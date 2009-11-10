@@ -2,11 +2,13 @@
 #define DISPLAYWIDGET_H
 
 #include <QGLWidget>
+#include "wavelettransform.h"
+#include <boost/shared_ptr.hpp>
 
 class DisplayWidget : public QGLWidget
 {
 public:
-    DisplayWidget( int timerInterval=0 );
+    DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int timerInterval=0 );
     ~DisplayWidget();
   static int lastKey;
 
@@ -23,11 +25,17 @@ protected slots:
   virtual void timeOutSlot();
 
 private:
+  boost::shared_ptr<WavelettTransform> wavelett;
   QTimer *m_timer;
   float px, py, pz,
         rx, ry, rz,
         qx, qy, qz;
   int prevX, prevY;
+
+  void drawArrows();
+  void drawColorFace();
+  void drawWaveform(boost::shared_ptr<Waveform> waveform);
+  void drawWavelett();
 };
 
 #endif // DISPLAYWIDGET_H
