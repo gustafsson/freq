@@ -1,35 +1,57 @@
 #include "../misc/inc/cudaUtil.h"
+#include <stdio.h>
 
-__global__ void WavelettKernel( float* in_waveform_ft, float* out_waveform_ft, float period, unsigned numElem );
-__global__ void InverseKernel( float* in_wavelett_ft, float* out_inverse_waveform, cudaExtent numElem );
+__global__ void WavelettKernel( float* in_waveform_ft, float* out_waveform_ft, cudaExtent numElem, float start, float steplogsize  );
+__global__ void InverseKernel( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem );
 
-void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, float period, unsigned numElem );
-void inverseWavelettTransform( float* in_wavelett_ft, float* out_inverse_waveform, cudaExtent numElem );
+void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem);
+void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem );
 
-void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, float period, unsigned numElem)
+void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem)
 {
-    // Multiply the coefficients together and normalize the result
-    dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(numElem, block.x), 1, 1);
-    if(grid.x>65535) {
-        grid.y = INTDIV_CEIL(grid.x, 65536 );
-        grid.x = 65536;
+    if(numElem.width%2) {
+        printf("Invalid argument, number of floats must be even to compose complex numbers from pairs.");
+        return;
     }
 
-    WavelettKernel<<<grid, block>>>( in_waveform_ft, out_waveform_ft, period, numElem );
+    dim3 block(256,1,1);
+    dim3 grid( INTDIV_CEIL(numElem.width, block.x), numElem.height*numElem.depth, 1);
+
+    if(grid.x>65535) {
+        printf("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+
+    float start = sampleRate/minHz/numElem.width;
+    float steplogsize = log(maxHz)-log(minHz);
+
+    WavelettKernel<<<grid, block>>>( in_waveform_ft, out_waveform_ft, numElem, start, steplogsize );
 }
 
 __global__ void WavelettKernel(
         float* in_waveform_ft,
         float* out_waveform_ft,
-        float period, unsigned numElem )
+        cudaExtent numElem, float start, float steplogsize )
 {
-    const unsigned
-            tx = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
-            ty = __umul24(blockIdx.y,blockDim.y) + threadIdx.y,
-            x = ty*blockDim.x*gridDim.x + tx;
+    // Find period for this thread
+    // float f = exp(log(minHz) + (fi/(float)nFrequencies())*(log(maxHz)-log(minHz)));
+    // return sampleRate/f;
 
-    if (x>=numElem)
+    unsigned nFrequencies = numElem.height;
+    unsigned fi = blockIdx.y%nFrequencies;
+    float ff = fi/(float)nFrequencies;
+    float period = start*exp(-ff*steplogsize);
+
+    // Find offset for this wavelett scale
+    unsigned channel = blockIdx.y/nFrequencies; // integer division
+    unsigned n = numElem.width;
+    unsigned offset = fi*n + channel*n*nFrequencies;
+
+    // Element number
+    const unsigned
+            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+
+    if (x>=numElem.width)
         return;
 
     const float f0 = 15;
@@ -39,39 +61,44 @@ __global__ void WavelettKernel(
 
     period *= f0;
 
-    float factor = 2*pi*x*period-two_pi_f0;
+    unsigned y = x/2; // compute equal results for the complex and scalar part
+    float factor = 2*pi*y*period-two_pi_f0;
     float basic = multiplier * exp(-0.5*factor*factor);
 
-    out_waveform_ft[x] = in_waveform_ft[x]*basic;
+    out_waveform_ft[offset + x] = in_waveform_ft[x]*basic;
 }
 
-void inverseWavelettTransform( float* in_wavelett_ft, float* out_inverse_waveform, cudaExtent numElem)
+void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem)
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(numElem.width, block.x), 1, 1);
+    dim3 grid( INTDIV_CEIL(out_numElem.width, block.x), 1, 1);
+
     if(grid.x>65535) {
-        grid.y = INTDIV_CEIL(grid.x, 65536 );
-        grid.x = 65536;
+        printf("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+    if(in_numElem.width < 2*out_numElem.width) {
+        printf("Invalid argument, complex insignal must be wider than real outsignal.");
+        return;
     }
 
-    InverseKernel<<<grid, block>>>( in_wavelett_ft, out_inverse_waveform, numElem );
+    InverseKernel<<<grid, block>>>( in_wavelett_ft, in_numElem, out_inverse_waveform, out_numElem );
 }
 
-__global__ void InverseKernel(float* in_wavelett_ft, float* out_inverse_waveform, cudaExtent numElem )
+__global__ void InverseKernel(float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem )
 {
     const unsigned
-            tx = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
-            ty = __umul24(blockIdx.y,blockDim.y) + threadIdx.y,
-            x = ty*blockDim.x*gridDim.x + tx;
+            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
 
-    if (x>=numElem.width )
+    if (x>=out_numElem.width )
         return;
 
     float a = 0;
-    for (unsigned fi=0; fi<numElem.height; fi++)
+    for (unsigned fi=0; fi<in_numElem.height; fi++)
     {
-        a += in_wavelett_ft[ x + fi*numElem.width ];
+        // 2*x selects only the real component of the complex transform
+        a += in_wavelett_ft[ 2*x + fi*in_numElem.width ];
     }
 
     out_inverse_waveform[x] = a;

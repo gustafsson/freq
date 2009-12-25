@@ -12,12 +12,13 @@ namespace audiere
 class Waveform
 {
 public:
+
+    Waveform();
+
     /**
       Reads an audio file using libaudiere
       */
     Waveform(const char* filename);
-
-    Waveform() {}
 
     /**
       Writes wave audio with 16 bits per sample

@@ -15,7 +15,7 @@ public:
     boost::shared_ptr<Waveform> getInverseWaveform();
 
     boost::shared_ptr<TransformData> computeCompleteWavelettTransform();
-    //boost::shared_ptr<TransformData> computeWavelettTransform( float startt, float endt, float lowf, float highf );
+    boost::shared_ptr<TransformData> computeWavelettTransform( float startt, float endt, float lowf, float highf, unsigned numf );
     boost::shared_ptr<Waveform> computeInverseWaveform();
 
 private:

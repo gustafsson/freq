@@ -1,5 +1,6 @@
 #include "waveform.h"
-#include <audiere.h>
+#include <audiere.h> // for reading various formats
+#include <sndfile.hh> // for writing wav
 #include <math.h>
 #include "Statistics.h"
 
@@ -7,6 +8,11 @@ using namespace audiere;
 
 #include <iostream>
 using namespace std;
+
+Waveform::Waveform()
+:   _sample_rate(0),
+    _source(0)
+{}
 
 Waveform::Waveform (const char* filename)
 {
@@ -27,7 +33,7 @@ Waveform::Waveform (const char* filename)
     float* fdata = _waveformData->getCpuMemory();
 
     for (unsigned i=0; i<num_frames; i++)
-    for (unsigned c=0; c<channel_count; c++)
+    for (int c=0; c<channel_count; c++)
     {
         float f = 0;
         switch(frame_size) {
@@ -49,4 +55,19 @@ Waveform::Waveform (const char* filename)
     }
 
     Statistics<float> waveform( _waveformData.get() );
+}
+
+void Waveform::writeFile( const char* filename ) const
+{
+    // todo: this method only writes mono data from the first (left) channel
+
+    const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+    //  const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
+
+    int number_of_channels = 1;
+    SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
+
+    if (not outfile) return;
+
+    outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
 }

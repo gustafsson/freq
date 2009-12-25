@@ -2,6 +2,8 @@
 #include "mainwindow.h"
 #include "displaywidget.h"
 #include "wavelettransform.h"
+#include <iostream>
+using namespace std;
 
 int main(int argc, char *argv[])
 {
@@ -16,5 +18,16 @@ int main(int argc, char *argv[])
     dw->show();
     w.show();
 
-    return a.exec();
+    {
+        cout << "blaj1" <<endl;
+        //boost::shared_ptr<TransformData> blaj = wt->getWavelettTransform();
+        cout << "blaj2" <<endl;
+    }
+        cout << "blaj3" <<endl;
+    //dw.reset();
+        cout << "blaj4" <<endl;
+        //wt.reset();
+        cout << "blaj5" <<endl;
+   return a.exec();
+   // return 0;
 }
