@@ -29,7 +29,9 @@ public:
     }
 
     float getNearestCoeff( float t, float f );
+    unsigned getFrequencyIndex( float f ) const;
     float getFrequency( unsigned fi ) const;
 };
 
 #endif // TRANSFORMDATA_H
+
