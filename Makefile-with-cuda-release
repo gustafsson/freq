@@ -9,15 +9,15 @@
 ####### Compiler, tools and options
 
 CC            = gcc
-CXX           = g++
+CXX           = colorgcc #g++
 NVCC          = /usr/local/cuda/bin/nvcc
 DEFINES       = -DQT_NO_DEBUG -DQT_TESTLIB_LIB -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED
 CFLAGS        = -pipe -O2 -Wall -W -D_REENTRANT $(DEFINES)
 CXXFLAGS      = -pipe -O2 -Wall -W -D_REENTRANT $(DEFINES)
-INCPATH       = -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4/QtGui -I/usr/include/qt4/QtOpenGL -I/usr/include/qt4/QtTest -I/usr/include/qt4 -I../misc/inc -I/usr/local/cuda/include -I/usr/X11R6/include -I. -I.
+INCPATH       = -I/usr/share/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore -I/usr/include/qt4/QtGui -I/usr/include/qt4/QtOpenGL -I/usr/include/qt4/QtTest -I/usr/include/qt4 -I../sonicawe-misc/inc -I/usr/local/cuda/include -I/usr/X11R6/include -I. -I.
 LINK          = g++
 LFLAGS        = -Wl,-O1
-LIBS          = $(SUBLIBS)  -L/usr/lib -L/usr/X11R6/lib -laudiere -lsndfile -L../misc -lmisc -L/usr/local/cuda/lib64 -lcudart -lcufft -lQtTest -lQtOpenGL -lQtGui -lQtCore -lGLU -lGL -lpthread
+LIBS          = $(SUBLIBS)  -L/usr/lib -L/usr/X11R6/lib -laudiere -lsndfile -L../sonicawe-misc -lmisc -L/usr/local/cuda/lib64 -lcudart -lcufft -lQtTest -lQtOpenGL -lQtGui -lQtCore -lGLU -lGL -lpthread
 AR            = ar cqs
 RANLIB        = 
 QMAKE         = /usr/bin/qmake-qt4
@@ -48,15 +48,17 @@ SOURCES       = main.cpp \
 		displaywidget.cpp \
 		wavelettransform.cpp \
 		transformdata.cpp \
-		waveform.cpp moc_mainwindow.cpp
+		waveform.cpp \
+		wavelet.cpp moc_mainwindow.cpp
 OBJECTS       = main.o \
 		mainwindow.o \
 		displaywidget.o \
 		wavelettransform.o \
 		transformdata.o \
 		waveform.o \
+		wavelet.o \
 		moc_mainwindow.o \
-		wavelett.cu.o
+		wavelet.cu.o
 DIST          = /usr/share/qt4/mkspecs/common/g++.conf \
 		/usr/share/qt4/mkspecs/common/unix.conf \
 		/usr/share/qt4/mkspecs/common/linux.conf \
@@ -166,7 +168,7 @@ qmake:  FORCE
 
 dist: 
 	@$(CHK_DIR_EXISTS) .tmp/visualizer1.0.0 || $(MKDIR) .tmp/visualizer1.0.0 
-	$(COPY_FILE) --parents $(SOURCES) $(DIST) .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.h displaywidget.h wavelettransform.h transformdata.h waveform.h .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents main.cpp mainwindow.cpp displaywidget.cpp wavelettransform.cpp transformdata.cpp waveform.cpp .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.ui .tmp/visualizer1.0.0/ && (cd `dirname .tmp/visualizer1.0.0` && $(TAR) visualizer1.0.0.tar visualizer1.0.0 && $(COMPRESS) visualizer1.0.0.tar) && $(MOVE) `dirname .tmp/visualizer1.0.0`/visualizer1.0.0.tar.gz . && $(DEL_FILE) -r .tmp/visualizer1.0.0
+	$(COPY_FILE) --parents $(SOURCES) $(DIST) .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.h displaywidget.h wavelettransform.h transformdata.h waveform.h timescaleplane.h .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents main.cpp mainwindow.cpp displaywidget.cpp wavelettransform.cpp transformdata.cpp waveform.cpp wavelet.cpp .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.ui .tmp/visualizer1.0.0/ && (cd `dirname .tmp/visualizer1.0.0` && $(TAR) visualizer1.0.0.tar visualizer1.0.0 && $(COMPRESS) visualizer1.0.0.tar) && $(MOVE) `dirname .tmp/visualizer1.0.0`/visualizer1.0.0.tar.gz . && $(DEL_FILE) -r .tmp/visualizer1.0.0
 
 
 clean:compiler_clean 
@@ -246,11 +248,14 @@ transformdata.o: transformdata.cpp transformdata.h
 waveform.o: waveform.cpp waveform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o waveform.o waveform.cpp
 
+wavelet.o: wavelet.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o wavelet.o wavelet.cpp
+
 moc_mainwindow.o: moc_mainwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_mainwindow.o moc_mainwindow.cpp
 
-wavelett.cu.o: wavelett.cu
-	$(NVCC) -c -o wavelett.cu.o wavelett.cu
+wavelet.cu.o: wavelet.cu
+	$(NVCC) -c $(INCPATH) -o wavelet.cu.o wavelet.cu
 
 ####### Install
 
