@@ -17,6 +17,9 @@ Waveform::Waveform()
 Waveform::Waveform (const char* filename)
 {
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
+    if (0==_source)
+        throw std::ios_base::failure(string() + "File " + filename + " not found");
+
     SampleFormat sample_format;
     int channel_count;
     _source->getFormat( channel_count, _sample_rate, sample_format);
