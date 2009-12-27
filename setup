@@ -1,0 +1,23 @@
+För utveckling på Ubuntu
+Installera cuda toolkit som laddas ner från nvidias hemsida
+Lägg till /usr/local/cuda/bin i PATH
+Lägg till /usr/local/cuda/lib i /etc/ld.so.conf (eller lib64)
+
+Installera paket med följande kommando
+sudo apt-get install libaudiere-dev libsndfile1-dev libboost1.37-dev libqt4-dev qt-creator libglut-dev
+
+Felsökning
+1. Kolla att att cuda är installerat korrekt genom att ladda ner cuda sdk och kompilera alla exempel
+
+2. Om inget cuda-kort hittas: Installera cuda drivers från nvidias hemsida.
+2.1 Ladda ner drivrutinen från nvidias hemsida
+2.2 Stoppa x-server
+sudo /etc/init.d/gdm stop
+2.3 Se till att ta bort alla nvidias drivrutiner som är installerade med ubuntu med
+sudo apt-get purge nvidia-glx-*
+2.4 Installera cuda med programmet du laddade ner
+2.5 starta x-server
+sudo /etc/init.d/gdm start
+
+3. Om grafiken hackar, stoppa compiz.
+3.1 Högerklicka på skrivbordet -> "change desktop background" -> "visual effects" -> none -> ok
