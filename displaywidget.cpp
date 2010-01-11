@@ -3,18 +3,16 @@
 #include <QApplication>
 #include <QTimer>
 #include <QKeyEvent>
-//#include <Magick++.h>
 
 #include <list>
 #include "wavelettransform.h"
 
 using namespace std;
-//using namespace Magick;
 
 int DisplayWidget::lastKey = 0;
 
-DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int timerInterval ) : QGLWidget( ),
-  wavelett( wavelett ),
+DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelet, int timerInterval ) : QGLWidget( ),
+  wavelet( wavelet ),
   px(0), py(0), pz(0),
   rx(0), ry(0), rz(0),
   qx(0), qy(0), qz(0),
@@ -147,9 +145,9 @@ void DisplayWidget::paintGL()
     glTranslatef( qx, qy, qz );
 
     //drawColorFace();
-    //drawWaveform(wavelett->getOriginalWaveform());
-    drawWavelett();
-    //drawWaveform(wavelett->getInverseWaveform());
+    //drawWaveform(wavelet->getOriginalWaveform());
+    drawWavelet();
+    //drawWaveform(wavelet->getInverseWaveform());
 }
 
 void DisplayWidget::drawArrows()

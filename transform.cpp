@@ -10,180 +10,366 @@
 #include "StatisticsRandom.h"
 #include <string.h>
 
-// defined in wavlett.cu
-void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem);
-void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem);
+#include "wavelet.cu.h"
 
-WavelettTransform::WavelettTransform( const char* filename )
+Transform::Transform( pWaveform waveform, unsigned scales_per_octave, unsigned samples_per_chunk, float wavelet_std_t )
+:   _originalWaveform(waveform),
+    _scales_per_octave( scales_per_octave ),
+    _samples_per_chunk( samples_per_chunk ),
+    _wavelet_std_t( wavelet_std_t )
 {
-    _originalWaveform.reset( new Waveform( filename ));
+    /*
+    Each chunk will then have the size
+        chunk_byte_size = sizeof(float)*2 * _scales_per_octave
+                        * _samples_per_chunk * number_of_octaves
+    Which for default values
+        scales_per_octave = 50,
+        samples_per_chunk = 1<<14
+        number_of_octaves=log2(20000)-log2(20) ~ 10
+    is
+        chunk_byte_size = 62.5 MB
+    Which in turn means that a graphics card with 512 MB of memory will have
+    space for roughly 6 chunks (leaving about 137 MB for other purposes).
+    */
 
     CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 }
 
-boost::shared_ptr<TransformData> WavelettTransform::getWavelettTransform() {
-    if (!_transform.get()) computeCompleteWavelettTransform();
-    return _transform;
+Transform::~Transform()
+{
+
+    gc();
 }
 
-boost::shared_ptr<Waveform> WavelettTransform::getOriginalWaveform() {
-    return _originalWaveform;
+ChunkNumber Transform::getChunkNumber( float including_time_t ) {
+    return t*_originalWaveform->_sample_rate / samples_per_chunk;
 }
 
-boost::shared_ptr<Waveform> WavelettTransform::getInverseWaveform() {
-    if (!_inverseWaveform.get()) computeInverseWaveform();
-    return _inverseWaveform;
+
+/*
+getChunk initializes asynchronous computation if 0!=stream (inherited
+behaviour from cuda). Also from NVIDIA CUDA Programming Guide section
+3.2.6.1, v2.3 Stream:
+
+"Two commands from different streams cannot run concurrently if either a page-
+locked host memory allocation, a device memory allocation, a device memory set,
+a device ↔ device memory copy, or any CUDA command to stream 0 is called in-
+between them by the host thread."
+
+That is, a call to getChunk shall never result in any of the operations
+mentioned above, which basically leaves kernel execution and page-locked
+host ↔ device memory copy. For this purpose, a page-locked chunk of memory
+is allocated beforehand and reserved for the Waveform_chunk. Previous copies
+with the page-locked chunk is synchronized on beforehand.
+*/
+pTransform_chunk Transform::getChunk( ChunkNumber n, cudaStream_t stream ) {
+    if (_oldChunks.find(n) != _oldChunks.end()) {
+        if (!_oldChunks[n]->modified() && _oldChunks[n].unique())
+            /* only use old chunks if they're not modified and unused */
+            return _oldChunks[n];
+    }
+
+    /* The waveform resides in CPU memory. In total we might have hours of data
+       which would instantly waste the entire GPU memory. In those cases it is
+       likely that the OS chooses to page parts of the waveform. Therefore this
+       takes in general an undefined amount of time before it returns.
+
+       However, we optimize for the assumption that it does reside in readily
+       available cpu memory.
+    */
+    Waveform_chunk wave = _originalWaveform->getChunk(
+            samples_per_chunk*n - wavelet_std_t*_originalWaveform->sampleRate,
+            samples_per_chunk + 2*wavelet_std_t*_originalWaveform->sampleRate);
+
+    /*
+    static cudaStream_t previousStream = -1;
+    if (0 < previousStream) {
+        cudaStreamSynchronize( previousStream );
+    }
+    previousStream = stream;
+    */
+
+    /* performing the transform might require allocating memory, */
+    pTransform_chunk wt = computeTransform( wave, stream );
+
+    /* allocateChunk is more prone to reuse old caches than to actually
+       allocate any memory */
+    pTransform_chunk clamped = allocateChunk( n );
+    clampTransform( clamped, wt, stream );
+
+    _oldChunks[n] = clamped;
 }
 
-void cufftSafeCall( cufftResult_t cufftResult) {
+
+pWaveform_chunk Transform::computeInverse( pTransform_chunk chunk, cudaStream_t stream ) {
+    cudaExtent sz = makeCudaExtent( chunk->nSamples(), 1, 1);
+
+    pWaveform_chunk r( new Waveform_chunk());
+    r->sampleOffset = chunk->sampleOffset;
+    r->sampleRate = chunk->sampleRate;
+    r->waveform_data.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
+
+    {
+        TaskTimer tt(__FUNCTION__);
+
+        // summarize them all
+        ::wtInverse( chunk->transform_data->getCudaGlobal().ptr(),
+                     chunk->transform_data->getNumberOfElements(),
+                     r->waveform_data->getCudaGlobal().ptr(),
+                     r->waveform_data->getNumberOfElements(),
+                     stream );
+    }
+
+    {
+        TaskTimer tt("inverse corollary");
+
+        size_t n = r->waveform_data->getNumberOfElements1D();
+        float* data = r->waveform_data->getCpuMemory();
+        pWaveform_chunk originalChunk = _originalWaveform->getChunk(chunk->sampleOffset, chunk->nSamples(), _channel);
+        float* orgdata = originalChunk->waveform_data->getCpuMemory();
+
+        double sum = 0, orgsum=0;
+        for (size_t i=0; i<n; i++) {
+            sum += fabsf(data[i]);
+        }
+        for (size_t i=0; i<n; i++) {
+            orgsum += fabsf(orgdata[i]);
+        }
+        float scale = orgsum/sum;
+        for (size_t i=0; i<n; i++)
+            data[i] *= scale;
+        tt.info("scales %g, %g, %g", sum, orgsum, scale);
+
+        r->writeFile("outtest.wav");
+    }
+    return r;
+}
+
+
+void Transform::gc() {
+    _oldChunks.clear();
+    _intermediate_wt.clear();
+}
+
+
+void Transform::channel( unsigned value ) {
+    if (value==_channel) return;
+    gc(); // invalidate allocated memory chunks
+    _channel=value;
+}
+
+
+void Transform::scales_per_octave( unsigned value ) {
+    if (value==_scales_per_octave) return;
+    gc();
+    _scales_per_octave=value;
+}
+
+
+void Transform::samples_per_chunk( unsigned value ) {
+    if (value==_samples_per_chunk) return;
+    gc();
+    _samples_per_chunk=value;
+}
+
+
+void Transform::wavelet_std_t( float value ) {
+    if (value==_wavelet_std_t) return;
+    gc();
+    _wavelet_std_t=value;
+}
+
+
+void Transform::originalWaveform( pWaveform value ) {
+    if (value==_originalWaveform) return;
+    gc();
+    _originalWaveform=value;
+}
+
+
+pTransform_chunk Transform::allocateChunk( ChunkNumber n )
+{
+    if (_oldChunks.find(n) != _oldChunks.end()) {
+        if (!_oldChunks[n].unique())
+            _oldChunks.remove(_oldChunks.find(n));
+        else
+            return _oldChunks[n];
+    }
+
+    // look for caches no longer in use
+    pTransform_chunk chunk = releaseChunkFurthestAwayFrom( n );
+
+    if (!chunk) {
+        // or allocate a new chunk
+        chunk = pTransform_chunk ( new Transform_chunk());
+        chunk->transform_data.reset(new GpuCpuData<float>(
+                makeCudaExtent(_samples_per_chunk, _scales_per_octave, 1), 0, GpuCpuDataVoid::CudaGlobal ));
+        chunk->minHz = 20;
+        chunk->maxHz = chunk->sampleRate/2;
+        chunk->sampleRate =  _originalWaveform->sampleRate;
+    }
+    chunk->sampleOffset = _samples_per_chunk*n;
+
+    _oldChunks[chunk_n] = chunk;
+    return chunk;
+}
+
+
+pTransform_chunk Transform::releaseChunkFurthestAwayFrom( ChunkNumber n )
+{
+    ChunkMap::iterator proposal;
+
+    while (!_oldChunks.empty()) {
+        proposal = abs(n-_oldChunks.first().first)
+                 < abs(n-_oldChunks.last().first)
+                 ? _oldChunks.first()
+                 : --_oldChunks.end();
+        _oldChunks.remove( proposal );
+
+        if ( proposal.second.unique())
+            return proposal.second;
+    }
+    return pTransform_chunk();
+}
+
+
+static void cufftSafeCall( cufftResult_t cufftResult) {
     if (cufftResult != CUFFT_SUCCESS) {
         ThrowInvalidArgument( cufftResult );
     }
 }
 
-boost::shared_ptr<TransformData> WavelettTransform::computeCompleteWavelettTransform()
+
+pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cudaStream_t stream )
 {
-    cudaExtent x = _originalWaveform->_waveformData->getNumberOfElements();
-    x.width *= 2;
-    x.height = 1;
-    x.depth = 1;
-    GpuCpuData<float> complexOriginal(0, x);
-    float *original = _originalWaveform->_waveformData->getCpuMemory();
-    float *complex = complexOriginal.getCpuMemory();
-    for (int i=0; i<x.width/2; i++) {
-        complex[i*2 + 0] = original[i];
-        complex[i*2 + 1] = 0;
-    }
-    complexOriginal.getCudaGlobal();
+    // Compute required size of transform
+    {
+        // Compute number of scales to use
+        float octaves = log2(_intermediate_wt->maxHz)-log2(_intermediate_wt->minHz);
+        unsigned nFrequencies = _scales_per_octave*octaves;
+        unsigned n = waveform_chunk->sampleOffset/_samples_per_chunk;
 
-TaskTimer tt(__FUNCTION__);
+        // The waveform must be complex interleaved
+        if (Waveform_chunk::Interleaved_Complex != waveform_chunk->interleaved())
+            waveform_chunk = waveform_chunk->getInterleaved();
 
-    TaskTimer* tt2 = new TaskTimer("start");
+        cudaExtent requiredFtSz( waveform_chunk->data->getNumberOfElements().width, nFrequencies, 1 );
+        // The in-signal is be padded to a power of 2 for faster calculations (or rather, "power of a small prime")
+        // TODO: measure time differences with other sizes
+        // TODO: test these three different sizes
+        //requiredFtSz.width = (1 << ((unsigned)ceil(log2(requiredFtSz.width))));
+        //requiredFtSz.width = (1 << ((unsigned)ceil(log2(requiredFtSz.width+1))));
+        requiredFtSz.width = (1 << ((unsigned)ceil(log2(requiredFtSz.width)+1)));
+        cudaExtent requiredWtSz( requiredFtSz, nFrequencies, 1 );
 
-    _transform.reset( new TransformData());
-    _transform->maxHz = _originalWaveform->_sample_rate/2;
-    _transform->minHz = 20;
-    _transform->sampleRate = _originalWaveform->_sample_rate;
+        if (_intermediate_wt && _intermediate_wt->getNumberOfElements()!=requiredWtSz)
+            _intermediate_wt.reset();
 
-    // Size of padded in-signal
-    cudaExtent noe = _originalWaveform->_waveformData->getNumberOfElements();
-    unsigned n = (1 << ((unsigned)ceil(log2(noe.width+1))));
+        if (_intermediate_ft && _intermediate_ft->getNumberOfElements()!=requiredFtSz)
+            _intermediate_ft.reset();
 
-    // Count number of scales to use
-    float octaves = log2(_transform->maxHz)-log2(_transform->minHz);
-    float granularity = 60; // scales per octave
-    unsigned nFrequencies = granularity*octaves;
+        if (!_intermediate_wt) {
+            // allocate a new chunk
+            pTransform_chunk chunk = pTransform_chunk ( new Transform_chunk());
 
-    // Allocate transform
-    cudaExtent transformSize = {2*n, nFrequencies, 1 };
-//    cudaExtent transformSize = {n, nFrequencies, _originalWaveform->channel_count() };
-    _transform->transformData.reset( new GpuCpuData<float>( 0, transformSize, GpuCpuVoidData::CudaGlobal ));
-    cudaMemset( _transform->transformData->getCudaGlobal().ptr(), 0, _transform->transformData->getSizeInBytes1D() );
+            while (!_oldChunks.empty()) try {
+                chunk->transform_data.reset(new GpuCpuData<float>( 0, requiredWtSz, GpuCpuDataVoid::CudaGlobal ));
+                break;
+            } catch ( const CudaException& x ) {
+                if (x.type() == MemoryException)
+                    releaseChunkFurthestAwayFrom( n );
+                else
+                    throw;
+            }
 
-    //    for (unsigned channel=0; channel<transformSize.depth; channel++) {
-        // Padd in-signal
-        GpuCpuData<float> waveform_ft((float*)0, make_cudaExtent(2*n,1,1), GpuCpuVoidData::CudaGlobal);
-        cudaMemset( waveform_ft.getCudaGlobal().ptr(), 0, waveform_ft.getSizeInBytes1D());
+            chunk->sampleRate =  _originalWaveform->sampleRate;
+            chunk->sampleOffset = _samples_per_chunk*n - _wavelet_std_t*_originalWaveform->sampleRate;
+            chunk->minHz = 20;
+            chunk->maxHz = chunk->sampleRate/2;
+            if (0>chunk->sampleOffset) chunk->sampleOffset=0;
 
-        //cudaMemcpy( waveform_ft.getCudaGlobal().ptr(), _originalWaveform->_waveformData->getCpuMemory(), noe.width*sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy( waveform_ft.getCudaGlobal().ptr()+2, complexOriginal.getCudaGlobal().ptr(), noe.width*sizeof(float)*2, cudaMemcpyDeviceToDevice);
-        //int cW = memcmp(waveform_ft.getCpuMemory(), _originalWaveform->_waveformData->getCpuMemory(), noe.width*sizeof(float));
+            _intermediate_wt = chunk;
+        }
+
+        if (!_intermediate_ft) {
+            while (!_oldChunks.empty()) try {
+                _intermediate_ft.reset(new GpuCpuData<float>( 0, requiredFtSz, GpuCpuDataVoid::CudaGlobal ));
+                break;
+            } catch ( const CudaException& x ) {
+                if (x.type() == MemoryException)
+                    releaseChunkFurthestAwayFrom( n );
+                else
+                    throw;
+            }
+        }
+    }  // Compute required size of transform
+
+
+    TaskTimer tt(__FUNCTION__);
+    {
+        TaskTimer tt2("start");
+
+        cudaMemset( _intermediate_wt->getCudaGlobal().ptr(), 0, _intermediate_wt->getSizeInBytes1D() );
+        cudaMemset( _intermediate_ft->getCudaGlobal().ptr(), 0, _intermediate_ft->getSizeInBytes1D() );
+        cudaMemcpy( _intermediate_ft->getCudaGlobal().ptr()+2,
+                    waveform_chunk->data->getCudaGlobal().ptr(),
+                    waveform_chunk->data->getsizeInBytes().width,
+                    cudaMemcpyDeviceToDevice);
 
         // Transform signal
-        cufftHandle plan;
-        cufftSafeCall(cufftPlan1d(&plan, n, CUFFT_C2C, 1));
-
-        //GpuCpuData<float> waveform_ft_wt(0, waveform_ft.getNumberOfElements(), GpuCpuVoidData::CudaGlobal);
-  //      for (int j=0; j<10090; j++)
-        // 1.28 s /10090 cufftSafeCall(cufftExecC2C(plan, (cufftComplex *)waveform_ft.getCudaGlobal().ptr(), (cufftComplex *)waveform_ft_wt.getCudaGlobal().ptr(), CUFFT_FORWARD));
-        cufftSafeCall(cufftExecC2C(plan, (cufftComplex *)waveform_ft.getCudaGlobal().ptr(), (cufftComplex *)waveform_ft.getCudaGlobal().ptr(), CUFFT_FORWARD));
-        //2.5 s / 10090 cufftSafeCall(cufftExecR2C(plan, (cufftReal *)waveform_ft.getCudaGlobal().ptr(), (cufftComplex *)waveform_ft_wt.getCudaGlobal().ptr()));
-
+        cufftSafeCall(cufftPlan1d(&_fft_single, n, CUFFT_C2C, 1));
+        cufftSafeCall(cufftSetStream(_fft_single, stream));
+        cufftSafeCall(cufftExecC2C(_fft_single,
+                                   (cufftComplex *)_intermediate_ft->getCudaGlobal().ptr(),
+                                   (cufftComplex *)_intermediate_ft->getCudaGlobal().ptr(),
+                                   CUFFT_FORWARD));
 
         //Destroy CUFFT context
-        cufftDestroy(plan);
+        cufftDestroy(_fft_single);
+
         CudaException_ThreadSynchronize();
-delete tt2;
-        // for each wanted scale
-        //GpuCpuData<float> waveform_ft_wt(0, waveform_ft.getNumberOfElements(), GpuCpuVoidData::CudaGlobal);
-        //cudaMemset( waveform_ft_wt.getCudaGlobal().ptr(), 0, waveform_ft_wt.getSizeInBytes1D());
-        //cudaMemcpy( waveform_ft_wt.getCudaGlobal().ptr(), waveform_ft.getCudaGlobal().ptr(), waveform_ft_wt.getSizeInBytes1D(), cudaMemcpyDeviceToDevice);
+    }
 
+    {
+        TaskTimer tt("computing");
+        ::wtCompute( _intermediate_ft->getCudaGlobal().ptr(),
+                     _intermediate_wt->data->getCudaGlobal().ptr(),
+                     _intermediate_wt->sampleRate,
+                     _intermediate_wt->minHz,
+                     _intermediate_wt->maxHz,
+                     _intermediate_wt->data->getNumberOfElements() );
 
-        float* dp_data = _transform->transformData->getCudaGlobal().ptr();
-        { TaskTimer tt("computing");
-            ::computeWavelettTransform( waveform_ft.getCudaGlobal().ptr(),
-                                        dp_data,
-                                        _transform->sampleRate,
-                                        _transform->minHz,
-                                        _transform->maxHz,
-                                        _transform->transformData->getNumberOfElements()
-                                        );
-            CudaException_ThreadSynchronize(); }
+        CudaException_ThreadSynchronize();
+    }
 
-        {        TaskTimer tt("inverse fft");
+    {
+        TaskTimer tt("inverse fft");
 
-            // Transform signal back
-            cufftSafeCall(cufftPlan1d(&plan, n, CUFFT_C2C, nFrequencies));
-            cufftSafeCall(cufftExecC2C(plan, (cufftComplex *)dp_data, (cufftComplex *)dp_data, CUFFT_INVERSE));
+        // Transform signal back
+        cufftSafeCall(cufftPlan1d(&_fft_many, n, CUFFT_C2C, nFrequencies));
+        cufftSafeCall(cufftExecC2C(_fft_many,
+                                   (cufftComplex *)_intermediate_wt->data->getCudaGlobal().ptr(),
+                                   (cufftComplex *)_intermediate_wt->data->getCudaGlobal().ptr(),
+                                   CUFFT_INVERSE));
 
-            //Destroy CUFFT context
-            cufftDestroy(plan);
-            CudaException_ThreadSynchronize(); }
-//    } // channel
+        // Destroy CUFFT context
+        cufftDestroy(_fft_many);
+        CudaException_ThreadSynchronize();
+    }
 
     CudaException_ThreadSynchronize();
 
     return _transform;
 }
 
-boost::shared_ptr<Waveform> WavelettTransform::computeInverseWaveform()
+
+void Transform::clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream )
 {
-    {
-    TaskTimer tt(__FUNCTION__);
-    //cudaExtent sz = _originalWaveform->_waveformData->getNumberOfElements();
-    cudaExtent sz = getWavelettTransform()->transformData->getNumberOfElements();
-
-    sz.height = 1;
-    sz.depth = 1;
-    sz.width = _originalWaveform->_waveformData->getNumberOfElements().width;
-
-    // summarize them all
-    _inverseWaveform.reset( new Waveform() );
-    _inverseWaveform->_sample_rate = _originalWaveform->_sample_rate;
-    _inverseWaveform->_waveformData.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
-
-    ::inverseWavelettTransform(
-            getWavelettTransform()->transformData->getCudaGlobal().ptr(),
-            getWavelettTransform()->transformData->getNumberOfElements(),
-            _inverseWaveform->_waveformData->getCudaGlobal().ptr(),
-            _inverseWaveform->_waveformData->getNumberOfElements()
-    );
-}
-        {
-    TaskTimer tt("inverse corollary");
-
-    size_t n = _inverseWaveform->_waveformData->getNumberOfElements1D();
-    float* data = _inverseWaveform->_waveformData->getCpuMemory();
-    float* orgdata = _originalWaveform->_waveformData->getCpuMemory();
-    double sum = 0, orgsum=0;
-    for (size_t i=0; i<n; i++) {
-        sum += fabsf(data[i]);
-    }
-    for (size_t i=0; i<n; i++) {
-        orgsum += fabsf(orgdata[i]);
-    }
-    float scale = orgsum/sum;
-    for (size_t i=0; i<n; i++)
-        data[i]*=scale;
-    tt.info("scales %g, %g, %g", sum, orgsum, scale);
-
-    _inverseWaveform->writeFile("outtest.wav");
-}
-    return _inverseWaveform;
-}
-
-boost::shared_ptr<TransformData> WavelettTransform::computeWavelettTransform( float startt, float endt, float lowf, float highf, unsigned numf )
-{
-    return boost::shared_ptr<TransformData>();
+    cudaExtent offset( _wavelet_std_t*_originalWaveform->sample_rate, 0, 0 );
+    ::wtClamp( in_transform->transform_data.getGpuMemory(),
+               in_transform->transform_data.getNumberOfElements(),
+               out_chunk->transform_data.getGpuMemory(),
+               out_chunk->transform_data.getNumberOfElements(),
+               offset,
+               stream );
 }

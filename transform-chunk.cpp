@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-float TransformData::getNearestCoeff( float t, float f )
+float Transform_chunk::getNearestCoeff( float t, float f )
 {
     if (!valid())
         return 0;
@@ -16,7 +16,7 @@ float TransformData::getNearestCoeff( float t, float f )
     return transformData->getCpuMemoryConst()[ fi*nSamples() + s ];
 }
 
-float TransformData::getFrequency( unsigned fi ) const
+float Transform_chunk::getFrequency( unsigned fi ) const
 {
     if (!valid())
         return 0;
@@ -24,7 +24,7 @@ float TransformData::getFrequency( unsigned fi ) const
     return exp(log(minHz) + (fi/(float)nFrequencies())*(log(maxHz)-log(minHz)));
 }
 
-unsigned TransformData::getFrequencyIndex( float f ) const
+unsigned Transform_chunk::getFrequencyIndex( float f ) const
 {
     if (f<minHz) f=minHz;
     if (f>maxHz) f=maxHz;

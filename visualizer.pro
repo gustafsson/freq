@@ -10,11 +10,23 @@ SOURCES += main.cpp \
     displaywidget.cpp \
     wavelettransform.cpp \
     transformdata.cpp \
+    wavelett.cpp \
+    spectrogram.cpp \
+    transform-inverse.cpp \
+    filter.cpp \
+    transform-chunk.cpp \
+    transform.cpp \
     waveform.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
-    wavelettransform.h \
     transformdata.h \
-    waveform.h
+    waveform.h \
+    spectrogram.h \
+    transform-inverse.h \
+    filter.h \
+    transform-chunk.h \
+    transform.h \
+    wavelet.cu.h
 FORMS += mainwindow.ui
-OTHER_FILES += wavelett.cu
+OTHER_FILES += wavelet.cu \
+    wavelet.cu
