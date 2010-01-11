@@ -47,16 +47,15 @@ SOURCES       = main.cpp \
 		mainwindow.cpp \
 		displaywidget.cpp \
 		wavelettransform.cpp \
-		transformdata.cpp \
+		transform-chunk.cpp \
 		waveform.cpp \
-		wavelet.cpp moc_mainwindow.cpp
+		moc_mainwindow.cpp
 OBJECTS       = main.o \
 		mainwindow.o \
 		displaywidget.o \
 		wavelettransform.o \
-		transformdata.o \
+		transform-chunk.o \
 		waveform.o \
-		wavelet.o \
 		moc_mainwindow.o \
 		wavelet.cu.o
 DIST          = /usr/share/qt4/mkspecs/common/g++.conf \
@@ -168,7 +167,7 @@ qmake:  FORCE
 
 dist: 
 	@$(CHK_DIR_EXISTS) .tmp/visualizer1.0.0 || $(MKDIR) .tmp/visualizer1.0.0 
-	$(COPY_FILE) --parents $(SOURCES) $(DIST) .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.h displaywidget.h wavelettransform.h transformdata.h waveform.h timescaleplane.h .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents main.cpp mainwindow.cpp displaywidget.cpp wavelettransform.cpp transformdata.cpp waveform.cpp wavelet.cpp .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.ui .tmp/visualizer1.0.0/ && (cd `dirname .tmp/visualizer1.0.0` && $(TAR) visualizer1.0.0.tar visualizer1.0.0 && $(COMPRESS) visualizer1.0.0.tar) && $(MOVE) `dirname .tmp/visualizer1.0.0`/visualizer1.0.0.tar.gz . && $(DEL_FILE) -r .tmp/visualizer1.0.0
+	$(COPY_FILE) --parents $(SOURCES) $(DIST) .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.h displaywidget.h wavelettransform.h transform-chunk.h waveform.h timescaleplane.h .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents main.cpp mainwindow.cpp displaywidget.cpp wavelettransform.cpp transform-chunk.cpp waveform.cpp .tmp/visualizer1.0.0/ && $(COPY_FILE) --parents mainwindow.ui .tmp/visualizer1.0.0/ && (cd `dirname .tmp/visualizer1.0.0` && $(TAR) visualizer1.0.0.tar visualizer1.0.0 && $(COMPRESS) visualizer1.0.0.tar) && $(MOVE) `dirname .tmp/visualizer1.0.0`/visualizer1.0.0.tar.gz . && $(DEL_FILE) -r .tmp/visualizer1.0.0
 
 
 clean:compiler_clean 
@@ -219,7 +218,7 @@ compiler_clean: compiler_moc_header_clean compiler_uic_clean
 main.o: main.cpp mainwindow.h \
 		displaywidget.h \
 		wavelettransform.h \
-		transformdata.h \
+		transform-chunk.h \
 		waveform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
@@ -227,29 +226,26 @@ mainwindow.o: mainwindow.cpp mainwindow.h \
 		ui_mainwindow.h \
 		displaywidget.h \
 		wavelettransform.h \
-		transformdata.h \
+		transform-chunk.h \
 		waveform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o mainwindow.o mainwindow.cpp
 
 displaywidget.o: displaywidget.cpp displaywidget.h \
 		wavelettransform.h \
-		transformdata.h \
+		transform-chunk.h \
 		waveform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o displaywidget.o displaywidget.cpp
 
 wavelettransform.o: wavelettransform.cpp wavelettransform.h \
-		transformdata.h \
+		transform-chunk.h \
 		waveform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o wavelettransform.o wavelettransform.cpp
 
-transformdata.o: transformdata.cpp transformdata.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o transformdata.o transformdata.cpp
+transform-chunk.o: transform-chunk.cpp transform-chunk.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o transform-chunk.o transform-chunk.cpp
 
 waveform.o: waveform.cpp waveform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o waveform.o waveform.cpp
-
-wavelet.o: wavelet.cpp 
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o wavelet.o wavelet.cpp
 
 moc_mainwindow.o: moc_mainwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_mainwindow.o moc_mainwindow.cpp
