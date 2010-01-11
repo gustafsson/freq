@@ -1,3 +1,10 @@
 *.o
 *~
 *.pdb
+moc_*.cpp
+ui_mainwindow.h
+*.wav
+*.orig
+*.remote
+visualizer
+*.user
