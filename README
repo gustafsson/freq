@@ -1,3 +1,13 @@
+Navigation
+=========
+Use z,c,d + mouse dragging to navigate
+
+Read setup for notes on developing for Sonic AWE.
+
+
+
+Setup
+=====
 För utveckling på Ubuntu
 Installera cuda toolkit som laddas ner från nvidias hemsida
 Lägg till /usr/local/cuda/bin i PATH
