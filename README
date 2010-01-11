@@ -1,0 +1,40 @@
+Navigation
+==========
+Use z,c,d + mouse dragging to navigate
+
+Read setup for notes on developing for Sonic AWE.
+
+
+Installation
+============
+Download binaries for your platform from
+http://github.com/gustafsson/sonicawe/downloads
+
+A cuda-enabled graphics card is required, check this list if you are unsure about your own card
+http://www.nvidia.com/object/cuda_learn_products.html
+
+
+Development setup
+=================
+For development on Ubuntu 9.10.
+
+Download and install the cuda toolkit from nvidia
+Add /usr/local/cuda/bin to your PATH
+Add /usr/local/cuda/lib to /etc/ld.so.conf (or /lib64 if you're running a 64-bit system)
+
+Install required packages
+sudo apt-get install libaudiere-dev libsndfile1-dev libboost1.37-dev libqt4-dev qt-creator libglut-dev
+
+Get the source to "sonicawe" from github.com:gustafsson/sonicawe.git
+Get the source to "sonicawe misc" from github.com:gustafsson/misc.git
+
+Troubleshooting
+1. Check that cuda is installed by downloading cuda sdk and compile all examples
+
+When you run the examples it sais that no cuda compatible graphics card is found (and you known you've got one).
+2. Install cuda drivers 
+2.1 http://www.nvidia.com/object/cuda_get.html
+2.2 Follow this thread: http://ubuntuforums.org/showthread.php?t=1125400
+
+3. If you experience slow graphics, try disabling compiz if you're running it.
+
