@@ -8,3 +8,4 @@ ui_mainwindow.h
 *.remote
 visualizer
 *.user
+Makefile
