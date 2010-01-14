@@ -17,21 +17,22 @@ HEADERS += mainwindow.h \
     transformdata.h \
     waveform.h
 FORMS += mainwindow.ui
-OTHER_FILES += wavelett.cu
-CUDA_SOURCES += wavelett.cu
+OTHER_FILES += wavelet.cu
+CUDA_SOURCES += wavelet.cu
 INCLUDEPATH += ../misc
 unix:INCLUDEPATH += /usr/local/cuda/include
-unix:LIBS += -lcuda \
-    -L/usr/local/cuda/lib \
-    -lsndfile \
+unix:LIBS += \
     -lsndfile \
     -laudiere \
-    -lmisc \
-    -L../misc
+    -L/usr/local/cuda/lib \
+    -lcuda \
+    -lcufft \
+    -L../misc \
+    -lmisc
 win32:LIBS += 
-MOC_DIR = tmp
-#OBJECTS_DIR = tmp
-UI_DIR = tmp
+MOC_DIR = tmp/
+OBJECTS_DIR = tmp/
+UI_DIR = tmp/
 
 # #######################################################################
 # CUDA
@@ -52,12 +53,13 @@ win32 {
 }
 unix { 
     # auto-detect CUDA path
-    CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
+    #CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
+    CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib
     LIBS += -lcudart
-    cuda.output = $$OBJECTS_DIR${QMAKE_FILE_BASE}_cuda.obj
-    cuda.commands = nvcc \
+    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
+    cuda.commands = $${CUDA_DIR}/bin/nvcc \
         -c \
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
@@ -65,23 +67,8 @@ unix {
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}
-    cuda.depends = nvcc \
-        -M \
-        -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        ${QMAKE_FILE_NAME} \
-        | \
-        sed \
-        "s,^.*: ,," \
-        | \
-        sed \
-        "s,^ *,," \
-        | \
-        tr \
-        -d \
-        '\\\n'
+#    cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
-##############################3
+########################################################################
