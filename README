@@ -44,6 +44,9 @@ git submodule update --init
 qmake
 make
 
+
+Get input data for Sonic Awe, there is an example file named file0255_2_in.wav available at https://github.com/gustafsson/sonicawe/downloads. You need to put this file in .../sonic/sonicawe.
+
 # run Sonic AWE
 cd sonicawe
 ./run-sonicawe.sh
