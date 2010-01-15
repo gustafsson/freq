@@ -3,7 +3,7 @@
 # -------------------------------------------------
 QT += opengl \
     testlib
-TARGET = visualizer
+TARGET = sonicawe
 TEMPLATE = app
 SOURCES += main.cpp \
     mainwindow.cpp \
@@ -14,7 +14,6 @@ SOURCES += main.cpp \
     transform-chunk.cpp \
     transform.cpp \
     waveform.cpp
-CUDA_SOURCES += wavelet.cu
 HEADERS += mainwindow.h \
     displaywidget.h \
     waveform.h \
@@ -25,6 +24,23 @@ HEADERS += mainwindow.h \
     transform.h \
     wavelet.cu.h
 FORMS += mainwindow.ui
+OTHER_FILES += wavelet.cu
+CUDA_SOURCES += wavelet.cu
+unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
+INCLUDEPATH += ../misc
+unix:INCLUDEPATH += /usr/local/cuda/include
+unix:LIBS += \
+    -lsndfile \
+    -laudiere \
+    -L/usr/local/cuda/lib$$IS64 \
+    -lcuda \
+    -lcufft \
+    -L../misc \
+    -lmisc
+win32:LIBS += 
+MOC_DIR = tmp/
+OBJECTS_DIR = tmp/
+UI_DIR = tmp/
 
 # #######################################################################
 # CUDA
@@ -49,9 +65,9 @@ unix {
     # manual
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
-    QMAKE_LIBDIR += $$CUDA_DIR/lib
+    QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
     LIBS += -lcudart
-    cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.obj
+    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
         -c \
         -Xcompiler \
@@ -80,4 +96,4 @@ unix {
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
-OTHER_FILES += wavelet.cu
+########################################################################

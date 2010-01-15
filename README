@@ -1,33 +1,73 @@
 Navigation
-=========
-Use z,c,d + mouse dragging to navigate
+==========
+Use z,x,c,d + mouse dragging to navigate
 
 Read setup for notes on developing for Sonic AWE.
 
 
+Installation
+============
+A cuda-enabled graphics card is required, check this list if you are unsure about your own hardware
+http://www.nvidia.com/object/cuda_learn_products.html
 
-Setup
-=====
-För utveckling på Ubuntu
-Installera cuda toolkit som laddas ner från nvidias hemsida
-Lägg till /usr/local/cuda/bin i PATH
-Lägg till /usr/local/cuda/lib i /etc/ld.so.conf (eller lib64)
+Download binaries for your platform from
+http://github.com/gustafsson/sonicawe/downloads
 
-Installera paket med följande kommando
-sudo apt-get install libaudiere-dev libsndfile1-dev libboost1.37-dev libqt4-dev qt-creator libglut-dev
+You might also need to install cuda-compatible drivers
+http://www.nvidia.com/object/cuda_get.html
 
-Felsökning
-1. Kolla att att cuda är installerat korrekt genom att ladda ner cuda sdk och kompilera alla exempel
 
-2. Om inget cuda-kort hittas: Installera cuda drivers från nvidias hemsida.
-2.1 Ladda ner drivrutinen från nvidias hemsida
-2.2 Stoppa x-server
-sudo /etc/init.d/gdm stop
-2.3 Se till att ta bort alla nvidias drivrutiner som är installerade med ubuntu med
-sudo apt-get purge nvidia-glx-*
-2.4 Installera cuda med programmet du laddade ner
-2.5 starta x-server
-sudo /etc/init.d/gdm start
+Development setup
+=================
+For development on Ubuntu 9.10.
 
-3. Om grafiken hackar, stoppa compiz.
-3.1 Högerklicka på skrivbordet -> "change desktop background" -> "visual effects" -> none -> ok
+Send your public RSA key (http://help.github.com/linux-key-setup/) to sonicawe@reep.se.
+
+Download and install the cuda toolkit from nvidia (http://www.nvidia.com/object/cuda_get.html).
+
+Execute the following commands:
+# set path and library path for Cuda
+echo PATH=$PATH:/usr/local/cuda/bin >> ~/.bashrc
+sudo echo /usr/local/cuda/lib > /etc/ld.so.conf.d/cuda.conf
+sudo echo /usr/local/cuda/lib64 >> /etc/ld.so.conf.d/cuda.conf
+sudo ldconfig
+
+# install required packages
+sudo apt-get install libaudiere-dev libsndfile1-dev libboost1.37-dev libqt4-dev qt-creator libglut-dev git
+
+# download source code
+git clone git@github.com:gustafsson/sonic.git
+cd sonic
+git submodule update --init 
+
+# compile
+qmake
+make
+
+
+Get input data for Sonic Awe, there is an example file named file0255_2_in.wav available at https://github.com/gustafsson/sonicawe/downloads. You need to put this file in .../sonic/sonicawe.
+
+# run Sonic AWE
+cd sonicawe
+./run-sonicawe.sh
+
+
+Debugging in Qt Creator
+=======================
+Under Projects/Build Environment, add: LD_LIBRARY_PATH=../misc
+
+
+Troubleshooting
+===============
+1. Check that cuda is installed by downloading cuda sdk and compile all examples
+
+When you run the examples it sais that no cuda compatible graphics card is found (and you known you've got one).
+2. Install cuda drivers 
+2.1 http://www.nvidia.com/object/cuda_get.html
+2.2 Follow this thread: http://ubuntuforums.org/showthread.php?t=1125400
+
+3. If you experience slow graphics, try disabling compiz if you're running it.
+
+
+have fun
+johan.gustafsson@reep.se
