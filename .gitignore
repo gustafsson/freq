@@ -9,3 +9,8 @@ ui_mainwindow.h
 visualizer
 *.user
 Makefile
+qtc-gdbmacros
+*.xcodeproj
+Info.plist
+build
+tmp
