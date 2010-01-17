@@ -147,7 +147,10 @@ void DisplayWidget::paintGL()
     glTranslatef( qx, qy, qz );
 
     //drawColorFace();
-    //drawWaveform(wavelett->getOriginalWaveform());
+    glPushMatrix();
+    glTranslatef( 0, 0, 6 );
+    drawWaveform(wavelett->getOriginalWaveform());
+    glPopMatrix();
     drawWavelett();
     //drawWaveform(wavelett->getInverseWaveform());
 }
@@ -234,6 +237,7 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
     //waveform->_waveformData->getCudaGlobal();
     const float* data = waveform->_waveformData->getCpuMemory();
 
+    n.height = 1;
     float ifs = 10./waveform->_sample_rate; // step per sample
     float max = 1e-6;
     for (unsigned c=0; c<n.height; c++)

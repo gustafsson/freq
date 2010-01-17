@@ -19,18 +19,20 @@ HEADERS += mainwindow.h \
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu
 CUDA_SOURCES += wavelet.cu
+unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
 unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS += \
     -lsndfile \
     -laudiere \
-    -L/usr/local/cuda/lib \
+    -L/usr/local/cuda/lib$$IS64 \
     -lcuda \
     -lcufft \
     -L../misc \
     -lmisc
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS += \
+    tmp/wavelet_cuda.o
     -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
@@ -39,9 +41,10 @@ macx:LIBS += \
     -L../misc \
     -lmisc
 win32:LIBS += 
-MOC_DIR = tmp/
-OBJECTS_DIR = tmp
+MOC_DIR = tmp
+OBJECTS_DIR = tmp/
 UI_DIR = tmp
+
 
 # #######################################################################
 # CUDA
@@ -65,7 +68,7 @@ unix {
     #CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
-    QMAKE_LIBDIR += $$CUDA_DIR/lib
+    QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
     LIBS += -lcudart
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
@@ -94,7 +97,23 @@ macx {
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}
-#    cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
+    cuda.dependcy_type = TYPE_C
+    cuda.depend_command = nvcc \
+        -M \
+        -Xcompiler \
+        $$join(QMAKE_CXXFLAGS,",") \
+        $$join(INCLUDEPATH,'" -I "','-I "','"') \
+        ${QMAKE_FILE_NAME} \
+        | \
+        sed \
+        "s,^.*: ,," \
+        | \
+        sed \
+        "s,^ *,," \
+        | \
+        tr \
+        -d \
+        '\\\n'
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda

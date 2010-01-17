@@ -6,7 +6,7 @@ ui_mainwindow.h
 *.wav
 *.orig
 *.remote
-visualizer
+sonicawe
 *.user
 Makefile
 qtc-gdbmacros

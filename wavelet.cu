@@ -1,4 +1,4 @@
-#include "../misc/inc/cudaUtil.h"
+#include "../misc/cudaUtil.h"
 #include <stdio.h>
 
 __global__ void WavelettKernel( float* in_waveform_ft, float* out_waveform_ft, cudaExtent numElem, float start, float steplogsize  );
