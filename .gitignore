@@ -10,3 +10,7 @@ sonicawe
 *.user
 Makefile
 qtc-gdbmacros
+*.xcodeproj
+Info.plist
+build
+tmp
