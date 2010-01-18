@@ -57,14 +57,23 @@ Filters that extract or alter data are applied when the transform is computed,
 and will thus alter the rendering. To render a spectogram without having the
 effects of filters visualized an empty filter chain can be passed into
 Spectogram. For altering the output refer to transform-inverse.h.
+
+The term scaleogram is not used in the source code, in favor of spectrogram.
 */
 
-typedef boost::shared_ptr<class Filter> FilterPtr;
+#include <list>
+#include <boost/shared_ptr.hpp>
+#include "transform-chunk.h"
+#include "waveform.h"
 
-class Spectogram_chunk: public Transform_chunk
+typedef boost::shared_ptr<class Filter> pFilter;
+typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
+typedef boost::shared_ptr<class Spectrogram_chunk> pSpectrogram_chunk;
+
+class Spectrogram_chunk: public Transform_chunk
 {
 public:
-    Spectogram_chunk(float start_time, float end_time,
+    Spectrogram_chunk(float start_time, float end_time,
                   float lowest_scale, float highest_scale,
                   int fzoom, int tzoom );
 
@@ -76,28 +85,29 @@ public:
     float _end_time, _highest_scale;
 };
 
-struct SpectogramSlot {
-    SpectogramBlock block;
+struct Spectrogram_slot {
+    Spectrogram_chunk block;
     unsigned last_access;
 };
 
-class Spectogram
+class Spectrogram
 {
 public:
-    Spectogram( boost::shared_ptr<Waveform> waveform, unsigned waveform_channel=0 );
+    Spectrogram( boost::shared_ptr<Waveform> waveform, unsigned waveform_channel=0 );
 
     void garbageCollect();
-    SpectogramBlock* getBlock( float t, float f, float dt, float df);
+    Spectrogram_chunk* getBlock( float t, float f, float dt, float df);
+    boost::shared_ptr<Waveform> getWaveform() { return _original_waveform; }
 
-    FilterPtr filter_chain;
+    pFilter filter_chain;
 
 private:
-    // Spectogram_chunk computeStft( pWaveform waveform, float );
+    // Spectrogram_chunk computeStft( pWaveform waveform, float );
     boost::shared_ptr<Waveform> _original_waveform;
     unsigned _original_waveform_channel;
 
-    // Slots with SpectogramBlock:s, as many as there are space for in the GPU ram
-    list<SpectogramSlot> _slots;
+    // Slots with Spectrogram_chunk:s, as many as there are space for in the GPU ram
+    std::list<Spectrogram_slot> _slots;
 };
 
 #endif // SPECTROGRAM_H

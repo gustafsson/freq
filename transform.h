@@ -11,16 +11,17 @@ typedef unsigned int cufftHandle; /* from cufft.h */
 class Transform
 {
 public:
-    typedef unsigned ChunkNumber;
+    typedef unsigned ChunkIndex;
 
     Transform( pWaveform waveform,
                unsigned channel=0,
                unsigned scales_per_octave = 50,
                unsigned samples_per_chunk = 1<<14,
                float wavelet_std_t = .1 );
+    ~Transform();
 
-    ChunkNumber            getChunkNumber( float including_time_t );
-    pTransform_chunk       getChunk( ChunkNumber n, cudaStream_t stream=0 );
+    ChunkIndex             getChunkIndex( float including_time_t );
+    pTransform_chunk       getChunk( ChunkIndex n, cudaStream_t stream=0 );
     /*static*/ pWaveform_chunk computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
 
     /* discard cached data, releases all GPU memory */
@@ -40,13 +41,13 @@ public:
     void      originalWaveform( pWaveform );
 
 private:
-    pTransform_chunk allocateChunk( ChunkNumber n ) const;
-    pTransform_chunk releaseChunk( ChunkNumber furthest_away_from_n );
+    pTransform_chunk allocateChunk( ChunkIndex n );
+    pTransform_chunk releaseChunkFurthestAwayFrom( ChunkIndex n );
     pTransform_chunk computeTransform( pWaveform_chunk chunk, cudaStream_t stream );
     void             clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream );
 
     /* caches */
-    typedef std::map<ChunkNumber. pTransform_chunk> ChunkMap;
+    typedef std::map<ChunkIndex, pTransform_chunk> ChunkMap;
     ChunkMap                                _oldChunks;
     cufftHandle                             _fft_single;
     cufftHandle                             _fft_many;
@@ -54,11 +55,11 @@ private:
     boost::shared_ptr<GpuCpuData<float> >   _intermediate_ft;
 
     /* property values */
+    pWaveform _originalWaveform;
     unsigned  _channel;
-    float     _wavelet_std_t;
     unsigned  _scales_per_octave;
     unsigned  _samples_per_chunk;
-    pWaveform _originalWaveform;
+    float     _wavelet_std_t;
 };
 
 #endif // TRANSFORM_H

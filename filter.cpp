@@ -1,21 +1,21 @@
 #include "filter.h"
+#include <functional>
 
-static class apply_filter
+class apply_filter
 {
     Transform_chunk& t;
     bool r;
 public:
     apply_filter( Transform_chunk& t):t(t),r(true) {}
 
-    void operator()( FilterPtr p) {
+    void operator()( pFilter p) {
         r |= (*p)( t );
     }
+
+    operator bool() { return r; }
 };
 
-class FilterChain: public Filter, std::list<FilterPtr>
-{
-public:
-    bool operator()( Transform_chunk& t) {
-        return foreach(begin(), end(), apply_filter( t ));
-    }
-};
+
+bool FilterChain::operator()( Transform_chunk& t) {
+    return std::for_each(begin(), end(), apply_filter( t ));
+}

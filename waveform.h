@@ -15,13 +15,16 @@ public:
         Only_Real
     };
 
-    Waveform_chunk(Interleaved interleaved);
+    Waveform_chunk(Interleaved interleaved=Only_Real);
 
-    boost::scoped_ptr<GpuCpuData<float> > data;
+    boost::scoped_ptr<GpuCpuData<float> > waveform_data;
 
     Interleaved interleaved() const {return _interleaved; }
     pWaveform_chunk getInterleaved(Interleaved);
-    unsigned sampleOffset;
+
+    unsigned sample_offset;
+    unsigned sample_rate;
+    bool modified;
 private:
     const Interleaved _interleaved;
 };
@@ -38,16 +41,17 @@ public:
     Waveform();
     Waveform(const char* filename);
 
-    void           writeFile( const char* filename ) const;
-    pWaveform_chunk getChunk( unsigned firstSample, unsigned numberOfSamples, int channel=0, bool interleaved=true );
+    void            writeFile( const char* filename ) const;
+    pWaveform_chunk getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Waveform_chunk::Interleaved interleaved );
 
-    int channel_count() {        return _waveformData->getNumberOfElements().height; }
+    int channel_count() {        return _waveform.waveform_data->getNumberOfElements().height; }
     int sample_rate() {          return _sample_rate;    }
+    int number_of_samples() {    return _waveform.waveform_data->getNumberOfElements().width; }
 
 private:
-    int _sample_rate;
     audiere::SampleSource* _source;
     Waveform_chunk _waveform;
+    unsigned _sample_rate;
 };
 
 #endif // WAVEFORM_H

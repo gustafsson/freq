@@ -27,10 +27,10 @@ class Transform_inverse
 public:
     class Callback {
     public:
-        virtual transform_inverse_callback(pWaveform_chunk chunk)=0;
+        virtual void transform_inverse_callback(pWaveform_chunk chunk)=0;
     };
 
-    Transform_inverse(WaveformPtr waveform, Callback* callback);
+    Transform_inverse(pWaveform waveform, Callback* callback);
 
     void compute_inverse( float startt, float endt, pFilter filter );
 

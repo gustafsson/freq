@@ -4,15 +4,17 @@
 #include <math.h>
 #include "Statistics.h"
 #include <stdexcept>
+#include <iostream>
+
+using namespace std;
 using namespace audiere;
 
-#include <iostream>
-using namespace std;
 
 Waveform::Waveform()
-:   _sample_rate(0),
-    _source(0)
+:   _source(0),
+    _sample_rate(0)
 {}
+
 
 /**
   Reads an audio file using libaudiere
@@ -24,19 +26,19 @@ Waveform::Waveform (const char* filename)
         throw std::ios_base::failure(string() + "File " + filename + " not found");
 
     SampleFormat sample_format;
-    int channel_count;
-    _source->getFormat( channel_count, _sample_rate, sample_format);
-
+    int channel_count, sample_rate;
+    _source->getFormat( channel_count, sample_rate, sample_format);
+    _sample_rate=sample_rate;
 
     unsigned frame_size = GetSampleSize(sample_format);
     unsigned num_frames = _source->getLength();
 
-    _waveformData.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
+    _waveform.waveform_data.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
     std::vector<char> data(num_frames*frame_size*channel_count);
     _source->read(num_frames, data.data());
 
     unsigned j=0;
-    float* fdata = _waveformData->getCpuMemory();
+    float* fdata = _waveform.waveform_data->getCpuMemory();
 
     for (unsigned i=0; i<num_frames; i++)
     for (int c=0; c<channel_count; c++)
@@ -60,8 +62,9 @@ Waveform::Waveform (const char* filename)
         fdata[ i + c*num_frames] = f;
     }
 
-    Statistics<float> waveform( _waveformData.get() );
+    Statistics<float> waveform( _waveform.waveform_data.get() );
 }
+
 
     /**
       Writes wave audio with 16 bits per sample
@@ -73,133 +76,127 @@ void Waveform::writeFile( const char* filename ) const
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
     //  const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
-    int number_of_channels = 1;
+    //int number_of_channels = 1;
     SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
 
     if (not outfile) return;
 
-    outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
+    outfile.write( _waveform.waveform_data->getCpuMemory(), _waveform.waveform_data->getNumberOfElements().width); // yes float
 }
 
-pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSamples, int channel=0, bool interleaved=true )
-{
-    pWaveform_chunk chunk( new Waveform_chunk( Waveform_chunk::Interleaved_Complex ));
-    char m=1+interleaved;
-    chunk->data.reset( new GpuCpuData<float>(0, makeCudaExtent(m*numberOfSamples, 1, 1) ) );
 
-    float *original = _waveform->data->getCpuMemory() + firstSample;
-    float *complex = chunk->data->getCpuMemory();
-    _waveform->data->getNumberOfSamples().width < fistSample+numberOfSamples;
-    unsigned validSamples = numberOfSampels;
-    if (firstSample > _waveform->data->getNumberOfSamples().width)
+/* returns a chunk with numberOfSamples samples. If the requested range exceeds the source signal it is padded with 0. */
+pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Waveform_chunk::Interleaved interleaved )
+{
+    if (firstSample+numberOfSamples < firstSample)
+        throw std::invalid_argument("Overflow: firstSample+numberOfSamples");
+
+    if (channel >= _waveform.waveform_data->getNumberOfElements().height)
+        throw std::invalid_argument("channel >= _waveform.waveform_data->getNumberOfElements().height");
+
+    char m=1+(Waveform_chunk::Interleaved_Complex == interleaved);
+    char sourcem = 1+(Waveform_chunk::Interleaved_Complex == _waveform.interleaved());
+
+    pWaveform_chunk chunk( new Waveform_chunk( interleaved ));
+    chunk->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(m*numberOfSamples, 1, 1) ) );
+    chunk->sample_rate = _sample_rate;
+    chunk->sample_offset = firstSample;
+    size_t sourceSamples = _waveform.waveform_data->getNumberOfElements().width/sourcem;
+
+    unsigned validSamples;
+    if (firstSample > sourceSamples)
         validSamples = 0;
-    else if ( numberOfSampels > _waveform->data->getNumberOfSamples().width - firstSample)
-        validSamples = _waveform->data->getNumberOfSamples().width - firstSample;
-    for (int i=0; i<validSamples; i++) {
-        complex[i*m + 0] = original[i];
-        if (interleaved)
-            complex[i*m + 1] = 0;
+    else if ( firstSample + numberOfSamples > sourceSamples )
+        validSamples = numberOfSamples - firstSample;
+    else // default case
+        validSamples = numberOfSamples;
+
+    float *target = chunk->waveform_data->getCpuMemory();
+    float *source = _waveform.waveform_data->getCpuMemory()
+                  + firstSample*sourcem
+                  + channel * _waveform.waveform_data->getNumberOfElements().width;
+
+    bool interleavedSource = Waveform_chunk::Interleaved_Complex == _waveform.interleaved();
+    for (unsigned i=0; i<validSamples; i++) {
+        target[i*m + 0] = source[i*m + 0];
+        if (Waveform_chunk::Interleaved_Complex == interleaved)
+            target[i*m + 1] = interleavedSource ? source[i*m + 1]:0;
     }
-    for (int i=validSamples; i<numberOfSampels; i++) {
-        complex[i*m + 0] = 0;
-        if (interleaved)
-            complex[i*m + 1] = 0;
+
+    for (unsigned i=validSamples; i<numberOfSamples; i++) {
+        target[i*m + 0] = 0;
+        if (Waveform_chunk::Interleaved_Complex == interleaved)
+            target[i*m + 1] = 0;
     }
     return chunk;
 }
+
     
-void Waveform_chunk::interleaved(Interleaved value) {
-    if (value == _interleaved)
-        return;
-
-    boost::scoped_ptr<GpuCpuData<float> > data;
-    chunk->data.reset( new GpuCpuData<float>(0, makeCudaExtent(m*numberOfSamples, 1, 1) ) );
-
-}
-
 Waveform_chunk::Waveform_chunk(Interleaved interleaved)
-:   interleaved(interleaved)
+:   sample_offset(0),
+    sample_rate(0),
+    modified(0),
+    _interleaved(interleaved)
 {
-    switch(interleaved) {
+    switch(_interleaved) {
         case Interleaved_Complex:
         case Only_Real:
             break;
         default:
-            throw invalid_argument( string(__FUNCTION___));
+            throw invalid_argument( string( __FUNCTION__ ));
     }
 }
+
 
 pWaveform_chunk Waveform_chunk::getInterleaved(Interleaved value)
 {
-    pWaveform_chunk chunk( new Waveform_chunk( Waveform_chunk::Interleaved_Complex ));
+    pWaveform_chunk chunk( new Waveform_chunk( value ));
 
     if (value == _interleaved) {
-        chunk->data.reset( new GpuCpuData<float>(data->getCpuMemory(), data->getNumberOfElements() ) );
+        chunk->waveform_data.reset( new GpuCpuData<float>(waveform_data->getCpuMemory(), waveform_data->getNumberOfElements() ) );
         return chunk;
     }
 
-    cudaExtent orgSz = data->getNumberOfElements();
+    cudaExtent orgSz = waveform_data->getNumberOfElements();
 
     //makeCudaExtent(m*numberOfSamples, 1, 1)
-    if (value == Only_Real) {
-        cudaExtent realSz = orgSz;
-        realSz.width/=2;
-        chunk->data.reset( new GpuCpuData<float>(0, realSz ) );
+    switch(value) {
+        case Only_Real: {
+            cudaExtent realSz = orgSz;
+            realSz.width/=2;
+            chunk->waveform_data.reset( new GpuCpuData<float>(0, realSz ) );
 
-        float *complex = data->getCpuMemory();
-        float *real = chunk->data->getCpuMemory();
+            float *complex = waveform_data->getCpuMemory();
+            float *real = chunk->waveform_data->getCpuMemory();
 
-        for (int z=0; z<realSz.depth; z++)
-            for (int y=0; y<realSz.height; y++)
-                for (int x=0; x<szrealSzwidth; x++)
-                    real[ x + (y + z*realSz.height)*realSz.width ]
-                            = complex[ 2*x + (y + z*orgSz.height)*orgSz.width ];
-    } else if (value == Interleaved_Complex) {
-        cudaExtent complexSz = orgSz;
-        complexSz.width*=2;
-        chunk->data.reset( new GpuCpuData<float>(0, complexSz ) );
+            for (unsigned z=0; z<realSz.depth; z++)
+                for (unsigned y=0; y<realSz.height; y++)
+                    for (unsigned x=0; x<realSz.width; x++)
+                        real[ x + (y + z*realSz.height)*realSz.width ]
+                                = complex[ 2*x + (y + z*orgSz.height)*orgSz.width ];
+            break;
+        }
+        case Interleaved_Complex: {
+            cudaExtent complexSz = orgSz;
+            complexSz.width*=2;
+            chunk->waveform_data.reset( new GpuCpuData<float>(0, complexSz ) );
 
-        float *complex = chunk->data->getCpuMemory();
-        float *real = data->getCpuMemory();
+            float *complex = chunk->waveform_data->getCpuMemory();
+            float *real = waveform_data->getCpuMemory();
 
-        for (int z=0; z<orgSz.depth; z++)
-            for (int y=0; y<orgSz.height; y++)
-                for (int x=0; x<orgSz.width; x++)
-                {
-                    complex[ 2*x + (y + z*complex.height)*complex.width ]
-                            = real[ x + (y + z*orgSz.height)*orgSz.width ];
-                    complex[ 2*x + 1 + (y + z*complex.height)*complex.width ] = 0;
-                }
-    } else {
-        throw invalid_argument( string(__FUNCTION___));
+            for (unsigned z=0; z<orgSz.depth; z++)
+                for (unsigned y=0; y<orgSz.height; y++)
+                    for (unsigned x=0; x<orgSz.width; x++)
+                    {
+                        complex[ 2*x + (y + z*complexSz.height)*complexSz.width ]
+                                = real[ x + (y + z*orgSz.height)*orgSz.width ];
+                        complex[ 2*x + 1 + (y + z*complexSz.height)*complexSz.width ] = 0;
+                    }
+            break;
+        }
+        default:
+            throw invalid_argument( string(__FUNCTION__));
     }
 
-    return chunk;
-}
-
-pWaveform_chunk ::interleaved( unsigned firstSample, unsigned numberOfSamples, int channel=0, bool interleaved=true )
-{
-    pWaveform_chunk chunk( new Waveform_chunk( Waveform_chunk::Interleaved_Complex ));
-    char m=1+interleaved;
-    chunk->data.reset( new GpuCpuData<float>(0, makeCudaExtent(m*numberOfSamples, 1, 1) ) );
-
-    float *original = _waveform->data->getCpuMemory() + firstSample;
-    float *complex = chunk->data->getCpuMemory();
-    _waveform->data->getNumberOfSamples().width < fistSample+numberOfSamples;
-    unsigned validSamples = numberOfSampels;
-    if (firstSample > _waveform->data->getNumberOfSamples().width)
-        validSamples = 0;
-    else if ( numberOfSampels > _waveform->data->getNumberOfSamples().width - firstSample)
-        validSamples = _waveform->data->getNumberOfSamples().width - firstSample;
-    for (int i=0; i<validSamples; i++) {
-        complex[i*m + 0] = original[i];
-        if (interleaved)
-            complex[i*m + 1] = 0;
-    }
-    for (int i=validSamples; i<numberOfSampels; i++) {
-        complex[i*m + 0] = 0;
-        if (interleaved)
-            complex[i*m + 1] = 0;
-    }
     return chunk;
 }

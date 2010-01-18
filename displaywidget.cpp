@@ -5,28 +5,29 @@
 #include <QKeyEvent>
 
 #include <list>
-#include "wavelettransform.h"
+#include <boost/foreach.hpp>
 
 using namespace std;
 
 int DisplayWidget::lastKey = 0;
 
-DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelet, int timerInterval ) : QGLWidget( ),
-  wavelet( wavelet ),
-  px(0), py(0), pz(0),
-  rx(0), ry(0), rz(0),
-  qx(0), qy(0), qz(0),
-  prevX(0), prevY(0)
+DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval ) : QGLWidget( ),
+  _spectrogram( spectrogram ),
+  _px(0), _py(0), _pz(0),
+  _rx(0), _ry(0), _rz(0),
+  _qx(0), _qy(0), _qz(0),
+  _prevX(0), _prevY(0),
+  _enqueueGcDisplayList( false )
 {
     timeOut();
 
     if( timerInterval == 0 )
-        m_timer = 0;
+        _timer = 0;
     else
     {
-        m_timer = new QTimer( this );
-        connect( m_timer, SIGNAL(timeout()), this, SLOT(timeOutSlot()) );
-        m_timer->start( timerInterval );
+        _timer = new QTimer( this );
+        connect( _timer, SIGNAL(timeout()), this, SLOT(timeOutSlot()) );
+        _timer->start( timerInterval );
     }
 }
 
@@ -36,52 +37,56 @@ DisplayWidget::~DisplayWidget()
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
-    prevX = e->x(),
-    prevY = e->y();
+    _prevX = e->x(),
+    _prevY = e->y();
 }
+
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
     float rs = 0.1,
           ps = 0.002;
 
-    int dx = e->x() - prevX,
-        dy = e->y() - prevY,
+    int dx = e->x() - _prevX,
+        dy = e->y() - _prevY,
         d = dx-dy;
-    prevX = e->x(),
-    prevY = e->y();
+    _prevX = e->x(),
+    _prevY = e->y();
 
     switch( lastKey ) {
-        case 'A': px += d*ps; break;
-        case 'S': py += d*ps; break;
-        case 'D': pz += d*ps; break;
-        case 'Q': rx += d*rs; break;
-        case 'W': ry += d*rs; break;
-        case 'E': rz += d*rs; break;
-        case 'Z': qx += d*ps; break;
-        case 'X': qy += d*ps; break;
-        case 'C': qz += d*ps; break;
+        case 'A': _px += d*ps; break;
+        case 'S': _py += d*ps; break;
+        case 'D': _pz += d*ps; break;
+        case 'Q': _rx += d*rs; break;
+        case 'W': _ry += d*rs; break;
+        case 'E': _rz += d*rs; break;
+        case 'Z': _qx += d*ps; break;
+        case 'X': _qy += d*ps; break;
+        case 'C': _qz += d*ps; break;
         default:
-            ry += dx*rs;
-            rx += dy*rs;
+            _ry += dx*rs;
+            _rx += dy*rs;
             break;
     }
 
     glDraw();
 }
 
+
 void DisplayWidget::timeOut()
 {
     try{
-} catch (...) {
-    string x32= "blaj";
+    } catch (...) {
+        string x32= "blaj";
+    }
 }
-}
+
 
 void DisplayWidget::timeOutSlot()
 {
         timeOut();
 }
+
 
 void DisplayWidget::initializeGL()
 {
@@ -108,6 +113,7 @@ void DisplayWidget::initializeGL()
     glEnable(GL_COLOR_MATERIAL);
 }
 
+
 void DisplayWidget::resizeGL( int width, int height ) {
     height = height?height:1;
 
@@ -121,6 +127,7 @@ void DisplayWidget::resizeGL( int width, int height ) {
     glLoadIdentity();
 }
 
+
 void DisplayWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -130,32 +137,32 @@ void DisplayWidget::paintGL()
 
     glBegin(GL_LINE_STRIP);
             glColor3f(0,0,0);         glVertex3f( 0, 0, 0 );
-            glColor3f(1,0,0);         glVertex3f( px, py, pz );
+            glColor3f(1,0,0);         glVertex3f( _px, _py, _pz );
     glEnd();
 
-    glTranslatef( px, py, pz );
+    glTranslatef( _px, _py, _pz );
 
-    glRotatef( rx, 1, 0, 0 );
-    glRotatef( ry, 0, 1, 0 );
-    glRotatef( rz, 0, 0, 1 );
+    glRotatef( _rx, 1, 0, 0 );
+    glRotatef( _ry, 0, 1, 0 );
+    glRotatef( _rz, 0, 0, 1 );
 
     drawArrows();
 
     //glTranslatef(-1.5f,0.0f,-6.0f);
-    glTranslatef( qx, qy, qz );
+    glTranslatef( _qx, _qy, _qz );
 
     //drawColorFace();
-    //drawWaveform(wavelet->getOriginalWaveform());
-    drawWavelet();
-    //drawWaveform(wavelet->getInverseWaveform());
 
     glPushMatrix();
-    glTranslatef( 0, 0, 6 );
-    drawWaveform(wavelett->getOriginalWaveform());
+        glTranslatef( 0, 0, 6 );
+        drawWaveform(_spectrogram->getWaveform());
     glPopMatrix();
-    drawWavelett();
-    //drawWaveform(wavelett->getInverseWaveform());
+
+    drawSpectrogram();
+
+    //drawWaveform(_spectrogram->getInverseWaveform());
 }
+
 
 void DisplayWidget::drawArrows()
 {
@@ -189,9 +196,10 @@ void DisplayWidget::drawArrows()
             glVertex3f( 0.0f, 0.0f, 1.0f);
             glVertex3f( 0.0f, 0.0f, 0.0f);
             glColor3f(1,1,1);
-            glVertex3f( qx, qy, qz );
+            glVertex3f( _qx, _qy, _qz );
     glEnd();
 }
+
 
 void DisplayWidget::drawColorFace()
 {
@@ -205,11 +213,13 @@ void DisplayWidget::drawColorFace()
     glEnd();
 }
 
+
 int clamp(int val, int max) {
     if (val<0) return 0;
     if (val>max) return max;
     return val;
 }
+
 
 void setWavelengthColor( float wavelengthScalar ) {
     const float spectrum[][3] = {
@@ -233,14 +243,22 @@ void setWavelengthColor( float wavelengthScalar ) {
     glColor3fv( rgb );
 }
 
-void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
+
+void DisplayWidget::drawWaveform(pWaveform waveform)
 {
-    cudaExtent n = waveform->_waveformData->getNumberOfElements();
-    //waveform->_waveformData->getCudaGlobal();
-    const float* data = waveform->_waveformData->getCpuMemory();
+    pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
+
+    draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode );
+}
+
+
+void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
+{
+    cudaExtent n = chunk->waveform_data->getNumberOfElements();
+    const float* data = chunk->waveform_data->getCpuMemory();
 
     n.height = 1;
-    float ifs = 10./waveform->_sample_rate; // step per sample
+    float ifs = 10./chunk->sample_rate; // step per sample
     float max = 1e-6;
     for (unsigned c=0; c<n.height; c++)
     {
@@ -266,30 +284,25 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
 }
 
 
-void DisplayWidget::drawWavelett()
+void DisplayWidget::drawSpectrogram()
 {
-    static int drawn = 0;
-    static GLuint listIndex = glGenLists(1);
+//    boost::shared_ptr<Spectrogram_chunk> transform = _spectrogram->getWavelettTransform();
 
-    if (1<drawn) {
-        glCallList(listIndex);
-        return;
-    }
-    drawn++;
+    if (_enqueueGcDisplayList)
+        gcDisplayList();
+}
 
-    if (1<drawn)
-        glNewList(listIndex, GL_COMPILE);
 
-    boost::shared_ptr<TransformData> transform = wavelett->getWavelettTransform();
+void DisplayWidget::drawSpectrogram_chunk_directMode( boost::shared_ptr<Spectrogram_chunk> chunk )
+{
+    cudaExtent n = chunk->transform_data->getNumberOfElements();
+    const float* data = chunk->transform_data->getCpuMemory();
 
-    cudaExtent n = transform->transformData->getNumberOfElements();
-    const float* data = transform->transformData->getCpuMemory();
-
-    float ifs = 10./transform->sampleRate; // step per sample
+    float ifs = 10./chunk->sample_rate; // step per sample
 
     glTranslatef(0, 0, -(2-1)*0.5); // different channels along y
 
-    static float max = 1;
+    /* static */ float max = 1;
     float s = 1/max;
     max = 0;
     int fstep = 1;
@@ -320,7 +333,7 @@ void DisplayWidget::drawWavelett()
                     //v[2][df] = real;
                 }
 
-                if(0>t)
+                if (0>t)
                     continue;
 
                 setWavelengthColor( s*v[1][1] );
@@ -341,7 +354,63 @@ void DisplayWidget::drawWavelett()
         glEnd();
     }
     glDisable(GL_NORMALIZE);
+}
 
-    if (1<drawn)
-        glEndList();
+
+template<typename RenderData>
+void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ) )
+{
+    std::map<void*, ListCounter>::iterator itr = _chunkGlList.find(chunk.get());
+    if (_chunkGlList.end() == itr) {
+        ListCounter cnt;
+        cnt.age = ListCounter::Age_JustCreated;
+        cnt.displayList = glGenLists(1);
+
+        if (0 != cnt.displayList) {
+            glNewList(cnt.displayList, GL_COMPILE_AND_EXECUTE );
+            renderFunction( chunk );
+            glEndList();
+            _chunkGlList[chunk.get()] = cnt;
+
+        } else {
+            // render anyway, but not into display list and enqueue gc
+            _enqueueGcDisplayList = true;
+            renderFunction( chunk );
+        }
+
+    } else {
+        itr->second.age = ListCounter::Age_InUse; // don't remove
+
+        glCallList( itr->second.displayList );
+    }
+}
+
+void DisplayWidget::gcDisplayList()
+{
+    /* remove those display lists that haven't been used since last gc
+       (used by draw_glList) */
+    for (std::map<void*, ListCounter>::iterator itr = _chunkGlList.begin();
+         _chunkGlList.end() != itr;
+         ++itr)
+    {
+        if (ListCounter::Age_ProposedForRemoval == itr->second.age) {
+            glDeleteLists( itr->second.displayList, 1 );
+            _chunkGlList.erase(itr);
+            /* restart for-loop as iterators are invalidated by 'erase' */
+            itr = _chunkGlList.begin();
+        }
+    }
+
+    /* at next gc, remove those that haven't been used since this gc */
+    typedef pair<void* const,ListCounter> lcp;
+    BOOST_FOREACH( lcp& cnt, _chunkGlList)
+    {
+/*    for (std::map<Spectrogram_chunk*, ListCounter>::iterator itr = _chunkGlList.begin();
+         _chunkGlList.end() != itr;
+         ++itr)
+    {*/
+        cnt.second.age = ListCounter::Age_ProposedForRemoval;
+    }
+
+    _enqueueGcDisplayList = false;
 }
