@@ -11,6 +11,37 @@
 using namespace std;
 //using namespace Magick;
 
+int MouseControl::deltaX( int x )
+{
+  if( down )
+    return x - lastx;
+  
+  return 0;
+}
+int MouseControl::deltaY( int y )
+{
+  if( down )
+    return y - lasty;
+  
+  return 0;
+}
+
+void MouseControl::press( int x, int y )
+{
+  update( x, y );
+  down = true;
+}
+void MouseControl::update( int x, int y )
+{
+  lastx = x;
+  lasty = y;
+}
+void MouseControl::release()
+{
+  down = false;
+}
+
+
 int DisplayWidget::lastKey = 0;
 
 DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int timerInterval ) : QGLWidget( ),
@@ -38,38 +69,105 @@ DisplayWidget::~DisplayWidget()
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
+  switch ( e->button() )
+  {
+    case Qt::LeftButton:
+      leftButton.press( e->x(), e->y() );
+      printf("LeftButton: Press\n");
+      break;
+    case Qt::MidButton:
+      middleButton.press( e->x(), e->y() );
+      printf("MidButton: Press\n");
+      break;
+    case Qt::RightButton:
+      rightButton.press( e->x(), e->y() );
+      printf("RightButton: Press\n");
+      break;
+    default:
+      break;
+  }
     prevX = e->x(),
     prevY = e->y();
 }
 
+void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
+{
+  switch ( e->button() )
+  {
+    case Qt::LeftButton:
+      leftButton.release();
+      printf("LeftButton: Release\n");
+      break;
+    case Qt::MidButton:
+      middleButton.release();
+      printf("MidButton: Release\n");
+      break;
+    case Qt::RightButton:
+      rightButton.release();
+      printf("RightButton: Release\n");
+      break;
+    default:
+      break;
+  }
+}
+
+void DisplayWidget::wheelEvent ( QWheelEvent *e )
+{
+  float ps = 0.002;
+  pz += ps * e->delta();
+  if( pz > 0 )
+    pz = 0;
+  
+  glDraw();
+}
+
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
-    float rs = 0.1,
-          ps = 0.002;
-
-    int dx = e->x() - prevX,
-        dy = e->y() - prevY,
-        d = dx-dy;
-    prevX = e->x(),
-    prevY = e->y();
-
-    switch( lastKey ) {
-        case 'A': px += d*ps; break;
-        case 'S': py += d*ps; break;
-        case 'D': pz += d*ps; break;
-        case 'Q': rx += d*rs; break;
-        case 'W': ry += d*rs; break;
-        case 'E': rz += d*rs; break;
-        case 'Z': qx += d*ps; break;
-        case 'X': qy += d*ps; break;
-        case 'C': qz += d*ps; break;
-        default:
-            ry += dx*rs;
-            rx += dy*rs;
-            break;
-    }
-
-    glDraw();
+  float rs = 0.2,
+        ps = 0.002 - pz/1000,
+        deg2rad = 3.1415926535/180;
+  
+  int x = e->x(), y = e->y();
+  
+  //Controlling the rotation with the left button.
+  ry += rs * leftButton.deltaX( x );
+  rx += rs * leftButton.deltaY( y );
+  
+  //Controlling the the position with the right button.
+  qx += ps * ( cos(ry * deg2rad) * rightButton.deltaX( x ) 
+              - sin(rx * deg2rad) * sin(ry * deg2rad) * rightButton.deltaY( y ) );
+  qz += ps * ( sin(ry * deg2rad) * rightButton.deltaX( x ) 
+              + sin(rx * deg2rad) * cos(ry * deg2rad) * rightButton.deltaY( y ) );
+  
+  //Updating the buttons
+  leftButton.update( x, y );
+  rightButton.update( x, y );
+  middleButton.update( x, y );
+  
+  /*
+  int dx = e->x() - prevX,
+  dy = e->y() - prevY,
+  d = dx-dy;
+  prevX = e->x(),
+  prevY = e->y();
+  
+  switch( lastKey ) {
+    case 'A': px += d*ps; break;
+    case 'S': py += d*ps; break;
+    case 'D': pz += d*ps; break;
+    case 'Q': rx += d*rs; break;
+    case 'W': ry += d*rs; break;
+    case 'E': rz += d*rs; break;
+    case 'Z': qx += d*ps; break;
+    case 'X': qy += d*ps; break;
+    case 'C': qz += d*ps; break;
+    default:
+      ry += dx*rs;
+      rx += dy*rs;
+      break;
+  }*/
+  
+  glDraw();
 }
 
 void DisplayWidget::timeOut()

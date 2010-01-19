@@ -5,6 +5,24 @@
 #include "wavelettransform.h"
 #include <boost/shared_ptr.hpp>
 
+class MouseControl
+{
+private:
+  int lastx;
+  int lasty;
+  bool down;
+  
+public:
+  MouseControl(): down( false ){};
+  
+  int deltaX( int x );
+  int deltaY( int y );
+  
+  void press( int x, int y );
+  void update( int x, int y );
+  void release();
+};
+
 class DisplayWidget : public QGLWidget
 {
 public:
@@ -18,6 +36,8 @@ protected:
   virtual void paintGL();
 
   virtual void mousePressEvent ( QMouseEvent * e );
+  virtual void mouseReleaseEvent ( QMouseEvent * e );
+  virtual void wheelEvent ( QWheelEvent *event );
   virtual void mouseMoveEvent ( QMouseEvent * e );
   virtual void timeOut();
 
@@ -36,6 +56,10 @@ private:
   void drawColorFace();
   void drawWaveform(boost::shared_ptr<Waveform> waveform);
   void drawWavelett();
+  
+  MouseControl leftButton;
+  MouseControl rightButton;
+  MouseControl middleButton;
 };
 
 #endif // DISPLAYWIDGET_H
