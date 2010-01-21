@@ -8,16 +8,18 @@
 
 typedef unsigned int cufftHandle; /* from cufft.h */
 
+typedef boost::shared_ptr<class Transform> pTransform;
+
 class Transform
 {
 public:
     typedef unsigned ChunkIndex;
 
     Transform( pWaveform waveform,
-               unsigned channel=0,
-               unsigned scales_per_octave = 50,
-               unsigned samples_per_chunk = 1<<14,
-               float wavelet_std_t = .1 );
+               unsigned channel,
+               unsigned samples_per_chunk,
+               unsigned scales_per_octave,
+               float wavelet_std_t );
     ~Transform();
 
     ChunkIndex             getChunkIndex( float including_time_t );
@@ -37,8 +39,13 @@ public:
     void      samples_per_chunk( unsigned );
     float     wavelet_std_t() const { return _wavelet_std_t; }
     void      wavelet_std_t( float );
-    pWaveform originalWaveform() { return _originalWaveform; }
-    void      originalWaveform( pWaveform );
+    pWaveform original_waveform() { return _original_waveform; }
+    void      original_waveform( pWaveform );
+    float     number_of_octaves() const;
+    float     min_hz() const { return _min_hz; }
+    void      min_hz(float f);
+    float     max_hz() const { return _max_hz; }
+    void      max_hz(float f);
 
 private:
     pTransform_chunk allocateChunk( ChunkIndex n );
@@ -55,11 +62,13 @@ private:
     boost::shared_ptr<GpuCpuData<float> >   _intermediate_ft;
 
     /* property values */
-    pWaveform _originalWaveform;
+    pWaveform _original_waveform;
     unsigned  _channel;
     unsigned  _scales_per_octave;
     unsigned  _samples_per_chunk;
     float     _wavelet_std_t;
+    float     _min_hz;
+    float     _max_hz;
 };
 
 #endif // TRANSFORM_H

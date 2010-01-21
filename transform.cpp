@@ -13,11 +13,13 @@
 #include "wavelet.cu.h"
 
 Transform::Transform( pWaveform waveform, unsigned channel, unsigned scales_per_octave, unsigned samples_per_chunk, float wavelet_std_t )
-:   _originalWaveform( waveform ),
+:   _original_waveform( waveform ),
     _channel( channel ),
     _scales_per_octave( scales_per_octave ),
     _samples_per_chunk( samples_per_chunk ),
-    _wavelet_std_t( wavelet_std_t )
+    _wavelet_std_t( wavelet_std_t ),
+    _min_hz(20),
+    _max_hz( waveform->sample_rate()/2 )
 {
     /*
     Each chunk will then have the size
@@ -43,7 +45,7 @@ Transform::~Transform()
 }
 
 Transform::ChunkIndex Transform::getChunkIndex( float including_time_t ) {
-    return including_time_t * _originalWaveform->sample_rate() / _samples_per_chunk;
+    return including_time_t * _original_waveform->sample_rate() / _samples_per_chunk;
 }
 
 
@@ -79,9 +81,9 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
        However, we optimize for the assumption that it does reside in readily
        available cpu memory.
     */
-    pWaveform_chunk wave = _originalWaveform->getChunk(
-            (unsigned)(_samples_per_chunk*n - _wavelet_std_t*_originalWaveform->sample_rate()),
-            (unsigned)(_samples_per_chunk + 2*_wavelet_std_t*_originalWaveform->sample_rate()),
+    pWaveform_chunk wave = _original_waveform->getChunk(
+            (unsigned)(_samples_per_chunk*n - _wavelet_std_t*_original_waveform->sample_rate()),
+            (unsigned)(_samples_per_chunk + 2*_wavelet_std_t*_original_waveform->sample_rate()),
             _channel,
             Waveform_chunk::Interleaved_Complex);
 
@@ -130,7 +132,7 @@ pWaveform_chunk Transform::computeInverse( pTransform_chunk chunk, cudaStream_t 
 
         size_t n = r->waveform_data->getNumberOfElements1D();
         float* data = r->waveform_data->getCpuMemory();
-        pWaveform_chunk originalChunk = _originalWaveform->getChunk(chunk->sample_offset, chunk->nSamples(), _channel);
+        pWaveform_chunk originalChunk = _original_waveform->getChunk(chunk->sample_offset, chunk->nSamples(), _channel);
         float* orgdata = originalChunk->waveform_data->getCpuMemory();
 
         double sum = 0, orgsum=0;
@@ -185,10 +187,25 @@ void Transform::wavelet_std_t( float value ) {
 }
 
 
-void Transform::originalWaveform( pWaveform value ) {
-    if (value==_originalWaveform) return;
+void Transform::original_waveform( pWaveform value ) {
+    if (value==_original_waveform) return;
     gc();
-    _originalWaveform=value;
+    _original_waveform=value;
+}
+
+float Transform::number_of_octaves() const {
+    return log2(_max_hz) - log2(_min_hz);
+}
+
+void Transform::min_hz(float value) {
+    if (value == _min_hz) return;
+    gc();
+    _min_hz = value;
+}
+void Transform::max_hz(float value) {
+    if (value == _max_hz) return;
+    gc();
+    _max_hz = value;
 }
 
 
@@ -211,7 +228,7 @@ pTransform_chunk Transform::allocateChunk( ChunkIndex n )
                 make_uint3(_samples_per_chunk, _scales_per_octave, 1), GpuCpuVoidData::CudaGlobal ));
         chunk->min_hz = 20;
         chunk->max_hz = chunk->sample_rate/2;
-        chunk->sample_rate = _originalWaveform->sample_rate();
+        chunk->sample_rate = _original_waveform->sample_rate();
     }
     chunk->sample_offset = _samples_per_chunk*n;
 
@@ -254,7 +271,7 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
     // Compute required size of transform
     {
         // Compute number of scales to use
-        float octaves = log2(_intermediate_wt->max_hz)-log2(_intermediate_wt->min_hz);
+        float octaves = number_of_octaves();
         unsigned nFrequencies = _scales_per_octave*octaves;
         unsigned chunkIndex = waveform_chunk->sample_offset/_samples_per_chunk;
 
@@ -291,8 +308,8 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
                     throw;
             }
 
-            chunk->sample_rate =  _originalWaveform->sample_rate();
-            chunk->sample_offset = _samples_per_chunk*chunkIndex - _wavelet_std_t * _originalWaveform->sample_rate();
+            chunk->sample_rate =  _original_waveform->sample_rate();
+            chunk->sample_offset = _samples_per_chunk*chunkIndex - _wavelet_std_t * _original_waveform->sample_rate();
             chunk->min_hz = 20;
             chunk->max_hz = chunk->sample_rate/2;
 
@@ -373,7 +390,7 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
 
 void Transform::clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream )
 {
-    cudaExtent offset = make_cudaExtent( _wavelet_std_t*_originalWaveform->sample_rate(), 0, 0 );
+    cudaExtent offset = make_cudaExtent( _wavelet_std_t*_original_waveform->sample_rate(), 0, 0 );
     ::wtClamp( in_transform->transform_data->getCudaGlobal().ptr(),
                in_transform->transform_data->getNumberOfElements(),
                out_chunk->transform_data->getCudaGlobal().ptr(),

@@ -23,7 +23,9 @@ Waveform::Waveform (const char* filename)
 {
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
-        throw std::ios_base::failure(string() + "File " + filename + " not found");
+        throw std::ios_base::failure(string() + "File " + filename + " not found\n"
+            "\n"
+            "Supported audio file formats through Audiere: Ogg Vorbis, MP3, FLAC, Speex, uncompressed WAV, AIFF, MOD, S3M, XM, IT");
 
     SampleFormat sample_format;
     int channel_count, sample_rate;

@@ -8,7 +8,7 @@
 class DisplayWidget : public QGLWidget
 {
 public:
-    DisplayWidget( boost::shared_ptr<Spectrogram> spectogram, int timerInterval=0 );
+    DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval=0 );
     ~DisplayWidget();
   static int lastKey;
 
@@ -48,10 +48,14 @@ private:
   void drawWaveform( pWaveform waveform );
   static void drawWaveform_chunk_directMode( pWaveform_chunk chunk);
   void drawSpectrogram();
-  static void drawSpectrogram_chunk_directMode( pSpectrogram_chunk chunk );
-  void drawSpectrogram_chunk_vertexArray( pSpectrogram_chunk chunk );
-  void drawSpectrogram_chunk_cudaGlInterop( pSpectrogram_chunk chunk );
-  void drawSpectrogram_chunk_cgShader( pSpectrogram_chunk chunk );
+  static void drawSpectrogram_block_directMode( Spectrogram::pBlock block );
+  void drawSpectrogram_block_vertexArray( Spectrogram::pBlock block );
+  void drawSpectrogram_block_cudaGlInterop( Spectrogram::pBlock block );
+  void drawSpectrogram_block_cgShader( Spectrogram::pBlock block );
+
+  void renderSpectrogramRef( Spectrogram::Reference ref );
+  bool renderChildrenSpectrogramRef( Spectrogram::Reference ref );
+  void renderParentSpectrogramRef( Spectrogram::Reference ref );
 
   template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ) );
 

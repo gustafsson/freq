@@ -63,51 +63,112 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 
 #include <list>
 #include <boost/shared_ptr.hpp>
-#include "transform-chunk.h"
+#include <tvector.h>
+#include "transform.h"
 #include "waveform.h"
 
 typedef boost::shared_ptr<class Filter> pFilter;
 typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
-typedef boost::shared_ptr<class Spectrogram_chunk> pSpectrogram_chunk;
 
-class Spectrogram_chunk: public Transform_chunk
-{
-public:
-    Spectrogram_chunk(float start_time, float end_time,
-                  float lowest_scale, float highest_scale,
-                  int fzoom, int tzoom );
-
-    // Zoom level for this slot, determines size of elements
-    int fzoom, tzoom;
-
-    // Contains start float start_t, start_f;
-    float _start_time, _lowest_scale;
-    float _end_time, _highest_scale;
-};
-
-struct Spectrogram_slot {
-    Spectrogram_chunk block;
-    unsigned last_access;
+struct position {
+    typedef tvector<2,int> Log2samplesPerUnit;
+    typedef tvector<2,unsigned> ChunkPosition;
+    Log2samplesPerUnit zoom;
+    ChunkPosition pos;
 };
 
 class Spectrogram
 {
 public:
-    Spectrogram( boost::shared_ptr<Waveform> waveform, unsigned waveform_channel=0 );
+    class Position;
+    class Reference;
+    class Block;
+    struct Slot;
+
+    typedef boost::shared_ptr<Block> pBlock;
+
+    Spectrogram( pTransform transform, unsigned samples_per_block, unsigned scales_per_block );
 
     void garbageCollect();
-    Spectrogram_chunk* getBlock( float t, float f, float dt, float df);
-    boost::shared_ptr<Waveform> getWaveform() { return _original_waveform; }
+
+    pBlock      getBlock( Reference ref );
+    pTransform  transform() const { return _transform; }
+
+    /**
+      Returns a Reference for a block containing 'p' in which a block element
+      is as big as possible yet smaller than or equal to 'sampleSize'.
+      */
+    Reference   findReference( Position p, Position sampleSize );
 
     pFilter filter_chain;
 
+    unsigned scales_per_block() { return _scales_per_block; }
+    unsigned samples_per_block() { return _samples_per_block; }
+    void scales_per_block(unsigned v);
+    void samples_per_block(unsigned v);
 private:
     // Spectrogram_chunk computeStft( pWaveform waveform, float );
-    boost::shared_ptr<Waveform> _original_waveform;
-    unsigned _original_waveform_channel;
+    pTransform _transform;
+    unsigned _samples_per_block;
+    unsigned _scales_per_block;
 
-    // Slots with Spectrogram_chunk:s, as many as there are space for in the GPU ram
-    std::list<Spectrogram_slot> _slots;
+    // Slots with Spectrogram::Block:s, as many as there are space for in the GPU ram
+    std::list<Slot> _cache;
+};
+
+class Spectrogram::Position {
+public:
+    float time, scale;
+
+    Position() { }
+    Position(float time, float scale):time(time), scale(scale) {}
+
+    tvector<2, float> operator()() { return tvector<2, float>(time, scale); }
+};
+
+class Spectrogram::Reference {
+public:
+    tvector<2,int> log2_samples_size;
+    tvector<2,unsigned> chunk_index;
+
+    bool operator==(const Reference &b) const;
+    void getArea( Position &a, Position &b) const;
+    bool valid() const;
+
+    /* child references */
+    Reference left();
+    Reference right();
+    Reference top();
+    Reference bottom();
+
+    /* sibblings, 3 other references who share the same parent */
+    Reference sibbling1();
+    Reference sibbling2();
+    Reference sibbling3();
+
+    /* parent */
+    Reference parent();
+private:
+    Reference();
+
+    friend class Spectrogram;
+
+    pSpectrogram _parent;
+    void validate();
+};
+
+class Spectrogram::Block: public Transform_chunk
+{
+public:
+    Block( Spectrogram::Reference ref ): ref(ref) {}
+
+    // Zoom level for this slot, determines size of elements
+    Spectrogram::Reference ref;
+};
+
+struct Spectrogram::Slot {
+    pBlock block;
+    time_t last_access;
 };
 
 #endif // SPECTROGRAM_H

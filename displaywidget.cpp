@@ -155,7 +155,7 @@ void DisplayWidget::paintGL()
 
     glPushMatrix();
         glTranslatef( 0, 0, 6 );
-        drawWaveform(_spectrogram->getWaveform());
+        drawWaveform(_spectrogram->transform()->original_waveform());
     glPopMatrix();
 
     drawSpectrogram();
@@ -283,22 +283,160 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
     }
 }
 
+typedef tvector<3,GLdouble> GLvector;
+
+template<typename f>
+GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view) {
+    GLvector win;
+    gluUnProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]);
+    return win;
+}
+
+template<typename f>
+GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view) {
+    GLvector obj;
+    gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]);
+    return obj;
+}
+
+template<typename f>
+GLvector gluProject(tvector<3,f> obj) {
+    GLdouble model[16], proj[16];
+    GLint view[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, model);
+    glGetDoublev(GL_PROJECTION_MATRIX, proj);
+    glGetIntegerv(GL_VIEWPORT, view);
+
+    return gluProject(obj, model, proj, view);
+}
+
+template<typename f>
+GLvector gluUnProject(tvector<3,f> win) {
+    GLdouble model[16], proj[16];
+    GLint view[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, model);
+    glGetDoublev(GL_PROJECTION_MATRIX, proj);
+    glGetIntegerv(GL_VIEWPORT, view);
+
+    return gluUnProject(win, model, proj, view);
+}
+
 
 void DisplayWidget::drawSpectrogram()
 {
 //    boost::shared_ptr<Spectrogram_chunk> transform = _spectrogram->getWavelettTransform();
 
-    if (_enqueueGcDisplayList)
-        gcDisplayList();
+    // find camera position
+    GLdouble model[16], proj[16];
+    GLint view[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, model);
+    glGetDoublev(GL_PROJECTION_MATRIX, proj);
+    glGetIntegerv(GL_VIEWPORT, view);
+
+    GLvector cam = gluUnProject(GLvector(view[2]/2, view[3]/2, 0), model, proj, view);
+
+
+    // find units per pixel right beneath camera
+    GLvector camToPlane(cam[0],0,cam[2]);
+    GLvector sC      = gluProject(camToPlane                  , model, proj, view);
+    GLvector sTime = gluProject(camToPlane + GLvector(1,0,0), model, proj, view);
+    GLvector sFreq   = gluProject(camToPlane + GLvector(0,0,1), model, proj, view);
+
+    GLdouble timePerPixel = (sTime-sC).rlength(); // == 1/pixelsPerSecond, pixelsPerSecond = (sSample-sC).length()
+    GLdouble freqPerPixel = (sFreq-sC).rlength();
+
+    Spectrogram::Reference ref = _spectrogram->findReference(Spectrogram::Position(cam[0], cam[2]), Spectrogram::Position(timePerPixel, freqPerPixel));
+
+    // This is the highest resolution that will be rendered of the dataset
+    renderSpectrogramRef(ref);
+
+    // Render its parent and parent and parent until a the largest section is found or a section is found that covers the entire viewed area
+    renderParentSpectrogramRef( ref );
+
+
+//    TODO: use display lists
+//    if (_enqueueGcDisplayList)
+//        gcDisplayList();
 }
 
-
-void DisplayWidget::drawSpectrogram_chunk_directMode( boost::shared_ptr<Spectrogram_chunk> chunk )
+void DisplayWidget::renderSpectrogramRef( Spectrogram::Reference ref )
 {
-    cudaExtent n = chunk->transform_data->getNumberOfElements();
-    const float* data = chunk->transform_data->getCpuMemory();
+    Spectrogram::Position a, b;
+    ref.getArea( a, b );
+    glBegin(GL_LINE_LOOP );
+        glVertex3f( a.time, 0, a.scale );
+        glVertex3f( a.time, 0, b.scale );
+        glVertex3f( b.time, 0, a.scale );
+        glVertex3f( b.time, 0, b.scale );
+    glEnd();
+    // TODO set the modelview matrix with translate and scale and render the chunk in a unit box
+//    Spectrum::Chunk chunk = _spectrogram->getChunk( ref );
+//    draw_glList<Spectrogram::Chunk>( chunk, DisplayWidget::drawSpectrogram_chunk_directMode );
+}
 
-    float ifs = 10./chunk->sample_rate; // step per sample
+bool DisplayWidget::renderChildrenSpectrogramRef( Spectrogram::Reference ref )
+{
+    if (!ref.valid())
+        return false;
+
+    Spectrogram::Position a, b;
+    ref.getArea( a, b );
+
+    GLvector s00 = gluProject( GLvector( a.time, 0, a.scale) );
+    GLvector s01 = gluProject( GLvector( a.time, 0, b.scale) );
+    GLvector s10 = gluProject( GLvector( b.time, 0, a.scale) );
+    GLvector s11 = gluProject( GLvector( b.time, 0, b.scale) );
+
+    if (0/* does the quadrilateral (s00, s01, s10, s11) not intersect with the screen?*/)
+        return false;
+
+
+    GLdouble t1 = (s00-s10).length();
+    GLdouble t2 = (s01-s11).length();
+    GLdouble f1 = (s00-s01).length();
+    GLdouble f2 = (s10-s11).length();
+
+    bool needBetterF = max(f1,f2) > _spectrogram->scales_per_block(),
+        needBetterT = max(t1,t2) > _spectrogram->samples_per_block();
+    if ( needBetterF && needBetterT) {
+        renderChildrenSpectrogramRef( ref.top().left() );
+        renderChildrenSpectrogramRef( ref.top().right() );
+        renderChildrenSpectrogramRef( ref.bottom().left() );
+        renderChildrenSpectrogramRef( ref.bottom().right() );
+    }
+    else if ( needBetterF ) {
+        renderChildrenSpectrogramRef( ref.top() );
+        renderChildrenSpectrogramRef( ref.bottom() );
+    }
+    else if ( needBetterT ) {
+        renderChildrenSpectrogramRef( ref.left() );
+        renderChildrenSpectrogramRef( ref.right() );
+    }
+    else {
+        renderSpectrogramRef( ref );
+    }
+
+    return true;
+}
+
+void DisplayWidget::renderParentSpectrogramRef( Spectrogram::Reference ref )
+{
+    // Assume that ref has already been drawn, draw sibblings, and call renderParent again
+    if (renderChildrenSpectrogramRef( ref.sibbling1() )
+        || renderChildrenSpectrogramRef( ref.sibbling2() )
+        || renderChildrenSpectrogramRef( ref.sibbling3() ))
+    {
+        renderParentSpectrogramRef( ref.parent() );
+    }
+}
+
+void DisplayWidget::drawSpectrogram_block_directMode( Spectrogram::pBlock block )
+{
+    // TODO: draw within an unit cube
+    cudaExtent n = block->transform_data->getNumberOfElements();
+    const float* data = block->transform_data->getCpuMemory();
+
+    float ifs = 10./block->sample_rate; // step per sample
 
     glTranslatef(0, 0, -(2-1)*0.5); // different channels along y
 
