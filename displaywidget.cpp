@@ -8,17 +8,54 @@
 #include <list>
 #include "wavelettransform.h"
 
+#include <tvector.h>
+
+typedef tvector<3,GLdouble> GLvector;
+template<typename f>
+GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
+  GLvector win;
+  bool s = (GLU_TRUE == gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
+  if(r) *r=s;
+  return win;
+}
+template<typename f>
+GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
+  GLvector obj;
+  bool s = (GLU_TRUE == gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
+  if(r) *r=s;
+  return obj;
+}
+template<typename f>
+GLvector gluProject(tvector<3,f> obj, bool *r=0) {
+  GLdouble model[16], proj[16];
+  GLint view[4];
+  glGetDoublev(GL_MODELVIEW_MATRIX, model);
+  glGetDoublev(GL_PROJECTION_MATRIX, proj);
+  glGetIntegerv(GL_VIEWPORT, view);
+  return gluProject(obj, model, proj, view, r);
+}
+template<typename f>
+GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
+  GLdouble model[16], proj[16];
+  GLint view[4];
+  glGetDoublev(GL_MODELVIEW_MATRIX, model);
+  glGetDoublev(GL_PROJECTION_MATRIX, proj);
+  glGetIntegerv(GL_VIEWPORT, view);
+  return gluUnProject(win, model, proj, view, r);
+}
+
+
 using namespace std;
 //using namespace Magick;
 
-int MouseControl::deltaX( int x )
+float MouseControl::deltaX( float x )
 {
   if( down )
     return x - lastx;
   
   return 0;
 }
-int MouseControl::deltaY( int y )
+float MouseControl::deltaY( float y )
 {
   if( down )
     return y - lasty;
@@ -26,12 +63,12 @@ int MouseControl::deltaY( int y )
   return 0;
 }
 
-void MouseControl::press( int x, int y )
+void MouseControl::press( float x, float y )
 {
   update( x, y );
   down = true;
 }
-void MouseControl::update( int x, int y )
+void MouseControl::update( float x, float y )
 {
   lastx = x;
   lasty = y;
@@ -72,20 +109,49 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
   switch ( e->button() )
   {
     case Qt::LeftButton:
+      
       leftButton.press( e->x(), e->y() );
       printf("LeftButton: Press\n");
       break;
+      
     case Qt::MidButton:
       middleButton.press( e->x(), e->y() );
       printf("MidButton: Press\n");
       break;
+      
     case Qt::RightButton:
-      rightButton.press( e->x(), e->y() );
-      printf("RightButton: Press\n");
+      GLdouble sx, sy, mx, my, mz, sh, s;
+      sx = e->x();
+      sy = e->y();
+      sh = this->height();
+      glGetIntegerv(GL_VIEWPORT, viewport);
+      glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
+      glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+      
+      gluUnProject(sx, sh - sy, 0.1, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
+      printf("CamPos1: %f: %f: %f\n", mx, my, mz);
+      v1.x = mx;
+      v1.y = my;
+      v1.z = mz;
+      
+      gluUnProject(sx, sh - sy, 0.6, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
+      printf("CamPos2: %f: %f: %f\n\n", mx, my, mz);
+      v2.x = mx;
+      v2.y = my;
+      v2.z = mz;
+      
+      s = (-v1.y/(v2.y-v1.y));
+      if( s > 0 )
+      {
+        rightButton.press( s * (v2.x-v1.x), s * (v2.z-v1.z) );
+        printf("RightButton: Press\n");
+      }
       break;
+      
     default:
       break;
   }
+  glDraw();
     prevX = e->x(),
     prevY = e->y();
 }
@@ -98,14 +164,17 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
       leftButton.release();
       printf("LeftButton: Release\n");
       break;
+      
     case Qt::MidButton:
       middleButton.release();
       printf("MidButton: Release\n");
       break;
+      
     case Qt::RightButton:
       rightButton.release();
       printf("RightButton: Release\n");
       break;
+      
     default:
       break;
   }
@@ -113,10 +182,15 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
 {
-  float ps = 0.002;
-  pz += ps * e->delta();
-  if( pz > 0 )
-    pz = 0;
+  float ps = 0.08;
+  if( e->orientation() == Qt::Horizontal )
+  {
+    ry -= ps * e->delta();
+  }
+  else
+  {
+    rx -= ps * e->delta();
+  }
   
   glDraw();
 }
@@ -134,14 +208,49 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
   rx += rs * leftButton.deltaY( y );
   
   //Controlling the the position with the right button.
+  /*
   qx += ps * ( cos(ry * deg2rad) * rightButton.deltaX( x ) 
               - sin(rx * deg2rad) * sin(ry * deg2rad) * rightButton.deltaY( y ) );
   qz += ps * ( sin(ry * deg2rad) * rightButton.deltaX( x ) 
-              + sin(rx * deg2rad) * cos(ry * deg2rad) * rightButton.deltaY( y ) );
+              + sin(rx * deg2rad) * cos(ry * deg2rad) * rightButton.deltaY( y ) );*/
+  if( rightButton.isDown() )
+  {
+    GLdouble sx, sy, mx, my, mz, sh, s;
+    sx = e->x();
+    sy = e->y();
+    sh = this->height();
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
+    glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+    
+    gluUnProject(sx, sh - sy, 0.1, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
+    printf("CamPos1: %f: %f: %f\n", mx, my, mz);
+    v1.x = mx;
+    v1.y = my;
+    v1.z = mz;
+    
+    gluUnProject(sx, sh - sy, 0.6, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
+    printf("CamPos2: %f: %f: %f\n\n", mx, my, mz);
+    v2.x = mx;
+    v2.y = my;
+    v2.z = mz;
+    
+    s = (-v1.y/(v2.y-v1.y));
+    
+    sx = s * (v2.x-v1.x);
+    sy = s * (v2.z-v1.z);
+    
+    qx += rightButton.deltaX( sx );
+    qz += rightButton.deltaY( sy );
+    
+    printf("RightButton: Move: %f: %f\n", sx, sy);
+    
+    rightButton.update( sx, sy );
+  }
   
   //Updating the buttons
   leftButton.update( x, y );
-  rightButton.update( x, y );
+  //rightButton.update( x, y );
   middleButton.update( x, y );
   
   /*
@@ -173,9 +282,11 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 void DisplayWidget::timeOut()
 {
     try{
-} catch (...) {
-    string x32= "blaj";
-}
+    } catch (...) {
+      string x32= "blaj";
+    }
+  
+  printf("Timeout\n");
 }
 
 void DisplayWidget::timeOutSlot()
@@ -229,7 +340,7 @@ void DisplayWidget::paintGL()
     glTranslatef( 0, 0, -3 );
 
     glBegin(GL_LINE_STRIP);
-            glColor3f(0,0,0);         glVertex3f( 0, 0, 0 );
+            glColor3f(0,0,0);         glVertex3f( v1.x, v1.y, v1.z );
             glColor3f(1,0,0);         glVertex3f( px, py, pz );
     glEnd();
 
@@ -249,7 +360,7 @@ void DisplayWidget::paintGL()
     glTranslatef( 0, 0, 6 );
     drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
-    drawWavelett();
+    //drawWavelett();
     //drawWaveform(wavelett->getInverseWaveform());
 }
 

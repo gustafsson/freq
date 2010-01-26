@@ -8,19 +8,25 @@
 class MouseControl
 {
 private:
-  int lastx;
-  int lasty;
+  float lastx;
+  float lasty;
   bool down;
   
 public:
   MouseControl(): down( false ){};
   
-  int deltaX( int x );
-  int deltaY( int y );
+  float deltaX( float x );
+  float deltaY( float y );
   
-  void press( int x, int y );
-  void update( int x, int y );
+  bool isDown(){return down;};
+  
+  void press( float x, float y );
+  void update( float x, float y );
   void release();
+};
+
+struct MyVector{
+  float x, y, z;
 };
 
 class DisplayWidget : public QGLWidget
@@ -50,7 +56,13 @@ private:
   float px, py, pz,
         rx, ry, rz,
         qx, qy, qz;
-  int prevX, prevY;
+  int prevX, prevY, targetQ;
+  
+  GLint viewport[4];
+  GLdouble modelMatrix[16];
+  GLdouble projectionMatrix[16];
+  
+  MyVector v1, v2;
 
   void drawArrows();
   void drawColorFace();
