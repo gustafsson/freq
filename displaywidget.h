@@ -2,7 +2,7 @@
 #define DISPLAYWIDGET_H
 
 #include <QGLWidget>
-#include "spectrogram.h"
+#include "spectrogram-renderer.h"
 #include <boost/shared_ptr.hpp>
 
 class DisplayWidget : public QGLWidget
@@ -25,7 +25,8 @@ protected slots:
   virtual void timeOutSlot();
 
 private:
-  boost::shared_ptr<Spectrogram> _spectrogram;
+  boost::shared_ptr<SpectrogramRenderer> _renderer;
+
   struct ListCounter {
       GLuint displayList;
       enum Age {
@@ -47,16 +48,6 @@ private:
   void drawColorFace();
   void drawWaveform( pWaveform waveform );
   static void drawWaveform_chunk_directMode( pWaveform_chunk chunk);
-  void drawSpectrogram();
-  static void drawSpectrogram_block_directMode( Spectrogram::pBlock block );
-  void drawSpectrogram_block_vertexArray( Spectrogram::pBlock block );
-  void drawSpectrogram_block_cudaGlInterop( Spectrogram::pBlock block );
-  void drawSpectrogram_block_cgShader( Spectrogram::pBlock block );
-
-  void renderSpectrogramRef( Spectrogram::Reference ref );
-  bool renderChildrenSpectrogramRef( Spectrogram::Reference ref );
-  void renderParentSpectrogramRef( Spectrogram::Reference ref );
-
   template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ) );
 
   bool _enqueueGcDisplayList;

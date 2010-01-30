@@ -13,7 +13,9 @@ SOURCES += main.cpp \
     filter.cpp \
     transform-chunk.cpp \
     transform.cpp \
-    waveform.cpp
+    waveform.cpp \
+    spectrogram-vbo.cpp \
+    spectrogram-renderer.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     waveform.h \
@@ -22,21 +24,26 @@ HEADERS += mainwindow.h \
     filter.h \
     transform-chunk.h \
     transform.h \
-    wavelet.cu.h
+    wavelet.cu.h \
+    spectrogram-vbo.h \
+    spectrogram-renderer.h
 FORMS += mainwindow.ui
-OTHER_FILES += wavelet.cu
+OTHER_FILES += wavelet.cu \
+    spectrogram.frag \
+    spectrogram.vert
 CUDA_SOURCES += wavelet.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
 unix:INCLUDEPATH += /usr/local/cuda/include
-unix:LIBS += \
-    -lsndfile \
+unix:LIBS += -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib$$IS64 \
     -lcuda \
     -lcufft \
     -L../misc \
-    -lmisc
+    -lmisc \
+    -lGLEW \
+    -lGLU -lGL
 win32:LIBS += 
 MOC_DIR = tmp/
 OBJECTS_DIR = tmp/
@@ -61,7 +68,7 @@ win32 {
 }
 unix { 
     # auto-detect CUDA path
-    #CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
+    # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     # manual
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
@@ -96,4 +103,3 @@ unix {
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
-########################################################################

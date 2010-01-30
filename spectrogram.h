@@ -69,6 +69,7 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 
 typedef boost::shared_ptr<class Filter> pFilter;
 typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
+typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
 
 struct position {
     typedef tvector<2,int> Log2samplesPerUnit;
@@ -106,6 +107,7 @@ public:
     unsigned samples_per_block() { return _samples_per_block; }
     void scales_per_block(unsigned v);
     void samples_per_block(unsigned v);
+
 private:
     // Spectrogram_chunk computeStft( pWaveform waveform, float );
     pTransform _transform;
@@ -114,6 +116,10 @@ private:
 
     // Slots with Spectrogram::Block:s, as many as there are space for in the GPU ram
     std::list<Slot> _cache;
+
+    Reference   findReferenceCanonical( Position p, Position sampleSize );
+    Position min_sample_size();
+    Position max_sample_size();
 };
 
 class Spectrogram::Position {
@@ -133,7 +139,9 @@ public:
 
     bool operator==(const Reference &b) const;
     void getArea( Position &a, Position &b) const;
-    bool valid() const;
+
+    bool containsSpectrogram() const;
+    bool toLarge() const;
 
     /* child references */
     Reference left();
@@ -149,21 +157,22 @@ public:
     /* parent */
     Reference parent();
 private:
-    Reference();
+    Reference( Spectrogram* parent );
 
     friend class Spectrogram;
 
-    pSpectrogram _parent;
-    void validate();
+    Spectrogram* _spectrogram;
 };
 
-class Spectrogram::Block: public Transform_chunk
+class Spectrogram::Block
 {
 public:
     Block( Spectrogram::Reference ref ): ref(ref) {}
 
     // Zoom level for this slot, determines size of elements
     Spectrogram::Reference ref;
+
+    pSpectrogramVbo vbo;
 };
 
 struct Spectrogram::Slot {

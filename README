@@ -33,7 +33,7 @@ sudo echo /usr/local/cuda/lib64 >> /etc/ld.so.conf.d/cuda.conf
 sudo ldconfig
 
 # install required packages
-sudo apt-get install libaudiere-dev libsndfile1-dev libboost1.37-dev libqt4-dev qt-creator libglut-dev git
+sudo apt-get install libaudiere-dev libsndfile1-dev libboost1.37-dev libqt4-dev qt-creator libglut-dev git libglew1.5-dev
 
 # download source code
 git clone git@github.com:gustafsson/sonic.git

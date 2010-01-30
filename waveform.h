@@ -47,6 +47,7 @@ public:
     int channel_count() {        return _waveform.waveform_data->getNumberOfElements().height; }
     int sample_rate() {          return _sample_rate;    }
     int number_of_samples() {    return _waveform.waveform_data->getNumberOfElements().width; }
+    float length() {             return number_of_samples() / (float)sample_rate(); }
 
 private:
     audiere::SampleSource* _source;
