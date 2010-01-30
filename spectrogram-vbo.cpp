@@ -227,8 +227,8 @@ static void setWavelengthColor( float wavelengthScalar ) {
 void SpectrogramVbo::draw_directMode( )
 {
     pHeight block = height();
-    cudaExtent n = block->data.getNumberOfElements();
-    const float* data = block->data.getCpuMemory();
+    cudaExtent n = block->data->getNumberOfElements();
+    const float* data = block->data->getCpuMemory();
 
     float ifs = 1./(n.width-3);
     float depthScale = 1.f/(n.height-3);

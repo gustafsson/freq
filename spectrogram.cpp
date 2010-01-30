@@ -149,13 +149,13 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
 
     // Reset block with dummy values
     SpectrogramVbo::pHeight h = block->vbo->height();
-    float* p = h->data.getCpuMemory();
+    float* p = h->data->getCpuMemory();
     for (unsigned s = 0; s<_samples_per_block; s++) {
         for (unsigned f = 0; f<_scales_per_block; f++) {
             p[ f*_samples_per_block + s] = sin(s*1./_samples_per_block)*cos(f*1./_scales_per_block);
         }
     }
-    h->data.getCudaGlobal();
+    h->data->getCudaGlobal();
 
     // TODO Compute block
     return block;

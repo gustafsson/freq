@@ -305,7 +305,7 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref )
         glScalef(b.time-a.time, 1, b.scale-a.scale);
 
         Spectrogram::pBlock block = _spectrogram->getBlock( ref );
-        if (0 && 0!=block.get()) {
+        if (0!=block.get()) {
             if (0 /* direct rendering */ )
                 block->vbo->draw_directMode();
             else if (1 /* vbo */ )

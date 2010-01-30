@@ -5,6 +5,7 @@
 #include <cuda_gl_interop.h>
 #include <boost/shared_ptr.hpp>
 #include <GpuCpuData.h>
+#include <stdio.h>
 
 typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
 typedef boost::shared_ptr<class SpectrogramRenderer> pSpectrogramRenderer;
@@ -34,19 +35,21 @@ class MappedVbo
 {
 public:
     MappedVbo( pVbo vbo, cudaExtent numberOfElements )
-    :   data(0, make_cudaExtent(0,0,0)),
-        _vbo(vbo)
+    :   _vbo(vbo)
     {
         void* g_data;
+        GLuint n = *_vbo;
         cudaGLMapBufferObject((void**)&g_data, *_vbo);
-        data = GpuCpuData<T>( g_data, numberOfElements, GpuCpuVoidData::CudaGlobal, true );
+
+        cudaPitchedPtr cpp = {g_data, sizeof(T)*numberOfElements.width, sizeof(T)*numberOfElements.width, numberOfElements.height };
+        data.reset( new GpuCpuData<T>( &cpp, numberOfElements, GpuCpuVoidData::CudaGlobal, true ));
     }
 
     ~MappedVbo() {
         cudaGLUnmapBufferObject(*_vbo);
     }
 
-    GpuCpuData<T> data;
+    boost::shared_ptr<GpuCpuData<T> > data;
 
 private:
     pVbo _vbo;
