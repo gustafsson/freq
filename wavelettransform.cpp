@@ -17,6 +17,7 @@ void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, flo
 WavelettTransform::WavelettTransform( const char* filename )
 {
     _originalWaveform.reset( new Waveform( filename ));
+    granularity = 40; // scales per octave
 
     CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 }
@@ -72,7 +73,6 @@ TaskTimer tt(__FUNCTION__);
 
     // Count number of scales to use
     float octaves = log2(_transform->maxHz)-log2(_transform->minHz);
-    float granularity = 40; // scales per octave
     unsigned nFrequencies = granularity*octaves;
 
     // Allocate transform
