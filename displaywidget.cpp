@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QTimer>
 #include <QKeyEvent>
-//#include <Magick++.h>
 
 #include <list>
 #include "wavelettransform.h"
@@ -84,7 +83,7 @@ bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
   
   s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
   
-  ox = s * (world_coord[1][0]-world_coord[0][0]);
+  ox = -s * (world_coord[1][0]-world_coord[0][0]);
   oy = s * (world_coord[1][2]-world_coord[0][2]);
   
   if( s < 0 || s > 100)
@@ -142,18 +141,18 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
     case Qt::LeftButton:
       
       leftButton.press( e->x(), this->height() - e->y() );
-      printf("LeftButton: Press\n");
+      //printf("LeftButton: Press\n");
       break;
       
     case Qt::MidButton:
       middleButton.press( e->x(), this->height() - e->y() );
-      printf("MidButton: Press\n");
+      //printf("MidButton: Press\n");
       break;
       
     case Qt::RightButton:
     {
       rightButton.press( e->x(), this->height() - e->y() );
-      printf("RightButton: Press\n");
+      //printf("RightButton: Press\n");
     }
       break;
       
@@ -171,17 +170,17 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
   {
     case Qt::LeftButton:
       leftButton.release();
-      printf("LeftButton: Release\n");
+      //printf("LeftButton: Release\n");
       break;
       
     case Qt::MidButton:
       middleButton.release();
-      printf("MidButton: Release\n");
+      //printf("MidButton: Release\n");
       break;
       
     case Qt::RightButton:
       rightButton.release();
-      printf("RightButton: Release\n");
+      //printf("RightButton: Release\n");
       break;
       
     default:
