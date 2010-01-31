@@ -152,7 +152,7 @@ void DisplayWidget::paintGL()
     drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
     drawWavelett();
-    //drawWaveform(wavelett->getInverseWaveform());
+    drawWaveform(wavelett->getInverseWaveform());
 }
 
 void DisplayWidget::drawArrows()
@@ -295,7 +295,7 @@ void DisplayWidget::drawWavelett()
     float depthScale = 5.f/n.height;
 
     glEnable(GL_NORMALIZE);
-    for (unsigned fi=0; fi+fstep<n.height-100; fi+=fstep)
+    for (unsigned fi=0; fi+fstep<n.height; fi+=fstep)
     {
         glBegin(GL_TRIANGLE_STRIP);
             float v[3][4] = {{0}};
@@ -312,7 +312,7 @@ void DisplayWidget::drawWavelett()
 
                     //float phase = atan2(complex, real);
                     float amplitude = sqrtf(real*real+complex*complex);
-                    v[2][df] = amplitude;
+                    v[2][df] = amplitude;// * exp(.001*fi);
                     v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
 
                     //v[2][df] = real;
