@@ -1,6 +1,7 @@
 # -------------------------------------------------
 # Project created by QtCreator 2009-11-06T11:26:14
 # -------------------------------------------------
+macx:CONFIG -= app_bundle
 QT += opengl \
     testlib
 TARGET = sonicawe

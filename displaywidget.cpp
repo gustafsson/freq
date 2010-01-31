@@ -63,6 +63,36 @@ float MouseControl::deltaY( float y )
   return 0;
 }
 
+bool MouseControl::worldPos(GLdouble &ox, GLdouble &oy)
+{
+  return worldPos(this->lastx, this->lasty, ox, oy);
+}
+bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
+{
+  GLdouble s;
+  bool test[2];
+  GLvector win_coord, world_coord[2];
+  
+  win_coord = GLvector(x, y, 0.1);
+  
+  world_coord[0] = gluUnProject<GLdouble>(win_coord, &test[0]);
+  //printf("CamPos1: %f: %f: %f\n", world_coord[0][0], world_coord[0][1], world_coord[0][2]);
+  
+  win_coord[2] = 0.6;
+  world_coord[1] = gluUnProject<GLdouble>(win_coord, &test[1]);
+  //printf("CamPos2: %f: %f: %f\n", world_coord[1][0], world_coord[1][1], world_coord[1][2]);
+  
+  s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
+  
+  ox = s * (world_coord[1][0]-world_coord[0][0]);
+  oy = s * (world_coord[1][2]-world_coord[0][2]);
+  
+  if( s < 0 || s > 100)
+    return false;
+  
+  return test[0] && test[1];
+}
+
 void MouseControl::press( float x, float y )
 {
   update( x, y );
@@ -110,42 +140,20 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
   {
     case Qt::LeftButton:
       
-      leftButton.press( e->x(), e->y() );
+      leftButton.press( e->x(), this->height() - e->y() );
       printf("LeftButton: Press\n");
       break;
       
     case Qt::MidButton:
-      middleButton.press( e->x(), e->y() );
+      middleButton.press( e->x(), this->height() - e->y() );
       printf("MidButton: Press\n");
       break;
       
     case Qt::RightButton:
-      GLdouble sx, sy, mx, my, mz, sh, s;
-      sx = e->x();
-      sy = e->y();
-      sh = this->height();
-      glGetIntegerv(GL_VIEWPORT, viewport);
-      glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
-      glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
-      
-      gluUnProject(sx, sh - sy, 0.1, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
-      printf("CamPos1: %f: %f: %f\n", mx, my, mz);
-      v1.x = mx;
-      v1.y = my;
-      v1.z = mz;
-      
-      gluUnProject(sx, sh - sy, 0.6, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
-      printf("CamPos2: %f: %f: %f\n\n", mx, my, mz);
-      v2.x = mx;
-      v2.y = my;
-      v2.z = mz;
-      
-      s = (-v1.y/(v2.y-v1.y));
-      if( s > 0 )
-      {
-        rightButton.press( s * (v2.x-v1.x), s * (v2.z-v1.z) );
-        printf("RightButton: Press\n");
-      }
+    {
+      rightButton.press( e->x(), this->height() - e->y() );
+      printf("RightButton: Press\n");
+    }
       break;
       
     default:
@@ -182,14 +190,16 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
 {
-  float ps = 0.08;
+  float ps = 0.005;
+  float rs = 0.08;
   if( e->orientation() == Qt::Horizontal )
   {
-    ry -= ps * e->delta();
+    ry -= rs * e->delta();
   }
   else
   {
-    rx -= ps * e->delta();
+    pz -= ps * e->delta();
+    //rx -= ps * e->delta();
   }
   
   glDraw();
@@ -201,56 +211,35 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         ps = 0.002 - pz/1000,
         deg2rad = 3.1415926535/180;
   
-  int x = e->x(), y = e->y();
+  int x = e->x(), y = this->height() - e->y();
   
   //Controlling the rotation with the left button.
   ry += rs * leftButton.deltaX( x );
-  rx += rs * leftButton.deltaY( y );
+  rx -= rs * leftButton.deltaY( y );
   
   //Controlling the the position with the right button.
-  /*
-  qx += ps * ( cos(ry * deg2rad) * rightButton.deltaX( x ) 
-              - sin(rx * deg2rad) * sin(ry * deg2rad) * rightButton.deltaY( y ) );
-  qz += ps * ( sin(ry * deg2rad) * rightButton.deltaX( x ) 
-              + sin(rx * deg2rad) * cos(ry * deg2rad) * rightButton.deltaY( y ) );*/
+  
+  /*qx += 0.01 * ( cos(ry * deg2rad) * rightButton.deltaX( x ) 
+              - sin(rx * deg2rad) * sin(ry * deg2rad) * -2*rightButton.deltaY( y ) );
+  qz += 0.01 * ( sin(ry * deg2rad) * rightButton.deltaX( x ) 
+              + sin(rx * deg2rad) * cos(ry * deg2rad) * -2*rightButton.deltaY( y ) );*/
   if( rightButton.isDown() )
   {
-    GLdouble sx, sy, mx, my, mz, sh, s;
-    sx = e->x();
-    sy = e->y();
-    sh = this->height();
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
-    glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
-    
-    gluUnProject(sx, sh - sy, 0.1, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
-    printf("CamPos1: %f: %f: %f\n", mx, my, mz);
-    v1.x = mx;
-    v1.y = my;
-    v1.z = mz;
-    
-    gluUnProject(sx, sh - sy, 0.6, modelMatrix, projectionMatrix, viewport, &mx, &my, &mz);
-    printf("CamPos2: %f: %f: %f\n\n", mx, my, mz);
-    v2.x = mx;
-    v2.y = my;
-    v2.z = mz;
-    
-    s = (-v1.y/(v2.y-v1.y));
-    
-    sx = s * (v2.x-v1.x);
-    sy = s * (v2.z-v1.z);
-    
-    qx += rightButton.deltaX( sx );
-    qz += rightButton.deltaY( sy );
-    
-    printf("RightButton: Move: %f: %f\n", sx, sy);
-    
-    rightButton.update( sx, sy );
+    GLvector last, current;
+    if( rightButton.worldPos(last[0], last[1]) &&
+        rightButton.worldPos(x, y, current[0], current[1]) )
+    {
+      qx += current[0] - last[0];
+      qz += current[1] - last[1];
+    }
   }
+  
+  
+  
   
   //Updating the buttons
   leftButton.update( x, y );
-  //rightButton.update( x, y );
+  rightButton.update( x, y );
   middleButton.update( x, y );
   
   /*
@@ -360,7 +349,7 @@ void DisplayWidget::paintGL()
     glTranslatef( 0, 0, 6 );
     drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
-    //drawWavelett();
+    drawWavelett();
     //drawWaveform(wavelett->getInverseWaveform());
 }
 

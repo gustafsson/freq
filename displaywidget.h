@@ -18,6 +18,9 @@ public:
   float deltaX( float x );
   float deltaY( float y );
   
+  bool worldPos(GLdouble &ox, GLdouble &oy);
+  static bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy);
+  
   bool isDown(){return down;};
   
   void press( float x, float y );
