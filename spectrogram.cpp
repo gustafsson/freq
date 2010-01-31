@@ -1,8 +1,10 @@
 #include "spectrogram.h"
 #include "spectrogram-vbo.h"  // breaks model-view-controller, but I want the rendering context associated with a spectrogram block to be removed when the cached block is removed
+#include "spectrogram-slope.cu.h"
 
 #include <boost/foreach.hpp>
 #include <CudaException.h>
+#include <GlException.h>
 
 using namespace std;
 
@@ -72,13 +74,15 @@ Spectrogram::Reference Spectrogram::findReference( Position p, Position sampleSi
     // Compute sample size
     r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
     r.chunk_index = tvector<2,unsigned>(0,0);
+    printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Validate sample size
     Position a,b; r.getArea(a,b);
     if (b.time < minSampleSize.time*_samples_per_block )                r.log2_samples_size[0]++;
     if (b.scale < minSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]++;
-    if (b.time >= maxSampleSize.time*_samples_per_block && 0<length )   r.log2_samples_size[0]--;
-    if (b.scale >= maxSampleSize.scale*_scales_per_block )              r.log2_samples_size[1]--;
+    if (b.time > maxSampleSize.time*_samples_per_block && 0<length )    r.log2_samples_size[0]--;
+    if (b.scale > maxSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]--;
+    printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Compute chunk index
     r.chunk_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
@@ -103,18 +107,18 @@ Spectrogram::Position Spectrogram::min_sample_size() {
 Spectrogram::Position Spectrogram::max_sample_size() {
     pWaveform wf = transform()->original_waveform();
     float length = wf->length();
+    Position minima=min_sample_size();
 
-    return Position( 2.f*length/_samples_per_block,
-                        2.f/_scales_per_block );
+    return Position( max(minima.time, 2.f*length/_samples_per_block),
+                        max(minima.scale, 2.f/_scales_per_block) );
 }
 
 
 Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
     // Look among cached blocks for this reference
-    BOOST_FOREACH( Slot& b, _cache ) {
-        if (b.block->ref == ref) {
-            b.last_access = time(0);
-            return b.block;
+    BOOST_FOREACH( pBlock& b, _cache ) {
+        if (b->ref == ref) {
+            return b;
         }
     }
 
@@ -123,27 +127,34 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
     try {
         Spectrogram::pBlock attempt( new Spectrogram::Block(ref));
         attempt->vbo.reset( new SpectrogramVbo( this ));
-        Slot s = { attempt, time(0) };
-        _cache.push_back( s );
+        SpectrogramVbo::pHeight h = attempt->vbo->height();
+        SpectrogramVbo::pSlope sl = attempt->vbo->slope();
+
+        GlException_CHECK_ERROR();
+        CudaException_CHECK_ERROR();
+
         block = attempt;
+        _cache.push_back( block );
     }
     catch (const CudaException& x )
-    {
+    { }
+    catch (const GlException& x )
+    { }
+
+    if ( 0 == block.get() && !_cache.empty()) {
         // Try to reuse an old block instead
         // Look for the oldest block
-        time_t oldest = time(0);
-        Slot* pb=0;
-        BOOST_FOREACH( Slot& b, _cache ) {
-            if ( 0< difftime(oldest, b.last_access)) {
-                oldest = b.last_access;
-                pb = &b;
+
+        unsigned oldest = _cache[0]->frame_number_last_used;
+
+        BOOST_FOREACH( pBlock& b, _cache ) {
+            if ( oldest > b->frame_number_last_used ) {
+                oldest = b->frame_number_last_used;
+                block = b;
             }
         }
-        if (pb) {
-            block = pb->block;
-            pb->last_access = time(0);
-        }
     }
+
     if ( 0 == block.get())
         return block; // return null-pointer
 
@@ -152,15 +163,36 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
     float* p = h->data->getCpuMemory();
     for (unsigned s = 0; s<_samples_per_block; s++) {
         for (unsigned f = 0; f<_scales_per_block; f++) {
-            p[ f*_samples_per_block + s] = sin(s*1./_samples_per_block)*cos(f*1./_scales_per_block);
+            p[ f*_samples_per_block + s] = sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
         }
     }
+    // Make sure it is moved to the gpu
     h->data->getCudaGlobal();
 
     // TODO Compute block
+
+    // Compute slope
+    cudaCalculateSlopeKernel(h->data->getCudaGlobal().ptr(), block->vbo->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block);
     return block;
 }
 
+void Spectrogram::gc() {
+    if (_cache.empty())
+        return;
+
+    unsigned latestFrame = _cache[0]->frame_number_last_used;
+    BOOST_FOREACH( pBlock& b, _cache ) {
+        if (latestFrame < b->frame_number_last_used)
+            latestFrame = b->frame_number_last_used;
+    }
+
+    for (std::vector<pBlock>::iterator itr = _cache.begin(); itr!=_cache.end(); itr++)
+    {
+        if ((*itr)->frame_number_last_used < latestFrame) {
+            itr = _cache.erase(itr);
+        }
+    }
+}
 
 bool Spectrogram::Reference::operator==(const Spectrogram::Reference &b) const
 {
@@ -244,6 +276,9 @@ bool Spectrogram::Reference::containsSpectrogram() const
 
     if (b.time-a.time < _spectrogram->min_sample_size().time*_spectrogram->_samples_per_block )
         return false;
+    float msss = _spectrogram->min_sample_size().scale;
+    unsigned spb = _spectrogram->_scales_per_block;
+    float ms = msss*spb;
     if (b.scale-a.scale < _spectrogram->min_sample_size().scale*_spectrogram->_scales_per_block )
         return false;
 
@@ -264,7 +299,7 @@ bool Spectrogram::Reference::toLarge() const
     getArea( a, b );
     pTransform t = _spectrogram->transform();
     pWaveform wf = t->original_waveform();
-    if (b.time > 2 * wf->length() && b.scale >= 5 )
+    if (b.time > 2 * wf->length() && b.scale > 2 )
         return true;
     return false;
 }

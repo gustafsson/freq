@@ -12,7 +12,7 @@
 
 #include "wavelet.cu.h"
 
-Transform::Transform( pWaveform waveform, unsigned channel, unsigned scales_per_octave, unsigned samples_per_chunk, float wavelet_std_t )
+Transform::Transform( pWaveform waveform, unsigned channel, unsigned samples_per_chunk, unsigned scales_per_octave, float wavelet_std_t )
 :   _original_waveform( waveform ),
     _channel( channel ),
     _scales_per_octave( scales_per_octave ),

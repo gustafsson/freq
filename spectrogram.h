@@ -64,6 +64,7 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include <tvector.h>
+#include <vector>
 #include "transform.h"
 #include "waveform.h"
 
@@ -84,7 +85,6 @@ public:
     class Position;
     class Reference;
     class Block;
-    struct Slot;
 
     typedef boost::shared_ptr<Block> pBlock;
 
@@ -94,6 +94,7 @@ public:
 
     pBlock      getBlock( Reference ref );
     pTransform  transform() const { return _transform; }
+    void        gc();
 
     /**
       Returns a Reference for a block containing 'p' in which a block element
@@ -108,6 +109,8 @@ public:
     void scales_per_block(unsigned v);
     void samples_per_block(unsigned v);
 
+    Position min_sample_size();
+    Position max_sample_size();
 private:
     // Spectrogram_chunk computeStft( pWaveform waveform, float );
     pTransform _transform;
@@ -115,11 +118,9 @@ private:
     unsigned _scales_per_block;
 
     // Slots with Spectrogram::Block:s, as many as there are space for in the GPU ram
-    std::list<Slot> _cache;
+    std::vector<pBlock> _cache;
 
     Reference   findReferenceCanonical( Position p, Position sampleSize );
-    Position min_sample_size();
-    Position max_sample_size();
 };
 
 class Spectrogram::Position {
@@ -171,13 +172,9 @@ public:
 
     // Zoom level for this slot, determines size of elements
     Spectrogram::Reference ref;
+    unsigned frame_number_last_used;
 
     pSpectrogramVbo vbo;
-};
-
-struct Spectrogram::Slot {
-    pBlock block;
-    time_t last_access;
 };
 
 #endif // SPECTROGRAM_H

@@ -127,9 +127,7 @@ void SpectrogramVbo::draw(SpectrogramRenderer* renderer) {
     unsigned meshW = _spectrogram->samples_per_block();
     unsigned meshH = _spectrogram->scales_per_block();
 
-    glBindBuffer(GL_ARRAY_BUFFER, *renderer->_mesh_position);
-    glVertexPointer(4, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_VERTEX_ARRAY);
+
 
     glBindBuffer(GL_ARRAY_BUFFER, *_height);
     glClientActiveTexture(GL_TEXTURE0);
@@ -142,35 +140,7 @@ void SpectrogramVbo::draw(SpectrogramRenderer* renderer) {
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 
-    glUseProgram(renderer->_shader_prog);
 
-    // Set default uniform variables parameters for the vertex shader
-    GLuint uniHeightScale, uniChopiness, uniSize;
-
-    uniHeightScale = glGetUniformLocation(renderer->_shader_prog, "heightScale");
-    glUniform1f(uniHeightScale, 0.5f);
-
-    uniChopiness   = glGetUniformLocation(renderer->_shader_prog, "chopiness");
-    glUniform1f(uniChopiness, 1.0f);
-
-    uniSize        = glGetUniformLocation(renderer->_shader_prog, "size");
-    glUniform2f(uniSize, meshW, meshH);
-
-    // Set default uniform variables parameters for the pixel shader
-    GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
-
-    uniDeepColor = glGetUniformLocation(renderer->_shader_prog, "deepColor");
-    glUniform4f(uniDeepColor, 0.0f, 0.0f, 0.1f, 1.0f);
-
-    uniShallowColor = glGetUniformLocation(renderer->_shader_prog, "shallowColor");
-    glUniform4f(uniShallowColor, 0.1f, 0.4f, 0.3f, 1.0f);
-
-    uniSkyColor = glGetUniformLocation(renderer->_shader_prog, "skyColor");
-    glUniform4f(uniSkyColor, 0.5f, 0.5f, 0.5f, 1.0f);
-
-    uniLightDir = glGetUniformLocation(renderer->_shader_prog, "lightDir");
-    glUniform3f(uniLightDir, 0.0f, 1.0f, 0.0f);
-    // end of uniform settings
 
     bool wireFrame = false;
     bool drawPoints = false;
@@ -179,21 +149,15 @@ void SpectrogramVbo::draw(SpectrogramRenderer* renderer) {
     if (drawPoints) {
         glDrawArrays(GL_POINTS, 0, meshW * meshH);
     } else {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer->_mesh_index_buffer);
-
-        glPolygonMode(GL_FRONT_AND_BACK, wireFrame ? GL_LINE : GL_FILL);
+//        glPolygonMode(GL_FRONT_AND_BACK, wireFrame ? GL_LINE : GL_FILL);
             glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+2)*(meshH-1), GL_UNSIGNED_INT, 0);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
-    glDisableClientState(GL_VERTEX_ARRAY);
+
     glClientActiveTexture(GL_TEXTURE0);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glClientActiveTexture(GL_TEXTURE1);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    glUseProgram(0);
 }
 
 int clamp(int val, int max) {

@@ -6,6 +6,16 @@
 #include <stdexcept>
 #include <iostream>
 
+#if LEKA_FFT
+#include <cufft.h>
+
+static void cufftSafeCall( cufftResult_t cufftResult) {
+    if (cufftResult != CUFFT_SUCCESS) {
+        ThrowInvalidArgument( cufftResult );
+    }
+}
+#endif
+
 using namespace std;
 using namespace audiere;
 
@@ -65,6 +75,36 @@ Waveform::Waveform (const char* filename)
     }
 
     Statistics<float> waveform( _waveform.waveform_data.get() );
+
+#if LEKA_FFT
+/* do stupid things: */
+    num_frames = 1<<13;
+    GpuCpuData<float> ut2(0, make_cudaExtent(3*num_frames*sizeof(float),1,1));
+    GpuCpuData<float> ut(0, make_cudaExtent(3*num_frames*sizeof(float),1,1));
+//    for (unsigned i=0; i<num_frames/2; i++)
+//        printf("\t%g\n",fdata[i]);
+
+    cufftHandle                             _fft_dummy;
+    cufftSafeCall(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_R2C, 1));
+    cufftSafeCall(cufftExecR2C(_fft_dummy,
+                               (cufftReal *)_waveform.waveform_data->getCudaGlobal().ptr(),
+                               (cufftComplex *)ut2.getCudaGlobal().ptr()));
+    cufftSafeCall(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_C2C, 1));
+    /*cufftSafeCall(cufftExecC2C(_fft_dummy,
+                               (cufftComplex *)_waveform.waveform_data->getCudaGlobal().ptr(),
+                               (cufftComplex *)ut2.getCudaGlobal().ptr(),
+                               CUFFT_FORWARD));*/
+    cufftSafeCall(cufftExecC2C(_fft_dummy,
+                               (cufftComplex *)ut2.getCudaGlobal().ptr(),
+                               (cufftComplex *)ut.getCudaGlobal().ptr(),
+                               CUFFT_INVERSE));
+    cufftDestroy( _fft_dummy );
+    //GpuCpuData<float> d = *_waveform.waveform_data;
+    fdata = ut.getCpuMemory();
+    printf("num_frames/2=%d\n", num_frames/2);
+    for (unsigned i=0; i<num_frames; i++)
+        printf("\t%g  \t%g\n",fdata[2*i], fdata[2*i+1]);
+#endif
 }
 
 

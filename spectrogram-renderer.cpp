@@ -11,7 +11,8 @@ SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
-    _initialized(false)
+    _initialized(false),
+    _redundancy(2) // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
 {
 }
 
@@ -74,9 +75,9 @@ void SpectrogramRenderer::createMeshPositionVBO(unsigned w, unsigned h)
         for(unsigned x=0; x<w; x++) {
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
-            *pos++ = u*2.0f-1.0f;
+            *pos++ = u;
             *pos++ = 0.0f;
-            *pos++ = v*2.0f-1.0f;
+            *pos++ = v;
             *pos++ = 1.0f;
         }
     }
@@ -87,6 +88,7 @@ void SpectrogramRenderer::createMeshPositionVBO(unsigned w, unsigned h)
 
 
 typedef tvector<3,GLdouble> GLvector;
+typedef tvector<4,GLdouble> GLvector4;
 
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
@@ -136,17 +138,38 @@ bool validWindowPos(GLvector win) {
             && win[2]>=0.1 && win[2]<=100;
 }
 
-bool inFrontOfCamera( GLvector obj ) {
+GLvector applyModelMatrix(GLvector obj) {
     GLdouble m[16];
     glGetDoublev(GL_MODELVIEW_MATRIX, m);
-    GLvector v;
+    GLvector eye;
     for (int i=0; i<3; i++) {
         GLdouble a = m[4*3+i];
         for (int j=0; j<3; j++)
             a+= obj[j]*m[i + 4*j];
-        v[i] = a;
+        eye[i] = a;
     }
-    return v[2] < 0;
+    return eye;
+}
+
+GLvector applyProjectionMatrix(GLvector eye) {
+    GLdouble p[16];
+    glGetDoublev(GL_PROJECTION_MATRIX, p);
+    GLvector clip;
+    for (int i=0; i<3; i++) {
+        GLdouble a = p[4*3+i];
+        for (int j=0; j<3; j++)
+            a+= eye[j]*p[i + 4*j];
+        clip[i] = a;
+    }
+    return clip;
+}
+
+bool inFrontOfCamera( GLvector obj ) {
+    GLvector eye = applyModelMatrix(obj);
+
+    GLvector clip = applyProjectionMatrix(eye);
+
+    return clip[2] > 0.1;
 }
 
 class glPushMatrixContext
@@ -220,20 +243,30 @@ void SpectrogramRenderer::draw()
     // wC is the point on screen that renders the closest pixel of the plane
 
     GLvector wStart = GLvector(wCam[0],0,wCam[2]);
+    float length = _spectrogram->transform()->original_waveform()->length();
     if (wStart[0]<0) wStart[0]=0;
     if (wStart[2]<0) wStart[2]=0;
-    if (wStart[0]>_spectrogram->transform()->original_waveform()->length()) wStart[0]=_spectrogram->transform()->original_waveform()->length();
+    if (wStart[0]>length) wStart[0]=length;
     if (wStart[2]>1) wStart[2]=1;
 
     GLvector sBase      = gluProject(wStart);
     sBase[2] = 0.1;
 
     if (!validWindowPos(sBase)) {
-        // point not visible, take bottom of screen instead
+        // point not visible => the pixel closest to the plane is somewhere along the border of the screen
+        // take bottom of screen instead
         if (wCam[1] > 0)
             sBase = GLvector(view[0]+view[2]/2, view[1], 0.1);
         else // or top of screen if beneath
             sBase = GLvector(view[0]+view[2]/2, view[1]+view[3], 0.1);
+
+/*        GLvector wBase = gluUnProject( sBase ),
+        if (wBase[0]<0 || )
+                        sBase = GLvector(view[0]+view[2]/2, view[1]+view[3], 0.1);
+wStart[0]=0;
+        if (wStart[2]<0) wStart[2]=0;
+        if (wStart[0]>length) wStart[0]=length;
+        if (wStart[2]>1) wStart[2]=1;*/
     }
 
     // find world coordinates of projection surface
@@ -279,18 +312,80 @@ void SpectrogramRenderer::draw()
 
     if (0==freqPerPixel) freqPerPixel=timePerPixel;
     if (0==timePerPixel) timePerPixel=freqPerPixel;
+    timePerPixel*=_redundancy;
+    freqPerPixel*=_redundancy;
 
     Spectrogram::Reference ref = _spectrogram->findReference(Spectrogram::Position(wBase[0], wBase[2]), Spectrogram::Position(timePerPixel, freqPerPixel));
 
-    // This is the starting point for rendering the dataset
+    Spectrogram::Position mss = _spectrogram->max_sample_size();
+    ref = _spectrogram->findReference(Spectrogram::Position(0,0), mss);
+
+    beginVboRendering();
+
     renderChildrenSpectrogramRef(ref);
+
+/*    // This is the starting point for rendering the dataset
+    while (false==renderChildrenSpectrogramRef(ref) && !ref.parent().toLarge() )
+        ref = ref.parent();
+
+
 
     // Render its parent and parent and parent until a the largest section is found or a section is found that covers the entire viewed area
     renderParentSpectrogramRef( ref );
+*/
+    endVboRendering();
 
     GlException_CHECK_ERROR();
 }
 
+void SpectrogramRenderer::beginVboRendering()
+{
+    unsigned meshW = _spectrogram->samples_per_block();
+    unsigned meshH = _spectrogram->scales_per_block();
+
+    glUseProgram(_shader_prog);
+
+    // Set default uniform variables parameters for the vertex shader
+    GLuint uniHeightScale, uniChopiness, uniSize;
+
+    uniHeightScale = glGetUniformLocation(_shader_prog, "heightScale");
+    glUniform1f(uniHeightScale, 0.5f);
+
+    uniChopiness   = glGetUniformLocation(_shader_prog, "chopiness");
+    glUniform1f(uniChopiness, 1.0f);
+
+    uniSize        = glGetUniformLocation(_shader_prog, "size");
+    glUniform2f(uniSize, meshW, meshH);
+
+    // Set default uniform variables parameters for the pixel shader
+    GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
+
+    uniDeepColor = glGetUniformLocation(_shader_prog, "deepColor");
+    glUniform4f(uniDeepColor, 0.0f, 0.0f, 0.1f, 1.0f);
+
+    uniShallowColor = glGetUniformLocation(_shader_prog, "shallowColor");
+    glUniform4f(uniShallowColor, 0.1f, 0.4f, 0.3f, 1.0f);
+
+    uniSkyColor = glGetUniformLocation(_shader_prog, "skyColor");
+    glUniform4f(uniSkyColor, 0.5f, 0.5f, 0.5f, 1.0f);
+
+    uniLightDir = glGetUniformLocation(_shader_prog, "lightDir");
+    glUniform3f(uniLightDir, 0.0f, 1.0f, 0.0f);
+    // end of uniform settings
+
+    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
+    glVertexPointer(4, GL_FLOAT, 0, 0);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+}
+
+void SpectrogramRenderer::endVboRendering() {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glUseProgram(0);
+}
 
 bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref )
 {
@@ -333,50 +428,20 @@ bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference r
     if (!ref.containsSpectrogram())
         return false;
 
-    Spectrogram::Position p[2];
-    ref.getArea( p[0], p[1] );
-
-    GLvector corner[4];
-    for (int i=0; i<4; i++)
-        corner[i] = GLvector( p[i/2].time, 0, p[i%2].scale);
-
-    bool valid[4], visible = false;
-    for (int i=0; i<4; i++)
-        visible |= (valid[i] = inFrontOfCamera( corner[i] ));
-
-    if (!visible)
+    float timePixels, scalePixels;
+    if (!computePixelsPerUnit( ref, timePixels, scalePixels))
         return false;
-
-    GLvector screen[4];
-    for (int i=0; i<4; i++) {
-        if (!valid[i]) continue;
-        screen[i] = gluProject( corner[i] );
-    }
-
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-    bool above=true, under=true, right=true, left=true;
-    for (int i=0; i<4; i++) {
-        if (!valid[i]) continue;
-        if (screen[i][0] > view[0]) left=false;
-        if (screen[i][0] < view[0]+view[2]) right=false;
-        if (screen[i][1] > view[1]) under=false;
-        if (screen[i][1] < view[1]+view[3]) above=false;
-    }
-
-    if (above || under || right || left)
-        return false;
-
-    GLdouble t1 = valid[0] && valid[2] ? (screen[0]-screen[2]).length() : 0;
-    GLdouble t2 = valid[1] && valid[3] ? (screen[1]-screen[3]).length() : 0;
-    GLdouble f1 = valid[0] && valid[1] ? (screen[0]-screen[1]).length() : 0;
-    GLdouble f2 = valid[2] && valid[3] ? (screen[2]-screen[3]).length() : 0;
 
     GLdouble needBetterF, needBetterT;
-    if (0==f1 && 0==f2) needBetterF = 1.1;
-    else needBetterF = max(f1,f2) / _spectrogram->scales_per_block();
-    if (0==t1 && 0==t2) needBetterT = 1.1;
-    else needBetterT = max(t1,t2) / _spectrogram->samples_per_block();
+
+    if (0==scalePixels)
+        needBetterF = 1.01;
+    else
+        needBetterF = scalePixels / (_redundancy*_spectrogram->scales_per_block());
+    if (0==timePixels)
+        needBetterT = 1.01;
+    else
+        needBetterT = timePixels / (_redundancy*_spectrogram->samples_per_block());
 
     if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() ) {
         renderChildrenSpectrogramRef( ref.top() );
@@ -404,3 +469,122 @@ void SpectrogramRenderer::renderParentSpectrogramRef( Spectrogram::Reference ref
         renderParentSpectrogramRef( ref.parent() );
 }
 
+// the normal does not need to be normalized, and back/front doesn't matter
+static float linePlane( GLvector planeNormal, GLvector pt, GLvector dir ) {
+    return -(pt % planeNormal)/ (dir % planeNormal);
+}
+
+static GLvector planeIntersection( GLvector planeNormal, GLvector pt, GLvector dir ) {
+    return pt + dir*linePlane(planeNormal, pt, dir);
+}
+
+GLvector xzIntersection( GLvector pt1, GLvector pt2 ) {
+    return planeIntersection( GLvector(0,1,0), pt1, pt2-pt1 );
+}
+
+static GLvector cameraIntersection( GLvector pt1, GLvector pt2, float &s ) {
+    GLvector s1 = applyProjectionMatrix(applyModelMatrix(pt1));
+    GLvector s2 = applyProjectionMatrix(applyModelMatrix(pt2));
+
+    //bs = (.3-s1[2]) / (s2[2]-s1[2]);
+    s = (.03-s1[2]) / (s2[2]-s1[2]);
+    return pt1 + (pt2-pt1)*s;
+}
+
+GLvector xzIntersection2( GLvector pt1, GLvector pt2, float &s ) {
+    s = -pt1[1] / (pt2[1]-pt1[1]);
+    return pt1 + (pt2-pt1)*s;
+}
+
+void updateBounds(float bounds[4], GLvector p) {
+    if (bounds[0] > p[0]) bounds[0] = p[0];
+    if (bounds[2] < p[0]) bounds[2] = p[0];
+    if (bounds[1] > p[1]) bounds[1] = p[1];
+    if (bounds[3] < p[1]) bounds[3] = p[1];
+}
+
+static void updateBorderLength(double& length, GLvector border, float s) {
+    border[2] = 0;
+    length = max(length, border.length()/s);
+}
+
+bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels )
+{
+    Spectrogram::Position p[2];
+    ref.getArea( p[0], p[1] );
+
+    GLvector corner[4]=
+    {
+        GLvector( p[0].time, 0, p[0].scale),
+        GLvector( p[0].time, 0, p[1].scale),
+        GLvector( p[1].time, 0, p[1].scale),
+        GLvector( p[1].time, 0, p[0].scale)
+    };
+
+    bool valid[4], visible = false;
+    for (int i=0; i<4; i++)
+        visible |= (valid[i] = inFrontOfCamera( corner[i] ));
+
+    if (!visible)
+        return false;
+
+    // Find projection of object coordinates in corner[i] onto window coordinates
+    // Compare length in pixels of each side
+    // Check if projection is visible
+    double b[2]={0};
+    GLint view[4];
+    glGetIntegerv(GL_VIEWPORT, view);
+    bool above=true, under=true, right=true, left=true;
+    for (int i=0; i<4; i++)
+    {
+        int nexti=(i+1)%4;
+        GLvector screen[2];
+        float s=NAN;
+
+        if (valid[i] && valid[nexti]) {
+            screen[0] = gluProject( corner[i] );
+            screen[1] = gluProject( corner[nexti] );
+            s = 1;
+
+        } else if (valid[i] && !valid[nexti]) {
+            GLvector xz = cameraIntersection( corner[i], corner[nexti], s );
+            screen[0] = gluProject( corner[i] );
+            screen[1] =  gluProject( xz );
+
+        } else if (!valid[i] && valid[nexti]) {
+            GLvector xz = cameraIntersection( corner[i], corner[nexti], s );
+            screen[0] = gluProject( xz );
+            screen[1] = gluProject( corner[nexti] );
+        }
+
+        if (isnan(s))
+            continue;
+
+        bool labove=true, lunder=true, lright=true, lleft=true;
+        for (int j=0; j<2; j++) {
+            if (screen[j][0] > view[0]) lleft=false;
+            if (screen[j][0] < view[0]+view[2]) lright=false;
+            if (screen[j][1] > view[1]) lunder=false;
+            if (screen[j][1] < view[1]+view[3]) labove=false;
+        }
+
+        above &= labove;
+        under &= lunder;
+        right &= lright;
+        left &= lleft;
+        // If everything is
+        if (labove || lunder || lright || lleft)
+            continue;
+
+        updateBorderLength( b[i%2], screen[0] - screen[1], s );
+    }
+
+    // If everything is
+    if (above || under || right || left)
+        return false;
+
+    scalePixels = b[0];
+    timePixels = b[1];
+
+    return true;
+}

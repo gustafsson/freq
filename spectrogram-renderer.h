@@ -21,6 +21,7 @@ private:
     pVbo _mesh_position;
     GLuint _shader_prog;
     bool _initialized;
+    float _redundancy;
 
     friend class SpectrogramVbo;
 
@@ -29,9 +30,13 @@ private:
     void createMeshIndexBuffer(unsigned w, unsigned h);
     void createMeshPositionVBO(unsigned w, unsigned h);
 
+    void beginVboRendering();
+    void endVboRendering();
+
     bool renderSpectrogramRef( Spectrogram::Reference ref );
     bool renderChildrenSpectrogramRef( Spectrogram::Reference ref );
     void renderParentSpectrogramRef( Spectrogram::Reference ref );
+    bool computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels );
 };
 
 

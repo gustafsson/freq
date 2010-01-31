@@ -14,7 +14,7 @@ int DisplayWidget::lastKey = 0;
 DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval )
 : QGLWidget( ),
   _renderer( new SpectrogramRenderer( spectrogram )),
-  _px(0), _py(0), _pz(0),
+  _px(0), _py(0), _pz(-3),
   _rx(0), _ry(0), _rz(0),
   _qx(0), _qy(0), _qz(0),
   _prevX(0), _prevY(0),
@@ -133,13 +133,6 @@ void DisplayWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-
-    glTranslatef( 0, 0, -3 );
-
-    glBegin(GL_LINE_STRIP);
-            glColor3f(0,0,0);         glVertex3f( 0, 0, 0 );
-            glColor3f(1,0,0);         glVertex3f( _px, _py, _pz );
-    glEnd();
 
     glTranslatef( _px, _py, _pz );
 
