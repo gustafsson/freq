@@ -17,6 +17,7 @@ void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, flo
 WavelettTransform::WavelettTransform( const char* filename )
 {
     _originalWaveform.reset( new Waveform( filename ));
+    granularity = 40; // scales per octave
 
     CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 }
@@ -63,6 +64,7 @@ TaskTimer tt(__FUNCTION__);
     _transform.reset( new TransformData());
     _transform->maxHz = _originalWaveform->_sample_rate/2;
     _transform->minHz = 20;
+    //_transform->minHz = 4;
     _transform->sampleRate = _originalWaveform->_sample_rate;
 
     // Size of padded in-signal
@@ -71,7 +73,6 @@ TaskTimer tt(__FUNCTION__);
 
     // Count number of scales to use
     float octaves = log2(_transform->maxHz)-log2(_transform->minHz);
-    float granularity = 60; // scales per octave
     unsigned nFrequencies = granularity*octaves;
 
     // Allocate transform
@@ -84,7 +85,8 @@ TaskTimer tt(__FUNCTION__);
         // Padd in-signal
         GpuCpuData<float> waveform_ft((float*)0, make_cudaExtent(2*n,1,1), GpuCpuVoidData::CudaGlobal);
         cudaMemset( waveform_ft.getCudaGlobal().ptr(), 0, waveform_ft.getSizeInBytes1D());
-
+printf("noe.width*sizeof(float) = %d\n", noe.width*sizeof(float));
+printf("n*sizeof(float) = %d\n", n*sizeof(float));
         //cudaMemcpy( waveform_ft.getCudaGlobal().ptr(), _originalWaveform->_waveformData->getCpuMemory(), noe.width*sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy( waveform_ft.getCudaGlobal().ptr()+2, complexOriginal.getCudaGlobal().ptr(), noe.width*sizeof(float)*2, cudaMemcpyDeviceToDevice);
         //int cW = memcmp(waveform_ft.getCpuMemory(), _originalWaveform->_waveformData->getCpuMemory(), noe.width*sizeof(float));

@@ -33,7 +33,6 @@ unix:LIBS += \
     -lmisc
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS += \
-    tmp/wavelet_cuda.o \
     -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \

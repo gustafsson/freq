@@ -1,36 +1,119 @@
 #include <QtGui/QApplication>
 #include <QtGui/QFileDialog>
+#include <iostream>
+#include <stdio.h>
 #include "mainwindow.h"
 #include "displaywidget.h"
-#include "wavelettransform.h"
-#include <iostream>
+
 using namespace std;
+
+static const char _sawe_version_string[] =
+        "sawe version 0.0.2\n";
+
+static const char _sawe_usage_string[] =
+        "sawe [--scales_per_octave=#n] FILENAME\n"
+        "sawe [--scales_per_octave] [--help] [--version] \n";
+
+static unsigned _scales_per_octave = 40;
+static const char* _soundfile = 0;
+static bool _sawe_exit=false;
+
+static int prefixcmp(const char *a, const char *prefix) {
+    for(;*a && *prefix;a++,prefix++) {
+        if (*a < *prefix) return -1;
+        if (*a > *prefix) return 1;
+    }
+    return 0!=*prefix;
+}
+
+
+void atoval(const char *cmd, float& val) {
+    val = atof(cmd);
+}
+void atoval(const char *cmd, unsigned& val) {
+    val = atoi(cmd);
+}
+
+#define readarg(cmd, name) tryreadarg(cmd, "--"#name, #name, _##name)
+
+template<typename Type>
+bool tryreadarg(const char **cmd, const char* prefix, const char* name, Type &val) {
+    if (prefixcmp(*cmd, prefix))
+        return 0;
+    *cmd += strlen(prefix);
+    if (**cmd == '=')
+        atoval(*cmd+1, val);
+    else {
+        cout << "default " << name << "=" << val << endl;
+        _sawe_exit = true;
+    }
+    return 1;
+}
+
+static int handle_options(char ***argv, int *argc)
+{
+    int handled = 0;
+
+    while (*argc > 0) {
+        const char *cmd = (*argv)[0];
+        if (cmd[0] != '-')
+            break;
+
+        if (!strcmp(cmd, "--help")) {
+            printf("%s", _sawe_usage_string);
+            _sawe_exit = true;
+        } else if (!strcmp(cmd, "--version")) {
+            printf("%s", _sawe_version_string);
+            _sawe_exit = true;
+        }
+        else if (readarg(&cmd, scales_per_octave));
+        else {
+            fprintf(stderr, "Unknown option: %s\n", cmd);
+            printf("%s", _sawe_usage_string);
+            exit(1);
+        }
+
+        (*argv)++;
+        (*argc)--;
+        handled++;
+    }
+
+    if (_sawe_exit)
+        exit(0);
+
+    return handled;
+}
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     MainWindow w;
+    
+    // skip application filename
+    argv++;
+    argc--;
 
-    QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
-  
-    const char* soundfile = "file0255_2_in.wav";
-    boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(fileName.toAscii().constData()) );
+    while (argc) {
+        handle_options(&argv, &argc);
+
+        if (argc) {
+            _soundfile = argv[0];
+            argv++;
+            argc--;
+        }
+    }
+
+    if (0 == _soundfile) {
+    	QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
+        _soundfile = fileName.toAscii().constData();
+    }
+
+    boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(_soundfile) );
+    wt->granularity = _scales_per_octave;
     boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wt ) );
-
     w.setCentralWidget( dw.get() );
     dw->show();
     w.show();
 
-    {
-        cout << "blaj1" <<endl;
-        //boost::shared_ptr<TransformData> blaj = wt->getWavelettTransform();
-        cout << "blaj2" <<endl;
-    }
-        cout << "blaj3" <<endl;
-    //dw.reset();
-        cout << "blaj4" <<endl;
-        //wt.reset();
-        cout << "blaj5" <<endl;
    return a.exec();
-   // return 0;
 }

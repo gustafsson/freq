@@ -54,7 +54,7 @@ __global__ void WavelettKernel(
     if (x>=numElem.width)
         return;
 
-    const float f0 = 15;
+    const float f0 = .6 + 40*ff*ff*ff;
     const float pi = 3.141592654;
     const float two_pi_f0 = 2.0 * pi * f0;
     const float multiplier = 1.8827925275534296252520792527491;
@@ -62,7 +62,7 @@ __global__ void WavelettKernel(
     period *= f0;
 
     unsigned y = x/2; // compute equal results for the complex and scalar part
-    float factor = 2*pi*y*period-two_pi_f0;
+    float factor = 4*pi*y*period-two_pi_f0;
     float basic = multiplier * exp(-0.5*factor*factor);
 
     out_waveform_ft[offset + x] = in_waveform_ft[x]*basic;

@@ -18,6 +18,8 @@ public:
     boost::shared_ptr<TransformData> computeWavelettTransform( float startt, float endt, float lowf, float highf, unsigned numf );
     boost::shared_ptr<Waveform> computeInverseWaveform();
 
+    float granularity;
+
 private:
     boost::shared_ptr<TransformData> _transform;
     boost::shared_ptr<Waveform> _originalWaveform;

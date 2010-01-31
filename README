@@ -36,7 +36,7 @@ sudo ldconfig
 sudo apt-get install libaudiere-dev libsndfile1-dev libboost1.37-dev libqt4-dev qt-creator libglut-dev git
 
 # download source code
-git clone git@github.com:gustafsson/sonic.git
+git clone git@github.com:reep/sonic.git
 cd sonic
 git submodule update --init 
 
