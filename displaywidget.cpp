@@ -147,12 +147,19 @@ void DisplayWidget::paintGL()
     glTranslatef( qx, qy, qz );
 
     //drawColorFace();
+    glScalef(-1,1,1);
+
     glPushMatrix();
-    glTranslatef( 0, 0, 6 );
-    drawWaveform(wavelett->getOriginalWaveform());
+        glTranslatef( 0, 0, 6 );
+        glColor3f(0,1,0);
+        drawWaveform(wavelett->getInverseWaveform());
+
+        glTranslatef( 0, 0, 1.5 );
+        glColor3f(1,0,0);
+        drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
+
     drawWavelett();
-    drawWaveform(wavelett->getInverseWaveform());
 }
 
 void DisplayWidget::drawArrows()
@@ -252,7 +259,7 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
     {
         glTranslatef(0, 0, -.5); // different channels along y
         glBegin(GL_LINE_STRIP);
-            glColor3f(1-c,c,0);
+            // glColor3f(1-c,c,0);
             for (unsigned t=0; t<n.width; t++) {
                 glVertex3f( -ifs*n.width/2 + ifs*t, s*data[t + c*n.width], 0);
 
