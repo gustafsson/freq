@@ -32,7 +32,7 @@ unix:LIBS += \
     -lmisc
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS += \
-    tmp/wavelet_cuda.o
+    tmp/wavelet_cuda.o \
     -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
@@ -80,8 +80,6 @@ unix {
         ${QMAKE_FILE_OUT}
 #    cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 }
-<<<<<<< HEAD
-=======
 macx { 
     # auto-detect CUDA path
     #CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
@@ -116,7 +114,6 @@ macx {
         -d \
         '\\\n'
 }
->>>>>>> topic-mac-devenv
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
 ########################################################################
