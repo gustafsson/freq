@@ -12,6 +12,13 @@ public:
     ~DisplayWidget();
   static int lastKey;
 
+  enum Yscale {
+      Yscale_Linear,
+      Yscale_ExpLinear,
+      Yscale_LogLinear,
+      Yscale_LogExpLinear
+  } yscale;
+
 protected:
   virtual void initializeGL();
   virtual void resizeGL( int width, int height );

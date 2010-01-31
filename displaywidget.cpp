@@ -20,6 +20,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
   qx(0), qy(0), qz(0),
   prevX(0), prevY(0)
 {
+    yscale = Yscale_LogLinear;
     timeOut();
 
     if( timerInterval == 0 )
@@ -261,7 +262,7 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
         glBegin(GL_LINE_STRIP);
             // glColor3f(1-c,c,0);
             for (unsigned t=0; t<n.width; t++) {
-                glVertex3f( -ifs*n.width/2 + ifs*t, s*data[t + c*n.width], 0);
+                glVertex3f( ifs*t, s*data[t + c*n.width], 0);
 
                 if (fabsf(data[t + c*n.width])>max)
                     max = fabsf(data[t + c*n.width]);
@@ -319,9 +320,22 @@ void DisplayWidget::drawWavelett()
 
                     //float phase = atan2(complex, real);
                     float amplitude = sqrtf(real*real+complex*complex);
-                    v[2][df] = amplitude;// * exp(.001*fi);
-                    v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
-
+                    switch (yscale) {
+                        case Yscale_Linear:
+                            v[2][df] = amplitude;
+                            break;
+                        case Yscale_ExpLinear:
+                            v[2][df] = amplitude * exp(.001*fi);
+                            break;
+                        case Yscale_LogLinear:
+                            v[2][df] = amplitude;
+                            v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
+                            break;
+                        case Yscale_LogExpLinear:
+                            v[2][df] = amplitude * exp(.001*fi);
+                            v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
+                            break;
+                    }
                     //v[2][df] = real;
                 }
 
@@ -332,13 +346,13 @@ void DisplayWidget::drawWavelett()
                 float dt=(v[2][1]-v[0][1]);
                 float df=(v[1][2]-v[1][0]);
                 glNormal3f( -dt, 2, -df );
-                glVertex3f( ifs*t - ifs*tmax/2, s*v[1][1], fi*depthScale);
+                glVertex3f( ifs*t, s*v[1][1], fi*depthScale);
 
                 setWavelengthColor( s*v[1][2] );
                 dt=(v[2][2]-v[0][2]);
                 df=(v[1][3]-v[1][1]);
                 glNormal3f( -dt, 2, -df );
-                glVertex3f( ifs*t - ifs*tmax/2, s*v[1][2], (fi+fstep)*depthScale);
+                glVertex3f( ifs*t, s*v[1][2], (fi+fstep)*depthScale);
 
                 if (fabsf(v[1][1])>max)
                     max = fabsf(v[1][1]);

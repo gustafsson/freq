@@ -11,10 +11,16 @@ static const char _sawe_version_string[] =
         "sawe version 0.0.2\n";
 
 static const char _sawe_usage_string[] =
-        "sawe [--scales_per_octave=#n] FILENAME\n"
-        "sawe [--scales_per_octave] [--help] [--version] \n";
+        "sawe [--scales_per_octave=#n] [--yscale=#y] FILENAME\n"
+        "sawe [--scales_per_octave] [--help] [--version] \n"
+        "\n"
+        "    y      0   A=amplitude of CWT coefficients\n"
+        "           1   A * exp(.001*fi)\n"
+        "           2   log(1 + |A|), default\n"
+        "           3   log(1 + [A * exp(.001*fi)]\n";
 
 static unsigned _scales_per_octave = 40;
+static unsigned _yscale = DisplayWidget::Yscale_LogLinear;
 static const char* _soundfile = 0;
 static bool _sawe_exit=false;
 
@@ -67,6 +73,7 @@ static int handle_options(char ***argv, int *argc)
             _sawe_exit = true;
         }
         else if (readarg(&cmd, scales_per_octave));
+        else if (readarg(&cmd, yscale));
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
             printf("%s", _sawe_usage_string);
@@ -108,9 +115,22 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    switch ( _yscale )
+    {
+        case DisplayWidget::Yscale_Linear:
+        case DisplayWidget::Yscale_ExpLinear:
+        case DisplayWidget::Yscale_LogLinear:
+        case DisplayWidget::Yscale_LogExpLinear:
+            break;
+        default:
+            printf("Invalid yscale value, must be one of {1, 2, 3, 4}\n\n%s", _sawe_usage_string);
+            exit(1);
+    }
+
     boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(_soundfile) );
     wt->granularity = _scales_per_octave;
     boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wt ) );
+    dw->yscale = (DisplayWidget::Yscale)_yscale;
     w.setCentralWidget( dw.get() );
     dw->show();
     w.show();
