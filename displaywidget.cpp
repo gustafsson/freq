@@ -86,9 +86,10 @@ bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
   ox = -s * (world_coord[1][0]-world_coord[0][0]);
   oy = s * (world_coord[1][2]-world_coord[0][2]);
   
-  if( s < 0 || s > 100)
+  float minAngle = 15;
+  if( s < 0 || world_coord[0][1]-world_coord[1][1] < sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
     return false;
-  
+
   return test[0] && test[1];
 }
 
@@ -112,11 +113,12 @@ int DisplayWidget::lastKey = 0;
 
 DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int timerInterval ) : QGLWidget( ),
   wavelett( wavelett ),
-  px(0), py(0), pz(0),
-  rx(0), ry(0), rz(0),
-  qx(0), qy(0), qz(0),
+  px(0), py(0), pz(-10),
+  rx(45), ry(225), rz(0),
+  qx(0), qy(0), qz(-3.6),
   prevX(0), prevY(0)
 {
+    qx = 5 * wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
     yscale = Yscale_LogLinear;
     timeOut();
 
@@ -232,8 +234,15 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     if( rightButton.worldPos(last[0], last[1]) &&
         rightButton.worldPos(x, y, current[0], current[1]) )
     {
+      float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
+
       qx += current[0] - last[0];
       qz += current[1] - last[1];
+
+      if (qx<0) qx=0;
+      if (qz>0) qz=0;
+      if (qz<-8) qz=-8;
+      if (qx>10*l) qx=10*l;
     }
   }
   
@@ -324,8 +333,6 @@ void DisplayWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    glTranslatef( 0, 0, -3 );
-
     glBegin(GL_LINE_STRIP);
             glColor3f(0,0,0);         glVertex3f( v1.x, v1.y, v1.z );
             glColor3f(1,0,0);         glVertex3f( px, py, pz );
@@ -337,7 +344,7 @@ void DisplayWidget::paintGL()
     glRotatef( ry, 0, 1, 0 );
     glRotatef( rz, 0, 0, 1 );
 
-    drawArrows();
+    //drawArrows();
 
     //glTranslatef(-1.5f,0.0f,-6.0f);
     glTranslatef( qx, qy, qz );
@@ -345,7 +352,7 @@ void DisplayWidget::paintGL()
     //drawColorFace();
     glScalef(-1,1-.99*orthoview,1);
 
-    orthoview.TimeStep(.01);
+    orthoview.TimeStep(.08);
 //        repaint();
 
     glPushMatrix();
