@@ -424,6 +424,7 @@ int clamp(int val, int max) {
 
 void setWavelengthColor( float wavelengthScalar ) {
     const float spectrum[][3] = {
+        { 0, 0, 0 },
         { 1, 0, 1 },
         { 0, 0, 1 },
         { 0, 1, 1 },
