@@ -1,8 +1,6 @@
 Navigation
 ==========
-Use z,x,c,d + mouse dragging to navigate
-
-Read setup for notes on developing for Sonic AWE.
+Use mouse dragging to navigate
 
 
 Installation
@@ -11,7 +9,7 @@ A cuda-enabled graphics card is required, check this list if you are unsure abou
 http://www.nvidia.com/object/cuda_learn_products.html
 
 Download binaries for your platform from
-http://github.com/gustafsson/sonicawe/downloads
+http://github.com/reep/sonicawe/downloads
 
 You might also need to install cuda-compatible drivers
 http://www.nvidia.com/object/cuda_get.html
@@ -45,7 +43,7 @@ qmake
 make
 
 
-Get input data for Sonic Awe, there is an example file named file0255_2_in.wav available at https://github.com/gustafsson/sonicawe/downloads. You need to put this file in .../sonic/sonicawe.
+Get input data for Sonic Awe, there is an example file named file0255_2_in.wav available at https://github.com/reep/sonicawe/downloads.
 
 # run Sonic AWE
 cd sonicawe

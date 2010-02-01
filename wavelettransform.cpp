@@ -180,7 +180,7 @@ boost::shared_ptr<Waveform> WavelettTransform::computeInverseWaveform()
         data[i]*=scale;
     tt.info("scales %g, %g, %g", sum, orgsum, scale);
 
-    _inverseWaveform->writeFile("outtest.wav");
+    _inverseWaveform->writeFile("inverse.wav");
 }
     return _inverseWaveform;
 }
