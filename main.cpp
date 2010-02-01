@@ -8,7 +8,7 @@
 using namespace std;
 
 static const char _sawe_version_string[] =
-        "sawe version 0.0.2\n";
+        "sawe version 0.2.1\n";
 
 static const char _sawe_usage_string[] =
         "sawe [--scales_per_octave=#n] [--yscale=#y] FILENAME\n"
