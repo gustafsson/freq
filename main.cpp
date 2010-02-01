@@ -112,6 +112,8 @@ int main(int argc, char *argv[])
 
     if (0 == _soundfile) {
     	QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
+        if (0==fileName.length())
+            return 0;
         _soundfile = fileName.toAscii().constData();
     }
 
