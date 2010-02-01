@@ -216,7 +216,10 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
   //Controlling the rotation with the left button.
   ry += rs * leftButton.deltaX( x );
   rx -= rs * leftButton.deltaY( y );
-  
+  if (rx<0) rx=0;
+  if (rx>90) { rx=90; orthoview=1; }
+  if (0<orthoview && rx<90) { rx=90; orthoview=0; }
+
   //Controlling the the position with the right button.
   
   /*qx += 0.01 * ( cos(ry * deg2rad) * rightButton.deltaX( x ) 
@@ -270,12 +273,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 
 void DisplayWidget::timeOut()
 {
-    try{
-    } catch (...) {
-      string x32= "blaj";
-    }
-  
-  printf("Timeout\n");
+  //printf("Timeout\n");
 }
 
 void DisplayWidget::timeOutSlot()
@@ -345,14 +343,17 @@ void DisplayWidget::paintGL()
     glTranslatef( qx, qy, qz );
 
     //drawColorFace();
-    glScalef(-1,1,1);
+    glScalef(-1,1-.99*orthoview,1);
+
+    orthoview.TimeStep(.01);
+//        repaint();
 
     glPushMatrix();
         glTranslatef( 0, 0, 6 );
         glColor3f(0,1,0);
         drawWaveform(wavelett->getInverseWaveform());
 
-        glTranslatef( 0, 0, 1.5 );
+        glTranslatef( 0, 0, 2 );
         glColor3f(1,0,0);
         drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
@@ -459,7 +460,7 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
         glBegin(GL_LINE_STRIP);
             // glColor3f(1-c,c,0);
             for (unsigned t=0; t<n.width; t++) {
-                glVertex3f( ifs*t, s*data[t + c*n.width], 0);
+                glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
 
                 if (fabsf(data[t + c*n.width])>max)
                     max = fabsf(data[t + c*n.width]);

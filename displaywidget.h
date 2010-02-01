@@ -4,6 +4,7 @@
 #include <QGLWidget>
 #include "wavelettransform.h"
 #include <boost/shared_ptr.hpp>
+#include <TAni.h>
 
 class MouseControl
 {
@@ -45,6 +46,7 @@ public:
       Yscale_LogLinear,
       Yscale_LogExpLinear
   } yscale;
+  floatAni orthoview;
 
 protected:
   virtual void initializeGL();
