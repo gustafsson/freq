@@ -316,7 +316,7 @@ void DisplayWidget::paintGL()
     glTranslatef( px, py, pz );
 
     glRotatef( rx, 1, 0, 0 );
-    glRotatef( fmod(fmod(ry,360)+360, 360) * (1-orthoview) + 180*orthoview, 0, 1, 0 );
+    glRotatef( fmod(fmod(ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( rz, 0, 0, 1 );
 
     //drawArrows();
