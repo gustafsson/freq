@@ -24,6 +24,7 @@ public:
       Writes wave audio with 16 bits per sample
       */
     void writeFile( const char* filename ) const;
+    void play() const;
 
     int _sample_rate;
     int channel_count() {

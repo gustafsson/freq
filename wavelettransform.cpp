@@ -9,15 +9,23 @@
 #include "Statistics.h"
 #include "StatisticsRandom.h"
 #include <string.h>
+#include <float.h>
+#include <limits.h>
+
+using namespace std;
 
 // defined in wavlett.cu
 void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem);
-void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem);
+void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area );
 
 WavelettTransform::WavelettTransform( const char* filename )
 {
+    _t1 = _f1 = 0;
     _originalWaveform.reset( new Waveform( filename ));
+
     granularity = 40; // scales per octave
+    _t2 = _originalWaveform->_waveformData->getNumberOfElements().width / (float)_originalWaveform->_sample_rate;
+    _f2 = 1;
 
     CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 }
@@ -35,6 +43,15 @@ boost::shared_ptr<Waveform> WavelettTransform::getInverseWaveform() {
     if (!_inverseWaveform.get()) computeInverseWaveform();
     return _inverseWaveform;
 }
+
+void WavelettTransform::setInverseArea(float t1, float f1, float t2, float f2) {
+    _inverseWaveform.reset();
+    _t1 = min(t1, t2);
+    _f1 = min(f1, f2);
+    _t2 = max(t1, t2);
+    _f2 = max(f1, f2);
+}
+
 
 void cufftSafeCall( cufftResult_t cufftResult) {
     if (cufftResult != CUFFT_SUCCESS) {
@@ -155,11 +172,18 @@ boost::shared_ptr<Waveform> WavelettTransform::computeInverseWaveform()
     _inverseWaveform->_sample_rate = _originalWaveform->_sample_rate;
     _inverseWaveform->_waveformData.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
 
+    uint4 area = make_uint4(
+            max(0.f, min((float)UINT_MAX, _t1 * _inverseWaveform->_sample_rate)),
+            max(0.f, min((float)UINT_MAX, _f1 * getWavelettTransform()->transformData->getNumberOfElements().height)),
+            max(0.f, min((float)UINT_MAX, _t2 * _inverseWaveform->_sample_rate)),
+            max(0.f, min((float)UINT_MAX, _f2 * getWavelettTransform()->transformData->getNumberOfElements().height)));
+
     ::inverseWavelettTransform(
             getWavelettTransform()->transformData->getCudaGlobal().ptr(),
             getWavelettTransform()->transformData->getNumberOfElements(),
             _inverseWaveform->_waveformData->getCudaGlobal().ptr(),
-            _inverseWaveform->_waveformData->getNumberOfElements()
+            _inverseWaveform->_waveformData->getNumberOfElements(),
+            area
     );
 }
         {
@@ -167,18 +191,37 @@ boost::shared_ptr<Waveform> WavelettTransform::computeInverseWaveform()
 
     size_t n = _inverseWaveform->_waveformData->getNumberOfElements1D();
     float* data = _inverseWaveform->_waveformData->getCpuMemory();
-    float* orgdata = _originalWaveform->_waveformData->getCpuMemory();
-    double sum = 0, orgsum=0;
-    for (size_t i=0; i<n; i++) {
-        sum += fabsf(data[i]);
+    static float scale = -1;
+    if (scale<0) {
+        switch (1) {
+            case 1:
+            {
+                float* orgdata = _originalWaveform->_waveformData->getCpuMemory();
+                double sum = 0, orgsum=0;
+                for (size_t i=0; i<n; i++) {
+                    sum += fabsf(data[i]);
+                }
+                for (size_t i=0; i<n; i++) {
+                    orgsum += fabsf(orgdata[i]);
+                }
+                scale = orgsum/sum;
+                tt.info("scales %g, %g, %g", sum, orgsum, scale);
+                break;
+            }
+            case 2:
+            {
+                float m = 0;
+                for (size_t i=0; i<n; i++) {
+                    m = max(m, fabsf(data[i]));
+                }
+                scale = 1.f/m;
+                break;
+            }
+        }
     }
-    for (size_t i=0; i<n; i++) {
-        orgsum += fabsf(orgdata[i]);
-    }
-    float scale = orgsum/sum;
+
     for (size_t i=0; i<n; i++)
         data[i]*=scale;
-    tt.info("scales %g, %g, %g", sum, orgsum, scale);
 
     _inverseWaveform->writeFile("inverse.wav");
 }

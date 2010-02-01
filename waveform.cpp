@@ -16,6 +16,13 @@ Waveform::Waveform()
 
 Waveform::Waveform (const char* filename)
 {
+    AudioDevicePtr device(OpenDevice());
+    OutputStreamPtr sound(OpenSound(device, filename, false));
+
+    sound->play();
+    sound->setRepeat(true);
+    sound->setVolume(1.0f);
+
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
         throw std::ios_base::failure(string() + "File " + filename + " not found");
@@ -73,4 +80,43 @@ void Waveform::writeFile( const char* filename ) const
     if (not outfile) return;
 
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
+}
+
+void Waveform::play() const {
+    // create signed short representation
+    unsigned num_frames = _waveformData->getNumberOfElements().width;
+    unsigned channel_count = _waveformData->getNumberOfElements().height;
+    std::vector<short> data(num_frames * channel_count );
+    float *fdata = _waveformData->getCpuMemory();
+    unsigned firstNonzero = 0;
+    unsigned lastNonzero = 0;
+    for (unsigned f=0; f<num_frames; f++)
+        for (unsigned c=0; c<channel_count; c++)
+            if (fdata[f*channel_count + c])
+                lastNonzero = max(lastNonzero, f);
+            else if (firstNonzero==f)
+                firstNonzero = f+1;
+
+    if (firstNonzero > lastNonzero)
+        return;
+
+    for (unsigned f=firstNonzero; f<=lastNonzero; f++)
+        for (unsigned c=0; c<channel_count; c++)
+            data[f*channel_count + c] = fdata[ f + c*num_frames]*32767;
+
+    // play sound
+    AudioDevicePtr device(OpenDevice());
+    SampleBuffer* sampleBuffer = CreateSampleBuffer(
+            data.data(),
+            lastNonzero-firstNonzero+1,
+            channel_count,
+            _sample_rate,
+            SF_S16);
+
+    OutputStreamPtr sound(OpenSound(device, sampleBuffer->openStream(), false));
+
+    sound->setVolume(1.0f);
+    sound->play();
+
+    sleep( 1 + num_frames / _sample_rate );
 }

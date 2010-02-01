@@ -83,10 +83,10 @@ bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
   
   s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
   
-  ox = -s * (world_coord[1][0]-world_coord[0][0]);
-  oy = s * (world_coord[1][2]-world_coord[0][2]);
+  ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
+  oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
   
-  float minAngle = 15;
+  float minAngle = 20;
   if( s < 0 || world_coord[0][1]-world_coord[1][1] < sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
     return false;
 
@@ -115,10 +115,19 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
   wavelett( wavelett ),
   px(0), py(0), pz(-10),
   rx(45), ry(225), rz(0),
-  qx(0), qy(0), qz(-3.6),
-  prevX(0), prevY(0)
+  qx(0), qy(0), qz(3.6f/5),
+  prevX(0), prevY(0),
+  selecting(false)
 {
-    qx = 5 * wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
+    float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
+    qx = .5 * l;
+    selection[0].x = 0;
+    selection[0].y = 0;
+    selection[0].z = 0;
+    selection[1].x = l;
+    selection[1].y = 0;
+    selection[1].z = 1;
+
     yscale = Yscale_LogLinear;
     timeOut();
 
@@ -173,6 +182,10 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
     case Qt::LeftButton:
       leftButton.release();
       //printf("LeftButton: Release\n");
+      if (selecting) {
+        wavelett->getInverseWaveform()->play();
+        selecting = false;
+      }
       break;
       
     case Qt::MidButton:
@@ -188,6 +201,7 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
     default:
       break;
   }
+  glDraw();
 }
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
@@ -215,35 +229,57 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
   
   int x = e->x(), y = this->height() - e->y();
   
-  //Controlling the rotation with the left button.
-  ry += rs * leftButton.deltaX( x );
-  rx -= rs * leftButton.deltaY( y );
-  if (rx<0) rx=0;
-  if (rx>90) { rx=90; orthoview=1; }
-  if (0<orthoview && rx<90) { rx=90; orthoview=0; }
-
-  //Controlling the the position with the right button.
-  
-  /*qx += 0.01 * ( cos(ry * deg2rad) * rightButton.deltaX( x ) 
-              - sin(rx * deg2rad) * sin(ry * deg2rad) * -2*rightButton.deltaY( y ) );
-  qz += 0.01 * ( sin(ry * deg2rad) * rightButton.deltaX( x ) 
-              + sin(rx * deg2rad) * cos(ry * deg2rad) * -2*rightButton.deltaY( y ) );*/
-  if( rightButton.isDown() )
+  if ((leftButton.isDown() && rightButton.isDown()) ||
+     (' '==lastKey))
   {
-    GLvector last, current;
-    if( rightButton.worldPos(last[0], last[1]) &&
-        rightButton.worldPos(x, y, current[0], current[1]) )
+    GLdouble p[2];
+    if (rightButton.worldPos(x, y, p[0], p[1]))
     {
-      float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
+      if (!selecting) {
+        selecting = true;
 
-      qx += current[0] - last[0];
-      qz += current[1] - last[1];
-
-      if (qx<0) qx=0;
-      if (qz>0) qz=0;
-      if (qz<-8) qz=-8;
-      if (qx>10*l) qx=10*l;
+        selection[0].x = selection[1].x = p[0];
+        selection[0].y = selection[1].y = 0;
+        selection[0].z = selection[1].z = p[1];
+      } else {
+        selection[1].x = p[0];
+        selection[1].y = 0;
+        selection[1].z = p[1];
+        wavelett->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+      }
     }
+  } else if (selecting) {
+    // if releasing spacebar but not mouse
+    wavelett->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    wavelett->getInverseWaveform()->play();
+    selecting = false;
+  } else {
+      //Controlling the rotation with the left button.
+      ry += rs * leftButton.deltaX( x );
+      rx -= rs * leftButton.deltaY( y );
+      if (rx<0) rx=0;
+      if (rx>90) { rx=90; orthoview=1; }
+      if (0<orthoview && rx<90) { rx=90; orthoview=0; }
+
+      //Controlling the the position with the right button.
+
+      if( rightButton.isDown() )
+      {
+        GLvector last, current;
+        if( rightButton.worldPos(last[0], last[1]) &&
+            rightButton.worldPos(x, y, current[0], current[1]) )
+        {
+          float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
+
+          qx -= current[0] - last[0];
+          qz -= current[1] - last[1];
+
+          if (qx<0) qx=0;
+          if (qz<0) qz=0;
+          if (qz>8.f/5) qz=8.f/5;
+          if (qx>l) qx=l;
+        }
+      }
   }
   
   
@@ -319,28 +355,25 @@ void DisplayWidget::paintGL()
     glRotatef( fmod(fmod(ry,360)+360, 360) * (1-orthoview) + 180*orthoview, 0, 1, 0 );
     glRotatef( rz, 0, 0, 1 );
 
-    //drawArrows();
+    glScalef(-10, 1-.99*orthoview, 5);
 
-    //glTranslatef(-1.5f,0.0f,-6.0f);
-    glTranslatef( qx, qy, qz );
-
-    //drawColorFace();
-    glScalef(-1,1-.99*orthoview,1);
+    glTranslatef( -qx, -qy, -qz );
 
     orthoview.TimeStep(.08);
-//        repaint();
 
     glPushMatrix();
-        glTranslatef( 0, 0, 6 );
+        glTranslatef( 0, 0, 1.25f );
+        glScalef(1, 1, .15);
         glColor3f(0,1,0);
         drawWaveform(wavelett->getInverseWaveform());
 
-        glTranslatef( 0, 0, 2 );
+        glTranslatef( 0, 0, 2.f );
         glColor3f(1,0,0);
         drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
 
     drawWavelett();
+    drawSelection();
 }
 
 void DisplayWidget::drawArrows()
@@ -427,7 +460,7 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
     const float* data = waveform->_waveformData->getCpuMemory();
 
     n.height = 1;
-    float ifs = 10./waveform->_sample_rate; // step per sample
+    float ifs = 1./waveform->_sample_rate; // step per sample
     float max = 1e-6;
     for (unsigned c=0; c<n.height; c++)
     {
@@ -444,9 +477,6 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
             // glColor3f(1-c,c,0);
             for (unsigned t=0; t<n.width; t++) {
                 glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
-
-                if (fabsf(data[t + c*n.width])>max)
-                    max = fabsf(data[t + c*n.width]);
             }
         glEnd();
     }
@@ -472,16 +502,16 @@ void DisplayWidget::drawWavelett()
     cudaExtent n = transform->transformData->getNumberOfElements();
     const float* data = transform->transformData->getCpuMemory();
 
-    float ifs = 10./transform->sampleRate; // step per sample
+    float ifs = 1./transform->sampleRate; // step per sample
 
-    glTranslatef(0, 0, -(2-1)*0.5); // different channels along y
+    //glTranslatef(0, 0, -(2-1)*0.5); // different channels along y
 
     static float max = 1;
     float s = 1/max;
     max = 0;
     int fstep = 1;
     int tstep = 10;
-    float depthScale = 5.f/n.height;
+    float depthScale = 1.f/n.height;
 
     glEnable(GL_NORMALIZE);
     for (unsigned fi=0; fi+fstep<n.height; fi+=fstep)
@@ -544,4 +574,107 @@ void DisplayWidget::drawWavelett()
 
     if (1<drawn)
         glEndList();
+
+  glDraw();
+}
+
+void DisplayWidget::drawSelection() {
+    float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+    float
+            x1 = max(0.f, min(selection[0].x, selection[1].x)),
+            z1 = max(0.f, min(selection[0].z, selection[1].z)),
+            x2 = min(l, max(selection[0].x, selection[1].x)),
+            z2 = min(1.f, max(selection[0].z, selection[1].z));
+    float y = 1;
+
+
+    glBegin(GL_QUADS);
+        glVertex3f( 0, y, 0 );
+        glVertex3f( 0, y, 1 );
+        glVertex3f( x1, y, 1 );
+        glVertex3f( x1, y, 0 );
+
+        glVertex3f( x1, y, 0 );
+        glVertex3f( x2, y, 0 );
+        glVertex3f( x2, y, z1 );
+        glVertex3f( x1, y, z1 );
+
+        glVertex3f( x1, y, 1 );
+        glVertex3f( x2, y, 1 );
+        glVertex3f( x2, y, z2 );
+        glVertex3f( x1, y, z2 );
+
+        glVertex3f( l, y, 0 );
+        glVertex3f( l, y, 1 );
+        glVertex3f( x2, y, 1 );
+        glVertex3f( x2, y, 0 );
+
+
+        if (x1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x1, y, z2 );
+        }
+
+        if (x2<l) {
+            glVertex3f( x2, y, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+        }
+
+        if (z1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, y, z1 );
+        }
+
+        if (z2<1) {
+            glVertex3f( x1, y, z2 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+        }
+    glEnd();
+    glDisable(GL_BLEND);
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_QUADS);
+        if (x1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x1, y, z2 );
+        }
+
+        if (x2<l) {
+            glVertex3f( x2, y, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+        }
+
+        if (z1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, y, z1 );
+        }
+
+        if (z2<1) {
+            glVertex3f( x1, y, z2 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+        }
+    glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }

@@ -2,10 +2,10 @@
 #include <stdio.h>
 
 __global__ void WavelettKernel( float* in_waveform_ft, float* out_waveform_ft, cudaExtent numElem, float start, float steplogsize  );
-__global__ void InverseKernel( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem );
+__global__ void InverseKernel( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area );
 
 void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem);
-void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem );
+void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area );
 
 void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem)
 {
@@ -68,7 +68,7 @@ __global__ void WavelettKernel(
     out_waveform_ft[offset + x] = in_waveform_ft[x]*basic;
 }
 
-void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem)
+void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area)
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -83,10 +83,10 @@ void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, flo
         return;
     }
 
-    InverseKernel<<<grid, block>>>( in_wavelett_ft, in_numElem, out_inverse_waveform, out_numElem );
+    InverseKernel<<<grid, block>>>( in_wavelett_ft, in_numElem, out_inverse_waveform, out_numElem, area );
 }
 
-__global__ void InverseKernel(float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem )
+__global__ void InverseKernel(float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area )
 {
     const unsigned
             x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
@@ -95,10 +95,13 @@ __global__ void InverseKernel(float* in_wavelett_ft, cudaExtent in_numElem, floa
         return;
 
     float a = 0;
-    for (unsigned fi=0; fi<in_numElem.height; fi++)
-    {
-        // 2*x selects only the real component of the complex transform
-        a += in_wavelett_ft[ 2*x + fi*in_numElem.width ];
+
+    if (x>=area.x && x<=area.z) {
+        for (unsigned fi=area.y; fi<in_numElem.height && fi<area.w; fi++)
+        {
+            // 2*x selects only the real component of the complex transform
+            a += in_wavelett_ft[ 2*x + fi*in_numElem.width ];
+        }
     }
 
     out_inverse_waveform[x] = a;

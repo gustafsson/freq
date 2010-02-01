@@ -75,11 +75,14 @@ private:
   GLdouble projectionMatrix[16];
   
   MyVector v1, v2;
+  MyVector selection[2];
+  bool selecting;
 
   void drawArrows();
   void drawColorFace();
   void drawWaveform(boost::shared_ptr<Waveform> waveform);
   void drawWavelett();
+  void drawSelection();
   
   MouseControl leftButton;
   MouseControl rightButton;
