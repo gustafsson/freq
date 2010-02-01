@@ -247,35 +247,10 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
   }
   
   
-  
-  
   //Updating the buttons
   leftButton.update( x, y );
   rightButton.update( x, y );
   middleButton.update( x, y );
-  
-  /*
-  int dx = e->x() - prevX,
-  dy = e->y() - prevY,
-  d = dx-dy;
-  prevX = e->x(),
-  prevY = e->y();
-  
-  switch( lastKey ) {
-    case 'A': px += d*ps; break;
-    case 'S': py += d*ps; break;
-    case 'D': pz += d*ps; break;
-    case 'Q': rx += d*rs; break;
-    case 'W': ry += d*rs; break;
-    case 'E': rz += d*rs; break;
-    case 'Z': qx += d*ps; break;
-    case 'X': qy += d*ps; break;
-    case 'C': qz += d*ps; break;
-    default:
-      ry += dx*rs;
-      rx += dy*rs;
-      break;
-  }*/
   
   glDraw();
 }
@@ -341,7 +316,7 @@ void DisplayWidget::paintGL()
     glTranslatef( px, py, pz );
 
     glRotatef( rx, 1, 0, 0 );
-    glRotatef( ry, 0, 1, 0 );
+    glRotatef( fmod(fmod(ry,360)+360, 360) * (1-orthoview) + 180*orthoview, 0, 1, 0 );
     glRotatef( rz, 0, 0, 1 );
 
     //drawArrows();
