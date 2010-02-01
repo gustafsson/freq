@@ -29,8 +29,10 @@ Waveform::Waveform (const char* filename)
     unsigned num_frames = _source->getLength();
 
     _waveformData.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
-    std::vector<char> data(num_frames*frame_size*channel_count);
-    _source->read(num_frames, data.data());
+    //std::vector<char> data(num_frames*frame_size*channel_count);
+    //_source->read(num_frames, data.data());
+    char *data = new char[num_frames*frame_size*channel_count];
+    _source->read(num_frames, data);
 
     unsigned j=0;
     float* fdata = _waveformData->getCpuMemory();
@@ -42,11 +44,13 @@ Waveform::Waveform (const char* filename)
         switch(frame_size) {
             case 0:
             case 1: f = data[i*channel_count + c]/127.; break;
-            case 2: f = ((short*)data.data())[i*channel_count + c]/32767.; break;
+            //case 2: f = ((short*)data.data())[i*channel_count + c]/32767.; break;
+            case 2: f = ((short*)data)[i*channel_count + c]/32767.; break;
             default:
                 // assume signed LSB
                 for (unsigned k=0; k<frame_size-1; k++) {
-                    f+=((unsigned char*)data.data())[j++];
+                    //f+=((unsigned char*)data.data())[j++];
+                    f+=((unsigned char*)data)[j++];
                     f/=256.;
                 }
                 f+=data[j++];
@@ -58,6 +62,7 @@ Waveform::Waveform (const char* filename)
     }
 
     Statistics<float> waveform( _waveformData.get() );
+    delete [] data;
 }
 
 void Waveform::writeFile( const char* filename ) const
@@ -70,7 +75,7 @@ void Waveform::writeFile( const char* filename ) const
     int number_of_channels = 1;
     SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
 
-    if (not outfile) return;
+    if (!outfile) return;
 
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
 }
