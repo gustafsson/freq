@@ -43,7 +43,7 @@ qmake
 make
 
 
-Get input data for Sonic Awe, there is an example file named file0255_2_in.wav available at https://github.com/reep/sonicawe/downloads.
+Get input data for Sonic Awe, small wav-files works well. Longer sounds require you to lower scales per octave, see ./run-sonicawe.sh --help.
 
 # run Sonic AWE
 cd sonicawe
