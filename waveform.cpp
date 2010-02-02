@@ -82,7 +82,7 @@ void Waveform::writeFile( const char* filename )
     if (!outfile) return;
 
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
-    play();
+    //play();
 }
 
 class SoundPlayer {

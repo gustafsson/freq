@@ -12,9 +12,10 @@ private:
   float lastx;
   float lasty;
   bool down;
+  unsigned int hold;
   
 public:
-  MouseControl(): down( false ){};
+  MouseControl(): down( false ), hold( 0 ){};
   
   float deltaX( float x );
   float deltaY( float y );
@@ -22,11 +23,15 @@ public:
   bool worldPos(GLdouble &ox, GLdouble &oy);
   static bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy);
   
-  bool isDown(){return down;};
+  bool isDown(){return down;}
+  bool isTouched();
+  int getHold(){return hold;}
   
   void press( float x, float y );
   void update( float x, float y );
   void release();
+  void touch(){hold = 0;}
+  void untouch(){hold++;}
 };
 
 struct MyVector{
@@ -58,13 +63,13 @@ protected:
   virtual void wheelEvent ( QWheelEvent *event );
   virtual void mouseMoveEvent ( QMouseEvent * e );
   virtual void timeOut();
+  void timerEvent( QTimerEvent *te);
 
 protected slots:
   virtual void timeOutSlot();
 
 private:
   boost::shared_ptr<WavelettTransform> wavelett;
-  QTimer *m_timer;
   float px, py, pz,
         rx, ry, rz,
         qx, qy, qz;

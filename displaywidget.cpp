@@ -99,18 +99,28 @@ bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
 
 void MouseControl::press( float x, float y )
 {
+  touch();
   update( x, y );
   down = true;
 }
 void MouseControl::update( float x, float y )
 {
+  touch();
   lastx = x;
   lasty = y;
 }
 void MouseControl::release()
 {
+  //touch();
   down = false;
 }
+bool MouseControl::isTouched()
+{
+  if(hold == 0)
+    return true;
+  else
+    return false;
+};
 
 
 int DisplayWidget::lastKey = 0;
@@ -135,13 +145,9 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
     yscale = Yscale_LogLinear;
     timeOut();
 
-    if( timerInterval == 0 )
-        m_timer = 0;
-    else
+    if( timerInterval != 0 )
     {
-        m_timer = new QTimer( this );
-        connect( m_timer, SIGNAL(timeout()), this, SLOT(timeOutSlot()) );
-        m_timer->start( timerInterval );
+        startTimer(timerInterval);
     }
 }
 
@@ -187,7 +193,8 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
       leftButton.release();
       //printf("LeftButton: Release\n");
       if (selecting) {
-        wavelett->getInverseWaveform()->play();
+        if(leftButton.getHold() < 5)
+          wavelett->getInverseWaveform()->play();
         selecting = false;
       }
       break;
@@ -253,7 +260,8 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
   } else if (selecting) {
     // if releasing spacebar but not mouse
     wavelett->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-    wavelett->getInverseWaveform()->play();
+    if(leftButton.getHold() < 5)
+      wavelett->getInverseWaveform()->play();
     selecting = false;
   } else {
       //Controlling the rotation with the left button.
@@ -295,7 +303,19 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 
 void DisplayWidget::timeOut()
 {
-  //printf("Timeout\n");
+  leftButton.untouch();
+  middleButton.untouch();
+  rightButton.untouch();
+
+  if(selecting && leftButton.getHold() == 5)
+  {
+    wavelett->getInverseWaveform()->play();
+  }
+}
+
+void DisplayWidget::timerEvent(QTimerEvent *te)
+{
+    timeOut();
 }
 
 void DisplayWidget::timeOutSlot()
