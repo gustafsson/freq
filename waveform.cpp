@@ -82,6 +82,7 @@ void Waveform::writeFile( const char* filename )
     if (!outfile) return;
 
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
+    play();
 }
 
 class SoundPlayer {
@@ -89,19 +90,32 @@ class SoundPlayer {
 public:
     SoundPlayer() {
         _device = OpenDevice();
+        toggle = 0;
     }
 
     void play( SampleBufferPtr sampleBuffer, float length )
     {
         _length = length;
-        _sound = OpenSound(_device, sampleBuffer->openStream(), false);
 
-        _sound->play();
+        _sound[toggle] = OpenSound(_device, sampleBuffer->openStream(), false);
+        _sound[toggle]->play();
+
+        unsigned n = (sizeof(_sound)/sizeof(_sound[0]));
+
+        for(unsigned i=0; i<n; i++)
+        {
+            if (_sound[i].get()) {
+                _sound[i]->setVolume( 1- ((toggle + n - i)%n)/(float)n );
+            }
+        }
+
+        toggle = (toggle+1)%n;
     }
 
 private:
     AudioDevicePtr _device;
-    OutputStreamPtr _sound;
+    OutputStreamPtr _sound[10];
+    int toggle;
     float _length;
 };
 
@@ -131,8 +145,10 @@ void Waveform::play() const {
 
     for (unsigned f=firstNonzero; f<=lastNonzero; f++)
         for (unsigned c=0; c<channel_count; c++) {
-            float rampup = min(1.f, (f-firstNonzero)*.01f);
-            float rampdown = min(1.f, (lastNonzero-f)*.01f);
+            float rampup = min(1.f, (f-firstNonzero)*.001f);
+            float rampdown = min(1.f, (lastNonzero-f)*.001f);
+            rampup = 3*rampup*rampup-2*rampup*rampup*rampup;
+            rampdown = 3*rampdown*rampdown-2*rampdown*rampdown*rampdown;
             data[(f-firstNonzero)*channel_count + c] = rampup*rampdown*fdata[ f + c*num_frames]*32767;
         }
 
