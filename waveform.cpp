@@ -85,36 +85,36 @@ void Waveform::writeFile( const char* filename ) const
 class SoundPlayer: public QThread {
 
 public:
-    SoundPlayer( SampleBufferPtr sampleBuffer, float length )
-    :   _length(length)
-    {
-        static AudioDevicePtr device(OpenDevice());
-
-        OutputStreamPtr sound(OpenSound(device, sampleBuffer->openStream(), false));
+    SoundPlayer() {
+        _device = OpenDevice();
     }
 
-    ~SoundPlayer() {
-        if( 0 != sound.get()) {
-            sound->stop();
-        }
+    void play( SampleBufferPtr sampleBuffer, float length )
+    {
+        this->quit();
+        this->wait(1);
+
+        _length = length;
+        _sound = OpenSound(_device, sampleBuffer->openStream(), false);
+
+        this->start();
     }
 
     virtual void run() {
-        if( 0 != sound.get()) {
-            sound->setVolume(1.0f);
-            sound->play();
-            sound->stop();
-            sleep( sound->getLength() );
+        if( 0 != _sound.get()) {
+            _sound->setVolume(1.0f);
+            _sound->play();
 
-        #ifdef _MSC_VER
-            Sleep( (1 + _length)*1000 );
-        #else
-            sleep( 1 + _length );
-        #endif
+            this->msleep( _length*1000 );
+            while (_sound->isPlaying())
+                this->msleep( _length*1000 );
+
+            this->msleep( _length*1000 );
         }
     }
 private:
-    OutputStreamPtr sound;
+    AudioDevicePtr _device;
+    OutputStreamPtr _sound;
     float _length;
 };
 
@@ -122,7 +122,6 @@ void Waveform::play() const {
     // create signed short representation
     unsigned num_frames = _waveformData->getNumberOfElements().width;
     unsigned channel_count = _waveformData->getNumberOfElements().height;
-    boost::scoped_array<short> data( new short[num_frames * channel_count] );
     float *fdata = _waveformData->getCpuMemory();
     unsigned firstNonzero = 0;
     unsigned lastNonzero = 0;
@@ -136,9 +135,14 @@ void Waveform::play() const {
     if (firstNonzero > lastNonzero)
         return;
 
+    boost::scoped_array<short> data( new short[(lastNonzero-firstNonzero+1) * channel_count] );
+
     for (unsigned f=firstNonzero; f<=lastNonzero; f++)
-        for (unsigned c=0; c<channel_count; c++)
-            data[f*channel_count + c] = fdata[ f + c*num_frames]*32767;
+        for (unsigned c=0; c<channel_count; c++) {
+            float rampup = min(1.f, (f-firstNonzero)*.01f);
+            float rampdown = min(1.f, (lastNonzero-f)*.01f);
+            data[(f-firstNonzero)*channel_count + c] = rampup*rampdown*fdata[ f + c*num_frames]*32767;
+        }
 
 
     // play sound
@@ -149,8 +153,6 @@ void Waveform::play() const {
             _sample_rate,
             SF_S16));
 
-    static boost::scoped_ptr<SoundPlayer> sp;
-    sp.reset ();
-    sp.reset ( new SoundPlayer( sampleBuffer, num_frames / (float)_sample_rate ) );
-    sp->run();
+    static SoundPlayer sp;
+    sp.play( sampleBuffer, num_frames / (float)_sample_rate );
 }
