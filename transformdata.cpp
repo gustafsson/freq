@@ -11,7 +11,7 @@ float TransformData::getNearestCoeff( float t, float f )
     unsigned s = t*sampleRate+.5;
     if ( s >= nSamples() ) s=nSamples()-1;
 
-    unsigned fi = round((log(f)-log(minHz))/(log(maxHz)-log(minHz))*nFrequencies());
+    unsigned fi = floor((log(f)-log(minHz))/(log(maxHz)-log(minHz))*nFrequencies() + 0.5);
 
     return transformData->getCpuMemoryConst()[ fi*nSamples() + s ];
 }

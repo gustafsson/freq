@@ -14,6 +14,14 @@
 
 using namespace std;
 
+#ifdef _MSC_VER
+double log2( double n )  
+{  
+    // log(n)/log(2) is log2.  
+    return logl( n ) / logl( 2 );  
+}
+#endif
+
 // defined in wavlett.cu
 void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem);
 void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area );

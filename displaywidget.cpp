@@ -9,6 +9,10 @@
 
 #include <tvector.h>
 
+#ifdef _MSC_VER
+#define M_PI 3.1415926535
+#endif
+
 typedef tvector<3,GLdouble> GLvector;
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {

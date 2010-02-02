@@ -3,6 +3,10 @@
 #include <sndfile.hh> // for writing wav
 #include <math.h>
 #include "Statistics.h"
+#ifdef _MSC_VER
+#include "windows.h"
+#endif
+
 
 using namespace audiere;
 
@@ -19,9 +23,9 @@ Waveform::Waveform (const char* filename)
     AudioDevicePtr device(OpenDevice());
     OutputStreamPtr sound(OpenSound(device, filename, false));
 
-    sound->play();
-    sound->setRepeat(true);
-    sound->setVolume(1.0f);
+    //sound->play();
+    //sound->setRepeat(true);
+    //sound->setVolume(1.0f);
 
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
@@ -36,8 +40,10 @@ Waveform::Waveform (const char* filename)
     unsigned num_frames = _source->getLength();
 
     _waveformData.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
-    std::vector<char> data(num_frames*frame_size*channel_count);
-    _source->read(num_frames, data.data());
+    //std::vector<char> data(num_frames*frame_size*channel_count);
+    //_source->read(num_frames, data.data());
+    char *data = new char[num_frames*frame_size*channel_count];
+    _source->read(num_frames, data);
 
     unsigned j=0;
     float* fdata = _waveformData->getCpuMemory();
@@ -49,11 +55,13 @@ Waveform::Waveform (const char* filename)
         switch(frame_size) {
             case 0:
             case 1: f = data[i*channel_count + c]/127.; break;
-            case 2: f = ((short*)data.data())[i*channel_count + c]/32767.; break;
+            //case 2: f = ((short*)data.data())[i*channel_count + c]/32767.; break;
+            case 2: f = ((short*)data)[i*channel_count + c]/32767.; break;
             default:
                 // assume signed LSB
                 for (unsigned k=0; k<frame_size-1; k++) {
-                    f+=((unsigned char*)data.data())[j++];
+                    //f+=((unsigned char*)data.data())[j++];
+                    f+=((unsigned char*)data)[j++];
                     f/=256.;
                 }
                 f+=data[j++];
@@ -65,6 +73,7 @@ Waveform::Waveform (const char* filename)
     }
 
     Statistics<float> waveform( _waveformData.get() );
+    delete [] data;
 }
 
 void Waveform::writeFile( const char* filename ) const
@@ -77,7 +86,7 @@ void Waveform::writeFile( const char* filename ) const
     int number_of_channels = 1;
     SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
 
-    if (not outfile) return;
+    if (!outfile) return;
 
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
 }
@@ -86,7 +95,8 @@ void Waveform::play() const {
     // create signed short representation
     unsigned num_frames = _waveformData->getNumberOfElements().width;
     unsigned channel_count = _waveformData->getNumberOfElements().height;
-    std::vector<short> data(num_frames * channel_count );
+    //std::vector<short> data(num_frames * channel_count );
+    short *data = new short[ num_frames * channel_count ];
     float *fdata = _waveformData->getCpuMemory();
     unsigned firstNonzero = 0;
     unsigned lastNonzero = 0;
@@ -107,7 +117,8 @@ void Waveform::play() const {
     // play sound
     AudioDevicePtr device(OpenDevice());
     SampleBuffer* sampleBuffer = CreateSampleBuffer(
-            data.data(),
+            //data.data(),
+            data,
             lastNonzero-firstNonzero+1,
             channel_count,
             _sample_rate,
@@ -117,6 +128,10 @@ void Waveform::play() const {
 
     sound->setVolume(1.0f);
     sound->play();
-
+#ifdef _MSC_VER
+    Sleep( (1 + num_frames / _sample_rate)*1000 );
+#else
     sleep( 1 + num_frames / _sample_rate );
+#endif
+    delete [] data;
 }
