@@ -10,6 +10,7 @@
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <QThread>
+#include <QSound>
 
 using namespace audiere;
 
@@ -67,8 +68,9 @@ Waveform::Waveform (const char* filename)
     Statistics<float> waveform( _waveformData.get() );
 }
 
-void Waveform::writeFile( const char* filename ) const
+void Waveform::writeFile( const char* filename )
 {
+    _last_filename = filename;
     // todo: this method only writes mono data from the first (left) channel
 
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
@@ -82,7 +84,7 @@ void Waveform::writeFile( const char* filename ) const
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
 }
 
-class SoundPlayer: public QThread {
+class SoundPlayer {
 
 public:
     SoundPlayer() {
@@ -91,27 +93,12 @@ public:
 
     void play( SampleBufferPtr sampleBuffer, float length )
     {
-        this->quit();
-        this->wait(1);
-
         _length = length;
         _sound = OpenSound(_device, sampleBuffer->openStream(), false);
 
-        this->start();
+        _sound->play();
     }
 
-    virtual void run() {
-        if( 0 != _sound.get()) {
-            _sound->setVolume(1.0f);
-            _sound->play();
-
-            this->msleep( _length*1000 );
-            while (_sound->isPlaying())
-                this->msleep( _length*1000 );
-
-            this->msleep( _length*1000 );
-        }
-    }
 private:
     AudioDevicePtr _device;
     OutputStreamPtr _sound;
@@ -119,6 +106,11 @@ private:
 };
 
 void Waveform::play() const {
+#ifdef MAC
+    QSound::play( _last_filename.c_str() );
+    return;
+#endif
+
     // create signed short representation
     unsigned num_frames = _waveformData->getNumberOfElements().width;
     unsigned channel_count = _waveformData->getNumberOfElements().height;
@@ -143,6 +135,7 @@ void Waveform::play() const {
             float rampdown = min(1.f, (lastNonzero-f)*.01f);
             data[(f-firstNonzero)*channel_count + c] = rampup*rampdown*fdata[ f + c*num_frames]*32767;
         }
+
 
 
     // play sound

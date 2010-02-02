@@ -23,7 +23,7 @@ public:
     /**
       Writes wave audio with 16 bits per sample
       */
-    void writeFile( const char* filename ) const;
+    void writeFile( const char* filename );
     void play() const;
 
     int _sample_rate;
@@ -35,6 +35,7 @@ public:
 
 protected:
     audiere::SampleSource* _source;
+    std::string _last_filename;
 };
 
 #endif // WAVEFORM_H
