@@ -3,6 +3,10 @@
 #include <sndfile.hh> // for writing wav
 #include <math.h>
 #include "Statistics.h"
+#ifdef _MSC_VER
+#include "windows.h"
+#endif
+
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <QThread>
@@ -73,7 +77,7 @@ void Waveform::writeFile( const char* filename ) const
     //int number_of_channels = 1;
     SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
 
-    if (not outfile) return;
+    if (!outfile) return;
 
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
 }
@@ -81,7 +85,7 @@ void Waveform::writeFile( const char* filename ) const
 class SoundPlayer: public QThread {
 
 public:
-    SoundPlayer( SampleBufferPtr sampleBuffer )
+    SoundPlayer( SampleBufferPtr sampleBuffer, float length )
     {
         static AudioDevicePtr device(OpenDevice());
 
@@ -100,10 +104,17 @@ public:
             sound->play();
             sound->stop();
             sleep( sound->getLength() );
+
+        #ifdef _MSC_VER
+            Sleep( (1 + length)*1000 );
+        #else
+            sleep( 1 + length );
+        #endif
         }
     }
 private:
     OutputStreamPtr sound;
+    float length;
 };
 
 void Waveform::play() const {

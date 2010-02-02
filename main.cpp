@@ -23,7 +23,7 @@ static const char _sawe_usage_string[] =
 
 static unsigned _scales_per_octave = 40;
 static unsigned _yscale = DisplayWidget::Yscale_LogLinear;
-static const char* _soundfile = 0;
+static std::string _soundfile = "";
 static bool _sawe_exit=false;
 
 static int prefixcmp(const char *a, const char *prefix) {
@@ -132,12 +132,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (0 == _soundfile || !QFile::exists(_soundfile)) {
+    if (0 == _soundfile.length() || !QFile::exists(_soundfile)) {
     	QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
-        if (0==fileName.length())
+        if (0 == fileName.length())
             return 0;
-        _soundfile = fileName.toAscii().constData();
+        _soundfile = fileName.toStdString();
     }
+    printf("Reading file: %s\n", _soundfile.c_str());
 
     switch ( _yscale )
     {
@@ -151,7 +152,7 @@ int main(int argc, char *argv[])
             exit(1);
     }
 
-    boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(_soundfile) );
+    boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(_soundfile.c_str()) );
     wt->granularity = _scales_per_octave;
     boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wt ) );
     dw->yscale = (DisplayWidget::Yscale)_yscale;
