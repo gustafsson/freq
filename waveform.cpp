@@ -74,7 +74,7 @@ void Waveform::writeFile( const char* filename ) const
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
     //  const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
-    int number_of_channels = 1;
+    //int number_of_channels = 1;
     SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
 
     if (not outfile) return;

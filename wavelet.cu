@@ -54,16 +54,16 @@ __global__ void WavelettKernel(
     if (x>=numElem.width)
         return;
 
-    const float f0 = .6 + 40*ff*ff*ff;
-    const float pi = 3.141592654;
-    const float two_pi_f0 = 2.0 * pi * f0;
-    const float multiplier = 1.8827925275534296252520792527491;
+    const float f0 = .6f + 40*ff*ff*ff;
+    const float pi = 3.141592654f;
+    const float two_pi_f0 = 2.0f * pi * f0;
+    const float multiplier = 1.8827925275534296252520792527491f;
 
     period *= f0;
 
     unsigned y = x/2; // compute equal results for the complex and scalar part
     float factor = 4*pi*y*period-two_pi_f0;
-    float basic = multiplier * exp(-0.5*factor*factor);
+    float basic = multiplier * exp(-0.5f*factor*factor);
 
     out_waveform_ft[offset + x] = in_waveform_ft[x]*basic;
 }
