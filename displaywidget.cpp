@@ -227,9 +227,7 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
-  float rs = 0.2,
-        ps = 0.002 - pz/1000,
-        deg2rad = 3.1415926535/180;
+  float rs = 0.2;
   
   int x = e->x(), y = this->height() - e->y();
   

@@ -76,7 +76,7 @@ boost::shared_ptr<TransformData> WavelettTransform::computeCompleteWavelettTrans
     GpuCpuData<float> complexOriginal(0, x);
     float *original = _originalWaveform->_waveformData->getCpuMemory();
     float *complex = complexOriginal.getCpuMemory();
-    for (int i=0; i<x.width/2; i++) {
+    for (unsigned i=0; i<x.width/2; i++) {
         complex[i*2 + 0] = original[i];
         complex[i*2 + 1] = 0;
     }
@@ -110,8 +110,8 @@ TaskTimer tt(__FUNCTION__);
         // Padd in-signal
         GpuCpuData<float> waveform_ft((float*)0, make_cudaExtent(2*n,1,1), GpuCpuVoidData::CudaGlobal);
         cudaMemset( waveform_ft.getCudaGlobal().ptr(), 0, waveform_ft.getSizeInBytes1D());
-printf("noe.width*sizeof(float) = %d\n", noe.width*sizeof(float));
-printf("n*sizeof(float) = %d\n", n*sizeof(float));
+printf("noe.width*sizeof(float) = %lu\n", noe.width*sizeof(float));
+printf("n*sizeof(float) = %lu\n", n*sizeof(float));
         //cudaMemcpy( waveform_ft.getCudaGlobal().ptr(), _originalWaveform->_waveformData->getCpuMemory(), noe.width*sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy( waveform_ft.getCudaGlobal().ptr()+2, complexOriginal.getCudaGlobal().ptr(), noe.width*sizeof(float)*2, cudaMemcpyDeviceToDevice);
         //int cW = memcmp(waveform_ft.getCpuMemory(), _originalWaveform->_waveformData->getCpuMemory(), noe.width*sizeof(float));
@@ -236,7 +236,7 @@ boost::shared_ptr<Waveform> WavelettTransform::computeInverseWaveform()
     return _inverseWaveform;
 }
 
-boost::shared_ptr<TransformData> WavelettTransform::computeWavelettTransform( float startt, float endt, float lowf, float highf, unsigned numf )
+boost::shared_ptr<TransformData> WavelettTransform::computeWavelettTransform( float , float , float , float , unsigned  )
 {
     return boost::shared_ptr<TransformData>();
 }
