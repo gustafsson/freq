@@ -3,6 +3,7 @@
 #include <sndfile.hh> // for writing wav
 #include <math.h>
 #include "Statistics.h"
+#include <boost/scoped_array.hpp>
 
 using namespace audiere;
 
@@ -16,13 +17,6 @@ Waveform::Waveform()
 
 Waveform::Waveform (const char* filename)
 {
-    AudioDevicePtr device(OpenDevice());
-    OutputStreamPtr sound(OpenSound(device, filename, false));
-
-    sound->play();
-    sound->setRepeat(true);
-    sound->setVolume(1.0f);
-
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
         throw std::ios_base::failure(string() + "File " + filename + " not found");
@@ -36,8 +30,8 @@ Waveform::Waveform (const char* filename)
     unsigned num_frames = _source->getLength();
 
     _waveformData.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
-    std::vector<char> data(num_frames*frame_size*channel_count);
-    _source->read(num_frames, data.data());
+    boost::scoped_array<char> data(new char[num_frames*frame_size*channel_count]);
+    _source->read(num_frames, data.get());
 
     unsigned j=0;
     float* fdata = _waveformData->getCpuMemory();
@@ -49,11 +43,11 @@ Waveform::Waveform (const char* filename)
         switch(frame_size) {
             case 0:
             case 1: f = data[i*channel_count + c]/127.; break;
-            case 2: f = ((short*)data.data())[i*channel_count + c]/32767.; break;
+            case 2: f = ((short*)data.get())[i*channel_count + c]/32767.; break;
             default:
                 // assume signed LSB
                 for (unsigned k=0; k<frame_size-1; k++) {
-                    f+=((unsigned char*)data.data())[j++];
+                    f+=((unsigned char*)data.get())[j++];
                     f/=256.;
                 }
                 f+=data[j++];
@@ -86,7 +80,7 @@ void Waveform::play() const {
     // create signed short representation
     unsigned num_frames = _waveformData->getNumberOfElements().width;
     unsigned channel_count = _waveformData->getNumberOfElements().height;
-    std::vector<short> data(num_frames * channel_count );
+    boost::scoped_array<short> data( new short[num_frames * channel_count] );
     float *fdata = _waveformData->getCpuMemory();
     unsigned firstNonzero = 0;
     unsigned lastNonzero = 0;
@@ -107,7 +101,7 @@ void Waveform::play() const {
     // play sound
     AudioDevicePtr device(OpenDevice());
     SampleBuffer* sampleBuffer = CreateSampleBuffer(
-            data.data(),
+            data.get(),
             lastNonzero-firstNonzero+1,
             channel_count,
             _sample_rate,
