@@ -4,6 +4,8 @@
 #include <math.h>
 #include "Statistics.h"
 #include <boost/scoped_array.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <QThread>
 
 using namespace audiere;
 
@@ -76,6 +78,34 @@ void Waveform::writeFile( const char* filename ) const
     outfile.write( _waveformData->getCpuMemory(), _waveformData->getNumberOfElements().width); // yes float
 }
 
+class SoundPlayer: public QThread {
+
+public:
+    SoundPlayer( SampleBufferPtr sampleBuffer )
+    {
+        static AudioDevicePtr device(OpenDevice());
+
+        OutputStreamPtr sound(OpenSound(device, sampleBuffer->openStream(), false));
+    }
+
+    ~SoundPlayer() {
+        if( 0 != sound.get()) {
+            sound->stop();
+        }
+    }
+
+    virtual void run() {
+        if( 0 != sound.get()) {
+            sound->setVolume(1.0f);
+            sound->play();
+            sound->stop();
+            sleep( sound->getLength() );
+        }
+    }
+private:
+    OutputStreamPtr sound;
+};
+
 void Waveform::play() const {
     // create signed short representation
     unsigned num_frames = _waveformData->getNumberOfElements().width;
@@ -98,19 +128,17 @@ void Waveform::play() const {
         for (unsigned c=0; c<channel_count; c++)
             data[f*channel_count + c] = fdata[ f + c*num_frames]*32767;
 
+
     // play sound
-    AudioDevicePtr device(OpenDevice());
-    SampleBuffer* sampleBuffer = CreateSampleBuffer(
+    SampleBufferPtr sampleBuffer( CreateSampleBuffer(
             data.get(),
             lastNonzero-firstNonzero+1,
             channel_count,
             _sample_rate,
-            SF_S16);
+            SF_S16));
 
-    OutputStreamPtr sound(OpenSound(device, sampleBuffer->openStream(), false));
-
-    sound->setVolume(1.0f);
-    sound->play();
-
-    sleep( 1 + num_frames / _sample_rate );
+    static boost::scoped_ptr<SoundPlayer> sp;
+    sp.reset ();
+    sp.reset ( new SoundPlayer( sampleBuffer ) );
+    sp->run();
 }

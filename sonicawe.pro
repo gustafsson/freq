@@ -22,9 +22,9 @@ OTHER_FILES += wavelet.cu
 CUDA_SOURCES += wavelet.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
+unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -r "s/ref:\ refs\\\/heads\\\/master// | sed -r "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
-unix:LIBS += \
-    -lsndfile \
+unix:LIBS += -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib$$IS64 \
     -lcuda \
@@ -32,8 +32,7 @@ unix:LIBS += \
     -L../misc \
     -lmisc
 macx:INCLUDEPATH += /usr/local/cuda/include
-macx:LIBS += \
-    -lsndfile \
+macx:LIBS += -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
     -lcuda \
@@ -64,7 +63,7 @@ win32 {
 }
 unix { 
     # auto-detect CUDA path
-    #CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
+    # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
@@ -78,11 +77,12 @@ unix {
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}
-#    cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 }
+
+# cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 macx { 
     # auto-detect CUDA path
-    #CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
+    # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib
@@ -116,4 +116,4 @@ macx {
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
-########################################################################
+

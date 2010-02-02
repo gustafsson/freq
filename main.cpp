@@ -1,18 +1,20 @@
 #include <QtGui/QApplication>
 #include <QtGui/QFileDialog>
+#include <QTime>
 #include <iostream>
 #include <stdio.h>
 #include "mainwindow.h"
 #include "displaywidget.h"
+#include <sstream>
 
 using namespace std;
 
-static const char _sawe_version_string[] =
-        "sawe version 0.2.1\n";
+static string _sawe_version_string(
+        "Sonic Awe - development snapshot\n");
 
 static const char _sawe_usage_string[] =
-        "sawe [--scales_per_octave=#n] [--yscale=#y] FILENAME\n"
-        "sawe [--scales_per_octave] [--help] [--version] \n"
+        "sonicawe [--scales_per_octave=#n] [--yscale=#y] FILENAME\n"
+        "sonicawe [--scales_per_octave] [--help] [--version] \n"
         "\n"
         "    y      0   A=amplitude of CWT coefficients\n"
         "           1   A * exp(.001*fi)\n"
@@ -69,7 +71,7 @@ static int handle_options(char ***argv, int *argc)
             printf("%s", _sawe_usage_string);
             _sawe_exit = true;
         } else if (!strcmp(cmd, "--version")) {
-            printf("%s", _sawe_version_string);
+            printf("%s", _sawe_version_string.c_str());
             _sawe_exit = true;
         }
         else if (readarg(&cmd, scales_per_octave));
@@ -91,10 +93,30 @@ static int handle_options(char ***argv, int *argc)
     return handled;
 }
 
+#define STRINGIFY(x) #x
+#define TOSTR(x) STRINGIFY(x)
+
 int main(int argc, char *argv[])
 {
+    QDateTime now = QDateTime::currentDateTime();
+    now.date().year();
+    stringstream ss;
+    ss << "Sonic Awe - ";
+#ifdef SONICAWE_VERSION
+    _sawe_version_string = SONICAWE_VERSION;
+#else
+    ss << __DATE__ << " - " << __TIME__;
+#endif
+
+#ifdef SONICAWE_BRANCH
+    if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
+        ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
+#endif
+
+    _sawe_version_string = ss.str();
+
     QApplication a(argc, argv);
-    MainWindow w;
+    MainWindow w(_sawe_version_string.c_str());
     
     // skip application filename
     argv++;
@@ -110,7 +132,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (0 == _soundfile) {
+    if (0 == _soundfile || !QFile::exists(_soundfile)) {
     	QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
         if (0==fileName.length())
             return 0;

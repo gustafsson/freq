@@ -3,10 +3,11 @@
 #include <QKeyEvent>
 #include "displaywidget.h"
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(const char* title, QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setWindowTitle( title );
 }
 
 MainWindow::~MainWindow()
@@ -28,4 +29,3 @@ void MainWindow::keyReleaseEvent ( QKeyEvent *  )
 {
     DisplayWidget::lastKey = 0;
 }
-

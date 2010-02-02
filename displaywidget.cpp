@@ -617,6 +617,10 @@ void DisplayWidget::drawSelection() {
             glVertex3f( x1, 0, z1 );
             glVertex3f( x1, 0, z2 );
             glVertex3f( x1, y, z2 );
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( 0, y, 1 );
         }
 
         if (x2<l) {
@@ -624,6 +628,10 @@ void DisplayWidget::drawSelection() {
             glVertex3f( x2, 0, z1 );
             glVertex3f( x2, 0, z2 );
             glVertex3f( x2, y, z2 );
+            glVertex3f( l, y, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
         }
 
         if (z1>0) {
@@ -631,6 +639,10 @@ void DisplayWidget::drawSelection() {
             glVertex3f( x1, 0, z1 );
             glVertex3f( x2, 0, z1 );
             glVertex3f( x2, y, z1 );
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, y, 0 );
         }
 
         if (z2<1) {
@@ -638,6 +650,10 @@ void DisplayWidget::drawSelection() {
             glVertex3f( x1, 0, z2 );
             glVertex3f( x2, 0, z2 );
             glVertex3f( x2, y, z2 );
+            glVertex3f( 0, y, 1 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
         }
     glEnd();
     glDisable(GL_BLEND);
