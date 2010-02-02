@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (0 == _soundfile.length() || !QFile::exists(_soundfile)) {
+    if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
     	QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
         if (0 == fileName.length())
             return 0;

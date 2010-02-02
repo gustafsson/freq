@@ -125,7 +125,6 @@ macx {
         '\\\n'
 }
 cuda.input = CUDA_SOURCES
-QMAKE_EXTRA_UNIX_COMPILERS += cuda
 
 macx {
 	cuda.input = CUDA_SOURCES

@@ -86,6 +86,7 @@ class SoundPlayer: public QThread {
 
 public:
     SoundPlayer( SampleBufferPtr sampleBuffer, float length )
+    :   _length(length)
     {
         static AudioDevicePtr device(OpenDevice());
 
@@ -106,15 +107,15 @@ public:
             sleep( sound->getLength() );
 
         #ifdef _MSC_VER
-            Sleep( (1 + length)*1000 );
+            Sleep( (1 + _length)*1000 );
         #else
-            sleep( 1 + length );
+            sleep( 1 + _length );
         #endif
         }
     }
 private:
     OutputStreamPtr sound;
-    float length;
+    float _length;
 };
 
 void Waveform::play() const {
@@ -150,6 +151,6 @@ void Waveform::play() const {
 
     static boost::scoped_ptr<SoundPlayer> sp;
     sp.reset ();
-    sp.reset ( new SoundPlayer( sampleBuffer ) );
+    sp.reset ( new SoundPlayer( sampleBuffer, num_frames / (float)_sample_rate ) );
     sp->run();
 }
