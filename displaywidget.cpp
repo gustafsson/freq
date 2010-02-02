@@ -257,7 +257,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     selecting = false;
   } else {
       //Controlling the rotation with the left button.
-      ry += rs * leftButton.deltaX( x );
+      ry += (1-orthoview)*rs * leftButton.deltaX( x );
       rx -= rs * leftButton.deltaY( y );
       if (rx<0) rx=0;
       if (rx>90) { rx=90; orthoview=1; }
