@@ -99,18 +99,28 @@ bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
 
 void MouseControl::press( float x, float y )
 {
+  touch();
   update( x, y );
   down = true;
 }
 void MouseControl::update( float x, float y )
 {
+  touch();
   lastx = x;
   lasty = y;
 }
 void MouseControl::release()
 {
+  //touch();
   down = false;
 }
+bool MouseControl::isTouched()
+{
+  if(hold == 0)
+    return true;
+  else
+    return false;
+};
 
 
 DisplayWidget* DisplayWidget::gDisplayWidget = 0;
@@ -136,13 +146,9 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
     yscale = Yscale_LogLinear;
     timeOut();
 
-    if( timerInterval == 0 )
-        m_timer = 0;
-    else
+    if( timerInterval != 0 )
     {
-        m_timer = new QTimer( this );
-        connect( m_timer, SIGNAL(timeout()), this, SLOT(timeOutSlot()) );
-        m_timer->start( timerInterval );
+        startTimer(timerInterval);
     }
 }
 
@@ -203,7 +209,6 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
       leftButton.release();
       //printf("LeftButton: Release\n");
       if (selecting) {
-        wavelett->getInverseWaveform()->play();
         selecting = false;
       }
       break;
@@ -306,7 +311,19 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 
 void DisplayWidget::timeOut()
 {
-  //printf("Timeout\n");
+  leftButton.untouch();
+  middleButton.untouch();
+  rightButton.untouch();
+
+  if(selecting && leftButton.getHold() == 5)
+  {
+    wavelett->getInverseWaveform()->play();
+  }
+}
+
+void DisplayWidget::timerEvent(QTimerEvent *)
+{
+    timeOut();
 }
 
 void DisplayWidget::timeOutSlot()
@@ -354,10 +371,6 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
-    if (' '==lastKey) {
-        wavelett->getInverseWaveform()->play();
-    }
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
@@ -643,6 +656,15 @@ void DisplayWidget::drawSelection() {
             glVertex3f( 0, 0, 0 );
             glVertex3f( 0, 0, 1 );
             glVertex3f( 0, y, 1 );
+        } else {
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( 0, 0, z1 );
+            glVertex3f( 0, y, z1 );
+            glVertex3f( 0, y, z2 );
+            glVertex3f( 0, 0, z2 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( 0, y, 1 );
         }
 
         if (x2<l) {
@@ -652,6 +674,15 @@ void DisplayWidget::drawSelection() {
             glVertex3f( x2, y, z2 );
             glVertex3f( l, y, 0 );
             glVertex3f( l, 0, 0 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
+        } else {
+            glVertex3f( l, y, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, 0, z1 );
+            glVertex3f( l, y, z1 );
+            glVertex3f( l, y, z2 );
+            glVertex3f( l, 0, z2 );
             glVertex3f( l, 0, 1 );
             glVertex3f( l, y, 1 );
         }
@@ -665,6 +696,15 @@ void DisplayWidget::drawSelection() {
             glVertex3f( 0, 0, 0 );
             glVertex3f( l, 0, 0 );
             glVertex3f( l, y, 0 );
+        } else {
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( x1, 0, 0 );
+            glVertex3f( x1, y, 0 );
+            glVertex3f( x2, y, 0 );
+            glVertex3f( x2, 0, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, y, 0 );
         }
 
         if (z2<1) {
@@ -674,6 +714,15 @@ void DisplayWidget::drawSelection() {
             glVertex3f( x2, y, z2 );
             glVertex3f( 0, y, 1 );
             glVertex3f( 0, 0, 1 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
+        } else {
+            glVertex3f( 0, y, 1 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( x1, 0, 1 );
+            glVertex3f( x1, y, 1 );
+            glVertex3f( x2, y, 1 );
+            glVertex3f( x2, 0, 1 );
             glVertex3f( l, 0, 1 );
             glVertex3f( l, y, 1 );
         }

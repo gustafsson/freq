@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     stringstream ss;
     ss << "Sonic Awe - ";
 #ifdef SONICAWE_VERSION
-    _sawe_version_string = SONICAWE_VERSION;
+    ss << TOSTR(SONICAWE_VERSION);
 #else
     ss << __DATE__ << " - " << __TIME__;
 #endif
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 
     boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(_soundfile.c_str()) );
     wt->granularity = _scales_per_octave;
-    boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wt ) );
+    boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wt, 50 ) );
     dw->yscale = (DisplayWidget::Yscale)_yscale;
     w.setCentralWidget( dw.get() );
     dw->show();
