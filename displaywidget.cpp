@@ -131,7 +131,8 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
   rx(45), ry(225), rz(0),
   qx(0), qy(0), qz(3.6f/5),
   prevX(0), prevY(0),
-  selecting(false)
+  selecting(false),
+  lastKey(0)
 {
     gDisplayWidget = this;
     float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
@@ -162,12 +163,6 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
 
 void DisplayWidget::keyReleaseEvent ( QKeyEvent * e )
 {
-    switch (e->key()) {
-        case Qt::Key_Space:
-            wavelett->getInverseWaveform()->play();
-            selecting = false;
-          break;
-    }
     lastKey = 0;
 }
 
@@ -176,8 +171,10 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
   switch ( e->button() )
   {
     case Qt::LeftButton:
-      
-      leftButton.press( e->x(), this->height() - e->y() );
+      if(' '==lastKey)
+      	selectionButton.press( e->x(), this->height() - e->y() );
+      else
+      	leftButton.press( e->x(), this->height() - e->y() );
       //printf("LeftButton: Press\n");
       break;
       
@@ -196,6 +193,10 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
     default:
       break;
   }
+  
+  if(leftButton.isDown() && rightButton.isDown())
+	selectionButton.press( e->x(), this->height() - e->y() );
+  
   glDraw();
     prevX = e->x(),
     prevY = e->y();
@@ -207,10 +208,9 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
   {
     case Qt::LeftButton:
       leftButton.release();
+      selectionButton.release();
       //printf("LeftButton: Release\n");
-      if (selecting) {
-        selecting = false;
-      }
+      selecting = false;
       break;
       
     case Qt::MidButton:
@@ -220,6 +220,7 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
       
     case Qt::RightButton:
       rightButton.release();
+      selectionButton.release();
       //printf("RightButton: Release\n");
       break;
       
@@ -252,18 +253,16 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
   
   int x = e->x(), y = this->height() - e->y();
   
-  if ((leftButton.isDown() && rightButton.isDown()) ||
-     (' '==lastKey))
+  if (selectionButton.isDown())
   {
     GLdouble p[2];
-    if (rightButton.worldPos(x, y, p[0], p[1]))
+    if (selectionButton.worldPos(x, y, p[0], p[1]))
     {
       if (!selecting) {
-        selecting = true;
-
         selection[0].x = selection[1].x = p[0];
         selection[0].y = selection[1].y = 0;
         selection[0].z = selection[1].z = p[1];
+        selecting = true;
       } else {
         selection[1].x = p[0];
         selection[1].y = 0;
@@ -305,6 +304,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
   leftButton.update( x, y );
   rightButton.update( x, y );
   middleButton.update( x, y );
+  selectionButton.update( x, y );
   
   glDraw();
 }
@@ -314,8 +314,9 @@ void DisplayWidget::timeOut()
   leftButton.untouch();
   middleButton.untouch();
   rightButton.untouch();
+  selectionButton.untouch();
 
-  if(selecting && leftButton.getHold() == 5)
+  if(selectionButton.isDown() && selectionButton.getHold() == 5)
   {
     wavelett->getInverseWaveform()->play();
   }

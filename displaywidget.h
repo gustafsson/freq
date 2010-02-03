@@ -95,6 +95,7 @@ private:
   MouseControl leftButton;
   MouseControl rightButton;
   MouseControl middleButton;
+  MouseControl selectionButton;
 };
 
 #endif // DISPLAYWIDGET_H
