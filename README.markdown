@@ -1,8 +1,17 @@
-Navigation
+Sonic Awe
 ==========
-Use mouse dragging to navigate
+Because the world deserves scalograms
+* * * 
+#### Navigation
 
-http://reep.github.com/sonicawe/dev.html
+Use mouse dragging to navigate.
 
-have fun
-johan.gustafsson@reep.se
+* * * 
+#### Development setup, license, ...
+
+
+[dev page](http://reep.github.com/sonicawe/dev.html)
+
+* * * 
+#### have fun
+sonicawe@reep.se
