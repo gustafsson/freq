@@ -113,7 +113,7 @@ void MouseControl::release()
 }
 
 
-int DisplayWidget::lastKey = 0;
+DisplayWidget* DisplayWidget::gDisplayWidget = 0;
 
 DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int timerInterval ) : QGLWidget( ),
   wavelett( wavelett ),
@@ -123,6 +123,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
   prevX(0), prevY(0),
   selecting(false)
 {
+    gDisplayWidget = this;
     float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
     qx = .5 * l;
     selection[0].x = 0;
@@ -148,6 +149,21 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
 DisplayWidget::~DisplayWidget()
 {}
 
+void DisplayWidget::keyPressEvent( QKeyEvent *e )
+{
+    lastKey = e->key();
+}
+
+void DisplayWidget::keyReleaseEvent ( QKeyEvent * e )
+{
+    switch (e->key()) {
+        case Qt::Key_Space:
+            wavelett->getInverseWaveform()->play();
+            selecting = false;
+          break;
+    }
+    lastKey = 0;
+}
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
@@ -250,11 +266,6 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         wavelett->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
       }
     }
-  } else if (selecting) {
-    // if releasing spacebar but not mouse
-    wavelett->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-    wavelett->getInverseWaveform()->play();
-    selecting = false;
   } else {
       //Controlling the rotation with the left button.
       ry += (1-orthoview)*rs * leftButton.deltaX( x );
@@ -343,6 +354,10 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
+    if (' '==lastKey) {
+        wavelett->getInverseWaveform()->play();
+    }
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
@@ -504,6 +519,8 @@ void DisplayWidget::drawWavelett()
     cudaExtent n = transform->transformData->getNumberOfElements();
     const float* data = transform->transformData->getCpuMemory();
 
+    cudaExtent waveformn = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements();
+
     float ifs = 1./transform->sampleRate; // step per sample
 
     //glTranslatef(0, 0, -(2-1)*0.5); // different channels along y
@@ -521,7 +538,8 @@ void DisplayWidget::drawWavelett()
         glBegin(GL_TRIANGLE_STRIP);
             float v[3][4] = {{0}};
 
-            int tmax = n.width>>1;
+            int tmax = waveformn.width; // cropped transform to input length
+            // int tmax = n.width>>1; complete transform with padding
             for (int t=-1; t<=tmax; t+=tstep)
             {
                 for (unsigned dt=0; dt<2; dt++)

@@ -38,7 +38,8 @@ class DisplayWidget : public QGLWidget
 public:
     DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int timerInterval=0 );
     ~DisplayWidget();
-  static int lastKey;
+  int lastKey;
+  static DisplayWidget* gDisplayWidget;
 
   enum Yscale {
       Yscale_Linear,
@@ -48,6 +49,8 @@ public:
   } yscale;
   floatAni orthoview;
 
+  virtual void keyPressEvent( QKeyEvent *e );
+  virtual void keyReleaseEvent ( QKeyEvent * e );
 protected:
   virtual void initializeGL();
   virtual void resizeGL( int width, int height );

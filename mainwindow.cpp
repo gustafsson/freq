@@ -17,15 +17,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::keyPressEvent( QKeyEvent *e )
 {
-    DisplayWidget::lastKey = e->key();
+    if (e->isAutoRepeat())
+        return;
+
     switch( e->key() )
     {
     case Qt::Key_Escape:
         close();
+    default:
+        DisplayWidget::gDisplayWidget->keyPressEvent(e);
     }
 }
 
-void MainWindow::keyReleaseEvent ( QKeyEvent *  )
+void MainWindow::keyReleaseEvent ( QKeyEvent * e )
 {
-    DisplayWidget::lastKey = 0;
+    if (e->isAutoRepeat())
+        return;
+
+    DisplayWidget::gDisplayWidget->keyReleaseEvent(e);
 }
