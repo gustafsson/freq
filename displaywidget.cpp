@@ -158,7 +158,10 @@ DisplayWidget::~DisplayWidget()
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
-    lastKey = e->key();
+	lastKey = e->key();
+	if(lastKey == ' ' ){
+		wavelett->getInverseWaveform()->play();
+	}
 }
 
 void DisplayWidget::keyReleaseEvent ( QKeyEvent * e )
