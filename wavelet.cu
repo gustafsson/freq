@@ -64,8 +64,7 @@ __global__ void WavelettKernel(
     unsigned y = x/2; // compute equal results for the complex and scalar part
     float factor = 4*pi*y*period-two_pi_f0;
     float basic = multiplier * exp(-0.5f*factor*factor);
-    float randomCorrectionFactor = ff*ff*sqrt(ff);
-    out_waveform_ft[offset + x] = in_waveform_ft[x]*basic*randomCorrectionFactor;
+    out_waveform_ft[offset + x] = in_waveform_ft[x]*basic*f0;
 }
 
 void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area)
