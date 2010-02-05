@@ -9,6 +9,8 @@
 
 #include <tvector.h>
 #include <math.h>
+#include <GL/glut.h>
+#include <stdio.h>
 
 #ifdef _MSC_VER
 #define M_PI 3.1415926535
@@ -135,6 +137,8 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int
   prevX(0), prevY(0),
   selecting(false)
 {
+    int c=0;
+    glutInit(&c,0);
     gDisplayWidget = this;
     float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
     qx = .5 * l;
@@ -236,7 +240,7 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
 {
-  float ps = 0.005;
+  float ps = 0.0005;
   float rs = 0.08;
   if( e->orientation() == Qt::Horizontal )
   {
@@ -347,6 +351,7 @@ void DisplayWidget::initializeGL()
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    glEnable(GL_LINE_SMOOTH);
 //    glDepthFunc(GL_NEVER);
 
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
@@ -627,6 +632,77 @@ void DisplayWidget::drawWavelett()
         glEnd();
     }
     glDisable(GL_NORMALIZE);
+
+    glLineWidth(3);
+    glColor4f(0,0,0,1);
+
+    unsigned sz=10;
+    boost::shared_ptr<TransformData> t = wavelett->getWavelettTransform();
+    unsigned f = t->minHz;
+    f = f/sz*sz;
+    float l = waveformn.width*ifs;
+    while(f < t->sampleRate*.5)
+    {
+        // float period = start*exp(-ff*steplogsize);
+        // f = 1/period = 1/start*exp(ff*)
+        float start = t->sampleRate/t->minHz/n.width;
+        float steplogsize = log(t->maxHz)-log(t->minHz);
+
+        float ff = log(f*start)/steplogsize;
+        if (ff>1)
+            break;
+        float g=(f/sz == 1)?2:1;
+        glLineWidth(g);
+    glBegin(GL_LINES);
+        glVertex3f(-.015f*g, 0, ff);
+        glVertex3f(0.f, 0, ff);
+        glVertex3f( l+.015f*g, 0, ff);
+        glVertex3f( l, 0, ff);
+    glEnd();
+        f += sz;
+        if(f/sz >= 10) {
+            sz*=10;
+
+            glLineWidth(1);
+            glPushMatrix();
+            glTranslatef(-.03f,0,ff);
+            glRotatef(90,0,1,0);
+            glRotatef(90,1,0,0);
+            glScalef(0.0002f,0.0001f,0.0001f);
+            char a[100];
+            sprintf(a,"%d", f);
+            for (char*c=a;*c!=0; c++)
+                glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+            glPopMatrix();
+        }
+    }
+
+    for (float s=0; s<l;)
+    {
+        for (unsigned m=0; m<10 && s<l; s+=.01, m++)
+        {
+            float g = m==0?2:1;
+            glLineWidth(g);
+    glBegin(GL_LINES);
+            glVertex3f(s, 0, -.015f*g);
+            glVertex3f(s, 0, 0.f);
+            glVertex3f(s, 0, 1+.015f*g);
+            glVertex3f(s, 0, 1.f);
+    glEnd();
+            if (0==m) {
+                glLineWidth(1);
+                glPushMatrix();
+                glTranslatef(s+.005,0,-.035f);
+                glRotatef(90,1,0,0);
+                glScalef(0.00015f,0.0001f,0.0001f);
+                char a[100];
+                sprintf(a,"%.1f", s);
+                for (char*c=a;*c!=0; c++)
+                    glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                glPopMatrix();
+            }
+        }
+    }
 
     if (1<drawn)
         glEndList();

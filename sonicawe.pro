@@ -30,7 +30,8 @@ unix:LIBS += -lsndfile \
     -lcuda \
     -lcufft \
     -L../misc \
-    -lmisc
+    -lmisc \
+    -lglut
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS += -lsndfile \
     -laudiere \
