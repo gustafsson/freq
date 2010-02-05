@@ -410,7 +410,7 @@ void DisplayWidget::paintGL()
         drawWaveform(wavelett->getInverseWaveform());
 
         glTranslatef( 0, 0, 2.f );
-        glColor4f(1,0,0,.5);
+        glColor4f(0,0,0,.5);
         drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
 
