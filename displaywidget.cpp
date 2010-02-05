@@ -641,14 +641,14 @@ void DisplayWidget::drawWavelett()
     unsigned f = t->minHz;
     f = f/sz*sz;
     float l = waveformn.width*ifs;
-    while(f < t->sampleRate*.5)
+    while(f < t->maxHz)
     {
         // float period = start*exp(-ff*steplogsize);
-        // f = 1/period = 1/start*exp(ff*)
+        // f = 1/period = 1/start*exp(ff*steplogsize)
         float start = t->sampleRate/t->minHz/n.width;
         float steplogsize = log(t->maxHz)-log(t->minHz);
 
-        float ff = log(f*start)/steplogsize;
+        float ff = log(f/t->minHz)/steplogsize;
         if (ff>1)
             break;
         float g=(f/sz == 1)?2:1;

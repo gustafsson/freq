@@ -26,7 +26,7 @@ Waveform::Waveform (const char* filename)
 {
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
-        throw std::ios_base::failure(string() + "File " + filename + " not found");
+        throw std::ios_base::failure(string() + "File " + filename + " could not be opened");
 
     SampleFormat sample_format;
     int channel_count;
@@ -35,6 +35,9 @@ Waveform::Waveform (const char* filename)
 
     unsigned frame_size = GetSampleSize(sample_format);
     unsigned num_frames = _source->getLength();
+
+    if (0==num_frames)
+        throw std::ios_base::failure(string() + "Failed reding file " + filename);
 
     _waveformData.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
     boost::scoped_array<char> data(new char[num_frames*frame_size*channel_count]);

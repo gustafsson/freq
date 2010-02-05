@@ -152,14 +152,18 @@ int main(int argc, char *argv[])
             exit(1);
     }
 
-    boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(_soundfile.c_str()) );
-    wt->granularity = _scales_per_octave;
-    boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wt, 50 ) );
-    dw->yscale = (DisplayWidget::Yscale)_yscale;
-    w.setCentralWidget( dw.get() );
-    dw->show();
-    w.show();
+    try {
+        boost::shared_ptr<WavelettTransform> wt( new WavelettTransform(_soundfile.c_str()) );
+        wt->granularity = _scales_per_octave;
+        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wt, 50 ) );
+        dw->yscale = (DisplayWidget::Yscale)_yscale;
+        w.setCentralWidget( dw.get() );
+        dw->show();
+        w.show();
 
-   return a.exec();
+       return a.exec();
+    } catch (std::exception &x) {
+        cout << "Error: " << x.what() << endl;
+    }
 }
 
