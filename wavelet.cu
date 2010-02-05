@@ -95,9 +95,23 @@ __global__ void InverseKernel(float* in_wavelett_ft, cudaExtent in_numElem, floa
 
     float a = 0;
 
+ /* box selection
     if (x>=area.x && x<=area.z) {
         for (unsigned fi=area.y; fi<in_numElem.height && fi<area.w; fi++)
         {
+            // 2*x selects only the real component of the complex transform
+            a += in_wavelett_ft[ 2*x + fi*in_numElem.width ];
+        }
+    }*/
+/* disc selection */
+    for (unsigned fi=0; fi<in_numElem.height; fi++)
+    {
+        float rx = area.z-(float)area.x;
+        float ry = area.w-(float)area.y;
+        float dx = x-(float)area.x;
+        float dy = fi-(float)area.y;
+
+        if (dx*dx/rx/rx + dy*dy/ry/ry < 1) {
             // 2*x selects only the real component of the complex transform
             a += in_wavelett_ft[ 2*x + fi*in_numElem.width ];
         }

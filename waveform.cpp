@@ -119,12 +119,7 @@ private:
     float _length;
 };
 
-void Waveform::play() const {
-#ifdef MAC
-    QSound::play( _last_filename.c_str() );
-    return;
-#endif
-
+pWaveform Waveform::crop() {
     // create signed short representation
     unsigned num_frames = _waveformData->getNumberOfElements().width;
     unsigned channel_count = _waveformData->getNumberOfElements().height;
@@ -134,30 +129,58 @@ void Waveform::play() const {
     for (unsigned f=0; f<num_frames; f++)
         for (unsigned c=0; c<channel_count; c++)
             if (fdata[f*channel_count + c])
-                lastNonzero = max(lastNonzero, f);
+                lastNonzero = f;
             else if (firstNonzero==f)
                 firstNonzero = f+1;
 
     if (firstNonzero > lastNonzero)
-        return;
+        return pWaveform();
 
-    boost::scoped_array<short> data( new short[(lastNonzero-firstNonzero+1) * channel_count] );
+    pWaveform wf(new Waveform());
+    wf->_sample_rate = _sample_rate;
+    wf->_waveformData.reset (new GpuCpuData<float>(0, make_cudaExtent((lastNonzero-firstNonzero+1) , channel_count, 1)));
+    float *data = wf->_waveformData->getCpuMemory();
+
 
     for (unsigned f=firstNonzero; f<=lastNonzero; f++)
         for (unsigned c=0; c<channel_count; c++) {
-            float rampup = min(1.f, (f-firstNonzero)*.001f);
-            float rampdown = min(1.f, (lastNonzero-f)*.001f);
+            float rampup = min(1.f, (f-firstNonzero)/(_sample_rate*0.01f));
+            float rampdown = min(1.f, (lastNonzero-f)/(_sample_rate*0.01f));
             rampup = 3*rampup*rampup-2*rampup*rampup*rampup;
             rampdown = 3*rampdown*rampdown-2*rampdown*rampdown*rampdown;
-            data[(f-firstNonzero)*channel_count + c] = rampup*rampdown*fdata[ f + c*num_frames]*32767;
+            data[f-firstNonzero + c*num_frames] = rampup*rampdown*fdata[ f + c*num_frames];
         }
 
+    return wf;
+}
+
+void Waveform::play() {
+#ifdef MAC
+    QSound::play( _last_filename.c_str() );
+    return;
+#endif
+
+    pWaveform wf = this->crop();
+
+    if (!wf.get())
+        return;
+
+    // create signed short representation
+    unsigned num_frames = wf->_waveformData->getNumberOfElements().width;
+    unsigned channel_count = wf->_waveformData->getNumberOfElements().height;
+    float *fdata = wf->_waveformData->getCpuMemory();
+
+
+    boost::scoped_array<short> data( new short[num_frames * channel_count] );
+    for (unsigned f=0; f<num_frames; f++)
+        for (unsigned c=0; c<channel_count; c++)
+            data[f*channel_count + c] = fdata[ f + c*num_frames]*32767;
 
 
     // play sound
     SampleBufferPtr sampleBuffer( CreateSampleBuffer(
             data.get(),
-            lastNonzero-firstNonzero+1,
+            num_frames,
             channel_count,
             _sample_rate,
             SF_S16));

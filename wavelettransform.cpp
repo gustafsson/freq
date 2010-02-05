@@ -54,10 +54,21 @@ boost::shared_ptr<Waveform> WavelettTransform::getInverseWaveform() {
 
 void WavelettTransform::setInverseArea(float t1, float f1, float t2, float f2) {
     _inverseWaveform.reset();
-    _t1 = min(t1, t2);
-    _f1 = min(f1, f2);
-    _t2 = max(t1, t2);
-    _f2 = max(f1, f2);
+    switch(2)
+    {
+    case 1: // square
+        _t1 = min(t1, t2);
+        _f1 = min(f1, f2);
+        _t2 = max(t1, t2);
+        _f2 = max(f1, f2);
+        break;
+    case 2: // circle
+        _t1 = t1;
+        _f1 = f1;
+        _t2 = t2;
+        _f2 = f2;
+        break;
+    }
 }
 
 
@@ -231,7 +242,9 @@ boost::shared_ptr<Waveform> WavelettTransform::computeInverseWaveform()
     for (size_t i=0; i<n; i++)
         data[i]*=scale;
 
-    _inverseWaveform->writeFile("inverse.wav");
+    pWaveform crop = _inverseWaveform->crop();
+    if (crop.get())
+        crop->writeFile("inverse.wav");
 }
     return _inverseWaveform;
 }

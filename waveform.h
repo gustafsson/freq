@@ -2,12 +2,15 @@
 #define WAVEFORM_H
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <GpuCpuData.h>
 
 namespace audiere
 {
     class SampleSource;
 }
+
+typedef boost::shared_ptr<class Waveform> pWaveform;
 
 class Waveform
 {
@@ -24,7 +27,8 @@ public:
       Writes wave audio with 16 bits per sample
       */
     void writeFile( const char* filename );
-    void play() const;
+    pWaveform crop();
+    void play();
 
     int _sample_rate;
     int channel_count() {

@@ -16,13 +16,13 @@ static const char _sawe_usage_string[] =
         "sonicawe [--scales_per_octave=#n] [--yscale=#y] FILENAME\n"
         "sonicawe [--scales_per_octave] [--help] [--version] \n"
         "\n"
-        "    y      0   A=amplitude of CWT coefficients\n"
+        "    y      0   A=amplitude of CWT coefficients, default\n"
         "           1   A * exp(.001*fi)\n"
-        "           2   log(1 + |A|), default\n"
+        "           2   log(1 + |A|)\n"
         "           3   log(1 + [A * exp(.001*fi)]\n";
 
 static unsigned _scales_per_octave = 40;
-static unsigned _yscale = DisplayWidget::Yscale_LogLinear;
+static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static std::string _soundfile = "";
 static bool _sawe_exit=false;
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 #ifdef SONICAWE_VERSION
     ss << TOSTR(SONICAWE_VERSION);
 #else
-    ss << __DATE__ << " - " << __TIME__;
+    ss << __DATE__;// << " - " << __TIME__;
 #endif
 
 #ifdef SONICAWE_BRANCH

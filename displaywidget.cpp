@@ -8,6 +8,7 @@
 #include "wavelettransform.h"
 
 #include <tvector.h>
+#include <math.h>
 
 #ifdef _MSC_VER
 #define M_PI 3.1415926535
@@ -126,23 +127,23 @@ bool MouseControl::isTouched()
 DisplayWidget* DisplayWidget::gDisplayWidget = 0;
 
 DisplayWidget::DisplayWidget( boost::shared_ptr<WavelettTransform> wavelett, int timerInterval ) : QGLWidget( ),
+  lastKey(0),
   wavelett( wavelett ),
   px(0), py(0), pz(-10),
   rx(45), ry(225), rz(0),
   qx(0), qy(0), qz(3.6f/5),
   prevX(0), prevY(0),
-  selecting(false),
-  lastKey(0)
+  selecting(false)
 {
     gDisplayWidget = this;
     float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
     qx = .5 * l;
-    selection[0].x = 0;
+    selection[0].x = l*.5f;
     selection[0].y = 0;
-    selection[0].z = 0;
-    selection[1].x = l;
+    selection[0].z = .85f;
+    selection[1].x = l*sqrt(2);
     selection[1].y = 0;
-    selection[1].z = 1;
+    selection[1].z = 2;
 
     yscale = Yscale_LogLinear;
     timeOut();
@@ -164,7 +165,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
 	}
 }
 
-void DisplayWidget::keyReleaseEvent ( QKeyEvent * e )
+void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
 {
     lastKey = 0;
 }
@@ -243,7 +244,9 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
   }
   else
   {
-    pz -= ps * e->delta();
+    pz *= (1+ps * e->delta());
+    //pz -= ps * e->delta();
+
     //rx -= ps * e->delta();
   }
   
@@ -339,7 +342,7 @@ void DisplayWidget::initializeGL()
 {
     glShadeModel(GL_SMOOTH);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
 
     glEnable(GL_DEPTH_TEST);
@@ -378,11 +381,11 @@ void DisplayWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    glBegin(GL_LINE_STRIP);
+/*    glBegin(GL_LINE_STRIP);
             glColor3f(0,0,0);         glVertex3f( v1.x, v1.y, v1.z );
             glColor3f(1,0,0);         glVertex3f( px, py, pz );
     glEnd();
-
+*/
     glTranslatef( px, py, pz );
 
     glRotatef( rx, 1, 0, 0 );
@@ -398,11 +401,11 @@ void DisplayWidget::paintGL()
     glPushMatrix();
         glTranslatef( 0, 0, 1.25f );
         glScalef(1, 1, .15);
-        glColor3f(0,1,0);
+        glColor4f(0,1,0,.5);
         drawWaveform(wavelett->getInverseWaveform());
 
         glTranslatef( 0, 0, 2.f );
-        glColor3f(1,0,0);
+        glColor4f(1,0,0,.5);
         drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
 
@@ -466,13 +469,22 @@ int clamp(int val, int max) {
 
 void setWavelengthColor( float wavelengthScalar ) {
     const float spectrum[][3] = {
+        /* white background */
+        { 1, 1, 1 },
+        { 0, 0, 1 },
+        { 0, 1, 1 },
+        { 0, 1, 0 },
+        { 1, 1, 0 },
+        { 1, 0, 1 },
+        { 1, 0, 0 }};
+        /* black background
         { 0, 0, 0 },
         { 1, 0, 1 },
         { 0, 0, 1 },
         { 0, 1, 1 },
         { 0, 1, 0 },
         { 1, 1, 0 },
-        { 1, 0, 0 }};
+        { 1, 0, 0 }}; */
 
     unsigned count = sizeof(spectrum)/sizeof(spectrum[0]);
     float f = count*wavelengthScalar;
@@ -504,6 +516,10 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
     }
     float s = 1/max;
 
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
     for (unsigned c=0; c<n.height; c++)
     {
         glTranslatef(0, 0, -.5); // different channels along y
@@ -514,6 +530,9 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
             }
         glEnd();
     }
+
+    glDepthMask(true);
+    glDisable(GL_BLEND);
 }
 
 
@@ -616,6 +635,10 @@ void DisplayWidget::drawWavelett()
 }
 
 void DisplayWidget::drawSelection() {
+    drawSelectionCircle();
+}
+
+void DisplayWidget::drawSelectionSquare() {
     float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
     glEnable(GL_BLEND);
     glDepthMask(false);
@@ -765,5 +788,160 @@ void DisplayWidget::drawSelection() {
             glVertex3f( x2, y, z2 );
         }
     glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+bool DisplayWidget::insideCircle( float x1, float z1 ) {
+    float
+            x = selection[0].x,
+            z = selection[0].z,
+            rx = selection[1].x,
+            rz = selection[1].z;
+    return (x-x1)*(x-x1)/rx/rx + (z-z1)*(z-z1)/rz/rz < 1;
+}
+
+void DisplayWidget::drawSelectionCircle() {
+    float
+            x = selection[0].x,
+            z = selection[0].z,
+            rx = fabs(selection[1].x-selection[0].x),
+            rz = fabs(selection[1].z-selection[0].z);
+    float y = 1;
+
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+    glBegin(GL_TRIANGLE_STRIP);
+    for (unsigned k=0; k<=360; k++) {
+        float s = z + rz*sin(k*M_PI/180);
+        float c = x + rx*cos(k*M_PI/180);
+        glVertex3f( c, 0, s );
+        glVertex3f( c, y, s );
+    }
+    glEnd();
+
+    glLineWidth(3.2f);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_LINE_LOOP);
+    for (unsigned k=0; k<360; k++) {
+        float s = z + rz*sin(k*M_PI/180);
+        float c = x + rx*cos(k*M_PI/180);
+        glVertex3f( c, y, s );
+    }
+    glEnd();
+    glLineWidth(0.5f);
+    glDepthMask(true);
+    glDisable(GL_BLEND);
+}
+
+void DisplayWidget::drawSelectionCircle2() {
+    float l = wavelett->getOriginalWaveform()->_waveformData->getNumberOfElements().width / (float)wavelett->getOriginalWaveform()->_sample_rate;
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+
+    float
+            x = selection[0].x,
+            z = selection[0].z,
+            rx = fabs(selection[1].x-selection[0].x),
+            rz = fabs(selection[1].z-selection[0].z);
+    float y = 1;
+    // compute points in each quadrant, upper right
+    std::vector<GLvector> pts[4];
+    GLvector corner[4];
+    corner[0] = GLvector(l,0,1);
+    corner[1] = GLvector(0,0,1);
+    corner[2] = GLvector(0,0,0);
+    corner[3] = GLvector(l,0,0);
+    for (unsigned k,j=0; j<4; j++) {
+        bool addedLast=false;
+        for (k=0; k<=90; k++) {
+            float s = z + rz*sin((k+j*90)*M_PI/180);
+            float c = x + rx*cos((k+j*90)*M_PI/180);
+            if (s>0 && s<1 && c>0&&c<l) {
+                if (pts[j].empty() && k>0) {
+                    if (0==j) pts[j].push_back(GLvector( l, 0, z + rz*sin(acos((l-x)/rx))));
+                    if (1==j) pts[j].push_back(GLvector( x + rx*cos(asin((1-z)/rz)), 0, 1));
+                    if (2==j) pts[j].push_back(GLvector( 0, 0, z + rz*sin(acos((0-x)/rx))));
+                    if (3==j) pts[j].push_back(GLvector( x + rx*cos(asin((0-z)/rz)), 0, 0));
+                }
+                pts[j].push_back(GLvector( c, 0, s));
+                addedLast = 90==k;
+            }
+        }
+        if (!addedLast) {
+            if (0==j) pts[j].push_back(GLvector( x + rx*cos(asin((1-z)/rz)), 0, 1));
+            if (1==j) pts[j].push_back(GLvector( 0, 0, z + rz*sin(acos((0-x)/rx))));
+            if (2==j) pts[j].push_back(GLvector( x + rx*cos(asin((0-z)/rz)), 0, 0));
+            if (3==j) pts[j].push_back(GLvector( l, 0, z + rz*sin(acos((l-x)/rx))));
+        }
+    }
+
+    for (unsigned j=0; j<4; j++) {
+        glBegin(GL_TRIANGLE_STRIP);
+        for (unsigned k=0; k<pts[j].size(); k++) {
+            glVertex3f( pts[j][k][0], 0, pts[j][k][2] );
+            glVertex3f( pts[j][k][0], y, pts[j][k][2] );
+        }
+        glEnd();
+    }
+
+
+    for (unsigned j=0; j<4; j++) {
+        if ( !insideCircle(corner[j][0], corner[j][2]) )
+        {
+            glBegin(GL_TRIANGLE_FAN);
+            GLvector middle1( 0==j?l:2==j?0:corner[j][0], 0, 1==j?1:3==j?0:corner[j][2]);
+            GLvector middle2( 3==j?l:1==j?0:corner[j][0], 0, 0==j?1:2==j?0:corner[j][2]);
+            if ( !insideCircle(middle1[0], middle1[2]) )
+                glVertex3f( middle1[0], y, middle1[2] );
+            for (unsigned k=0; k<pts[j].size(); k++) {
+                glVertex3f( pts[j][k][0], y, pts[j][k][2] );
+            }
+            if ( !insideCircle(middle2[0], middle2[2]) )
+                glVertex3f( middle2[0], y, middle2[2] );
+            glEnd();
+        }
+    }
+    for (unsigned j=0; j<4; j++) {
+        bool b1 = insideCircle(corner[j][0], corner[j][2]);
+        bool b2 = insideCircle(0==j?l:2==j?0:corner[j][0], 1==j?1:3==j?0:corner[j][2]);
+        bool b3 = insideCircle(corner[(j+1)%4][0], corner[(j+1)%4][2]);
+        glBegin(GL_TRIANGLE_STRIP);
+        if ( b1 )
+        {
+            glVertex3f( corner[j][0], 0, corner[j][2] );
+            glVertex3f( corner[j][0], y, corner[j][2] );
+            if ( !b2 && pts[(j+1)%4].size()>0 ) {
+                glVertex3f( pts[j].back()[0], 0, pts[j].back()[2] );
+                glVertex3f( pts[j].back()[0], y, pts[j].back()[2] );
+            }
+        }
+        if ( b3 ) {
+            if ( !b2 && pts[(j+1)%4].size()>1) {
+                glVertex3f( pts[(j+1)%4][1][0], 0, pts[(j+1)%4][1][2] );
+                glVertex3f( pts[(j+1)%4][1][0], y, pts[(j+1)%4][1][2] );
+            }
+            glVertex3f( corner[(j+1)%4][0], 0, corner[(j+1)%4][2] );
+            glVertex3f( corner[(j+1)%4][0], y, corner[(j+1)%4][2] );
+        }
+        glEnd();
+    }
+    glDisable(GL_BLEND);
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+
+    for (unsigned j=0; j<4; j++) {
+        glBegin(GL_LINE_STIPPLE);
+        for (unsigned k=0; k<pts[j].size(); k++) {
+            glVertex3f( pts[j][k][0], y, pts[j][k][2] );
+        }
+        glEnd();
+    }
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }

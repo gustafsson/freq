@@ -91,7 +91,12 @@ private:
   void drawWaveform(boost::shared_ptr<Waveform> waveform);
   void drawWavelett();
   void drawSelection();
-  
+  void drawSelectionCircle();
+  void drawSelectionCircle2();
+  void drawSelectionSquare();
+  bool insideCircle( float x1, float z1 );
+
+
   MouseControl leftButton;
   MouseControl rightButton;
   MouseControl middleButton;
