@@ -406,11 +406,11 @@ void DisplayWidget::paintGL()
     glPushMatrix();
         glTranslatef( 0, 0, 1.25f );
         glScalef(1, 1, .15);
-        glColor4f(0,1,0,.5);
+        glColor4f(0,1,0,1);
         drawWaveform(wavelett->getInverseWaveform());
 
         glTranslatef( 0, 0, 2.f );
-        glColor4f(0,0,0,.5);
+        glColor4f(0,0,0,1);
         drawWaveform(wavelett->getOriginalWaveform());
     glPopMatrix();
 
@@ -529,7 +529,6 @@ void DisplayWidget::drawWaveform(boost::shared_ptr<Waveform> waveform)
     {
         glTranslatef(0, 0, -.5); // different channels along y
         glBegin(GL_LINE_STRIP);
-            // glColor3f(1-c,c,0);
             for (unsigned t=0; t<n.width; t++) {
                 glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
             }
@@ -635,6 +634,9 @@ void DisplayWidget::drawWavelett()
 
     glLineWidth(3);
     glColor4f(0,0,0,1);
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     unsigned sz=10;
     boost::shared_ptr<TransformData> t = wavelett->getWavelettTransform();
@@ -645,8 +647,8 @@ void DisplayWidget::drawWavelett()
     {
         // float period = start*exp(-ff*steplogsize);
         // f = 1/period = 1/start*exp(ff*steplogsize)
-        float start = t->sampleRate/t->minHz/n.width;
-        float steplogsize = log(t->maxHz)-log(t->minHz);
+        // start = t->sampleRate/t->minHz/n.width;
+        float steplogsize = log(t->maxHz) - log(t->minHz);
 
         float ff = log(f/t->minHz)/steplogsize;
         if (ff>1)
@@ -671,6 +673,53 @@ void DisplayWidget::drawWavelett()
             glScalef(0.0002f,0.0001f,0.0001f);
             char a[100];
             sprintf(a,"%d", f);
+            for (char*c=a;*c!=0; c++)
+                glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+            glPopMatrix();
+        }
+    }
+
+    for( unsigned tone = (unsigned)ceil(log(20.f)/0.05); true; tone++)
+    {
+        float steplogsize = log(t->maxHz)-log(t->minHz);
+        float ff = log(exp(tone*.05)/t->minHz)/steplogsize;
+        float ffN = log(exp((tone+1)*.05)/t->minHz)/steplogsize;
+        float ffP = log(exp((tone-1)*.05)/t->minHz)/steplogsize;
+        if (ff>1)
+            break;
+        bool blackKey = false;
+        switch(tone%12) { case 1: case 3: case 6: case 8: case 10: blackKey = true; }
+        bool blackKeyP = false;
+        switch((tone+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
+        bool blackKeyN = false;
+        switch((tone+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
+        glLineWidth(1);
+        float wN = ffN-ff, wP = ff-ffP;
+        if (blackKey)
+            wN *= .5, wP *= .5;
+        else {
+            if (!blackKeyN)
+                wN *= .5;
+            if (!blackKeyP)
+                wP *= .5;
+        }
+
+    glBegin(blackKey ? GL_QUADS:GL_LINE_LOOP);
+        glVertex3f(-.04f -.012f*blackKey, 0, ff+wN);
+        glVertex3f(-.07f, 0, ff+wN);
+        glVertex3f(-.07f, 0, ff-wP);
+        glVertex3f(-.04f -.012f*blackKey, 0, ff-wP);
+    glEnd();
+        if(tone%12 == 0) {
+            glLineWidth(1.f);
+            glPushMatrix();
+            glTranslatef(-.0515f,0,ff-wP*.7f);
+            //glRotatef(90,0,1,0);
+            glRotatef(90,1,0,0);
+            float s = (wN+wP)*0.01f*.7f;
+            glScalef(s*.5f,s,s);
+            char a[100];
+            sprintf(a,"C%d", tone/12 - 10);
             for (char*c=a;*c!=0; c++)
                 glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
             glPopMatrix();
@@ -703,6 +752,8 @@ void DisplayWidget::drawWavelett()
             }
         }
     }
+    glDepthMask(true);
+    glDisable(GL_BLEND);
 
     if (1<drawn)
         glEndList();
