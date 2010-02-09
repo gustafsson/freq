@@ -4,6 +4,10 @@
 #include "spectrogram-vbo.h"
 #include <list>
 #include <GlException.h>
+#include <CudaException.h>
+#include <boost/array.hpp>
+#include <tmatrix.h>
+
 using namespace std;
 
 SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
@@ -89,6 +93,10 @@ void SpectrogramRenderer::createMeshPositionVBO(unsigned w, unsigned h)
 
 typedef tvector<3,GLdouble> GLvector;
 typedef tvector<4,GLdouble> GLvector4;
+typedef tmatrix<4,GLdouble> GLmatrix;
+
+static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
+static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
@@ -118,6 +126,20 @@ GLvector gluProject(tvector<3,f> obj, bool *r=0) {
 }
 
 template<typename f>
+GLvector gluProject2(tvector<3,f> obj, bool *r=0) {
+    GLint view[4];
+    glGetIntegerv(GL_VIEWPORT, view);
+    GLvector4 eye = applyProjectionMatrix(applyModelMatrix(to4(obj)));
+    eye[0]/=eye[3];
+    eye[1]/=eye[3];
+    eye[2]/=eye[3];
+
+    GLvector screen(view[0] + (eye[0]+1)*view[2]/2, view[1] + (eye[1]+1)*view[3]/2, eye[2]);
+    float dummy=43*23;
+    return screen;
+}
+
+template<typename f>
 GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
     GLdouble model[16], proj[16];
     GLint view[4];
@@ -128,7 +150,7 @@ GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
     return gluUnProject(win, model, proj, view, r);
 }
 
-bool validWindowPos(GLvector win) {
+static bool validWindowPos(GLvector win) {
     GLint view[4];
     glGetIntegerv(GL_VIEWPORT, view);
 
@@ -138,38 +160,41 @@ bool validWindowPos(GLvector win) {
             && win[2]>=0.1 && win[2]<=100;
 }
 
-GLvector applyModelMatrix(GLvector obj) {
+static GLvector4 applyModelMatrix(GLvector4 obj) {
     GLdouble m[16];
     glGetDoublev(GL_MODELVIEW_MATRIX, m);
-    GLvector eye;
-    for (int i=0; i<3; i++) {
-        GLdouble a = m[4*3+i];
-        for (int j=0; j<3; j++)
-            a+= obj[j]*m[i + 4*j];
-        eye[i] = a;
-    }
+
+    GLvector4 eye = GLmatrix(m) * obj;
     return eye;
 }
 
-GLvector applyProjectionMatrix(GLvector eye) {
+static GLvector4 applyProjectionMatrix(GLvector4 eye) {
     GLdouble p[16];
     glGetDoublev(GL_PROJECTION_MATRIX, p);
-    GLvector clip;
-    for (int i=0; i<3; i++) {
-        GLdouble a = p[4*3+i];
-        for (int j=0; j<3; j++)
-            a+= eye[j]*p[i + 4*j];
-        clip[i] = a;
-    }
+
+    GLvector4 clip = GLmatrix(p) * eye;
     return clip;
 }
 
-bool inFrontOfCamera( GLvector obj ) {
-    GLvector eye = applyModelMatrix(obj);
-
-    GLvector clip = applyProjectionMatrix(eye);
+static bool inFrontOfCamera2( GLvector obj ) {
+    GLvector4 eye = applyModelMatrix(to4(obj));
+    GLvector4 clip = applyProjectionMatrix(eye);
 
     return clip[2] > 0.1;
+}
+
+static bool inFrontOfPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
+    return (plane-obj)%normal < 0;
+}
+
+static bool inFrontOfCamera( GLvector obj ) {
+    // need to comply exactly with cameraIntersection
+    GLint view[4];
+    glGetIntegerv(GL_VIEWPORT, view);
+    GLvector projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, .2) );
+    GLvector projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, 1) ) - projectionPlane).Normalize();
+
+    return inFrontOfPlane( obj, projectionPlane, projectionNormal);
 }
 
 class glPushMatrixContext
@@ -184,6 +209,14 @@ void SpectrogramRenderer::init()
     // initialize necessary OpenGL extensions
     GlException_CHECK_ERROR_MSG("1");
 
+    int cudaDevices;
+    CudaException_SAFE_CALL( cudaGetDeviceCount( &cudaDevices) );
+    if (0 == cudaDevices ) {
+        fprintf(stderr, "ERROR: Couldn't find any \"cuda capable\" device.");
+        fflush(stderr);
+        exit(EXIT_FAILURE);
+    }
+
     if (0 != glewInit() ) {
         fprintf(stderr, "ERROR: Couldn't initialize \"glew\".");
         fflush(stderr);
@@ -197,8 +230,8 @@ void SpectrogramRenderer::init()
     }
 
     if (!glewIsSupported( "GL_VERSION_1_5 GL_ARB_vertex_buffer_object GL_ARB_pixel_buffer_object" )) {
-            fprintf(stderr, "Error: failed to get minimal extensions for demo\n");
-            fprintf(stderr, "This sample requires:\n");
+            fprintf(stderr, "Error: failed to get minimal extensions\n");
+            fprintf(stderr, "Sonic AWE requires:\n");
             fprintf(stderr, "  OpenGL version 1.5\n");
             fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
             fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
@@ -432,6 +465,9 @@ bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference r
     if (!computePixelsPerUnit( ref, timePixels, scalePixels))
         return false;
 
+    fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.chunk_index[0], ref.chunk_index[1], timePixels,scalePixels);
+    fflush(stdout);
+
     GLdouble needBetterF, needBetterT;
 
     if (0==scalePixels)
@@ -478,18 +514,48 @@ static GLvector planeIntersection( GLvector planeNormal, GLvector pt, GLvector d
     return pt + dir*linePlane(planeNormal, pt, dir);
 }
 
+static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const GLvector& plane, const GLvector& normal ) {
+    GLvector dir = pt2-pt1;
+
+    s = ((plane-pt1)%normal)/(dir % normal);
+    GLvector p = pt1 + dir * s;
+
+//    float v = (p-plane ) % normal;
+//    fprintf(stdout,"p[2] = %g, v = %g\n", p[2], v);
+//    fflush(stdout);
+    return p;
+}
+
 GLvector xzIntersection( GLvector pt1, GLvector pt2 ) {
     return planeIntersection( GLvector(0,1,0), pt1, pt2-pt1 );
 }
 
 static GLvector cameraIntersection( GLvector pt1, GLvector pt2, float &s ) {
-    GLvector s1 = applyProjectionMatrix(applyModelMatrix(pt1));
-    GLvector s2 = applyProjectionMatrix(applyModelMatrix(pt2));
+    /*
+      This is possible to compute without glUnProject, but not as straight-forward
 
-    //bs = (.3-s1[2]) / (s2[2]-s1[2]);
-    s = (.03-s1[2]) / (s2[2]-s1[2]);
+    GLvector4 s1 = applyProjectionMatrix(applyModelMatrix(to4(pt1)));
+    GLvector4 s2 = applyProjectionMatrix(applyModelMatrix(to4(pt2)));
+
+    s = (0.3-s1[2]) / (s2[2]-s1[2]);
     return pt1 + (pt2-pt1)*s;
+
+    GLvector4 pp = applyProjectionMatrix(applyModelMatrix(to4(projectionPlane)));
+    //GLvector4 pp = applyModelMatrix(to4(projectionPlane));
+    float v = (p-projectionPlane) % projectionNormal;
+
+    float dummy = pp[2]/pp[3];
+    float dummy2= 342*34;
+*/
+
+    GLint view[4];
+    glGetIntegerv(GL_VIEWPORT, view);
+    GLvector projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, .2) );
+    GLvector projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, 1) ) - projectionPlane).Normalize();
+
+    return planeIntersection(pt1, pt2, s, projectionPlane, projectionNormal);
 }
+
 
 GLvector xzIntersection2( GLvector pt1, GLvector pt2, float &s ) {
     s = -pt1[1] / (pt2[1]-pt1[1]);
@@ -503,11 +569,209 @@ void updateBounds(float bounds[4], GLvector p) {
     if (bounds[3] < p[1]) bounds[3] = p[1];
 }
 
-static void updateBorderLength(double& length, GLvector border, float s) {
-    border[2] = 0;
-    length = max(length, border.length()/s);
+std::vector<GLvector> clipPlane( std::vector<GLvector> p, GLvector p0, GLvector n ) {
+    std::vector<GLvector> r;
+
+    bool valid[4], visible = false;
+    for (unsigned i=0; i<p.size(); i++)
+        visible |= (valid[i] = inFrontOfPlane( p[i], p0, n ));
+
+    // Clipp ref square with projection plane
+    for (unsigned i=0; i<p.size(); i++) {
+        int nexti=(i+1)%p.size();
+        if (valid[i])
+            r.push_back( p[i] );
+        if (valid[i] !=  valid[nexti]) {
+            float s=NAN;
+            GLvector xy = planeIntersection( p[i], p[nexti], s, p0, n );
+            if (!isnan(s) && 0 < s && s < 1)
+                r.push_back( xy );
+        }
+    }
+
+    return r;
 }
 
+void printl(const char* str, const std::vector<GLvector>& l) {
+    fprintf(stdout,"%s\n",str);
+    for (unsigned i=0; i<l.size(); i++) {
+        fprintf(stdout,"  %g\t%g\t%g\n",l[i][0],l[i][1],l[i][2]);
+    }
+    fflush(stdout);
+}
+
+
+std::vector<GLvector> clipFrustum( std::vector<GLvector> l ) {
+    GLint view[4];
+    glGetIntegerv(GL_VIEWPORT, view);
+
+    float z0 = .1, z1=1;
+    GLvector projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
+    GLvector projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalize();
+
+    GLvector rightPlane = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z0) );
+    GLvector rightZ = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z1) );
+    GLvector rightY = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2+1, z0) );
+    GLvector rightNormal = ((rightY-rightPlane)^(rightZ-rightPlane)).Normalize();
+
+    GLvector leftPlane = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z0) );
+    GLvector leftZ = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z1) );
+    GLvector leftY = gluUnProject( GLvector( view[0], view[1] + view[3]/2+1, z0) );
+    GLvector leftNormal = ((leftZ-leftPlane)^(leftY-leftPlane)).Normalize();
+
+    GLvector topPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z0) );
+    GLvector topZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z1) );
+    GLvector topX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1] + view[3], z0) );
+    GLvector topNormal = ((topZ-topPlane)^(topX-topPlane)).Normalize();
+
+    GLvector bottomPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z0) );
+    GLvector bottomZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z1) );
+    GLvector bottomX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1], z0) );
+    GLvector bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
+
+    //printl("Start",l);
+    l = clipPlane(l, projectionPlane, projectionNormal);
+    printl("Projectionclipped",l);
+    l = clipPlane(l, rightPlane, rightNormal);
+    printl("Right", l);
+    l = clipPlane(l, leftPlane, leftNormal);
+    printl("Left", l);
+    l = clipPlane(l, topPlane, topNormal);
+    printl("Top",l);
+    l = clipPlane(l, bottomPlane, bottomNormal);
+    printl("Bottom",l);
+    //printl("Clipped polygon",l);
+
+    return l;
+}
+
+std::vector<GLvector> clipFrustum( GLvector corner[4] ) {
+    std::vector<GLvector> l;
+    for (unsigned i=0; i<4; i++)
+        l.push_back( corner[i] );
+    return clipFrustum(l);
+}
+
+static GLvector findSquare( const std::vector<GLvector>& l, const GLvector& a, unsigned i) {
+    GLvector b=a;
+    bool done[2]={false,false};
+    // find vertical and horisontal intersection
+    unsigned j, nexti = (i+1)%l.size();
+    for (j=nexti; j!=i; j=(j+1)%l.size()) {
+        const GLvector& p1 = l[j];
+        const GLvector& p2 = l[(j+1)%l.size()];
+        for (unsigned v=0; v<=2; v+=2) {
+            unsigned u=2*(!v);
+            float f = (a[u]-p1[u])/(p2[u]-p1[u]);
+            if (0 <= f && f <= 1 && p2[u]!=p1[u]) {
+                float s = p1[v] + (p2[v]-p1[v])*f;
+                if (!done[0!=v]) {
+                    b[v]=s;
+                    done[0!=v] = true;
+                }
+            }
+        }
+    }
+
+    if (!done[0] || !done[1])
+        return a;
+
+    // validate that the fourth point lies on the inside
+    for (j=nexti; j!=i; j=(j+1)%l.size()) {
+        const GLvector& p1 = l[j];
+        const GLvector& p2 = l[(j+1)%l.size()];
+        for (unsigned v=0; v<=2; v+=2) {
+            unsigned u=2*(!v);
+            float f = (b[u]-p1[u])/(p2[u]-p1[u]);
+            if (0 <= f && f <= 1 && p2[u]!=p1[u]) {
+                float s = p1[v] + (p2[v]-p1[v])*f;
+                float g = (s-a[u])/(b[u]-a[u]);
+                if (0 < g && g < 1 && b[u]!=a[u])
+                    b[v]=s;
+            }
+        }
+    }
+
+    return b;
+}
+
+static std::vector<GLvector> getLargestSquare( const std::vector<GLvector>& l) {
+    // find the largest square enclosed by convex polygon 'l'
+
+    // check that the polygon isn't already square
+    if (4==l.size()) {
+        GLvector a = l[0],b = l[0];
+        for (unsigned i=1; i<l.size(); i++) {
+            for (unsigned c=0; c<3; c++) {
+                if (l[i][c]<a[c]) a[c]=l[i][c];
+                if (l[i][c]>b[c]) b[c]=l[i][c];
+            }
+        }
+        bool square = true;
+        for (unsigned i=1; i<l.size(); i++) {
+            for (unsigned c=0; c<3; c++) {
+                if (l[i][c] != a[c] && l[i][c] != b[c])
+                    square = false;
+            }
+        }
+        if (square)
+            return l;
+    }
+
+    // the largest square will tangent the polygon at three points, for which the remaining point lie within the polygon
+    GLvector a,b;
+    float maxp=-1;
+    for (unsigned i=0; i<l.size(); i++) {
+        unsigned nexti = (i+1)%l.size();
+        for (unsigned m=0; m<2; m++) {
+            GLvector sa = (l[i]+l[nexti])*(.5f*m),
+                     sb = findSquare(l, sa, i);
+
+            if (fabs((a[0]-b[0])*(a[2]-b[2])) < fabs((sa[0]-sb[0])*(sa[2]-sb[2]))) {
+                a = sa, b = sb;
+                maxp = i + .5f*m;
+            }
+        }
+    }
+
+    if (maxp<0)
+        return std::vector<GLvector>();
+
+    float sz = .25f;
+    while (sz>.01) { // accuracy
+        unsigned maxi = (unsigned)floor(maxp);
+        GLvector sa = (l[maxi]+l[(maxi+1)%l.size()])*(maxp+sz-maxi);
+        GLvector sb = findSquare(l, sa, maxi);
+
+        if (fabs((a[0]-b[0])*(a[2]-b[2])) < fabs((sa[0]-sb[0])*(sa[2]-sb[2]))) {
+            a = sa, b = sb;
+            maxp = maxp+sz;
+        }
+
+        maxi = (((unsigned)ceil(maxp))+l.size()-1)%l.size();
+        sa = (l[maxi]+l[(maxi+1)%l.size()])*(maxp-sz-maxi);
+        sb = findSquare(l, sa, maxi);
+
+        if (fabs((a[0]-b[0])*(a[2]-b[2])) < fabs((sa[0]-sb[0])*(sa[2]-sb[2]))) {
+            a = sa, b = sb;
+            maxp = maxp+sz;
+        }
+
+        sz /= 2;
+    }
+
+    std::vector<GLvector> r;
+    r.push_back( a );
+    r.push_back( GLvector( a[0], 0, b[2] ) );
+    r.push_back( GLvector( b[0], 0, b[2] ) );
+    r.push_back( GLvector( b[0], 0, a[2] ) );
+    return r;
+}
+
+/**
+  @arg timePixels Estimated longest line of pixels along t-axis within ref measured in pixels
+  @arg scalePixels Estimated longest line of pixels along t-axis within ref measured in pixels
+  */
 bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels )
 {
     Spectrogram::Position p[2];
@@ -521,70 +785,91 @@ bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, floa
         GLvector( p[1].time, 0, p[0].scale)
     };
 
-    bool valid[4], visible = false;
-    for (int i=0; i<4; i++)
-        visible |= (valid[i] = inFrontOfCamera( corner[i] ));
+    std::vector<GLvector> clippedCorners = clipFrustum(corner);
+    // clippedCorners = getLargestSquare(clippedCorners);
+    printl("Largest Square",clippedCorners);
 
-    if (!visible)
+    if (0==clippedCorners.size())
         return false;
 
     // Find projection of object coordinates in corner[i] onto window coordinates
     // Compare length in pixels of each side
     // Check if projection is visible
-    double b[2]={0};
     GLint view[4];
     glGetIntegerv(GL_VIEWPORT, view);
     bool above=true, under=true, right=true, left=true;
-    for (int i=0; i<4; i++)
+    timePixels = scalePixels = 0;
+    for (unsigned i=0; i<clippedCorners.size(); i++)
+    for (unsigned nexti=0; nexti<clippedCorners.size(); nexti++)
     {
-        int nexti=(i+1)%4;
+        if (nexti==i)
+            continue;
+        //unsigned nexti=(i+1)%clippedCorners.size();
+
         GLvector screen[2];
-        float s=NAN;
 
-        if (valid[i] && valid[nexti]) {
-            screen[0] = gluProject( corner[i] );
-            screen[1] = gluProject( corner[nexti] );
-            s = 1;
+        GLvector c1 = clippedCorners[i];
+        GLvector c2 = clippedCorners[nexti];
 
-        } else if (valid[i] && !valid[nexti]) {
-            GLvector xz = cameraIntersection( corner[i], corner[nexti], s );
-            screen[0] = gluProject( corner[i] );
-            screen[1] =  gluProject( xz );
+        GLvector a[] = {
+            GLvector( min(c1[0], c2[0]), 0, min(c1[2], c2[2])),
+            GLvector( min(c1[0], c2[0]), 0, max(c1[2], c2[2])),
+            GLvector( max(c1[0], c2[0]), 0, max(c1[2], c2[2])),
+            GLvector( max(c1[0], c2[0]), 0, min(c1[2], c2[2]))
+        };
 
-        } else if (!valid[i] && valid[nexti]) {
-            GLvector xz = cameraIntersection( corner[i], corner[nexti], s );
-            screen[0] = gluProject( xz );
-            screen[1] = gluProject( corner[nexti] );
+        unsigned alen = sizeof(a)/sizeof(a[0]);
+        if ( a[0] == a[1] ) {
+            a[1] = a[2];
+            alen = 2;
+        }
+        if ( a[0] == a[3] ) {
+            alen = 2;
         }
 
-        if (isnan(s))
-            continue;
+        for (unsigned b=0; b<(2==alen?1:alen); b++) {
+            std::vector<GLvector> l;
+            l.push_back( a[b] );
+            l.push_back( a[(b+1)%alen] );
+            l = clipFrustum( l );
+            if (2 > l.size())
+                continue;
+            if (l[0] == l[1])
+                continue;
 
-        bool labove=true, lunder=true, lright=true, lleft=true;
-        for (int j=0; j<2; j++) {
-            if (screen[j][0] > view[0]) lleft=false;
-            if (screen[j][0] < view[0]+view[2]) lright=false;
-            if (screen[j][1] > view[1]) lunder=false;
-            if (screen[j][1] < view[1]+view[3]) labove=false;
+            screen[0] = gluProject2( l[0] );
+            screen[1] = gluProject2( l[1] );
+
+            GLvector screenBorder = screen[0] - screen[1];
+            GLvector worldBorder = l[0] - l[1];
+
+            bool labove=true, lunder=true, lright=true, lleft=true;
+            for (unsigned j=0; j<2; j++) {
+                if (screen[j][0] > view[0]) lleft=false;
+                if (screen[j][0] < view[0]+view[2]) lright=false;
+                if (screen[j][1] > view[1]) lunder=false;
+                if (screen[j][1] < view[1]+view[3]) labove=false;
+            }
+
+            above &= labove;
+            under &= lunder;
+            right &= lright;
+            left &= lleft;
+            // If everything is
+            //if (labove || lunder || lright || lleft)
+            //    continue;
+
+            screenBorder[2] = 0;
+            float ltimePixels = screenBorder.length() * (p[1].time-p[0].time)/worldBorder[0];
+            float lscalePixels = screenBorder.length() * (p[1].scale-p[0].scale)/worldBorder[2];
+            timePixels = max(timePixels, (0==worldBorder[0])?0:ltimePixels);
+            scalePixels = max(scalePixels, (0==worldBorder[2])?0:lscalePixels);
         }
-
-        above &= labove;
-        under &= lunder;
-        right &= lright;
-        left &= lleft;
-        // If everything is
-        if (labove || lunder || lright || lleft)
-            continue;
-
-        updateBorderLength( b[i%2], screen[0] - screen[1], s );
     }
 
     // If everything is
     if (above || under || right || left)
         return false;
-
-    scalePixels = b[0];
-    timePixels = b[1];
 
     return true;
 }

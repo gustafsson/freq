@@ -197,7 +197,7 @@ void SpectrogramVbo::draw_directMode( )
     float ifs = 1./(n.width-3);
     float depthScale = 1.f/(n.height-3);
 
-    //glEnable(GL_NORMALIZE);
+    glEnable(GL_NORMALIZE);
     for (unsigned fi=1; fi<n.height-2; fi++)
     {
         glBegin(GL_TRIANGLE_STRIP);
@@ -221,11 +221,11 @@ void SpectrogramVbo::draw_directMode( )
                     setWavelengthColor( v[1][j+1] );
                     float dt=(v[2][j+1]-v[0][j+1]);
                     float df=(v[1][j+2]-v[1][j+0]);
-                    glNormal3f( -dt, 2, -df ); // TODO need to normalize this
+                    glNormal3f( -dt, 2, -df ); // normalized by OpenGL
                     glVertex3f( ifs*(t-2), v[1][j+1], (fi-1+j)*depthScale);
                 }
             }
         glEnd(); // GL_TRIANGLE_STRIP
     }
-    //glDisable(GL_NORMALIZE);
+    glDisable(GL_NORMALIZE);
 }
