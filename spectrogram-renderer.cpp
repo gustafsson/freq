@@ -10,6 +10,8 @@
 
 using namespace std;
 
+static bool g_invalidFrustum = true;
+
 SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
 :   _spectrogram(spectrogram),
     _mesh_index_buffer(0),
@@ -252,6 +254,8 @@ void SpectrogramRenderer::init()
 void SpectrogramRenderer::draw()
 {
     if (!_initialized) init();
+
+    g_invalidFrustum = true;
 
     glPushMatrixContext();
 
@@ -602,44 +606,54 @@ void printl(const char* str, const std::vector<GLvector>& l) {
 
 
 std::vector<GLvector> clipFrustum( std::vector<GLvector> l ) {
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
 
-    float z0 = .1, z1=1;
-    GLvector projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
-    GLvector projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalize();
+    static GLvector projectionPlane, projectionNormal,
+        rightPlane, rightNormal,
+        leftPlane, leftNormal,
+        topPlane, topNormal,
+        bottomPlane, bottomNormal;
 
-    GLvector rightPlane = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z0) );
-    GLvector rightZ = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z1) );
-    GLvector rightY = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2+1, z0) );
-    GLvector rightNormal = ((rightY-rightPlane)^(rightZ-rightPlane)).Normalize();
+    if (g_invalidFrustum) {
+        GLint view[4];
+        glGetIntegerv(GL_VIEWPORT, view);
+        float z0 = .1, z1=1;
+        g_invalidFrustum = false;
 
-    GLvector leftPlane = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z0) );
-    GLvector leftZ = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z1) );
-    GLvector leftY = gluUnProject( GLvector( view[0], view[1] + view[3]/2+1, z0) );
-    GLvector leftNormal = ((leftZ-leftPlane)^(leftY-leftPlane)).Normalize();
+        projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
+        projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalize();
 
-    GLvector topPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z0) );
-    GLvector topZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z1) );
-    GLvector topX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1] + view[3], z0) );
-    GLvector topNormal = ((topZ-topPlane)^(topX-topPlane)).Normalize();
+        rightPlane = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z0) );
+        GLvector rightZ = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z1) );
+        GLvector rightY = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2+1, z0) );
+        rightNormal = ((rightY-rightPlane)^(rightZ-rightPlane)).Normalize();
 
-    GLvector bottomPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z0) );
-    GLvector bottomZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z1) );
-    GLvector bottomX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1], z0) );
-    GLvector bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
+        leftPlane = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z0) );
+        GLvector leftZ = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z1) );
+        GLvector leftY = gluUnProject( GLvector( view[0], view[1] + view[3]/2+1, z0) );
+        leftNormal = ((leftZ-leftPlane)^(leftY-leftPlane)).Normalize();
+
+        topPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z0) );
+        GLvector topZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z1) );
+        GLvector topX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1] + view[3], z0) );
+        topNormal = ((topZ-topPlane)^(topX-topPlane)).Normalize();
+
+        bottomPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z0) );
+        GLvector bottomZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z1) );
+        GLvector bottomX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1], z0) );
+        bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
+    }
 
     //printl("Start",l);
     l = clipPlane(l, projectionPlane, projectionNormal);
-    printl("Projectionclipped",l);
+    //printl("Projectionclipped",l);
     l = clipPlane(l, rightPlane, rightNormal);
-    printl("Right", l);
+    //printl("Right", l);
     l = clipPlane(l, leftPlane, leftNormal);
-    printl("Left", l);
+    //printl("Left", l);
     l = clipPlane(l, topPlane, topNormal);
-    printl("Top",l);
+    //printl("Top",l);
     l = clipPlane(l, bottomPlane, bottomNormal);
-    printl("Bottom",l);
+    //printl("Bottom",l);
     //printl("Clipped polygon",l);
 
     return l;
@@ -802,9 +816,9 @@ bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, floa
     for (unsigned i=0; i<clippedCorners.size(); i++)
     for (unsigned nexti=0; nexti<clippedCorners.size(); nexti++)
     {
+        //unsigned nexti=(i+1)%clippedCorners.size();
         if (nexti==i)
             continue;
-        //unsigned nexti=(i+1)%clippedCorners.size();
 
         GLvector screen[2];
 
