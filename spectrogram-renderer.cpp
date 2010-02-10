@@ -179,26 +179,11 @@ static GLvector4 applyProjectionMatrix(GLvector4 eye) {
     return clip;
 }
 
-static bool inFrontOfCamera2( GLvector obj ) {
-    GLvector4 eye = applyModelMatrix(to4(obj));
-    GLvector4 clip = applyProjectionMatrix(eye);
-
-    return clip[2] > 0.1;
+/* distance along normal, a negative distance means obj is in front of plane */
+static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
+    return (plane-obj)%normal;
 }
 
-static bool inFrontOfPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
-    return (plane-obj)%normal <= 1e-7;
-}
-
-static bool inFrontOfCamera( GLvector obj ) {
-    // need to comply exactly with cameraIntersection
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-    GLvector projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, .2) );
-    GLvector projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, 1) ) - projectionPlane).Normalize();
-
-    return inFrontOfPlane( obj, projectionPlane, projectionNormal);
-}
 
 class glPushMatrixContext
 {
@@ -262,115 +247,14 @@ void SpectrogramRenderer::draw()
 
     glScalef( 10, 1, 5 );
 
-//    boost::shared_ptr<Spectrogram_chunk> transform = _spectrogram->getWavelettTransform();
-
-    // find camera position
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-
-    GLvector wCam = gluUnProject(GLvector(view[2]/2, view[3]/2, -1e100) ); // approx==camera position
-
-    // as we
-    // 1) never tilt the camera around the z-axes
-    // 2) x-rotation is performed before y-rotation
-    // 3) never rotate more than 90 degrees around x
-    // => the closest point in the plane from the camera is on the line: (view[2]/2, view[3])-(view[2]/2, view[3]/2)
-    // Check if the point right beneath the camera is visible
-
-    // find units per pixel right beneath camera
-    // wC is the point on screen that renders the closest pixel of the plane
-
-    GLvector wStart = GLvector(wCam[0],0,wCam[2]);
-    float length = _spectrogram->transform()->original_waveform()->length();
-    if (wStart[0]<0) wStart[0]=0;
-    if (wStart[2]<0) wStart[2]=0;
-    if (wStart[0]>length) wStart[0]=length;
-    if (wStart[2]>1) wStart[2]=1;
-
-    GLvector sBase      = gluProject(wStart);
-    sBase[2] = 0.1;
-
-    if (!validWindowPos(sBase)) {
-        // point not visible => the pixel closest to the plane is somewhere along the border of the screen
-        // take bottom of screen instead
-        if (wCam[1] > 0)
-            sBase = GLvector(view[0]+view[2]/2, view[1], 0.1);
-        else // or top of screen if beneath
-            sBase = GLvector(view[0]+view[2]/2, view[1]+view[3], 0.1);
-
-/*        GLvector wBase = gluUnProject( sBase ),
-        if (wBase[0]<0 || )
-                        sBase = GLvector(view[0]+view[2]/2, view[1]+view[3], 0.1);
-wStart[0]=0;
-        if (wStart[2]<0) wStart[2]=0;
-        if (wStart[0]>length) wStart[0]=length;
-        if (wStart[2]>1) wStart[2]=1;*/
-    }
-
-    // find world coordinates of projection surface
-    GLvector
-            wBase = gluUnProject( sBase ),
-            w1 = gluUnProject(sBase + GLvector(1,0,0) ),
-            w2 = gluUnProject(sBase + GLvector(0,1,0) );
-
-    // directions
-    GLvector
-            dirBase = wBase-wCam,
-            dir1 = w1-wCam,
-            dir2 = w2-wCam;
-
-    // valid projection on xz-plane exists if dir?[1]<0 wBase[1]<0
-    GLvector
-            xzBase = wCam - dirBase*(wCam[1]/dirBase[1]),
-            xz1 = wCam - dir1*(wCam[1]/dir1[1]),
-            xz2 = wCam - dir2*(wCam[1]/dir2[1]);
-
-    // compute {units in xz-plane} per {screen pixel}, that determines the required resolution
-    GLdouble
-            timePerPixel = 0,
-            freqPerPixel = 0;
-
-    if (dir1[1] != 0 && dir2[1] != 0) {
-        timePerPixel = max(timePerPixel, fabs(xz1[0]-xz2[0]));
-        freqPerPixel = max(freqPerPixel, fabs(xz1[2]-xz2[2]));
-    }
-    if (dir1[1] != 0 && dirBase[1] != 0) {
-        timePerPixel = max(timePerPixel, fabs(xz1[0]-xzBase[0]));
-        freqPerPixel = max(freqPerPixel, fabs(xz1[2]-xzBase[2]));
-    }
-    if (dir2[1] != 0 && dirBase[1] != 0) {
-        timePerPixel = max(timePerPixel, fabs(xz2[0]-xzBase[0]));
-        freqPerPixel = max(freqPerPixel, fabs(xz2[2]-xzBase[2]));
-    }
-
-    if (0 == timePerPixel)
-        timePerPixel = max(fabs(w1[0]-wBase[0]), fabs(w2[0]-wBase[0]));
-    if (0 == freqPerPixel)
-        freqPerPixel = max(fabs(w1[2]-wBase[2]), fabs(w2[2]-wBase[2]));
-
-    if (0==freqPerPixel) freqPerPixel=timePerPixel;
-    if (0==timePerPixel) timePerPixel=freqPerPixel;
-    timePerPixel*=_redundancy;
-    freqPerPixel*=_redundancy;
-
-    Spectrogram::Reference ref = _spectrogram->findReference(Spectrogram::Position(wBase[0], wBase[2]), Spectrogram::Position(timePerPixel, freqPerPixel));
 
     Spectrogram::Position mss = _spectrogram->max_sample_size();
-    ref = _spectrogram->findReference(Spectrogram::Position(0,0), mss);
+    Spectrogram::Reference ref = _spectrogram->findReference(Spectrogram::Position(0,0), mss);
 
     beginVboRendering();
 
     renderChildrenSpectrogramRef(ref);
 
-/*    // This is the starting point for rendering the dataset
-    while (false==renderChildrenSpectrogramRef(ref) && !ref.parent().toLarge() )
-        ref = ref.parent();
-
-
-
-    // Render its parent and parent and parent until a the largest section is found or a section is found that covers the entire viewed area
-    renderParentSpectrogramRef( ref );
-*/
     endVboRendering();
 
     GlException_CHECK_ERROR();
@@ -512,15 +396,7 @@ void SpectrogramRenderer::renderParentSpectrogramRef( Spectrogram::Reference ref
         renderParentSpectrogramRef( ref.parent() );
 }
 
-// the normal does not need to be normalized, and back/front doesn't matter
-static float linePlane( GLvector planeNormal, GLvector pt, GLvector dir ) {
-    return -(pt % planeNormal)/ (dir % planeNormal);
-}
-
-static GLvector planeIntersection( GLvector planeNormal, GLvector pt, GLvector dir ) {
-    return pt + dir*linePlane(planeNormal, pt, dir);
-}
-
+// the normal does not need to be normalized
 static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const GLvector& plane, const GLvector& normal ) {
     GLvector dir = pt2-pt1;
 
@@ -533,50 +409,8 @@ static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const G
     return p;
 }
 
-GLvector xzIntersection( GLvector pt1, GLvector pt2 ) {
-    return planeIntersection( GLvector(0,1,0), pt1, pt2-pt1 );
-}
 
-static GLvector cameraIntersection( GLvector pt1, GLvector pt2, float &s ) {
-    /*
-      This is possible to compute without glUnProject, but not as straight-forward
-
-    GLvector4 s1 = applyProjectionMatrix(applyModelMatrix(to4(pt1)));
-    GLvector4 s2 = applyProjectionMatrix(applyModelMatrix(to4(pt2)));
-
-    s = (0.3-s1[2]) / (s2[2]-s1[2]);
-    return pt1 + (pt2-pt1)*s;
-
-    GLvector4 pp = applyProjectionMatrix(applyModelMatrix(to4(projectionPlane)));
-    //GLvector4 pp = applyModelMatrix(to4(projectionPlane));
-    float v = (p-projectionPlane) % projectionNormal;
-
-    float dummy = pp[2]/pp[3];
-    float dummy2= 342*34;
-*/
-
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-    GLvector projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, .2) );
-    GLvector projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, 1) ) - projectionPlane).Normalize();
-
-    return planeIntersection(pt1, pt2, s, projectionPlane, projectionNormal);
-}
-
-
-GLvector xzIntersection2( GLvector pt1, GLvector pt2, float &s ) {
-    s = -pt1[1] / (pt2[1]-pt1[1]);
-    return pt1 + (pt2-pt1)*s;
-}
-
-void updateBounds(float bounds[4], GLvector p) {
-    if (bounds[0] > p[0]) bounds[0] = p[0];
-    if (bounds[2] < p[0]) bounds[2] = p[0];
-    if (bounds[1] > p[1]) bounds[1] = p[1];
-    if (bounds[3] < p[1]) bounds[3] = p[1];
-}
-
-std::vector<GLvector> clipPlane( std::vector<GLvector> p, GLvector p0, GLvector n ) {
+static std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, GLvector p0, GLvector n ) {
     std::vector<GLvector> r;
 
     // Clipp ref square with projection plane
@@ -597,7 +431,7 @@ std::vector<GLvector> clipPlane( std::vector<GLvector> p, GLvector p0, GLvector 
     return r;
 }
 
-void printl(const char* str, const std::vector<GLvector>& l) {
+static void printl(const char* str, const std::vector<GLvector>& l) {
     fprintf(stdout,"%s (%lu)\n",str,l.size());
     for (unsigned i=0; i<l.size(); i++) {
         fprintf(stdout,"  %g\t%g\t%g\n",l[i][0],l[i][1],l[i][2]);
@@ -605,8 +439,48 @@ void printl(const char* str, const std::vector<GLvector>& l) {
     fflush(stdout);
 }
 
+/* returns the first point on the border of the polygon 'l' that lies closest to 'target' */
+static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &target)
+{
+    GLvector r;
+    // check if point lies inside
+    bool allNeg = true, allPos = true;
 
-std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i ) {
+    // find point in poly closest to projectionPlane
+    float min = FLT_MAX;
+    for (unsigned i=0; i<l.size(); i++) {
+        float f = (l[i]-target).dot();
+        if (f<min) {
+            min = f;
+            r = l[i];
+        }
+
+        GLvector d = (l[(i+1)%l.size()] - l[i]),
+                 v = target - l[i];
+
+        if (d%v<0) allNeg=false;
+        if (d%v>0) allPos=false;
+        float k = d%v / (d.dot());
+        if (0<k && k<1) {
+            f = (l[i]+d*k-target).dot();
+            if (f<min) {
+                min = f;
+                r = l[i]+d*k;
+            }
+        }
+    }
+
+    if (allNeg || allPos) {
+        // point lies within convex polygon, create normal and project to surface
+        if (l.size()>2) {
+            GLvector n = (l[0]-l[1])^(l[0]-l[2]);
+            r = target + n*distanceToPlane( target, l[0], n );
+        }
+    }
+    return r;
+}
+
+static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i ) {
 
     static GLvector projectionPlane, projectionNormal,
         rightPlane, rightNormal,
@@ -657,150 +531,15 @@ std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i 
     //printl("Bottom",l);
     //printl("Clipped polygon",l);
 
-    // find point in poly closest to projectionPlane
-    float min = FLT_MAX;
-    for (unsigned i=0; i<l.size(); i++) {
-        float f = (l[i]-projectionPlane).dot();
-        if (f<min) {
-            min = f;
-            closest_i = l[i];
-        }
-
-        GLvector d = (l[(i+1)%l.size()] - l[i]),
-                 v = projectionPlane - l[i];
-        float k = d%v / (d.dot());
-        if (0<k && k<1) {
-            f = (l[i]+d*k-projectionPlane).dot();
-            if (f<min) {
-                min = f;
-                closest_i = l[i]+d*k;
-            }
-        }
-    }
+    closest_i = closestPointOnPoly(l, projectionPlane);
     return l;
 }
 
-std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i ) {
+static std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i ) {
     std::vector<GLvector> l;
     for (unsigned i=0; i<4; i++)
         l.push_back( corner[i] );
     return clipFrustum(l, closest_i);
-}
-
-static GLvector findSquare( const std::vector<GLvector>& l, const GLvector& a, unsigned i) {
-    GLvector b=a;
-    bool done[2]={false,false};
-    // find vertical and horisontal intersection
-    unsigned j, nexti = (i+1)%l.size();
-    for (j=nexti; j!=i; j=(j+1)%l.size()) {
-        const GLvector& p1 = l[j];
-        const GLvector& p2 = l[(j+1)%l.size()];
-        for (unsigned v=0; v<=2; v+=2) {
-            unsigned u=2*(!v);
-            float f = (a[u]-p1[u])/(p2[u]-p1[u]);
-            if (0 <= f && f <= 1 && p2[u]!=p1[u]) {
-                float s = p1[v] + (p2[v]-p1[v])*f;
-                if (!done[0!=v]) {
-                    b[v]=s;
-                    done[0!=v] = true;
-                }
-            }
-        }
-    }
-
-    if (!done[0] || !done[1])
-        return a;
-
-    // validate that the fourth point lies on the inside
-    for (j=nexti; j!=i; j=(j+1)%l.size()) {
-        const GLvector& p1 = l[j];
-        const GLvector& p2 = l[(j+1)%l.size()];
-        for (unsigned v=0; v<=2; v+=2) {
-            unsigned u=2*(!v);
-            float f = (b[u]-p1[u])/(p2[u]-p1[u]);
-            if (0 <= f && f <= 1 && p2[u]!=p1[u]) {
-                float s = p1[v] + (p2[v]-p1[v])*f;
-                float g = (s-a[u])/(b[u]-a[u]);
-                if (0 < g && g < 1 && b[u]!=a[u])
-                    b[v]=s;
-            }
-        }
-    }
-
-    return b;
-}
-
-static std::vector<GLvector> getLargestSquare( const std::vector<GLvector>& l) {
-    // find the largest square enclosed by convex polygon 'l'
-
-    // check that the polygon isn't already square
-    if (4==l.size()) {
-        GLvector a = l[0],b = l[0];
-        for (unsigned i=1; i<l.size(); i++) {
-            for (unsigned c=0; c<3; c++) {
-                if (l[i][c]<a[c]) a[c]=l[i][c];
-                if (l[i][c]>b[c]) b[c]=l[i][c];
-            }
-        }
-        bool square = true;
-        for (unsigned i=1; i<l.size(); i++) {
-            for (unsigned c=0; c<3; c++) {
-                if (l[i][c] != a[c] && l[i][c] != b[c])
-                    square = false;
-            }
-        }
-        if (square)
-            return l;
-    }
-
-    // the largest square will tangent the polygon at three points, for which the remaining point lie within the polygon
-    GLvector a,b;
-    float maxp=-1;
-    for (unsigned i=0; i<l.size(); i++) {
-        unsigned nexti = (i+1)%l.size();
-        for (unsigned m=0; m<2; m++) {
-            GLvector sa = (l[i]+l[nexti])*(.5f*m),
-                     sb = findSquare(l, sa, i);
-
-            if (fabs((a[0]-b[0])*(a[2]-b[2])) < fabs((sa[0]-sb[0])*(sa[2]-sb[2]))) {
-                a = sa, b = sb;
-                maxp = i + .5f*m;
-            }
-        }
-    }
-
-    if (maxp<0)
-        return std::vector<GLvector>();
-
-    float sz = .25f;
-    while (sz>.01) { // accuracy
-        unsigned maxi = (unsigned)floor(maxp);
-        GLvector sa = (l[maxi]+l[(maxi+1)%l.size()])*(maxp+sz-maxi);
-        GLvector sb = findSquare(l, sa, maxi);
-
-        if (fabs((a[0]-b[0])*(a[2]-b[2])) < fabs((sa[0]-sb[0])*(sa[2]-sb[2]))) {
-            a = sa, b = sb;
-            maxp = maxp+sz;
-        }
-
-        maxi = (((unsigned)ceil(maxp))+l.size()-1)%l.size();
-        sa = (l[maxi]+l[(maxi+1)%l.size()])*(maxp-sz-maxi);
-        sb = findSquare(l, sa, maxi);
-
-        if (fabs((a[0]-b[0])*(a[2]-b[2])) < fabs((sa[0]-sb[0])*(sa[2]-sb[2]))) {
-            a = sa, b = sb;
-            maxp = maxp+sz;
-        }
-
-        sz /= 2;
-    }
-
-    std::vector<GLvector> r;
-    r.push_back( a );
-    r.push_back( GLvector( a[0], 0, b[2] ) );
-    r.push_back( GLvector( b[0], 0, b[2] ) );
-    r.push_back( GLvector( b[0], 0, a[2] ) );
-    return r;
 }
 
 /**
@@ -822,8 +561,7 @@ bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, floa
 
     GLvector closest_i;
     std::vector<GLvector> clippedCorners = clipFrustum(corner, closest_i);
-    // clippedCorners = getLargestSquare(clippedCorners);
-    if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
+    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
     {
         printl("Clipped corners",clippedCorners);
         printf("closest_i %g\t%g\t%g\n", closest_i[0], closest_i[1], closest_i[2]);
@@ -863,12 +601,11 @@ bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, floa
             xzBase = wBase - dirBase*(wBase[1]/dirBase[1]),
             xz1 = w1 - dir1*(w1[1]/dir1[1]),
             xz2 = w2 - dir2*(w2[1]/dir2[1]);
-    if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
+    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
     {
     printf("xzBase %g\t%g\t%g\n", xzBase[0], xzBase[1], xzBase[2]);
     printf("xz1 %g\t%g\t%g\n", xz1[0], xz1[1], xz1[2]);
     printf("xz2 %g\t%g\t%g\n", xz2[0], xz2[1], xz2[2]);
-    printf("xz1-xz2 %g\t%g\t%g\n", (xz1-xz2)[0], (xz1-xz2)[1], (xz1-xz2)[2]);
     printf("xz1-xzBase %g\t%g\t%g\n", (xz1-xzBase)[0], (xz1-xzBase)[1], (xz1-xzBase)[2]);
     printf("xz2-xzBase %g\t%g\t%g\n", (xz2-xzBase)[0], (xz2-xzBase)[1], (xz2-xzBase)[2]);
     }
@@ -878,10 +615,6 @@ bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, floa
             timePerPixel = 0,
             freqPerPixel = 0;
 
-    /*if (dir1[1] != 0 && dir2[1] != 0) {
-        timePerPixel = max(timePerPixel, fabs(xz1[0]-xz2[0]));
-        freqPerPixel = max(freqPerPixel, fabs(xz1[2]-xz2[2]));
-    }*/
     if (dir1[1] != 0 && dirBase[1] != 0) {
         timePerPixel = max(timePerPixel, fabs(xz1[0]-xzBase[0]));
         freqPerPixel = max(freqPerPixel, fabs(xz1[2]-xzBase[2]));
