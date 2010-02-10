@@ -22,7 +22,7 @@ public:
                float wavelet_std_t );
     ~Transform();
 
-    ChunkIndex             getChunkIndex( float including_time_t );
+    ChunkIndex             getChunkIndex( unsigned including_sample );
     pTransform_chunk       getChunk( ChunkIndex n, cudaStream_t stream=0 );
     /*static*/ pWaveform_chunk computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
 

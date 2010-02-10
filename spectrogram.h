@@ -121,6 +121,8 @@ private:
     std::vector<pBlock> _cache;
 
     Reference   findReferenceCanonical( Position p, Position sampleSize );
+    void        computeBlock( Spectrogram::pBlock block );
+    void        mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk );
 };
 
 class Spectrogram::Position {
@@ -140,6 +142,8 @@ public:
 
     bool operator==(const Reference &b) const;
     void getArea( Position &a, Position &b) const;
+    unsigned sampleOffset() const;
+    unsigned scaleOffset() const;
 
     bool containsSpectrogram() const;
     bool toLarge() const;

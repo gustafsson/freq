@@ -27,14 +27,17 @@ HEADERS += mainwindow.h \
     wavelet.cu.h \
     spectrogram-vbo.h \
     spectrogram-renderer.h \
-    spectrogram-slope.cu.h
+    spectrogram-slope.cu.h \
+    spectrogram-block.cu.h
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu \
     spectrogram.frag \
     spectrogram.vert \
-    spectrogram-slope.cu
+    spectrogram-slope.cu \
+    spectrogram-block.cu
 CUDA_SOURCES += wavelet.cu \
-    spectrogram-slope.cu
+    spectrogram-slope.cu \
+    spectrogram-block.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
 unix:INCLUDEPATH += /usr/local/cuda/include

@@ -1,6 +1,7 @@
 #include "spectrogram.h"
 #include "spectrogram-vbo.h"  // breaks model-view-controller, but I want the rendering context associated with a spectrogram block to be removed when the cached block is removed
 #include "spectrogram-slope.cu.h"
+#include "spectrogram-block.cu.h"
 
 #include <boost/foreach.hpp>
 #include <CudaException.h>
@@ -159,21 +160,66 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
         return block; // return null-pointer
 
     // Reset block with dummy values
-    SpectrogramVbo::pHeight h = block->vbo->height();
-    float* p = h->data->getCpuMemory();
-    for (unsigned s = 0; s<_samples_per_block; s++) {
-        for (unsigned f = 0; f<_scales_per_block; f++) {
-            p[ f*_samples_per_block + s] = sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
+    {
+        SpectrogramVbo::pHeight h = block->vbo->height();
+        float* p = h->data->getCpuMemory();
+        for (unsigned s = 0; s<_samples_per_block; s++) {
+            for (unsigned f = 0; f<_scales_per_block; f++) {
+                p[ f*_samples_per_block + s] = sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
+            }
         }
+        // Make sure it is moved to the gpu
+        h->data->getCudaGlobal();
+
+        // TODO Compute block
+        // computeBlock( block );
+
+        // Compute slope
+        // TODO select cuda stream
+        cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->vbo->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block );
     }
-    // Make sure it is moved to the gpu
-    h->data->getCudaGlobal();
 
-    // TODO Compute block
-
-    // Compute slope
-    cudaCalculateSlopeKernel(h->data->getCudaGlobal().ptr(), block->vbo->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block);
     return block;
+}
+
+void Spectrogram::computeBlock( Spectrogram::pBlock block ) {
+    Position a, b;
+    block->ref.getArea( a, b );
+    unsigned
+        start = a.time * _transform->original_waveform()->sample_rate(),
+        end = b.time * _transform->original_waveform()->sample_rate();
+
+    SpectrogramVbo::pHeight h = block->vbo->height();
+    for (unsigned t = start; t<end;) {
+        Transform::ChunkIndex n = _transform->getChunkIndex(t);
+        pTransform_chunk chunk = _transform->getChunk(n);
+        mergeBlock( block, chunk );
+        t += chunk->nSamples();
+    }
+}
+
+void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk ) {
+    SpectrogramVbo::pHeight h = outBlock->vbo->height();
+    h->data->getCudaGlobal();
+    Position a, b;
+    outBlock->ref.getArea( a, b );
+
+    float in_sample_rate = inChunk->sample_rate;
+    float out_sample_rate = pow(2,-outBlock->ref.log2_samples_size[0]);
+    float in_frequency_resolution = inChunk->nFrequencies();
+    float out_frequency_resolution = pow(2,-outBlock->ref.log2_samples_size[0]);
+    float in_offset = max(0.f,(a.time-inChunk->startTime()))*in_sample_rate;
+    float out_offset = max(0.f,(inChunk->startTime()-a.time))*out_sample_rate;
+
+
+    blockMerge( h->data->getCudaGlobal(),
+                           inChunk->transform_data->getCudaGlobal(),
+                           in_sample_rate,
+                           out_sample_rate,
+                           in_frequency_resolution,
+                           out_frequency_resolution,
+                           in_offset,
+                           out_offset);
 }
 
 void Spectrogram::gc() {

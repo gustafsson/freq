@@ -44,8 +44,8 @@ Transform::~Transform()
     gc();
 }
 
-Transform::ChunkIndex Transform::getChunkIndex( float including_time_t ) {
-    return including_time_t * _original_waveform->sample_rate() / _samples_per_chunk;
+Transform::ChunkIndex Transform::getChunkIndex( unsigned including_sample ) {
+    return including_sample / _samples_per_chunk;
 }
 
 
