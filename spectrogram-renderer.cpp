@@ -7,6 +7,7 @@
 #include <CudaException.h>
 #include <boost/array.hpp>
 #include <tmatrix.h>
+#include <float.h>
 
 using namespace std;
 
@@ -186,7 +187,7 @@ static bool inFrontOfCamera2( GLvector obj ) {
 }
 
 static bool inFrontOfPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
-    return (plane-obj)%normal < 0;
+    return (plane-obj)%normal <= 1e-7;
 }
 
 static bool inFrontOfCamera( GLvector obj ) {
@@ -469,8 +470,10 @@ bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference r
     if (!computePixelsPerUnit( ref, timePixels, scalePixels))
         return false;
 
-    fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.chunk_index[0], ref.chunk_index[1], timePixels,scalePixels);
-    fflush(stdout);
+    if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
+        fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.chunk_index[0], ref.chunk_index[1], timePixels,scalePixels);
+        fflush(stdout);
+    }
 
     GLdouble needBetterF, needBetterT;
 
@@ -576,19 +579,17 @@ void updateBounds(float bounds[4], GLvector p) {
 std::vector<GLvector> clipPlane( std::vector<GLvector> p, GLvector p0, GLvector n ) {
     std::vector<GLvector> r;
 
-    bool valid[4], visible = false;
-    for (unsigned i=0; i<p.size(); i++)
-        visible |= (valid[i] = inFrontOfPlane( p[i], p0, n ));
-
     // Clipp ref square with projection plane
     for (unsigned i=0; i<p.size(); i++) {
         int nexti=(i+1)%p.size();
-        if (valid[i])
+        if ((p0-p[i])%n < 0)
             r.push_back( p[i] );
-        if (valid[i] !=  valid[nexti]) {
-            float s=NAN;
+
+        if (((p0-p[i])%n < 0) != ((p0-p[nexti])%n <0) ) {
+            float s;
             GLvector xy = planeIntersection( p[i], p[nexti], s, p0, n );
-            if (!isnan(s) && 0 < s && s < 1)
+
+            if (!isnan(s) && -.1 <= s && s <= 1.1)
                 r.push_back( xy );
         }
     }
@@ -597,7 +598,7 @@ std::vector<GLvector> clipPlane( std::vector<GLvector> p, GLvector p0, GLvector 
 }
 
 void printl(const char* str, const std::vector<GLvector>& l) {
-    fprintf(stdout,"%s\n",str);
+    fprintf(stdout,"%s (%lu)\n",str,l.size());
     for (unsigned i=0; i<l.size(); i++) {
         fprintf(stdout,"  %g\t%g\t%g\n",l[i][0],l[i][1],l[i][2]);
     }
@@ -605,7 +606,7 @@ void printl(const char* str, const std::vector<GLvector>& l) {
 }
 
 
-std::vector<GLvector> clipFrustum( std::vector<GLvector> l ) {
+std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i ) {
 
     static GLvector projectionPlane, projectionNormal,
         rightPlane, rightNormal,
@@ -656,14 +657,34 @@ std::vector<GLvector> clipFrustum( std::vector<GLvector> l ) {
     //printl("Bottom",l);
     //printl("Clipped polygon",l);
 
+    // find point in poly closest to projectionPlane
+    float min = FLT_MAX;
+    for (unsigned i=0; i<l.size(); i++) {
+        float f = (l[i]-projectionPlane).dot();
+        if (f<min) {
+            min = f;
+            closest_i = l[i];
+        }
+
+        GLvector d = (l[(i+1)%l.size()] - l[i]),
+                 v = projectionPlane - l[i];
+        float k = d%v / (d.dot());
+        if (0<k && k<1) {
+            f = (l[i]+d*k-projectionPlane).dot();
+            if (f<min) {
+                min = f;
+                closest_i = l[i]+d*k;
+            }
+        }
+    }
     return l;
 }
 
-std::vector<GLvector> clipFrustum( GLvector corner[4] ) {
+std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i ) {
     std::vector<GLvector> l;
     for (unsigned i=0; i<4; i++)
         l.push_back( corner[i] );
-    return clipFrustum(l);
+    return clipFrustum(l, closest_i);
 }
 
 static GLvector findSquare( const std::vector<GLvector>& l, const GLvector& a, unsigned i) {
@@ -799,91 +820,87 @@ bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, floa
         GLvector( p[1].time, 0, p[0].scale)
     };
 
-    std::vector<GLvector> clippedCorners = clipFrustum(corner);
+    GLvector closest_i;
+    std::vector<GLvector> clippedCorners = clipFrustum(corner, closest_i);
     // clippedCorners = getLargestSquare(clippedCorners);
-    printl("Largest Square",clippedCorners);
-
+    if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
+    {
+        printl("Clipped corners",clippedCorners);
+        printf("closest_i %g\t%g\t%g\n", closest_i[0], closest_i[1], closest_i[2]);
+    }
     if (0==clippedCorners.size())
         return false;
 
-    // Find projection of object coordinates in corner[i] onto window coordinates
-    // Compare length in pixels of each side
-    // Check if projection is visible
     GLint view[4];
     glGetIntegerv(GL_VIEWPORT, view);
-    bool above=true, under=true, right=true, left=true;
-    timePixels = scalePixels = 0;
-    for (unsigned i=0; i<clippedCorners.size(); i++)
-    for (unsigned nexti=0; nexti<clippedCorners.size(); nexti++)
+
+    // Find units per pixel at point closest_i with glUnProject
+    GLvector screen = gluProject( closest_i );
+    GLvector screenX=screen, screenY=screen;
+    if (screen[0]>view[0] + view[2]/2)       screenX[0]--;
+    else                                     screenX[0]++;
+
+    if (screen[1]>view[1] + view[3]/2)       screenY[1]--;
+    else                                     screenY[1]++;
+
+    GLvector
+            wBase = gluUnProject( screen ),
+            w1 = gluUnProject( screenX ),
+            w2 = gluUnProject( screenY );
+
+    screen[2]+=1;
+    screenX[2]+=1;
+    screenY[2]+=1;
+
+    // directions
+    GLvector
+            dirBase = gluUnProject( screen )-wBase,
+            dir1 = gluUnProject( screenX )-w1,
+            dir2 = gluUnProject( screenY )-w2;
+
+    // valid projection on xz-plane exists if dir?[1]<0 wBase[1]<0
+    GLvector
+            xzBase = wBase - dirBase*(wBase[1]/dirBase[1]),
+            xz1 = w1 - dir1*(w1[1]/dir1[1]),
+            xz2 = w2 - dir2*(w2[1]/dir2[1]);
+    if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
     {
-        //unsigned nexti=(i+1)%clippedCorners.size();
-        if (nexti==i)
-            continue;
-
-        GLvector screen[2];
-
-        GLvector c1 = clippedCorners[i];
-        GLvector c2 = clippedCorners[nexti];
-
-        GLvector a[] = {
-            GLvector( min(c1[0], c2[0]), 0, min(c1[2], c2[2])),
-            GLvector( min(c1[0], c2[0]), 0, max(c1[2], c2[2])),
-            GLvector( max(c1[0], c2[0]), 0, max(c1[2], c2[2])),
-            GLvector( max(c1[0], c2[0]), 0, min(c1[2], c2[2]))
-        };
-
-        unsigned alen = sizeof(a)/sizeof(a[0]);
-        if ( a[0] == a[1] ) {
-            a[1] = a[2];
-            alen = 2;
-        }
-        if ( a[0] == a[3] ) {
-            alen = 2;
-        }
-
-        for (unsigned b=0; b<(2==alen?1:alen); b++) {
-            std::vector<GLvector> l;
-            l.push_back( a[b] );
-            l.push_back( a[(b+1)%alen] );
-            l = clipFrustum( l );
-            if (2 > l.size())
-                continue;
-            if (l[0] == l[1])
-                continue;
-
-            screen[0] = gluProject2( l[0] );
-            screen[1] = gluProject2( l[1] );
-
-            GLvector screenBorder = screen[0] - screen[1];
-            GLvector worldBorder = l[0] - l[1];
-
-            bool labove=true, lunder=true, lright=true, lleft=true;
-            for (unsigned j=0; j<2; j++) {
-                if (screen[j][0] > view[0]) lleft=false;
-                if (screen[j][0] < view[0]+view[2]) lright=false;
-                if (screen[j][1] > view[1]) lunder=false;
-                if (screen[j][1] < view[1]+view[3]) labove=false;
-            }
-
-            above &= labove;
-            under &= lunder;
-            right &= lright;
-            left &= lleft;
-            // If everything is
-            //if (labove || lunder || lright || lleft)
-            //    continue;
-
-            screenBorder[2] = 0;
-            float ltimePixels = screenBorder.length() * (p[1].time-p[0].time)/worldBorder[0];
-            float lscalePixels = screenBorder.length() * (p[1].scale-p[0].scale)/worldBorder[2];
-            timePixels = max(timePixels, (0==worldBorder[0])?0:ltimePixels);
-            scalePixels = max(scalePixels, (0==worldBorder[2])?0:lscalePixels);
-        }
+    printf("xzBase %g\t%g\t%g\n", xzBase[0], xzBase[1], xzBase[2]);
+    printf("xz1 %g\t%g\t%g\n", xz1[0], xz1[1], xz1[2]);
+    printf("xz2 %g\t%g\t%g\n", xz2[0], xz2[1], xz2[2]);
+    printf("xz1-xz2 %g\t%g\t%g\n", (xz1-xz2)[0], (xz1-xz2)[1], (xz1-xz2)[2]);
+    printf("xz1-xzBase %g\t%g\t%g\n", (xz1-xzBase)[0], (xz1-xzBase)[1], (xz1-xzBase)[2]);
+    printf("xz2-xzBase %g\t%g\t%g\n", (xz2-xzBase)[0], (xz2-xzBase)[1], (xz2-xzBase)[2]);
     }
 
-    // If everything is
-    if (above || under || right || left)
-        return false;
+    // compute {units in xz-plane} per {screen pixel}, that determines the required resolution
+    GLdouble
+            timePerPixel = 0,
+            freqPerPixel = 0;
+
+    /*if (dir1[1] != 0 && dir2[1] != 0) {
+        timePerPixel = max(timePerPixel, fabs(xz1[0]-xz2[0]));
+        freqPerPixel = max(freqPerPixel, fabs(xz1[2]-xz2[2]));
+    }*/
+    if (dir1[1] != 0 && dirBase[1] != 0) {
+        timePerPixel = max(timePerPixel, fabs(xz1[0]-xzBase[0]));
+        freqPerPixel = max(freqPerPixel, fabs(xz1[2]-xzBase[2]));
+    }
+    if (dir2[1] != 0 && dirBase[1] != 0) {
+        timePerPixel = max(timePerPixel, fabs(xz2[0]-xzBase[0]));
+        freqPerPixel = max(freqPerPixel, fabs(xz2[2]-xzBase[2]));
+    }
+
+    if (0 == timePerPixel)
+        timePerPixel = max(fabs(w1[0]-wBase[0]), fabs(w2[0]-wBase[0]));
+    if (0 == freqPerPixel)
+        freqPerPixel = max(fabs(w1[2]-wBase[2]), fabs(w2[2]-wBase[2]));
+
+    if (0==freqPerPixel) freqPerPixel=timePerPixel;
+    if (0==timePerPixel) timePerPixel=freqPerPixel;
+
+    timePixels = (p[1].time - p[0].time)/timePerPixel;
+    scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
 
     return true;
 }
