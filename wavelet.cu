@@ -3,9 +3,11 @@
 
 __global__ void WavelettKernel( float* in_waveform_ft, float* out_waveform_ft, cudaExtent numElem, float start, float steplogsize  );
 __global__ void InverseKernel( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area );
+__global__ void RemoveDiscKernel(float* in_wavelet, cudaExtent in_numElem, uint4 area );
 
 void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem);
 void inverseWavelettTransform( float* in_wavelett_ft, cudaExtent in_numElem, float* out_inverse_waveform, cudaExtent out_numElem, uint4 area );
+void removeDisc( float* in_wavelet, cudaExtent in_numElem, uint4 area );
 
 void computeWavelettTransform( float* in_waveform_ft, float* out_waveform_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem)
 {
@@ -118,4 +120,38 @@ __global__ void InverseKernel(float* in_wavelett_ft, cudaExtent in_numElem, floa
     }
 
     out_inverse_waveform[x] = a;
+}
+
+void removeDisc( float* in_wavelet, cudaExtent in_numElem, uint4 area )
+{
+    // Multiply the coefficients together and normalize the result
+    dim3 block(256,1,1);
+    dim3 grid( INTDIV_CEIL(numElem.width, block.x), numElem.height*numElem.depth, 1);
+
+    if(grid.x>65535) {
+        printf("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+
+    RemoveDiscKernel<<<grid, block>>>( in_wavelett_ft, in_numElem, out_inverse_waveform, out_numElem, area );
+}
+
+__global__ void RemoveDiscKernel(float* in_wavelet, cudaExtent in_numElem, uint4 area )
+{
+    const unsigned
+            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            fi = __umul24(blockIdx.y,blockDim.y) + threadIdx.y;
+
+    if (x>=out_numElem.width )
+        return;
+
+    float rx = area.z-(float)area.x;
+    float ry = area.w-(float)area.y;
+    float dx = x-(float)area.x;
+    float dy = fi-(float)area.y;
+
+    if (dx*dx/rx/rx + dy*dy/ry/ry < 1) {
+        in_wavelett_ft[ 2*x + fi*in_numElem.width ] = 0;
+        in_wavelett_ft[ 2*x + 1 + fi*in_numElem.width ] = 0;
+    }
 }
