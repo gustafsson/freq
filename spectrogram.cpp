@@ -199,9 +199,6 @@ void Spectrogram::computeBlock( Spectrogram::pBlock block ) {
         pTransform_chunk chunk = _transform->getChunk(n);
         mergeBlock( block, chunk );
         t += chunk->nSamples();
-        if (t<end) {
-            int wohotwice=1;
-        }
     }
 }
 
