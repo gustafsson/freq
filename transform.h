@@ -59,7 +59,7 @@ private:
     cufftHandle                             _fft_single;
     cufftHandle                             _fft_many;
     pTransform_chunk                        _intermediate_wt;
-    boost::shared_ptr<GpuCpuData<float> >   _intermediate_ft;
+    boost::shared_ptr<GpuCpuData<float2> >  _intermediate_ft;
 
     /* property values */
     pWaveform _original_waveform;

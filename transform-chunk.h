@@ -17,7 +17,7 @@ public:
       use as transform_data[ sample + f_index*nSamples ];
       See getNearestCoeff for an example on how to find f_index.
     */
-    boost::scoped_ptr<GpuCpuData<float> > transform_data;
+    boost::scoped_ptr<GpuCpuData<float2> > transform_data;
 
     float min_hz, max_hz, sample_rate;
     unsigned sample_offset;
@@ -36,7 +36,7 @@ public:
                min_hz < max_hz;
     }
 
-    float getNearestCoeff( float t, float f );
+    float2 getNearestCoeff( float t, float f );
     unsigned getFrequencyIndex( float f ) const;
     float getFrequency( unsigned fi ) const;
 };

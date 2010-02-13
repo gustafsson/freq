@@ -9,10 +9,10 @@ Transform_chunk::Transform_chunk()
     sample_offset(0)
 {}
 
-float Transform_chunk::getNearestCoeff( float t, float f )
+float2 Transform_chunk::getNearestCoeff( float t, float f )
 {
     if (!valid())
-        return 0;
+        return make_float2(0,0);
 
     if ( t < 0 ) t = 0;
     unsigned s = t*sample_rate+.5;

@@ -75,7 +75,7 @@ Spectrogram::Reference Spectrogram::findReference( Position p, Position sampleSi
     // Compute sample size
     r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
     r.chunk_index = tvector<2,unsigned>(0,0);
-    printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
+    //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Validate sample size
     Position a,b; r.getArea(a,b);
@@ -83,7 +83,7 @@ Spectrogram::Reference Spectrogram::findReference( Position p, Position sampleSi
     if (b.scale < minSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]++;
     if (b.time > maxSampleSize.time*_samples_per_block && 0<length )    r.log2_samples_size[0]--;
     if (b.scale > maxSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]--;
-    printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
+    //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Compute chunk index
     r.chunk_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
@@ -111,7 +111,7 @@ Spectrogram::Position Spectrogram::max_sample_size() {
     Position minima=min_sample_size();
 
     return Position( max(minima.time, 2.f*length/_samples_per_block),
-                        max(minima.scale, 2.f/_scales_per_block) );
+                        max(minima.scale, 1.f/_scales_per_block) );
 }
 
 
@@ -160,7 +160,7 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
         return block; // return null-pointer
 
     // Reset block with dummy values
-    {
+    if(0) {
         SpectrogramVbo::pHeight h = block->vbo->height();
         float* p = h->data->getCpuMemory();
         for (unsigned s = 0; s<_samples_per_block; s++) {
@@ -168,16 +168,21 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
                 p[ f*_samples_per_block + s] = sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
             }
         }
+
         // Make sure it is moved to the gpu
         h->data->getCudaGlobal();
+    }
 
-        // TODO Compute block
-        // computeBlock( block );
+    // TODO Compute block
+    computeBlock( block );
 
-        // Compute slope
-        // TODO select cuda stream
+    // Compute slope
+    // TODO select cuda stream
+    {
+        SpectrogramVbo::pHeight h = block->vbo->height();
         cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->vbo->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block );
     }
+
 
     return block;
 }
@@ -189,12 +194,14 @@ void Spectrogram::computeBlock( Spectrogram::pBlock block ) {
         start = a.time * _transform->original_waveform()->sample_rate(),
         end = b.time * _transform->original_waveform()->sample_rate();
 
-    SpectrogramVbo::pHeight h = block->vbo->height();
     for (unsigned t = start; t<end;) {
         Transform::ChunkIndex n = _transform->getChunkIndex(t);
         pTransform_chunk chunk = _transform->getChunk(n);
         mergeBlock( block, chunk );
         t += chunk->nSamples();
+        if (t<end) {
+            int wohotwice=1;
+        }
     }
 }
 
@@ -205,13 +212,13 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inC
     outBlock->ref.getArea( a, b );
 
     float in_sample_rate = inChunk->sample_rate;
-    float out_sample_rate = pow(2,-outBlock->ref.log2_samples_size[0]);
+    float out_sample_rate = pow(2, -outBlock->ref.log2_samples_size[0]);
     float in_frequency_resolution = inChunk->nFrequencies();
-    float out_frequency_resolution = pow(2,-outBlock->ref.log2_samples_size[0]);
-    float in_offset = max(0.f,(a.time-inChunk->startTime()))*in_sample_rate;
-    float out_offset = max(0.f,(inChunk->startTime()-a.time))*out_sample_rate;
+    float out_frequency_resolution = pow(2, -outBlock->ref.log2_samples_size[1]);
+    float in_offset = max(0.f, (a.time-inChunk->startTime()))*in_sample_rate;
+    float out_offset = max(0.f, (inChunk->startTime()-a.time))*out_sample_rate;
 
-
+    // cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
     blockMerge( h->data->getCudaGlobal(),
                            inChunk->transform_data->getCudaGlobal(),
                            in_sample_rate,

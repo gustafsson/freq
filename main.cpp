@@ -24,9 +24,9 @@ static const char _sawe_usage_string[] =
 static unsigned _channel=0;
 static unsigned _samples_per_chunk = 1<<13;
 static unsigned _scales_per_octave = 40;
-static float _wavelet_std_t = 0.1;
+static float _wavelet_std_t = 0.01;
 static unsigned _samples_per_block = 1<<9;
-static unsigned _scales_per_block = 1<<9;
+static unsigned _scales_per_block = 1<<8;
 static const char* _soundfile = 0;
 static bool _sawe_exit=false;
 
@@ -124,14 +124,19 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    boost::shared_ptr<Waveform> wf( new Waveform( _soundfile ) );
-    boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
-    boost::shared_ptr<Spectrogram> sg( new Spectrogram(wt, _samples_per_block, _scales_per_block  ) );
-    boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg ) );
+    try
+    {
+        boost::shared_ptr<Waveform> wf( new Waveform( _soundfile ) );
+        boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
+        boost::shared_ptr<Spectrogram> sg( new Spectrogram(wt, _samples_per_block, _scales_per_block  ) );
+        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg ) );
 
-    w.setCentralWidget( dw.get() );
-    dw->show();
-    w.show();
+        w.setCentralWidget( dw.get() );
+        dw->show();
+        w.show();
 
-   return a.exec();
+       return a.exec();
+   } catch ( const std::exception& x ) {
+       cout << "Caught exception: " << x.what() << endl;
+   }
 }

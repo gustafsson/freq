@@ -149,7 +149,7 @@ pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSampl
     if (firstSample > sourceSamples)
         validSamples = 0;
     else if ( firstSample + numberOfSamples > sourceSamples )
-        validSamples = numberOfSamples - firstSample;
+        validSamples = sourceSamples - firstSample;
     else // default case
         validSamples = numberOfSamples;
 
@@ -160,9 +160,9 @@ pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSampl
 
     bool interleavedSource = Waveform_chunk::Interleaved_Complex == _waveform.interleaved();
     for (unsigned i=0; i<validSamples; i++) {
-        target[i*m + 0] = source[i*m + 0];
+        target[i*m + 0] = source[i*sourcem + 0];
         if (Waveform_chunk::Interleaved_Complex == interleaved)
-            target[i*m + 1] = interleavedSource ? source[i*m + 1]:0;
+            target[i*m + 1] = interleavedSource ? source[i*sourcem + 1]:0;
     }
 
     for (unsigned i=validSamples; i<numberOfSamples; i++) {

@@ -354,7 +354,7 @@ bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference r
     if (!computePixelsPerUnit( ref, timePixels, scalePixels))
         return false;
 
-    if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
+    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
         fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.chunk_index[0], ref.chunk_index[1], timePixels,scalePixels);
         fflush(stdout);
     }
