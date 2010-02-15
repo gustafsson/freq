@@ -3,7 +3,7 @@
 
 __global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float steplogsize  );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem );
-__global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, float* out_clamped_wt, cudaExtent out_numElem );
+__global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem );
 
 static const char* gLastError = 0;
 
@@ -74,8 +74,11 @@ __global__ void kernel_compute(
     unsigned y = x/2; // compute equal results for the complex and scalar part
     float factor = 4*pi*y*period-two_pi_f0;
     float basic = multiplier * exp(-0.5f*factor*factor);
-    basic /= 7000;
-    out_wavelet_ft[offset + x] = in_waveform_ft[x]*basic*f0;
+
+    float jibberish_normalization = 2.3406;
+    float cufft_normalize = 1.f/numElem.width;
+
+    out_wavelet_ft[offset + x] = jibberish_normalization*cufft_normalize*basic*f0*in_waveform_ft[x];
 }
 
 void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, cudaStream_t stream  )
@@ -109,12 +112,13 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
     out_inverse_waveform[x] = a;
 }
 
-void wtClamp( float2* in_wt, cudaExtent in_numElem, size_t in_offset, float2* out_clamped_wt, cudaExtent out_numElem, cudaStream_t stream )
+void wtClamp( float2* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float2* out_clamped_wt, cudaExtent out_numElem, cudaStream_t stream )
 {
     // in this scope, work on arrays of float* instead of float2* to coalesce better
     in_numElem.width *= 2;
     in_offset *= 2;
     out_numElem.width *= 2;
+    last_sample *= 2;
 
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -133,25 +137,31 @@ void wtClamp( float2* in_wt, cudaExtent in_numElem, size_t in_offset, float2* ou
         return;
     }
 
-    kernel_clamp<<<grid, block, stream>>>( (float*)in_wt, in_numElem, in_offset, (float*)out_clamped_wt, out_numElem );
+    kernel_clamp<<<grid, block, stream>>>( (float*)in_wt, in_numElem, in_offset, last_sample, (float*)out_clamped_wt, out_numElem );
 }
 
-__global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, float* out_clamped_wt, cudaExtent out_numElem )
+__global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem )
 {
     const unsigned
             x = __umul24(blockIdx.x, blockDim.x) + threadIdx.x,
             y = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
 
+    // sanity checks...
     if (x>=out_numElem.width )
         return;
-    if (y>=out_numElem.height || y>=in_numElem.height)
-        return;
-    // sanity checks...
-    if (in_offset + x >=in_numElem.width)
+    if (y>=out_numElem.height)
         return;
 
     // Not coalesced reads for arbitrary in_offset, coalesced writes though
-    unsigned i = in_offset + x + in_numElem.width*y;
+    float v = 0;
+    if (y<in_numElem.height && in_offset + x < in_numElem.width) {
+        unsigned i = in_offset + x + in_numElem.width*y;
+        v = in_wt[i];
+    }
+
+    if (x >= last_sample)
+        v = 0.f/0.f;
+
     unsigned o = x + out_numElem.width*y;
-    out_clamped_wt[o] = in_wt[i];
+    out_clamped_wt[o] = v;
 }

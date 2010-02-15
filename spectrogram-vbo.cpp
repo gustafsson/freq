@@ -80,7 +80,8 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
 
 Vbo::Vbo(size_t size)
-:   _vbo(0)
+:   _sz(size),
+    _vbo(0)
 {
     // create buffer object
     glGenBuffers(1, &_vbo);
@@ -123,11 +124,9 @@ SpectrogramVbo::pSlope SpectrogramVbo::slope() {
             _spectrogram->scales_per_block(), 1)));
 }
 
-void SpectrogramVbo::draw(SpectrogramRenderer* renderer) {
+void SpectrogramVbo::draw() {
     unsigned meshW = _spectrogram->samples_per_block();
     unsigned meshH = _spectrogram->scales_per_block();
-
-
 
     glBindBuffer(GL_ARRAY_BUFFER, *_height);
     glClientActiveTexture(GL_TEXTURE0);
@@ -142,7 +141,7 @@ void SpectrogramVbo::draw(SpectrogramRenderer* renderer) {
 
 
 
-    bool wireFrame = false;
+    // bool wireFrame = false;
     bool drawPoints = false;
 
     glColor3f(1.0, 1.0, 1.0);

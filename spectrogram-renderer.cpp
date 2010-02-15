@@ -326,7 +326,7 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref )
             if (0 /* direct rendering */ )
                 block->vbo->draw_directMode();
             else if (1 /* vbo */ )
-                block->vbo->draw( this );
+                block->vbo->draw();
 
         } else {
             // getBlock would try to find something else if the requested block wasn't readily available.

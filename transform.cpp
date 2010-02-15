@@ -50,7 +50,7 @@ Transform::ChunkIndex Transform::getChunkIndex( unsigned including_sample ) {
 
 /*
 getChunk initializes asynchronous computation if 0!=stream (inherited
-behaviour from cuda). Also from NVIDIA CUDA Programming Guide section
+behaviour from cuda). Also note, from NVIDIA CUDA Programming Guide section
 3.2.6.1, v2.3 Stream:
 
 "Two commands from different streams cannot run concurrently if either a page-
@@ -65,7 +65,7 @@ is allocated beforehand and reserved for the Waveform_chunk. Previous copies
 with the page-locked chunk is synchronized on beforehand.
 */
 pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
-    if(0) if (_oldChunks.find(n) != _oldChunks.end()) {
+    if (_oldChunks.find(n) != _oldChunks.end()) {
         if (!_oldChunks[n]->modified && _oldChunks[n].unique())
             /* only use old chunks if they're not modified and unused */
             return _oldChunks[n];
@@ -209,7 +209,7 @@ void Transform::max_hz(float value) {
 
 pTransform_chunk Transform::allocateChunk( ChunkIndex n )
 {
-    if(0) if (_oldChunks.find(n) != _oldChunks.end()) {
+    if (_oldChunks.find(n) != _oldChunks.end()) {
         if (!_oldChunks[n].unique())
             _oldChunks.erase(_oldChunks.find(n));
         else
@@ -328,25 +328,21 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
         }
     }  // Compute required size of transform, _intermediate_wt
 
-
     TaskTimer tt(__FUNCTION__);
     {
-        TaskTimer tt("start");
-
-        cudaMemset( _intermediate_wt->transform_data->getCudaGlobal().ptr(), 0, _intermediate_wt->transform_data->getSizeInBytes1D() );
-        cudaMemset( _intermediate_ft->getCudaGlobal().ptr(), 0, _intermediate_ft->getSizeInBytes1D() );
-        cudaMemcpy( _intermediate_ft->getCudaGlobal().ptr()+2,
+        cufftComplex* d = _intermediate_ft->getCudaGlobal().ptr();
+        cudaMemset( d, 0, _intermediate_ft->getSizeInBytes1D() );
+        cudaMemcpy( d+2, // TODO test the significance of this "2"
                     waveform_chunk->waveform_data->getCudaGlobal().ptr(),
                     waveform_chunk->waveform_data->getSizeInBytes().width,
                     cudaMemcpyDeviceToDevice);
+        TaskTimer tt("start");
 
         // Transform signal
+        cufftHandle _fft_single;
         cufftSafeCall(cufftPlan1d(&_fft_single, _intermediate_ft->getNumberOfElements().width, CUFFT_C2C, 1));
         cufftSafeCall(cufftSetStream(_fft_single, stream));
-        cufftSafeCall(cufftExecC2C(_fft_single,
-                                   (cufftComplex *)_intermediate_ft->getCudaGlobal().ptr(),
-                                   (cufftComplex *)_intermediate_ft->getCudaGlobal().ptr(),
-                                   CUFFT_FORWARD));
+        cufftSafeCall(cufftExecC2C(_fft_single, d, d, CUFFT_FORWARD));
 
         //Destroy CUFFT context
         cufftDestroy(_fft_single);
@@ -356,6 +352,11 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
 
     {
         TaskTimer tt("computing");
+        _intermediate_wt->sample_rate =  _original_waveform->sample_rate();
+        _intermediate_wt->sample_offset = waveform_chunk->sample_offset;
+        _intermediate_wt->min_hz = 20;
+        _intermediate_wt->max_hz = waveform_chunk->sample_rate/2;
+
         ::wtCompute( _intermediate_ft->getCudaGlobal().ptr(),
                      _intermediate_wt->transform_data->getCudaGlobal().ptr(),
                      _intermediate_wt->sample_rate,
@@ -370,23 +371,19 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
         TaskTimer tt("inverse fft");
 
         // Transform signal back
-        cufftSafeCall(cufftPlan1d(&_fft_many, _intermediate_wt->transform_data->getNumberOfElements().width, CUFFT_C2C, _intermediate_wt->transform_data->getNumberOfElements().height));
-        cufftSafeCall(cufftExecC2C(_fft_many,
-                                   (cufftComplex *)_intermediate_wt->transform_data->getCudaGlobal().ptr(),
-                                   (cufftComplex *)_intermediate_wt->transform_data->getCudaGlobal().ptr(),
-                                   CUFFT_INVERSE));
+        GpuCpuData<float2>* g = _intermediate_wt->transform_data.get();
+        cudaExtent n = g->getNumberOfElements();
+        cufftComplex *d = g->getCudaGlobal().ptr();
+
+        cufftHandle _fft_many;
+        cufftSafeCall(cufftPlan1d(&_fft_many, n.width, CUFFT_C2C, n.height));
+        cufftSafeCall(cufftSetStream(_fft_many, stream));
+        cufftSafeCall(cufftExecC2C(_fft_many, d, d, CUFFT_INVERSE));
 
         // Destroy CUFFT context
         cufftDestroy(_fft_many);
         CudaException_ThreadSynchronize();
     }
-
-    CudaException_ThreadSynchronize();
-
-    _intermediate_wt->sample_rate =  _original_waveform->sample_rate();
-    _intermediate_wt->sample_offset = waveform_chunk->sample_offset;
-    _intermediate_wt->min_hz = 20;
-    _intermediate_wt->max_hz = waveform_chunk->sample_rate/2;
 
     return _intermediate_wt;
 }
@@ -402,11 +399,14 @@ void Transform::clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_
     BOOST_ASSERT( in_transform->transform_data->getNumberOfElements().width >= out_chunk->transform_data->getNumberOfElements().width );
     BOOST_ASSERT( in_transform->transform_data->getNumberOfElements().height >= out_chunk->transform_data->getNumberOfElements().height );
     BOOST_ASSERT( in_transform->transform_data->getNumberOfElements().depth >= out_chunk->transform_data->getNumberOfElements().depth );
-    //cudaMemset( out_chunk->transform_data->getCudaGlobal().ptr(), 0, out_chunk->transform_data->getSizeInBytes1D());
+    cudaMemset( out_chunk->transform_data->getCudaGlobal().ptr(), 0, out_chunk->transform_data->getSizeInBytes1D());
+    size_t last_sample = _original_waveform->number_of_samples()>out_chunk->sample_offset?
+                         _original_waveform->number_of_samples()-out_chunk->sample_offset:0;
 
     ::wtClamp( in_transform->transform_data->getCudaGlobal().ptr(),
                in_transform->transform_data->getNumberOfElements(),
                in_offset,
+               last_sample,
                out_chunk->transform_data->getCudaGlobal().ptr(),
                out_chunk->transform_data->getNumberOfElements(),
                stream );

@@ -9,28 +9,30 @@ __global__ void kernel_merge(
                 float in_offset,
                 float out_offset)
 {
-    ushort3 threadPos;
-    if( !outBlock.unwrapCudaGrid( threadPos ))
+    elemSize3_t writePos;
+    if( !outBlock.unwrapCudaGrid( writePos ))
         return;
 
     float val = 0;
     unsigned n = 0;
 
-    if (threadPos.x-out_offset >= 0)
+    if (writePos.x>=out_offset)
     {
         for (float x = 0; x < resample_width; x++)
         {
             for (float y = 0; y < resample_height; y++)
             {
-                float s = in_offset + x + resample_width*(threadPos.x-out_offset);
-                float t = y + resample_height*threadPos.y;
+                float s = in_offset + x + resample_width*(writePos.x-out_offset);
+                float t = y + resample_height*writePos.y;
 
-                ushort3 readPos = make_ushort3( s, t, 0 );
+                elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
                 if ( inChunk.valid(readPos) ) {
-                    float2 c = inChunk.e(readPos);
+                    float2 c = inChunk.elem(readPos);
                     //val = max(val, sqrt(c.x*c.x + c.y*c.y)); n=0;
                     val += sqrt(c.x*c.x + c.y*c.y);
                     //val += c.x;
+                    outBlock.e( writePos ) = val;
+                    return;
 
                     n ++;
                 }
@@ -40,8 +42,7 @@ __global__ void kernel_merge(
 
     if (0<n) {
         val/=n;
-
-        outBlock.e( threadPos ) = val;
+        outBlock.e( writePos ) = val;
     }
 }
 
@@ -58,8 +59,8 @@ void blockMerge( cudaPitchedPtrType<float> outBlock,
 {
     dim3 grid, block;
     unsigned block_size = 128;
-    ushort3 sz_o = outBlock.getNumberOfElements();
-    ushort3 sz_i = inChunk.getNumberOfElements();
+    elemSize3_t sz_o = outBlock.getNumberOfElements();
+    elemSize3_t sz_i = inChunk.getNumberOfElements();
     fprintf(stdout,"sz_o (%d, %d, %d)\tsz_i (%d, %d, %d)\n", sz_o.x, sz_o.y, sz_o.z, sz_i.x, sz_i.y, sz_i.z );
 
     outBlock.wrapCudaGrid2D( block_size, grid, block );
@@ -73,6 +74,16 @@ void blockMerge( cudaPitchedPtrType<float> outBlock,
         in_frequency_resolution, out_frequency_resolution,
         in_offset, out_offset,
         resample_width, resample_height);
+    fprintf(stdout,"outBlock(%d,%d,%d) pitch %lu\n",
+        outBlock.getNumberOfElements().x,
+        outBlock.getNumberOfElements().y,
+        outBlock.getNumberOfElements().z,
+        outBlock.getCudaPitchedPtr().pitch );
+    fprintf(stdout,"inChunk(%d,%d,%d) pitch %lu\n",
+        inChunk.getNumberOfElements().x,
+        inChunk.getNumberOfElements().y,
+        inChunk.getNumberOfElements().z,
+        inChunk.getCudaPitchedPtr().pitch );
     fflush(stdout);
 
 

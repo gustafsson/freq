@@ -6,6 +6,7 @@
 #include <boost/foreach.hpp>
 #include <CudaException.h>
 #include <GlException.h>
+#include <math.h>
 
 using namespace std;
 
@@ -194,11 +195,12 @@ void Spectrogram::computeBlock( Spectrogram::pBlock block ) {
         start = a.time * _transform->original_waveform()->sample_rate(),
         end = b.time * _transform->original_waveform()->sample_rate();
 
-    for (unsigned t = start; t<end;) {
-        Transform::ChunkIndex n = _transform->getChunkIndex(t);
+    for (Transform::ChunkIndex n = _transform->getChunkIndex(start); true;n++)
+    {
         pTransform_chunk chunk = _transform->getChunk(n);
         mergeBlock( block, chunk );
-        t += chunk->nSamples();
+        if ( chunk->sample_offset + chunk->nSamples() > end )
+            break;
     }
 }
 
@@ -210,12 +212,12 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inC
 
     float in_sample_rate = inChunk->sample_rate;
     float out_sample_rate = pow(2, -outBlock->ref.log2_samples_size[0]);
+    out_sample_rate += 1/(b.time-a.time);
     float in_frequency_resolution = inChunk->nFrequencies();
     float out_frequency_resolution = pow(2, -outBlock->ref.log2_samples_size[1]);
     float in_offset = max(0.f, (a.time-inChunk->startTime()))*in_sample_rate;
     float out_offset = max(0.f, (inChunk->startTime()-a.time))*out_sample_rate;
 
-    // cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
     blockMerge( h->data->getCudaGlobal(),
                            inChunk->transform_data->getCudaGlobal(),
                            in_sample_rate,
@@ -224,6 +226,38 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inC
                            out_frequency_resolution,
                            in_offset,
                            out_offset);
+
+
+    inChunk->transform_data->getCpuMemory();
+    inChunk->transform_data->getCudaGlobal();
+    cudaExtent in,on;
+    float* ip,*op;
+
+    in = h->data->getNumberOfElements();
+    ip = h->data->getCpuMemory();
+    on = h->data->getNumberOfElements();
+    op = h->data->getCpuMemory();
+
+    fprintf(stdout, "in_offset %g, out_offset %g\n", in_offset, out_offset);
+
+    for (unsigned i=0; i<10; i++) {
+        fprintf(stdout, "%d (%g) i\n", i, op[i]);
+        fprintf(stdout, "%d (%g) o\n", i, op[1*on.width + i]);
+    }
+
+    float2* ip2,*op2;
+    in = inChunk->transform_data->getNumberOfElements();
+    ip2 = inChunk->transform_data->getCpuMemory();
+    on = inChunk->transform_data->getNumberOfElements();
+    op2 = inChunk->transform_data->getCpuMemory();
+
+    for (unsigned i=0; i<10; i++) {
+        fprintf(stdout, "%d (%g, %g) i\n", i, op2[i].x, op2[i].y);
+        fprintf(stdout, "%d (%g, %g) o\n", i, op2[100*on.width + i].x, op2[100*on.width + i].y);
+    }
+    fflush(stdout);
+
+    int dum=2134;
 }
 
 void Spectrogram::gc() {
@@ -326,9 +360,9 @@ bool Spectrogram::Reference::containsSpectrogram() const
 
     if (b.time-a.time < _spectrogram->min_sample_size().time*_spectrogram->_samples_per_block )
         return false;
-    float msss = _spectrogram->min_sample_size().scale;
-    unsigned spb = _spectrogram->_scales_per_block;
-    float ms = msss*spb;
+    //float msss = _spectrogram->min_sample_size().scale;
+    //unsigned spb = _spectrogram->_scales_per_block;
+    //float ms = msss*spb;
     if (b.scale-a.scale < _spectrogram->min_sample_size().scale*_spectrogram->_scales_per_block )
         return false;
 

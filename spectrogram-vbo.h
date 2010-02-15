@@ -22,10 +22,12 @@ public:
     ~Vbo();
     operator GLuint() const { return _vbo; }
 
+    size_t size() { return _sz; }
 private:
     Vbo(const Vbo &b);
     Vbo& operator=(const Vbo &b);
 
+    size_t _sz;
     GLuint _vbo;
 };
 
@@ -38,11 +40,15 @@ public:
     :   _vbo(vbo)
     {
         void* g_data;
-        GLuint n = *_vbo;
         cudaGLMapBufferObject((void**)&g_data, *_vbo);
 
-        cudaPitchedPtr cpp = {g_data, sizeof(T)*numberOfElements.width, sizeof(T)*numberOfElements.width, numberOfElements.height };
+        cudaPitchedPtr cpp;
+        cpp.ptr = g_data;
+        cpp.pitch = sizeof(T)*numberOfElements.width;
+        cpp.xsize = sizeof(T)*numberOfElements.width;
+        cpp.ysize = numberOfElements.height;
         data.reset( new GpuCpuData<T>( &cpp, numberOfElements, GpuCpuVoidData::CudaGlobal, true ));
+        BOOST_ASSERT( data->getSizeInBytes1D() == vbo->size() );
     }
 
     ~MappedVbo() {
@@ -67,7 +73,7 @@ public:
     pHeight height();
     pSlope slope();
 
-    void draw(SpectrogramRenderer* renderer);
+    void draw( );
     void draw_directMode( );
 private:
     Spectrogram* _spectrogram;
