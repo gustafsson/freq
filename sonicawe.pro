@@ -40,7 +40,9 @@ macx:LIBS += -lsndfile \
     -lcufft \
     -L../misc \
     -lmisc
+win32:INCLUDEPATH += ..\..\glut
 win32:LIBS += \
+	-l..\..\glut\glut32 \
     -l..\..\audiere\lib\audiere \
     -l..\..\libsndfile\libsndfile-1 \
     -LC:\CUDA\lib \
@@ -62,15 +64,17 @@ win32 {
 	.
     QMAKE_LIBDIR += $(CUDA_LIB_PATH)
     LIBS += -lcudart
-#    cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
-#    cuda.commands = $(CUDA_BIN_DIR)/nvcc.exe \
-#        -c \
-#        -Xcompiler \
-#        $$join(QMAKE_CXXFLAGS,",") \
-#        $$join(INCLUDEPATH,'" -I "','-I "','"') \
-#        ${QMAKE_FILE_NAME} \
-#        -o \
-#        ${QMAKE_FILE_OUT}
+	QMAKE_CXXFLAGS -= -Zc:wchar_t-
+	QMAKE_CXXFLAGS += -Zc:wchar_t
+    cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
+    cuda.commands = $(CUDA_BIN_PATH)/nvcc.exe \
+        -c \
+        -Xcompiler \
+        \"$$join(QMAKE_CXXFLAGS," ")\" \
+        $$join(INCLUDEPATH,'" -I "','-I "','"') \
+        ${QMAKE_FILE_NAME} \
+        -o \
+        ${QMAKE_FILE_OUT}
 }
 unix { 
     # auto-detect CUDA path
@@ -126,13 +130,6 @@ macx {
         '\\\n'
 }
 cuda.input = CUDA_SOURCES
+QMAKE_EXTRA_UNIX_COMPILERS += cuda
 
-macx {
-	cuda.input = CUDA_SOURCES
-	QMAKE_EXTRA_UNIX_COMPILERS += cuda
-}
-unix {
-	cuda.input = CUDA_SOURCES
-	QMAKE_EXTRA_UNIX_COMPILERS += cuda
-}
 # end of cuda section #######################################################################

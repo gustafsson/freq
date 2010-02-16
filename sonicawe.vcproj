@@ -4,7 +4,6 @@
 	Version="9,00"
 	Name="sonicawe"
 	ProjectGUID="{2D5C7E83-831B-357C-B6A0-22909A5B5FD6}"
-	RootNamespace="sonicawe"
 	Keyword="Qt4VSv1.0"
 	TargetFrameworkVersion="0"
 	>
@@ -14,12 +13,6 @@
 		/>
 	</Platforms>
 	<ToolFiles>
-		<ToolFile
-			RelativePath="..\..\Cuda.Rules"
-		/>
-		<ToolFile
-			RelativePath="..\..\..\..\Visual Studio 2008\Projects\SonicAwe\Cuda.Rules"
-		/>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
@@ -37,9 +30,6 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="CUDA Build Rule"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -55,13 +45,13 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
 				Optimization="4"
-				AdditionalIncludeDirectories="c:\Qt\4.6.1\include\QtCore;c:\Qt\4.6.1\include\QtGui;c:\Qt\4.6.1\include\QtOpenGL;c:\Qt\4.6.1\include\QtTest;c:\Qt\4.6.1\include;..\misc;&quot;$(CUDA_INC_PATH)&quot;;..\..\libsndfile\include;..\..\audiere\include;.;c:\Qt\4.6.1\include\ActiveQt;tmp;c:\Qt\4.6.1\mkspecs\default"
+				AdditionalIncludeDirectories="&quot;c:\Qt\4.6.2\include\QtCore&quot;,&quot;c:\Qt\4.6.2\include\QtGui&quot;,&quot;c:\Qt\4.6.2\include\QtOpenGL&quot;,&quot;c:\Qt\4.6.2\include\QtTest&quot;,&quot;c:\Qt\4.6.2\include&quot;,&quot;..\misc&quot;,&quot;..\..\glut&quot;,&quot;$(CUDA_INC_PATH)&quot;,&quot;..\..\libsndfile\include&quot;,&quot;..\..\audiere\include&quot;,&quot;.&quot;,&quot;c:\Qt\4.6.2\include\ActiveQt&quot;,&quot;tmp&quot;,&quot;tmp&quot;,c:\Qt\4.6.2\mkspecs\default"
 				PreprocessorDefinitions="UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_TESTLIB_LIB,QT_OPENGL_LIB,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
 				RuntimeLibrary="3"
 				BufferSecurityCheck="false"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				AssemblerListingLocation="tmp\"
 				ObjectFile="tmp\"
@@ -83,10 +73,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="opengl32.lib glu32.lib gdi32.lib user32.lib ..\..\audiere\lib\audiere.lib ..\..\libsndfile\libsndfile-1.lib $(CUDA_LIB_PATH)\cuda.lib $(CUDA_LIB_PATH)\cufft.lib misc.lib $(CUDA_LIB_PATH)\cudart.lib c:\Qt\4.6.1\lib\QtTestd4.lib c:\Qt\4.6.1\lib\QtOpenGLd4.lib c:\Qt\4.6.1\lib\QtGuid4.lib c:\Qt\4.6.1\lib\QtCored4.lib"
+				AdditionalDependencies="opengl32.lib glu32.lib gdi32.lib user32.lib ..\..\glut\glut32.lib ..\..\audiere\lib\audiere.lib ..\..\libsndfile\libsndfile-1.lib C:\CUDA\lib\cuda.lib C:\CUDA\lib\cufft.lib ../misc\misc.lib C:\CUDA\lib\cudart.lib c:\Qt\4.6.2\lib\QtTestd4.lib c:\Qt\4.6.2\lib\QtOpenGLd4.lib c:\Qt\4.6.2\lib\QtGuid4.lib c:\Qt\4.6.2\lib\QtCored4.lib"
 				OutputFile="debug\sonicawe.exe"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(CUDA_LIB_PATH),c:\Qt\4.6.1\lib,C:\CUDA\lib,../misc"
+				AdditionalLibraryDirectories="$(CUDA_LIB_PATH),c:\Qt\4.6.2\lib,C:\CUDA\lib,../misc"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=""
 				SubSystem="1"
@@ -129,9 +119,6 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="CUDA Build Rule"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -147,13 +134,13 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189 -w34100 -w34189"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;c:\Qt\4.6.1\include\QtCore&quot;,&quot;c:\Qt\4.6.1\include\QtGui&quot;,&quot;c:\Qt\4.6.1\include\QtOpenGL&quot;,&quot;c:\Qt\4.6.1\include\QtTest&quot;,&quot;c:\Qt\4.6.1\include&quot;,&quot;..\misc&quot;,&quot;$(CUDA_INC_PATH)&quot;,&quot;..\..\libsndfile\include&quot;,&quot;..\..\audiere\include&quot;,&quot;.&quot;,&quot;c:\Qt\4.6.1\include\ActiveQt&quot;,&quot;tmp&quot;,&quot;tmp&quot;,c:\Qt\4.6.1\mkspecs\default"
+				AdditionalIncludeDirectories="&quot;c:\Qt\4.6.2\include\QtCore&quot;,&quot;c:\Qt\4.6.2\include\QtGui&quot;,&quot;c:\Qt\4.6.2\include\QtOpenGL&quot;,&quot;c:\Qt\4.6.2\include\QtTest&quot;,&quot;c:\Qt\4.6.2\include&quot;,&quot;..\misc&quot;,&quot;..\..\glut&quot;,&quot;$(CUDA_INC_PATH)&quot;,&quot;..\..\libsndfile\include&quot;,&quot;..\..\audiere\include&quot;,&quot;.&quot;,&quot;c:\Qt\4.6.2\include\ActiveQt&quot;,&quot;tmp&quot;,&quot;tmp&quot;,c:\Qt\4.6.2\mkspecs\default"
 				PreprocessorDefinitions="QT_NO_DEBUG,NDEBUG,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_DLL,QT_NO_DEBUG,QT_TESTLIB_LIB,QT_OPENGL_LIB,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,NDEBUG"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="1"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				AssemblerListingLocation="tmp\"
 				ObjectFile="tmp\"
@@ -175,11 +162,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="opengl32.lib glu32.lib gdi32.lib user32.lib ..\..\audiere\lib\audiere.lib ..\..\libsndfile\libsndfile-1.lib $(CUDA_LIB_PATH)\cuda.lib $(CUDA_LIB_PATH)\cufft.lib misc.lib $(CUDA_LIB_PATH)\cudart.lib c:\Qt\4.6.1\lib\QtTest4.lib c:\Qt\4.6.1\lib\QtOpenGL4.lib c:\Qt\4.6.1\lib\QtGui4.lib c:\Qt\4.6.1\lib\QtCore4.lib"
+				AdditionalDependencies="opengl32.lib glu32.lib gdi32.lib user32.lib ..\..\glut\glut32.lib ..\..\audiere\lib\audiere.lib ..\..\libsndfile\libsndfile-1.lib C:\CUDA\lib\cuda.lib C:\CUDA\lib\cufft.lib ../misc\misc.lib C:\CUDA\lib\cudart.lib c:\Qt\4.6.2\lib\QtTest4.lib c:\Qt\4.6.2\lib\QtOpenGL4.lib c:\Qt\4.6.2\lib\QtGui4.lib c:\Qt\4.6.2\lib\QtCore4.lib"
 				OutputFile="release\sonicawe.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(CUDA_LIB_PATH),c:\Qt\4.6.1\lib,C:\CUDA\lib,../misc"
+				AdditionalLibraryDirectories="$(CUDA_LIB_PATH),c:\Qt\4.6.2\lib,C:\CUDA\lib,../misc"
 				GenerateDebugInformation="false"
 				ProgramDatabaseFile=""
 				SubSystem="1"
@@ -259,7 +246,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC mainwindow.h"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\moc_mainwindow.cpp&#x0D;&#x0A;C:\Qt\4.6.1\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_TESTLIB_LIB -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;c:\Qt\4.6.1\include\QtCore&quot; -I&quot;c:\Qt\4.6.1\include\QtGui&quot; -I&quot;c:\Qt\4.6.1\include\QtOpenGL&quot; -I&quot;c:\Qt\4.6.1\include\QtTest&quot; -I&quot;c:\Qt\4.6.1\include&quot; -I&quot;..\misc&quot; -I&quot;$(CUDA_INC_PATH)&quot; -I&quot;..\..\libsndfile\include&quot; -I&quot;..\..\audiere\include&quot; -I&quot;.&quot; -I&quot;c:\Qt\4.6.1\include\ActiveQt&quot; -I&quot;tmp&quot; -I&quot;tmp&quot; -Ic:\Qt\4.6.1\mkspecs\default -D_MSC_VER=1500 -DWIN32 mainwindow.h -o tmp\moc_mainwindow.cpp&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\moc_mainwindow.cpp&#x0D;&#x0A;C:\Qt\4.6.2\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_TESTLIB_LIB -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;c:\Qt\4.6.2\include\QtCore&quot; -I&quot;c:\Qt\4.6.2\include\QtGui&quot; -I&quot;c:\Qt\4.6.2\include\QtOpenGL&quot; -I&quot;c:\Qt\4.6.2\include\QtTest&quot; -I&quot;c:\Qt\4.6.2\include&quot; -I&quot;..\misc&quot; -I&quot;..\..\glut&quot; -I&quot;$(CUDA_INC_PATH)&quot; -I&quot;..\..\libsndfile\include&quot; -I&quot;..\..\audiere\include&quot; -I&quot;.&quot; -I&quot;c:\Qt\4.6.2\include\ActiveQt&quot; -I&quot;tmp&quot; -I&quot;tmp&quot; -Ic:\Qt\4.6.2\mkspecs\default -D_MSC_VER=1500 -DWIN32 mainwindow.h -o tmp\moc_mainwindow.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;mainwindow.h"
 						Outputs="tmp\moc_mainwindow.cpp"
 					/>
@@ -270,7 +257,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC mainwindow.h"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\moc_mainwindow.cpp&#x0D;&#x0A;C:\Qt\4.6.1\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_TESTLIB_LIB -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;c:\Qt\4.6.1\include\QtCore&quot; -I&quot;c:\Qt\4.6.1\include\QtGui&quot; -I&quot;c:\Qt\4.6.1\include\QtOpenGL&quot; -I&quot;c:\Qt\4.6.1\include\QtTest&quot; -I&quot;c:\Qt\4.6.1\include&quot; -I&quot;..\misc&quot; -I&quot;$(CUDA_INC_PATH)&quot; -I&quot;..\..\libsndfile\include&quot; -I&quot;..\..\audiere\include&quot; -I&quot;.&quot; -I&quot;c:\Qt\4.6.1\include\ActiveQt&quot; -I&quot;tmp&quot; -I&quot;tmp&quot; -Ic:\Qt\4.6.1\mkspecs\default -D_MSC_VER=1500 -DWIN32 mainwindow.h -o tmp\moc_mainwindow.cpp&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\moc_mainwindow.cpp&#x0D;&#x0A;C:\Qt\4.6.2\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_TESTLIB_LIB -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;c:\Qt\4.6.2\include\QtCore&quot; -I&quot;c:\Qt\4.6.2\include\QtGui&quot; -I&quot;c:\Qt\4.6.2\include\QtOpenGL&quot; -I&quot;c:\Qt\4.6.2\include\QtTest&quot; -I&quot;c:\Qt\4.6.2\include&quot; -I&quot;..\misc&quot; -I&quot;..\..\glut&quot; -I&quot;$(CUDA_INC_PATH)&quot; -I&quot;..\..\libsndfile\include&quot; -I&quot;..\..\audiere\include&quot; -I&quot;.&quot; -I&quot;c:\Qt\4.6.2\include\ActiveQt&quot; -I&quot;tmp&quot; -I&quot;tmp&quot; -Ic:\Qt\4.6.2\mkspecs\default -D_MSC_VER=1500 -DWIN32 mainwindow.h -o tmp\moc_mainwindow.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;mainwindow.h"
 						Outputs="tmp\moc_mainwindow.cpp"
 					/>
@@ -318,7 +305,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC mainwindow.ui"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\ui_mainwindow.h&#x0D;&#x0A;C:\Qt\4.6.1\bin\uic.exe mainwindow.ui -o tmp\ui_mainwindow.h&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\ui_mainwindow.h&#x0D;&#x0A;C:\Qt\4.6.2\bin\uic.exe mainwindow.ui -o tmp\ui_mainwindow.h&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;mainwindow.ui"
 						Outputs="tmp\ui_mainwindow.h"
 					/>
@@ -329,7 +316,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC mainwindow.ui"
-						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\ui_mainwindow.h&#x0D;&#x0A;C:\Qt\4.6.1\bin\uic.exe mainwindow.ui -o tmp\ui_mainwindow.h&#x0D;&#x0A;"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile tmp\ui_mainwindow.h&#x0D;&#x0A;C:\Qt\4.6.2\bin\uic.exe mainwindow.ui -o tmp\ui_mainwindow.h&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;mainwindow.ui"
 						Outputs="tmp\ui_mainwindow.h"
 					/>
@@ -337,11 +324,35 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="CUDA Source Files"
+			Name="cuda"
+			UniqueIdentifier="{E0D8C965-CC5F-43d7-AD63-FAEF0BBC0F85}-cuda"
+			ParseFiles="false"
 			>
 			<File
-				RelativePath=".\wavelet.cu"
+				RelativePath="wavelet.cu"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="$(CUDA_BIN_PATH)/nvcc.exe"
+						CommandLine="$(CUDA_BIN_PATH)/nvcc.exe -c -Xcompiler &quot;-nologo -Zm200 -Zc:wchar_t&quot; -I &quot;../misc&quot; -I &quot;..\..\glut&quot; -I &quot;$(CUDA_INC_PATH)&quot; -I &quot;..\..\libsndfile\include&quot; -I &quot;..\..\audiere\include&quot; -I &quot;.&quot; wavelet.cu -o tmp\wavelet_cuda.obj&#x0D;&#x0A;"
+						AdditionalDependencies="$(CUDA_BIN_PATH)/nvcc.exe;wavelet.cu"
+						Outputs="tmp\wavelet_cuda.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="$(CUDA_BIN_PATH)/nvcc.exe"
+						CommandLine="$(CUDA_BIN_PATH)/nvcc.exe -c -Xcompiler &quot;-nologo -Zm200 -Zc:wchar_t&quot; -I &quot;../misc&quot; -I &quot;..\..\glut&quot; -I &quot;$(CUDA_INC_PATH)&quot; -I &quot;..\..\libsndfile\include&quot; -I &quot;..\..\audiere\include&quot; -I &quot;.&quot; wavelet.cu -o tmp\wavelet_cuda.obj&#x0D;&#x0A;"
+						AdditionalDependencies="$(CUDA_BIN_PATH)/nvcc.exe;wavelet.cu"
+						Outputs="tmp\wavelet_cuda.obj"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>
