@@ -67,6 +67,9 @@ private:
     float     _wavelet_std_t;
     float     _min_hz;
     float     _max_hz;
+    cufftHandle _fft_many;
+    cufftHandle _fft_single;
+    unsigned _fft_width;
 };
 
 #endif // TRANSFORM_H

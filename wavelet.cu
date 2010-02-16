@@ -78,7 +78,8 @@ __global__ void kernel_compute(
     float jibberish_normalization = 2.3406;
     float cufft_normalize = 1.f/numElem.width;
 
-    out_wavelet_ft[offset + x] = jibberish_normalization*cufft_normalize*basic*f0*in_waveform_ft[x];
+    float m = jibberish_normalization*cufft_normalize*basic*f0;
+    out_wavelet_ft[offset + x] = m*in_waveform_ft[x];
 }
 
 void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, cudaStream_t stream  )

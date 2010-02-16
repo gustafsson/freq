@@ -40,7 +40,6 @@ public:
     MappedVbo( pVbo vbo, cudaExtent numberOfElements )
     :   _vbo(vbo)
     {
-        TaskTimer tt(__FUNCTION__);
         void* g_data;
         cudaGLMapBufferObject((void**)&g_data, *_vbo);
 
@@ -54,7 +53,7 @@ public:
     }
 
     ~MappedVbo() {
-        TaskTimer tt(__FUNCTION__);
+        data->getCudaGlobal();
         cudaGLUnmapBufferObject(*_vbo);
     }
 

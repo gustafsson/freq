@@ -14,7 +14,8 @@ using namespace std;
 Spectrogram::Spectrogram( pTransform transform, unsigned samples_per_block, unsigned scales_per_block )
 :   _transform(transform),
     _samples_per_block(samples_per_block),
-    _scales_per_block(scales_per_block)
+    _scales_per_block(scales_per_block),
+    _frame_counter(0)
 {}
 
 
@@ -121,6 +122,7 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
     BOOST_FOREACH( pBlock& b, _cache ) {
         if (b->ref == ref) {
             block = b;
+            b->frame_number_last_used = _frame_counter;
 
             break;
         }
@@ -142,31 +144,40 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
                 if (getNextInvalidChunk(block,0)) {
                     if (0==_unfinished_count) {
                         computeBlockOneChunk( block, 0 );
+
                         need_slope = true;
                     }
                     _unfinished_count++;
                 }
             } else if (0 /* partial block, multithreaded, multiple GPUs*/ ) {
-                if (0!=block->prepared_data.get()) {
-                    SpectrogramVbo::pHeight h = block->vbo->height();
+                bool enqueue = false;
+                {
+                    Block::pData prepared_data = block->prepared_data;
+                    if (0 != prepared_data.get()) {
+                        SpectrogramVbo::pHeight h = block->vbo->height();
 
-                    BOOST_ASSERT( h->data->getSizeInBytes1D() == block->prepared_data->getSizeInBytes1D() );
-                    memcpy(h->data->getCpuMemory(),
-                           block->prepared_data->getCpuMemory(),
-                           h->data->getSizeInBytes1D());
-                    block->prepared_data.reset();
-                    need_slope = true;
+                        BOOST_ASSERT( h->data->getSizeInBytes1D() == prepared_data->getSizeInBytes1D() );
+                        memcpy(h->data->getCpuMemory(),
+                               prepared_data->getCpuMemory(),
+                               h->data->getSizeInBytes1D());
+
+                        enqueue = true;
+                        need_slope = true;
+                    }
                 }
-
                 if (getNextInvalidChunk( block, 0 )) {
-                    block_worker()->filo_enqueue( block );
+                    enqueue = true;
                     _unfinished_count++;
                 }
+                if (enqueue)
+                    block_worker()->filo_enqueue( block );
+
+            }
+
+            if (need_slope) {
+                computeSlope( block, 0 );
             }
         }
-
-        if (need_slope)
-            computeSlope( block, 0 );
 
         result = block;
     } catch (const CudaException &) {
@@ -209,6 +220,9 @@ Spectrogram::pBlock Spectrogram::BlockWorker::wait_for_data_to_process()
     {
         _cond.wait(lock);
         data = _next_block;
+
+        if (0!=data.get() && !_spectrogram->getNextInvalidChunk(data, 0))
+            data->prepared_data.reset();
     }
     return data;
 }
@@ -228,6 +242,10 @@ void Spectrogram::BlockWorker::run()
 Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
 {
     TaskTimer tt(__FUNCTION__);
+    {
+        TaskTimer t("prev");
+        CudaException_ThreadSynchronize();
+    }
 
     // Try to allocate a new block
     pBlock block;
@@ -271,7 +289,7 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
         cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
 
         if ( 1 /* create from others */ ) {
-            // TODO not the best idea to use all caches, but it's better that no caches
+            // TODO not the best idea to use all caches, but it's better than to use no caches
             BOOST_FOREACH( pBlock& b, _cache ) {
                 mergeBlock( block, b, 0 );
             }
@@ -284,9 +302,6 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
                     p[ f*_samples_per_block + s] = sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
                 }
             }
-
-            // Make sure it is moved to the gpu
-            h->data->getCudaGlobal();
         }
 
         result = block;
@@ -301,6 +316,8 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
 
     _cache.push_back( result );
 
+    CudaException_ThreadSynchronize();
+
     return result;
 }
 
@@ -310,6 +327,12 @@ void Spectrogram::computeBlock( Spectrogram::pBlock block ) {
 }
 
 bool Spectrogram::computeBlockOneChunk( Spectrogram::pBlock block, unsigned cuda_stream, bool prepare ) {
+    TaskTimer t(__FUNCTION__);
+    {
+        TaskTimer t("prev");
+        CudaException_ThreadSynchronize();
+    }
+
     Transform::ChunkIndex n;
     if (getNextInvalidChunk( block, &n )) {
         pTransform_chunk chunk = _transform->getChunk(n, cuda_stream);
@@ -318,13 +341,21 @@ bool Spectrogram::computeBlockOneChunk( Spectrogram::pBlock block, unsigned cuda
 
         return true;
     }
-
+    CudaException_ThreadSynchronize();
     return false;
 }
 
 void Spectrogram::computeSlope( Spectrogram::pBlock block, unsigned cuda_stream ) {
+    TaskTimer t(__FUNCTION__);
+    {
+        TaskTimer t("prev");
+        CudaException_ThreadSynchronize();
+    }
+
     SpectrogramVbo::pHeight h = block->vbo->height();
     cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->vbo->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
+
+    CudaException_ThreadSynchronize();
 }
 
 bool Spectrogram::getNextInvalidChunk( pBlock block, Transform::ChunkIndex* on )
@@ -349,14 +380,15 @@ bool Spectrogram::getNextInvalidChunk( pBlock block, Transform::ChunkIndex* on )
 }
 
 void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cuda_stream, bool prepare) {
-
     boost::shared_ptr<GpuCpuData<float> > outData;
 
     if (!prepare)
         outData = outBlock->vbo->height()->data;
     else {
-        outBlock->prepared_data.reset( new GpuCpuData<float>(0, make_cudaExtent( _samples_per_block, _scales_per_block, 1 ), GpuCpuVoidData::CudaGlobal ) );
-        outData = outBlock->prepared_data;
+        if (outBlock->prepared_data)
+            outData = outBlock->prepared_data;
+        else
+            outData.reset( new GpuCpuData<float>(0, make_cudaExtent( _samples_per_block, _scales_per_block, 1 ), GpuCpuVoidData::CudaGlobal ) );
     }
 
     Position a, b;
@@ -370,7 +402,7 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inC
     float out_offset = max(0.f, (inChunk->startTime()-a.time))*out_sample_rate;
 
     blockMergeChunk( inChunk->transform_data->getCudaGlobal(),
-                      outData->getCudaGlobal(),
+                      outData->getCudaGlobal(false),
                            in_sample_rate,
                            out_sample_rate,
                            in_frequency_resolution,
@@ -378,44 +410,17 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inC
                            in_offset,
                            out_offset,
                            cuda_stream);
-/*
-    inChunk->transform_data->getCpuMemory();
-    inChunk->transform_data->getCudaGlobal();
-    cudaExtent in,on;
-    float* ip,*op;
 
-    SpectrogramVbo::pHeight h = outBlock->vbo->height();
-
-    in = h->data->getNumberOfElements();
-    ip = h->data->getCpuMemory();
-    on = h->data->getNumberOfElements();
-    op = h->data->getCpuMemory();
-
-    fprintf(stdout, "in_offset %g, out_offset %g\n", in_offset, out_offset);
-
-    for (unsigned i=0; i<10; i++) {
-        fprintf(stdout, "%d (%g) i\n", i, op[i]);
-        fprintf(stdout, "%d (%g) o\n", i, op[1*on.width + i]);
+    if (prepare) {
+        outData->getCpuMemory();
+        outBlock->prepared_data = outData;
     }
-
-    float2* ip2,*op2;
-    in = inChunk->transform_data->getNumberOfElements();
-    ip2 = inChunk->transform_data->getCpuMemory();
-    on = inChunk->transform_data->getNumberOfElements();
-    op2 = inChunk->transform_data->getCpuMemory();
-
-    for (unsigned i=0; i<10; i++) {
-        fprintf(stdout, "%d (%g, %g) i\n", i, op2[i].x, op2[i].y);
-        fprintf(stdout, "%d (%g, %g) o\n", i, op2[100*on.width + i].x, op2[100*on.width + i].y);
-    }
-    fflush(stdout);
-
-    int dum=2134;
-    */
 }
 
 void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock inBlock, unsigned cuda_stream )
 {
+    TaskTimer t(__FUNCTION__);
+
     SpectrogramVbo::pHeight out_h = outBlock->vbo->height();
     SpectrogramVbo::pHeight in_h = inBlock->vbo->height();
 
@@ -449,6 +454,8 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock 
                            in_offset,
                            out_offset,
                            cuda_stream);
+
+    CudaException_ThreadSynchronize();
 }
 
 float Spectrogram::Block::sample_rate() {

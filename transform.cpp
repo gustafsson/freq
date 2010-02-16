@@ -18,7 +18,10 @@ Transform::Transform( pWaveform waveform, unsigned channel, unsigned samples_per
     _samples_per_chunk( samples_per_chunk ),
     _wavelet_std_t( wavelet_std_t ),
     _min_hz(20),
-    _max_hz( waveform->sample_rate()/2 )
+    _max_hz( waveform->sample_rate()/2 ),
+    _fft_many(-1),
+    _fft_single(-1),
+    _fft_width(0)
 {
     /*
     Each chunk will then have the size
@@ -154,6 +157,12 @@ pWaveform_chunk Transform::computeInverse( pTransform_chunk chunk, cudaStream_t 
 void Transform::gc() {
     _oldChunks.clear();
     _intermediate_wt.reset();
+
+            // Destroy CUFFT context
+    if (_fft_many == (cufftHandle)-1)
+        cufftDestroy(_fft_many);
+    if (_fft_single == (cufftHandle)-1)
+        cufftDestroy(_fft_single);
 }
 
 
@@ -284,6 +293,12 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
         requiredFtSz.width = (1 << ((unsigned)ceil(log2(requiredFtSz.width+1))));
         cudaExtent requiredWtSz = make_cudaExtent( requiredFtSz.width, nFrequencies, 1 );
 
+        if (_fft_width != requiredFtSz.width)
+        {
+            gc();
+            _fft_width = requiredFtSz.width;
+        }
+
         if (_intermediate_wt && _intermediate_wt->transform_data->getNumberOfElements() != requiredWtSz)
             _intermediate_wt.reset();
 
@@ -339,15 +354,13 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
         TaskTimer tt("start");
 
         // Transform signal
-        cufftHandle _fft_single;
-        cufftSafeCall(cufftPlan1d(&_fft_single, _intermediate_ft->getNumberOfElements().width, CUFFT_C2C, 1));
+        if (_fft_single == (cufftHandle)-1)
+            cufftSafeCall(cufftPlan1d(&_fft_single, _intermediate_ft->getNumberOfElements().width, CUFFT_C2C, 1));
+
         cufftSafeCall(cufftSetStream(_fft_single, stream));
         cufftSafeCall(cufftExecC2C(_fft_single, d, d, CUFFT_FORWARD));
 
-        //Destroy CUFFT context
-        cufftDestroy(_fft_single);
-
-        CudaException_ThreadSynchronize();
+//        CudaException_ThreadSynchronize();
     }
 
     {
@@ -364,7 +377,7 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
                      _intermediate_wt->max_hz,
                      _intermediate_wt->transform_data->getNumberOfElements() );
 
-        CudaException_ThreadSynchronize();
+//        CudaException_ThreadSynchronize();
     }
 
     {
@@ -375,14 +388,13 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
         cudaExtent n = g->getNumberOfElements();
         cufftComplex *d = g->getCudaGlobal().ptr();
 
-        cufftHandle _fft_many;
-        cufftSafeCall(cufftPlan1d(&_fft_many, n.width, CUFFT_C2C, n.height));
+        if (_fft_many == (cufftHandle)-1)
+            cufftSafeCall(cufftPlan1d(&_fft_many, n.width, CUFFT_C2C, n.height));
+
         cufftSafeCall(cufftSetStream(_fft_many, stream));
         cufftSafeCall(cufftExecC2C(_fft_many, d, d, CUFFT_INVERSE));
 
-        // Destroy CUFFT context
-        cufftDestroy(_fft_many);
-        CudaException_ThreadSynchronize();
+//        CudaException_ThreadSynchronize();
     }
 
     return _intermediate_wt;

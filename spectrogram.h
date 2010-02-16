@@ -113,7 +113,7 @@ public:
     unsigned samples_per_block() { return _samples_per_block; }
     void scales_per_block(unsigned v);
     void samples_per_block(unsigned v);
-    unsigned read_unfinished_count() { unsigned t = _unfinished_count; _unfinished_count = 0; return t; }
+    unsigned read_unfinished_count() { unsigned t = _unfinished_count; _unfinished_count = 0; _frame_counter++; return t; }
 
     Position min_sample_size();
     Position max_sample_size();
@@ -123,6 +123,7 @@ private:
     unsigned _samples_per_block;
     unsigned _scales_per_block;
     unsigned _unfinished_count;
+    unsigned _frame_counter;
 
     // Slots with Spectrogram::Block:s, as many as there are space for in the GPU ram
     std::vector<pBlock> _cache;
@@ -196,7 +197,8 @@ public:
     unsigned frame_number_last_used;
     pSpectrogramVbo vbo;
 
-    boost::shared_ptr<GpuCpuData<float> > prepared_data;
+    typedef boost::shared_ptr<GpuCpuData<float> > pData;
+    pData prepared_data;
 
     std::set<Transform::ChunkIndex> valid_chunks;
 };

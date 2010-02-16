@@ -70,7 +70,6 @@ void blockMerge( cudaPitchedPtrType<float> inBlock,
         in_offset, out_offset );
 }
 
-
 __global__ void kernel_merge_chunk(
                 cudaPitchedPtrType<float2> inChunk,
                 cudaPitchedPtrType<float> outBlock,
@@ -98,6 +97,55 @@ __global__ void kernel_merge_chunk(
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
                 if ( inChunk.valid(readPos) ) {
                     float2 c = inChunk.elem(readPos);
+                    val += sqrt(c.x*c.x + c.y*c.y);
+
+                    n ++;
+                }
+            }
+        }
+    }
+
+    __syncthreads();
+
+    if (0<n) {
+        val/=n;
+        outBlock.e( writePos ) = val;
+    }
+}
+
+/*
+#define WARP 32
+
+__global__ void kernel_merge_chunk(
+                cudaPitchedPtrType<float2> inChunk,
+                cudaPitchedPtrType<float> outBlock,
+                float resample_width,
+                float resample_height,
+                float in_offset,
+                float out_offset)
+{
+    elemSize3_t writePos;
+    if( !outBlock.unwrapCudaGrid( writePos ))
+        return;
+
+    __shared__ float val[WARP] = 0;
+    unsigned n = 0;
+
+    if (writePos.x>=out_offset)
+    {
+        for (float x = 0; x < resample_width; x++)
+        {
+            for (float y = 0; y < resample_height; y++)
+            {
+                float s = in_offset + x + resample_width*(writePos.x-out_offset);
+                float t = y + resample_height*writePos.y;
+
+                elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
+                if ( inChunk.valid(readPos) ) {
+                    unsigned o = inChunk.eOffs(readPos);
+                    float* i = (float*)inChunk.ptr();
+                    i[2*o + WARP%2];
+                    float2 c
                     //val = max(val, sqrt(c.x*c.x + c.y*c.y)); n=0;
                     val += sqrt(c.x*c.x + c.y*c.y);
                     //val += c.x;
@@ -111,12 +159,13 @@ __global__ void kernel_merge_chunk(
         }
     }
 
-    if (0<n) {
+    __syncthreads();
+
+    if (0<n && threadIdx.x < WARP) {
         val/=n;
         outBlock.e( writePos ) = val;
     }
-}
-
+}*/
 
 extern "C"
 void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
