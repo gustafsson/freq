@@ -30,7 +30,7 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleR
     float steplogsize = log(maxHz)-log(minHz);
 
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(numElem.width, block.x), numElem.height*numElem.depth, 1);
+    dim3 grid( INTDIV_CEIL(numElem.width, block.x), numElem.depth, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
@@ -45,17 +45,6 @@ __global__ void kernel_compute(
         float* out_wavelet_ft,
         cudaExtent numElem, float start, float steplogsize )
 {
-    // Find period for this thread
-    unsigned nFrequencies = numElem.height;
-    unsigned fi = blockIdx.y%nFrequencies;
-    float ff = fi/(float)nFrequencies;
-    float period = start*exp(-ff*steplogsize);
-
-    // Find offset for this wavelet scale
-    unsigned channel = blockIdx.y/nFrequencies; // integer division
-    unsigned n = numElem.width;
-    unsigned offset = fi*n + channel*n*nFrequencies;
-
     // Element number
     const unsigned
             x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
@@ -63,23 +52,38 @@ __global__ void kernel_compute(
     if (x>=numElem.width)
         return;
 
-    // Compute value of analytic FT of wavelet
-    const float f0 = .6f + 40*ff*ff*ff;
-    const float pi = 3.141592654f;
-    const float two_pi_f0 = 2.0f * pi * f0;
-    const float multiplier = 1.8827925275534296252520792527491f;
-
-    period *= f0;
-
-    unsigned y = x/2; // compute equal results for the complex and scalar part
-    float factor = 4*pi*y*period-two_pi_f0;
-    float basic = multiplier * exp(-0.5f*factor*factor);
+    float waveform = in_waveform_ft[x];
 
     float jibberish_normalization = 2.3406;
     float cufft_normalize = 1.f/numElem.width;
 
-    float m = jibberish_normalization*cufft_normalize*basic*f0;
-    out_wavelet_ft[offset + x] = m*in_waveform_ft[x];
+    // Find period for this thread
+    unsigned nFrequencies = numElem.height;
+    for( unsigned fi = 0; fi<nFrequencies; fi++) {
+        float ff = fi/(float)nFrequencies;
+        float period = start*exp(-ff*steplogsize);
+
+        // Find offset for this wavelet scale
+        unsigned channel = blockIdx.y;
+        unsigned n = numElem.width;
+        unsigned offset = fi*n + channel*n*nFrequencies;
+
+
+        // Compute value of analytic FT of wavelet
+        const float f0 = .6f + 40*ff*ff*ff;
+        const float pi = 3.141592654f;
+        const float two_pi_f0 = 2.0f * pi * f0;
+        const float multiplier = 1.8827925275534296252520792527491f;
+
+        period *= f0;
+
+        unsigned y = x/2; // compute equal results for the complex and scalar part
+        float factor = 4*pi*y*period-two_pi_f0;
+        float basic = multiplier * exp(-0.5f*factor*factor);
+
+        float m = jibberish_normalization*cufft_normalize*basic*f0;
+        out_wavelet_ft[offset + x] = m * waveform;
+    }
 }
 
 void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, cudaStream_t stream  )
