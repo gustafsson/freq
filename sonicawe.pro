@@ -50,7 +50,8 @@ unix:LIBS += -lsndfile \
     -lmisc \
     -lGLEW \
     -lGLU \
-    -lGL
+    -lGL \
+    -lboost_thread-mt
 win32:LIBS += 
 MOC_DIR = tmp/
 OBJECTS_DIR = tmp/

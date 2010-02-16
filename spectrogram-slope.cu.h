@@ -3,6 +3,6 @@
 
 extern "C"
 void cudaCalculateSlopeKernel(  float* h, float2 *slopeOut,
-                                unsigned int width, unsigned int height);
+                                unsigned int width, unsigned int height, unsigned cuda_stream);
 
 #endif // SPECTROGRAMSLOPE_CU_H

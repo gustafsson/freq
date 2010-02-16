@@ -113,13 +113,15 @@ SpectrogramVbo::~SpectrogramVbo() {
 }
 
 SpectrogramVbo::pHeight SpectrogramVbo::height() {
-    return pHeight(new MappedVbo<float>(_height, make_cudaExtent(
+    if (_mapped_height) return _mapped_height;
+    return _mapped_height = pHeight(new MappedVbo<float>(_height, make_cudaExtent(
             _spectrogram->samples_per_block(),
             _spectrogram->scales_per_block(), 1)));
 }
 
 SpectrogramVbo::pSlope SpectrogramVbo::slope() {
-    return pSlope(new MappedVbo<float2>(_slope, make_cudaExtent(
+    if (_mapped_slope) return _mapped_slope;
+    return _mapped_slope = pSlope(new MappedVbo<float2>(_slope, make_cudaExtent(
             _spectrogram->samples_per_block(),
             _spectrogram->scales_per_block(), 1)));
 }
@@ -127,6 +129,9 @@ SpectrogramVbo::pSlope SpectrogramVbo::slope() {
 void SpectrogramVbo::draw() {
     unsigned meshW = _spectrogram->samples_per_block();
     unsigned meshH = _spectrogram->scales_per_block();
+
+    _mapped_height.reset();
+    _mapped_slope.reset();
 
     glBindBuffer(GL_ARRAY_BUFFER, *_height);
     glClientActiveTexture(GL_TEXTURE0);

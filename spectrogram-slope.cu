@@ -40,9 +40,9 @@ __global__ void calculateSlopeKernel(float* h, float2 *slopeOut, unsigned int wi
 
 extern "C"
 void cudaCalculateSlopeKernel(  float* hptr, float2 *slopeOut,
-                                unsigned int width, unsigned int height)
+                                unsigned int width, unsigned int height, unsigned cuda_stream)
 {
     dim3 block(8, 8, 1);
     dim3 grid2(cuda_iDivUp(width, block.x), cuda_iDivUp(height, block.y), 1);
-    calculateSlopeKernel<<<grid2, block>>>(hptr, slopeOut, width, height);
+    calculateSlopeKernel<<<grid2, block, cuda_stream>>>(hptr, slopeOut, width, height);
 }

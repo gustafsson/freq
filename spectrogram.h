@@ -1,5 +1,6 @@
 #ifndef SPECTROGRAM_H
 #define SPECTROGRAM_H
+// TODO refactor spectrogram.{h,cpp}
 
 /*
 Data structures
@@ -62,11 +63,14 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 */
 
 #include <list>
+#include <set>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <tvector.h>
 #include <vector>
 #include "transform.h"
 #include "waveform.h"
+#include <QThread>
 
 typedef boost::shared_ptr<class Filter> pFilter;
 typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
@@ -85,6 +89,7 @@ public:
     class Position;
     class Reference;
     class Block;
+    class BlockWorker;
 
     typedef boost::shared_ptr<Block> pBlock;
 
@@ -108,6 +113,7 @@ public:
     unsigned samples_per_block() { return _samples_per_block; }
     void scales_per_block(unsigned v);
     void samples_per_block(unsigned v);
+    unsigned read_unfinished_count() { unsigned t = _unfinished_count; _unfinished_count = 0; return t; }
 
     Position min_sample_size();
     Position max_sample_size();
@@ -116,13 +122,21 @@ private:
     pTransform _transform;
     unsigned _samples_per_block;
     unsigned _scales_per_block;
+    unsigned _unfinished_count;
 
     // Slots with Spectrogram::Block:s, as many as there are space for in the GPU ram
     std::vector<pBlock> _cache;
+    boost::scoped_ptr<BlockWorker> _block_worker;
 
     Reference   findReferenceCanonical( Position p, Position sampleSize );
+    pBlock      createBlock( Spectrogram::Reference ref );
     void        computeBlock( Spectrogram::pBlock block );
-    void        mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk );
+    bool        computeBlockOneChunk( Spectrogram::pBlock block, unsigned cuda_stream, bool prepare=false );
+    void        computeSlope( Spectrogram::pBlock block, unsigned cuda_stream );
+    void        mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cuda_stream, bool prepare = false );
+    void        mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock inBlock, unsigned cuda_stream );
+    BlockWorker* block_worker();
+    bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n );
 };
 
 class Spectrogram::Position {
@@ -174,11 +188,38 @@ class Spectrogram::Block
 public:
     Block( Spectrogram::Reference ref ): ref(ref) {}
 
+    float sample_rate();
+    float nFrequencies();
+
     // Zoom level for this slot, determines size of elements
     Spectrogram::Reference ref;
     unsigned frame_number_last_used;
-
     pSpectrogramVbo vbo;
+
+    boost::shared_ptr<GpuCpuData<float> > prepared_data;
+
+    std::set<Transform::ChunkIndex> valid_chunks;
+};
+
+class Spectrogram::BlockWorker: public QThread
+{
+public:
+    BlockWorker( Spectrogram* parent, unsigned cuda_stream = 1 );
+
+    void filo_enqueue( Spectrogram::pBlock block );
+
+private:
+    boost::condition_variable _cond;
+    boost::mutex _mut;
+
+    pBlock wait_for_data_to_process();
+    void process_data(pBlock data);
+
+    virtual void run();
+    Spectrogram::pBlock _next_block;
+    unsigned _cuda_stream;
+
+    Spectrogram* _spectrogram;
 };
 
 #endif // SPECTROGRAM_H

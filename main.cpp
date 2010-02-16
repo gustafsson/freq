@@ -23,6 +23,7 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _samples_per_chunk = 1<<13;
+//static unsigned _samples_per_chunk = 1<<11;
 static unsigned _scales_per_octave = 40;
 static float _wavelet_std_t = 0.03;
 static unsigned _samples_per_block = 1<<9;

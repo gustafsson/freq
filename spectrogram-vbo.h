@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <GpuCpuData.h>
 #include <stdio.h>
+#include <TaskTimer.h>
 
 typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
 typedef boost::shared_ptr<class SpectrogramRenderer> pSpectrogramRenderer;
@@ -39,6 +40,7 @@ public:
     MappedVbo( pVbo vbo, cudaExtent numberOfElements )
     :   _vbo(vbo)
     {
+        TaskTimer tt(__FUNCTION__);
         void* g_data;
         cudaGLMapBufferObject((void**)&g_data, *_vbo);
 
@@ -52,6 +54,7 @@ public:
     }
 
     ~MappedVbo() {
+        TaskTimer tt(__FUNCTION__);
         cudaGLUnmapBufferObject(*_vbo);
     }
 
@@ -77,6 +80,9 @@ public:
     void draw_directMode( );
 private:
     Spectrogram* _spectrogram;
+
+    pHeight _mapped_height;
+    pSlope _mapped_slope;
 
     pVbo _height;
     pVbo _slope;

@@ -157,6 +157,9 @@ void DisplayWidget::paintGL()
     if (_enqueueGcDisplayList)
 //        gcDisplayList();
     { ; }
+
+    if (0 < this->_renderer->spectrogram()->read_unfinished_count())
+        update();
 }
 
 
