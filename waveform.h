@@ -34,6 +34,8 @@ namespace audiere
     class SampleSource;
 }
 
+typedef boost::shared_ptr<class Waveform> pWaveform;
+
 class Waveform
 {
 public:
@@ -41,18 +43,29 @@ public:
     Waveform();
     Waveform(const char* filename);
 
-    void            writeFile( const char* filename ) const;
     pWaveform_chunk getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Waveform_chunk::Interleaved interleaved );
+    void setChunk( pWaveform_chunk chunk ) { _waveform = chunk; }
+    pWaveform_chunk getChunkBehind() { return _waveform; }
 
-    int channel_count() {        return _waveform.waveform_data->getNumberOfElements().height; }
+    /**
+      Writes wave audio with 16 bits per sample
+      */
+    void writeFile( const char* filename );
+    pWaveform crop();
+    void play();
+
+    int channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
     int sample_rate() {          return _sample_rate;    }
-    int number_of_samples() {    return _waveform.waveform_data->getNumberOfElements().width; }
+    int number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
     float length() {             return number_of_samples() / (float)sample_rate(); }
 
 private:
     audiere::SampleSource* _source;
-    Waveform_chunk _waveform;
+
+    pWaveform_chunk _waveform;
     unsigned _sample_rate;
+
+    std::string _last_filename;
 };
 
 #endif // WAVEFORM_H

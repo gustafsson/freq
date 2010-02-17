@@ -245,9 +245,6 @@ void SpectrogramRenderer::draw()
 
     glPushMatrixContext();
 
-    glScalef( 10, 1, 5 );
-
-
     Spectrogram::Position mss = _spectrogram->max_sample_size();
     Spectrogram::Reference ref = _spectrogram->findReference(Spectrogram::Position(0,0), mss);
 
@@ -413,7 +410,6 @@ static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const G
 static std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, GLvector p0, GLvector n ) {
     std::vector<GLvector> r;
 
-    // Clipp ref square with projection plane
     for (unsigned i=0; i<p.size(); i++) {
         int nexti=(i+1)%p.size();
         if ((p0-p[i])%n < 0)
@@ -491,7 +487,7 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
     if (g_invalidFrustum) {
         GLint view[4];
         glGetIntegerv(GL_VIEWPORT, view);
-        float z0 = .1, z1=1;
+        float z0 = .1, z1=.2;
         g_invalidFrustum = false;
 
         projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
@@ -500,7 +496,9 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
         rightPlane = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z0) );
         GLvector rightZ = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z1) );
         GLvector rightY = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2+1, z0) );
-        rightNormal = ((rightY-rightPlane)^(rightZ-rightPlane)).Normalize();
+        rightZ=rightZ-rightPlane;
+        rightY=rightY-rightPlane;
+        rightNormal = ((rightY)^(rightZ)).Normalize();
 
         leftPlane = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z0) );
         GLvector leftZ = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z1) );
@@ -518,16 +516,17 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
         bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
     }
 
+    // must make all normals negative because one of axes are flipped (glScale with a minus sign on the x-axis)
     //printl("Start",l);
     l = clipPlane(l, projectionPlane, projectionNormal);
     //printl("Projectionclipped",l);
-    l = clipPlane(l, rightPlane, rightNormal);
+    l = clipPlane(l, rightPlane, -rightNormal);
     //printl("Right", l);
-    l = clipPlane(l, leftPlane, leftNormal);
+    l = clipPlane(l, leftPlane, -leftNormal);
     //printl("Left", l);
-    l = clipPlane(l, topPlane, topNormal);
+    l = clipPlane(l, topPlane, -topNormal);
     //printl("Top",l);
-    l = clipPlane(l, bottomPlane, bottomNormal);
+    l = clipPlane(l, bottomPlane, -bottomNormal);
     //printl("Bottom",l);
     //printl("Clipped polygon",l);
 

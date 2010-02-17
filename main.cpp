@@ -1,25 +1,33 @@
 #include <QtGui/QApplication>
+#include "transform.h"
+#include <QtGui/QFileDialog>
+#include <QTime>
 #include <iostream>
 #include <stdio.h>
-
 #include "mainwindow.h"
 #include "displaywidget.h"
-#include "transform.h"
+#include <sstream>
 
 using namespace std;
+using namespace boost;
 
-static const char _sawe_version_string[] =
-        "sawe version 0.0.2\n";
+static string _sawe_version_string(
+        "Sonic Awe - development snapshot\n");
 
 static const char _sawe_usage_string[] =
         "sawe [--samples_per_chunk=#n] [--scales_per_octave=#n]\n"
         "           [--samples_per_block=#n] [--scales_per_block=#n]\n"
-        "           [--channel=#n] FILENAME\n"
+        "           [--channel=#n] [--yscale=#y] FILENAME\n"
         "sawe [--samples_per_chunk] [--scales_per_octave]\n"
         "           [--samples_per_block] [--scales_per_block]\n"
-        "           [--channel]\n"
+        "           [--channel] [--yscale]\n"
         "sawe [--help] \n"
-        "sawe [--version] \n";
+        "sawe [--version] \n"
+        "\n"
+        "    y      0   A=amplitude of CWT coefficients, default\n"
+        "           1   A * exp(.001*fi)\n"
+        "           2   log(1 + |A|)\n"
+        "           3   log(1 + [A * exp(.001*fi)]\n";
 
 static unsigned _channel=0;
 static unsigned _samples_per_chunk = 1<<13;
@@ -28,7 +36,8 @@ static unsigned _scales_per_octave = 40;
 static float _wavelet_std_t = 0.03;
 static unsigned _samples_per_block = 1<<9;
 static unsigned _scales_per_block = 1<<8;
-static const char* _soundfile = 0;
+static unsigned _yscale = DisplayWidget::Yscale_Linear;
+static std::string _soundfile = "";
 static bool _sawe_exit=false;
 
 static int prefixcmp(const char *a, const char *prefix) {
@@ -76,7 +85,7 @@ static int handle_options(char ***argv, int *argc)
             printf("%s", _sawe_usage_string);
             _sawe_exit = true;
         } else if (!strcmp(cmd, "--version")) {
-            printf("%s", _sawe_version_string);
+            printf("%s", _sawe_version_string.c_str());
             _sawe_exit = true;
         }
         else if (readarg(&cmd, samples_per_chunk));
@@ -84,6 +93,7 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, wavelet_std_t));
         else if (readarg(&cmd, samples_per_block));
         else if (readarg(&cmd, scales_per_block));
+        else if (readarg(&cmd, yscale));
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
             printf("%s", _sawe_usage_string);
@@ -101,11 +111,31 @@ static int handle_options(char ***argv, int *argc)
     return handled;
 }
 
+#define STRINGIFY(x) #x
+#define TOSTR(x) STRINGIFY(x)
+
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
+    QDateTime now = QDateTime::currentDateTime();
+    now.date().year();
+    stringstream ss;
+    ss << "Sonic Awe - ";
+#ifdef SONICAWE_VERSION
+    ss << TOSTR(SONICAWE_VERSION);
+#else
+    ss << __DATE__;// << " - " << __TIME__;
+#endif
 
+#ifdef SONICAWE_BRANCH
+    if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
+        ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
+#endif
+
+    _sawe_version_string = ss.str();
+
+    QApplication a(argc, argv);
+    MainWindow w(_sawe_version_string.c_str());
+    
     // skip application filename
     argv++;
     argc--;
@@ -120,24 +150,40 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (0 == _soundfile) {
-        printf("Missing audio file\n\n%s", _sawe_usage_string);
-        exit(1);
+    if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
+    	QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
+        if (0 == fileName.length())
+            return 0;
+        _soundfile = fileName.toStdString();
+    }
+    printf("Reading file: %s\n", _soundfile.c_str());
+
+    switch ( _yscale )
+    {
+        case DisplayWidget::Yscale_Linear:
+        case DisplayWidget::Yscale_ExpLinear:
+        case DisplayWidget::Yscale_LogLinear:
+        case DisplayWidget::Yscale_LogExpLinear:
+            break;
+        default:
+            printf("Invalid yscale value, must be one of {1, 2, 3, 4}\n\n%s", _sawe_usage_string);
+            exit(1);
     }
 
-    try
-    {
-        boost::shared_ptr<Waveform> wf( new Waveform( _soundfile ) );
+    try {
+        boost::shared_ptr<Waveform> wf( new Waveform( _soundfile.c_str() ) );
         boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
         boost::shared_ptr<Spectrogram> sg( new Spectrogram(wt, _samples_per_block, _scales_per_block  ) );
         boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg ) );
+        dw->yscale = (DisplayWidget::Yscale)_yscale;
 
         w.setCentralWidget( dw.get() );
         dw->show();
         w.show();
 
        return a.exec();
-   } catch ( const std::exception& x ) {
-       cout << "Caught exception: " << x.what() << endl;
-   }
+    } catch (std::exception &x) {
+        cout << "Error: " << x.what() << endl;
+    }
 }
+

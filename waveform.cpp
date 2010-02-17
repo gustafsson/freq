@@ -6,6 +6,15 @@
 #include <stdexcept>
 #include <iostream>
 
+#ifdef _MSC_VER
+#include "windows.h"
+#endif
+
+#include <boost/scoped_array.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <QThread>
+#include <QSound>
+
 #if LEKA_FFT
 #include <cufft.h>
 
@@ -23,7 +32,9 @@ using namespace audiere;
 Waveform::Waveform()
 :   _source(0),
     _sample_rate(0)
-{}
+{
+    _waveform.reset( new Waveform_chunk());
+}
 
 
 /**
@@ -31,6 +42,8 @@ Waveform::Waveform()
   */
 Waveform::Waveform (const char* filename)
 {
+    _waveform.reset( new Waveform_chunk());
+
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
         throw std::ios_base::failure(string() + "File " + filename + " not found\n"
@@ -45,12 +58,15 @@ Waveform::Waveform (const char* filename)
     unsigned frame_size = GetSampleSize(sample_format);
     unsigned num_frames = _source->getLength();
 
-    _waveform.waveform_data.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
-    std::vector<char> data(num_frames*frame_size*channel_count);
-    _source->read(num_frames, data.data());
+    if (0==num_frames)
+        throw std::ios_base::failure(string() + "Failed reding file " + filename);
+
+    _waveform->waveform_data.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
+    boost::scoped_array<char> data(new char[num_frames*frame_size*channel_count]);
+    _source->read(num_frames, data.get());
 
     unsigned j=0;
-    float* fdata = _waveform.waveform_data->getCpuMemory();
+    float* fdata = _waveform->waveform_data->getCpuMemory();
 
     for (unsigned i=0; i<num_frames; i++)
     for (int c=0; c<channel_count; c++)
@@ -59,11 +75,11 @@ Waveform::Waveform (const char* filename)
         switch(frame_size) {
             case 0:
             case 1: f = data[i*channel_count + c]/127.; break;
-            case 2: f = ((short*)data.data())[i*channel_count + c]/32767.; break;
+            case 2: f = ((short*)data.get())[i*channel_count + c]/32767.; break;
             default:
                 // assume signed LSB
                 for (unsigned k=0; k<frame_size-1; k++) {
-                    f+=((unsigned char*)data.data())[j++];
+                    f+=((unsigned char*)data.get())[j++];
                     f/=256.;
                 }
                 f+=data[j++];
@@ -74,7 +90,8 @@ Waveform::Waveform (const char* filename)
         fdata[ i + c*num_frames] = f;
     }
 
-    Statistics<float> waveform( _waveform.waveform_data.get() );
+    _waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
+    //Statistics<float> waveform( _waveform->waveform_data.get() );
 
 #if LEKA_FFT
 /* do stupid things: */
@@ -111,8 +128,9 @@ Waveform::Waveform (const char* filename)
     /**
       Writes wave audio with 16 bits per sample
       */
-void Waveform::writeFile( const char* filename ) const
+void Waveform::writeFile( const char* filename )
 {
+    _last_filename = filename;
     // todo: this method only writes mono data from the first (left) channel
 
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
@@ -121,9 +139,10 @@ void Waveform::writeFile( const char* filename ) const
     //int number_of_channels = 1;
     SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
 
-    if (not outfile) return;
+    if (!outfile) return;
 
-    outfile.write( _waveform.waveform_data->getCpuMemory(), _waveform.waveform_data->getNumberOfElements().width); // yes float
+    outfile.write( _waveform->waveform_data->getCpuMemory(), _waveform->waveform_data->getNumberOfElements().width); // yes float
+    //play();
 }
 
 
@@ -133,17 +152,17 @@ pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSampl
     if (firstSample+numberOfSamples < firstSample)
         throw std::invalid_argument("Overflow: firstSample+numberOfSamples");
 
-    if (channel >= _waveform.waveform_data->getNumberOfElements().height)
+    if (channel >= _waveform->waveform_data->getNumberOfElements().height)
         throw std::invalid_argument("channel >= _waveform.waveform_data->getNumberOfElements().height");
 
     char m=1+(Waveform_chunk::Interleaved_Complex == interleaved);
-    char sourcem = 1+(Waveform_chunk::Interleaved_Complex == _waveform.interleaved());
+    char sourcem = 1+(Waveform_chunk::Interleaved_Complex == _waveform->interleaved());
 
     pWaveform_chunk chunk( new Waveform_chunk( interleaved ));
     chunk->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(m*numberOfSamples, 1, 1) ) );
     chunk->sample_rate = _sample_rate;
     chunk->sample_offset = firstSample;
-    size_t sourceSamples = _waveform.waveform_data->getNumberOfElements().width/sourcem;
+    size_t sourceSamples = _waveform->waveform_data->getNumberOfElements().width/sourcem;
 
     unsigned validSamples;
     if (firstSample > sourceSamples)
@@ -154,11 +173,11 @@ pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSampl
         validSamples = numberOfSamples;
 
     float *target = chunk->waveform_data->getCpuMemory();
-    float *source = _waveform.waveform_data->getCpuMemory()
+    float *source = _waveform->waveform_data->getCpuMemory()
                   + firstSample*sourcem
-                  + channel * _waveform.waveform_data->getNumberOfElements().width;
+                  + channel * _waveform->waveform_data->getNumberOfElements().width;
 
-    bool interleavedSource = Waveform_chunk::Interleaved_Complex == _waveform.interleaved();
+    bool interleavedSource = Waveform_chunk::Interleaved_Complex == _waveform->interleaved();
     for (unsigned i=0; i<validSamples; i++) {
         target[i*m + 0] = source[i*sourcem + 0];
         if (Waveform_chunk::Interleaved_Complex == interleaved)
@@ -241,4 +260,108 @@ pWaveform_chunk Waveform_chunk::getInterleaved(Interleaved value)
     }
 
     return chunk;
+}
+
+class SoundPlayer {
+
+public:
+    SoundPlayer() {
+        _device = OpenDevice();
+        toggle = 0;
+    }
+
+    void play( SampleBufferPtr sampleBuffer, float length )
+    {
+        _length = length;
+
+        _sound[toggle] = OpenSound(_device, sampleBuffer->openStream(), false);
+        _sound[toggle]->play();
+
+        unsigned n = (sizeof(_sound)/sizeof(_sound[0]));
+
+        for(unsigned i=0; i<n; i++)
+        {
+            if (_sound[i].get()) {
+                _sound[i]->setVolume( 1- ((toggle + n - i)%n)/(float)n );
+            }
+        }
+
+        toggle = (toggle+1)%n;
+    }
+
+private:
+    AudioDevicePtr _device;
+    OutputStreamPtr _sound[10];
+    int toggle;
+    float _length;
+};
+
+pWaveform Waveform::crop() {
+    // create signed short representation
+    unsigned num_frames = _waveform->waveform_data->getNumberOfElements().width;
+    unsigned channel_count = _waveform->waveform_data->getNumberOfElements().height;
+    float *fdata = _waveform->waveform_data->getCpuMemory();
+    unsigned firstNonzero = 0;
+    unsigned lastNonzero = 0;
+    for (unsigned f=0; f<num_frames; f++)
+        for (unsigned c=0; c<channel_count; c++)
+            if (fdata[f*channel_count + c])
+                lastNonzero = f;
+            else if (firstNonzero==f)
+                firstNonzero = f+1;
+
+    if (firstNonzero > lastNonzero)
+        return pWaveform();
+
+    pWaveform wf(new Waveform());
+    wf->_sample_rate = _sample_rate;
+    wf->_waveform->waveform_data.reset (new GpuCpuData<float>(0, make_cudaExtent((lastNonzero-firstNonzero+1) , channel_count, 1)));
+    float *data = wf->_waveform->waveform_data->getCpuMemory();
+
+
+    for (unsigned f=firstNonzero; f<=lastNonzero; f++)
+        for (unsigned c=0; c<channel_count; c++) {
+            float rampup = min(1.f, (f-firstNonzero)/(_sample_rate*0.01f));
+            float rampdown = min(1.f, (lastNonzero-f)/(_sample_rate*0.01f));
+            rampup = 3*rampup*rampup-2*rampup*rampup*rampup;
+            rampdown = 3*rampdown*rampdown-2*rampdown*rampdown*rampdown;
+            data[f-firstNonzero + c*num_frames] = rampup*rampdown*fdata[ f + c*num_frames];
+        }
+
+    return wf;
+}
+
+void Waveform::play() {
+#ifdef MAC
+    QSound::play( _last_filename.c_str() );
+    return;
+#endif
+
+    pWaveform wf = this->crop();
+
+    if (!wf.get())
+        return;
+
+    // create signed short representation
+    unsigned num_frames = wf->_waveform->waveform_data->getNumberOfElements().width;
+    unsigned channel_count = wf->_waveform->waveform_data->getNumberOfElements().height;
+    float *fdata = wf->_waveform->waveform_data->getCpuMemory();
+
+
+    boost::scoped_array<short> data( new short[num_frames * channel_count] );
+    for (unsigned f=0; f<num_frames; f++)
+        for (unsigned c=0; c<channel_count; c++)
+            data[f*channel_count + c] = fdata[ f + c*num_frames]*32767;
+
+
+    // play sound
+    SampleBufferPtr sampleBuffer( CreateSampleBuffer(
+            data.get(),
+            num_frames,
+            channel_count,
+            _sample_rate,
+            SF_S16));
+
+    static SoundPlayer sp;
+    sp.play( sampleBuffer, num_frames / (float)_sample_rate );
 }

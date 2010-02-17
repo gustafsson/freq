@@ -1,6 +1,7 @@
 # -------------------------------------------------
 # Project created by QtCreator 2009-11-06T11:26:14
 # -------------------------------------------------
+macx:CONFIG -= app_bundle
 QT += opengl \
     testlib
 TARGET = sonicawe
@@ -40,6 +41,7 @@ CUDA_SOURCES += wavelet.cu \
     spectrogram-block.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
+unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -r "s/ref:\ refs\\\/heads\\\/master// | sed -r "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS += -lsndfile \
     -laudiere \
@@ -51,21 +53,57 @@ unix:LIBS += -lsndfile \
     -lGLEW \
     -lGLU \
     -lGL \
-    -lboost_thread-mt
-win32:LIBS += 
-MOC_DIR = tmp/
+    -lboost_thread-mt \
+    -lglut
+macx:INCLUDEPATH += /usr/local/cuda/include
+macx:LIBS += -lsndfile \
+    -laudiere \
+    -L/usr/local/cuda/lib \
+    -lcuda \
+    -lcufft \
+    -L../misc \
+    -lmisc
+win32:LIBS += \
+    -l..\..\audiere\lib\audiere \
+    -l..\..\libsndfile\libsndfile-1 \
+    -LC:\CUDA\lib \
+    -lcuda \
+    -lcufft \
+    -L../misc \
+    -lmisc
+MOC_DIR = tmp
 OBJECTS_DIR = tmp/
-UI_DIR = tmp/
+UI_DIR = tmp
 
 # #######################################################################
 # CUDA
 # #######################################################################
 win32 { 
-    INCLUDEPATH += $(CUDA_INC_DIR)
-    QMAKE_LIBDIR += $(CUDA_LIB_DIR)
+    INCLUDEPATH += $(CUDA_INC_PATH)\
+	..\..\libsndfile\include \
+	..\..\audiere\include \
+	.
+    QMAKE_LIBDIR += $(CUDA_LIB_PATH)
     LIBS += -lcudart
-    cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
-    cuda.commands = $(CUDA_BIN_DIR)/nvcc.exe \
+#    cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
+#    cuda.commands = $(CUDA_BIN_DIR)/nvcc.exe \
+#        -c \
+#        -Xcompiler \
+#        $$join(QMAKE_CXXFLAGS,",") \
+#        $$join(INCLUDEPATH,'" -I "','-I "','"') \
+#        ${QMAKE_FILE_NAME} \
+#        -o \
+#        ${QMAKE_FILE_OUT}
+}
+unix { 
+    # auto-detect CUDA path
+    # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
+    CUDA_DIR = /usr/local/cuda
+    INCLUDEPATH += $$CUDA_DIR/include
+    QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
+    LIBS += -lcudart
+    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
+    cuda.commands = $${CUDA_DIR}/bin/nvcc \
         -c \
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
@@ -74,13 +112,15 @@ win32 {
         -o \
         ${QMAKE_FILE_OUT}
 }
-unix { 
+
+# cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
+macx { 
     # auto-detect CUDA path
     # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     # manual
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
-    QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
+    QMAKE_LIBDIR += $$CUDA_DIR/lib
     LIBS += -lcudart
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
@@ -111,3 +151,5 @@ unix {
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
+
+# end of cuda section #######################################################################

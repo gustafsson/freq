@@ -7,79 +7,336 @@
 #include <algorithm>
 #include <boost/foreach.hpp>
 
+#include <tvector.h>
+#include <math.h>
+#include <GL/glut.h>
+#include <stdio.h>
+
+#ifdef _MSC_VER
+#define M_PI 3.1415926535
+#endif
+
+typedef tvector<3,GLdouble> GLvector;
+template<typename f>
+GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
+  GLvector win;
+  bool s = (GLU_TRUE == gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
+  if(r) *r=s;
+  return win;
+}
+template<typename f>
+GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
+  GLvector obj;
+  bool s = (GLU_TRUE == gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
+  if(r) *r=s;
+  return obj;
+}
+template<typename f>
+GLvector gluProject(tvector<3,f> obj, bool *r=0) {
+  GLdouble model[16], proj[16];
+  GLint view[4];
+  glGetDoublev(GL_MODELVIEW_MATRIX, model);
+  glGetDoublev(GL_PROJECTION_MATRIX, proj);
+  glGetIntegerv(GL_VIEWPORT, view);
+  return gluProject(obj, model, proj, view, r);
+}
+template<typename f>
+GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
+  GLdouble model[16], proj[16];
+  GLint view[4];
+  glGetDoublev(GL_MODELVIEW_MATRIX, model);
+  glGetDoublev(GL_PROJECTION_MATRIX, proj);
+  glGetIntegerv(GL_VIEWPORT, view);
+  return gluUnProject(win, model, proj, view, r);
+}
+
+
 using namespace std;
 
-int DisplayWidget::lastKey = 0;
+float MouseControl::deltaX( float x )
+{
+  if( down )
+    return x - lastx;
+  
+  return 0;
+}
+float MouseControl::deltaY( float y )
+{
+  if( down )
+    return y - lasty;
+  
+  return 0;
+}
+
+bool MouseControl::worldPos(GLdouble &ox, GLdouble &oy)
+{
+  return worldPos(this->lastx, this->lasty, ox, oy);
+}
+bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
+{
+  GLdouble s;
+  bool test[2];
+  GLvector win_coord, world_coord[2];
+  
+  win_coord = GLvector(x, y, 0.1);
+  
+  world_coord[0] = gluUnProject<GLdouble>(win_coord, &test[0]);
+  //printf("CamPos1: %f: %f: %f\n", world_coord[0][0], world_coord[0][1], world_coord[0][2]);
+  
+  win_coord[2] = 0.6;
+  world_coord[1] = gluUnProject<GLdouble>(win_coord, &test[1]);
+  //printf("CamPos2: %f: %f: %f\n", world_coord[1][0], world_coord[1][1], world_coord[1][2]);
+  
+  s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
+  
+  ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
+  oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
+  
+  float minAngle = 20;
+  if( s < 0 || world_coord[0][1]-world_coord[1][1] < sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
+    return false;
+
+  return test[0] && test[1];
+}
+
+void MouseControl::press( float x, float y )
+{
+  touch();
+  update( x, y );
+  down = true;
+}
+void MouseControl::update( float x, float y )
+{
+  touch();
+  lastx = x;
+  lasty = y;
+}
+void MouseControl::release()
+{
+  //touch();
+  down = false;
+}
+bool MouseControl::isTouched()
+{
+  if(hold == 0)
+    return true;
+  else
+    return false;
+};
+
+
+DisplayWidget* DisplayWidget::gDisplayWidget = 0;
 
 DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval )
 : QGLWidget( ),
+  lastKey(0),
   _renderer( new SpectrogramRenderer( spectrogram )),
-  _px(0), _py(0), _pz(-3),
-  _rx(0), _ry(0), _rz(0),
-  _qx(0), _qy(0), _qz(0),
-  _prevX(0), _prevY(0),
-  _enqueueGcDisplayList( false )
+  _px(0), _py(0), _pz(-10),
+  _rx(45), _ry(225), _rz(0),
+  _qx(0), _qy(0), _qz(3.6f/5),
+  _prevX(0), _prevY(0), _targetQ(0),
+  _enqueueGcDisplayList( false ),
+  selecting(false)
 {
+    int c=0;
+    glutInit(&c,0);
+    gDisplayWidget = this;
+    float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+    _qx = .5 * l;
+    selection[0].x = l*.5f;
+    selection[0].y = 0;
+    selection[0].z = .85f;
+    selection[1].x = l*sqrt(2);
+    selection[1].y = 0;
+    selection[1].z = 2;
+
+    yscale = Yscale_LogLinear;
     timeOut();
 
-    if( timerInterval == 0 )
-        _timer = 0;
-    else
+    if( timerInterval != 0 )
     {
-        _timer = new QTimer( this );
-        connect( _timer, SIGNAL(timeout()), this, SLOT(timeOutSlot()) );
-        _timer->start( timerInterval );
+        startTimer(timerInterval);
     }
 }
 
 DisplayWidget::~DisplayWidget()
 {}
 
+void DisplayWidget::keyPressEvent( QKeyEvent *e )
+{
+	lastKey = e->key();
+        if(lastKey == ' ' ){
+            _renderer->spectrogram()->transform()->get_inverse_waveform()->play();
+	}
+}
+
+void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
+{
+    lastKey = 0;
+}
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
+  switch ( e->button() )
+  {
+    case Qt::LeftButton:
+      if(' '==lastKey)
+      	selectionButton.press( e->x(), this->height() - e->y() );
+      else
+      	leftButton.press( e->x(), this->height() - e->y() );
+      //printf("LeftButton: Press\n");
+      break;
+      
+    case Qt::MidButton:
+      middleButton.press( e->x(), this->height() - e->y() );
+      //printf("MidButton: Press\n");
+      break;
+      
+    case Qt::RightButton:
+    {
+      rightButton.press( e->x(), this->height() - e->y() );
+      //printf("RightButton: Press\n");
+    }
+      break;
+      
+    default:
+      break;
+  }
+  
+  if(leftButton.isDown() && rightButton.isDown())
+	selectionButton.press( e->x(), this->height() - e->y() );
+  
+  glDraw();
     _prevX = e->x(),
     _prevY = e->y();
 }
 
+void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
+{
+  switch ( e->button() )
+  {
+    case Qt::LeftButton:
+      leftButton.release();
+      selectionButton.release();
+      //printf("LeftButton: Release\n");
+      selecting = false;
+      break;
+      
+    case Qt::MidButton:
+      middleButton.release();
+      //printf("MidButton: Release\n");
+      break;
+      
+    case Qt::RightButton:
+      rightButton.release();
+      selectionButton.release();
+      //printf("RightButton: Release\n");
+      break;
+      
+    default:
+      break;
+  }
+  glDraw();
+}
+
+void DisplayWidget::wheelEvent ( QWheelEvent *e )
+{
+  float ps = 0.0005;
+  float rs = 0.08;
+  if( e->orientation() == Qt::Horizontal )
+  {
+    _ry -= rs * e->delta();
+  }
+  else
+  {
+    _pz *= (1+ps * e->delta());
+    //_pz -= ps * e->delta();
+
+    //_rx -= ps * e->delta();
+  }
+  
+  glDraw();
+}
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
-    float rs = 0.1,
-          ps = 0.002;
-
-    int dx = e->x() - _prevX,
-        dy = e->y() - _prevY,
-        d = dx-dy;
-    _prevX = e->x(),
-    _prevY = e->y();
-
-    switch( lastKey ) {
-        case 'A': _px += d*ps; break;
-        case 'S': _py += d*ps; break;
-        case 'D': _pz += d*ps; break;
-        case 'Q': _rx += d*rs; break;
-        case 'W': _ry += d*rs; break;
-        case 'E': _rz += d*rs; break;
-        case 'Z': _qx += d*ps; break;
-        case 'X': _qy += d*ps; break;
-        case 'C': _qz += d*ps; break;
-        default:
-            _ry += dx*rs;
-            _rx += dy*rs;
-            break;
+  float rs = 0.2;
+  
+  int x = e->x(), y = this->height() - e->y();
+  
+  if (selectionButton.isDown())
+  {
+    GLdouble p[2];
+    if (selectionButton.worldPos(x, y, p[0], p[1]))
+    {
+      if (!selecting) {
+        selection[0].x = selection[1].x = p[0];
+        selection[0].y = selection[1].y = 0;
+        selection[0].z = selection[1].z = p[1];
+        selecting = true;
+      } else {
+        selection[1].x = p[0];
+        selection[1].y = 0;
+        selection[1].z = p[1];
+        _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+      }
     }
+  } else {
+      //Controlling the rotation with the left button.
+      _ry += (1-orthoview)*rs * leftButton.deltaX( x );
+      _rx -= rs * leftButton.deltaY( y );
+      if (_rx<0) _rx=0;
+      if (_rx>90) { _rx=90; orthoview=1; }
+      if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
 
-    glDraw();
+      //Controlling the the position with the right button.
+
+      if( rightButton.isDown() )
+      {
+        GLvector last, current;
+        if( rightButton.worldPos(last[0], last[1]) &&
+            rightButton.worldPos(x, y, current[0], current[1]) )
+        {
+          float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+
+          _qx -= current[0] - last[0];
+          _qz -= current[1] - last[1];
+
+          if (_qx<0) _qx=0;
+          if (_qz<0) _qz=0;
+          if (_qz>8.f/5) _qz=8.f/5;
+          if (_qx>l) _qx=l;
+        }
+      }
+  }
+  
+  
+  //Updating the buttons
+  leftButton.update( x, y );
+  rightButton.update( x, y );
+  middleButton.update( x, y );
+  selectionButton.update( x, y );
+  
+  glDraw();
 }
 
 
 void DisplayWidget::timeOut()
 {
-    try{
-    } catch (...) {
-        string x32= "blaj";
-    }
+  leftButton.untouch();
+  middleButton.untouch();
+  rightButton.untouch();
+  selectionButton.untouch();
+
+  if(selectionButton.isDown() && selectionButton.getHold() == 5)
+  {
+    _renderer->spectrogram()->transform()->get_inverse_waveform()->play();
+  }
+}
+
+void DisplayWidget::timerEvent(QTimerEvent *)
+{
+    timeOut();
 }
 
 
@@ -93,11 +350,12 @@ void DisplayWidget::initializeGL()
 {
     glShadeModel(GL_SMOOTH);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    glEnable(GL_LINE_SMOOTH);
 //    glDepthFunc(GL_NEVER);
 
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
@@ -134,25 +392,37 @@ void DisplayWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
+/*    glBegin(GL_LINE_STRIP);
+            glColor3f(0,0,0);         glVertex3f( v1.x, v1.y, v1.z );
+            glColor3f(1,0,0);         glVertex3f( _px, _py, _pz );
+    glEnd();
+*/
     glTranslatef( _px, _py, _pz );
 
     glRotatef( _rx, 1, 0, 0 );
-    glRotatef( _ry, 0, 1, 0 );
+    glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( _rz, 0, 0, 1 );
 
-    drawArrows();
+    glScalef(-10, 1-.99*orthoview, 5);
 
-    //glTranslatef(-1.5f,0.0f,-6.0f);
-    glTranslatef( _qx, _qy, _qz );
+    glTranslatef( -_qx, -_qy, -_qz );
 
-    //drawColorFace();
+    orthoview.TimeStep(.08);
 
     glPushMatrix();
-        glTranslatef( 0, 0, 6 );
+        glTranslatef( 0, 0, 1.25f );
+        glScalef(1, 1, .15);
+        glColor4f(0,1,0,1);
+        drawWaveform(_renderer->spectrogram()->transform()->get_inverse_waveform());
+
+        glTranslatef( 0, 0, 2.f );
+        glColor4f(0,0,0,1);
         drawWaveform(_renderer->spectrogram()->transform()->original_waveform());
     glPopMatrix();
 
     _renderer->draw();
+
+    draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode );
 
     if (_enqueueGcDisplayList)
 //        gcDisplayList();
@@ -160,6 +430,8 @@ void DisplayWidget::paintGL()
 
     if (0 < this->_renderer->spectrogram()->read_unfinished_count())
         update();
+
+    drawSelection();
 }
 
 
@@ -213,14 +485,13 @@ void DisplayWidget::drawColorFace()
 }
 
 
-
 void DisplayWidget::drawWaveform(pWaveform waveform)
 {
-    static pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
+    //static pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
+    pWaveform_chunk chunk = waveform->getChunkBehind();
 
     draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode );
 }
-
 
 void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
 {
@@ -228,29 +499,34 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
     const float* data = chunk->waveform_data->getCpuMemory();
 
     n.height = 1;
-    float ifs = 10./chunk->sample_rate; // step per sample
+    float ifs = 1./chunk->sample_rate; // step per sample
     float max = 1e-6;
-    for (unsigned c=0; c<n.height; c++)
+    //for (unsigned c=0; c<n.height; c++)
     {
+        unsigned c=0;
         for (unsigned t=0; t<n.width; t++)
             if (fabsf(data[t + c*n.width])>max)
                 max = fabsf(data[t + c*n.width]);
     }
     float s = 1/max;
 
-    for (unsigned c=0; c<n.height; c++)
-    {
-        glTranslatef(0, 0, -.5); // different channels along y
-        glBegin(GL_LINE_STRIP);
-            glColor3f(1-c,c,0);
-            for (unsigned t=0; t<n.width; t++) {
-                glVertex3f( -ifs*n.width/2 + ifs*t, s*data[t + c*n.width], 0);
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-                if (fabsf(data[t + c*n.width])>max)
-                    max = fabsf(data[t + c*n.width]);
+    unsigned c=0;
+//    for (unsigned c=0; c<n.height; c++)
+    {
+        glBegin(GL_LINE_STRIP);
+            for (unsigned t=0; t<n.width; t++) {
+                glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
             }
         glEnd();
+//        glTranslatef(0, 0, -.5); // different channels along y
     }
+
+    glDepthMask(true);
+    glDisable(GL_BLEND);
 }
 
 
@@ -310,4 +586,441 @@ void DisplayWidget::gcDisplayList()
     }
 
     _enqueueGcDisplayList = false;
+}
+
+void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer ) {
+    glLineWidth(3);
+    glColor4f(0,0,0,1);
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+    unsigned sz=10;
+    pTransform t = renderer->spectrogram()->transform();//wavelett->getWavelettTransform();
+    unsigned f = t->min_hz();
+    f = f/sz*sz;
+    float l = renderer->spectrogram()->transform()->original_waveform()->length();
+    while(f < t->max_hz())
+    {
+        // float period = start*exp(-ff*steplogsize);
+        // f = 1/period = 1/start*exp(ff*steplogsize)
+        // start = t->sampleRate/t->minHz/n.width;
+        float steplogsize = log(t->max_hz()) - log(t->min_hz());
+
+        float ff = log(f/t->min_hz())/steplogsize;
+        if (ff>1)
+            break;
+        float g=(f/sz == 1)?2:1;
+        glLineWidth(g);
+    glBegin(GL_LINES);
+        glVertex3f(-.015f*g, 0, ff);
+        glVertex3f(0.f, 0, ff);
+        glVertex3f( l+.015f*g, 0, ff);
+        glVertex3f( l, 0, ff);
+    glEnd();
+        f += sz;
+        if(f/sz >= 10) {
+            sz*=10;
+
+            glLineWidth(1);
+            glPushMatrix();
+            glTranslatef(-.03f,0,ff);
+            glRotatef(90,0,1,0);
+            glRotatef(90,1,0,0);
+            glScalef(0.0002f,0.0001f,0.0001f);
+            char a[100];
+            sprintf(a,"%d", f);
+            for (char*c=a;*c!=0; c++)
+                glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+            glPopMatrix();
+        }
+    }
+
+    for( unsigned tone = (unsigned)ceil(log(20.f)/0.05); true; tone++)
+    {
+        float steplogsize = log(t->max_hz())-log(t->min_hz());
+        float ff = log(exp(tone*.05)/t->min_hz())/steplogsize;
+        float ffN = log(exp((tone+1)*.05)/t->min_hz())/steplogsize;
+        float ffP = log(exp((tone-1)*.05)/t->min_hz())/steplogsize;
+        if (ff>1)
+            break;
+        bool blackKey = false;
+        switch(tone%12) { case 1: case 3: case 6: case 8: case 10: blackKey = true; }
+        bool blackKeyP = false;
+        switch((tone+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
+        bool blackKeyN = false;
+        switch((tone+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
+        glLineWidth(1);
+        float wN = ffN-ff, wP = ff-ffP;
+        if (blackKey)
+            wN *= .5, wP *= .5;
+        else {
+            if (!blackKeyN)
+                wN *= .5;
+            if (!blackKeyP)
+                wP *= .5;
+        }
+
+    glBegin(blackKey ? GL_QUADS:GL_LINE_LOOP);
+        glVertex3f(-.04f -.012f*blackKey, 0, ff+wN);
+        glVertex3f(-.07f, 0, ff+wN);
+        glVertex3f(-.07f, 0, ff-wP);
+        glVertex3f(-.04f -.012f*blackKey, 0, ff-wP);
+    glEnd();
+        if(tone%12 == 0) {
+            glLineWidth(1.f);
+            glPushMatrix();
+            glTranslatef(-.0515f,0,ff-wP*.7f);
+            //glRotatef(90,0,1,0);
+            glRotatef(90,1,0,0);
+            float s = (wN+wP)*0.01f*.7f;
+            glScalef(s*.5f,s,s);
+            char a[100];
+            sprintf(a,"C%d", tone/12 - 10);
+            for (char*c=a;*c!=0; c++)
+                glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+            glPopMatrix();
+        }
+    }
+
+    for (float s=0; s<l;)
+    {
+        for (unsigned m=0; m<10 && s<l; s+=.01, m++)
+        {
+            float g = m==0?2:1;
+            glLineWidth(g);
+    glBegin(GL_LINES);
+            glVertex3f(s, 0, -.015f*g);
+            glVertex3f(s, 0, 0.f);
+            glVertex3f(s, 0, 1+.015f*g);
+            glVertex3f(s, 0, 1.f);
+    glEnd();
+            if (0==m) {
+                glLineWidth(1);
+                glPushMatrix();
+                glTranslatef(s+.005,0,-.035f);
+                glRotatef(90,1,0,0);
+                glScalef(0.00015f,0.0001f,0.0001f);
+                char a[100];
+                sprintf(a,"%.1f", s);
+                for (char*c=a;*c!=0; c++)
+                    glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                glPopMatrix();
+            }
+        }
+    }
+    glDepthMask(true);
+    glDisable(GL_BLEND);
+}
+
+void DisplayWidget::drawSelection() {
+    drawSelectionCircle();
+}
+
+void DisplayWidget::drawSelectionSquare() {
+    float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+    float
+            x1 = max(0.f, min(selection[0].x, selection[1].x)),
+            z1 = max(0.f, min(selection[0].z, selection[1].z)),
+            x2 = min(l, max(selection[0].x, selection[1].x)),
+            z2 = min(1.f, max(selection[0].z, selection[1].z));
+    float y = 1;
+
+
+    glBegin(GL_QUADS);
+        glVertex3f( 0, y, 0 );
+        glVertex3f( 0, y, 1 );
+        glVertex3f( x1, y, 1 );
+        glVertex3f( x1, y, 0 );
+
+        glVertex3f( x1, y, 0 );
+        glVertex3f( x2, y, 0 );
+        glVertex3f( x2, y, z1 );
+        glVertex3f( x1, y, z1 );
+
+        glVertex3f( x1, y, 1 );
+        glVertex3f( x2, y, 1 );
+        glVertex3f( x2, y, z2 );
+        glVertex3f( x1, y, z2 );
+
+        glVertex3f( l, y, 0 );
+        glVertex3f( l, y, 1 );
+        glVertex3f( x2, y, 1 );
+        glVertex3f( x2, y, 0 );
+
+
+        if (x1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x1, y, z2 );
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( 0, y, 1 );
+        } else {
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( 0, 0, z1 );
+            glVertex3f( 0, y, z1 );
+            glVertex3f( 0, y, z2 );
+            glVertex3f( 0, 0, z2 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( 0, y, 1 );
+        }
+
+        if (x2<l) {
+            glVertex3f( x2, y, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+            glVertex3f( l, y, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
+        } else {
+            glVertex3f( l, y, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, 0, z1 );
+            glVertex3f( l, y, z1 );
+            glVertex3f( l, y, z2 );
+            glVertex3f( l, 0, z2 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
+        }
+
+        if (z1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, y, z1 );
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, y, 0 );
+        } else {
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( x1, 0, 0 );
+            glVertex3f( x1, y, 0 );
+            glVertex3f( x2, y, 0 );
+            glVertex3f( x2, 0, 0 );
+            glVertex3f( l, 0, 0 );
+            glVertex3f( l, y, 0 );
+        }
+
+        if (z2<1) {
+            glVertex3f( x1, y, z2 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+            glVertex3f( 0, y, 1 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
+        } else {
+            glVertex3f( 0, y, 1 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( x1, 0, 1 );
+            glVertex3f( x1, y, 1 );
+            glVertex3f( x2, y, 1 );
+            glVertex3f( x2, 0, 1 );
+            glVertex3f( l, 0, 1 );
+            glVertex3f( l, y, 1 );
+        }
+    glEnd();
+    glDisable(GL_BLEND);
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_QUADS);
+        if (x1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x1, y, z2 );
+        }
+
+        if (x2<l) {
+            glVertex3f( x2, y, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+        }
+
+        if (z1>0) {
+            glVertex3f( x1, y, z1 );
+            glVertex3f( x1, 0, z1 );
+            glVertex3f( x2, 0, z1 );
+            glVertex3f( x2, y, z1 );
+        }
+
+        if (z2<1) {
+            glVertex3f( x1, y, z2 );
+            glVertex3f( x1, 0, z2 );
+            glVertex3f( x2, 0, z2 );
+            glVertex3f( x2, y, z2 );
+        }
+    glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+bool DisplayWidget::insideCircle( float x1, float z1 ) {
+    float
+            x = selection[0].x,
+            z = selection[0].z,
+            _rx = selection[1].x,
+            _rz = selection[1].z;
+    return (x-x1)*(x-x1)/_rx/_rx + (z-z1)*(z-z1)/_rz/_rz < 1;
+}
+
+void DisplayWidget::drawSelectionCircle() {
+    float
+            x = selection[0].x,
+            z = selection[0].z,
+            _rx = fabs(selection[1].x-selection[0].x),
+            _rz = fabs(selection[1].z-selection[0].z);
+    float y = 1;
+
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+    glBegin(GL_TRIANGLE_STRIP);
+    for (unsigned k=0; k<=360; k++) {
+        float s = z + _rz*sin(k*M_PI/180);
+        float c = x + _rx*cos(k*M_PI/180);
+        glVertex3f( c, 0, s );
+        glVertex3f( c, y, s );
+    }
+    glEnd();
+
+    glLineWidth(3.2f);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_LINE_LOOP);
+    for (unsigned k=0; k<360; k++) {
+        float s = z + _rz*sin(k*M_PI/180);
+        float c = x + _rx*cos(k*M_PI/180);
+        glVertex3f( c, y, s );
+    }
+    glEnd();
+    glLineWidth(0.5f);
+    glDepthMask(true);
+    glDisable(GL_BLEND);
+}
+
+void DisplayWidget::drawSelectionCircle2() {
+    float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+
+    float
+            x = selection[0].x,
+            z = selection[0].z,
+            _rx = fabs(selection[1].x-selection[0].x),
+            _rz = fabs(selection[1].z-selection[0].z);
+    float y = 1;
+    // compute points in each quadrant, upper right
+    std::vector<GLvector> pts[4];
+    GLvector corner[4];
+    corner[0] = GLvector(l,0,1);
+    corner[1] = GLvector(0,0,1);
+    corner[2] = GLvector(0,0,0);
+    corner[3] = GLvector(l,0,0);
+    for (unsigned k,j=0; j<4; j++) {
+        bool addedLast=false;
+        for (k=0; k<=90; k++) {
+            float s = z + _rz*sin((k+j*90)*M_PI/180);
+            float c = x + _rx*cos((k+j*90)*M_PI/180);
+            if (s>0 && s<1 && c>0&&c<l) {
+                if (pts[j].empty() && k>0) {
+                    if (0==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
+                    if (1==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
+                    if (2==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
+                    if (3==j) pts[j].push_back(GLvector( x + _rx*cos(asin((0-z)/_rz)), 0, 0));
+                }
+                pts[j].push_back(GLvector( c, 0, s));
+                addedLast = 90==k;
+            }
+        }
+        if (!addedLast) {
+            if (0==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
+            if (1==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
+            if (2==j) pts[j].push_back(GLvector( x + _rx*cos(asin((0-z)/_rz)), 0, 0));
+            if (3==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
+        }
+    }
+
+    for (unsigned j=0; j<4; j++) {
+        glBegin(GL_TRIANGLE_STRIP);
+        for (unsigned k=0; k<pts[j].size(); k++) {
+            glVertex3f( pts[j][k][0], 0, pts[j][k][2] );
+            glVertex3f( pts[j][k][0], y, pts[j][k][2] );
+        }
+        glEnd();
+    }
+
+
+    for (unsigned j=0; j<4; j++) {
+        if ( !insideCircle(corner[j][0], corner[j][2]) )
+        {
+            glBegin(GL_TRIANGLE_FAN);
+            GLvector middle1( 0==j?l:2==j?0:corner[j][0], 0, 1==j?1:3==j?0:corner[j][2]);
+            GLvector middle2( 3==j?l:1==j?0:corner[j][0], 0, 0==j?1:2==j?0:corner[j][2]);
+            if ( !insideCircle(middle1[0], middle1[2]) )
+                glVertex3f( middle1[0], y, middle1[2] );
+            for (unsigned k=0; k<pts[j].size(); k++) {
+                glVertex3f( pts[j][k][0], y, pts[j][k][2] );
+            }
+            if ( !insideCircle(middle2[0], middle2[2]) )
+                glVertex3f( middle2[0], y, middle2[2] );
+            glEnd();
+        }
+    }
+    for (unsigned j=0; j<4; j++) {
+        bool b1 = insideCircle(corner[j][0], corner[j][2]);
+        bool b2 = insideCircle(0==j?l:2==j?0:corner[j][0], 1==j?1:3==j?0:corner[j][2]);
+        bool b3 = insideCircle(corner[(j+1)%4][0], corner[(j+1)%4][2]);
+        glBegin(GL_TRIANGLE_STRIP);
+        if ( b1 )
+        {
+            glVertex3f( corner[j][0], 0, corner[j][2] );
+            glVertex3f( corner[j][0], y, corner[j][2] );
+            if ( !b2 && pts[(j+1)%4].size()>0 ) {
+                glVertex3f( pts[j].back()[0], 0, pts[j].back()[2] );
+                glVertex3f( pts[j].back()[0], y, pts[j].back()[2] );
+            }
+        }
+        if ( b3 ) {
+            if ( !b2 && pts[(j+1)%4].size()>1) {
+                glVertex3f( pts[(j+1)%4][1][0], 0, pts[(j+1)%4][1][2] );
+                glVertex3f( pts[(j+1)%4][1][0], y, pts[(j+1)%4][1][2] );
+            }
+            glVertex3f( corner[(j+1)%4][0], 0, corner[(j+1)%4][2] );
+            glVertex3f( corner[(j+1)%4][0], y, corner[(j+1)%4][2] );
+        }
+        glEnd();
+    }
+    glDisable(GL_BLEND);
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+
+    for (unsigned j=0; j<4; j++) {
+        glBegin(GL_LINE_STIPPLE);
+        for (unsigned k=0; k<pts[j].size(); k++) {
+            glVertex3f( pts[j][k][0], y, pts[j][k][2] );
+        }
+        glEnd();
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }

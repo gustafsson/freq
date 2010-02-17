@@ -99,6 +99,23 @@ __global__ void kernel_merge_chunk(
                     float2 c = inChunk.elem(readPos);
                     val += sqrt(c.x*c.x + c.y*c.y);
 
+/*
+  TODO use command line argument "yscale"
+                        case Yscale_Linear:
+                            v[2][df] = amplitude;
+                            break;
+                        case Yscale_ExpLinear:
+                            v[2][df] = amplitude * exp(.001*fi);
+                            break;
+                        case Yscale_LogLinear:
+                            v[2][df] = amplitude;
+                            v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
+                            break;
+                        case Yscale_LogExpLinear:
+                            v[2][df] = amplitude * exp(.001*fi);
+                            v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
+                            */
+
                     n ++;
                 }
             }

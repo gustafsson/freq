@@ -170,14 +170,24 @@ int clamp(int val, int max) {
     return val;
 }
 
-static void setWavelengthColor( float wavelengthScalar ) {
+void setWavelengthColor( float wavelengthScalar ) {
     const float spectrum[][3] = {
+        /* white background */
+        { 1, 1, 1 },
+        { 0, 0, 1 },
+        { 0, 1, 1 },
+        { 0, 1, 0 },
+        { 1, 1, 0 },
+        { 1, 0, 1 },
+        { 1, 0, 0 }};
+        /* black background
+        { 0, 0, 0 },
         { 1, 0, 1 },
         { 0, 0, 1 },
         { 0, 1, 1 },
         { 0, 1, 0 },
         { 1, 1, 0 },
-        { 1, 0, 0 }};
+        { 1, 0, 0 }}; */
 
     unsigned count = sizeof(spectrum)/sizeof(spectrum[0]);
     float f = count*wavelengthScalar;

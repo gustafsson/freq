@@ -25,6 +25,7 @@ public:
     ChunkIndex             getChunkIndex( unsigned including_sample );
     pTransform_chunk       getChunk( ChunkIndex n, cudaStream_t stream=0 );
     /*static*/ pWaveform_chunk computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
+    pWaveform_chunk        computeInverse( float start=0, float end=-1);
 
     /* discard cached data, releases all GPU memory */
     void     gc();
@@ -41,11 +42,14 @@ public:
     void      wavelet_std_t( float );
     pWaveform original_waveform() { return _original_waveform; }
     void      original_waveform( pWaveform );
+    pWaveform get_inverse_waveform();
     float     number_of_octaves() const;
+    unsigned  nScales() { return number_of_octaves() * scales_per_octave(); }
     float     min_hz() const { return _min_hz; }
     void      min_hz(float f);
     float     max_hz() const { return _max_hz; }
     void      max_hz(float f);
+    void      setInverseArea(float t1, float f1, float t2, float f2);
 
 private:
     pTransform_chunk allocateChunk( ChunkIndex n );
@@ -61,6 +65,7 @@ private:
 
     /* property values */
     pWaveform _original_waveform;
+    pWaveform _inverse_waveform;
     unsigned  _channel;
     unsigned  _scales_per_octave;
     unsigned  _samples_per_chunk;
@@ -70,6 +75,10 @@ private:
     cufftHandle _fft_many;
     cufftHandle _fft_single;
     unsigned _fft_width;
+
+    // TODO move into some filter
+    float _t1, _f1, _t2, _f2;
+
 };
 
 #endif // TRANSFORM_H
