@@ -25,7 +25,7 @@ int attachShader(GLuint prg, GLenum type, const char *name)
     src = (char*)malloc(size);
 
     fseek(fp, 0, SEEK_SET);
-    fread(src, sizeof(char), size, fp);
+    size = fread(src, sizeof(char), size, fp);
     fclose(fp);
 
     shader = glCreateShader(type);

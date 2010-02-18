@@ -275,7 +275,12 @@ public:
         _length = length;
 
         _sound[toggle] = OpenSound(_device, sampleBuffer->openStream(), false);
-        _sound[toggle]->play();
+        if (_sound[toggle].get())
+            _sound[toggle]->play();
+        else {
+            fprintf(stderr,"Can't play sound\n");
+            fflush(stdout);
+        }
 
         unsigned n = (sizeof(_sound)/sizeof(_sound[0]));
 

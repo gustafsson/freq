@@ -54,9 +54,9 @@ public:
     pWaveform crop();
     void play();
 
-    int channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
-    int sample_rate() {          return _sample_rate;    }
-    int number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
+    unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
+    unsigned sample_rate() {          return _sample_rate;    }
+    unsigned number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
     float length() {             return number_of_samples() / (float)sample_rate(); }
 
 private:
