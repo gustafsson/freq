@@ -15,7 +15,7 @@ float2 Transform_chunk::getNearestCoeff( float t, float f )
         return make_float2(0,0);
 
     if ( t < 0 ) t = 0;
-    unsigned s = t*sample_rate+.5;
+    unsigned s = (unsigned)(t*sample_rate+.5);
     if ( s >= nSamples() ) s=nSamples()-1;
 
     unsigned fi = getFrequencyIndex(f);
@@ -36,7 +36,7 @@ unsigned Transform_chunk::getFrequencyIndex( float f ) const
     if (f<min_hz) f=min_hz;
     if (f>max_hz) f=max_hz;
 
-    unsigned fi = round((log(f)-log(min_hz))/(log(max_hz)-log(min_hz))*nFrequencies());
+    unsigned fi = (unsigned)((log(f)-log(min_hz))/(log(max_hz)-log(min_hz))*nFrequencies());
     if (fi>nFrequencies()) fi = nFrequencies()-1;
 
     return fi;

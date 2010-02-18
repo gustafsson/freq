@@ -7,6 +7,7 @@
 #include <CudaException.h>
 #include <GlException.h>
 #include <math.h>
+#include <msc_stdc.h>
 
 using namespace std;
 
@@ -28,7 +29,6 @@ void Spectrogram::samples_per_block(unsigned v) {
     _cache.clear();
     _samples_per_block=v;
 }
-
 
 Spectrogram::Reference Spectrogram::findReferenceCanonical( Position p, Position sampleSize )
 {

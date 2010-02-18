@@ -63,16 +63,20 @@ macx:LIBS += -lsndfile \
     -lcufft \
     -L../misc \
     -lmisc
-win32:INCLUDEPATH += ..\..\glut
+win32:INCLUDEPATH += ..\..\glut \
+	..\..\glew\include \
+	$(BOOST_PATH)
 win32:LIBS += \
 	-l..\..\glut\glut32 \
+	-l..\..\glew\lib\glew32 \
     -l..\..\audiere\lib\audiere \
     -l..\..\libsndfile\libsndfile-1 \
-    -LC:\CUDA\lib \
+    -L$(CUDA_LIB_PATH)\..\lib \
     -lcuda \
     -lcufft \
     -L../misc \
-    -lmisc
+    -lmisc \
+	-L$(BOOST_PATH)\lib
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
 UI_DIR = tmp

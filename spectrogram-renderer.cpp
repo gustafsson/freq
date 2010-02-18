@@ -1,3 +1,6 @@
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 #include "GL/glew.h"
 #include <stdio.h>
 #include "spectrogram-renderer.h"
@@ -8,6 +11,7 @@
 #include <boost/array.hpp>
 #include <tmatrix.h>
 #include <float.h>
+#include <msc_stdc.h>
 
 using namespace std;
 
@@ -259,6 +263,7 @@ void SpectrogramRenderer::draw()
 
 void SpectrogramRenderer::beginVboRendering()
 {
+    GlException_CHECK_ERROR();
     unsigned meshW = _spectrogram->samples_per_block();
     unsigned meshH = _spectrogram->scales_per_block();
 

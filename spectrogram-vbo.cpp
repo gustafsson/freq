@@ -1,3 +1,6 @@
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 #include "GL/glew.h"
 #include "spectrogram-vbo.h"
 #include <stdio.h>
@@ -55,14 +58,12 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
     program = glCreateProgram();
     if (!attachShader(program, GL_VERTEX_SHADER, vertFileName)) {
         glDeleteProgram(program);
-        fprintf(stderr, "Couldn't attach vertex shader from file %s\n", vertFileName);
-        return 0;
+		throw std::invalid_argument(std::string("Couldn't attach vertex shader from file ") + vertFileName);
     }
 
     if (!attachShader(program, GL_FRAGMENT_SHADER, fragFileName)) {
         glDeleteProgram(program);
-        fprintf(stderr, "Couldn't attach fragment shader from file %s\n", fragFileName);
-        return 0;
+		throw std::invalid_argument(std::string("Couldn't attach fragment shader from file ") + fragFileName);
     }
 
     glLinkProgram(program);

@@ -2,6 +2,9 @@
 #define SPECTROGRAMVBO_H
 
 #include <cuda_runtime.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 #include <cuda_gl_interop.h>
 #include <boost/shared_ptr.hpp>
 #include <GpuCpuData.h>

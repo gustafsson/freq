@@ -10,6 +10,7 @@
 #include "StatisticsRandom.h"
 #include <string.h>
 #include "wavelet.cu.h"
+#include <msc_stdc.h>
 
 using namespace std;
 
@@ -327,12 +328,14 @@ pTransform_chunk Transform::allocateChunk( ChunkIndex n )
 pTransform_chunk Transform::releaseChunkFurthestAwayFrom( ChunkIndex n )
 {
     ChunkMap::iterator proposal;
-
     while (!_oldChunks.empty()) {
-        proposal = fabs(n-_oldChunks.begin()->first)
-                 < fabs(n-_oldChunks.end()->first)
+		ChunkMap::iterator last = _oldChunks.end();
+		last--;
+        proposal = abs((int)n-(int)_oldChunks.begin()->first)
+                 < abs((int)n-(int)last->first)
                  ? _oldChunks.begin()
-                 : --_oldChunks.end();
+                 : last;
+
         if ( proposal->second.unique()) {
             pTransform_chunk r = proposal->second;
             _oldChunks.erase( proposal );
@@ -370,7 +373,7 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
         // TODO: measure time differences with other sizes
         // TODO: test these different sizes
         //requiredFtSz.width = (1 << ((unsigned)ceil(log2(requiredFtSz.width))));
-        requiredFtSz.width = (1 << ((unsigned)ceil(log2(requiredFtSz.width+1))));
+        requiredFtSz.width = (1 << ((unsigned)ceil(log2((float)requiredFtSz.width+1))));
         cudaExtent requiredWtSz = make_cudaExtent( requiredFtSz.width, nFrequencies, 1 );
 
         if (_fft_width != requiredFtSz.width)
