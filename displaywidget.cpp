@@ -138,15 +138,16 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
   _enqueueGcDisplayList( false ),
   selecting(false)
 {
-    int c=0;
-    glutInit(&c,0);
+    int c=1;
+	char* dum="dum\0"; 
+    glutInit(&c,&dum);
     gDisplayWidget = this;
     float l = _renderer->spectrogram()->transform()->original_waveform()->length();
     _qx = .5 * l;
     selection[0].x = l*.5f;
     selection[0].y = 0;
     selection[0].z = .85f;
-    selection[1].x = l*sqrt(2);
+    selection[1].x = l*sqrt(2.0f);
     selection[1].y = 0;
     selection[1].z = 2;
 
