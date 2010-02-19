@@ -115,8 +115,7 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
 }
 
 void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
-    _inverse_waveform.reset();
-    switch(2)
+    switch(1)
     {
     case 1: // square
         _t1 = min(t1, t2);
@@ -131,18 +130,42 @@ void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
         _f2 = f2;
         break;
     }
+    _inverse_waveform.reset();
 }
 
 pWaveform Transform::get_inverse_waveform()
 {
     if(0 == _inverse_waveform) {
         _inverse_waveform.reset(new Waveform());
-        _inverse_waveform->setChunk( computeInverse(0, _original_waveform->length() ) );
+        _inverse_waveform->n = getChunkIndex(0);
+        _inverse_waveform->setChunk(prepare_inverse(0, _original_waveform->length()));
     }
+    if (_inverse_waveform->n*samples_per_chunk() < _original_waveform->number_of_samples() ) {
+        merge_chunk(_inverse_waveform->getChunkBehind(), _inverse_waveform->n);
+        _inverse_waveform->n++;
+        if (_inverse_waveform->n*samples_per_chunk() >= _original_waveform->number_of_samples() ) {
+            _inverse_waveform->play();
+        }
+        _inverse_waveform->getChunkBehind()->modified = true;
+    }
+
     return _inverse_waveform;
 }
 
 pWaveform_chunk Transform::computeInverse( float start, float end)
+{
+    pWaveform_chunk r = prepare_inverse(start, end);
+
+    for(Transform::ChunkIndex n = getChunkIndex(start);
+         n*samples_per_chunk() < end*r->sample_rate;
+         n++)
+    {
+        merge_chunk(r, n);
+    }
+    return r;
+}
+
+pWaveform_chunk Transform::prepare_inverse(float start, float end)
 {
     unsigned n = original_waveform()->number_of_samples();
 
@@ -159,30 +182,25 @@ pWaveform_chunk Transform::computeInverse( float start, float end)
     r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(n, 1, 1), GpuCpuVoidData::CudaGlobal) );
     cudaMemset(r->waveform_data->getCudaGlobal().ptr(), 0, r->waveform_data->getSizeInBytes1D());
 
-    for(Transform::ChunkIndex n = getChunkIndex(start);
-         n*samples_per_chunk() < end*r->sample_rate;
-         n++)
-    {
-        pWaveform_chunk chunk = computeInverse( getChunk(n), 0 );
-
-        // merge
-        unsigned out_offs = (chunk->sample_offset > r->sample_offset)? chunk->sample_offset - r->sample_offset : 0;
-        unsigned in_offs = (r->sample_offset > chunk->sample_offset)? r->sample_offset - chunk->sample_offset : 0;
-        unsigned count = chunk->waveform_data->getNumberOfElements().width;
-        if (count>in_offs)
-            count -= in_offs;
-        else
-            continue;
-
-        fprintf(stdout, "out_offs = %d, in_offs = %d, count = %d\n", out_offs, in_offs, count);
-        fflush(stdout);
-
-        cudaMemcpy( &r->waveform_data->getCudaGlobal().ptr()[ out_offs ],
-                    &chunk->waveform_data->getCudaGlobal().ptr()[ in_offs ],
-                    count*sizeof(float), cudaMemcpyDeviceToDevice );
-    }
-
     return r;
+}
+
+void Transform::merge_chunk(pWaveform_chunk r, Transform::ChunkIndex n)
+{
+    pWaveform_chunk chunk = computeInverse( getChunk(n), 0 );
+
+    // merge
+    unsigned out_offs = (chunk->sample_offset > r->sample_offset)? chunk->sample_offset - r->sample_offset : 0;
+    unsigned in_offs = (r->sample_offset > chunk->sample_offset)? r->sample_offset - chunk->sample_offset : 0;
+    unsigned count = chunk->waveform_data->getNumberOfElements().width;
+    if (count>in_offs)
+        count -= in_offs;
+    else
+        return;
+
+    cudaMemcpy( &r->waveform_data->getCudaGlobal().ptr()[ out_offs ],
+                &chunk->waveform_data->getCudaGlobal().ptr()[ in_offs ],
+                count*sizeof(float), cudaMemcpyDeviceToDevice );
 }
 
 pWaveform_chunk Transform::computeInverse( pTransform_chunk chunk, cudaStream_t stream ) {
@@ -193,12 +211,11 @@ pWaveform_chunk Transform::computeInverse( pTransform_chunk chunk, cudaStream_t 
     r->sample_rate = chunk->sample_rate;
     r->waveform_data.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
 
-    uint4 area = make_uint4(
-            max(0.f, min((float)UINT_MAX, _t1 * _inverse_waveform->sample_rate())),
-            max(0.f, min((float)UINT_MAX, _f1 * nScales())),
-            max(0.f, min((float)UINT_MAX, _t2 * _inverse_waveform->sample_rate())),
-            max(0.f, min((float)UINT_MAX, _f2 * nScales())));
-
+    float4 area = make_float4(
+            _t1 * _original_waveform->sample_rate() - r->sample_offset,
+            _f1 * nScales(),
+            _t2 * _original_waveform->sample_rate() - r->sample_offset,
+            _f2 * nScales());
     {
         TaskTimer tt(__FUNCTION__);
 

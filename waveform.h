@@ -55,15 +55,15 @@ public:
     void play();
 
     unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
-    unsigned sample_rate() {          return _sample_rate;    }
+    unsigned sample_rate() {          return _waveform->sample_rate;    }
     unsigned number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
     float length() {             return number_of_samples() / (float)sample_rate(); }
 
+    unsigned n;
 private:
     audiere::SampleSource* _source;
 
     pWaveform_chunk _waveform;
-    unsigned _sample_rate;
 
     std::string _last_filename;
 };

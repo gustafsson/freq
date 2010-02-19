@@ -56,6 +56,8 @@ private:
     pTransform_chunk releaseChunkFurthestAwayFrom( ChunkIndex n );
     pTransform_chunk computeTransform( pWaveform_chunk chunk, cudaStream_t stream );
     void             clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream );
+    void             merge_chunk(pWaveform_chunk r, Transform::ChunkIndex n);
+    pWaveform_chunk  prepare_inverse(float start, float end);
 
     /* caches */
     typedef std::map<ChunkIndex, pTransform_chunk> ChunkMap;

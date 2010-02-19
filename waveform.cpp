@@ -30,8 +30,7 @@ using namespace audiere;
 
 
 Waveform::Waveform()
-:   _source(0),
-    _sample_rate(0)
+:   n(0), _source(0)
 {
     _waveform.reset( new Waveform_chunk());
 }
@@ -41,6 +40,7 @@ Waveform::Waveform()
   Reads an audio file using libaudiere
   */
 Waveform::Waveform (const char* filename)
+:   n(0)
 {
     _waveform.reset( new Waveform_chunk());
 
@@ -53,7 +53,7 @@ Waveform::Waveform (const char* filename)
     SampleFormat sample_format;
     int channel_count, sample_rate;
     _source->getFormat( channel_count, sample_rate, sample_format);
-    _sample_rate=sample_rate;
+    _waveform->sample_rate=sample_rate;
 
     unsigned frame_size = GetSampleSize(sample_format);
     unsigned num_frames = _source->getLength();
@@ -90,7 +90,7 @@ Waveform::Waveform (const char* filename)
         fdata[ i + c*num_frames] = f;
     }
 
-    _waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
+    //_waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
     //Statistics<float> waveform( _waveform->waveform_data.get() );
 
 #if LEKA_FFT
@@ -137,7 +137,7 @@ void Waveform::writeFile( const char* filename )
     //  const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
     //int number_of_channels = 1;
-    SndfileHandle outfile(filename, SFM_WRITE, format, 1, _sample_rate);
+    SndfileHandle outfile(filename, SFM_WRITE, format, 1, sample_rate());
 
     if (!outfile) return;
 
@@ -160,7 +160,7 @@ pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSampl
 
     pWaveform_chunk chunk( new Waveform_chunk( interleaved ));
     chunk->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(m*numberOfSamples, 1, 1) ) );
-    chunk->sample_rate = _sample_rate;
+    chunk->sample_rate = sample_rate();
     chunk->sample_offset = firstSample;
     size_t sourceSamples = _waveform->waveform_data->getNumberOfElements().width/sourcem;
 
@@ -266,12 +266,34 @@ class SoundPlayer {
 
 public:
     SoundPlayer() {
+#ifdef SoundPlayer_VERBOSE
+        std::vector< AudioDeviceDesc > devices;
+        GetSupportedAudioDevices( devices );
+        fprintf(stdout, "%lu audio device%s available:\n", devices.size(), devices.size()==1?"":"s");
+        for (unsigned i=0; i<devices.size(); i++) {
+            fprintf(stdout, "  %s: %s\n", devices[i].name.c_str(), devices[i].description.c_str());
+        }
+
         _device = OpenDevice();
+        if (0==_device.get())
+            fprintf(stdout,"Couldn't open sound device\n");
+        else
+            fprintf(stdout,"Opened sound device: %s\n", _device->getName());
+
+        fflush(stdout);
+#endif // SoundPlayer_VERBOSE
         toggle = 0;
     }
 
     void play( SampleBufferPtr sampleBuffer, float length )
     {
+        if (0 == _device.get())
+            _device = OpenDevice();
+        /*if (0 == _device.get() || !active()) {
+            _device = 0;
+            _device = OpenDevice();
+        }*/
+
         _length = length;
 
         _sound[toggle] = OpenSound(_device, sampleBuffer->openStream(), false);
@@ -294,6 +316,17 @@ public:
         toggle = (toggle+1)%n;
     }
 
+    bool active() {
+        unsigned n = (sizeof(_sound)/sizeof(_sound[0]));
+        for(unsigned i=0; i<n; i++)
+        {
+            if (_sound[i].get()) {
+                if (_sound[i]->isPlaying())
+                    return true;
+            }
+        }
+        return false;
+    }
 private:
     AudioDevicePtr _device;
     OutputStreamPtr _sound[10];
@@ -319,15 +352,15 @@ pWaveform Waveform::crop() {
         return pWaveform();
 
     pWaveform wf(new Waveform());
-    wf->_sample_rate = _sample_rate;
+    wf->_waveform->sample_rate = sample_rate();
     wf->_waveform->waveform_data.reset (new GpuCpuData<float>(0, make_cudaExtent((lastNonzero-firstNonzero+1) , channel_count, 1)));
     float *data = wf->_waveform->waveform_data->getCpuMemory();
 
 
     for (unsigned f=firstNonzero; f<=lastNonzero; f++)
         for (unsigned c=0; c<channel_count; c++) {
-            float rampup = min(1.f, (f-firstNonzero)/(_sample_rate*0.01f));
-            float rampdown = min(1.f, (lastNonzero-f)/(_sample_rate*0.01f));
+            float rampup = min(1.f, (f-firstNonzero)/(sample_rate()*0.01f));
+            float rampdown = min(1.f, (lastNonzero-f)/(sample_rate()*0.01f));
             rampup = 3*rampup*rampup-2*rampup*rampup*rampup;
             rampdown = 3*rampdown*rampdown-2*rampdown*rampdown*rampdown;
             data[f-firstNonzero + c*num_frames] = rampup*rampdown*fdata[ f + c*num_frames];
@@ -358,15 +391,16 @@ void Waveform::play() {
         for (unsigned c=0; c<channel_count; c++)
             data[f*channel_count + c] = fdata[ f + c*num_frames]*32767;
 
+    BOOST_ASSERT( 0 != sample_rate() );
 
     // play sound
     SampleBufferPtr sampleBuffer( CreateSampleBuffer(
             data.get(),
             num_frames,
             channel_count,
-            _sample_rate,
+            sample_rate(),
             SF_S16));
 
     static SoundPlayer sp;
-    sp.play( sampleBuffer, num_frames / (float)_sample_rate );
+    sp.play( sampleBuffer, num_frames / (float)sample_rate() );
 }

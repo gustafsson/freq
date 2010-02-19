@@ -96,7 +96,7 @@ private:
   void drawWaveform( pWaveform waveform );
   static void drawWaveform_chunk_directMode( pWaveform_chunk chunk);
   static void drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer );
-  template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ) );
+  template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw=false );
 
   bool _enqueueGcDisplayList;
   void gcDisplayList();

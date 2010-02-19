@@ -2,9 +2,9 @@
 #include <stdio.h>
 
 __global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float steplogsize  );
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, uint4 area );
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area );
 __global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem );
-__global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, uint4 area );
+__global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area );
 
 static const char* gLastError = 0;
 
@@ -55,8 +55,8 @@ __global__ void kernel_compute(
 
     float waveform = in_waveform_ft[x];
 
-    float jibberish_normalization = 2.3406;
-    float cufft_normalize = 1.f/numElem.width;
+    float cufft_normalize = 1.f/sqrt((float)numElem.width);
+    float jibberish_normalization = 0.05123456;
 
     // Find period for this thread
     unsigned nFrequencies = numElem.height;
@@ -83,11 +83,13 @@ __global__ void kernel_compute(
         float basic = multiplier * exp(-0.5f*factor*factor);
 
         float m = jibberish_normalization*cufft_normalize*basic*f0;
+        //float m = cufft_normalize*basic*f0;
+        //float m = basic*f0;
         out_wavelet_ft[offset + x] = m * waveform;
     }
 }
 
-void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, uint4 area, cudaStream_t stream )
+void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -101,44 +103,48 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
     kernel_inverse<<<grid, block, stream>>>( in_wavelet, out_inverse_waveform, numElem, area );
 }
 
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, uint4 area )
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area )
 {
     const unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            x = blockIdx.x*blockDim.x + threadIdx.x;
 
     if (x>=numElem.width )
         return;
 
     float a = 0;
-/* no selection */
+/* no selection
     for (unsigned fi=0; fi<numElem.height; fi++)
     {
         a += in_wavelet[ x + fi*numElem.width ].x;
-    }
+    }*/
  /* box selection
-    if (x>=area.x && x<=area.z) {
-        for (unsigned fi=area.y; fi<in_numElem.height && fi<area.w; fi++)
+    if (x>=area.x && x<=area.z)
+      {
+        for (unsigned fi=max(0.f,area.y); fi<numElem.height && fi<area.w; fi++)
         {
-            // 2*x selects only the real component of the complex transform
-            a += in_wavelett_ft[ 2*x + fi*in_numElem.width ];
+            // select only the real component of the complex transform
+            a += in_wavelet[ x + fi*numElem.width ].x;
         }
     }*/
-/* disc selection
-    for (unsigned fi=0; fi<in_numElem.height; fi++)
+/* disc selection */
+    for (unsigned fi=0; fi<numElem.height; fi++)
     {
-        float rx = area.z-(float)area.x;
-        float ry = area.w-(float)area.y;
-        float dx = x-(float)area.x;
-        float dy = fi-(float)area.y;
+        float rx = area.z-area.x;
+        float ry = area.w-area.y;
+        float dx = x-area.x;
+        float dy = fi-area.y;
 
         if (dx*dx/rx/rx + dy*dy/ry/ry < 1) {
-            // 2*x selects only the real component of the complex transform
-            a += in_wavelett_ft[ 2*x + fi*in_numElem.width ];
+            // select only the real component of the complex transform
+            a += in_wavelet[ x + fi*numElem.width ].x;
         }
     }
-*/
 
-    out_inverse_waveform[x] = a;
+    float cufft_normalize = 1.f/sqrt((float)numElem.width);
+    float jibberish_normalization = .1;
+
+    out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
 }
 
 void wtClamp( float2* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float2* out_clamped_wt, cudaExtent out_numElem, cudaStream_t stream )
@@ -195,7 +201,7 @@ __global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_off
     out_clamped_wt[o] = v;
 }
 
-void removeDisc( float2* wavelet, cudaExtent numElem, uint4 area )
+void removeDisc( float2* wavelet, cudaExtent numElem, float4 area )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -209,7 +215,7 @@ void removeDisc( float2* wavelet, cudaExtent numElem, uint4 area )
     kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area );
 }
 
-__global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, uint4 area )
+__global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area )
 {
     const unsigned
             x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,

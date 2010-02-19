@@ -495,8 +495,11 @@ void DisplayWidget::drawWaveform(pWaveform waveform)
 {
     //static pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
     pWaveform_chunk chunk = waveform->getChunkBehind();
-
-    draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode );
+    draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode, chunk->modified );
+    if (chunk->modified) {
+        update();
+        chunk->modified=false;
+    }
 }
 
 void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
@@ -537,13 +540,22 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
 
 
 template<typename RenderData>
-void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ) )
+void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw )
 {
     std::map<void*, ListCounter>::iterator itr = _chunkGlList.find(chunk.get());
+    if (_chunkGlList.end() != itr && force_redraw) {
+        itr = _chunkGlList.end();
+    } else
+        force_redraw = false;
+
     if (_chunkGlList.end() == itr) {
         ListCounter cnt;
-        cnt.age = ListCounter::Age_JustCreated;
-        cnt.displayList = glGenLists(1);
+        if (force_redraw)
+            cnt = itr->second;
+        else {
+            cnt.age = ListCounter::Age_JustCreated;
+            cnt.displayList = glGenLists(1);
+        }
 
         if (0 != cnt.displayList) {
             glNewList(cnt.displayList, GL_COMPILE_AND_EXECUTE );
