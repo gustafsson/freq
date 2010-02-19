@@ -5,7 +5,7 @@ varying vec3 eyeSpaceNormal;
 uniform float heightScale; // = 0.5;
 uniform float chopiness;   // = 1.0;
 uniform vec2  size;        // = vec2(256.0, 256.0);
-
+varying float intensity;
 void main()
 {
     float height     = gl_MultiTexCoord0.x;
@@ -21,4 +21,7 @@ void main()
     
     eyeSpacePos      = (gl_ModelViewMatrix * pos).xyz;
     eyeSpaceNormal   = (gl_NormalMatrix * normal).xyz;
+
+    //gl_Color.y = 1;
+    intensity=pos.y;
 }
