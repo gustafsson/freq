@@ -30,7 +30,7 @@ using namespace audiere;
 
 
 Waveform::Waveform()
-:   n(0), _source(0)
+:   _source(0)
 {
     _waveform.reset( new Waveform_chunk());
 }
@@ -40,13 +40,12 @@ Waveform::Waveform()
   Reads an audio file using libaudiere
   */
 Waveform::Waveform (const char* filename)
-:   n(0)
 {
     _waveform.reset( new Waveform_chunk());
 
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
-        throw std::ios_base::failure(string() + "File " + filename + " not found\n"
+        throw std::ios_base::failure(string() + "Couldn't open " + filename + "\n"
             "\n"
             "Supported audio file formats through Audiere: Ogg Vorbis, MP3, FLAC, Speex, uncompressed WAV, AIFF, MOD, S3M, XM, IT");
 

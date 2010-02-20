@@ -4,6 +4,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <GpuCpuData.h>
+#include <set>
 
 typedef boost::shared_ptr<class Waveform> pWaveform;
 typedef boost::shared_ptr<class Waveform_chunk> pWaveform_chunk;
@@ -25,6 +26,8 @@ public:
     unsigned sample_offset;
     unsigned sample_rate;
     bool modified;
+
+    std::set<unsigned> valid_transform_chunks;
 private:
     const Interleaved _interleaved;
 };
@@ -59,7 +62,6 @@ public:
     unsigned number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
     float length() {             return number_of_samples() / (float)sample_rate(); }
 
-    unsigned n;
 private:
     audiere::SampleSource* _source;
 

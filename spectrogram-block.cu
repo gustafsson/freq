@@ -76,7 +76,8 @@ __global__ void kernel_merge_chunk(
                 float resample_width,
                 float resample_height,
                 float in_offset,
-                float out_offset)
+                float out_offset,
+                unsigned n_valid_samples )
 {
     elemSize3_t writePos;
     if( !outBlock.unwrapCudaGrid( writePos ))
@@ -89,9 +90,12 @@ __global__ void kernel_merge_chunk(
     {
         for (float x = 0; x < resample_width; x++)
         {
+            float s = in_offset + x + resample_width*(writePos.x-out_offset);
+            if ( s >= in_offset + n_valid_samples )
+                continue;
+
             for (float y = 0; y < resample_height; y++)
             {
-                float s = in_offset + x + resample_width*(writePos.x-out_offset);
                 float t = y + resample_height*writePos.y;
 
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
@@ -193,6 +197,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  float out_frequency_resolution,
                  float in_offset,
                  float out_offset,
+                 unsigned n_valid_samples,
                  unsigned cuda_stream)
 {
     dim3 grid, block;
@@ -233,5 +238,5 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
         inChunk, outBlock,
         resample_width,
         resample_height,
-        in_offset, out_offset );
+        in_offset, out_offset, n_valid_samples );
 }

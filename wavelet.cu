@@ -1,8 +1,9 @@
 #include "cudaUtil.h"
 #include <stdio.h>
+#include "wavelet.cu.h"
 
 __global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float steplogsize  );
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area );
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem );
 __global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area );
 
@@ -89,7 +90,7 @@ __global__ void kernel_compute(
     }
 }
 
-void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, cudaStream_t stream )
+void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -100,15 +101,17 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
         return;
     }
 
-    kernel_inverse<<<grid, block, stream>>>( in_wavelet, out_inverse_waveform, numElem, area );
+    kernel_inverse<<<grid, block, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
 }
 
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area )
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
 {
     const unsigned
             //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
+    if (x>=n_valid_samples)
+        return;
     if (x>=numElem.width )
         return;
 
@@ -187,7 +190,7 @@ __global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_off
     if (y>=out_numElem.height)
         return;
 
-    // TODO Not coalesced reads for arbitrary in_offset, coalesced writes though
+    // Not coalesced reads for arbitrary in_offset, coalesced writes though. Make sure in_offset is a multiple of 16, or even better 32.
     float v = 0;
     if (y<in_numElem.height && in_offset + x < in_numElem.width) {
         unsigned i = in_offset + x + in_numElem.width*y;

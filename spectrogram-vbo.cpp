@@ -131,8 +131,14 @@ void SpectrogramVbo::draw() {
     unsigned meshW = _spectrogram->samples_per_block();
     unsigned meshH = _spectrogram->scales_per_block();
 
-    _mapped_height.reset();
-    _mapped_slope.reset();
+    if (_mapped_height) {
+        TaskTimer tt("Heightmap Cuda->OpenGL");
+        _mapped_height.reset();
+    }
+    if (_mapped_slope) {
+        TaskTimer tt("Gradient Cuda->OpenGL");
+        _mapped_slope.reset();
+    }
 
     glBindBuffer(GL_ARRAY_BUFFER, *_height);
     glClientActiveTexture(GL_TEXTURE0);
@@ -147,16 +153,16 @@ void SpectrogramVbo::draw() {
 
 
 
-    // bool wireFrame = false;
+    bool wireFrame = false;
     bool drawPoints = false;
 
     glColor3f(1.0, 1.0, 1.0);
     if (drawPoints) {
         glDrawArrays(GL_POINTS, 0, meshW * meshH);
     } else {
-//        glPolygonMode(GL_FRONT_AND_BACK, wireFrame ? GL_LINE : GL_FILL);
+        glPolygonMode(GL_FRONT_AND_BACK, wireFrame ? GL_LINE : GL_FILL);
             glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+2)*(meshH-1), GL_UNSIGNED_INT, 0);
-//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
     glClientActiveTexture(GL_TEXTURE0);
@@ -225,7 +231,7 @@ void SpectrogramVbo::draw_directMode( )
                         v[dt][df] = v[dt+1][df];
 
                 for (int df=-1; df<3; df++)
-                    v[2][df] = data[ t + (fi + df)*n.width ];
+                    v[2][df+1] = data[ t + (fi + df)*n.width ];
 
                 if (2>t) // building v
                     continue;

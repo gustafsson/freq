@@ -26,6 +26,8 @@ private:
     bool _initialized;
     float _redundancy;
 
+    unsigned _drawn_blocks;
+
     friend class SpectrogramVbo;
 
     void init();

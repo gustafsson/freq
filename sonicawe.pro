@@ -4,6 +4,7 @@
 macx:CONFIG -= app_bundle
 QT += opengl \
     testlib
+QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
 TEMPLATE = app
 SOURCES += main.cpp \
@@ -99,6 +100,7 @@ win32 {
         -Xcompiler \
         \"$$join(QMAKE_CXXFLAGS," ")\" \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
+        --use_fast_math \
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}
@@ -116,12 +118,31 @@ unix {
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
+        --use_fast_math \
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}
+    cuda.dependcy_type = TYPE_C
+    cuda.depend_command_dosntwork = nvcc \
+        -M \
+        -Xcompiler \
+        $$join(QMAKE_CXXFLAGS,",") \
+        $$join(INCLUDEPATH,'" -I "','-I "','"') \
+        ${QMAKE_FILE_NAME} \
+        | \
+        sed \
+        "s,^.*: ,," \
+        | \
+        sed \
+        "s,^ *,," \
+        | \
+        tr \
+        -d \
+        '\\\n'
 }
 
 # cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
+
 macx { 
     # auto-detect CUDA path
     # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
@@ -136,6 +157,7 @@ macx {
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
+        --use_fast_math \
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}

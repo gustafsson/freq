@@ -122,7 +122,7 @@ bool MouseControl::isTouched()
     return true;
   else
     return false;
-};
+}
 
 
 DisplayWidget* DisplayWidget::gDisplayWidget = 0;
@@ -155,6 +155,8 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     selection[1].x = l*sqrt(2.0f);
     selection[1].y = 0;
     selection[1].z = 2;
+
+    _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
 
     yscale = Yscale_LogLinear;
     timeOut();
@@ -395,6 +397,8 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
+    TaskTimer tt(__FUNCTION__);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
@@ -419,11 +423,16 @@ void DisplayWidget::paintGL()
         glTranslatef( 0, 0, 1.25f );
         glScalef(1, 1, .15);
         glColor4f(0,1,0,1);
-        drawWaveform(_renderer->spectrogram()->transform()->get_inverse_waveform());
-
+        {
+            TaskTimer tt("drawWaveform( inverse )");
+            drawWaveform(_renderer->spectrogram()->transform()->get_inverse_waveform());
+        }
         glTranslatef( 0, 0, 2.f );
         glColor4f(0,0,0,1);
-        drawWaveform(_renderer->spectrogram()->transform()->original_waveform());
+        {
+            TaskTimer tt("drawWaveform( original )");
+            drawWaveform(_renderer->spectrogram()->transform()->original_waveform());
+        }
     glPopMatrix();
 
     _renderer->draw();
@@ -526,7 +535,8 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
     unsigned c=0;
 //    for (unsigned c=0; c<n.height; c++)
     {
-        glBegin(GL_LINE_STRIP);
+        //glBegin(GL_LINE_STRIP);
+        glBegin(GL_POINTS);
             for (unsigned t=0; t<n.width; t++) {
                 glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
             }

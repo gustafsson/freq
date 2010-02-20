@@ -9,6 +9,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  float out_frequency_resolution,
                  float in_offset,
                  float out_offset,
+                 unsigned n_valid_samples,
                  unsigned cuda_stream);
 
 extern "C"

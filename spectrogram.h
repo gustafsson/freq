@@ -134,10 +134,11 @@ private:
     void        computeBlock( Spectrogram::pBlock block );
     bool        computeBlockOneChunk( Spectrogram::pBlock block, unsigned cuda_stream, bool prepare=false );
     void        computeSlope( Spectrogram::pBlock block, unsigned cuda_stream );
-    void        mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cuda_stream, bool prepare = false );
+    void        mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
     void        mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock inBlock, unsigned cuda_stream );
     BlockWorker* block_worker();
     bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n );
+    bool        isInvalidChunk( pBlock block, Transform::ChunkIndex n );
 };
 
 class Spectrogram::Position {

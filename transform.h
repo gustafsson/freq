@@ -38,7 +38,7 @@ public:
     void      scales_per_octave( unsigned );
     unsigned  samples_per_chunk() const { return _samples_per_chunk; }
     void      samples_per_chunk( unsigned );
-    float     wavelet_std_t() const { return _wavelet_std_t; }
+    float     wavelet_std_t() const { return _wavelet_std_samples/(float)_original_waveform->sample_rate(); }
     void      wavelet_std_t( float );
     pWaveform original_waveform() { return _original_waveform; }
     void      original_waveform( pWaveform );
@@ -50,18 +50,23 @@ public:
     float     max_hz() const { return _max_hz; }
     void      max_hz(float f);
     void      setInverseArea(float t1, float f1, float t2, float f2);
+    pTransform_chunk previous_chunk( unsigned &out_chunk_index );
 
 private:
+#ifdef _USE_CHUNK_CACHE
     pTransform_chunk allocateChunk( ChunkIndex n );
     pTransform_chunk releaseChunkFurthestAwayFrom( ChunkIndex n );
-    pTransform_chunk computeTransform( pWaveform_chunk chunk, cudaStream_t stream );
     void             clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream );
-    void             merge_chunk(pWaveform_chunk r, Transform::ChunkIndex n);
+#endif // #ifdef _USE_CHUNK_CACHE
+    pTransform_chunk computeTransform( pWaveform_chunk chunk, cudaStream_t stream );
+    void             merge_chunk(pWaveform_chunk r, pTransform_chunk transform);
     pWaveform_chunk  prepare_inverse(float start, float end);
 
     /* caches */
+#ifdef _USE_CHUNK_CACHE
     typedef std::map<ChunkIndex, pTransform_chunk> ChunkMap;
     ChunkMap                                _oldChunks;
+#endif // #ifdef _USE_CHUNK_CACHE
     pTransform_chunk                        _intermediate_wt;
     boost::shared_ptr<GpuCpuData<float2> >  _intermediate_ft;
 
@@ -71,7 +76,7 @@ private:
     unsigned  _channel;
     unsigned  _scales_per_octave;
     unsigned  _samples_per_chunk;
-    float     _wavelet_std_t;
+    unsigned  _wavelet_std_samples;
     float     _min_hz;
     float     _max_hz;
     cufftHandle _fft_many;
@@ -80,6 +85,7 @@ private:
 
     // TODO move into some filter
     float _t1, _f1, _t2, _f2;
+    boost::shared_ptr<TaskTimer> filterTimer;
 
 };
 

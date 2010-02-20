@@ -5,8 +5,11 @@
 Transform_chunk::Transform_chunk()
 :   min_hz(0),
     max_hz(0),
+    chunk_offset(0),
     sample_rate(0),
-    sample_offset(0)
+    first_valid_sample(0),
+    n_valid_samples(0),
+    modified(false)
 {}
 
 float2 Transform_chunk::getNearestCoeff( float t, float f )
@@ -41,4 +44,3 @@ unsigned Transform_chunk::getFrequencyIndex( float f ) const
 
     return fi;
 }
-

@@ -23,7 +23,7 @@ SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
-    _redundancy(2) // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
+    _redundancy(10) // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
 {
 }
 
@@ -243,6 +243,7 @@ void SpectrogramRenderer::init()
 
 void SpectrogramRenderer::draw()
 {
+    TaskTimer tt("Rendering scaletime plot");
     if (!_initialized) init();
 
     g_invalidFrustum = true;
@@ -257,6 +258,9 @@ void SpectrogramRenderer::draw()
     renderChildrenSpectrogramRef(ref);
 
     endVboRendering();
+
+    tt.info("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
+    _drawn_blocks=0;
 
     GlException_CHECK_ERROR();
 }
@@ -316,39 +320,45 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref )
     if (!ref.containsSpectrogram())
         return false;
 
+    TaskTimer("drawing").suppressTiming();
+
     Spectrogram::Position a, b;
     ref.getArea( a, b );
-    glPushMatrix();
-    if (1) { // matrix push/pop
-        glTranslatef(a.time, 0, a.scale);
-        glScalef(b.time-a.time, 1, b.scale-a.scale);
+    glPushMatrixContext mc;
 
-        Spectrogram::pBlock block = _spectrogram->getBlock( ref );
-        if (0!=block.get()) {
-            if (0 /* direct rendering */ )
-                block->vbo->draw_directMode();
-            else if (1 /* vbo */ )
-                block->vbo->draw();
+    glTranslatef(a.time, 0, a.scale);
+    glScalef(b.time-a.time, 1, b.scale-a.scale);
 
-        } else {
-            // getBlock would try to find something else if the requested block wasn't readily available.
-            // If getBlock fails, we're out of memory. Indicate by not drawing the surface but only a wireframe
+    Spectrogram::pBlock block = _spectrogram->getBlock( ref );
+    if (0!=block.get()) {
+        if (0 /* direct rendering */ )
+            block->vbo->draw_directMode();
+        else if (1 /* vbo */ )
+            block->vbo->draw();
 
-            glBegin(GL_LINE_LOOP );
-                glVertex3f( 0, 0, 0 );
-                glVertex3f( 0, 0, 1 );
-                glVertex3f( 1, 0, 0 );
-                glVertex3f( 1, 0, 1 );
-            glEnd();
-        }
+    } else {
+        // getBlock would try to find something else if the requested block wasn't readily available.
+        // If getBlock fails, we're out of memory. Indicate by not drawing the surface but only a wireframe
+
+        glBegin(GL_LINE_LOOP );
+            glVertex3f( 0, 0, 0 );
+            glVertex3f( 0, 0, 1 );
+            glVertex3f( 1, 0, 0 );
+            glVertex3f( 1, 0, 1 );
+        glEnd();
     }
-    glPopMatrix();
+
+    _drawn_blocks++;
 
     return true;
 }
 
 bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference ref )
 {
+    Spectrogram::Position a, b;
+    ref.getArea( a, b );
+    TaskTimer tt("[%g, %g]", a.time, b.time);
+
     if (!ref.containsSpectrogram())
         return false;
 

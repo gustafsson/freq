@@ -10,7 +10,7 @@ typedef boost::shared_ptr<class Transform_chunk> pTransform_chunk;
 class Transform_chunk
 {
 public:
-    Transform_chunk();
+    Transform_chunk( );
 
     /**
       transform_data contains the wavelet transform rowwise.
@@ -19,12 +19,15 @@ public:
     */
     boost::scoped_ptr<GpuCpuData<float2> > transform_data;
 
-    float min_hz, max_hz, sample_rate;
-    unsigned sample_offset;
+    float min_hz, max_hz;
+    unsigned chunk_offset;
+    unsigned sample_rate;
+    unsigned first_valid_sample;
+    unsigned n_valid_samples;
     bool modified;
 
-    float timeInterval() const {       return nSamples()/sample_rate; }
-    float startTime() const {          return sample_offset/sample_rate; }
+    float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
+    float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }
     float endTime() const {            return startTime() + timeInterval(); }
     unsigned nSamples() const {        return transform_data->getNumberOfElements().width; }
     unsigned nFrequencies() const {    return transform_data->getNumberOfElements().height; }

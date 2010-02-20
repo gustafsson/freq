@@ -60,6 +60,6 @@ void main()
 //    gl_FragColor = waterColor;
 //    gl_FragColor = waterColor*diffuse;
 //    gl_FragColor = waterColor*diffuse + skyColor*fresnel;
-    gl_FragColor = setWavelengthColor( intensity );
-//    gl_FragColor = pow(1-intensity,5);
+//    gl_FragColor = setWavelengthColor( intensity );
+    gl_FragColor = pow(1-intensity,5);
 }
