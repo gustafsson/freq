@@ -53,6 +53,7 @@ public:
       Yscale_LogExpLinear
   } yscale;
   floatAni orthoview;
+  float xscale;
 
   virtual void keyPressEvent( QKeyEvent *e );
   virtual void keyReleaseEvent ( QKeyEvent * e );

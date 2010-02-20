@@ -130,6 +130,7 @@ DisplayWidget* DisplayWidget::gDisplayWidget = 0;
 DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval )
 : QGLWidget( ),
   lastKey(0),
+  xscale(1),
   _renderer( new SpectrogramRenderer( spectrogram )),
   _px(0), _py(0), _pz(-10),
   _rx(45), _ry(225), _rz(0),
@@ -257,7 +258,10 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
   }
   else
   {
-    _pz *= (1+ps * e->delta());
+    if(e->modifiers().testFlag(Qt::ControlModifier))
+        xscale *= (1+ps * e->delta());
+    else
+        _pz *= (1+ps * e->delta());
     //_pz -= ps * e->delta();
 
     //_rx -= ps * e->delta();
@@ -413,7 +417,7 @@ void DisplayWidget::paintGL()
     glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( _rz, 0, 0, 1 );
 
-    glScalef(-10, 1-.99*orthoview, 5);
+    glScalef(-10*xscale, 1-.99*orthoview, 5);
 
     glTranslatef( -_qx, -_qy, -_qz );
 
