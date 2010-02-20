@@ -12,22 +12,35 @@ using namespace std;
 using namespace boost;
 
 static string _sawe_version_string(
-        "Sonic Awe - development snapshot\n");
+        "Sonic AWE - development snapshot\n");
 
 static const char _sawe_usage_string[] =
-        "sawe [--samples_per_chunk=#n] [--scales_per_octave=#n]\n"
-        "           [--samples_per_block=#n] [--scales_per_block=#n]\n"
-        "           [--channel=#n] [--yscale=#y] FILENAME\n"
-        "sawe [--samples_per_chunk] [--scales_per_octave]\n"
-        "           [--samples_per_block] [--scales_per_block]\n"
-        "           [--channel] [--yscale]\n"
-        "sawe [--help] \n"
-        "sawe [--version] \n"
+        "sonicawe [--parameter=value]* [FILENAME]\n"
+        "sonicawe [--parameter] \n"
+        "sonicawe [--help] \n"
+        "sonicawe [--version] \n"
         "\n"
-        "    y      0   A=amplitude of CWT coefficients, default\n"
-        "           1   A * exp(.001*fi)\n"
-        "           2   log(1 + |A|)\n"
-        "           3   log(1 + [A * exp(.001*fi)]\n";
+"    Each parameter takes a value, if no value is given the default value is\n"
+"    written to standard output and the program exits immediately after.\n"
+"    Valid parameters are:\n"
+"\n"
+"    samples_per_chunk  The transform is computed in chunks from the input\n"
+"                       This determines the number of input samples that \n"
+"                       should correspond to one chunk of the transform.\n"
+"    scales_per_octave  Accuracy of transform, higher accuracy takes more time\n"
+"                       to compute.\n"
+"    wavelet_std_t      Transform chunks overlap this much, given in secnods.\n"
+"    samples_per_block  The transform chunks are downsampled to blocks for\n"
+"                       rendering, this gives the number of samples per block.\n"
+"    scales_per_block   Number of scales per block, se samples_per_block.\n"
+"    yscale             Tells how to translate the complex transform to a \n"
+"                       hightmap. Valid yscale values:\n"
+"                       0   A=amplitude of CWT coefficients, default\n"
+"                       1   A * exp(.001*fi)\n"
+"                       2   log(1 + |A|)\n"
+"                       3   log(1 + [A * exp(.001*fi)]\n"
+"\n"
+"Sonic AWE, 2010\n";
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 40;
@@ -86,7 +99,7 @@ static int handle_options(char ***argv, int *argc)
             printf("%s", _sawe_usage_string);
             _sawe_exit = true;
         } else if (!strcmp(cmd, "--version")) {
-            printf("%s", _sawe_version_string.c_str());
+            printf("%s\n", _sawe_version_string.c_str());
             _sawe_exit = true;
         }
         else if (readarg(&cmd, samples_per_chunk));
