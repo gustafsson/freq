@@ -403,3 +403,49 @@ void Waveform::play() {
     static SoundPlayer sp;
     sp.play( sampleBuffer, num_frames / (float)sample_rate() );
 }
+/*
+class ChunkSource: public Audiere::SampleSource {
+protected:
+    pWaveform _waveform;
+    unsigned _position;
+
+    ~ChunkSource() { }
+
+public:
+    ChunkSource( pWaveform waveform )
+    :   _waveform(waveform),
+        _position(0)
+    {
+    }
+
+    void getFormat(
+            int& channel_count,
+            int& sample_rate,
+            SampleFormat& sample_format)
+    {
+        channel_count = 1;
+        sample_rate = _waveform->sample_rate();
+        sample_format = Audiere::SF_S16;
+    }
+
+    int read(int frame_count, void* buffer) {
+        // ...
+    }
+
+    void reset() { return 0; }
+    bool isSeekable() { return false; }
+
+    int getLength() { return _waveform->number_of_samples(); }
+
+    void setPosition(int position) { _position = position; }
+    int getPosition() { return _position; }
+
+    bool getRepeat() { return false; }
+    void setRepeat(bool) {}
+
+    int getTagCount() { return 0; }
+    virtual const char* getTagKey(int i) { return 0; }
+    virtual const char* getTagValue(int i) { return 0; }
+    virtual const char* getTagType(int i) { return 0; }
+};
+*/
