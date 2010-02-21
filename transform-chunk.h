@@ -4,13 +4,12 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
+#include "transform.h"
 
-typedef boost::shared_ptr<class Transform_chunk> pTransform_chunk;
-
-class Transform_chunk
+class Transform::Chunk
 {
 public:
-    Transform_chunk( );
+    Chunk( );
 
     /**
       transform_data contains the wavelet transform rowwise.

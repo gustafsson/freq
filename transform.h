@@ -13,6 +13,9 @@ typedef boost::shared_ptr<class Transform> pTransform;
 class Transform
 {
 public:
+    typedef boost::shared_ptr<class Inverse> pInverse;
+    typedef boost::shared_ptr<class Chunk> pChunk;
+
     typedef unsigned ChunkIndex;
 
     Transform( pWaveform waveform,
@@ -24,7 +27,6 @@ public:
 
     ChunkIndex             getChunkIndex( unsigned including_sample );
     pTransform_chunk       getChunk( ChunkIndex n, cudaStream_t stream=0 );
-    /*static*/ pWaveform_chunk computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
     pWaveform_chunk        computeInverse( float start=0, float end=-1);
 
     /* discard cached data, releases all GPU memory */
@@ -42,15 +44,15 @@ public:
     void      wavelet_std_t( float );
     pWaveform original_waveform() { return _original_waveform; }
     void      original_waveform( pWaveform );
-    pWaveform get_inverse_waveform();
     float     number_of_octaves() const;
     unsigned  nScales() { return number_of_octaves() * scales_per_octave(); }
     float     min_hz() const { return _min_hz; }
     void      min_hz(float f);
     float     max_hz() const { return _max_hz; }
     void      max_hz(float f);
-    void      setInverseArea(float t1, float f1, float t2, float f2);
     pTransform_chunk previous_chunk( unsigned &out_chunk_index );
+
+    boost::shared_ptr<Transform_inverse> inverse();
 
 private:
 #ifdef _USE_CHUNK_CACHE
@@ -59,8 +61,6 @@ private:
     void             clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream );
 #endif // #ifdef _USE_CHUNK_CACHE
     pTransform_chunk computeTransform( pWaveform_chunk chunk, cudaStream_t stream );
-    void             merge_chunk(pWaveform_chunk r, pTransform_chunk transform);
-    pWaveform_chunk  prepare_inverse(float start, float end);
 
     /* caches */
 #ifdef _USE_CHUNK_CACHE

@@ -22,7 +22,7 @@ length dt.
 
 typedef boost::shared_ptr<class Filter> pFilter;
 
-class Transform_inverse
+class Transform::Inverse
 {
 public:
     class Callback {
@@ -30,9 +30,15 @@ public:
         virtual void transform_inverse_callback(pWaveform_chunk chunk)=0;
     };
 
-    Transform_inverse(pWaveform waveform, Callback* callback);
+    Inverse(pWaveform waveform, Callback* callback);
 
     void compute_inverse( float startt, float endt, pFilter filter );
+
+    pWaveform_chunk computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
+    pWaveform get_inverse_waveform();
+    void      setInverseArea(float t1, float f1, float t2, float f2);
+    void             merge_chunk(pWaveform_chunk r, pTransform_chunk transform);
+    pWaveform_chunk  prepare_inverse(float start, float end);
 
 private:
     pWaveform _waveform;
