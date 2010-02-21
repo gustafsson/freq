@@ -156,6 +156,7 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
                     }
                     _unfinished_count++;
                 }
+#ifdef MULTITHREADED_SONICAWE
             } else if (0 /* partial block, multithreaded, multiple GPUs*/ ) {
                 bool enqueue = false;
                 {
@@ -178,7 +179,7 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
                 }
                 if (enqueue)
                     block_worker()->filo_enqueue( block );
-
+#endif
             }
 
             if (need_slope) {
@@ -194,6 +195,7 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
     return result;
 }
 
+#ifdef MULTITHREADED_SONICAWE
 Spectrogram::BlockWorker* Spectrogram::block_worker() {
     if ( 0 == _block_worker ) {
         _block_worker.reset(new BlockWorker( this ));
@@ -245,7 +247,7 @@ void Spectrogram::BlockWorker::run()
         process_data( wait_for_data_to_process() );
     }
 }
-
+#endif
 Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
 {
     // Try to allocate a new block

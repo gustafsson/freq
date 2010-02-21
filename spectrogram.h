@@ -65,12 +65,15 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 #include <list>
 #include <set>
 #include <boost/shared_ptr.hpp>
-#include <boost/thread/condition_variable.hpp>
 #include <tvector.h>
 #include <vector>
 #include "transform.h"
 #include "waveform.h"
+
+#ifdef MULTITHREADED_SONICAWE
+#include <boost/thread/condition_variable.hpp>
 #include <QThread>
+#endif
 
 typedef boost::shared_ptr<class Filter> pFilter;
 typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
@@ -89,7 +92,9 @@ public:
     class Position;
     class Reference;
     class Block;
+#ifdef MULTITHREADED_SONICAWE
     class BlockWorker;
+#endif
 
     typedef boost::shared_ptr<Block> pBlock;
 
@@ -129,7 +134,9 @@ private:
 
     // Slots with Spectrogram::Block:s, as many as there are space for in the GPU ram
     std::vector<pBlock> _cache;
-    boost::scoped_ptr<BlockWorker> _block_worker;
+#ifdef MULTITHREADED_SONICAWE
+        boost::scoped_ptr<BlockWorker> _block_worker;
+#endif
 
     Reference   findReferenceCanonical( Position p, Position sampleSize );
     pBlock      createBlock( Spectrogram::Reference ref );
@@ -138,7 +145,9 @@ private:
     void        computeSlope( Spectrogram::pBlock block, unsigned cuda_stream );
     void        mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
     void        mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock inBlock, unsigned cuda_stream );
+#ifdef MULTITHREADED_SONICAWE
     BlockWorker* block_worker();
+#endif
     bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n );
     bool        isInvalidChunk( pBlock block, Transform::ChunkIndex n );
 };
@@ -206,6 +215,7 @@ public:
     std::set<Transform::ChunkIndex> valid_chunks;
 };
 
+#ifdef MULTITHREADED_SONICAWE
 class Spectrogram::BlockWorker: public QThread
 {
 public:
@@ -226,7 +236,7 @@ private:
 
     Spectrogram* _spectrogram;
 };
-
+#endif // MULTITHREADED_SONICAWE
 #endif // SPECTROGRAM_H
 /*
 git daemon --verbose --base-path=/home/johan/git

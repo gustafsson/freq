@@ -57,7 +57,8 @@ unix:LIBS += -lsndfile \
     -lGLEW \
     -lGLU \
     -lGL \
-    -lboost_thread-mt \
+#ifdef MULTITHREADED_SONICAWE
+#    -lboost_thread-mt \
     -lglut
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS += -lsndfile \
