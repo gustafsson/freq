@@ -26,6 +26,8 @@ public:
     unsigned sample_offset;
     unsigned sample_rate;
     bool modified;
+    bool was_modified;
+    bool play_when_done;
 
     std::set<unsigned> valid_transform_chunks;
 private:

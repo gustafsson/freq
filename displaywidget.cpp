@@ -157,6 +157,10 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     selection[1].y = 0;
     selection[1].z = 2;
 
+    // no selection
+    selection[0].x = selection[1].x;
+    selection[0].z = selection[1].z;
+
     _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
 
     yscale = Yscale_LogLinear;
@@ -175,7 +179,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
 	lastKey = e->key();
         if(lastKey == ' ' ){
-            _renderer->spectrogram()->transform()->get_inverse_waveform()->play();
+            _renderer->spectrogram()->transform()->play_inverse();
 	}
 }
 
@@ -259,7 +263,7 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
   else
   {
     if(e->modifiers().testFlag(Qt::ControlModifier))
-        xscale *= (1+ps * e->delta());
+        xscale *= (1-ps * e->delta());
     else
         _pz *= (1+ps * e->delta());
     //_pz -= ps * e->delta();
@@ -342,7 +346,7 @@ void DisplayWidget::timeOut()
 
   if(selectionButton.isDown() && selectionButton.getHold() == 5)
   {
-    _renderer->spectrogram()->transform()->get_inverse_waveform()->play();
+    _renderer->spectrogram()->transform()->play_inverse();
   }
 }
 
@@ -417,19 +421,20 @@ void DisplayWidget::paintGL()
     glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( _rz, 0, 0, 1 );
 
-    glScalef(-10*xscale, 1-.99*orthoview, 5);
+    glScalef(-xscale, 1-.99*orthoview, 5);
 
     glTranslatef( -_qx, -_qy, -_qz );
 
     orthoview.TimeStep(.08);
 
+    pWaveform inv;
     glPushMatrix();
         glTranslatef( 0, 0, 1.25f );
         glScalef(1, 1, .15);
         glColor4f(0,1,0,1);
         {
             TaskTimer tt("drawWaveform( inverse )");
-            drawWaveform(_renderer->spectrogram()->transform()->get_inverse_waveform());
+            drawWaveform(inv = _renderer->spectrogram()->transform()->get_inverse_waveform());
         }
         glTranslatef( 0, 0, 2.f );
         glColor4f(0,0,0,1);
@@ -441,14 +446,19 @@ void DisplayWidget::paintGL()
 
     _renderer->draw();
 
-    draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode );
+    static float prev_xscale = xscale;
+    draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale );
 
     if (_enqueueGcDisplayList)
 //        gcDisplayList();
     { ; }
 
-    if (0 < this->_renderer->spectrogram()->read_unfinished_count())
+    if (0 < this->_renderer->spectrogram()->read_unfinished_count()) {
+        if (inv->getChunkBehind()->play_when_done || inv->getChunkBehind()->modified)
+            _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
         update();
+    }
+
 
     drawSelection();
 }
@@ -508,15 +518,22 @@ void DisplayWidget::drawWaveform(pWaveform waveform)
 {
     //static pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
     pWaveform_chunk chunk = waveform->getChunkBehind();
-    draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode, chunk->modified );
     if (chunk->modified) {
+        chunk->was_modified = true;
+        drawWaveform_chunk_directMode( chunk );
         update();
         chunk->modified=false;
+    } else if(chunk->was_modified) {
+        draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode, true );
+        chunk->was_modified = false;
+    } else {
+        draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode, false );
     }
 }
 
 void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
 {
+    TaskTimer tt(__FUNCTION__);
     cudaExtent n = chunk->waveform_data->getNumberOfElements();
     const float* data = chunk->waveform_data->getCpuMemory();
 
@@ -539,10 +556,22 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
     unsigned c=0;
 //    for (unsigned c=0; c<n.height; c++)
     {
-        //glBegin(GL_LINE_STRIP);
-        glBegin(GL_POINTS);
-            for (unsigned t=0; t<n.width; t++) {
+        glBegin(GL_TRIANGLE_STRIP);
+        //glBegin(GL_POINTS);
+            for (unsigned t=0; t<n.width; t+=std::max((size_t)1,n.width/2000)) {
+                /*float lmin,lmax = (lmin = data[t + c*n.width]);
+                for (unsigned j=0; j<std::max((size_t)2, (n.width/1000)) && t<n.width;j++, t++) {
+                    const float &a = data[t + c*n.width];
+                    if (a<lmin) lmin=a;
+                    if (a>lmax) lmax=a;
+                }
+                glVertex3f( ifs*t, 0, s*lmax);
+                glVertex3f( ifs*t, 0, s*lmin);*/
                 glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
+                float pt = t;
+                t+=std::max((size_t)1,n.width/2000);
+                if (t<n.width)
+                    glVertex3f( ifs*pt, 0, s*data[t + c*n.width]);
             }
         glEnd();
 //        glTranslatef(0, 0, -.5); // different channels along y
@@ -564,9 +593,10 @@ void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*ren
 
     if (_chunkGlList.end() == itr) {
         ListCounter cnt;
-        if (force_redraw)
+        if (force_redraw) {
             cnt = itr->second;
-        else {
+            cnt.age = ListCounter::Age_InUse;
+        } else {
             cnt.age = ListCounter::Age_JustCreated;
             cnt.displayList = glGenLists(1);
         }
@@ -715,30 +745,34 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
         }
     }
 
-    for (float s=0; s<l;)
+    unsigned m=0;
+    unsigned marker = max(1.f, 20.f/gDisplayWidget->xscale);
+    marker = pow(10,ceil(log(marker)/log(10)));
+
+    for (float s=0; s<l;s+=.01f, m++)
     {
-        for (unsigned m=0; m<10 && s<l; s+=.01, m++)
-        {
-            float g = m==0?2:1;
-            glLineWidth(g);
-    glBegin(GL_LINES);
-            glVertex3f(s, 0, -.015f*g);
-            glVertex3f(s, 0, 0.f);
-            glVertex3f(s, 0, 1+.015f*g);
-            glVertex3f(s, 0, 1.f);
-    glEnd();
-            if (0==m) {
-                glLineWidth(1);
-                glPushMatrix();
-                glTranslatef(s+.005,0,-.035f);
-                glRotatef(90,1,0,0);
-                glScalef(0.00015f,0.0001f,0.0001f);
-                char a[100];
-                sprintf(a,"%.1f", s);
-                for (char*c=a;*c!=0; c++)
-                    glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                glPopMatrix();
-            }
+        if((m%max((unsigned)1,marker/10))!=0)
+            continue;
+
+        float g = (m%marker)==0?2:1;
+        glLineWidth(g);
+glBegin(GL_LINES);
+        glVertex3f(s, 0, -.015f*g);
+        glVertex3f(s, 0, 0.f);
+        glVertex3f(s, 0, 1+.015f*g);
+        glVertex3f(s, 0, 1.f);
+glEnd();
+        if (0==(m%marker)) {
+            glLineWidth(1);
+            glPushMatrix();
+            glTranslatef(s+.005,0,-.065f);
+            glRotatef(90,1,0,0);
+            glScalef(0.00045f/gDisplayWidget->xscale,0.0003f,0.0003f);
+            char a[100];
+            sprintf(a,"%.1f", s);
+            for (char*c=a;*c!=0; c++)
+                glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+            glPopMatrix();
         }
     }
     glDepthMask(true);

@@ -114,6 +114,7 @@ public:
     void scales_per_block(unsigned v);
     void samples_per_block(unsigned v);
     unsigned read_unfinished_count() { unsigned t = _unfinished_count; _unfinished_count = 0; _frame_counter++; return t; }
+    void dont_compute_until_next_read_unfinished_count() { _unfinished_count++; }
 
     Position min_sample_size();
     Position max_sample_size();

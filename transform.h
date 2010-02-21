@@ -42,6 +42,7 @@ public:
     void      wavelet_std_t( float );
     pWaveform original_waveform() { return _original_waveform; }
     void      original_waveform( pWaveform );
+    void      play_inverse();
     pWaveform get_inverse_waveform();
     float     number_of_octaves() const;
     unsigned  nScales() { return number_of_octaves() * scales_per_octave(); }

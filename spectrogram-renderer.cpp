@@ -23,7 +23,7 @@ SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
-    _redundancy(10) // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
+    _redundancy(2) // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
 {
 }
 

@@ -117,7 +117,9 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
     // somewhat bigger for the first chunk is ok
     n_samples = _samples_per_chunk + _wavelet_std_samples*2;
 
-    TaskTimer tt("computing transform %g s, total including redundant %g s",
+    TaskTimer tt("computing transform [%g - %g] %g s, total including redundant %g s",
+                 (offs+first_valid)/(float)_original_waveform->sample_rate(),
+                 (offs+first_valid+n_valid)/(float)_original_waveform->sample_rate(),
                  n_valid/(float)_original_waveform->sample_rate(),
                  n_samples/(float)_original_waveform->sample_rate());
 
@@ -152,19 +154,24 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
 
 void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
     float mint, maxt;
+    float pmint, pmaxt;
     switch(2)
     {
     case 1: // square
-        mint = min(min(_t1, _t2), min(t1, t2));
-        maxt = max(max(_t1, _t2), max(t1, t2));
+        pmint = min(_t1, _t2);
+        pmaxt = max(_t1, _t2);
+        mint = min(t1, t2);
+        maxt = max(t1, t2);
         _t1 = min(t1, t2);
         _f1 = min(f1, f2);
         _t2 = max(t1, t2);
         _f2 = max(f1, f2);
         break;
     case 2: // circle
-        mint = min(_t1 - fabs(_t1-_t2), t1 - fabs(t1-t2));
-        maxt = max(_t1 + fabs(_t1-_t2), t1 + fabs(t1-t2));
+        pmint = _t1 - fabs(_t1-_t2);
+        pmaxt = _t1 + fabs(_t1-_t2);
+        mint = t1 - fabs(t1-t2);
+        maxt = t1 + fabs(t1-t2);
         _t1 = t1;
         _f1 = f1;
         _t2 = t2;
@@ -172,16 +179,28 @@ void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
         break;
     }
 
-    if (_inverse_waveform && _inverse_waveform->getChunkBehind())
+    get_inverse_waveform();
+
+    for (unsigned n = getChunkIndex( max(0.f,mint)*_original_waveform->sample_rate());
+         n <= getChunkIndex( max(0.f,maxt)*_original_waveform->sample_rate());
+         n++)
     {
-        for (unsigned n = getChunkIndex( max(0.f,mint)*_original_waveform->sample_rate());
-             n <= getChunkIndex( max(0.f,maxt)*_original_waveform->sample_rate());
-             n++)
-        {
-            _inverse_waveform->getChunkBehind()->valid_transform_chunks.erase(n);
-        }
+        _inverse_waveform->getChunkBehind()->valid_transform_chunks.erase(n);
     }
+    for (unsigned n = getChunkIndex( max(0.f,pmint)*_original_waveform->sample_rate());
+         n <= getChunkIndex( max(0.f,pmaxt)*_original_waveform->sample_rate());
+         n++)
+    {
+        _inverse_waveform->getChunkBehind()->valid_transform_chunks.erase(n);
+    }
+
     filterTimer.reset(new TaskTimer("Computing inverse [%g,%g], %g s", mint, maxt, maxt-mint));
+}
+
+void Transform::play_inverse()
+{
+    _inverse_waveform->getChunkBehind()->play_when_done = true;
+    get_inverse_waveform();
 }
 
 pWaveform Transform::get_inverse_waveform()
@@ -189,6 +208,13 @@ pWaveform Transform::get_inverse_waveform()
     if (0 == _inverse_waveform) {
         _inverse_waveform.reset(new Waveform());
         _inverse_waveform->setChunk(prepare_inverse(0, _original_waveform->length()));
+
+        for (unsigned n = 0;
+             n <= getChunkIndex( _original_waveform->number_of_samples() );
+             n++)
+        {
+            _inverse_waveform->getChunkBehind()->valid_transform_chunks.insert(n);
+        }
     }
 
     unsigned n, last_index=getChunkIndex( _original_waveform->number_of_samples() );
@@ -218,16 +244,22 @@ pWaveform Transform::get_inverse_waveform()
         _inverse_waveform->getChunkBehind()->modified = true;
     }
 
-    for (n=0; n<=last_index; n++) {
-        if (0==_inverse_waveform->getChunkBehind()->valid_transform_chunks.count(n))
-            break;
+    if (_inverse_waveform->getChunkBehind()->play_when_done)
+    {
+        for (n=0; n<=last_index; n++) {
+            if (0==_inverse_waveform->getChunkBehind()->valid_transform_chunks.count(n))
+                break;
+        }
+        if (n>last_index) {
+            if(filterTimer)
+                filterTimer->info("Computed entire inverse");
+            filterTimer.reset();
+            _inverse_waveform->play();
+
+            _inverse_waveform->getChunkBehind()->play_when_done = false;
+        }
     }
-    if (n>last_index) {
-        if(filterTimer)
-            filterTimer->info("Computed entire inverse");
-        filterTimer.reset();
-        _inverse_waveform->play();
-    }
+
 
     return _inverse_waveform;
 }

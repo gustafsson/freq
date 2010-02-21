@@ -196,6 +196,8 @@ Waveform_chunk::Waveform_chunk(Interleaved interleaved)
 :   sample_offset(0),
     sample_rate(0),
     modified(0),
+    was_modified(0),
+    play_when_done(0),
     _interleaved(interleaved)
 {
     switch(_interleaved) {
