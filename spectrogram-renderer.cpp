@@ -277,7 +277,7 @@ void SpectrogramRenderer::beginVboRendering()
     GLuint uniHeightScale, uniChopiness, uniSize;
 
     uniHeightScale = glGetUniformLocation(_shader_prog, "heightScale");
-    glUniform1f(uniHeightScale, 0.5f);
+    glUniform1f(uniHeightScale, 0.0125f);
 
     uniChopiness   = glGetUniformLocation(_shader_prog, "chopiness");
     glUniform1f(uniChopiness, 1.0f);

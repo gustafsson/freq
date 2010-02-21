@@ -133,7 +133,7 @@ void Waveform::writeFile( const char* filename )
     // todo: this method only writes mono data from the first (left) channel
 
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-    //  const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
+    //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
     //int number_of_channels = 1;
     SndfileHandle outfile(filename, SFM_WRITE, format, 1, sample_rate());
@@ -377,6 +377,7 @@ void Waveform::play() {
 #endif
 
     pWaveform wf = this->crop();
+    wf->writeFile("selection.wav");
 
     if (!wf.get())
         return;
