@@ -378,6 +378,20 @@ bool Spectrogram::isInvalidChunk( pBlock block, Transform::ChunkIndex n )
     return r;
 }
 
+void Spectrogram::invalidate_range(float start_time, float end_time)
+{
+    unsigned start = start_time*_transform->original_waveform()->sample_rate();
+    unsigned end = end_time*_transform->original_waveform()->sample_rate();
+    BOOST_FOREACH( pBlock& b, _cache ) {
+        for (Transform::ChunkIndex n = _transform->getChunkIndex(start);
+             n*_transform->samples_per_chunk() < end;
+             n++)
+        {
+            b->valid_chunks.erase( n );
+        }
+    }
+}
+
 void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cuda_stream, bool save_in_prepared_data) {
     boost::shared_ptr<GpuCpuData<float> > outData;
 
@@ -395,7 +409,7 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inC
 
     float in_sample_rate = inChunk->sample_rate;
     float out_sample_rate = outBlock->sample_rate();
-    float in_frequency_resolution = inChunk->nFrequencies();
+    float in_frequency_resolution = inChunk->nScales();
     float out_frequency_resolution = outBlock->nFrequencies();
     float in_offset = max(0.f, (a.time-inChunk->startTime()))*in_sample_rate;
     float out_offset = max(0.f, (inChunk->startTime()-a.time))*out_sample_rate;

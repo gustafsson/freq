@@ -30,16 +30,19 @@ HEADERS += mainwindow.h \
     spectrogram-vbo.h \
     spectrogram-renderer.h \
     spectrogram-slope.cu.h \
-    spectrogram-block.cu.h
+    spectrogram-block.cu.h \
+    filter.cu.h
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu \
     spectrogram.frag \
     spectrogram.vert \
     spectrogram-slope.cu \
-    spectrogram-block.cu
+    spectrogram-block.cu \
+    filter.cu
 CUDA_SOURCES += wavelet.cu \
     spectrogram-slope.cu \
-    spectrogram-block.cu
+    spectrogram-block.cu \
+    filter.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -r "s/ref:\ refs\\\/heads\\\/master// | sed -r "s/ref:\ refs\\\/heads\\\///"; fi)\'"

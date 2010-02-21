@@ -15,7 +15,9 @@
 using namespace std;
 
 Transform::Transform( pWaveform waveform, unsigned channel, unsigned samples_per_chunk, unsigned scales_per_octave, float wavelet_std_t )
-:   _original_waveform( waveform ),
+:    built_in_filter(0,0,0,0,false),
+
+    _original_waveform( waveform ),
     _channel( channel ),
     _scales_per_octave( scales_per_octave ),
     _samples_per_chunk( samples_per_chunk ),
@@ -40,7 +42,6 @@ Transform::Transform( pWaveform waveform, unsigned channel, unsigned samples_per
     space for roughly 6 chunks (leaving about 137 MB for other purposes).
     */
 
-    _t1 = _f1 = _t2 = _f2 = 0;
     this->wavelet_std_t( wavelet_std_t );
 
     CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
@@ -53,7 +54,7 @@ Transform::~Transform()
 }
 
 
-Transform::ChunkIndex Transform::getChunkIndex( unsigned including_sample ) {
+Transform::ChunkIndex Transform::getChunkIndex( unsigned including_sample ) const {
     return including_sample / _samples_per_chunk;
 }
 
@@ -139,6 +140,8 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
     pTransform_chunk wt = computeTransform( wave, stream );
     wt->first_valid_sample = first_valid;
     wt->n_valid_samples = n_valid;
+
+    filter_chain(*wt);
 #ifndef _USE_CHUNK_CACHE
     return wt;
 #else
@@ -152,49 +155,21 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
 #endif
 }
 
+void Transform::recompute_filter(pFilter f) {
+    if (f.get())
+        f->invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
+    else
+        filter_chain.invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
+}
+
 void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
-    float mint, maxt;
-    float pmint, pmaxt;
-    switch(2)
-    {
-    case 1: // square
-        pmint = min(_t1, _t2);
-        pmaxt = max(_t1, _t2);
-        mint = min(t1, t2);
-        maxt = max(t1, t2);
-        _t1 = min(t1, t2);
-        _f1 = min(f1, f2);
-        _t2 = max(t1, t2);
-        _f2 = max(f1, f2);
-        break;
-    case 2: // circle
-        pmint = _t1 - fabs(_t1-_t2);
-        pmaxt = _t1 + fabs(_t1-_t2);
-        mint = t1 - fabs(t1-t2);
-        maxt = t1 + fabs(t1-t2);
-        _t1 = t1;
-        _f1 = f1;
-        _t2 = t2;
-        _f2 = f2;
-        break;
-    }
+    built_in_filter.invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
+    built_in_filter = EllipsFilter(t1,f1,t2,f2,true);
+    built_in_filter.invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
 
-    get_inverse_waveform();
-
-    for (unsigned n = getChunkIndex( max(0.f,mint)*_original_waveform->sample_rate());
-         n <= getChunkIndex( max(0.f,maxt)*_original_waveform->sample_rate());
-         n++)
-    {
-        _inverse_waveform->getChunkBehind()->valid_transform_chunks.erase(n);
-    }
-    for (unsigned n = getChunkIndex( max(0.f,pmint)*_original_waveform->sample_rate());
-         n <= getChunkIndex( max(0.f,pmaxt)*_original_waveform->sample_rate());
-         n++)
-    {
-        _inverse_waveform->getChunkBehind()->valid_transform_chunks.erase(n);
-    }
-
-    filterTimer.reset(new TaskTimer("Computing inverse [%g,%g], %g s", mint, maxt, maxt-mint));
+    float start_time, end_time;
+    built_in_filter.range(start_time, end_time);
+    filterTimer.reset(new TaskTimer("Computing inverse [%g,%g], %g s", start_time, end_time, end_time-start_time));
 }
 
 void Transform::play_inverse()
@@ -324,10 +299,10 @@ pWaveform_chunk Transform::computeInverse( pTransform_chunk chunk, cudaStream_t 
     r->waveform_data.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
 
     float4 area = make_float4(
-            _t1 * _original_waveform->sample_rate() - r->sample_offset,
-            _f1 * nScales(),
-            _t2 * _original_waveform->sample_rate() - r->sample_offset,
-            _f2 * nScales());
+            built_in_filter._t1 * _original_waveform->sample_rate() - r->sample_offset,
+            built_in_filter._f1 * nScales(),
+            built_in_filter._t2 * _original_waveform->sample_rate() - r->sample_offset,
+            built_in_filter._f2 * nScales());
     {
         TaskTimer tt(__FUNCTION__);
 

@@ -31,7 +31,7 @@ float Transform_chunk::getFrequency( unsigned fi ) const
     if (!valid())
         return 0;
 
-    return exp(log(min_hz) + (fi/(float)nFrequencies())*(log(max_hz)-log(min_hz)));
+    return exp(log(min_hz) + (fi/(float)nScales())*(log(max_hz)-log(min_hz)));
 }
 
 unsigned Transform_chunk::getFrequencyIndex( float f ) const
@@ -39,8 +39,8 @@ unsigned Transform_chunk::getFrequencyIndex( float f ) const
     if (f<min_hz) f=min_hz;
     if (f>max_hz) f=max_hz;
 
-    unsigned fi = (unsigned)((log(f)-log(min_hz))/(log(max_hz)-log(min_hz))*nFrequencies());
-    if (fi>nFrequencies()) fi = nFrequencies()-1;
+    unsigned fi = (unsigned)((log(f)-log(min_hz))/(log(max_hz)-log(min_hz))*nScales());
+    if (fi>nScales()) fi = nScales()-1;
 
     return fi;
 }

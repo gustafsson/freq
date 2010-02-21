@@ -99,6 +99,7 @@ public:
 
     pBlock      getBlock( Reference ref );
     pTransform  transform() const { return _transform; }
+    void        invalidate_range(float start_time, float end_time);
     void        gc();
 
     /**

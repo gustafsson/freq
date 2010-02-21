@@ -30,7 +30,7 @@ public:
     float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }
     float endTime() const {            return startTime() + timeInterval(); }
     unsigned nSamples() const {        return transform_data->getNumberOfElements().width; }
-    unsigned nFrequencies() const {    return transform_data->getNumberOfElements().height; }
+    unsigned nScales() const {         return transform_data->getNumberOfElements().height; }
     unsigned nChannels() const {       return transform_data->getNumberOfElements().depth; }
 
     bool valid() const {

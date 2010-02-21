@@ -178,9 +178,40 @@ DisplayWidget::~DisplayWidget()
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
 	lastKey = e->key();
-        if(lastKey == ' ' ){
-            _renderer->spectrogram()->transform()->play_inverse();
-	}
+        pTransform t = _renderer->spectrogram()->transform();
+        switch (lastKey )
+        {
+            case ' ':
+                t->play_inverse();
+                break;
+            case 'c': case 'C':
+            {
+                t->recompute_filter(pFilter());
+
+                BOOST_FOREACH( pFilter f, t->filter_chain )
+                {
+                    float start, end;
+                    f->range(start,end);
+                    _renderer->spectrogram()->invalidate_range(start,end);
+                }
+
+                t->filter_chain.clear();
+                update();
+                break;
+            }
+            case 'a': case 'A':
+            {
+                pFilter f(new EllipsFilter( t->built_in_filter ) );
+                t->filter_chain.push_back(f);
+                t->recompute_filter(f);
+
+                float start, end;
+                f->range(start,end);
+                _renderer->spectrogram()->invalidate_range(start,end);
+                update();
+                break;
+            }
+        }
 }
 
 void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )

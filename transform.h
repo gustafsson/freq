@@ -5,6 +5,7 @@
 #include "waveform.h"
 #include <boost/shared_ptr.hpp>
 #include <map>
+#include "filter.h"
 
 typedef unsigned int cufftHandle; /* from cufft.h */
 
@@ -22,7 +23,7 @@ public:
                float wavelet_std_t );
     ~Transform();
 
-    ChunkIndex             getChunkIndex( unsigned including_sample );
+    ChunkIndex             getChunkIndex( unsigned including_sample ) const;
     pTransform_chunk       getChunk( ChunkIndex n, cudaStream_t stream=0 );
     /*static*/ pWaveform_chunk computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
     pWaveform_chunk        computeInverse( float start=0, float end=-1);
@@ -40,7 +41,7 @@ public:
     void      samples_per_chunk( unsigned );
     float     wavelet_std_t() const { return _wavelet_std_samples/(float)_original_waveform->sample_rate(); }
     void      wavelet_std_t( float );
-    pWaveform original_waveform() { return _original_waveform; }
+    pWaveform original_waveform() const { return _original_waveform; }
     void      original_waveform( pWaveform );
     void      play_inverse();
     pWaveform get_inverse_waveform();
@@ -53,6 +54,9 @@ public:
     void      setInverseArea(float t1, float f1, float t2, float f2);
     pTransform_chunk previous_chunk( unsigned &out_chunk_index );
 
+    FilterChain filter_chain;
+    EllipsFilter built_in_filter;
+    void      recompute_filter(pFilter);
 private:
 #ifdef _USE_CHUNK_CACHE
     pTransform_chunk allocateChunk( ChunkIndex n );
@@ -84,8 +88,6 @@ private:
     cufftHandle _fft_single;
     unsigned _fft_width;
 
-    // TODO move into some filter
-    float _t1, _f1, _t2, _f2;
     boost::shared_ptr<TaskTimer> filterTimer;
 
 };
