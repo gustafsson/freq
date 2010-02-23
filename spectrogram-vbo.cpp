@@ -58,12 +58,12 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
     program = glCreateProgram();
     if (!attachShader(program, GL_VERTEX_SHADER, vertFileName)) {
         glDeleteProgram(program);
-		throw std::invalid_argument(std::string("Couldn't attach vertex shader from file ") + vertFileName);
+                throw std::runtime_error(std::string("Couldn't attach vertex shader from file ") + vertFileName);
     }
 
     if (!attachShader(program, GL_FRAGMENT_SHADER, fragFileName)) {
         glDeleteProgram(program);
-		throw std::invalid_argument(std::string("Couldn't attach fragment shader from file ") + fragFileName);
+                throw std::runtime_error(std::string("Couldn't attach fragment shader from file ") + fragFileName);
     }
 
     glLinkProgram(program);

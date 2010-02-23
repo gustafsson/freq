@@ -130,6 +130,35 @@ static int handle_options(char ***argv, int *argc)
 #define STRINGIFY(x) #x
 #define TOSTR(x) STRINGIFY(x)
 
+class SonicAWE_Application: public QApplication
+{
+public:
+    SonicAWE_Application( int& argc, char **argv)
+    :   QApplication(argc, argv)
+    {}
+
+    virtual bool notify(QObject * receiver, QEvent * e) {
+        bool v = false;
+        try {
+            QApplication::notify(receiver,e);
+        } catch (const std::exception &x) {
+            cerr << "======================" << endl
+                 << "Error: " << typeid(x).name() << endl
+                 << "Message: " << x.what() << endl
+                 << "======================" << endl;
+            cerr.flush();
+            exit(-2);
+        } catch (...) {
+            cerr << "=========================" << endl
+                 << "An unknown error occurred" << endl
+                 << "=========================" << endl;
+            cerr.flush();
+            exit(-1);
+        }
+        return v;
+    }
+};
+
 int main(int argc, char *argv[])
 {
     QDateTime now = QDateTime::currentDateTime();
@@ -149,7 +178,7 @@ int main(int argc, char *argv[])
 
     _sawe_version_string = ss.str();
 
-    QApplication a(argc, argv);
+    SonicAWE_Application a(argc, argv);
     MainWindow w(_sawe_version_string.c_str());
     
     // skip application filename
@@ -203,7 +232,12 @@ int main(int argc, char *argv[])
 
        return a.exec();
     } catch (std::exception &x) {
-        cout << "Error: " << x.what() << endl;
+            cerr << "======================" << endl
+                 << "Error: " << typeid(x).name() << endl
+                 << "Message: " << x.what() << endl
+                 << "======================" << endl;
+            cerr.flush();
+            exit(-2);
     }
 }
 
