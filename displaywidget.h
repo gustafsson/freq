@@ -41,7 +41,7 @@ struct MyVector{
 class DisplayWidget : public QGLWidget
 {
 public:
-    DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval=0 );
+    DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval=0, std::string playback_source_test="" );
     ~DisplayWidget();
   int lastKey;
   static DisplayWidget* gDisplayWidget;
@@ -58,6 +58,7 @@ public:
   virtual void keyPressEvent( QKeyEvent *e );
   virtual void keyReleaseEvent ( QKeyEvent * e );
 protected:
+  void open_inverse_test(std::string soundfile="");
   virtual void initializeGL();
   virtual void resizeGL( int width, int height );
   virtual void paintGL();
@@ -74,6 +75,7 @@ protected slots:
 
 private:
   boost::shared_ptr<SpectrogramRenderer> _renderer;
+  boost::shared_ptr<Transform> _transform;
 
   struct ListCounter {
       GLuint displayList;

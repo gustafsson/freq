@@ -53,6 +53,7 @@ static unsigned _samples_per_block = 1<<7;//                                    
 static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static std::string _soundfile = "";
+static std::string _playback_source_test = "";
 static bool _sawe_exit=false;
 
 static int prefixcmp(const char *a, const char *prefix) {
@@ -159,7 +160,11 @@ int main(int argc, char *argv[])
         handle_options(&argv, &argc);
 
         if (argc) {
-            _soundfile = argv[0];
+            if (_soundfile.empty()) {
+                _soundfile = argv[0];
+            } else {
+                _playback_source_test =  argv[0];;
+            }
             argv++;
             argc--;
         }
@@ -189,7 +194,7 @@ int main(int argc, char *argv[])
         boost::shared_ptr<Waveform> wf( new Waveform( _soundfile.c_str() ) );
         boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
         boost::shared_ptr<Spectrogram> sg( new Spectrogram(wt, _samples_per_block, _scales_per_block  ) );
-        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg ) );
+        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg, 0, _playback_source_test ) );
         dw->yscale = (DisplayWidget::Yscale)_yscale;
 
         w.setCentralWidget( dw.get() );

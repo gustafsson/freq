@@ -4,6 +4,9 @@
 #include <QTimer>
 #include <QKeyEvent>
 
+#include <QtGui/QFileDialog>
+#include <CudaException.h>
+
 #include <algorithm>
 #include <boost/foreach.hpp>
 
@@ -127,7 +130,7 @@ bool MouseControl::isTouched()
 
 DisplayWidget* DisplayWidget::gDisplayWidget = 0;
 
-DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval )
+DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval, std::string playback_source_test )
 : QGLWidget( ),
   lastKey(0),
   xscale(1),
@@ -166,9 +169,16 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     yscale = Yscale_LogLinear;
     timeOut();
 
-    if( timerInterval != 0 )
+    if ( timerInterval != 0 )
     {
         startTimer(timerInterval);
+    }
+
+    if (!playback_source_test.empty())
+    {
+        open_inverse_test(playback_source_test);
+    } else {
+        _transform = _renderer->spectrogram()->transform();
     }
 }
 
@@ -177,41 +187,56 @@ DisplayWidget::~DisplayWidget()
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
-	lastKey = e->key();
-        pTransform t = _renderer->spectrogram()->transform();
-        switch (lastKey )
+    lastKey = e->key();
+    pTransform t = _renderer->spectrogram()->transform();
+    switch (lastKey )
+    {
+        case ' ':
+            _transform->play_inverse();
+            break;
+        case 'c': case 'C':
         {
-            case ' ':
-                t->play_inverse();
-                break;
-            case 'c': case 'C':
+            t->recompute_filter(pFilter());
+            if( _transform != t )
+                _transform->recompute_filter(pFilter());
+
+            BOOST_FOREACH( pFilter f, t->filter_chain )
             {
-                t->recompute_filter(pFilter());
-
-                BOOST_FOREACH( pFilter f, t->filter_chain )
-                {
-                    float start, end;
-                    f->range(start,end);
-                    _renderer->spectrogram()->invalidate_range(start,end);
-                }
-
-                t->filter_chain.clear();
-                update();
-                break;
-            }
-            case 'a': case 'A':
-            {
-                pFilter f(new EllipsFilter( t->built_in_filter ) );
-                t->filter_chain.push_back(f);
-                t->recompute_filter(f);
-
                 float start, end;
                 f->range(start,end);
                 _renderer->spectrogram()->invalidate_range(start,end);
-                update();
-                break;
             }
+
+            t->filter_chain.clear();
+            if( _transform != t )
+                _transform->filter_chain.clear();
+
+            update();
+            break;
         }
+        case 'a': case 'A': case '\n': case '\r':
+        {
+            pFilter f(new EllipsFilter( t->built_in_filter ) );
+
+            t->filter_chain.push_back(f);
+            t->recompute_filter(f);
+            if( _transform != t ) {
+                _transform->filter_chain.push_back(f);
+                _transform->recompute_filter(f);
+            }
+
+            float start, end;
+            f->range(start,end);
+            _renderer->spectrogram()->invalidate_range(start,end);
+            update();
+            break;
+        }
+        case 'e': case 'E':
+        {
+            open_inverse_test();
+            break;
+        }
+    }
 }
 
 void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
@@ -326,6 +351,8 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         selection[1].y = 0;
         selection[1].z = p[1];
         _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+        if (_transform != _renderer->spectrogram()->transform())
+            _transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
       }
     }
   } else {
@@ -377,7 +404,7 @@ void DisplayWidget::timeOut()
 
   if(selectionButton.isDown() && selectionButton.getHold() == 5)
   {
-    _renderer->spectrogram()->transform()->play_inverse();
+    _transform->play_inverse();
   }
 }
 
@@ -389,9 +416,35 @@ void DisplayWidget::timerEvent(QTimerEvent *)
 
 void DisplayWidget::timeOutSlot()
 {
-        timeOut();
+    timeOut();
 }
 
+void DisplayWidget::open_inverse_test(std::string soundfile)
+{
+    if (0 == soundfile.length() || !QFile::exists(soundfile.c_str())) {
+        QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
+        if (0 == fileName.length()) {
+            _transform = _renderer->spectrogram()->transform();
+            return;
+        }
+        soundfile = fileName.toStdString();
+    }
+    boost::shared_ptr<Waveform> wf( new Waveform( soundfile.c_str() ) );
+    boost::shared_ptr<Transform> t = _renderer->spectrogram()->transform();
+
+    _transform.reset();
+    _transform.reset( new Transform(wf, 0, t->samples_per_chunk(), t->scales_per_octave(), t->wavelet_std_t() ) );
+
+    try
+    {
+        _transform->get_inverse_waveform();
+    } catch (const CudaException& x) {
+        _renderer->spectrogram()->gc();
+        _transform->get_inverse_waveform();
+    }
+
+    _transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+}
 
 void DisplayWidget::initializeGL()
 {
@@ -458,7 +511,7 @@ void DisplayWidget::paintGL()
 
     orthoview.TimeStep(.08);
 
-    pWaveform inv;
+    pWaveform inv, inv2;
     glPushMatrix();
         glTranslatef( 0, 0, 1.25f );
         glScalef(1, 1, .15);
@@ -466,6 +519,17 @@ void DisplayWidget::paintGL()
         {
             TaskTimer tt("drawWaveform( inverse )");
             drawWaveform(inv = _renderer->spectrogram()->transform()->get_inverse_waveform());
+            // drawWaveform(inv = _transform->get_inverse_waveform());
+            if( _transform != _renderer->spectrogram()->transform() )
+            {
+                inv2 = _transform->get_inverse_waveform();
+                pWaveform_chunk chunk = inv2->getChunkBehind();
+                if (chunk->modified) {
+                    update();
+                    chunk->modified=false;
+                }
+            }
+
         }
         glTranslatef( 0, 0, 2.f );
         glColor4f(0,0,0,1);
@@ -486,6 +550,8 @@ void DisplayWidget::paintGL()
 
     if (0 < this->_renderer->spectrogram()->read_unfinished_count()) {
         if (inv->getChunkBehind()->play_when_done || inv->getChunkBehind()->modified)
+            _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
+        if (inv2) if (inv2->getChunkBehind()->play_when_done || inv2->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
         update();
     }
