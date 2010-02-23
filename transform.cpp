@@ -174,7 +174,8 @@ void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
 
 void Transform::play_inverse()
 {
-    _inverse_waveform->getChunkBehind()->play_when_done = true;
+    if ( _inverse_waveform ) if (_inverse_waveform->getChunkBehind() )
+        _inverse_waveform->getChunkBehind()->play_when_done = true;
     get_inverse_waveform();
 }
 

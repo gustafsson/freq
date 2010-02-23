@@ -377,6 +377,8 @@ void Waveform::play() {
 #endif
 
     pWaveform wf = this->crop();
+    if (!wf)
+        return;
     wf->writeFile("selection.wav");
 
     if (!wf.get())
