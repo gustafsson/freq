@@ -234,12 +234,13 @@ int main(int argc, char *argv[])
 
        return a.exec();
     } catch (std::exception &x) {
-            cerr << "======================" << endl
+            cerr << endl << endl
+                 << "======================" << endl
                  << "Error: " << typeid(x).name() << endl
                  << "Message: " << x.what() << endl
                  << "======================" << endl;
             cerr.flush();
-            exit(-2);
+            ::exit(-2);
     }
 }
 
