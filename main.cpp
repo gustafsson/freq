@@ -142,18 +142,20 @@ public:
         try {
             QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            cerr << "======================" << endl
+            cerr << endl << endl
+                 << "======================" << endl
                  << "Error: " << typeid(x).name() << endl
                  << "Message: " << x.what() << endl
                  << "======================" << endl;
             cerr.flush();
-            exit(-2);
+            ::exit(-2);
         } catch (...) {
-            cerr << "=========================" << endl
+            cerr << endl << endl
+                 << "=========================" << endl
                  << "An unknown error occurred" << endl
                  << "=========================" << endl;
             cerr.flush();
-            exit(-1);
+            ::exit(-1);
         }
         return v;
     }
