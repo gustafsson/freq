@@ -5,7 +5,11 @@
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
-#include <GL/gl.h>
+#ifndef __APPLE__
+  #include <GL/gl.h>
+#else
+  #include <OpenGL/gl.h>
+#endif
 #include "spectrogram-vbo.h"
 
 class SpectrogramRenderer

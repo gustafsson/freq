@@ -371,8 +371,9 @@ pWaveform Waveform::crop() {
 }
 
 void Waveform::play() {
-#ifdef MAC
+#ifdef __APPLE__
     QSound::play( _last_filename.c_str() );
+    printf("Play file: %s\n", _last_filename.c_str());
     return;
 #endif
 

@@ -12,7 +12,11 @@
 
 #include <tvector.h>
 #include <math.h>
+#ifndef __APPLE__
 #include <GL/glut.h>
+#else
+#include <GLUT/glut.h>
+#endif
 #include <stdio.h>
 
 #ifdef _MSC_VER

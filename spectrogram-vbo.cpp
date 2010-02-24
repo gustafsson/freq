@@ -1,7 +1,9 @@
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
-#include "GL/glew.h"
+#ifndef __APPLE__
+  #include <GL/glew.h>
+#endif
 #include "spectrogram-vbo.h"
 #include <stdio.h>
 #include "spectrogram.h"
@@ -50,14 +52,18 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         }
 
         if (0<len) {
+#ifndef __APPLE__
             tt.info("Shader log:\n%s", log);
+#endif
         }
 
 
         glAttachShader(prg, shader);
         glDeleteShader(shader);
     } catch (const std::exception &x) {
+#ifndef __APPLE__
         tt.info("Failed, throwing %s", typeid(x).name());
+#endif
         throw;
     }
 }

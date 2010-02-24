@@ -9,15 +9,15 @@ uniform vec3 lightDir;     // = vec3(0.0, 1.0, 0.0);
 varying float intensity;
 
 vec4 setWavelengthColor( float wavelengthScalar ) {
-    vec4 spectrum[] = {
+    vec4 spectrum[7];
         /* white background */
-        vec4( 1, 1, 1, 0 ),
-        vec4( 0, 0, 1, 0 ),
-        vec4( 0, 1, 1, 0 ),
-        vec4( 0, 1, 0, 0 ),
-        vec4( 1, 1, 0, 0 ),
-        vec4( 1, 0, 1, 0 ),
-        vec4( 1, 0, 0, 0 )};
+    spectrum[0] = vec4( 1, 1, 1, 0 ),
+    spectrum[1] = vec4( 0, 0, 1, 0 ),
+    spectrum[2] = vec4( 0, 1, 1, 0 ),
+    spectrum[3] = vec4( 0, 1, 0, 0 ),
+    spectrum[4] = vec4( 1, 1, 0, 0 ),
+    spectrum[5] = vec4( 1, 0, 1, 0 ),
+    spectrum[6] = vec4( 1, 0, 0, 0 );
         /* black background
         { 0, 0, 0 },
         { 1, 0, 1 },
@@ -28,10 +28,10 @@ vec4 setWavelengthColor( float wavelengthScalar ) {
         { 1, 0, 0 }}; */
 
     int count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
-    float f = count*wavelengthScalar;
-    int i = min(f,count);
-    int j = min(f+1,count);
-    float t = f-i;
+    float f = float(count)*wavelengthScalar;
+    int i = int(min(f, float(count)));
+    int j = int(min(f+1.0, float(count)));
+    float t = f-float(i);
 
     vec4 rgb = mix(spectrum[i], spectrum[j], t);
     return rgb;
@@ -57,6 +57,6 @@ void main()
 //    gl_FragColor = waterColor*diffuse + skyColor*fresnel;
 //    gl_FragColor = pow(1-intensity,5);
 //    gl_FragColor = setWavelengthColor( intensity );
-    gl_FragColor = setWavelengthColor( 1-pow(1-saturate(intensity),5) );
+    gl_FragColor = setWavelengthColor( 1.0-pow(1.0-clamp(intensity, 0.0, 1.0),5.0) );
 
 }

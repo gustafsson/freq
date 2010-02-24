@@ -1,7 +1,11 @@
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
-#include "GL/glew.h"
+#ifndef __APPLE__
+  #include "GL/glew.h"
+#else
+  #include "OpenGL/glu.h"
+#endif
 #include <stdio.h>
 #include "spectrogram-renderer.h"
 #include "spectrogram-vbo.h"
@@ -209,6 +213,7 @@ void SpectrogramRenderer::init()
         exit(EXIT_FAILURE);
     }
 
+#ifndef __APPLE__
     if (0 != glewInit() ) {
         fprintf(stderr, "ERROR: Couldn't initialize \"glew\".");
         fflush(stderr);
@@ -230,6 +235,7 @@ void SpectrogramRenderer::init()
             fflush(stderr);
             exit(-1);
     }
+#endif
 
     // load shader
     _shader_prog = loadGLSLProgram("spectrogram.vert", "spectrogram.frag");
