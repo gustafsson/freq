@@ -20,12 +20,12 @@ bool LayerFilter::operator()( Waveform_chunk& chunk ) {
     */
 }
 
-class merge_layer
+class layer_sequence
 {
     Waveform_chunk& w;
     bool r;
 public:
-    merge_layer( Waveform_chunk& w):w(w),r(true) {}
+    layer_sequence( Waveform_chunk& w):w(w),r(true) {}
 
     void operator()( pLayer p) {
         r |= (*p)( w );
@@ -34,6 +34,30 @@ public:
     operator bool() { return r; }
 };
 
+bool LayerSequence::operator()( Waveform_chunk& w) {
+    return std::for_each(begin(), end(), layer_sequence( w ));
+}
+
+class layer_merge
+{
+    Waveform_chunk& w;
+    bool r;
+public:
+    layer_merge( Waveform_chunk& w):w(w),r(true) {}
+
+    void operator()( pLayer p) {
+        Waveform_chunk t(sizeof w));
+        r |= (*p)( t );
+
+        Waveform wf;
+        wf.setBehind( t );
+        LayerWaveform l( wf )
+        r |= l(w);
+    }
+
+    operator bool() { return r; }
+};
+
 bool LayerMerge::operator()( Waveform_chunk& w) {
-    return std::for_each(begin(), end(), merge_layer( w ));
+    return std::for_each(begin(), end(), layer_merge( w ));
 }
