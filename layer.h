@@ -15,6 +15,7 @@ public:
 
 class LayerWaveform: public Layer
 {
+public:
     LayerWaveform( pWaveform src );
     virtual bool operator()( Waveform_chunk& );
 private:
@@ -23,6 +24,7 @@ private:
 
 class LayerFilter: public Layer
 {
+public:
     LayerFilter( pFilter filter );
     bool virtual operator()( Waveform_chunk& chunk );
 private:
@@ -31,12 +33,17 @@ private:
 
 class LayerSequence: public Layer, public std::list<pFilter>
 {
+public:
     virtual bool operator()( Waveform_chunk& ) = 0;
 };
 
-class LayerMerge: public Layer, public std::list<pFilter>
+class LayerMerge: public Layer
 {
+public:
+    LayerMerge( pLayer layer );
     virtual bool operator()( Waveform_chunk& ) = 0;
+private:
+    pLayer _layer;
 };
 
 
