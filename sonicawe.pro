@@ -19,7 +19,8 @@ SOURCES += main.cpp \
     spectrogram-vbo.cpp \
     spectrogram-renderer.cpp \
     waveform-recorder.cpp \
-    waveform-readfromdisk.cpp
+    waveform-readfromdisk.cpp \
+    layer.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     waveform.h \
@@ -34,7 +35,8 @@ HEADERS += mainwindow.h \
     spectrogram-slope.cu.h \
     spectrogram-block.cu.h \
     waveform-recorder.h \
-    waveform-readfromdisk.h
+    waveform-readfromdisk.h \
+    layer.h
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu \
     spectrogram.frag \
