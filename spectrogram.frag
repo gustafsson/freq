@@ -39,6 +39,7 @@ vec4 setWavelengthColor( float wavelengthScalar ) {
 
 void main()
 {
+/*
     vec3 eyeVector              = normalize(eyeSpacePos);
     vec3 eyeSpaceNormalVector   = normalize(eyeSpaceNormal);
     vec3 worldSpaceNormalVector = normalize(worldSpaceNormal);
@@ -48,15 +49,15 @@ void main()
     float diffuse   = max(0.0, dot(worldSpaceNormalVector, lightDir));
     
     vec4 waterColor = mix(shallowColor, deepColor, facing);
-    
+    */
 //    gl_FragColor = gl_Color;
 //    gl_FragColor = vec4(fresnel);
 //    gl_FragColor = vec4(diffuse);
 //    gl_FragColor = waterColor;
 //    gl_FragColor = waterColor*diffuse;
 //    gl_FragColor = waterColor*diffuse + skyColor*fresnel;
-//    gl_FragColor = pow(1-intensity,5);
+    gl_FragColor = pow(1-intensity,5);
 //    gl_FragColor = setWavelengthColor( intensity );
-    gl_FragColor = setWavelengthColor( 1.0-pow(1.0-clamp(intensity, 0.0, 1.0),5.0) );
+//    gl_FragColor = setWavelengthColor( 1.0-pow(1.0-clamp(intensity, 0.0, 1.0),5.0) );
 
 }

@@ -29,7 +29,7 @@ static const char _sawe_usage_string[] =
 "                       should correspond to one chunk of the transform.\n"
 "    scales_per_octave  Accuracy of transform, higher accuracy takes more time\n"
 "                       to compute.\n"
-"    wavelet_std_t      Transform chunks overlap this much, given in secnods.\n"
+"    wavelet_std_t      Transform chunks overlap this much, given in seconds.\n"
 "    samples_per_block  The transform chunks are downsampled to blocks for\n"
 "                       rendering, this gives the number of samples per block.\n"
 "    scales_per_block   Number of scales per block, se samples_per_block.\n"
@@ -44,11 +44,12 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 40;
-//static float _wavelet_std_t = 0.1;
-static float _wavelet_std_t = 0.03;
+static float _wavelet_std_t = 0.1f;
 static unsigned _samples_per_chunk = (1<<14) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
-//static float _wavelet_std_t = 0.03;
-//static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
+//static float _wavelet_std_t = 0.03f;
+//static unsigned _samples_per_chunk = (1<<12) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
+//static float _wavelet_std_t = 0.f;
+//static unsigned _samples_per_chunk = 1<<15;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
 static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;

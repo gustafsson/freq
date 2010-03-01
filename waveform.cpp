@@ -58,7 +58,7 @@ Waveform::Waveform (const char* filename)
     unsigned num_frames = _source->getLength();
 
     if (0==num_frames)
-        throw std::ios_base::failure(string() + "Failed reding file " + filename);
+        throw std::ios_base::failure(string() + "Opened source file but failed reading data from " + filename);
 
     _waveform->waveform_data.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
     boost::scoped_array<char> data(new char[num_frames*frame_size*channel_count]);
@@ -129,6 +129,8 @@ Waveform::Waveform (const char* filename)
       */
 void Waveform::writeFile( const char* filename )
 {
+	TaskTimer tt("%s %s",__FUNCTION__,filename);
+
     _last_filename = filename;
     // todo: this method only writes mono data from the first (left) channel
 

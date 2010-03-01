@@ -103,6 +103,8 @@ __global__ void kernel_merge_chunk(
                     float2 c = inChunk.elem(readPos);
                     val += sqrt(c.x*c.x + c.y*c.y);
 
+ outBlock.e( writePos ) = val;
+ return;
 /*
   TODO use command line argument "yscale"
                         case Yscale_Linear:

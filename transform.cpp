@@ -22,8 +22,8 @@ Transform::Transform( pWaveform waveform, unsigned channel, unsigned samples_per
     _scales_per_octave( scales_per_octave ),
     _samples_per_chunk( samples_per_chunk ),
     _wavelet_std_samples( 0 ),
-    _min_hz(20),
-    _max_hz( waveform->sample_rate()/2 ),
+    _min_hz(20.f),
+    _max_hz( waveform->sample_rate()/2.f ),
     _fft_many(-1),
     _fft_single(-1),
     _fft_width(0)
@@ -240,7 +240,7 @@ pWaveform Transform::get_inverse_waveform()
     return _inverse_waveform;
 }
 
-pWaveform_chunk Transform::computeInverse( float start, float end)
+/*pWaveform_chunk Transform::computeInverse( float start, float end)
 {
     pWaveform_chunk r = prepare_inverse(start, end);
 
@@ -251,7 +251,7 @@ pWaveform_chunk Transform::computeInverse( float start, float end)
         merge_chunk(r, getChunk(n));
     }
     return r;
-}
+}*/
 
 pWaveform_chunk Transform::prepare_inverse(float start, float end)
 {
@@ -260,7 +260,7 @@ pWaveform_chunk Transform::prepare_inverse(float start, float end)
     if(start<0) start=0;
     pWaveform_chunk r( new Waveform_chunk());
     r->sample_rate = original_waveform()->sample_rate();
-    r->sample_offset = min((float)n, r->sample_rate*start);
+    r->sample_offset = (unsigned)min((float)n, r->sample_rate*start);
     n -= r->sample_offset;
     if (start<=end)
         n = min((float)n, r->sample_rate*(end-start));
@@ -593,7 +593,8 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
                      _intermediate_wt->sample_rate,
                      _intermediate_wt->min_hz,
                      _intermediate_wt->max_hz,
-                     _intermediate_wt->transform_data->getNumberOfElements() );
+                     _intermediate_wt->transform_data->getNumberOfElements(),
+					 _scales_per_octave );
 
         if (someWhatAccurateTiming)
             CudaException_ThreadSynchronize();

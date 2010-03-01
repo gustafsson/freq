@@ -46,7 +46,7 @@ public:
     void      play_inverse();
     pWaveform get_inverse_waveform();
     float     number_of_octaves() const;
-    unsigned  nScales() { return number_of_octaves() * scales_per_octave(); }
+    unsigned  nScales() { return (unsigned)(number_of_octaves() * scales_per_octave()); }
     float     min_hz() const { return _min_hz; }
     void      min_hz(float f);
     float     max_hz() const { return _max_hz; }

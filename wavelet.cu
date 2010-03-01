@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "wavelet.cu.h"
 
-__global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float steplogsize  );
+__global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float scales_per_octave, float steplogsize  );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem );
 
@@ -22,7 +22,7 @@ void setError(const char* staticErrorMessage) {
 #define TOSTR(x) #x
 #define setError(x) setError(TOSTR(__FUNCTION__) ": " x)
 
-void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem, cudaStream_t stream )
+void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem, float scales_per_octave, cudaStream_t stream )
 {
     // in this scope, work on arrays of float* instead of float2* to coalesce better
     numElem.width *= 2;
@@ -38,13 +38,14 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleR
         return;
     }
 
-    kernel_compute<<<grid, block, stream>>>( (float*)in_waveform_ft, (float*)out_wavelet_ft, numElem, start, steplogsize );
+	// float scales_per_octave = numElem.height/((log(maxHz)/log(2.f)-(log(minHz)/log(2.f));
+    kernel_compute<<<grid, block, stream>>>( (float*)in_waveform_ft, (float*)out_wavelet_ft, numElem, start, steplogsize, scales_per_octave );
 }
 
 __global__ void kernel_compute(
         float* in_waveform_ft,
         float* out_wavelet_ft,
-        cudaExtent numElem, float start, float steplogsize )
+        cudaExtent numElem, float start, float steplogsize, float scales_per_octave )
 {
     // Element number
     const unsigned
@@ -56,7 +57,7 @@ __global__ void kernel_compute(
     float waveform = in_waveform_ft[x];
 
     float cufft_normalize = 1.f/sqrt((float)numElem.width);
-    float jibberish_normalization = 0.6123456;
+    float jibberish_normalization =  (21.3625f-3.1415961*0.000000000001)/scales_per_octave;
 
     // Find period for this thread
     unsigned nFrequencies = numElem.height;
