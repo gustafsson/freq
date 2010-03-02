@@ -184,13 +184,35 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     } else {
         _transform = _renderer->spectrogram()->transform();
     }
+    
+    grabKeyboard();
 }
 
 DisplayWidget::~DisplayWidget()
 {}
 
+void DisplayWidget::recieveCurrentSelection(int index)
+{
+    if (index < 0) return;
+    
+    printf("####Current selection: %d\n", index);
+    pTransform t = _renderer->spectrogram()->transform();
+    FilterChain::iterator i = t->filter_chain.begin();
+    std::advance(i, index);
+    EllipsFilter *e = (EllipsFilter*)(i->get()->filter());
+    selection[0].x = e->_t1;
+    selection[0].z = e->_f1;
+    selection[1].x = e->_t2;
+    selection[1].z = e->_f2;
+    //_transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    glDraw();
+}
+
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
+    if (e->isAutoRepeat())
+        return;
+    
     lastKey = e->key();
     pTransform t = _renderer->spectrogram()->transform();
     switch (lastKey )
@@ -210,12 +232,12 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
                 f->range(start,end);
                 _renderer->spectrogram()->invalidate_range(start,end);
             }
-
             t->filter_chain.clear();
             if( _transform != t )
                 _transform->filter_chain.clear();
 
             update();
+            emit filterChainUpdated(t);
             break;
         }
         case 'a': case 'A': case '\n': case '\r':
@@ -233,6 +255,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             f->range(start,end);
             _renderer->spectrogram()->invalidate_range(start,end);
             update();
+            emit filterChainUpdated(t);
             break;
         }
         case 'e': case 'E':

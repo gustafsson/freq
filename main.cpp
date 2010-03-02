@@ -46,7 +46,7 @@ static unsigned _channel=0;
 static unsigned _scales_per_octave = 40;
 //static float _wavelet_std_t = 0.1;
 static float _wavelet_std_t = 0.03;
-static unsigned _samples_per_chunk = (1<<14) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
+static unsigned _samples_per_chunk = (1<<12) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
 //static float _wavelet_std_t = 0.03;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
@@ -228,6 +228,7 @@ int main(int argc, char *argv[])
         boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg, 0, _playback_source_test ) );
         dw->yscale = (DisplayWidget::Yscale)_yscale;
 
+        w.connectLayerWindow(dw.get());
         w.setCentralWidget( dw.get() );
         dw->show();
         w.show();

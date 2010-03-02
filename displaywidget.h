@@ -40,6 +40,7 @@ struct MyVector{
 
 class DisplayWidget : public QGLWidget
 {
+  Q_OBJECT
 public:
     DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval=0, std::string playback_source_test="" );
     ~DisplayWidget();
@@ -72,6 +73,10 @@ protected:
 
 protected slots:
   virtual void timeOutSlot();
+  virtual void recieveCurrentSelection(int);
+    
+signals:
+void filterChainUpdated(pTransform);
 
 private:
   boost::shared_ptr<SpectrogramRenderer> _renderer;

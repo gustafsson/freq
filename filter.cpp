@@ -20,6 +20,11 @@ void Filter::invalidateWaveform( const Transform& t, Waveform_chunk& w)
     }
 }
 
+Filter *Filter::filter()
+{
+    return this;
+}
+
 //////////// FilterChain
 
 class apply_filter
@@ -66,6 +71,11 @@ void FilterChain::invalidateWaveform( const Transform& t, Waveform_chunk& w) {
     std::for_each(begin(), end(), invalidate_waveform( t,w ));
 }
 
+int FilterChain::type()
+{
+    return chain_filter;
+}
+
 //////////// EllipsFilter
 EllipsFilter::EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside)
 {
@@ -100,6 +110,11 @@ void EllipsFilter::range(float& start_time, float& end_time) {
     end_time = _t1 + fabs(_t1 - _t2);
 }
 
+int EllipsFilter::type()
+{
+    return ellips_filter;
+}
+
 //////////// SquareFilter
 SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_inside) {
     _t1 = std::min(t1, t2);
@@ -116,4 +131,9 @@ bool SquareFilter::operator()( Transform_chunk& ) {
 void SquareFilter::range(float& start_time, float& end_time) {
     start_time = _t1;
     end_time = _t2;
+}
+
+int SquareFilter::type()
+{
+    return square_filter;
 }
