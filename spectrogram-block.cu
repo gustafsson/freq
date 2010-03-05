@@ -7,41 +7,45 @@ __global__ void kernel_merge(
                 float resample_width,
                 float resample_height,
                 float in_offset,
-                float out_offset)
+                float out_offset,
+                float in_valid_samples)
 {
     elemSize3_t writePos;
     if( !outBlock.unwrapCudaGrid( writePos ))
         return;
 
     float val = 0;
-    unsigned n = 0;
+    //unsigned n = 0;
 
     if (writePos.x>=out_offset)
     {
         for (float x = 0; x < resample_width; x++)
         {
+            float s = in_offset + x + resample_width*(writePos.x-out_offset);
+            if ( s >= in_offset + in_valid_samples )
+                continue;
+
             for (float y = 0; y < resample_height; y++)
             {
-                float s = in_offset + x + resample_width*(writePos.x-out_offset);
                 float t = y + resample_height*writePos.y;
 
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
                 if ( inBlock.valid(readPos) ) {
                     val += inBlock.elem(readPos);
 
-                    // outBlock.e( writePos ) = val;
-                    // return;
+                    outBlock.e( writePos ) = val;
+                    return;
 
-                    n ++;
+                    //n ++;
                 }
             }
         }
     }
-
+/*
     if (0<n) {
         val/=n;
         outBlock.elem( writePos ) = val;
-    }
+    }*/
 }
 
 extern "C"
@@ -53,6 +57,7 @@ void blockMerge( cudaPitchedPtrType<float> inBlock,
                  float out_frequency_resolution,
                  float in_offset,
                  float out_offset,
+                 float in_valid_samples,
                  unsigned cuda_stream)
 {
     dim3 grid, block;
@@ -67,7 +72,7 @@ void blockMerge( cudaPitchedPtrType<float> inBlock,
         inBlock, outBlock,
         resample_width,
         resample_height,
-        in_offset, out_offset );
+        in_offset, out_offset, in_valid_samples );
 }
 
 __global__ void kernel_merge_chunk(
@@ -84,7 +89,7 @@ __global__ void kernel_merge_chunk(
         return;
 
     float val = 0;
-    unsigned n = 0;
+    //unsigned n = 0;
 
     if (writePos.x>=out_offset)
     {
@@ -122,18 +127,18 @@ __global__ void kernel_merge_chunk(
                             v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
                             */
 
-                    n ++;
+  /*                  n ++;*/
                 }
             }
         }
     }
-
+/*
     __syncthreads();
 
     if (0<n) {
         val/=n;
         outBlock.e( writePos ) = val;
-    }
+    }*/
 }
 
 /*
@@ -241,4 +246,77 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
         resample_width,
         resample_height,
         in_offset, out_offset, n_valid_samples );
+}
+
+__global__ void kernel_expand_stft(
+                cudaPitchedPtrType<float2> inStft,
+                cudaPitchedPtrType<float> outBlock,
+                float start,
+                float steplogsize,
+                float out_offset,
+                float out_length )
+{
+    // Element number
+    const unsigned
+            y = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+
+    unsigned nFrequencies = outBlock.getNumberOfElementsD().y;
+    if( y >= nFrequencies )
+        return;
+
+    float ff = y/(float)nFrequencies;
+    float hz_out = start*exp(ff*steplogsize);
+
+    float max_stft_hz = inStft.getNumberOfElementsD().x/2;
+    float read_f = hz_out/max_stft_hz;
+
+    float2 c;
+
+    float p = read_f*inStft.getNumberOfElementsD().x;
+    elemSize3_t readPos = make_elemSize3_t( p, 0, 0 );
+    inStft.clamp(readPos);
+    c = inStft.elem(readPos);
+    float val1 = sqrt(c.x*c.x + c.y*c.y);
+
+    readPos.x++;
+    inStft.clamp(readPos);
+    c = inStft.elem(readPos);
+    float val2 = sqrt(c.x*c.x + c.y*c.y);
+
+    p-=(unsigned)p;
+    float val = val1*(1-p)+val2*p;
+
+    elemSize3_t writePos = make_elemSize3_t( 0, y, 0 );
+    for (writePos.x=out_offset; writePos.x<out_offset + out_length && writePos.x<outBlock.getNumberOfElementsD().x;writePos.x++)
+    {
+        outBlock.e( writePos ) = val;
+    }
+}
+
+extern "C"
+void expandStft( cudaPitchedPtrType<float2> inStft,
+                 cudaPitchedPtrType<float> outBlock,
+                 float min_hz,
+                 float max_hz,
+                 float out_offset,
+                 float out_length,
+                 unsigned cuda_stream)
+{
+    dim3 block(256,1,1);
+    dim3 grid( INTDIV_CEIL(outBlock.getNumberOfElements().x, block.y), 1, 1);
+
+    if(grid.x>65535) {
+        printf("====================\nInvalid argument, number of floats in complex signal must be less than 65535*256.\n===================\n");
+        return;
+    }
+
+    float start = min_hz*outBlock.getNumberOfElements().x;
+    float steplogsize = log(max_hz)-log(min_hz);
+
+    kernel_expand_stft<<<grid, block, cuda_stream>>>(
+        inStft, outBlock,
+        start,
+        steplogsize,
+        out_offset,
+        out_length );
 }

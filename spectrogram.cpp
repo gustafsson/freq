@@ -39,7 +39,7 @@ Spectrogram::Reference Spectrogram::findReferenceCanonical( Position p, Position
     if (p.scale < 0) p.scale=0;
 
     r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
-    r.chunk_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
+    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
                                         p.scale / _scales_per_block * pow(2, -r.log2_samples_size[1]));
 
     return r;
@@ -76,7 +76,7 @@ Spectrogram::Reference Spectrogram::findReference( Position p, Position sampleSi
 
     // Compute sample size
     r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
-    r.chunk_index = tvector<2,unsigned>(0,0);
+    r.block_index = tvector<2,unsigned>(0,0);
     //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Validate sample size
@@ -88,13 +88,13 @@ Spectrogram::Reference Spectrogram::findReference( Position p, Position sampleSi
     //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Compute chunk index
-    r.chunk_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
+    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
                                         p.scale / _scales_per_block * pow(2, -r.log2_samples_size[1]));
 
     // Validate chunk index
     r.getArea(a,b);
-    if (a.time >= length && 0<length)   r.chunk_index[0]--;
-    if (a.scale == 1)                   r.chunk_index[1]--;
+    if (a.time >= length && 0<length)   r.block_index[0]--;
+    if (a.scale == 1)                   r.block_index[1]--;
 
     // Test result
     // ASSERT(r.containsSpectrogram() && !r.toLarge());
@@ -141,12 +141,12 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
                 if (getNextInvalidChunk(block,0))
                     computeBlock(block);
             } else if (1 /* partial blocks, single threaded */ ) {
-                unsigned previous_chunk_index = (unsigned)-1;
-                pTransform_chunk chunk = _transform->previous_chunk(previous_chunk_index);
+                unsigned previous_block_index = (unsigned)-1;
+                pTransform_chunk chunk = _transform->previous_chunk(previous_block_index);
 
-                if (chunk && isInvalidChunk( block, previous_chunk_index)) {
+                if (chunk && isInvalidChunk( block, previous_block_index)) {
                     mergeBlock( block, chunk, 0 );
-                    block->valid_chunks.insert( previous_chunk_index );
+                    block->valid_chunks.insert( previous_block_index );
                     need_slope = true;
                 } else if (getNextInvalidChunk(block,0)) {
                     if (0==_unfinished_count) {
@@ -250,6 +250,7 @@ void Spectrogram::BlockWorker::run()
 #endif
 Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
 {
+    TaskTimer tt("Creating a new block");
     // Try to allocate a new block
     pBlock block;
     try {
@@ -269,6 +270,7 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
     { }
 
     if ( 0 == block.get() && !_cache.empty()) {
+        tt.info("Memory allocation failed, overwriting some older block");
         // Try to reuse an old block instead
         // Look for the oldest block
 
@@ -282,8 +284,10 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
         }
     }
 
-    if ( 0 == block.get())
+    if ( 0 == block.get()) {
+        tt.info("Failed");
         return block; // return null-pointer
+    }
 
     pBlock result;
     try {
@@ -292,10 +296,33 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
         cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
 
         if ( 1 /* create from others */ ) {
-            // TODO not the best idea to use all caches, but it's better than to use no caches
+            TaskTimer tt("Merging all blocks into new block");
+            // start with the blocks that are just slightly more detailed
             BOOST_FOREACH( pBlock& b, _cache ) {
-                mergeBlock( block, b, 0 );
+                if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]+1 ||
+                    block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1]+1)
+                {
+                    mergeBlock( block, b, 0 );
+                }
             }
+            // then try using the blocks that are even more detailed
+            BOOST_FOREACH( pBlock& b, _cache ) {
+                if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
+                    block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
+                {
+                    mergeBlock( block, b, 0 );
+                }
+            }
+            // fill remaining chunks by STFT
+            fillStft( block );
+            // then try to upscale other blocks
+            /*BOOST_FOREACH( pBlock& b, _cache ) {
+                if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0] ||
+                    block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1] )
+                {
+                    mergeBlock( block, b, 0 );
+                }
+            }*/
 
         } else if ( 0 /* set dummy values */ ) {
             SpectrogramVbo::pHeight h = block->vbo->height();
@@ -359,7 +386,7 @@ bool Spectrogram::getNextInvalidChunk( pBlock block, Transform::ChunkIndex* on )
          n++)
     {
         if (block->valid_chunks.find( n ) == block->valid_chunks.end()) {
-            if(on) *on = n;
+            if (on) *on = n;
             return true;
         }
     }
@@ -378,6 +405,35 @@ bool Spectrogram::isInvalidChunk( pBlock block, Transform::ChunkIndex n )
     bool r = block->valid_chunks.find( n ) == block->valid_chunks.end();
     r &=_transform->getChunkIndex(start)<=n && n<=_transform->getChunkIndex(end-1);
     return r;
+}
+
+void Spectrogram::fillStft( pBlock block ) {
+    Transform::ChunkIndex n;
+    Position a, b;
+    block->ref.getArea(a,b);
+    float tmin = _transform->min_hz(),
+          tmax = _transform->max_hz();
+    float min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
+          max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
+
+    while (getNextInvalidChunk( block, &n )) {
+        boost::shared_ptr<GpuCpuData<float2> > stft = _transform->stft( n );
+        float chunk_start = n*_transform->samples_per_chunk()/(float)_transform->original_waveform()->sample_rate();
+        float fraction = _transform->samples_per_chunk()/((b.time-a.time)*_transform->original_waveform()->sample_rate());
+
+        float time_offset = chunk_start > a.time
+                          ? chunk_start - a.time
+                          : 0;
+
+        ::expandStft( stft->getCudaGlobal(),
+                      block->vbo->height()->data->getCudaGlobal(),
+                      min_hz,
+                      max_hz,
+                      time_offset*block->sample_rate(),
+                      fraction*this->samples_per_block(),
+                      0);
+        // expand to entire block
+    }
 }
 
 void Spectrogram::invalidate_range(float start_time, float end_time)
@@ -459,6 +515,23 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock 
     float in_offset = max(0.f, (out_a.time-in_a.time))*in_sample_rate;
     float out_offset = max(0.f, (in_a.time-out_a.time))*out_sample_rate;
 
+    Transform::ChunkIndex end=-1;
+    float in_valid_samples=samples_per_block();
+    if (getNextInvalidChunk( inBlock, &end ))
+        in_valid_samples = max(0.f, end*_transform->samples_per_chunk()/_transform->original_waveform()->sample_rate() - in_a.time)*in_sample_rate;
+    Transform::ChunkIndex start=-1;
+    if (getNextInvalidChunk( outBlock, &start )) {
+        if (start>=end)
+            return;
+        float skipt = start*_transform->samples_per_chunk()/_transform->original_waveform()->sample_rate() - out_a.time;
+        if (0<skipt) {
+            in_offset += skipt*in_sample_rate;
+            out_offset += skipt*out_sample_rate;
+        }
+    } else {
+        return;
+    }
+
     blockMerge( in_h->data->getCudaGlobal(),
                 out_h->data->getCudaGlobal(),
 
@@ -468,7 +541,20 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock 
                            out_frequency_resolution,
                            in_offset,
                            out_offset,
+                           in_valid_samples,
                            cuda_stream);
+
+    // validate block if inBlock was a valid source
+    if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] ||
+        inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
+    {
+        if (end == (Transform::ChunkIndex)-1)
+            end = out_b.time*_transform->original_waveform()->sample_rate();
+        for (unsigned n=start;n<end;n++)
+        {
+            inBlock->valid_chunks.insert(n);
+        }
+    }
 }
 
 float Spectrogram::Block::sample_rate() {
@@ -502,7 +588,7 @@ void Spectrogram::gc() {
 bool Spectrogram::Reference::operator==(const Spectrogram::Reference &b) const
 {
     return log2_samples_size == b.log2_samples_size
-            && chunk_index == b.chunk_index
+            && block_index == b.block_index
             && _spectrogram == b._spectrogram;
 }
 
@@ -510,8 +596,8 @@ void Spectrogram::Reference::getArea( Position &a, Position &b) const
 {
     Position blockSize( _spectrogram->samples_per_block() * pow(2,log2_samples_size[0]),
                         _spectrogram->scales_per_block() * pow(2,log2_samples_size[1]));
-    a.time = blockSize.time * chunk_index[0];
-    a.scale = blockSize.scale * chunk_index[1];
+    a.time = blockSize.time * block_index[0];
+    a.scale = blockSize.scale * block_index[1];
     b.time = a.time + blockSize.time;
     b.scale = a.scale + blockSize.scale;
 }
@@ -520,43 +606,43 @@ void Spectrogram::Reference::getArea( Position &a, Position &b) const
 Spectrogram::Reference Spectrogram::Reference::left() {
     Reference r = *this;
     r.log2_samples_size[0]--;
-    r.chunk_index[0]<<=1;
+    r.block_index[0]<<=1;
     return r;
 }
 Spectrogram::Reference Spectrogram::Reference::right() {
     Reference r = *this;
     r.log2_samples_size[0]--;
-    (r.chunk_index[0]<<=1)++;
+    (r.block_index[0]<<=1)++;
     return r;
 }
 Spectrogram::Reference Spectrogram::Reference::top() {
     Reference r = *this;
     r.log2_samples_size[1]--;
-    r.chunk_index[1]<<=1;
+    r.block_index[1]<<=1;
     return r;
 }
 Spectrogram::Reference Spectrogram::Reference::bottom() {
     Reference r = *this;
     r.log2_samples_size[1]--;
-    (r.chunk_index[1]<<=1)++;
+    (r.block_index[1]<<=1)++;
     return r;
 }
 
 /* sibblings, 3 other references who share the same parent */
 Spectrogram::Reference Spectrogram::Reference::sibbling1() {
     Reference r = *this;
-    r.chunk_index[0]^=1;
+    r.block_index[0]^=1;
     return r;
 }
 Spectrogram::Reference Spectrogram::Reference::sibbling2() {
     Reference r = *this;
-    r.chunk_index[1]^=1;
+    r.block_index[1]^=1;
     return r;
 }
 Spectrogram::Reference Spectrogram::Reference::sibbling3() {
     Reference r = *this;
-    r.chunk_index[0]^=1;
-    r.chunk_index[1]^=1;
+    r.block_index[0]^=1;
+    r.block_index[1]^=1;
     return r;
 }
 
@@ -565,8 +651,8 @@ Spectrogram::Reference Spectrogram::Reference::parent() {
     Reference r = *this;
     r.log2_samples_size[0]++;
     r.log2_samples_size[1]++;
-    r.chunk_index[0]>>=1;
-    r.chunk_index[1]>>=1;
+    r.block_index[0]>>=1;
+    r.block_index[1]>>=1;
     return r;
 }
 
