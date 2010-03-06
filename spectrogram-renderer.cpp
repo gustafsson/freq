@@ -373,7 +373,7 @@ bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference r
         return false;
 
     if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
-        fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.chunk_index[0], ref.chunk_index[1], timePixels,scalePixels);
+        fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.block_index[0], ref.block_index[1], timePixels,scalePixels);
         fflush(stdout);
     }
 
