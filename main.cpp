@@ -44,10 +44,10 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 40;
-static float _wavelet_std_t = 0.1f;
+static float _wavelet_std_t = 0.06f;
 static unsigned _samples_per_chunk = (1<<14) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
 //static float _wavelet_std_t = 0.03f;
-//static unsigned _samples_per_chunk = (1<<12) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
+//static unsigned _samples_per_chunk = (1<<13) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
 //static float _wavelet_std_t = 0.f;
 //static unsigned _samples_per_chunk = 1<<15;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
