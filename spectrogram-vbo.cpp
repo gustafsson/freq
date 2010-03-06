@@ -52,9 +52,9 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         }
 
         if (0<len) {
-#ifndef __APPLE__
-            tt.info("Shader log:\n%s", log);
-#endif
+// #ifndef __APPLE__
+            tt.info("Shader log:\n%s", log, "dummy");
+// #endif
         }
 
 

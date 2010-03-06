@@ -19,6 +19,8 @@
 #endif
 #include <stdio.h>
 
+#undef max
+
 #ifdef _MSC_VER
 #define M_PI 3.1415926535
 #endif
@@ -538,33 +540,36 @@ void DisplayWidget::paintGL()
 
     orthoview.TimeStep(.08);
 
-    pWaveform inv, inv2;
-    glPushMatrix();
-        glTranslatef( 0, 0, 1.25f );
-        glScalef(1, 1, .15);
-        glColor4f(0,1,0,1);
-        {
-            TaskTimer tt("drawWaveform( inverse )");
-            drawWaveform(inv = _renderer->spectrogram()->transform()->get_inverse_waveform());
-            // drawWaveform(inv = _transform->get_inverse_waveform());
-            if( _transform != _renderer->spectrogram()->transform() )
-            {
-                inv2 = _transform->get_inverse_waveform();
-                pWaveform_chunk chunk = inv2->getChunkBehind();
-                if (chunk->modified) {
-                    update();
-                    chunk->modified=false;
-                }
-            }
+    pWaveform inv = _renderer->spectrogram()->transform()->get_inverse_waveform(),
+		inv2;
+	if (0) {
+		glPushMatrix();
+			glTranslatef( 0, 0, 1.25f );
+			glScalef(1, 1, .15);
+			glColor4f(0,1,0,1);
+			{
+				TaskTimer tt("drawWaveform( inverse )");
+				drawWaveform(inv);
+				// drawWaveform(inv = _transform->get_inverse_waveform());
+				if( _transform != _renderer->spectrogram()->transform() )
+				{
+					inv2 = _transform->get_inverse_waveform();
+					pWaveform_chunk chunk = inv2->getChunkBehind();
+					if (chunk->modified) {
+						update();
+						chunk->modified=false;
+					}
+				}
 
-        }
-        glTranslatef( 0, 0, 2.f );
-        glColor4f(0,0,0,1);
-        {
-            TaskTimer tt("drawWaveform( original )");
-            drawWaveform(_renderer->spectrogram()->transform()->original_waveform());
-        }
-    glPopMatrix();
+			}
+			glTranslatef( 0, 0, 2.f );
+			glColor4f(0,0,0,1);
+			{
+				TaskTimer tt("drawWaveform( original )");
+				drawWaveform(_renderer->spectrogram()->transform()->original_waveform());
+			}
+		glPopMatrix();
+	}
 
     _renderer->draw();
 
@@ -575,13 +580,30 @@ void DisplayWidget::paintGL()
 //        gcDisplayList();
     { ; }
 
+	if (inv->getChunkBehind()->modified)
+	{
+		inv->getChunkBehind()->was_modified = true;
+		glClearColor(.8f, .8f, .8f, 0.0f);
+		update();
+
+		inv->getChunkBehind()->modified=false;
+
+	} else if (inv->getChunkBehind()->was_modified) {
+		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+		update();
+
+		inv->getChunkBehind()->was_modified = false;
+	}
+
     if (0 < this->_renderer->spectrogram()->read_unfinished_count()) {
         if (inv->getChunkBehind()->play_when_done || inv->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
         if (inv2) if (inv2->getChunkBehind()->play_when_done || inv2->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
-        update();
+		
+		update();
     }
+
 
 
     drawSelection();
@@ -663,7 +685,7 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
 
     n.height = 1;
     float ifs = 1./chunk->sample_rate; // step per sample
-    float max = 1e-6;
+/*    float max = 1e-6;
     //for (unsigned c=0; c<n.height; c++)
     {
         unsigned c=0;
@@ -672,7 +694,8 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
                 max = fabsf(data[t + c*n.width]);
     }
     float s = 1/max;
-
+*/
+	float s = 1;
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -682,7 +705,7 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
     {
         glBegin(GL_TRIANGLE_STRIP);
         //glBegin(GL_POINTS);
-            for (unsigned t=0; t<n.width; t+=std::max((size_t)1,n.width/2000)) {
+            for (unsigned t=0; t<n.width; t+=std::max( (size_t)1 , (n.width/2000) )) {
                 /*float lmin,lmax = (lmin = data[t + c*n.width]);
                 for (unsigned j=0; j<std::max((size_t)2, (n.width/1000)) && t<n.width;j++, t++) {
                     const float &a = data[t + c*n.width];
@@ -705,17 +728,23 @@ void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
     glDisable(GL_BLEND);
 }
 
-
+/**
+	draw_glList renders 'chunk' by passing it as argument to 'renderFunction' and caches the results in an OpenGL display list.
+	When draw_glList is called again with the same 'chunk' it will not call 'renderFunction' but instead draw the previously cached results.
+	If 'force_redraw' is set to true, 'renderFunction' will be called again to replace the old cache. 
+*/
 template<typename RenderData>
 void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw )
 {
+	// do a cache lookup
     std::map<void*, ListCounter>::iterator itr = _chunkGlList.find(chunk.get());
-    if (_chunkGlList.end() != itr && force_redraw) {
-        itr = _chunkGlList.end();
-    } else
-        force_redraw = false;
 
-    if (_chunkGlList.end() == itr) {
+	if (_chunkGlList.end() == itr && force_redraw) {
+		force_redraw = false;
+	}
+
+	// cache miss or force_redraw
+    if (_chunkGlList.end() == itr || force_redraw) {
         ListCounter cnt;
         if (force_redraw) {
             cnt = itr->second;
@@ -738,6 +767,7 @@ void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*ren
         }
 
     } else {
+		// render cache
         itr->second.age = ListCounter::Age_InUse; // don't remove
 
         glCallList( itr->second.displayList );
@@ -871,7 +901,7 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
 
     unsigned m=0;
     unsigned marker = max(1.f, 20.f/gDisplayWidget->xscale);
-    marker = pow(10,ceil(log(marker)/log(10)));
+    marker = pow(10,ceil(log((float)marker)/log(10.f)));
 
     for (float s=0; s<l;s+=.01f, m++)
     {

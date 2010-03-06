@@ -1,6 +1,7 @@
 #include <QtGui/QApplication>
 #include "transform.h"
 #include <QtGui/QFileDialog>
+#include <QtGui/QMessageBox>
 #include <QTime>
 #include <iostream>
 #include <stdio.h>
@@ -29,7 +30,7 @@ static const char _sawe_usage_string[] =
 "                       should correspond to one chunk of the transform.\n"
 "    scales_per_octave  Accuracy of transform, higher accuracy takes more time\n"
 "                       to compute.\n"
-"    wavelet_std_t      Transform chunks overlap this much, given in secnods.\n"
+"    wavelet_std_t      Transform chunks overlap this much, given in seconds.\n"
 "    samples_per_block  The transform chunks are downsampled to blocks for\n"
 "                       rendering, this gives the number of samples per block.\n"
 "    scales_per_block   Number of scales per block, se samples_per_block.\n"
@@ -235,12 +236,14 @@ int main(int argc, char *argv[])
 
        return a.exec();
     } catch (std::exception &x) {
+        char str_msg[1024];
             cerr << endl << endl
                  << "======================" << endl
                  << "Error: " << typeid(x).name() << endl
                  << "Message: " << x.what() << endl
                  << "======================" << endl;
             cerr.flush();
+        QMessageBox::information( &w, "Sonic Awe", x.what() );
             ::exit(-2);
     }
 }

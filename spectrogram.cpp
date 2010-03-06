@@ -474,7 +474,7 @@ void Spectrogram::mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock 
 float Spectrogram::Block::sample_rate() {
     Position a, b;
     ref.getArea( a, b );
-    return pow(2, -ref.log2_samples_size[0]) + 1/(b.time-a.time);
+    return pow(2, -ref.log2_samples_size[0]) - 1/(b.time-a.time);
 }
 
 float Spectrogram::Block::nFrequencies() {
