@@ -306,6 +306,22 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
             }
 
             if (0) {
+                TaskTimer tt("preventing wavelet transform");
+                Position a,b;
+                block->ref.getArea(a,b);
+                unsigned start = a.time * _transform->original_waveform()->sample_rate();
+                unsigned end = b.time * _transform->original_waveform()->sample_rate();
+
+                for (Transform::ChunkIndex n = _transform->getChunkIndex(start);
+                     n <= _transform->getChunkIndex(end);
+                     n++)
+                {
+                    block->valid_chunks.insert( n );
+                }
+
+            }
+
+            if (0) {
                 TaskTimer tt("details");
                 // start with the blocks that are just slightly more detailed
                 BOOST_FOREACH( pBlock& b, _cache ) {
@@ -442,12 +458,16 @@ void Spectrogram::fillStft( pBlock block ) {
           in_max_hz = _transform->original_waveform()->sample_rate()/2;
     float in_min_hz = in_max_hz / in_stft_size;
 
-    float out_stft_size = (in_stft_size/(float)_transform->original_waveform()->sample_rate())*block->sample_rate();
+    float out_stft_size = (in_stft_size/(float)stft->sample_rate)*block->sample_rate();
+
+    float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->sample_rate();
+
     ::expandCompleteStft( stft->waveform_data->getCudaGlobal(),
                   block->vbo->height()->data->getCudaGlobal(),
                   out_min_hz,
                   out_max_hz,
                   out_stft_size,
+                  out_offset,
                   in_min_hz,
                   in_max_hz,
                   in_stft_size,

@@ -296,6 +296,7 @@ __global__ void kernel_expand_stft(
     }
 }
 
+
 extern "C"
 void expandStft( cudaPitchedPtrType<float2> inStft,
                  cudaPitchedPtrType<float> outBlock,
@@ -306,7 +307,7 @@ void expandStft( cudaPitchedPtrType<float2> inStft,
                  unsigned cuda_stream)
 {
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(outBlock.getNumberOfElements().y, block.x), 1, 1);
+    dim3 grid( int_div_ceil(outBlock.getNumberOfElements().y, block.x), 1, 1);
 
     if(grid.x>65535) {
         printf("====================\nInvalid argument, number of floats in complex signal must be less than 65535*256.\n===================\n");
@@ -331,6 +332,7 @@ __global__ void kernel_expand_complete_stft(
                 float start,
                 float steplogsize,
                 float out_stft_size,
+                float out_offset,
                 float in_min_hz,
                 float in_max_hz,
                 unsigned in_stft_size)
@@ -352,22 +354,33 @@ __global__ void kernel_expand_complete_stft(
         float read_f = max(0.f,min(1.f,(hz_out-in_min_hz)/(in_max_hz-in_min_hz)));
 
         float2 c;
-        unsigned chunk = x/out_stft_size;
+        float q = max(0.f, (x+out_offset)/out_stft_size);
+        unsigned chunk = (unsigned)q;
+        q-=chunk;
         float p = ((chunk+read_f)*in_stft_size);
-        elemSize3_t readPos = make_elemSize3_t( ((unsigned)p)*2, 0, 0 );
-        c.x = inStft.elem(readPos);
-        readPos.x++;
-        c.y = inStft.elem(readPos);
+        unsigned read_start = ((unsigned)p)*2;
+        p-=(unsigned)p;
+
+        c.x = inStft.elem(make_elemSize3_t( read_start, 0, 0 ));
+        c.y = inStft.elem(make_elemSize3_t( read_start+1, 0, 0 ));
         float val1 = sqrt(c.x*c.x + c.y*c.y);
 
-        readPos.x = min(readPos.x+1, 2*((1+chunk)*in_stft_size-1));
-        c.x = inStft.elem(readPos);
-        readPos.x++;
-        c.y = inStft.elem(readPos);
+        c.x = inStft.elem(make_elemSize3_t( read_start+2*in_stft_size, 0, 0 ));
+        c.y = inStft.elem(make_elemSize3_t( read_start+2*in_stft_size+1, 0, 0 ));
         float val2 = sqrt(c.x*c.x + c.y*c.y);
 
-        p-=(unsigned)p;
-        val = .06f*(val1*(1-p)+val2*p);
+        unsigned read_secondline = min(read_start+2, 2*((1+chunk)*in_stft_size-1));
+        c.x = inStft.elem(make_elemSize3_t( read_secondline, 0, 0 ));
+        c.y = inStft.elem(make_elemSize3_t( read_secondline+1, 0, 0 ));
+        float val3 = sqrt(c.x*c.x + c.y*c.y);
+
+        c.x = inStft.elem(make_elemSize3_t( read_secondline+2*in_stft_size, 0, 0 ));
+        c.y = inStft.elem(make_elemSize3_t( read_secondline+2*in_stft_size+1, 0, 0 ));
+        float val4 = sqrt(c.x*c.x + c.y*c.y);
+
+        p = 3*p*p-2*p*p*p;
+        q = 3*q*q-2*q*q*q;
+        val = .06f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
         const float f0 = .6f + 40*ff*ff*ff;
         val*=f0;
     }
@@ -383,6 +396,7 @@ void expandCompleteStft( cudaPitchedPtrType<float> inStft,
                  float out_min_hz,
                  float out_max_hz,
                  float out_stft_size,
+                 float out_offset,
                  float in_min_hz,
                  float in_max_hz,
                  unsigned in_stft_size,
@@ -404,7 +418,8 @@ void expandCompleteStft( cudaPitchedPtrType<float> inStft,
         start,
         steplogsize,
         out_stft_size,
+        out_offset,
         in_min_hz,
         in_max_hz,
-        in_stft_size);
+        in_stft_size );
 }

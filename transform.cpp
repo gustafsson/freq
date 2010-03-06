@@ -219,14 +219,20 @@ boost::shared_ptr<GpuCpuData<float2> > Transform::stft( ChunkIndex n, cudaStream
 
 pWaveform_chunk Transform::stft(float startt, float endt, unsigned* chunkSize, cudaStream_t stream)
 {
-    cudaExtent requiredFtSz = make_cudaExtent( (endt-startt)*_original_waveform->sample_rate(), 1, 1 );
+    BOOST_ASSERT(startt<=endt);
+
+    unsigned ftChunk = 1 << 11;
+    unsigned first_chunk = startt*_original_waveform->sample_rate();
+    first_chunk = first_chunk>ftChunk/2 ? first_chunk - ftChunk/2: 0;
+    first_chunk/=ftChunk;//(
+    unsigned after_last_chunk = 2 + endt*_original_waveform->sample_rate()/ftChunk;
+    cudaExtent requiredFtSz = make_cudaExtent( (after_last_chunk-first_chunk)*ftChunk, 1, 1 );
     // The in-signal is be padded to a power of 2 for faster calculations (or rather, "power of a small prime")
     requiredFtSz.width = (1 << ((unsigned)ceil(log2((float)requiredFtSz.width))));
-    unsigned ftChunk = 1 << 11;
     requiredFtSz.width = max(requiredFtSz.width, (size_t)ftChunk);
 
     pWaveform_chunk complete_stft = _original_waveform->getChunk(
-            startt*_original_waveform->sample_rate(), requiredFtSz.width, _channel,
+            first_chunk*ftChunk, requiredFtSz.width, _channel,
             Waveform_chunk::Interleaved_Complex);
 
     cufftComplex* d = (cufftComplex*)complete_stft->waveform_data->getCudaGlobal().ptr();
