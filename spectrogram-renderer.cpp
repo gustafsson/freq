@@ -27,7 +27,10 @@ SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
-    _redundancy(2) // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
+    _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
+    _fewest_pixles_per_unit( FLT_MAX ),
+    _fewest_pixles_per_unit_ref(_spectrogram->findReference( Spectrogram::Position(),  Spectrogram::Position())),
+    _drawn_blocks(0)
 {
 }
 
@@ -268,6 +271,14 @@ void SpectrogramRenderer::draw()
     tt.info("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
     _drawn_blocks=0;
 
+    if (_fewest_pixles_per_unit != FLT_MAX) {
+        TaskTimer tt("Updating a part of the closest non finished scaletime block");
+        _spectrogram->updateBlock( _spectrogram->getBlock(_fewest_pixles_per_unit_ref) );
+
+        _fewest_pixles_per_unit = FLT_MAX;
+    }
+
+
     GlException_CHECK_ERROR();
 }
 
@@ -321,7 +332,7 @@ void SpectrogramRenderer::endVboRendering() {
     glUseProgram(0);
 }
 
-bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref )
+bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref, bool* finished_ref )
 {
     if (!ref.containsSpectrogram())
         return false;
@@ -335,7 +346,7 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref )
     glTranslatef(a.time, 0, a.scale);
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
-    Spectrogram::pBlock block = _spectrogram->getBlock( ref );
+    Spectrogram::pBlock block = _spectrogram->getBlock( ref, finished_ref );
     if (0!=block.get()) {
         if (0 /* direct rendering */ )
             block->vbo->draw_directMode();
@@ -344,7 +355,7 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref )
 
     } else {
         // getBlock would try to find something else if the requested block wasn't readily available.
-        // If getBlock fails, we're out of memory. Indicate by not drawing the surface but only a wireframe
+        // If getBlock fails, we're most likely out of memory. Indicate this silently by not drawing the surface but only a wireframe
 
         glBegin(GL_LINE_LOOP );
             glVertex3f( 0, 0, 0 );
@@ -397,7 +408,20 @@ bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference r
         renderChildrenSpectrogramRef( ref.right() );
     }
     else {
-        renderSpectrogramRef( ref );
+        bool finished_ref=true;
+        bool* finished_ptr = 0;
+        float pixels_per_unit = timePixels*pow(2.,ref.log2_samples_size[0])
+                              + scalePixels*pow(2.,ref.log2_samples_size[1]);
+
+        if (pixels_per_unit < _fewest_pixles_per_unit)
+        {
+            finished_ptr = &finished_ref;
+        }
+
+        if (renderSpectrogramRef( ref, finished_ptr )) if (!finished_ref) {
+            _fewest_pixles_per_unit = pixels_per_unit;
+            _fewest_pixles_per_unit_ref = ref;
+        }
     }
 
     return true;

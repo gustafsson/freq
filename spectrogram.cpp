@@ -116,7 +116,7 @@ Spectrogram::Position Spectrogram::max_sample_size() {
                         max(minima.scale, 1.f/_scales_per_block) );
 }
 
-Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
+Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref, bool *finished_block) {
     // Look among cached blocks for this reference
     pBlock block;
     BOOST_FOREACH( pBlock& b, _cache ) {
@@ -130,62 +130,15 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
 
     pBlock result = block;
     try {
-        bool need_slope = false;
         if (0 == block.get()) {
             block = createBlock( ref );
-            need_slope = true;
+            computeSlope( block, 0 );
             _unfinished_count++;
         }
 
         if (0 != block.get()) {
-            if ( 0 /* block for complete block */ ) {
-                if (getNextInvalidChunk(block,0))
-                    computeBlock(block);
-            } else if (1 /* partial blocks, single threaded */ ) {
-                unsigned previous_block_index = (unsigned)-1;
-                pTransform_chunk chunk = _transform->previous_chunk(previous_block_index);
-
-                if (chunk && isInvalidChunk( block, previous_block_index)) {
-                    mergeBlock( block, chunk, 0 );
-                    block->valid_chunks.insert( previous_block_index );
-                    need_slope = true;
-                } else if (getNextInvalidChunk(block,0)) {
-                    if (0==_unfinished_count) {
-                        computeBlockOneChunk( block, 0 );
-
-                        need_slope = true;
-                    }
-                    _unfinished_count++;
-                }
-#ifdef MULTITHREADED_SONICAWE
-            } else if (0 /* partial block, multithreaded, multiple GPUs*/ ) {
-                bool enqueue = false;
-                {
-                    Block::pData prepared_data = block->prepared_data;
-                    if (0 != prepared_data.get()) {
-                        SpectrogramVbo::pHeight h = block->vbo->height();
-
-                        BOOST_ASSERT( h->data->getSizeInBytes1D() == prepared_data->getSizeInBytes1D() );
-                        memcpy(h->data->getCpuMemory(),
-                               prepared_data->getCpuMemory(),
-                               h->data->getSizeInBytes1D());
-
-                        enqueue = true;
-                        need_slope = true;
-                    }
-                }
-                if (getNextInvalidChunk( block, 0 )) {
-                    enqueue = true;
-                    _unfinished_count++;
-                }
-                if (enqueue)
-                    block_worker()->filo_enqueue( block );
-#endif
-            }
-
-            if (need_slope) {
-                computeSlope( block, 0 );
-            }
+            if (finished_block)
+                *finished_block = !getNextInvalidChunk(block,0);
         }
 
         result = block;
@@ -194,6 +147,65 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
     }
 
     return result;
+}
+
+
+bool Spectrogram::updateBlock( Spectrogram::pBlock block ) {
+    bool need_slope = false;
+    try {
+        if ( 0 /* block for complete block */ ) {
+            if (getNextInvalidChunk(block,0))
+                computeBlock(block);
+        } else if (1 /* partial blocks, single threaded */ ) {
+            unsigned previous_block_index = (unsigned)-1;
+            pTransform_chunk chunk = _transform->previous_chunk(previous_block_index);
+
+            if (chunk && isInvalidChunk( block, previous_block_index)) {
+                mergeBlock( block, chunk, 0 );
+                block->valid_chunks.insert( previous_block_index );
+                need_slope = true;
+            } else if (getNextInvalidChunk(block,0)) {
+                if (0==_unfinished_count) {
+                    computeBlockOneChunk( block, 0 );
+
+                    need_slope = true;
+                }
+            }
+    #ifdef MULTITHREADED_SONICAWE
+        } else if (0 /* partial block, multithreaded, multiple GPUs*/ ) {
+            bool enqueue = false;
+            {
+                Block::pData prepared_data = block->prepared_data;
+                if (0 != prepared_data.get()) {
+                    SpectrogramVbo::pHeight h = block->vbo->height();
+
+                    BOOST_ASSERT( h->data->getSizeInBytes1D() == prepared_data->getSizeInBytes1D() );
+                    // need to do the memcpy in CPU memory as the data was computed in different CUDA contexts.
+                    memcpy(h->data->getCpuMemory(),
+                           prepared_data->getCpuMemory(),
+                           h->data->getSizeInBytes1D());
+
+                    enqueue = true;
+                    need_slope = true;
+                }
+            }
+            if (getNextInvalidChunk( block, 0 )) {
+                enqueue = true;
+                _unfinished_count++;
+            }
+            if (enqueue)
+                block_worker()->filo_enqueue( block );
+    #endif
+        }
+
+        if (need_slope) {
+            computeSlope( block, 0 );
+            _unfinished_count++;
+        }
+    } catch (const CudaException &) {
+    } catch (const GlException &) {
+    }
+    return need_slope;
 }
 
 #ifdef MULTITHREADED_SONICAWE
@@ -456,7 +468,7 @@ void Spectrogram::fillStft( pBlock block ) {
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
           in_max_hz = _transform->original_waveform()->sample_rate()/2;
-    float in_min_hz = in_max_hz / in_stft_size;
+    float in_min_hz = in_max_hz / 4/in_stft_size;
 
     float out_stft_size = (in_stft_size/(float)stft->sample_rate)*block->sample_rate();
 

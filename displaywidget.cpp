@@ -579,7 +579,7 @@ void DisplayWidget::paintGL()
         if (inv2) if (inv2->getChunkBehind()->play_when_done || inv2->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
 		
-		update();
+        update();
     }
 
 

@@ -102,7 +102,8 @@ public:
 
     void garbageCollect();
 
-    pBlock      getBlock( Reference ref );
+    pBlock      getBlock( Reference ref, bool* finished_block=0 );
+    bool        updateBlock( Spectrogram::pBlock block );
     pTransform  transform() const { return _transform; }
     void        invalidate_range(float start_time, float end_time);
     void        gc();
@@ -157,7 +158,7 @@ class Spectrogram::Position {
 public:
     float time, scale;
 
-    Position() { }
+    Position():time(0), scale(0) { }
     Position(float time, float scale):time(time), scale(scale) {}
 
     tvector<2, float> operator()() { return tvector<2, float>(time, scale); }
