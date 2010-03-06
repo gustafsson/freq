@@ -41,7 +41,8 @@ class MappedVbo
 {
 public:
     MappedVbo( pVbo vbo, cudaExtent numberOfElements )
-    :   _vbo(vbo)
+    :   _vbo(vbo),
+        tt("Mapping vbo")
     {
         void* g_data;
         cudaGLMapBufferObject((void**)&g_data, *_vbo);
@@ -64,6 +65,8 @@ public:
 
 private:
     pVbo _vbo;
+
+    TaskTimer tt;
 };
 
 class SpectrogramVbo
@@ -77,6 +80,7 @@ public:
 
     pHeight height();
     pSlope slope();
+    void unmap();
 
     void draw( );
     void draw_directMode( );

@@ -54,7 +54,8 @@ public:
     void      setInverseArea(float t1, float f1, float t2, float f2);
     pTransform_chunk previous_chunk( unsigned &out_chunk_index );
 
-    boost::shared_ptr<GpuCpuData<float2> > stft( ChunkIndex n, cudaStream_t stream=0 );
+    boost::shared_ptr<GpuCpuData<float2> >  stft( ChunkIndex n, cudaStream_t stream=0 );
+    pWaveform_chunk                         stft( float start, float end, unsigned* chunkSize=0, cudaStream_t stream=0);
 
     FilterChain filter_chain;
     EllipsFilter built_in_filter;

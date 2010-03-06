@@ -148,7 +148,7 @@ private:
 #ifdef MULTITHREADED_SONICAWE
     BlockWorker* block_worker();
 #endif
-    bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n );
+    bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n, bool requireGreaterThanOn =false );
     bool        isInvalidChunk( pBlock block, Transform::ChunkIndex n );
     void        fillStft( pBlock block );
 };

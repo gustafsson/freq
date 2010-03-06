@@ -144,6 +144,11 @@ SpectrogramVbo::pSlope SpectrogramVbo::slope() {
             _spectrogram->scales_per_block(), 1)));
 }
 
+void SpectrogramVbo::unmap() {
+    _mapped_height.reset();
+    _mapped_slope.reset();
+}
+
 void SpectrogramVbo::draw() {
     unsigned meshW = _spectrogram->samples_per_block();
     unsigned meshH = _spectrogram->scales_per_block();

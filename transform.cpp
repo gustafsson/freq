@@ -14,7 +14,7 @@
 
 using namespace std;
 
-static bool someWhatAccurateTiming = true;
+static bool someWhatAccurateTiming = false;
 
 static void cufftSafeCall( cufftResult_t cufftResult) {
     if (cufftResult != CUFFT_SUCCESS) {
@@ -131,7 +131,7 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
 #endif
 }
 
-boost::shared_ptr<GpuCpuData<float2> > Transform::stft(ChunkIndex n, cudaStream_t stream)
+boost::shared_ptr<GpuCpuData<float2> > Transform::stft( ChunkIndex n, cudaStream_t stream)
 {
     /* The waveform resides in CPU memory, beacuse in total we might have hours
        of data which would instantly waste the entire GPU memory. In those
@@ -215,6 +215,34 @@ boost::shared_ptr<GpuCpuData<float2> > Transform::stft(ChunkIndex n, cudaStream_
     }
 
     return _intermediate_ft;
+}
+
+pWaveform_chunk Transform::stft(float startt, float endt, unsigned* chunkSize, cudaStream_t stream)
+{
+    cudaExtent requiredFtSz = make_cudaExtent( (endt-startt)*_original_waveform->sample_rate(), 1, 1 );
+    // The in-signal is be padded to a power of 2 for faster calculations (or rather, "power of a small prime")
+    requiredFtSz.width = (1 << ((unsigned)ceil(log2((float)requiredFtSz.width))));
+    unsigned ftChunk = 1 << 11;
+    requiredFtSz.width = max(requiredFtSz.width, (size_t)ftChunk);
+
+    pWaveform_chunk complete_stft = _original_waveform->getChunk(
+            startt*_original_waveform->sample_rate(), requiredFtSz.width, _channel,
+            Waveform_chunk::Interleaved_Complex);
+
+    cufftComplex* d = (cufftComplex*)complete_stft->waveform_data->getCudaGlobal().ptr();
+
+    // Transform signal
+    cufftHandle fft_all;
+    cufftSafeCall(cufftPlan1d(&fft_all, ftChunk, CUFFT_C2C, requiredFtSz.width/ftChunk));
+
+    cufftSafeCall(cufftSetStream(fft_all, stream));
+    cufftSafeCall(cufftExecC2C(fft_all, d, d, CUFFT_FORWARD));
+    cufftDestroy(fft_all);
+
+    if (chunkSize)
+        *chunkSize = ftChunk;
+
+    return complete_stft;
 }
 
 void Transform::recompute_filter(pFilter f) {
