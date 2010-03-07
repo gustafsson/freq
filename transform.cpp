@@ -252,14 +252,17 @@ pWaveform_chunk Transform::stft(float startt, float endt, unsigned* chunkSize, c
 }
 
 void Transform::recompute_filter(pFilter f) {
-    if (f.get())
+    if (f.get()) {
         f->invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
-    else
+
+        float a,b;
+        f->range(a,b);
+        if (_intermediate_wt->startTime()>a && _intermediate_wt->endTime()<b)
+            _intermediate_wt->chunk_offset = (unsigned)-1;
+    } else {
         filter_chain.invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
-    float a,b;
-    f->range(a,b);
-    if (_intermediate_wt->startTime()>a && _intermediate_wt->endTime()<b)
         _intermediate_wt->chunk_offset = (unsigned)-1;
+    }
 }
 
 void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
