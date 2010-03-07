@@ -256,6 +256,10 @@ void Transform::recompute_filter(pFilter f) {
         f->invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
     else
         filter_chain.invalidateWaveform(*this, *get_inverse_waveform()->getChunkBehind());
+    float a,b;
+    f->range(a,b);
+    if (_intermediate_wt->startTime()>a && _intermediate_wt->endTime()<b)
+        _intermediate_wt->chunk_offset = (unsigned)-1;
 }
 
 void Transform::setInverseArea(float t1, float f1, float t2, float f2) {
@@ -513,11 +517,9 @@ void Transform::max_hz(float value) {
 }
 
 pTransform_chunk Transform::previous_chunk( unsigned &out_chunk_index ) {
-    if (_intermediate_wt)
+    if (_intermediate_wt && _intermediate_wt->chunk_offset != (unsigned)-1)
     {
         out_chunk_index = getChunkIndex(_intermediate_wt->chunk_offset + _intermediate_wt->first_valid_sample);
-        if (_samples_per_chunk*out_chunk_index < _intermediate_wt->chunk_offset + _intermediate_wt->first_valid_sample)
-            out_chunk_index++;
         if (out_chunk_index >= getChunkIndex(_intermediate_wt->chunk_offset + _intermediate_wt->first_valid_sample + _intermediate_wt->n_valid_samples))
             out_chunk_index = (unsigned)-1;
     }

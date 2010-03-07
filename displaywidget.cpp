@@ -233,8 +233,8 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             }
 
             float start, end;
-            f->range(start,end);
-            _renderer->spectrogram()->invalidate_range(start,end);
+            f->range(start, end);
+            _renderer->spectrogram()->invalidate_range(start, end);
             update();
             break;
         }
