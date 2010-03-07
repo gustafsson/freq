@@ -120,7 +120,7 @@ public:
     unsigned samples_per_block() { return _samples_per_block; }
     void scales_per_block(unsigned v);
     void samples_per_block(unsigned v);
-    unsigned read_unfinished_count() { unsigned t = _unfinished_count; _unfinished_count = 0; _frame_counter++; return t; }
+    unsigned read_unfinished_count();
     void dont_compute_until_next_read_unfinished_count() { _unfinished_count++; }
 
     Position min_sample_size();

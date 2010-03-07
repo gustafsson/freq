@@ -30,6 +30,18 @@ void Spectrogram::samples_per_block(unsigned v) {
     _samples_per_block=v;
 }
 
+unsigned Spectrogram::read_unfinished_count() {
+    unsigned t = _unfinished_count;
+    _unfinished_count = 0;
+    _frame_counter++;
+
+    BOOST_FOREACH( pBlock& b, _cache ) {
+        b->vbo->unmap();
+    }
+
+    return t;
+}
+
 Spectrogram::Reference Spectrogram::findReferenceCanonical( Position p, Position sampleSize )
 {
     // doesn't ASSERT(r.containsSpectrogram() && !r.toLarge())
@@ -164,12 +176,9 @@ bool Spectrogram::updateBlock( Spectrogram::pBlock block ) {
                 mergeBlock( block, chunk, 0 );
                 block->valid_chunks.insert( previous_block_index );
                 need_slope = true;
-            } else if (getNextInvalidChunk(block,0)) {
-                if (0==_unfinished_count) {
-                    computeBlockOneChunk( block, 0 );
-
+            } else if (0==_unfinished_count) {
+                if (computeBlockOneChunk( block, 0 ))
                     need_slope = true;
-                }
             }
     #ifdef MULTITHREADED_SONICAWE
         } else if (0 /* partial block, multithreaded, multiple GPUs*/ ) {
@@ -403,7 +412,7 @@ bool Spectrogram::computeBlockOneChunk( Spectrogram::pBlock block, unsigned cuda
     if (getNextInvalidChunk( block, &n )) {
         pTransform_chunk chunk = _transform->getChunk(n, cuda_stream);
         mergeBlock( block, chunk, cuda_stream, prepare );
-       block->valid_chunks.insert( n );
+        block->valid_chunks.insert( n );
 
         return true;
     }
@@ -429,6 +438,16 @@ bool Spectrogram::getNextInvalidChunk( pBlock block, Transform::ChunkIndex* on, 
          n*_transform->samples_per_chunk() < end;
          n++)
     {
+        while (true) {
+            unsigned x1 = (unsigned)(n*_transform->samples_per_chunk()/(float)_transform->original_waveform()->sample_rate()*block->sample_rate());
+            unsigned x2 = (unsigned)((n+1)*_transform->samples_per_chunk()/(float)_transform->original_waveform()->sample_rate()*block->sample_rate());
+            if (x1==x2) {
+                n++;
+                continue;
+            }
+            break;
+        }
+
         if (block->valid_chunks.find( n ) == block->valid_chunks.end()) {
             if (on) {
                 if (requireGreaterThanOn && *on >= n )
