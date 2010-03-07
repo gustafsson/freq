@@ -7,6 +7,8 @@
 #include "mainwindow.h"
 #include "displaywidget.h"
 #include <sstream>
+#include <CudaProperties.h>
+#include <QtGui/QMessageBox>
 
 using namespace std;
 using namespace boost;
@@ -131,6 +133,33 @@ static int handle_options(char ***argv, int *argc)
 #define STRINGIFY(x) #x
 #define TOSTR(x) STRINGIFY(x)
 
+void fatal_exception( const std::string& str )
+{
+    cerr << endl << endl
+         << "======================" << endl
+         << str
+         << "======================" << endl;
+    cerr.flush();
+
+    QMessageBox::critical( 0,
+                 QString("Fatal error. Sonic AWE needs to close"),
+                 QString::fromStdString(str) );
+
+    ::exit(-2);
+}
+void fatal_exception( const std::exception &x )
+{
+    stringstream ss;
+    ss   << "Error: " << typeid(x).name() << endl
+         << "Message: " << x.what() << endl;
+
+    fatal_exception( ss.str() );
+}
+
+void fatal_unknown_exception() {
+    fatal_exception( string("An unknown error occurred") );
+}
+
 class SonicAWE_Application: public QApplication
 {
 public:
@@ -143,27 +172,41 @@ public:
         try {
             QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            cerr << endl << endl
-                 << "======================" << endl
-                 << "Error: " << typeid(x).name() << endl
-                 << "Message: " << x.what() << endl
-                 << "======================" << endl;
-            cerr.flush();
-            ::exit(-2);
+            fatal_exception(x);
         } catch (...) {
-            cerr << endl << endl
-                 << "=========================" << endl
-                 << "An unknown error occurred" << endl
-                 << "=========================" << endl;
-            cerr.flush();
-            ::exit(-1);
+            fatal_unknown_exception();
         }
         return v;
     }
 };
 
+void check_cuda() {
+    if (0 < CudaProperties::getCudaDeviceCount())
+        return;
+
+    stringstream ss;
+    ss   << "Sonic AWE requires you to have installed graphics drivers from NVIDIA." << endl
+         << endl
+         << "You need to have one of these graphics cards from NVIDIA;" << endl
+         << "   http://www.nvidia.com/object/cuda_gpus.html" << endl
+         << endl
+         << "You also need to have NVIDIAs display drivers installed;" << endl
+         <<"    http://www.nvidia.com" << endl
+         << endl
+         << endl
+         << "Sonic AWE cannot start." << endl;
+    cerr << ss.str();
+    cerr.flush();
+
+    QMessageBox::critical( 0,
+                 "Cannot start Sonic AWE",
+                 QString::fromStdString(ss.str()) );
+
+    exit(-1);
+}
 int main(int argc, char *argv[])
 {
+
     QDateTime now = QDateTime::currentDateTime();
     now.date().year();
     stringstream ss;
@@ -182,6 +225,8 @@ int main(int argc, char *argv[])
     _sawe_version_string = ss.str();
 
     SonicAWE_Application a(argc, argv);
+    check_cuda();
+
     MainWindow w(_sawe_version_string.c_str());
     
     // skip application filename
@@ -234,14 +279,10 @@ int main(int argc, char *argv[])
         w.show();
 
        return a.exec();
-    } catch (std::exception &x) {
-            cerr << endl << endl
-                 << "======================" << endl
-                 << "Error: " << typeid(x).name() << endl
-                 << "Message: " << x.what() << endl
-                 << "======================" << endl;
-            cerr.flush();
-            ::exit(-2);
+    } catch (const std::exception &x) {
+        fatal_exception(x);
+    } catch (...) {
+        fatal_unknown_exception();
     }
 }
 
