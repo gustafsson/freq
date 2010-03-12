@@ -45,24 +45,22 @@ CUDA_SOURCES += wavelet.cu \
     filter.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
-#unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -r "s/ref:\ refs\\\/heads\\\/master// | sed -r "s/ref:\ refs\\\/heads\\\///"; fi)\'"
+unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
-unix:LIBS += -lsndfile \
+unix:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib$$IS64 \
     -lcuda \
     -lcufft \
     -L../misc \
-    -lmisc 
-#    -lGLEW \
-#    -lGLU \
-#    -lGL \
-#"ifdef MULTITHREADED_SONICAWE"
-#    -lboost_thread-mt \
-#"endif"
-#    -lglut
+    -lmisc \
+    -lGLEW \
+    -lGLU \
+    -lGL \
+    -lboost_thread-mt \
+    -lglut
 macx:INCLUDEPATH += /usr/local/cuda/include
-macx:LIBS += -lsndfile \
+macx:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
     -lcuda \
