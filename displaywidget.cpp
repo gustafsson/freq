@@ -6,6 +6,7 @@
 
 #include <QtGui/QFileDialog>
 #include <CudaException.h>
+#include <GlException.h>
 
 #include <algorithm>
 #include <boost/foreach.hpp>
@@ -607,6 +608,9 @@ void DisplayWidget::paintGL()
 
 
     drawSelection();
+
+    CudaException_ThreadSynchronize();
+    GlException_CHECK_ERROR();
 }
 
 

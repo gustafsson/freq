@@ -54,6 +54,9 @@ public:
     void      setInverseArea(float t1, float f1, float t2, float f2);
     pTransform_chunk previous_chunk( unsigned &out_chunk_index );
 
+    boost::shared_ptr<GpuCpuData<float2> >  stft( ChunkIndex n, cudaStream_t stream=0 );
+    pWaveform_chunk                         stft( float start, float end, unsigned* chunkSize=0, cudaStream_t stream=0);
+
     FilterChain filter_chain;
     EllipsFilter built_in_filter;
     void      recompute_filter(pFilter);
@@ -63,7 +66,7 @@ private:
     pTransform_chunk releaseChunkFurthestAwayFrom( ChunkIndex n );
     void             clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream );
 #endif // #ifdef _USE_CHUNK_CACHE
-    pTransform_chunk computeTransform( pWaveform_chunk chunk, cudaStream_t stream );
+    pTransform_chunk computeTransform( ChunkIndex n, cudaStream_t stream );
     void             merge_chunk(pWaveform_chunk r, pTransform_chunk transform);
     pWaveform_chunk  prepare_inverse(float start, float end);
 

@@ -9,7 +9,7 @@ void removeDisc( float2* wavelet, cudaExtent numElem, float4 area )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(numElem.width, block.x), numElem.height*numElem.depth, 1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height*numElem.depth, 1);
 
     if(grid.x>65535) {
         printf("Invalid argument, number of floats in complex signal must be less than 65535*256.");

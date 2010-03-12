@@ -144,10 +144,7 @@ SpectrogramVbo::pSlope SpectrogramVbo::slope() {
             _spectrogram->scales_per_block(), 1)));
 }
 
-void SpectrogramVbo::draw() {
-    unsigned meshW = _spectrogram->samples_per_block();
-    unsigned meshH = _spectrogram->scales_per_block();
-
+void SpectrogramVbo::unmap() {
     if (_mapped_height) {
         TaskTimer tt("Heightmap Cuda->OpenGL");
         _mapped_height.reset();
@@ -156,6 +153,13 @@ void SpectrogramVbo::draw() {
         TaskTimer tt("Gradient Cuda->OpenGL");
         _mapped_slope.reset();
     }
+}
+
+void SpectrogramVbo::draw() {
+    unsigned meshW = _spectrogram->samples_per_block();
+    unsigned meshH = _spectrogram->scales_per_block();
+
+    unmap();
 
     glBindBuffer(GL_ARRAY_BUFFER, *_height);
     glClientActiveTexture(GL_TEXTURE0);

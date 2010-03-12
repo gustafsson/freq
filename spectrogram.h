@@ -148,8 +148,9 @@ private:
 #ifdef MULTITHREADED_SONICAWE
     BlockWorker* block_worker();
 #endif
-    bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n );
+    bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n, bool requireGreaterThanOn =false );
     bool        isInvalidChunk( pBlock block, Transform::ChunkIndex n );
+    void        fillStft( pBlock block );
 };
 
 class Spectrogram::Position {
@@ -165,7 +166,7 @@ public:
 class Spectrogram::Reference {
 public:
     tvector<2,int> log2_samples_size;
-    tvector<2,unsigned> chunk_index;
+    tvector<2,unsigned> block_index;
 
     bool operator==(const Reference &b) const;
     void getArea( Position &a, Position &b) const;
