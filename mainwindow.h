@@ -29,9 +29,11 @@ public slots:
     void updateLayerList(pTransform t);
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(int);
+    void slotDeleteSelection(void);
 
 signals:
     void sendCurrentSelection(int);
+    void sendRemoveItem(int);
 
 private:
     Ui::MainWindow *ui;

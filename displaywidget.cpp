@@ -196,19 +196,11 @@ DisplayWidget::~DisplayWidget()
 
 void DisplayWidget::recieveCurrentSelection(int index)
 {
-    if (index < 0) return;
-    
-    printf("####Current selection: %d\n", index);
-    pTransform t = _renderer->spectrogram()->transform();
-    FilterChain::iterator i = t->filter_chain.begin();
-    std::advance(i, index);
-    EllipsFilter *e = (EllipsFilter*)(i->get()->filter());
-    selection[0].x = e->_t1;
-    selection[0].z = e->_f1;
-    selection[1].x = e->_t2;
-    selection[1].z = e->_f2;
-    //_transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-    glDraw();
+    setSelection(index);
+}
+
+void DisplayWidget::recieveFilterRemoval(int index){
+    removeFilter(index);
 }
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
@@ -255,8 +247,8 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             }
 
             float start, end;
-            f->range(start,end);
-            _renderer->spectrogram()->invalidate_range(start,end);
+            f->range(start, end);
+            _renderer->spectrogram()->invalidate_range(start, end);
             update();
             emit filterChainUpdated(t);
             break;
@@ -581,31 +573,45 @@ void DisplayWidget::paintGL()
 //        gcDisplayList();
     { ; }
 
-	if (inv->getChunkBehind()->modified)
-	{
-		inv->getChunkBehind()->was_modified = true;
-		glClearColor(.8f, .8f, .8f, 0.0f);
-		update();
+    static bool computing_inverse = false;
+    static bool computing_plot = false;
+    bool computing_prev = computing_inverse || computing_plot;
 
-		inv->getChunkBehind()->modified=false;
+    computing_inverse = false;
+    computing_plot = false;
 
-	} else if (inv->getChunkBehind()->was_modified) {
-		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-		update();
+    if (inv->getChunkBehind()->modified)
+    {
+        inv->getChunkBehind()->was_modified = true;
+        computing_inverse = true;
 
-		inv->getChunkBehind()->was_modified = false;
-	}
+        inv->getChunkBehind()->modified=false;
+
+    } else if (inv->getChunkBehind()->was_modified) {
+        computing_inverse = false;
+
+        inv->getChunkBehind()->was_modified = false;
+    }
 
     if (0 < this->_renderer->spectrogram()->read_unfinished_count()) {
         if (inv->getChunkBehind()->play_when_done || inv->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
         if (inv2) if (inv2->getChunkBehind()->play_when_done || inv2->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
-		
-		update();
+
+        computing_plot = true;
     }
 
+    if (computing_inverse) {
+        glClearColor(.8f, .8f, .8f, 0.0f);
+    } else if (computing_plot) {
+        glClearColor(.9f, .9f, .9f, 0.0f);
+    } else {
+        glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    }
 
+    if (computing_prev || computing_inverse || computing_plot)
+        update();
 
     drawSelection();
 
@@ -935,6 +941,47 @@ glEnd();
     }
     glDepthMask(true);
     glDisable(GL_BLEND);
+}
+
+void DisplayWidget::setSelection(int index){
+    if (index < 0) return;
+    
+    printf("####Current selection: %d\n", index);
+    pTransform t = _renderer->spectrogram()->transform();
+    FilterChain::iterator i = t->filter_chain.begin();
+    std::advance(i, index);
+    EllipsFilter *e = (EllipsFilter*)(i->get()->filter());
+    selection[0].x = e->_t1;
+    selection[0].z = e->_f1;
+    selection[1].x = e->_t2;
+    selection[1].z = e->_f2;
+    //_transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    
+    glDraw();
+}
+
+void DisplayWidget::removeFilter(int index){
+    if (index < 0) return;
+    
+    printf("####Removing filter: %d\n", index);
+    pTransform t = _renderer->spectrogram()->transform();
+    
+    float start, end;
+    FilterChain::iterator i = t->filter_chain.begin();
+    std::advance(i, index);
+    EllipsFilter *e = (EllipsFilter*)(i->get()->filter());
+    e->range(start, end);
+    
+    t->filter_chain.erase(i);
+    if( _transform != t ) {
+        i = t->filter_chain.begin();
+        std::advance(i, index);
+        _transform->filter_chain.erase(i);
+    }
+    
+    _renderer->spectrogram()->invalidate_range(start, end);
+    update();
+    emit filterChainUpdated(t);
 }
 
 void DisplayWidget::drawSelection() {

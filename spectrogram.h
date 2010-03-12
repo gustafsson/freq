@@ -102,7 +102,8 @@ public:
 
     void garbageCollect();
 
-    pBlock      getBlock( Reference ref );
+    pBlock      getBlock( Reference ref, bool* finished_block=0 );
+    bool        updateBlock( Spectrogram::pBlock block );
     pTransform  transform() const { return _transform; }
     void        invalidate_range(float start_time, float end_time);
     void        gc();
@@ -119,7 +120,7 @@ public:
     unsigned samples_per_block() { return _samples_per_block; }
     void scales_per_block(unsigned v);
     void samples_per_block(unsigned v);
-    unsigned read_unfinished_count() { unsigned t = _unfinished_count; _unfinished_count = 0; _frame_counter++; return t; }
+    unsigned read_unfinished_count();
     void dont_compute_until_next_read_unfinished_count() { _unfinished_count++; }
 
     Position min_sample_size();
@@ -157,7 +158,7 @@ class Spectrogram::Position {
 public:
     float time, scale;
 
-    Position() { }
+    Position():time(0), scale(0) { }
     Position(float time, float scale):time(time), scale(scale) {}
 
     tvector<2, float> operator()() { return tvector<2, float>(time, scale); }

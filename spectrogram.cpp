@@ -30,6 +30,18 @@ void Spectrogram::samples_per_block(unsigned v) {
     _samples_per_block=v;
 }
 
+unsigned Spectrogram::read_unfinished_count() {
+    unsigned t = _unfinished_count;
+    _unfinished_count = 0;
+    _frame_counter++;
+
+    BOOST_FOREACH( pBlock& b, _cache ) {
+        b->vbo->unmap();
+    }
+
+    return t;
+}
+
 Spectrogram::Reference Spectrogram::findReferenceCanonical( Position p, Position sampleSize )
 {
     // doesn't ASSERT(r.containsSpectrogram() && !r.toLarge())
@@ -116,7 +128,7 @@ Spectrogram::Position Spectrogram::max_sample_size() {
                         max(minima.scale, 1.f/_scales_per_block) );
 }
 
-Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
+Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref, bool *finished_block) {
     // Look among cached blocks for this reference
     pBlock block;
     BOOST_FOREACH( pBlock& b, _cache ) {
@@ -130,62 +142,15 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
 
     pBlock result = block;
     try {
-        bool need_slope = false;
         if (0 == block.get()) {
             block = createBlock( ref );
-            need_slope = true;
+            computeSlope( block, 0 );
             _unfinished_count++;
         }
 
         if (0 != block.get()) {
-            if ( 0 /* block for complete block */ ) {
-                if (getNextInvalidChunk(block,0))
-                    computeBlock(block);
-            } else if (1 /* partial blocks, single threaded */ ) {
-                unsigned previous_block_index = (unsigned)-1;
-                pTransform_chunk chunk = _transform->previous_chunk(previous_block_index);
-
-                if (chunk && isInvalidChunk( block, previous_block_index)) {
-                    mergeBlock( block, chunk, 0 );
-                    block->valid_chunks.insert( previous_block_index );
-                    need_slope = true;
-                } else if (getNextInvalidChunk(block,0)) {
-                    if (0==_unfinished_count) {
-                        computeBlockOneChunk( block, 0 );
-
-                        need_slope = true;
-                    }
-                    _unfinished_count++;
-                }
-#ifdef MULTITHREADED_SONICAWE
-            } else if (0 /* partial block, multithreaded, multiple GPUs*/ ) {
-                bool enqueue = false;
-                {
-                    Block::pData prepared_data = block->prepared_data;
-                    if (0 != prepared_data.get()) {
-                        SpectrogramVbo::pHeight h = block->vbo->height();
-
-                        BOOST_ASSERT( h->data->getSizeInBytes1D() == prepared_data->getSizeInBytes1D() );
-                        memcpy(h->data->getCpuMemory(),
-                               prepared_data->getCpuMemory(),
-                               h->data->getSizeInBytes1D());
-
-                        enqueue = true;
-                        need_slope = true;
-                    }
-                }
-                if (getNextInvalidChunk( block, 0 )) {
-                    enqueue = true;
-                    _unfinished_count++;
-                }
-                if (enqueue)
-                    block_worker()->filo_enqueue( block );
-#endif
-            }
-
-            if (need_slope) {
-                computeSlope( block, 0 );
-            }
+            if (finished_block)
+                *finished_block = !getNextInvalidChunk(block,0);
         }
 
         result = block;
@@ -194,6 +159,62 @@ Spectrogram::pBlock Spectrogram::getBlock( Spectrogram::Reference ref) {
     }
 
     return result;
+}
+
+
+bool Spectrogram::updateBlock( Spectrogram::pBlock block ) {
+    bool need_slope = false;
+    try {
+        if ( 0 /* block for complete block */ ) {
+            if (getNextInvalidChunk(block,0))
+                computeBlock(block);
+        } else if (1 /* partial blocks, single threaded */ ) {
+            unsigned previous_block_index = (unsigned)-1;
+            pTransform_chunk chunk = _transform->previous_chunk(previous_block_index);
+
+            if (chunk && isInvalidChunk( block, previous_block_index)) {
+                mergeBlock( block, chunk, 0 );
+                block->valid_chunks.insert( previous_block_index );
+                need_slope = true;
+            } else if (0==_unfinished_count) {
+                if (computeBlockOneChunk( block, 0 ))
+                    need_slope = true;
+            }
+    #ifdef MULTITHREADED_SONICAWE
+        } else if (0 /* partial block, multithreaded, multiple GPUs*/ ) {
+            bool enqueue = false;
+            {
+                Block::pData prepared_data = block->prepared_data;
+                if (0 != prepared_data.get()) {
+                    SpectrogramVbo::pHeight h = block->vbo->height();
+
+                    BOOST_ASSERT( h->data->getSizeInBytes1D() == prepared_data->getSizeInBytes1D() );
+                    // need to do the memcpy in CPU memory as the data was computed in different CUDA contexts.
+                    memcpy(h->data->getCpuMemory(),
+                           prepared_data->getCpuMemory(),
+                           h->data->getSizeInBytes1D());
+
+                    enqueue = true;
+                    need_slope = true;
+                }
+            }
+            if (getNextInvalidChunk( block, 0 )) {
+                enqueue = true;
+                _unfinished_count++;
+            }
+            if (enqueue)
+                block_worker()->filo_enqueue( block );
+    #endif
+        }
+
+        if (need_slope) {
+            computeSlope( block, 0 );
+            _unfinished_count++;
+        }
+    } catch (const CudaException &) {
+    } catch (const GlException &) {
+    }
+    return need_slope;
 }
 
 #ifdef MULTITHREADED_SONICAWE
@@ -391,7 +412,7 @@ bool Spectrogram::computeBlockOneChunk( Spectrogram::pBlock block, unsigned cuda
     if (getNextInvalidChunk( block, &n )) {
         pTransform_chunk chunk = _transform->getChunk(n, cuda_stream);
         mergeBlock( block, chunk, cuda_stream, prepare );
-       block->valid_chunks.insert( n );
+        block->valid_chunks.insert( n );
 
         return true;
     }
@@ -417,6 +438,16 @@ bool Spectrogram::getNextInvalidChunk( pBlock block, Transform::ChunkIndex* on, 
          n*_transform->samples_per_chunk() < end;
          n++)
     {
+        while (true) {
+            unsigned x1 = (unsigned)(n*_transform->samples_per_chunk()/(float)_transform->original_waveform()->sample_rate()*block->sample_rate());
+            unsigned x2 = (unsigned)((n+1)*_transform->samples_per_chunk()/(float)_transform->original_waveform()->sample_rate()*block->sample_rate());
+            if (x1==x2) {
+                n++;
+                continue;
+            }
+            break;
+        }
+
         if (block->valid_chunks.find( n ) == block->valid_chunks.end()) {
             if (on) {
                 if (requireGreaterThanOn && *on >= n )
@@ -456,7 +487,7 @@ void Spectrogram::fillStft( pBlock block ) {
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
           in_max_hz = _transform->original_waveform()->sample_rate()/2;
-    float in_min_hz = in_max_hz / in_stft_size;
+    float in_min_hz = in_max_hz / 4/in_stft_size;
 
     float out_stft_size = (in_stft_size/(float)stft->sample_rate)*block->sample_rate();
 
@@ -476,11 +507,13 @@ void Spectrogram::fillStft( pBlock block ) {
 
 void Spectrogram::invalidate_range(float start_time, float end_time)
 {
-    unsigned start = start_time*_transform->original_waveform()->sample_rate();
-    unsigned end = end_time*_transform->original_waveform()->sample_rate();
+    unsigned start = max(0.f,start_time)*_transform->original_waveform()->sample_rate();
+    unsigned end = max(0.f,end_time)*_transform->original_waveform()->sample_rate();
+    start = max((unsigned)1,_transform->getChunkIndex(start))-1;
+    end = _transform->getChunkIndex(end)+1;
     BOOST_FOREACH( pBlock& b, _cache ) {
-        for (Transform::ChunkIndex n = _transform->getChunkIndex(start);
-             n*_transform->samples_per_chunk() < end;
+        for (Transform::ChunkIndex n = start;
+             n <= end;
              n++)
         {
             b->valid_chunks.erase( n );

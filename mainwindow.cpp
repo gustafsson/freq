@@ -12,6 +12,7 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     void signalDbclkFilterItem(QListWidgetItem*);
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
     connect(ui->layerWidget, SIGNAL(currentRowChanged(int)), this, SLOT(slotNewSelection(int)));
+    connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
 }
 
 void MainWindow::slotDbclkFilterItem(QListWidgetItem *item)
@@ -24,6 +25,11 @@ void MainWindow::slotNewSelection(int index)
     emit sendCurrentSelection(index);
 }
 
+void MainWindow::slotDeleteSelection(void)
+{
+    emit sendRemoveItem(ui->layerWidget->currentRow());
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -33,6 +39,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
 {
     connect(d, SIGNAL(filterChainUpdated(pTransform)), this, SLOT(updateLayerList(pTransform)));
     connect(this, SIGNAL(sendCurrentSelection(int)), d, SLOT(recieveCurrentSelection(int)));
+    connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(recieveFilterRemoval(int)));
 }
 
 void MainWindow::updateLayerList(pTransform t)

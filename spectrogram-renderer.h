@@ -30,6 +30,9 @@ private:
     bool _initialized;
     float _redundancy;
 
+    float _fewest_pixles_per_unit;
+    Spectrogram::Reference _fewest_pixles_per_unit_ref;
+
     unsigned _drawn_blocks;
 
     friend class SpectrogramVbo;
@@ -42,7 +45,7 @@ private:
     void beginVboRendering();
     void endVboRendering();
 
-    bool renderSpectrogramRef( Spectrogram::Reference ref );
+    bool renderSpectrogramRef( Spectrogram::Reference ref, bool* finished_ref );
     bool renderChildrenSpectrogramRef( Spectrogram::Reference ref );
     void renderParentSpectrogramRef( Spectrogram::Reference ref );
     bool computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels );
