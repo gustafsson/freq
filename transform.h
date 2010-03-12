@@ -52,6 +52,7 @@ public:
     float     max_hz() const { return _max_hz; }
     void      max_hz(float f);
     void      setInverseArea(float t1, float f1, float t2, float f2);
+    void      saveCsv();
     pTransform_chunk previous_chunk( unsigned &out_chunk_index );
 
     boost::shared_ptr<GpuCpuData<float2> >  stft( ChunkIndex n, cudaStream_t stream=0 );
