@@ -45,7 +45,7 @@ CUDA_SOURCES += wavelet.cu \
     filter.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
-unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -r "s/ref:\ refs\\\/heads\\\/master// | sed -r "s/ref:\ refs\\\/heads\\\///"; fi)\'"
+#unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -r "s/ref:\ refs\\\/heads\\\/master// | sed -r "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS += -lsndfile \
     -laudiere \
@@ -53,14 +53,14 @@ unix:LIBS += -lsndfile \
     -lcuda \
     -lcufft \
     -L../misc \
-    -lmisc \
-    -lGLEW \
-    -lGLU \
-    -lGL \
+    -lmisc 
+#    -lGLEW \
+#    -lGLU \
+#    -lGL \
 #"ifdef MULTITHREADED_SONICAWE"
 #    -lboost_thread-mt \
 #"endif"
-    -lglut
+#    -lglut
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS += -lsndfile \
     -laudiere \
@@ -68,7 +68,9 @@ macx:LIBS += -lsndfile \
     -lcuda \
     -lcufft \
     -L../misc \
-    -lmisc
+    -lmisc \
+    -framework GLUT \
+    -framework OpenGL
 win32:INCLUDEPATH += ..\..\glut \
 	..\..\glew\include \
 	$(BOOST_PATH)
