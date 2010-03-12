@@ -399,13 +399,16 @@ string csv_number()
     return basename+"0.csv";
 }
 
-void Transform::saveCsv()
+void Transform::saveCsv(ChunkIndex chunk_number)
 {
     string filename = csv_number();
     TaskTimer tt("Saving CSV-file %s", filename.c_str());
     ofstream csv(filename.c_str());
 
-    ChunkIndex n = getChunkIndex( built_in_filter._t1 * _original_waveform->sample_rate() );
+    ChunkIndex n = chunk_number;
+    if (n == (ChunkIndex)-1)
+        n = getChunkIndex( built_in_filter._t1 * _original_waveform->sample_rate() );
+
     pTransform_chunk chunk = getChunk( n );
     float2* p = chunk->transform_data->getCpuMemory();
     cudaExtent s = chunk->transform_data->getNumberOfElements();
