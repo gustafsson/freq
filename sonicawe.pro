@@ -45,9 +45,9 @@ CUDA_SOURCES += wavelet.cu \
     filter.cu
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
-unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -r "s/ref:\ refs\\\/heads\\\/master// | sed -r "s/ref:\ refs\\\/heads\\\///"; fi)\'"
+unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
-unix:LIBS += -lsndfile \
+unix:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib$$IS64 \
     -lcuda \
@@ -110,7 +110,7 @@ win32 {
         -o \
         ${QMAKE_FILE_OUT}
 }
-unix { 
+unix {
     # auto-detect CUDA path
     # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     CUDA_DIR = /usr/local/cuda

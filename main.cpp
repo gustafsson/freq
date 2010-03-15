@@ -43,7 +43,8 @@ static const char _sawe_usage_string[] =
 "                       3   log(1 + [A * exp(.001*fi)]\n"
 "    extract_chunk      Saves the given chunk number into sonicawe-n.csv which \n"
 "                       then can be read by matlab or octave.\n"
-"    get_chunk_count    Exits with the number of chunks as exit code.\n"
+"    get_chunk_count    If assigned a value, Sonic AWE exits with the number of \n"
+"                       chunks as exit code.\n"
 "\n"
 "Sonic AWE, 2010\n";
 

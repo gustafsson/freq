@@ -1,1 +1,1 @@
-ffmpeg -sameq -f image2 -i image-%d.png -r 20 spectra2d-unversioned.avi
+ffmpeg -sameq -f image2 -r 60 -i image-%d.png unversioned.avi
