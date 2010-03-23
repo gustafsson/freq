@@ -79,13 +79,6 @@ typedef boost::shared_ptr<class Filter> pFilter;
 typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
 typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
 
-struct position {
-    typedef tvector<2,int> Log2samplesPerUnit;
-    typedef tvector<2,unsigned> ChunkPosition;
-    Log2samplesPerUnit zoom;
-    ChunkPosition pos;
-};
-
 class Spectrogram
 {
 public:
@@ -161,7 +154,7 @@ public:
     Position():time(0), scale(0) { }
     Position(float time, float scale):time(time), scale(scale) {}
 
-    tvector<2, float> operator()() { return tvector<2, float>(time, scale); }
+    operator tvector<2, float>() { return tvector<2, float>(time, scale); }
 };
 
 class Spectrogram::Reference {

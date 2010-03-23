@@ -199,7 +199,7 @@ boost::shared_ptr<GpuCpuData<float2> > Transform::stft( ChunkIndex n, cudaStream
         TaskTimer tt("forward fft");
         cufftComplex* d = _intermediate_ft->getCudaGlobal().ptr();
         cudaMemset( d, 0, _intermediate_ft->getSizeInBytes1D() );
-        cudaMemcpy( d+2, // TODO test the significance of this "2"
+        cudaMemcpy( d,
                     waveform_chunk->waveform_data->getCudaGlobal().ptr(),
                     waveform_chunk->waveform_data->getSizeInBytes().width,
                     cudaMemcpyDeviceToDevice );
