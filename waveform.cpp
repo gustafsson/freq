@@ -58,7 +58,9 @@ Waveform::Waveform (const char* filename)
     unsigned num_frames = _source->getLength();
 
     if (0==num_frames)
-        throw std::ios_base::failure(string() + "Opened source file but failed reading data from " + filename);
+        throw std::ios_base::failure(string() + "Opened source file but failed reading data from " + filename + "\n"
+                                     "\n"
+                                     "Supported audio file formats through Audiere: Ogg Vorbis, MP3, FLAC, Speex, uncompressed WAV, AIFF, MOD, S3M, XM, IT");
 
     _waveform->waveform_data.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
     boost::scoped_array<char> data(new char[num_frames*frame_size*channel_count]);

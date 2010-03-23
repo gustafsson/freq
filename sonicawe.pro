@@ -113,7 +113,7 @@ win32 {
         -o \
         ${QMAKE_FILE_OUT}
 }
-unix { 
+unix {
     # auto-detect CUDA path
     # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     CUDA_DIR = /usr/local/cuda

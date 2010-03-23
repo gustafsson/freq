@@ -42,6 +42,10 @@ static const char _sawe_usage_string[] =
 "                       1   A * exp(.001*fi)\n"
 "                       2   log(1 + |A|)\n"
 "                       3   log(1 + [A * exp(.001*fi)]\n"
+"    extract_chunk      Saves the given chunk number into sonicawe-n.csv which \n"
+"                       then can be read by matlab or octave.\n"
+"    get_chunk_count    If assigned a value, Sonic AWE exits with the number of \n"
+"                       chunks as exit code.\n"
 "\n"
 "Sonic AWE, 2010\n";
 
@@ -55,6 +59,8 @@ static unsigned _samples_per_chunk = (1<<12) - 2*(((unsigned)(_wavelet_std_t*441
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
 static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;
+static unsigned _extract_chunk = (unsigned)-1;
+static unsigned _get_chunk_count = (unsigned)-1;
 static std::string _soundfile = "";
 static std::string _playback_source_test = "";
 static bool _sawe_exit=false;
@@ -113,6 +119,8 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, samples_per_block));
         else if (readarg(&cmd, scales_per_block));
         else if (readarg(&cmd, yscale));
+        else if (readarg(&cmd, extract_chunk));
+        else if (readarg(&cmd, get_chunk_count));
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
             printf("%s", _sawe_usage_string);
@@ -270,6 +278,16 @@ int main(int argc, char *argv[])
     try {
         boost::shared_ptr<Waveform> wf( new Waveform( _soundfile.c_str() ) );
         boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
+
+        if (_extract_chunk != (unsigned)-1) {
+            wt->saveCsv(_extract_chunk);
+            return 0;
+        }
+
+        if (_get_chunk_count != (unsigned)-1) {
+            return wt->getChunkIndex( wf->number_of_samples() );
+        }
+
         boost::shared_ptr<Spectrogram> sg( new Spectrogram(wt, _samples_per_block, _scales_per_block  ) );
         boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg, 0, _playback_source_test ) );
         dw->yscale = (DisplayWidget::Yscale)_yscale;

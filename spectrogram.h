@@ -80,13 +80,6 @@ typedef boost::shared_ptr<class Filter> pFilter;
 typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
 typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
 
-struct position {
-    typedef tvector<2,int> Log2samplesPerUnit;
-    typedef tvector<2,unsigned> ChunkPosition;
-    Log2samplesPerUnit zoom;
-    ChunkPosition pos;
-};
-
 class Spectrogram
 {
 public:
@@ -153,6 +146,7 @@ private:
     bool        isInvalidChunk( pBlock block, Transform::ChunkIndex n );
     void        fillStft( pBlock block );
 };
+
 
 class Spectrogram::Reference {
 public:
