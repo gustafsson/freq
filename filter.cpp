@@ -5,6 +5,7 @@
 #include <CudaException.h>
 #include <float.h>
 #include <boost/foreach.hpp>
+#include "selection.h"
 
 //////////// Filter
 
@@ -18,11 +19,6 @@ void Filter::invalidateWaveform( const Transform& t, Waveform_chunk& w)
     {
         w.valid_transform_chunks.erase(n);
     }
-}
-
-Filter *Filter::filter()
-{
-    return this;
 }
 
 //////////// FilterChain
@@ -71,9 +67,58 @@ void FilterChain::invalidateWaveform( const Transform& t, Waveform_chunk& w) {
     std::for_each(begin(), end(), invalidate_waveform( t,w ));
 }
 
-int FilterChain::type()
-{
-    return chain_filter;
+
+//////////// SelectionFilter
+
+SelectionFilter::SelectionFilter( Selection s ) {
+		this->s = s;
+}
+
+bool SelectionFilter::operator()( Transform_chunk& chunk) {
+		if(dynamic_cast<RectangleSelection*>(&s))
+		{
+				RectangleSelection *rs = dynamic_cast<RectangleSelection*>(&s);
+				float4 area = make_float4(
+            		rs->p1.time * chunk.sample_rate - chunk.chunk_offset,
+            		rs->p1.scale * chunk.nScales(),
+            		rs->p2.time * chunk.sample_rate - chunk.chunk_offset,
+        		    rs->p2.scale * chunk.nScales());
+    		{
+        		TaskTimer tt(__FUNCTION__);
+
+        		// summarize them all
+        		::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
+              		        chunk.transform_data->getNumberOfElements(),
+          		            area );
+
+      		  CudaException_ThreadSynchronize();
+  		  }
+  		  return true;
+		}else if(dynamic_cast<EllipseSelection*>(&s) != 0)
+		{
+				EllipseSelection *es = dynamic_cast<EllipseSelection*>(&s);
+				float4 area = make_float4(
+            		es->p1.time * chunk.sample_rate - chunk.chunk_offset,
+            		es->p1.scale * chunk.nScales(),
+            		es->p2.time * chunk.sample_rate - chunk.chunk_offset,
+        		    es->p2.scale * chunk.nScales());
+    		{
+        		TaskTimer tt(__FUNCTION__);
+
+        		// summarize them all
+        		::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
+              		        chunk.transform_data->getNumberOfElements(),
+          		            area );
+
+      		  CudaException_ThreadSynchronize();
+  		  }
+  		  return true;
+		}
+		return false;
+}
+
+void SelectionFilter::range(float& start_time, float& end_time) {
+		s.range(start_time, end_time);
 }
 
 //////////// EllipsFilter
@@ -110,10 +155,6 @@ void EllipsFilter::range(float& start_time, float& end_time) {
     end_time = _t1 + fabs(_t1 - _t2);
 }
 
-int EllipsFilter::type()
-{
-    return ellips_filter;
-}
 
 //////////// SquareFilter
 SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_inside) {
@@ -133,7 +174,3 @@ void SquareFilter::range(float& start_time, float& end_time) {
     end_time = _t2;
 }
 
-int SquareFilter::type()
-{
-    return square_filter;
-}

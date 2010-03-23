@@ -68,6 +68,7 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 #include <tvector.h>
 #include <vector>
 #include "transform.h"
+#include "position.h"
 #include "waveform.h"
 
 #ifdef MULTITHREADED_SONICAWE
@@ -89,7 +90,6 @@ struct position {
 class Spectrogram
 {
 public:
-    class Position;
     class Reference;
     class Block;
 #ifdef MULTITHREADED_SONICAWE
@@ -152,16 +152,6 @@ private:
     bool        getNextInvalidChunk( pBlock block, Transform::ChunkIndex* n, bool requireGreaterThanOn =false );
     bool        isInvalidChunk( pBlock block, Transform::ChunkIndex n );
     void        fillStft( pBlock block );
-};
-
-class Spectrogram::Position {
-public:
-    float time, scale;
-
-    Position():time(0), scale(0) { }
-    Position(float time, float scale):time(time), scale(scale) {}
-
-    tvector<2, float> operator()() { return tvector<2, float>(time, scale); }
 };
 
 class Spectrogram::Reference {

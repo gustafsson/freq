@@ -17,7 +17,8 @@ SOURCES += main.cpp \
     transform.cpp \
     waveform.cpp \
     spectrogram-vbo.cpp \
-    spectrogram-renderer.cpp
+    spectrogram-renderer.cpp \
+    selection.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     waveform.h \
@@ -31,7 +32,9 @@ HEADERS += mainwindow.h \
     spectrogram-renderer.h \
     spectrogram-slope.cu.h \
     spectrogram-block.cu.h \
-    filter.cu.h
+    filter.cu.h \
+    selection.h \
+    position.h
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu \
     spectrogram.frag \

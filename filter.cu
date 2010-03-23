@@ -3,6 +3,7 @@
 #include "filter.cu.h"
 
 __global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area );
+__global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area );
 
 
 void removeDisc( float2* wavelet, cudaExtent numElem, float4 area )
@@ -17,6 +18,20 @@ void removeDisc( float2* wavelet, cudaExtent numElem, float4 area )
     }
 
     kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area );
+}
+
+void removeRect( float2* wavelet, cudaExtent numElem, float4 area )
+{
+    // Multiply the coefficients together and normalize the result
+    dim3 block(256,1,1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height, 1);
+
+    if(grid.x>65535) {
+        printf("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+
+    kernel_remove_rect<<<grid, block>>>( wavelet, numElem, area );
 }
 
 __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area )
@@ -49,4 +64,30 @@ __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 a
         wavelet[ x + fi*numElem.width ].x *= f;
         wavelet[ x + fi*numElem.width ].y *= f;
     }
+}
+
+__global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 area )
+{
+    const unsigned
+            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
+            fi = __umul24(blockIdx.y,blockDim.y) + threadIdx.y;
+
+    if (x>=numElem.width )
+        return;
+	float d1x = area.x;
+	float d1y = area.y;
+	float d2x = area.z;
+	float d2y = area.w;
+	float f;
+
+	if(x > d1x && x < d2x && fi > d1y && fi < d2y)
+	{
+		f = 1;
+	}
+	else
+	{
+		f = 0;
+	}
+    wavelet[ x + fi*numElem.width ].x *= f;
+    wavelet[ x + fi*numElem.width ].y *= f;
 }
