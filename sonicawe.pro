@@ -57,18 +57,18 @@ unix:LIBS = -lsndfile \
     -lGLEW \
     -lGLU \
     -lGL \
-#"ifdef MULTITHREADED_SONICAWE"
-#    -lboost_thread-mt \
-#"endif"
+    -lboost_thread-mt \
     -lglut
 macx:INCLUDEPATH += /usr/local/cuda/include
-macx:LIBS += -lsndfile \
+macx:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
     -lcuda \
     -lcufft \
     -L../misc \
-    -lmisc
+    -lmisc \
+    -framework GLUT \
+    -framework OpenGL
 win32:INCLUDEPATH += ..\..\glut \
 	..\..\glew\include \
 	$(BOOST_PATH)
