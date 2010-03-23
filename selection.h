@@ -1,5 +1,6 @@
 #include "position.h"
 #include <vector>
+#include <boost/shared_ptr.hpp>
 
 #ifndef SELECTION_H
 #define SELECTION_H

@@ -955,7 +955,7 @@ void DisplayWidget::setSelection(int index){
     pTransform t = _renderer->spectrogram()->transform();
     FilterChain::iterator i = t->filter_chain.begin();
     std::advance(i, index);
-    EllipsFilter *e = (EllipsFilter*)(i->get()->filter());
+    EllipsFilter *e = (EllipsFilter*)(i->get());
     selection[0].x = e->_t1;
     selection[0].z = e->_f1;
     selection[1].x = e->_t2;
@@ -974,7 +974,7 @@ void DisplayWidget::removeFilter(int index){
     float start, end;
     FilterChain::iterator i = t->filter_chain.begin();
     std::advance(i, index);
-    EllipsFilter *e = (EllipsFilter*)(i->get()->filter());
+    EllipsFilter *e = (EllipsFilter*)(i->get());
     e->range(start, end);
     
     t->filter_chain.erase(i);
