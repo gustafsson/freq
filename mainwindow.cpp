@@ -3,6 +3,10 @@
 #include <QKeyEvent>
 #include "displaywidget.h"
 #include <boost/foreach.hpp>
+#include <sstream>
+#include <iomanip>
+
+using namespace std;
 
 MainWindow::MainWindow(const char* title, QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
@@ -47,7 +51,38 @@ void MainWindow::updateLayerList(pTransform t)
     ui->layerWidget->clear();
     
     BOOST_FOREACH( pFilter f, t->filter_chain ) {
-        ui->layerWidget->addItem("Circle");
+        stringstream title;
+        stringstream tooltip;
+        tooltip << fixed << setprecision(2) << " ";
+
+        if (FilterChain *c = dynamic_cast<FilterChain*>(f.get())) {
+            title << "Chain #" << c->size() << "";
+            tooltip << "Chain contains " << c->size() << " subfilters";
+
+        } else if (EllipsFilter* c = dynamic_cast<EllipsFilter*>(f.get())) {
+            title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
+            tooltip << "Ellips2 p(" << c->_t1 << ", " << c->_f1 << "), r(" << fabsf(c->_t2-c->_t1) << ", " << fabsf(c->_f2-c->_f1) << ")";
+
+        } else if (SquareFilter* c = dynamic_cast<SquareFilter*>(f.get())) {
+            title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
+            tooltip << "Square2 t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
+
+        }/* else if (SelectionFilter* c = dynamic_cast<SelectionFilter>(f.get())) {
+            if (EllipsSelection* c = dynamic_cast<EllipsSelection>(c->selection)) {
+                title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
+                tooltip << "Ellips pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
+
+            } else if (SquareSelection* c = dynamic_cast<SquareSelection>(c->selection)) {
+                title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
+                tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
+        }*/
+        else {
+            title << typeid(*f).name() << ", unknown attributes";
+        }
+
+        QListWidgetItem* itm = new QListWidgetItem( title.str().c_str(), ui->layerWidget, 0 );
+        itm->setToolTip( tooltip.str().c_str() );
+        ui->layerWidget->addItem( itm );
     }
     
     printf("#####Updating: Layers!\n");
