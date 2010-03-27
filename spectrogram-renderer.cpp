@@ -29,7 +29,7 @@ SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
     _initialized(false),
     _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
     _fewest_pixles_per_unit( FLT_MAX ),
-    _fewest_pixles_per_unit_ref(_spectrogram->findReference( Spectrogram::Position(),  Spectrogram::Position())),
+    _fewest_pixles_per_unit_ref(_spectrogram->findReference( Position(),  Position())),
     _drawn_blocks(0)
 {
 }
@@ -259,8 +259,8 @@ void SpectrogramRenderer::draw()
 
     glPushMatrixContext();
 
-    Spectrogram::Position mss = _spectrogram->max_sample_size();
-    Spectrogram::Reference ref = _spectrogram->findReference(Spectrogram::Position(0,0), mss);
+    Position mss = _spectrogram->max_sample_size();
+    Spectrogram::Reference ref = _spectrogram->findReference(Position(0,0), mss);
 
     beginVboRendering();
 
@@ -339,7 +339,7 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref, bool
 
     TaskTimer("drawing").suppressTiming();
 
-    Spectrogram::Position a, b;
+    Position a, b;
     ref.getArea( a, b );
     glPushMatrixContext mc;
 
@@ -372,7 +372,7 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref, bool
 
 bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference ref )
 {
-    Spectrogram::Position a, b;
+    Position a, b;
     ref.getArea( a, b );
     TaskTimer tt("[%g, %g]", a.time, b.time);
 
@@ -592,7 +592,7 @@ static std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_
   */
 bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels )
 {
-    Spectrogram::Position p[2];
+    Position p[2];
     ref.getArea( p[0], p[1] );
 
     GLvector corner[4]=

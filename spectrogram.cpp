@@ -114,12 +114,12 @@ Spectrogram::Reference Spectrogram::findReference( Position p, Position sampleSi
     return r;
 }
 
-Spectrogram::Position Spectrogram::min_sample_size() {
+Position Spectrogram::min_sample_size() {
     return Position( 1.f/transform()->original_waveform()->sample_rate(),
                         1.f/(transform()->number_of_octaves() * transform()->scales_per_octave()) );
 }
 
-Spectrogram::Position Spectrogram::max_sample_size() {
+Position Spectrogram::max_sample_size() {
     pWaveform wf = transform()->original_waveform();
     float length = wf->length();
     Position minima=min_sample_size();

@@ -3,6 +3,7 @@
 
 #include <list>
 #include <boost/shared_ptr.hpp>
+#include "selection.h"
 
 class Transform_chunk;
 class Transform;
@@ -12,9 +13,8 @@ typedef boost::shared_ptr<class Filter> pFilter;
 class Filter
 {
 public:
-    virtual int type() = 0;
-    virtual Filter *filter();
-    
+	  virtual ~Filter() {}
+	  
     virtual bool operator()( Transform_chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;
 
@@ -23,15 +23,26 @@ public:
 
 class FilterChain: public Filter, public std::list<pFilter>
 {
-public:
-    static const int chain_filter = 3;
-    
+public:    
     virtual bool operator()( Transform_chunk& );
     virtual void range(float& start_time, float& end_time);
 
     virtual void invalidateWaveform( const Transform&, Waveform_chunk& );
-    
-    virtual int type();
+};
+
+class SelectionFilter: public Filter
+{
+public:
+    SelectionFilter( Selection s );
+
+    virtual bool operator()( Transform_chunk& );
+    virtual void range(float& start_time, float& end_time);
+
+	  Selection s;
+
+private:
+		SelectionFilter& operator=(const SelectionFilter& );
+		SelectionFilter(const SelectionFilter& );
 };
 
 class EllipsFilter: public Filter
@@ -42,7 +53,6 @@ public:
 
     virtual bool operator()( Transform_chunk& );
     virtual void range(float& start_time, float& end_time);
-    virtual int type();
 
     float _t1, _f1, _t2, _f2;
     
@@ -59,7 +69,6 @@ public:
 
     virtual bool operator()( Transform_chunk& );
     virtual void range(float& start_time, float& end_time);
-    virtual int type();
     
     float _t1, _f1, _t2, _f2;
     
