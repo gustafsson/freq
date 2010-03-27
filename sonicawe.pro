@@ -1,12 +1,13 @@
 # -------------------------------------------------
 # Project created by QtCreator 2009-11-06T11:26:14
 # -------------------------------------------------
+TEMPLATE = app
+win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
 QT += opengl \
     testlib
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
-TEMPLATE = app
 SOURCES += main.cpp \
     mainwindow.cpp \
     displaywidget.cpp \
@@ -43,6 +44,14 @@ CUDA_SOURCES += wavelet.cu \
     spectrogram-slope.cu \
     spectrogram-block.cu \
     filter.cu
+OTHER_SOURCES += spectrogram.frag \
+    spectrogram.vert \
+    sonicawe.pro
+win32 {
+	othersources.input = OTHER_SOURCES
+	othersources.output = ${QMAKE_FILE_NAME}
+	QMAKE_EXTRA_UNIX_COMPILERS += othersources
+}
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../misc
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
@@ -106,7 +115,7 @@ win32 {
         \"$$join(QMAKE_CXXFLAGS," ")\" \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         --use_fast_math \
-        ${QMAKE_FILE_NAME} \
+        ${QMAKE_FILE_BASE}.cu \
         -o \
         ${QMAKE_FILE_OUT}
 }
@@ -186,5 +195,4 @@ macx {
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
-
 # end of cuda section #######################################################################
