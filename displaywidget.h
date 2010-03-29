@@ -83,56 +83,55 @@ private:
     boost::shared_ptr<SpectrogramRenderer> _renderer;
     boost::shared_ptr<Transform> _transform;
     
-    struct ListCounter {
-        GLuint displayList;
-        enum Age {
-            Age_JustCreated,
-            Age_InUse,
-            Age_ProposedForRemoval
-        } age;
-        //ListAge age;
-    };
-    std::map<void*, ListCounter> _chunkGlList;
-    
-    QTimer *_timer;
-    float _px, _py, _pz,
-    _rx, _ry, _rz,
-    _qx, _qy, _qz;
-    int _prevX, _prevY, _targetQ;
-    
-    void drawArrows();
-    void drawColorFace();
-    void drawWaveform( pWaveform waveform );
-    static void drawWaveform_chunk_directMode( pWaveform_chunk chunk);
-    static void drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer );
-    template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw=false );
-    
-    bool _enqueueGcDisplayList;
-    void gcDisplayList();
-    
-    GLint viewport[4];
-    GLdouble modelMatrix[16];
-    GLdouble projectionMatrix[16];
-    
-    MyVector v1, v2;
-    MyVector selection[2];
-    bool selecting;
-    
+	struct ListCounter {
+	  GLuint displayList;
+	  enum Age {
+		  Age_JustCreated,
+		  Age_InUse,
+		  Age_ProposedForRemoval
+	  } age;
+	  //ListAge age;
+	};
+	std::map<void*, ListCounter> _chunkGlList;
+
+	QTimer *_timer;
+	float _px, _py, _pz,
+		_rx, _ry, _rz,
+		_qx, _qy, _qz;
+	int _prevX, _prevY, _targetQ;
+
+	void drawArrows();
+	void drawColorFace();
+	void drawWaveform( Signal::pSource waveform );
+	static void drawWaveform_chunk_directMode( Signal::pBuffer chunk);
+	static void drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer );
+	template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw=false );
+
+	bool _enqueueGcDisplayList;
+	void gcDisplayList();
+
+	GLint viewport[4];
+	GLdouble modelMatrix[16];
+	GLdouble projectionMatrix[16];
+
+	MyVector v1, v2;
+	MyVector selection[2];
+	bool selecting;
+
     void setSelection(int i);
     void removeFilter(int i);
-    
-    void drawSelection();
-    void drawSelectionCircle();
-    void drawSelectionCircle2();
-    void drawSelectionSquare();
-    
-    bool insideCircle( float x1, float z1 );
-    
-    
-    MouseControl leftButton;
-    MouseControl rightButton;
-    MouseControl middleButton;
-    MouseControl selectionButton;
+
+	void drawSelection();
+	void drawSelectionCircle();
+	void drawSelectionCircle2();
+	void drawSelectionSquare();
+	bool insideCircle( float x1, float z1 );
+
+
+	MouseControl leftButton;
+	MouseControl rightButton;
+	MouseControl middleButton;
+	MouseControl selectionButton;
 };
 
 #endif // DISPLAYWIDGET_H

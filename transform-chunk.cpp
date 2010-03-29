@@ -1,4 +1,4 @@
-#include "transform-chunk.h"
+#include "transform.h"
 
 #include <math.h>
 
@@ -44,3 +44,4 @@ unsigned Transform_chunk::getFrequencyIndex( float f ) const
 
     return fi;
 }
+

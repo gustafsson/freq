@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "mainwindow.h"
 #include "displaywidget.h"
+#include "signal-audiofile.h"
 #include <sstream>
 #include <CudaProperties.h>
 #include <QtGui/QMessageBox>
@@ -276,7 +277,7 @@ int main(int argc, char *argv[])
     }
 
     try {
-        boost::shared_ptr<Waveform> wf( new Waveform( _soundfile.c_str() ) );
+        boost::shared_ptr<Signal::Source> wf( new Signal::Audiofile( _soundfile.c_str() ) );
         boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
 
         if (_extract_chunk != (unsigned)-1) {

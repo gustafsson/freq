@@ -16,13 +16,18 @@ SOURCES += main.cpp \
     filter.cpp \
     transform-chunk.cpp \
     transform.cpp \
-    waveform.cpp \
     spectrogram-vbo.cpp \
     spectrogram-renderer.cpp \
-    selection.cpp
+    selection.cpp \
+    signal-source.cpp \
+    signal-audiofile.cpp \
+    signal-microphonerecorder.cpp \
+    signal-operation.cpp \
+    signal-invalidsamplesdescriptor.cpp \
+    signal-playback.cpp \
+    signal-sink.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
-    waveform.h \
     spectrogram.h \
     transform-inverse.h \
     filter.h \
@@ -35,7 +40,14 @@ HEADERS += mainwindow.h \
     spectrogram-block.cu.h \
     filter.cu.h \
     selection.h \
-    position.h
+    position.h \
+    signal-source.h \
+    signal-audiofile.h \
+    signal-microphonerecorder.h \
+    signal-operation.h \
+    signal-invalidsamplesdescriptor.h \
+    signal-playback.h \
+    signal-sink.h
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu \
     spectrogram.frag \
@@ -70,7 +82,8 @@ unix:LIBS = -lsndfile \
     -lGLU \
     -lGL \
     -lboost_thread-mt \
-    -lglut
+    -lglut \
+    -lportaudiocpp -lportaudio
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS = -lsndfile \
     -laudiere \

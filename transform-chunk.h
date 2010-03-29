@@ -18,6 +18,7 @@ public:
       See getNearestCoeff for an example on how to find f_index.
     */
     boost::scoped_ptr<GpuCpuData<float2> > transform_data;
+    Signal::pBuffer computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
 
     float min_hz, max_hz;
     unsigned chunk_offset;

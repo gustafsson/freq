@@ -9,7 +9,7 @@
 
 //////////// Filter
 
-void Filter::invalidateWaveform( const Transform& t, Waveform_chunk& w)
+void Filter::invalidateWaveform( const Transform& t, Signal::Buffer& w)
 {
     float start,end;
     range(start,end);
@@ -54,16 +54,16 @@ void FilterChain::range(float& start_time, float& end_time) {
 class invalidate_waveform
 {
     const Transform& t;
-    Waveform_chunk& w;
+    Signal::Buffer& w;
 public:
-    invalidate_waveform( const Transform& t, Waveform_chunk& w):t(t),w(w) {}
+    invalidate_waveform( const Transform& t, Signal::Buffer& w):t(t),w(w) {}
 
     void operator()( pFilter p) {
         p->invalidateWaveform(t,w);
     }
 };
 
-void FilterChain::invalidateWaveform( const Transform& t, Waveform_chunk& w) {
+void FilterChain::invalidateWaveform( const Transform& t, Signal::Buffer& w) {
     std::for_each(begin(), end(), invalidate_waveform( t,w ));
 }
 

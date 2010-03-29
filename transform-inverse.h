@@ -18,7 +18,9 @@ length dt.
 */
 
 #include <boost/shared_ptr.hpp>
-#include "waveform.h"
+#include "signal-source.h"
+#include "transform-chunk.h"
+#include "filter.h"
 
 typedef boost::shared_ptr<class Filter> pFilter;
 
@@ -27,16 +29,32 @@ class Transform_inverse
 public:
     class Callback {
     public:
-        virtual void transform_inverse_callback(pWaveform_chunk chunk)=0;
+        virtual void transform_inverse_callback(Signal::pBuffer chunk)=0;
     };
 
-    Transform_inverse(pWaveform waveform, Callback* callback);
+    Transform_inverse( Signal::pSource waveform, Callback* callback, class Transform* temp_to_remove );
 
     void compute_inverse( float startt, float endt, pFilter filter );
 
+    Signal::pBuffer         computeInverse( float start=0, float end=-1);
+    Signal::pBuffer computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
+    Signal::pSource get_inverse_waveform();
+    void      setInverseArea(float t1, float f1, float t2, float f2);
+    void      recompute_filter(pFilter);
+
+    void                merge_chunk(Signal::pBuffer r, pTransform_chunk transform);
+    Signal::pBuffer     prepare_inverse(float start, float end);
+    void      play_inverse();
+
+    EllipsFilter built_in_filter;
 private:
-    pWaveform _waveform;
+    Signal::pSource _original_waveform;
     Callback* _callback;
+    Transform* _temp_to_remove;
+    Signal::pSource _inverse_waveform;
+
+    boost::shared_ptr<TaskTimer> filterTimer;
+    float _t1, _f1, _t2, _f2;
 };
 
 #endif // TRANSFORMINVERSE_H

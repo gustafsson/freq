@@ -4,22 +4,23 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include "selection.h"
+#include "signal-source.h"
 
 class Transform_chunk;
 class Transform;
-class Waveform_chunk;
-typedef boost::shared_ptr<class Filter> pFilter;
 
 class Filter
 {
 public:
-	  virtual ~Filter() {}
+      virtual ~Filter() {}
 	  
     virtual bool operator()( Transform_chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;
 
-    virtual void invalidateWaveform( const Transform&, Waveform_chunk& );
+    virtual void invalidateWaveform( const Transform&, Signal::Buffer& );
 };
+
+typedef boost::shared_ptr<class Filter> pFilter;
 
 class FilterChain: public Filter, public std::list<pFilter>
 {
@@ -27,7 +28,7 @@ public:
     virtual bool operator()( Transform_chunk& );
     virtual void range(float& start_time, float& end_time);
 
-    virtual void invalidateWaveform( const Transform&, Waveform_chunk& );
+    virtual void invalidateWaveform( const Transform&, Signal::Buffer& );
 };
 
 class SelectionFilter: public Filter

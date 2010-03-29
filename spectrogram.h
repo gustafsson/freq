@@ -69,10 +69,10 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 #include <vector>
 #include "transform.h"
 #include "position.h"
-#include "waveform.h"
 
 #ifdef MULTITHREADED_SONICAWE
 #include <boost/thread/condition_variable.hpp>
+#include "signal-source.h"
 #include <QThread>
 #endif
 

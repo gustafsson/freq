@@ -19,6 +19,8 @@
 #include <GLUT/glut.h>
 #endif
 #include <stdio.h>
+#include "signal-audiofile.h"
+#include "signal-playback.h"
 
 #undef max
 
@@ -171,7 +173,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     selection[0].x = selection[1].x;
     selection[0].z = selection[1].z;
 
-    _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
 
     yscale = Yscale_LogLinear;
     timeOut();
@@ -213,7 +215,17 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
     switch (lastKey )
     {
         case ' ':
-            _transform->play_inverse();
+            // TODO use Signal::Playback
+            /*Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
+            Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
+            Signal::Playback::list_devices();
+
+            Signal::Playback pb;
+            pb.expected_samples_left(0);
+            pb.put( s->read( 0, s->number_of_samples() ) );
+            TaskTimer tt("Playing");
+            sleep(1);*/
+            _transform->inverse()->play_inverse();
             break;
         case 'c': case 'C':
         {
@@ -237,7 +249,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         }
         case 'a': case 'A': case '\n': case '\r':
         {
-            pFilter f(new EllipsFilter( t->built_in_filter ) );
+            pFilter f(new EllipsFilter( t->inverse()->built_in_filter ) );
 
             t->filter_chain.push_back(f);
             t->recompute_filter(f);
@@ -377,9 +389,9 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         selection[1].x = p[0];
         selection[1].y = 0;
         selection[1].z = p[1];
-        _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+        _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
         if (_transform != _renderer->spectrogram()->transform())
-            _transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+            _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
       }
     }
   } else {
@@ -431,7 +443,19 @@ void DisplayWidget::timeOut()
 
   if(selectionButton.isDown() && selectionButton.getHold() == 5)
   {
-    _transform->play_inverse();
+    _transform->inverse()->play_inverse();
+/*      // TODO use Signal::Playback
+        Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
+        Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
+        Signal::Playback::list_devices();
+
+        Signal::Playback pb;
+        pb.expected_samples_left(0);
+        pb.put( s->read( 0, s->number_of_samples() ) );
+        TaskTimer tt("Playing");
+        sleep(3);
+        // if(a) a->play();
+*/
   }
 }
 
@@ -456,7 +480,7 @@ void DisplayWidget::open_inverse_test(std::string soundfile)
         }
         soundfile = fileName.toStdString();
     }
-    boost::shared_ptr<Waveform> wf( new Waveform( soundfile.c_str() ) );
+    boost::shared_ptr<Signal::Source> wf( new Signal::Audiofile( soundfile.c_str() ) );
     boost::shared_ptr<Transform> t = _renderer->spectrogram()->transform();
 
     _transform.reset();
@@ -464,13 +488,13 @@ void DisplayWidget::open_inverse_test(std::string soundfile)
 
     try
     {
-        _transform->get_inverse_waveform();
+        _transform->inverse()->get_inverse_waveform();
     } catch (const CudaException& x) {
         _renderer->spectrogram()->gc();
-        _transform->get_inverse_waveform();
+        _transform->inverse()->get_inverse_waveform();
     }
 
-    _transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
 }
 
 void DisplayWidget::initializeGL()
@@ -538,25 +562,31 @@ void DisplayWidget::paintGL()
 
     orthoview.TimeStep(.08);
 
-    pWaveform inv = _renderer->spectrogram()->transform()->get_inverse_waveform(),
-		inv2;
-	if (0) {
+    Signal::pSource invs = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform(),
+                inv2s;
+    Signal::Audiofile* inv = dynamic_cast<Signal::Audiofile*>( invs.get() ),
+                     * inv2 = 0;
+
+        if (0) {
 		glPushMatrix();
 			glTranslatef( 0, 0, 1.25f );
 			glScalef(1, 1, .15);
 			glColor4f(0,1,0,1);
 			{
 				TaskTimer tt("drawWaveform( inverse )");
-				drawWaveform(inv);
+                                drawWaveform(invs);
 				// drawWaveform(inv = _transform->get_inverse_waveform());
 				if( _transform != _renderer->spectrogram()->transform() )
 				{
-					inv2 = _transform->get_inverse_waveform();
-					pWaveform_chunk chunk = inv2->getChunkBehind();
+                                    inv2s = _transform->inverse()->get_inverse_waveform();
+                                    inv2 = dynamic_cast<Signal::Audiofile*>( inv2s.get() );
+                                    if (inv2) {
+                                        Signal::pBuffer chunk = inv2->getChunkBehind();
 					if (chunk->modified) {
 						update();
 						chunk->modified=false;
 					}
+                                    }
 				}
 
 			}
@@ -675,10 +705,12 @@ void DisplayWidget::drawColorFace()
 }
 
 
-void DisplayWidget::drawWaveform(pWaveform waveform)
+void DisplayWidget::drawWaveform(Signal::pSource /*waveform*/)
 {
     //static pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
-    pWaveform_chunk chunk = waveform->getChunkBehind();
+    // TODO draw waveform
+    /*Signal::pBuffer chunk = waveform.get()->getChunkBehind();
+    draw_glList<Signal::Buffer>( chunk, DisplayWidget::drawWaveform_chunk_directMode, chunk->modified );
     if (chunk->modified) {
         chunk->was_modified = true;
         drawWaveform_chunk_directMode( chunk );
@@ -690,9 +722,10 @@ void DisplayWidget::drawWaveform(pWaveform waveform)
     } else {
         draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode, false );
     }
+    */
 }
 
-void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
+void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
 {
     TaskTimer tt(__FUNCTION__);
     cudaExtent n = chunk->waveform_data->getNumberOfElements();
