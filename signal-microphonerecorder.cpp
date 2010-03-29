@@ -1,4 +1,9 @@
 #include "signal-microphonerecorder.h"
+#include <iostream>
+#include <memory.h>
+#include <boost/foreach.hpp>
+
+using namespace std;
 
 namespace Signal {
 
@@ -26,12 +31,17 @@ MicrophoneRecorder::MicrophoneRecorder()
             frames_per_buffer,
             paClipOff);
 
-    streamRecord.reset( new portaudio::MemFunCallbackStream<MicrophoneRecorder>(
+    _stream_record.reset( new portaudio::MemFunCallbackStream<MicrophoneRecorder>(
             paramsRecord,
             *this,
             &MicrophoneRecorder::writeBuffer));
 }
 
+MicrophoneRecorder::~MicrophoneRecorder()
+{
+    _stream_record->stop();
+    _stream_record->close();
+}
 
 pBuffer MicrophoneRecorder::
         read( unsigned firstSample, unsigned numberOfSamples )
@@ -50,33 +60,28 @@ pBuffer MicrophoneRecorder::
     {
         // count previous samples
         for (; iBuffer<_cache.size(); iBuffer++) {
-            if (_playback_itr < nAccumulated_samples + _cache[iBuffer]->number_of_samples() )
+            if (firstSample < nAccumulated_samples + _cache[iBuffer]->number_of_samples() )
                 break;
             nAccumulated_samples += _cache[iBuffer]->number_of_samples();
         }
 
-        if (buffer>=_cache.size())
+        if (iBuffer>=_cache.size())
         {
-            memset(outputBuffer, 0, numberOfSamples*sizeof(float));
-            streamPlayback->stop();
-            streamPlayback->close();
-            streamPlayback.reset();
+            memset(buffer, 0, numberOfSamples*sizeof(float));
             numberOfSamples = 0;
         } else {
             r = 0;
 
-            const BufferSlot& s = _cache[iBuffer];
+            unsigned nBytes_to_copy = nAccumulated_samples + _cache[iBuffer]->number_of_samples() - firstSample;
+            if (numberOfSamples < nBytes_to_copy )
+                nBytes_to_copy = numberOfSamples;
 
-            unsigned nBytes_to_copy = nAccumulated_samples + _cache[iBuffer]->number_of_samples() - _playback_itr;
-            if (framesPerBuffer < bytesToCopy )
-                nBytes_to_copy = framesPerBuffer;
-
-            memcpy( outputBuffer,
-                    &_cache[iBuffer]->getCpuMemory()[ _playback_itr - nAccumulated_samples ],
+            memcpy( buffer,
+                    &_cache[iBuffer]->waveform_data->getCpuMemory()[ firstSample - nAccumulated_samples ],
                     nBytes_to_copy);
 
             numberOfSamples -= nBytes_to_copy;
-            _playback_itr += nBytes_to_copy;
+            firstSample += nBytes_to_copy;
         }
     }
 
@@ -114,12 +119,12 @@ int MicrophoneRecorder::
         writeBuffer(const void *inputBuffer,
                  void */*outputBuffer*/,
                  unsigned long framesPerBuffer,
-                 const PaStreamCallbackTimeInfo *timeInfo,
-                 PaStreamCallbackFlags statusFlags)
+                 const PaStreamCallbackTimeInfo */*timeInfo*/,
+                 PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( inputBuffer );
-    float **in = static_cast<float **>(inputBuffer);
-    float *buffer = in[0];
+    const float **in = (const float **)inputBuffer;
+    const float *buffer = in[0];
 
     pBuffer b( new Buffer() );
     b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent( framesPerBuffer, 1, 1) ) );

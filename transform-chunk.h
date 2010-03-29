@@ -4,12 +4,13 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
-#include "transform.h"
 
-class Transform::Chunk
+typedef boost::shared_ptr<class Transform_chunk> pTransform_chunk;
+
+class Transform_chunk
 {
 public:
-    Chunk( );
+    Transform_chunk( );
 
     /**
       transform_data contains the wavelet transform rowwise.
@@ -17,6 +18,7 @@ public:
       See getNearestCoeff for an example on how to find f_index.
     */
     boost::scoped_ptr<GpuCpuData<float2> > transform_data;
+    Signal::pBuffer computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
 
     float min_hz, max_hz;
     unsigned chunk_offset;

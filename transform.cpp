@@ -11,10 +11,11 @@
 #include <string.h>
 #include "wavelet.cu.h"
 #include <msc_stdc.h>
+#include "signal-audiofile.h"
 
 using namespace std;
 
-Transform::Transform( pWaveform waveform, unsigned channel, unsigned samples_per_chunk, unsigned scales_per_octave, float wavelet_std_t )
+Transform::Transform( Signal::pSource waveform, unsigned channel, unsigned samples_per_chunk, unsigned scales_per_octave, float wavelet_std_t )
 :   _original_waveform( waveform ),
     _channel( channel ),
     _scales_per_octave( scales_per_octave ),
@@ -40,7 +41,6 @@ Transform::Transform( pWaveform waveform, unsigned channel, unsigned samples_per
     space for roughly 6 chunks (leaving about 137 MB for other purposes).
     */
 
-    _t1 = _f1 = _t2 = _f2 = 0;
     this->wavelet_std_t( wavelet_std_t );
 
     CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
@@ -121,9 +121,10 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
                  n_valid/(float)_original_waveform->sample_rate(),
                  n_samples/(float)_original_waveform->sample_rate());
 
-    pWaveform_chunk wave = _original_waveform->getChunk(
+    Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(_original_waveform.get());
+    Signal::pBuffer wave = a->getChunk(
             offs, n_samples, _channel,
-            Waveform_chunk::Interleaved_Complex);
+            Signal::Buffer::Interleaved_Complex);
 
     /*
     static cudaStream_t previousStream = -1;
@@ -195,7 +196,7 @@ void Transform::wavelet_std_t( float value ) {
 }
 
 
-void Transform::original_waveform( pWaveform value ) {
+void Transform::original_waveform( Signal::pSource value ) {
     if (value==_original_waveform) return;
     gc();
     _original_waveform=value;
@@ -227,6 +228,12 @@ pTransform_chunk Transform::previous_chunk( unsigned &out_chunk_index ) {
     }
 
     return _intermediate_wt;
+}
+
+boost::shared_ptr<Transform_inverse> Transform::inverse()
+{
+    static boost::shared_ptr<Transform_inverse> p ( new Transform_inverse( this->_original_waveform, 0, this ) );
+    return p;
 }
 
 #ifdef _USE_CHUNK_CACHE
@@ -289,7 +296,7 @@ static void cufftSafeCall( cufftResult_t cufftResult) {
 }
 
 
-pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cudaStream_t stream )
+pTransform_chunk Transform::computeTransform( Signal::pBuffer waveform_chunk, cudaStream_t stream )
 {
     bool someWhatAccurateTiming = true;
 
@@ -301,8 +308,8 @@ pTransform_chunk Transform::computeTransform( pWaveform_chunk waveform_chunk, cu
         unsigned nFrequencies = _scales_per_octave*octaves;
 
         // The waveform must be complex interleaved
-        if (Waveform_chunk::Interleaved_Complex != waveform_chunk->interleaved())
-            waveform_chunk = waveform_chunk->getInterleaved( Waveform_chunk::Interleaved_Complex );
+        if (Signal::Buffer::Interleaved_Complex != waveform_chunk->interleaved())
+            waveform_chunk = waveform_chunk->getInterleaved( Signal::Buffer::Interleaved_Complex );
 
         cudaExtent requiredFtSz = make_cudaExtent( waveform_chunk->waveform_data->getNumberOfElements().width/2, 1, 1 );
         // The in-signal is be padded to a power of 2 for faster calculations (or rather, "power of a small prime")

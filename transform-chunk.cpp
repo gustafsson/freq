@@ -1,4 +1,4 @@
-#include "transform-chunk.h"
+#include "transform.h"
 
 #include <math.h>
 
@@ -45,54 +45,3 @@ unsigned Transform_chunk::getFrequencyIndex( float f ) const
     return fi;
 }
 
-pWaveform_chunk Transform_chunk::computeInverse( pTransform_chunk chunk, cudaStream_t stream ) {
-    cudaExtent sz = make_cudaExtent( chunk->n_valid_samples, 1, 1);
-
-    pWaveform_chunk r( new Waveform_chunk());
-    r->sample_offset = chunk->chunk_offset + chunk->first_valid_sample;
-    r->sample_rate = chunk->sample_rate;
-    r->waveform_data.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
-
-    float4 area = make_float4(
-            _t1 * _original_waveform->sample_rate() - r->sample_offset,
-            _f1 * nScales(),
-            _t2 * _original_waveform->sample_rate() - r->sample_offset,
-            _f2 * nScales());
-    {
-        TaskTimer tt(__FUNCTION__);
-
-        // summarize them all
-        ::wtInverse( chunk->transform_data->getCudaGlobal().ptr() + chunk->first_valid_sample,
-                     r->waveform_data->getCudaGlobal().ptr(),
-                     chunk->transform_data->getNumberOfElements(),
-                     area,
-                     chunk->n_valid_samples,
-                     stream );
-
-        CudaException_ThreadSynchronize();
-    }
-
-/*    {
-        TaskTimer tt("inverse corollary");
-
-        size_t n = r->waveform_data->getNumberOfElements1D();
-        float* data = r->waveform_data->getCpuMemory();
-        pWaveform_chunk originalChunk = _original_waveform->getChunk(chunk->sample_offset, chunk->nSamples(), _channel);
-        float* orgdata = originalChunk->waveform_data->getCpuMemory();
-
-        double sum = 0, orgsum=0;
-        for (size_t i=0; i<n; i++) {
-            sum += fabsf(data[i]);
-        }
-        for (size_t i=0; i<n; i++) {
-            orgsum += fabsf(orgdata[i]);
-        }
-        float scale = orgsum/sum;
-        for (size_t i=0; i<n; i++)
-            data[i] *= scale;
-        tt.info("scales %g, %g, %g", sum, orgsum, scale);
-
-        r->writeFile("outtest.wav");
-    }*/
-    return r;
-}

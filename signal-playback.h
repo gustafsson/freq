@@ -32,6 +32,7 @@ private:
                      const PaStreamCallbackTimeInfo *timeInfo,
                      PaStreamCallbackFlags statusFlags);
 
+    portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<Playback> > streamPlayback;
 
     std::vector<BufferSlot> _cache;

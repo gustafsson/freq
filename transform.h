@@ -1,8 +1,9 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "transform-chunk.h"
-#include "waveform.h"
+#include "signal-source.h"
+#include "signal-sink.h"
+#include "transform-inverse.h"
 #include <boost/shared_ptr.hpp>
 #include <map>
 
@@ -14,11 +15,10 @@ class Transform
 {
 public:
     typedef boost::shared_ptr<class Inverse> pInverse;
-    typedef boost::shared_ptr<class Chunk> pChunk;
 
     typedef unsigned ChunkIndex;
 
-    Transform( pWaveform waveform,
+    Transform( Signal::pSource source,
                unsigned channel,
                unsigned samples_per_chunk,
                unsigned scales_per_octave,
@@ -27,7 +27,6 @@ public:
 
     ChunkIndex             getChunkIndex( unsigned including_sample );
     pTransform_chunk       getChunk( ChunkIndex n, cudaStream_t stream=0 );
-    pWaveform_chunk        computeInverse( float start=0, float end=-1);
 
     /* discard cached data, releases all GPU memory */
     void     gc();
@@ -42,8 +41,8 @@ public:
     void      samples_per_chunk( unsigned );
     float     wavelet_std_t() const { return _wavelet_std_samples/(float)_original_waveform->sample_rate(); }
     void      wavelet_std_t( float );
-    pWaveform original_waveform() { return _original_waveform; }
-    void      original_waveform( pWaveform );
+    Signal::pSource original_waveform() { return _original_waveform; }
+    void      original_waveform( Signal::pSource );
     float     number_of_octaves() const;
     unsigned  nScales() { return number_of_octaves() * scales_per_octave(); }
     float     min_hz() const { return _min_hz; }
@@ -60,7 +59,7 @@ private:
     pTransform_chunk releaseChunkFurthestAwayFrom( ChunkIndex n );
     void             clampTransform( pTransform_chunk out_chunk, pTransform_chunk in_transform, cudaStream_t stream );
 #endif // #ifdef _USE_CHUNK_CACHE
-    pTransform_chunk computeTransform( pWaveform_chunk chunk, cudaStream_t stream );
+    pTransform_chunk computeTransform( Signal::pBuffer chunk, cudaStream_t stream );
 
     /* caches */
 #ifdef _USE_CHUNK_CACHE
@@ -71,8 +70,7 @@ private:
     boost::shared_ptr<GpuCpuData<float2> >  _intermediate_ft;
 
     /* property values */
-    pWaveform _original_waveform;
-    pWaveform _inverse_waveform;
+    Signal::pSource _original_waveform;
     unsigned  _channel;
     unsigned  _scales_per_octave;
     unsigned  _samples_per_chunk;
@@ -82,11 +80,6 @@ private:
     cufftHandle _fft_many;
     cufftHandle _fft_single;
     unsigned _fft_width;
-
-    // TODO move into some filter
-    float _t1, _f1, _t2, _f2;
-    boost::shared_ptr<TaskTimer> filterTimer;
-
 };
 
 #endif // TRANSFORM_H

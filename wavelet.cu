@@ -32,7 +32,7 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleR
     float steplogsize = log(maxHz)-log(minHz);
 
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(numElem.width, block.x), numElem.depth, 1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.depth, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
@@ -94,7 +94,7 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(numElem.width, block.x), 1, 1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), 1, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
@@ -160,7 +160,7 @@ void wtClamp( float2* in_wt, cudaExtent in_numElem, size_t in_offset, size_t las
 
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(out_numElem.width, block.x), out_numElem.height, out_numElem.depth );
+    dim3 grid( int_div_ceil(out_numElem.width, block.x), out_numElem.height, out_numElem.depth );
 
     if(grid.x>65535) {
         setError("Invalid argument, first dimension of wavelet transform must be less than 65535*256 ~ 16 Mi.");
@@ -208,7 +208,7 @@ void removeDisc( float2* wavelet, cudaExtent numElem, float4 area )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
-    dim3 grid( INTDIV_CEIL(numElem.width, block.x), numElem.height*numElem.depth, 1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height*numElem.depth, 1);
 
     if(grid.x>65535) {
         printf("Invalid argument, number of floats in complex signal must be less than 65535*256.");

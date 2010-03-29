@@ -69,7 +69,7 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 #include <tvector.h>
 #include <vector>
 #include "transform.h"
-#include "waveform.h"
+#include "signal-source.h"
 #include <QThread>
 
 typedef boost::shared_ptr<class Filter> pFilter;

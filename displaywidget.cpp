@@ -11,6 +11,8 @@
 #include <math.h>
 #include <GL/glut.h>
 #include <stdio.h>
+#include "signal-audiofile.h"
+#include "signal-playback.h"
 
 #ifdef _MSC_VER
 #define M_PI 3.1415926535
@@ -157,7 +159,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     selection[1].y = 0;
     selection[1].z = 2;
 
-    _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
 
     yscale = Yscale_LogLinear;
     timeOut();
@@ -175,7 +177,18 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
 	lastKey = e->key();
         if(lastKey == ' ' ){
-            _renderer->spectrogram()->transform()->get_inverse_waveform()->play();
+            // TODO use Signal::Playback
+            Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
+            Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
+            Signal::Playback::list_devices();
+
+            Signal::Playback pb;
+            pb.expected_samples_left(0);
+            pb.put( s->read( 0, s->number_of_samples() ) );
+            TaskTimer tt("Playing");
+            sleep(1);
+
+            // if(a) {TaskTimer t2("a->play"); a->play();}
 	}
 }
 
@@ -290,7 +303,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         selection[1].x = p[0];
         selection[1].y = 0;
         selection[1].z = p[1];
-        _renderer->spectrogram()->transform()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+        _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
       }
     }
   } else {
@@ -342,7 +355,17 @@ void DisplayWidget::timeOut()
 
   if(selectionButton.isDown() && selectionButton.getHold() == 5)
   {
-    _renderer->spectrogram()->transform()->get_inverse_waveform()->play();
+      // TODO use Signal::Playback
+        Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
+        Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
+        Signal::Playback::list_devices();
+
+        Signal::Playback pb;
+        pb.expected_samples_left(0);
+        pb.put( s->read( 0, s->number_of_samples() ) );
+        TaskTimer tt("Playing");
+        sleep(3);
+        // if(a) a->play();
   }
 }
 
@@ -423,13 +446,13 @@ void DisplayWidget::paintGL()
 
     orthoview.TimeStep(.08);
 
-    glPushMatrix();
+/*    glPushMatrix();
         glTranslatef( 0, 0, 1.25f );
         glScalef(1, 1, .15);
         glColor4f(0,1,0,1);
         {
             TaskTimer tt("drawWaveform( inverse )");
-            drawWaveform(_renderer->spectrogram()->transform()->get_inverse_waveform());
+            drawWaveform(_renderer->spectrogram()->transform()->inverse()->get_inverse_waveform());
         }
         glTranslatef( 0, 0, 2.f );
         glColor4f(0,0,0,1);
@@ -438,7 +461,7 @@ void DisplayWidget::paintGL()
             drawWaveform(_renderer->spectrogram()->transform()->original_waveform());
         }
     glPopMatrix();
-
+*/
     _renderer->draw();
 
     draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode );
@@ -504,18 +527,19 @@ void DisplayWidget::drawColorFace()
 }
 
 
-void DisplayWidget::drawWaveform(pWaveform waveform)
+void DisplayWidget::drawWaveform(Signal::pSource /*waveform*/)
 {
     //static pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
-    pWaveform_chunk chunk = waveform->getChunkBehind();
-    draw_glList<Waveform_chunk>( chunk, DisplayWidget::drawWaveform_chunk_directMode, chunk->modified );
+    // TODO draw waveform
+    /*Signal::pBuffer chunk = waveform.get()->getChunkBehind();
+    draw_glList<Signal::Buffer>( chunk, DisplayWidget::drawWaveform_chunk_directMode, chunk->modified );
     if (chunk->modified) {
         update();
         chunk->modified=false;
-    }
+    }*/
 }
 
-void DisplayWidget::drawWaveform_chunk_directMode( pWaveform_chunk chunk)
+void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
 {
     cudaExtent n = chunk->waveform_data->getNumberOfElements();
     const float* data = chunk->waveform_data->getCpuMemory();

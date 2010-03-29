@@ -145,6 +145,9 @@ void Audiofile::writeFile( const char* filename )
     //play();
 }
 
+pBuffer Audiofile::read( unsigned firstSample, unsigned numberOfSamples ) {
+    return  getChunk( firstSample, numberOfSamples, 0, Buffer::Only_Real );
+}
 
 /* returns a chunk with numberOfSamples samples. If the requested range exceeds the source signal it is padded with 0. */
 pBuffer Audiofile::getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved )
@@ -385,4 +388,7 @@ public:
     virtual const char* getTagType(int i) { return 0; }
 };
 */
+unsigned Audiofile::sample_rate() {          return _waveform->sample_rate;    }
+unsigned Audiofile::number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
+
 } // namespace Signal

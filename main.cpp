@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "mainwindow.h"
 #include "displaywidget.h"
+#include "signal-audiofile.h"
 #include <sstream>
 
 using namespace std;
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
     }
 
     try {
-        boost::shared_ptr<Waveform> wf( new Waveform( _soundfile.c_str() ) );
+        boost::shared_ptr<Signal::Source> wf( new Signal::Audiofile( _soundfile.c_str() ) );
         boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
         boost::shared_ptr<Spectrogram> sg( new Spectrogram(wt, _samples_per_block, _scales_per_block  ) );
         boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg ) );

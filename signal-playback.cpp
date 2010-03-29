@@ -180,9 +180,6 @@ int Playback::
         if (iBuffer >= _cache.size())
         {
             memset(buffer, 0, framesPerBuffer*sizeof(float));
-            streamPlayback->stop();
-            streamPlayback->close();
-            streamPlayback.reset();
             framesPerBuffer = 0;
         } else {
             r = paContinue;

@@ -50,7 +50,7 @@ Spectrogram::Reference Spectrogram::findReference( Position p, Position sampleSi
     Spectrogram::Reference r(this);
 
     // make sure the reference becomes valid
-    pWaveform wf = transform()->original_waveform();
+    Signal::pSource wf = transform()->original_waveform();
     float length = wf->length();
 
     // Validate requested sampleSize
@@ -108,7 +108,7 @@ Spectrogram::Position Spectrogram::min_sample_size() {
 }
 
 Spectrogram::Position Spectrogram::max_sample_size() {
-    pWaveform wf = transform()->original_waveform();
+    Signal::pSource wf = transform()->original_waveform();
     float length = wf->length();
     Position minima=min_sample_size();
 
@@ -572,7 +572,7 @@ bool Spectrogram::Reference::containsSpectrogram() const
         return false;
 
     pTransform t = _spectrogram->transform();
-    pWaveform wf = t->original_waveform();
+    Signal::pSource wf = t->original_waveform();
     if (a.time >= wf->length() )
         return false;
 
@@ -587,7 +587,7 @@ bool Spectrogram::Reference::toLarge() const
     Position a, b;
     getArea( a, b );
     pTransform t = _spectrogram->transform();
-    pWaveform wf = t->original_waveform();
+    Signal::pSource wf = t->original_waveform();
     if (b.time > 2 * wf->length() && b.scale > 2 )
         return true;
     return false;
