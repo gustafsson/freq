@@ -1,10 +1,5 @@
-#ifndef WAVEFORM_H
-#define WAVEFORM_H
-
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include <GpuCpuData.h>
-#include <set>
+#ifndef SIGNALAUDIOFILE_H
+#define SIGNALAUDIOFILE_H
 
 /*
     input signal, 1D, can be sound, matlab vector or data-file
@@ -118,20 +113,25 @@
         have to be recomputed. So the cache will have to be invalidated.
 
         For this purpose there is an InvalidSamplesDescriptor class
-        InvalidSamplesDescriptor Operation::getIsd()
+
+        protected: InvalidSamplesDescriptor Operation::updateIsd()
         {
-            InvalidSamplesDescriptor isd = _myIsd;
+            foreach ( Operation* child, ChildrenList ( this ) ) {
+                _myIsd |= position_transform( child->updateIsd() );
+            }
 
-            foreach ( Operation* child, ChildrenList ( this ) )
-                isd |= child->getIsd();
-
-            return isd;
+            return _myIsd;
         }
 
+        protected: Operation::sample InvalidSamplesDescriptor
+
+        The InvalidSamplesDescriptor defines which cache regions that are valid. It is real quick to process the
+        tree once each frame.
+
         If an operation has been altered, but in a way such that most parts of the Source remain unaffected (for instance
-        a small circle-remove filter is inserted in a FilterOperation). It is possible to query an Operation for
-        altered regions that havn't been read yet, such a region can be moved through parent Op entire operation.
-        This is accomplished by propagating Signal::Cache
+        a small circle-remove filter is inserted in a FilterOperation). The InvalidSamplesDescriptor for that
+        FilterOperation is updated by _myIsd |= oldFilter->updateIsd(). Each filter is responsible for maintaining
+        its own InvalidSamplesDescriptor for data that has not been requested for.
 
     Time Frequency Representation/Distribution transform,
     Tfr is mostly a bunch of functionals. Some functionals doesn't keep much meaningful states and are thus transient.
@@ -215,72 +215,50 @@
     It is possible to keep Signals can be combined
 */
 
+#include "signal-source.h"
+
 namespace audiere
 {
     class SampleSource;
 }
 
-namespace Waveform
+namespace Signal
 {
 
-typedef boost::shared_ptr<class Waveform> pWaveform;
-typedef boost::shared_ptr<class Chunk> pChunk;
-
-class Chunk {
+class Audiofile: public Source
+{
 public:
-    enum Interleaved {
-        Interleaved_Complex,
-        Only_Real
-    };
 
-    Chunk(Interleaved interleaved=Only_Real);
+    Audiofile();
+    Audiofile(const char* filename);
 
-    boost::scoped_ptr<GpuCpuData<float> > waveform_data;
+    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
 
-    Interleaved interleaved() const {return _interleaved; }
-    pChunk getInterleaved(Interleaved);
-
-    unsigned sample_offset;
-    unsigned sample_rate;
-    bool modified;
-
-    std::set<unsigned> valid_transform_chunks;
+    pBuffer getChunkBehind() { return _waveform; }
+    void setChunk( pBuffer chunk ) { _waveform = chunk; }
 private:
-    const Interleaved _interleaved;
-};
-
-class Waveform
-{
-public:
-
-    Waveform();
-    Waveform(const char* filename);
-
-    pChunk getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Chunk::Interleaved interleaved );
-    void setChunk( pChunk chunk ) { _waveform = chunk; }
-    pChunk getChunkBehind() { return _waveform; }
-    void appendChunk( pChunk chunk );
+    pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
+    void appendChunk( pBuffer chunk );
 
     /**
       Writes wave audio with 16 bits per sample
       */
     void writeFile( const char* filename );
-    pWaveform crop();
+    pSource crop();
     void play();
 
     unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
     unsigned sample_rate() {          return _waveform->sample_rate;    }
     unsigned number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
-    float length() {             return number_of_samples() / (float)sample_rate(); }
 
 private:
     audiere::SampleSource* _source;
 
-    pChunk _waveform;
+    pBuffer _waveform;
 
     std::string _last_filename;
 };
 
-} // namespace Waveform
+} // namespace Signal
 
-#endif // WAVEFORM_H
+#endif // SIGNALAUDIOFILE_H
