@@ -25,7 +25,8 @@ SOURCES += main.cpp \
     signal-operation.cpp \
     signal-invalidsamplesdescriptor.cpp \
     signal-playback.cpp \
-    signal-sink.cpp
+    signal-sink.cpp \
+    layer.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     spectrogram.h \
@@ -47,7 +48,8 @@ HEADERS += mainwindow.h \
     signal-operation.h \
     signal-invalidsamplesdescriptor.h \
     signal-playback.h \
-    signal-sink.h
+    signal-sink.h \
+    layer.h
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu \
     spectrogram.frag \
