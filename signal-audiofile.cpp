@@ -1,4 +1,4 @@
-#include "waveform.h"
+#include "signal-audiofile.h"
 #include <audiere.h> // for reading various formats
 #include <sndfile.hh> // for writing wav
 #include <math.h>
@@ -28,20 +28,21 @@ static void cufftSafeCall( cufftResult_t cufftResult) {
 using namespace std;
 using namespace audiere;
 
+namespace Signal {
 
-Waveform::Waveform()
+Audiofile::Audiofile()
 :   _source(0)
 {
-    _waveform.reset( new Waveform_chunk());
+    _waveform.reset( new Buffer());
 }
 
 
 /**
   Reads an audio file using libaudiere
   */
-Waveform::Waveform (const char* filename)
+Audiofile::Audiofile(const char* filename)
 {
-    _waveform.reset( new Waveform_chunk());
+    _waveform.reset( new Buffer());
 
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
     if (0==_source)
@@ -127,7 +128,7 @@ Waveform::Waveform (const char* filename)
     /**
       Writes wave audio with 16 bits per sample
       */
-void Waveform::writeFile( const char* filename )
+void Audiofile::writeFile( const char* filename )
 {
     _last_filename = filename;
     // todo: this method only writes mono data from the first (left) channel
@@ -146,7 +147,7 @@ void Waveform::writeFile( const char* filename )
 
 
 /* returns a chunk with numberOfSamples samples. If the requested range exceeds the source signal it is padded with 0. */
-pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Waveform_chunk::Interleaved interleaved )
+pBuffer Audiofile::getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved )
 {
     if (firstSample+numberOfSamples < firstSample)
         throw std::invalid_argument("Overflow: firstSample+numberOfSamples");
@@ -154,10 +155,10 @@ pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSampl
     if (channel >= _waveform->waveform_data->getNumberOfElements().height)
         throw std::invalid_argument("channel >= _waveform.waveform_data->getNumberOfElements().height");
 
-    char m=1+(Waveform_chunk::Interleaved_Complex == interleaved);
-    char sourcem = 1+(Waveform_chunk::Interleaved_Complex == _waveform->interleaved());
+    char m=1+(Buffer::Interleaved_Complex == interleaved);
+    char sourcem = 1+(Buffer::Interleaved_Complex == _waveform->interleaved());
 
-    pWaveform_chunk chunk( new Waveform_chunk( interleaved ));
+    pBuffer chunk( new Buffer( interleaved ));
     chunk->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(m*numberOfSamples, 1, 1) ) );
     chunk->sample_rate = sample_rate();
     chunk->sample_offset = firstSample;
@@ -176,90 +177,22 @@ pWaveform_chunk Waveform::getChunk( unsigned firstSample, unsigned numberOfSampl
                   + firstSample*sourcem
                   + channel * _waveform->waveform_data->getNumberOfElements().width;
 
-    bool interleavedSource = Waveform_chunk::Interleaved_Complex == _waveform->interleaved();
+    bool interleavedSource = Buffer::Interleaved_Complex == _waveform->interleaved();
     for (unsigned i=0; i<validSamples; i++) {
         target[i*m + 0] = source[i*sourcem + 0];
-        if (Waveform_chunk::Interleaved_Complex == interleaved)
+        if (Buffer::Interleaved_Complex == interleaved)
             target[i*m + 1] = interleavedSource ? source[i*sourcem + 1]:0;
     }
 
     for (unsigned i=validSamples; i<numberOfSamples; i++) {
         target[i*m + 0] = 0;
-        if (Waveform_chunk::Interleaved_Complex == interleaved)
+        if (Buffer::Interleaved_Complex == interleaved)
             target[i*m + 1] = 0;
     }
     return chunk;
 }
 
     
-Waveform_chunk::Waveform_chunk(Interleaved interleaved)
-:   sample_offset(0),
-    sample_rate(0),
-    modified(0),
-    _interleaved(interleaved)
-{
-    switch(_interleaved) {
-        case Interleaved_Complex:
-        case Only_Real:
-            break;
-        default:
-            throw invalid_argument( string( __FUNCTION__ ));
-    }
-}
-
-
-pWaveform_chunk Waveform_chunk::getInterleaved(Interleaved value)
-{
-    pWaveform_chunk chunk( new Waveform_chunk( value ));
-
-    if (value == _interleaved) {
-        chunk->waveform_data.reset( new GpuCpuData<float>(waveform_data->getCpuMemory(), waveform_data->getNumberOfElements() ) );
-        return chunk;
-    }
-
-    cudaExtent orgSz = waveform_data->getNumberOfElements();
-
-    //makeCudaExtent(m*numberOfSamples, 1, 1)
-    switch(value) {
-        case Only_Real: {
-            cudaExtent realSz = orgSz;
-            realSz.width/=2;
-            chunk->waveform_data.reset( new GpuCpuData<float>(0, realSz ) );
-
-            float *complex = waveform_data->getCpuMemory();
-            float *real = chunk->waveform_data->getCpuMemory();
-
-            for (unsigned z=0; z<realSz.depth; z++)
-                for (unsigned y=0; y<realSz.height; y++)
-                    for (unsigned x=0; x<realSz.width; x++)
-                        real[ x + (y + z*realSz.height)*realSz.width ]
-                                = complex[ 2*x + (y + z*orgSz.height)*orgSz.width ];
-            break;
-        }
-        case Interleaved_Complex: {
-            cudaExtent complexSz = orgSz;
-            complexSz.width*=2;
-            chunk->waveform_data.reset( new GpuCpuData<float>(0, complexSz ) );
-
-            float *complex = chunk->waveform_data->getCpuMemory();
-            float *real = waveform_data->getCpuMemory();
-
-            for (unsigned z=0; z<orgSz.depth; z++)
-                for (unsigned y=0; y<orgSz.height; y++)
-                    for (unsigned x=0; x<orgSz.width; x++)
-                    {
-                        complex[ 2*x + (y + z*complexSz.height)*complexSz.width ]
-                                = real[ x + (y + z*orgSz.height)*orgSz.width ];
-                        complex[ 2*x + 1 + (y + z*complexSz.height)*complexSz.width ] = 0;
-                    }
-            break;
-        }
-        default:
-            throw invalid_argument( string(__FUNCTION__));
-    }
-
-    return chunk;
-}
 
 class SoundPlayer {
 
@@ -333,7 +266,7 @@ private:
     float _length;
 };
 
-pWaveform Waveform::crop() {
+pSource Audiofile::crop() {
     // create signed short representation
     unsigned num_frames = _waveform->waveform_data->getNumberOfElements().width;
     unsigned channel_count = _waveform->waveform_data->getNumberOfElements().height;
@@ -348,9 +281,10 @@ pWaveform Waveform::crop() {
                 firstNonzero = f+1;
 
     if (firstNonzero > lastNonzero)
-        return pWaveform();
+        return pSource();
 
-    pWaveform wf(new Waveform());
+    Audiofile* wf(new Audiofile());
+    pSource rwf(wf);
     wf->_waveform->sample_rate = sample_rate();
     wf->_waveform->waveform_data.reset (new GpuCpuData<float>(0, make_cudaExtent((lastNonzero-firstNonzero+1) , channel_count, 1)));
     float *data = wf->_waveform->waveform_data->getCpuMemory();
@@ -365,20 +299,21 @@ pWaveform Waveform::crop() {
             data[f-firstNonzero + c*num_frames] = rampup*rampdown*fdata[ f + c*num_frames];
         }
 
-    return wf;
+    return rwf;
 }
 
-void Waveform::play() {
+void Audiofile::play() {
 #ifdef MAC
     QSound::play( _last_filename.c_str() );
     return;
 #endif
 
-    pWaveform wf = this->crop();
+    pSource wfs = this->crop();
 
-    if (!wf.get())
+    if (!wfs.get())
         return;
 
+    Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
     // create signed short representation
     unsigned num_frames = wf->_waveform->waveform_data->getNumberOfElements().width;
     unsigned channel_count = wf->_waveform->waveform_data->getNumberOfElements().height;
@@ -403,6 +338,7 @@ void Waveform::play() {
     static SoundPlayer sp;
     sp.play( sampleBuffer, num_frames / (float)sample_rate() );
 }
+
 /*
 class ChunkSource: public Audiere::SampleSource {
 protected:
@@ -449,3 +385,4 @@ public:
     virtual const char* getTagType(int i) { return 0; }
 };
 */
+} // namespace Signal

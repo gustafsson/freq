@@ -1,6 +1,7 @@
 #include "signal-playback.h"
 #include <iostream>
 #include <stdexcept>
+#include <boost/foreach.hpp>
 
 using namespace std;
 
@@ -13,8 +14,9 @@ Playback::Playback( /*int outputDevice*/ )
     portaudio::System &sys = portaudio::System::instance();
 
     cout << "Using system default input/output devices..." << endl;
-    iInputDevice	= sys.defaultInputDevice().index();
-    iOutputDevice	= sys.defaultOutputDevice().index();
+    unsigned iInputDevice	= sys.defaultInputDevice().index();
+    unsigned iOutputDevice	= sys.defaultOutputDevice().index();
+    cout << iInputDevice << " " << iOutputDevice << endl;
 }
 
 Playback::~Playback()
@@ -38,8 +40,8 @@ list_devices()
     std::cout << "Number of devices = " << iNumDevices << std::endl;
 
     cout << "Using system default input/output devices..." << endl;
-    iInputDevice	= sys.defaultInputDevice().index();
-    iOutputDevice	= sys.defaultOutputDevice().index();
+    unsigned iInputDevice	= sys.defaultInputDevice().index();
+    unsigned iOutputDevice	= sys.defaultOutputDevice().index();
     cout << " input device " << iInputDevice << endl
          << " output device " << iOutputDevice << endl;
 
@@ -81,7 +83,7 @@ void Playback::put( pBuffer buffer )
 
     BufferSlot slot = { buffer, clock() };
 
-    if (isPlaying()) {
+    if (streamPlayback) {
         // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
         _cache.push_back( slot );
         return;
@@ -92,8 +94,8 @@ void Playback::put( pBuffer buffer )
 
     _cache.push_back( slot );
 
-    clock_t first = _cache.first().timestamp;
-    clock_t last = _cache.last().timestamp;
+    clock_t first = _cache.front().timestamp;
+    clock_t last = _cache.back().timestamp;
 
     float accumulation_time = (last-first) / (float)CLOCKS_PER_SEC;
     float incoming_samples_per_sec = nAccumulated_samples / accumulation_time;
@@ -101,7 +103,7 @@ void Playback::put( pBuffer buffer )
     float estimated_time_required = expected_samples_left() / incoming_samples_per_sec;
 
     unsigned x = expected_samples_left();
-    if (x < bufer->number_of_samples() )
+    if (x < buffer->number_of_samples() )
         x = 0;
     else
         x -= buffer->number_of_samples();
@@ -111,6 +113,7 @@ void Playback::put( pBuffer buffer )
     {
         // start playing
         portaudio::System &sys = portaudio::System::instance();
+        unsigned iOutputDevice	= sys.defaultOutputDevice().index();
 
         // Set up the parameters required to open a (Callback)Stream:
         portaudio::DirectionSpecificStreamParameters outParamsPlayback(
@@ -124,7 +127,7 @@ void Playback::put( pBuffer buffer )
                 portaudio::DirectionSpecificStreamParameters::null(),
                 outParamsPlayback,
                 buffer->sample_rate,
-                buffer->numer_of_samples(),
+                buffer->number_of_samples(),
                 paClipOff);
 
         // Create (and open) a new Stream, using the SineGenerator::generate function as a callback:
@@ -132,9 +135,9 @@ void Playback::put( pBuffer buffer )
         streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
                 paramsPlayback,
                 *this,
-                &readBuffer) );
+                &Signal::Playback::readBuffer) );
 
-        streamPlayback.start();
+        streamPlayback->start();
     }
 }
 
@@ -153,8 +156,8 @@ int Playback::
         readBuffer(const void */*inputBuffer*/,
                  void *outputBuffer,
                  unsigned long framesPerBuffer,
-                 const PaStreamCallbackTimeInfo *timeInfo,
-                 PaStreamCallbackFlags statusFlags)
+                 const PaStreamCallbackTimeInfo */*timeInfo*/,
+                 PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( outputBuffer );
     float **out = static_cast<float **>(outputBuffer);
@@ -174,7 +177,7 @@ int Playback::
             nAccumulated_samples += s.buffer->number_of_samples();
         }
 
-        if (buffer>=_cache.size())
+        if (iBuffer >= _cache.size())
         {
             memset(buffer, 0, framesPerBuffer*sizeof(float));
             streamPlayback->stop();
@@ -187,11 +190,11 @@ int Playback::
             const BufferSlot& s = _cache[iBuffer];
 
             unsigned nBytes_to_copy = nAccumulated_samples + s.buffer->number_of_samples() - _playback_itr;
-            if (framesPerBuffer < bytesToCopy )
+            if (framesPerBuffer < nBytes_to_copy )
                 nBytes_to_copy = framesPerBuffer;
 
             memcpy( buffer,
-                    &s.buffer->getCpuMemory()[ _playback_itr - nAccumulated_samples ],
+                    &s.buffer->waveform_data->getCpuMemory()[ _playback_itr - nAccumulated_samples ],
                     nBytes_to_copy);
 
             buffer += nBytes_to_copy;

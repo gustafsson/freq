@@ -2,7 +2,7 @@
 #define SIGNALPLAYBACK_H
 
 #include "signal-sink.h"
-#include <list>
+#include <vector>
 #include <time.h>
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/scoped_ptr.hpp>
@@ -13,6 +13,7 @@ class Playback: public Sink
 {
 public:
     Playback( /* int outputDevice = -1 */ );
+    ~Playback();
 
     virtual void put( pBuffer );
 
@@ -36,7 +37,7 @@ private:
     std::vector<BufferSlot> _cache;
     unsigned _playback_itr;
 
-    void nAccumulatedSamples();
+    unsigned nAccumulatedSamples();
 };
 
 } // namespace Signal
