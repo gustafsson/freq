@@ -177,7 +177,7 @@ public:
     virtual bool notify(QObject * receiver, QEvent * e) {
         bool v = false;
         try {
-            QApplication::notify(receiver,e);
+            v = QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
             fatal_exception(x);
             exit(-2);
@@ -213,6 +213,29 @@ bool check_cuda() {
 
     return false;
 }
+
+void validate_arguments() {
+    if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
+        QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
+        if (0 == fileName.length())
+            exit(0);
+        _soundfile = fileName.toStdString();
+    }
+    printf("Reading file: %s\n", _soundfile.c_str());
+
+    switch ( _yscale )
+    {
+        case DisplayWidget::Yscale_Linear:
+        case DisplayWidget::Yscale_ExpLinear:
+        case DisplayWidget::Yscale_LogLinear:
+        case DisplayWidget::Yscale_LogExpLinear:
+            break;
+        default:
+            printf("Invalid yscale value, must be one of {1, 2, 3, 4}\n\n%s", _sawe_usage_string);
+            exit(-1);
+    }
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -257,25 +280,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
-    	QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
-        if (0 == fileName.length())
-            return 0;
-        _soundfile = fileName.toStdString();
-    }
-    printf("Reading file: %s\n", _soundfile.c_str());
-
-    switch ( _yscale )
-    {
-        case DisplayWidget::Yscale_Linear:
-        case DisplayWidget::Yscale_ExpLinear:
-        case DisplayWidget::Yscale_LogLinear:
-        case DisplayWidget::Yscale_LogExpLinear:
-            break;
-        default:
-            printf("Invalid yscale value, must be one of {1, 2, 3, 4}\n\n%s", _sawe_usage_string);
-            exit(1);
-    }
+    validate_arguments();
 
     try {
         boost::shared_ptr<Signal::Source> wf( new Signal::Audiofile( _soundfile.c_str() ) );
@@ -302,8 +307,10 @@ int main(int argc, char *argv[])
        return a.exec();
     } catch (const std::exception &x) {
         fatal_exception(x);
+        return -2;
     } catch (...) {
         fatal_unknown_exception();
+        return -3;
     }
 }
 
