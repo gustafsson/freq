@@ -5,6 +5,7 @@
 #include "Statistics.h"
 #include <stdexcept>
 #include <iostream>
+#include <sstream>
 
 #ifdef _MSC_VER
 #include "windows.h"
@@ -45,10 +46,26 @@ Audiofile::Audiofile(const char* filename)
     _waveform.reset( new Buffer());
 
     _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
-    if (0==_source)
-        throw std::ios_base::failure(string() + "Couldn't open " + filename + "\n"
-            "\n"
-            "Supported audio file formats through Audiere: Ogg Vorbis, MP3, FLAC, Speex, uncompressed WAV, AIFF, MOD, S3M, XM, IT");
+    if (0==_source) {
+        stringstream ss;
+
+        std::vector<FileFormatDesc> formats;
+        GetSupportedFileFormats(formats);
+        ss << "Couldn't open " << filename << endl
+           << endl
+           << "Supported audio file formats through Audiere:";
+
+        for (unsigned n=0; n<formats.size(); n++) {
+            ss << "  " << formats[n].description << " {";
+            for (unsigned k=0; k<formats[n].extensions.size(); k++) {
+                if (k) ss << ", ";
+                ss << formats[n].extensions[k];
+            }
+            ss << "}" << endl;
+        }
+
+        throw std::ios_base::failure(ss.str());
+    }
 
     SampleFormat sample_format;
     int channel_count, sample_rate;
