@@ -189,9 +189,9 @@ public:
     }
 };
 
-void check_cuda() {
-    if (0 < CudaProperties::getCudaDeviceCount())
-        return;
+bool check_cuda() {
+    if (CudaProperties::haveCuda())
+        return true;
 
     stringstream ss;
     ss   << "Sonic AWE requires you to have installed graphics drivers from NVIDIA." << endl
@@ -211,7 +211,7 @@ void check_cuda() {
                  "Cannot start Sonic AWE",
                  QString::fromStdString(ss.str()) );
 
-    exit(-1);
+    return false;
 }
 int main(int argc, char *argv[])
 {
@@ -234,7 +234,8 @@ int main(int argc, char *argv[])
     _sawe_version_string = ss.str();
 
     SonicAWE_Application a(argc, argv);
-    check_cuda();
+    if (!check_cuda())
+        return -1;
 
     MainWindow w(_sawe_version_string.c_str());
     
