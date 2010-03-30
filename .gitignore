@@ -1,6 +1,7 @@
 *.o
 *~
 *.pdb
+*.deb
 moc_*.cpp
 ui_mainwindow.h
 *.wav
