@@ -153,8 +153,6 @@ void fatal_exception( const std::string& str )
     QMessageBox::critical( 0,
                  QString("Fatal error. Sonic AWE needs to close"),
                  QString::fromStdString(str) );
-
-    ::exit(-2);
 }
 void fatal_exception( const std::exception &x )
 {
@@ -182,8 +180,10 @@ public:
             QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
             fatal_exception(x);
+            exit(-2);
         } catch (...) {
             fatal_unknown_exception();
+            exit(-2);
         }
         return v;
     }
