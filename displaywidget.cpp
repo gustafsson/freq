@@ -345,7 +345,7 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
   }
   else
   {
-    if(e->modifiers().testFlag(Qt::ControlModifier))
+    if(e->modifiers().testFlag(Qt::ShiftModifier))
         xscale *= (1-ps * e->delta());
     else
         _pz *= (1+ps * e->delta());
@@ -516,7 +516,7 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
-    TaskTimer tt(__FUNCTION__);
+    TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();

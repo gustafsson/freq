@@ -10,6 +10,8 @@
 #include <sstream>
 #include <CudaProperties.h>
 #include <QtGui/QMessageBox>
+#include <CudaException.h>
+//#include <cuda_runtime.h>
 
 using namespace std;
 using namespace boost;
@@ -64,6 +66,7 @@ static unsigned _get_chunk_count = (unsigned)-1;
 static std::string _soundfile = "";
 static std::string _playback_source_test = "";
 static bool _sawe_exit=false;
+std::string fatal_error;
 
 static int prefixcmp(const char *a, const char *prefix) {
     for(;*a && *prefix;a++,prefix++) {
@@ -178,28 +181,47 @@ public:
         try {
             QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            fatal_exception(x);
-            exit(-2);
+            fatal_error = "Error: ";
+            fatal_error.append(typeid(x).name());
+            fatal_error.append("\n");
+            fatal_error.append("Message: ");
+            fatal_error.append(x.what());
+            fatal_error.append("\n");
+            this->exit(-2);
         } catch (...) {
-            fatal_unknown_exception();
-            exit(-2);
+            fatal_error = "An unknown error occurred";
+            this->exit(-2);
         }
         return v;
     }
 };
 
 bool check_cuda() {
-    if (CudaProperties::haveCuda())
+    stringstream ss;
+    void* ptr=(void*)1;
+    try {
+        CudaException_CALL_CHECK ( cudaMalloc( &ptr, 1024 ));
+        CudaException_CALL_CHECK ( cudaFree( ptr ));
+        GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
+    }
+    catch (const CudaException& x) {
+        ss << x.what() << endl;
+        ptr = 0;
+    } catch (...) {
+        ss << "ptr=0" << endl;
+        ptr = 0;
+    }
+    
+    if (ptr && CudaProperties::haveCuda())
         return true;
 
-    stringstream ss;
     ss   << "Sonic AWE requires you to have installed graphics drivers from NVIDIA." << endl
          << endl
          << "You need to have one of these graphics cards from NVIDIA;" << endl
-         << "   http://www.nvidia.com/object/cuda_gpus.html" << endl
+         << "   www.nvidia.com/object/cuda_gpus.html" << endl
          << endl
          << "You also need to have NVIDIAs display drivers installed;" << endl
-         <<"    http://www.nvidia.com" << endl
+         <<"    www.nvidia.com" << endl
          << endl
          << endl
          << "Sonic AWE cannot start." << endl;
@@ -214,7 +236,8 @@ bool check_cuda() {
 }
 int main(int argc, char *argv[])
 {
-
+    TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
+  
     QDateTime now = QDateTime::currentDateTime();
     now.date().year();
     stringstream ss;
@@ -298,9 +321,13 @@ int main(int argc, char *argv[])
         dw->show();
         w.show();
 
-       return a.exec();
+        int r = a.exec();
+        if (!fatal_error.empty())
+            fatal_exception(fatal_error);
+        return r;
     } catch (const std::exception &x) {
         fatal_exception(x);
+        
     } catch (...) {
         fatal_unknown_exception();
     }

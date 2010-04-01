@@ -368,26 +368,22 @@ pWaveform Waveform::crop() {
             float rampdown = min(1.f, (lastNonzero-f)/(sample_rate()*0.01f));
             rampup = 3*rampup*rampup-2*rampup*rampup*rampup;
             rampdown = 3*rampdown*rampdown-2*rampdown*rampdown*rampdown;
-            data[f-firstNonzero + c*num_frames] = rampup*rampdown*fdata[ f + c*num_frames];
+            data[f-firstNonzero + c*num_frames] = 0.5f*rampup*rampdown*fdata[ f + c*num_frames];
         }
 
     return wf;
 }
 
 void Waveform::play() {
-#ifdef __APPLE__
-    QSound::play( _last_filename.c_str() );
-    printf("Play file: %s\n", _last_filename.c_str());
-    return;
-#endif
-
     pWaveform wf = this->crop();
     if (!wf)
-        return;
+      return;
     wf->writeFile("selection.wav");
-
-    if (!wf.get())
-        return;
+#ifdef __APPLE__
+    QSound::play("selection.wav");
+    printf("Play file: %s\n", "selection.wav");
+    return;
+#endif
 
     // create signed short representation
     unsigned num_frames = wf->_waveform->waveform_data->getNumberOfElements().width;

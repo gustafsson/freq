@@ -1,6 +1,8 @@
 # -------------------------------------------------
 # Project created by QtCreator 2009-11-06T11:26:14
 # -------------------------------------------------
+TEMPLATE = app
+win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
 QT += opengl \
     testlib
@@ -53,7 +55,6 @@ unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib$$IS64 \
-    -lcuda \
     -lcufft \
     -L../misc \
     -lmisc \
@@ -66,12 +67,15 @@ macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
-    -lcuda \
     -lcufft \
     -L../misc \
     -lmisc \
     -framework GLUT \
     -framework OpenGL
+#    tmp/wavelet_cuda.o \
+#    tmp/spectrogram-slope_cuda.o \
+#    tmp/spectrogram-block_cuda.o \
+#    tmp/filter_cuda.o
 win32:INCLUDEPATH += ..\..\glut \
 	..\..\glew\include \
 	$(BOOST_PATH)
@@ -81,7 +85,6 @@ win32:LIBS += \
     -l..\..\audiere\lib\audiere \
     -l..\..\libsndfile\libsndfile-1 \
     -L$(CUDA_LIB_PATH)\..\lib \
-    -lcuda \
     -lcufft \
     -L../misc \
     -lmisc \
