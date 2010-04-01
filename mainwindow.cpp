@@ -11,22 +11,37 @@ using namespace std;
 MainWindow::MainWindow(const char* title, QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
+#ifdef Q_WS_MAC
+    qt_mac_set_menubar_icons(false);
+#endif
     ui->setupUi(this);
     this->setWindowTitle( title );
     void signalDbclkFilterItem(QListWidgetItem*);
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
-    connect(ui->layerWidget, SIGNAL(currentRowChanged(int)), this, SLOT(slotNewSelection(int)));
+    connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
 }
 
 void MainWindow::slotDbclkFilterItem(QListWidgetItem *item)
 {
-    emit sendCurrentSelection(ui->layerWidget->row(item));
+    //emit sendCurrentSelection(ui->layerWidget->row(item), );
 }
 
-void MainWindow::slotNewSelection(int index)
+void MainWindow::slotNewSelection(QListWidgetItem *item)
 {
-    emit sendCurrentSelection(index);
+    int index = ui->layerWidget->row(item);
+    if(index < 0){
+        ui->deleteFilterButton->setEnabled(false);
+        return;
+    }else{
+        ui->deleteFilterButton->setEnabled(true);
+    }
+    bool checked = false;
+    if(ui->layerWidget->item(index)->checkState() == Qt::Checked){
+        checked = true;
+    }
+    printf("Selecting new item: index:%d checked %d\n", index, checked);
+    emit sendCurrentSelection(index, checked);
 }
 
 void MainWindow::slotDeleteSelection(void)
@@ -42,8 +57,13 @@ MainWindow::~MainWindow()
 void MainWindow::connectLayerWindow(DisplayWidget *d)
 {
     connect(d, SIGNAL(filterChainUpdated(pTransform)), this, SLOT(updateLayerList(pTransform)));
-    connect(this, SIGNAL(sendCurrentSelection(int)), d, SLOT(recieveCurrentSelection(int)));
+    connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(recieveCurrentSelection(int, bool)));
     connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(recieveFilterRemoval(int)));
+    
+    connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(recieveToggleSelection(bool)));
+    connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(recieveToggleNavigation(bool)));
+    connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
+    connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
 }
 
 void MainWindow::updateLayerList(pTransform t)
@@ -82,6 +102,8 @@ void MainWindow::updateLayerList(pTransform t)
 
         QListWidgetItem* itm = new QListWidgetItem( title.str().c_str(), ui->layerWidget, 0 );
         itm->setToolTip( tooltip.str().c_str() );
+        itm->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        itm->setCheckState(Qt::Checked);
         ui->layerWidget->addItem( itm );
     }
     

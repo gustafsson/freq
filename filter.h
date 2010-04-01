@@ -19,6 +19,8 @@ public:
     virtual void range(float& start_time, float& end_time) = 0;
 
     virtual void invalidateWaveform( const Transform&, Waveform_chunk& );
+    
+    bool enabled;
 };
 
 class FilterChain: public Filter, public std::list<pFilter>

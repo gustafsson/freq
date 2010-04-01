@@ -66,7 +66,7 @@ static unsigned _get_chunk_count = (unsigned)-1;
 static std::string _soundfile = "";
 static std::string _playback_source_test = "";
 static bool _sawe_exit=false;
-std::string fatal_error;
+std::stringstream fatal_error;
 
 static int prefixcmp(const char *a, const char *prefix) {
     for(;*a && *prefix;a++,prefix++) {
@@ -156,17 +156,21 @@ void fatal_exception( const std::string& str )
                  QString("Fatal error. Sonic AWE needs to close"),
                  QString::fromStdString(str) );
 }
+const char *unknown_exception_string = "An unknown error occurred";
+void fatal_exception_string( const std::exception &x, std::stringstream &ss )
+{
+		ss   << "Error: " << typeid(x).name() << endl
+         << "Message: " << x.what() << endl;
+}
 void fatal_exception( const std::exception &x )
 {
     stringstream ss;
-    ss   << "Error: " << typeid(x).name() << endl
-         << "Message: " << x.what() << endl;
-
+    fatal_exception_string(x, ss);
     fatal_exception( ss.str() );
 }
 
 void fatal_unknown_exception() {
-    fatal_exception( string("An unknown error occurred") );
+    fatal_exception( unknown_exception_string );
 }
 
 class SonicAWE_Application: public QApplication
@@ -181,15 +185,10 @@ public:
         try {
             QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            fatal_error = "Error: ";
-            fatal_error.append(typeid(x).name());
-            fatal_error.append("\n");
-            fatal_error.append("Message: ");
-            fatal_error.append(x.what());
-            fatal_error.append("\n");
+            fatal_exception_string(x, fatal_error);
             this->exit(-2);
         } catch (...) {
-            fatal_error = "An unknown error occurred";
+            fatal_error << unknown_exception_string;
             this->exit(-2);
         }
         return v;
@@ -322,8 +321,8 @@ int main(int argc, char *argv[])
         w.show();
 
         int r = a.exec();
-        if (!fatal_error.empty())
-            fatal_exception(fatal_error);
+        if (!fatal_error.str().empty())
+            fatal_exception(fatal_error.str());
         return r;
     } catch (const std::exception &x) {
         fatal_exception(x);
