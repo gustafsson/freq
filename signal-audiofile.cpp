@@ -319,24 +319,22 @@ pSource Audiofile::crop() {
             float rampdown = min(1.f, (lastNonzero-f)/(sample_rate()*0.01f));
             rampup = 3*rampup*rampup-2*rampup*rampup*rampup;
             rampdown = 3*rampdown*rampdown-2*rampdown*rampdown*rampdown;
-            data[f-firstNonzero + c*num_frames] = rampup*rampdown*fdata[ f + c*num_frames];
+            data[f-firstNonzero + c*num_frames] = 0.5f*rampup*rampdown*fdata[ f + c*num_frames];
         }
 
     return rwf;
 }
 
-
 void Audiofile::play() {
+    pSource wf = this->crop();
+    if (!wf)
+      return;
+    wf->writeFile("selection.wav");
 #ifdef __APPLE__
-    QSound::play( _last_filename.c_str() );
-    printf("Play file: %s\n", _last_filename.c_str());
+    QSound::play("selection.wav");
+    printf("Play file: %s\n", "selection.wav");
     return;
 #endif
-
-    pSource wfs = this->crop();
-
-    if (!wfs.get())
-        return;
 
     Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
     wf->writeFile("selection.wav");

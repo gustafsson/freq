@@ -252,7 +252,7 @@ void SpectrogramRenderer::init()
 
 void SpectrogramRenderer::draw()
 {
-    TaskTimer tt("Rendering scaletime plot");
+    TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
     if (!_initialized) init();
 
     g_invalidFrustum = true;
@@ -272,7 +272,7 @@ void SpectrogramRenderer::draw()
     _drawn_blocks=0;
 
     if (_fewest_pixles_per_unit != FLT_MAX) {
-        TaskTimer tt("Updating a part of the closest non finished scaletime block");
+        TaskTimer tt(TaskTimer::LogVerbose, "Updating a part of the closest non finished scaletime block");
         _spectrogram->updateBlock( _spectrogram->getBlock(_fewest_pixles_per_unit_ref) );
 
         _fewest_pixles_per_unit = FLT_MAX;
@@ -337,7 +337,7 @@ bool SpectrogramRenderer::renderSpectrogramRef( Spectrogram::Reference ref, bool
     if (!ref.containsSpectrogram())
         return false;
 
-    TaskTimer("drawing").suppressTiming();
+    TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
 
     Position a, b;
     ref.getArea( a, b );
@@ -374,7 +374,7 @@ bool SpectrogramRenderer::renderChildrenSpectrogramRef( Spectrogram::Reference r
 {
     Position a, b;
     ref.getArea( a, b );
-    TaskTimer tt("[%g, %g]", a.time, b.time);
+    TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
 
     if (!ref.containsSpectrogram())
         return false;

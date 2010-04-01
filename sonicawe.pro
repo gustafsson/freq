@@ -24,7 +24,6 @@ SOURCES += main.cpp \
     signal-microphonerecorder.cpp \
     signal-operation.cpp \
     signal-invalidsamplesdescriptor.cpp \
-    signal-playback.cpp \
     signal-sink.cpp \
     layer.cpp
 HEADERS += mainwindow.h \
@@ -56,6 +55,7 @@ OTHER_FILES += wavelet.cu \
     spectrogram.vert \
     spectrogram-slope.cu \
     spectrogram-block.cu \
+    signal-playback.cpp \
     filter.cu
 CUDA_SOURCES += wavelet.cu \
     spectrogram-slope.cu \
@@ -76,7 +76,6 @@ unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib$$IS64 \
-    -lcuda \
     -lcufft \
     -L../misc \
     -lmisc \
@@ -90,12 +89,15 @@ macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
-    -lcuda \
     -lcufft \
     -L../misc \
     -lmisc \
     -framework GLUT \
     -framework OpenGL
+#    tmp/wavelet_cuda.o \
+#    tmp/spectrogram-slope_cuda.o \
+#    tmp/spectrogram-block_cuda.o \
+#    tmp/filter_cuda.o
 win32:INCLUDEPATH += ..\..\glut \
 	..\..\glew\include \
 	$(BOOST_PATH)
@@ -105,7 +107,6 @@ win32:LIBS += \
     -l..\..\audiere\lib\audiere \
     -l..\..\libsndfile\libsndfile-1 \
     -L$(CUDA_LIB_PATH)\..\lib \
-    -lcuda \
     -lcufft \
     -L../misc \
     -lmisc \

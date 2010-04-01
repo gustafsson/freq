@@ -102,7 +102,7 @@ pTransform_chunk Transform::getChunk( ChunkIndex n, cudaStream_t stream ) {
     }
 #endif // _USE_CHUNK_CACHE
 
-    TaskTimer tt("computing transform");
+    TaskTimer tt(TaskTimer::LogVerbose, "computing transform");
 
 
 
@@ -157,7 +157,7 @@ boost::shared_ptr<GpuCpuData<float2> > Transform::stft( ChunkIndex n, cudaStream
     // somewhat bigger for the first chunk is ok
     n_samples = _samples_per_chunk + _wavelet_std_samples*2;
 
-    TaskTimer("[%g - %g] %g s, total including redundant %g s",
+    TaskTimer(TaskTimer::LogVerbose, "[%g - %g] %g s, total including redundant %g s",
                  (offs+first_valid)/(float)_original_waveform->sample_rate(),
                  (offs+first_valid+_samples_per_chunk)/(float)_original_waveform->sample_rate(),
                  _samples_per_chunk/(float)_original_waveform->sample_rate(),
@@ -196,7 +196,7 @@ boost::shared_ptr<GpuCpuData<float2> > Transform::stft( ChunkIndex n, cudaStream
     }
 
     {
-        TaskTimer tt("forward fft");
+        TaskTimer tt(TaskTimer::LogVerbose, "forward fft");
         cufftComplex* d = _intermediate_ft->getCudaGlobal().ptr();
         cudaMemset( d, 0, _intermediate_ft->getSizeInBytes1D() );
         cudaMemcpy( d,
@@ -465,7 +465,7 @@ pTransform_chunk Transform::computeTransform( ChunkIndex n, cudaStream_t stream 
 
     // Compute required size of transform
     {
-        TaskTimer tt("prerequisites");
+        TaskTimer tt(TaskTimer::LogVerbose, "prerequisites");
         // Compute number of scales to use
         float octaves = number_of_octaves();
         unsigned nFrequencies = _scales_per_octave*octaves;
@@ -511,7 +511,7 @@ pTransform_chunk Transform::computeTransform( ChunkIndex n, cudaStream_t stream 
     }  // Compute required size of transform, _intermediate_wt
 
     {
-        TaskTimer tt("inflating");
+        TaskTimer tt(TaskTimer::LogVerbose, "inflating");
         _intermediate_wt->sample_rate =  _original_waveform->sample_rate();
         _intermediate_wt->min_hz = 20;
         _intermediate_wt->max_hz = original_waveform()->sample_rate()/2;
@@ -544,7 +544,7 @@ pTransform_chunk Transform::computeTransform( ChunkIndex n, cudaStream_t stream 
     }
 
     {
-        TaskTimer tt("inverse fft");
+        TaskTimer tt(TaskTimer::LogVerbose, "inverse fft");
 
         // Transform signal back
         GpuCpuData<float2>* g = _intermediate_wt->transform_data.get();

@@ -146,11 +146,11 @@ SpectrogramVbo::pSlope SpectrogramVbo::slope() {
 
 void SpectrogramVbo::unmap() {
     if (_mapped_height) {
-        TaskTimer tt("Heightmap Cuda->OpenGL");
+        TaskTimer tt(TaskTimer::LogVerbose, "Heightmap Cuda->OpenGL");
         _mapped_height.reset();
     }
     if (_mapped_slope) {
-        TaskTimer tt("Gradient Cuda->OpenGL");
+        TaskTimer tt(TaskTimer::LogVerbose, "Gradient Cuda->OpenGL");
         _mapped_slope.reset();
     }
 }

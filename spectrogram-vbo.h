@@ -42,7 +42,7 @@ class MappedVbo
 public:
     MappedVbo( pVbo vbo, cudaExtent numberOfElements )
     :   _vbo(vbo),
-        tt("Mapping vbo")
+        tt(TaskTimer::LogVerbose, "Mapping vbo")
     {
         void* g_data;
         cudaGLMapBufferObject((void**)&g_data, *_vbo);
