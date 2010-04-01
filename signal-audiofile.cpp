@@ -325,10 +325,15 @@ pSource Audiofile::crop() {
     return rwf;
 }
 
+
 void Audiofile::play() {
-    pSource wf = this->crop();
-    if (!wf)
-      return;
+    pSource wfs = this->crop();
+
+    if (!wfs.get())
+        return;
+
+    Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
+
     wf->writeFile("selection.wav");
 #ifdef __APPLE__
     QSound::play("selection.wav");
@@ -336,8 +341,6 @@ void Audiofile::play() {
     return;
 #endif
 
-    Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
-    wf->writeFile("selection.wav");
     // create signed short representation
     unsigned num_frames = wf->_waveform->waveform_data->getNumberOfElements().width;
     unsigned channel_count = wf->_waveform->waveform_data->getNumberOfElements().height;
