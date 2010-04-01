@@ -222,7 +222,7 @@ Signal::pBuffer Transform::stft(float startt, float endt, unsigned* chunkSize, c
 {
     BOOST_ASSERT(startt<=endt);
 
-    unsigned ftChunk = 1 << 11;
+    const unsigned ftChunk = 1 << 11;
     unsigned first_chunk = startt*_original_waveform->sample_rate();
     first_chunk = first_chunk>ftChunk/2 ? first_chunk - ftChunk/2: 0;
     first_chunk/=ftChunk;//(
@@ -232,9 +232,15 @@ Signal::pBuffer Transform::stft(float startt, float endt, unsigned* chunkSize, c
     requiredFtSz.width = (1 << ((unsigned)ceil(log2((float)requiredFtSz.width))));
     requiredFtSz.width = max(requiredFtSz.width, (size_t)ftChunk);
 
+/*
     Signal::pBuffer complete_stft = _original_waveform->read(
             first_chunk*ftChunk, requiredFtSz.width);
     complete_stft->getInterleaved( Signal::Buffer::Interleaved_Complex );
+*/
+    Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(_original_waveform.get());
+    Signal::pBuffer complete_stft = a->getChunk(
+            first_chunk*ftChunk, requiredFtSz.width, 0,
+            Signal::Buffer::Interleaved_Complex);
 
     cufftComplex* d = (cufftComplex*)complete_stft->waveform_data->getCudaGlobal().ptr();
 

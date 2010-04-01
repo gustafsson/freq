@@ -84,7 +84,7 @@ bool SelectionFilter::operator()( Transform_chunk& chunk) {
             		rs->p2.time * chunk.sample_rate - chunk.chunk_offset,
         		    rs->p2.scale * chunk.nScales());
     		{
-        		TaskTimer tt(__FUNCTION__);
+                        TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
         		// summarize them all
         		::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),

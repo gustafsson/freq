@@ -79,12 +79,11 @@ Signal::pSource Transform_inverse::get_inverse_waveform()
         _inverse_waveform.reset(a);
         a->setChunk(prepare_inverse(0, _original_waveform->length()));
 
-        Signal::Audiofile* af = dynamic_cast<Signal::Audiofile*>(_original_waveform.get());
         for (unsigned n = 0;
-             n <= _temp_to_remove->getChunkIndex( af->number_of_samples() );
+             n <= _temp_to_remove->getChunkIndex( a->number_of_samples() );
              n++)
         {
-            af->getChunkBehind()->valid_transform_chunks.insert(n);
+            a->getChunkBehind()->valid_transform_chunks.insert(n);
         }
     }
 
