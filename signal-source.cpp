@@ -24,6 +24,9 @@ Buffer::Buffer(Interleaved interleaved)
 pBuffer Buffer::getInterleaved(Interleaved value)
 {
     pBuffer chunk( new Buffer( value ));
+    chunk->sample_rate = sample_rate;
+    chunk->sample_offset = sample_offset;
+    chunk->valid_transform_chunks = valid_transform_chunks;
 
     if (value == _interleaved) {
         chunk->waveform_data.reset( new GpuCpuData<float>(waveform_data->getCpuMemory(), waveform_data->getNumberOfElements() ) );

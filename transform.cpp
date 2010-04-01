@@ -163,11 +163,13 @@ boost::shared_ptr<GpuCpuData<float2> > Transform::stft( ChunkIndex n, cudaStream
                  _samples_per_chunk/(float)_original_waveform->sample_rate(),
                  n_samples/(float)_original_waveform->sample_rate()).suppressTiming();
 
-    Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(_original_waveform.get());
-    Signal::pBuffer waveform_chunk = a->getChunk(
+    // Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(_original_waveform.get());
+    Signal::pBuffer waveform_chunk = _original_waveform->read(
+            offs, n_samples)->getInterleaved( Signal::Buffer::Interleaved_Complex );
+/*    Signal::pBuffer waveform_chunk = a->getChunk(
             offs, n_samples, _channel,
             Signal::Buffer::Interleaved_Complex);
-
+*/
     cudaExtent requiredFtSz = make_cudaExtent( waveform_chunk->waveform_data->getNumberOfElements().width/2, 1, 1 );
     // The in-signal is be padded to a power of 2 for faster calculations (or rather, "power of a small prime")
     requiredFtSz.width = (1 << ((unsigned)ceil(log2((float)requiredFtSz.width))));
@@ -232,16 +234,15 @@ Signal::pBuffer Transform::stft(float startt, float endt, unsigned* chunkSize, c
     requiredFtSz.width = (1 << ((unsigned)ceil(log2((float)requiredFtSz.width))));
     requiredFtSz.width = max(requiredFtSz.width, (size_t)ftChunk);
 
-/*
+
     Signal::pBuffer complete_stft = _original_waveform->read(
-            first_chunk*ftChunk, requiredFtSz.width);
-    complete_stft->getInterleaved( Signal::Buffer::Interleaved_Complex );
-*/
-    Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(_original_waveform.get());
+            first_chunk*ftChunk, requiredFtSz.width)->getInterleaved( Signal::Buffer::Interleaved_Complex );
+
+/*    Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(_original_waveform.get());
     Signal::pBuffer complete_stft = a->getChunk(
             first_chunk*ftChunk, requiredFtSz.width, 0,
             Signal::Buffer::Interleaved_Complex);
-
+*/
     cufftComplex* d = (cufftComplex*)complete_stft->waveform_data->getCudaGlobal().ptr();
 
     // Transform signal
