@@ -521,7 +521,7 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
     return r;
 }
 
-static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i ) {
+static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w=0, float h=0 ) {
 
     static GLvector projectionPlane, projectionNormal,
         rightPlane, rightNormal,
@@ -529,35 +529,39 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
         topPlane, topNormal,
         bottomPlane, bottomNormal;
 
+    if (!(0==w && 0==h))
+        g_invalidFrustum = true;
+
     if (g_invalidFrustum) {
         GLint view[4];
         glGetIntegerv(GL_VIEWPORT, view);
         float z0 = .1, z1=.2;
-        g_invalidFrustum = false;
+        if (0==w && 0==h)
+            g_invalidFrustum = false;
 
         projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
         projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalize();
 
-        rightPlane = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z0) );
-        GLvector rightZ = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2, z1) );
-        GLvector rightY = gluUnProject( GLvector( view[0] + view[2], view[1] + view[3]/2+1, z0) );
+        rightPlane = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z0) );
+        GLvector rightZ = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z1) );
+        GLvector rightY = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2+1, z0) );
         rightZ=rightZ-rightPlane;
         rightY=rightY-rightPlane;
         rightNormal = ((rightY)^(rightZ)).Normalize();
 
-        leftPlane = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z0) );
-        GLvector leftZ = gluUnProject( GLvector( view[0], view[1] + view[3]/2, z1) );
-        GLvector leftY = gluUnProject( GLvector( view[0], view[1] + view[3]/2+1, z0) );
+        leftPlane = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2, z0) );
+        GLvector leftZ = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2, z1) );
+        GLvector leftY = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2+1, z0) );
         leftNormal = ((leftZ-leftPlane)^(leftY-leftPlane)).Normalize();
 
-        topPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z0) );
-        GLvector topZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3], z1) );
-        GLvector topX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1] + view[3], z0) );
+        topPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + (1-h)*view[3], z0) );
+        GLvector topZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + (1-h)*view[3], z1) );
+        GLvector topX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1] + (1-h)*view[3], z0) );
         topNormal = ((topZ-topPlane)^(topX-topPlane)).Normalize();
 
-        bottomPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z0) );
-        GLvector bottomZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1], z1) );
-        GLvector bottomX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1], z0) );
+        bottomPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1]+h*view[3], z0) );
+        GLvector bottomZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1]+h*view[3], z1) );
+        GLvector bottomX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1]+h*view[3], z0) );
         bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
     }
 
@@ -579,11 +583,11 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
     return l;
 }
 
-static std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i ) {
+static std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i, float w=0, float h=0 ) {
     std::vector<GLvector> l;
     for (unsigned i=0; i<4; i++)
         l.push_back( corner[i] );
-    return clipFrustum(l, closest_i);
+    return clipFrustum(l, closest_i, w, h);
 }
 
 /**
@@ -681,3 +685,174 @@ bool SpectrogramRenderer::computePixelsPerUnit( Spectrogram::Reference ref, floa
 
     return true;
 }
+
+void SpectrogramRenderer::drawAxes()
+{
+    // Draw overlay borders, on top, below, to the right or to the left
+    // default left bottom
+
+    // 1 gray draw overlay
+    // 2 clip entire sound to frustum
+    // 3 decide upon scale
+    // 4 draw axis
+
+    float w = 0.3f, h=0.3f;
+    { // 1 gray draw overlay
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+
+        glLoadIdentity();
+        gluOrtho2D( 0, 1, 0, 1 );
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        glEnable(GL_BLEND);
+        glBlendFunc( GL_ONE, GL_SRC_ALPHA );
+        glDisable(GL_DEPTH_TEST);
+
+        glColor4f( .4f, .4f, .4f, .4f );
+        glBegin( GL_QUADS );
+            glVertex2f( 0, 0 );
+            glVertex2f( w, 0 );
+            glVertex2f( w, 1 );
+            glVertex2f( 0, 1 );
+
+            glVertex2f( w, 0 );
+            glVertex2f( w, h );
+            glVertex2f( 1-w, h );
+            glVertex2f( 1-w, 0 );
+
+            glVertex2f( 1, 0 );
+            glVertex2f( 1-w, 0 );
+            glVertex2f( 1-w, 1 );
+            glVertex2f( 1, 1 );
+
+            glVertex2f( w, 1 );
+            glVertex2f( w, 1-h );
+            glVertex2f( 1-w, 1-h );
+            glVertex2f( 1-w, 1 );
+        glEnd();
+
+        glEnable(GL_DEPTH_TEST);
+
+        glDisable(GL_BLEND);
+
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
+    }
+
+    // 2 clip entire sound to frustum
+    std::vector<GLvector> clippedFrustum;
+    float T = _spectrogram->transform()->original_waveform()->length();
+    GLvector closest_i;
+    {
+        GLvector corner[4]=
+        {
+            GLvector( 0, 0, 0),
+            GLvector( 0, 0, 1),
+            GLvector( T, 0, 1),
+            GLvector( T, 0, 0),
+        };
+
+        clippedFrustum = clipFrustum(corner, closest_i, w, h);
+    }
+
+    // 3 decide upon scale
+    float circumference = 0;
+    float DT=0, DF=0;
+    GLvector inside;
+    {
+        float mint=T, maxt=0, minf=1, maxf=0;
+        for (unsigned i=0; i<clippedFrustum.size(); i++)
+        {
+            unsigned j=(i+1)%clippedFrustum.size();
+
+            GLvector a = clippedFrustum[j]-clippedFrustum[i];
+            inside = inside + clippedFrustum[i];
+
+            if (a[0] < mint) mint = a[0];
+            if (a[0] > maxt) maxt = a[0];
+            if (a[2] < minf) minf = a[2];
+            if (a[2] > maxf) maxf = a[2];
+            circumference += a.length();
+        }
+        // as clippedFrustum is a convex polygon, the mean position of its vertices will be inside
+        inside = inside * (1.f/clippedFrustum.size());
+
+        DT = maxt-mint;
+        DF = maxf-minf;
+
+        if (clippedFrustum.size())
+        {
+            int st = 0, sf = 0;
+            while( powf(10, st) < DT ) st++;
+            while( powf(10, st) > DT ) st--;
+            while( powf(10, sf) < DF ) sf++;
+            while( powf(10, sf) > DF ) sf--;
+
+            st-=1;
+            sf-=1;
+
+            DT = powf(10, st);
+            DF = powf(10, sf);
+        }
+    }
+
+    // 4 render
+    glColor4f(0,0,0,0);
+        glDisable(GL_DEPTH_TEST);
+    glBegin( GL_LINES );
+    GLvector x(1,0,0), z(0,0,1);
+
+    for (unsigned i=0; i<clippedFrustum.size(); i++)
+    {
+        unsigned j=(i+1)%clippedFrustum.size();
+
+        GLvector p = clippedFrustum[i];
+        GLvector a = clippedFrustum[j]-clippedFrustum[i];
+
+        unsigned t = p[0]/DT;
+        if (a[0] > 0) t++;
+
+        unsigned f = p[2]/DF;
+        if (a[2] > 0) f++;
+
+        for (float u=0; u<1; )
+        {
+            // find next intersection along a
+
+            float ut = (t*DT - clippedFrustum[i][0])/a[0];
+            float uf = (f*DF - clippedFrustum[i][2])/a[2];
+
+            if (ut > 0 && (ut < uf || !(uf > 0)))   { u = ut; }
+            else if (uf > 0)                        { u = uf; }
+            else break;
+            if (u>1)        break;
+
+            p = clippedFrustum[i]+a*u;
+
+            if (u==ut) {
+                glVertex3f( p[0], 0, p[2] );
+                glVertex3f( p[0], 0, p[2] + DF*h*10*((a^z)%(a^( p - inside))>0?1:-1) );
+
+                if (a[0] > 0) t++;
+                if (a[0] < 0) t--;
+            } else {
+                glVertex3f( p[0], 0, p[2] );
+                glVertex3f( p[0] + DT*w*10*((a^x)%(a^( p - inside))>0?1:-1), 0, p[2] );
+
+                if (a[2] > 0) f++;
+                if (a[2] < 0) f--;
+            }
+        }
+    }
+
+    glEnd();
+        glEnable(GL_DEPTH_TEST);
+}
+
