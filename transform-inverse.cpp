@@ -203,7 +203,7 @@ Signal::pBuffer Transform_inverse::computeInverse( pTransform_chunk chunk, cudaS
             built_in_filter._t2 * _original_waveform->sample_rate() - r->sample_offset,
             built_in_filter._f2 * _temp_to_remove->nScales());
     {
-        TaskTimer tt(__FUNCTION__);
+        TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
         // summarize them all
         ::wtInverse( chunk->transform_data->getCudaGlobal().ptr() + chunk->first_valid_sample,

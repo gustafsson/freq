@@ -239,8 +239,8 @@ public:
     pBuffer getChunkBehind() { return _waveform; }
     void setChunk( pBuffer chunk ) { _waveform = chunk; }
     void play();
-    pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
 private:
+    pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
     void appendChunk( pBuffer chunk );
 
     /**

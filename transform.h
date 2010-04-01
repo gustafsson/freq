@@ -10,8 +10,6 @@
 
 typedef unsigned int cufftHandle; /* from cufft.h */
 
-typedef boost::shared_ptr<class Transform> pTransform;
-
 class Transform
 {
 public:
@@ -90,5 +88,7 @@ private:
     boost::shared_ptr<TaskTimer> filterTimer;
 
 };
+
+typedef boost::shared_ptr<class Transform> pTransform;
 
 #endif // TRANSFORM_H
