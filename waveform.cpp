@@ -28,6 +28,7 @@ static void cufftSafeCall( cufftResult_t cufftResult) {
 using namespace std;
 using namespace audiere;
 
+const char *selection_name = "selection.wav";
 
 Waveform::Waveform()
 :   _source(0)
@@ -133,7 +134,7 @@ void Waveform::writeFile( const char* filename )
 {
 	TaskTimer tt("%s %s",__FUNCTION__,filename);
 
-    _last_filename = filename;
+    _last_filename = "flapppa";
     // todo: this method only writes mono data from the first (left) channel
 
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
@@ -378,10 +379,10 @@ void Waveform::play() {
     pWaveform wf = this->crop();
     if (!wf)
       return;
-    wf->writeFile("selection.wav");
+    wf->writeFile(selection_name);
 #ifdef __APPLE__
-    QSound::play("selection.wav");
-    printf("Play file: %s\n", "selection.wav");
+    QSound::play(selection_name);
+    printf("Play file: %s\n", selection_name);
     return;
 #endif
 

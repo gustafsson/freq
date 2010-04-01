@@ -73,11 +73,16 @@ protected:
     
 protected slots:
     virtual void timeOutSlot();
-    virtual void recieveCurrentSelection(int);
+    virtual void recieveCurrentSelection(int, bool);
     virtual void recieveFilterRemoval(int);
+    
+    virtual void recieveToggleSelection(bool);
+    virtual void recieveToggleNavigation(bool);
     
 signals:
     void filterChainUpdated(pTransform);
+    void setSelectionActive(bool);
+    void setNavigationActive(bool);
     
 private:
     boost::shared_ptr<SpectrogramRenderer> _renderer;
@@ -99,6 +104,7 @@ private:
     _rx, _ry, _rz,
     _qx, _qy, _qz;
     int _prevX, _prevY, _targetQ;
+    bool _selectionActive, _navigationActive;
     
     void drawArrows();
     void drawColorFace();
@@ -118,7 +124,7 @@ private:
     MyVector selection[2];
     bool selecting;
     
-    void setSelection(int i);
+    void setSelection(int i, bool enabled);
     void removeFilter(int i);
     
     void drawSelection();
@@ -133,6 +139,9 @@ private:
     MouseControl rightButton;
     MouseControl middleButton;
     MouseControl selectionButton;
+    MouseControl moveButton;
+    MouseControl rotateButton;
+    MouseControl scaleButton;
 };
 
 #endif // DISPLAYWIDGET_H

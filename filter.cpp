@@ -31,6 +31,9 @@ public:
     apply_filter( Transform_chunk& t):t(t),r(true) {}
 
     void operator()( pFilter p) {
+        if(!p.get()->enabled)
+            return;
+        
         r |= (*p)( t );
     }
 
@@ -71,7 +74,8 @@ void FilterChain::invalidateWaveform( const Transform& t, Waveform_chunk& w) {
 //////////// SelectionFilter
 
 SelectionFilter::SelectionFilter( Selection s ) {
-		this->s = s;
+    this->s = s;
+    enabled = true;
 }
 
 bool SelectionFilter::operator()( Transform_chunk& chunk) {
@@ -129,6 +133,7 @@ EllipsFilter::EllipsFilter(float t1, float f1, float t2, float f2, bool save_ins
     _t2 = t2;
     _f2 = f2;
     _save_inside = save_inside;
+    enabled = true;
 }
 
 bool EllipsFilter::operator()( Transform_chunk& chunk) {
@@ -163,6 +168,7 @@ SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_ins
     _t2 = std::max(t1, t2);
     _f2 = std::max(f1, f2);
     _save_inside = save_inside;
+    enabled = true;
 }
 
 bool SquareFilter::operator()( Transform_chunk& ) {
