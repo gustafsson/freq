@@ -3,6 +3,7 @@
 
 #include <QGLWidget>
 #include "spectrogram-renderer.h"
+#include "signal-microphonerecorder.h"
 #include <boost/shared_ptr.hpp>
 #include <TAni.h>
 
@@ -38,7 +39,7 @@ struct MyVector{
     float x, y, z;
 };
 
-class DisplayWidget : public QGLWidget
+class DisplayWidget : public QGLWidget, public Signal::MicrophoneRecorder::Callback
 {
     Q_OBJECT
 public:
@@ -80,6 +81,9 @@ signals:
     void filterChainUpdated(pTransform);
     
 private:
+    virtual void recievedData( Signal::MicrophoneRecorder* );
+    bool _record_update;
+
     boost::shared_ptr<SpectrogramRenderer> _renderer;
     boost::shared_ptr<Transform> _transform;
     

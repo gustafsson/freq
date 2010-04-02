@@ -143,6 +143,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 : QGLWidget( ),
   lastKey(0),
   xscale(1),
+  _record_update(false),
   _renderer( new SpectrogramRenderer( spectrogram )),
   _px(0), _py(0), _pz(-10),
   _rx(45), _ry(225), _rz(0),
@@ -247,7 +248,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             emit filterChainUpdated(t);
             break;
         }
-        case 'a': case 'A': case '\n': case '\r':
+        case 'a': case 'A':
         {
             pFilter f(new EllipsFilter( t->inverse()->built_in_filter ) );
 
@@ -275,7 +276,26 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             t->saveCsv();
             break;
         }
+        case 'r': case 'R':
+        {
+            Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( t->original_waveform().get() );
+            if (r)
+            {
+                r->isStopped() ? r->startRecording( this ) : r->stopRecording();
+            }
+            break;
+        }
     }
+}
+
+void DisplayWidget::recievedData( Signal::MicrophoneRecorder* r )
+{
+    static float prevl = r->length();
+    float newl = r->length();
+    _record_update = true;
+    update();
+    _renderer->spectrogram()->invalidate_range( prevl, newl );
+    prevl = newl;
 }
 
 void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
@@ -602,7 +622,9 @@ void DisplayWidget::paintGL()
     _renderer->draw();
 
     static float prev_xscale = xscale;
-    draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale );
+    draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale || _record_update);
+    _record_update = false;
+    prev_xscale = xscale;
 
     if (_enqueueGcDisplayList)
 //        gcDisplayList();

@@ -12,19 +12,21 @@ class MicrophoneRecorder: public Source
 public:
     class Callback {
         public:
-        virtual void recievedData( MicrophoneRecorder* );
+        virtual void recievedData( MicrophoneRecorder* ) = 0;
     };
 
     MicrophoneRecorder();
     ~MicrophoneRecorder();
+
+    void startRecording( Callback* );
+    void stopRecording();
+    bool isStopped();
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     virtual unsigned sample_rate();
     virtual unsigned number_of_samples();
 
     unsigned recording_itr() { return number_of_samples(); }
-
-    void setCallback( Callback* );
 
 private:
     Callback* _callback;

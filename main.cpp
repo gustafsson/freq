@@ -8,6 +8,7 @@
 #include "mainwindow.h"
 #include "displaywidget.h"
 #include "signal-audiofile.h"
+#include "signal-microphonerecorder.h"
 #include <sstream>
 #include <CudaProperties.h>
 #include <QtGui/QMessageBox>
@@ -49,6 +50,8 @@ static const char _sawe_usage_string[] =
 "                       then can be read by matlab or octave.\n"
 "    get_chunk_count    If assigned a value, Sonic AWE exits with the number of \n"
 "                       chunks as exit code.\n"
+"    record             If assigned a non-zero value, Sonic AWE record from the \n"
+"                       default microphone.\n"
 "\n"
 "Sonic AWE, 2010\n";
 
@@ -64,6 +67,7 @@ static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static unsigned _extract_chunk = (unsigned)-1;
 static unsigned _get_chunk_count = (unsigned)-1;
+static unsigned _record = 0;
 static std::string _soundfile = "";
 static std::string _playback_source_test = "";
 static bool _sawe_exit=false;
@@ -125,6 +129,7 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, yscale));
         else if (readarg(&cmd, extract_chunk));
         else if (readarg(&cmd, get_chunk_count));
+        else if (readarg(&cmd, record));
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
             printf("%s", _sawe_usage_string);
@@ -237,13 +242,12 @@ bool check_cuda() {
 }
 
 void validate_arguments() {
-    if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
+    if (!_record) if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
         QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
         if (0 == fileName.length())
             exit(0);
         _soundfile = fileName.toStdString();
     }
-    printf("Reading file: %s\n", _soundfile.c_str());
 
     switch ( _yscale )
     {
@@ -306,7 +310,15 @@ int main(int argc, char *argv[])
     validate_arguments();
 
     try {
-        boost::shared_ptr<Signal::Source> wf( new Signal::Audiofile( _soundfile.c_str() ) );
+        boost::shared_ptr<Signal::Source> wf;
+
+        if (_record)
+            wf.reset( new Signal::MicrophoneRecorder() );
+        else {
+            printf("Reading file: %s\n", _soundfile.c_str());
+            wf.reset( new Signal::Audiofile( _soundfile.c_str() ) );
+        }
+
         boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
 
         if (_extract_chunk != (unsigned)-1) {

@@ -166,7 +166,7 @@ Signal::pBuffer Transform_inverse::prepare_inverse(float start, float end)
     r->sample_offset = (unsigned)min((float)n, r->sample_rate*start);
     n -= r->sample_offset;
     if (start<=end)
-        n = min((float)n, r->sample_rate*(end-start));
+        n = max(1.f, min((float)n, r->sample_rate*(end-start)));
     fprintf(stdout, "rate = %d, offs = %d, n = %d, orgn = %d\n", r->sample_rate, r->sample_offset, n, _temp_to_remove->original_waveform()->number_of_samples());
     fflush(stdout);
 

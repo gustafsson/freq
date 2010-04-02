@@ -8,6 +8,7 @@ using namespace std;
 namespace Signal {
 
 MicrophoneRecorder::MicrophoneRecorder()
+:   _callback(0)
 {
     _sample_rate = 44100;
     unsigned frames_per_buffer = 1<<14;
@@ -19,7 +20,8 @@ MicrophoneRecorder::MicrophoneRecorder()
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             sys.deviceByIndex(iInputDevice),
             1,
-            portaudio::INT16,
+//            portaudio::INT16,
+            portaudio::FLOAT32,
             false,
             sys.deviceByIndex(iInputDevice).defaultLowInputLatency(),
             NULL);
@@ -39,8 +41,26 @@ MicrophoneRecorder::MicrophoneRecorder()
 
 MicrophoneRecorder::~MicrophoneRecorder()
 {
+    if (_stream_record) {
+        _stream_record->isStopped()? void(): _stream_record->stop();
+        _stream_record->close();
+    }
+}
+
+void MicrophoneRecorder::startRecording( Callback *p )
+{
+    _callback = p;
+    _stream_record->start();
+}
+
+void MicrophoneRecorder::stopRecording()
+{
     _stream_record->stop();
-    _stream_record->close();
+}
+
+bool MicrophoneRecorder::isStopped()
+{
+    return _stream_record->isStopped();
 }
 
 pBuffer MicrophoneRecorder::
@@ -48,6 +68,8 @@ pBuffer MicrophoneRecorder::
 {
     pBuffer b( new Buffer() );
     b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent( numberOfSamples, 1, 1) ) );
+    b->sample_offset = firstSample;
+    b->sample_rate = this->sample_rate();
 
     // this code is close to identical to "Playback::readBuffer", they could both use a BufferSource instead.
     // TODO refactor
@@ -85,8 +107,8 @@ pBuffer MicrophoneRecorder::
         }
     }
 
-    if (r==-1)
-        return pBuffer();
+//    if (r==-1)
+//        return pBuffer();
 
     return b;
 }
@@ -109,12 +131,6 @@ unsigned MicrophoneRecorder::
     return n;
 }
 
-void MicrophoneRecorder::
-        setCallback( Callback* p )
-{
-    _callback = p;
-}
-
 int MicrophoneRecorder::
         writeBuffer(const void *inputBuffer,
                  void */*outputBuffer*/,
@@ -131,6 +147,8 @@ int MicrophoneRecorder::
 
 
     memcpy ( b->waveform_data->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
+
+    _cache.push_back( b );
 
     if (_callback)
         _callback->recievedData( this );
