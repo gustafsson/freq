@@ -270,11 +270,14 @@ int main(int argc, char *argv[])
     QDateTime now = QDateTime::currentDateTime();
     now.date().year();
     stringstream ss;
-    ss << "Sonic Awe - ";
+    ss << "Sonic AWE";
+#ifndef SONICAWE_RELEASE
+    ss << " - ";
 #ifdef SONICAWE_VERSION
     ss << TOSTR(SONICAWE_VERSION);
 #else
     ss << __DATE__;// << " - " << __TIME__;
+#endif
 #endif
 
 #ifdef SONICAWE_BRANCH
