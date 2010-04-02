@@ -33,7 +33,8 @@ static const char _sawe_usage_string[] =
 "\n"
 "    samples_per_chunk  The transform is computed in chunks from the input\n"
 "                       This determines the number of input samples that \n"
-"                       should correspond to one chunk of the transform.\n"
+"                       should correspond to one chunk of the transform by\n"
+"                       2^samples_per_chunk.\n"
 "    scales_per_octave  Accuracy of transform, higher accuracy takes more time\n"
 "                       to compute.\n"
 "    wavelet_std_t      Transform chunks overlap this much, given in seconds.\n"
@@ -59,7 +60,7 @@ static unsigned _channel=0;
 static unsigned _scales_per_octave = 40;
 //static float _wavelet_std_t = 0.1;
 static float _wavelet_std_t = 0.03;
-static unsigned _samples_per_chunk = (1<<12) - 2*(((unsigned)(_wavelet_std_t*44100)+31)/32*32);
+static unsigned _samples_per_chunk = 13;
 //static float _wavelet_std_t = 0.03;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
@@ -319,7 +320,17 @@ int main(int argc, char *argv[])
             wf.reset( new Signal::Audiofile( _soundfile.c_str() ) );
         }
 
-        boost::shared_ptr<Transform> wt( new Transform(wf, _channel, _samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
+        // TODO compute required memory by application and adjust _samples_per_chunk thereafter
+        //unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
+
+        unsigned redundant = 2*(((unsigned)(_wavelet_std_t*wf->sample_rate())+31)/32*32);
+        while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
+            _samples_per_chunk++;
+            TaskTimer("To few samples per chunk, increasing to 2^%d", _samples_per_chunk).suppressTiming();
+        }
+        unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
+
+        boost::shared_ptr<Transform> wt( new Transform(wf, _channel, total_samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
 
         if (_extract_chunk != (unsigned)-1) {
             wt->saveCsv(_extract_chunk);

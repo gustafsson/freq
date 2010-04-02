@@ -186,17 +186,17 @@ int Playback::
 
             const BufferSlot& s = _cache[iBuffer];
 
-            unsigned nBytes_to_copy = nAccumulated_samples + s.buffer->number_of_samples() - _playback_itr;
-            if (framesPerBuffer < nBytes_to_copy )
-                nBytes_to_copy = framesPerBuffer;
+            unsigned nSamples_to_copy = nAccumulated_samples + s.buffer->number_of_samples() - _playback_itr;
+            if (framesPerBuffer < nSamples_to_copy )
+                nSamples_to_copy = framesPerBuffer;
 
             memcpy( buffer,
                     &s.buffer->waveform_data->getCpuMemory()[ _playback_itr - nAccumulated_samples ],
-                    nBytes_to_copy);
+                    nSamples_to_copy*sizeof(float));
 
-            buffer += nBytes_to_copy;
-            framesPerBuffer -= nBytes_to_copy;
-            _playback_itr += nBytes_to_copy;
+            buffer += nSamples_to_copy;
+            framesPerBuffer -= nSamples_to_copy;
+            _playback_itr += nSamples_to_copy;
         }
     }
     return r;

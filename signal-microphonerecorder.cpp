@@ -10,28 +10,24 @@ namespace Signal {
 MicrophoneRecorder::MicrophoneRecorder()
 :   _callback(0)
 {
-    _sample_rate = 44100;
-    unsigned frames_per_buffer = 1<<14;
-
     portaudio::System &sys = portaudio::System::instance();
-    unsigned iInputDevice = sys.defaultInputDevice().index();
+    portaudio::Device& inputDevice = sys.defaultInputDevice();
 
-    cout << "Opening recording input stream on " << sys.deviceByIndex(iInputDevice).name() << endl;
+    cout << "Opening recording input stream on " << inputDevice.name() << endl;
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
-            sys.deviceByIndex(iInputDevice),
-            1,
-//            portaudio::INT16,
+            inputDevice,
+            1, // channels
             portaudio::FLOAT32,
-            false,
-            sys.deviceByIndex(iInputDevice).defaultLowInputLatency(),
+            false, // interleaved
+            inputDevice.defaultLowInputLatency(),
             NULL);
 
     portaudio::StreamParameters paramsRecord(
             inParamsRecord,
             portaudio::DirectionSpecificStreamParameters::null(),
-            _sample_rate,
-            frames_per_buffer,
-            paClipOff);
+            inputDevice.defaultSampleRate(),
+            paFramesPerBufferUnspecified,
+            paNoFlag);
 
     _stream_record.reset( new portaudio::MemFunCallbackStream<MicrophoneRecorder>(
             paramsRecord,
@@ -73,7 +69,6 @@ pBuffer MicrophoneRecorder::
 
     // this code is close to identical to "Playback::readBuffer", they could both use a BufferSource instead.
     // TODO refactor
-    int r = -1;
     float *buffer = b->waveform_data->getCpuMemory();
     unsigned iBuffer = 0;
     unsigned nAccumulated_samples = 0;
@@ -87,28 +82,24 @@ pBuffer MicrophoneRecorder::
             nAccumulated_samples += _cache[iBuffer]->number_of_samples();
         }
 
-        if (iBuffer>=_cache.size())
-        {
+        if (iBuffer>=_cache.size()) {
             memset(buffer, 0, numberOfSamples*sizeof(float));
             numberOfSamples = 0;
-        } else {
-            r = 0;
 
-            unsigned nBytes_to_copy = nAccumulated_samples + _cache[iBuffer]->number_of_samples() - firstSample;
-            if (numberOfSamples < nBytes_to_copy )
-                nBytes_to_copy = numberOfSamples;
+        } else {
+            unsigned nSamples_to_copy = nAccumulated_samples + _cache[iBuffer]->number_of_samples() - firstSample;
+            if (numberOfSamples < nSamples_to_copy )
+                nSamples_to_copy = numberOfSamples;
 
             memcpy( buffer,
                     &_cache[iBuffer]->waveform_data->getCpuMemory()[ firstSample - nAccumulated_samples ],
-                    nBytes_to_copy);
+                    nSamples_to_copy*sizeof(float));
 
-            numberOfSamples -= nBytes_to_copy;
-            firstSample += nBytes_to_copy;
+            numberOfSamples -= nSamples_to_copy;
+            firstSample += nSamples_to_copy;
+            buffer += nSamples_to_copy;
         }
     }
-
-//    if (r==-1)
-//        return pBuffer();
 
     return b;
 }
@@ -116,7 +107,7 @@ pBuffer MicrophoneRecorder::
 unsigned MicrophoneRecorder::
         sample_rate()
 {
-    return _sample_rate;
+    return _stream_record->sampleRate();
 }
 
 unsigned MicrophoneRecorder::
@@ -147,6 +138,7 @@ int MicrophoneRecorder::
 
 
     memcpy ( b->waveform_data->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
+    //memset ( b->waveform_data->getCpuMemory(), 0, framesPerBuffer*sizeof(float) );
 
     _cache.push_back( b );
 

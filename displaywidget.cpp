@@ -292,9 +292,12 @@ void DisplayWidget::recievedData( Signal::MicrophoneRecorder* r )
 {
     static float prevl = r->length();
     float newl = r->length();
+    if (_qx == prevl )
+        _qx = newl;
+
     _record_update = true;
-    update();
     _renderer->spectrogram()->invalidate_range( prevl, newl );
+    update();
     prevl = newl;
 }
 

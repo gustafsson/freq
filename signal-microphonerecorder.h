@@ -40,8 +40,6 @@ private:
                      unsigned long framesPerBuffer,
                      const PaStreamCallbackTimeInfo *timeInfo,
                      PaStreamCallbackFlags statusFlags);
-
-    unsigned _sample_rate;
 };
 
 } // namespace Waveform
