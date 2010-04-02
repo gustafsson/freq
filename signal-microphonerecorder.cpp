@@ -136,9 +136,7 @@ int MicrophoneRecorder::
     pBuffer b( new Buffer() );
     b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent( framesPerBuffer, 1, 1) ) );
 
-
     memcpy ( b->waveform_data->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
-    //memset ( b->waveform_data->getCpuMemory(), 0, framesPerBuffer*sizeof(float) );
 
     _cache.push_back( b );
 
