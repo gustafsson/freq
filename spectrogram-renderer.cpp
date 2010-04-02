@@ -696,7 +696,7 @@ void SpectrogramRenderer::drawAxes()
     // 3 decide upon scale
     // 4 draw axis
 
-    float w = 0.3f, h=0.3f;
+    float w = 0.1f, h=0.1f;
     { // 1 gray draw overlay
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
@@ -764,7 +764,7 @@ void SpectrogramRenderer::drawAxes()
 
     // 3 decide upon scale
     float circumference = 0;
-    float DT=0, DF=0;
+    float DT=0, DF=0, ST=0, SF=0;
     GLvector inside;
     {
         float mint=T, maxt=0, minf=1, maxf=0;
@@ -784,16 +784,16 @@ void SpectrogramRenderer::drawAxes()
         // as clippedFrustum is a convex polygon, the mean position of its vertices will be inside
         inside = inside * (1.f/clippedFrustum.size());
 
-        DT = maxt-mint;
-        DF = maxf-minf;
+        ST = maxt-mint;
+        SF = maxf-minf;
 
         if (clippedFrustum.size())
         {
             int st = 0, sf = 0;
-            while( powf(10, st) < DT ) st++;
-            while( powf(10, st) > DT ) st--;
-            while( powf(10, sf) < DF ) sf++;
-            while( powf(10, sf) > DF ) sf--;
+            while( powf(10, st) < ST ) st++;
+            while( powf(10, st) > ST ) st--;
+            while( powf(10, sf) < SF ) sf++;
+            while( powf(10, sf) > SF ) sf--;
 
             st-=1;
             sf-=1;
@@ -806,53 +806,76 @@ void SpectrogramRenderer::drawAxes()
     // 4 render
     glColor4f(0,0,0,0);
         glDisable(GL_DEPTH_TEST);
-    glBegin( GL_LINES );
     GLvector x(1,0,0), z(0,0,1);
 
+    glColor4f(0,0,0,1);
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+    // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
         unsigned j=(i+1)%clippedFrustum.size();
+        GLvector p = clippedFrustum[i]; // starting point of side
+        GLvector v = clippedFrustum[j]-p; // vector pointing from p to the next vertex
 
-        GLvector p = clippedFrustum[i];
-        GLvector a = clippedFrustum[j]-clippedFrustum[i];
+        if (v[0] || v[2]) // skip if |v| = 0
+            continue;
 
-        unsigned t = p[0]/DT;
-        if (a[0] > 0) t++;
+        // compute index of next marker along t and f
+        unsigned t = p[0]/DT; // t marker index along t
+        if (v[0] > 0) t++;
 
-        unsigned f = p[2]/DF;
-        if (a[2] > 0) f++;
+        unsigned f = p[2]/DF; // t marker index along f
+        if (v[2] > 0) f++;
 
-        for (float u=0; u<1; )
+        // decide if this side is an t or f axis
+        bool taxis = fabsf(v[0]*SF) > fabsf(v[2]*ST);
+
+        for (float u=0; true; )
         {
-            // find next intersection along a
+            // find next intersection along v
+            float nu;
+            if (taxis)  nu = (t*DT - clippedFrustum[i][0])/v[0];
+            else        nu = (f*DF - clippedFrustum[i][2])/v[2];
 
-            float ut = (t*DT - clippedFrustum[i][0])/a[0];
-            float uf = (f*DF - clippedFrustum[i][2])/a[2];
-
-            if (ut > 0 && (ut < uf || !(uf > 0)))   { u = ut; }
-            else if (uf > 0)                        { u = uf; }
+            // if valid intersection
+            if ( nu > u && nu<1 ) { u = nu; }
             else break;
-            if (u>1)        break;
 
-            p = clippedFrustum[i]+a*u;
+            // compute intersection
+            p = clippedFrustum[i]+v*u;
 
-            if (u==ut) {
-                glVertex3f( p[0], 0, p[2] );
-                glVertex3f( p[0], 0, p[2] + DF*h*10*((a^z)%(a^( p - inside))>0?1:-1) );
+            // draw marker
+            if (taxis) {
+                float size = 1+ (0 == (t%10));
+                glLineWidth(size);
 
-                if (a[0] > 0) t++;
-                if (a[0] < 0) t--;
+                glBegin(GL_LINES);
+                    glVertex3f( p[0], 0, p[2] );
+                    glVertex3f( p[0], 0, p[2] + size*SF*h*.1f*((v^z)%(v^( p - inside))>0?1:-1) );
+                glEnd();
+
+                if (v[0] > 0) t++;
+                if (v[0] < 0) t--;
             } else {
-                glVertex3f( p[0], 0, p[2] );
-                glVertex3f( p[0] + DT*w*10*((a^x)%(a^( p - inside))>0?1:-1), 0, p[2] );
+                float size = 1+ (0 == (f%10));
+                glLineWidth(size);
 
-                if (a[2] > 0) f++;
-                if (a[2] < 0) f--;
+                glBegin(GL_LINES);
+                    glVertex3f( p[0], 0, p[2] );
+                    glVertex3f( p[0] + size*ST*w*.1f*((v^x)%(v^( p - inside))>0?1:-1), 0, p[2] );
+                glEnd();
+
+                if (v[2] > 0) f++;
+                if (v[2] < 0) f--;
             }
         }
     }
 
-    glEnd();
-        glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(true);
+    glDisable(GL_BLEND);
 }
 
