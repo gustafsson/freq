@@ -16,6 +16,7 @@ Spectrogram::Spectrogram( pTransform transform, unsigned samples_per_block, unsi
 :   _transform(transform),
     _samples_per_block(samples_per_block),
     _scales_per_block(scales_per_block),
+    _unfinished_count(0),
     _frame_counter(0)
 {}
 

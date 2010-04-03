@@ -20,6 +20,8 @@ public:
     pSpectrogram spectrogram() { return _spectrogram; }
 
     void draw();
+    void drawAxes();
+
 private:
     pSpectrogram _spectrogram;
     GLuint _mesh_index_buffer;

@@ -205,7 +205,7 @@ public:
 
 bool check_cuda() {
     stringstream ss;
-    void* ptr=(void*)1;
+    void* ptr=(void*)0;
     try {
         CudaException_CALL_CHECK ( cudaMalloc( &ptr, 1024 ));
         CudaException_CALL_CHECK ( cudaFree( ptr ));
