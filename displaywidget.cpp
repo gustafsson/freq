@@ -600,10 +600,10 @@ void DisplayWidget::paintGL()
 	}
 
     _renderer->draw();
-     _renderer->drawAxes();
+    _renderer->drawAxes();
 
-    static float prev_xscale = xscale;
-    draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale );
+    // static float prev_xscale = xscale;
+    // draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale );
 
     if (_enqueueGcDisplayList)
 //        gcDisplayList();

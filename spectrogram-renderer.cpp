@@ -6,6 +6,7 @@
 #else
   #include "OpenGL/glu.h"
 #endif
+#include <GL/glut.h>
 #include <stdio.h>
 #include "spectrogram-renderer.h"
 #include "spectrogram-vbo.h"
@@ -16,7 +17,6 @@
 #include <tmatrix.h>
 #include <float.h>
 #include <msc_stdc.h>
-
 using namespace std;
 
 static bool g_invalidFrustum = true;
@@ -765,6 +765,7 @@ void SpectrogramRenderer::drawAxes()
     // 3 decide upon scale
     float circumference = 0;
     float DT=0, DF=0, ST=0, SF=0;
+    int st = 0, sf = 0;
     GLvector inside;
     {
         float mint=T, maxt=0, minf=1, maxf=0;
@@ -789,11 +790,11 @@ void SpectrogramRenderer::drawAxes()
 
         if (clippedFrustum.size())
         {
-            int st = 0, sf = 0;
-            while( powf(10, st) < ST ) st++;
-            while( powf(10, st) > ST ) st--;
-            while( powf(10, sf) < SF ) sf++;
-            while( powf(10, sf) > SF ) sf--;
+            st = 0, sf = 0;
+            while( powf(10, st) < ST*.5f ) st++;
+            while( powf(10, st) > ST*.5f ) st--;
+            while( powf(10, sf) < SF*.5f ) sf++;
+            while( powf(10, sf) > SF*.5f ) sf--;
 
             st-=1;
             sf-=1;
@@ -803,32 +804,40 @@ void SpectrogramRenderer::drawAxes()
         }
     }
 
+    glDisable(GL_DEPTH_TEST);
+
     // 4 render
-    glColor4f(0,0,0,0);
-        glDisable(GL_DEPTH_TEST);
     GLvector x(1,0,0), z(0,0,1);
 
-    glColor4f(0,0,0,1);
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
+    float min_hz = spectrogram()->transform()->min_hz();
+    float max_hz = spectrogram()->transform()->max_hz();
+    float steplogsize = log(max_hz) - log(min_hz);
     // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
+        glColor4f(0,0,0,1);
         unsigned j=(i+1)%clippedFrustum.size();
         GLvector p = clippedFrustum[i]; // starting point of side
         GLvector v = clippedFrustum[j]-p; // vector pointing from p to the next vertex
 
-        if (v[0] || v[2]) // skip if |v| = 0
+        if (!v[0] && !v[2]) // skip if |v| = 0
             continue;
 
         // compute index of next marker along t and f
         unsigned t = p[0]/DT; // t marker index along t
         if (v[0] > 0) t++;
 
-        unsigned f = p[2]/DF; // t marker index along f
-        if (v[2] > 0) f++;
+        unsigned fc, f = exp(p[2]*steplogsize)*min_hz; // t marker index along f
+        for(fc = 1; fc*10 < f; fc*=10) {}
+
+        f = f/fc*fc;
+        if (10*fc==f) { fc*=10; }
+        // unsigned p[2]/DF; // t marker index along f
+        if (v[2] > 0) f+=fc;
 
         // decide if this side is an t or f axis
         bool taxis = fabsf(v[0]*SF) > fabsf(v[2]*ST);
@@ -838,7 +847,7 @@ void SpectrogramRenderer::drawAxes()
             // find next intersection along v
             float nu;
             if (taxis)  nu = (t*DT - clippedFrustum[i][0])/v[0];
-            else        nu = (f*DF - clippedFrustum[i][2])/v[2];
+            else        nu = (log(f/min_hz)/steplogsize - clippedFrustum[i][2])/v[2];
 
             // if valid intersection
             if ( nu > u && nu<1 ) { u = nu; }
@@ -852,24 +861,159 @@ void SpectrogramRenderer::drawAxes()
                 float size = 1+ (0 == (t%10));
                 glLineWidth(size);
 
+                float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
+                float o = size*SF*h*.1f*sign;
                 glBegin(GL_LINES);
                     glVertex3f( p[0], 0, p[2] );
-                    glVertex3f( p[0], 0, p[2] + size*SF*h*.1f*((v^z)%(v^( p - inside))>0?1:-1) );
+                    glVertex3f( p[0], 0, p[2] - o);
                 glEnd();
+
+                if (size>1) {
+                    glLineWidth(1);
+                    glPushMatrix();
+                        glTranslatef(p[0], 0, p[2]);
+                        glRotatef(90,0,1,0);
+                        glRotatef(90,1,0,0);
+                        glScalef(0.00016f*SF,0.00016f*ST,1.f);
+                        char a[100];
+                        char b[100];
+                        sprintf(b,"%%.%df", st<0?-1-st:0);
+                        sprintf(a, b, t*DT);
+                        unsigned w=20;
+                        if (sign>0) {
+                            for (char*c=a;*c!=0; c++)
+                                w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                        }
+                        glTranslatef(-1.f*w,-50.f,0);
+                        for (char*c=a;*c!=0; c++)
+                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    glPopMatrix();
+                }
 
                 if (v[0] > 0) t++;
                 if (v[0] < 0) t--;
             } else {
-                float size = 1+ (0 == (f%10));
+                float size = 1+ (1 == (f/fc));
                 glLineWidth(size);
 
+                float sign = (v^x)%(v^( p - inside))>0 ? 1.f : -1.f;
+                float o = size*ST*w*.1f*sign;
                 glBegin(GL_LINES);
                     glVertex3f( p[0], 0, p[2] );
-                    glVertex3f( p[0] + size*ST*w*.1f*((v^x)%(v^( p - inside))>0?1:-1), 0, p[2] );
+                    glVertex3f( p[0] - o, 0, p[2] );
                 glEnd();
 
-                if (v[2] > 0) f++;
-                if (v[2] < 0) f--;
+                if (size>1 || SF<.8f)
+                {
+                    glLineWidth(1);
+                    glPushMatrix();
+                        glTranslatef(p[0],0,p[2]);
+                        glRotatef(90,1,0,0);
+                        glScalef(0.00014f*ST,0.00014f*SF,1.f);
+                        char a[100];
+                        sprintf(a,"%d", f);
+                        unsigned w=20;
+                        if (sign<0) {
+                            for (char*c=a;*c!=0; c++)
+                                w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                        }
+                        glTranslatef(sign*w,-50.f,0);
+                        for (char*c=a;*c!=0; c++)
+                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    glPopMatrix();
+                }
+
+                if (v[2] > 0) {
+                    if (10*fc==f) { fc*=10; }
+                    f+=fc;
+                    if (10*fc==f) { fc*=10; }
+                }
+                if (v[2] < 0) { if (fc==f) { fc/=10; } f-=fc; }
+            }
+        }
+
+        if (!taxis) { // draw piano
+            // from http://en.wikipedia.org/wiki/Piano_key_frequencies
+            // F(n) = 440 * pow(pow(2, 1/12),n-49)
+            // log(F(n)/440) = log(pow(2, 1/12),n-49)
+            // log(F(n)/440) = log(pow(2, 1/12))*log(n-49)
+            // log(F(n)/440)/log(pow(2, 1/12)) = log(n-49)
+            // n = exp(log(F(n)/440)/log(pow(2, 1/12))) + 49
+            unsigned F1 = exp(clippedFrustum[i][2]*steplogsize)*min_hz;
+            unsigned F2 = exp(clippedFrustum[j][2]*steplogsize)*min_hz;
+            if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
+            if (!(F1>min_hz)) F1=min_hz;
+            if (!(F2<max_hz)) F2=max_hz;
+            float tva12 = powf(2.f, 1.f/12);
+            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
+            int startTone = exp(log(F1/440.f)/log(tva12)) + 49;
+            int endTone = exp(log(F2/440.f)/log(tva12)) + 49;
+            //if (startTone<0)
+                startTone = -5;
+            //if (endTone>200)
+                endTone = 117;
+            for( int tone = startTone; tone<=endTone; tone++)
+            {
+                float ff = log(440 * pow(tva12,tone-44)/min_hz)/steplogsize;
+                float ffN = log(440 * pow(tva12,tone-43)/min_hz)/steplogsize;
+                float ffP = log(440 * pow(tva12,tone-45)/min_hz)/steplogsize;
+    //            float ff = log(440 * pow(tva12,tone-49)/min_hz)/steplogsize;
+  //              float ffN = log(440 * pow(tva12,tone-48)/min_hz)/steplogsize;
+//                float ffP = log(440 * pow(tva12,tone-50)/min_hz)/steplogsize;
+//                float ff = log(exp(tone*.05)/t->min_hz())/steplogsize;
+//                float ffN = log(exp((tone+1)*.05)/t->min_hz())/steplogsize;
+//                float ffP = log(exp((tone-1)*.05)/t->min_hz())/steplogsize;
+                //if (ff>1)
+                //    break;
+                bool blackKey = false;
+                switch(tone%12) { case 1: case 3: case 6: case 8: case 10: blackKey = true; }
+                bool blackKeyP = false;
+                switch((tone+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
+                bool blackKeyN = false;
+                switch((tone+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
+                glLineWidth(1);
+                float wN = ffN-ff, wP = ff-ffP;
+                if (blackKey)
+                    wN *= .5, wP *= .5;
+                else {
+                    if (!blackKeyN)
+                        wN *= .5;
+                    if (!blackKeyP)
+                        wP *= .5;
+                }
+
+                float un = (ff+wN - clippedFrustum[i][2])/v[2];
+                float up = (ff-wP - clippedFrustum[i][2])/v[2];
+                GLvector pn = clippedFrustum[i]+v*un;
+                GLvector pp = clippedFrustum[i]+v*up;
+                    glPushMatrix();
+                    if (sign>0)
+                        glTranslatef( sign*ST*0.14f, 0.f, 0.f );
+                    else
+                        glTranslatef( -sign*ST*0.08f, 0.f, 0.f );
+    glColor4f(0,0,0,.35);
+            glBegin(blackKey ? GL_QUADS:GL_LINE_LOOP);
+                glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
+                glVertex3f(pn[0] - ST*0.14f, 0, pn[2]);
+                glVertex3f(pp[0] - ST*0.14f, 0, pp[2]);
+                glVertex3f(pp[0] - ST*(.08f +.024f*blackKey), 0, pp[2]);
+            glEnd();
+    glColor4f(0,0,0,1);
+                    glPopMatrix();
+                if(tone%12 == 0) {
+                    glLineWidth(1.f);
+                    glPushMatrix();
+                    glTranslatef(-.0515f,0,ff-wP*.7f);
+                    //glRotatef(90,0,1,0);
+                    glRotatef(90,1,0,0);
+                    float s = (wN+wP)*0.01f*.7f;
+                    glScalef(s*.5f,s,s);
+                    char a[100];
+                    sprintf(a,"C%d", tone/12 - 10);
+                    for (char*c=a;*c!=0; c++)
+                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    glPopMatrix();
+                }
             }
         }
     }
@@ -878,4 +1022,3 @@ void SpectrogramRenderer::drawAxes()
     glDepthMask(true);
     glDisable(GL_BLEND);
 }
-
