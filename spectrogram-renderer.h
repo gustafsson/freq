@@ -1,6 +1,6 @@
 #ifndef SPECTROGRAMRENDERER_H
 #define SPECTROGRAMRENDERER_H
-
+#include <sstream>
 #include "spectrogram.h"
 #ifdef _MSC_VER
 #include <windows.h>
@@ -12,10 +12,12 @@
 #endif
 #include "spectrogram-vbo.h"
 
+static std::string _shaderBaseDir;
 class SpectrogramRenderer
 {
 public:
     SpectrogramRenderer( pSpectrogram spectrogram );
+    static void setShaderBaseDir(std::string shaderBaseDir){ _shaderBaseDir = shaderBaseDir; printf("Shaderbasedir: %s\n", _shaderBaseDir.c_str());}
 
     pSpectrogram spectrogram() { return _spectrogram; }
 

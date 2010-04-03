@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/icon_move.png</file>
+    <file>icons/icon_select.png</file>
+  </qresource>
+</RCC>

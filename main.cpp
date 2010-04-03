@@ -10,7 +10,9 @@
 #include <sstream>
 #include <CudaProperties.h>
 #include <QtGui/QMessageBox>
+#include <QString>
 #include <CudaException.h>
+#include "spectrogram-renderer.h"
 //#include <cuda_runtime.h>
 
 using namespace std;
@@ -178,7 +180,9 @@ class SonicAWE_Application: public QApplication
 public:
     SonicAWE_Application( int& argc, char **argv)
     :   QApplication(argc, argv)
-    {}
+    {
+        SpectrogramRenderer::setShaderBaseDir(std::string(QApplication::applicationDirPath().toAscii()));
+    }
 
     virtual bool notify(QObject * receiver, QEvent * e) {
         bool v = false;

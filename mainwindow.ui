@@ -27,6 +27,13 @@
      <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+    <addaction name="actionToggleLayerWindow"/>
+   </widget>
+   <addaction name="menuWindows"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -40,6 +47,21 @@
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
+   <property name="minimumSize">
+    <size>
+     <width>200</width>
+     <height>157</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>300</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
@@ -128,6 +150,17 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionToggleLayerWindow">
+   <property name="text">
+    <string>Layer window</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle layer window</string>
+   </property>
+   <property name="shortcut">
+    <string>L</string>
    </property>
   </action>
  </widget>

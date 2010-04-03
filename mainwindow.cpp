@@ -20,6 +20,15 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
+    connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
+}
+
+void MainWindow::slotToggleLayerWindow(bool){
+    if(ui->layerWindow->isVisible()){
+        ui->layerWindow->close();
+    } else {
+        ui->layerWindow->show();
+    }
 }
 
 void MainWindow::slotDbclkFilterItem(QListWidgetItem *item)
