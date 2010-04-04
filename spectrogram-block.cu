@@ -96,10 +96,10 @@ __global__ void kernel_merge_chunk(
         for (float x = 0; x < resample_width; x++)
         {
             float s = in_offset + x + resample_width*(writePos.x-out_offset);
-            if ( s >= in_offset + n_valid_samples )
-                continue;
 
-            for (float y = 0; y < resample_height; y++)
+            if ( s >= in_offset + n_valid_samples )
+                x=resample_width;
+            else for (float y = 0; y < resample_height; y++)
             {
                 float t = y + resample_height*writePos.y;
 
@@ -156,16 +156,19 @@ __global__ void kernel_merge_chunk(
     if( !outBlock.unwrapCudaGrid( writePos ))
         return;
 
-    __shared__ float val[WARP] = 0;
+    // __shared__ float val[WARP] = 0;
     unsigned n = 0;
 
     if (writePos.x>=out_offset)
     {
         for (float x = 0; x < resample_width; x++)
         {
-            for (float y = 0; y < resample_height; y++)
+            float s = in_offset + x + resample_width*(writePos.x-out_offset);
+
+            if ( s >= in_offset + n_valid_samples )
+                x=resample_width;
+            else for (float y = 0; y < resample_height; y++)
             {
-                float s = in_offset + x + resample_width*(writePos.x-out_offset);
                 float t = y + resample_height*writePos.y;
 
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
@@ -218,7 +221,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
     if(0) {
         elemSize3_t sz_o = outBlock.getNumberOfElements();
         elemSize3_t sz_i = inChunk.getNumberOfElements();
-        fprintf(stdout,"sz_o (%d, %d, %d)\tsz_i (%d, %d, %d)\n", sz_o.x, sz_o.y, sz_o.z, sz_i.x, sz_i.y, sz_i.z );
+        //fprintf(stdout,"sz_o (%d, %d, %d)\tsz_i (%d, %d, %d)\n", sz_o.x, sz_o.y, sz_o.z, sz_i.x, sz_i.y, sz_i.z );
 
 
         fprintf(stdout,"grid (%d, %d, %d)\tblock (%d, %d, %d)\n", grid.x, grid.y, grid.z, block.x, block.y, block.z );
@@ -260,7 +263,7 @@ __global__ void kernel_expand_stft(
     const unsigned
             y = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
 
-    unsigned nFrequencies = outBlock.getNumberOfElementsD().y;
+    unsigned nFrequencies = outBlock.getNumberOfElements().y;
     if( y >= nFrequencies )
         return;
 
@@ -268,12 +271,12 @@ __global__ void kernel_expand_stft(
     float hz_out = start*exp(ff*steplogsize);
 
     float max_stft_hz = 44100.f/2;
-    float min_stft_hz = 44100.f/(2*inStft.getNumberOfElementsD().x);
+    float min_stft_hz = 44100.f/(2*inStft.getNumberOfElements().x);
     float read_f = max(0.f,min(1.f,(hz_out-min_stft_hz)/(max_stft_hz-min_stft_hz)));
 
     float2 c;
 
-    float p = read_f*inStft.getNumberOfElementsD().x;
+    float p = read_f*inStft.getNumberOfElements().x;
     elemSize3_t readPos = make_elemSize3_t( p, 0, 0 );
     inStft.clamp(readPos);
     c = inStft.elem(readPos);
@@ -290,7 +293,7 @@ __global__ void kernel_expand_stft(
     val*=f0;
 
     elemSize3_t writePos = make_elemSize3_t( 0, y, 0 );
-    for (writePos.x=out_offset; writePos.x<out_offset + out_length && writePos.x<outBlock.getNumberOfElementsD().x;writePos.x++)
+    for (writePos.x=out_offset; writePos.x<out_offset + out_length && writePos.x<outBlock.getNumberOfElements().x;writePos.x++)
     {
         outBlock.e( writePos ) = val;
     }
@@ -344,7 +347,7 @@ __global__ void kernel_expand_complete_stft(
 
     float val;
     /*if (1 || 0==threadIdx.x)*/ {
-            unsigned nFrequencies = outBlock.getNumberOfElementsD().y;
+            unsigned nFrequencies = outBlock.getNumberOfElements().y;
         if( y >= nFrequencies )
             return;
 

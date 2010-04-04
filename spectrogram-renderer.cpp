@@ -110,7 +110,7 @@ typedef tvector<4,GLdouble> GLvector4;
 typedef tmatrix<4,GLdouble> GLmatrix;
 
 static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
-static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
+// static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
@@ -164,7 +164,7 @@ GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
     return gluUnProject(win, model, proj, view, r);
 }
 
-static bool validWindowPos(GLvector win) {
+/* static bool validWindowPos(GLvector win) {
     GLint view[4];
     glGetIntegerv(GL_VIEWPORT, view);
 
@@ -172,23 +172,23 @@ static bool validWindowPos(GLvector win) {
             && win[0]<view[0]+view[2]
             && win[1]<view[1]+view[3]
             && win[2]>=0.1 && win[2]<=100;
-}
+}*/
 
-static GLvector4 applyModelMatrix(GLvector4 obj) {
+/*static GLvector4 applyModelMatrix(GLvector4 obj) {
     GLdouble m[16];
     glGetDoublev(GL_MODELVIEW_MATRIX, m);
 
     GLvector4 eye = GLmatrix(m) * obj;
     return eye;
-}
+}*/
 
-static GLvector4 applyProjectionMatrix(GLvector4 eye) {
+/*static GLvector4 applyProjectionMatrix(GLvector4 eye) {
     GLdouble p[16];
     glGetDoublev(GL_PROJECTION_MATRIX, p);
 
     GLvector4 clip = GLmatrix(p) * eye;
     return clip;
-}
+}*/
 
 /* distance along normal, a negative distance means obj is in front of plane */
 static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
