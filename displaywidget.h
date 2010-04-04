@@ -6,6 +6,7 @@
 #include "signal-microphonerecorder.h"
 #include <boost/shared_ptr.hpp>
 #include <TAni.h>
+#include <queue>
 
 class MouseControl
 {
@@ -103,6 +104,7 @@ private:
 		_rx, _ry, _rz,
 		_qx, _qy, _qz;
 	int _prevX, _prevY, _targetQ;
+        std::queue<std::pair<float, float> > _invalidRange;
 
 	void drawArrows();
 	void drawColorFace();

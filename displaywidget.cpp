@@ -147,7 +147,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
   _renderer( new SpectrogramRenderer( spectrogram )),
   _px(0), _py(0), _pz(-10),
   _rx(45), _ry(225), _rz(0),
-  _qx(0), _qy(0), _qz(3.6f/5),
+  _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
   _prevX(0), _prevY(0), _targetQ(0),
   _enqueueGcDisplayList( false ),
   selecting(false)
@@ -162,7 +162,6 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 #endif
     gDisplayWidget = this;
     float l = _renderer->spectrogram()->transform()->original_waveform()->length();
-    _qx = .5 * l;
     selection[0].x = l*.5f;
     selection[0].y = 0;
     selection[0].z = .85f;
@@ -175,6 +174,11 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     selection[0].z = selection[1].z;
 
     _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(_renderer->spectrogram()->transform()->original_waveform().get());
+    if (0!=r)
+        recievedData( r );
+
 
     yscale = Yscale_LogLinear;
     timeOut();
@@ -196,7 +200,6 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 
 DisplayWidget::~DisplayWidget()
 {
-    // TODO use a mutex for recievedData
 }
 
 void DisplayWidget::recieveCurrentSelection(int index)
@@ -292,14 +295,14 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
 
 void DisplayWidget::recievedData( Signal::MicrophoneRecorder* r )
 {
-    // TODO use a mutex for ~DisplayWidget
-    static float prevl = r->length();
     float newl = r->length();
+    static float prevl = newl;
     if (_qx == prevl )
         _qx = newl;
 
     _record_update = true;
-    _renderer->spectrogram()->invalidate_range( prevl, newl );
+
+    _invalidRange.push( std::pair<float, float>(prevl, newl));
     update();
     prevl = newl;
 }
@@ -568,6 +571,12 @@ void DisplayWidget::paintGL()
 {
     TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
+    while (_invalidRange.size()) {
+        std::pair<float, float> p = _invalidRange.front();
+        _invalidRange.pop();
+        _renderer->spectrogram()->invalidate_range( p.first, p.second );
+    }
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
@@ -679,7 +688,8 @@ void DisplayWidget::paintGL()
 
     drawSelection();
 
-    CudaException_ThreadSynchronize();
+    // CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
     GlException_CHECK_ERROR();
 }
 
