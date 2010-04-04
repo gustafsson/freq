@@ -939,19 +939,23 @@ void SpectrogramRenderer::drawAxes()
             // log(F(n)/440) = log(pow(2, 1/12))*log(n-49)
             // log(F(n)/440)/log(pow(2, 1/12)) = log(n-49)
             // n = exp(log(F(n)/440)/log(pow(2, 1/12))) + 49
+
             unsigned F1 = exp(clippedFrustum[i][2]*steplogsize)*min_hz;
             unsigned F2 = exp(clippedFrustum[j][2]*steplogsize)*min_hz;
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
             if (!(F1>min_hz)) F1=min_hz;
             if (!(F2<max_hz)) F2=max_hz;
             float tva12 = powf(2.f, 1.f/12);
-            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
-            int startTone = exp(log(F1/440.f)/log(tva12)) + 49;
-            int endTone = exp(log(F2/440.f)/log(tva12)) + 49;
+
+
+            int startTone = log(F1/440.f)/log(tva12) + 45;
+            int endTone = log(F2/440.f)/log(tva12) + 44;
             //if (startTone<0)
-                startTone = -5;
+            //    startTone = -5;
             //if (endTone>200)
-                endTone = 117;
+            //    endTone = 117;
+            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
+
             for( int tone = startTone; tone<=endTone; tone++)
             {
                 float ff = log(440 * pow(tva12,tone-44)/min_hz)/steplogsize;
@@ -1003,7 +1007,7 @@ void SpectrogramRenderer::drawAxes()
                 if(tone%12 == 0) {
                     glLineWidth(1.f);
                     glPushMatrix();
-                    glTranslatef(-.0515f,0,ff-wP*.7f);
+                    glTranslatef(.5f*pn[0]+.5f*pp[0] - .0515f,0,.15f*pn[0]+.85f*pp[0]);
                     //glRotatef(90,0,1,0);
                     glRotatef(90,1,0,0);
                     float s = (wN+wP)*0.01f*.7f;
