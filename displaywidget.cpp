@@ -195,7 +195,9 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 }
 
 DisplayWidget::~DisplayWidget()
-{}
+{
+    // TODO use a mutex for recievedData
+}
 
 void DisplayWidget::recieveCurrentSelection(int index)
 {
@@ -290,6 +292,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
 
 void DisplayWidget::recievedData( Signal::MicrophoneRecorder* r )
 {
+    // TODO use a mutex for ~DisplayWidget
     static float prevl = r->length();
     float newl = r->length();
     if (_qx == prevl )
