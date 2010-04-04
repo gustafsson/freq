@@ -1007,13 +1007,21 @@ void SpectrogramRenderer::drawAxes()
                 if(tone%12 == 0) {
                     glLineWidth(1.f);
                     glPushMatrix();
-                    glTranslatef(.5f*pn[0]+.5f*pp[0] - .0515f,0,.15f*pn[0]+.85f*pp[0]);
-                    //glRotatef(90,0,1,0);
+                    glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
                     glRotatef(90,1,0,0);
-                    float s = (wN+wP)*0.01f*.7f;
-                    glScalef(s*.5f,s,s);
+
+                    // glTranslatef(.5f*pn[0]+.5f*pp[0] - .0515f,0,.15f*pn[0]+.85f*pp[0]);
+                    //float s = (wN+wP)*0.01f*.7f;
+                        glScalef(0.00014f*ST,0.00014f*SF,1.f);
+                    //glScalef(s*.5f,s,s);
                     char a[100];
-                    sprintf(a,"C%d", tone/12 - 10);
+                    sprintf(a,"C%d", tone/12 - 4);
+                    unsigned w=20;
+                    if (sign<0) {
+                        for (char*c=a;*c!=0; c++)
+                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                    }
+                    glTranslatef(sign*w,-50.f,0);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                     glPopMatrix();
