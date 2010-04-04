@@ -3,10 +3,11 @@
 #endif
 #ifndef __APPLE__
   #include "GL/glew.h"
+  #include <GL/glut.h>
 #else
   #include "OpenGL/glu.h"
+  #include <GLUT/glut.h>
 #endif
-#include <GL/glut.h>
 #include <stdio.h>
 #include "spectrogram-renderer.h"
 #include "spectrogram-vbo.h"

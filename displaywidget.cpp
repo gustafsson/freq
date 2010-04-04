@@ -278,10 +278,16 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         }
         case 'r': case 'R':
         {
+        		printf("Try recording: ");
             Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( t->original_waveform().get() );
             if (r)
             {
+            		printf("succeded!\n");
                 r->isStopped() ? r->startRecording( this ) : r->stopRecording();
+            }
+            else
+            {
+            		printf("failed!\n");;
             }
             break;
         }

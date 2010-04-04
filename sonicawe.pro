@@ -8,6 +8,7 @@ QT += opengl \
     testlib
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
+INCLUDEPATH += ../../libs/include
 SOURCES += main.cpp \
     mainwindow.cpp \
     displaywidget.cpp \
@@ -83,7 +84,7 @@ unix:LIBS = -lsndfile \
     -lGLU \
     -lGL \
     -lboost_thread-mt \
-    -lglut \
+#    -lglut \
     -lportaudiocpp -lportaudio
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS = -lsndfile \
@@ -93,7 +94,8 @@ macx:LIBS = -lsndfile \
     -L../misc \
     -lmisc \
     -framework GLUT \
-    -framework OpenGL
+    -framework OpenGL \
+    -L../../libs -lportaudiocpp -lportaudio
 #    tmp/wavelet_cuda.o \
 #    tmp/spectrogram-slope_cuda.o \
 #    tmp/spectrogram-block_cuda.o \
