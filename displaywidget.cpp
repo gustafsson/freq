@@ -1009,10 +1009,10 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
 }
 
 void DisplayWidget::setSelection(int index, bool enabled){
-    if (index < 0) return;
+    pTransform t = _renderer->spectrogram()->transform();
+    if (index < 0 || index>=t->filter_chain.size()) return;
     
     printf("####Current selection: %d\n", index);
-    pTransform t = _renderer->spectrogram()->transform();
     FilterChain::iterator i = t->filter_chain.begin();
     std::advance(i, index);
     EllipsFilter *e = (EllipsFilter*)(i->get());
@@ -1020,7 +1020,7 @@ void DisplayWidget::setSelection(int index, bool enabled){
     selection[0].z = e->_f1;
     selection[1].x = e->_t2;
     selection[1].z = e->_f2;
-    //_transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    t->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
     
     if(e->enabled != enabled){
         e->enabled = enabled;
@@ -1029,7 +1029,7 @@ void DisplayWidget::setSelection(int index, bool enabled){
         _renderer->spectrogram()->invalidate_range(start, end);
     }
     
-    glDraw();
+    update();
 }
 
 void DisplayWidget::removeFilter(int index){

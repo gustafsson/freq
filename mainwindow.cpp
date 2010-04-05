@@ -21,17 +21,21 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
     connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
+    connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
 }
 
-void MainWindow::slotToggleLayerWindow(bool){
-    if(ui->layerWindow->isVisible()){
+void MainWindow::slotToggleLayerWindow(bool a){
+    if(!a) {
         ui->layerWindow->close();
     } else {
         ui->layerWindow->show();
     }
 }
+void MainWindow::slotClosedLayerWindow(bool visible){
+    ui->actionToggleLayerWindow->setChecked(visible);
+}
 
-void MainWindow::slotDbclkFilterItem(QListWidgetItem *item)
+void MainWindow::slotDbclkFilterItem(QListWidgetItem */*item*/)
 {
     //emit sendCurrentSelection(ui->layerWidget->row(item), );
 }
@@ -82,19 +86,25 @@ void MainWindow::updateLayerList(pTransform t)
     BOOST_FOREACH( pFilter f, t->filter_chain ) {
         stringstream title;
         stringstream tooltip;
-        tooltip << fixed << setprecision(2) << " ";
+        title << fixed << setprecision(1);
+        tooltip << fixed << setprecision(2);
 
         if (FilterChain *c = dynamic_cast<FilterChain*>(f.get())) {
             title << "Chain #" << c->size() << "";
             tooltip << "Chain contains " << c->size() << " subfilters";
 
         } else if (EllipsFilter* c = dynamic_cast<EllipsFilter*>(f.get())) {
-            title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
-            tooltip << "Ellips2 p(" << c->_t1 << ", " << c->_f1 << "), r(" << fabsf(c->_t2-c->_t1) << ", " << fabsf(c->_f2-c->_f1) << ")";
+            float r = fabsf(c->_t1-c->_t2);
+            title << "Ellips [" << c->_t1-r << ", " << c->_t1 + r << "]";
+            tooltip << "Ellips p(" << c->_t1 << ", " << c->_f1 << "), "
+                            << "r(" << r << ", " << fabsf(c->_f2-c->_f1) << "), "
+                            << "area " << r*fabsf((c->_f1-c->_f2)*M_PI);
 
         } else if (SquareFilter* c = dynamic_cast<SquareFilter*>(f.get())) {
-            title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
-            tooltip << "Square2 t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
+            title << "Square [" << c->_t1 << ", " << c->_t2 << "]";
+            tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], "
+                            << "f[" << c->_f1 << ", " << c->_f2 << "], "
+                            << "area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2));
 
         }/* else if (SelectionFilter* c = dynamic_cast<SelectionFilter>(f.get())) {
             if (EllipsSelection* c = dynamic_cast<EllipsSelection>(c->selection)) {
@@ -112,7 +122,7 @@ void MainWindow::updateLayerList(pTransform t)
         QListWidgetItem* itm = new QListWidgetItem( title.str().c_str(), ui->layerWidget, 0 );
         itm->setToolTip( tooltip.str().c_str() );
         itm->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-        itm->setCheckState(Qt::Checked);
+        itm->setCheckState( f->enabled? Qt::Checked:Qt::Unchecked);
         ui->layerWidget->addItem( itm );
     }
     

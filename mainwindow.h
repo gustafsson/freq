@@ -35,6 +35,7 @@ public slots:
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);
     void slotToggleLayerWindow(bool);
+    void slotClosedLayerWindow(bool visible);
 
 signals:
     void sendCurrentSelection(int, bool);
