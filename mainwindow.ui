@@ -14,8 +14,8 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>../../../../dev/sonicawe.scm/sonic/sonicawe/sonicawe.png</normaloff>../../../../dev/sonicawe.scm/sonic/sonicawe/sonicawe.png</iconset>
+   <iconset resource="icon-resources.qrc">
+    <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QMenuBar" name="menuBar">
@@ -24,9 +24,16 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+    <addaction name="actionToggleLayerWindow"/>
+   </widget>
+   <addaction name="menuWindows"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -35,9 +42,26 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionActivateSelection"/>
+   <addaction name="actionActivateNavigation"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
+   <property name="minimumSize">
+    <size>
+     <width>200</width>
+     <height>160</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>300</width>
+     <height>524287</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
@@ -65,6 +89,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QToolButton" name="deleteFilterButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Delete</string>
          </property>
@@ -75,8 +102,77 @@
     </layout>
    </widget>
   </widget>
+  <action name="actionActivateSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/icons/icon_select.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Activate Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Activate selection [S]</string>
+   </property>
+   <property name="shortcut">
+    <string>S</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionActivateNavigation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/icons/icon_move.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Activate Navigation</string>
+   </property>
+   <property name="toolTip">
+    <string>Activate navigation [N]</string>
+   </property>
+   <property name="shortcut">
+    <string>N</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionToggleLayerWindow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Layer window</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle layer window</string>
+   </property>
+   <property name="shortcut">
+    <string>L</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="icon-resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

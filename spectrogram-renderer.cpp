@@ -111,7 +111,7 @@ typedef tvector<4,GLdouble> GLvector4;
 typedef tmatrix<4,GLdouble> GLmatrix;
 
 static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
-static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
+// static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
@@ -165,7 +165,7 @@ GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
     return gluUnProject(win, model, proj, view, r);
 }
 
-static bool validWindowPos(GLvector win) {
+/* static bool validWindowPos(GLvector win) {
     GLint view[4];
     glGetIntegerv(GL_VIEWPORT, view);
 
@@ -173,23 +173,23 @@ static bool validWindowPos(GLvector win) {
             && win[0]<view[0]+view[2]
             && win[1]<view[1]+view[3]
             && win[2]>=0.1 && win[2]<=100;
-}
+}*/
 
-static GLvector4 applyModelMatrix(GLvector4 obj) {
+/*static GLvector4 applyModelMatrix(GLvector4 obj) {
     GLdouble m[16];
     glGetDoublev(GL_MODELVIEW_MATRIX, m);
 
     GLvector4 eye = GLmatrix(m) * obj;
     return eye;
-}
+}*/
 
-static GLvector4 applyProjectionMatrix(GLvector4 eye) {
+/*static GLvector4 applyProjectionMatrix(GLvector4 eye) {
     GLdouble p[16];
     glGetDoublev(GL_PROJECTION_MATRIX, p);
 
     GLvector4 clip = GLmatrix(p) * eye;
     return clip;
-}
+}*/
 
 /* distance along normal, a negative distance means obj is in front of plane */
 static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
@@ -242,7 +242,15 @@ void SpectrogramRenderer::init()
 #endif
 
     // load shader
-    _shader_prog = loadGLSLProgram("spectrogram.vert", "spectrogram.frag");
+/*#ifdef __APPLE__
+    printf("Shaderbasedir: %s\n", _shaderBaseDir.c_str());
+    std::string vsPath = _shaderBaseDir + "spectrogram.vert";
+    std::string fsPath = _shaderBaseDir + "spectrogram.frag";
+    printf("Shaderpath: \n %s\n %s\n", fsPath.c_str(), vsPath.c_str());
+    _shader_prog = loadGLSLProgram(vsPath.c_str(), fsPath.c_str());
+#else
+#endif*/
+    _shader_prog = loadGLSLProgram(":/shaders/spectrogram.vert", ":/shaders/spectrogram.frag");
 
     setSize( _spectrogram->samples_per_block(), _spectrogram->scales_per_block() );
 
@@ -940,19 +948,23 @@ void SpectrogramRenderer::drawAxes()
             // log(F(n)/440) = log(pow(2, 1/12))*log(n-49)
             // log(F(n)/440)/log(pow(2, 1/12)) = log(n-49)
             // n = exp(log(F(n)/440)/log(pow(2, 1/12))) + 49
+
             unsigned F1 = exp(clippedFrustum[i][2]*steplogsize)*min_hz;
             unsigned F2 = exp(clippedFrustum[j][2]*steplogsize)*min_hz;
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
             if (!(F1>min_hz)) F1=min_hz;
             if (!(F2<max_hz)) F2=max_hz;
             float tva12 = powf(2.f, 1.f/12);
-            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
-            int startTone = exp(log(F1/440.f)/log(tva12)) + 49;
-            int endTone = exp(log(F2/440.f)/log(tva12)) + 49;
+
+
+            int startTone = log(F1/440.f)/log(tva12) + 45;
+            int endTone = log(F2/440.f)/log(tva12) + 44;
             //if (startTone<0)
-                startTone = -5;
+            //    startTone = -5;
             //if (endTone>200)
-                endTone = 117;
+            //    endTone = 117;
+            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
+
             for( int tone = startTone; tone<=endTone; tone++)
             {
                 float ff = log(440 * pow(tva12,tone-44)/min_hz)/steplogsize;
@@ -1004,13 +1016,21 @@ void SpectrogramRenderer::drawAxes()
                 if(tone%12 == 0) {
                     glLineWidth(1.f);
                     glPushMatrix();
-                    glTranslatef(-.0515f,0,ff-wP*.7f);
-                    //glRotatef(90,0,1,0);
+                    glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
                     glRotatef(90,1,0,0);
-                    float s = (wN+wP)*0.01f*.7f;
-                    glScalef(s*.5f,s,s);
+
+                    // glTranslatef(.5f*pn[0]+.5f*pp[0] - .0515f,0,.15f*pn[0]+.85f*pp[0]);
+                    //float s = (wN+wP)*0.01f*.7f;
+                        glScalef(0.00014f*ST,0.00014f*SF,1.f);
+                    //glScalef(s*.5f,s,s);
                     char a[100];
-                    sprintf(a,"C%d", tone/12 - 10);
+                    sprintf(a,"C%d", tone/12 - 4);
+                    unsigned w=20;
+                    if (sign<0) {
+                        for (char*c=a;*c!=0; c++)
+                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                    }
+                    glTranslatef(sign*w,-50.f,0);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                     glPopMatrix();

@@ -18,6 +18,8 @@ public:
     virtual void range(float& start_time, float& end_time) = 0;
 
     virtual void invalidateWaveform( const Transform&, Signal::Buffer& );
+    
+    bool enabled;
 };
 
 typedef boost::shared_ptr<class Filter> pFilter;

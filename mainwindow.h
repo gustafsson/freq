@@ -6,6 +6,10 @@
 #include "displaywidget.h"
 #include "spectrogram-renderer.h"
 
+#ifdef Q_WS_MAC
+void qt_mac_set_menubar_icons(bool enable);
+#endif
+
 namespace Ui
 {
     class MainWindow;
@@ -28,11 +32,13 @@ protected:
 public slots:
     void updateLayerList(pTransform t);
     void slotDbclkFilterItem(QListWidgetItem*);
-    void slotNewSelection(int);
+    void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);
+    void slotToggleLayerWindow(bool);
+    void slotClosedLayerWindow(bool visible);
 
 signals:
-    void sendCurrentSelection(int);
+    void sendCurrentSelection(int, bool);
     void sendRemoveItem(int);
 
 private:

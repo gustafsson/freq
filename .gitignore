@@ -20,3 +20,4 @@ debug
 *.idb
 ncb
 *.dsp
+qrc_icon-resources.cpp

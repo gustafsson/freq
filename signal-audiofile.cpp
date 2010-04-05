@@ -30,6 +30,7 @@ using namespace std;
 using namespace audiere;
 
 namespace Signal {
+const char *selection_name = "selection.wav";
 
 Audiofile::Audiofile()
 :   _source(0)
@@ -151,7 +152,7 @@ void Audiofile::writeFile( const char* filename )
 {
 	TaskTimer tt("%s %s",__FUNCTION__,filename);
 
-    _last_filename = filename;
+    _last_filename = "flapppa";
     // todo: this method only writes mono data from the first (left) channel
 
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
@@ -334,10 +335,10 @@ void Audiofile::play() {
 
     Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
 
-    wf->writeFile("selection.wav");
+    wf->writeFile(selection_name);
 #ifdef __APPLE__
-    QSound::play("selection.wav");
-    printf("Play file: %s\n", "selection.wav");
+    QSound::play(selection_name);
+    printf("Play file: %s\n", selection_name);
     return;
 #endif
 

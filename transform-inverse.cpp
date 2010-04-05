@@ -50,10 +50,6 @@ void Transform_inverse::setInverseArea(float t1, float f1, float t2, float f2) {
     built_in_filter = EllipsFilter(t1,f1,t2,f2,true);
     Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(get_inverse_waveform().get());
     built_in_filter.invalidateWaveform(*_temp_to_remove, *a->getChunkBehind());
-
-    float start_time, end_time;
-    built_in_filter.range(start_time, end_time);
-    filterTimer.reset(new TaskTimer("Computing inverse [%g,%g], %g s", start_time, end_time, end_time-start_time));
 }
 
 void Transform_inverse::recompute_filter(pFilter f) {
@@ -67,7 +63,14 @@ void Transform_inverse::play_inverse()
 {
     Signal::Audiofile* af = dynamic_cast<Signal::Audiofile*>(_inverse_waveform.get());
     if ( _inverse_waveform ) if (af->getChunkBehind() )
+    {
+        float start_time, end_time;
+        built_in_filter.range(start_time, end_time);
+        filterTimer.reset(new TaskTimer("Computing inverse [%g,%g], %g s", start_time, end_time, end_time-start_time));
+
         af->getChunkBehind()->play_when_done = true;
+    }
+
     get_inverse_waveform();
 }
 
@@ -167,8 +170,8 @@ Signal::pBuffer Transform_inverse::prepare_inverse(float start, float end)
     n -= r->sample_offset;
     if (start<=end)
         n = max(1.f, min((float)n, r->sample_rate*(end-start)));
-    fprintf(stdout, "rate = %d, offs = %d, n = %d, orgn = %d\n", r->sample_rate, r->sample_offset, n, _temp_to_remove->original_waveform()->number_of_samples());
-    fflush(stdout);
+    //fprintf(stdout, "rate = %d, offs = %d, n = %d, orgn = %d\n", r->sample_rate, r->sample_offset, n, _temp_to_remove->original_waveform()->number_of_samples());
+    //fflush(stdout);
 
     r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(n, 1, 1), GpuCpuVoidData::CudaGlobal) );
     cudaMemset(r->waveform_data->getCudaGlobal().ptr(), 0, r->waveform_data->getSizeInBytes1D());

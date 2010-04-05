@@ -39,7 +39,13 @@ MicrophoneRecorder::~MicrophoneRecorder()
 {
     if (_stream_record) {
         _stream_record->isStopped()? void(): _stream_record->stop();
+        _stream_record->isStopped()? void(): _stream_record->abort();
         _stream_record->close();
+    }
+
+    if (!_cache.empty()) {
+        TaskTimer tt(TaskTimer::LogVerbose, "Releasing recorded data");
+        _cache.clear();
     }
 }
 
