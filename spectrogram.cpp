@@ -271,40 +271,40 @@ void Spectrogram::BlockWorker::run()
     }
 }
 #endif
-Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
+
+Spectrogram::pBlock attempt( Spectrogram* t, Spectrogram::Reference ref )
 {
-    TaskTimer tt("Creating a new block");
-    // Try to allocate a new block
-    pBlock block;
     try {
-        pBlock attempt( new Spectrogram::Block(ref));
-        attempt->vbo.reset( new SpectrogramVbo( this ));
+        Spectrogram::pBlock attempt( new Spectrogram::Block(ref));
+        attempt->vbo.reset( new SpectrogramVbo( t ));
         SpectrogramVbo::pHeight h = attempt->vbo->height();
         SpectrogramVbo::pSlope sl = attempt->vbo->slope();
+        attempt->vbo->unmap();
 
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        block = attempt;
+        return attempt;
     }
-    catch (const CudaException& x )
+    catch (const CudaException& )
     { }
-    catch (const GlException& x )
+    catch (const GlException& )
     { }
+    return Spectrogram::pBlock();
+}
+
+Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
+{
+    Position a,b;
+    ref.getArea(a,b);
+    TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
+    // Try to allocate a new block
+    pBlock block = attempt( this, ref );
 
     if ( 0 == block.get() && !_cache.empty()) {
         tt.info("Memory allocation failed, overwriting some older block");
-        // Try to reuse an old block instead
-        // Look for the oldest block
-
-        unsigned oldest = _cache[0]->frame_number_last_used;
-
-        BOOST_FOREACH( pBlock& b, _cache ) {
-            if ( oldest > b->frame_number_last_used ) {
-                oldest = b->frame_number_last_used;
-                block = b;
-            }
-        }
+        gc();
+        block = attempt( this, ref );
     }
 
     if ( 0 == block.get()) {
@@ -319,16 +319,16 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
         cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
 
         if ( 1 /* create from others */ ) {
-            TaskTimer tt("Merging all blocks into new block");
+            TaskTimer tt(TaskTimer::LogVerbose, "Stubbing new block");
 
             // fill block by STFT
             {
-                TaskTimer tt("stft");
+                TaskTimer tt(TaskTimer::LogVerbose, "stft");
                 fillStft( block );
             }
 
             if (0) {
-                TaskTimer tt("preventing wavelet transform");
+                TaskTimer tt(TaskTimer::LogVerbose, "Preventing wavelet transform");
                 Position a,b;
                 block->ref.getArea(a,b);
                 unsigned start = a.time * _transform->original_waveform()->sample_rate();
@@ -344,7 +344,7 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
             }
 
             if (0) {
-                TaskTimer tt("details");
+                TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // start with the blocks that are just slightly more detailed
                 BOOST_FOREACH( pBlock& b, _cache ) {
                     if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]+1 ||
@@ -356,7 +356,7 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
             }
 
             if (0) {
-                TaskTimer tt("more");
+                TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
                 // then try using the blocks that are even more detailed
                 BOOST_FOREACH( pBlock& b, _cache ) {
                     if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
@@ -368,6 +368,7 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
             }
 
             if (0) {
+                TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                 // then try to upscale other blocks
                 BOOST_FOREACH( pBlock& b, _cache ) {
                     if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0] ||

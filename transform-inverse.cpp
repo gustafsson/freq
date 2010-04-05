@@ -170,8 +170,8 @@ Signal::pBuffer Transform_inverse::prepare_inverse(float start, float end)
     n -= r->sample_offset;
     if (start<=end)
         n = max(1.f, min((float)n, r->sample_rate*(end-start)));
-    fprintf(stdout, "rate = %d, offs = %d, n = %d, orgn = %d\n", r->sample_rate, r->sample_offset, n, _temp_to_remove->original_waveform()->number_of_samples());
-    fflush(stdout);
+    //fprintf(stdout, "rate = %d, offs = %d, n = %d, orgn = %d\n", r->sample_rate, r->sample_offset, n, _temp_to_remove->original_waveform()->number_of_samples());
+    //fflush(stdout);
 
     r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(n, 1, 1), GpuCpuVoidData::CudaGlobal) );
     cudaMemset(r->waveform_data->getCudaGlobal().ptr(), 0, r->waveform_data->getSizeInBytes1D());
