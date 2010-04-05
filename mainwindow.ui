@@ -14,8 +14,8 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>../../../../dev/sonicawe.scm/sonic/sonicawe/sonicawe.png</normaloff>../../../../dev/sonicawe.scm/sonic/sonicawe/sonicawe.png</iconset>
+   <iconset resource="icon-resources.qrc">
+    <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QMenuBar" name="menuBar">
@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -50,7 +50,7 @@
    <property name="minimumSize">
     <size>
      <width>200</width>
-     <height>157</height>
+     <height>160</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -118,7 +118,7 @@
     <string>Activate Selection</string>
    </property>
    <property name="toolTip">
-    <string>Activate selection</string>
+    <string>Activate selection [S]</string>
    </property>
    <property name="shortcut">
     <string>S</string>
@@ -143,7 +143,7 @@
     <string>Activate Navigation</string>
    </property>
    <property name="toolTip">
-    <string>Activate navigation</string>
+    <string>Activate navigation [N]</string>
    </property>
    <property name="shortcut">
     <string>N</string>
@@ -153,6 +153,12 @@
    </property>
   </action>
   <action name="actionToggleLayerWindow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Layer window</string>
    </property>

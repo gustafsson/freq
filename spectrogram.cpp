@@ -509,8 +509,8 @@ void Spectrogram::invalidate_range(float start_time, float end_time)
 {
     unsigned start = max(0.f,start_time)*_transform->original_waveform()->sample_rate();
     unsigned end = max(0.f,end_time)*_transform->original_waveform()->sample_rate();
-    start = max((unsigned)1,_transform->getChunkIndex(start))-1;
-    end = _transform->getChunkIndex(end)+1;
+    start = max((unsigned)2,_transform->getChunkIndex(start))-2;
+    end = _transform->getChunkIndex(end)+2;
     BOOST_FOREACH( pBlock& b, _cache ) {
         for (Transform::ChunkIndex n = start;
              n <= end;

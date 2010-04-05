@@ -260,7 +260,7 @@ __global__ void kernel_expand_stft(
     const unsigned
             y = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
 
-    unsigned nFrequencies = outBlock.getNumberOfElementsD().y;
+    unsigned nFrequencies = outBlock.getNumberOfElements().y;
     if( y >= nFrequencies )
         return;
 
@@ -268,12 +268,12 @@ __global__ void kernel_expand_stft(
     float hz_out = start*exp(ff*steplogsize);
 
     float max_stft_hz = 44100.f/2;
-    float min_stft_hz = 44100.f/(2*inStft.getNumberOfElementsD().x);
+    float min_stft_hz = 44100.f/(2*inStft.getNumberOfElements().x);
     float read_f = max(0.f,min(1.f,(hz_out-min_stft_hz)/(max_stft_hz-min_stft_hz)));
 
     float2 c;
 
-    float p = read_f*inStft.getNumberOfElementsD().x;
+    float p = read_f*inStft.getNumberOfElements().x;
     elemSize3_t readPos = make_elemSize3_t( p, 0, 0 );
     inStft.clamp(readPos);
     c = inStft.elem(readPos);
@@ -290,7 +290,7 @@ __global__ void kernel_expand_stft(
     val*=f0;
 
     elemSize3_t writePos = make_elemSize3_t( 0, y, 0 );
-    for (writePos.x=out_offset; writePos.x<out_offset + out_length && writePos.x<outBlock.getNumberOfElementsD().x;writePos.x++)
+    for (writePos.x=out_offset; writePos.x<out_offset + out_length && writePos.x<outBlock.getNumberOfElements().x;writePos.x++)
     {
         outBlock.e( writePos ) = val;
     }
@@ -344,7 +344,7 @@ __global__ void kernel_expand_complete_stft(
 
     float val;
     /*if (1 || 0==threadIdx.x)*/ {
-            unsigned nFrequencies = outBlock.getNumberOfElementsD().y;
+            unsigned nFrequencies = outBlock.getNumberOfElements().y;
         if( y >= nFrequencies )
             return;
 
