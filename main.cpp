@@ -265,8 +265,10 @@ void validate_arguments() {
 
 int main(int argc, char *argv[])
 {
+//#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
-  
+//#endif
+
     QDateTime now = QDateTime::currentDateTime();
     now.date().year();
     stringstream ss;
@@ -356,6 +358,8 @@ int main(int argc, char *argv[])
         int r = a.exec();
         if (!fatal_error.empty())
             fatal_exception(fatal_error);
+
+        CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
         fatal_exception(x);

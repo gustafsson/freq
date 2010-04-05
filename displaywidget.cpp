@@ -200,6 +200,11 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 
 DisplayWidget::~DisplayWidget()
 {
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(
+            this->_renderer->spectrogram()->transform()->original_waveform().get() );
+    if (r) {
+        r->isStopped() ? void() : r->stopRecording();
+    }
 }
 
 void DisplayWidget::recieveCurrentSelection(int index)
