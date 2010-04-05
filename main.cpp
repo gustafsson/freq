@@ -12,7 +12,9 @@
 #include <sstream>
 #include <CudaProperties.h>
 #include <QtGui/QMessageBox>
+#include <QString>
 #include <CudaException.h>
+#include "spectrogram-renderer.h"
 //#include <cuda_runtime.h>
 
 using namespace std;
@@ -163,40 +165,38 @@ void fatal_exception( const std::string& str )
                  QString("Fatal error. Sonic AWE needs to close"),
                  QString::fromStdString(str) );
 }
-void fatal_exception( const std::exception &x )
+
+string fatal_exception( const std::exception &x )
 {
-    stringstream ss;
+    std::stringstream ss;
     ss   << "Error: " << typeid(x).name() << endl
-         << "Message: " << x.what() << endl;
-
-    fatal_exception( ss.str() );
+         << "Message: " << x.what();
+    return ss.str();
 }
 
-void fatal_unknown_exception() {
-    fatal_exception( string("An unknown error occurred") );
+string fatal_unknown_exception() {
+    return "Error: An unknown error occurred";
 }
+
 
 class SonicAWE_Application: public QApplication
 {
 public:
     SonicAWE_Application( int& argc, char **argv)
     :   QApplication(argc, argv)
-    {}
+    {
+        SpectrogramRenderer::setShaderBaseDir(std::string(QApplication::applicationDirPath().toAscii()));
+    }
 
     virtual bool notify(QObject * receiver, QEvent * e) {
         bool v = false;
         try {
             v = QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            fatal_error = "Error: ";
-            fatal_error.append(typeid(x).name());
-            fatal_error.append("\n");
-            fatal_error.append("Message: ");
-            fatal_error.append(x.what());
-            fatal_error.append("\n");
+            fatal_error = fatal_exception(x);
             this->exit(-2);
         } catch (...) {
-            fatal_error = "An unknown error occurred";
+            fatal_error = fatal_unknown_exception();
             this->exit(-2);
         }
         return v;
@@ -362,10 +362,10 @@ int main(int argc, char *argv[])
         CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
-        fatal_exception(x);
+        fatal_exception(fatal_exception(x));
         return -2;
     } catch (...) {
-        fatal_unknown_exception();
+        fatal_exception(fatal_unknown_exception());
         return -3;
     }
 }

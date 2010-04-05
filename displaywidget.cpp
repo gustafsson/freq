@@ -31,35 +31,35 @@
 typedef tvector<3,GLdouble> GLvector;
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
-  GLvector win;
-  bool s = (GLU_TRUE == gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
-  if(r) *r=s;
-  return win;
+    GLvector win;
+    bool s = (GLU_TRUE == gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
+    if(r) *r=s;
+    return win;
 }
 template<typename f>
 GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
-  GLvector obj;
-  bool s = (GLU_TRUE == gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
-  if(r) *r=s;
-  return obj;
+    GLvector obj;
+    bool s = (GLU_TRUE == gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
+    if(r) *r=s;
+    return obj;
 }
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, bool *r=0) {
-  GLdouble model[16], proj[16];
-  GLint view[4];
-  glGetDoublev(GL_MODELVIEW_MATRIX, model);
-  glGetDoublev(GL_PROJECTION_MATRIX, proj);
-  glGetIntegerv(GL_VIEWPORT, view);
-  return gluProject(obj, model, proj, view, r);
+    GLdouble model[16], proj[16];
+    GLint view[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, model);
+    glGetDoublev(GL_PROJECTION_MATRIX, proj);
+    glGetIntegerv(GL_VIEWPORT, view);
+    return gluProject(obj, model, proj, view, r);
 }
 template<typename f>
 GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
-  GLdouble model[16], proj[16];
-  GLint view[4];
-  glGetDoublev(GL_MODELVIEW_MATRIX, model);
-  glGetDoublev(GL_PROJECTION_MATRIX, proj);
-  glGetIntegerv(GL_VIEWPORT, view);
-  return gluUnProject(win, model, proj, view, r);
+    GLdouble model[16], proj[16];
+    GLint view[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, model);
+    glGetDoublev(GL_PROJECTION_MATRIX, proj);
+    glGetIntegerv(GL_VIEWPORT, view);
+    return gluUnProject(win, model, proj, view, r);
 }
 
 
@@ -67,73 +67,73 @@ using namespace std;
 
 float MouseControl::deltaX( float x )
 {
-  if( down )
-    return x - lastx;
-  
-  return 0;
+    if( down )
+        return x - lastx;
+    
+    return 0;
 }
 float MouseControl::deltaY( float y )
 {
-  if( down )
-    return y - lasty;
-  
-  return 0;
+    if( down )
+        return y - lasty;
+    
+    return 0;
 }
 
 bool MouseControl::worldPos(GLdouble &ox, GLdouble &oy)
 {
-  return worldPos(this->lastx, this->lasty, ox, oy);
+    return worldPos(this->lastx, this->lasty, ox, oy);
 }
 bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
 {
-  GLdouble s;
-  bool test[2];
-  GLvector win_coord, world_coord[2];
-  
-  win_coord = GLvector(x, y, 0.1);
-  
-  world_coord[0] = gluUnProject<GLdouble>(win_coord, &test[0]);
-  //printf("CamPos1: %f: %f: %f\n", world_coord[0][0], world_coord[0][1], world_coord[0][2]);
-  
-  win_coord[2] = 0.6;
-  world_coord[1] = gluUnProject<GLdouble>(win_coord, &test[1]);
-  //printf("CamPos2: %f: %f: %f\n", world_coord[1][0], world_coord[1][1], world_coord[1][2]);
-  
-  s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
-  
-  ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
-  oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
-  
-  float minAngle = 20;
-  if( s < 0 || world_coord[0][1]-world_coord[1][1] < sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
-    return false;
-
-  return test[0] && test[1];
+    GLdouble s;
+    bool test[2];
+    GLvector win_coord, world_coord[2];
+    
+    win_coord = GLvector(x, y, 0.1);
+    
+    world_coord[0] = gluUnProject<GLdouble>(win_coord, &test[0]);
+    //printf("CamPos1: %f: %f: %f\n", world_coord[0][0], world_coord[0][1], world_coord[0][2]);
+    
+    win_coord[2] = 0.6;
+    world_coord[1] = gluUnProject<GLdouble>(win_coord, &test[1]);
+    //printf("CamPos2: %f: %f: %f\n", world_coord[1][0], world_coord[1][1], world_coord[1][2]);
+    
+    s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
+    
+    ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
+    oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
+    
+    float minAngle = 20;
+    if( s < 0 || world_coord[0][1]-world_coord[1][1] < sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
+        return false;
+    
+    return test[0] && test[1];
 }
 
 void MouseControl::press( float x, float y )
 {
-  touch();
-  update( x, y );
-  down = true;
+    touch();
+    update( x, y );
+    down = true;
 }
 void MouseControl::update( float x, float y )
 {
-  touch();
-  lastx = x;
-  lasty = y;
+    touch();
+    lastx = x;
+    lasty = y;
 }
 void MouseControl::release()
 {
-  //touch();
-  down = false;
+    //touch();
+    down = false;
 }
 bool MouseControl::isTouched()
 {
-  if(hold == 0)
-    return true;
-  else
-    return false;
+    if(hold == 0)
+        return true;
+    else
+        return false;
 }
 
 
@@ -149,6 +149,8 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
   _rx(45), _ry(225), _rz(0),
   _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
   _prevX(0), _prevY(0), _targetQ(0),
+  _selectionActive(true),
+  _navigationActive(false),
   _enqueueGcDisplayList( false ),
   selecting(false)
 {
@@ -168,7 +170,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     selection[1].x = l*sqrt(2.0f);
     selection[1].y = 0;
     selection[1].z = 2;
-
+    
     // no selection
     selection[0].x = selection[1].x;
     selection[0].z = selection[1].z;
@@ -182,12 +184,12 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 
     yscale = Yscale_LogLinear;
     timeOut();
-
+    
     if ( timerInterval != 0 )
     {
         startTimer(timerInterval);
     }
-
+    
     if (!playback_source_test.empty())
     {
         open_inverse_test(playback_source_test);
@@ -207,13 +209,32 @@ DisplayWidget::~DisplayWidget()
     }
 }
 
-void DisplayWidget::recieveCurrentSelection(int index)
+void DisplayWidget::recieveCurrentSelection(int index, bool enabled)
 {
-    setSelection(index);
+    setSelection(index, enabled);
 }
 
 void DisplayWidget::recieveFilterRemoval(int index){
     removeFilter(index);
+}
+
+void DisplayWidget::recieveToggleSelection(bool active)
+{
+    if(active && _selectionActive != active){
+        _navigationActive = false;
+        printf("Setting navigation false\n");
+        emit setNavigationActive(false);
+    }
+    _selectionActive = active;
+}
+void DisplayWidget::recieveToggleNavigation(bool active)
+{
+    if(active && _navigationActive != active){
+        _selectionActive = false;
+        printf("Setting selection false\n");
+        emit setSelectionActive(false);
+    }
+    _navigationActive = active;
 }
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
@@ -243,7 +264,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             t->recompute_filter(pFilter());
             if( _transform != t )
                 _transform->recompute_filter(pFilter());
-
+            
             BOOST_FOREACH( pFilter f, t->filter_chain )
             {
                 float start, end;
@@ -253,7 +274,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             t->filter_chain.clear();
             if( _transform != t )
                 _transform->filter_chain.clear();
-
+            
             update();
             emit filterChainUpdated(t);
             break;
@@ -268,7 +289,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
                 _transform->filter_chain.push_back(f);
                 _transform->recompute_filter(f);
             }
-
+            
             float start, end;
             f->range(start, end);
             _renderer->spectrogram()->invalidate_range(start, end);
@@ -319,164 +340,203 @@ void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
-  switch ( e->button() )
-  {
-    case Qt::LeftButton:
-      if(' '==lastKey)
-      	selectionButton.press( e->x(), this->height() - e->y() );
-      else
-      	leftButton.press( e->x(), this->height() - e->y() );
-      //printf("LeftButton: Press\n");
-      break;
-      
-    case Qt::MidButton:
-      middleButton.press( e->x(), this->height() - e->y() );
-      //printf("MidButton: Press\n");
-      break;
-      
-    case Qt::RightButton:
+    /*switch ( e->button() )
     {
-      rightButton.press( e->x(), this->height() - e->y() );
-      //printf("RightButton: Press\n");
+        case Qt::LeftButton:
+            if(' '==lastKey)
+                selectionButton.press( e->x(), this->height() - e->y() );
+            else
+                leftButton.press( e->x(), this->height() - e->y() );
+            //printf("LeftButton: Press\n");
+            break;
+            
+        case Qt::MidButton:
+            middleButton.press( e->x(), this->height() - e->y() );
+            //printf("MidButton: Press\n");
+            break;
+            
+        case Qt::RightButton:
+        {
+            rightButton.press( e->x(), this->height() - e->y() );
+            //printf("RightButton: Press\n");
+        }
+            break;
+            
+        default:
+            break;
+    }*/
+    
+    if(_navigationActive) {
+        switch ( e->button() )
+        {
+            case Qt::LeftButton:
+                moveButton.press( e->x(), this->height() - e->y() );
+                break;
+
+            case Qt::RightButton:
+                rotateButton.press( e->x(), this->height() - e->y() );
+                break;
+            default:
+                break;
+        }
+    }else if(_selectionActive)
+    {
+        switch ( e->button() )
+        {
+            case Qt::LeftButton:
+                selectionButton.press( e->x(), this->height() - e->y() );
+                break;
+                
+            case Qt::RightButton:
+                scaleButton.press( e->x(), this->height() - e->y() );
+                break;
+            default:
+                break;
+        }
     }
-      break;
-      
-    default:
-      break;
-  }
-  
-  if(leftButton.isDown() && rightButton.isDown())
-	selectionButton.press( e->x(), this->height() - e->y() );
-  
-  glDraw();
+    
+    if(leftButton.isDown() && rightButton.isDown())
+        selectionButton.press( e->x(), this->height() - e->y() );
+    
+    glDraw();
     _prevX = e->x(),
     _prevY = e->y();
 }
 
 void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 {
-  switch ( e->button() )
-  {
-    case Qt::LeftButton:
-      leftButton.release();
-      selectionButton.release();
-      //printf("LeftButton: Release\n");
-      selecting = false;
-      break;
-      
-    case Qt::MidButton:
-      middleButton.release();
-      //printf("MidButton: Release\n");
-      break;
-      
-    case Qt::RightButton:
-      rightButton.release();
-      selectionButton.release();
-      //printf("RightButton: Release\n");
-      break;
-      
-    default:
-      break;
-  }
-  glDraw();
+    switch ( e->button() )
+    {
+        case Qt::LeftButton:
+            leftButton.release();
+            selectionButton.release();
+            moveButton.release();
+            //printf("LeftButton: Release\n");
+            selecting = false;
+            break;
+            
+        case Qt::MidButton:
+            middleButton.release();
+            //printf("MidButton: Release\n");
+            break;
+            
+        case Qt::RightButton:
+            rightButton.release();
+            selectionButton.release();
+            scaleButton.release();
+            rotateButton.release();
+            //printf("RightButton: Release\n");
+            break;
+            
+        default:
+            break;
+    }
+    glDraw();
 }
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
 {
-  float ps = 0.0005;
-  float rs = 0.08;
-  if( e->orientation() == Qt::Horizontal )
-  {
-    _ry -= rs * e->delta();
-  }
-  else
-  {
-    if(e->modifiers().testFlag(Qt::ShiftModifier))
-        xscale *= (1-ps * e->delta());
+    float ps = 0.0005;
+    float rs = 0.08;
+    if( e->orientation() == Qt::Horizontal )
+    {
+        _ry -= rs * e->delta();
+    }
     else
-        _pz *= (1+ps * e->delta());
-    //_pz -= ps * e->delta();
-
-    //_rx -= ps * e->delta();
-  }
-  
-  glDraw();
+    {
+        if(e->modifiers().testFlag(Qt::ShiftModifier))
+            xscale *= (1-ps * e->delta());
+        else
+            _pz *= (1+ps * e->delta());
+        //_pz -= ps * e->delta();
+        
+        //_rx -= ps * e->delta();
+    }
+    
+    glDraw();
 }
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
-  float rs = 0.2;
-  
-  int x = e->x(), y = this->height() - e->y();
-  
-  if (selectionButton.isDown())
-  {
-    GLdouble p[2];
-    if (selectionButton.worldPos(x, y, p[0], p[1]))
+    float rs = 0.2;
+    
+    int x = e->x(), y = this->height() - e->y();
+    
+    
+    if ( selectionButton.isDown() )
     {
-      if (!selecting) {
-        selection[0].x = selection[1].x = p[0];
-        selection[0].y = selection[1].y = 0;
-        selection[0].z = selection[1].z = p[1];
-        selecting = true;
-      } else {
-        selection[1].x = p[0];
-        selection[1].y = 0;
-        selection[1].z = p[1];
-        _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-        if (_transform != _renderer->spectrogram()->transform())
-            _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-      }
-    }
-  } else {
-      //Controlling the rotation with the left button.
-      _ry += (1-orthoview)*rs * leftButton.deltaX( x );
-      _rx -= rs * leftButton.deltaY( y );
-      if (_rx<0) _rx=0;
-      if (_rx>90) { _rx=90; orthoview=1; }
-      if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
-
-      //Controlling the the position with the right button.
-
-      if( rightButton.isDown() )
-      {
-        GLvector last, current;
-        if( rightButton.worldPos(last[0], last[1]) &&
-            rightButton.worldPos(x, y, current[0], current[1]) )
+        GLdouble p[2];
+        if (selectionButton.worldPos(x, y, p[0], p[1]))
         {
-          float l = _renderer->spectrogram()->transform()->original_waveform()->length();
-
-          _qx -= current[0] - last[0];
-          _qz -= current[1] - last[1];
-
-          if (_qx<0) _qx=0;
-          if (_qz<0) _qz=0;
-          if (_qz>8.f/5) _qz=8.f/5;
-          if (_qx>l) _qx=l;
+            if (!selecting) {
+                selection[0].x = selection[1].x = p[0];
+                selection[0].y = selection[1].y = 0;
+                selection[0].z = selection[1].z = p[1];
+                selecting = true;
+            } else {
+                selection[1].x = p[0];
+                selection[1].y = 0;
+                selection[1].z = p[1];
+				_renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+				if (_transform != _renderer->spectrogram()->transform())
+				    _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+            }
         }
-      }
-  }
-  
-  
-  //Updating the buttons
-  leftButton.update( x, y );
-  rightButton.update( x, y );
-  middleButton.update( x, y );
-  selectionButton.update( x, y );
-  
-  glDraw();
+    } 
+    if( rotateButton.isDown() ){
+        //Controlling the rotation with the left button.
+        _ry += (1-orthoview)*rs * rotateButton.deltaX( x );
+        _rx -= rs * rotateButton.deltaY( y );
+        if (_rx<0) _rx=0;
+        if (_rx>90) { _rx=90; orthoview=1; }
+        if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
+        
+    }
+    if( moveButton.isDown() )
+    {
+        //Controlling the the position with the right button.
+        GLvector last, current;
+        if( moveButton.worldPos(last[0], last[1]) &&
+           moveButton.worldPos(x, y, current[0], current[1]) )
+        {
+            float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+            
+            _qx -= current[0] - last[0];
+            _qz -= current[1] - last[1];
+            
+            if (_qx<0) _qx=0;
+            if (_qz<0) _qz=0;
+            if (_qz>8.f/5) _qz=8.f/5;
+            if (_qx>l) _qx=l;
+        }
+    }
+    
+    
+    //Updating the buttons
+    leftButton.update( x, y );
+    rightButton.update( x, y );
+    middleButton.update( x, y );
+    selectionButton.update( x, y );
+    moveButton.update(x, y);
+    rotateButton.update(x, y);
+    scaleButton.update(x, y);
+    
+    glDraw();
 }
 
 
 void DisplayWidget::timeOut()
 {
-  leftButton.untouch();
-  middleButton.untouch();
-  rightButton.untouch();
-  selectionButton.untouch();
-
-  if(selectionButton.isDown() && selectionButton.getHold() == 5)
-  {
+    leftButton.untouch();
+    middleButton.untouch();
+    rightButton.untouch();
+    selectionButton.untouch();
+    rotateButton.untouch();
+    moveButton.untouch();
+    scaleButton.untouch();
+    
+    if(selectionButton.isDown() && selectionButton.getHold() == 5)
+    {
     _transform->inverse()->play_inverse();
 /*      // TODO use Signal::Playback
         Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
@@ -490,7 +550,7 @@ void DisplayWidget::timeOut()
         sleep(3);
         // if(a) a->play();
 */
-  }
+    }
 }
 
 void DisplayWidget::timerEvent(QTimerEvent *)
@@ -516,10 +576,10 @@ void DisplayWidget::open_inverse_test(std::string soundfile)
     }
     boost::shared_ptr<Signal::Source> wf( new Signal::Audiofile( soundfile.c_str() ) );
     boost::shared_ptr<Transform> t = _renderer->spectrogram()->transform();
-
+    
     _transform.reset();
     _transform.reset( new Transform(wf, 0, t->samples_per_chunk(), t->scales_per_octave(), t->wavelet_std_t() ) );
-
+    
     try
     {
         _transform->inverse()->get_inverse_waveform();
@@ -534,17 +594,17 @@ void DisplayWidget::open_inverse_test(std::string soundfile)
 void DisplayWidget::initializeGL()
 {
     glShadeModel(GL_SMOOTH);
-
+    
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
-
+    
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_LINE_SMOOTH);
-//    glDepthFunc(GL_NEVER);
-
+    //    glDepthFunc(GL_NEVER);
+    
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
+    
     GLfloat LightAmbient[]= { 0.5f, 0.5f, 0.5f, 1.0f };
     GLfloat LightDiffuse[]= { 1.0f, 1.0f, 1.0f, 1.0f };
     GLfloat LightPosition[]= { 0.0f, 0.0f, 2.0f, 1.0f };
@@ -560,13 +620,13 @@ void DisplayWidget::initializeGL()
 
 void DisplayWidget::resizeGL( int width, int height ) {
     height = height?height:1;
-
+    
     glViewport( 0, 0, (GLint)width, (GLint)height );
-
+    
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.1f,100.0f);
-
+    
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -584,23 +644,36 @@ void DisplayWidget::paintGL()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-
-/*    glBegin(GL_LINE_STRIP);
-            glColor3f(0,0,0);         glVertex3f( v1.x, v1.y, v1.z );
-            glColor3f(1,0,0);         glVertex3f( _px, _py, _pz );
-    glEnd();
-*/
+    
+    /*    glBegin(GL_LINE_STRIP);
+     glColor3f(0,0,0);         glVertex3f( v1.x, v1.y, v1.z );
+     glColor3f(1,0,0);         glVertex3f( _px, _py, _pz );
+     glEnd();
+     */
     glTranslatef( _px, _py, _pz );
-
+    
     glRotatef( _rx, 1, 0, 0 );
     glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( _rz, 0, 0, 1 );
-
+    
     glScalef(-xscale, 1-.99*orthoview, 5);
-
+    
     glTranslatef( -_qx, -_qy, -_qz );
-
+    
     orthoview.TimeStep(.08);
+    _transform->inverse()->play_inverse();
+/*      // TODO use Signal::Playback
+        Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
+        Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
+        Signal::Playback::list_devices();
+
+        Signal::Playback pb;
+        pb.expected_samples_left(0);
+        pb.put( s->read( 0, s->number_of_samples() ) );
+        TaskTimer tt("Playing");
+        sleep(3);
+        // if(a) a->play();
+*/
 
     Signal::pSource invs = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform(),
                 inv2s;
@@ -638,7 +711,7 @@ void DisplayWidget::paintGL()
 			}
 		glPopMatrix();
 	}
-
+    
     _renderer->draw();
     _renderer->drawAxes();
 
@@ -648,38 +721,38 @@ void DisplayWidget::paintGL()
     // prev_xscale = xscale;
 
     if (_enqueueGcDisplayList)
-//        gcDisplayList();
+        //        gcDisplayList();
     { ; }
-
+    
     static bool computing_inverse = false;
     static bool computing_plot = false;
     bool computing_prev = computing_inverse || computing_plot;
-
+    
     computing_inverse = false;
     computing_plot = false;
-
+    
     if (inv->getChunkBehind()->modified)
     {
         inv->getChunkBehind()->was_modified = true;
         computing_inverse = true;
-
+        
         inv->getChunkBehind()->modified=false;
-
+        
     } else if (inv->getChunkBehind()->was_modified) {
         computing_inverse = false;
-
+        
         inv->getChunkBehind()->was_modified = false;
     }
-
+    
     if (0 < this->_renderer->spectrogram()->read_unfinished_count()) {
         if (inv->getChunkBehind()->play_when_done || inv->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
         if (inv2) if (inv2->getChunkBehind()->play_when_done || inv2->getChunkBehind()->modified)
             _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
-
+        
         computing_plot = true;
     }
-
+    
     if (computing_inverse) {
         glClearColor(.8f, .8f, .8f, 0.0f);
     } else if (computing_plot) {
@@ -687,10 +760,10 @@ void DisplayWidget::paintGL()
     } else {
         glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     }
-
+    
     if (computing_prev || computing_inverse || computing_plot)
         update();
-
+    
     drawSelection();
 
     // CudaException_ThreadSynchronize();
@@ -702,36 +775,36 @@ void DisplayWidget::paintGL()
 void DisplayWidget::drawArrows()
 {
     glBegin(GL_LINE_STRIP);
-            glColor3f(1,0,0);
-            glVertex3f( 0.0f, 0.0f, 0.0f);
-            glVertex3f( 1.0f, 0.0f, 0.0f);
-            glVertex3f( 0.9f, 0.1f, 0.0f);
-            glVertex3f( 0.9f, -0.1f, 0.0f);
-            glVertex3f( 1.0f, 0.0f, 0.0f);
-            glVertex3f( 0.9f, 0.0f, 0.1f);
-            glVertex3f( 0.9f, 0.0f, -0.1f);
-            glVertex3f( 1.0f, 0.0f, 0.0f);
-            glVertex3f( 0.0f, 0.0f, 0.0f);
-            glColor3f(0,1,0);
-            glVertex3f( 0.0f, 1.0f, 0.0f);
-            glVertex3f( 0.0f, 0.9f, 0.1f);
-            glVertex3f( 0.0f, 0.9f, -0.1f);
-            glVertex3f( 0.0f, 1.0f, 0.0f);
-            glVertex3f( 0.1f, 0.9f, 0.0f);
-            glVertex3f( -0.1f, 0.9f, 0.0f);
-            glVertex3f( 0.0f, 1.0f, 0.0f);
-            glVertex3f( 0.0f, 0.0f, 0.0f);
-            glColor3f(0,0,1);
-            glVertex3f( 0.0f, 0.0f, 1.0f);
-            glVertex3f( 0.0f, 0.1f, 0.9f);
-            glVertex3f( 0.0f, -0.1f, 0.9f);
-            glVertex3f( 0.0f, 0.0f, 1.0f);
-            glVertex3f( 0.1f, 0.0f, 0.9f);
-            glVertex3f( -0.1f, 0.0f, 0.9f);
-            glVertex3f( 0.0f, 0.0f, 1.0f);
-            glVertex3f( 0.0f, 0.0f, 0.0f);
-            glColor3f(1,1,1);
-            glVertex3f( _qx, _qy, _qz );
+    glColor3f(1,0,0);
+    glVertex3f( 0.0f, 0.0f, 0.0f);
+    glVertex3f( 1.0f, 0.0f, 0.0f);
+    glVertex3f( 0.9f, 0.1f, 0.0f);
+    glVertex3f( 0.9f, -0.1f, 0.0f);
+    glVertex3f( 1.0f, 0.0f, 0.0f);
+    glVertex3f( 0.9f, 0.0f, 0.1f);
+    glVertex3f( 0.9f, 0.0f, -0.1f);
+    glVertex3f( 1.0f, 0.0f, 0.0f);
+    glVertex3f( 0.0f, 0.0f, 0.0f);
+    glColor3f(0,1,0);
+    glVertex3f( 0.0f, 1.0f, 0.0f);
+    glVertex3f( 0.0f, 0.9f, 0.1f);
+    glVertex3f( 0.0f, 0.9f, -0.1f);
+    glVertex3f( 0.0f, 1.0f, 0.0f);
+    glVertex3f( 0.1f, 0.9f, 0.0f);
+    glVertex3f( -0.1f, 0.9f, 0.0f);
+    glVertex3f( 0.0f, 1.0f, 0.0f);
+    glVertex3f( 0.0f, 0.0f, 0.0f);
+    glColor3f(0,0,1);
+    glVertex3f( 0.0f, 0.0f, 1.0f);
+    glVertex3f( 0.0f, 0.1f, 0.9f);
+    glVertex3f( 0.0f, -0.1f, 0.9f);
+    glVertex3f( 0.0f, 0.0f, 1.0f);
+    glVertex3f( 0.1f, 0.0f, 0.9f);
+    glVertex3f( -0.1f, 0.0f, 0.9f);
+    glVertex3f( 0.0f, 0.0f, 1.0f);
+    glVertex3f( 0.0f, 0.0f, 0.0f);
+    glColor3f(1,1,1);
+    glVertex3f( _qx, _qy, _qz );
     glEnd();
 }
 
@@ -739,12 +812,12 @@ void DisplayWidget::drawArrows()
 void DisplayWidget::drawColorFace()
 {
     glBegin(GL_TRIANGLE_FAN);
-            glColor3f( 0, 0, 0);    glVertex3f( 0.0f, 0.0f, 0.0f);
-            glColor3f( 1, 0, 0);    glVertex3f( -1.0f, -1.0f, 0.0f);
-            glColor3f( 0, 1, 0);    glVertex3f(1.0f,-1.0f, 0.0f);
-            glColor3f( 0, 0, 1);    glVertex3f( 1.0f,1.0f, 0.0f);
-            glColor3f( .7, .7, 0);    glVertex3f( -1.0f,1.0f, 0.0f);
-            glColor3f( 1, 0, 0);    glVertex3f( -1.0f, -1.0f, 0.0f);
+    glColor3f( 0, 0, 0);    glVertex3f( 0.0f, 0.0f, 0.0f);
+    glColor3f( 1, 0, 0);    glVertex3f( -1.0f, -1.0f, 0.0f);
+    glColor3f( 0, 1, 0);    glVertex3f(1.0f,-1.0f, 0.0f);
+    glColor3f( 0, 0, 1);    glVertex3f( 1.0f,1.0f, 0.0f);
+    glColor3f( .7, .7, 0);    glVertex3f( -1.0f,1.0f, 0.0f);
+    glColor3f( 1, 0, 0);    glVertex3f( -1.0f, -1.0f, 0.0f);
     glEnd();
 }
 
@@ -774,67 +847,67 @@ void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
     TaskTimer tt(__FUNCTION__);
     cudaExtent n = chunk->waveform_data->getNumberOfElements();
     const float* data = chunk->waveform_data->getCpuMemory();
-
+    
     n.height = 1;
     float ifs = 1./chunk->sample_rate; // step per sample
-/*    float max = 1e-6;
-    //for (unsigned c=0; c<n.height; c++)
-    {
-        unsigned c=0;
-        for (unsigned t=0; t<n.width; t++)
-            if (fabsf(data[t + c*n.width])>max)
-                max = fabsf(data[t + c*n.width]);
-    }
-    float s = 1/max;
-*/
+    /*    float max = 1e-6;
+     //for (unsigned c=0; c<n.height; c++)
+     {
+     unsigned c=0;
+     for (unsigned t=0; t<n.width; t++)
+     if (fabsf(data[t + c*n.width])>max)
+     max = fabsf(data[t + c*n.width]);
+     }
+     float s = 1/max;
+     */
 	float s = 1;
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
+    
     unsigned c=0;
-//    for (unsigned c=0; c<n.height; c++)
+    //    for (unsigned c=0; c<n.height; c++)
     {
         glBegin(GL_TRIANGLE_STRIP);
         //glBegin(GL_POINTS);
-            for (unsigned t=0; t<n.width; t+=std::max( (size_t)1 , (n.width/2000) )) {
-                /*float lmin,lmax = (lmin = data[t + c*n.width]);
-                for (unsigned j=0; j<std::max((size_t)2, (n.width/1000)) && t<n.width;j++, t++) {
-                    const float &a = data[t + c*n.width];
-                    if (a<lmin) lmin=a;
-                    if (a>lmax) lmax=a;
-                }
-                glVertex3f( ifs*t, 0, s*lmax);
-                glVertex3f( ifs*t, 0, s*lmin);*/
-                glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
-                float pt = t;
-                t+=std::max((size_t)1,n.width/2000);
-                if (t<n.width)
-                    glVertex3f( ifs*pt, 0, s*data[t + c*n.width]);
-            }
+        for (unsigned t=0; t<n.width; t+=std::max( (size_t)1 , (n.width/2000) )) {
+            /*float lmin,lmax = (lmin = data[t + c*n.width]);
+             for (unsigned j=0; j<std::max((size_t)2, (n.width/1000)) && t<n.width;j++, t++) {
+             const float &a = data[t + c*n.width];
+             if (a<lmin) lmin=a;
+             if (a>lmax) lmax=a;
+             }
+             glVertex3f( ifs*t, 0, s*lmax);
+             glVertex3f( ifs*t, 0, s*lmin);*/
+            glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
+            float pt = t;
+            t+=std::max((size_t)1,n.width/2000);
+            if (t<n.width)
+                glVertex3f( ifs*pt, 0, s*data[t + c*n.width]);
+        }
         glEnd();
-//        glTranslatef(0, 0, -.5); // different channels along y
+        //        glTranslatef(0, 0, -.5); // different channels along y
     }
-
+    
     glDepthMask(true);
     glDisable(GL_BLEND);
 }
 
 /**
-	draw_glList renders 'chunk' by passing it as argument to 'renderFunction' and caches the results in an OpenGL display list.
-	When draw_glList is called again with the same 'chunk' it will not call 'renderFunction' but instead draw the previously cached results.
-	If 'force_redraw' is set to true, 'renderFunction' will be called again to replace the old cache. 
-*/
+ draw_glList renders 'chunk' by passing it as argument to 'renderFunction' and caches the results in an OpenGL display list.
+ When draw_glList is called again with the same 'chunk' it will not call 'renderFunction' but instead draw the previously cached results.
+ If 'force_redraw' is set to true, 'renderFunction' will be called again to replace the old cache. 
+ */
 template<typename RenderData>
 void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw )
 {
 	// do a cache lookup
     std::map<void*, ListCounter>::iterator itr = _chunkGlList.find(chunk.get());
-
+    
 	if (_chunkGlList.end() == itr && force_redraw) {
 		force_redraw = false;
 	}
-
+    
 	// cache miss or force_redraw
     if (_chunkGlList.end() == itr || force_redraw) {
         ListCounter cnt;
@@ -845,23 +918,23 @@ void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*ren
             cnt.age = ListCounter::Age_JustCreated;
             cnt.displayList = glGenLists(1);
         }
-
+        
         if (0 != cnt.displayList) {
             glNewList(cnt.displayList, GL_COMPILE_AND_EXECUTE );
             renderFunction( chunk );
             glEndList();
             _chunkGlList[chunk.get()] = cnt;
-
+            
         } else {
             // render anyway, but not into display list and enqueue gc
             _enqueueGcDisplayList = true;
             renderFunction( chunk );
         }
-
+        
     } else {
 		// render cache
         itr->second.age = ListCounter::Age_InUse; // don't remove
-
+        
         glCallList( itr->second.displayList );
     }
 }
@@ -869,7 +942,7 @@ void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*ren
 void DisplayWidget::gcDisplayList()
 {
     /* remove those display lists that haven't been used since last gc
-       (used by draw_glList) */
+     (used by draw_glList) */
     for (std::map<void*, ListCounter>::iterator itr = _chunkGlList.begin();
          _chunkGlList.end() != itr;
          ++itr)
@@ -881,18 +954,18 @@ void DisplayWidget::gcDisplayList()
             itr = _chunkGlList.begin();
         }
     }
-
+    
     /* at next gc, remove those that haven't been used since this gc */
     typedef pair<void* const,ListCounter> lcp;
     BOOST_FOREACH( lcp& cnt, _chunkGlList)
     {
-/*    for (std::map<Spectrogram_chunk*, ListCounter>::iterator itr = _chunkGlList.begin();
+        /*    for (std::map<Spectrogram_chunk*, ListCounter>::iterator itr = _chunkGlList.begin();
          _chunkGlList.end() != itr;
          ++itr)
-    {*/
+         {*/
         cnt.second.age = ListCounter::Age_ProposedForRemoval;
     }
-
+    
     _enqueueGcDisplayList = false;
 }
 
@@ -902,7 +975,7 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
+    
     unsigned sz=10;
     pTransform t = renderer->spectrogram()->transform();//wavelett->getWavelettTransform();
     unsigned f = t->min_hz();
@@ -914,22 +987,22 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
         // f = 1/period = 1/start*exp(ff*steplogsize)
         // start = t->sampleRate/t->minHz/n.width;
         float steplogsize = log(t->max_hz()) - log(t->min_hz());
-
+        
         float ff = log(f/t->min_hz())/steplogsize;
         if (ff>1)
             break;
         float g=(f/sz == 1)?2:1;
         glLineWidth(g);
-    glBegin(GL_LINES);
+        glBegin(GL_LINES);
         glVertex3f(-.015f*g, 0, ff);
         glVertex3f(0.f, 0, ff);
         glVertex3f( l+.015f*g, 0, ff);
         glVertex3f( l, 0, ff);
-    glEnd();
+        glEnd();
         f += sz;
         if(f/sz >= 10) {
             sz*=10;
-
+            
             glLineWidth(1);
             glPushMatrix();
             glTranslatef(-.03f,0,ff);
@@ -943,7 +1016,7 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
             glPopMatrix();
         }
     }
-
+    
     for( unsigned tone = (unsigned)ceil(log(20.f)/0.05); true; tone++)
     {
         float steplogsize = log(t->max_hz())-log(t->min_hz());
@@ -968,13 +1041,13 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
             if (!blackKeyP)
                 wP *= .5;
         }
-
-    glBegin(blackKey ? GL_QUADS:GL_LINE_LOOP);
+        
+        glBegin(blackKey ? GL_QUADS:GL_LINE_LOOP);
         glVertex3f(-.04f -.012f*blackKey, 0, ff+wN);
         glVertex3f(-.07f, 0, ff+wN);
         glVertex3f(-.07f, 0, ff-wP);
         glVertex3f(-.04f -.012f*blackKey, 0, ff-wP);
-    glEnd();
+        glEnd();
         if(tone%12 == 0) {
             glLineWidth(1.f);
             glPushMatrix();
@@ -990,24 +1063,24 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
             glPopMatrix();
         }
     }
-
+    
     unsigned m=0;
     unsigned marker = max(1.f, 20.f/gDisplayWidget->xscale);
     marker = pow(10,ceil(log((float)marker)/log(10.f)));
-
+    
     for (float s=0; s<l;s+=.01f, m++)
     {
         if((m%max((unsigned)1,marker/10))!=0)
             continue;
-
+        
         float g = (m%marker)==0?2:1;
         glLineWidth(g);
-glBegin(GL_LINES);
+        glBegin(GL_LINES);
         glVertex3f(s, 0, -.015f*g);
         glVertex3f(s, 0, 0.f);
         glVertex3f(s, 0, 1+.015f*g);
         glVertex3f(s, 0, 1.f);
-glEnd();
+        glEnd();
         if (0==(m%marker)) {
             glLineWidth(1);
             glPushMatrix();
@@ -1025,11 +1098,11 @@ glEnd();
     glDisable(GL_BLEND);
 }
 
-void DisplayWidget::setSelection(int index){
-    if (index < 0) return;
+void DisplayWidget::setSelection(int index, bool enabled){
+    pTransform t = _renderer->spectrogram()->transform();
+    if (index < 0 || index>=(int)t->filter_chain.size()) return;
     
     printf("####Current selection: %d\n", index);
-    pTransform t = _renderer->spectrogram()->transform();
     FilterChain::iterator i = t->filter_chain.begin();
     std::advance(i, index);
     EllipsFilter *e = (EllipsFilter*)(i->get());
@@ -1037,9 +1110,16 @@ void DisplayWidget::setSelection(int index){
     selection[0].z = e->_f1;
     selection[1].x = e->_t2;
     selection[1].z = e->_f2;
-    //_transform->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    t->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
     
-    glDraw();
+    if(e->enabled != enabled){
+        e->enabled = enabled;
+        float start, end;
+        e->range(start, end);
+        _renderer->spectrogram()->invalidate_range(start, end);
+    }
+    
+    update();
 }
 
 void DisplayWidget::removeFilter(int index){
@@ -1077,169 +1157,169 @@ void DisplayWidget::drawSelectionSquare() {
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f( 0, 0, 0, .5);
     float
-            x1 = max(0.f, min(selection[0].x, selection[1].x)),
-            z1 = max(0.f, min(selection[0].z, selection[1].z)),
-            x2 = min(l, max(selection[0].x, selection[1].x)),
-            z2 = min(1.f, max(selection[0].z, selection[1].z));
+    x1 = max(0.f, min(selection[0].x, selection[1].x)),
+    z1 = max(0.f, min(selection[0].z, selection[1].z)),
+    x2 = min(l, max(selection[0].x, selection[1].x)),
+    z2 = min(1.f, max(selection[0].z, selection[1].z));
     float y = 1;
-
-
+    
+    
     glBegin(GL_QUADS);
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, y, 1 );
-        glVertex3f( x1, y, 1 );
-        glVertex3f( x1, y, 0 );
-
-        glVertex3f( x1, y, 0 );
-        glVertex3f( x2, y, 0 );
-        glVertex3f( x2, y, z1 );
+    glVertex3f( 0, y, 0 );
+    glVertex3f( 0, y, 1 );
+    glVertex3f( x1, y, 1 );
+    glVertex3f( x1, y, 0 );
+    
+    glVertex3f( x1, y, 0 );
+    glVertex3f( x2, y, 0 );
+    glVertex3f( x2, y, z1 );
+    glVertex3f( x1, y, z1 );
+    
+    glVertex3f( x1, y, 1 );
+    glVertex3f( x2, y, 1 );
+    glVertex3f( x2, y, z2 );
+    glVertex3f( x1, y, z2 );
+    
+    glVertex3f( l, y, 0 );
+    glVertex3f( l, y, 1 );
+    glVertex3f( x2, y, 1 );
+    glVertex3f( x2, y, 0 );
+    
+    
+    if (x1>0) {
         glVertex3f( x1, y, z1 );
-
+        glVertex3f( x1, 0, z1 );
+        glVertex3f( x1, 0, z2 );
+        glVertex3f( x1, y, z2 );
+        glVertex3f( 0, y, 0 );
+        glVertex3f( 0, 0, 0 );
+        glVertex3f( 0, 0, 1 );
+        glVertex3f( 0, y, 1 );
+    } else {
+        glVertex3f( 0, y, 0 );
+        glVertex3f( 0, 0, 0 );
+        glVertex3f( 0, 0, z1 );
+        glVertex3f( 0, y, z1 );
+        glVertex3f( 0, y, z2 );
+        glVertex3f( 0, 0, z2 );
+        glVertex3f( 0, 0, 1 );
+        glVertex3f( 0, y, 1 );
+    }
+    
+    if (x2<l) {
+        glVertex3f( x2, y, z1 );
+        glVertex3f( x2, 0, z1 );
+        glVertex3f( x2, 0, z2 );
+        glVertex3f( x2, y, z2 );
+        glVertex3f( l, y, 0 );
+        glVertex3f( l, 0, 0 );
+        glVertex3f( l, 0, 1 );
+        glVertex3f( l, y, 1 );
+    } else {
+        glVertex3f( l, y, 0 );
+        glVertex3f( l, 0, 0 );
+        glVertex3f( l, 0, z1 );
+        glVertex3f( l, y, z1 );
+        glVertex3f( l, y, z2 );
+        glVertex3f( l, 0, z2 );
+        glVertex3f( l, 0, 1 );
+        glVertex3f( l, y, 1 );
+    }
+    
+    if (z1>0) {
+        glVertex3f( x1, y, z1 );
+        glVertex3f( x1, 0, z1 );
+        glVertex3f( x2, 0, z1 );
+        glVertex3f( x2, y, z1 );
+        glVertex3f( 0, y, 0 );
+        glVertex3f( 0, 0, 0 );
+        glVertex3f( l, 0, 0 );
+        glVertex3f( l, y, 0 );
+    } else {
+        glVertex3f( 0, y, 0 );
+        glVertex3f( 0, 0, 0 );
+        glVertex3f( x1, 0, 0 );
+        glVertex3f( x1, y, 0 );
+        glVertex3f( x2, y, 0 );
+        glVertex3f( x2, 0, 0 );
+        glVertex3f( l, 0, 0 );
+        glVertex3f( l, y, 0 );
+    }
+    
+    if (z2<1) {
+        glVertex3f( x1, y, z2 );
+        glVertex3f( x1, 0, z2 );
+        glVertex3f( x2, 0, z2 );
+        glVertex3f( x2, y, z2 );
+        glVertex3f( 0, y, 1 );
+        glVertex3f( 0, 0, 1 );
+        glVertex3f( l, 0, 1 );
+        glVertex3f( l, y, 1 );
+    } else {
+        glVertex3f( 0, y, 1 );
+        glVertex3f( 0, 0, 1 );
+        glVertex3f( x1, 0, 1 );
         glVertex3f( x1, y, 1 );
         glVertex3f( x2, y, 1 );
-        glVertex3f( x2, y, z2 );
-        glVertex3f( x1, y, z2 );
-
-        glVertex3f( l, y, 0 );
+        glVertex3f( x2, 0, 1 );
+        glVertex3f( l, 0, 1 );
         glVertex3f( l, y, 1 );
-        glVertex3f( x2, y, 1 );
-        glVertex3f( x2, y, 0 );
-
-
-        if (x1>0) {
-            glVertex3f( x1, y, z1 );
-            glVertex3f( x1, 0, z1 );
-            glVertex3f( x1, 0, z2 );
-            glVertex3f( x1, y, z2 );
-            glVertex3f( 0, y, 0 );
-            glVertex3f( 0, 0, 0 );
-            glVertex3f( 0, 0, 1 );
-            glVertex3f( 0, y, 1 );
-        } else {
-            glVertex3f( 0, y, 0 );
-            glVertex3f( 0, 0, 0 );
-            glVertex3f( 0, 0, z1 );
-            glVertex3f( 0, y, z1 );
-            glVertex3f( 0, y, z2 );
-            glVertex3f( 0, 0, z2 );
-            glVertex3f( 0, 0, 1 );
-            glVertex3f( 0, y, 1 );
-        }
-
-        if (x2<l) {
-            glVertex3f( x2, y, z1 );
-            glVertex3f( x2, 0, z1 );
-            glVertex3f( x2, 0, z2 );
-            glVertex3f( x2, y, z2 );
-            glVertex3f( l, y, 0 );
-            glVertex3f( l, 0, 0 );
-            glVertex3f( l, 0, 1 );
-            glVertex3f( l, y, 1 );
-        } else {
-            glVertex3f( l, y, 0 );
-            glVertex3f( l, 0, 0 );
-            glVertex3f( l, 0, z1 );
-            glVertex3f( l, y, z1 );
-            glVertex3f( l, y, z2 );
-            glVertex3f( l, 0, z2 );
-            glVertex3f( l, 0, 1 );
-            glVertex3f( l, y, 1 );
-        }
-
-        if (z1>0) {
-            glVertex3f( x1, y, z1 );
-            glVertex3f( x1, 0, z1 );
-            glVertex3f( x2, 0, z1 );
-            glVertex3f( x2, y, z1 );
-            glVertex3f( 0, y, 0 );
-            glVertex3f( 0, 0, 0 );
-            glVertex3f( l, 0, 0 );
-            glVertex3f( l, y, 0 );
-        } else {
-            glVertex3f( 0, y, 0 );
-            glVertex3f( 0, 0, 0 );
-            glVertex3f( x1, 0, 0 );
-            glVertex3f( x1, y, 0 );
-            glVertex3f( x2, y, 0 );
-            glVertex3f( x2, 0, 0 );
-            glVertex3f( l, 0, 0 );
-            glVertex3f( l, y, 0 );
-        }
-
-        if (z2<1) {
-            glVertex3f( x1, y, z2 );
-            glVertex3f( x1, 0, z2 );
-            glVertex3f( x2, 0, z2 );
-            glVertex3f( x2, y, z2 );
-            glVertex3f( 0, y, 1 );
-            glVertex3f( 0, 0, 1 );
-            glVertex3f( l, 0, 1 );
-            glVertex3f( l, y, 1 );
-        } else {
-            glVertex3f( 0, y, 1 );
-            glVertex3f( 0, 0, 1 );
-            glVertex3f( x1, 0, 1 );
-            glVertex3f( x1, y, 1 );
-            glVertex3f( x2, y, 1 );
-            glVertex3f( x2, 0, 1 );
-            glVertex3f( l, 0, 1 );
-            glVertex3f( l, y, 1 );
-        }
+    }
     glEnd();
     glDisable(GL_BLEND);
     glDepthMask(true);
-
+    
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glPolygonOffset(1.f, 1.f);
     glBegin(GL_QUADS);
-        if (x1>0) {
-            glVertex3f( x1, y, z1 );
-            glVertex3f( x1, 0, z1 );
-            glVertex3f( x1, 0, z2 );
-            glVertex3f( x1, y, z2 );
-        }
-
-        if (x2<l) {
-            glVertex3f( x2, y, z1 );
-            glVertex3f( x2, 0, z1 );
-            glVertex3f( x2, 0, z2 );
-            glVertex3f( x2, y, z2 );
-        }
-
-        if (z1>0) {
-            glVertex3f( x1, y, z1 );
-            glVertex3f( x1, 0, z1 );
-            glVertex3f( x2, 0, z1 );
-            glVertex3f( x2, y, z1 );
-        }
-
-        if (z2<1) {
-            glVertex3f( x1, y, z2 );
-            glVertex3f( x1, 0, z2 );
-            glVertex3f( x2, 0, z2 );
-            glVertex3f( x2, y, z2 );
-        }
+    if (x1>0) {
+        glVertex3f( x1, y, z1 );
+        glVertex3f( x1, 0, z1 );
+        glVertex3f( x1, 0, z2 );
+        glVertex3f( x1, y, z2 );
+    }
+    
+    if (x2<l) {
+        glVertex3f( x2, y, z1 );
+        glVertex3f( x2, 0, z1 );
+        glVertex3f( x2, 0, z2 );
+        glVertex3f( x2, y, z2 );
+    }
+    
+    if (z1>0) {
+        glVertex3f( x1, y, z1 );
+        glVertex3f( x1, 0, z1 );
+        glVertex3f( x2, 0, z1 );
+        glVertex3f( x2, y, z1 );
+    }
+    
+    if (z2<1) {
+        glVertex3f( x1, y, z2 );
+        glVertex3f( x1, 0, z2 );
+        glVertex3f( x2, 0, z2 );
+        glVertex3f( x2, y, z2 );
+    }
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 bool DisplayWidget::insideCircle( float x1, float z1 ) {
     float
-            x = selection[0].x,
-            z = selection[0].z,
-            _rx = selection[1].x,
-            _rz = selection[1].z;
+    x = selection[0].x,
+    z = selection[0].z,
+    _rx = selection[1].x,
+    _rz = selection[1].z;
     return (x-x1)*(x-x1)/_rx/_rx + (z-z1)*(z-z1)/_rz/_rz < 1;
 }
 
 void DisplayWidget::drawSelectionCircle() {
     float
-            x = selection[0].x,
-            z = selection[0].z,
-            _rx = fabs(selection[1].x-selection[0].x),
-            _rz = fabs(selection[1].z-selection[0].z);
+    x = selection[0].x,
+    z = selection[0].z,
+    _rx = fabs(selection[1].x-selection[0].x),
+    _rz = fabs(selection[1].z-selection[0].z);
     float y = 1;
-
+    
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -1252,7 +1332,7 @@ void DisplayWidget::drawSelectionCircle() {
         glVertex3f( c, y, s );
     }
     glEnd();
-
+    
     glLineWidth(3.2f);
     glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINE_LOOP);
@@ -1273,12 +1353,12 @@ void DisplayWidget::drawSelectionCircle2() {
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f( 0, 0, 0, .5);
-
+    
     float
-            x = selection[0].x,
-            z = selection[0].z,
-            _rx = fabs(selection[1].x-selection[0].x),
-            _rz = fabs(selection[1].z-selection[0].z);
+    x = selection[0].x,
+    z = selection[0].z,
+    _rx = fabs(selection[1].x-selection[0].x),
+    _rz = fabs(selection[1].z-selection[0].z);
     float y = 1;
     // compute points in each quadrant, upper right
     std::vector<GLvector> pts[4];
@@ -1310,7 +1390,7 @@ void DisplayWidget::drawSelectionCircle2() {
             if (3==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
         }
     }
-
+    
     for (unsigned j=0; j<4; j++) {
         glBegin(GL_TRIANGLE_STRIP);
         for (unsigned k=0; k<pts[j].size(); k++) {
@@ -1319,8 +1399,8 @@ void DisplayWidget::drawSelectionCircle2() {
         }
         glEnd();
     }
-
-
+    
+    
     for (unsigned j=0; j<4; j++) {
         if ( !insideCircle(corner[j][0], corner[j][2]) )
         {
@@ -1363,10 +1443,10 @@ void DisplayWidget::drawSelectionCircle2() {
     }
     glDisable(GL_BLEND);
     glDepthMask(true);
-
+    
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glPolygonOffset(1.f, 1.f);
-
+    
     for (unsigned j=0; j<4; j++) {
         glBegin(GL_LINE_STIPPLE);
         for (unsigned k=0; k<pts[j].size(); k++) {
@@ -1374,6 +1454,6 @@ void DisplayWidget::drawSelectionCircle2() {
         }
         glEnd();
     }
-
+    
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }

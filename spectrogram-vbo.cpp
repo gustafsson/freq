@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "spectrogram.h"
 #include "spectrogram-renderer.h"
+#include <QResource>
 
 // Helpers from Cuda SDK sample, ocean FFT
 
@@ -17,11 +18,12 @@ void attachShader(GLuint prg, GLenum type, const char *name)
     TaskTimer tt("Compiling shader %s", name);
     try {
         GLuint shader;
-        FILE * fp;
+        FILE * fp=0;
         int size, compiled;
         char * src;
 
-        fp = fopen(name, "rb");
+        shader = glCreateShader(type);
+/*        fp = fopen(name, "rb");
         if (!fp)
             throw std::ios::failure(std::string("Couldn't open shader file ") + name);
 
@@ -32,13 +34,20 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         fseek(fp, 0, SEEK_SET);
         size = fread(src, sizeof(char), size, fp);
         fclose(fp);
+        */
+        QResource qr(name);
+        if (!qr.isValid())
+            throw std::ios::failure(std::string("Couldn't find shader resource ") + name);
+        if ( 0 == qr.size())
+            throw std::ios::failure(std::string("Shader resource empty ") + name);
 
-        shader = glCreateShader(type);
+        size = qr.size();
+        src = (char*)qr.data();
         glShaderSource(shader, 1, (const char**)&src, (const GLint*)&size);
         glCompileShader(shader);
         glGetShaderiv(shader, GL_COMPILE_STATUS, (GLint*)&compiled);
 
-        free(src);
+        if (fp) free(src);
 
         char log[2048];
         int len;

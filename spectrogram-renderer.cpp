@@ -241,7 +241,15 @@ void SpectrogramRenderer::init()
 #endif
 
     // load shader
-    _shader_prog = loadGLSLProgram("spectrogram.vert", "spectrogram.frag");
+/*#ifdef __APPLE__
+    printf("Shaderbasedir: %s\n", _shaderBaseDir.c_str());
+    std::string vsPath = _shaderBaseDir + "spectrogram.vert";
+    std::string fsPath = _shaderBaseDir + "spectrogram.frag";
+    printf("Shaderpath: \n %s\n %s\n", fsPath.c_str(), vsPath.c_str());
+    _shader_prog = loadGLSLProgram(vsPath.c_str(), fsPath.c_str());
+#else
+#endif*/
+    _shader_prog = loadGLSLProgram(":/shaders/spectrogram.vert", ":/shaders/spectrogram.frag");
 
     setSize( _spectrogram->samples_per_block(), _spectrogram->scales_per_block() );
 

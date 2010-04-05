@@ -6,6 +6,7 @@ win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
 QT += opengl \
     testlib
+RESOURCES += icon-resources.qrc
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
 SOURCES += main.cpp \
