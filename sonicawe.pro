@@ -101,6 +101,7 @@ macx:LIBS = -lsndfile \
 #    tmp/filter_cuda.o
 win32:INCLUDEPATH += ..\..\glut \
 	..\..\glew\include \
+	..\..\portaudio\include \
 	$(BOOST_PATH)
 win32:LIBS += \
 	-l..\..\glut\glut32 \
@@ -111,6 +112,8 @@ win32:LIBS += \
     -lcufft \
     -L../misc \
     -lmisc \
+	-l..\..\portaudio\portaudio \
+	-l..\..\portaudio\portaudiocpp \
 	-L$(BOOST_PATH)\lib
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
