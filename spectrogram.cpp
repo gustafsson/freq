@@ -343,7 +343,7 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
 
             }
 
-            if (0) {
+            if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // start with the blocks that are just slightly more detailed
                 BOOST_FOREACH( pBlock& b, _cache ) {
@@ -367,7 +367,7 @@ Spectrogram::pBlock Spectrogram::createBlock( Spectrogram::Reference ref )
                 }
             }
 
-            if (0) {
+            if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                 // then try to upscale other blocks
                 BOOST_FOREACH( pBlock& b, _cache ) {
