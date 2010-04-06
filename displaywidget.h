@@ -70,17 +70,17 @@ protected:
     virtual void mouseReleaseEvent ( QMouseEvent * e );
     virtual void wheelEvent ( QWheelEvent *event );
     virtual void mouseMoveEvent ( QMouseEvent * e );
-    virtual void timeOut();
-    void timerEvent( QTimerEvent *te);
+    //virtual void timeOut();
+    //void timerEvent( QTimerEvent *te);
     
 protected slots:
-    virtual void timeOutSlot();
+    //virtual void timeOutSlot();
     virtual void recieveCurrentSelection(int, bool);
     virtual void recieveFilterRemoval(int);
     
     virtual void recieveToggleSelection(bool);
     virtual void recieveToggleNavigation(bool);
-    
+    virtual void recieveTogglePiano(bool);
 signals:
     void filterChainUpdated(pTransform);
     void setSelectionActive(bool);
@@ -88,7 +88,7 @@ signals:
     
 private:
     virtual void recievedData( Signal::MicrophoneRecorder* );
-    bool _record_update;
+    // bool _record_update;
 
     boost::shared_ptr<SpectrogramRenderer> _renderer;
     boost::shared_ptr<Transform> _transform;
@@ -127,7 +127,7 @@ private:
     GLdouble projectionMatrix[16];
     
     MyVector v1, v2;
-    MyVector selection[2];
+    MyVector selection[2], selectionStart;
     bool selecting;
     
     void setSelection(int i, bool enabled);

@@ -56,19 +56,18 @@ __global__ void kernel_compute(
 
     float waveform = in_waveform_ft[x];
 
-    float cufft_normalize = 1.f/sqrt((float)numElem.width);
-    //float jibberish_normalization =  (21.3625f-3.1415961*0.000000000001)/scales_per_octave;
+    float cufft_normalize = rsqrt((float)numElem.width);
     float jibberish_normalization =  26.0993675428f/scales_per_octave;
 
     // Find period for this thread
     unsigned nFrequencies = numElem.height;
+    unsigned channel = blockIdx.y;
+    unsigned n = numElem.width;
     for( unsigned fi = 0; fi<nFrequencies; fi++) {
         float ff = fi/(float)nFrequencies;
         float period = start*exp(-ff*steplogsize);
 
         // Find offset for this wavelet scale
-        unsigned channel = blockIdx.y;
-        unsigned n = numElem.width;
         unsigned offset = fi*n + channel*n*nFrequencies;
 
 

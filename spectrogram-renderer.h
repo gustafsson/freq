@@ -24,6 +24,7 @@ public:
     void draw();
     void drawAxes();
 
+    bool draw_piano;
 private:
     pSpectrogram _spectrogram;
     GLuint _mesh_index_buffer;

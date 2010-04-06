@@ -44,6 +44,8 @@
    </attribute>
    <addaction name="actionActivateSelection"/>
    <addaction name="actionActivateNavigation"/>
+   <addaction name="separator"/>
+   <addaction name="actionToggle_piano_grid"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
@@ -167,6 +169,24 @@
    </property>
    <property name="shortcut">
     <string>L</string>
+   </property>
+  </action>
+  <action name="actionToggle_piano_grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-piano.png</normaloff>:/icons/icons/icon-piano.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle piano grid</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle piano grid</string>
    </property>
   </action>
  </widget>

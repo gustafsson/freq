@@ -9,7 +9,6 @@ QT += opengl \
 RESOURCES += icon-resources.qrc
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
-INCLUDEPATH += ../../libs/include
 SOURCES += main.cpp \
     mainwindow.cpp \
     displaywidget.cpp \
@@ -85,9 +84,10 @@ unix:LIBS = -lsndfile \
     -lGLU \
     -lGL \
     -lboost_thread-mt \
-#    -lglut \
+    -lglut \
     -lportaudiocpp -lportaudio
-macx:INCLUDEPATH += /usr/local/cuda/include
+macx:INCLUDEPATH += /usr/local/cuda/include \
+      ../../libs/include
 macx:LIBS = -lsndfile \
     -laudiere \
     -L/usr/local/cuda/lib \
@@ -103,6 +103,7 @@ macx:LIBS = -lsndfile \
 #    tmp/filter_cuda.o
 win32:INCLUDEPATH += ..\..\glut \
 	..\..\glew\include \
+	..\..\portaudio\include \
 	$(BOOST_PATH)
 win32:LIBS += \
 	-l..\..\glut\glut32 \
@@ -113,6 +114,8 @@ win32:LIBS += \
     -lcufft \
     -L../misc \
     -lmisc \
+	-l..\..\portaudio\portaudio \
+	-l..\..\portaudio\portaudiocpp \
 	-L$(BOOST_PATH)\lib
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
