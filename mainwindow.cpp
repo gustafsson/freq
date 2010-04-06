@@ -75,6 +75,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     
     connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(recieveToggleSelection(bool)));
     connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(recieveToggleNavigation(bool)));
+    connect(this->ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), d, SLOT(recieveTogglePiano(bool)));
     connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
 }

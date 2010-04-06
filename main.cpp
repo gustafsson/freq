@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
         if (!fatal_error.empty())
             fatal_exception(fatal_error);
 
-        CudaException_CALL_CHECK ( cudaThreadExit() );
+        // CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
         fatal_exception(fatal_exception(x));

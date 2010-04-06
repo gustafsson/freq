@@ -22,7 +22,8 @@ using namespace std;
 static bool g_invalidFrustum = true;
 
 SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
-:   _spectrogram(spectrogram),
+:   draw_piano(true),
+    _spectrogram(spectrogram),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -824,6 +825,7 @@ void SpectrogramRenderer::drawAxes()
     float min_hz = spectrogram()->transform()->min_hz();
     float max_hz = spectrogram()->transform()->max_hz();
     float steplogsize = log(max_hz) - log(min_hz);
+    //float steplogsize = log(max_hz-min_hz);
     // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
@@ -871,6 +873,7 @@ void SpectrogramRenderer::drawAxes()
 
                 float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
                 float o = size*SF*h*.1f*sign;
+
                 glBegin(GL_LINES);
                     glVertex3f( p[0], 0, p[2] );
                     glVertex3f( p[0], 0, p[2] - o);
@@ -940,7 +943,8 @@ void SpectrogramRenderer::drawAxes()
             }
         }
 
-        if (!taxis) { // draw piano
+        if (!taxis && draw_piano)
+        {
             // from http://en.wikipedia.org/wiki/Piano_key_frequencies
             // F(n) = 440 * pow(pow(2, 1/12),n-49)
             // log(F(n)/440) = log(pow(2, 1/12),n-49)
@@ -994,8 +998,10 @@ void SpectrogramRenderer::drawAxes()
                         wP *= .5;
                 }
 
+                float u = (ff - clippedFrustum[i][2])/v[2];
                 float un = (ff+wN - clippedFrustum[i][2])/v[2];
                 float up = (ff-wP - clippedFrustum[i][2])/v[2];
+                GLvector pt = clippedFrustum[i]+v*u;
                 GLvector pn = clippedFrustum[i]+v*un;
                 GLvector pp = clippedFrustum[i]+v*up;
                     glPushMatrix();
@@ -1003,16 +1009,20 @@ void SpectrogramRenderer::drawAxes()
                         glTranslatef( sign*ST*0.14f, 0.f, 0.f );
                     else
                         glTranslatef( -sign*ST*0.08f, 0.f, 0.f );
-    glColor4f(0,0,0,.35);
-            glBegin(blackKey ? GL_QUADS:GL_LINE_LOOP);
-                glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
+    glColor4f(0,0,0,.4);
+            glBegin(GL_LINES );
                 glVertex3f(pn[0] - ST*0.14f, 0, pn[2]);
                 glVertex3f(pp[0] - ST*0.14f, 0, pp[2]);
-                glVertex3f(pp[0] - ST*(.08f +.024f*blackKey), 0, pp[2]);
+            glEnd();
+            glBegin(blackKey ? GL_QUADS:GL_LINE_STRIP );
+                glVertex3f(pp[0] - ST*(.14f - .036f*blackKeyP), 0, pp[2]);
+                glVertex3f(pp[0] - ST*(.08f + .024f*blackKey), 0, pp[2]);
+                glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
+                glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
             glEnd();
     glColor4f(0,0,0,1);
                     glPopMatrix();
-                if(tone%12 == 0) {
+                if (tone%12 == 0) {
                     glLineWidth(1.f);
                     glPushMatrix();
                     glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);

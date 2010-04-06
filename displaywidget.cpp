@@ -143,7 +143,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 : QGLWidget( ),
   lastKey(0),
   xscale(1),
-  _record_update(false),
+//  _record_update(false),
   _renderer( new SpectrogramRenderer( spectrogram )),
   _px(0), _py(0), _pz(-10),
   _rx(45), _ry(225), _rz(0),
@@ -183,7 +183,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 
 
     yscale = Yscale_LogLinear;
-    timeOut();
+    //timeOut();
     
     if ( timerInterval != 0 )
     {
@@ -227,6 +227,7 @@ void DisplayWidget::recieveToggleSelection(bool active)
     }
     _selectionActive = active;
 }
+
 void DisplayWidget::recieveToggleNavigation(bool active)
 {
     if(active && _navigationActive != active){
@@ -235,6 +236,12 @@ void DisplayWidget::recieveToggleNavigation(bool active)
         emit setSelectionActive(false);
     }
     _navigationActive = active;
+}
+
+void DisplayWidget::recieveTogglePiano(bool active)
+{
+    _renderer->draw_piano = active;
+    update();
 }
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
@@ -326,7 +333,7 @@ void DisplayWidget::recievedData( Signal::MicrophoneRecorder* r )
     if (_qx == prevl )
         _qx = newl;
 
-    _record_update = true;
+//    _record_update = true;
 
     _invalidRange.push( std::pair<float, float>(prevl, newl));
     update();
@@ -524,7 +531,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     glDraw();
 }
 
-
+#if 0
 void DisplayWidget::timeOut()
 {
     leftButton.untouch();
@@ -563,6 +570,7 @@ void DisplayWidget::timeOutSlot()
 {
     timeOut();
 }
+#endif
 
 void DisplayWidget::open_inverse_test(std::string soundfile)
 {
@@ -661,7 +669,7 @@ void DisplayWidget::paintGL()
     glTranslatef( -_qx, -_qy, -_qz );
     
     orthoview.TimeStep(.08);
-    _transform->inverse()->play_inverse();
+    //_transform->inverse()->play_inverse();
 /*      // TODO use Signal::Playback
         Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
         Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
@@ -715,10 +723,11 @@ void DisplayWidget::paintGL()
     _renderer->draw();
     _renderer->drawAxes();
 
-    // static float prev_xscale = xscale;
-    // draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale || _record_update );
-    _record_update = false;
-    // prev_xscale = xscale;
+    //static float prev_xscale = xscale;
+    //draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale);
+    //draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale || _record_update );
+    //_record_update = false;
+    //prev_xscale = xscale;
 
     if (_enqueueGcDisplayList)
         //        gcDisplayList();

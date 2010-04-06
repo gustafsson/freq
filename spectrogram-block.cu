@@ -23,9 +23,8 @@ __global__ void kernel_merge(
         {
             float s = in_offset + x + resample_width*(writePos.x-out_offset);
             if ( s >= in_offset + in_valid_samples )
-                continue;
-
-            for (float y = 0; y < resample_height; y++)
+                x=resample_width;
+            else for (float y = 0; y < resample_height; y++)
             {
                 float t = y + resample_height*writePos.y;
 
