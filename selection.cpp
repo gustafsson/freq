@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <float.h>
 #include <math.h>
+#include <string>
 
 void Selection::scale(Position p)
 {
