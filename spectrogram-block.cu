@@ -215,7 +215,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
     outBlock.wrapCudaGrid2D( block_size, grid, block );
 
     float resample_width = in_sample_rate/out_sample_rate;
-    float resample_height = in_frequency_resolution/out_frequency_resolution;
+    float resample_height = (in_frequency_resolution+2)/out_frequency_resolution;
 
     if(0) {
         elemSize3_t sz_o = outBlock.getNumberOfElements();
