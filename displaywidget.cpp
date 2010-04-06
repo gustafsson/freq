@@ -245,6 +245,12 @@ void DisplayWidget::recieveTogglePiano(bool active)
     update();
 }
 
+void DisplayWidget::recievePlaySound()
+{
+		printf("Playing the selection.\n");
+		_transform->inverse()->play_inverse();
+}
+
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
@@ -254,7 +260,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
     pTransform t = _renderer->spectrogram()->transform();
     switch (lastKey )
     {
-        case ' ':
+        //case ' ':
             // TODO use Signal::Playback
             /*Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
             Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
@@ -265,8 +271,8 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             pb.put( s->read( 0, s->number_of_samples() ) );
             TaskTimer tt("Playing");
             sleep(1);*/
-            _transform->inverse()->play_inverse();
-            break;
+            //_transform->inverse()->play_inverse();
+            //break;
         case 'c': case 'C':
         {
             t->recompute_filter(pFilter());
@@ -454,14 +460,14 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
     float rs = 0.08;
     if( e->orientation() == Qt::Horizontal )
     {
-        _ry -= rs * e->delta();
+    		if(e->modifiers().testFlag(Qt::ShiftModifier))
+            xscale *= (1-ps * e->delta());
+        else
+        		_ry -= rs * e->delta();
     }
     else
     {
-        if(e->modifiers().testFlag(Qt::ShiftModifier))
-            xscale *= (1-ps * e->delta());
-        else
-            _pz *= (1+ps * e->delta());
+        _pz *= (1+ps * e->delta());
         //_pz -= ps * e->delta();
         
         //_rx -= ps * e->delta();
@@ -556,7 +562,7 @@ void DisplayWidget::timeOut()
     
     if(selectionButton.isDown() && selectionButton.getHold() == 5)
     {
-    _transform->inverse()->play_inverse();
+    		recievePlaySound();
 /*      // TODO use Signal::Playback
         Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
         Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());

@@ -36,6 +36,8 @@ public slots:
     void slotDeleteSelection(void);
     void slotToggleLayerWindow(bool);
     void slotClosedLayerWindow(bool visible);
+    void slotToggleToolWindow(bool);
+    void slotClosedToolWindow(bool visible);
 
 signals:
     void sendCurrentSelection(int, bool);

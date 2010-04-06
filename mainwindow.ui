@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -32,6 +32,7 @@
      <string>Windows</string>
     </property>
     <addaction name="actionToggleLayerWindow"/>
+    <addaction name="actionToggleToolWindow"/>
    </widget>
    <addaction name="menuWindows"/>
   </widget>
@@ -46,6 +47,7 @@
    <addaction name="actionActivateNavigation"/>
    <addaction name="separator"/>
    <addaction name="actionToggle_piano_grid"/>
+   <addaction name="actionPlaySelection"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
@@ -187,6 +189,39 @@
    </property>
    <property name="toolTip">
     <string>Toggle piano grid</string>
+   </property>
+  </action>
+  <action name="actionPlaySelection">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/icons/icon-play.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Play Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Play the selected area</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
+   </property>
+  </action>
+  <action name="actionToggleToolWindow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Tool window</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle the tool window</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
    </property>
   </action>
  </widget>

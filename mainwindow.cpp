@@ -26,6 +26,8 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
     connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
+    connect(ui->actionToggleToolWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleToolWindow(bool)));
+    connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
     connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
 }
 
@@ -36,8 +38,18 @@ void MainWindow::slotToggleLayerWindow(bool a){
         ui->layerWindow->show();
     }
 }
+void MainWindow::slotToggleToolWindow(bool a){
+    if(!a) {
+        ui->mainToolBar->close();
+    } else {
+        ui->mainToolBar->show();
+    }
+}
 void MainWindow::slotClosedLayerWindow(bool visible){
     ui->actionToggleLayerWindow->setChecked(visible);
+}
+void MainWindow::slotClosedToolWindow(bool visible){
+    ui->actionToggleToolWindow->setChecked(visible);
 }
 
 void MainWindow::slotDbclkFilterItem(QListWidgetItem */*item*/)
@@ -80,6 +92,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     
     connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(recieveToggleSelection(bool)));
     connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(recieveToggleNavigation(bool)));
+    connect(this->ui->actionPlaySelection, SIGNAL(triggered()), d, SLOT(recievePlaySound()));
     connect(this->ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), d, SLOT(recieveTogglePiano(bool)));
     connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
