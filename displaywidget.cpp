@@ -24,9 +24,10 @@
 
 #undef max
 
-#ifdef _MSC_VER
-#define M_PI 3.1415926535
+#if defined(_MSC_VER)
+#define _USE_MATH_DEFINES
 #endif
+#include <math.h>
 
 typedef tvector<3,GLdouble> GLvector;
 template<typename f>
