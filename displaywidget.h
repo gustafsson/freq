@@ -127,7 +127,7 @@ private:
     GLdouble projectionMatrix[16];
     
     MyVector v1, v2;
-    MyVector selection[2];
+    MyVector selection[2], selectionStart;
     bool selecting;
     
     void setSelection(int i, bool enabled);

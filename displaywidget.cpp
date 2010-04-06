@@ -476,17 +476,22 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         if (selectionButton.worldPos(x, y, p[0], p[1]))
         {
             if (!selecting) {
-                selection[0].x = selection[1].x = p[0];
-                selection[0].y = selection[1].y = 0;
-                selection[0].z = selection[1].z = p[1];
+                selection[0].x = selection[1].x = selectionStart.x = p[0];
+                selection[0].y = selection[1].y = selectionStart.y = 0;
+                selection[0].z = selection[1].z = selectionStart.z = p[1];
                 selecting = true;
             } else {
-                selection[1].x = p[0];
+                float rt = p[0]-selectionStart.x;
+                float rf = p[1]-selectionStart.z;
+                selection[0].x = selectionStart.x + .5f*rt;
+                selection[0].y = 0;
+                selection[0].z = selectionStart.z + .5f*rf;
+                selection[1].x = selection[0].x + .5f*sqrtf(2.f)*rt;
                 selection[1].y = 0;
-                selection[1].z = p[1];
-				_renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-				if (_transform != _renderer->spectrogram()->transform())
-				    _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+                selection[1].z = selection[0].z + .5f*sqrtf(2.f)*rf;
+                _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+                if (_transform != _renderer->spectrogram()->transform())
+                    _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
             }
         }
     } 
