@@ -895,7 +895,7 @@ void SpectrogramRenderer::drawAxes()
                             for (char*c=a;*c!=0; c++)
                                 w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                         }
-                        glTranslatef(-1.f*w,-50.f,0);
+                        glTranslatef(-sign*w,-50.f,0);
                         for (char*c=a;*c!=0; c++)
                             glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                     glPopMatrix();
