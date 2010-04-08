@@ -1,0 +1,5 @@
+Sonic AWE makes use of several open source libraries. Two of these are 
+licensed under LGPL: sndfile and Qt4, their respective license terms may be 
+found in sndfile-license.txt and qt4-license.txt which accompany the binary 
+libraries in this distribution. Other open source libraries include portaudio,
+glew and boost. Non open source libraries include glut and cuda.
