@@ -16,6 +16,7 @@ public:
     ~Playback();
 
     virtual void put( pBuffer );
+    virtual void reset();
 
     static void list_devices();
     unsigned playback_itr();

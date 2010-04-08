@@ -310,7 +310,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             open_inverse_test();
             break;
         }
-        case 'm': case 'M':
+        case 'x': case 'X':
         {
             t->saveCsv();
             break;

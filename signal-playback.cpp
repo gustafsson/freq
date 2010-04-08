@@ -86,6 +86,7 @@ void Playback::put( pBuffer buffer )
     if (streamPlayback) {
         // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
         _cache.push_back( slot );
+        if (streamPlayback->isStopped()) streamPlayback->start();
         return;
     }
 
@@ -139,6 +140,14 @@ void Playback::put( pBuffer buffer )
 
         streamPlayback->start();
     }
+}
+
+void Playback::
+    reset()
+{
+    _cache.clear();
+    _playback_itr = 0;
+    streamPlayback.reset();
 }
 
 unsigned Playback::

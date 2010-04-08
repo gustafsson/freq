@@ -11,6 +11,7 @@ public:
     Sink();
     virtual ~Sink() {}
 
+    virtual void reset() = 0;
     virtual void put( pBuffer ) = 0;
     virtual unsigned expected_samples_left();
     virtual void expected_samples_left(unsigned);

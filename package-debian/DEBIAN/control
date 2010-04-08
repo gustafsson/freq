@@ -1,11 +1,11 @@
 Package: sonicawe
-Version: 0.3.30
+Version: 0.4.9
 Section: non-free/audio
 Priority: optional
 Architecture: amd64
 Essential: no
 Installed-Size: 1214059
-Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libaudiere-1.9.4, libportaudio2
+Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2
 Maintainer: Johan Gustafsson [johan@sonicawe.com]
 Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
  With Sonic AWE it is possible to edit audio directly within the time-frequency representation.

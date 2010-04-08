@@ -1,5 +1,6 @@
 #include "signal-audiofile.h"
-#include <audiere.h> // for reading various formats
+#include "signal-playback.h"
+//#include <audiere.h> // for reading various formats
 #include <sndfile.hh> // for writing wav
 #include <math.h>
 #include "Statistics.h"
@@ -27,17 +28,61 @@ static void cufftSafeCall( cufftResult_t cufftResult) {
 #endif
 
 using namespace std;
-using namespace audiere;
 
 namespace Signal {
 const char *selection_name = "selection.wav";
 
 Audiofile::Audiofile()
-:   _source(0)
 {
     _waveform.reset( new Buffer());
 }
 
+std::string getSupportedFileFormats (bool detailed=false) {
+    SF_FORMAT_INFO	info ;
+    SF_INFO 		sfinfo ;
+    char buffer [128] ;
+    int format, major_count, subtype_count, m, s ;
+    stringstream ss;
+
+    memset (&sfinfo, 0, sizeof (sfinfo)) ;
+    buffer [0] = 0 ;
+    sf_command (NULL, SFC_GET_LIB_VERSION, buffer, sizeof (buffer)) ;
+    if (strlen (buffer) < 1)
+    {	ss << "Could not retrieve sndfile lib version.";
+        return ss.str();
+    }
+    ss << "Version : " << buffer << endl;
+
+    sf_command (NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof (int)) ;
+    sf_command (NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int)) ;
+
+    sfinfo.channels = 1 ;
+    for (m = 0 ; m < major_count ; m++)
+    {	info.format = m ;
+            sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
+            ss << info.name << "  (extension \"" << info.extension << "\")" << endl;
+
+            format = info.format ;
+
+            if(detailed)
+            {
+                for (s = 0 ; s < subtype_count ; s++)
+                {	info.format = s ;
+                        sf_command (NULL, SFC_GET_FORMAT_SUBTYPE, &info, sizeof (info)) ;
+
+                        format = (format & SF_FORMAT_TYPEMASK) | info.format ;
+
+                        sfinfo.format = format ;
+                        if (sf_format_check (&sfinfo))
+                                ss << "   " << info.name << endl;
+                } ;
+                ss << endl;
+            }
+    } ;
+    ss << endl;
+
+    return ss.str();
+}
 
 /**
   Reads an audio file using libaudiere
@@ -46,68 +91,32 @@ Audiofile::Audiofile(const char* filename)
 {
     _waveform.reset( new Buffer());
 
-    _source = OpenSampleSource (filename); // , FileFormat file_format=FF_AUTODETECT
-    if (0==_source) {
+    TaskTimer tt("%s %s",__FUNCTION__,filename);
+
+    SndfileHandle source(filename);
+
+    if (0==source || 0 == source.frames()) {
         stringstream ss;
 
-        std::vector<FileFormatDesc> formats;
-        GetSupportedFileFormats(formats);
         ss << "Couldn't open " << filename << endl
            << endl
-           << "Supported audio file formats through Audiere:";
-
-        for (unsigned n=0; n<formats.size(); n++) {
-            ss << "  " << formats[n].description << " {";
-            for (unsigned k=0; k<formats[n].extensions.size(); k++) {
-                if (k) ss << ", ";
-                ss << formats[n].extensions[k];
-            }
-            ss << "}" << endl;
-        }
+           << "Supported audio file formats through Sndfile:" << endl
+           << getSupportedFileFormats();
 
         throw std::ios_base::failure(ss.str());
     }
 
-    SampleFormat sample_format;
-    int channel_count, sample_rate;
-    _source->getFormat( channel_count, sample_rate, sample_format);
-    _waveform->sample_rate=sample_rate;
+    GpuCpuData<float> completeFile(0, make_uint3( source.channels(), source.frames(), 1));
+    _waveform->waveform_data.reset( new GpuCpuData<float>(0, make_uint3( source.frames(), source.channels(), 1)) );
+    _waveform->sample_rate = source.samplerate();
+    source.read(completeFile.getCpuMemory(), source.channels()*source.frames()); // yes float
+    float* target = _waveform->waveform_data->getCpuMemory();
+    float* data = completeFile.getCpuMemory();
 
-    unsigned frame_size = GetSampleSize(sample_format);
-    unsigned num_frames = _source->getLength();
-
-    if (0==num_frames)
-        throw std::ios_base::failure(string() + "Opened source file but failed reading data from " + filename + "\n"
-                                     "\n"
-                                     "Supported audio file formats through Audiere: Ogg Vorbis, MP3, FLAC, Speex, uncompressed WAV, AIFF, MOD, S3M, XM, IT");
-
-    _waveform->waveform_data.reset( new GpuCpuData<float>(0, make_uint3( num_frames, channel_count, 1)) );
-    boost::scoped_array<char> data(new char[num_frames*frame_size*channel_count]);
-    _source->read(num_frames, data.get());
-
-    unsigned j=0;
-    float* fdata = _waveform->waveform_data->getCpuMemory();
-
-    for (unsigned i=0; i<num_frames; i++)
-    for (int c=0; c<channel_count; c++)
-    {
-        float f = 0;
-        switch(frame_size) {
-            case 0:
-            case 1: f = data[i*channel_count + c]/127.; break;
-            case 2: f = ((short*)data.get())[i*channel_count + c]/32767.; break;
-            default:
-                // assume signed LSB
-                for (unsigned k=0; k<frame_size-1; k++) {
-                    f+=((unsigned char*)data.get())[j++];
-                    f/=256.;
-                }
-                f+=data[j++];
-                f/=128.;
-                break;
+    for (unsigned i=0; i<source.frames(); i++) {
+        for (int c=0; c<source.channels(); c++) {
+            target[i + c*source.frames()] = data[i*source.channels() + c];
         }
-
-        fdata[ i + c*num_frames] = f;
     }
 
     //_waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
@@ -217,79 +226,6 @@ pBuffer Audiofile::getChunk( unsigned firstSample, unsigned numberOfSamples, uns
     return chunk;
 }
 
-    
-class SoundPlayer {
-
-public:
-    SoundPlayer() {
-#ifdef SoundPlayer_VERBOSE
-        std::vector< AudioDeviceDesc > devices;
-        GetSupportedAudioDevices( devices );
-        fprintf(stdout, "%lu audio device%s available:\n", devices.size(), devices.size()==1?"":"s");
-        for (unsigned i=0; i<devices.size(); i++) {
-            fprintf(stdout, "  %s: %s\n", devices[i].name.c_str(), devices[i].description.c_str());
-        }
-
-        _device = OpenDevice();
-        if (0==_device.get())
-            fprintf(stdout,"Couldn't open sound device\n");
-        else
-            fprintf(stdout,"Opened sound device: %s\n", _device->getName());
-
-        fflush(stdout);
-#endif // SoundPlayer_VERBOSE
-        toggle = 0;
-    }
-
-    void play( SampleBufferPtr sampleBuffer, float length )
-    {
-        if (0 == _device.get())
-            _device = OpenDevice();
-        /*if (0 == _device.get() || !active()) {
-            _device = 0;
-            _device = OpenDevice();
-        }*/
-
-        _length = length;
-
-        _sound[toggle] = OpenSound(_device, sampleBuffer->openStream(), false);
-        if (_sound[toggle].get())
-            _sound[toggle]->play();
-        else {
-            fprintf(stderr,"Can't play sound\n");
-            fflush(stdout);
-        }
-
-        unsigned n = (sizeof(_sound)/sizeof(_sound[0]));
-
-        for(unsigned i=0; i<n; i++)
-        {
-            if (_sound[i].get()) {
-                _sound[i]->setVolume( 1- ((toggle + n - i)%n)/(float)n );
-            }
-        }
-
-        toggle = (toggle+1)%n;
-    }
-
-    bool active() {
-        unsigned n = (sizeof(_sound)/sizeof(_sound[0]));
-        for(unsigned i=0; i<n; i++)
-        {
-            if (_sound[i].get()) {
-                if (_sound[i]->isPlaying())
-                    return true;
-            }
-        }
-        return false;
-    }
-private:
-    AudioDevicePtr _device;
-    OutputStreamPtr _sound[10];
-    int toggle;
-    float _length;
-};
-
 pSource Audiofile::crop() {
     // create signed short representation
     unsigned num_frames = _waveform->waveform_data->getNumberOfElements().width;
@@ -334,85 +270,12 @@ void Audiofile::play() {
         return;
 
     Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
-
     wf->writeFile(selection_name);
-#ifdef __APPLE__
-    QSound::play(selection_name);
-    printf("Play file: %s\n", selection_name);
-    return;
-#endif
 
-    // create signed short representation
-    unsigned num_frames = wf->_waveform->waveform_data->getNumberOfElements().width;
-    unsigned channel_count = wf->_waveform->waveform_data->getNumberOfElements().height;
-    float *fdata = wf->_waveform->waveform_data->getCpuMemory();
-
-
-    boost::scoped_array<short> data( new short[num_frames * channel_count] );
-    for (unsigned f=0; f<num_frames; f++)
-        for (unsigned c=0; c<channel_count; c++)
-            data[f*channel_count + c] = fdata[ f + c*num_frames]*32767;
-
-    BOOST_ASSERT( 0 != sample_rate() );
-
-    // play sound
-    SampleBufferPtr sampleBuffer( CreateSampleBuffer(
-            data.get(),
-            num_frames,
-            channel_count,
-            sample_rate(),
-            SF_S16));
-
-    static SoundPlayer sp;
-    sp.play( sampleBuffer, num_frames / (float)sample_rate() );
+    pb.reset();
+    pb.put( wf->_waveform );
 }
 
-/*
-class ChunkSource: public Audiere::SampleSource {
-protected:
-    pWaveform _waveform;
-    unsigned _position;
-
-    ~ChunkSource() { }
-
-public:
-    ChunkSource( pWaveform waveform )
-    :   _waveform(waveform),
-        _position(0)
-    {
-    }
-
-    void getFormat(
-            int& channel_count,
-            int& sample_rate,
-            SampleFormat& sample_format)
-    {
-        channel_count = 1;
-        sample_rate = _waveform->sample_rate();
-        sample_format = Audiere::SF_S16;
-    }
-
-    int read(int frame_count, void* buffer) {
-        // ...
-    }
-
-    void reset() { return 0; }
-    bool isSeekable() { return false; }
-
-    int getLength() { return _waveform->number_of_samples(); }
-
-    void setPosition(int position) { _position = position; }
-    int getPosition() { return _position; }
-
-    bool getRepeat() { return false; }
-    void setRepeat(bool) {}
-
-    int getTagCount() { return 0; }
-    virtual const char* getTagKey(int i) { return 0; }
-    virtual const char* getTagValue(int i) { return 0; }
-    virtual const char* getTagType(int i) { return 0; }
-};
-*/
 unsigned Audiofile::sample_rate() {          return _waveform->sample_rate;    }
 unsigned Audiofile::number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
 

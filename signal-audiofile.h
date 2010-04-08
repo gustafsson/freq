@@ -217,10 +217,7 @@
 
 #include "signal-source.h"
 
-namespace audiere
-{
-    class SampleSource;
-}
+#include "signal-playback.h"
 
 namespace Signal
 {
@@ -252,7 +249,7 @@ private:
     unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
 
 private:
-    audiere::SampleSource* _source;
+    Signal::Playback pb;
 
     pBuffer _waveform;
 
