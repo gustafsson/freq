@@ -7,25 +7,37 @@ using namespace std;
 
 namespace Signal {
 
-MicrophoneRecorder::MicrophoneRecorder()
+MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
 :   _callback(0)
 {
     portaudio::System &sys = portaudio::System::instance();
-    portaudio::Device& inputDevice = sys.defaultInputDevice();
 
-    cout << "Opening recording input stream on " << inputDevice.name() << endl;
+    if (0>inputDevice || inputDevice>sys.deviceCount()) {
+        inputDevice = sys.defaultOutputDevice().index();
+    } else if ( sys.deviceByIndex(inputDevice).isOutputOnlyDevice() ) {
+        cout << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output." << endl;
+        inputDevice = sys.defaultOutputDevice().index();
+    } else {
+        inputDevice = inputDevice;
+    }
+
+    cout << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for input." << endl << endl;
+
+    portaudio::Device& device = sys.deviceByIndex(inputDevice);
+
+    cout << "Opening recording input stream on " << device.name() << endl;
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
-            inputDevice,
+            device,
             1, // channels
             portaudio::FLOAT32,
             false, // interleaved
-            inputDevice.defaultLowInputLatency(),
+            device.defaultLowInputLatency(),
             NULL);
 
     portaudio::StreamParameters paramsRecord(
             inParamsRecord,
             portaudio::DirectionSpecificStreamParameters::null(),
-            inputDevice.defaultSampleRate(),
+            device.defaultSampleRate(),
             paFramesPerBufferUnspecified,
             paNoFlag);
 

@@ -7,16 +7,24 @@ using namespace std;
 
 namespace Signal {
 
-Playback::Playback( /*int outputDevice*/ )
-:   _playback_itr(0)
+Playback::Playback( int outputDevice )
+:   _playback_itr(0),
+    _output_device(0)
 {
     portaudio::AutoSystem autoSys;
     portaudio::System &sys = portaudio::System::instance();
 
-    cout << "Using system default input/output devices..." << endl;
-    unsigned iInputDevice	= sys.defaultInputDevice().index();
-    unsigned iOutputDevice	= sys.defaultOutputDevice().index();
-    cout << iInputDevice << " " << iOutputDevice << endl;
+    list_devices();
+    if (0>outputDevice || outputDevice>sys.deviceCount()) {
+        _output_device = sys.defaultOutputDevice().index();
+    } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
+        cout << "Requested device '" << sys.deviceByIndex(outputDevice).name() << "' can only be used for input." << endl;
+        _output_device = sys.defaultOutputDevice().index();
+    } else {
+        _output_device = outputDevice;
+    }
+
+    cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for output." << endl << endl;
 }
 
 Playback::~Playback()
@@ -37,19 +45,7 @@ list_devices()
     int 	iIndex 				= 0;
     string	strDetails			= "";
 
-    std::cout << "Number of devices = " << iNumDevices << std::endl;
-
-    cout << "Using system default input/output devices..." << endl;
-    unsigned iInputDevice	= sys.defaultInputDevice().index();
-    unsigned iOutputDevice	= sys.defaultOutputDevice().index();
-    cout << " input device " << iInputDevice << endl
-         << " output device " << iOutputDevice << endl;
-
-    //		portaudio::Device inDevice = portaudio::Device(sys.defaultInputDevice());
-
-    //		portaudio::Device& inDevice 	= sys.deviceByIndex(iInputDevice);
-    //portaudio::Device& outDevice 	= sys.deviceByIndex(iOutputDevice);
-
+    std::cout << "Enumerating sound devices (count " << iNumDevices << ")" << std::endl;
     for (portaudio::System::DeviceIterator i = sys.devicesBegin(); i != sys.devicesEnd(); ++i)
     {
         strDetails = "";
@@ -58,6 +54,7 @@ list_devices()
         if ((*i).isSystemDefaultOutputDevice())
                 strDetails += ", default output";
 
+        cout << " ";
         cout << (*i).index() << ": " << (*i).name() << ", ";
         cout << "in=" << (*i).maxInputChannels() << " ";
         cout << "out=" << (*i).maxOutputChannels() << ", ";
@@ -114,15 +111,14 @@ void Playback::put( pBuffer buffer )
     {
         // start playing
         portaudio::System &sys = portaudio::System::instance();
-        unsigned iOutputDevice	= sys.defaultOutputDevice().index();
 
         // Set up the parameters required to open a (Callback)Stream:
         portaudio::DirectionSpecificStreamParameters outParamsPlayback(
-                sys.deviceByIndex(iOutputDevice),
+                sys.deviceByIndex(_output_device),
                 1, // mono sound
                 portaudio::FLOAT32,
                 false,
-                sys.deviceByIndex(iOutputDevice).defaultLowOutputLatency(),
+                sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
                 NULL);
         portaudio::StreamParameters paramsPlayback(
                 portaudio::DirectionSpecificStreamParameters::null(),
@@ -132,22 +128,23 @@ void Playback::put( pBuffer buffer )
                 paClipOff);
 
         // Create (and open) a new Stream, using the SineGenerator::generate function as a callback:
-        cout << "Opening beep output stream on: " << sys.deviceByIndex(iOutputDevice).name() << endl;
+        //cout << "Opening beep output stream on: " << sys.deviceByIndex(iOutputDevice).name() << endl;
         streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
                 paramsPlayback,
                 *this,
                 &Signal::Playback::readBuffer) );
 
-        streamPlayback->start();
+        if (streamPlayback) streamPlayback->start();
     }
 }
 
 void Playback::
     reset()
 {
+    if (streamPlayback) if (!streamPlayback->isStopped()) streamPlayback->stop();
+    streamPlayback.reset();
     _cache.clear();
     _playback_itr = 0;
-    streamPlayback.reset();
 }
 
 unsigned Playback::

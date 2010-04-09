@@ -78,7 +78,7 @@ void Transform_inverse::play_inverse()
 Signal::pSource Transform_inverse::get_inverse_waveform()
 {
     if (0 == _inverse_waveform) {
-        Signal::Audiofile* a = new Signal::Audiofile();
+        Signal::Audiofile* a = new Signal::Audiofile(this->_temp_to_remove->_temp_to_remove_playback);
         _inverse_waveform.reset(a);
         a->setChunk(prepare_inverse(0, _original_waveform->length()));
 

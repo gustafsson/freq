@@ -32,11 +32,6 @@ using namespace std;
 namespace Signal {
 const char *selection_name = "selection.wav";
 
-Audiofile::Audiofile()
-{
-    _waveform.reset( new Buffer());
-}
-
 std::string getSupportedFileFormats (bool detailed=false) {
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
@@ -84,10 +79,18 @@ std::string getSupportedFileFormats (bool detailed=false) {
     return ss.str();
 }
 
+Audiofile::Audiofile(int _temp_to_remove_playback_device)
+//:   pb(-1)
+:   pb(_temp_to_remove_playback_device)
+{
+    _waveform.reset( new Buffer());
+}
+
 /**
-  Reads an audio file using libaudiere
+  Reads an audio file using libsndfile
   */
 Audiofile::Audiofile(const char* filename)
+:   pb(-1)
 {
     _waveform.reset( new Buffer());
 

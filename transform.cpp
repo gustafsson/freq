@@ -25,8 +25,9 @@ static void cufftSafeCall( cufftResult_t cufftResult) {
 }
 
 
-Transform::Transform( Signal::pSource waveform, unsigned channel, unsigned samples_per_chunk, unsigned scales_per_octave, float wavelet_std_t )
-:   _original_waveform( waveform ),
+Transform::Transform( Signal::pSource waveform, unsigned channel, unsigned samples_per_chunk, unsigned scales_per_octave, float wavelet_std_t, int playback )
+:   _temp_to_remove_playback(playback),
+    _original_waveform( waveform ),
     _channel( channel ),
     _scales_per_octave( scales_per_octave ),
     _samples_per_chunk( samples_per_chunk ),

@@ -226,7 +226,7 @@ class Audiofile: public Source
 {
 public:
 
-    Audiofile();
+    Audiofile(int=-1);
     Audiofile(const char* filename);
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
@@ -236,6 +236,7 @@ public:
     pBuffer getChunkBehind() { return _waveform; }
     void setChunk( pBuffer chunk ) { _waveform = chunk; }
     void play();
+
 private:
     pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
     void appendChunk( pBuffer chunk );

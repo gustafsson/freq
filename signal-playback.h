@@ -12,7 +12,7 @@ namespace Signal {
 class Playback: public Sink
 {
 public:
-    Playback( /* int outputDevice = -1 */ );
+    Playback( int outputDevice/* = -1 */);
     ~Playback();
 
     virtual void put( pBuffer );
@@ -38,6 +38,7 @@ private:
 
     std::vector<BufferSlot> _cache;
     unsigned _playback_itr;
+    int _output_device;
 
     unsigned nAccumulatedSamples();
 };

@@ -15,7 +15,7 @@ public:
         virtual void recievedData( MicrophoneRecorder* ) = 0;
     };
 
-    MicrophoneRecorder();
+    MicrophoneRecorder(int inputDevice/*=-1*/);
     ~MicrophoneRecorder();
 
     void startRecording( Callback* );

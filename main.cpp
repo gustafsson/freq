@@ -53,8 +53,11 @@ static const char _sawe_usage_string[] =
 "                       then can be read by matlab or octave.\n"
 "    get_chunk_count    If assigned a value, Sonic AWE exits with the number of \n"
 "                       chunks as exit code.\n"
-"    record             If assigned a non-zero value, Sonic AWE record from the \n"
-"                       default microphone.\n"
+"    record             If assigned a non-negative value, Sonic AWE records from the \n"
+"                       given input device, a value of -1 specifies the default \n"
+"                       microphone.\n"
+"    playback           Selects a specific device for playback. -1 specifices the\n"
+"                       default output device.\n"
 "\n"
 "Sonic AWE, 2010\n";
 
@@ -70,7 +73,8 @@ static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static unsigned _extract_chunk = (unsigned)-1;
 static unsigned _get_chunk_count = (unsigned)-1;
-static unsigned _record = 0;
+static int _record = -2;
+static int _playback = -1;
 static std::string _soundfile = "";
 static std::string _playback_source_test = "";
 static bool _sawe_exit=false;
@@ -89,6 +93,9 @@ void atoval(const char *cmd, float& val) {
     val = atof(cmd);
 }
 void atoval(const char *cmd, unsigned& val) {
+    val = atoi(cmd);
+}
+void atoval(const char *cmd, int& val) {
     val = atoi(cmd);
 }
 
@@ -133,6 +140,7 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, extract_chunk));
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record));
+        else if (readarg(&cmd, playback));
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
             printf("%s", _sawe_usage_string);
@@ -212,7 +220,9 @@ bool check_cuda() {
         GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
     }
     catch (const CudaException& x) {
+#ifdef _DEBUG
         ss << x.what() << endl;
+#endif
         ptr = 0;
     } catch (...) {
         ss << "ptr=0" << endl;
@@ -222,12 +232,12 @@ bool check_cuda() {
     if (ptr && CudaProperties::haveCuda())
         return true;
 
-    ss   << "Sonic AWE requires you to have installed graphics drivers from NVIDIA." << endl
+    ss   << "Sonic AWE requires you to have installed CUDA-compatible graphics drivers from NVIDIA, and no such driver was found." << endl
          << endl
-         << "You need to have one of these graphics cards from NVIDIA;" << endl
+         << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
          << "   www.nvidia.com/object/cuda_gpus.html" << endl
          << endl
-         << "You also need to have NVIDIAs display drivers installed;" << endl
+         << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl
          <<"    www.nvidia.com" << endl
          << endl
          << endl
@@ -236,14 +246,14 @@ bool check_cuda() {
     cerr.flush();
 
     QMessageBox::critical( 0,
-                 "Cannot start Sonic AWE",
+                 "Couldn't find CUDA, cannot start Sonic AWE",
                  QString::fromStdString(ss.str()) );
 
     return false;
 }
 
 void validate_arguments() {
-    if (!_record) if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
+    if (-1>_record) if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
         QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
         if (0 == fileName.length())
             exit(0);
@@ -318,8 +328,8 @@ int main(int argc, char *argv[])
     try {
         boost::shared_ptr<Signal::Source> wf;
 
-        if (_record)
-            wf.reset( new Signal::MicrophoneRecorder() );
+        if (-1<=_record)
+            wf.reset( new Signal::MicrophoneRecorder(_record) );
         else {
             printf("Reading file: %s\n", _soundfile.c_str());
             wf.reset( new Signal::Audiofile( _soundfile.c_str() ) );
@@ -335,7 +345,7 @@ int main(int argc, char *argv[])
         }
         unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
 
-        boost::shared_ptr<Transform> wt( new Transform(wf, _channel, total_samples_per_chunk, _scales_per_octave, _wavelet_std_t ) );
+        boost::shared_ptr<Transform> wt( new Transform(wf, _channel, total_samples_per_chunk, _scales_per_octave, _wavelet_std_t, _playback ) );
 
         if (_extract_chunk != (unsigned)-1) {
             wt->saveCsv(_extract_chunk);
