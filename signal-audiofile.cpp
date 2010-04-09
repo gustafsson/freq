@@ -79,10 +79,13 @@ std::string getSupportedFileFormats (bool detailed=false) {
     return ss.str();
 }
 
+boost::shared_ptr<Signal::Playback> Audiofile::pb(new Signal::Playback(-1));
+
 Audiofile::Audiofile(int _temp_to_remove_playback_device)
-//:   pb(-1)
-:   pb(_temp_to_remove_playback_device)
 {
+    if ((int)pb->output_device() != _temp_to_remove_playback_device && 0<=_temp_to_remove_playback_device)
+        pb.reset(new Signal::Playback(_temp_to_remove_playback_device) );
+
     _waveform.reset( new Buffer());
 }
 
@@ -90,7 +93,6 @@ Audiofile::Audiofile(int _temp_to_remove_playback_device)
   Reads an audio file using libsndfile
   */
 Audiofile::Audiofile(const char* filename)
-:   pb(-1)
 {
     _waveform.reset( new Buffer());
 
@@ -230,7 +232,6 @@ pBuffer Audiofile::getChunk( unsigned firstSample, unsigned numberOfSamples, uns
 }
 
 pSource Audiofile::crop() {
-    // create signed short representation
     unsigned num_frames = _waveform->waveform_data->getNumberOfElements().width;
     unsigned channel_count = _waveform->waveform_data->getNumberOfElements().height;
     float *fdata = _waveform->waveform_data->getCpuMemory();
@@ -248,6 +249,7 @@ pSource Audiofile::crop() {
 
     Audiofile* wf(new Audiofile());
     pSource rwf(wf);
+    wf->_waveform->sample_offset = firstNonzero + _waveform->sample_offset;
     wf->_waveform->sample_rate = sample_rate();
     wf->_waveform->waveform_data.reset (new GpuCpuData<float>(0, make_cudaExtent((lastNonzero-firstNonzero+1) , channel_count, 1)));
     float *data = wf->_waveform->waveform_data->getCpuMemory();
@@ -275,8 +277,9 @@ void Audiofile::play() {
     Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
     wf->writeFile(selection_name);
 
-    pb.reset();
-    pb.put( wf->_waveform );
+    pb->reset();
+    pb->expected_samples_left( wf->_waveform->number_of_samples());
+    pb->put( wf->_waveform );
 }
 
 unsigned Audiofile::sample_rate() {          return _waveform->sample_rate;    }

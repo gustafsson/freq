@@ -14,21 +14,26 @@ Playback::Playback( int outputDevice )
     portaudio::AutoSystem autoSys;
     portaudio::System &sys = portaudio::System::instance();
 
-    list_devices();
+    static bool first = true;
+    if (first) list_devices();
+
     if (0>outputDevice || outputDevice>sys.deviceCount()) {
         _output_device = sys.defaultOutputDevice().index();
     } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
-        cout << "Requested device '" << sys.deviceByIndex(outputDevice).name() << "' can only be used for input." << endl;
+        if(first) cout << "Requested device '" << sys.deviceByIndex(outputDevice).name() << "' can only be used for input." << endl;
         _output_device = sys.defaultOutputDevice().index();
     } else {
         _output_device = outputDevice;
     }
 
-    cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for output." << endl << endl;
+    if(first) cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for output." << endl << endl;
+
+    //first = false;
 }
 
 Playback::~Playback()
 {
+    cout << "Clearing Playback" << endl;
     if (streamPlayback) {
         streamPlayback->stop();
         streamPlayback->close();
@@ -67,9 +72,15 @@ list_devices()
 }
 
 unsigned Playback::
-playback_itr()
+    playback_itr()
 {
     return _playback_itr;
+}
+
+float Playback::
+    time()
+{
+    return streamPlayback->time();
 }
 
 void Playback::put( pBuffer buffer )
@@ -83,7 +94,11 @@ void Playback::put( pBuffer buffer )
     if (streamPlayback) {
         // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
         _cache.push_back( slot );
-        if (streamPlayback->isStopped()) streamPlayback->start();
+
+        if (streamPlayback->isStopped()) {
+            // start over
+            streamPlayback->start();
+        }
         return;
     }
 
@@ -119,13 +134,14 @@ void Playback::put( pBuffer buffer )
                 portaudio::FLOAT32,
                 false,
                 sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
+                //sys.deviceByIndex(_output_device).defaultHighOutputLatency(),
                 NULL);
         portaudio::StreamParameters paramsPlayback(
                 portaudio::DirectionSpecificStreamParameters::null(),
                 outParamsPlayback,
                 buffer->sample_rate,
-                buffer->number_of_samples(),
-                paClipOff);
+                1 << 13,
+                paNoFlag);//paClipOff);
 
         // Create (and open) a new Stream, using the SineGenerator::generate function as a callback:
         //cout << "Opening beep output stream on: " << sys.deviceByIndex(iOutputDevice).name() << endl;
@@ -135,6 +151,8 @@ void Playback::put( pBuffer buffer )
                 &Signal::Playback::readBuffer) );
 
         if (streamPlayback) streamPlayback->start();
+    } else {
+        //  Wait for more data
     }
 }
 
@@ -142,7 +160,6 @@ void Playback::
     reset()
 {
     if (streamPlayback) if (!streamPlayback->isStopped()) streamPlayback->stop();
-    streamPlayback.reset();
     _cache.clear();
     _playback_itr = 0;
 }
@@ -156,6 +173,20 @@ unsigned Playback::
         nAccumulated_samples += s.buffer->number_of_samples();
     }
     return nAccumulated_samples;
+}
+
+pBuffer Playback::
+    first_buffer()
+{
+    if (_cache.empty())
+        return pBuffer();
+    return _cache[0].buffer;
+}
+
+bool Playback::
+    isStopped()
+{
+    return streamPlayback?!streamPlayback->isActive() || streamPlayback->isStopped():true;
 }
 
 int Playback::

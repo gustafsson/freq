@@ -237,6 +237,7 @@ public:
     void setChunk( pBuffer chunk ) { _waveform = chunk; }
     void play();
 
+    static boost::shared_ptr<Signal::Playback> pb;
 private:
     pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
     void appendChunk( pBuffer chunk );
@@ -250,7 +251,6 @@ private:
     unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
 
 private:
-    Signal::Playback pb;
 
     pBuffer _waveform;
 

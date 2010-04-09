@@ -20,7 +20,10 @@ public:
 
     static void list_devices();
     unsigned playback_itr();
-
+    float time();
+    pBuffer first_buffer();
+    unsigned output_device() { return _output_device; }
+    bool isStopped();
 private:
     struct BufferSlot {
         pBuffer buffer;
