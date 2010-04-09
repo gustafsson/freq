@@ -22,3 +22,5 @@ ncb
 *.dsp
 qrc_icon-resources.cpp
 md5sums
+*.gz
+*.so*

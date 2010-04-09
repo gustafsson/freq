@@ -4,8 +4,7 @@
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
-QT += opengl \
-    testlib
+QT += opengl
 RESOURCES += icon-resources.qrc
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
@@ -82,7 +81,6 @@ unix:LIBS = -lsndfile \
     -lGLEW \
     -lGLU \
     -lGL \
-    -lboost_thread-mt \
     -lglut \
     -lportaudiocpp -lportaudio
 macx:INCLUDEPATH += /usr/local/cuda/include

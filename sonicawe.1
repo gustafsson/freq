@@ -1,0 +1,75 @@
+.\" Process this file with
+.\" groff -man -Tascii sonicawe.1
+.\"
+.TH sonicawe 1
+.SH NAME
+sonicawe \- Cross-platform audio editor and visualizer
+.SH SYNOPSIS
+.B sonicawe
+\--help
+.br
+.B sonicawe
+\--version
+.br
+
+.B sonicawe
+\--parameter
+.br
+.B sonicawe
+[\--parameter=value]* [
+.I AUDIO-FILE
+]
+.B 
+.SH DESCRIPTION
+.B Sonic AWE
+is an audio editor and visualizer.  This man page does not
+describe all of the features of Sonic AWE or how to use
+it; for this contact info@sonicawe.com.  This man page 
+describes the command line options.
+
+.SH OPTIONS
+Each parameter takes a value, if no value is given the default value is
+written to standard output and the program exits immediately after.
+.TP 10
+\fB\-help\fR
+display a brief list of command line options
+.TP 10
+\fB\-version\fR
+display the sonicawe version number
+.TP 10
+\fB\--samples_per_chunk[=value]\fR
+The transform is computed in chunks from the input. This determines the number of input samples that
+should correspond to one chunk of the transform by 2^samples_per_chunk.
+.TP 10
+\fB\--scales_per_octave[=value]\fR
+Accuracy of transform, higher accuracy takes more time to compute.
+.TP 10
+\fB\--wavelet_std_t[=decimal_value]\fR
+Transform chunks overlap this much, given in seconds.
+.TP 10
+\fB\--extract_chunk=chunk_number\fR
+Saves the given chunk number into sonicawe-n.csv which then can be read by a third part program."
+.TP 10
+\fB\--get_chunk_count=1\fR
+Makes Sonic AWE exit with the number of chunks as exit code.
+.TP 10
+\fB\--record=1\fR
+Makes Sonic AWE record from the default microphone.
+
+.SH LICENSE
+
+Sonic AWE is distributed as commercial software for evaluation purposes only.
+However some of the libraries it links to are distributed under other free licenses, including the
+LGPL and MIT licenses.
+
+.SH BUGS
+
+To report a bug, fill in the form at http://sonicawe.com/subscribe.php
+
+.SH AUTHORS
+Sonic AWE is a product from REEP. Sonic AWE would not
+be possible without libsndfile, Qt, and many of
+the other libraries it is built upon.  
+
+.\" arch-tag: e07678ca-81e0-4147-997c-18a80f6fb8d1
+
