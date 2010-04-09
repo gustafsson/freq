@@ -80,7 +80,13 @@ unsigned Playback::
 float Playback::
     time()
 {
-    return streamPlayback->time();
+    return streamPlayback?streamPlayback->time():0;
+}
+
+float Playback::
+    outputLatency()
+{
+    return streamPlayback?streamPlayback->outputLatency():0;
 }
 
 void Playback::put( pBuffer buffer )

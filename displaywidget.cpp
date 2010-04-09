@@ -1178,13 +1178,13 @@ void DisplayWidget::drawSelection() {
     static QTime myClock = QTime::currentTime();
     unsigned this_itr = pb->playback_itr();
     if (this_itr!=prev_itr) {
-        base_itr=prev_itr;
+        base_itr=2*prev_itr - this_itr;
         prev_itr=this_itr;
         myClock.restart();
     }
     float dt = myClock.elapsed() * 0.001f;
     float y = 1;
-    float t = (b->sample_offset + base_itr) / (float)b->sample_rate + dt;
+    float t = (b->sample_offset + base_itr) / (float)b->sample_rate + dt - pb->outputLatency();
     //float t = b->sample_offset / (float)b->sample_rate + pb->time();
     glEnable(GL_BLEND);
     glDepthMask(false);

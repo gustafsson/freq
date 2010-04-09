@@ -21,6 +21,7 @@ public:
     static void list_devices();
     unsigned playback_itr();
     float time();
+    float outputLatency();
     pBuffer first_buffer();
     unsigned output_device() { return _output_device; }
     bool isStopped();
