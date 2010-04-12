@@ -46,6 +46,10 @@
    <addaction name="actionActivateNavigation"/>
    <addaction name="separator"/>
    <addaction name="actionToggle_piano_grid"/>
+   <addaction name="actionToggle_hz_grid"/>
+   <addaction name="separator"/>
+   <addaction name="actionActionAdd_selection"/>
+   <addaction name="actionActionRemove_selection"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
@@ -187,6 +191,51 @@
    </property>
    <property name="toolTip">
     <string>Toggle piano grid</string>
+   </property>
+  </action>
+  <action name="actionToggle_hz_grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-hz.png</normaloff>:/icons/icons/icon-hz.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle frequency markers</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle frequency markers</string>
+   </property>
+  </action>
+  <action name="actionActionAdd_selection">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-plus.png</normaloff>:/icons/icons/icon-plus.png</iconset>
+   </property>
+   <property name="text">
+    <string>actionAdd_selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Remember the selection</string>
+   </property>
+  </action>
+  <action name="actionActionRemove_selection">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-minus.png</normaloff>:/icons/icons/icon-minus.png</iconset>
+   </property>
+   <property name="text">
+    <string>actionRemove_selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Silences the selected region [A]</string>
+   </property>
+   <property name="shortcut">
+    <string>A</string>
    </property>
   </action>
  </widget>

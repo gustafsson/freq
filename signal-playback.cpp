@@ -146,7 +146,7 @@ void Playback::put( pBuffer buffer )
                 portaudio::DirectionSpecificStreamParameters::null(),
                 outParamsPlayback,
                 buffer->sample_rate,
-                1 << 13,
+                0,
                 paNoFlag);//paClipOff);
 
         // Create (and open) a new Stream, using the SineGenerator::generate function as a callback:

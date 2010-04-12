@@ -246,6 +246,42 @@ void DisplayWidget::recieveTogglePiano(bool active)
     update();
 }
 
+void DisplayWidget::recieveToggleHz(bool active)
+{
+    _renderer->draw_hz = active;
+    update();
+}
+
+void DisplayWidget::recieveAddClearSelection(bool active)
+{
+    recieveAddSelection(active);
+
+    pTransform t = _renderer->spectrogram()->transform();
+    t->filter_chain.back()->enabled = true;
+
+    emit filterChainUpdated(t);
+}
+
+void DisplayWidget::recieveAddSelection(bool active)
+{
+    pTransform t = _renderer->spectrogram()->transform();
+    pFilter f(new EllipsFilter( t->inverse()->built_in_filter ) );
+
+    t->filter_chain.push_back(f);
+    t->recompute_filter(f);
+    if( _transform != t ) {
+        _transform->filter_chain.push_back(f);
+        _transform->recompute_filter(f);
+    }
+
+    float start, end;
+    f->range(start, end);
+    f->enabled = false;
+    _renderer->spectrogram()->invalidate_range(start, end);
+    update();
+    emit filterChainUpdated(t);
+}
+
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
@@ -285,24 +321,6 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             if( _transform != t )
                 _transform->filter_chain.clear();
             
-            update();
-            emit filterChainUpdated(t);
-            break;
-        }
-        case 'a': case 'A':
-        {
-            pFilter f(new EllipsFilter( t->inverse()->built_in_filter ) );
-
-            t->filter_chain.push_back(f);
-            t->recompute_filter(f);
-            if( _transform != t ) {
-                _transform->filter_chain.push_back(f);
-                _transform->recompute_filter(f);
-            }
-            
-            float start, end;
-            f->range(start, end);
-            _renderer->spectrogram()->invalidate_range(start, end);
             update();
             emit filterChainUpdated(t);
             break;
@@ -1178,7 +1196,7 @@ void DisplayWidget::drawSelection() {
     static QTime myClock = QTime::currentTime();
     unsigned this_itr = pb->playback_itr();
     if (this_itr!=prev_itr) {
-        base_itr=2*prev_itr - this_itr;
+        base_itr=prev_itr;//2*prev_itr - this_itr;
         prev_itr=this_itr;
         myClock.restart();
     }
