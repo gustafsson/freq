@@ -251,6 +251,7 @@ void DisplayWidget::recievePlaySound()
 {
 		printf("Playing the selection.\n");
 		_transform->inverse()->play_inverse();
+                update();
 }
 
 void DisplayWidget::recieveToggleHz(bool active)
@@ -269,7 +270,7 @@ void DisplayWidget::recieveAddClearSelection(bool active)
     emit filterChainUpdated(t);
 }
 
-void DisplayWidget::recieveAddSelection(bool active)
+void DisplayWidget::recieveAddSelection(bool /*active*/)
 {
     pTransform t = _renderer->spectrogram()->transform();
     pFilter f(new EllipsFilter( t->inverse()->built_in_filter ) );
@@ -1250,6 +1251,8 @@ void DisplayWidget::drawSelection() {
         glVertex3f( t, y, z1 );
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    usleep( 10000 );
 
     update();
 }
