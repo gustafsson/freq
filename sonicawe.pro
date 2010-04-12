@@ -4,8 +4,7 @@
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
-QT += opengl \
-    testlib
+QT += opengl
 RESOURCES += icon-resources.qrc
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
@@ -26,6 +25,7 @@ SOURCES += main.cpp \
     signal-operation.cpp \
     signal-invalidsamplesdescriptor.cpp \
     signal-sink.cpp \
+    signal-playback.cpp \
     layer.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
@@ -56,7 +56,6 @@ OTHER_FILES += wavelet.cu \
     spectrogram.vert \
     spectrogram-slope.cu \
     spectrogram-block.cu \
-    signal-playback.cpp \
     filter.cu
 CUDA_SOURCES += wavelet.cu \
     spectrogram-slope.cu \
@@ -75,7 +74,6 @@ INCLUDEPATH += ../misc
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS = -lsndfile \
-    -laudiere \
     -L/usr/local/cuda/lib$$IS64 \
     -lcufft \
     -L../misc \
@@ -83,7 +81,6 @@ unix:LIBS = -lsndfile \
     -lGLEW \
     -lGLU \
     -lGL \
-    -lboost_thread-mt \
     -lglut \
     -lportaudiocpp -lportaudio
 macx:INCLUDEPATH += /usr/local/cuda/include \
@@ -108,7 +105,6 @@ win32:INCLUDEPATH += ..\..\glut \
 win32:LIBS += \
 	-l..\..\glut\glut32 \
 	-l..\..\glew\lib\glew32 \
-    -l..\..\audiere\lib\audiere \
     -l..\..\libsndfile\libsndfile-1 \
     -L$(CUDA_LIB_PATH)\..\lib \
     -lcufft \
@@ -126,8 +122,6 @@ UI_DIR = tmp
 # #######################################################################
 win32 { 
     INCLUDEPATH += $(CUDA_INC_PATH)\
-	..\..\libsndfile\include \
-	..\..\audiere\include \
 	.
     QMAKE_LIBDIR += $(CUDA_LIB_PATH)
     LIBS += -lcudart
@@ -220,4 +214,3 @@ macx {
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
-# end of cuda section #######################################################################

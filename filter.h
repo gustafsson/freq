@@ -12,7 +12,8 @@ class Transform;
 class Filter
 {
 public:
-      virtual ~Filter() {}
+		Filter():enabled(true){}
+    virtual ~Filter() {}
 	  
     virtual bool operator()( Transform_chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;

@@ -19,7 +19,8 @@ public:
                unsigned channel,
                unsigned samples_per_chunk,
                unsigned scales_per_octave,
-               float wavelet_std_t );
+               float wavelet_std_t,
+               int temp_to_remove_playback_device=-1);
     ~Transform();
 
     ChunkIndex             getChunkIndex( unsigned including_sample ) const;
@@ -54,6 +55,8 @@ public:
 
     boost::shared_ptr<Transform_inverse> inverse();
     FilterChain filter_chain;
+
+    int       _temp_to_remove_playback;
 
 private:
 #ifdef _USE_CHUNK_CACHE

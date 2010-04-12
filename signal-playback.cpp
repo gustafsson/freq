@@ -7,20 +7,33 @@ using namespace std;
 
 namespace Signal {
 
-Playback::Playback( /*int outputDevice*/ )
-:   _playback_itr(0)
+Playback::Playback( int outputDevice )
+:   _playback_itr(0),
+    _output_device(0)
 {
     portaudio::AutoSystem autoSys;
     portaudio::System &sys = portaudio::System::instance();
 
-    cout << "Using system default input/output devices..." << endl;
-    unsigned iInputDevice	= sys.defaultInputDevice().index();
-    unsigned iOutputDevice	= sys.defaultOutputDevice().index();
-    cout << iInputDevice << " " << iOutputDevice << endl;
+    static bool first = true;
+    if (first) list_devices();
+
+    if (0>outputDevice || outputDevice>sys.deviceCount()) {
+        _output_device = sys.defaultOutputDevice().index();
+    } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
+        if(first) cout << "Requested device '" << sys.deviceByIndex(outputDevice).name() << "' can only be used for input." << endl;
+        _output_device = sys.defaultOutputDevice().index();
+    } else {
+        _output_device = outputDevice;
+    }
+
+    if(first) cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for output." << endl << endl;
+
+    //first = false;
 }
 
 Playback::~Playback()
 {
+    cout << "Clearing Playback" << endl;
     if (streamPlayback) {
         streamPlayback->stop();
         streamPlayback->close();
@@ -37,19 +50,7 @@ list_devices()
     int 	iIndex 				= 0;
     string	strDetails			= "";
 
-    std::cout << "Number of devices = " << iNumDevices << std::endl;
-
-    cout << "Using system default input/output devices..." << endl;
-    unsigned iInputDevice	= sys.defaultInputDevice().index();
-    unsigned iOutputDevice	= sys.defaultOutputDevice().index();
-    cout << " input device " << iInputDevice << endl
-         << " output device " << iOutputDevice << endl;
-
-    //		portaudio::Device inDevice = portaudio::Device(sys.defaultInputDevice());
-
-    //		portaudio::Device& inDevice 	= sys.deviceByIndex(iInputDevice);
-    //portaudio::Device& outDevice 	= sys.deviceByIndex(iOutputDevice);
-
+    std::cout << "Enumerating sound devices (count " << iNumDevices << ")" << std::endl;
     for (portaudio::System::DeviceIterator i = sys.devicesBegin(); i != sys.devicesEnd(); ++i)
     {
         strDetails = "";
@@ -58,6 +59,7 @@ list_devices()
         if ((*i).isSystemDefaultOutputDevice())
                 strDetails += ", default output";
 
+        cout << " ";
         cout << (*i).index() << ": " << (*i).name() << ", ";
         cout << "in=" << (*i).maxInputChannels() << " ";
         cout << "out=" << (*i).maxOutputChannels() << ", ";
@@ -70,9 +72,21 @@ list_devices()
 }
 
 unsigned Playback::
-playback_itr()
+    playback_itr()
 {
     return _playback_itr;
+}
+
+float Playback::
+    time()
+{
+    return streamPlayback?streamPlayback->time():0;
+}
+
+float Playback::
+    outputLatency()
+{
+    return streamPlayback?streamPlayback->outputLatency():0;
 }
 
 void Playback::put( pBuffer buffer )
@@ -86,6 +100,11 @@ void Playback::put( pBuffer buffer )
     if (streamPlayback) {
         // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
         _cache.push_back( slot );
+
+        if (streamPlayback->isStopped()) {
+            // start over
+            streamPlayback->start();
+        }
         return;
     }
 
@@ -113,32 +132,42 @@ void Playback::put( pBuffer buffer )
     {
         // start playing
         portaudio::System &sys = portaudio::System::instance();
-        unsigned iOutputDevice	= sys.defaultOutputDevice().index();
 
         // Set up the parameters required to open a (Callback)Stream:
         portaudio::DirectionSpecificStreamParameters outParamsPlayback(
-                sys.deviceByIndex(iOutputDevice),
+                sys.deviceByIndex(_output_device),
                 1, // mono sound
                 portaudio::FLOAT32,
                 false,
-                sys.deviceByIndex(iOutputDevice).defaultLowOutputLatency(),
+                sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
+                //sys.deviceByIndex(_output_device).defaultHighOutputLatency(),
                 NULL);
         portaudio::StreamParameters paramsPlayback(
                 portaudio::DirectionSpecificStreamParameters::null(),
                 outParamsPlayback,
                 buffer->sample_rate,
-                buffer->number_of_samples(),
-                paClipOff);
+                1 << 13,
+                paNoFlag);//paClipOff);
 
         // Create (and open) a new Stream, using the SineGenerator::generate function as a callback:
-        cout << "Opening beep output stream on: " << sys.deviceByIndex(iOutputDevice).name() << endl;
+        //cout << "Opening beep output stream on: " << sys.deviceByIndex(iOutputDevice).name() << endl;
         streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
                 paramsPlayback,
                 *this,
                 &Signal::Playback::readBuffer) );
 
-        streamPlayback->start();
+        if (streamPlayback) streamPlayback->start();
+    } else {
+        //  Wait for more data
     }
+}
+
+void Playback::
+    reset()
+{
+    if (streamPlayback) if (!streamPlayback->isStopped()) streamPlayback->stop();
+    _cache.clear();
+    _playback_itr = 0;
 }
 
 unsigned Playback::
@@ -150,6 +179,20 @@ unsigned Playback::
         nAccumulated_samples += s.buffer->number_of_samples();
     }
     return nAccumulated_samples;
+}
+
+pBuffer Playback::
+    first_buffer()
+{
+    if (_cache.empty())
+        return pBuffer();
+    return _cache[0].buffer;
+}
+
+bool Playback::
+    isStopped()
+{
+    return streamPlayback?!streamPlayback->isActive() || streamPlayback->isStopped():true;
 }
 
 int Playback::

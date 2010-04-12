@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QTimer>
+#include <QTime>
 #include <QKeyEvent>
 
 #include <QtGui/QFileDialog>
@@ -272,7 +273,8 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             TaskTimer tt("Playing");
             sleep(1);*/
             //_transform->inverse()->play_inverse();
-            //break;
+            update();
+            break;
         case 'c': case 'C':
         {
             t->recompute_filter(pFilter());
@@ -296,6 +298,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         case 'a': case 'A':
         {
             pFilter f(new EllipsFilter( t->inverse()->built_in_filter ) );
+            //pFilter f(new SquareFilter( t->inverse()->built_in_filter._t1, t->inverse()->built_in_filter._f1, t->inverse()->built_in_filter._t2, t->inverse()->built_in_filter._f2, true ) );
 
             t->filter_chain.push_back(f);
             t->recompute_filter(f);
@@ -316,7 +319,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             open_inverse_test();
             break;
         }
-        case 'm': case 'M':
+        case 'x': case 'X':
         {
             t->saveCsv();
             break;
@@ -1175,6 +1178,62 @@ void DisplayWidget::removeFilter(int index){
 
 void DisplayWidget::drawSelection() {
     drawSelectionCircle();
+
+    // Draw playback marker
+    Signal::Playback *pb = Signal::Audiofile::pb.get();
+    if (!pb) return;
+    if (pb->isStopped()) return;
+    Signal::pBuffer b = pb->first_buffer();
+    if (0 == b) return;
+
+    static unsigned base_itr = pb->playback_itr();
+    static unsigned prev_itr = pb->playback_itr();
+    static QTime myClock = QTime::currentTime();
+    unsigned this_itr = pb->playback_itr();
+    if (this_itr!=prev_itr) {
+        base_itr=2*prev_itr - this_itr;
+        prev_itr=this_itr;
+        myClock.restart();
+    }
+    float dt = myClock.elapsed() * 0.001f;
+    float y = 1;
+    float t = (b->sample_offset + base_itr) / (float)b->sample_rate + dt - pb->outputLatency();
+    //float t = b->sample_offset / (float)b->sample_rate + pb->time();
+    glEnable(GL_BLEND);
+    glDepthMask(false);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+
+    float
+        x = selection[0].x,
+        z = selection[0].z,
+        _rx = selection[1].x-selection[0].x,
+        _rz = selection[1].z-selection[0].z,
+        z1 = z-sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz,
+        z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
+
+
+    glBegin(GL_QUADS);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z2 );
+        glVertex3f( t, y, z1 );
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_QUADS);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z2 );
+        glVertex3f( t, y, z1 );
+    glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    update();
 }
 
 void DisplayWidget::drawSelectionSquare() {

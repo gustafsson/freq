@@ -217,10 +217,7 @@
 
 #include "signal-source.h"
 
-namespace audiere
-{
-    class SampleSource;
-}
+#include "signal-playback.h"
 
 namespace Signal
 {
@@ -229,7 +226,7 @@ class Audiofile: public Source
 {
 public:
 
-    Audiofile();
+    Audiofile(int=-1);
     Audiofile(const char* filename);
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
@@ -239,6 +236,8 @@ public:
     pBuffer getChunkBehind() { return _waveform; }
     void setChunk( pBuffer chunk ) { _waveform = chunk; }
     void play();
+
+    static boost::shared_ptr<Signal::Playback> pb;
 private:
     pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
     void appendChunk( pBuffer chunk );
@@ -252,7 +251,6 @@ private:
     unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
 
 private:
-    audiere::SampleSource* _source;
 
     pBuffer _waveform;
 
