@@ -70,14 +70,11 @@ win32 {
 	QMAKE_EXTRA_UNIX_COMPILERS += othersources
 }
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
-INCLUDEPATH += ../misc
+INCLUDEPATH += ../gpumisc
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS = -lsndfile \
     -L/usr/local/cuda/lib$$IS64 \
-    -lcufft \
-    -L../misc \
-    -lmisc \
     -lGLEW \
     -lGLU \
     -lGL \
@@ -86,9 +83,6 @@ unix:LIBS = -lsndfile \
 macx:INCLUDEPATH += /usr/local/cuda/include
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
-    -lcufft \
-    -L../misc \
-    -lmisc \
     -framework GLUT \
     -framework OpenGL
 #    tmp/wavelet_cuda.o \
@@ -104,12 +98,13 @@ win32:LIBS += \
 	-l..\..\glew\lib\glew32 \
     -l..\..\libsndfile\libsndfile-1 \
     -L$(CUDA_LIB_PATH)\..\lib \
-    -lcufft \
-    -L../misc \
-    -lmisc \
 	-l..\..\portaudio\portaudio \
 	-l..\..\portaudio\portaudiocpp \
 	-L$(BOOST_PATH)\lib
+LIBS += -lcufft \
+    -L../gpumisc \
+    -lgpumisc \
+
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
 UI_DIR = tmp
