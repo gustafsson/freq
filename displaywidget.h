@@ -81,9 +81,13 @@ protected slots:
     virtual void recieveToggleSelection(bool);
     virtual void recieveToggleNavigation(bool);
     virtual void recieveTogglePiano(bool);
-    
+
+
     virtual void recievePlaySound();
-    
+    virtual void recieveToggleHz(bool);
+    virtual void recieveAddSelection(bool);
+    virtual void recieveAddClearSelection(bool);
+
 signals:
     void filterChainUpdated(pTransform);
     void setSelectionActive(bool);

@@ -174,10 +174,59 @@ void fatal_exception( const std::string& str )
                  QString::fromStdString(str) );
 }
 
+#ifdef __GNUC__
+
+#include <cxxabi.h>
+string demangle(const char* d) {
+    int     status;
+    char * a = abi::__cxa_demangle(d, 0, 0, &status);
+    string s(a);
+    free(a);
+    return s;
+}
+
+#else
+
+string demangle(const char* d) {
+    int pointer = false;
+    string s;
+    while ('P' == *d) { pointer++; d++; }
+    if ('f' == *d) { s += "float"; }
+    if ('d' == *d) { s += "double"; }
+    int i = atoi(d);
+    if (i>0) {
+        d++;
+        while (i>0) {
+            s+=*d;
+            i--;
+            d++;
+        }
+    }
+    if (s.empty())
+        s+=d;
+    if ('I' == *d) {
+        d++;
+        s+="<";
+        s+=demangle(d);
+        s+=">";
+        if (0==pointer)
+            s+=" ";
+    }
+
+    while (pointer>0) {
+        s+="*";
+        pointer--;
+    }
+
+    return s;
+}
+
+#endif
+
 string fatal_exception( const std::exception &x )
 {
     std::stringstream ss;
-    ss   << "Error: " << typeid(x).name() << endl
+    ss   << "Error: " << demangle(typeid(x).name()) << endl
          << "Message: " << x.what();
     return ss.str();
 }

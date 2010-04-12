@@ -24,6 +24,7 @@ static bool g_invalidFrustum = true;
 
 SpectrogramRenderer::SpectrogramRenderer( pSpectrogram spectrogram )
 :   draw_piano(true),
+    draw_hz(false),
     _spectrogram(spectrogram),
     _mesh_index_buffer(0),
     _mesh_width(0),
@@ -853,6 +854,7 @@ void SpectrogramRenderer::drawAxes()
         // decide if this side is an t or f axis
         bool taxis = fabsf(v[0]*SF) > fabsf(v[2]*ST);
 
+        if (taxis || draw_hz)
         for (float u=0; true; )
         {
             // find next intersection along v

@@ -5,6 +5,9 @@
     <file>icons/icon_select.png</file>
     <file>icons/sonicawe.png</file>
     <file>icons/icon-piano.png</file>
+    <file>icons/icon-plus.png</file>
+    <file>icons/icon-minus.png</file>
+    <file>icons/icon-hz.png</file>
   </qresource>
   <qresource prefix="/shaders">
     <file>spectrogram.vert</file>
