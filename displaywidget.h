@@ -114,7 +114,8 @@ private:
     QTimer *_timer;
     float _px, _py, _pz,
 		_rx, _ry, _rz,
-		_qx, _qy, _qz;
+		_qx, _qy, _qz,
+		_renderRatio;
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive;
     std::queue<std::pair<float, float> > _invalidRange;

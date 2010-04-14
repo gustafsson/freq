@@ -37,6 +37,9 @@
    <addaction name="menuWindows"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
@@ -47,9 +50,9 @@
    <addaction name="actionActivateNavigation"/>
    <addaction name="separator"/>
    <addaction name="actionToggle_piano_grid"/>
-   <addaction name="actionPlaySelection"/>
    <addaction name="actionToggle_hz_grid"/>
    <addaction name="separator"/>
+   <addaction name="actionPlaySelection"/>
    <addaction name="actionActionAdd_selection"/>
    <addaction name="actionActionRemove_selection"/>
   </widget>
@@ -58,7 +61,7 @@
    <property name="minimumSize">
     <size>
      <width>200</width>
-     <height>160</height>
+     <height>209</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -91,21 +94,43 @@
       <number>10</number>
      </property>
      <item>
-      <widget class="QListWidget" name="layerWidget"/>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QToolButton" name="deleteFilterButton">
-         <property name="enabled">
-          <bool>false</bool>
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="layerTab">
+        <attribute name="title">
+         <string>Layers</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="margin">
+          <number>0</number>
          </property>
-         <property name="text">
-          <string>Delete</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+         <item>
+          <widget class="QListWidget" name="layerWidget"/>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QToolButton" name="deleteFilterButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Delete</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="historyTab">
+        <attribute name="title">
+         <string>History</string>
+        </attribute>
+       </widget>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -118,9 +143,9 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normalon>:/icons/icons/icon_select.png</normalon>
-    </iconset>
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>
+     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-circle-selection.png</iconset>
    </property>
    <property name="text">
     <string>Activate Selection</string>
@@ -143,9 +168,9 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normalon>:/icons/icons/icon_move.png</normalon>
-    </iconset>
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-navigation.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-navigation.png</iconset>
    </property>
    <property name="text">
     <string>Activate Navigation</string>
@@ -186,7 +211,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-piano.png</normaloff>:/icons/icons/icon-piano.png</iconset>
+     <normaloff>:/icons/icons/icon-toggle-piano.png</normaloff>:/icons/icons/icon-toggle-piano.png</iconset>
    </property>
    <property name="text">
     <string>Toggle piano grid</string>
@@ -237,7 +262,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-hz.png</normaloff>:/icons/icons/icon-hz.png</iconset>
+     <normaloff>:/icons/icons/icon-toggle-hz.png</normaloff>:/icons/icons/icon-toggle-hz.png</iconset>
    </property>
    <property name="text">
     <string>Toggle frequency markers</string>
@@ -249,7 +274,7 @@
   <action name="actionActionAdd_selection">
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-plus.png</normaloff>:/icons/icons/icon-plus.png</iconset>
+     <normaloff>:/icons/icons/icon-save-selection.png</normaloff>:/icons/icons/icon-save-selection.png</iconset>
    </property>
    <property name="text">
     <string>actionAdd_selection</string>
@@ -261,7 +286,7 @@
   <action name="actionActionRemove_selection">
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-minus.png</normaloff>:/icons/icons/icon-minus.png</iconset>
+     <normaloff>:/icons/icons/icon-silence-selection.png</normaloff>:/icons/icons/icon-silence-selection.png</iconset>
    </property>
    <property name="text">
     <string>actionRemove_selection</string>

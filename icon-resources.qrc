@@ -1,13 +1,13 @@
 <RCC>
   <qresource prefix="/icons">
     <file>icons/icon-play.png</file>
-    <file>icons/icon_move.png</file>
-    <file>icons/icon_select.png</file>
     <file>icons/sonicawe.png</file>
-    <file>icons/icon-piano.png</file>
-    <file>icons/icon-plus.png</file>
-    <file>icons/icon-minus.png</file>
-    <file>icons/icon-hz.png</file>
+    <file>icons/icon-navigation.png</file>
+    <file>icons/icon-toggle-hz.png</file>
+    <file>icons/icon-save-selection.png</file>
+    <file>icons/icon-silence-selection.png</file>
+    <file>icons/icon-toggle-piano.png</file>
+    <file>icons/icon-circle-selection.png</file>
   </qresource>
   <qresource prefix="/shaders">
     <file>spectrogram.vert</file>
