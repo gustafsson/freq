@@ -83,7 +83,6 @@ unix:LIBS = -lsndfile \
 macx:INCLUDEPATH += /usr/local/cuda/include \
       ../../libs/include 
 macx:LIBS = -lsndfile \
-    -laudiere \
     -L/usr/local/cuda/lib \
     -lcufft \
     -L../misc \

@@ -303,7 +303,7 @@ bool check_cuda() {
 
 void validate_arguments() {
     if (-1>_record) if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
-        QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
+        QString fileName = QFileDialog::getOpenFileName(0, "Open sound file", NULL, QString(Signal::getFileFormatsQtFilter().c_str()));
         if (0 == fileName.length())
             exit(0);
         _soundfile = fileName.toStdString();

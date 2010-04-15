@@ -79,6 +79,36 @@ std::string getSupportedFileFormats (bool detailed=false) {
     return ss.str();
 }
 
+std::string getFileFormatsQtFilter() {
+    SF_FORMAT_INFO	info ;
+    SF_INFO 		sfinfo ;
+    char buffer [128] ;
+    int format, major_count, subtype_count, m, s ;
+    stringstream ss;
+
+    memset (&sfinfo, 0, sizeof (sfinfo)) ;
+    buffer [0] = 0 ;
+    sf_command (NULL, SFC_GET_LIB_VERSION, buffer, sizeof (buffer)) ;
+    if (strlen (buffer) < 1)
+    {
+        return NULL;
+    }
+    ss << "Sound files (";
+
+    sf_command (NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof (int)) ;
+    sf_command (NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int)) ;
+
+    sfinfo.channels = 1 ;
+    for (m = 0 ; m < major_count ; m++)
+    {	info.format = m ;
+            sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
+            ss <<" *."<< info.extension;
+    }
+    ss <<")";
+
+    return ss.str();
+}
+
 boost::shared_ptr<Signal::Playback> Audiofile::pb(new Signal::Playback(-1));
 
 Audiofile::Audiofile(int _temp_to_remove_playback_device)

@@ -153,7 +153,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 //  _record_update(false),
   _renderer( new SpectrogramRenderer( spectrogram )),
   _px(0), _py(0), _pz(-10),
-  _rx(45), _ry(225), _rz(0),
+  _rx(91), _ry(180), _rz(0),
   _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
   _prevX(0), _prevY(0), _targetQ(0),
   _selectionActive(true),
@@ -203,6 +203,10 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     } else {
         _transform = _renderer->spectrogram()->transform();
     }
+    
+    if (_rx<0) _rx=0;
+    if (_rx>90) { _rx=90; orthoview=1; }
+    if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
     
     grabKeyboard();
 }
@@ -673,7 +677,6 @@ void DisplayWidget::initializeGL()
 
 void DisplayWidget::resizeGL( int width, int height ) {
 	_renderRatio = (float)width/(float)height;
-	printf("Render ratio: %f\n", _renderRatio);
 
     height = height?height:1;
     
@@ -850,7 +853,7 @@ void DisplayWidget::paintGL()
     	glRotatef(computing_rotation, 0, 0, 1);
     	drawRectRing(15, 0.10, 0.145);
     	glRotatef(-2*computing_rotation, 0, 0, 1);
-    	drawRectRing(15, 0.15, 0.2);
+    	drawRectRing(20, 0.15, 0.2);
     	computing_rotation += 5;
     	glPopMatrix();
     	
