@@ -97,6 +97,8 @@ macx:LIBS = -lsndfile \
 win32:INCLUDEPATH += ..\..\glut \
 	..\..\glew\include \
 	..\..\portaudio\include \
+	..\..\libsndfile\include \
+	..\..\std \
 	$(BOOST_PATH)
 win32:LIBS += \
 	-l..\..\glut\glut32 \
