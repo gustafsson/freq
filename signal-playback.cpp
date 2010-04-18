@@ -196,10 +196,10 @@ bool Playback::
 }
 
 int Playback::
-        readBuffer(const void */*inputBuffer*/,
+        readBuffer(const void * /*inputBuffer*/,
                  void *outputBuffer,
                  unsigned long framesPerBuffer,
-                 const PaStreamCallbackTimeInfo */*timeInfo*/,
+                 const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( outputBuffer );

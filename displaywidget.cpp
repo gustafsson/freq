@@ -23,6 +23,8 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
 
+#include <msc_stdc.h>
+
 #undef max
 
 #if defined(_MSC_VER)
@@ -498,7 +500,10 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
     }
     else
     {
-        _pz *= (1+ps * e->delta());
+		if(e->modifiers().testFlag(Qt::ShiftModifier))
+            xscale *= (1-ps * e->delta());
+        else
+	        _pz *= (1+ps * e->delta());
         //_pz -= ps * e->delta();
         
         //_rx -= ps * e->delta();
@@ -839,9 +844,10 @@ void DisplayWidget::paintGL()
     	glLoadIdentity();
     	glOrtho(-1 * _renderRatio, 1 * _renderRatio, 1, -1, -1, 1);
     
+		glTranslatef(0.5, 0.5, 0);
     	glMatrixMode(GL_MODELVIEW);
     	glLoadIdentity();
-    	glScalef(0.5, 0.5, 1);
+    	glScalef(0.25, 0.25, 1);
     
     	glEnable(GL_BLEND);
     	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -955,7 +961,7 @@ void drawRectRing(int rects, float irad, float orad)
 
 void drawRoundRect(float width, float height, float roundness)
 {
-	roundness = fmax(0.01, roundness);
+	roundness = fmax(0.01f, roundness);
 	float radius = fmin(width, height) * roundness * 0.5;
 	width = width - 2.0 * radius;
 	height = height - 2.0 * radius;
@@ -1227,7 +1233,7 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
     
     unsigned m=0;
     unsigned marker = max(1.f, 20.f/gDisplayWidget->xscale);
-    marker = pow(10,ceil(log((float)marker)/log(10.f)));
+    marker = pow(10.f,ceil(log((float)marker)/log(10.f)));
     
     for (float s=0; s<l;s+=.01f, m++)
     {
@@ -1364,7 +1370,11 @@ void DisplayWidget::drawSelection() {
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    usleep( 10000 );
+#if (defined (_MSCVER) || defined (_MSC_VER))
+	Sleep( 10 );
+#else
+	usleep( 10000 );
+#endif
 
     update();
 }

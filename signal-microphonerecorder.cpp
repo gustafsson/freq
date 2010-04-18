@@ -133,7 +133,9 @@ unsigned MicrophoneRecorder::
 {
     unsigned n = 0;
 
-    BOOST_FOREACH( const pBuffer& s, _cache ) {
+	QMutexLocker l(&_mutex);
+
+    BOOST_FOREACH( const pBuffer& s, _cache) {
         n += s->number_of_samples();
     }
 
@@ -142,9 +144,9 @@ unsigned MicrophoneRecorder::
 
 int MicrophoneRecorder::
         writeBuffer(const void *inputBuffer,
-                 void */*outputBuffer*/,
+                 void * /*outputBuffer*/,
                  unsigned long framesPerBuffer,
-                 const PaStreamCallbackTimeInfo */*timeInfo*/,
+                 const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( inputBuffer );
@@ -156,7 +158,10 @@ int MicrophoneRecorder::
 
     memcpy ( b->waveform_data->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
 
-    _cache.push_back( b );
+	{
+		QMutexLocker l(&_mutex);
+		_cache.push_back( b );
+	}
 
     if (_callback)
         _callback->recievedData( this );

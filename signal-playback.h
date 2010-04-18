@@ -31,7 +31,7 @@ private:
         clock_t timestamp;
     };
 
-    int readBuffer(const void */*inputBuffer*/,
+    int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,
                      unsigned long framesPerBuffer,
                      const PaStreamCallbackTimeInfo *timeInfo,

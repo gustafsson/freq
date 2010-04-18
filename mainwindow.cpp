@@ -52,7 +52,7 @@ void MainWindow::slotClosedToolWindow(bool visible){
     ui->actionToggleToolWindow->setChecked(visible);
 }
 
-void MainWindow::slotDbclkFilterItem(QListWidgetItem */*item*/)
+void MainWindow::slotDbclkFilterItem(QListWidgetItem * /*item*/)
 {
     //emit sendCurrentSelection(ui->layerWidget->row(item), );
 }

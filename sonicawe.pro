@@ -4,7 +4,9 @@
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
+win32:CONFIG -= app_bundle
 QT += opengl
+CONFIG += release qt windows
 RESOURCES += icon-resources.qrc
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
@@ -90,27 +92,24 @@ macx:LIBS = -lsndfile \
     -framework GLUT \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio
-#    tmp/wavelet_cuda.o \
-#    tmp/spectrogram-slope_cuda.o \
-#    tmp/spectrogram-block_cuda.o \
-#    tmp/filter_cuda.o
-win32:INCLUDEPATH += ..\..\glut \
-	..\..\glew\include \
-	..\..\portaudio\include \
-	..\..\libsndfile\include \
-	..\..\std \
-	$(BOOST_PATH)
+win32:INCLUDEPATH += \
+	..\..\winlib\glut \
+	..\..\winlib\glew\include \
+	..\..\winlib\portaudio\include \
+	..\..\winlib\libsndfile\include \
+	..\..\winlib
 win32:LIBS += \
-	-l..\..\glut\glut32 \
-	-l..\..\glew\lib\glew32 \
-    -l..\..\libsndfile\libsndfile-1 \
-    -L$(CUDA_LIB_PATH)\..\lib \
-	-l..\..\portaudio\portaudio \
-	-l..\..\portaudio\portaudiocpp \
+	-l..\..\winlib\glut\glut32 \
+	-l..\..\winlib\glew\lib\glew32 \
+    -l..\..\winlib\libsndfile\libsndfile-1 \
+#    -L$(CUDA_LIB_PATH)\..\lib \
+	-l..\..\winlib\portaudio\portaudio \
+	-l..\..\winlib\portaudio\portaudiocpp \
 	-L$(BOOST_PATH)\lib
-LIBS += -lcufft \
-    -L../gpumisc \
-    -lgpumisc \
+LIBS += -lcufft 
+unix:LIBS += -l../gpumisc/gpumisc
+macx:LIBS += -l../gpumisc/gpumisc
+win32:LIBS += -l..\gpumisc\debug\gpumisc
 
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
@@ -120,10 +119,8 @@ UI_DIR = tmp
 # CUDA
 # #######################################################################
 win32 { 
-    INCLUDEPATH += $(CUDA_INC_PATH)\
-	.
-    QMAKE_LIBDIR += $(CUDA_LIB_PATH)
-    LIBS += -lcudart
+    INCLUDEPATH += $(CUDA_INC_PATH)
+    LIBS += -L$(CUDA_LIB_PATH) -lcudart
 	QMAKE_CXXFLAGS -= -Zc:wchar_t-
 	QMAKE_CXXFLAGS += -Zc:wchar_t
     cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj

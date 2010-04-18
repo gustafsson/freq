@@ -1,6 +1,7 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
-//#include <audiere.h> // for reading various formats
+typedef long long __int64_t;
+#include <stdint.h>
 #include <sndfile.hh> // for writing wav
 #include <math.h>
 #include "Statistics.h"

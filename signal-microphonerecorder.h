@@ -2,6 +2,7 @@
 #define WAVEFORMRECORDER_H
 
 #include <vector>
+#include <QMutex>
 #include "signal-source.h"
 #include <portaudiocpp/PortAudioCpp.hxx>
 
@@ -29,6 +30,7 @@ public:
     unsigned recording_itr() { return number_of_samples(); }
 
 private:
+	QMutex _mutex;
     Callback* _callback;
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<MicrophoneRecorder> > _stream_record;
@@ -36,7 +38,7 @@ private:
     std::vector<pBuffer> _cache;
 
     int writeBuffer(const void *inputBuffer,
-                     void */*outputBuffer*/,
+                     void * /*outputBuffer*/,
                      unsigned long framesPerBuffer,
                      const PaStreamCallbackTimeInfo *timeInfo,
                      PaStreamCallbackFlags statusFlags);
