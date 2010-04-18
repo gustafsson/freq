@@ -287,7 +287,11 @@ bool check_cuda() {
          << "   www.nvidia.com/object/cuda_gpus.html" << endl
          << endl
          << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl
-         <<"    www.nvidia.com" << endl
+#ifdef __APPLE__
+         << "   http://developer.nvidia.com/object/cuda_3_0_downloads.html#MacOS" << endl
+#else
+         << "   www.nvidia.com" << endl
+#endif
          << endl
          << endl
          << "Sonic AWE cannot start." << endl;
