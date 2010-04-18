@@ -107,7 +107,7 @@ win32:LIBS += \
 	-l..\..\winlib\portaudio\portaudiocpp \
 	-L$(BOOST_PATH)\lib
 LIBS += -lcufft 
-unix:LIBS += -l../gpumisc/gpumisc
+unix:LIBS += -L../gpumisc -lgpumisc
 macx:LIBS += -l../gpumisc/gpumisc
 win32:LIBS += -l..\gpumisc\debug\gpumisc
 

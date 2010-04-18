@@ -1,6 +1,8 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
+#ifdef _MSC_VER
 typedef long long __int64_t;
+#endif
 #include <stdint.h>
 #include <sndfile.hh> // for writing wav
 #include <math.h>
