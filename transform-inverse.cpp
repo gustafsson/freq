@@ -192,57 +192,6 @@ Signal::pBuffer Transform_inverse::computeInverse( float start, float end)
     return r;
 }
 
-Signal::pBuffer Transform_inverse::computeInverse( pTransform_chunk chunk, cudaStream_t stream ) {
-    cudaExtent sz = make_cudaExtent( chunk->n_valid_samples, 1, 1);
-
-    Signal::pBuffer r( new Signal::Buffer());
-    r->sample_offset = chunk->chunk_offset + chunk->first_valid_sample;
-    r->sample_rate = chunk->sample_rate;
-    r->waveform_data.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
-
-    float4 area = make_float4(
-            built_in_filter._t1 * _original_waveform->sample_rate() - r->sample_offset,
-            built_in_filter._f1 * _temp_to_remove->nScales(),
-            built_in_filter._t2 * _original_waveform->sample_rate() - r->sample_offset,
-            built_in_filter._f2 * _temp_to_remove->nScales());
-    {
-        TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
-
-        // summarize them all
-        ::wtInverse( chunk->transform_data->getCudaGlobal().ptr() + chunk->first_valid_sample,
-                     r->waveform_data->getCudaGlobal().ptr(),
-                     chunk->transform_data->getNumberOfElements(),
-                     area,
-                     chunk->n_valid_samples,
-                     stream );
-
-        CudaException_ThreadSynchronize();
-    }
-
-/*    {
-        TaskTimer tt("inverse corollary");
-
-        size_t n = r->waveform_data->getNumberOfElements1D();
-        float* data = r->waveform_data->getCpuMemory();
-        pWaveform_chunk originalChunk = _original_waveform->getChunk(chunk->sample_offset, chunk->nSamples(), _channel);
-        float* orgdata = originalChunk->waveform_data->getCpuMemory();
-
-        double sum = 0, orgsum=0;
-        for (size_t i=0; i<n; i++) {
-            sum += fabsf(data[i]);
-        }
-        for (size_t i=0; i<n; i++) {
-            orgsum += fabsf(orgdata[i]);
-        }
-        float scale = orgsum/sum;
-        for (size_t i=0; i<n; i++)
-            data[i] *= scale;
-        tt.info("scales %g, %g, %g", sum, orgsum, scale);
-
-        r->writeFile("outtest.wav");
-    }*/
-    return r;
-}
 
 void Transform_inverse::merge_chunk(Signal::pBuffer r, pTransform_chunk transform)
 {

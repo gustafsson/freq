@@ -19,7 +19,7 @@ public:
 
     boost::scoped_ptr<GpuCpuData<float> > waveform_data;
 
-    unsigned number_of_samples() { return waveform_data->getNumberOfElements().width; }
+    unsigned number_of_samples() { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
     Interleaved interleaved() const {return _interleaved; }
     boost::shared_ptr<class Buffer> getInterleaved(Interleaved);
 

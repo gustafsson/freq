@@ -1,24 +1,21 @@
-#ifndef TRANSFORMCHUNK_H
-#define TRANSFORMCHUNK_H
+#ifndef TFRCHUNK_H
+#define TFRCHUNK_H
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
 
-typedef boost::shared_ptr<class Transform_chunk> pTransform_chunk;
+namespace Tfr {
 
-class Transform_chunk
+struct Chunk
 {
-public:
-    Transform_chunk( );
+    Chunk();
 
     /**
-      transform_data contains the wavelet transform rowwise.
+      transform_data contains the complex wavelet transform rowwise.
       use as transform_data[ sample + f_index*nSamples ];
       See getNearestCoeff for an example on how to find f_index.
     */
     boost::scoped_ptr<GpuCpuData<float2> > transform_data;
-    Signal::pBuffer computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
 
     float min_hz, max_hz;
     unsigned chunk_offset;
@@ -45,4 +42,6 @@ public:
     float getFrequency( unsigned fi ) const;
 };
 
-#endif // TRANSFORMCHUNK_H
+} // namespace Tfr
+
+#endif // TFRCHUNK_H

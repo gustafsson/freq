@@ -37,7 +37,6 @@ public:
     void compute_inverse( float startt, float endt, pFilter filter );
 
     Signal::pBuffer         computeInverse( float start=0, float end=-1);
-    Signal::pBuffer computeInverse( pTransform_chunk chunk, cudaStream_t stream=0 );
     Signal::pSource get_inverse_waveform();
     void      setInverseArea(float t1, float f1, float t2, float f2);
     void      recompute_filter(pFilter);
@@ -47,6 +46,7 @@ public:
     void      play_inverse();
 
     EllipsFilter built_in_filter;
+
 private:
     Signal::pSource _original_waveform;
     Callback* _callback;

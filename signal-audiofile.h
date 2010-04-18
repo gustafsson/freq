@@ -8,21 +8,23 @@
         a sound can be recorded
         a matlab vector can be supplied by mex calls
         a data file can be binary data or csv
-        all signals in Sonic AWE have a sample rate, data files need to supply this
+        all signals in Sonic AWE have a sample rate, raw data files need to supply
+        this by external means.
         Two, or more, sources can be overloaded, the sample rate of the total is equal
         to the highest sample rate. Samples from sources of lower sample rates need to
         be resampled.
 
-        The input signal could always be interpreted as a stream, from which a number
-        of elements, floats, can be read. But the access pattern only needs a simple
-        API providing a read method, which returns a signal buffer (eq to streambuf):
+        The input signal could always be interpreted as a stream (similar to
+        std::stream), from which a number of elements, floats, can be read. But the
+        access pattern only needs a simple API providing a read method, which returns
+        a signal buffer (equivalent to streambuf):
 
         Signal::pBuffer b = Signal::Source::read( firstSample, number_of_samples )
 
-        A Signal doesn't have any pBuffers, it's up to each implementation to provide them
-        when requested for. A Signal::MicrophoneRecorder might for instance have a member
-        std::list<Signal::pBuffer> to store recordings in, internally. These would be
-        assembled to another Buffer when requested by read.
+        The base class Signal doesn't have any pBuffers, it's up to each implementation
+        to provide them when requested for. A Signal::MicrophoneRecorder might for
+        instance have a member std::list<Signal::pBuffer> to store recordings in,
+        internally. These would be assembled to another Buffer when requested by read.
 
         --- Different sinks ---
         A partial Tfd is then computed from the Buffer. The inverse Cwt can be put into
@@ -38,7 +40,7 @@
         estimations, Signal::Sink::expected_samples_left can be used to tell how many
         more samples that can be expected to be put into the chunk. If left to its default
         value of 0 playback will start playing immediately when each new chunk is received.
-        Signal::Save opens a .wav-file for writing and writes the result when
+        Signal::WavWriter opens a .wav-file for writing and writes the result when
         expected_samples_left is matched, or is 0. If Buffer has an offset, WavWriter will
         write with the same offset.
 
@@ -48,7 +50,7 @@
         at the same time. One WavWriter writes 'selection.wav', this WavWriter have a global
         offset such that the start of the wav file equals the start of the selection.
         Another WavWrtier writes to $cache as computed by the platform independent equivalent of
-        "$wavfile = `echo $INPUT_FILE_NAME | sed 's/\.[^\.]*$//`.wav~'
+        "$wavfile = `echo $INPUT_FILE_NAME | sed 's/\.[^\.]*$//`.wav'
         "$cache = $wavfile~
         Note the tilde at the end. If the user chooses to export her/his work at the end of
         a session, $cache is renamed to $wavfile. If "echo $INPUT_FILE_NAME | grep -i \.wav$"
@@ -56,16 +58,16 @@
         The user should probably be asked about overwriting the original sound.
 
         --- Rendering Waveforms ---
-        The waveform should be rendered like the TFD, in blocks - WaveformBlocks - in
+        The waveform should be rendered like the TFR, in blocks - WaveformBlocks - in
         of different scales. Those blocks are created by doing reads from a
-        Signal::Source and building up Tfd::WaveformBlock, which are rendered by
-        Tfd::Waveform. "Waveform" refers to "the shape and form of a signal". That is,
+        Signal::Source and building up Function1D::WaveformBlock, which are rendered by
+        Function1D::Waveform. "Waveform" refers to "the shape and form of a signal". That is,
         a waveform is not the signal itself, but a Waveform describes the looks of a signal.
 
-        As for the Tfd, a WaveformBlock isn't created until it is requested for.
+        As for the Tfr, a WaveformBlock isn't created until it is requested for.
 
-        Signals are never stored on the GPU, they are transfered when requested for, used
-        for one calculation/kernel execution and then released.
+        Complete signals are never stored on the GPU, they are transfered in parts when requested
+        for, used for one calculation/kernel execution and then released.
 
         --- Channels? ---
         Signals are treated as 1D vectors. If a signal contains 'n' channels they must be
@@ -91,11 +93,11 @@
         the local cosine transform, or by some other means in transform.
 
         A quite trivial operation is to superimpose a second Signal::Source onto the first one. This requires
-        a resampling operation if they don't have the same sample rate. These kind of operations are called
-        Layers.
+        a resampling operation if the two signals don't have the same sample rate. These kind of operations are
+        called Layers.
 
         Some non-so-trivial operations require Filters on the Cwt domain and are called FilterOperations. The
-        filter is always a FilterChain and might in turn invoke several filters.
+        filter of a FilterOperation is always a FilterChain and might in turn invoke several filters.
 
         Buffer = Tfr::InverseCwt( _filter_chain ( Tfr::Cwt ( buffer ) ) )
         (If the filterchain is empty, the FilterOperation doesn't do anything and returns the Buffer immediately.)
@@ -125,8 +127,8 @@
 
         protected: Operation::sample InvalidSamplesDescriptor
 
-        The InvalidSamplesDescriptor defines which cache regions that are valid. It is real quick to process the
-        tree once each frame.
+        The InvalidSamplesDescriptor defines which cache regions that are valid. It is a quick operation to process
+        the tree once each frame.
 
         If an operation has been altered, but in a way such that most parts of the Source remain unaffected (for instance
         a small circle-remove filter is inserted in a FilterOperation). The InvalidSamplesDescriptor for that

@@ -1,8 +1,9 @@
-#include "transform.h"
-
+#include "tfr-chunk.h"
 #include <math.h>
 
-Transform_chunk::Transform_chunk()
+namespace Tfr {
+
+Chunk::Chunk()
 :   min_hz(0),
     max_hz(0),
     chunk_offset(0),
@@ -12,7 +13,7 @@ Transform_chunk::Transform_chunk()
     modified(false)
 {}
 
-float2 Transform_chunk::getNearestCoeff( float t, float f )
+float2 Chunk::getNearestCoeff( float t, float f )
 {
     if (!valid())
         return make_float2(0,0);
@@ -26,7 +27,7 @@ float2 Transform_chunk::getNearestCoeff( float t, float f )
     return transform_data->getCpuMemoryConst()[ fi*nSamples() + s ];
 }
 
-float Transform_chunk::getFrequency( unsigned fi ) const
+float Chunk::getFrequency( unsigned fi ) const
 {
     if (!valid())
         return 0;
@@ -34,7 +35,7 @@ float Transform_chunk::getFrequency( unsigned fi ) const
     return exp(log(min_hz) + (fi/(float)nScales())*(log(max_hz)-log(min_hz)));
 }
 
-unsigned Transform_chunk::getFrequencyIndex( float f ) const
+unsigned Chunk::getFrequencyIndex( float f ) const
 {
     if (f<min_hz) f=min_hz;
     if (f>max_hz) f=max_hz;
@@ -45,3 +46,4 @@ unsigned Transform_chunk::getFrequencyIndex( float f ) const
     return fi;
 }
 
+} // namespace Tfr

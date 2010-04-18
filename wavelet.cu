@@ -39,7 +39,7 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleR
     }
 
 	// float scales_per_octave = numElem.height/((log(maxHz)/log(2.f)-(log(minHz)/log(2.f));
-    kernel_compute<<<grid, block, stream>>>( (float*)in_waveform_ft, (float*)out_wavelet_ft, numElem, start, steplogsize, scales_per_octave );
+    kernel_compute<<<grid, block, 0, stream>>>( (float*)in_waveform_ft, (float*)out_wavelet_ft, numElem, start, steplogsize, scales_per_octave );
 }
 
 __global__ void kernel_compute(
@@ -90,7 +90,7 @@ __global__ void kernel_compute(
     }
 }
 
-void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
+void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -101,10 +101,10 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
         return;
     }
 
-    kernel_inverse<<<grid, block, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
+    kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, n_valid_samples );
 }
 
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples )
 {
     const unsigned
             //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
@@ -116,21 +116,47 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
         return;
 
     float a = 0;
-/* no selection
+
+    // no selection
     for (unsigned fi=0; fi<numElem.height; fi++)
     {
         a += in_wavelet[ x + fi*numElem.width ].x;
-    }*/
- /* box selection
-    if (x>=area.x && x<=area.z)
-      {
-        for (unsigned fi=max(0.f,area.y); fi<numElem.height && fi<area.w; fi++)
-        {
-            // select only the real component of the complex transform
-            a += in_wavelet[ x + fi*numElem.width ].x;
-        }
-    }*/
-/* disc selection */
+    }
+
+    float cufft_normalize = 1.f/sqrt((float)numElem.width);
+    float jibberish_normalization = .1;
+
+    out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
+}
+
+void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
+{
+    // Multiply the coefficients together and normalize the result
+    dim3 block(256,1,1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), 1, 1);
+
+    if(grid.x>65535) {
+        setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+
+    kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
+}
+
+__global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
+{
+    const unsigned
+            //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            x = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if (x>=n_valid_samples)
+        return;
+    if (x>=numElem.width )
+        return;
+
+    float a = 0;
+
+    // disc selection
     for (unsigned fi=0; fi<numElem.height; fi++)
     {
         float rx = area.z-area.x;
@@ -139,6 +165,49 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
         float dy = fi-area.y;
 
         if (dx*dx/rx/rx + dy*dy/ry/ry < 1) {
+            // select only the real component of the complex transform
+            a += in_wavelet[ x + fi*numElem.width ].x;
+        }
+    }
+
+    float cufft_normalize = 1.f/sqrt((float)numElem.width);
+    float jibberish_normalization = .1;
+
+    out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
+}
+
+void wtInverseBox( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
+{
+    // Multiply the coefficients together and normalize the result
+    dim3 block(256,1,1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), 1, 1);
+
+    if(grid.x>65535) {
+        setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+
+    kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
+}
+
+__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
+{
+    const unsigned
+            //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            x = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if (x>=n_valid_samples)
+        return;
+    if (x>=numElem.width )
+        return;
+
+    float a = 0;
+
+    // box selection
+    if (x>=area.x && x<=area.z)
+      {
+        for (unsigned fi=max(0.f,area.y); fi<numElem.height && fi<area.w; fi++)
+        {
             // select only the real component of the complex transform
             a += in_wavelet[ x + fi*numElem.width ].x;
         }
@@ -175,7 +244,7 @@ void wtClamp( float2* in_wt, cudaExtent in_numElem, size_t in_offset, size_t las
         return;
     }
 
-    kernel_clamp<<<grid, block, stream>>>( (float*)in_wt, in_numElem, in_offset, last_sample, (float*)out_clamped_wt, out_numElem );
+    kernel_clamp<<<grid, block, 0, stream>>>( (float*)in_wt, in_numElem, in_offset, last_sample, (float*)out_clamped_wt, out_numElem );
 }
 
 __global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem )
