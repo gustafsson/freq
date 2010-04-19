@@ -215,6 +215,16 @@
     A filter should
  Invalidate children...
     It is possible to keep Signals can be combined
+
+
+   The waveform resides in CPU memory, beacuse in total we might have hours
+   of data which would instantly waste the entire GPU memory. In those
+   cases it is likely though that the OS chooses to page parts of the
+   waveform. Therefore this takes in general an undefined amount of time
+   before it returns.
+
+   However, we optimize for the assumption that it does reside in readily
+   available cpu memory.
 */
 
 #include "signal-source.h"

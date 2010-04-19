@@ -4,17 +4,27 @@
 
 namespace Tfr {
 
-Stft::Stft(cudaStream_t stream)
+static void cufftSafeCall( cufftResult_t cufftResult) {
+    if (cufftResult != CUFFT_SUCCESS) {
+        ThrowInvalidArgument( cufftResult );
+    }
+}
+
+Fft::
+Fft(cudaStream_t stream)
 :   _stream(stream),
     _fft_single(-1)
 {
 }
 
-Stft::~Stft() {
+Fft::
+~Fft()
+{
     gc();
 }
 
-pStftData stft::operator()( Signal::pBuffer buffer )
+pFftData Fft::
+operator()( Signal::pBuffer buffer )
 {
     if (buffer->interleaved != Signal::Buffer::Interleaved_Complex) {
         buffer = buffer->getInterleaved( Signal::Buffer::Interleaved_Complex );
@@ -53,8 +63,10 @@ pStftData stft::operator()( Signal::pBuffer buffer )
     return _intermediate_stft;
 }
 
-void gc() {
-    _intermediate_stft.reset();
+void Fft:
+gc()
+{
+    _intermediate_fft.reset();
 
     // Destroy CUFFT context
     if (_fft_single == (cufftHandle)-1)
@@ -62,4 +74,55 @@ void gc() {
 
     _fft_single = -1;
 }
+
+
+
+/// STFT
+
+
+Stft::
+Stft( cudaStream_t stream )
+:   chunk_size( 1<<11 ),
+    _stream( stream ),
+    _fft_many( -1 )
+{
+}
+
+Signal::pBuffer Stft::
+operator() (Signal::pBuffer b)
+{
+    const unsigned ftChunk = 1 << 11;
+
+    b = b->getInterleaved( Signal::Buffer::Interleaved_Complex );
+
+    cufftComplex* d = (cufftComplex*)b->waveform_data->getCudaGlobal().ptr();
+
+    // Transform signal
+    cufftHandle fft_many;
+    cufftSafeCall(cufftPlan1d(&fft_many, ftChunk, CUFFT_C2C, b->number_of_elements()/ftChunk));
+
+    cufftSafeCall(cufftSetStream(fft_many, stream));
+    cufftSafeCall(cufftExecC2C(fft_many, d, d, CUFFT_FORWARD));
+    cufftDestroy(fft_many);
+    if (b->number_of_elements() % ftChunk != 0)
+    {
+        cudaMemset( d + (b->number_of_elements() / ftChunk), 0, b->number_of_elements() % ftChunk );
+    }
+
+    if (chunkSize)
+        *chunkSize = ftChunk;
+
+    return b;
+}
+
+void Stft::
+chunk_size( unsigned value )
+{
+    if (_chunk_size == value )
+        return;
+
+    _chunk_size = value;
+    gc();
+}
+
 } // namespace Tfr

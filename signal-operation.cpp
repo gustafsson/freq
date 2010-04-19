@@ -2,6 +2,12 @@
 
 namespace Signal {
 
+Operation::
+Operation(pSource source )
+:   _source( source )
+{
+}
+
 unsigned Operation::
 sample_rate() const
 {

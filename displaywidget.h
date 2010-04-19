@@ -99,6 +99,7 @@ private:
 
     boost::shared_ptr<SpectrogramRenderer> _renderer;
     boost::shared_ptr<Transform> _transform;
+    boost::shared_ptr<MainPlayback> _playback;
     
     struct ListCounter {
         GLuint displayList;
@@ -156,6 +157,22 @@ private:
     MouseControl moveButton;
     MouseControl rotateButton;
     MouseControl scaleButton;
+};
+
+class MainPlayback: public Signal::WorkerCallback
+{
+public:
+    MainPlayback(int outputDevice, Signal::Worker* worker):WorkerCallback(worker), pb(outputDevice) {}
+
+    /**
+      Signal::Playback outputs audio data through port audio.
+      */
+    Signal::Playback pb;
+
+private:
+    virtual void reset() { pb.reset(); }
+    virtual void put( pBuffer b ) { pb.put( b ); }
+    virtual void put( pBuffer b, pSource s ) { pb.put (b, s); }
 };
 
 #endif // DISPLAYWIDGET_H

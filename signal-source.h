@@ -23,13 +23,14 @@ public:
     Interleaved interleaved() const {return _interleaved; }
     boost::shared_ptr<class Buffer> getInterleaved(Interleaved);
 
+    float start() { return sample_offset/(float)sample_rate; }
+    float length() { return number_of_samples()/(float)sample_rate; }
+
     unsigned sample_offset;
     unsigned sample_rate;
     bool modified;
     bool was_modified;
-    bool play_when_done;
 
-    std::set<unsigned> valid_transform_chunks;
 private:
     const Interleaved _interleaved;
 };

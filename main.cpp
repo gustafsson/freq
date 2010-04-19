@@ -379,6 +379,8 @@ int main(int argc, char *argv[])
     validate_arguments();
 
     try {
+        CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
         boost::shared_ptr<Signal::Source> wf;
 
         if (-1<=_record)

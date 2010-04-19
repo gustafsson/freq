@@ -1,23 +1,24 @@
-#ifndef SPECTROGRAMRENDERER_H
-#define SPECTROGRAMRENDERER_H
+#ifndef HEIGHTMAPRENDERER_H
+#define HEIGHTMAPRENDERER_H
+
 #include <sstream>
 #include "spectrogram.h"
-#ifdef _MSC_VER
-#include <windows.h>
-#endif
+//#ifdef _MSC_VER
+//#include <windows.h>
+//#endif
 #ifndef __APPLE__
   #include <GL/gl.h>
 #else
   #include <OpenGL/gl.h>
 #endif
-#include "spectrogram-vbo.h"
+#include "heightmap-vbo.h"
 
-static std::string _shaderBaseDir;
-class SpectrogramRenderer
+namespace Heightmap {
+
+class Renderer
 {
 public:
-    SpectrogramRenderer( pSpectrogram spectrogram );
-    static void setShaderBaseDir(std::string shaderBaseDir){ _shaderBaseDir = shaderBaseDir; printf("Shaderbasedir: %s\n", _shaderBaseDir.c_str());}
+    Renderer( pSpectrogram spectrogram );
 
     pSpectrogram spectrogram() { return _spectrogram; }
 
@@ -57,5 +58,6 @@ private:
     bool computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels );
 };
 
+} // namespace Heightmap
 
-#endif // SPECTROGRAMRENDERER_H
+#endif // HEIGHTMAPRENDERER_H

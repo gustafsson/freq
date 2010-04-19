@@ -3,7 +3,9 @@
 #include "wavelet.cu.h"
 
 __global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float scales_per_octave, float steplogsize  );
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
+__global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
+__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem );
 
 static const char* gLastError = 0;
@@ -140,7 +142,7 @@ void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExten
         return;
     }
 
-    kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
+    kernel_inverse_ellips<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
 }
 
 __global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
@@ -187,7 +189,7 @@ void wtInverseBox( float2* in_wavelet, float* out_inverse_waveform, cudaExtent n
         return;
     }
 
-    kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
+    kernel_inverse_box<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
 }
 
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
@@ -217,58 +219,4 @@ __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_wavef
     float jibberish_normalization = .1;
 
     out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
-}
-
-void wtClamp( float2* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float2* out_clamped_wt, cudaExtent out_numElem, cudaStream_t stream )
-{
-    // in this scope, work on arrays of float* instead of float2* to coalesce better
-    in_numElem.width *= 2;
-    in_offset *= 2;
-    out_numElem.width *= 2;
-    last_sample *= 2;
-
-    // Multiply the coefficients together and normalize the result
-    dim3 block(256,1,1);
-    dim3 grid( int_div_ceil(out_numElem.width, block.x), out_numElem.height, out_numElem.depth );
-
-    if(grid.x>65535) {
-        setError("Invalid argument, first dimension of wavelet transform must be less than 65535*256 ~ 16 Mi.");
-        return;
-    }
-    if(grid.y>65535) {
-        setError("Invalid argument, number of scales in wavelet transform must be less than 65535.");
-        return;
-    }
-    if(grid.z>1) {
-        setError("Invalid argument, out_numElem.depth must be 1.");
-        return;
-    }
-
-    kernel_clamp<<<grid, block, 0, stream>>>( (float*)in_wt, in_numElem, in_offset, last_sample, (float*)out_clamped_wt, out_numElem );
-}
-
-__global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem )
-{
-    const unsigned
-            x = __umul24(blockIdx.x, blockDim.x) + threadIdx.x,
-            y = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
-
-    // sanity checks...
-    if (x>=out_numElem.width )
-        return;
-    if (y>=out_numElem.height)
-        return;
-
-    // Not coalesced reads for arbitrary in_offset, coalesced writes though. Make sure in_offset is a multiple of 16, or even better 32.
-    float v = 0;
-    if (y<in_numElem.height && in_offset + x < in_numElem.width) {
-        unsigned i = in_offset + x + in_numElem.width*y;
-        v = in_wt[i];
-    }
-
-    if (x >= last_sample)
-        v = 0.f/0.f;
-
-    unsigned o = x + out_numElem.width*y;
-    out_clamped_wt[o] = v;
 }

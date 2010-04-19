@@ -9,8 +9,10 @@ namespace Signal {
 class Operation: public Source
 {
 public:
-    Operation( boost::shared_ptr<class Operation> child );
+    Operation( pSource source );
+
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
+
     virtual unsigned sample_rate() const;
     virtual unsigned number_of_samples() const;
 
@@ -18,9 +20,8 @@ public:
 
 protected:
     InvalidSamplesDescriptor _isd;
-    boost::shared_ptr<class Operation> _child;
+    pSource _source;
 };
-typedef boost::shared_ptr<class Operation> pOperation;
 
 } // namespace Signal
 
