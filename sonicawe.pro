@@ -108,7 +108,7 @@ win32:LIBS += \
 	-L$(BOOST_PATH)\lib
 LIBS += -lcufft 
 unix:LIBS += -L../gpumisc -lgpumisc
-macx:LIBS += -l../gpumisc/gpumisc
+macx:LIBS += -L../gpumisc -lgpumisc
 win32:LIBS += -l..\gpumisc\debug\gpumisc
 
 MOC_DIR = tmp
