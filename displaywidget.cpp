@@ -844,10 +844,10 @@ void DisplayWidget::paintGL()
     	glLoadIdentity();
     	glOrtho(-1 * _renderRatio, 1 * _renderRatio, 1, -1, -1, 1);
     
-		glTranslatef(0.5, 0.5, 0);
+		glTranslatef(_renderRatio * 1 -0.15, -0.85, 0);
     	glMatrixMode(GL_MODELVIEW);
     	glLoadIdentity();
-    	glScalef(0.25, 0.25, 1);
+    	glScalef(0.5, 0.5, 1);
     
     	glEnable(GL_BLEND);
     	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
