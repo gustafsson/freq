@@ -2,8 +2,9 @@
 #define DISPLAYWIDGET_H
 
 #include <QGLWidget>
-#include "spectrogram-renderer.h"
-#include "signal-microphonerecorder.h"
+#include "heightmap-renderer.h"
+#include "sawe-mainplayback.h"
+#include "signal-filteroperation.h"
 #include <boost/shared_ptr.hpp>
 #include <TAni.h>
 #include <queue>
@@ -40,11 +41,11 @@ struct MyVector{
     float x, y, z;
 };
 
-class DisplayWidget : public QGLWidget, public Signal::MicrophoneRecorder::Callback
+class DisplayWidget : public QGLWidget, public Signal::Sink
 {
     Q_OBJECT
 public:
-    DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval=0, std::string playback_source_test="" );
+    DisplayWidget( Heightmap::pCollection collection, int timerInterval=0  );
     ~DisplayWidget();
     int lastKey;
     static DisplayWidget* gDisplayWidget;
@@ -89,17 +90,19 @@ protected slots:
     virtual void recieveAddClearSelection(bool);
 
 signals:
-    void filterChainUpdated(pTransform);
+    void filterChainUpdated( Tfr::pFilter f );
     void setSelectionActive(bool);
     void setNavigationActive(bool);
     
 private:
-    virtual void recievedData( Signal::MicrophoneRecorder* );
+    virtual void put( Signal::pBuffer b) { put (b, Signal::pSource());}
+    virtual void put( Signal::pBuffer, Signal::pSource );
+    Signal::FilterOperation* getFilterOperation();
     // bool _record_update;
 
-    boost::shared_ptr<SpectrogramRenderer> _renderer;
-    boost::shared_ptr<Transform> _transform;
-    boost::shared_ptr<MainPlayback> _playback;
+    Heightmap::pRenderer _renderer;
+    Signal::pWorker _worker;
+    Sawe::pMainPlayback _mainPlayback;
     
     struct ListCounter {
         GLuint displayList;
@@ -123,9 +126,9 @@ private:
     
     void drawArrows();
     void drawColorFace();
-	void drawWaveform( Signal::pSource waveform );
-	static void drawWaveform_chunk_directMode( Signal::pBuffer chunk);
-    static void drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer );
+    void drawWaveform( Signal::pSource waveform );
+    static void drawWaveform_chunk_directMode( Signal::pBuffer chunk);
+    static void drawSpectrogram_borders_directMode( Heightmap::pRenderer renderer );
     template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw=false );
     
     bool _enqueueGcDisplayList;
@@ -159,21 +162,6 @@ private:
     MouseControl scaleButton;
 };
 
-class MainPlayback: public Signal::WorkerCallback
-{
-public:
-    MainPlayback(int outputDevice, Signal::Worker* worker):WorkerCallback(worker), pb(outputDevice) {}
-
-    /**
-      Signal::Playback outputs audio data through port audio.
-      */
-    Signal::Playback pb;
-
-private:
-    virtual void reset() { pb.reset(); }
-    virtual void put( pBuffer b ) { pb.put( b ); }
-    virtual void put( pBuffer b, pSource s ) { pb.put (b, s); }
-};
 
 #endif // DISPLAYWIDGET_H
 

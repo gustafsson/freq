@@ -3,8 +3,7 @@
 
 #include "signal-sink.h"
 
-namespace Sawe
-{
+namespace Sawe {
 
 /**
   Transforms a pBuffer into a pChunk with CwtSingleton and saves the chunk in a file called
@@ -15,7 +14,9 @@ namespace Sawe
 class Csv: public Signal::Sink
 {
 public:
-    void    put( pBuffer );
+    void    put( Signal::pBuffer );
 };
+
+} // namespace Sawe
 
 #endif // SAWECSV_H

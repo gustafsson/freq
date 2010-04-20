@@ -3,13 +3,15 @@
 
 #include "tfr-filter.h"
 #include "tfr-cwt.h"
+#include "tfr-inversecwt.h"
+#include "signal-operation.h"
 
 namespace Signal {
 
 class FilterOperation : public Signal::Operation
 {
 public:
-    FilterOperation(Tfr::pFilter filter);
+    FilterOperation( pSource source, Tfr::pFilter filter);
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
 
@@ -24,11 +26,18 @@ public:
     Tfr::pFilter    filter() const { return _filter; }
     void            filter( Tfr::pFilter f ) { _filter = f; }
 
+    Tfr::Cwt cwt;
+    Tfr::InverseCwt inverse_cwt;
+
+    /**
+      If source also is a FilterOperation, take out its pFilter and do both
+      filters in this FilterOperation. Then remove source by taking source->source
+      as source instead.
+      */
+    void meldFilters();
 private:
 
     Tfr::pFilter _filter;
-    Tfr::Cwt _cwt;
-
     Tfr::pChunk _previous_chunk;
 };
 

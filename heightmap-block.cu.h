@@ -1,3 +1,6 @@
+#ifndef HEIGHTMAPBLOCK_CU_H
+#define HEIGHTMAPBLOCK_CU_H
+
 #include <cudaPitchedPtrType.h>
 
 extern "C"
@@ -45,3 +48,5 @@ void expandCompleteStft( cudaPitchedPtrType<float> inStft,
                  float in_max_hz,
                  unsigned in_stft_size,
                  unsigned cuda_stream);
+
+#endif // HEIGHTMAPBLOCK_CU_H

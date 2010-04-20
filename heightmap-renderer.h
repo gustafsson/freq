@@ -2,7 +2,7 @@
 #define HEIGHTMAPRENDERER_H
 
 #include <sstream>
-#include "spectrogram.h"
+#include "heightmap-collection.h"
 //#ifdef _MSC_VER
 //#include <windows.h>
 //#endif
@@ -18,9 +18,9 @@ namespace Heightmap {
 class Renderer
 {
 public:
-    Renderer( pSpectrogram spectrogram );
+    Renderer( pCollection collection );
 
-    pSpectrogram spectrogram() { return _spectrogram; }
+    pCollection collection() { return _collection; }
 
     void draw();
     void drawAxes();
@@ -28,7 +28,7 @@ public:
     bool draw_piano;
     bool draw_hz;
 private:
-    pSpectrogram _spectrogram;
+    pCollection _collection;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
@@ -38,11 +38,11 @@ private:
     float _redundancy;
 
     float _fewest_pixles_per_unit;
-    Spectrogram::Reference _fewest_pixles_per_unit_ref;
+    Reference _fewest_pixles_per_unit_ref;
 
     unsigned _drawn_blocks;
 
-    friend class SpectrogramVbo;
+    friend class Heightmap::GlBlock;
 
     void init();
     void setSize( unsigned w, unsigned h);
@@ -52,11 +52,12 @@ private:
     void beginVboRendering();
     void endVboRendering();
 
-    bool renderSpectrogramRef( Spectrogram::Reference ref, bool* finished_ref );
-    bool renderChildrenSpectrogramRef( Spectrogram::Reference ref );
-    void renderParentSpectrogramRef( Spectrogram::Reference ref );
-    bool computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels );
+    bool renderSpectrogramRef( Reference ref, bool* finished_ref );
+    bool renderChildrenSpectrogramRef( Reference ref );
+    void renderParentSpectrogramRef( Reference ref );
+    bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );
 };
+typedef boost::shared_ptr<Renderer> pRenderer;
 
 } // namespace Heightmap
 

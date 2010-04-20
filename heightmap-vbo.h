@@ -1,5 +1,7 @@
-#ifndef SPECTROGRAMVBO_H
-#define SPECTROGRAMVBO_H
+#ifndef HEIGHTMAPVBO_H
+#define HEIGHTMAPVBO_H
+
+#include "heightmap-collection.h"
 
 #include <cuda_runtime.h>
 #ifdef _MSC_VER
@@ -11,18 +13,20 @@
 #include <TaskTimer.h>
 #include <mappedvbo.h>
 
-typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
+/*typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
 typedef boost::shared_ptr<class SpectrogramRenderer> pSpectrogramRenderer;
 typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
+*/
 
+namespace Heightmap {
 
 GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
 
-class SpectrogramVbo
+class GlBlock
 {
 public:
-    SpectrogramVbo( Spectrogram* spectrogram );
-    ~SpectrogramVbo();
+    GlBlock( Collection* collection );
+    ~GlBlock();
 
     typedef boost::shared_ptr< MappedVbo<float> > pHeight;
     typedef boost::shared_ptr< MappedVbo<float2> > pSlope;
@@ -34,7 +38,7 @@ public:
     void draw( );
     void draw_directMode( );
 private:
-    Spectrogram* _spectrogram;
+    Collection* _collection;
 
     pHeight _mapped_height;
     pSlope _mapped_slope;
@@ -43,5 +47,8 @@ private:
     pVbo _slope;
 };
 
+typedef boost::shared_ptr<GlBlock> pGlBlock;
 
-#endif // SPECTROGRAMVBO_H
+} // namespace Heightmap
+
+#endif // HEIGHTMAPVBO_H

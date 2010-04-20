@@ -1,6 +1,9 @@
-#ifndef POSITION_H
-#define POSITION_H
+#ifndef HEIGHTMAPPOSITION_H
+#define HEIGHTMAPPOSITION_H
+
 #include <tvector.h>
+
+namespace Heightmap {
 
 class Position {
 public:
@@ -12,4 +15,6 @@ public:
     tvector<2, float> operator()() { return tvector<2, float>(time, scale); }
 };
 
-#endif
+} // Heightmap
+
+#endif // HEIGHTMAPPOSITION_H

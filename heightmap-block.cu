@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "spectrogram-block.cu.h"
+#include "heightmap-block.cu.h"
 
 __global__ void kernel_merge(
                 cudaPitchedPtrType<float> inBlock,

@@ -2,7 +2,7 @@
 #define SIGNALOPERATION_H
 
 #include "signal-source.h"
-#include "signal-invalidsamplesdescriptor.h"
+#include "signal-samplesintervaldescriptor.h"
 
 namespace Signal {
 
@@ -15,11 +15,12 @@ public:
 
     virtual unsigned sample_rate() const;
     virtual unsigned number_of_samples() const;
+    virtual pSource source() const { return _source; }
 
-    virtual InvalidSamplesDescriptor updateIsd();
+    virtual SamplesIntervalDescriptor updateInvalidSamples();
 
 protected:
-    InvalidSamplesDescriptor _isd;
+    SamplesIntervalDescriptor _invalid_samples;
     pSource _source;
 };
 

@@ -36,9 +36,9 @@ nFrequencies()
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-Collection( unsigned samples_per_block, unsigned scales_per_block )
-:   _samples_per_block( samples_per_block ),
-    _scales_per_block( scales_per_block )
+Collection()
+:   _samples_per_block( 1<<7 ),
+    _scales_per_block( 1<<8 )
 {
 
 }

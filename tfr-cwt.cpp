@@ -1,10 +1,11 @@
 #include "tfr-cwt.h"
+#include <cufft.h>
+#include "tfr-stft.h"
 
 /**
   TODO remove
   #include "transform.h"
 #include <cuda_runtime.h>
-#include <cufft.h>
 #include "CudaException.h"
 #include <math.h>
 #include "CudaProperties.h"
@@ -47,9 +48,11 @@ Cwt::Cwt( float scales_per_octave, float wavelet_std_t, cudaStream_t stream=0 )
 {
 }
 
-pChunk operator()( Signal::pBuffer buffer )
+pChunk Cwt::operator()( Signal::pBuffer buffer )
 {
-    pStftData ft = _stft( buffer );
+    pFftChunk ft = _fft( buffer );
+
+    pChunk _intermediate_wt;
 
     {
         TaskTimer tt(TaskTimer::LogVerbose, "prerequisites");
@@ -61,7 +64,7 @@ pChunk operator()( Signal::pBuffer buffer )
 
         if (!_intermediate_wt) {
             // allocate a new chunk
-            pTransform_chunk chunk = pTransform_chunk ( new Transform_chunk());
+            pChunk chunk = pChunk ( new Chunk());
 
             chunk->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal ));
             _intermediate_wt = chunk;
@@ -156,7 +159,7 @@ wavelet_std_samples( unsigned sample_rate ) const
 }
 
 void Cwt::gc() {
-    _intermediate_wt.reset();
+    // _intermediate_wt.reset();
 
     // Destroy CUFFT context
     if (_fft_many == (cufftHandle)-1)

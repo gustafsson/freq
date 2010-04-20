@@ -1,8 +1,11 @@
-#ifndef HEIGHTMAPCOLLECTION_H
-#define HEIGHTMAPCOLLECTION_H
+#ifndef HEIGHTMAPREFERENCE_H
+#define HEIGHTMAPREFERENCE_H
+
+#include "heightmap-position.h"
 
 namespace Heightmap {
 
+class Collection;
 
 class Reference {
 public:
@@ -31,13 +34,13 @@ public:
     /* parent */
     Reference parent();
 private:
-    friend class Spectrogram;
+    friend class Collection;
 
-    Reference( Spectrogram* parent );
+    Reference( Collection* parent );
 
-    Spectrogram* _spectrogram;
+    Collection* _collection;
 };
 
 } // namespace Heightmap
 
-#endif // HEIGHTMAPCOLLECTION_H
+#endif // HEIGHTMAPREFERENCE_H

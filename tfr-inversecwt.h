@@ -8,7 +8,7 @@
 
 namespace Tfr {
 /**
-TODO: Obsolete, remove or rewrite:
+TODO: Obsolete text, remove or rewrite:
 
 Transform_inverse produces a streaming inverse of the transform in chunks of
 length dt.

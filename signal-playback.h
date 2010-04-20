@@ -9,7 +9,7 @@
 
 namespace Signal {
 
-class Playback: public virtual Sink
+class Playback: virtual public Sink
 {
 public:
     Playback( int outputDevice/* = -1 */);

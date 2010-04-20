@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include "signal-audiofile.h"
 #include "signal-playback.h"
+#include "signal-microphonerecorder.h"
 
 #undef max
 
@@ -146,12 +147,12 @@ bool MouseControl::isTouched()
 
 DisplayWidget* DisplayWidget::gDisplayWidget = 0;
 
-DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval, std::string playback_source_test )
+DisplayWidget::DisplayWidget( Heightmap::pCollection collection, int timerInterval )
 : QGLWidget( ),
   lastKey(0),
   xscale(1),
 //  _record_update(false),
-  _renderer( new SpectrogramRenderer( spectrogram )),
+  _renderer( new Heightmap::Renderer( collection )),
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
   _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
@@ -170,7 +171,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     glutInit(&c,0);
 #endif
     gDisplayWidget = this;
-    float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+    float l = _worker->source()->length();
     selection[0].x = l*.5f;
     selection[0].y = 0;
     selection[0].z = .85f;
@@ -182,11 +183,12 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     selection[0].x = selection[1].x;
     selection[0].z = selection[1].z;
 
-    _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+    getFilterOperation()->inverse_cwt.filter.reset( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z) );
 
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(_renderer->spectrogram()->transform()->original_waveform().get());
+
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(collection->fast_source().get());
     if (0!=r)
-        recievedData( r );
+        put( Signal::pBuffer(), collection->fast_source() );
 
 
     yscale = Yscale_LogLinear;
@@ -196,14 +198,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
     {
         startTimer(timerInterval);
     }
-    
-    if (!playback_source_test.empty())
-    {
-        open_inverse_test(playback_source_test);
-    } else {
-        _transform = _renderer->spectrogram()->transform();
-    }
-    
+        
     if (_rx<0) _rx=0;
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
@@ -214,7 +209,7 @@ DisplayWidget::DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int ti
 DisplayWidget::~DisplayWidget()
 {
     Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(
-            this->_renderer->spectrogram()->transform()->original_waveform().get() );
+            _renderer->collection()->fast_source().get() );
     if (r) {
         r->isStopped() ? void() : r->stopRecording();
     }
@@ -258,9 +253,9 @@ void DisplayWidget::recieveTogglePiano(bool active)
 
 void DisplayWidget::recievePlaySound()
 {
-		printf("Playing the selection.\n");
-		_transform->inverse()->play_inverse();
-                update();
+    TaskTimer("Playing the selection.\n").suppressTiming();
+    _mainPlayback.reset( new Sawe::pMainPlayback( _worker.get() ));
+    update();
 }
 
 void DisplayWidget::recieveToggleHz(bool active)
@@ -281,15 +276,10 @@ void DisplayWidget::recieveAddClearSelection(bool active)
 
 void DisplayWidget::recieveAddSelection(bool /*active*/)
 {
-    pTransform t = _renderer->spectrogram()->transform();
-    pFilter f(new EllipsFilter( t->inverse()->built_in_filter ) );
-
-    t->filter_chain.push_back(f);
-    t->recompute_filter(f);
-    if( _transform != t ) {
-        _transform->filter_chain.push_back(f);
-        _transform->recompute_filter(f);
-    }
+    Signal::FilterOperation *f = getFilterOperation();
+    f = new Signal::FilterOperation( _worker->source(), f->inverse_cwt.filter );
+    f->meldFilters();
+    _worker->source( pFilter(f) );
 
     float start, end;
     f->range(start, end);
@@ -342,11 +332,6 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             emit filterChainUpdated(t);
             break;
         }
-        case 'e': case 'E':
-        {
-            open_inverse_test();
-            break;
-        }
         case 'x': case 'X':
         {
             t->saveCsv();
@@ -370,8 +355,12 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
     }
 }
 
-void DisplayWidget::recievedData( Signal::MicrophoneRecorder* r )
+void DisplayWidget::put(pBuffer b, pSource s)
 {
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(s.get());
+    if (0==r)
+        return;
+
     float newl = r->length();
     static float prevl = newl;
     if (_qx == prevl )
@@ -382,6 +371,18 @@ void DisplayWidget::recievedData( Signal::MicrophoneRecorder* r )
     _invalidRange.push( std::pair<float, float>(prevl, newl));
     update();
     prevl = newl;
+}
+
+Signal::FilterOperation* DisplayWidget::getFilterOperation()
+{
+    Signal::pSource s = _worker->source();
+    Signal::FilterOperation* f = dynamic_cast<Signal::FilterOperation*>( s.get() );
+    if (0 == f) {
+        f = new Signal::FilterOperation(s, Tfr::pFilter());
+        s.reset( f );
+        _worker->source( s );
+    }
+    return f;
 }
 
 void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
@@ -620,33 +621,6 @@ void DisplayWidget::timeOutSlot()
     timeOut();
 }
 #endif
-
-void DisplayWidget::open_inverse_test(std::string soundfile)
-{
-    if (0 == soundfile.length() || !QFile::exists(soundfile.c_str())) {
-        QString fileName = QFileDialog::getOpenFileName(0, "Open sound file");
-        if (0 == fileName.length()) {
-            _transform = _renderer->spectrogram()->transform();
-            return;
-        }
-        soundfile = fileName.toStdString();
-    }
-    boost::shared_ptr<Signal::Source> wf( new Signal::Audiofile( soundfile.c_str() ) );
-    boost::shared_ptr<Transform> t = _renderer->spectrogram()->transform();
-    
-    _transform.reset();
-    _transform.reset( new Transform(wf, 0, t->samples_per_chunk(), t->scales_per_octave(), t->wavelet_std_t() ) );
-    
-    try
-    {
-        _transform->inverse()->get_inverse_waveform();
-    } catch (const CudaException& x) {
-        _renderer->spectrogram()->gc();
-        _transform->inverse()->get_inverse_waveform();
-    }
-
-    _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-}
 
 void DisplayWidget::initializeGL()
 {

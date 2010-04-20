@@ -64,7 +64,7 @@ class SquareFilter: public Filter
 public:
     SquareFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    virtual bool operator()( Transform_chunk& );
+    virtual bool operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
 
     float _t1, _f1, _t2, _f2;

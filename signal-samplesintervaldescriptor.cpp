@@ -1,60 +1,66 @@
-#include "signal-invalidsamplesdescriptor.h"
+#include "signal-samplesintervaldescriptor.h"
 #include <stdexcept>
+#include <boost/foreach.hpp>
+#include <cfloat>
 
 namespace Signal {
 
-bool InvalidSamplesDescriptor::Interval::
-operator<(const Interval& r)
+bool SamplesIntervalDescriptor::Interval::
+operator<(const Interval& r) const
 {
     return last < r.first;
 }
 
-bool InvalidSamplesDescriptor::Interval::
+bool SamplesIntervalDescriptor::Interval::
 operator|=(const Interval& r)
 {
-    first = min(first, r.first);
-    last = max(last, r.last);
+    bool b = (*this < r) == (r < *this);
+    first = std::min(first, r.first);
+    last = std::max(last, r.last);
+    return b;
 }
 
-InvalidSamplesDescriptor::
-InvalidSamplesDescriptor()
+SamplesIntervalDescriptor::
+SamplesIntervalDescriptor()
 {
 }
 
-InvalidSamplesDescriptor::
-InvalidSamplesDescriptor(float first, float last)
+SamplesIntervalDescriptor::
+SamplesIntervalDescriptor(float first, float last)
 {
     Interval r = { first, last };
     _intervals.push_back( r );
 }
 
-InvalidSamplesDescriptor& InvalidSamplesDescriptor::
-operator |= (const InvalidSamplesDescriptor& b)
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+operator |= (const SamplesIntervalDescriptor& b)
 {
-    BOOST_FOR_EACH (const Interval& r,  b._intervals)
-        operator()( r );
+    BOOST_FOREACH (const Interval& r,  b._intervals)
+        operator|=( r );
+    return *this;
 }
 
-InvalidSamplesDescriptor& InvalidSamplesDescriptor::
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
 operator |= (const Interval& r)
 {
     _intervals.push_back( r );
     _intervals.sort();
 
-    for (_intervals::iterator itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
-        _intervals::iterator next = itr;
+    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
+        std::list<Interval>::iterator next = itr;
         next++;
         if (next==_intervals.end())
             continue;
 
-        if ((*itr)<(*next) == (*next)<(*itr)) {
+        if (((*itr)<(*next)) == ((*next)<(*itr))) {
             *itr |= *next;
-            itr = _intervals.remove( next );
+            _intervals.erase( next );
         }
     }
+    return *this;
 }
 
-Interval InvalidSamplesDescriptor::
+SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
 popInterval( float dt, float center )
 {
     if (0 == _intervals.size()) {
@@ -62,19 +68,19 @@ popInterval( float dt, float center )
         return r;
     }
 
-    _intervals::iterator itr;
+    std::list<Interval>::iterator itr;
     for (itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
-        if (itr->front > center)
+        if (itr->first > center)
             break;
     }
     float next=FLT_MAX;
     float prev=FLT_MAX;
 
     if (itr != _intervals.end()) {
-        next = itr->front - center;
+        next = itr->first - center;
     }
     if (itr != _intervals.begin()) {
-        _intervals::iterator itrp = itr;
+        std::list<Interval>::iterator itrp = itr;
         itrp--;
         if (itrp->last < center )
             prev = center - itrp->last;
@@ -85,7 +91,7 @@ popInterval( float dt, float center )
         Interval &f = *itr;
         if (f.last - f.first < dt ) {
             Interval r = f;
-            _intervals.remove( itr );
+            _intervals.erase( itr );
             return r;
         }
         Interval r = { f.first, f.first + dt };
@@ -93,7 +99,7 @@ popInterval( float dt, float center )
         return r;
     } else {
         itr--;
-        Interval &f = itr;
+        Interval &f = *itr;
         if (f.last - f.first < dt ) {
             Interval r = f;
             _intervals.erase( itr );
@@ -107,7 +113,7 @@ popInterval( float dt, float center )
         }
 
         float start = f.first + dt*(unsigned)((center-f.first) / dt);
-        Interval r = {start, min(start+dt, f.last) };
+        Interval r = {start, std::min(start+dt, f.last) };
         if (start+dt < f.last ) {
             Interval r2 = { start+dt, f.last };
             _intervals.insert( itr, r2 );
@@ -117,14 +123,14 @@ popInterval( float dt, float center )
     }
 }
 
-void InvalidSamplesDescriptor::
+void SamplesIntervalDescriptor::
 makeValid( Interval i )
 {
     if (0 == _intervals.size()) {
         return;
     }
 
-    _intervals::iterator itr;
+    std::list<Interval>::iterator itr;
     for (itr = _intervals.begin(); itr!=_intervals.end(); ) {
         if (itr->last > i.first && itr->first < i.last)
         {

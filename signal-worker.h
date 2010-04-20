@@ -1,26 +1,12 @@
 #ifndef SIGNALWORKER_H
 #define SIGNALWORKER_H
 
+#include "signal-sink.h"
+#include "signal-samplesintervaldescriptor.h"
+
+#include <QMutex>
+
 namespace Signal {
-
-class Worker
-{
-public:
-    Worker();
-};
-
-
-/**
-   @see Worker
-  */
-class WorkerCallback: public virtual Signal::Sink {
-public:
-    WorkerCallback( Worker* p ) :_q(p) { BOOST_ASSERT(p); _q->addCallback( this ); }
-    ~WorkerCallback( ) { _q->removeCallback( this ); }
-
-private:
-    class Worker* _q;
-};
 
 /**
 Signal::Worker is a queue of ranges, that might be worked off by one or
@@ -111,6 +97,7 @@ instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
 
+class WorkerCallback;
 
 /**
 */
@@ -131,7 +118,7 @@ public:
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
-    InvalidSamplesDescriptor todo_list;
+    SamplesIntervalDescriptor todo_list;
 
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
@@ -157,12 +144,8 @@ public:
     unsigned            requested_fps() const;
     void                requested_fps(unsigned);
 
-    /**
-      This object controls all properties for the continious wavelet transform.
-      */
-    Cwt cwt;
 private:
-    friend class ChunkCompleteCallback;
+    friend class WorkerCallback;
 
     /**
       A ChunkCompleteCallback adds itself to a cwtqueue.
@@ -204,7 +187,20 @@ private:
       */
     unsigned _requested_fps;
 };
-boost::shared_ptr<Worker> pWorker;
+typedef boost::shared_ptr<Worker> pWorker;
+
+
+/**
+   @see Worker
+  */
+class WorkerCallback: virtual public Signal::Sink {
+public:
+    WorkerCallback( Worker* p ) :_q(p) { BOOST_ASSERT(p); _q->addCallback( this ); }
+    ~WorkerCallback( ) { _q->removeCallback( this ); }
+
+private:
+    Worker* _q;
+};
 
 } // namespace Signal
 

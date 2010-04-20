@@ -17,7 +17,7 @@ SOURCES += main.cpp \
     signal-audiofile.cpp \
     signal-microphonerecorder.cpp \
     signal-operation.cpp \
-    signal-invalidsamplesdescriptor.cpp \
+    signal-samplesintervaldescriptor.cpp \
     signal-sink.cpp \
     signal-playback.cpp \
     layer.cpp \
@@ -42,12 +42,12 @@ HEADERS += mainwindow.h \
     heightmap-block.cu.h \
     filter.cu.h \
     selection.h \
-    position.h \
+    heightmap-position.h \
     signal-source.h \
     signal-audiofile.h \
     signal-microphonerecorder.h \
     signal-operation.h \
-    signal-invalidsamplesdescriptor.h \
+    signal-samplesintervaldescriptor.h \
     signal-playback.h \
     signal-sink.h \
     layer.h \

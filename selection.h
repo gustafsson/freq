@@ -1,11 +1,16 @@
-#include "position.h"
+#include "heightmap-position.h"
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
+// TODO move to first line of file
 #ifndef SELECTION_H
 #define SELECTION_H
 
+// TODO move to after Selection
 typedef boost::shared_ptr<class Selection> pSelection;
+
+// TODO never use "using namespace" in header file
+using namespace Heightmap;
 
 class Selection
 {

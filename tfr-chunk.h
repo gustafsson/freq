@@ -2,6 +2,7 @@
 #define TFRCHUNK_H
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
 
 namespace Tfr {
@@ -41,6 +42,7 @@ struct Chunk
     unsigned getFrequencyIndex( float f ) const;
     float getFrequency( unsigned fi ) const;
 };
+typedef boost::shared_ptr< Chunk > pChunk;
 
 } // namespace Tfr
 

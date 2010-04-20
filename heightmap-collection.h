@@ -2,7 +2,11 @@
 #define HEIGHTMAPCOLLECTION_H
 
 #include "heightmap-reference.h"
-
+#include "heightmap-vbo.h"
+#include "signal-samplesintervaldescriptor.h"
+#include "signal-source.h"
+#include "signal-worker.h"
+#include "tfr-chunk.h"
 
 /*
 TODO: rewrite this section
@@ -81,20 +85,20 @@ namespace Heightmap {
 
 class Block {
 public:
-    Block( Spectrogram::Reference ref ): ref(ref) {}
+    Block( Heightmap::Reference ref ): ref(ref) {}
 
     float sample_rate();
     float nFrequencies();
 
     // Zoom level for this slot, determines size of elements
-    Spectrogram::Reference ref;
+	Heightmap::Reference ref;
     unsigned frame_number_last_used;
-    pSpectrogramVbo vbo;
+    pGlBlock glblock;
 
     typedef boost::shared_ptr<GpuCpuData<float> > pData;
     pData prepared_data;
 
-    InvalidSamplesDescriptor isd;
+    Signal::SamplesIntervalDescriptor isd;
 };
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -103,24 +107,27 @@ typedef boost::shared_ptr<Block> pBlock;
   put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection: public WorkerCallback {
+class Collection: public Signal::WorkerCallback {
 public:
+    Collection();
+
+
     // WorkerCallback: Implementations of virtual methods
 
     /**
       Releases all GPU resources allocated by Heightmap::Collection.
       */
-    virtual void reset() { garbageCollect(); }
+    virtual void reset() { gc(); }
 
     /**
       @see put( pBuffer, pSource );
       */
-    virtual void put( pBuffer b) { put(b, pSource(0)); }
+    virtual void put( Signal::pBuffer b) { put(b, Signal::pSource()); }
 
     /**
       Computes the Cwt and updates the cache of blocks.
       */
-    virtual void put( pBuffer, pSource );
+    virtual void put( Signal::pBuffer, Signal::pSource );
 
 
     /**
@@ -132,6 +139,22 @@ public:
     unsigned    samples_per_block() { return _samples_per_block; }
     void        samples_per_block(unsigned v);
 
+    /**
+      If a fast source is provided collection will use this source to when allocating
+      new new blocks. A Buffer over the entire block will be fetched and the initial
+      value of the block will be computed by a fast windowed fourier transform.
+
+      This source could for instance be the original source without any operations
+      applied to it.
+
+      TODO: walk through the worker source instead and look for a cache source and
+          query its InvalidSampleDescriptor to make sure that the required samples
+          are readily available. Otherwise, continue down and look for another cache
+          or a source that is not an operation. I.e an original source such as
+          MicrophoneRecroder or Audiofile, these sources are fast.
+      */
+    Signal::pSource fast_source() { return _fast_source; }
+    void            fast_source( Signal::pSource v ) { _fast_source = v; }
     /**
       getBlock increases a counter for each block that hasn't been computed yet.
       */
@@ -163,10 +186,12 @@ public:
     void        gc();
 
 private:
-    unsigned _samples_per_block;
-    unsigned _scales_per_block;
-    unsigned _unfinished_count;
-    unsigned _frame_counter; // TODO shouldn't need _frame_counter
+    unsigned
+        _samples_per_block,
+        _scales_per_block,
+        _unfinished_count,
+        _frame_counter; // TODO shouldn't need _frame_counter
+    Signal::pSource _fast_source;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.
@@ -180,30 +205,30 @@ private:
     /**
       Attempts to allocate a new block.
       */
-    pBlock      attempt( Spectrogram::Reference ref );
+    pBlock      attempt( Reference ref );
 
     /**
       Creates a new block.
       */
-    pBlock      createBlock( Spectrogram::Reference ref );
+    pBlock      createBlock( Reference ref );
     void        prepareFillStft( pBlock block );
 
     /**
       Update the slope texture used by the vertex shader. Called when height data has been updated.
       */
-    void        updateSlope( Spectrogram::pBlock block, unsigned cuda_stream );
+    void        updateSlope( pBlock block, unsigned cuda_stream );
 
     /**
       Add block information from Cwt transform.
       */
-    void        mergeBlock( Spectrogram::pBlock outBlock, Cwt::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
+    void        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
 
     /**
       Add block information from another block.
       */
-    void        mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock inBlock, unsigned cuda_stream );
+    void        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
 };
-
+typedef boost::shared_ptr<Collection> pCollection;
 
 } // namespace Heightmap
 

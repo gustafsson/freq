@@ -1,8 +1,9 @@
-#ifndef WAVEFORMRECORDER_H
-#define WAVEFORMRECORDER_H
+#ifndef SIGNALMICROPHONERECORDER_H
+#define SIGNALMICROPHONERECORDER_H
 
 #include <vector>
 #include "signal-source.h"
+#include "signal-sink.h"
 #include <portaudiocpp/PortAudioCpp.hxx>
 
 namespace Signal {
@@ -10,15 +11,10 @@ namespace Signal {
 class MicrophoneRecorder: public Source
 {
 public:
-    class Callback {
-        public:
-        virtual void recievedData( MicrophoneRecorder* ) = 0;
-    };
-
     MicrophoneRecorder(int inputDevice/*=-1*/);
     ~MicrophoneRecorder();
 
-    void startRecording( Callback* );
+    void startRecording( Signal::Sink* callback );
     void stopRecording();
     bool isStopped();
 
@@ -29,7 +25,7 @@ public:
     unsigned recording_itr() { return number_of_samples(); }
 
 private:
-    Callback* _callback;
+    Sink* _callback;
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<MicrophoneRecorder> > _stream_record;
 
@@ -44,4 +40,4 @@ private:
 
 } // namespace Waveform
 
-#endif // WAVEFORMRECORDER_H
+#endif // SIGNALMICROPHONERECORDER_H

@@ -3,6 +3,7 @@
 
 #include "signal-source.h"
 #include "tfr-stft.h"
+#include "tfr-chunk.h"
 
 namespace Tfr {
 
@@ -35,10 +36,9 @@ public:
     void      min_hz(float f);
     float     max_hz(unsigned sample_rate) const { return sample_rate/2; }
     float     number_of_octaves( unsigned sample_rate ) const;
-    unsigned  nScales() { return (unsigned)(number_of_octaves() * scales_per_octave()); }
+    unsigned  nScales(unsigned FS) { return (unsigned)(number_of_octaves(FS) * scales_per_octave()); }
     unsigned  scales_per_octave() const { return _scales_per_octave; }
     void      scales_per_octave( unsigned );
-    pChunk    previous_chunk( unsigned &out_chunk_index ) { return _intermediate_wt; }
 
     /**
       wavelet_std_t is the size of overlapping required in the windowed cwt, measured in time units (i.e seconds).
@@ -59,27 +59,24 @@ public:
     void     gc();
 
 private:
-    Stft            _stft;
+    Fft             _fft;
     cudaStream_t    _stream;
     cufftHandle     _fft_many;
     float           _min_hz;
     unsigned        _scales_per_octave;
-    pChunk          _intermediate_wt;
 
     /**
       Default value: wavelet_std_samples=0.03.
       @see wavelet_std_t
       */
     float  _wavelet_std_t;
-
-    void gc();
 };
 typedef boost::shared_ptr<Cwt> pCwt;
 
 class CwtSingleton
 {
 public:
-    static pChunk operator()( Signal::pBuffer );
+    static pChunk operate( Signal::pBuffer );
 
     static pCwt instance();
 };
