@@ -87,7 +87,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::connectLayerWindow(DisplayWidget *d)
 {
-    connect(d, SIGNAL(filterChainUpdated(pTransform)), this, SLOT(updateLayerList(pTransform)));
+    connect(d, SIGNAL(filterChainUpdated(Tfr::pFilter)), this, SLOT(updateLayerList(Tfr::pFilter)));
     connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(recieveCurrentSelection(int, bool)));
     connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(recieveFilterRemoval(int)));
     

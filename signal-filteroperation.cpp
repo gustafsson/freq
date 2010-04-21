@@ -3,8 +3,9 @@
 namespace Signal {
 
 FilterOperation::
-FilterOperation(Tfr::pFilter filter)
-:   _filter( filter )
+FilterOperation(pSource source, Tfr::pFilter filter)
+:   Operation(source),
+    _filter( filter )
 {
 }
 
@@ -22,9 +23,9 @@ read( unsigned firstSample, unsigned numberOfSamples )
 
     pBuffer b = _source->read( firstSample, numberOfSamples + 2*wavelet_std_samples );
 
-    pChunk c = cwt( b );
-    if (_filter) _filter( c );
-    pBuffer r = inverse_cwt( c );
+    Tfr::pChunk c = cwt( b );
+    if (_filter) (*_filter)( *c );
+    pBuffer r = inverse_cwt( *c );
 
     _previous_chunk = c;
 
@@ -40,11 +41,12 @@ meldFilters()
     f->meldFilters();
 
     Tfr::FilterChain* c = dynamic_cast<Tfr::FilterChain*>(_filter.get());
-    if (0==c) {
-        Tfr::pFilter chain;
-        if (_filter) chain.push_back( _filter );
-        c = chain.get();
-        _filter = chain;
+    if (0==c) {        
+        if (_filter) {
+            c = new Tfr::FilterChain;
+            c->push_back( _filter );
+        }
+        _filter = Tfr::pFilter( c );
     }
 
     Tfr::FilterChain* c2 = dynamic_cast<Tfr::FilterChain*>(f->filter().get());
@@ -56,7 +58,7 @@ meldFilters()
 
     // Remove _source (this effectively prevents two subsequent FilterOperation to
     // have different parameters for Cwt and InverseCwt
-    _source = _source->source();
+    _source = f->source();
 }
 
 

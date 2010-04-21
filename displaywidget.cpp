@@ -23,6 +23,7 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
 #include "signal-microphonerecorder.h"
+#include "sawe-csv.h"
 
 #undef max
 
@@ -254,7 +255,7 @@ void DisplayWidget::recieveTogglePiano(bool active)
 void DisplayWidget::recievePlaySound()
 {
     TaskTimer("Playing the selection.\n").suppressTiming();
-    _mainPlayback.reset( new Sawe::pMainPlayback( _worker.get() ));
+    _mainPlayback.reset( new Sawe::MainPlayback( -1, _worker.get() ));
     update();
 }
 
@@ -268,10 +269,9 @@ void DisplayWidget::recieveAddClearSelection(bool active)
 {
     recieveAddSelection(active);
 
-    pTransform t = _renderer->spectrogram()->transform();
-    t->filter_chain.back()->enabled = true;
+    getFilterOperation()->filter()->enabled = true;
 
-    emit filterChainUpdated(t);
+    emit filterChainUpdated(getFilterOperation()->filter());
 }
 
 void DisplayWidget::recieveAddSelection(bool /*active*/)
@@ -279,14 +279,15 @@ void DisplayWidget::recieveAddSelection(bool /*active*/)
     Signal::FilterOperation *f = getFilterOperation();
     f = new Signal::FilterOperation( _worker->source(), f->inverse_cwt.filter );
     f->meldFilters();
-    _worker->source( pFilter(f) );
+    _worker->source( Signal::pSource(f) );
 
     float start, end;
-    f->range(start, end);
-    f->enabled = false;
-    _renderer->spectrogram()->invalidate_range(start, end);
+    f->filter()->range(start, end);
+    f->filter()->enabled = false;
+    Signal::SamplesIntervalDescriptor sid(start, end);
+    _renderer->collection()->updateInvalidSamples(sid);
     update();
-    emit filterChainUpdated(t);
+    emit filterChainUpdated(getFilterOperation()->filter());
 }
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
@@ -295,7 +296,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         return;
     
     lastKey = e->key();
-    pTransform t = _renderer->spectrogram()->transform();
+    // pTransform t = _renderer->spectrogram()->transform();
     switch (lastKey )
     {
         //case ' ':
@@ -314,33 +315,32 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             break;
         case 'c': case 'C':
         {
-            t->recompute_filter(pFilter());
-            if( _transform != t )
-                _transform->recompute_filter(pFilter());
-            
-            BOOST_FOREACH( pFilter f, t->filter_chain )
-            {
-                float start, end;
-                f->range(start,end);
-                _renderer->spectrogram()->invalidate_range(start,end);
-            }
-            t->filter_chain.clear();
-            if( _transform != t )
-                _transform->filter_chain.clear();
+            Signal::FilterOperation* f = getFilterOperation();
+
+            Signal::SamplesIntervalDescriptor sid;
+
+
+            sid |= f->filter()->coveredSamples();
+
+            // Remove all topmost filters
+            _worker->source( f->source() );
             
             update();
-            emit filterChainUpdated(t);
+            // getFilterOperation will recreate an empty FilterOperation
+            emit filterChainUpdated(getFilterOperation()->filter());
             break;
         }
         case 'x': case 'X':
         {
-            t->saveCsv();
+            Signal::pSink s( new Sawe::Csv() );
+            s->put( Signal::pBuffer(), _worker->source().get() );
             break;
         }
         case 'r': case 'R':
         {
-        		printf("Try recording: ");
-            Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( t->original_waveform().get() );
+            printf("Try recording: ");
+
+            Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( _worker->source().get() );
             if (r)
             {
             		printf("succeded!\n");
@@ -355,7 +355,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
     }
 }
 
-void DisplayWidget::put(pBuffer b, pSource s)
+void DisplayWidget::put(Signal::pBuffer /*b*/, Signal::pSource s)
 {
     Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(s.get());
     if (0==r)
@@ -534,9 +534,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
                 selection[1].x = selection[0].x + .5f*sqrtf(2.f)*rt;
                 selection[1].y = 0;
                 selection[1].z = selection[0].z + .5f*sqrtf(2.f)*rf;
-                _renderer->spectrogram()->transform()->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-                if (_transform != _renderer->spectrogram()->transform())
-                    _transform->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
+                getFilterOperation()->inverse_cwt.filter.reset( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z ));
             }
         }
     } 
@@ -556,7 +554,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         if( moveButton.worldPos(last[0], last[1]) &&
            moveButton.worldPos(x, y, current[0], current[1]) )
         {
-            float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+            float l = _worker->source()->length();
             
             _qx -= current[0] - last[0];
             _qz -= current[1] - last[1];
@@ -673,91 +671,29 @@ void DisplayWidget::paintGL()
     while (_invalidRange.size()) {
         std::pair<float, float> p = _invalidRange.front();
         _invalidRange.pop();
-        _renderer->spectrogram()->invalidate_range( p.first, p.second );
+        _renderer->collection()->updateInvalidSamples( Signal::SamplesIntervalDescriptor( p.first, p.second ));
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-    
-    /*    glBegin(GL_LINE_STRIP);
-     glColor3f(0,0,0);         glVertex3f( v1.x, v1.y, v1.z );
-     glColor3f(1,0,0);         glVertex3f( _px, _py, _pz );
-     glEnd();
-     */
-    glTranslatef( _px, _py, _pz );
-    
-    glRotatef( _rx, 1, 0, 0 );
-    glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
-    glRotatef( _rz, 0, 0, 1 );
-    
-    glScalef(-xscale, 1-.99*orthoview, 5);
-    
-    glTranslatef( -_qx, -_qy, -_qz );
-    
-    orthoview.TimeStep(.08);
-    //_transform->inverse()->play_inverse();
-/*      // TODO use Signal::Playback
-        Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
-        Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
-        Signal::Playback::list_devices();
 
-        Signal::Playback pb;
-        pb.expected_samples_left(0);
-        pb.put( s->read( 0, s->number_of_samples() ) );
-        TaskTimer tt("Playing");
-        sleep(3);
-        // if(a) a->play();
-*/
+    // Set up camera position
+    {
+        glTranslatef( _px, _py, _pz );
 
-    Signal::pSource invs = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform(),
-                inv2s;
-    Signal::Audiofile* inv = dynamic_cast<Signal::Audiofile*>( invs.get() ),
-                     * inv2 = 0;
+        glRotatef( _rx, 1, 0, 0 );
+        glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
+        glRotatef( _rz, 0, 0, 1 );
 
-        if (0) {
-		glPushMatrix();
-			glTranslatef( 0, 0, 1.25f );
-			glScalef(1, 1, .15);
-			glColor4f(0,1,0,1);
-			{
-				TaskTimer tt("drawWaveform( inverse )");
-                                drawWaveform(invs);
-				// drawWaveform(inv = _transform->get_inverse_waveform());
-				if( _transform != _renderer->spectrogram()->transform() )
-				{
-                                    inv2s = _transform->inverse()->get_inverse_waveform();
-                                    inv2 = dynamic_cast<Signal::Audiofile*>( inv2s.get() );
-                                    if (inv2) {
-                                        Signal::pBuffer chunk = inv2->getChunkBehind();
-					if (chunk->modified) {
-						update();
-						chunk->modified=false;
-					}
-                                    }
-				}
+        glScalef(-xscale, 1-.99*orthoview, 5);
 
-			}
-			glTranslatef( 0, 0, 2.f );
-			glColor4f(0,0,0,1);
-			{
-				TaskTimer tt("drawWaveform( original )");
-				drawWaveform(_renderer->spectrogram()->transform()->original_waveform());
-			}
-		glPopMatrix();
-	}
-    
+        glTranslatef( -_qx, -_qy, -_qz );
+
+        orthoview.TimeStep(.08);
+    }
+
     _renderer->draw();
     _renderer->drawAxes();
-
-    //static float prev_xscale = xscale;
-    //draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale);
-    //draw_glList<SpectrogramRenderer>( _renderer, DisplayWidget::drawSpectrogram_borders_directMode, xscale!=prev_xscale || _record_update );
-    //_record_update = false;
-    //prev_xscale = xscale;
-
-    if (_enqueueGcDisplayList)
-        //        gcDisplayList();
-    { ; }
     
     static bool computing_inverse = false;
     static bool computing_plot = false;
@@ -766,25 +702,13 @@ void DisplayWidget::paintGL()
     computing_inverse = false;
     computing_plot = false;
     
-    if (inv->getChunkBehind()->modified)
+
+    if (_mainPlayback->pb.expected_samples_left())
     {
-        inv->getChunkBehind()->was_modified = true;
         computing_inverse = true;
-        
-        inv->getChunkBehind()->modified=false;
-        
-    } else if (inv->getChunkBehind()->was_modified) {
-        computing_inverse = false;
-        
-        inv->getChunkBehind()->was_modified = false;
     }
     
-    if (0 < this->_renderer->spectrogram()->read_unfinished_count()) {
-        if (inv->getChunkBehind()->play_when_done || inv->getChunkBehind()->modified)
-            _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
-        if (inv2) if (inv2->getChunkBehind()->play_when_done || inv2->getChunkBehind()->modified)
-            _renderer->spectrogram()->dont_compute_until_next_read_unfinished_count();
-        
+    if (0 < this->_renderer->collection()->read_unfinished_count()) {
         computing_plot = true;
     }
     
@@ -804,7 +728,7 @@ void DisplayWidget::paintGL()
     static float computing_rotation = 0.0;
     if (computing_prev || computing_inverse || computing_plot)
     {
-	    glMatrixMode(GL_PROJECTION);
+        glMatrixMode(GL_PROJECTION);
     	glPushMatrix();
     	glMatrixMode(GL_MODELVIEW);
     	glPushMatrix();
@@ -1104,7 +1028,7 @@ void DisplayWidget::gcDisplayList()
     _enqueueGcDisplayList = false;
 }
 
-void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer ) {
+/*void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer ) {
     glLineWidth(3);
     glColor4f(0,0,0,1);
     glEnable(GL_BLEND);
@@ -1232,60 +1156,69 @@ void DisplayWidget::drawSpectrogram_borders_directMode( boost::shared_ptr<Spectr
     glDepthMask(true);
     glDisable(GL_BLEND);
 }
+*/
 
-void DisplayWidget::setSelection(int index, bool enabled){
-    pTransform t = _renderer->spectrogram()->transform();
-    if (index < 0 || index>=(int)t->filter_chain.size()) return;
+void DisplayWidget::setSelection(int index, bool enabled)
+{
+    Signal::FilterOperation* f = getFilterOperation();
+    Tfr::FilterChain* c = dynamic_cast<Tfr::FilterChain*>( f->filter().get());
+    if (0 == c || (index < 0 || index>=(int)c->size()))
+        return;
     
     printf("####Current selection: %d\n", index);
-    FilterChain::iterator i = t->filter_chain.begin();
+    Tfr::FilterChain::iterator i = c->begin();
     std::advance(i, index);
-    EllipsFilter *e = (EllipsFilter*)(i->get());
-    selection[0].x = e->_t1;
-    selection[0].z = e->_f1;
-    selection[1].x = e->_t2;
-    selection[1].z = e->_f2;
-    t->inverse()->setInverseArea( selection[0].x, selection[0].z, selection[1].x, selection[1].z );
-    
-    if(e->enabled != enabled){
-        e->enabled = enabled;
-        float start, end;
-        e->range(start, end);
-        _renderer->spectrogram()->invalidate_range(start, end);
+    Tfr::EllipsFilter *e = dynamic_cast<Tfr::EllipsFilter*>(i->get());
+    if (e)
+    {
+        selection[0].x = e->_t1;
+        selection[0].z = e->_f1;
+        selection[1].x = e->_t2;
+        selection[1].z = e->_f2;
+        f->inverse_cwt.filter.reset( new Tfr::EllipsFilter(*e ));
+
+        if(e->enabled != enabled) {
+            e->enabled = enabled;
+
+            _renderer->collection()->updateInvalidSamples( e->coveredSamples() );
+        }
     }
     
     update();
 }
 
 void DisplayWidget::removeFilter(int index){
-    if (index < 0) return;
+    Signal::FilterOperation* f = getFilterOperation();
+    Tfr::FilterChain* c = dynamic_cast<Tfr::FilterChain*>( f->filter().get());
+
+    if (0==c || index < 0) return;
     
     printf("####Removing filter: %d\n", index);
-    pTransform t = _renderer->spectrogram()->transform();
     
     float start, end;
-    FilterChain::iterator i = t->filter_chain.begin();
+    Tfr::FilterChain::iterator i = c->begin();
     std::advance(i, index);
-    EllipsFilter *e = (EllipsFilter*)(i->get());
-    e->range(start, end);
-    
-    t->filter_chain.erase(i);
-    if( _transform != t ) {
-        i = t->filter_chain.begin();
-        std::advance(i, index);
-        _transform->filter_chain.erase(i);
+    Tfr::EllipsFilter *e = dynamic_cast<Tfr::EllipsFilter*>(i->get());
+    if (e)
+    {
+        e->range(start, end);
+
+        c->erase(i);
+
+        _renderer->collection()->updateInvalidSamples( e->coveredSamples() );
     }
-    
-    _renderer->spectrogram()->invalidate_range(start, end);
     update();
-    emit filterChainUpdated(t);
+    emit filterChainUpdated(getFilterOperation()->filter());
 }
 
 void DisplayWidget::drawSelection() {
     drawSelectionCircle();
 
+    if (0==_mainPlayback.get())
+        return;
+
     // Draw playback marker
-    Signal::Playback *pb = Signal::Audiofile::pb.get();
+    Signal::Playback *pb = &_mainPlayback->pb;
     if (!pb) return;
     if (pb->isStopped()) return;
     Signal::pBuffer b = pb->first_buffer();
@@ -1344,7 +1277,7 @@ void DisplayWidget::drawSelection() {
 }
 
 void DisplayWidget::drawSelectionSquare() {
-    float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+    float l = _worker->source()->length();
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -1541,7 +1474,7 @@ void DisplayWidget::drawSelectionCircle() {
 }
 
 void DisplayWidget::drawSelectionCircle2() {
-    float l = _renderer->spectrogram()->transform()->original_waveform()->length();
+    float l = _worker->source()->length();
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

@@ -22,7 +22,7 @@ public:
       caches. But the sink is required to perform the same result if only the
       buffer is supplied.
       */
-    virtual void put( pBuffer b, pSource ) { put (b); }
+    virtual void put( pBuffer b, Source* ) { put (b); }
 
     /**
       For some sinks it makes sense to reset, for some it doesn't.

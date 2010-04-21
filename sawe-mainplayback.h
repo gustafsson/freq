@@ -20,7 +20,7 @@ public:
 private:
     virtual void reset() { pb.reset(); }
     virtual void put( Signal::pBuffer b ) { pb.put( b ); }
-    virtual void put( Signal::pBuffer b, Signal::pSource s ) { pb.Sink::put (b, s); }
+    virtual void put( Signal::pBuffer b, Signal::Source* s ) { pb.Sink::put (b, s); }
 };
 typedef boost::shared_ptr<MainPlayback> pMainPlayback;
 

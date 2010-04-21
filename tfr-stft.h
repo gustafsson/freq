@@ -36,7 +36,7 @@ class Stft
       The number of elements divided by chunk_size gives the number of windows. pFftChunk will have a width equal to chunk_size and a height
       equal to the number of windows.
       */
-    Signal::pBuffer operator()( Signal::pBuffer );
+    Signal::pBuffer operator()( Signal::pBuffer);
 
     /**
         Default window size for the windowed fourier transform, or short-time fourier transform, stft

@@ -1,6 +1,6 @@
 #include "tfr-filter.h"
 #include <functional>
-#include "transform.h"
+#include "tfr-chunk.h"
 #include "filter.cu.h"
 #include <CudaException.h>
 #include <float.h>
@@ -10,19 +10,28 @@
 namespace Tfr {
 
 //////////// Filter
-Filter::Filter()
+Filter::
+Filter()
 :   enabled(true)
 {
+}
+
+Signal::SamplesIntervalDescriptor Filter::
+coveredSamples()
+{
+    float a,b;
+    this->range(a,b);
+    return Signal::SamplesIntervalDescriptor(a,b);
 }
 
 //////////// FilterChain
 
 class apply_filter
 {
-    Transform_chunk& t;
+    Chunk& t;
     bool r;
 public:
-    apply_filter( Transform_chunk& t):t(t),r(true) {}
+    apply_filter( Chunk& t):t(t),r(true) {}
 
     void operator()( pFilter p) {
         if(!p.get()->enabled)
@@ -34,7 +43,7 @@ public:
     operator bool() { return r; }
 };
 
-bool FilterChain::operator()( Transform_chunk& t) {
+bool FilterChain::operator()( Chunk& t) {
     return std::for_each(begin(), end(), apply_filter( t ));
 }
 
@@ -55,7 +64,7 @@ SelectionFilter::SelectionFilter( Selection s ) {
     enabled = true;
 }
 
-bool SelectionFilter::operator()( Transform_chunk& chunk) {
+bool SelectionFilter::operator()( Chunk& chunk) {
     TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
     if(dynamic_cast<RectangleSelection*>(&s))
@@ -106,7 +115,7 @@ EllipsFilter::EllipsFilter(float t1, float f1, float t2, float f2, bool save_ins
     enabled = true;
 }
 
-bool EllipsFilter::operator()( Transform_chunk& chunk) {
+bool EllipsFilter::operator()( Chunk& chunk) {
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset,
             _f1 * chunk.nScales(),
@@ -140,7 +149,7 @@ SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_ins
     enabled = true;
 }
 
-bool SquareFilter::operator()( Transform_chunk& chunk) {
+bool SquareFilter::operator()( Chunk& chunk) {
     float4 area = make_float4(
         _t1 * chunk.sample_rate - chunk.chunk_offset,
         _f1 * chunk.nScales(),

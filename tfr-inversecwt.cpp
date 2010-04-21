@@ -1,11 +1,11 @@
+#include <CudaException.h>
 #include "tfr-inversecwt.h"
+#include "wavelet.cu.h"
 /**
   #include "transform.h"
 #include "signal-audiofile.h"
 #include <stdio.h>
 #include <string> // min/max
-#include "CudaException.h"
-#include "wavelet.cu.h"
   */
 
 namespace Tfr {
@@ -15,7 +15,8 @@ InverseCwt::InverseCwt(cudaStream_t stream)
 {
 }
 
-Signal::pBuffer operator()(Tfr::Chunk& chunk)
+Signal::pBuffer InverseCwt::
+operator()(Tfr::Chunk& chunk)
 {
     EllipsFilter* e;
     SquareFilter* s;
@@ -39,9 +40,9 @@ Signal::pBuffer operator()(Tfr::Chunk& chunk)
 
         if (e) {
             float4 area = make_float4(
-                    e->_t1 * _original_waveform->sample_rate() - r->sample_offset,
+                    e->_t1 * chunk.sample_rate - r->sample_offset,
                     e->_f1 * chunk.nScales(),
-                    e->_t2 * _original_waveform->sample_rate() - r->sample_offset,
+                    e->_t2 * chunk.sample_rate - r->sample_offset,
                     e->_f2 * chunk.nScales());
 
             ::wtInverseEllips( chunk.transform_data->getCudaGlobal().ptr() + chunk.first_valid_sample,
@@ -52,9 +53,9 @@ Signal::pBuffer operator()(Tfr::Chunk& chunk)
                          _stream );
         } else if (s) {
             float4 area = make_float4(
-                    s->_t1 * _original_waveform->sample_rate() - r->sample_offset,
+                    s->_t1 * chunk.sample_rate - r->sample_offset,
                     s->_f1 * chunk.nScales(),
-                    s->_t2 * _original_waveform->sample_rate() - r->sample_offset,
+                    s->_t2 * chunk.sample_rate - r->sample_offset,
                     s->_f2 * chunk.nScales());
 
             ::wtInverseBox( chunk.transform_data->getCudaGlobal().ptr() + chunk.first_valid_sample,

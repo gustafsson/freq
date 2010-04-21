@@ -61,7 +61,7 @@ MicrophoneRecorder::~MicrophoneRecorder()
     }
 }
 
-void MicrophoneRecorder::startRecording( Callback *p )
+void MicrophoneRecorder::startRecording( Signal::Sink* p )
 {
     _callback = p;
     _stream_record->start();
@@ -159,7 +159,7 @@ int MicrophoneRecorder::
     _cache.push_back( b );
 
     if (_callback)
-        _callback->recievedData( this );
+        _callback->put( b, this );
 
     return paContinue;
 }

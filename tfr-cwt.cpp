@@ -6,16 +6,13 @@
   TODO remove
   #include "transform.h"
 #include <cuda_runtime.h>
-#include "CudaException.h"
 #include <math.h>
 #include "CudaProperties.h"
-#include "throwInvalidArgument.h"
 #include <iostream>
 #include <fstream>
 #include "Statistics.h"
 #include "StatisticsRandom.h"
 #include <string.h>
-#include "wavelet.cu.h"
 #include <msc_stdc.h>
 #include "signal-audiofile.h"
 
@@ -28,6 +25,11 @@
 
   */
 
+#include <throwInvalidArgument.h>
+#include <CudaException.h>
+#include "wavelet.cu.h"
+
+
 #define TIME_CWT
 
 namespace Tfr {
@@ -38,8 +40,8 @@ static void cufftSafeCall( cufftResult_t cufftResult) {
     }
 }
 
-Cwt::Cwt( float scales_per_octave, float wavelet_std_t, cudaStream_t stream=0 )
-:   _stft( stream ),
+Cwt::Cwt( float scales_per_octave, float wavelet_std_t, cudaStream_t stream )
+:   _fft( stream ),
     _stream( stream ),
     _fft_many( -1 ),
     _min_hz( 20 ),
@@ -57,7 +59,7 @@ pChunk Cwt::operator()( Signal::pBuffer buffer )
     {
         TaskTimer tt(TaskTimer::LogVerbose, "prerequisites");
 
-        cudaExtent requiredWtSz = make_cudaExtent( ft->getNumberOfElements().width, nScales(), 1 );
+        cudaExtent requiredWtSz = make_cudaExtent( ft->getNumberOfElements().width, nScales(buffer->sample_rate), 1 );
 
         if (_intermediate_wt && _intermediate_wt->transform_data->getNumberOfElements() != requiredWtSz)
             gc();
@@ -125,7 +127,7 @@ pChunk Cwt::operator()( Signal::pBuffer buffer )
         if (_fft_many == (cufftHandle)-1)
             cufftSafeCall(cufftPlan1d(&_fft_many, n.width, CUFFT_C2C, n.height));
 
-        cufftSafeCall(cufftSetStream(_fft_many, stream));
+        cufftSafeCall(cufftSetStream(_fft_many, _stream));
         cufftSafeCall(cufftExecC2C(_fft_many, d, d, CUFFT_INVERSE));
 
         #ifdef TIME_CWT
@@ -146,7 +148,7 @@ float Cwt::number_of_octaves( unsigned sample_rate ) const {
     return log2(max_hz(sample_rate)) - log2(_min_hz);
 }
 
-void Cwt::scales_per_octave( unsigned ) {
+void Cwt::scales_per_octave( unsigned value) {
     if (value==_scales_per_octave) return;
     gc();
     _scales_per_octave=value;
@@ -169,7 +171,8 @@ void Cwt::gc() {
 }
 
 pChunk CwtSingleton::
-operator()( Signal::pBuffer b ) {
+operate( Signal::pBuffer b )
+{
     return (*instance())( b );
 }
 

@@ -7,6 +7,7 @@
 #include "signal-source.h"
 #include "signal-worker.h"
 #include "tfr-chunk.h"
+#include <vector>
 
 /*
 TODO: rewrite this section
@@ -185,6 +186,7 @@ public:
 
     void        gc();
 
+    virtual void updateInvalidSamples( Signal::SamplesIntervalDescriptor );
 private:
     unsigned
         _samples_per_block,

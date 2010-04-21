@@ -151,6 +151,7 @@ private:
       A ChunkCompleteCallback adds itself to a cwtqueue.
       */
     void addCallback( WorkerCallback* c );
+
     /**
       A ChunkCompleteCallback removes itself from a cwtqueue.
       */
@@ -159,7 +160,7 @@ private:
     /**
       Self explanatory.
       */
-    void callCallbacks( pBuffer, pSource );
+    void callCallbacks( pBuffer );
     /**
       All callbacks in this list are called once for each call of workOne().
       */

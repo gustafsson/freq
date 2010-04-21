@@ -9,22 +9,26 @@ Operation(pSource source )
 }
 
 unsigned Operation::
-sample_rate() const
+sample_rate()
 {
-    return _child->sample_rate();
+    return _source->sample_rate();
 }
 
 unsigned Operation::
-number_of_samples() const
+number_of_samples()
 {
-    return _child->number_of_samples();
+    return _source->number_of_samples();
 }
 
-InvalidSamplesDescriptor Operation::
-updateIsd()
+SamplesIntervalDescriptor Operation::
+updateInvalidSamples()
 {
-    _isd |= _child->updateIsd();
-    return _isd;
+    Operation* o = dynamic_cast<Operation*>(_source.get());
+
+    if (0!=o)
+        _invalid_samples |= o->updateInvalidSamples();
+
+    return _invalid_samples;
 }
 
 } // namespace Signal

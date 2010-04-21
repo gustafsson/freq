@@ -1,24 +1,21 @@
-#include "heightmap-renderer.h"
-
-namespace Heightmap {
-
-Renderer::Renderer()
-{
-}
-
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
+
 #ifndef __APPLE__
-  #include "GL/glew.h"
-  #include <GL/glut.h>
+ #include "GL/glew.h"
+ #include <GL/glut.h>
 #else
   #include "OpenGL/glu.h"
   #include <GLUT/glut.h>
 #endif
+
+#include "heightmap-renderer.h"
+
+namespace Heightmap {
+
 #include <stdio.h>
-#include "spectrogram-renderer.h"
-#include "spectrogram-vbo.h"
+#include "heightmap-vbo.h"
 #include <list>
 #include <GlException.h>
 #include <CudaException.h>
@@ -26,12 +23,14 @@ Renderer::Renderer()
 #include <tmatrix.h>
 #include <float.h>
 #include <msc_stdc.h>
+
 using namespace std;
 
 static bool g_invalidFrustum = true;
 
-Renderer::Renderer( pSpectrogram spectrogram )
-:   draw_piano(true),
+Renderer::Renderer( pCollection collection )
+:   _collection( collection ),
+    draw_piano(true),
     draw_hz(false),
     _spectrogram(spectrogram),
     _mesh_index_buffer(0),

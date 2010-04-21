@@ -1,4 +1,9 @@
 #include "sawe-csv.h"
+#include <sstream>
+#include <fstream>
+#include "tfr-cwt.h"
+
+using namespace std;
 
 namespace Sawe
 {
@@ -18,19 +23,13 @@ string csv_number()
 }
 
 void Csv::
-put( pBuffer b )
+put( Signal::pBuffer b )
 {
     string filename = csv_number();
     TaskTimer tt("Saving CSV-file %s", filename.c_str());
     ofstream csv(filename.c_str());
 
-    ChunkIndex n = chunk_number;
-    if (n == (ChunkIndex)-1)
-        n = getChunkIndex( inverse()->built_in_filter._t1 * _original_waveform->sample_rate() );
-
-    pTransform_chunk chunk = getChunk( n );
-
-    Tfr::pChunk chunk = CwtSingleton::operator()( b );
+    Tfr::pChunk chunk = Tfr::CwtSingleton::operate( b );
 
     float2* p = chunk->transform_data->getCpuMemory();
     cudaExtent s = chunk->transform_data->getNumberOfElements();

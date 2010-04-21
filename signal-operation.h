@@ -13,8 +13,8 @@ public:
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
 
-    virtual unsigned sample_rate() const;
-    virtual unsigned number_of_samples() const;
+    virtual unsigned sample_rate();
+    virtual unsigned number_of_samples();
     virtual pSource source() const { return _source; }
 
     virtual SamplesIntervalDescriptor updateInvalidSamples();

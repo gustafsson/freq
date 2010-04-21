@@ -252,6 +252,15 @@ gc()
     }
 }
 
+
+void Collection::
+updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
+{
+    BOOST_FOREACH( pBlock& b, _cache ) {
+        b.isd |= sid;
+    }
+}
+
 ////// private
 
 

@@ -1,4 +1,8 @@
 #include "signal-worker.h"
+#include "signal-samplesintervaldescriptor.h"
+#include <QTime>
+#include <QMutexLocker>
+#include <boost/foreach.hpp>
 
 namespace Signal {
 
@@ -15,14 +19,14 @@ Worker(Signal::pSource s)
 void Worker::
 workOne()
 {
-    float a=0, b=0;
-    QTime t();
+    QTime t;
     t.start();
 
-    todo_list.get( _samples_per_chunk, a, b );
-    pBuffer b = _source->read( a, b-a );
+    SamplesIntervalDescriptor::Interval interval;
+    interval = todo_list.popInterval( _samples_per_chunk, 0 );
+    pBuffer b = _source->read( interval.first, interval.last-interval.first );
 
-    callCallbacks(b);
+    callCallbacks( b );
 
     int milliseconds = t.elapsed();
     if (0==milliseconds) milliseconds=1;
@@ -74,23 +78,24 @@ requested_fps(unsigned value)
 void Worker::
 addCallback( WorkerCallback* c )
 {
-    QMutexLocker( &_mutex );
+    QMutexLocker l( &_lock );
     _callbacks.push_back( c );
 }
 
 void Worker::
 removeCallback( WorkerCallback* c )
 {
-    QMutexLocker( &_mutex );
+    QMutexLocker l( &_lock );
     _callbacks.remove( c );
 }
 
 void Worker::
 callCallbacks( pBuffer b )
 {
-    QMutexLocker( &_mutex );
-    BOOST_FOR_EACH( WorkerCallback* c, _callbacks ) {
-        c->put( b, _source );
+    QMutexLocker l( &_lock );
+
+    BOOST_FOREACH( WorkerCallback* c, _callbacks ) {
+        c->put( b, _source.get() );
     }
 }
 

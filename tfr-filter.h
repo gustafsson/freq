@@ -2,6 +2,7 @@
 #define TFRFILTER_H
 
 #include "selection.h"
+#include "signal-samplesintervaldescriptor.h"
 
 #include <list>
 #include <boost/shared_ptr.hpp>
@@ -18,6 +19,8 @@ public:
 
     virtual bool operator()( Chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;
+
+    virtual Signal::SamplesIntervalDescriptor coveredSamples();
 
     bool enabled;
 };
