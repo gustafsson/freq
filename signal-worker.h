@@ -199,6 +199,8 @@ public:
     WorkerCallback( Worker* p ) :_q(p) { BOOST_ASSERT(p); _q->addCallback( this ); }
     ~WorkerCallback( ) { _q->removeCallback( this ); }
 
+    Worker* worker() { return _q; }
+
 private:
     Worker* _q;
 };

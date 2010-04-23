@@ -11,7 +11,7 @@ TARGET = sonicawe
 SOURCES += main.cpp \
     mainwindow.cpp \
     displaywidget.cpp \
-    heightmap-vbo.cpp \
+    heightmap-glblock.cpp \
     selection.cpp \
     signal-source.cpp \
     signal-audiofile.cpp \
@@ -37,7 +37,7 @@ SOURCES += main.cpp \
 HEADERS += mainwindow.h \
     displaywidget.h \
     wavelet.cu.h \
-    heightmap-vbo.h \
+    heightmap-glblock.h \
     heightmap-slope.cu.h \
     heightmap-block.cu.h \
     filter.cu.h \

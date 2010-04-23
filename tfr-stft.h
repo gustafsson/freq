@@ -29,6 +29,7 @@ private:
 
 class Stft
 {
+public:
     Stft( cudaStream_t stream=0 );
 
     /**

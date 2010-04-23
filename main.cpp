@@ -16,7 +16,8 @@
 #include <CudaException.h>
 #include "heightmap-renderer.h"
 #include "sawe-csv.h"
-//#include <cuda_runtime.h>
+#include "signal-audiofile.h"
+#include "signal-microphonerecorder.h"
 
 using namespace std;
 using namespace boost;
@@ -423,7 +424,8 @@ int main(int argc, char *argv[])
             return wf->number_of_samples() / total_samples_per_chunk;
         }
 
-        Heightmap::pCollection sg( new Heightmap::Collection );
+        Signal::pWorker wk( new Signal::Worker( wf ) );
+        Heightmap::pCollection sg( new Heightmap::Collection(wk.get()) );
         sg->samples_per_block( _samples_per_block );
         sg->scales_per_block( _scales_per_block );
         boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg, 0 ) );

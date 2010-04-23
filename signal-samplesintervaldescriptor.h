@@ -8,21 +8,28 @@ namespace Signal {
 class SamplesIntervalDescriptor
 {
 public:
+    typedef unsigned SampleType;
+
     struct Interval {
-        float first, last;
+        SampleType first, last;
 
         bool operator<(const Interval& r) const;
         bool operator|=(const Interval& r);
     };
 
-    SamplesIntervalDescriptor();
-    SamplesIntervalDescriptor(float first, float last);
+    SamplesIntervalDescriptor( );
+    SamplesIntervalDescriptor( SampleType first, SampleType last );
     SamplesIntervalDescriptor& operator |= (const SamplesIntervalDescriptor&);
     SamplesIntervalDescriptor& operator |= (const Interval&);
+    SamplesIntervalDescriptor& operator -= (const SamplesIntervalDescriptor&);
+    SamplesIntervalDescriptor& operator -= (const Interval&);
+    SamplesIntervalDescriptor& operator &= (const SamplesIntervalDescriptor&);
+    SamplesIntervalDescriptor& operator &= (const Interval&);
+    SamplesIntervalDescriptor& operator *= (const float& scale);
 
-    Interval    popInterval( float dt, float center = 0 );
-    void        makeValid( Interval );
+    Interval    popInterval( SampleType dt, SampleType center = 0 );
 
+    const std::list<Interval>& intervals() { return _intervals; }
 private:
     std::list<Interval> _intervals;
 };

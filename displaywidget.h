@@ -95,6 +95,8 @@ signals:
     void setNavigationActive(bool);
     
 private:
+    friend class Heightmap::Renderer;
+
     virtual void put( Signal::pBuffer b) { put (b, Signal::pSource());}
     virtual void put( Signal::pBuffer, Signal::pSource );
     Signal::FilterOperation* getFilterOperation();

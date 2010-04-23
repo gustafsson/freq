@@ -153,7 +153,7 @@ DisplayWidget::DisplayWidget( Heightmap::pCollection collection, int timerInterv
   lastKey(0),
   xscale(1),
 //  _record_update(false),
-  _renderer( new Heightmap::Renderer( collection )),
+  _renderer( new Heightmap::Renderer( collection, this )),
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
   _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),

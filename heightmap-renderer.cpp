@@ -11,35 +11,38 @@
 #endif
 
 #include "heightmap-renderer.h"
+#include <float.h>
+#include <tmatrix.h>
+#include <GlException.h>
+#include <CudaException.h>
+#include "displaywidget.h"
 
-namespace Heightmap {
-
+/*
 #include <stdio.h>
 #include "heightmap-vbo.h"
 #include <list>
-#include <GlException.h>
-#include <CudaException.h>
 #include <boost/array.hpp>
-#include <tmatrix.h>
-#include <float.h>
 #include <msc_stdc.h>
+  */
+namespace Heightmap {
+
 
 using namespace std;
 
 static bool g_invalidFrustum = true;
 
-Renderer::Renderer( pCollection collection )
-:   _collection( collection ),
-    draw_piano(true),
+Renderer::Renderer( pCollection collection,DisplayWidget* _tempToRemove )
+:   draw_piano(true),
     draw_hz(false),
-    _spectrogram(spectrogram),
+    _collection(collection),
+    _tempToRemove( _tempToRemove ),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
     _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
     _fewest_pixles_per_unit( FLT_MAX ),
-    _fewest_pixles_per_unit_ref(_spectrogram->findReference( Position(),  Position())),
+    _fewest_pixles_per_unit_ref(collection->findReference( Position(),  Position())),
     _drawn_blocks(0)
 {
 }
@@ -125,7 +128,7 @@ static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);
 template<typename f>
 GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
     GLvector win;
-    bool s = (GLU_TRUE == gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
+    bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
     if(r) *r=s;
     return win;
 }
@@ -133,7 +136,7 @@ GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* pro
 template<typename f>
 GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
     GLvector obj;
-    bool s = (GLU_TRUE == gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
+    bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
     if(r) *r=s;
     return obj;
 }
@@ -253,7 +256,7 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    setSize( _spectrogram->samples_per_block(), _spectrogram->scales_per_block() );
+    setSize( _collection->samples_per_block(), _collection->scales_per_block() );
 
     _initialized=true;
 
@@ -269,8 +272,8 @@ void Renderer::draw()
 
     glPushMatrixContext();
 
-    Position mss = _spectrogram->max_sample_size();
-    Spectrogram::Reference ref = _spectrogram->findReference(Position(0,0), mss);
+    Position mss = _collection->max_sample_size();
+    Reference ref = _collection->findReference(Position(0,0), mss);
 
     beginVboRendering();
 
@@ -281,22 +284,14 @@ void Renderer::draw()
     tt.info("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
     _drawn_blocks=0;
 
-    if (_fewest_pixles_per_unit != FLT_MAX) {
-        TaskTimer tt(TaskTimer::LogVerbose, "Updating a part of the closest non finished scaletime block");
-        _spectrogram->updateBlock( _spectrogram->getBlock(_fewest_pixles_per_unit_ref) );
-
-        _fewest_pixles_per_unit = FLT_MAX;
-    }
-
-
     GlException_CHECK_ERROR();
 }
 
 void Renderer::beginVboRendering()
 {
     GlException_CHECK_ERROR();
-    unsigned meshW = _spectrogram->samples_per_block();
-    unsigned meshH = _spectrogram->scales_per_block();
+    unsigned meshW = _collection->samples_per_block();
+    unsigned meshH = _collection->scales_per_block();
 
     glUseProgram(_shader_prog);
 
@@ -342,7 +337,7 @@ void Renderer::endVboRendering() {
     glUseProgram(0);
 }
 
-bool Renderer::renderSpectrogramRef( Spectrogram::Reference ref, bool* finished_ref )
+bool Renderer::renderSpectrogramRef( Reference ref, bool* finished_ref )
 {
     if (!ref.containsSpectrogram())
         return false;
@@ -356,12 +351,12 @@ bool Renderer::renderSpectrogramRef( Spectrogram::Reference ref, bool* finished_
     glTranslatef(a.time, 0, a.scale);
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
-    Spectrogram::pBlock block = _spectrogram->getBlock( ref, finished_ref );
+    pBlock block = _collection->getBlock( ref, finished_ref );
     if (0!=block.get()) {
         if (0 /* direct rendering */ )
-            block->vbo->draw_directMode();
+            block->glblock->draw_directMode();
         else if (1 /* vbo */ )
-            block->vbo->draw();
+            block->glblock->draw();
 
     } else {
         // getBlock would try to find something else if the requested block wasn't readily available.
@@ -380,7 +375,7 @@ bool Renderer::renderSpectrogramRef( Spectrogram::Reference ref, bool* finished_
     return true;
 }
 
-bool Renderer::renderChildrenSpectrogramRef( Spectrogram::Reference ref )
+bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     Position a, b;
     ref.getArea( a, b );
@@ -403,11 +398,11 @@ bool Renderer::renderChildrenSpectrogramRef( Spectrogram::Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*_spectrogram->scales_per_block());
+        needBetterF = scalePixels / (_redundancy*_collection->scales_per_block());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*_spectrogram->samples_per_block());
+        needBetterT = timePixels / (_redundancy*_collection->samples_per_block());
 
     if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() ) {
         renderChildrenSpectrogramRef( ref.top() );
@@ -437,7 +432,7 @@ bool Renderer::renderChildrenSpectrogramRef( Spectrogram::Reference ref )
     return true;
 }
 
-void Renderer::renderParentSpectrogramRef( Spectrogram::Reference ref )
+void Renderer::renderParentSpectrogramRef( Reference ref )
 {
     // Assume that ref has already been drawn, draw sibblings, and call renderParent again
     renderChildrenSpectrogramRef( ref.sibbling1() );
@@ -604,7 +599,7 @@ static std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_
   @arg timePixels Estimated longest line of pixels along t-axis within ref measured in pixels
   @arg scalePixels Estimated longest line of pixels along t-axis within ref measured in pixels
   */
-bool Renderer::computePixelsPerUnit( Spectrogram::Reference ref, float& timePixels, float& scalePixels )
+bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
     Position p[2];
     ref.getArea( p[0], p[1] );
@@ -758,7 +753,8 @@ void Renderer::drawAxes()
 
     // 2 clip entire sound to frustum
     std::vector<GLvector> clippedFrustum;
-    float T = _spectrogram->transform()->original_waveform()->length();
+    // TODO use displaywidget::worker::source()
+    float T = _tempToRemove->_worker->source()->length();
     GLvector closest_i;
     {
         GLvector corner[4]=
@@ -823,8 +819,8 @@ void Renderer::drawAxes()
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    float min_hz = spectrogram()->transform()->min_hz();
-    float max_hz = spectrogram()->transform()->max_hz();
+    float min_hz = _tempToRemove->getFilterOperation()->cwt.min_hz();
+    float max_hz = _tempToRemove->getFilterOperation()->cwt.max_hz( _tempToRemove->_worker->source()->sample_rate() );
     float steplogsize = log(max_hz) - log(min_hz);
     //float steplogsize = log(max_hz-min_hz);
     // loop along all sides

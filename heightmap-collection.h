@@ -2,7 +2,7 @@
 #define HEIGHTMAPCOLLECTION_H
 
 #include "heightmap-reference.h"
-#include "heightmap-vbo.h"
+#include "heightmap-glblock.h"
 #include "signal-samplesintervaldescriptor.h"
 #include "signal-source.h"
 #include "signal-worker.h"
@@ -86,20 +86,26 @@ namespace Heightmap {
 
 class Block {
 public:
-    Block( Heightmap::Reference ref ): ref(ref) {}
+    Block( Reference ref ): ref(ref) {}
 
     float sample_rate();
     float nFrequencies();
 
     // Zoom level for this slot, determines size of elements
-	Heightmap::Reference ref;
+    Reference ref;
     unsigned frame_number_last_used;
     pGlBlock glblock;
 
     typedef boost::shared_ptr<GpuCpuData<float> > pData;
     pData prepared_data;
 
-    Signal::SamplesIntervalDescriptor isd;
+    /**
+      valid_samples describes the intervals of valid samples contained in this block.
+      it is relative to the start of the heightmap, not relative to this block unless this is
+      the first block in the heightmap. The samplerate is the sample rate of the full
+      resolution signal.
+      */
+    Signal::SamplesIntervalDescriptor valid_samples;
 };
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -110,7 +116,7 @@ typedef boost::shared_ptr<Block> pBlock;
   */
 class Collection: public Signal::WorkerCallback {
 public:
-    Collection();
+    Collection( Signal::Worker* worker );
 
 
     // WorkerCallback: Implementations of virtual methods
@@ -193,6 +199,7 @@ private:
         _scales_per_block,
         _unfinished_count,
         _frame_counter; // TODO shouldn't need _frame_counter
+
     Signal::pSource _fast_source;
 
     /**
@@ -213,6 +220,7 @@ private:
       Creates a new block.
       */
     pBlock      createBlock( Reference ref );
+    void        computeSlope( pBlock block, unsigned cuda_stream );
     void        prepareFillStft( pBlock block );
 
     /**

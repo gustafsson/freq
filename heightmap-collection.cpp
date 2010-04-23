@@ -1,13 +1,16 @@
 #include "heightmap-collection.h"
-/*
-#include "spectrogram.h"
-#include "spectrogram-vbo.h"  // breaks model-view-controller, but I want the rendering context associated with a spectrogram block to be removed when the cached block is removed
-#include "spectrogram-slope.cu.h"
-#include "spectrogram-block.cu.h"
-
+#include "heightmap-slope.cu.h"
+#include "heightmap-block.cu.h"
+#include "signal-filteroperation.h"
+#include "tfr-cwt.h"
 #include <boost/foreach.hpp>
 #include <CudaException.h>
 #include <GlException.h>
+
+/*
+#include "spectrogram.h"
+#include "spectrogram-vbo.h"  // breaks model-view-controller, but I want the rendering context associated with a spectrogram block to be removed when the cached block is removed
+
 #include <math.h>
 #include <msc_stdc.h>
 
@@ -36,15 +39,16 @@ nFrequencies()
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-Collection()
-:   _samples_per_block( 1<<7 ),
+Collection( Signal::Worker* worker )
+:   WorkerCallback( worker ),
+    _samples_per_block( 1<<7 ),
     _scales_per_block( 1<<8 )
 {
 
 }
 
 void Collection::
-put( pBuffer b, pSource s)
+put( Signal::pBuffer b, Signal::pSource s)
 {
     try {
         // Get a chunk for this block
@@ -57,17 +61,17 @@ put( pBuffer b, pSource s)
             chunk = filterOp->previous_chunk();
         } else {
             // otherwise compute the Cwt of this block
-            chunk = CwtSingleton::operator()( b );
+            chunk = Tfr::CwtSingleton::operate( b );
         }
 
         // Update all blocks with this new chunk
-        BOOST_FOREACH( pBlock& b, _cache ) {
-            Position a,b;
-            b->ref.getArea(a,b);
-            if (b.time > b->start() && a.time < b->start()+b->length())
+        BOOST_FOREACH( pBlock& pb, _cache ) {
+            Position p1, p2;
+            pb->ref.getArea(p1, p2);
+            if (p2.time > b->start() && p1.time < b->start()+b->length())
             {
-                mergeBlock(b, chunk );
-                computeSlope( b, 0 );
+                mergeBlock( pb, chunk, 0 );
+                computeSlope( pb, 0 );
             }
         }
     } catch (const CudaException &) {
@@ -100,7 +104,7 @@ read_unfinished_count()
     _frame_counter++;
 
     BOOST_FOREACH( pBlock& b, _cache ) {
-        b->vbo->unmap();
+        b->glblock->unmap();
     }
 
     return t;
@@ -109,22 +113,23 @@ read_unfinished_count()
 Position Collection::
 min_sample_size()
 {
-    return Position( 1.f/transform()->original_waveform()->sample_rate(),
-                        1.f/(transform()->number_of_octaves() * transform()->scales_per_octave()) );
+//    return Position( 1.f/worker()->source()->sample_rate(),
+//                     1.f/(transform()->number_of_octaves() * transform()->scales_per_octave()) );
+    return Position( 1.f/worker()->source()->sample_rate(), 1.f/500 );
 }
 
 Position Collection::
 max_sample_size()
 {
-    Signal::pSource wf = transform()->original_waveform();
+    Signal::pSource wf = worker()->source();
     float length = wf->length();
     Position minima=min_sample_size();
 
-    return Position( max(minima.time, 2.f*length/_samples_per_block),
-                        max(minima.scale, 1.f/_scales_per_block) );
+    return Position( std::max(minima.time, 2.f*length/_samples_per_block),
+                     std::max(minima.scale, 1.f/_scales_per_block) );
 }
 
-static Reference findReferenceCanonical( Position p, Position sampleSize )
+/*Reference Collection::findReferenceCanonical( Position p, Position sampleSize )
 {
     // doesn't ASSERT(r.containsSpectrogram() && !r.toLarge())
     Reference r(this);
@@ -137,7 +142,7 @@ static Reference findReferenceCanonical( Position p, Position sampleSize )
                                         p.scale / _scales_per_block * pow(2, -r.log2_samples_size[1]));
 
     return r;
-}
+}*/
 
 Reference Collection::
 findReference( Position p, Position sampleSize )
@@ -145,7 +150,7 @@ findReference( Position p, Position sampleSize )
     Reference r(this);
 
     // make sure the reference becomes valid
-    Signal::pSource wf = transform()->original_waveform();
+    Signal::pSource wf = worker()->source();
     float length = wf->length();
 
     // Validate requested sampleSize
@@ -198,7 +203,7 @@ findReference( Position p, Position sampleSize )
 }
 
 pBlock Collection::
-getBlock( Spectrogram::Reference ref, bool *finished_block)
+getBlock( Reference ref, bool * /*finished_block*/)
 {
     // Look among cached blocks for this reference
     pBlock block;
@@ -220,8 +225,9 @@ getBlock( Spectrogram::Reference ref, bool *finished_block)
         }
 
         if (0 != block.get()) {
-            if (finished_block)
-                *finished_block = !getNextInvalidChunk(block,0);
+//            TODO is finished_block used anywhere?
+//            if (finished_block)
+//                *finished_block = !getNextInvalidChunk(block,0);
         }
 
         result = block;
@@ -256,8 +262,9 @@ gc()
 void Collection::
 updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
 {
-    BOOST_FOREACH( pBlock& b, _cache ) {
-        b.isd |= sid;
+    BOOST_FOREACH( pBlock& b, _cache )
+    {
+        b->valid_samples -= sid;
     }
 }
 
@@ -265,14 +272,14 @@ updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
 
 
 pBlock Collection::
-attempt( Spectrogram::Reference ref )
+attempt( Reference ref )
 {
     try {
-        Spectrogram::pBlock attempt( new Spectrogram::Block(ref));
-        attempt->vbo.reset( new SpectrogramVbo( this ));
-        SpectrogramVbo::pHeight h = attempt->vbo->height();
-        SpectrogramVbo::pSlope sl = attempt->vbo->slope();
-        attempt->vbo->unmap();
+        pBlock attempt( new Block(ref));
+        attempt->glblock.reset( new GlBlock( this ));
+        GlBlock::pHeight h = attempt->glblock->height();
+        GlBlock::pSlope sl = attempt->glblock->slope();
+        attempt->glblock->unmap();
 
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
@@ -283,23 +290,23 @@ attempt( Spectrogram::Reference ref )
     { }
     catch (const GlException& )
     { }
-    return Spectrogram::pBlock();
+    return pBlock();
 }
 
 
 pBlock Collection::
-createBlock( Spectrogram::Reference ref )
+createBlock( Reference ref )
 {
     Position a,b;
     ref.getArea(a,b);
     TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
     // Try to allocate a new block
-    pBlock block = attempt( this, ref );
+    pBlock block = attempt( ref );
 
     if ( 0 == block.get() && !_cache.empty()) {
         tt.info("Memory allocation failed, overwriting some older block");
         gc();
-        block = attempt( this, ref );
+        block = attempt( ref );
     }
 
     if ( 0 == block.get()) {
@@ -310,7 +317,7 @@ createBlock( Spectrogram::Reference ref )
     pBlock result;
     try {
         // set to zero
-        SpectrogramVbo::pHeight h = block->vbo->height();
+        GlBlock::pHeight h = block->glblock->height();
         cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
 
         if ( 1 /* create from others */ ) {
@@ -319,15 +326,15 @@ createBlock( Spectrogram::Reference ref )
             // fill block by STFT
             {
                 TaskTimer tt(TaskTimer::LogVerbose, "stft");
-                fillStft( block );
+                prepareFillStft( block );
             }
 
-            if (0) {
+            /*if (0) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Preventing wavelet transform");
                 Position a,b;
                 block->ref.getArea(a,b);
-                unsigned start = a.time * _transform->original_waveform()->sample_rate();
-                unsigned end = b.time * _transform->original_waveform()->sample_rate();
+                unsigned start = a.time * worker()->source()->sample_rate();
+                unsigned end = b.time * worker()->source()->sample_rate();
 
                 for (Transform::ChunkIndex n = _transform->getChunkIndex(start);
                      n <= _transform->getChunkIndex(end);
@@ -335,8 +342,7 @@ createBlock( Spectrogram::Reference ref )
                 {
                     block->valid_chunks.insert( n );
                 }
-
-            }
+            }*/
 
             if (0) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
@@ -375,7 +381,7 @@ createBlock( Spectrogram::Reference ref )
             }
 
         } else if ( 0 /* set dummy values */ ) {
-            SpectrogramVbo::pHeight h = block->vbo->height();
+            GlBlock::pHeight h = block->glblock->height();
             float* p = h->data->getCpuMemory();
             for (unsigned s = 0; s<_samples_per_block; s++) {
                 for (unsigned f = 0; f<_scales_per_block; f++) {
@@ -400,18 +406,28 @@ createBlock( Spectrogram::Reference ref )
 }
 
 void Collection::
+computeSlope( pBlock block, unsigned cuda_stream )
+{
+    GlBlock::pHeight h = block->glblock->height();
+    cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
+}
+
+void Collection::
 prepareFillStft( pBlock block ) {
     Position a, b;
     block->ref.getArea(a,b);
-    float tmin = _transform->min_hz(),
-          tmax = _transform->max_hz();
+    // TODO: don't use constants
+    float tmin = 20,// _transform->min_hz(),
+          tmax = worker()->source()->sample_rate()/2; // _transform->max_hz();
 
     unsigned in_stft_size;
-    Signal::pBuffer stft = _transform->stft( a.time, b.time, &in_stft_size );
+    Tfr::Stft trans;
+    Signal::pBuffer stft = trans( fast_source()->read( a.time, b.time-a.time ) );
+    in_stft_size = trans.chunk_size;
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
-          in_max_hz = _transform->original_waveform()->sample_rate()/2;
+          in_max_hz = fast_source()->sample_rate()/2;
     float in_min_hz = in_max_hz / 4/in_stft_size;
 
     float out_stft_size = (in_stft_size/(float)stft->sample_rate)*block->sample_rate();
@@ -419,7 +435,7 @@ prepareFillStft( pBlock block ) {
     float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->sample_rate();
 
     ::expandCompleteStft( stft->waveform_data->getCudaGlobal(),
-                  block->vbo->height()->data->getCudaGlobal(),
+                  block->glblock->height()->data->getCudaGlobal(),
                   out_min_hz,
                   out_max_hz,
                   out_stft_size,
@@ -432,19 +448,19 @@ prepareFillStft( pBlock block ) {
 
 
 void Collection::
-updateSlope( Spectrogram::pBlock block, unsigned cuda_stream )
+updateSlope( pBlock block, unsigned cuda_stream )
 {
-    SpectrogramVbo::pHeight h = block->vbo->height();
-    cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->vbo->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
+    GlBlock::pHeight h = block->glblock->height();
+    cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
 }
 
 void Collection::
-mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cuda_stream, bool save_in_prepared_data)
+mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data)
 {
     boost::shared_ptr<GpuCpuData<float> > outData;
 
     if (!save_in_prepared_data)
-        outData = outBlock->vbo->height()->data;
+        outData = outBlock->glblock->height()->data;
     else {
         if (outBlock->prepared_data)
             outData = outBlock->prepared_data;
@@ -459,8 +475,8 @@ mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cud
     float out_sample_rate = outBlock->sample_rate();
     float in_frequency_resolution = inChunk->nScales();
     float out_frequency_resolution = outBlock->nFrequencies();
-    float in_offset = max(0.f, (a.time-inChunk->startTime()))*in_sample_rate;
-    float out_offset = max(0.f, (inChunk->startTime()-a.time))*out_sample_rate;
+    float in_offset = std::max(0.f, (a.time-inChunk->startTime()))*in_sample_rate;
+    float out_offset = std::max(0.f, (inChunk->startTime()-a.time))*out_sample_rate;
 
     in_offset += inChunk->first_valid_sample;
     blockMergeChunk( inChunk->transform_data->getCudaGlobal(),
@@ -474,7 +490,7 @@ mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cud
                            inChunk->n_valid_samples,
                            cuda_stream);
 
-    outBlock->isd |= InvalidSampleDescriptor( inChunk->startTime(), inChunk->endTime() );
+    outBlock->valid_samples |= Signal::SamplesIntervalDescriptor( inChunk->startTime(), inChunk->endTime() );
 
     if (save_in_prepared_data) {
         outData->getCpuMemory();
@@ -483,47 +499,41 @@ mergeBlock( Spectrogram::pBlock outBlock, pTransform_chunk inChunk, unsigned cud
 }
 
 void Collection::
-mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock inBlock, unsigned cuda_stream )
+mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
 {
-    Position in_a, in_b, out_a, out_b;
-    inBlock->ref.getArea( in_a, in_b );
-    outBlock->ref.getArea( out_a, out_b );
+    Signal::SamplesIntervalDescriptor in_sid = inBlock->valid_samples;
+    Signal::SamplesIntervalDescriptor& out_sid = outBlock->valid_samples;
+    Signal::SamplesIntervalDescriptor out_ref_sid = outBlock->ref.getInterval();
+    Signal::SamplesIntervalDescriptor::Interval outInterval = out_ref_sid.intervals().front();
 
-    if (in_a.time >= out_b.time)
-        return;
-    if (in_b.time <= out_a.time)
-        return;
-    if (in_a.scale >= out_b.scale)
-        return;
-    if (in_b.scale <= out_a.scale)
-        return;
+    // check if inBlock has any samples that can be merged with outBlock
+    // by computing which samples to copy from in to out
+    in_sid &= out_ref_sid; // restrict to ref block
+    in_sid -= out_sid;     // remove already valid samples
 
-    float in_sample_rate = inBlock->sample_rate();
-    float out_sample_rate = outBlock->sample_rate();
-    float in_frequency_resolution = inBlock->nFrequencies();
-    float out_frequency_resolution = outBlock->nFrequencies();
-    float in_offset = max(0.f, (out_a.time-in_a.time))*in_sample_rate;
-    float out_offset = max(0.f, (in_a.time-out_a.time))*out_sample_rate;
-
-    Transform::ChunkIndex end=-1;
-    float in_valid_samples=samples_per_block();
-    if (getNextInvalidChunk( inBlock, &end ))
-        in_valid_samples = max(0.f, end*_transform->samples_per_chunk()/_transform->original_waveform()->sample_rate() - in_a.time)*in_sample_rate;
-    Transform::ChunkIndex start=-1;
-    if (getNextInvalidChunk( outBlock, &start )) {
-        if (start>=end)
-            return;
-        float skipt = start*_transform->samples_per_chunk()/_transform->original_waveform()->sample_rate() - out_a.time;
-        if (0<skipt) {
-            in_offset += skipt*in_sample_rate;
-            out_offset += skipt*out_sample_rate;
-        }
-    } else {
+    if (in_sid.intervals().empty()) {
         return;
     }
 
-    SpectrogramVbo::pHeight out_h = outBlock->vbo->height();
-    SpectrogramVbo::pHeight in_h = inBlock->vbo->height();
+    Signal::SamplesIntervalDescriptor::Interval read_interval;
+    read_interval = in_sid.popInterval(0, outInterval.last - outInterval.first );
+
+    float in_sample_rate = inBlock->sample_rate();
+    float out_sample_rate = outBlock->sample_rate();
+    unsigned signal_sample_rate = worker()->source()->sample_rate();
+    float in_frequency_resolution = inBlock->nFrequencies();
+    float out_frequency_resolution = outBlock->nFrequencies();
+
+    float in_offset = outInterval.first>read_interval.first?outInterval.first-read_interval.first:0;
+    float out_offset = read_interval.first>outInterval.first?read_interval.first-outInterval.first:0;
+    in_offset*=in_sample_rate/signal_sample_rate;
+    out_offset*=out_sample_rate/signal_sample_rate;
+
+    float in_valid_samples=read_interval.last-read_interval.first;
+    in_valid_samples*=in_sample_rate/signal_sample_rate;
+
+    GlBlock::pHeight out_h = outBlock->glblock->height();
+    GlBlock::pHeight in_h = inBlock->glblock->height();
 
     blockMerge( in_h->data->getCudaGlobal(),
                 out_h->data->getCudaGlobal(),
@@ -537,18 +547,18 @@ mergeBlock( Spectrogram::pBlock outBlock, Spectrogram::pBlock inBlock, unsigned 
                            in_valid_samples,
                            cuda_stream);
 
-    inBlock->vbo->unmap();
+    inBlock->glblock->unmap();
 
     // validate block if inBlock was a valid source
     if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] ||
         inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
     {
-        if (end == (Transform::ChunkIndex)-1)
-            end = out_b.time*_transform->original_waveform()->sample_rate();
-        for (unsigned n=start;n<end;n++)
-        {
-            inBlock->valid_chunks.insert(n);
-        }
+        outBlock->valid_samples |= read_interval;
+    }
+
+    // keep on going merging if there are more things to read from inBlock
+    if (in_sid.intervals().size()>1) {
+        mergeBlock( outBlock, inBlock, cuda_stream );
     }
 }
 

@@ -11,14 +11,16 @@
 #else
   #include <OpenGL/gl.h>
 #endif
-#include "heightmap-vbo.h"
+#include "heightmap-glblock.h"
+
+class DisplayWidget;
 
 namespace Heightmap {
 
 class Renderer
 {
 public:
-    Renderer( pCollection collection );
+    Renderer( pCollection collection, DisplayWidget* _tempToRemove );
 
     pCollection collection() { return _collection; }
 
@@ -29,6 +31,7 @@ public:
     bool draw_hz;
 private:
     pCollection _collection;
+    DisplayWidget* _tempToRemove;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;

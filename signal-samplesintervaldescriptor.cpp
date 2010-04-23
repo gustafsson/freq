@@ -26,7 +26,7 @@ SamplesIntervalDescriptor()
 }
 
 SamplesIntervalDescriptor::
-SamplesIntervalDescriptor(float first, float last)
+SamplesIntervalDescriptor(unsigned first, unsigned last)
 {
     Interval r = { first, last };
     _intervals.push_back( r );
@@ -60,8 +60,113 @@ operator |= (const Interval& r)
     return *this;
 }
 
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+operator -= (const SamplesIntervalDescriptor& b)
+{
+    BOOST_FOREACH (const Interval& r,  b._intervals)
+        operator-=( r );
+    return *this;
+}
+
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+operator -= (const Interval& r)
+{
+    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+
+        // Check if interval 'itr' intersects with 'r'
+        if (((*itr)<r) == (r<(*itr))) {
+
+            // Check if intersection is over the start of 'itr'
+            if (itr->first >= r.first && itr->last > r.last)
+                itr->first = r.last;
+
+            // Check if intersection is over the end of 'itr'
+            else if (itr->first <= r.first && itr->last < r.last)
+                itr->last = r.first;
+
+            // Check if intersection is over the entire 'itr'
+            else if (itr->first >= r.first && itr->last <= r.last)
+                itr = _intervals.erase( itr );
+
+            // Check if intersection is in the middle of 'itr'
+            else if (itr->first < r.first && itr->last > r.last) {
+                Interval j = {itr->last, r.last};
+                _intervals.insert(itr, j);
+                itr->last = r.first;
+                itr++;
+                itr++;
+
+            // Else, error
+            } else {
+                throw std::logic_error("Shouldn't reach here");
+            }
+        } else {
+            itr++;
+        }
+    }
+    return *this;
+}
+
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+operator &= (const SamplesIntervalDescriptor& b)
+{
+    BOOST_FOREACH (const Interval& r,  b._intervals)
+        operator&=( r );
+    return *this;
+}
+
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+operator &= (const Interval& r)
+{
+    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+
+        // Check if interval 'itr' does not intersects with 'r'
+        if (((*itr)<r) != (r<(*itr))) {
+            itr = _intervals.erase(itr);
+
+        } else {
+
+            // Check if intersection is over the start of 'itr'
+            if (itr->first >= r.first && itr->last > r.last)
+                itr->last = r.last;
+
+            // Check if intersection is over the end of 'itr'
+            else if (itr->first <= r.first && itr->last < r.last)
+                itr->first = r.first;
+
+            // Check if intersection is over the entire 'itr'
+            else if (itr->first >= r.first && itr->last <= r.last)
+            {}
+
+            // Check if intersection is in the middle of 'itr'
+            else if (itr->first < r.first && itr->last > r.last) {
+                itr->first = r.first;
+                itr->last = r.last;
+
+            // Else, error
+            } else {
+                throw std::logic_error("Shouldn't reach here");
+            }
+            itr++;
+        }
+    }
+    return *this;
+}
+
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+operator*=(const float& scale)
+{
+    std::list<Interval>::iterator itr;
+    for (itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
+        itr->first*=scale;
+        itr->last*=scale;
+    }
+
+    return *this;
+}
+
 SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
-popInterval( float dt, float center )
+popInterval( SampleType dt, SampleType center )
 {
     if (0 == _intervals.size()) {
         Interval r = {0.f, 0.f};
@@ -112,7 +217,7 @@ popInterval( float dt, float center )
             return r;
         }
 
-        float start = f.first + dt*(unsigned)((center-f.first) / dt);
+        SampleType start = f.first + dt*(unsigned)((center-f.first) / dt);
         Interval r = {start, std::min(start+dt, f.last) };
         if (start+dt < f.last ) {
             Interval r2 = { start+dt, f.last };
@@ -120,37 +225,6 @@ popInterval( float dt, float center )
         }
         f.last = start;
         return r;
-    }
-}
-
-void SamplesIntervalDescriptor::
-makeValid( Interval i )
-{
-    if (0 == _intervals.size()) {
-        return;
-    }
-
-    std::list<Interval>::iterator itr;
-    for (itr = _intervals.begin(); itr!=_intervals.end(); ) {
-        if (itr->last > i.first && itr->first < i.last)
-        {
-            if (itr->first < i.first && itr->last > i.last) {
-                Interval r2 = { i.last, itr->first };
-                itr = _intervals.insert( itr, r2 );
-                itr->last = i.first;
-            }
-            if (itr->first >= i.first)
-                itr->first = i.last;
-            if (itr->last <= i.last)
-                itr->last = i.first;
-
-            if (itr->last <= itr->first)
-            {
-                itr = _intervals.erase( itr );
-                continue;
-            }
-        }
-        itr++;
     }
 }
 
