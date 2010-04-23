@@ -11,6 +11,10 @@ public:
     typedef unsigned SampleType;
 
     struct Interval {
+        /**
+            'last' is rather the first sample not within the interval, such that
+            the length of the interval can be computed as "last-first".
+          */
         SampleType first, last;
 
         bool operator<(const Interval& r) const;
@@ -18,6 +22,7 @@ public:
     };
 
     SamplesIntervalDescriptor( );
+    SamplesIntervalDescriptor( Interval );
     SamplesIntervalDescriptor( SampleType first, SampleType last );
     SamplesIntervalDescriptor& operator |= (const SamplesIntervalDescriptor&);
     SamplesIntervalDescriptor& operator |= (const Interval&);

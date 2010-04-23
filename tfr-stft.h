@@ -11,6 +11,9 @@ namespace Tfr {
 
 typedef boost::shared_ptr< GpuCpuData<float2> > pFftChunk;
 
+/**
+Computes the complex Fast Fourier Transform of a Signal::Buffer.
+*/
 class Fft
 {
 public:
@@ -27,6 +30,10 @@ private:
     void gc();
 };
 
+/**
+Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
+@see Stft::operator()
+*/
 class Stft
 {
 public:

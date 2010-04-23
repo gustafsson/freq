@@ -7,17 +7,6 @@
 #include <CudaException.h>
 #include <GlException.h>
 
-/*
-#include "spectrogram.h"
-#include "spectrogram-vbo.h"  // breaks model-view-controller, but I want the rendering context associated with a spectrogram block to be removed when the cached block is removed
-
-#include <math.h>
-#include <msc_stdc.h>
-
-using namespace std;
-
-
-  */
 namespace Heightmap {
 
 ///// HEIGHTMAP::BLOCK
@@ -39,8 +28,8 @@ nFrequencies()
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-Collection( Signal::Worker* worker )
-:   WorkerCallback( worker ),
+Collection( Signal::pWorker worker )
+:   worker( worker ),
     _samples_per_block( 1<<7 ),
     _scales_per_block( 1<<8 )
 {
@@ -48,14 +37,14 @@ Collection( Signal::Worker* worker )
 }
 
 void Collection::
-put( Signal::pBuffer b, Signal::pSource s)
+    put( Signal::pBuffer b, Signal::Source* s)
 {
     try {
         // Get a chunk for this block
         Tfr::pChunk chunk;
 
         // If buffer comes directly from a Signal::FilterOperation
-        Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s.get());
+        Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s);
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
             chunk = filterOp->previous_chunk();
@@ -113,15 +102,15 @@ read_unfinished_count()
 Position Collection::
 min_sample_size()
 {
-//    return Position( 1.f/worker()->source()->sample_rate(),
-//                     1.f/(transform()->number_of_octaves() * transform()->scales_per_octave()) );
-    return Position( 1.f/worker()->source()->sample_rate(), 1.f/500 );
+    unsigned FS = worker->source()->sample_rate();
+    return Position( 1.f/FS,
+                     1.f/Tfr::CwtSingleton::instance()->nScales( FS ) );
 }
 
 Position Collection::
 max_sample_size()
 {
-    Signal::pSource wf = worker()->source();
+    Signal::pSource wf = worker->source();
     float length = wf->length();
     Position minima=min_sample_size();
 
@@ -150,7 +139,7 @@ findReference( Position p, Position sampleSize )
     Reference r(this);
 
     // make sure the reference becomes valid
-    Signal::pSource wf = worker()->source();
+    Signal::pSource wf = worker->source();
     float length = wf->length();
 
     // Validate requested sampleSize
@@ -203,7 +192,7 @@ findReference( Position p, Position sampleSize )
 }
 
 pBlock Collection::
-getBlock( Reference ref, bool * /*finished_block*/)
+getBlock( Reference ref )
 {
     // Look among cached blocks for this reference
     pBlock block;
@@ -222,12 +211,6 @@ getBlock( Reference ref, bool * /*finished_block*/)
             block = createBlock( ref );
             computeSlope( block, 0 );
             _unfinished_count++;
-        }
-
-        if (0 != block.get()) {
-//            TODO is finished_block used anywhere?
-//            if (finished_block)
-//                *finished_block = !getNextInvalidChunk(block,0);
         }
 
         result = block;
@@ -260,12 +243,27 @@ gc()
 
 
 void Collection::
-updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
+        updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
 {
     BOOST_FOREACH( pBlock& b, _cache )
     {
         b->valid_samples -= sid;
     }
+}
+
+Signal::SamplesIntervalDescriptor Collection::
+        getMissingSamples()
+{
+    Signal::SamplesIntervalDescriptor r;
+
+    BOOST_FOREACH( pBlock& b, _cache )
+    {
+        Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
+        i -= b->valid_samples;
+        r |= i;
+    }
+
+    return r;
 }
 
 ////// private
@@ -392,9 +390,9 @@ createBlock( Reference ref )
 
         result = block;
     }
-    catch (const CudaException& x )
+    catch (const CudaException& )
     { }
-    catch (const GlException& x )
+    catch (const GlException& )
     { }
 
     if ( 0 == result.get())
@@ -416,18 +414,18 @@ void Collection::
 prepareFillStft( pBlock block ) {
     Position a, b;
     block->ref.getArea(a,b);
-    // TODO: don't use constants
-    float tmin = 20,// _transform->min_hz(),
-          tmax = worker()->source()->sample_rate()/2; // _transform->max_hz();
+    float tmin = Tfr::CwtSingleton::instance()->min_hz();
+    float tmax = Tfr::CwtSingleton::instance()->max_hz( worker->source()->sample_rate() );
 
     unsigned in_stft_size;
     Tfr::Stft trans;
-    Signal::pBuffer stft = trans( fast_source()->read( a.time, b.time-a.time ) );
+    Signal::pSource first_source = Signal::Operation::first_source( worker->source() );
+    Signal::pBuffer stft = trans( first_source->read( a.time*first_source->sample_rate(), (b.time-a.time)*first_source->sample_rate() ) );
     in_stft_size = trans.chunk_size;
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
-          in_max_hz = fast_source()->sample_rate()/2;
+          in_max_hz = first_source->sample_rate()/2;
     float in_min_hz = in_max_hz / 4/in_stft_size;
 
     float out_stft_size = (in_stft_size/(float)stft->sample_rate)*block->sample_rate();
@@ -520,7 +518,7 @@ mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
 
     float in_sample_rate = inBlock->sample_rate();
     float out_sample_rate = outBlock->sample_rate();
-    unsigned signal_sample_rate = worker()->source()->sample_rate();
+    unsigned signal_sample_rate = worker->source()->sample_rate();
     float in_frequency_resolution = inBlock->nFrequencies();
     float out_frequency_resolution = outBlock->nFrequencies();
 

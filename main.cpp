@@ -38,7 +38,8 @@ static const char _sawe_usage_string[] =
 //"    channel            Sonic AWE can only work with one-dimensional data.\n"
 //"                       channel specifies which channel to read from if source\n"
 //"                       has more than one channel.\n"
-"    samples_per_chunk  The transform is computed in chunks from the input\n"
+"    samples_per_chunk  Only used by extract_chunk option.\n"
+"                       The transform is computed in chunks from the input\n"
 "                       This determines the number of input samples that \n"
 "                       should correspond to one chunk of the transform by\n"
 "                       2^samples_per_chunk.\n"
@@ -166,17 +167,26 @@ static int handle_options(char ***argv, int *argc)
 #define STRINGIFY(x) #x
 #define TOSTR(x) STRINGIFY(x)
 
-void fatal_exception( const std::string& str )
+void fatal_exception_cerr( const std::string& str )
 {
     cerr << endl << endl
          << "======================" << endl
          << str
          << "======================" << endl;
     cerr.flush();
+}
 
+void fatal_exception_qt( const std::string& str )
+{
     QMessageBox::critical( 0,
                  QString("Fatal error. Sonic AWE needs to close"),
                  QString::fromStdString(str) );
+}
+
+void fatal_exception( const std::string& str )
+{
+    fatal_exception_cerr(str);
+    fatal_exception_qt(str);
 }
 
 #ifdef __GNUC__
@@ -252,12 +262,15 @@ public:
     virtual bool notify(QObject * receiver, QEvent * e) {
         bool v = false;
         try {
+            if(!fatal_error.empty())
+                this->exit(-2);
+
             v = QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            fatal_error = fatal_exception(x);
+            fatal_exception_cerr( fatal_error = fatal_exception(x) );
             this->exit(-2);
         } catch (...) {
-            fatal_error = fatal_unknown_exception();
+            fatal_exception_cerr( fatal_error = fatal_unknown_exception() );
             this->exit(-2);
         }
         return v;
@@ -391,14 +404,13 @@ int main(int argc, char *argv[])
         boost::shared_ptr<Signal::Source> wf;
 
         if (-1<=_record)
+            // TODO use _channel
             wf.reset( new Signal::MicrophoneRecorder(_record) );
         else {
+            // TODO use _channel
             printf("Reading file: %s\n", _soundfile.c_str());
             wf.reset( new Signal::Audiofile( _soundfile.c_str() ) );
         }
-
-        // TODO compute required memory by application and adjust _samples_per_chunk thereafter
-        //unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
 
         unsigned redundant = 2*(((unsigned)(_wavelet_std_t*wf->sample_rate())+31)/32*32);
         while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
@@ -407,10 +419,6 @@ int main(int argc, char *argv[])
         }
         unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
 
-        // TODO use _playback
-        // TODO use _channel
-        // TODO use or remove total_samples_per_chunk
-        // boost::shared_ptr<Transform> wt( new Transform(wf, _channel, total_samples_per_chunk, _scales_per_octave, _wavelet_std_t, _playback ) );
         Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
         cwt->scales_per_octave( _scales_per_octave );
         cwt->wavelet_std_t( _wavelet_std_t );
@@ -425,10 +433,11 @@ int main(int argc, char *argv[])
         }
 
         Signal::pWorker wk( new Signal::Worker( wf ) );
-        Heightmap::pCollection sg( new Heightmap::Collection(wk.get()) );
-        sg->samples_per_block( _samples_per_block );
-        sg->scales_per_block( _scales_per_block );
-        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg, 0 ) );
+        Heightmap::Collection* sgp( new Heightmap::Collection(wk) );
+        Signal::pSink sg( sgp );
+        sgp->samples_per_block( _samples_per_block );
+        sgp->scales_per_block( _scales_per_block );
+        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wk, sg, _playback, 0 ) );
         dw->yscale = (DisplayWidget::Yscale)_yscale;
 
         w.connectLayerWindow(dw.get());
@@ -438,9 +447,9 @@ int main(int argc, char *argv[])
 
         int r = a.exec();
         if (!fatal_error.empty())
-            fatal_exception(fatal_error);
+            fatal_exception_qt(fatal_error);
 
-        // CudaException_CALL_CHECK ( cudaThreadExit() );
+        // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
         fatal_exception(fatal_exception(x));

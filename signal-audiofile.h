@@ -2,6 +2,7 @@
 #define SIGNALAUDIOFILE_H
 
 /*
+    TODO update reference manual
     input signal, 1D, can be sound, matlab vector or data-file
         --- Different sources ---
         a sound can be read from disc
@@ -229,8 +230,6 @@
 
 #include "signal-source.h"
 
-#include "signal-playback.h"
-
 namespace Signal
 {
 std::string getFileFormatsQtFilter();
@@ -239,7 +238,7 @@ class Audiofile: public Source
 {
 public:
 
-    Audiofile(int=-1);
+    Audiofile();
     Audiofile(const char* filename);
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
@@ -248,17 +247,11 @@ public:
 
     pBuffer getChunkBehind() { return _waveform; }
     void setChunk( pBuffer chunk ) { _waveform = chunk; }
-    void play();
 
-    static boost::shared_ptr<Signal::Playback> pb;
 private:
     pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
     void appendChunk( pBuffer chunk );
 
-    /**
-      Writes wave audio with 16 bits per sample
-      */
-    void writeFile( const char* filename );
     pSource crop();
 
     unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }

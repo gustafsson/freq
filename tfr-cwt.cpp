@@ -1,34 +1,9 @@
 #include "tfr-cwt.h"
 #include <cufft.h>
 #include "tfr-stft.h"
-
-/**
-  TODO remove
-  #include "transform.h"
-#include <cuda_runtime.h>
-#include <math.h>
-#include "CudaProperties.h"
-#include <iostream>
-#include <fstream>
-#include "Statistics.h"
-#include "StatisticsRandom.h"
-#include <string.h>
-#include <msc_stdc.h>
-#include "signal-audiofile.h"
-
-#include "signal-source.h"
-#include "signal-sink.h"
-#include "transform-inverse.h"
-#include <boost/shared_ptr.hpp>
-#include <map>
-#include "filter.h"
-
-  */
-
 #include <throwInvalidArgument.h>
 #include <CudaException.h>
 #include "wavelet.cu.h"
-
 
 #define TIME_CWT
 
@@ -129,6 +104,22 @@ pChunk Cwt::operator()( Signal::pBuffer buffer )
 
         cufftSafeCall(cufftSetStream(_fft_many, _stream));
         cufftSafeCall(cufftExecC2C(_fft_many, d, d, CUFFT_INVERSE));
+
+        _intermediate_wt->chunk_offset = buffer->sample_offset;
+        _intermediate_wt->first_valid_sample = wavelet_std_samples( buffer->sample_rate );
+        _intermediate_wt->max_hz = max_hz( buffer->sample_rate );
+        _intermediate_wt->min_hz = min_hz();
+
+        printf("2*_intermediate_wt->first_valid_sample = %d\n", 2*_intermediate_wt->first_valid_sample);
+        printf("buffer->number_of_samples() = %d\n", buffer->number_of_samples());
+        fflush(stdout);
+
+        if (2*_intermediate_wt->first_valid_sample >= buffer->number_of_samples())
+            ThrowInvalidArgument( _wavelet_std_t );
+        else
+            _intermediate_wt->n_valid_samples = buffer->number_of_samples() - 2*wavelet_std_samples( buffer->sample_rate );
+
+        _intermediate_wt->sample_rate = buffer->sample_rate;
 
         #ifdef TIME_CWT
             CudaException_ThreadSynchronize();

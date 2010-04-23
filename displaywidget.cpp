@@ -24,6 +24,7 @@
 #include "signal-playback.h"
 #include "signal-microphonerecorder.h"
 #include "sawe-csv.h"
+#include "signal-writewav.h"
 
 #undef max
 
@@ -146,14 +147,20 @@ bool MouseControl::isTouched()
 }
 
 
-DisplayWidget* DisplayWidget::gDisplayWidget = 0;
+DisplayWidget* DisplayWidget::
+        gDisplayWidget = 0;
 
-DisplayWidget::DisplayWidget( Heightmap::pCollection collection, int timerInterval )
+DisplayWidget::
+        DisplayWidget( Signal::pWorker worker, Signal::pSink collection, unsigned playback_device, int timerInterval )
 : QGLWidget( ),
   lastKey(0),
   xscale(1),
 //  _record_update(false),
-  _renderer( new Heightmap::Renderer( collection, this )),
+  _renderer( new Heightmap::Renderer( dynamic_cast<Heightmap::Collection*>(collection.get()), this )),
+  _worker( worker ),
+  _collectionCallback( new Signal::WorkerCallback( worker, collection )),
+  _playbackCallback( new Signal::WorkerCallback( worker, Signal::pSink( new Signal::Playback( playback_device )))),
+  _diskwriterCallback( new Signal::WorkerCallback (worker, Signal::pSink( new Signal::WriteWav("selection.wav")))),
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
   _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
@@ -186,10 +193,11 @@ DisplayWidget::DisplayWidget( Heightmap::pCollection collection, int timerInterv
 
     getFilterOperation()->inverse_cwt.filter.reset( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z) );
 
+    Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
 
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(collection->fast_source().get());
     if (0!=r)
-        put( Signal::pBuffer(), collection->fast_source() );
+        put( Signal::pBuffer(), first_source );
 
 
     yscale = Yscale_LogLinear;
@@ -207,10 +215,12 @@ DisplayWidget::DisplayWidget( Heightmap::pCollection collection, int timerInterv
     grabKeyboard();
 }
 
-DisplayWidget::~DisplayWidget()
+DisplayWidget::
+        ~DisplayWidget()
 {
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(
-            _renderer->collection()->fast_source().get() );
+    Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+
     if (r) {
         r->isStopped() ? void() : r->stopRecording();
     }
@@ -221,7 +231,8 @@ void DisplayWidget::recieveCurrentSelection(int index, bool enabled)
     setSelection(index, enabled);
 }
 
-void DisplayWidget::recieveFilterRemoval(int index){
+void DisplayWidget::recieveFilterRemoval(int index)
+{
     removeFilter(index);
 }
 
@@ -254,8 +265,28 @@ void DisplayWidget::recieveTogglePiano(bool active)
 
 void DisplayWidget::recievePlaySound()
 {
-    TaskTimer("Playing the selection.\n").suppressTiming();
-    _mainPlayback.reset( new Sawe::MainPlayback( -1, _worker.get() ));
+    TaskTimer tt("Initiating playback of selection.\n");
+
+    // find range of selection
+    Signal::SamplesIntervalDescriptor sid = getFilterOperation()->inverse_cwt.filter->coveredSamples();
+    if (sid.intervals().empty())
+        return;
+
+    const Signal::SamplesIntervalDescriptor::Interval& i = sid.intervals().front();
+
+    _playbackCallback->sink()->reset();
+    _diskwriterCallback->sink()->reset();
+
+    Signal::Playback* p = dynamic_cast<Signal::Playback*>( _playbackCallback->sink().get() );
+    if (p) {
+        p->preparePlayback( i.first, i.last-i.first );
+        _worker->todo_list = p->getMissingSamples();
+    }
+
+    Signal::WriteWav* w = dynamic_cast<Signal::WriteWav*>( _diskwriterCallback->sink().get() );
+    if (w)
+        w->expected_samples_left( i.last - i.first );
+
     update();
 }
 
@@ -299,20 +330,11 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
     // pTransform t = _renderer->spectrogram()->transform();
     switch (lastKey )
     {
-        //case ' ':
-            // TODO use Signal::Playback
-            /*Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
-            Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
-            Signal::Playback::list_devices();
-
-            Signal::Playback pb;
-            pb.expected_samples_left(0);
-            pb.put( s->read( 0, s->number_of_samples() ) );
-            TaskTimer tt("Playing");
-            sleep(1);*/
-            //_transform->inverse()->play_inverse();
-            update();
+        case ' ':
+        {
+            recievePlaySound();
             break;
+        }
         case 'c': case 'C':
         {
             Signal::FilterOperation* f = getFilterOperation();
@@ -340,15 +362,16 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         {
             printf("Try recording: ");
 
-            Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( _worker->source().get() );
+            Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
+            Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
             if (r)
             {
-            		printf("succeded!\n");
+                printf("succeded!\n");
                 r->isStopped() ? r->startRecording( this ) : r->stopRecording();
             }
             else
             {
-            		printf("failed!\n");;
+                printf("failed!\n");;
             }
             break;
         }
@@ -592,19 +615,7 @@ void DisplayWidget::timeOut()
     
     if(selectionButton.isDown() && selectionButton.getHold() == 5)
     {
-    		recievePlaySound();
-/*      // TODO use Signal::Playback
-        Signal::pSource s = _renderer->spectrogram()->transform()->inverse()->get_inverse_waveform();
-        Signal::Audiofile* a = dynamic_cast<Signal::Audiofile*>(s.get());
-        Signal::Playback::list_devices();
-
-        Signal::Playback pb;
-        pb.expected_samples_left(0);
-        pb.put( s->read( 0, s->number_of_samples() ) );
-        TaskTimer tt("Playing");
-        sleep(3);
-        // if(a) a->play();
-*/
+        recievePlaySound();
     }
 }
 
@@ -702,8 +713,7 @@ void DisplayWidget::paintGL()
     computing_inverse = false;
     computing_plot = false;
     
-
-    if (_mainPlayback->pb.expected_samples_left())
+    if (_playbackCallback->sink()->expected_samples_left())
     {
         computing_inverse = true;
     }
@@ -768,6 +778,16 @@ void DisplayWidget::paintGL()
     	glMatrixMode(GL_MODELVIEW);
     	glPopMatrix();
     }
+
+
+    Signal::Playback* p = dynamic_cast<Signal::Playback*>( _playbackCallback->sink().get() );
+    if (p && p->isUnderfed()) {
+        _worker->todo_list = p->getMissingSamples();
+    } else {
+        _worker->todo_list = _renderer->collection()->getMissingSamples();
+    }
+
+    _worker->workOne();
 
     // CudaException_ThreadSynchronize();
     CudaException_CHECK_ERROR();
@@ -1211,14 +1231,16 @@ void DisplayWidget::removeFilter(int index){
     emit filterChainUpdated(getFilterOperation()->filter());
 }
 
-void DisplayWidget::drawSelection() {
+void DisplayWidget::
+        drawSelection()
+{
     drawSelectionCircle();
 
-    if (0==_mainPlayback.get())
+    if (0==_playbackCallback->sink()->expected_samples_left())
         return;
 
     // Draw playback marker
-    Signal::Playback *pb = &_mainPlayback->pb;
+    Signal::Playback* pb = dynamic_cast<Signal::Playback*>( _playbackCallback->sink().get() );
     if (!pb) return;
     if (pb->isStopped()) return;
     Signal::pBuffer b = pb->first_buffer();

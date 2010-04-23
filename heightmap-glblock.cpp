@@ -13,6 +13,7 @@
 namespace Heightmap {
 
 // Helpers based on Cuda SDK sample, ocean FFT
+// TODO check license terms of the Cuda SDK
 
 // Attach shader to a program
 void attachShader(GLuint prg, GLenum type, const char *name)

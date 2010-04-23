@@ -1,12 +1,6 @@
 #include <CudaException.h>
 #include "tfr-inversecwt.h"
 #include "wavelet.cu.h"
-/**
-  #include "transform.h"
-#include "signal-audiofile.h"
-#include <stdio.h>
-#include <string> // min/max
-  */
 
 namespace Tfr {
 

@@ -23,11 +23,6 @@ length dt.
 5 Send inverse to callback function. The callback function is responsible for
   caching and may block execution if it is fed with data too fast.
 6 Start over, overwrite the transform of the chunk furthest away from [t,t+dt).
-
-#include <boost/shared_ptr.hpp>
-#include "signal-source.h"
-#include "tfr-chunk.h"
-#include "filter.h"
   */
 class InverseCwt
 {

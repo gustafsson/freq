@@ -2,6 +2,7 @@
 #define SIGNALPLAYBACK_H
 
 #include "signal-sink.h"
+#include "signal-samplesintervaldescriptor.h"
 #include <vector>
 #include <time.h>
 #include <portaudiocpp/PortAudioCpp.hxx>
@@ -18,13 +19,17 @@ public:
     virtual void put( pBuffer );
     virtual void reset();
 
+    SamplesIntervalDescriptor getMissingSamples();
     static void list_devices();
-    unsigned playback_itr();
-    float time();
-    float outputLatency();
-    pBuffer first_buffer();
-    unsigned output_device() { return _output_device; }
-    bool isStopped();
+    unsigned    playback_itr();
+    float       time();
+    float       outputLatency();
+    pBuffer     first_buffer();
+    unsigned    output_device() { return _output_device; }
+    bool        isStopped();
+    bool        isUnderfed();
+    void        preparePlayback( unsigned firstSample, unsigned number_of_samples );
+
 private:
     struct BufferSlot {
         pBuffer buffer;
@@ -42,6 +47,7 @@ private:
 
     std::vector<BufferSlot> _cache;
     unsigned _playback_itr;
+    unsigned _first_invalid_sample;
     int _output_device;
 
     unsigned nAccumulatedSamples();

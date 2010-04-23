@@ -26,11 +26,10 @@ SOURCES += main.cpp \
     tfr-filter.cpp \
     tfr-inversecwt.cpp \
     tfr-chunk.cpp \
-    tfr-cwtcomputer.cpp \
     sawe-csv.cpp \
-    sawe-mainplayback.cpp \
     signal-filteroperation.cpp \
     signal-worker.cpp \
+    signal-writewav.cpp \
     heightmap-renderer.cpp \
     heightmap-collection.cpp \
     heightmap-reference.cpp
@@ -56,11 +55,11 @@ HEADERS += mainwindow.h \
     tfr-filter.h \
     tfr-inversecwt.h \
     tfr-chunk.h \
-    tfr-cwtcomputer.h \
     sawe-csv.h \
     sawe-mainplayback.h \
     signal-filteroperation.h \
     signal-worker.h \
+    signal-writewav.h \
     heightmap-renderer.h \
     heightmap-collection.h \
     heightmap-reference.h

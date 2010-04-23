@@ -17,13 +17,6 @@
 #include <CudaException.h>
 #include "displaywidget.h"
 
-/*
-#include <stdio.h>
-#include "heightmap-vbo.h"
-#include <list>
-#include <boost/array.hpp>
-#include <msc_stdc.h>
-  */
 namespace Heightmap {
 
 
@@ -31,7 +24,7 @@ using namespace std;
 
 static bool g_invalidFrustum = true;
 
-Renderer::Renderer( pCollection collection,DisplayWidget* _tempToRemove )
+Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
 :   draw_piano(true),
     draw_hz(false),
     _collection(collection),
@@ -41,8 +34,6 @@ Renderer::Renderer( pCollection collection,DisplayWidget* _tempToRemove )
     _mesh_height(0),
     _initialized(false),
     _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
-    _fewest_pixles_per_unit( FLT_MAX ),
-    _fewest_pixles_per_unit_ref(collection->findReference( Position(),  Position())),
     _drawn_blocks(0)
 {
 }
@@ -337,7 +328,7 @@ void Renderer::endVboRendering() {
     glUseProgram(0);
 }
 
-bool Renderer::renderSpectrogramRef( Reference ref, bool* finished_ref )
+bool Renderer::renderSpectrogramRef( Reference ref )
 {
     if (!ref.containsSpectrogram())
         return false;
@@ -351,7 +342,7 @@ bool Renderer::renderSpectrogramRef( Reference ref, bool* finished_ref )
     glTranslatef(a.time, 0, a.scale);
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
-    pBlock block = _collection->getBlock( ref, finished_ref );
+    pBlock block = _collection->getBlock( ref );
     if (0!=block.get()) {
         if (0 /* direct rendering */ )
             block->glblock->draw_directMode();
@@ -413,20 +404,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         renderChildrenSpectrogramRef( ref.right() );
     }
     else {
-        bool finished_ref=true;
-        bool* finished_ptr = 0;
-        float pixels_per_unit = timePixels*pow(2.,ref.log2_samples_size[0])
-                              + scalePixels*pow(2.,ref.log2_samples_size[1]);
-
-        if (pixels_per_unit < _fewest_pixles_per_unit)
-        {
-            finished_ptr = &finished_ref;
-        }
-
-        if (renderSpectrogramRef( ref, finished_ptr )) if (!finished_ref) {
-            _fewest_pixles_per_unit = pixels_per_unit;
-            _fewest_pixles_per_unit_ref = ref;
-        }
+        renderSpectrogramRef( ref );
     }
 
     return true;
@@ -753,8 +731,7 @@ void Renderer::drawAxes()
 
     // 2 clip entire sound to frustum
     std::vector<GLvector> clippedFrustum;
-    // TODO use displaywidget::worker::source()
-    float T = _tempToRemove->_worker->source()->length();
+    float T = _collection->worker->source()->length();
     GLvector closest_i;
     {
         GLvector corner[4]=
@@ -819,8 +796,8 @@ void Renderer::drawAxes()
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    float min_hz = _tempToRemove->getFilterOperation()->cwt.min_hz();
-    float max_hz = _tempToRemove->getFilterOperation()->cwt.max_hz( _tempToRemove->_worker->source()->sample_rate() );
+    float min_hz = Tfr::CwtSingleton::instance()->min_hz();
+    float max_hz = Tfr::CwtSingleton::instance()->max_hz( _collection->worker->source()->sample_rate() );
     float steplogsize = log(max_hz) - log(min_hz);
     //float steplogsize = log(max_hz-min_hz);
     // loop along all sides

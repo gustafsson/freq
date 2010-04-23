@@ -4,7 +4,6 @@
 #include <QtGui/QMainWindow>
 #include <QtGui/QListWidgetItem>
 #include "displaywidget.h"
-//#include "heightmap-renderer.h"
 #include "tfr-filter.h"
 
 #ifdef Q_WS_MAC

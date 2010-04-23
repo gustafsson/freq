@@ -6,6 +6,11 @@
 
 namespace Signal {
 
+/**
+A Signal::Operation is a Signal::Source which reads data from another 
+Signal::Source and performs some operation on that data before returning it to
+the caller.
+ */
 class Operation: public Source
 {
 public:
@@ -18,6 +23,8 @@ public:
     virtual pSource source() const { return _source; }
 
     virtual SamplesIntervalDescriptor updateInvalidSamples();
+
+    static pSource first_source(pSource start);
 
 protected:
     SamplesIntervalDescriptor _invalid_samples;

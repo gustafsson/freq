@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include "heightmap-collection.h"
+//TODO check necessity by compiling in windows
 //#ifdef _MSC_VER
 //#include <windows.h>
 //#endif
@@ -20,9 +21,9 @@ namespace Heightmap {
 class Renderer
 {
 public:
-    Renderer( pCollection collection, DisplayWidget* _tempToRemove );
+    Renderer( Collection* collection, DisplayWidget* _tempToRemove );
 
-    pCollection collection() { return _collection; }
+    Collection* collection() { return _collection; }
 
     void draw();
     void drawAxes();
@@ -30,7 +31,7 @@ public:
     bool draw_piano;
     bool draw_hz;
 private:
-    pCollection _collection;
+    Collection* _collection;
     DisplayWidget* _tempToRemove;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
@@ -39,9 +40,6 @@ private:
     GLuint _shader_prog;
     bool _initialized;
     float _redundancy;
-
-    float _fewest_pixles_per_unit;
-    Reference _fewest_pixles_per_unit_ref;
 
     unsigned _drawn_blocks;
 
@@ -55,7 +53,7 @@ private:
     void beginVboRendering();
     void endVboRendering();
 
-    bool renderSpectrogramRef( Reference ref, bool* finished_ref );
+    bool renderSpectrogramRef( Reference ref );
     bool renderChildrenSpectrogramRef( Reference ref );
     void renderParentSpectrogramRef( Reference ref );
     bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );

@@ -3,10 +3,15 @@
 
 #include "signal-sink.h"
 #include "signal-samplesintervaldescriptor.h"
-
+#include <boost/noncopyable.hpp>
 #include <QMutex>
 
 namespace Signal {
+
+/**
+WorkerCallback is a Signal::Put that registers itself as a worker callback for an instance of the worker class.
+*/
+class WorkerCallback; // Implementation below.
 
 /**
 Signal::Worker is a queue of ranges, that might be worked off by one or
@@ -96,11 +101,6 @@ underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
-
-class WorkerCallback;
-
-/**
-*/
 class Worker
 {
 public:
@@ -150,21 +150,22 @@ private:
     /**
       A ChunkCompleteCallback adds itself to a cwtqueue.
       */
-    void addCallback( WorkerCallback* c );
+    void addCallback( Sink* c );
 
     /**
       A ChunkCompleteCallback removes itself from a cwtqueue.
       */
-    void removeCallback( WorkerCallback* c );
+    void removeCallback( Sink* c );
 
     /**
       Self explanatory.
       */
     void callCallbacks( pBuffer );
+
     /**
       All callbacks in this list are called once for each call of workOne().
       */
-    std::list<WorkerCallback*> _callbacks;
+    std::list<Sink*> _callbacks; // TODO use pSink
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
@@ -194,16 +195,24 @@ typedef boost::shared_ptr<Worker> pWorker;
 /**
    @see Worker
   */
-class WorkerCallback: virtual public Signal::Sink {
+class WorkerCallback: boost::noncopyable {
 public:
-    WorkerCallback( Worker* p ) :_q(p) { BOOST_ASSERT(p); _q->addCallback( this ); }
-    ~WorkerCallback( ) { _q->removeCallback( this ); }
+    WorkerCallback( pWorker w, pSink s )
+        :   _w(w),
+            _s(s)
+    {
+        _w->addCallback( _s.get() );
+    }
+    ~WorkerCallback( ) { _w->removeCallback( _s.get() ); }
 
-    Worker* worker() { return _q; }
+    pWorker worker() { return _w; }
+    pSink sink() { return _s; }
 
 private:
-    Worker* _q;
+    pWorker _w;
+    pSink _s;
 };
+typedef boost::shared_ptr<WorkerCallback> pWorkerCallback;
 
 } // namespace Signal
 

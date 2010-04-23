@@ -13,10 +13,6 @@
 #include <TaskTimer.h>
 #include <mappedvbo.h>
 
-/*typedef boost::shared_ptr<class SpectrogramVbo> pSpectrogramVbo;
-typedef boost::shared_ptr<class SpectrogramRenderer> pSpectrogramRenderer;
-typedef boost::shared_ptr<class Spectrogram> pSpectrogram;
-*/
 
 namespace Heightmap {
 
@@ -52,3 +48,4 @@ typedef boost::shared_ptr<GlBlock> pGlBlock;
 } // namespace Heightmap
 
 #endif // HEIGHTMAPVBO_H
+

@@ -71,17 +71,6 @@ Spectogram. For altering the output refer to transform-inverse.h.
 The term scaleogram is not used in the source code, in favor of spectrogram.
 */
 
-
-/*
-#include <list>
-#include <set>
-#include <boost/shared_ptr.hpp>
-#include <tvector.h>
-#include <vector>
-#include "transform.h"
-#include "position.h"
-#include "signal-worker.h"
-  */
 namespace Heightmap {
 
 class Block {
@@ -111,12 +100,12 @@ typedef boost::shared_ptr<Block> pBlock;
 
 
 /**
-  put is used to insert information into this collection.
+  Signal::Sink::put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection: public Signal::WorkerCallback {
+class Collection: public Signal::Sink {
 public:
-    Collection( Signal::Worker* worker );
+    Collection(Signal::pWorker worker);
 
 
     // WorkerCallback: Implementations of virtual methods
@@ -129,12 +118,12 @@ public:
     /**
       @see put( pBuffer, pSource );
       */
-    virtual void put( Signal::pBuffer b) { put(b, Signal::pSource()); }
+    virtual void put( Signal::pBuffer b) { put(b, 0); }
 
     /**
       Computes the Cwt and updates the cache of blocks.
       */
-    virtual void put( Signal::pBuffer, Signal::pSource );
+    virtual void put( Signal::pBuffer, Signal::Source* );
 
 
     /**
@@ -147,22 +136,6 @@ public:
     void        samples_per_block(unsigned v);
 
     /**
-      If a fast source is provided collection will use this source to when allocating
-      new new blocks. A Buffer over the entire block will be fetched and the initial
-      value of the block will be computed by a fast windowed fourier transform.
-
-      This source could for instance be the original source without any operations
-      applied to it.
-
-      TODO: walk through the worker source instead and look for a cache source and
-          query its InvalidSampleDescriptor to make sure that the required samples
-          are readily available. Otherwise, continue down and look for another cache
-          or a source that is not an operation. I.e an original source such as
-          MicrophoneRecroder or Audiofile, these sources are fast.
-      */
-    Signal::pSource fast_source() { return _fast_source; }
-    void            fast_source( Signal::pSource v ) { _fast_source = v; }
-    /**
       getBlock increases a counter for each block that hasn't been computed yet.
       */
     unsigned    read_unfinished_count();
@@ -173,7 +146,6 @@ public:
       */
     Position min_sample_size();
     Position max_sample_size();
-
 
     /**
       Returns a Reference for a block containing 'p' in which a block element
@@ -187,20 +159,21 @@ public:
       This method is used by Heightmap::Renderer to get the heightmap data of
       blocks that has been decided for rendering.
       */
-    pBlock      getBlock( Reference ref, bool* finished_block=0 );
+    pBlock      getBlock( Reference ref );
 
 
     void        gc();
 
     virtual void updateInvalidSamples( Signal::SamplesIntervalDescriptor );
+    Signal::SamplesIntervalDescriptor getMissingSamples();
+
+    Signal::pWorker     worker;
 private:
     unsigned
         _samples_per_block,
         _scales_per_block,
         _unfinished_count,
         _frame_counter; // TODO shouldn't need _frame_counter
-
-    Signal::pSource _fast_source;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.
@@ -238,7 +211,6 @@ private:
       */
     void        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
 };
-typedef boost::shared_ptr<Collection> pCollection;
 
 } // namespace Heightmap
 

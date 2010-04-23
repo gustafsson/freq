@@ -3,14 +3,16 @@
 
 namespace Heightmap {
 
-bool Reference::operator==(const Reference &b) const
+bool Reference::
+        operator==(const Reference &b) const
 {
     return log2_samples_size == b.log2_samples_size
             && block_index == b.block_index
             && _collection == b._collection;
 }
 
-void Reference::getArea( Position &a, Position &b) const
+void Reference::
+        getArea( Position &a, Position &b) const
 {
     Position blockSize( _collection->samples_per_block() * pow(2,log2_samples_size[0]),
                         _collection->scales_per_block() * pow(2,log2_samples_size[1]));
@@ -21,25 +23,33 @@ void Reference::getArea( Position &a, Position &b) const
 }
 
 /* child references */
-Reference Reference::left() {
+Reference Reference::
+        left()
+{
     Reference r = *this;
     r.log2_samples_size[0]--;
     r.block_index[0]<<=1;
     return r;
 }
-Reference Reference::right() {
+Reference Reference::
+        right()
+{
     Reference r = *this;
     r.log2_samples_size[0]--;
     (r.block_index[0]<<=1)++;
     return r;
 }
-Reference Reference::top() {
+Reference Reference::
+        top()
+{
     Reference r = *this;
     r.log2_samples_size[1]--;
     r.block_index[1]<<=1;
     return r;
 }
-Reference Reference::bottom() {
+Reference Reference::
+        bottom()
+{
     Reference r = *this;
     r.log2_samples_size[1]--;
     (r.block_index[1]<<=1)++;
@@ -47,17 +57,23 @@ Reference Reference::bottom() {
 }
 
 /* sibblings, 3 other references who share the same parent */
-Reference Reference::sibbling1() {
+Reference Reference::
+        sibbling1()
+{
     Reference r = *this;
     r.block_index[0]^=1;
     return r;
 }
-Reference Reference::sibbling2() {
+Reference Reference::
+        sibbling2()
+{
     Reference r = *this;
     r.block_index[1]^=1;
     return r;
 }
-Reference Reference::sibbling3() {
+Reference Reference::
+        sibbling3()
+{
     Reference r = *this;
     r.block_index[0]^=1;
     r.block_index[1]^=1;
@@ -75,12 +91,12 @@ Reference Reference::parent() {
 }
 
 Reference::
-Reference(Collection *collection)
+        Reference(Collection *collection)
 :   _collection(collection)
 {}
 
 bool Reference::
-containsSpectrogram() const
+        containsSpectrogram() const
 {
     Position a, b;
     getArea( a, b );
@@ -93,7 +109,7 @@ containsSpectrogram() const
     if (b.scale-a.scale < _collection->min_sample_size().scale*_collection->scales_per_block() )
         return false;
 
-    Signal::pSource wf = _collection->worker()->source();
+    Signal::pSource wf = _collection->worker->source();
     if (a.time >= wf->length() )
         return false;
 
@@ -104,29 +120,30 @@ containsSpectrogram() const
 }
 
 bool Reference::
-toLarge() const
+        toLarge() const
 {
     Position a, b;
     getArea( a, b );
-    Signal::pSource wf = _collection->worker()->source();
+    Signal::pSource wf = _collection->worker->source();
     if (b.time > 2 * wf->length() && b.scale > 2 )
         return true;
     return false;
 }
 
 unsigned Reference::
-samplesPerBlock() const
+        samplesPerBlock() const
 {
     return _collection->samples_per_block();
 }
 
-Signal::SamplesIntervalDescriptor Reference::
-getInterval()
+Signal::SamplesIntervalDescriptor::Interval Reference::
+        getInterval()
 {
     Position a,b;
     getArea(a,b);
-    unsigned FS = _collection->worker()->source()->sample_rate();
-    return Signal::SamplesIntervalDescriptor( a.time * FS, b.time*FS );
+    unsigned FS = _collection->worker->source()->sample_rate();
+    Signal::SamplesIntervalDescriptor::Interval i = { a.time * FS, b.time*FS };
+    return i;
 }
 
 } // namespace Heightmap

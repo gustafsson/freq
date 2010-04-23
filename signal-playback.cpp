@@ -7,8 +7,10 @@ using namespace std;
 
 namespace Signal {
 
-Playback::Playback( int outputDevice )
+Playback::
+        Playback( int outputDevice )
 :   _playback_itr(0),
+    _first_invalid_sample( 0 ),
     _output_device(0)
 {
     portaudio::AutoSystem autoSys;
@@ -31,7 +33,8 @@ Playback::Playback( int outputDevice )
     //first = false;
 }
 
-Playback::~Playback()
+Playback::
+        ~Playback()
 {
     cout << "Clearing Playback" << endl;
     if (streamPlayback) {
@@ -41,7 +44,7 @@ Playback::~Playback()
 }
 
 /*static*/ void Playback::
-list_devices()
+        list_devices()
 {
     portaudio::AutoSystem autoSys;
     portaudio::System &sys = portaudio::System::instance();
@@ -72,28 +75,31 @@ list_devices()
 }
 
 unsigned Playback::
-    playback_itr()
+        playback_itr()
 {
     return _playback_itr;
 }
 
 float Playback::
-    time()
+        time()
 {
     return streamPlayback?streamPlayback->time():0;
 }
 
 float Playback::
-    outputLatency()
+        outputLatency()
 {
     return streamPlayback?streamPlayback->outputLatency():0;
 }
 
-void Playback::put( pBuffer buffer )
+void Playback::
+        put( pBuffer buffer )
 {
     if (!_cache.empty()) if (_cache[0].buffer->sample_rate != buffer->sample_rate) {
         throw std::logic_error(std::string(__FUNCTION__) + " sample rate is different from previous sample rate" );
     }
+
+    _first_invalid_sample = buffer->sample_offset + buffer->number_of_samples();
 
     BufferSlot slot = { buffer, clock() };
 
@@ -108,18 +114,7 @@ void Playback::put( pBuffer buffer )
         return;
     }
 
-    // estimate speed of input, in samples per second
-    unsigned nAccumulated_samples = nAccumulatedSamples();
-
     _cache.push_back( slot );
-
-    clock_t first = _cache.front().timestamp;
-    clock_t last = _cache.back().timestamp;
-
-    float accumulation_time = (last-first) / (float)CLOCKS_PER_SEC;
-    float incoming_samples_per_sec = nAccumulated_samples / accumulation_time;
-    float time_left = (nAccumulated_samples - _playback_itr + expected_samples_left()) / (float)buffer->sample_rate;
-    float estimated_time_required = expected_samples_left() / incoming_samples_per_sec;
 
     unsigned x = expected_samples_left();
     if (x < buffer->number_of_samples() )
@@ -128,8 +123,10 @@ void Playback::put( pBuffer buffer )
         x -= buffer->number_of_samples();
     expected_samples_left( x );
 
-    if (x == 0 || time_left < estimated_time_required )
-    {
+    if (isUnderfed() ) {
+        //  Wait for more data
+
+    } else {
         // start playing
         portaudio::System &sys = portaudio::System::instance();
 
@@ -156,22 +153,34 @@ void Playback::put( pBuffer buffer )
                 *this,
                 &Signal::Playback::readBuffer) );
 
-        if (streamPlayback) streamPlayback->start();
-    } else {
-        //  Wait for more data
+        if (streamPlayback)
+            streamPlayback->start();
     }
 }
 
 void Playback::
-    reset()
+        reset()
 {
     if (streamPlayback) if (!streamPlayback->isStopped()) streamPlayback->stop();
     _cache.clear();
     _playback_itr = 0;
+    expected_samples_left(0);
+}
+
+SamplesIntervalDescriptor Playback::
+        getMissingSamples()
+{
+    if (0 == expected_samples_left())
+        return SamplesIntervalDescriptor();
+
+    return SamplesIntervalDescriptor(
+            _first_invalid_sample,
+            _first_invalid_sample + expected_samples_left()
+            );
 }
 
 unsigned Playback::
-    nAccumulatedSamples()
+        nAccumulatedSamples()
 {
     // count previous samples
     unsigned nAccumulated_samples = 0;
@@ -182,7 +191,7 @@ unsigned Playback::
 }
 
 pBuffer Playback::
-    first_buffer()
+        first_buffer()
 {
     if (_cache.empty())
         return pBuffer();
@@ -190,17 +199,49 @@ pBuffer Playback::
 }
 
 bool Playback::
-    isStopped()
+        isStopped()
 {
     return streamPlayback?!streamPlayback->isActive() || streamPlayback->isStopped():true;
 }
 
+bool Playback::
+        isUnderfed()
+{
+    if (1>=_cache.size())
+        return true;
+
+    unsigned nAccumulated_samples = nAccumulatedSamples();
+
+    clock_t first = _cache.front().timestamp;
+    clock_t last = _cache.back().timestamp;
+
+
+    float accumulation_time = (last-first) / (float)CLOCKS_PER_SEC;
+    float incoming_samples_per_sec = (nAccumulated_samples - _cache.front().buffer->number_of_samples()) / accumulation_time;
+    float time_left = (nAccumulated_samples - _playback_itr + expected_samples_left()) / (float)_cache[0].buffer->sample_rate;
+    float estimated_time_required = expected_samples_left() / incoming_samples_per_sec;
+
+    if (expected_samples_left() == 0 || time_left < estimated_time_required )
+    {
+        return false; // not underfed, ok to start playing
+    }
+
+    return true; // underfed, don't start playing
+}
+
+void Playback::
+        preparePlayback( unsigned firstSample, unsigned number_of_samples )
+{
+    _first_invalid_sample = firstSample;
+    expected_samples_left( number_of_samples );
+}
+
 int Playback::
         readBuffer(const void */*inputBuffer*/,
-                 void *outputBuffer,
-                 unsigned long framesPerBuffer,
-                 const PaStreamCallbackTimeInfo */*timeInfo*/,
-                 PaStreamCallbackFlags /*statusFlags*/)
+             void *outputBuffer,
+             unsigned long framesPerBuffer,
+             const PaStreamCallbackTimeInfo */*timeInfo*/,
+             PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( outputBuffer );
     float **out = static_cast<float **>(outputBuffer);

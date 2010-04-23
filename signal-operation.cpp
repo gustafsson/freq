@@ -31,4 +31,13 @@ updateInvalidSamples()
     return _invalid_samples;
 }
 
+pSource Operation::first_source(pSource start)
+{
+    Operation* o = dynamic_cast<Operation*>(start.get());
+    if (o)
+        return first_source(o->source());
+
+    return start;
+}
+
 } // namespace Signal

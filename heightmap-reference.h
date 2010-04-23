@@ -40,7 +40,7 @@ public:
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
       invalid samples.
       */
-    Signal::SamplesIntervalDescriptor getInterval();
+    Signal::SamplesIntervalDescriptor::Interval getInterval();
 private:
     friend class Collection;
 

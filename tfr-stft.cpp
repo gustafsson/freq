@@ -104,15 +104,19 @@ operator() (Signal::pBuffer b)
 
     // Transform signal
     cufftHandle fft_many;
-    cufftSafeCall(cufftPlan1d(&fft_many, chunk_size, CUFFT_C2C, b->number_of_samples()/chunk_size));
+    unsigned count = b->number_of_samples();
+    count/=chunk_size;
+    if (0<count) {
+        cufftSafeCall(cufftPlan1d(&fft_many, chunk_size, CUFFT_C2C, count));
 
-    cufftSafeCall(cufftSetStream(fft_many, stream));
-    cufftSafeCall(cufftExecC2C(fft_many, d, d, CUFFT_FORWARD));
-    cufftDestroy(fft_many);
+        cufftSafeCall(cufftSetStream(fft_many, stream));
+        cufftSafeCall(cufftExecC2C(fft_many, d, d, CUFFT_FORWARD));
+        cufftDestroy(fft_many);
+    }
 
     // Clean leftovers with 0
     if (b->number_of_samples() % chunk_size != 0) {
-        cudaMemset( d + (b->number_of_samples() / chunk_size), 0, b->number_of_samples() % chunk_size );
+        cudaMemset( d + ((b->number_of_samples() / chunk_size)*chunk_size), 0, b->number_of_samples() % chunk_size );
     }
 
     return b;

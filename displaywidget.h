@@ -41,11 +41,11 @@ struct MyVector{
     float x, y, z;
 };
 
-class DisplayWidget : public QGLWidget, public Signal::Sink
+class DisplayWidget : public QGLWidget, public Signal::Sink /* sink is used as microphone callback */
 {
     Q_OBJECT
 public:
-    DisplayWidget( Heightmap::pCollection collection, int timerInterval=0  );
+    DisplayWidget( Signal::pWorker worker, Signal::pSink collection, unsigned playback_device, int timerInterval=0  );
     ~DisplayWidget();
     int lastKey;
     static DisplayWidget* gDisplayWidget;
@@ -104,8 +104,10 @@ private:
 
     Heightmap::pRenderer _renderer;
     Signal::pWorker _worker;
-    Sawe::pMainPlayback _mainPlayback;
-    
+    Signal::pWorkerCallback _collectionCallback;
+    Signal::pWorkerCallback _playbackCallback;
+    Signal::pWorkerCallback _diskwriterCallback;
+
     struct ListCounter {
         GLuint displayList;
         enum Age {

@@ -1,6 +1,7 @@
 #include "signal-samplesintervaldescriptor.h"
 #include <stdexcept>
 #include <boost/foreach.hpp>
+#include <boost/assert.hpp>
 #include <cfloat>
 
 namespace Signal {
@@ -21,13 +22,21 @@ operator|=(const Interval& r)
 }
 
 SamplesIntervalDescriptor::
-SamplesIntervalDescriptor()
+        SamplesIntervalDescriptor()
 {
 }
 
 SamplesIntervalDescriptor::
-SamplesIntervalDescriptor(unsigned first, unsigned last)
+        SamplesIntervalDescriptor(Interval r)
 {
+    BOOST_ASSERT( r.first < r.last );
+    _intervals.push_back( r );
+}
+
+SamplesIntervalDescriptor::
+        SamplesIntervalDescriptor(unsigned first, unsigned last)
+{
+    BOOST_ASSERT( first < last );
     Interval r = { first, last };
     _intervals.push_back( r );
 }
