@@ -1,8 +1,10 @@
-#ifndef SPECTROGRAMSLOPE_CU_H
-#define SPECTROGRAMSLOPE_CU_H
+#ifndef HEIGHTMAPSLOPE_CU_H
+#define HEIGHTMAPSLOPE_CU_H
+
+#include <vector_types.h>
 
 extern "C"
 void cudaCalculateSlopeKernel(  float* h, float2 *slopeOut,
                                 unsigned int width, unsigned int height, unsigned cuda_stream);
 
-#endif // SPECTROGRAMSLOPE_CU_H
+#endif // HEIGHTMAPSLOPE_CU_H

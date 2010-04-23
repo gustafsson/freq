@@ -2,25 +2,34 @@
 #define SIGNALOPERATION_H
 
 #include "signal-source.h"
-#include "signal-invalidsamplesdescriptor.h"
+#include "signal-samplesintervaldescriptor.h"
 
 namespace Signal {
 
+/**
+A Signal::Operation is a Signal::Source which reads data from another 
+Signal::Source and performs some operation on that data before returning it to
+the caller.
+ */
 class Operation: public Source
 {
 public:
-    Operation( boost::shared_ptr<class Operation> child );
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
-    virtual unsigned sample_rate() const;
-    virtual unsigned number_of_samples() const;
+    Operation( pSource source );
 
-    virtual InvalidSamplesDescriptor updateIsd();
+    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
+
+    virtual unsigned sample_rate();
+    virtual unsigned number_of_samples();
+    virtual pSource source() const { return _source; }
+
+    virtual SamplesIntervalDescriptor updateInvalidSamples();
+
+    static pSource first_source(pSource start);
 
 protected:
-    InvalidSamplesDescriptor _isd;
-    boost::shared_ptr<class Operation> _child;
+    SamplesIntervalDescriptor _invalid_samples;
+    pSource _source;
 };
-typedef boost::shared_ptr<class Operation> pOperation;
 
 } // namespace Signal
 

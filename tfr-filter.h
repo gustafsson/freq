@@ -1,37 +1,36 @@
-#ifndef FILTER_H
-#define FILTER_H
+#ifndef TFRFILTER_H
+#define TFRFILTER_H
+
+#include "selection.h"
+#include "signal-samplesintervaldescriptor.h"
 
 #include <list>
 #include <boost/shared_ptr.hpp>
-#include "selection.h"
-#include "signal-source.h"
 
-class Transform_chunk;
-class Transform;
+
+namespace Tfr {
+class Chunk;
 
 class Filter
 {
 public:
-		Filter():enabled(true){}
+    Filter();
     virtual ~Filter() {}
-	  
-    virtual bool operator()( Transform_chunk& ) = 0;
+
+    virtual bool operator()( Chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;
 
-    virtual void invalidateWaveform( const Transform&, Signal::Buffer& );
-    
+    virtual Signal::SamplesIntervalDescriptor coveredSamples( unsigned FS );
+
     bool enabled;
 };
-
-typedef boost::shared_ptr<class Filter> pFilter;
+typedef boost::shared_ptr<Filter> pFilter;
 
 class FilterChain: public Filter, public std::list<pFilter>
 {
-public:    
-    virtual bool operator()( Transform_chunk& );
+public:
+    virtual bool operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
-
-    virtual void invalidateWaveform( const Transform&, Signal::Buffer& );
 };
 
 class SelectionFilter: public Filter
@@ -39,27 +38,26 @@ class SelectionFilter: public Filter
 public:
     SelectionFilter( Selection s );
 
-    virtual bool operator()( Transform_chunk& );
+    virtual bool operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
 
-	  Selection s;
+    Selection s;
 
 private:
-		SelectionFilter& operator=(const SelectionFilter& );
-		SelectionFilter(const SelectionFilter& );
+    SelectionFilter& operator=(const SelectionFilter& );
+    SelectionFilter(const SelectionFilter& );
 };
 
 class EllipsFilter: public Filter
 {
 public:
-    static const int ellips_filter = 1;
     EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    virtual bool operator()( Transform_chunk& );
+    virtual bool operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
 
     float _t1, _f1, _t2, _f2;
-    
+
 private:
     bool _save_inside;
 };
@@ -67,17 +65,17 @@ private:
 class SquareFilter: public Filter
 {
 public:
-    static const int square_filter = 2;
-    
     SquareFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    virtual bool operator()( Transform_chunk& );
+    virtual bool operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
-    
+
     float _t1, _f1, _t2, _f2;
-    
+
 private:
     bool _save_inside;
 };
 
-#endif // FILTER_H
+} // namespace Tfr
+
+#endif // TFRFILTER_H

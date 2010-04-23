@@ -13,63 +13,76 @@ TARGET = sonicawe
 SOURCES += main.cpp \
     mainwindow.cpp \
     displaywidget.cpp \
-    spectrogram.cpp \
-    transform-inverse.cpp \
-    filter.cpp \
-    transform-chunk.cpp \
-    transform.cpp \
-    spectrogram-vbo.cpp \
-    spectrogram-renderer.cpp \
+    heightmap-glblock.cpp \
     selection.cpp \
     signal-source.cpp \
     signal-audiofile.cpp \
     signal-microphonerecorder.cpp \
     signal-operation.cpp \
-    signal-invalidsamplesdescriptor.cpp \
+    signal-samplesintervaldescriptor.cpp \
     signal-sink.cpp \
     signal-playback.cpp \
-    layer.cpp
+    layer.cpp \
+    tfr-stft.cpp \
+    tfr-cwt.cpp \
+    tfr-filter.cpp \
+    tfr-inversecwt.cpp \
+    tfr-chunk.cpp \
+    sawe-csv.cpp \
+    signal-filteroperation.cpp \
+    signal-worker.cpp \
+    signal-writewav.cpp \
+    heightmap-renderer.cpp \
+    heightmap-collection.cpp \
+    heightmap-reference.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
-    spectrogram.h \
-    transform-inverse.h \
-    filter.h \
-    transform-chunk.h \
-    transform.h \
     wavelet.cu.h \
-    spectrogram-vbo.h \
-    spectrogram-renderer.h \
-    spectrogram-slope.cu.h \
-    spectrogram-block.cu.h \
+    heightmap-glblock.h \
+    heightmap-slope.cu.h \
+    heightmap-block.cu.h \
     filter.cu.h \
     selection.h \
-    position.h \
+    heightmap-position.h \
     signal-source.h \
     signal-audiofile.h \
     signal-microphonerecorder.h \
     signal-operation.h \
-    signal-invalidsamplesdescriptor.h \
+    signal-samplesintervaldescriptor.h \
     signal-playback.h \
     signal-sink.h \
-    layer.h
+    layer.h \
+    tfr-stft.h \
+    tfr-cwt.h \
+    tfr-filter.h \
+    tfr-inversecwt.h \
+    tfr-chunk.h \
+    sawe-csv.h \
+    sawe-mainplayback.h \
+    signal-filteroperation.h \
+    signal-worker.h \
+    signal-writewav.h \
+    heightmap-renderer.h \
+    heightmap-collection.h \
+    heightmap-reference.h
 FORMS += mainwindow.ui
 OTHER_FILES += wavelet.cu \
-    spectrogram.frag \
-    spectrogram.vert \
-    spectrogram-slope.cu \
-    spectrogram-block.cu \
+    heightmap.frag \
+    heightmap.vert \
+    heightmap-slope.cu \
+    heightmap-block.cu \
     filter.cu
 CUDA_SOURCES += wavelet.cu \
-    spectrogram-slope.cu \
-    spectrogram-block.cu \
+    heightmap-slope.cu \
+    heightmap-block.cu \
     filter.cu
-OTHER_SOURCES += spectrogram.frag \
-    spectrogram.vert \
+OTHER_SOURCES += heightmap.frag \
+    heightmap.vert \
     sonicawe.pro
-win32 {
-	othersources.input = OTHER_SOURCES
-	othersources.output = ${QMAKE_FILE_NAME}
-	QMAKE_EXTRA_UNIX_COMPILERS += othersources
+win32 { 
+    othersources.input = OTHER_SOURCES
+    othersources.output = ${QMAKE_FILE_NAME}
+    QMAKE_EXTRA_UNIX_COMPILERS += othersources
 }
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 INCLUDEPATH += ../gpumisc

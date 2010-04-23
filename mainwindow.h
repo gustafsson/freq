@@ -4,7 +4,7 @@
 #include <QtGui/QMainWindow>
 #include <QtGui/QListWidgetItem>
 #include "displaywidget.h"
-#include "spectrogram-renderer.h"
+#include "tfr-filter.h"
 
 #ifdef Q_WS_MAC
 void qt_mac_set_menubar_icons(bool enable);
@@ -30,7 +30,7 @@ protected:
     virtual void keyReleaseEvent ( QKeyEvent * e );
 
 public slots:
-    void updateLayerList(pTransform t);
+    void updateLayerList( Tfr::pFilter f );
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);

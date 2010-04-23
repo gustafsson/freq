@@ -4,13 +4,16 @@
 #ifndef __APPLE__
   #include <GL/glew.h>
 #endif
-#include "spectrogram-vbo.h"
+#include <vbo.h>
 #include <stdio.h>
-#include "spectrogram.h"
-#include "spectrogram-renderer.h"
+#include "heightmap-collection.h"
+#include "heightmap-renderer.h"
 #include <QResource>
 
-// Helpers from Cuda SDK sample, ocean FFT
+namespace Heightmap {
+
+// Helpers based on Cuda SDK sample, ocean FFT
+// TODO check license terms of the Cuda SDK
 
 // Attach shader to a program
 void attachShader(GLuint prg, GLenum type, const char *name)
@@ -23,18 +26,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         char * src;
 
         shader = glCreateShader(type);
-/*        fp = fopen(name, "rb");
-        if (!fp)
-            throw std::ios::failure(std::string("Couldn't open shader file ") + name);
 
-        fseek(fp, 0, SEEK_END);
-        size = ftell(fp);
-        src = (char*)malloc(size);
-
-        fseek(fp, 0, SEEK_SET);
-        size = fread(src, sizeof(char), size, fp);
-        fclose(fp);
-        */
         QResource qr(name);
         if (!qr.isValid())
             throw std::ios::failure(std::string("Couldn't find shader resource ") + name);
@@ -105,55 +97,45 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
     return program;
 }
 
-
-Vbo::Vbo(size_t size)
-:   _sz(size),
-    _vbo(0)
-{
-    // create buffer object
-    glGenBuffers(1, &_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-    glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-Vbo::~Vbo()
-{
-    if (_vbo)
-        glDeleteBuffers(1, &_vbo);
-}
-
-
-SpectrogramVbo::SpectrogramVbo( Spectrogram* spectrogram )
-:   _spectrogram( spectrogram ),
-    _height( new Vbo(spectrogram->samples_per_block()*spectrogram->scales_per_block()*sizeof(float)) ),
-    _slope( new Vbo(spectrogram->samples_per_block()*spectrogram->scales_per_block()*sizeof(float2)) )
+GlBlock::
+GlBlock( Collection* collection )
+:   _collection( collection ),
+    _height( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float)) ),
+    _slope( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float2)) )
 {
     //_renderer->setSize(renderer->spectrogram()->samples_per_block(), renderer->spectrogram()->scales_per_block());
     cudaGLRegisterBufferObject(*_height);
     cudaGLRegisterBufferObject(*_slope);
 }
 
-SpectrogramVbo::~SpectrogramVbo() {
+GlBlock::
+~GlBlock()
+{
     cudaGLUnregisterBufferObject(*_height);
     cudaGLUnregisterBufferObject(*_slope);
 }
 
-SpectrogramVbo::pHeight SpectrogramVbo::height() {
+GlBlock::pHeight GlBlock::
+height()
+{
     if (_mapped_height) return _mapped_height;
     return _mapped_height = pHeight(new MappedVbo<float>(_height, make_cudaExtent(
-            _spectrogram->samples_per_block(),
-            _spectrogram->scales_per_block(), 1)));
+            _collection->samples_per_block(),
+            _collection->scales_per_block(), 1)));
 }
 
-SpectrogramVbo::pSlope SpectrogramVbo::slope() {
+GlBlock::pSlope GlBlock::
+slope()
+{
     if (_mapped_slope) return _mapped_slope;
     return _mapped_slope = pSlope(new MappedVbo<float2>(_slope, make_cudaExtent(
-            _spectrogram->samples_per_block(),
-            _spectrogram->scales_per_block(), 1)));
+            _collection->samples_per_block(),
+            _collection->scales_per_block(), 1)));
 }
 
-void SpectrogramVbo::unmap() {
+void GlBlock::
+unmap()
+{
     if (_mapped_height) {
         TaskTimer tt(TaskTimer::LogVerbose, "Heightmap Cuda->OpenGL");
         _mapped_height.reset();
@@ -164,9 +146,11 @@ void SpectrogramVbo::unmap() {
     }
 }
 
-void SpectrogramVbo::draw() {
-    unsigned meshW = _spectrogram->samples_per_block();
-    unsigned meshH = _spectrogram->scales_per_block();
+void GlBlock::
+draw()
+{
+    unsigned meshW = _collection->samples_per_block();
+    unsigned meshH = _collection->scales_per_block();
 
     unmap();
 
@@ -239,7 +223,8 @@ void setWavelengthColor( float wavelengthScalar ) {
     glColor3fv( rgb );
 }
 
-void SpectrogramVbo::draw_directMode( )
+void GlBlock::
+draw_directMode( )
 {
     pHeight block = height();
     cudaExtent n = block->data->getNumberOfElements();
@@ -280,3 +265,5 @@ void SpectrogramVbo::draw_directMode( )
     }
     glDisable(GL_NORMALIZE);
 }
+
+} // namespace Heightmap

@@ -5,6 +5,7 @@
 #include <boost/foreach.hpp>
 #include <sstream>
 #include <iomanip>
+#include "tfr-filter.h"
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -86,7 +87,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::connectLayerWindow(DisplayWidget *d)
 {
-    connect(d, SIGNAL(filterChainUpdated(pTransform)), this, SLOT(updateLayerList(pTransform)));
+    connect(d, SIGNAL(filterChainUpdated(Tfr::pFilter)), this, SLOT(updateLayerList(Tfr::pFilter)));
     connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(recieveCurrentSelection(int, bool)));
     connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(recieveFilterRemoval(int)));
     
@@ -103,39 +104,45 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     ui->actionActivateNavigation->setChecked(true);
 }
 
-void MainWindow::updateLayerList(pTransform t)
+void MainWindow::updateLayerList( Tfr::pFilter f )
 {
     ui->layerWidget->clear();
-    
-    BOOST_FOREACH( pFilter f, t->filter_chain ) {
+
+    Tfr::FilterChain* filter_chain = dynamic_cast<Tfr::FilterChain*>(f.get());
+    if (0 == filter_chain )
+    {
+        return;
+    }
+
+    BOOST_FOREACH( Tfr::pFilter f, *filter_chain ) {
         stringstream title;
         stringstream tooltip;
         title << fixed << setprecision(1);
         tooltip << fixed << setprecision(2);
 
-        if (FilterChain *c = dynamic_cast<FilterChain*>(f.get())) {
+        if (Tfr::FilterChain *c = dynamic_cast<Tfr::FilterChain*>(f.get())) {
             title << "Chain #" << c->size() << "";
             tooltip << "Chain contains " << c->size() << " subfilters";
 
-        } else if (EllipsFilter* c = dynamic_cast<EllipsFilter*>(f.get())) {
+        } else if (Tfr::EllipsFilter* c = dynamic_cast<Tfr::EllipsFilter*>(f.get())) {
             float r = fabsf(c->_t1-c->_t2);
             title << "Ellips [" << c->_t1-r << ", " << c->_t1 + r << "]";
             tooltip << "Ellips p(" << c->_t1 << ", " << c->_f1 << "), "
                             << "r(" << r << ", " << fabsf(c->_f2-c->_f1) << "), "
                             << "area " << r*fabsf((c->_f1-c->_f2)*M_PI);
 
-        } else if (SquareFilter* c = dynamic_cast<SquareFilter*>(f.get())) {
+        } else if (Tfr::SquareFilter* c = dynamic_cast<Tfr::SquareFilter*>(f.get())) {
             title << "Square [" << c->_t1 << ", " << c->_t2 << "]";
             tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], "
                             << "f[" << c->_f1 << ", " << c->_f2 << "], "
                             << "area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2));
 
-        }/* else if (SelectionFilter* c = dynamic_cast<SelectionFilter>(f.get())) {
+        }/* else if (Tfr::SelectionFilter* c = dynamic_cast<Tfr::SelectionFilter>(f.get())) {
             if (EllipsSelection* c = dynamic_cast<EllipsSelection>(c->selection)) {
                 title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
                 tooltip << "Ellips pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
 
-            } else if (SquareSelection* c = dynamic_cast<SquareSelection>(c->selection)) {
+            } else if (Tfr::SquareSelection* c = dynamic_cast<Tfr::SquareSelection>(c->selection)) {
                 title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
                 tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
         }*/

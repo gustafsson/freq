@@ -8,6 +8,12 @@
 
 namespace Signal {
 
+/**
+The Signal::Buffer class is _the_ container class for data in the Signal 
+namespace. A Buffer can contain an entire song as when created by
+Signal::Audiofile, or a Buffer can contain sound as fractions of a second
+as when created by Signal::MicrophoneRecorder.
+*/
 class Buffer {
 public:
     enum Interleaved {
@@ -19,29 +25,38 @@ public:
 
     boost::scoped_ptr<GpuCpuData<float> > waveform_data;
 
-    unsigned number_of_samples() { return waveform_data->getNumberOfElements().width; }
+    unsigned number_of_samples() { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
     Interleaved interleaved() const {return _interleaved; }
     boost::shared_ptr<class Buffer> getInterleaved(Interleaved);
 
+    float start() { return sample_offset/(float)sample_rate; }
+    float length() { return number_of_samples()/(float)sample_rate; }
+
     unsigned sample_offset;
     unsigned sample_rate;
-    bool modified;
-    bool was_modified;
-    bool play_when_done;
 
-    std::set<unsigned> valid_transform_chunks;
 private:
     const Interleaved _interleaved;
 };
 typedef boost::shared_ptr<class Buffer> pBuffer;
 
 
+/**
+Signal::Source is a very important class in the Signal namespace. It declares 
+an interface through which buffers can be read.
+*/
 class Source
 {
 public:
     virtual ~Source() {}
 
+    /**
+    read does not have to return a Buffer of the same size as numberOfSamples.
+    But it has to start at firstSample. The caller of read must allow for read
+    to return Buffers of arbitrary sizes.
+    */
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
+    virtual pBuffer read( float , float ) { throw std::runtime_error("NOOO"); }
     virtual unsigned sample_rate() = 0;
     virtual unsigned number_of_samples() = 0;
 

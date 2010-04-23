@@ -1,10 +1,11 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
-#ifdef _MSC_VER
-typedef long long __int64_t;
-#endif
+// TODO check necessity in windows
+//#ifdef _MSC_VER
+//typedef long long __int64_t;
+//#endif
 #include <stdint.h>
-#include <sndfile.hh> // for writing wav
+#include <sndfile.hh> // for reading various formats
 #include <math.h>
 #include "Statistics.h"
 #include <stdexcept>
@@ -86,6 +87,7 @@ std::string getFileFormatsQtFilter() {
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
     char buffer [128] ;
+    // TODO remove unused variables
     int format, major_count, subtype_count, m, s ;
     stringstream ss;
 
@@ -112,20 +114,18 @@ std::string getFileFormatsQtFilter() {
     return ss.str();
 }
 
-boost::shared_ptr<Signal::Playback> Audiofile::pb(new Signal::Playback(-1));
 
-Audiofile::Audiofile(int _temp_to_remove_playback_device)
+Audiofile::
+        Audiofile()
 {
-    if ((int)pb->output_device() != _temp_to_remove_playback_device && 0<=_temp_to_remove_playback_device)
-        pb.reset(new Signal::Playback(_temp_to_remove_playback_device) );
-
     _waveform.reset( new Buffer());
 }
 
 /**
   Reads an audio file using libsndfile
   */
-Audiofile::Audiofile(const char* filename)
+Audiofile::
+        Audiofile(const char* filename)
 {
     _waveform.reset( new Buffer());
 
@@ -191,28 +191,6 @@ Audiofile::Audiofile(const char* filename)
 #endif
 }
 
-
-    /**
-      Writes wave audio with 16 bits per sample
-      */
-void Audiofile::writeFile( const char* filename )
-{
-	TaskTimer tt("%s %s",__FUNCTION__,filename);
-
-    _last_filename = "flapppa";
-    // todo: this method only writes mono data from the first (left) channel
-
-    const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-    //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
-
-    //int number_of_channels = 1;
-    SndfileHandle outfile(filename, SFM_WRITE, format, 1, sample_rate());
-
-    if (!outfile) return;
-
-    outfile.write( _waveform->waveform_data->getCpuMemory(), _waveform->waveform_data->getNumberOfElements().width); // yes float
-    //play();
-}
 
 pBuffer Audiofile::read( unsigned firstSample, unsigned numberOfSamples ) {
     return  getChunk( firstSample, numberOfSamples, 0, Buffer::Only_Real );
@@ -300,20 +278,6 @@ pSource Audiofile::crop() {
     return rwf;
 }
 
-
-void Audiofile::play() {
-    pSource wfs = this->crop();
-
-    if (!wfs.get())
-        return;
-
-    Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
-    wf->writeFile(selection_name);
-
-    pb->reset();
-    pb->expected_samples_left( wf->_waveform->number_of_samples());
-    pb->put( wf->_waveform );
-}
 
 unsigned Audiofile::sample_rate() {          return _waveform->sample_rate;    }
 unsigned Audiofile::number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
