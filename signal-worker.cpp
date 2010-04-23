@@ -51,17 +51,19 @@ void Worker::
     int milliseconds = t.elapsed();
     if (0==milliseconds) milliseconds=1;
 
-    if (1000.f/milliseconds < _requested_fps && _samples_per_chunk>1024)
-    {
-        if (1<_samples_per_chunk) {
-            _samples_per_chunk>>=1;
+    if (0) {
+        if (1000.f/milliseconds < _requested_fps && _samples_per_chunk>1024)
+        {
+            if (1<_samples_per_chunk) {
+                _samples_per_chunk>>=1;
+            }
         }
-    }
-    else if (1000.f/milliseconds > 2.5f*_requested_fps)
-    {
-        _samples_per_chunk<<=1;
-        if (_samples_per_chunk>_max_samples_per_chunk)
-            _samples_per_chunk=_max_samples_per_chunk;
+        else if (1000.f/milliseconds > 2.5f*_requested_fps)
+        {
+            _samples_per_chunk<<=1;
+            if (_samples_per_chunk>_max_samples_per_chunk)
+                _samples_per_chunk=_max_samples_per_chunk;
+        }
     }
 }
 

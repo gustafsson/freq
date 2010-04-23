@@ -5,6 +5,7 @@
 #include "signal-samplesintervaldescriptor.h"
 #include <vector>
 #include <time.h>
+#include <QMutex>
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/scoped_ptr.hpp>
 
@@ -31,6 +32,8 @@ public:
     void        preparePlayback( unsigned firstSample, unsigned number_of_samples );
 
 private:
+    QMutex _cache_lock;
+
     struct BufferSlot {
         pBuffer buffer;
         clock_t timestamp;

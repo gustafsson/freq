@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/foreach.hpp>
+#include <QMutexLocker>
 
 using namespace std;
 
@@ -36,6 +37,7 @@ Playback::
 Playback::
         ~Playback()
 {
+    QMutexLocker l(&_cache_lock);
     cout << "Clearing Playback" << endl;
     if (streamPlayback) {
         streamPlayback->stop();
@@ -95,26 +97,31 @@ float Playback::
 void Playback::
         put( pBuffer buffer )
 {
-    if (!_cache.empty()) if (_cache[0].buffer->sample_rate != buffer->sample_rate) {
-        throw std::logic_error(std::string(__FUNCTION__) + " sample rate is different from previous sample rate" );
-    }
+    {
+        QMutexLocker l(&_cache_lock);
 
-    _first_invalid_sample = buffer->sample_offset + buffer->number_of_samples();
-
-    BufferSlot slot = { buffer, clock() };
-
-    if (streamPlayback) {
-        // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
-        _cache.push_back( slot );
-
-        if (streamPlayback->isStopped()) {
-            // start over
-            streamPlayback->start();
+        if (!_cache.empty()) if (_cache[0].buffer->sample_rate != buffer->sample_rate) {
+            throw std::logic_error(std::string(__FUNCTION__) + " sample rate is different from previous sample rate" );
         }
-        return;
-    }
 
-    _cache.push_back( slot );
+        _first_invalid_sample = buffer->sample_offset + buffer->number_of_samples();
+
+        BufferSlot slot = { buffer, clock() };
+
+        if (streamPlayback) {
+            // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
+            _cache.push_back( slot );
+
+            if (streamPlayback->isStopped()) {
+                // start over
+                streamPlayback->start();
+            }
+            return;
+        }
+
+        buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
+        _cache.push_back( slot );
+    }
 
     unsigned x = expected_samples_left();
     if (x < buffer->number_of_samples() )
@@ -161,6 +168,7 @@ void Playback::
 void Playback::
         reset()
 {
+    QMutexLocker l(&_cache_lock);
     if (streamPlayback) if (!streamPlayback->isStopped()) streamPlayback->stop();
     _cache.clear();
     _playback_itr = 0;
@@ -182,6 +190,8 @@ SamplesIntervalDescriptor Playback::
 unsigned Playback::
         nAccumulatedSamples()
 {
+    QMutexLocker l(&_cache_lock);
+
     // count previous samples
     unsigned nAccumulated_samples = 0;
     BOOST_FOREACH( const BufferSlot& s, _cache ) {
@@ -193,6 +203,7 @@ unsigned Playback::
 pBuffer Playback::
         first_buffer()
 {
+    QMutexLocker l(&_cache_lock);
     if (_cache.empty())
         return pBuffer();
     return _cache[0].buffer;
@@ -207,10 +218,11 @@ bool Playback::
 bool Playback::
         isUnderfed()
 {
+    unsigned nAccumulated_samples = nAccumulatedSamples();
+
+    QMutexLocker l(&_cache_lock);
     if (1>=_cache.size())
         return true;
-
-    unsigned nAccumulated_samples = nAccumulatedSamples();
 
     clock_t first = _cache.front().timestamp;
     clock_t last = _cache.back().timestamp;
@@ -243,6 +255,7 @@ int Playback::
              const PaStreamCallbackTimeInfo */*timeInfo*/,
              PaStreamCallbackFlags /*statusFlags*/)
 {
+    QMutexLocker l(&_cache_lock);
     BOOST_ASSERT( outputBuffer );
     float **out = static_cast<float **>(outputBuffer);
     float *buffer = out[0];

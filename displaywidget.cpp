@@ -283,12 +283,12 @@ void DisplayWidget::recievePlaySound()
     const Signal::SamplesIntervalDescriptor::Interval& i = sid.intervals().front();
 
     if (!_playbackCallback)
-        _playbackCallback.reset( new Signal::WorkerCallback( Signal::pWorker(), Signal::pSink( new Signal::Playback( _playback_device ))));
+        _playbackCallback.reset( new Signal::WorkerCallback( _worker, Signal::pSink( new Signal::Playback( _playback_device ))));
     else
         _playbackCallback->sink()->reset();
 
     if (!_diskwriterCallback)
-        _diskwriterCallback.reset( new Signal::WorkerCallback( Signal::pWorker(), Signal::pSink( new Signal::WriteWav( _selection_filename ))));
+        _diskwriterCallback.reset( new Signal::WorkerCallback( _worker, Signal::pSink( new Signal::WriteWav( _selection_filename ))));
     else
         _diskwriterCallback->sink()->reset();
 
@@ -814,7 +814,7 @@ void DisplayWidget::paintGL()
     if (p && p->isUnderfed() && p->expected_samples_left()) {
         _worker->todo_list = p->getMissingSamples();
     } else {
-        _worker->todo_list = _renderer->collection()->getMissingSamples();
+        //_worker->todo_list = _renderer->collection()->getMissingSamples();
     }
 
     _worker->workOne();

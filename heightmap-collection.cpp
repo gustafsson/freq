@@ -491,8 +491,8 @@ mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool sav
                            cuda_stream);
 
     outBlock->valid_samples |= Signal::SamplesIntervalDescriptor(
-            (unsigned)(inChunk->startTime()*inChunk->sample_rate),
-            (unsigned)(inChunk->endTime()*inChunk->sample_rate) );
+            (unsigned)(inChunk->startTime()*inChunk->sample_rate +.5f),
+            (unsigned)(inChunk->endTime()*inChunk->sample_rate +.5f) );
 
     if (save_in_prepared_data) {
         outData->getCpuMemory();
