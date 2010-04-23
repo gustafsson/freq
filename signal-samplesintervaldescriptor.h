@@ -2,6 +2,7 @@
 #define SAMPLESINTERVALDESCRIPTOR_H
 
 #include <list>
+#include <stdexcept> // TODO remove temp code
 
 namespace Signal {
 
@@ -23,6 +24,10 @@ public:
 
     SamplesIntervalDescriptor( );
     SamplesIntervalDescriptor( Interval );
+    SamplesIntervalDescriptor( float , float )
+    {
+        throw std::runtime_error("NOOO2");
+    }
     SamplesIntervalDescriptor( SampleType first, SampleType last );
     SamplesIntervalDescriptor& operator |= (const SamplesIntervalDescriptor&);
     SamplesIntervalDescriptor& operator |= (const Interval&);

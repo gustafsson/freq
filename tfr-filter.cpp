@@ -17,11 +17,11 @@ Filter()
 }
 
 Signal::SamplesIntervalDescriptor Filter::
-coveredSamples()
+coveredSamples(unsigned FS)
 {
     float a,b;
     this->range(a,b);
-    return Signal::SamplesIntervalDescriptor(a,b);
+    return Signal::SamplesIntervalDescriptor((unsigned)(a*FS), (unsigned)(b*FS));
 }
 
 //////////// FilterChain

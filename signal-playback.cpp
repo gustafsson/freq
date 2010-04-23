@@ -274,8 +274,9 @@ int Playback::
             if (framesPerBuffer < nSamples_to_copy )
                 nSamples_to_copy = framesPerBuffer;
 
+            float *source = s.buffer->waveform_data->getCpuMemory();
             memcpy( buffer,
-                    &s.buffer->waveform_data->getCpuMemory()[ _playback_itr - nAccumulated_samples ],
+                    &source[ _playback_itr - nAccumulated_samples ],
                     nSamples_to_copy*sizeof(float));
 
             buffer += nSamples_to_copy;

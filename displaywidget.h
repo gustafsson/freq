@@ -45,7 +45,7 @@ class DisplayWidget : public QGLWidget, public Signal::Sink /* sink is used as m
 {
     Q_OBJECT
 public:
-    DisplayWidget( Signal::pWorker worker, Signal::pSink collection, unsigned playback_device, int timerInterval=0  );
+    DisplayWidget( Signal::pWorker worker, Signal::pSink collection, unsigned playback_device, std::string selection_filename, int timerInterval=0  );
     ~DisplayWidget();
     int lastKey;
     static DisplayWidget* gDisplayWidget;
@@ -108,6 +108,9 @@ private:
     Signal::pWorkerCallback _playbackCallback;
     Signal::pWorkerCallback _diskwriterCallback;
 
+    std::string _selection_filename;
+    unsigned _playback_device;
+
     struct ListCounter {
         GLuint displayList;
         enum Age {
@@ -127,7 +130,7 @@ private:
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive;
     std::queue<std::pair<float, float> > _invalidRange;
-    
+
     void drawArrows();
     void drawColorFace();
     void drawWaveform( Signal::pSource waveform );

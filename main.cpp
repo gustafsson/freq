@@ -79,6 +79,7 @@ static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static unsigned _extract_chunk = (unsigned)-1;
 static unsigned _get_chunk_count = (unsigned)-1;
+static std::string _selectionfile = "selection.wav";
 static int _record = -2;
 static int _playback = -1;
 static std::string _soundfile = "";
@@ -147,6 +148,7 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, record));
         else if (readarg(&cmd, playback));
         else if (readarg(&cmd, channel));
+        // TODO use _selectionfile
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
             printf("%s", _sawe_usage_string);
@@ -437,7 +439,7 @@ int main(int argc, char *argv[])
         Signal::pSink sg( sgp );
         sgp->samples_per_block( _samples_per_block );
         sgp->scales_per_block( _scales_per_block );
-        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wk, sg, _playback, 0 ) );
+        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wk, sg, _playback, _selectionfile, 0 ) );
         dw->yscale = (DisplayWidget::Yscale)_yscale;
 
         w.connectLayerWindow(dw.get());

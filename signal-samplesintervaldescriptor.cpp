@@ -86,12 +86,16 @@ operator -= (const Interval& r)
         if (((*itr)<r) == (r<(*itr))) {
 
             // Check if intersection is over the start of 'itr'
-            if (itr->first >= r.first && itr->last > r.last)
+            if (itr->first >= r.first && itr->last > r.last) {
                 itr->first = r.last;
+                itr++;
+            }
 
             // Check if intersection is over the end of 'itr'
-            else if (itr->first <= r.first && itr->last < r.last)
+            else if (itr->first <= r.first && itr->last < r.last) {
                 itr->last = r.first;
+                itr++;
+            }
 
             // Check if intersection is over the entire 'itr'
             else if (itr->first >= r.first && itr->last <= r.last)

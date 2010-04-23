@@ -420,7 +420,9 @@ prepareFillStft( pBlock block ) {
     unsigned in_stft_size;
     Tfr::Stft trans;
     Signal::pSource first_source = Signal::Operation::first_source( worker->source() );
-    Signal::pBuffer stft = trans( first_source->read( a.time*first_source->sample_rate(), (b.time-a.time)*first_source->sample_rate() ) );
+    Signal::pBuffer stft = trans( first_source->read(
+            (unsigned)(a.time*first_source->sample_rate()),
+            (unsigned)((b.time-a.time)*first_source->sample_rate()) ) );
     in_stft_size = trans.chunk_size;
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
@@ -488,7 +490,9 @@ mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool sav
                            inChunk->n_valid_samples,
                            cuda_stream);
 
-    outBlock->valid_samples |= Signal::SamplesIntervalDescriptor( inChunk->startTime(), inChunk->endTime() );
+    outBlock->valid_samples |= Signal::SamplesIntervalDescriptor(
+            (unsigned)(inChunk->startTime()*inChunk->sample_rate),
+            (unsigned)(inChunk->endTime()*inChunk->sample_rate) );
 
     if (save_in_prepared_data) {
         outData->getCpuMemory();

@@ -20,7 +20,7 @@ public:
     virtual bool operator()( Chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;
 
-    virtual Signal::SamplesIntervalDescriptor coveredSamples();
+    virtual Signal::SamplesIntervalDescriptor coveredSamples( unsigned FS );
 
     bool enabled;
 };

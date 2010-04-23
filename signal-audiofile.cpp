@@ -82,6 +82,7 @@ std::string getFileFormatsQtFilter() {
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
     char buffer [128] ;
+    // TODO remove unused variables
     int format, major_count, subtype_count, m, s ;
     stringstream ss;
 

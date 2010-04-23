@@ -3,13 +3,15 @@
 #include <QTime>
 #include <QMutexLocker>
 #include <boost/foreach.hpp>
+#include <CudaException.h>
 
 namespace Signal {
 
 Worker::
         Worker(Signal::pSource s)
 :   _source(s),
-    _samples_per_chunk( 1<< 12 )
+    _samples_per_chunk( 1<<12 ),
+    _max_samples_per_chunk( 1<<16 )
 {
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
@@ -31,7 +33,18 @@ void Worker::
     if (interval.first == interval.last)
         return;
 
-    pBuffer b = _source->read( interval.first, interval.last-interval.first );
+    pBuffer b;
+
+    try {
+        b = _source->read( interval.first, interval.last-interval.first );
+    } catch (const CudaException& e ) {
+        if (cudaErrorMemoryAllocation == e.getCudaError()) {
+            _samples_per_chunk >>=1;
+            _max_samples_per_chunk = _samples_per_chunk;
+        } else {
+            throw;
+        }
+    }
 
     callCallbacks( b );
 
@@ -45,7 +58,11 @@ void Worker::
         }
     }
     else if (1000.f/milliseconds > 2.5f*_requested_fps)
+    {
         _samples_per_chunk<<=1;
+        if (_samples_per_chunk>_max_samples_per_chunk)
+            _samples_per_chunk=_max_samples_per_chunk;
+    }
 }
 
 

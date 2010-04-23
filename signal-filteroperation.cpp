@@ -21,8 +21,8 @@ read( unsigned firstSample, unsigned numberOfSamples )
     if (firstSample < wavelet_std_samples) firstSample = 0;
     else firstSample -= wavelet_std_samples;
 
-    if (numberOfSamples<wavelet_std_samples)
-        numberOfSamples=wavelet_std_samples;
+    if (numberOfSamples<.5f*wavelet_std_samples)
+        numberOfSamples=.5f*wavelet_std_samples;
 
     pBuffer b = _source->read( firstSample, numberOfSamples + 2*wavelet_std_samples );
 
