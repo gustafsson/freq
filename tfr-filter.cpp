@@ -21,6 +21,8 @@ coveredSamples(unsigned FS)
 {
     float a,b;
     this->range(a,b);
+    a = std::max(0.f,a);
+    b = std::max(0.f,b);
     return Signal::SamplesIntervalDescriptor((unsigned)(a*FS), (unsigned)(b*FS));
 }
 

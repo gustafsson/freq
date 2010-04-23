@@ -1272,8 +1272,18 @@ void DisplayWidget::
 {
     drawSelectionCircle();
 
-    if (0==_playbackCallback)
+    static unsigned base_itr = 0;
+    static unsigned prev_itr = 0;
+    static QTime myClock;
+
+    QTime copyClock = myClock;
+    myClock = QTime();
+
+    if (0==_playbackCallback) {
+        base_itr = 0;
+        prev_itr = 0;
         return;
+    }
 
     // Draw playback marker
     Signal::Playback* pb = dynamic_cast<Signal::Playback*>( _playbackCallback->sink().get() );
@@ -1282,9 +1292,14 @@ void DisplayWidget::
     Signal::pBuffer b = pb->first_buffer();
     if (0 == b) return;
 
-    static unsigned base_itr = pb->playback_itr();
-    static unsigned prev_itr = pb->playback_itr();
-    static QTime myClock = QTime::currentTime();
+    myClock = copyClock;
+
+    if (myClock.isNull()) {
+        myClock = QTime::currentTime();
+        base_itr = pb->playback_itr();
+        prev_itr = pb->playback_itr();
+    }
+
     unsigned this_itr = pb->playback_itr();
     if (this_itr!=prev_itr) {
         base_itr=prev_itr;//2*prev_itr - this_itr;

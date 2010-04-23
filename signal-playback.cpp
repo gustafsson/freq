@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <boost/foreach.hpp>
 #include <QMutexLocker>
+#include <stdio.h> // todo remove
 
 using namespace std;
 
@@ -108,6 +109,9 @@ void Playback::
 
         BufferSlot slot = { buffer, clock() };
 
+        buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
+        buffer->waveform_data->freeUnused();
+
         if (streamPlayback) {
             // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
             _cache.push_back( slot );
@@ -119,7 +123,6 @@ void Playback::
             return;
         }
 
-        buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
         _cache.push_back( slot );
     }
 
@@ -215,6 +218,7 @@ bool Playback::
     return streamPlayback?!streamPlayback->isActive() || streamPlayback->isStopped():true;
 }
 
+
 bool Playback::
         isUnderfed()
 {
@@ -233,7 +237,7 @@ bool Playback::
     float time_left = (nAccumulated_samples - _playback_itr + expected_samples_left()) / (float)_cache[0].buffer->sample_rate;
     float estimated_time_required = expected_samples_left() / incoming_samples_per_sec;
 
-    if (expected_samples_left() == 0 || time_left < estimated_time_required )
+    if (expected_samples_left() == 0 || time_left > estimated_time_required )
     {
         return false; // not underfed, ok to start playing
     }
@@ -246,6 +250,7 @@ void Playback::
 {
     _first_invalid_sample = firstSample;
     expected_samples_left( number_of_samples );
+    _playback_itr = 0;
 }
 
 int Playback::
@@ -264,6 +269,7 @@ int Playback::
     unsigned iBuffer = 0;
     unsigned nAccumulated_samples = 0;
 
+    static int zeroFillCounter=0;
     while ( 0 < framesPerBuffer )
     {
         // count previous samples
@@ -276,9 +282,15 @@ int Playback::
 
         if (iBuffer >= _cache.size())
         {
+            if (paComplete == r)
+                zeroFillCounter++;
+            if (10>zeroFillCounter)
+                r = paContinue;
+
             memset(buffer, 0, framesPerBuffer*sizeof(float));
             framesPerBuffer = 0;
         } else {
+            zeroFillCounter=0;
             r = paContinue;
 
             const BufferSlot& s = _cache[iBuffer];

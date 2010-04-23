@@ -417,20 +417,18 @@ prepareFillStft( pBlock block ) {
     float tmin = Tfr::CwtSingleton::instance()->min_hz();
     float tmax = Tfr::CwtSingleton::instance()->max_hz( worker->source()->sample_rate() );
 
-    unsigned in_stft_size;
     Tfr::Stft trans;
     Signal::pSource first_source = Signal::Operation::first_source( worker->source() );
     Signal::pBuffer stft = trans( first_source->read(
             (unsigned)(a.time*first_source->sample_rate()),
-            (unsigned)((b.time-a.time)*first_source->sample_rate()) ) );
-    in_stft_size = trans.chunk_size;
+            (unsigned)((b.time-a.time)*first_source->sample_rate()) + trans.chunk_size ) );
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
-          in_max_hz = first_source->sample_rate()/2;
-    float in_min_hz = in_max_hz / 4/in_stft_size;
+          in_max_hz = tmax;
+    float in_min_hz = in_max_hz / 4/trans.chunk_size;
 
-    float out_stft_size = (in_stft_size/(float)stft->sample_rate)*block->sample_rate();
+    float out_stft_size = (trans.chunk_size/(float)stft->sample_rate)*block->sample_rate();
 
     float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->sample_rate();
 
@@ -442,7 +440,7 @@ prepareFillStft( pBlock block ) {
                   out_offset,
                   in_min_hz,
                   in_max_hz,
-                  in_stft_size,
+                  trans.chunk_size,
                   0);
 }
 
