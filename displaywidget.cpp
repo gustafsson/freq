@@ -696,7 +696,7 @@ void DisplayWidget::paintGL()
     {
         QMutexLocker l(&_invalidRangeMutex);
         if (!_invalidRange.intervals().empty()) {
-            //_renderer->collection()->updateInvalidSamples( _invalidRange );
+            _renderer->collection()->updateInvalidSamples( _invalidRange );
             _invalidRange = Signal::SamplesIntervalDescriptor();
         }
     }

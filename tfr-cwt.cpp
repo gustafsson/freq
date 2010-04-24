@@ -103,10 +103,6 @@ pChunk Cwt::
         intermediate_wt->max_hz = max_hz( buffer->sample_rate );
         intermediate_wt->min_hz = min_hz();
 
-        printf("2*_intermediate_wt->first_valid_sample = %d\n", 2*intermediate_wt->first_valid_sample);
-        printf("buffer->number_of_samples() = %d\n", buffer->number_of_samples());
-        fflush(stdout);
-
         if (2*intermediate_wt->first_valid_sample >= buffer->number_of_samples())
             ThrowInvalidArgument( _wavelet_std_t );
         else

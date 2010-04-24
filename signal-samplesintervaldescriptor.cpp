@@ -103,11 +103,11 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
 
             // Check if intersection is in the middle of 'itr'
             else if (itr->first < r.first && itr->last > r.last) {
-                Interval j = {itr->last, r.last};
-                _intervals.insert(itr, j);
+                Interval j = {r.last, itr->last};
                 itr->last = r.first;
                 itr++;
-                itr++;
+                _intervals.insert(itr, j);
+//                itr++;
 
             // Else, error
             } else {
