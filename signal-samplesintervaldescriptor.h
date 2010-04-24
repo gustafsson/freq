@@ -37,7 +37,7 @@ public:
     SamplesIntervalDescriptor& operator &= (const Interval&);
     SamplesIntervalDescriptor& operator *= (const float& scale);
 
-    Interval    popInterval( SampleType dt, SampleType center = 0 );
+    Interval    getInterval( SampleType dt, SampleType center = 0 ) const;
 
     const std::list<Interval>& intervals() { return _intervals; }
 private:

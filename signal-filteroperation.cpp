@@ -18,8 +18,10 @@ read( unsigned firstSample, unsigned numberOfSamples )
 
     // wavelet_std_samples gets stored in c so that inverse_cwt can take it
     // into account and create an inverse that is of the desired size.
-    if (firstSample < wavelet_std_samples) firstSample = 0;
-    else firstSample -= wavelet_std_samples;
+    unsigned first_valid_sample = 0;
+    if (firstSample < wavelet_std_samples) first_valid_sample = firstSample;
+    else first_valid_sample = wavelet_std_samples;
+    firstSample -= first_valid_sample;
 
     if (numberOfSamples<.5f*wavelet_std_samples)
         numberOfSamples=.5f*wavelet_std_samples;
@@ -27,6 +29,10 @@ read( unsigned firstSample, unsigned numberOfSamples )
     pBuffer b = _source->read( firstSample, numberOfSamples + 2*wavelet_std_samples );
 
     Tfr::pChunk c = cwt( b );
+
+    c->n_valid_samples += c->first_valid_sample - first_valid_sample;
+    c->first_valid_sample = first_valid_sample;
+
     if (_filter) (*_filter)( *c );
     pBuffer r = inverse_cwt( *c );
 

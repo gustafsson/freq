@@ -97,8 +97,8 @@ signals:
 private:
     friend class Heightmap::Renderer;
 
-    virtual void put( Signal::pBuffer b) { put (b, Signal::pSource());}
-    virtual void put( Signal::pBuffer, Signal::pSource );
+    virtual void put( Signal::pBuffer b);
+//    virtual void put( Signal::pBuffer, Signal::Source* );
     Signal::FilterOperation* getFilterOperation();
     // bool _record_update;
 
@@ -129,7 +129,8 @@ private:
 		_renderRatio;
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive;
-    std::queue<std::pair<float, float> > _invalidRange;
+    QMutex _invalidRangeMutex;
+    Signal::SamplesIntervalDescriptor _invalidRange;
 
     void drawArrows();
     void drawColorFace();

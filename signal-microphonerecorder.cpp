@@ -133,7 +133,7 @@ unsigned MicrophoneRecorder::
 {
     unsigned n = 0;
 
-	QMutexLocker l(&_mutex);
+    QMutexLocker l(&_mutex);
 
     BOOST_FOREACH( const pBuffer& s, _cache) {
         n += s->number_of_samples();
@@ -158,10 +158,13 @@ int MicrophoneRecorder::
 
     memcpy ( b->waveform_data->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
 
-	{
-		QMutexLocker l(&_mutex);
-		_cache.push_back( b );
-	}
+    b->sample_offset = number_of_samples();
+    b->sample_rate = sample_rate();
+
+    {
+        QMutexLocker l(&_mutex);
+        _cache.push_back( b );
+    }
 
     if (_callback)
         _callback->put( b, this );

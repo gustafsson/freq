@@ -55,13 +55,9 @@ public:
       */
     unsigned  wavelet_std_samples( unsigned sample_rate ) const;
 
-    /** discard cached data, releases all GPU memory */
-    void     gc();
-
 private:
     Fft             _fft;
     cudaStream_t    _stream;
-    cufftHandle     _fft_many;
     float           _min_hz;
     unsigned        _scales_per_octave;
 

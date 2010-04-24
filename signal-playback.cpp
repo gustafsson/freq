@@ -110,7 +110,6 @@ void Playback::
         BufferSlot slot = { buffer, clock() };
 
         buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
-        buffer->waveform_data->freeUnused();
 
         if (streamPlayback) {
             // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns

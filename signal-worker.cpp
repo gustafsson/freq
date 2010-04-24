@@ -22,23 +22,28 @@ Worker::
 ///// OPERATIONS
 
 
-void Worker::
+bool Worker::
         workOne()
 {
     QTime t;
     t.start();
 
+    if (todo_list.intervals().empty())
+        return false;
+
     SamplesIntervalDescriptor::Interval interval;
-    interval = todo_list.popInterval( _samples_per_chunk, 0 );
-    if (interval.first == interval.last)
-        return;
+    interval = todo_list.getInterval( _samples_per_chunk, 0 );
+    if (interval.first == interval.last) {
+        throw std::invalid_argument(std::string(__FUNCTION__) + " todo_list.getInterval returned interval.first == interval.last" );
+    }
 
     pBuffer b;
 
     try {
         b = _source->read( interval.first, interval.last-interval.first );
+        todo_list -= SamplesIntervalDescriptor( b->sample_offset, b->sample_offset + b->number_of_samples() );
     } catch (const CudaException& e ) {
-        if (cudaErrorMemoryAllocation == e.getCudaError()) {
+        if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
             _samples_per_chunk >>=1;
             _max_samples_per_chunk = _samples_per_chunk;
         } else {
@@ -65,6 +70,8 @@ void Worker::
                 _samples_per_chunk=_max_samples_per_chunk;
         }
     }
+
+    return true;
 }
 
 

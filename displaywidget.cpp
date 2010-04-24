@@ -202,13 +202,6 @@ DisplayWidget::
 
     getFilterOperation()->inverse_cwt.filter.reset( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z) );
 
-    Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
-
-    if (0!=r)
-        put( Signal::pBuffer(), first_source );
-
-
     yscale = Yscale_LogLinear;
     //timeOut();
     
@@ -397,22 +390,22 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
     }
 }
 
-void DisplayWidget::put(Signal::pBuffer /*b*/, Signal::pSource s)
-{
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>(s.get());
-    if (0==r)
-        return;
-
-    float newl = r->length();
+void DisplayWidget::put(Signal::pBuffer b )
+{    
+    float newl = _worker->source()->length();
     static float prevl = newl;
-    if (_qx == prevl )
+    if (_qx == prevl || prevl == newl) // prevl == newl is true for the first put
         _qx = newl;
-
-//    _record_update = true;
-
-    _invalidRange.push( std::pair<float, float>(prevl, newl));
-    update();
     prevl = newl;
+
+    if (b) {
+        QMutexLocker l(&_invalidRangeMutex);
+
+        _invalidRange |= Signal::SamplesIntervalDescriptor(
+                b->sample_offset, b->sample_offset + b->number_of_samples());
+    }
+
+    update();
 }
 
 Signal::FilterOperation* DisplayWidget::getFilterOperation()
@@ -700,14 +693,12 @@ void DisplayWidget::resizeGL( int width, int height ) {
 void DisplayWidget::paintGL()
 {
     TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
-
-    while (_invalidRange.size()) {
-        std::pair<float, float> p = _invalidRange.front();
-        _invalidRange.pop();
-        unsigned FS = this->_worker->source()->sample_rate();
-        _renderer->collection()->updateInvalidSamples( Signal::SamplesIntervalDescriptor(
-                (unsigned)(p.first*FS),
-                (unsigned)(p.second*FS) ));
+    {
+        QMutexLocker l(&_invalidRangeMutex);
+        if (!_invalidRange.intervals().empty()) {
+            //_renderer->collection()->updateInvalidSamples( _invalidRange );
+            _invalidRange = Signal::SamplesIntervalDescriptor();
+        }
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -820,10 +811,11 @@ void DisplayWidget::paintGL()
     if (p && p->isUnderfed() && p->expected_samples_left()) {
         _worker->todo_list = p->getMissingSamples();
     } else {
-        //_worker->todo_list = _renderer->collection()->getMissingSamples();
+        _worker->todo_list = _renderer->collection()->getMissingSamples();
     }
 
-    _worker->workOne();
+    if (_worker->workOne())
+        update();
 
     // CudaException_ThreadSynchronize();
     CudaException_CHECK_ERROR();

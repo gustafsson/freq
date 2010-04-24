@@ -7,13 +7,13 @@
 namespace Signal {
 
 bool SamplesIntervalDescriptor::Interval::
-operator<(const Interval& r) const
+        operator<(const Interval& r) const
 {
     return last < r.first;
 }
 
 bool SamplesIntervalDescriptor::Interval::
-operator|=(const Interval& r)
+        operator|=(const Interval& r)
 {
     bool b = (*this < r) == (r < *this);
     first = std::min(first, r.first);
@@ -42,7 +42,7 @@ SamplesIntervalDescriptor::
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-operator |= (const SamplesIntervalDescriptor& b)
+        operator |= (const SamplesIntervalDescriptor& b)
 {
     BOOST_FOREACH (const Interval& r,  b._intervals)
         operator|=( r );
@@ -50,7 +50,7 @@ operator |= (const SamplesIntervalDescriptor& b)
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-operator |= (const Interval& r)
+        operator |= (const Interval& r)
 {
     _intervals.push_back( r );
     _intervals.sort();
@@ -70,7 +70,7 @@ operator |= (const Interval& r)
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-operator -= (const SamplesIntervalDescriptor& b)
+        operator -= (const SamplesIntervalDescriptor& b)
 {
     BOOST_FOREACH (const Interval& r,  b._intervals)
         operator-=( r );
@@ -78,7 +78,7 @@ operator -= (const SamplesIntervalDescriptor& b)
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-operator -= (const Interval& r)
+        operator -= (const Interval& r)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
 
@@ -92,7 +92,7 @@ operator -= (const Interval& r)
             }
 
             // Check if intersection is over the end of 'itr'
-            else if (itr->first <= r.first && itr->last < r.last) {
+            else if (itr->first < r.first && itr->last <= r.last) {
                 itr->last = r.first;
                 itr++;
             }
@@ -121,7 +121,7 @@ operator -= (const Interval& r)
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-operator &= (const SamplesIntervalDescriptor& b)
+        operator &= (const SamplesIntervalDescriptor& b)
 {
     BOOST_FOREACH (const Interval& r,  b._intervals)
         operator&=( r );
@@ -129,7 +129,7 @@ operator &= (const SamplesIntervalDescriptor& b)
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-operator &= (const Interval& r)
+        operator &= (const Interval& r)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
 
@@ -167,7 +167,7 @@ operator &= (const Interval& r)
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-operator*=(const float& scale)
+        operator*=(const float& scale)
 {
     std::list<Interval>::iterator itr;
     for (itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
@@ -179,64 +179,55 @@ operator*=(const float& scale)
 }
 
 SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
-popInterval( SampleType dt, SampleType center )
+        getInterval( SampleType dt, SampleType center ) const
 {
     if (0 == _intervals.size()) {
         Interval r = {0.f, 0.f};
         return r;
     }
 
-    std::list<Interval>::iterator itr;
+    std::list<Interval>::const_iterator itr;
     for (itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
-        if (itr->first > center)
+        if (itr->first >= center)
             break;
     }
-    float next=FLT_MAX;
-    float prev=FLT_MAX;
+    float distance_to_next=FLT_MAX;
+    float distance_to_prev=FLT_MAX;
 
     if (itr != _intervals.end()) {
-        next = itr->first - center;
+        distance_to_next = itr->first - center;
     }
     if (itr != _intervals.begin()) {
-        std::list<Interval>::iterator itrp = itr;
+        std::list<Interval>::const_iterator itrp = itr;
         itrp--;
         if (itrp->last < center )
-            prev = center - itrp->last;
+            distance_to_prev = center - itrp->last;
         else
-            prev = 0;
+            distance_to_prev = 0;
     }
-    if (next<prev) {
-        Interval &f = *itr;
+    if (distance_to_next<=distance_to_prev) {
+        const Interval &f = *itr;
         if (f.last - f.first < dt ) {
             Interval r = f;
-            _intervals.erase( itr );
             return r;
         }
         Interval r = { f.first, f.first + dt };
-        f.first += dt;
         return r;
-    } else {
-        itr--;
-        Interval &f = *itr;
+    } else { // distance_to_next>distance_to_prev
+        itr--; // get previous Interval
+        const Interval &f = *itr;
         if (f.last - f.first < dt ) {
             Interval r = f;
-            _intervals.erase( itr );
             return r;
         }
 
         if (f.last <= center ) {
             Interval r = { f.last-dt, f.last };
-            f.last -= dt;
             return r;
         }
 
         SampleType start = f.first + dt*(unsigned)((center-f.first) / dt);
         Interval r = {start, std::min(start+dt, f.last) };
-        if (start+dt < f.last ) {
-            Interval r2 = { start+dt, f.last };
-            _intervals.insert( itr, r2 );
-        }
-        f.last = start;
         return r;
     }
 }

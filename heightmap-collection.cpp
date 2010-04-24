@@ -419,9 +419,21 @@ prepareFillStft( pBlock block ) {
 
     Tfr::Stft trans;
     Signal::pSource first_source = Signal::Operation::first_source( worker->source() );
-    Signal::pBuffer stft = trans( first_source->read(
-            (unsigned)(a.time*first_source->sample_rate()),
-            (unsigned)((b.time-a.time)*first_source->sample_rate()) + trans.chunk_size ) );
+
+    unsigned first_sample = (unsigned)(a.time*first_source->sample_rate()),
+             n_samples = (unsigned)((b.time-a.time)*first_source->sample_rate());
+    first_sample = ((first_sample-1)/trans.chunk_size+1)*trans.chunk_size;
+    n_samples = ((n_samples-1)/trans.chunk_size+1)*trans.chunk_size;
+
+    Signal::pBuffer buff = first_source->read( first_sample, n_samples );
+    /*printf("b->number_of_samples() %% chunk_size = %d\n", buff->number_of_samples() % trans.chunk_size);
+    printf("n_samples %% chunk_size = %d\n", n_samples % trans.chunk_size);
+    printf("b->number_of_samples() = %d\n", buff->number_of_samples());
+    printf("n_samples = %d\n", n_samples );
+    printf("trans.chunk_size = %d\n", trans.chunk_size );
+    fflush(stdout);*/
+
+    Signal::pBuffer stft = trans( buff );
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
@@ -516,7 +528,8 @@ mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
     }
 
     Signal::SamplesIntervalDescriptor::Interval read_interval;
-    read_interval = in_sid.popInterval(0, outInterval.last - outInterval.first );
+    read_interval = in_sid.getInterval(0, outInterval.last - outInterval.first );
+    in_sid -= read_interval;
 
     float in_sample_rate = inBlock->sample_rate();
     float out_sample_rate = outBlock->sample_rate();

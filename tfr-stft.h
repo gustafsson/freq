@@ -24,10 +24,6 @@ public:
 
 private:
     cudaStream_t    _stream;
-    pFftChunk       _intermediate_fft;
-    cufftHandle     _fft_single;
-
-    void gc();
 };
 
 /**
