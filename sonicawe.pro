@@ -20,6 +20,8 @@ SOURCES += main.cpp \
     signal-audiofile.cpp \
     signal-microphonerecorder.cpp \
     signal-operation.cpp \
+    signal-operation-basic.cpp \
+    signal-operation-composite.cpp \
     signal-samplesintervaldescriptor.cpp \
     signal-sink.cpp \
     signal-playback.cpp \
@@ -49,6 +51,8 @@ HEADERS += mainwindow.h \
     signal-audiofile.h \
     signal-microphonerecorder.h \
     signal-operation.h \
+    signal-operation-basic.h \
+    signal-operation-composite.h \
     signal-samplesintervaldescriptor.h \
     signal-playback.h \
     signal-sink.h \

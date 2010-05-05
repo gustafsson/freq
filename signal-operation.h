@@ -17,6 +17,8 @@ public:
     Operation( pSource source );
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
+    virtual pBuffer readChecked( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer readFixedLength( unsigned firstSample, unsigned numberOfSamples );
 
     virtual unsigned sample_rate();
     virtual unsigned number_of_samples();
@@ -28,6 +30,7 @@ public:
     static pSource first_source(pSource start);
 
 protected:
+    // TODO define how _invalid_samples is used
     SamplesIntervalDescriptor _invalid_samples;
     pSource _source;
 };
