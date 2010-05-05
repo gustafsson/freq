@@ -31,22 +31,19 @@ coveredSamples(unsigned FS)
 class apply_filter
 {
     Chunk& t;
-    bool r;
 public:
-    apply_filter( Chunk& t):t(t),r(true) {}
+    apply_filter( Chunk& t):t(t) {}
 
     void operator()( pFilter p) {
         if(!p.get()->enabled)
             return;
 
-        r |= (*p)( t );
+        (*p)( t );
     }
-
-    operator bool() { return r; }
 };
 
-bool FilterChain::operator()( Chunk& t) {
-    return std::for_each(begin(), end(), apply_filter( t ));
+void FilterChain::operator()( Chunk& t) {
+    std::for_each(begin(), end(), apply_filter( t ));
 }
 
 void FilterChain::range(float& start_time, float& end_time) {
@@ -66,7 +63,7 @@ SelectionFilter::SelectionFilter( Selection s ) {
     enabled = true;
 }
 
-bool SelectionFilter::operator()( Chunk& chunk) {
+void SelectionFilter::operator()( Chunk& chunk) {
     TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
     if(dynamic_cast<RectangleSelection*>(&s))
@@ -95,11 +92,11 @@ bool SelectionFilter::operator()( Chunk& chunk) {
                       area );
     } else
     {
-        return false;
+        return;
     }
 
     CudaException_ThreadSynchronize();
-    return true;
+    return;
 }
 
 void SelectionFilter::range(float& start_time, float& end_time) {
@@ -117,7 +114,7 @@ EllipsFilter::EllipsFilter(float t1, float f1, float t2, float f2, bool save_ins
     enabled = true;
 }
 
-bool EllipsFilter::operator()( Chunk& chunk) {
+void EllipsFilter::operator()( Chunk& chunk) {
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset,
             _f1 * chunk.nScales(),
@@ -131,8 +128,6 @@ bool EllipsFilter::operator()( Chunk& chunk) {
                   area );
 
     CudaException_ThreadSynchronize();
-
-    return true;
 }
 
 void EllipsFilter::range(float& start_time, float& end_time) {
@@ -151,7 +146,7 @@ SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_ins
     enabled = true;
 }
 
-bool SquareFilter::operator()( Chunk& chunk) {
+void SquareFilter::operator()( Chunk& chunk) {
     float4 area = make_float4(
         _t1 * chunk.sample_rate - chunk.chunk_offset,
         _f1 * chunk.nScales(),
@@ -165,8 +160,6 @@ bool SquareFilter::operator()( Chunk& chunk) {
                   area );
 
     CudaException_ThreadSynchronize();
-
-    return true;
 }
 
 void SquareFilter::range(float& start_time, float& end_time) {

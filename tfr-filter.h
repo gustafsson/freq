@@ -17,7 +17,7 @@ public:
     Filter();
     virtual ~Filter() {}
 
-    virtual bool operator()( Chunk& ) = 0;
+    virtual void operator()( Chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;
 
     virtual Signal::SamplesIntervalDescriptor coveredSamples( unsigned FS );
@@ -29,7 +29,7 @@ typedef boost::shared_ptr<Filter> pFilter;
 class FilterChain: public Filter, public std::list<pFilter>
 {
 public:
-    virtual bool operator()( Chunk& );
+    virtual void operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
 };
 
@@ -38,7 +38,7 @@ class SelectionFilter: public Filter
 public:
     SelectionFilter( Selection s );
 
-    virtual bool operator()( Chunk& );
+    virtual void operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
 
     Selection s;
@@ -53,7 +53,7 @@ class EllipsFilter: public Filter
 public:
     EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    virtual bool operator()( Chunk& );
+    virtual void operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
 
     float _t1, _f1, _t2, _f2;
@@ -67,7 +67,7 @@ class SquareFilter: public Filter
 public:
     SquareFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    virtual bool operator()( Chunk& );
+    virtual void operator()( Chunk& );
     virtual void range(float& start_time, float& end_time);
 
     float _t1, _f1, _t2, _f2;
