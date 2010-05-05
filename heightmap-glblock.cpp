@@ -147,7 +147,7 @@ unmap()
 }
 
 void GlBlock::
-draw()
+        draw()
 {
     unsigned meshW = _collection->samples_per_block();
     unsigned meshH = _collection->scales_per_block();
