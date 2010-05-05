@@ -26,7 +26,8 @@ public:
     unsigned recording_itr() { return number_of_samples(); }
 
 private:
-	QMutex _mutex;
+    QMutex _mutex;
+
     Sink* _callback;
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<MicrophoneRecorder> > _stream_record;
