@@ -154,7 +154,7 @@ public:
     Reference   findReference( Position p, Position sampleSize );
 
     /**
-      Get a heightmap block. If the reference doesn't exist it is created
+      Get a heightmap block. If the referenced block doesn't exist it is created.
 
       This method is used by Heightmap::Renderer to get the heightmap data of
       blocks that has been decided for rendering.

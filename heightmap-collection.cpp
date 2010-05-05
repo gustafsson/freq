@@ -404,14 +404,15 @@ createBlock( Reference ref )
 }
 
 void Collection::
-computeSlope( pBlock block, unsigned cuda_stream )
+        computeSlope( pBlock block, unsigned cuda_stream )
 {
     GlBlock::pHeight h = block->glblock->height();
     cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
 }
 
 void Collection::
-prepareFillStft( pBlock block ) {
+        prepareFillStft( pBlock block )
+{
     Position a, b;
     block->ref.getArea(a,b);
     float tmin = Tfr::CwtSingleton::instance()->min_hz();
@@ -458,14 +459,14 @@ prepareFillStft( pBlock block ) {
 
 
 void Collection::
-updateSlope( pBlock block, unsigned cuda_stream )
+        updateSlope( pBlock block, unsigned cuda_stream )
 {
     GlBlock::pHeight h = block->glblock->height();
     cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
 }
 
 void Collection::
-mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data)
+        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data)
 {
     boost::shared_ptr<GpuCpuData<float> > outData;
 

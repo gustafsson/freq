@@ -3,17 +3,18 @@
 
 namespace Tfr {
 
-Chunk::Chunk()
+Chunk::
+        Chunk()
 :   min_hz(0),
     max_hz(0),
     chunk_offset(0),
     sample_rate(0),
     first_valid_sample(0),
-    n_valid_samples(0),
-    modified(false)
+    n_valid_samples(0)
 {}
 
-float2 Chunk::getNearestCoeff( float t, float f )
+float2 Chunk::
+        getNearestCoeff( float t, float f )
 {
     if (!valid())
         return make_float2(0,0);
@@ -27,7 +28,8 @@ float2 Chunk::getNearestCoeff( float t, float f )
     return transform_data->getCpuMemoryConst()[ fi*nSamples() + s ];
 }
 
-float Chunk::getFrequency( unsigned fi ) const
+float Chunk::
+        getFrequency( unsigned fi ) const
 {
     if (!valid())
         return 0;
@@ -35,7 +37,8 @@ float Chunk::getFrequency( unsigned fi ) const
     return exp(log(min_hz) + (fi/(float)nScales())*(log(max_hz)-log(min_hz)));
 }
 
-unsigned Chunk::getFrequencyIndex( float f ) const
+unsigned Chunk::
+        getFrequencyIndex( float f ) const
 {
     if (f<min_hz) f=min_hz;
     if (f>max_hz) f=max_hz;

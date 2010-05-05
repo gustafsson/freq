@@ -19,11 +19,21 @@ struct Chunk
     boost::scoped_ptr<GpuCpuData<float2> > transform_data;
 
     float min_hz, max_hz;
+
+    /**
+      chunk_offset is the start of the chunk, along the timeline, measured in samples
+      */
     unsigned chunk_offset;
     unsigned sample_rate;
+    /**
+      first_valid_sample is the first nonredundant column. first_valid_sample is also the number of redundant column.
+      */
     unsigned first_valid_sample;
+    /**
+      the number of nonredundant column
+      */
     unsigned n_valid_samples;
-    bool modified;
+    // bool modified;
 
     float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
     float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }

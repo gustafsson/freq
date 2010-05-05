@@ -126,6 +126,8 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
     }
 
     float cufft_normalize = 1.f/sqrt((float)numElem.width);
+
+    // TODO wtf?
     float jibberish_normalization = .1;
 
     out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
