@@ -170,9 +170,18 @@ void Playback::
 void Playback::
         reset()
 {
-    QMutexLocker l(&_cache_lock);
-    if (streamPlayback) if (!streamPlayback->isStopped()) streamPlayback->stop();
-    _cache.clear();
+    if (streamPlayback)
+    {
+        // streamPlayback->stop will invoke a join with readBuffer
+        if (!streamPlayback->isStopped())
+            streamPlayback->stop();
+    }
+
+
+    {
+        QMutexLocker l(&_cache_lock);
+        _cache.clear();
+    }
     _playback_itr = 0;
     expected_samples_left(0);
 }
