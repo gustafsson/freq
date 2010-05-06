@@ -211,8 +211,14 @@ getBlock( Reference ref )
             block = createBlock( ref );
             if (0 != block.get()) {
                 computeSlope( block, 0 );
-                _unfinished_count++;
             }
+        }
+
+        Signal::SamplesIntervalDescriptor::Interval refInt = block->ref.getInterval();
+        if (0 != block.get() &&
+            (block->valid_samples &= refInt).intervals() != Signal::SamplesIntervalDescriptor( refInt ).intervals())
+        {
+            _unfinished_count++;
         }
 
         result = block;

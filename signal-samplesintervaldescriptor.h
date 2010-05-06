@@ -20,6 +20,7 @@ public:
 
         bool operator<(const Interval& r) const;
         bool operator|=(const Interval& r);
+        bool operator==(const Interval& r) const;
     };
 
     SamplesIntervalDescriptor( );

@@ -21,6 +21,12 @@ bool SamplesIntervalDescriptor::Interval::
     return b;
 }
 
+bool SamplesIntervalDescriptor::Interval::
+        operator==(const Interval& r) const
+{
+    return first==r.first && last==r.last;
+}
+
 SamplesIntervalDescriptor::
         SamplesIntervalDescriptor()
 {
@@ -81,29 +87,29 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
         operator -= (const Interval& r)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
-
+        Interval& i = *itr;
         // Check if interval 'itr' intersects with 'r'
-        if (((*itr)<r) == (r<(*itr))) {
+        if (!(i<r) && !(r<i)) {
 
             // Check if intersection is over the start of 'itr'
-            if (itr->first >= r.first && itr->last > r.last) {
-                itr->first = r.last;
+            if (i.first >= r.first && i.last > r.last) {
+                i.first = r.last;
                 itr++;
             }
 
             // Check if intersection is over the end of 'itr'
-            else if (itr->first < r.first && itr->last <= r.last) {
-                itr->last = r.first;
+            else if (i.first < r.first && i.last <= r.last) {
+                i.last = r.first;
                 itr++;
             }
 
             // Check if intersection is over the entire 'itr'
-            else if (itr->first >= r.first && itr->last <= r.last)
+            else if (i.first >= r.first && i.last <= r.last)
                 itr = _intervals.erase( itr );
 
             // Check if intersection is in the middle of 'itr'
-            else if (itr->first < r.first && itr->last > r.last) {
-                Interval j = {r.last, itr->last};
+            else if (i.first < r.first && i.last > r.last) {
+                Interval j = {r.last, i.last};
                 itr->last = r.first;
                 itr++;
                 _intervals.insert(itr, j);
@@ -132,29 +138,33 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
         operator &= (const Interval& r)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+        Interval& i = *itr;
 
-        // Check if interval 'itr' does not intersects with 'r'
-        if (((*itr)<r) != (r<(*itr))) {
+        // Check if interval 'itr' does not intersect with 'r'
+        if ((i<r) != (r<i)) {
             itr = _intervals.erase(itr);
+
+        } else if ((i<r) && (r<i)) {
+            throw std::logic_error("Shouldn't reach here");
 
         } else {
 
             // Check if intersection is over the start of 'itr'
-            if (itr->first >= r.first && itr->last > r.last)
-                itr->last = r.last;
+            if (i.first >= r.first && i.last > r.last)
+                i.last = r.last;
 
             // Check if intersection is over the end of 'itr'
-            else if (itr->first <= r.first && itr->last < r.last)
-                itr->first = r.first;
+            else if (i.first < r.first && i.last <= r.last)
+                i.first = r.first;
 
             // Check if intersection is over the entire 'itr'
-            else if (itr->first >= r.first && itr->last <= r.last)
+            else if (i.first >= r.first && i.last <= r.last)
             {}
 
             // Check if intersection is in the middle of 'itr'
-            else if (itr->first < r.first && itr->last > r.last) {
-                itr->first = r.first;
-                itr->last = r.last;
+            else if (i.first < r.first && i.last > r.last) {
+                i.first = r.first;
+                i.last = r.last;
 
             // Else, error
             } else {
