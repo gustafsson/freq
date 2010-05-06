@@ -14,22 +14,34 @@ the caller.
 class Operation: public Source
 {
 public:
+    /**
+      This constructor by itself creates a dummy Operation that redirects any
+      method calls to its _source.
+      */
     Operation( pSource source );
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
+    /**
+      The default implementation of read is to read from source()
+      */
+    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples )
+    {
+        source()->read(firstSample, numberOfSamples);
+    }
+
     virtual pBuffer readChecked( unsigned firstSample, unsigned numberOfSamples );
     virtual pBuffer readFixedLength( unsigned firstSample, unsigned numberOfSamples );
 
     virtual unsigned sample_rate();
     virtual unsigned number_of_samples();
     virtual pSource source() const { return _source; }
+    virtual void source(pSource v) const { _source=v; }
 
     virtual SamplesIntervalDescriptor updateInvalidSamples();
 
     // TODO should find last source that does not have a slow operation (i.e. FilterOperation) among its parents.
     static pSource first_source(pSource start);
 
-protected:
+protected:    
     // TODO define how _invalid_samples is used
     SamplesIntervalDescriptor _invalid_samples;
     pSource _source;

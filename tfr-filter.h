@@ -76,6 +76,17 @@ private:
     bool _save_inside;
 };
 
+class MoveFilter: public Filter
+{
+public:
+    MoveFilter(float df);
+
+    virtual void operator()( Chunk& );
+    virtual void range(float& start_time, float& end_time);
+
+    float _df;
+};
+
 } // namespace Tfr
 
 #endif // TFRFILTER_H

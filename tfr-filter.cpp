@@ -167,4 +167,29 @@ void SquareFilter::range(float& start_time, float& end_time) {
     end_time = _t2;
 }
 
+MoveFilter::
+        MoveFilter(float df)
+:   _df(df)
+{}
+
+void MoveFilter::
+        operator()( Chunk& chunk )
+{
+    TaskTimer tt(__FUNCTION__);
+
+    float df = _df * chunk.nScales();
+
+    ::moveFilter( chunk.transform_data->getCudaGlobal(),
+                  df, chunk.min_hz, chunk.max_hz, chunk.sample_rate );
+
+    CudaException_ThreadSynchronize();
+}
+
+void MoveFilter::
+        range(float& start_time, float& end_time)
+{
+    start_time = 0;
+    end_time = FLT_MAX;
+}
+
 } // namespace Tfr

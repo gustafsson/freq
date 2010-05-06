@@ -35,7 +35,7 @@ public:
     virtual pSource source2() const { return _source2; }
 
 private:
-    pSource source2;
+    pSource _source2;
 };
 
 } // namespace Signal

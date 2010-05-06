@@ -1,9 +1,9 @@
 #include "signal-operation.h"
+#include <string.h>
 
 namespace Signal {
 
-Operation::
-Operation(pSource source )
+Operation::Operation(pSource source )
 :   _source( source )
 {
 }
@@ -11,7 +11,7 @@ Operation(pSource source )
 pBuffer Operation::
         readChecked( unsigned firstSample, unsigned numberOfSamples )
 {
-    pBuffer r = read(first, numberOfSamples);
+    pBuffer r = read(firstSample, numberOfSamples);
 
     if (r->sample_offset > firstSample)
         throw std::runtime_error("read didn't contain firstSample, r->sample_offset > firstSample");
@@ -33,7 +33,7 @@ pBuffer Operation::
     r->sample_offset = firstSample;
     r->sample_rate = p->sample_rate;
     r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, 1, 1)));
-    float* c = q->waveform_data->getCpuMemory();
+    float* c = r->waveform_data->getCpuMemory();
 
     // Fill new buffer
     unsigned itr = 0;

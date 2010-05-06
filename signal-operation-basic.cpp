@@ -1,4 +1,5 @@
 #include "signal-operation-basic.h"
+#include <string.h>
 
 namespace Signal {
 
@@ -62,7 +63,7 @@ pBuffer OperationInsertSilence::
 
 OperationSuperposition::
         OperationSuperposition( pSource source, pSource source2 )
-:   _source( source ),
+:   Operation( source ),
     _source2( source2 )
 {
     if (_source->sample_rate() != _source2->sample_rate())
