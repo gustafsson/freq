@@ -173,7 +173,7 @@ void fatal_exception_cerr( const std::string& str )
 {
     cerr << endl << endl
          << "======================" << endl
-         << str
+         << str << endl
          << "======================" << endl;
     cerr.flush();
 }
