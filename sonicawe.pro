@@ -9,6 +9,7 @@ QT += opengl
 CONFIG += qt
 win32:CONFIG += windows
 RESOURCES += icon-resources.qrc
+unix:QMAKE_CXXFLAGS_DEBUG = -ggdb
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
 SOURCES += main.cpp \
