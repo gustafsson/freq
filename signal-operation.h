@@ -28,9 +28,6 @@ public:
         return source()->read(firstSample, numberOfSamples);
     }
 
-    virtual pBuffer readChecked( unsigned firstSample, unsigned numberOfSamples );
-    virtual pBuffer readFixedLength( unsigned firstSample, unsigned numberOfSamples );
-
     virtual unsigned sample_rate();
     virtual unsigned number_of_samples();
     virtual pSource source() const { return _source; }

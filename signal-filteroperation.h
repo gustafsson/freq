@@ -15,6 +15,7 @@ public:
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
 
+    // TODO don't keep _previous_chunk unless requested
     /**
       Get previous Tfr::Chunk. Used by heightmap rendering.
       */

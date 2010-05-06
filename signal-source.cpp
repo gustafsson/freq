@@ -1,4 +1,6 @@
 #include "signal-source.h"
+#include <string.h>
+#include <stdio.h>
 
 using namespace std;
 
@@ -72,6 +74,54 @@ pBuffer Buffer::getInterleaved(Interleaved value)
     }
 
     return chunk;
+}
+
+pBuffer Source::
+        readChecked( unsigned firstSample, unsigned numberOfSamples )
+{
+    pBuffer r = read(firstSample, numberOfSamples);
+
+    if (r->sample_offset > firstSample)
+        throw std::runtime_error("read didn't contain firstSample, r->sample_offset > firstSample");
+
+    if (r->sample_offset + r->number_of_samples() <= firstSample)
+        throw std::runtime_error("read didn't contain firstSample, r->sample_offset + r->number_of_samples() <= firstSample");
+
+    return r;
+}
+
+pBuffer Source::
+        readFixedLength( unsigned firstSample, unsigned numberOfSamples )
+{
+    // Try a simple read
+    pBuffer p = readChecked(firstSample, numberOfSamples );
+    if (p->number_of_samples() == numberOfSamples && p->sample_offset==firstSample)
+        return p;
+
+    // Didn't get exact result, prepare new Buffer
+    pBuffer r( new Buffer );
+    r->sample_offset = firstSample;
+    r->sample_rate = p->sample_rate;
+    r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, 1, 1)));
+    float* c = r->waveform_data->getCpuMemory();
+
+    // Fill new buffer
+    unsigned itr = 0;
+    do {
+        unsigned o = p->sample_offset - firstSample-itr;
+        unsigned l = p->number_of_samples()-o;
+        //fprintf(stdout,"o=%d, l=%d, itr=%d, numberOfSamples - itr = %d\n", o, l, itr, numberOfSamples - itr);
+        //fflush(stdout);
+        memcpy( c+itr, p->waveform_data->getCpuMemory()+o, l*sizeof(float) );
+
+        itr+=l;
+
+        if (itr<numberOfSamples)
+            p = readChecked( firstSample + itr, numberOfSamples - itr );
+
+    } while (itr<numberOfSamples);
+
+    return r;
 }
 
 } // namespace Signal

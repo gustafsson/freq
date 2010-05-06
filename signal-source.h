@@ -56,7 +56,8 @@ public:
     to return Buffers of arbitrary sizes.
     */
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
-    virtual pBuffer read( float , float ) { throw std::runtime_error("NOOO"); }
+    virtual pBuffer readChecked( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer readFixedLength( unsigned firstSample, unsigned numberOfSamples );
     virtual unsigned sample_rate() = 0;
     virtual unsigned number_of_samples() = 0;
 

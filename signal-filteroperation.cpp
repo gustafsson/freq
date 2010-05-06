@@ -1,4 +1,5 @@
 #include "signal-filteroperation.h"
+#include <CudaException.h>
 
 namespace Signal {
 
@@ -26,19 +27,36 @@ read( unsigned firstSample, unsigned numberOfSamples )
     if (numberOfSamples<.5f*wavelet_std_samples)
         numberOfSamples=.5f*wavelet_std_samples;
 
-    pBuffer b = _source->read( firstSample, numberOfSamples + 2*wavelet_std_samples );
+    // Decrease the amount of memory required
+    while(true) {
+        try {
+            pBuffer b = _source->read( firstSample, numberOfSamples + 2*wavelet_std_samples );
 
-    Tfr::pChunk c = cwt( b );
+            Tfr::pChunk c = cwt( b );
 
-    c->n_valid_samples += c->first_valid_sample - first_valid_sample;
-    c->first_valid_sample = first_valid_sample;
+            c->n_valid_samples += c->first_valid_sample - first_valid_sample;
+            c->first_valid_sample = first_valid_sample;
 
-    if (_filter) (*_filter)( *c );
-    pBuffer r = inverse_cwt( *c );
+            if (_filter) (*_filter)( *c );
+            pBuffer r = inverse_cwt( *c );
 
-    _previous_chunk = c;
+            _previous_chunk = c;
 
-    return r;
+            return r;
+        } catch (const CufftException &) {
+            if (numberOfSamples>wavelet_std_samples) {
+                numberOfSamples/=2;
+                continue;
+            }
+            throw;
+        } catch (const CudaException &x) {
+            if (x.getCudaError() == cudaErrorMemoryAllocation && numberOfSamples>wavelet_std_samples) {
+                numberOfSamples/=2;
+                continue;
+            }
+            throw;
+        }
+    }
 }
 
 void FilterOperation::

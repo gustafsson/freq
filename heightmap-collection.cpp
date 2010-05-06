@@ -428,7 +428,7 @@ void Collection::
     first_sample = ((first_sample-1)/trans.chunk_size+1)*trans.chunk_size;
     n_samples = ((n_samples-1)/trans.chunk_size+1)*trans.chunk_size;
 
-    Signal::pBuffer buff = fast_source->read( first_sample, n_samples );
+    Signal::pBuffer buff = fast_source->readFixedLength( first_sample, n_samples );
     /*printf("b->number_of_samples() %% chunk_size = %d\n", buff->number_of_samples() % trans.chunk_size);
     printf("n_samples %% chunk_size = %d\n", n_samples % trans.chunk_size);
     printf("b->number_of_samples() = %d\n", buff->number_of_samples());
