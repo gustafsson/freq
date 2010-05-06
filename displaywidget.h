@@ -76,18 +76,18 @@ protected:
     
 protected slots:
     //virtual void timeOutSlot();
-    virtual void recieveCurrentSelection(int, bool);
-    virtual void recieveFilterRemoval(int);
+    virtual void receiveCurrentSelection(int, bool);
+    virtual void receiveFilterRemoval(int);
     
-    virtual void recieveToggleSelection(bool);
-    virtual void recieveToggleNavigation(bool);
-    virtual void recieveTogglePiano(bool);
+    virtual void receiveToggleSelection(bool);
+    virtual void receiveToggleNavigation(bool);
+    virtual void receiveTogglePiano(bool);
 
 
-    virtual void recievePlaySound();
-    virtual void recieveToggleHz(bool);
-    virtual void recieveAddSelection(bool);
-    virtual void recieveAddClearSelection(bool);
+    virtual void receivePlaySound();
+    virtual void receiveToggleHz(bool);
+    virtual void receiveAddSelection(bool);
+    virtual void receiveAddClearSelection(bool);
 
 signals:
     void filterChainUpdated( Tfr::pFilter f );

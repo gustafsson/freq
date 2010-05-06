@@ -228,17 +228,17 @@ DisplayWidget::
     }
 }
 
-void DisplayWidget::recieveCurrentSelection(int index, bool enabled)
+void DisplayWidget::receiveCurrentSelection(int index, bool enabled)
 {
     setSelection(index, enabled);
 }
 
-void DisplayWidget::recieveFilterRemoval(int index)
+void DisplayWidget::receiveFilterRemoval(int index)
 {
     removeFilter(index);
 }
 
-void DisplayWidget::recieveToggleSelection(bool active)
+void DisplayWidget::receiveToggleSelection(bool active)
 {
     if(active && _selectionActive != active){
         _navigationActive = false;
@@ -248,7 +248,7 @@ void DisplayWidget::recieveToggleSelection(bool active)
     _selectionActive = active;
 }
 
-void DisplayWidget::recieveToggleNavigation(bool active)
+void DisplayWidget::receiveToggleNavigation(bool active)
 {
     if(active && _navigationActive != active){
         _selectionActive = false;
@@ -258,14 +258,14 @@ void DisplayWidget::recieveToggleNavigation(bool active)
     _navigationActive = active;
 }
 
-void DisplayWidget::recieveTogglePiano(bool active)
+void DisplayWidget::receiveTogglePiano(bool active)
 {
     _renderer->draw_piano = active;
     update();
 }
 
 
-void DisplayWidget::recievePlaySound()
+void DisplayWidget::receivePlaySound()
 {
     TaskTimer tt("Initiating playback of selection.\n");
 
@@ -300,22 +300,22 @@ void DisplayWidget::recievePlaySound()
     update();
 }
 
-void DisplayWidget::recieveToggleHz(bool active)
+void DisplayWidget::receiveToggleHz(bool active)
 {
     _renderer->draw_hz = active;
     update();
 }
 
-void DisplayWidget::recieveAddClearSelection(bool active)
+void DisplayWidget::receiveAddClearSelection(bool active)
 {
-    recieveAddSelection(active);
+    receiveAddSelection(active);
 
     getFilterOperation()->filter()->enabled = true;
 
     emit filterChainUpdated(getFilterOperation()->filter());
 }
 
-void DisplayWidget::recieveAddSelection(bool /*active*/)
+void DisplayWidget::receiveAddSelection(bool /*active*/)
 {
     Signal::FilterOperation *f = getFilterOperation();
     f = new Signal::FilterOperation( _worker->source(), f->inverse_cwt.filter );
@@ -344,7 +344,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
     {
         case ' ':
         {
-            recievePlaySound();
+            receivePlaySound();
             break;
         }
         case 'c': case 'C':
@@ -630,7 +630,7 @@ void DisplayWidget::timeOut()
     
     if(selectionButton.isDown() && selectionButton.getHold() == 5)
     {
-        recievePlaySound();
+        receivePlaySound();
     }
 }
 

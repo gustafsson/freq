@@ -88,16 +88,16 @@ MainWindow::~MainWindow()
 void MainWindow::connectLayerWindow(DisplayWidget *d)
 {
     connect(d, SIGNAL(filterChainUpdated(Tfr::pFilter)), this, SLOT(updateLayerList(Tfr::pFilter)));
-    connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(recieveCurrentSelection(int, bool)));
-    connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(recieveFilterRemoval(int)));
+    connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(receiveCurrentSelection(int, bool)));
+    connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(receiveFilterRemoval(int)));
     
-    connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(recieveToggleSelection(bool)));
-    connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(recieveToggleNavigation(bool)));
-    connect(this->ui->actionPlaySelection, SIGNAL(triggered()), d, SLOT(recievePlaySound()));
-    connect(this->ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), d, SLOT(recieveTogglePiano(bool)));
-    connect(this->ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), d, SLOT(recieveToggleHz(bool)));
-    connect(this->ui->actionActionAdd_selection, SIGNAL(triggered(bool)), d, SLOT(recieveAddSelection(bool)));
-    connect(this->ui->actionActionRemove_selection, SIGNAL(triggered(bool)), d, SLOT(recieveAddClearSelection(bool)));
+    connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(receiveToggleSelection(bool)));
+    connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(receiveToggleNavigation(bool)));
+    connect(this->ui->actionPlaySelection, SIGNAL(triggered()), d, SLOT(receivePlaySound()));
+    connect(this->ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), d, SLOT(receiveTogglePiano(bool)));
+    connect(this->ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), d, SLOT(receiveToggleHz(bool)));
+    connect(this->ui->actionActionAdd_selection, SIGNAL(triggered(bool)), d, SLOT(receiveAddSelection(bool)));
+    connect(this->ui->actionActionRemove_selection, SIGNAL(triggered(bool)), d, SLOT(receiveAddClearSelection(bool)));
     connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
 
