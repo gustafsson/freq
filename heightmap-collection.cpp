@@ -209,8 +209,10 @@ getBlock( Reference ref )
     try {
         if (0 == block.get()) {
             block = createBlock( ref );
-            computeSlope( block, 0 );
-            _unfinished_count++;
+            if (0 != block.get()) {
+                computeSlope( block, 0 );
+                _unfinished_count++;
+            }
         }
 
         result = block;
@@ -419,14 +421,14 @@ void Collection::
     float tmax = Tfr::CwtSingleton::instance()->max_hz( worker->source()->sample_rate() );
 
     Tfr::Stft trans;
-    Signal::pSource first_source = Signal::Operation::first_source( worker->source() );
+    Signal::pSource fast_source = Signal::Operation::fast_source( worker->source() );
 
-    unsigned first_sample = (unsigned)(a.time*first_source->sample_rate()),
-             n_samples = (unsigned)((b.time-a.time)*first_source->sample_rate());
+    unsigned first_sample = (unsigned)(a.time*fast_source->sample_rate()),
+             n_samples = (unsigned)((b.time-a.time)*fast_source->sample_rate());
     first_sample = ((first_sample-1)/trans.chunk_size+1)*trans.chunk_size;
     n_samples = ((n_samples-1)/trans.chunk_size+1)*trans.chunk_size;
 
-    Signal::pBuffer buff = first_source->read( first_sample, n_samples );
+    Signal::pBuffer buff = fast_source->read( first_sample, n_samples );
     /*printf("b->number_of_samples() %% chunk_size = %d\n", buff->number_of_samples() % trans.chunk_size);
     printf("n_samples %% chunk_size = %d\n", n_samples % trans.chunk_size);
     printf("b->number_of_samples() = %d\n", buff->number_of_samples());

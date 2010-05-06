@@ -1,5 +1,6 @@
 #include "signal-operation.h"
 #include <string.h>
+#include "signal-filteroperation.h"
 
 namespace Signal {
 
@@ -78,11 +79,32 @@ updateInvalidSamples()
     return _invalid_samples;
 }
 
-pSource Operation::first_source(pSource start)
+pSource Operation::
+        first_source(pSource start)
 {
     Operation* o = dynamic_cast<Operation*>(start.get());
     if (o)
         return first_source(o->source());
+
+    return start;
+}
+
+pSource Operation::
+        fast_source(pSource start)
+{
+    pSource r = start;
+    pSource itr = start;
+    while(true) {
+        Operation* o = dynamic_cast<Operation*>(itr.get());
+        if (!o)
+            break;
+
+        FilterOperation* f = dynamic_cast<FilterOperation*>(itr.get());
+        if (f)
+            r = f->source();
+
+        itr = o->source();
+    }
 
     return start;
 }

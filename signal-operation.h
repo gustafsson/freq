@@ -38,8 +38,10 @@ public:
 
     virtual SamplesIntervalDescriptor updateInvalidSamples();
 
-    // TODO should find last source that does not have a slow operation (i.e. FilterOperation) among its parents.
     static pSource first_source(pSource start);
+
+    /// finds last source that does not have a slow operation (i.e. FilterOperation) among its parents.
+    static pSource fast_source(pSource start);
 
 protected:    
     // TODO define how _invalid_samples is used
