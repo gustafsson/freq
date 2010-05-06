@@ -89,6 +89,8 @@ protected slots:
     virtual void receiveAddSelection(bool);
     virtual void receiveAddClearSelection(bool);
 
+    virtual void receiveCropSelection();
+    virtual void receiveMoveSelection(bool);
 signals:
     void filterChainUpdated( Tfr::pFilter f );
     void setSelectionActive(bool);
@@ -149,6 +151,8 @@ private:
     MyVector v1, v2;
     MyVector selection[2], selectionStart;
     bool selecting;
+
+    MyVector sourceSelection[2];
     
     void setSelection(int i, bool enabled);
     void removeFilter(int i);

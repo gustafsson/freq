@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -55,6 +55,9 @@
    <addaction name="actionPlaySelection"/>
    <addaction name="actionActionAdd_selection"/>
    <addaction name="actionActionRemove_selection"/>
+   <addaction name="separator"/>
+   <addaction name="actionCropSelection"/>
+   <addaction name="actionMoveSelection"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
@@ -296,6 +299,56 @@
    </property>
    <property name="shortcut">
     <string>A</string>
+   </property>
+  </action>
+  <action name="actionCropSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Crop Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Crop selection [C]</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionMoveSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Move selection [M]</string>
+   </property>
+   <property name="shortcut">
+    <string>M</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
  </widget>

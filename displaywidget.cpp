@@ -23,6 +23,8 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
 #include "signal-microphonerecorder.h"
+#include "signal-operation-composite.h"
+#include "signal-operation-basic.h"
 #include "sawe-csv.h"
 #include "signal-writewav.h"
 
@@ -331,6 +333,58 @@ void DisplayWidget::receiveAddSelection(bool /*active*/)
     _renderer->collection()->updateInvalidSamples(sid);
     update();
     emit filterChainUpdated(getFilterOperation()->filter());
+}
+
+void DisplayWidget::
+        receiveCropSelection()
+{
+    Signal::Operation *b = getFilterOperation();
+
+    // Find out what to crop based on selection
+    float start = std::min(selection[0].x, selection[1].x);
+    float end = std::max(selection[0].x, selection[1].x);
+
+    // Create OperationCrop to remove that section from the stream
+    unsigned FS = b->sample_rate();
+    Signal::pSource crop(new Signal::OperationCrop( b->source(), start*FS, (end-start)*FS ));
+
+    // Update stream
+    b->source(crop);
+}
+
+void DisplayWidget::
+        receiveMoveSelection(bool v)
+{
+    Signal::Operation *b = getFilterOperation();
+
+    if (true==v) { // Button pressed
+        // Remember selection
+        sourceSelection[0] = selection[0];
+        sourceSelection[1] = selection[1];
+
+    } else { // Button released
+        // Create filter for extracting selection
+        Tfr::pFilter extractFilter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z ));
+        Tfr::pFilter moveFilter(new Tfr::MoveFilter( selection[0].z - sourceSelection[0].z ));
+        Tfr::FilterChain* pchain(new Tfr::FilterChain);
+        Tfr::pFilter chain(pchain);
+        pchain->push_back(extractFilter);
+        pchain->push_back(moveFilter);
+
+        // Create FilterOperation for applying filters
+        Signal::pSource extractSelection(new Signal::FilterOperation( b->source(), chain ));
+
+        // Create operation to move and merge selection,
+        unsigned FS = extractSelection->sample_rate();
+        int diff = FS * (selection[0].x - sourceSelection[0].x);
+        Signal::pSource moveSelection(new Signal::OperationMove( extractSelection,
+                                                    diff>0?0:-diff,
+                                                    extractSelection->number_of_samples(),
+                                                    diff>0?diff:0));
+        Signal::pSource mergeSelection( new Signal::OperationSuperposition( b->source(), moveSelection ));
+
+        b->source(mergeSelection);
+    }
 }
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )
