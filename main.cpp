@@ -269,10 +269,12 @@ public:
 
             v = QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            fatal_exception_cerr( fatal_error = fatal_exception(x) );
+            if(fatal_error.empty())
+                fatal_exception_cerr( fatal_error = fatal_exception(x) );
             this->exit(-2);
         } catch (...) {
-            fatal_exception_cerr( fatal_error = fatal_unknown_exception() );
+            if(fatal_error.empty())
+                fatal_exception_cerr( fatal_error = fatal_unknown_exception() );
             this->exit(-2);
         }
         return v;
