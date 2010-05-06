@@ -9,12 +9,6 @@
 
 namespace Tfr {
 
-static void cufftSafeCall( cufftResult_t cufftResult) {
-    if (cufftResult != CUFFT_SUCCESS) {
-        ThrowInvalidArgument( cufftResult );
-    }
-}
-
 Cwt::
         Cwt( float scales_per_octave, float wavelet_std_t, cudaStream_t stream )
 :   _fft( stream ),
@@ -92,10 +86,10 @@ pChunk Cwt::
         cufftComplex *d = g->getCudaGlobal().ptr();
 
         cufftHandle     fft_many;
-        cufftSafeCall(cufftPlan1d(&fft_many, n.width, CUFFT_C2C, n.height));
+        CufftException_SAFE_CALL(cufftPlan1d(&fft_many, n.width, CUFFT_C2C, n.height));
 
-        cufftSafeCall(cufftSetStream(fft_many, _stream));
-        cufftSafeCall(cufftExecC2C(fft_many, d, d, CUFFT_INVERSE));
+        CufftException_SAFE_CALL(cufftSetStream(fft_many, _stream));
+        CufftException_SAFE_CALL(cufftExecC2C(fft_many, d, d, CUFFT_INVERSE));
         cufftDestroy(fft_many);
 
         intermediate_wt->chunk_offset = buffer->sample_offset;

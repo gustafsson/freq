@@ -24,11 +24,6 @@
 #if LEKA_FFT
 #include <cufft.h>
 
-static void cufftSafeCall( cufftResult_t cufftResult) {
-    if (cufftResult != CUFFT_SUCCESS) {
-        ThrowInvalidArgument( cufftResult );
-    }
-}
 #endif
 
 using namespace std;
@@ -169,16 +164,16 @@ Audiofile::
 //        printf("\t%g\n",fdata[i]);
 
     cufftHandle                             _fft_dummy;
-    cufftSafeCall(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_R2C, 1));
-    cufftSafeCall(cufftExecR2C(_fft_dummy,
+    CufftException_SAFE_CALL(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_R2C, 1));
+    CufftException_SAFE_CALL(cufftExecR2C(_fft_dummy,
                                (cufftReal *)_waveform.waveform_data->getCudaGlobal().ptr(),
                                (cufftComplex *)ut2.getCudaGlobal().ptr()));
-    cufftSafeCall(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_C2C, 1));
-    /*cufftSafeCall(cufftExecC2C(_fft_dummy,
+    CufftException_SAFE_CALL(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_C2C, 1));
+    /*CufftException_SAFE_CALL(cufftExecC2C(_fft_dummy,
                                (cufftComplex *)_waveform.waveform_data->getCudaGlobal().ptr(),
                                (cufftComplex *)ut2.getCudaGlobal().ptr(),
                                CUFFT_FORWARD));*/
-    cufftSafeCall(cufftExecC2C(_fft_dummy,
+    CufftException_SAFE_CALL(cufftExecC2C(_fft_dummy,
                                (cufftComplex *)ut2.getCudaGlobal().ptr(),
                                (cufftComplex *)ut.getCudaGlobal().ptr(),
                                CUFFT_INVERSE));

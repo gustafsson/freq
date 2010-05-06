@@ -7,12 +7,6 @@
 
 namespace Tfr {
 
-static void cufftSafeCall( cufftResult_t cufftResult) {
-    if (cufftResult != CUFFT_SUCCESS) {
-        ThrowInvalidArgument( cufftResult );
-    }
-}
-
 Fft::
         Fft(cudaStream_t stream)
 :   _stream(stream)
@@ -50,10 +44,10 @@ pFftChunk Fft::
 
     // Transform signal
     cufftHandle fft_single;
-    cufftSafeCall(cufftPlan1d(&fft_single, intermediate_fft->getNumberOfElements().width, CUFFT_C2C, 1));
+    CufftException_SAFE_CALL(cufftPlan1d(&fft_single, intermediate_fft->getNumberOfElements().width, CUFFT_C2C, 1));
 
-    cufftSafeCall(cufftSetStream(fft_single, _stream));
-    cufftSafeCall(cufftExecC2C(fft_single, d, d, CUFFT_FORWARD));
+    CufftException_SAFE_CALL(cufftSetStream(fft_single, _stream));
+    CufftException_SAFE_CALL(cufftExecC2C(fft_single, d, d, CUFFT_FORWARD));
     cufftDestroy(fft_single);
 
     #ifdef TIME_STFT
@@ -89,10 +83,10 @@ Signal::pBuffer Stft::
     unsigned count = b->number_of_samples();
     count/=chunk_size;
     if (0<count) {
-        cufftSafeCall(cufftPlan1d(&fft_many, chunk_size, CUFFT_C2C, count));
+        CufftException_SAFE_CALL(cufftPlan1d(&fft_many, chunk_size, CUFFT_C2C, count));
 
-        cufftSafeCall(cufftSetStream(fft_many, stream));
-        cufftSafeCall(cufftExecC2C(fft_many, d, d, CUFFT_FORWARD));
+        CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
+        CufftException_SAFE_CALL(cufftExecC2C(fft_many, d, d, CUFFT_FORWARD));
         cufftDestroy(fft_many);
     }
 
