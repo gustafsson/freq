@@ -1,7 +1,7 @@
 #include "tfr-filter.h"
 #include <functional>
 #include "tfr-chunk.h"
-#include "filter.cu.h"
+#include "tfr-filter.cu.h"
 #include <CudaException.h>
 #include <float.h>
 #include <boost/foreach.hpp>

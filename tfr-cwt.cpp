@@ -3,7 +3,7 @@
 #include "tfr-stft.h"
 #include <throwInvalidArgument.h>
 #include <CudaException.h>
-#include "wavelet.cu.h"
+#include "tfr-wavelet.cu.h"
 
 #define TIME_CWT
 

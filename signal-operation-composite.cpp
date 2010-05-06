@@ -8,13 +8,14 @@ namespace Signal {
 
 OperationSubOperations::
         OperationSubOperations(pSource source)
-:   _sourceSubOperation( new Operation(source))
+:   Operation(source),
+    _sourceSubOperation( new Operation(source))
 {}
 
 pBuffer OperationSubOperations ::
         read( unsigned firstSample, unsigned numberOfSamples )
 {
-    _readSubOperation->read( firstSample, numberOfSamples );
+    return _readSubOperation->read( firstSample, numberOfSamples );
 }
 
 void OperationSubOperations ::
@@ -80,7 +81,7 @@ void OperationMove::
         reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
 {
     // Note: difference to OperationMoveMerge is that OperationMove has the silenceTarget step
-    pSource silenceTarget( new OperationSetSilent(_sourceSubOperation, _newFirstSample, numberOfSamples ));
+    pSource silenceTarget( new OperationSetSilent(_sourceSubOperation, newFirstSample, numberOfSamples ));
     pSource silence( new OperationSetSilent(silenceTarget, firstSample, numberOfSamples ));
     pSource crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
     pSource moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
@@ -94,7 +95,7 @@ void OperationMove::
 
 OperationMoveMerge::
         OperationMoveMerge( pSource source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
-:   Operation( source )
+:   OperationSubOperations( source )
 {
     reset(firstSample, numberOfSamples, newFirstSample);
 }

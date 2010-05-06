@@ -1,6 +1,6 @@
 #include <CudaException.h>
 #include "tfr-inversecwt.h"
-#include "wavelet.cu.h"
+#include "tfr-wavelet.cu.h"
 
 namespace Tfr {
 
@@ -12,8 +12,8 @@ InverseCwt::InverseCwt(cudaStream_t stream)
 Signal::pBuffer InverseCwt::
 operator()(Tfr::Chunk& chunk)
 {
-    EllipsFilter* e;
-    SquareFilter* s;
+    EllipsFilter* e = 0;
+    SquareFilter* s = 0;
     if (filter.get()) {
         e = dynamic_cast<EllipsFilter*>(filter.get());
         s = dynamic_cast<SquareFilter*>(filter.get());

@@ -40,11 +40,11 @@ SOURCES += main.cpp \
     heightmap-reference.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
-    wavelet.cu.h \
+    tfr-wavelet.cu.h \
     heightmap-glblock.h \
     heightmap-slope.cu.h \
     heightmap-block.cu.h \
-    filter.cu.h \
+    tfr-filter.cu.h \
     selection.h \
     heightmap-position.h \
     signal-source.h \
@@ -71,16 +71,16 @@ HEADERS += mainwindow.h \
     heightmap-collection.h \
     heightmap-reference.h
 FORMS += mainwindow.ui
-OTHER_FILES += wavelet.cu \
+OTHER_FILES += tfr-wavelet.cu \
     heightmap.frag \
     heightmap.vert \
     heightmap-slope.cu \
     heightmap-block.cu \
-    filter.cu
-CUDA_SOURCES += wavelet.cu \
+    tfr-filter.cu
+CUDA_SOURCES += tfr-wavelet.cu \
     heightmap-slope.cu \
     heightmap-block.cu \
-    filter.cu
+    tfr-filter.cu
 OTHER_SOURCES += heightmap.frag \
     heightmap.vert \
     sonicawe.pro

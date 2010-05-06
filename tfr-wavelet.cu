@@ -1,6 +1,6 @@
 #include "cudaUtil.h"
 #include <stdio.h>
-#include "wavelet.cu.h"
+#include "tfr-wavelet.cu.h"
 
 __global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float scales_per_octave, float steplogsize  );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );

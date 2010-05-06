@@ -25,7 +25,7 @@ public:
       */
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples )
     {
-        source()->read(firstSample, numberOfSamples);
+        return source()->read(firstSample, numberOfSamples);
     }
 
     virtual pBuffer readChecked( unsigned firstSample, unsigned numberOfSamples );
@@ -34,7 +34,7 @@ public:
     virtual unsigned sample_rate();
     virtual unsigned number_of_samples();
     virtual pSource source() const { return _source; }
-    virtual void source(pSource v) const { _source=v; }
+    virtual void source(pSource v) { _source=v; }
 
     virtual SamplesIntervalDescriptor updateInvalidSamples();
 

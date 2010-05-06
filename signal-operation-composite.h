@@ -77,7 +77,7 @@ public:
   OperationMove( start, 1, 2, 0 );
   result: 1204567 ("10" + "23" = "33")
   */
-class OperationMove: public Operation {
+class OperationMove: public OperationSubOperations {
 public:
     OperationMove( pSource source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 
@@ -105,7 +105,7 @@ public:
   OperationMoveMerge( start, 1, 2, 0 );
   result: 3304567 ("10" + "23" = "33")
   */
-class OperationMoveMerge: public Operation {
+class OperationMoveMerge: public OperationSubOperations {
 public:
     OperationMoveMerge( pSource source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 

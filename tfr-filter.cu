@@ -1,6 +1,6 @@
 #include "cudaUtil.h"
 #include <stdio.h>
-#include "filter.cu.h"
+#include "tfr-filter.cu.h"
 
 __global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area );
 __global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area );

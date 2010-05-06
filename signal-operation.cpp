@@ -18,6 +18,8 @@ pBuffer Operation::
 
     if (r->sample_offset + r->number_of_samples() <= firstSample)
         throw std::runtime_error("read didn't contain firstSample, r->sample_offset + r->number_of_samples() <= firstSample");
+
+    return r;
 }
 
 pBuffer Operation::
