@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include "tfr-filter.cu.h"
 
-__global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area );
+__global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside );
 __global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area );
 __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate );
 
 
-void removeDisc( float2* wavelet, cudaExtent numElem, float4 area )
+void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
 {
     dim3 block(256,1,1);
     dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height, 1);
@@ -17,7 +17,7 @@ void removeDisc( float2* wavelet, cudaExtent numElem, float4 area )
         return;
     }
 
-    kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area );
+    kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area, save_inside );
 }
 
 void removeRect( float2* wavelet, cudaExtent numElem, float4 area )
@@ -33,7 +33,7 @@ void removeRect( float2* wavelet, cudaExtent numElem, float4 area )
     kernel_remove_rect<<<grid, block>>>( wavelet, numElem, area );
 }
 
-__global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area )
+__global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
 {
     const unsigned
             x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
@@ -57,9 +57,13 @@ __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 a
       f = 1;
     }
 
+    if (save_inside)
+        f = 1-f;
+
     if (f < 1) {
         f*=f;
         f*=f;
+
         wavelet[ x + fi*numElem.width ].x *= f;
         wavelet[ x + fi*numElem.width ].y *= f;
     }

@@ -87,9 +87,10 @@ void SelectionFilter::operator()( Chunk& chunk) {
             es->p2.time * chunk.sample_rate - chunk.chunk_offset,
             es->p2.scale * chunk.nScales());
 
+        bool save_inside = false;
         ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                       chunk.transform_data->getNumberOfElements(),
-                      area );
+                      area, save_inside );
     } else
     {
         return;
@@ -125,7 +126,7 @@ void EllipsFilter::operator()( Chunk& chunk) {
 
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
-                  area );
+                  area, _save_inside );
 
     CudaException_ThreadSynchronize();
 }
