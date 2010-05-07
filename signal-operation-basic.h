@@ -11,6 +11,7 @@ public:
     OperationRemoveSection( pSource source, unsigned firstSample, unsigned numberOfRemovedSamples );
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual unsigned number_of_samples();
 private:
     unsigned _firstSample, _numberOfRemovedSamples;
 };
@@ -21,6 +22,7 @@ public:
     OperationInsertSilence( pSource source, unsigned firstSample, unsigned numberOfSilentSamples );
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual unsigned number_of_samples();
 private:
     unsigned _firstSample, _numberOfSilentSamples;
 };

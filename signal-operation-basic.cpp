@@ -16,12 +16,27 @@ pBuffer OperationRemoveSection::
         read( unsigned firstSample, unsigned numberOfSamples )
 {
     if (firstSample + numberOfSamples <= _firstSample )
+    {
         return _source->read( firstSample, numberOfSamples );
+    }
 
     if (firstSample < _firstSample)
+    {
         return _source->read( firstSample, _firstSample - firstSample );
+    }
 
-    return _source->read( firstSample + _numberOfRemovedSamples, numberOfSamples );
+    pBuffer b = _source->read( firstSample + _numberOfRemovedSamples, numberOfSamples );
+    b->sample_offset -= _numberOfRemovedSamples;
+    return b;
+}
+
+unsigned OperationRemoveSection::
+        number_of_samples()
+{
+    unsigned N = Operation::number_of_samples();
+    if (N<_numberOfRemovedSamples)
+        return 0;
+    return N - _numberOfRemovedSamples;
 }
 
     // OperationInsertSilence ///////////////////////////////////////////////////////////
@@ -43,8 +58,11 @@ pBuffer OperationInsertSilence::
     if (firstSample < _firstSample)
         return _source->read( firstSample, _firstSample - firstSample );
 
-    if (firstSample > _firstSample +  _numberOfSilentSamples)
-        return _source->read( firstSample - _numberOfSilentSamples, numberOfSamples );
+    if (firstSample >= _firstSample +  _numberOfSilentSamples) {
+        pBuffer b = _source->read( firstSample - _numberOfSilentSamples, numberOfSamples );
+        b->sample_offset += _numberOfSilentSamples;
+        return b;
+    }
 
     // Create silence
     unsigned length = _numberOfSilentSamples - (firstSample - _firstSample);
@@ -57,6 +75,12 @@ pBuffer OperationInsertSilence::
     r->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent(length,1,1) ));
     memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
     return r;
+}
+
+unsigned OperationInsertSilence::
+        number_of_samples()
+{
+    return Operation::number_of_samples() + _numberOfSilentSamples;
 }
 
 // OperationSuperposition ///////////////////////////////////////////////////////////
@@ -74,7 +98,7 @@ pBuffer OperationSuperposition::
         read( unsigned firstSample, unsigned numberOfSamples )
 {
     pBuffer a = _source->read(firstSample, numberOfSamples );
-    pBuffer b = _source->read(firstSample, numberOfSamples );
+    pBuffer b = _source2->read(firstSample, numberOfSamples );
     if (a->interleaved()!=Buffer::Only_Real) a = a->getInterleaved(Buffer::Only_Real);
     if (b->interleaved()!=Buffer::Only_Real) b = b->getInterleaved(Buffer::Only_Real);
 
