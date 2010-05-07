@@ -67,8 +67,12 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
         if (next==_intervals.end())
             continue;
 
-        if (((*itr)<(*next)) == ((*next)<(*itr))) {
-            *itr |= *next;
+        Interval& a = *itr;
+        Interval& b = *next;
+
+        if ((a<b) == (b<a))
+        {
+            a |= b;
             _intervals.erase( next );
         }
     }

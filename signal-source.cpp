@@ -110,8 +110,6 @@ pBuffer Source::
     do {
         unsigned o = p->sample_offset - firstSample-itr;
         unsigned l = p->number_of_samples()-o;
-        //fprintf(stdout,"o=%d, l=%d, itr=%d, numberOfSamples - itr = %d\n", o, l, itr, numberOfSamples - itr);
-        //fflush(stdout);
         memcpy( c+itr, p->waveform_data->getCpuMemory()+o, l*sizeof(float) );
 
         itr+=l;
