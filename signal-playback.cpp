@@ -98,6 +98,8 @@ float Playback::
 void Playback::
         put( pBuffer buffer )
 {
+    buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
+
     {
         QMutexLocker l(&_cache_lock);
 
@@ -109,28 +111,23 @@ void Playback::
 
         BufferSlot slot = { buffer, clock() };
 
-        buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
+        _cache.push_back( slot );
+
+        unsigned x = expected_samples_left();
+        if (x < buffer->number_of_samples() )
+            x = 0;
+        else
+            x -= buffer->number_of_samples();
+        expected_samples_left( x );
 
         if (streamPlayback) {
-            // not thread-safe, could stop playing if _cache is empty after isPlaying returned true and before _cache.push_back returns
-            _cache.push_back( slot );
-
             if (streamPlayback->isStopped()) {
                 // start over
                 streamPlayback->start();
             }
             return;
         }
-
-        _cache.push_back( slot );
     }
-
-    unsigned x = expected_samples_left();
-    if (x < buffer->number_of_samples() )
-        x = 0;
-    else
-        x -= buffer->number_of_samples();
-    expected_samples_left( x );
 
     if (isUnderfed() ) {
         //  Wait for more data

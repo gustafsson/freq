@@ -862,7 +862,8 @@ void DisplayWidget::paintGL()
         p = 0;
     }
 
-    if (p && p->isUnderfed() && p->expected_samples_left()) {
+//    if (p && p->isUnderfed() && p->expected_samples_left()) {
+    if (p && p->expected_samples_left()) {
         _worker->todo_list = p->getMissingSamples();
     } else {
         _worker->todo_list = _renderer->collection()->getMissingSamples();
