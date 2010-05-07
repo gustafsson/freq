@@ -111,5 +111,28 @@ void OperationMoveMerge::
     _readSubOperation = addition;
 }
 
+
+    // OperationShift  /////////////////////////////////////////////////////////////////
+
+OperationShift::
+        OperationShift( pSource source, int sampleShift )
+:   OperationSubOperations( source )
+{
+    reset(sampleShift);
+}
+
+void OperationShift::
+        reset( int sampleShift )
+{
+    if ( 0 < sampleShift )
+    {
+        pSource addSilence( new OperationInsertSilence( Operation::source(), 0u, (unsigned)sampleShift ));
+        _sourceSubOperation = _readSubOperation = addSilence;
+    } else {
+        pSource removeStart( new OperationRemoveSection( Operation::source(), 0u, (unsigned)-sampleShift ));
+        _sourceSubOperation = _readSubOperation = removeStart;
+    }
+}
+
 } // namespace Signal
 

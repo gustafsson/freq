@@ -112,6 +112,29 @@ public:
     void reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 };
 
+/**
+  Example 1:
+  start:  1234567
+  OperationShift( start, 1 );
+  result: 01234567
+
+  Example 2:
+  start:  1234567
+  OperationShift( start, 0 );
+  result: 1234567 ( same as start )
+
+  Example 3:
+  start:  1234567
+  OperationShift( start, -1 );
+  result: 234567
+  */
+class OperationShift: public OperationSubOperations {
+public:
+    OperationShift( pSource source, int sampleShift );
+
+    void reset( int sampleShift );
+};
+
 } // namespace Signal
 
 #endif // SIGNALOPERATIONCOMPOSITE_H
