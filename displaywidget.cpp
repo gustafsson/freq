@@ -348,11 +348,15 @@ void DisplayWidget::
 
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
-    unsigned start = std::min(selection[0].x, selection[1].x) * FS;
-    unsigned end = std::max(selection[0].x, selection[1].x) * FS;
+    float radie = fabsf(selection[0].x - selection[1].x);
+    unsigned start = std::max(0.0, selection[0].x - radie/sqrt(2)) * FS;
+    unsigned end = (selection[0].x + radie/sqrt(2)) * FS;
 
-    // Create OperationCrop to remove that section from the stream
-    Signal::pSource crop(new Signal::OperationCrop( b->source(), start, end-start ));
+    if (end<=start)
+        return;
+
+    // Create OperationRemoveSection to remove that section from the stream
+    Signal::pSource remove(new Signal::OperationRemoveSection( b->source(), start, end-start ));
 
     // Invalidate rendering
     Signal::SamplesIntervalDescriptor sid(start, b->number_of_samples());
@@ -360,7 +364,7 @@ void DisplayWidget::
     update();
 
     // Update stream
-    b->source(crop);
+    b->source(remove);
 }
 
 void DisplayWidget::
@@ -375,8 +379,8 @@ void DisplayWidget::
 
     } else { // Button released
         // Create filter for extracting selection
-        Tfr::pFilter extractFilter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z ));
-        Tfr::pFilter moveFilter(new Tfr::MoveFilter( selection[0].z - sourceSelection[0].z ));
+        Tfr::pFilter extractFilter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, true ));
+        Tfr::pFilter moveFilter(new Tfr::MoveFilter( sourceSelection[0].z - selection[0].z ));
         Tfr::FilterChain* pchain(new Tfr::FilterChain);
         Tfr::pFilter chain(pchain);
         pchain->push_back(extractFilter);
@@ -385,23 +389,72 @@ void DisplayWidget::
         // Create FilterOperation for applying filters
         Signal::pSource extractSelection(new Signal::FilterOperation( b->source(), chain ));
 
+        Tfr::pFilter removeFilter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, false ));
+        Signal::pSource removeSelection(new Signal::FilterOperation( b->source(), removeFilter ));
+        //Signal::pSource skipSelection(new Signal::OperationSkip( removeSelection, removeFilter->coveredSamples( removeSelection->sample_rate() ) ));
+
         // Create operation to move and merge selection,
         unsigned FS = extractSelection->sample_rate();
-        int diff = FS * (selection[0].x - sourceSelection[0].x);
+        float fR = fabsf(sourceSelection[0].x - sourceSelection[1].x);
+        unsigned L = FS * 2 * fR;
+        if (0==L)
+            return;
+        unsigned oldStart = FS * std::max( 0.f, sourceSelection[0].x-fR );
+        unsigned newStart = FS * std::max( 0.f, selection[0].x-fR );
         Signal::pSource moveSelection(new Signal::OperationMove( extractSelection,
-                                                    diff>0?0:-diff,
-                                                    extractSelection->number_of_samples(),
-                                                    diff>0?diff:0));
-        Signal::pSource mergeSelection( new Signal::OperationSuperposition( b->source(), moveSelection ));
+                                                    oldStart,
+                                                    L,
+                                                    newStart));
+        Signal::pSource mergeSelection( new Signal::OperationSuperposition( removeSelection, moveSelection ));
 
         // Invalidate rendering
-        Signal::SamplesIntervalDescriptor sid((unsigned)(FS*std::min(selection[0].x, sourceSelection[0].x)),
-                                              b->number_of_samples());
+        Signal::SamplesIntervalDescriptor sid(oldStart, oldStart+L);
+        sid |= Signal::SamplesIntervalDescriptor(newStart, newStart+L);
         _renderer->collection()->updateInvalidSamples(sid);
         update();
 
         // update stream
         b->source(mergeSelection);
+    }
+}
+
+void DisplayWidget::
+        receiveMoveSelectionInTime(bool v)
+{
+    Signal::Operation *b = getFilterOperation();
+
+    if (true==v) { // Button pressed
+        // Remember selection
+        sourceSelection[0] = selection[0];
+        sourceSelection[1] = selection[1];
+
+    } else { // Button released
+
+        // Create operation to move and merge selection,
+        unsigned FS = b->sample_rate();
+        float fL = fabsf(sourceSelection[0].x - sourceSelection[1].x);
+        if (sourceSelection[0].x < 0)
+            fL -= sourceSelection[0].x;
+        if (sourceSelection[1].x < 0)
+            fL -= sourceSelection[1].x;
+        unsigned L = FS * fL;
+        if (fL < 0 || 0==L)
+            return;
+        unsigned oldStart = FS * std::max( 0.f, sourceSelection[0].x );
+        unsigned newStart = FS * std::max( 0.f, selection[0].x );
+        Signal::pSource moveSelection(new Signal::OperationMove( b->source(),
+                                                    oldStart,
+                                                    L,
+                                                    newStart));
+
+        // Invalidate rendering
+        Signal::SamplesIntervalDescriptor sid(oldStart, oldStart+L);
+        sid |= Signal::SamplesIntervalDescriptor(newStart, newStart+L);
+        _renderer->collection()->updateInvalidSamples(sid);
+        update();
+
+        // update stream
+        b->source(moveSelection );
     }
 }
 

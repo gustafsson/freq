@@ -91,6 +91,7 @@ protected slots:
 
     virtual void receiveCropSelection();
     virtual void receiveMoveSelection(bool);
+    virtual void receiveMoveSelectionInTime(bool);
 signals:
     void filterChainUpdated( Tfr::pFilter f );
     void setSelectionActive(bool);
