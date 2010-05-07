@@ -6,7 +6,8 @@ namespace Signal {
 FilterOperation::
 FilterOperation(pSource source, Tfr::pFilter filter)
 :   Operation(source),
-    _filter( filter )
+    _filter( filter ),
+    _save_previous_chunk( false )
 {
 }
 
@@ -27,10 +28,13 @@ read( unsigned firstSample, unsigned numberOfSamples )
     if (numberOfSamples<.5f*wavelet_std_samples)
         numberOfSamples=.5f*wavelet_std_samples;
 
+    _previous_chunk.reset();
+
     // Decrease the amount of memory required
+    pBuffer r;
     while(true) {
         try {
-            pBuffer b = _source->read( firstSample, numberOfSamples + 2*wavelet_std_samples );
+            pBuffer b = _source->readFixedLength( firstSample, numberOfSamples + 2*wavelet_std_samples );
 
             Tfr::pChunk c = cwt( b );
 
@@ -38,11 +42,12 @@ read( unsigned firstSample, unsigned numberOfSamples )
             c->first_valid_sample = first_valid_sample;
 
             if (_filter) (*_filter)( *c );
-            pBuffer r = inverse_cwt( *c );
+            r = inverse_cwt( *c );
 
-            _previous_chunk = c;
+            if (_save_previous_chunk)
+                _previous_chunk = c;
 
-            return r;
+            break;
         } catch (const CufftException &) {
             if (numberOfSamples>wavelet_std_samples) {
                 numberOfSamples/=2;
@@ -57,10 +62,14 @@ read( unsigned firstSample, unsigned numberOfSamples )
             throw;
         }
     }
+
+    _save_previous_chunk = false;
+
+    return r;
 }
 
 void FilterOperation::
-meldFilters()
+        meldFilters()
 {
     FilterOperation* f = dynamic_cast<FilterOperation*>( _source.get());
     if (0==f) return;
@@ -68,24 +77,36 @@ meldFilters()
     f->meldFilters();
 
     Tfr::FilterChain* c = dynamic_cast<Tfr::FilterChain*>(_filter.get());
-    if (0==c) {        
+    if (0==c) {
         if (_filter) {
             c = new Tfr::FilterChain;
             c->push_back( _filter );
+            _filter = Tfr::pFilter( c );
+        } else {
+            _filter = f->filter();
         }
-        _filter = Tfr::pFilter( c );
     }
 
-    Tfr::FilterChain* c2 = dynamic_cast<Tfr::FilterChain*>(f->filter().get());
-    if (0==c2) {
-        if(f->filter()) c->push_back( f->filter() );
-    } else {
-        c->insert(c->end(), c2->begin(), c2->end());
+    if (0!=c) {
+        Tfr::FilterChain* c2 = dynamic_cast<Tfr::FilterChain*>(f->filter().get());
+        if (0==c2) {
+            if(f->filter())
+                c->push_back( f->filter() );
+        } else {
+            c->insert(c->end(), c2->begin(), c2->end());
+        }
     }
 
     // Remove _source (this effectively prevents two subsequent FilterOperation to
     // have different parameters for Cwt and InverseCwt
     _source = f->source();
+}
+
+Tfr::pChunk FilterOperation::
+        previous_chunk()
+{
+    _save_previous_chunk = true;
+    return _previous_chunk;
 }
 
 

@@ -15,11 +15,11 @@ public:
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
 
-    // TODO don't keep _previous_chunk unless requested
     /**
-      Get previous Tfr::Chunk. Used by heightmap rendering.
+      Get previous Tfr::Chunk. Used by heightmap rendering. Not guaranteed to
+      return a chunk, will return null unless polled before each call to 'read'.
       */
-    Tfr::pChunk previous_chunk() const { return _previous_chunk; }
+    Tfr::pChunk previous_chunk();
 
     /**
       Get/set the Tfr::Filter for this operation.
@@ -40,7 +40,19 @@ private:
 
     Tfr::pFilter _filter;
     Tfr::pChunk _previous_chunk;
+    bool _save_previous_chunk;
 };
+
+/*class OperationSkip: public Signal::Operation
+{
+public:
+    OperationSkip( pSource source, pSource baseSource, SamplesIntervalDescriptor skip, bool setToZero);
+
+    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+
+private:
+    SamplesIntervalDescriptor _skipped;
+};*/
 
 } // namespace Signal
 
