@@ -141,7 +141,7 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
         Interval& i = *itr;
 
         // Check if interval 'itr' does not intersect with 'r'
-        if ((i<r) != (r<i)) {
+        if ((i.last<=r.first) != (r.last<=i.first)) {
             itr = _intervals.erase(itr);
 
         } else if ((i<r) && (r<i)) {
