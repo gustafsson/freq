@@ -48,7 +48,8 @@ void Collection::
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
             chunk = filterOp->previous_chunk();
-        } else {
+        }
+        if (0 == chunk) {
             // otherwise compute the Cwt of this block
             chunk = Tfr::CwtSingleton::operate( b );
         }
@@ -214,9 +215,9 @@ getBlock( Reference ref )
             }
         }
 
-        Signal::SamplesIntervalDescriptor::Interval refInt = block->ref.getInterval();
+        Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
         if (0 != block.get() &&
-            (block->valid_samples &= refInt).intervals() != Signal::SamplesIntervalDescriptor( refInt ).intervals())
+            !(refInt-=block->valid_samples).intervals().empty())
         {
             _unfinished_count++;
         }
