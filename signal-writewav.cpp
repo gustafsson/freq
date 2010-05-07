@@ -78,6 +78,7 @@ void WriteWav::
 
     pBuffer b( new Buffer);
     b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent(N,1,1) ));
+    b->sample_rate = _cache[0]->sample_rate;
 
     float* p = b->waveform_data->getCpuMemory();
     BOOST_FOREACH( const pBuffer& s, _cache ) {
