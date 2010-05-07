@@ -17,13 +17,25 @@ Filter()
 }
 
 Signal::SamplesIntervalDescriptor Filter::
-coveredSamples(unsigned FS)
+        coveredSamples(unsigned FS)
 {
     float a,b;
     this->range(a,b);
     a = std::max(0.f,a);
     b = std::max(0.f,b);
     return Signal::SamplesIntervalDescriptor((unsigned)(a*FS), (unsigned)(b*FS));
+}
+
+Signal::SamplesIntervalDescriptor Filter::
+        excludedSamples( unsigned /*FS*/ )
+{
+    return Signal::SamplesIntervalDescriptor();
+}
+
+Signal::SamplesIntervalDescriptor Filter::
+        includedSamples( unsigned /*FS*/ )
+{
+    return Signal::SamplesIntervalDescriptor();
 }
 
 //////////// FilterChain

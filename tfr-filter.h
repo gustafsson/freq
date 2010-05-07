@@ -20,7 +20,18 @@ public:
     virtual void operator()( Chunk& ) = 0;
     virtual void range(float& start_time, float& end_time) = 0;
 
+    /**
+      These are the samples that the Filter does its magic to.
+      */
     virtual Signal::SamplesIntervalDescriptor coveredSamples( unsigned FS );
+    /**
+      These samples are definitely set to 0 by the Filter.
+      */
+    virtual Signal::SamplesIntervalDescriptor excludedSamples( unsigned FS );
+    /**
+      These samples are definitely left as is by the Filter.
+      */
+    virtual Signal::SamplesIntervalDescriptor includedSamples( unsigned FS );
 
     bool enabled;
 };
