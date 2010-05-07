@@ -253,9 +253,21 @@ gc()
 void Collection::
         updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
 {
-    BOOST_FOREACH( pBlock& b, _cache )
+    // canonical
+    // BOOST_FOREACH( pBlock& b, _cache )
+    // {
+    //    b->valid_samples -= sid;
+    // }
+
+    for (std::vector<pBlock>::iterator i = _cache.begin(); i!=_cache.end(); )
     {
-        b->valid_samples -= sid;
+        (*i)->valid_samples -= sid;
+
+        // Remove cached blocks which are completely invalid
+        if ((*i)->valid_samples.intervals().empty())
+            i = _cache.erase( i );
+        else
+            i++;
     }
 }
 

@@ -290,14 +290,20 @@ void DisplayWidget::receivePlaySound()
         _diskwriterCallback->sink()->reset();
 
     Signal::Playback* p = dynamic_cast<Signal::Playback*>( _playbackCallback->sink().get() );
+    unsigned L = std::min(i.last, _worker->source()->number_of_samples());
+    if (L<=i.first)
+        return;
+
+    L -= i.first;
+
     if (p) {
-        p->preparePlayback( i.first, i.last-i.first );
+        p->preparePlayback( i.first, L );
         _worker->todo_list = p->getMissingSamples();
     }
 
     Signal::WriteWav* w = dynamic_cast<Signal::WriteWav*>( _diskwriterCallback->sink().get() );
     if (w)
-        w->expected_samples_left( i.last - i.first );
+        w->expected_samples_left( L );
 
     update();
 }
@@ -341,12 +347,17 @@ void DisplayWidget::
     Signal::Operation *b = getFilterOperation();
 
     // Find out what to crop based on selection
-    float start = std::min(selection[0].x, selection[1].x);
-    float end = std::max(selection[0].x, selection[1].x);
+    unsigned FS = b->sample_rate();
+    unsigned start = std::min(selection[0].x, selection[1].x) * FS;
+    unsigned end = std::max(selection[0].x, selection[1].x) * FS;
 
     // Create OperationCrop to remove that section from the stream
-    unsigned FS = b->sample_rate();
-    Signal::pSource crop(new Signal::OperationCrop( b->source(), start*FS, (end-start)*FS ));
+    Signal::pSource crop(new Signal::OperationCrop( b->source(), start, end-start ));
+
+    // Invalidate rendering
+    Signal::SamplesIntervalDescriptor sid(start, b->number_of_samples());
+    _renderer->collection()->updateInvalidSamples(sid);
+    update();
 
     // Update stream
     b->source(crop);
@@ -383,6 +394,13 @@ void DisplayWidget::
                                                     diff>0?diff:0));
         Signal::pSource mergeSelection( new Signal::OperationSuperposition( b->source(), moveSelection ));
 
+        // Invalidate rendering
+        Signal::SamplesIntervalDescriptor sid((unsigned)(FS*std::min(selection[0].x, sourceSelection[0].x)),
+                                              b->number_of_samples());
+        _renderer->collection()->updateInvalidSamples(sid);
+        update();
+
+        // update stream
         b->source(mergeSelection);
     }
 }
@@ -862,14 +880,16 @@ void DisplayWidget::paintGL()
         p = 0;
     }
 
+    unsigned center = 0;
 //    if (p && p->isUnderfed() && p->expected_samples_left()) {
     if (p && p->expected_samples_left()) {
         _worker->todo_list = p->getMissingSamples();
     } else {
         _worker->todo_list = _renderer->collection()->getMissingSamples();
+        center = _worker->source()->sample_rate() * _qx;
     }
 
-    if (_worker->workOne())
+    if (_worker->workOne( center ))
         update();
 
     // CudaException_ThreadSynchronize();

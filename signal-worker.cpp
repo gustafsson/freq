@@ -23,16 +23,18 @@ Worker::
 
 
 bool Worker::
-        workOne()
+        workOne( unsigned middle_chunk )
 {
     QTime t;
     t.start();
+
+    // todo_list &= SamplesIntervalDescriptor(0, _source->number_of_samples());
 
     if (todo_list.intervals().empty())
         return false;
 
     SamplesIntervalDescriptor::Interval interval;
-    interval = todo_list.getInterval( _samples_per_chunk, 0 );
+    interval = todo_list.getInterval( _samples_per_chunk, middle_chunk );
     if (interval.first == interval.last) {
         throw std::invalid_argument(std::string(__FUNCTION__) + " todo_list.getInterval returned interval.first == interval.last" );
     }

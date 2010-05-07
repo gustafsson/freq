@@ -111,9 +111,10 @@ public:
       it will approximately take more than 10 ms but less than 40 ms. However, _samples_per_chunk will
       always be greater than 2.5*_wavelet_std_samples.
 
+      @param middle_chunk tells from were work should be commenced, defaults to 0.
       @return true if some work was done and false otherwise
       */
-    bool workOne();
+    bool workOne( unsigned middle_chunk=0 );
 
     /**
       The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
