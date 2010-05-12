@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=Sonic AWE, open file
+Name=Sonic AWE, record from mic
 GenericName=Sound Visualizer
 Comment=Record and visualize audio files
 
@@ -8,7 +8,7 @@ Icon=sonicawe
 Type=Application
 Categories=AudioVideo;Audio;AudioVideoEditing;
 
-Exec=sonicawe
+Exec=sonicawe --record=1
 StartupNotify=false
 Terminal=false
 MimeType=application/ogg;audio/basic;audio/mpeg;audio/x-aiff;audio/x-wav;
