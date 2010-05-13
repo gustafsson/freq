@@ -1,4 +1,4 @@
-Business case: Audio editing suite
+h4. Business case: Audio editing suite
 
-1 Locate the signals’ frequency blobs in scaleogram
-2 todo, mention in-painting
+# Locate the signals’ frequency blobs in scaleogram
+# todo, mention in-painting
