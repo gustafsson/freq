@@ -120,11 +120,12 @@ Audiofile::
   Reads an audio file using libsndfile
   */
 Audiofile::
-        Audiofile(const char* filename)
+        Audiofile(std::string filename)
+:   _original_filename(filename)
 {
     _waveform.reset( new Buffer());
 
-    TaskTimer tt("%s %s",__FUNCTION__,filename);
+    TaskTimer tt("%s %s",__FUNCTION__,filename.c_str());
 
     SndfileHandle source(filename);
 

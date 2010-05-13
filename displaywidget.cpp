@@ -320,7 +320,18 @@ void DisplayWidget::receiveAddClearSelection(bool active)
 
     getFilterOperation()->filter()->enabled = true;
 
-    emit filterChainUpdated(getFilterOperation()->filter());
+    setWorkerSource();
+}
+
+void DisplayWidget::setWorkerSource( Signal::pSource s ) {
+    if (s.get())
+        _worker->source( s );
+
+    // Update worker structure
+    Signal::FilterOperation* fo = getFilterOperation();
+
+    emit filterChainUpdated(fo->filter());
+    emit operationsUpdated( _worker->source() );
 }
 
 void DisplayWidget::receiveAddSelection(bool /*active*/)
@@ -328,7 +339,7 @@ void DisplayWidget::receiveAddSelection(bool /*active*/)
     Signal::FilterOperation *f = getFilterOperation();
     f = new Signal::FilterOperation( _worker->source(), f->inverse_cwt.filter );
     f->meldFilters();
-    _worker->source( Signal::pSource(f) );
+    setWorkerSource( Signal::pSource(f) );
 
     float start, end;
     f->filter()->range(start, end);
@@ -338,7 +349,7 @@ void DisplayWidget::receiveAddSelection(bool /*active*/)
             (unsigned)(end*f->sample_rate()));
     _renderer->collection()->updateInvalidSamples(sid);
     update();
-    emit filterChainUpdated(getFilterOperation()->filter());
+    setWorkerSource();
 }
 
 void DisplayWidget::
@@ -482,11 +493,11 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             sid |= f->filter()->coveredSamples(f->sample_rate());
 
             // Remove all topmost filters
-            _worker->source( f->source() );
+            setWorkerSource( f->source() );
             
             update();
             // getFilterOperation will recreate an empty FilterOperation
-            emit filterChainUpdated(getFilterOperation()->filter());
+            setWorkerSource();
             break;
         }
         case 'x': case 'X':
@@ -1384,7 +1395,7 @@ void DisplayWidget::removeFilter(int index){
         _renderer->collection()->updateInvalidSamples( e->coveredSamples(f->sample_rate()) );
     }
     update();
-    emit filterChainUpdated(getFilterOperation()->filter());
+    setWorkerSource();
 }
 
 void DisplayWidget::

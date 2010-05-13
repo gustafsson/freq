@@ -58,7 +58,9 @@ public:
     } yscale;
     floatAni orthoview;
     float xscale;
-    
+
+    void setWorkerSource( Signal::pSource s = Signal::pSource());
+
     virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );
 protected:
@@ -93,6 +95,7 @@ protected slots:
     virtual void receiveMoveSelection(bool);
     virtual void receiveMoveSelectionInTime(bool);
 signals:
+    void operationsUpdated( Signal::pSource s );
     void filterChainUpdated( Tfr::pFilter f );
     void setSelectionActive(bool);
     void setNavigationActive(bool);
@@ -165,7 +168,7 @@ private:
     
     bool insideCircle( float x1, float z1 );
     
-    
+
     MouseControl leftButton;
     MouseControl rightButton;
     MouseControl middleButton;

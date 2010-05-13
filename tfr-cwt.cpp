@@ -22,7 +22,7 @@ Cwt::
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
-    pFftChunk ft = _fft( buffer );
+    pFftChunk ft ( _fft( buffer ) );
 
     pChunk intermediate_wt( new Chunk() );
 
