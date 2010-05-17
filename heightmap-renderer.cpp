@@ -679,7 +679,7 @@ void Renderer::drawAxes()
     // 3 decide upon scale
     // 4 draw axis
 
-    float w = 0.1f, h=0.1f;
+    float w = 0.1f, h=0.05f;
     { // 1 gray draw overlay
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
@@ -858,21 +858,27 @@ void Renderer::drawAxes()
                     glLineWidth(1);
                     glPushMatrix();
                         glTranslatef(p[0], 0, p[2]);
-                        glRotatef(90,0,1,0);
+//                        glRotatef(90,0,1,0);
                         glRotatef(90,1,0,0);
-                        glScalef(0.00016f*SF,0.00016f*ST,1.f);
+                        glScalef(0.00012f*ST,0.00012f*SF,1.f);
                         char a[100];
                         char b[100];
                         sprintf(b,"%%.%df", st<0?-1-st:0);
                         sprintf(a, b, t*DT);
-                        unsigned w=20;
-                        if (sign>0) {
-                            for (char*c=a;*c!=0; c++)
-                                w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                        float w=0;
+                        float letter_spacing=15;
+
+                        for (char*c=a;*c!=0; c++) {
+                            if (c!=a)
+                                w+=letter_spacing;
+                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                         }
-                        glTranslatef(-sign*w,-50.f,0);
-                        for (char*c=a;*c!=0; c++)
+
+                        glTranslatef(-.5f*w,sign*120-50.f,0);
+                        for (char*c=a;*c!=0; c++) {
                             glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                            glTranslatef(letter_spacing,0,0);
+                        }
                     glPopMatrix();
                 }
 
