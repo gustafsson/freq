@@ -10,6 +10,7 @@ class SamplesIntervalDescriptor
 {
 public:
     typedef unsigned SampleType;
+    static const SampleType SampleType_MAX;
 
     struct Interval {
         /**
@@ -40,6 +41,7 @@ public:
 
     Interval    getInterval( SampleType dt, SampleType center = 0 ) const;
 
+    bool isEmpty() const { return _intervals.empty(); }
     const std::list<Interval>& intervals() { return _intervals; }
 private:
     std::list<Interval> _intervals;

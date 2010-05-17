@@ -21,7 +21,7 @@ public:
 	//Standard manipulation of the selection
 	virtual void move(Position p);
 	virtual void scale(Position p);
-	virtual void range(float& start_time, float& end_time);
+        virtual void range(float& start_time, float& end_time) const;
 	
 	virtual ~Selection();
 };

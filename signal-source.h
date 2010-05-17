@@ -22,16 +22,18 @@ public:
     };
 
     Buffer(Interleaved interleaved=Only_Real);
+    Buffer(unsigned firstSample, unsigned numberOfSamples, unsigned FS, Interleaved interleaved=Only_Real);
 
     boost::scoped_ptr<GpuCpuData<float> > waveform_data;
 
-    unsigned number_of_samples() { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
+    unsigned number_of_samples() const { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
     Interleaved interleaved() const {return _interleaved; }
-    boost::shared_ptr<class Buffer> getInterleaved(Interleaved);
+    boost::shared_ptr<class Buffer> getInterleaved(Interleaved) const;
 
     float start() { return sample_offset/(float)sample_rate; }
     float length() { return number_of_samples()/(float)sample_rate; }
 
+    Buffer& operator|=(const Buffer& b);
     unsigned sample_offset;
     unsigned sample_rate;
 

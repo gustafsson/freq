@@ -1,5 +1,6 @@
 #include "signal-filteroperation.h"
 #include <CudaException.h>
+#include <memory.h>
 
 namespace Signal {
 
@@ -34,8 +35,32 @@ read( unsigned firstSample, unsigned numberOfSamples )
     pBuffer r;
     while(true) {
         try {
-            pBuffer b = _source->readFixedLength( firstSample, numberOfSamples + 2*wavelet_std_samples );
+            unsigned L = numberOfSamples + 2*wavelet_std_samples;
 
+            // If filter would make all these samples zero, return immediately
+            if (_filter) {
+                SamplesIntervalDescriptor work(firstSample, firstSample + L );
+                work -= _filter->getZeroSamples( _source->sample_rate() );
+                if (work.isEmpty()) {
+                    pBuffer b( new Buffer( firstSample, L, _source->sample_rate() ));
+                    ::memset( b->waveform_data->getCpuMemory(), 0, L);
+                    return b;
+                }
+            }
+
+            pBuffer b = _source->readFixedLength( firstSample, L );
+
+            // If filter would leave these samples untouched, return immediately
+            if (_filter) {
+                SamplesIntervalDescriptor work(firstSample, firstSample + L );
+                work -= _filter->getUntouchedSamples( _source->sample_rate() );
+                if (work.isEmpty())
+                    return b;
+            }
+            if (!_filter)
+                return b;
+
+            // Compute the continous wavelet transform
             Tfr::pChunk c = cwt( b );
 
             c->n_valid_samples += c->first_valid_sample - first_valid_sample;

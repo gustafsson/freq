@@ -30,7 +30,7 @@ bool Worker::
 
     // todo_list &= SamplesIntervalDescriptor(0, _source->number_of_samples());
 
-    if (todo_list.intervals().empty())
+    if (todo_list.isEmpty())
         return false;
 
     SamplesIntervalDescriptor::Interval interval;

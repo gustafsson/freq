@@ -1,6 +1,7 @@
 #include "signal-source.h"
 #include <string.h>
 #include <stdio.h>
+#include "signal-samplesintervaldescriptor.h"
 
 using namespace std;
 
@@ -20,8 +21,26 @@ Buffer::Buffer(Interleaved interleaved)
     }
 }
 
+Buffer::Buffer(unsigned first_sample, unsigned numberOfSamples, unsigned FS, Interleaved interleaved)
+:   sample_offset(first_sample),
+    sample_rate(FS),
+    _interleaved(interleaved)
+{
+    switch(_interleaved) {
+        case Interleaved_Complex:
+            numberOfSamples*=2;
+            break;
+        case Only_Real:
+            break;
+        default:
+            throw invalid_argument( string( __FUNCTION__ ));
+    }
 
-pBuffer Buffer::getInterleaved(Interleaved value)
+    waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, 1, 1)));
+}
+
+
+pBuffer Buffer::getInterleaved(Interleaved value) const
 {
     pBuffer chunk( new Buffer( value ));
     chunk->sample_rate = sample_rate;
@@ -76,6 +95,36 @@ pBuffer Buffer::getInterleaved(Interleaved value)
     return chunk;
 }
 
+Buffer& Buffer::
+        operator|=(const Buffer& rb)
+{
+    pBuffer b2;
+    const Buffer *p = &rb;
+    
+    if (_interleaved != p->interleaved()) {
+        b2 = p->getInterleaved(_interleaved);
+        p = &*b2;
+    }
+
+    float* c = waveform_data->getCpuMemory();
+
+    SamplesIntervalDescriptor sid( sample_offset, sample_offset + number_of_samples());
+    SamplesIntervalDescriptor psid( p->sample_offset, p->sample_offset + p->number_of_samples());
+    sid &= psid;
+
+    if (sid.isEmpty())
+        return *this;
+
+    SamplesIntervalDescriptor::Interval i = sid.getInterval(p->number_of_samples());
+
+    unsigned offs_write = i.first - sample_offset;
+    unsigned offs_read = i.first - p->sample_offset;
+    unsigned f = _interleaved == Interleaved_Complex ? 2: 1;
+    memcpy(c+offs_write, p->waveform_data->getCpuMemory() + offs_read, f*(i.last-i.first)*sizeof(float));
+
+    return *this;
+}
+
 pBuffer Source::
         readChecked( unsigned firstSample, unsigned numberOfSamples )
 {
@@ -99,25 +148,19 @@ pBuffer Source::
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r( new Buffer );
-    r->sample_offset = firstSample;
-    r->sample_rate = p->sample_rate;
-    r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, 1, 1)));
-    float* c = r->waveform_data->getCpuMemory();
+    pBuffer r( new Buffer(firstSample, numberOfSamples, p->sample_rate) );
+    SamplesIntervalDescriptor sid(firstSample, firstSample + numberOfSamples);
 
-    // Fill new buffer
-    unsigned itr = 0;
-    do {
-        unsigned o = p->sample_offset - firstSample-itr;
-        unsigned l = p->number_of_samples()-o;
-        memcpy( c+itr, p->waveform_data->getCpuMemory()+o, l*sizeof(float) );
+    while (!sid.isEmpty())
+    {
+        (*r) |= *p;
+        sid -= SamplesIntervalDescriptor( p->sample_offset, p->sample_offset + p->number_of_samples() );
 
-        itr+=l;
-
-        if (itr<numberOfSamples)
-            p = readChecked( firstSample + itr, numberOfSamples - itr );
-
-    } while (itr<numberOfSamples);
+        if (!sid.isEmpty()) {
+            SamplesIntervalDescriptor::Interval i = sid.getInterval( SamplesIntervalDescriptor::SampleType_MAX );
+            p = readChecked( i.first, i.last - i.first );
+        }
+    }
 
     return r;
 }

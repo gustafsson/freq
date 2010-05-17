@@ -217,7 +217,7 @@ getBlock( Reference ref )
 
         Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
         if (0 != block.get() &&
-            !(refInt-=block->valid_samples).intervals().empty())
+            !(refInt-=block->valid_samples).isEmpty())
         {
             _unfinished_count++;
         }
@@ -265,7 +265,7 @@ void Collection::
         (*i)->valid_samples -= sid;
 
         // Remove cached blocks which are completely invalid
-        if ((*i)->valid_samples.intervals().empty())
+        if ((*i)->valid_samples.isEmpty())
             i = _cache.erase( i );
         else
             i++;
@@ -545,7 +545,7 @@ mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
     in_sid &= out_ref_sid; // restrict to ref block
     in_sid -= out_sid;     // remove already valid samples
 
-    if (in_sid.intervals().empty()) {
+    if (in_sid.isEmpty()) {
         return;
     }
 

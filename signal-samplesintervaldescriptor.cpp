@@ -6,6 +6,8 @@
 
 namespace Signal {
 
+const SamplesIntervalDescriptor::SampleType SamplesIntervalDescriptor::SampleType_MAX = (SamplesIntervalDescriptor::SampleType)-1;
+
 bool SamplesIntervalDescriptor::Interval::
         operator<(const Interval& r) const
 {

@@ -273,11 +273,11 @@ void DisplayWidget::receivePlaySound()
 
     // find range of selection
     Signal::FilterOperation *f = getFilterOperation();
-    Signal::SamplesIntervalDescriptor sid = f->inverse_cwt.filter->coveredSamples( f->sample_rate() );
-    if (sid.intervals().empty())
+    const Signal::SamplesIntervalDescriptor::Interval i = f->inverse_cwt.filter->coveredInterval( f->sample_rate() );
+    if (i.first == i.last)
         return;
 
-    const Signal::SamplesIntervalDescriptor::Interval& i = sid.intervals().front();
+    //const Signal::SamplesIntervalDescriptor::Interval& i = sid.intervals().front();
 
     if (!_playbackCallback)
         _playbackCallback.reset( new Signal::WorkerCallback( _worker, Signal::pSink( new Signal::Playback( _playback_device ))));
@@ -330,13 +330,8 @@ void DisplayWidget::receiveAddSelection(bool /*active*/)
     f->meldFilters();
     _worker->source( Signal::pSource(f) );
 
-    float start, end;
-    f->filter()->range(start, end);
     f->filter()->enabled = false;
-    Signal::SamplesIntervalDescriptor sid(
-            (unsigned)(start*f->sample_rate()),
-            (unsigned)(end*f->sample_rate()));
-    _renderer->collection()->updateInvalidSamples(sid);
+    _renderer->collection()->updateInvalidSamples(f->filter()->getTouchedSamples(f->sample_rate()));
     update();
     emit filterChainUpdated(getFilterOperation()->filter());
 }
@@ -401,11 +396,18 @@ void DisplayWidget::
             return;
         unsigned oldStart = FS * std::max( 0.f, sourceSelection[0].x-fR );
         unsigned newStart = FS * std::max( 0.f, selection[0].x-fR );
-        Signal::pSource moveSelection(new Signal::OperationMove( extractSelection,
+/*        Signal::pSource moveSelection(new Signal::OperationMove( extractSelection,
                                                     oldStart,
                                                     L,
-                                                    newStart));
-        Signal::pSource mergeSelection( new Signal::OperationSuperposition( removeSelection, moveSelection ));
+                                                    newStart));*/
+        if (oldStart > newStart ) {
+            extractSelection.reset(new Signal::OperationRemoveSection( extractSelection,
+                                                                0, oldStart-newStart));
+        } else if (newStart > oldStart) {
+            extractSelection.reset(new Signal::OperationInsertSilence( extractSelection,
+                                                                0, newStart-oldStart));
+        }
+        Signal::pSource mergeSelection( new Signal::OperationSuperposition( removeSelection, extractSelection ));
 
         // Invalidate rendering
         Signal::SamplesIntervalDescriptor sid(oldStart, oldStart+L);
@@ -479,7 +481,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             Signal::SamplesIntervalDescriptor sid;
 
 
-            sid |= f->filter()->coveredSamples(f->sample_rate());
+            sid |= f->filter()->getTouchedSamples(f->sample_rate());
 
             // Remove all topmost filters
             _worker->source( f->source() );
@@ -820,7 +822,7 @@ void DisplayWidget::paintGL()
     TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
     {
         QMutexLocker l(&_invalidRangeMutex);
-        if (!_invalidRange.intervals().empty()) {
+        if (!_invalidRange.isEmpty()) {
             _renderer->collection()->updateInvalidSamples( _invalidRange );
             _invalidRange = Signal::SamplesIntervalDescriptor();
         }
@@ -1356,7 +1358,7 @@ void DisplayWidget::setSelection(int index, bool enabled)
         if(e->enabled != enabled) {
             e->enabled = enabled;
 
-            _renderer->collection()->updateInvalidSamples( e->coveredSamples(f->sample_rate()) );
+            _renderer->collection()->updateInvalidSamples( e->getTouchedSamples(f->sample_rate()) );
         }
     }
     
@@ -1371,17 +1373,14 @@ void DisplayWidget::removeFilter(int index){
     
     printf("####Removing filter: %d\n", index);
     
-    float start, end;
     Tfr::FilterChain::iterator i = c->begin();
     std::advance(i, index);
     Tfr::EllipsFilter *e = dynamic_cast<Tfr::EllipsFilter*>(i->get());
     if (e)
     {
-        e->range(start, end);
-
         c->erase(i);
 
-        _renderer->collection()->updateInvalidSamples( e->coveredSamples(f->sample_rate()) );
+        _renderer->collection()->updateInvalidSamples( e->getTouchedSamples(f->sample_rate()) );
     }
     update();
     emit filterChainUpdated(getFilterOperation()->filter());

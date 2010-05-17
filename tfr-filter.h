@@ -18,20 +18,19 @@ public:
     virtual ~Filter() {}
 
     virtual void operator()( Chunk& ) = 0;
-    virtual void range(float& start_time, float& end_time) = 0;
 
     /**
-      These are the samples that the Filter does its magic to.
+      These samples are definitely set to 0 by the filter.
       */
-    virtual Signal::SamplesIntervalDescriptor coveredSamples( unsigned FS );
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const = 0;
+
     /**
-      These samples are definitely set to 0 by the Filter.
+      These samples are definitely left as is by the filter.
       */
-    virtual Signal::SamplesIntervalDescriptor excludedSamples( unsigned FS );
-    /**
-      These samples are definitely left as is by the Filter.
-      */
-    virtual Signal::SamplesIntervalDescriptor includedSamples( unsigned FS );
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const = 0;
+
+    Signal::SamplesIntervalDescriptor getTouchedSamples( unsigned FS ) const;
+    Signal::SamplesIntervalDescriptor::Interval coveredInterval( unsigned FS ) const;
 
     bool enabled;
 };
@@ -41,7 +40,8 @@ class FilterChain: public Filter, public std::list<pFilter>
 {
 public:
     virtual void operator()( Chunk& );
-    virtual void range(float& start_time, float& end_time);
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 };
 
 class SelectionFilter: public Filter
@@ -50,7 +50,8 @@ public:
     SelectionFilter( Selection s );
 
     virtual void operator()( Chunk& );
-    virtual void range(float& start_time, float& end_time);
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 
     Selection s;
 
@@ -65,7 +66,8 @@ public:
     EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
     virtual void operator()( Chunk& );
-    virtual void range(float& start_time, float& end_time);
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 
     float _t1, _f1, _t2, _f2;
 
@@ -79,7 +81,8 @@ public:
     SquareFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
     virtual void operator()( Chunk& );
-    virtual void range(float& start_time, float& end_time);
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 
     float _t1, _f1, _t2, _f2;
 
@@ -93,7 +96,8 @@ public:
     MoveFilter(float df);
 
     virtual void operator()( Chunk& );
-    virtual void range(float& start_time, float& end_time);
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 
     float _df;
 };
