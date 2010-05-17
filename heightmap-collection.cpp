@@ -47,7 +47,7 @@ void Collection::
         Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s);
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
-            chunk = filterOp->previous_chunk();
+            chunk = filterOp->pick_previous_chunk();
         }
         if (0 == chunk) {
             // otherwise compute the Cwt of this block

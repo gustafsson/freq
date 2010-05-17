@@ -16,10 +16,14 @@ public:
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
 
     /**
-      Get previous Tfr::Chunk. Used by heightmap rendering. Not guaranteed to
-      return a chunk, will return null unless polled before each call to 'read'.
+      Pick previous Tfr::Chunk. Used by heightmap rendering. Not guaranteed to
+      return a chunk, will return null unless polled before each call to 'read'
+      (and 'read' concluded that a chunk had to be computed).
+
+      Also returns a chunk only once. Two subsequent calls to pick_... without
+      calling 'read' in between will make the second call return null.
       */
-    Tfr::pChunk previous_chunk();
+    Tfr::pChunk pick_previous_chunk();
 
     /**
       Get/set the Tfr::Filter for this operation.
