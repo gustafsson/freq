@@ -5,7 +5,7 @@
 namespace Signal {
 
 FilterOperation::
-FilterOperation(pSource source, Tfr::pFilter filter)
+        FilterOperation(pSource source, Tfr::pFilter filter)
 :   Operation(source),
     _filter( filter ),
     _save_previous_chunk( false )
@@ -13,13 +13,13 @@ FilterOperation(pSource source, Tfr::pFilter filter)
 }
 
 pBuffer FilterOperation::
-read( unsigned firstSample, unsigned numberOfSamples )
+        read( unsigned firstSample, unsigned numberOfSamples )
 {
     meldFilters();
 
     unsigned wavelet_std_samples = cwt.wavelet_std_samples( _source->sample_rate());
 
-    // wavelet_std_samples gets stored in c so that inverse_cwt can take it
+    // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
     // into account and create an inverse that is of the desired size.
     unsigned first_valid_sample = 0;
     if (firstSample < wavelet_std_samples) first_valid_sample = firstSample;
@@ -50,15 +50,16 @@ read( unsigned firstSample, unsigned numberOfSamples )
 
             pBuffer b = _source->readFixedLength( firstSample, L );
 
-            // If filter would leave these samples untouched, return immediately
+            // If filter would leave these samples untouched, there is nothing to do; return
             if (_filter) {
                 SamplesIntervalDescriptor work(firstSample, firstSample + L );
                 work -= _filter->getUntouchedSamples( _source->sample_rate() );
                 if (work.isEmpty())
                     return b;
-            }
-            if (!_filter)
+            } else {
+                // If there is no filter to apply, there is nothing to do; return
                 return b;
+            }
 
             // Compute the continous wavelet transform
             Tfr::pChunk c = cwt( b );
@@ -66,7 +67,13 @@ read( unsigned firstSample, unsigned numberOfSamples )
             c->n_valid_samples += c->first_valid_sample - first_valid_sample;
             c->first_valid_sample = first_valid_sample;
 
-            if (_filter) (*_filter)( *c );
+            // Apply filter
+            if (_filter)
+            {
+                (*_filter)( *c );
+            }
+
+            // Compute the inverse
             r = inverse_cwt( *c );
 
             if (_save_previous_chunk)
@@ -123,7 +130,7 @@ void FilterOperation::
     }
 
     // Remove _source (this effectively prevents two subsequent FilterOperation to
-    // have different parameters for Cwt and InverseCwt
+    // have different parameters for Cwt and InverseCwt)
     _source = f->source();
 }
 
