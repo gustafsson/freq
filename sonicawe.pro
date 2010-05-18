@@ -1,6 +1,8 @@
 # -------------------------------------------------
 # Project created by QtCreator 2009-11-06T11:26:14
 # -------------------------------------------------
+
+### Compiler settings
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
@@ -12,6 +14,13 @@ RESOURCES += icon-resources.qrc
 unix:QMAKE_CXXFLAGS_DEBUG = -ggdb
 QMAKE_CXXFLAGS_RELEASE = -O3
 TARGET = sonicawe
+#unix {
+#    QMAKE_CXX = llvm-g++
+#    QMAKE_CC = llvm-gcc
+#    QMAKE_LINK = llvm-g++
+#}
+
+### Source code
 SOURCES += main.cpp \
     mainwindow.cpp \
     displaywidget.cpp \
