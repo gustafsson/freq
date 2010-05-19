@@ -1,6 +1,9 @@
 #ifndef DISPLAYWIDGET_H
 #define DISPLAYWIDGET_H
 
+#ifdef _WIN32 // QGLWidget includes WinDef.h on windows
+#define NOMINMAX
+#endif
 #include <QGLWidget>
 #include "heightmap-renderer.h"
 #include "sawe-mainplayback.h"

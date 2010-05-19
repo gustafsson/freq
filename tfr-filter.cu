@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include "tfr-filter.cu.h"
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#include <math.h>
+#endif
+
 __global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside );
 __global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area );
 __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate );

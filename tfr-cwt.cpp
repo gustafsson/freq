@@ -5,6 +5,10 @@
 #include <CudaException.h>
 #include "tfr-wavelet.cu.h"
 
+#ifdef _MSC_VER
+#include "msc_stdc.h"
+#endif
+
 #define TIME_CWT
 
 namespace Tfr {

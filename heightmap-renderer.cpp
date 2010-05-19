@@ -17,6 +17,10 @@
 #include <CudaException.h>
 #include "displaywidget.h"
 
+#ifdef _MSC_VER
+#include "msc_stdc.h"
+#endif
+
 namespace Heightmap {
 
 

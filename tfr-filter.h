@@ -9,7 +9,7 @@
 
 
 namespace Tfr {
-class Chunk;
+struct Chunk;
 
 class Filter
 {

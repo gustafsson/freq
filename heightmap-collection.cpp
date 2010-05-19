@@ -6,6 +6,11 @@
 #include <boost/foreach.hpp>
 #include <CudaException.h>
 #include <GlException.h>
+#include <string>
+
+#ifdef _MSC_VER
+#include <msc_stdc.h>
+#endif
 
 namespace Heightmap {
 
@@ -178,8 +183,8 @@ findReference( Position p, Position sampleSize )
     //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Compute chunk index
-    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
-                                        p.scale / _scales_per_block * pow(2, -r.log2_samples_size[1]));
+    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2.f, -r.log2_samples_size[0]),
+                                        p.scale / _scales_per_block * pow(2.f, -r.log2_samples_size[1]));
 
     // Validate chunk index
     r.getArea(a,b);
