@@ -69,6 +69,8 @@ Signal::SamplesIntervalDescriptor FilterChain::
     BOOST_FOREACH( pFilter f, *this ) {
         sid |= f->getZeroSamples( FS );
     }
+
+	return sid;
 }
 
 Signal::SamplesIntervalDescriptor FilterChain::
@@ -79,6 +81,8 @@ Signal::SamplesIntervalDescriptor FilterChain::
     BOOST_FOREACH( pFilter f, *this ) {
         sid &= f->getUntouchedSamples( FS );
     }
+
+	return sid;
 }
 
 //////////// SelectionFilter
@@ -284,7 +288,7 @@ void MoveFilter::
     float df = _df * chunk.nScales();
 
     ::moveFilter( chunk.transform_data->getCudaGlobal(),
-                  df, chunk.min_hz, chunk.max_hz, chunk.sample_rate );
+                  df, chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
 
     CudaException_ThreadSynchronize();
 }
