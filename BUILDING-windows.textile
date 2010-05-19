@@ -28,12 +28,7 @@ follow these steps:
 <pre>cd /path/to/sonic
 cd gpumisc
 qmake</pre>
-This creates gpumisc.dsp, a Visual Studio file for old versions of Visual Studio. Open this file in Visual
-Studio which should ask you to convert this to a newer version, say yes, save and close. You now have a
-gpumisc.vcproj file as well, which is the file linked to by the Visual Studio solution at 
-'/path/to/sonic/sonic.sln'. Do the same for sonicawe. Note that you need to redo these steps each time
-a .pro file have changed. Also, project settings are managed through .pro files. Visual Studio project 
-files should be regared as temporary files.
+This creates gpumisc.dsp, a Visual Studio file for old versions of Visual Studio. Open this file in Visual Studio which should ask you to convert this to a newer version (don't open the .vcproj file instead if you're asked that), say yes, save and close. You now have a gpumisc.vcproj file as well, which is the file linked to by the Visual Studio solution at '/path/to/sonic/sonic.sln'. Do the same for sonicawe. Note that you need to redo these steps each time a .pro file have changed. Also, project settings are managed through .pro files. Visual Studio project files should be regared as temporary files.
 
 'enable-dsp-to-vcproj.sln' is needed to prevent Visual Studio from opening sonic.sln when you 
 attempt to open gpumisc.dsp.
@@ -50,9 +45,8 @@ Follow the link "here":http://qt.nokia.com/downloads/visual-studio-add-in to dow
 ---
 
 *4. Packaging the application*
-*4.1 Debug build*
-To package a debug build of SonicAwe, copy the included libraries and the exe to the folder of your choice. Also include the VS runtime libraries msvcp90d.dll, msvcr90d.dll and the manifest file Microsoft.VC90.DebugCRT.manifest. These should be located in the folder "C:\program files\Microsoft Visual Studio 9.0\VC\redist\Debug_NonRedist\x86".
-It should be a trivial task to put this behaviour into the project file but since paths may differ on different computers, this has not been done.
+To package a build of SonicAwe, copy the included libraries and the exe to the folder of your choice. Also include the VS runtime libraries msvcp90d.dll, msvcr90d.dll and the manifest file Microsoft.VC90.DebugCRT.manifest. These should be located in the folder "C:\[Program]\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT".
+It should be possible to put this behaviour into the project file but since paths may differ on different computers, this has not been done.
 
 The following dlls should be included in the package:
 <pre>cudart.dll
@@ -60,16 +54,10 @@ cufft.dll
 glew32.dll
 glut32.dll
 libsndfile-1.dll
-msvcp90d.dll
-msvcr90d.dll
-QtCored4.dll
+msvcp90.dll
+msvcr90.dll
+QtCore4.dll
 QtGuid4.dll
-QtOpenGLd4.dll
+QtOpenGL4.dll
 portaudio_x86.dll
 </pre>
-Also don't forget to include
-<pre>spectrogram.frag
-spectrogram.vert</pre>
-
-*4.2 Release build*
-The application is currently not in a state stable enough to run in release mode but the process is similar to the previously described debug mode.
