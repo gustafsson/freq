@@ -5,15 +5,12 @@
 #include <QtGui/QListWidgetItem>
 #include "displaywidget.h"
 #include "tfr-filter.h"
+#include <QTreeWidgetItem>
 
 #ifdef Q_WS_MAC
 void qt_mac_set_menubar_icons(bool enable);
 #endif
 
-namespace Ui
-{
-    class MainWindow;
-}
 
 class MainWindow : public QMainWindow
 {
@@ -30,6 +27,7 @@ protected:
     virtual void keyReleaseEvent ( QKeyEvent * e );
 
 public slots:
+    void updateOperationsTree( Signal::pSource s);
     void updateLayerList( Tfr::pFilter f );
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(QListWidgetItem*);
@@ -44,7 +42,9 @@ signals:
     void sendRemoveItem(int);
 
 private:
-    Ui::MainWindow *ui;
+    void updateOperationsTree( Signal::pSource s, QTreeWidgetItem* w );
+    void updateOperationsTree( Tfr::pFilter f, QTreeWidgetItem* w );
+    class Ui_MainWindow *ui;
 };
 
 #endif // MAINWINDOW_H

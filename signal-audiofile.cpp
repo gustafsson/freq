@@ -1,10 +1,9 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
-// TODO check necessity in windows
-//#ifdef _MSC_VER
-//typedef long long __int64_t;
-//#endif
-#include <stdint.h>
+#include <stdint.h> // defines int64_t which is expected by sndfile.h
+#ifdef _MSC_VER
+typedef int64_t __int64_t;
+#endif
 #include <sndfile.hh> // for reading various formats
 #include <math.h>
 #include "Statistics.h"
@@ -13,7 +12,7 @@
 #include <sstream>
 
 #ifdef _MSC_VER
-#include "windows.h"
+//TODO #include "windows.h"
 #endif
 
 #include <boost/scoped_array.hpp>
@@ -120,11 +119,12 @@ Audiofile::
   Reads an audio file using libsndfile
   */
 Audiofile::
-        Audiofile(const char* filename)
+        Audiofile(std::string filename)
+:   _original_filename(filename)
 {
     _waveform.reset( new Buffer());
 
-    TaskTimer tt("%s %s",__FUNCTION__,filename);
+    TaskTimer tt("%s %s",__FUNCTION__,filename.c_str());
 
     SndfileHandle source(filename);
 

@@ -30,7 +30,8 @@
 
 #include <msc_stdc.h>
 
-#undef max
+//#undef max
+//#undef min
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -320,7 +321,18 @@ void DisplayWidget::receiveAddClearSelection(bool active)
 
     getFilterOperation()->filter()->enabled = true;
 
-    emit filterChainUpdated(getFilterOperation()->filter());
+    setWorkerSource();
+}
+
+void DisplayWidget::setWorkerSource( Signal::pSource s ) {
+    if (s.get())
+        _worker->source( s );
+
+    // Update worker structure
+    Signal::FilterOperation* fo = getFilterOperation();
+
+    emit filterChainUpdated(fo->filter());
+    emit operationsUpdated( _worker->source() );
 }
 
 void DisplayWidget::receiveAddSelection(bool /*active*/)
@@ -328,12 +340,12 @@ void DisplayWidget::receiveAddSelection(bool /*active*/)
     Signal::FilterOperation *f = getFilterOperation();
     f = new Signal::FilterOperation( _worker->source(), f->inverse_cwt.filter );
     f->meldFilters();
-    _worker->source( Signal::pSource(f) );
+    setWorkerSource( Signal::pSource(f) );
 
     f->filter()->enabled = false;
     _renderer->collection()->updateInvalidSamples(f->filter()->getTouchedSamples(f->sample_rate()));
     update();
-    emit filterChainUpdated(getFilterOperation()->filter());
+    setWorkerSource();
 }
 
 void DisplayWidget::
@@ -344,8 +356,8 @@ void DisplayWidget::
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
     float radie = fabsf(selection[0].x - selection[1].x);
-    unsigned start = std::max(0.0, selection[0].x - radie/sqrt(2)) * FS;
-    unsigned end = (selection[0].x + radie/sqrt(2)) * FS;
+    unsigned start = std::max(0.f, selection[0].x - radie/sqrt(2.f)) * FS;
+    unsigned end = (selection[0].x + radie/sqrt(2.f)) * FS;
 
     if (end<=start)
         return;
@@ -484,11 +496,11 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
             sid |= f->filter()->getTouchedSamples(f->sample_rate());
 
             // Remove all topmost filters
-            _worker->source( f->source() );
+            setWorkerSource( f->source() );
             
             update();
             // getFilterOperation will recreate an empty FilterOperation
-            emit filterChainUpdated(getFilterOperation()->filter());
+            setWorkerSource();
             break;
         }
         case 'x': case 'X':
@@ -1383,7 +1395,7 @@ void DisplayWidget::removeFilter(int index){
         _renderer->collection()->updateInvalidSamples( e->getTouchedSamples(f->sample_rate()) );
     }
     update();
-    emit filterChainUpdated(getFilterOperation()->filter());
+    setWorkerSource();
 }
 
 void DisplayWidget::

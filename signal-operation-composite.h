@@ -20,6 +20,8 @@ namespace Signal {
   class subclassing OperationSubOperations. Hence the protected constructor.
   */
 class OperationSubOperations : public Operation {
+public:
+    pSource subSource() { return _readSubOperation; }
 protected:
     OperationSubOperations(pSource source);
 

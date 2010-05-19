@@ -14,8 +14,8 @@ bool Reference::
 void Reference::
         getArea( Position &a, Position &b) const
 {
-    Position blockSize( _collection->samples_per_block() * pow(2,log2_samples_size[0]),
-                        _collection->scales_per_block() * pow(2,log2_samples_size[1]));
+    Position blockSize( _collection->samples_per_block() * pow(2.f,log2_samples_size[0]),
+                        _collection->scales_per_block() * pow(2.f,log2_samples_size[1]));
     a.time = blockSize.time * block_index[0];
     a.scale = blockSize.scale * block_index[1];
     b.time = a.time + blockSize.time;

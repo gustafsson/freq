@@ -81,13 +81,13 @@ pBuffer FilterOperation::
 
             break;
         } catch (const CufftException &) {
-            if (numberOfSamples>wavelet_std_samples) {
+            if (numberOfSamples>1) {
                 numberOfSamples/=2;
                 continue;
             }
             throw;
         } catch (const CudaException &x) {
-            if (x.getCudaError() == cudaErrorMemoryAllocation && numberOfSamples>wavelet_std_samples) {
+            if (x.getCudaError() == cudaErrorMemoryAllocation && numberOfSamples>1) {
                 numberOfSamples/=2;
                 continue;
             }
@@ -135,10 +135,12 @@ void FilterOperation::
 }
 
 Tfr::pChunk FilterOperation::
-        previous_chunk()
+        pick_previous_chunk()
 {
     _save_previous_chunk = true;
-    return _previous_chunk;
+    Tfr::pChunk r = _previous_chunk;
+    _previous_chunk.reset();
+    return r;
 }
 
 

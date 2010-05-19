@@ -1,0 +1,38 @@
+*These steps will setup your development environment for Sonic Awe on Ubuntu 9.10*
+*1. Github*
+"Install git":http://help.github.com/ and send your github user name to "REEP":http://github.com/reep.
+
+*2. Prerequisites*
+*2.1. Cuda*
+Download and install the <a href="http://www.nvidia.com/object/cuda_get.html">cuda toolkit from nvidia</a>.
+
+Create link to nvidia cuda compiler (nvcc) in path, and set library path for Cuda:
+<pre>$ sudo ln -s /usr/local/cuda/bin/nvcc /usr/local/bin/nvcc
+$ sudo echo /usr/local/cuda/lib > /etc/ld.so.conf.d/cuda.conf
+$ sudo echo /usr/local/cuda/lib64 >> /etc/ld.so.conf.d/cuda.conf
+$ sudo ldconfig</pre>
+
+*2.2. Packages from the Ubuntu repositories*
+<pre>$ sudo apt-get install libsndfile1-dev portaudio19-dev libglew1.5-dev freeglut3-dev
+$ sudo apt-get install libboost1.37-dev libqt4-dev qt-creator</pre>
+
+*3. Sonic Awe*
+*3.1 Get source code*
+<pre>$ git clone git@github.com:reep/sonic.git
+$ cd sonic
+$ git submodule update --init
+$ cd sonicawe; git pull origin master
+$ cd ../gpumisc; git pull origin master
+$ cd ..</pre>
+
+*3.2. Compile*
+<pre>$ qmake
+$ make</pre>
+
+*3.3. Run*
+<pre>$ cd sonicawe
+$ ./sonicawe</pre>
+
+*Development troubleshooting*
+# The prefered workflow is to get the distributed binaries to work first, before starting developing. See [[Deployment instructions]] for drivers and downloads.
+# ...

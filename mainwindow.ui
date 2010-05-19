@@ -102,9 +102,41 @@
        <property name="currentIndex">
         <number>0</number>
        </property>
-       <widget class="QWidget" name="layerTab">
+       <widget class="QWidget" name="operationsTab">
         <attribute name="title">
-         <string>Layers</string>
+         <string>Operations</string>
+        </attribute>
+        <widget class="QTreeWidget" name="operationsTree">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>256</width>
+           <height>241</height>
+          </rect>
+         </property>
+         <property name="autoFillBackground">
+          <bool>true</bool>
+         </property>
+         <property name="columnCount">
+          <number>1</number>
+         </property>
+         <attribute name="headerVisible">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="headerVisible">
+          <bool>false</bool>
+         </attribute>
+         <column>
+          <property name="text">
+           <string>1</string>
+          </property>
+         </column>
+        </widget>
+       </widget>
+       <widget class="QWidget" name="filterTab">
+        <attribute name="title">
+         <string>Top filter</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="margin">

@@ -5,6 +5,10 @@
 #include <CudaException.h>
 #include "tfr-wavelet.cu.h"
 
+#ifdef _MSC_VER
+#include "msc_stdc.h"
+#endif
+
 #define TIME_CWT
 
 namespace Tfr {
@@ -22,7 +26,7 @@ Cwt::
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
-    pFftChunk ft = _fft( buffer );
+    pFftChunk ft ( _fft( buffer ) );
 
     pChunk intermediate_wt( new Chunk() );
 

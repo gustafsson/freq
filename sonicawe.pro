@@ -1,17 +1,28 @@
 # -------------------------------------------------
 # Project created by QtCreator 2009-11-06T11:26:14
 # -------------------------------------------------
+
+### Compiler settings
+TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 macx:CONFIG -= app_bundle
-win32:CONFIG -= app_bundle
+
+CONFIG += warn_on
 QT += opengl
-CONFIG += qt
-win32:CONFIG += windows
+unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
+unix:QMAKE_CXXFLAGS_RELEASE += -O3
+macx:QMAKE_CXXFLAGS_RELEASE += -O3
+
+### Settings for using llvm instead of gcc on linux
+#unix {
+#    QMAKE_CXX = llvm-g++
+#    QMAKE_CC = llvm-gcc
+#    QMAKE_LINK = llvm-g++
+#}
+
+### Source code
 RESOURCES += icon-resources.qrc
-unix:QMAKE_CXXFLAGS_DEBUG = -ggdb
-QMAKE_CXXFLAGS_RELEASE = -O3
-TARGET = sonicawe
 SOURCES += main.cpp \
     mainwindow.cpp \
     displaywidget.cpp \
@@ -128,7 +139,6 @@ win32:LIBS += \
 LIBS += -lcufft 
 unix:LIBS += -L../gpumisc -lgpumisc
 macx:LIBS += -L../gpumisc -lgpumisc
-win32:LIBS += -l..\gpumisc\debug\gpumisc
 
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/

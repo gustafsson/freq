@@ -238,8 +238,7 @@ class Audiofile: public Source
 {
 public:
 
-    Audiofile();
-    Audiofile(const char* filename);
+    Audiofile(std::string filename);
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     virtual unsigned sample_rate();
@@ -247,8 +246,11 @@ public:
 
     pBuffer getChunkBehind() { return _waveform; }
     void setChunk( pBuffer chunk ) { _waveform = chunk; }
+    std::string filename() const { return _original_filename; }
 
 private:
+    Audiofile();
+
     pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
     void appendChunk( pBuffer chunk );
 
@@ -260,6 +262,7 @@ private:
 
     pBuffer _waveform;
 
+    std::string _original_filename;
     std::string _last_filename;
 };
 

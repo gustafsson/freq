@@ -3,6 +3,10 @@
 #include <throwInvalidArgument.h>
 #include <CudaException.h>
 
+#ifdef _MSC_VER
+#include "msc_stdc.h"
+#endif
+
 #define TIME_STFT
 
 namespace Tfr {
