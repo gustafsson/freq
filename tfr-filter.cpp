@@ -184,8 +184,8 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
     if (_save_inside)
     {
         float
-			start_time = std::max(0.f, _t1 - fabs(_t1 - _t2)),
-			end_time = std::max(0.f, _t1 + fabs(_t1 - _t2));
+			start_time = std::max(0.f, _t1 - fabsf(_t1 - _t2)),
+			end_time = std::max(0.f, _t1 + fabsf(_t1 - _t2));
 
 		sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
 		if ((unsigned)(end_time*FS)>0)
@@ -203,8 +203,8 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
     if (!_save_inside)
     {
         float
-			start_time = std::max(0.f, _t1 - fabs(_t1 - _t2)),
-			end_time = std::max(0.f, _t1 + fabs(_t1 - _t2));
+			start_time = std::max(0.f, _t1 - fabsf(_t1 - _t2)),
+			end_time = std::max(0.f, _t1 + fabsf(_t1 - _t2));
 
 		sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
 		if ((unsigned)(end_time*FS)>0)
