@@ -11,10 +11,6 @@ typedef int64_t __int64_t;
 #include <iostream>
 #include <sstream>
 
-#ifdef _MSC_VER
-//TODO #include "windows.h"
-#endif
-
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <QThread>
@@ -81,8 +77,8 @@ std::string getFileFormatsQtFilter() {
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
     char buffer [128] ;
-    // TODO remove unused variables
-    int format, major_count, subtype_count, m, s ;
+
+	int major_count, subtype_count, m ;
     stringstream ss;
 
     memset (&sfinfo, 0, sizeof (sfinfo)) ;
@@ -103,7 +99,7 @@ std::string getFileFormatsQtFilter() {
     {	info.format = m ;
             sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
             ss <<" *."<< info.extension;
-			if (0==stricmp(info.extension, "ogg"))
+			if (string(info.extension) == "ogg")
 				foundogg = true;
     }
 

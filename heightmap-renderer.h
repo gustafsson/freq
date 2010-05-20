@@ -3,10 +3,6 @@
 
 #include <sstream>
 #include "heightmap-collection.h"
-//TODO check necessity by compiling in windows
-//#ifdef _MSC_VER
-//#include <windows.h>
-//#endif
 #ifndef __APPLE__
   #include <GL/gl.h>
 #else
