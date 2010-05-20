@@ -177,8 +177,14 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
         operator &= (const SamplesIntervalDescriptor& b)
 {
-	BOOST_FOREACH (const Interval& r,  b._intervals)
-        operator&=( r );
+	SamplesIntervalDescriptor rebuild;
+	BOOST_FOREACH (const Interval& r,  b._intervals) {
+		SamplesIntervalDescriptor copy = *this;
+        copy&=( r );
+		rebuild |= copy;
+	}
+
+	this->_intervals = rebuild._intervals;
 
 	if (b._intervals.empty())
 		_intervals.clear();
