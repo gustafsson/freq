@@ -385,50 +385,32 @@ void DisplayWidget::
         sourceSelection[1] = selection[1];
 
     } else { // Button released
-        // Create filter for extracting selection
-        Tfr::pFilter extractFilter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, true ));
-        Tfr::pFilter moveFilter(new Tfr::MoveFilter( sourceSelection[0].z - selection[0].z ));
-        Tfr::FilterChain* pchain(new Tfr::FilterChain);
-        Tfr::pFilter chain(pchain);
-        pchain->push_back(extractFilter);
-        pchain->push_back(moveFilter);
+		Tfr::pFilter filter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, false ));
 
-        // Create FilterOperation for applying filters
-        Signal::pSource extractSelection(new Signal::FilterOperation( b->source(), chain ));
+		unsigned FS = b->sample_rate();
+		int delta = (int)(FS * (selection[0].x - sourceSelection[0].x));
 
-        Tfr::pFilter removeFilter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, false ));
-        Signal::pSource removeSelection(new Signal::FilterOperation( b->source(), removeFilter ));
-        //Signal::pSource skipSelection(new Signal::OperationSkip( removeSelection, removeFilter->coveredSamples( removeSelection->sample_rate() ) ));
-
-        // Create operation to move and merge selection,
-        unsigned FS = extractSelection->sample_rate();
-        float fR = fabsf(sourceSelection[0].x - sourceSelection[1].x);
-        unsigned L = FS * 2 * fR;
-        if (0==L)
-            return;
-        unsigned oldStart = FS * std::max( 0.f, sourceSelection[0].x-fR );
-        unsigned newStart = FS * std::max( 0.f, selection[0].x-fR );
-/*        Signal::pSource moveSelection(new Signal::OperationMove( extractSelection,
-                                                    oldStart,
-                                                    L,
-                                                    newStart));*/
-        if (oldStart > newStart ) {
-            extractSelection.reset(new Signal::OperationRemoveSection( extractSelection,
-                                                                0, oldStart-newStart));
-        } else if (newStart > oldStart) {
-            extractSelection.reset(new Signal::OperationInsertSilence( extractSelection,
-                                                                0, newStart-oldStart));
-        }
-        Signal::pSource mergeSelection( new Signal::OperationSuperposition( removeSelection, extractSelection ));
-
-        // Invalidate rendering
-        Signal::SamplesIntervalDescriptor sid(oldStart, oldStart+L);
-        sid |= Signal::SamplesIntervalDescriptor(newStart, newStart+L);
-        _renderer->collection()->updateInvalidSamples(sid);
-        update();
+		Signal::pSource moveSelection( new Signal::OperationMoveSelection( 
+			b->source(), 
+			filter, 
+			delta, 
+			sourceSelection[0].z - selection[0].z));
 
         // update stream
-        b->source(mergeSelection);
+        b->source(moveSelection);
+		setWorkerSource();
+
+		// Invalidate rendering
+		Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+		sid -= filter->getUntouchedSamples( FS );
+
+		Signal::SamplesIntervalDescriptor sid2 = sid;
+		if (0<delta) sid2 += delta;
+		else         sid2 -= -delta;
+		sid |= sid2;
+
+		_renderer->collection()->updateInvalidSamples(sid);
+        update();
     }
 }
 

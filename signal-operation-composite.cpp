@@ -1,5 +1,6 @@
 #include "signal-operation-composite.h"
 #include "signal-operation-basic.h"
+#include <demangle.h>
 
 namespace Signal {
 
@@ -7,9 +8,10 @@ namespace Signal {
     // OperationSubOperations  /////////////////////////////////////////////////////////////////
 
 OperationSubOperations::
-        OperationSubOperations(pSource source)
+	OperationSubOperations(pSource source, std::string name)
 :   Operation(source),
-    _sourceSubOperation( new Operation(source))
+    _sourceSubOperation( new Operation(source)),
+	_name(name)
 {}
 
 pBuffer OperationSubOperations ::
@@ -128,10 +130,61 @@ void OperationShift::
     {
         pSource addSilence( new OperationInsertSilence( Operation::source(), 0u, (unsigned)sampleShift ));
         _sourceSubOperation = _readSubOperation = addSilence;
-    } else {
+    } else if (0 > sampleShift ){
         pSource removeStart( new OperationRemoveSection( Operation::source(), 0u, (unsigned)-sampleShift ));
         _sourceSubOperation = _readSubOperation = removeStart;
-    }
+	} else {
+        _sourceSubOperation = _readSubOperation = _source;
+	}
+}
+
+
+    // OperationShift  /////////////////////////////////////////////////////////////////
+
+OperationMoveSelection::
+		OperationMoveSelection( pSource source, Tfr::pFilter selectionFilter, int sampleShift, float freqDelta )
+:	OperationSubOperations( source, "OperationMoveSelection" )
+{
+	reset(selectionFilter, sampleShift, freqDelta );
+}
+
+void OperationMoveSelection::
+	reset( Tfr::pFilter selectionFilter, int sampleShift, float freqDelta )
+{
+	Tfr::pFilter extract, remove;
+	if (Tfr::EllipsFilter* f = dynamic_cast<Tfr::EllipsFilter*>(selectionFilter.get())) {
+		bool v = f->_save_inside;
+		f->_save_inside = false;
+		remove.reset( new Tfr::EllipsFilter(*f) );
+		f->_save_inside = true;
+		extract = selectionFilter;
+		f->_save_inside = v;
+	} else {
+		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipsFilter as selectionFilter");
+	}
+
+	Signal::pSource extractAndMoveSelection;
+	{
+		// Create filter for extracting selection
+		Tfr::pFilter moveFilter(new Tfr::MoveFilter( freqDelta ));
+		Tfr::FilterChain* pchain(new Tfr::FilterChain);
+		Tfr::pFilter chain(pchain);
+		pchain->push_back(extract);
+		pchain->push_back(moveFilter);
+
+		// Create FilterOperation for applying filters
+		extractAndMoveSelection.reset(new Signal::FilterOperation( Operation::source(), chain ));
+
+		// Create operation to move selection
+		if (0!=sampleShift)
+			extractAndMoveSelection.reset( new OperationShift( extractAndMoveSelection, sampleShift ));
+	}
+
+	Signal::pSource removeSelection( new Signal::FilterOperation( Operation::source(), remove ));
+
+	Signal::pSource mergeSelection( new Signal::OperationSuperposition( removeSelection, extractAndMoveSelection ));
+
+	_readSubOperation = mergeSelection;
 }
 
 } // namespace Signal

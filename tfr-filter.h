@@ -56,6 +56,7 @@ public:
     Selection s;
 
 private:
+	// Why not copyable?
     SelectionFilter& operator=(const SelectionFilter& );
     SelectionFilter(const SelectionFilter& );
 };
@@ -70,9 +71,7 @@ public:
     virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 
     float _t1, _f1, _t2, _f2;
-
-private:
-    bool _save_inside;
+	bool _save_inside;
 };
 
 class SquareFilter: public Filter
@@ -85,8 +84,6 @@ public:
     virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 
     float _t1, _f1, _t2, _f2;
-
-private:
     bool _save_inside;
 };
 

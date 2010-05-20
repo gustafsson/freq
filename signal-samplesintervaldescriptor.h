@@ -10,7 +10,9 @@ class SamplesIntervalDescriptor
 {
 public:
     typedef unsigned SampleType;
+    static const SampleType SampleType_MIN;
     static const SampleType SampleType_MAX;
+    static const SamplesIntervalDescriptor SamplesIntervalDescriptor_ALL;
 
     struct Interval {
         /**
@@ -35,6 +37,8 @@ public:
     SamplesIntervalDescriptor& operator |= (const Interval&);
     SamplesIntervalDescriptor& operator -= (const SamplesIntervalDescriptor&);
     SamplesIntervalDescriptor& operator -= (const Interval&);
+    SamplesIntervalDescriptor& operator -= (const SampleType&);
+    SamplesIntervalDescriptor& operator += (const SampleType&);
     SamplesIntervalDescriptor& operator &= (const SamplesIntervalDescriptor&);
     SamplesIntervalDescriptor& operator &= (const Interval&);
     SamplesIntervalDescriptor& operator *= (const float& scale);

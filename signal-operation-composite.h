@@ -22,14 +22,18 @@ namespace Signal {
 class OperationSubOperations : public Operation {
 public:
     pSource subSource() { return _readSubOperation; }
+
+	std::string name() { return _name; }
+
 protected:
-    OperationSubOperations(pSource source);
+	OperationSubOperations(pSource source, std::string name = "");
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     virtual void source(pSource v);
 
     pSource _sourceSubOperation;
     pSource _readSubOperation;
+	std::string _name;
 };
 
 /**
@@ -135,6 +139,13 @@ public:
     OperationShift( pSource source, int sampleShift );
 
     void reset( int sampleShift );
+};
+
+class OperationMoveSelection: public OperationSubOperations {
+public:
+	OperationMoveSelection( pSource source, Tfr::pFilter selectionFilter, int sampleShift, float freqDelta );
+
+	void reset( Tfr::pFilter selectionFilter, int sampleShift, float freqDelta );
 };
 
 } // namespace Signal

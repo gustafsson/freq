@@ -6,7 +6,9 @@
 
 namespace Signal {
 
+const SamplesIntervalDescriptor::SampleType SamplesIntervalDescriptor::SampleType_MIN = (SamplesIntervalDescriptor::SampleType)0;
 const SamplesIntervalDescriptor::SampleType SamplesIntervalDescriptor::SampleType_MAX = (SamplesIntervalDescriptor::SampleType)-1;
+const SamplesIntervalDescriptor SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL = SamplesIntervalDescriptor(SamplesIntervalDescriptor::SampleType_MIN, SamplesIntervalDescriptor::SampleType_MAX);
 
 bool SamplesIntervalDescriptor::Interval::
         operator<(const Interval& r) const
@@ -133,11 +135,55 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+		operator -= (const SampleType& b)
+{
+    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+        Interval& i = *itr;
+	
+		if (SampleType_MIN + b > i.first ) i.first = SampleType_MIN;
+		else i.first -= b;
+		if (SampleType_MIN + b > i.last ) i.last = SampleType_MIN;
+		else i.last -= b;
+
+		if ( SampleType_MIN == i.first && SampleType_MIN == i.last )
+			itr = _intervals.erase( itr );
+		else
+			itr++;
+	}
+
+	return *this;
+}
+
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+		operator += (const SampleType& b)
+{
+    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+        Interval& i = *itr;
+	
+		if (SampleType_MAX - b < i.first ) i.first = SampleType_MAX;
+		else i.first += b;
+		if (SampleType_MAX - b < i.last ) i.last = SampleType_MAX;
+		else i.last += b;
+
+		if ( SampleType_MAX == i.first && SampleType_MAX == i.last )
+			itr = _intervals.erase( itr );
+		else
+			itr++;
+	}
+
+	return *this;
+}
+
+SamplesIntervalDescriptor& SamplesIntervalDescriptor::
         operator &= (const SamplesIntervalDescriptor& b)
 {
-    BOOST_FOREACH (const Interval& r,  b._intervals)
+	BOOST_FOREACH (const Interval& r,  b._intervals)
         operator&=( r );
-    return *this;
+
+	if (b._intervals.empty())
+		_intervals.clear();
+
+	return *this;
 }
 
 SamplesIntervalDescriptor& SamplesIntervalDescriptor::
