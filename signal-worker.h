@@ -173,7 +173,7 @@ private:
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
       */
-    QMutex _lock;
+    QMutex _callbacks_lock;
 
     /**
       @see source

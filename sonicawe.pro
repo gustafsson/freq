@@ -113,7 +113,7 @@ unix:LIBS = -lsndfile \
     -lglut \
     -lportaudiocpp -lportaudio
 macx:INCLUDEPATH += /usr/local/cuda/include \
-      ../../libs/include 
+    ../../libs/include
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -lcufft \
@@ -132,10 +132,8 @@ win32:LIBS += \
 	-l..\..\winlib\glut\glut32 \
 	-l..\..\winlib\glew\lib\glew32 \
     -l..\..\winlib\libsndfile\libsndfile-1 \
-#    -L$(CUDA_LIB_PATH)\..\lib \
 	-l..\..\winlib\portaudio\portaudio \
-	-l..\..\winlib\portaudio\portaudiocpp \
-	-L$(BOOST_PATH)\lib
+	-l..\..\winlib\portaudio\portaudiocpp
 LIBS += -lcufft 
 unix:LIBS += -L../gpumisc -lgpumisc
 macx:LIBS += -L../gpumisc -lgpumisc
