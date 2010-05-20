@@ -98,11 +98,18 @@ std::string getFileFormatsQtFilter() {
     sf_command (NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int)) ;
 
     sfinfo.channels = 1 ;
+	bool foundogg = false;
     for (m = 0 ; m < major_count ; m++)
     {	info.format = m ;
             sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
             ss <<" *."<< info.extension;
+			if (0==stricmp(info.extension, "ogg"))
+				foundogg = true;
     }
+
+	if (!foundogg)
+		ss<<" *.ogg";
+
     ss <<")";
 
     return ss.str();

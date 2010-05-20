@@ -42,8 +42,6 @@ signals:
     void sendRemoveItem(int);
 
 private:
-    void updateOperationsTree( Signal::pSource s, QTreeWidgetItem* w );
-    void updateOperationsTree( Tfr::pFilter f, QTreeWidgetItem* w );
     class Ui_MainWindow *ui;
 };
 

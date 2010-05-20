@@ -322,6 +322,7 @@ void DisplayWidget::receiveAddClearSelection(bool active)
     getFilterOperation()->filter()->enabled = true;
 
     setWorkerSource();
+    update();
 }
 
 void DisplayWidget::setWorkerSource( Signal::pSource s ) {
@@ -343,9 +344,12 @@ void DisplayWidget::receiveAddSelection(bool /*active*/)
     setWorkerSource( Signal::pSource(f) );
 
     f->filter()->enabled = false;
+
     _renderer->collection()->updateInvalidSamples(f->filter()->getTouchedSamples(f->sample_rate()));
     update();
+
     setWorkerSource();
+    update();
 }
 
 void DisplayWidget::
@@ -368,10 +372,12 @@ void DisplayWidget::
     // Invalidate rendering
     Signal::SamplesIntervalDescriptor sid(start, b->number_of_samples());
     _renderer->collection()->updateInvalidSamples(sid);
-    update();
 
     // Update stream
     b->source(remove);
+
+    setWorkerSource();
+    update();
 }
 
 void DisplayWidget::
@@ -399,6 +405,7 @@ void DisplayWidget::
         // update stream
         b->source(moveSelection);
 		setWorkerSource();
+
 
 		// Invalidate rendering
 		Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
@@ -447,10 +454,12 @@ void DisplayWidget::
         Signal::SamplesIntervalDescriptor sid(oldStart, oldStart+L);
         sid |= Signal::SamplesIntervalDescriptor(newStart, newStart+L);
         _renderer->collection()->updateInvalidSamples(sid);
-        update();
 
         // update stream
         b->source(moveSelection );
+
+        setWorkerSource();
+        update();
     }
 }
 
