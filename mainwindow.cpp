@@ -153,6 +153,7 @@ void MainWindow::updateOperationsTree( Tfr::pFilter f, QTreeWidgetItem* w )
 
     child->setText(0, QString::fromStdString( title.str()));
     child->setToolTip(0, QString::fromStdString( tooltip.str()) );
+    //child->setFlags(Qt::ItemIsEnabled);
     child->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     child->setCheckState(0, Qt::Checked);
     w->addChild( child );
