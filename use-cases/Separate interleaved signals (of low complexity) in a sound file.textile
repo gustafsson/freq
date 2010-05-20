@@ -8,8 +8,10 @@ A signal is a composite of blobs.
 ## intensity based outline
 ## snakes
 ## boundary around local maximas
-# Blobs in the same time span are found and grouped
+# Manually select more blobs
+# Blobs in the same time span are *found* and grouped based on
 ## onset/offset
 ## overtone spacing
-# If not satisfied, 
-## manually include and exclude blobs
+# If not satisfied manually include and exclude blobs
+## clicking on blob to group/ungroup
+## marking areas that should be excluded (and in effect any blobs in it)
