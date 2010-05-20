@@ -98,6 +98,8 @@ pChunk Cwt::
 
         intermediate_wt->chunk_offset = buffer->sample_offset;
         intermediate_wt->first_valid_sample = wavelet_std_samples( buffer->sample_rate );
+		if (0==buffer->sample_offset)
+			intermediate_wt->first_valid_sample=0;
         intermediate_wt->max_hz = max_hz( buffer->sample_rate );
         intermediate_wt->min_hz = min_hz();
 
