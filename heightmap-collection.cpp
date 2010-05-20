@@ -220,11 +220,11 @@ getBlock( Reference ref )
             }
         }
 
-        Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
-        if (0 != block.get() &&
-            !(refInt-=block->valid_samples).isEmpty())
-        {
-            _unfinished_count++;
+        if (0 != block.get()) 
+		{
+			Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
+			if (!(refInt-=block->valid_samples).isEmpty())
+				_unfinished_count++;
         }
 
         result = block;
