@@ -1,9 +1,13 @@
 #ifndef DISPLAYWIDGET_H
 #define DISPLAYWIDGET_H
 
+#ifdef _WIN32 // QGLWidget includes WinDef.h on windows
+#define NOMINMAX
+#endif
 #include <QGLWidget>
-#include "spectrogram-renderer.h"
-#include "signal-microphonerecorder.h"
+#include "heightmap-renderer.h"
+#include "sawe-mainplayback.h"
+#include "signal-filteroperation.h"
 #include <boost/shared_ptr.hpp>
 #include <TAni.h>
 #include <queue>
@@ -40,11 +44,11 @@ struct MyVector{
     float x, y, z;
 };
 
-class DisplayWidget : public QGLWidget, public Signal::MicrophoneRecorder::Callback
+class DisplayWidget : public QGLWidget, public Signal::Sink /* sink is used as microphone callback */
 {
     Q_OBJECT
 public:
-    DisplayWidget( boost::shared_ptr<Spectrogram> spectrogram, int timerInterval=0, std::string playback_source_test="" );
+    DisplayWidget( Signal::pWorker worker, Signal::pSink collection, unsigned playback_device, std::string selection_filename, int timerInterval=0  );
     ~DisplayWidget();
     int lastKey;
     static DisplayWidget* gDisplayWidget;
@@ -57,7 +61,9 @@ public:
     } yscale;
     floatAni orthoview;
     float xscale;
-    
+
+    void setWorkerSource( Signal::pSource s = Signal::pSource());
+
     virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );
 protected:
@@ -75,31 +81,45 @@ protected:
     
 protected slots:
     //virtual void timeOutSlot();
-    virtual void recieveCurrentSelection(int, bool);
-    virtual void recieveFilterRemoval(int);
+    virtual void receiveCurrentSelection(int, bool);
+    virtual void receiveFilterRemoval(int);
     
-    virtual void recieveToggleSelection(bool);
-    virtual void recieveToggleNavigation(bool);
-    virtual void recieveTogglePiano(bool);
+    virtual void receiveToggleSelection(bool);
+    virtual void receiveToggleNavigation(bool);
+    virtual void receiveTogglePiano(bool);
 
 
-    virtual void recievePlaySound();
-    virtual void recieveToggleHz(bool);
-    virtual void recieveAddSelection(bool);
-    virtual void recieveAddClearSelection(bool);
+    virtual void receivePlaySound();
+    virtual void receiveToggleHz(bool);
+    virtual void receiveAddSelection(bool);
+    virtual void receiveAddClearSelection(bool);
 
+    virtual void receiveCropSelection();
+    virtual void receiveMoveSelection(bool);
+    virtual void receiveMoveSelectionInTime(bool);
 signals:
-    void filterChainUpdated(pTransform);
+    void operationsUpdated( Signal::pSource s );
+    void filterChainUpdated( Tfr::pFilter f );
     void setSelectionActive(bool);
     void setNavigationActive(bool);
     
 private:
-    virtual void recievedData( Signal::MicrophoneRecorder* );
+    friend class Heightmap::Renderer;
+
+    virtual void put( Signal::pBuffer b);
+//    virtual void put( Signal::pBuffer, Signal::Source* );
+    Signal::FilterOperation* getFilterOperation();
     // bool _record_update;
 
-    boost::shared_ptr<SpectrogramRenderer> _renderer;
-    boost::shared_ptr<Transform> _transform;
-    
+    Heightmap::pRenderer _renderer;
+    Signal::pWorker _worker;
+    Signal::pWorkerCallback _collectionCallback;
+    Signal::pWorkerCallback _playbackCallback;
+    Signal::pWorkerCallback _diskwriterCallback;
+
+    std::string _selection_filename;
+    unsigned _playback_device;
+
     struct ListCounter {
         GLuint displayList;
         enum Age {
@@ -118,13 +138,14 @@ private:
 		_renderRatio;
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive;
-    std::queue<std::pair<float, float> > _invalidRange;
-    
+    QMutex _invalidRangeMutex;
+    Signal::SamplesIntervalDescriptor _invalidRange;
+
     void drawArrows();
     void drawColorFace();
-	void drawWaveform( Signal::pSource waveform );
-	static void drawWaveform_chunk_directMode( Signal::pBuffer chunk);
-    static void drawSpectrogram_borders_directMode( boost::shared_ptr<SpectrogramRenderer> renderer );
+    void drawWaveform( Signal::pSource waveform );
+    static void drawWaveform_chunk_directMode( Signal::pBuffer chunk);
+    static void drawSpectrogram_borders_directMode( Heightmap::pRenderer renderer );
     template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw=false );
     
     bool _enqueueGcDisplayList;
@@ -137,6 +158,8 @@ private:
     MyVector v1, v2;
     MyVector selection[2], selectionStart;
     bool selecting;
+
+    MyVector sourceSelection[2];
     
     void setSelection(int i, bool enabled);
     void removeFilter(int i);
@@ -148,7 +171,7 @@ private:
     
     bool insideCircle( float x1, float z1 );
     
-    
+
     MouseControl leftButton;
     MouseControl rightButton;
     MouseControl middleButton;
@@ -157,6 +180,7 @@ private:
     MouseControl rotateButton;
     MouseControl scaleButton;
 };
+
 
 #endif // DISPLAYWIDGET_H
 

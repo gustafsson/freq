@@ -1,19 +1,15 @@
 #include "signal-audiofile.h"
 #include "signal-playback.h"
+#include <stdint.h> // defines int64_t which is expected by sndfile.h
 #ifdef _MSC_VER
-typedef long long __int64_t;
+typedef int64_t __int64_t;
 #endif
-#include <stdint.h>
-#include <sndfile.hh> // for writing wav
+#include <sndfile.hh> // for reading various formats
 #include <math.h>
 #include "Statistics.h"
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
-
-#ifdef _MSC_VER
-#include "windows.h"
-#endif
 
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -23,11 +19,6 @@ typedef long long __int64_t;
 #if LEKA_FFT
 #include <cufft.h>
 
-static void cufftSafeCall( cufftResult_t cufftResult) {
-    if (cufftResult != CUFFT_SUCCESS) {
-        ThrowInvalidArgument( cufftResult );
-    }
-}
 #endif
 
 using namespace std;
@@ -86,7 +77,8 @@ std::string getFileFormatsQtFilter() {
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
     char buffer [128] ;
-    int format, major_count, subtype_count, m, s ;
+
+	int major_count, subtype_count, m ;
     stringstream ss;
 
     memset (&sfinfo, 0, sizeof (sfinfo)) ;
@@ -102,34 +94,40 @@ std::string getFileFormatsQtFilter() {
     sf_command (NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int)) ;
 
     sfinfo.channels = 1 ;
+	bool foundogg = false;
     for (m = 0 ; m < major_count ; m++)
     {	info.format = m ;
             sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
             ss <<" *."<< info.extension;
+			if (string(info.extension) == "ogg")
+				foundogg = true;
     }
+
+	if (!foundogg)
+		ss<<" *.ogg";
+
     ss <<")";
 
     return ss.str();
 }
 
-boost::shared_ptr<Signal::Playback> Audiofile::pb(new Signal::Playback(-1));
 
-Audiofile::Audiofile(int _temp_to_remove_playback_device)
+Audiofile::
+        Audiofile()
 {
-    if ((int)pb->output_device() != _temp_to_remove_playback_device && 0<=_temp_to_remove_playback_device)
-        pb.reset(new Signal::Playback(_temp_to_remove_playback_device) );
-
     _waveform.reset( new Buffer());
 }
 
 /**
   Reads an audio file using libsndfile
   */
-Audiofile::Audiofile(const char* filename)
+Audiofile::
+        Audiofile(std::string filename)
+:   _original_filename(filename)
 {
     _waveform.reset( new Buffer());
 
-    TaskTimer tt("%s %s",__FUNCTION__,filename);
+    TaskTimer tt("%s %s",__FUNCTION__,filename.c_str());
 
     SndfileHandle source(filename);
 
@@ -169,16 +167,16 @@ Audiofile::Audiofile(const char* filename)
 //        printf("\t%g\n",fdata[i]);
 
     cufftHandle                             _fft_dummy;
-    cufftSafeCall(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_R2C, 1));
-    cufftSafeCall(cufftExecR2C(_fft_dummy,
+    CufftException_SAFE_CALL(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_R2C, 1));
+    CufftException_SAFE_CALL(cufftExecR2C(_fft_dummy,
                                (cufftReal *)_waveform.waveform_data->getCudaGlobal().ptr(),
                                (cufftComplex *)ut2.getCudaGlobal().ptr()));
-    cufftSafeCall(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_C2C, 1));
-    /*cufftSafeCall(cufftExecC2C(_fft_dummy,
+    CufftException_SAFE_CALL(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_C2C, 1));
+    /*CufftException_SAFE_CALL(cufftExecC2C(_fft_dummy,
                                (cufftComplex *)_waveform.waveform_data->getCudaGlobal().ptr(),
                                (cufftComplex *)ut2.getCudaGlobal().ptr(),
                                CUFFT_FORWARD));*/
-    cufftSafeCall(cufftExecC2C(_fft_dummy,
+    CufftException_SAFE_CALL(cufftExecC2C(_fft_dummy,
                                (cufftComplex *)ut2.getCudaGlobal().ptr(),
                                (cufftComplex *)ut.getCudaGlobal().ptr(),
                                CUFFT_INVERSE));
@@ -191,28 +189,6 @@ Audiofile::Audiofile(const char* filename)
 #endif
 }
 
-
-    /**
-      Writes wave audio with 16 bits per sample
-      */
-void Audiofile::writeFile( const char* filename )
-{
-	TaskTimer tt("%s %s",__FUNCTION__,filename);
-
-    _last_filename = "flapppa";
-    // todo: this method only writes mono data from the first (left) channel
-
-    const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-    //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
-
-    //int number_of_channels = 1;
-    SndfileHandle outfile(filename, SFM_WRITE, format, 1, sample_rate());
-
-    if (!outfile) return;
-
-    outfile.write( _waveform->waveform_data->getCpuMemory(), _waveform->waveform_data->getNumberOfElements().width); // yes float
-    //play();
-}
 
 pBuffer Audiofile::read( unsigned firstSample, unsigned numberOfSamples ) {
     return  getChunk( firstSample, numberOfSamples, 0, Buffer::Only_Real );
@@ -300,20 +276,6 @@ pSource Audiofile::crop() {
     return rwf;
 }
 
-
-void Audiofile::play() {
-    pSource wfs = this->crop();
-
-    if (!wfs.get())
-        return;
-
-    Audiofile* wf = dynamic_cast<Audiofile*>(wfs.get());
-    wf->writeFile(selection_name);
-
-    pb->reset();
-    pb->expected_samples_left( wf->_waveform->number_of_samples());
-    pb->put( wf->_waveform );
-}
 
 unsigned Audiofile::sample_rate() {          return _waveform->sample_rate;    }
 unsigned Audiofile::number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }

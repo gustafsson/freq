@@ -61,7 +61,7 @@ MicrophoneRecorder::~MicrophoneRecorder()
     }
 }
 
-void MicrophoneRecorder::startRecording( Callback *p )
+void MicrophoneRecorder::startRecording( Signal::Sink* p )
 {
     _callback = p;
     _stream_record->start();
@@ -86,7 +86,7 @@ pBuffer MicrophoneRecorder::
     b->sample_rate = this->sample_rate();
 
     // this code is close to identical to "Playback::readBuffer", they could both use a BufferSource instead.
-    // TODO refactor
+    // TODO refactor and use a BufferSource instead, shared with Playback::readBuffer
     float *buffer = b->waveform_data->getCpuMemory();
     unsigned iBuffer = 0;
     unsigned nAccumulated_samples = 0;
@@ -133,7 +133,7 @@ unsigned MicrophoneRecorder::
 {
     unsigned n = 0;
 
-	QMutexLocker l(&_mutex);
+    QMutexLocker l(&_mutex);
 
     BOOST_FOREACH( const pBuffer& s, _cache) {
         n += s->number_of_samples();
@@ -158,13 +158,16 @@ int MicrophoneRecorder::
 
     memcpy ( b->waveform_data->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
 
-	{
-		QMutexLocker l(&_mutex);
-		_cache.push_back( b );
-	}
+    b->sample_offset = number_of_samples();
+    b->sample_rate = sample_rate();
+
+    {
+        QMutexLocker l(&_mutex);
+        _cache.push_back( b );
+    }
 
     if (_callback)
-        _callback->recievedData( this );
+        _callback->put( b, this );
 
     return paContinue;
 }

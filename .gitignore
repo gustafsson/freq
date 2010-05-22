@@ -17,8 +17,10 @@ build
 tmp
 *.vcproj
 debug
+release
 *.idb
-ncb
+*.ncb
+*.dll
 *.dsp
 qrc_icon-resources.cpp
 md5sums

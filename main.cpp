@@ -1,5 +1,5 @@
 #include <QtGui/QApplication>
-#include "transform.h"
+#include "tfr-cwt.h"
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
 #include <QTime>
@@ -14,8 +14,11 @@
 #include <QtGui/QMessageBox>
 #include <QString>
 #include <CudaException.h>
-#include "spectrogram-renderer.h"
-//#include <cuda_runtime.h>
+#include "heightmap-renderer.h"
+#include "sawe-csv.h"
+#include "signal-audiofile.h"
+#include "signal-microphonerecorder.h"
+#include <demangle.h>
 
 using namespace std;
 using namespace boost;
@@ -33,7 +36,11 @@ static const char _sawe_usage_string[] =
 "    written to standard output and the program exits immediately after.\n"
 "    Valid parameters are:\n"
 "\n"
-"    samples_per_chunk  The transform is computed in chunks from the input\n"
+//"    channel            Sonic AWE can only work with one-dimensional data.\n"
+//"                       channel specifies which channel to read from if source\n"
+//"                       has more than one channel.\n"
+"    samples_per_chunk  Only used by extract_chunk option.\n"
+"                       The transform is computed in chunks from the input\n"
 "                       This determines the number of input samples that \n"
 "                       should correspond to one chunk of the transform by\n"
 "                       2^samples_per_chunk.\n"
@@ -73,10 +80,10 @@ static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static unsigned _extract_chunk = (unsigned)-1;
 static unsigned _get_chunk_count = (unsigned)-1;
+static std::string _selectionfile = "selection.wav";
 static int _record = -2;
 static int _playback = -1;
 static std::string _soundfile = "";
-static std::string _playback_source_test = "";
 static bool _sawe_exit=false;
 std::string fatal_error;
 
@@ -141,6 +148,8 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record));
         else if (readarg(&cmd, playback));
+        else if (readarg(&cmd, channel));
+        // TODO use _selectionfile
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
             printf("%s", _sawe_usage_string);
@@ -161,67 +170,27 @@ static int handle_options(char ***argv, int *argc)
 #define STRINGIFY(x) #x
 #define TOSTR(x) STRINGIFY(x)
 
-void fatal_exception( const std::string& str )
+void fatal_exception_cerr( const std::string& str )
 {
     cerr << endl << endl
          << "======================" << endl
-         << str
+         << str << endl
          << "======================" << endl;
     cerr.flush();
+}
 
+void fatal_exception_qt( const std::string& str )
+{
     QMessageBox::critical( 0,
                  QString("Fatal error. Sonic AWE needs to close"),
                  QString::fromStdString(str) );
 }
 
-#ifdef __GNUC__
-
-#include <cxxabi.h>
-string demangle(const char* d) {
-    int     status;
-    char * a = abi::__cxa_demangle(d, 0, 0, &status);
-    string s(a);
-    free(a);
-    return s;
+void fatal_exception( const std::string& str )
+{
+    fatal_exception_cerr(str);
+    fatal_exception_qt(str);
 }
-
-#else
-
-string demangle(const char* d) {
-    int pointer = false;
-    string s;
-    while ('P' == *d) { pointer++; d++; }
-    if ('f' == *d) { s += "float"; }
-    if ('d' == *d) { s += "double"; }
-    int i = atoi(d);
-    if (i>0) {
-        d++;
-        while (i>0) {
-            s+=*d;
-            i--;
-            d++;
-        }
-    }
-    if (s.empty())
-        s+=d;
-    if ('I' == *d) {
-        d++;
-        s+="<";
-        s+=demangle(d);
-        s+=">";
-        if (0==pointer)
-            s+=" ";
-    }
-
-    while (pointer>0) {
-        s+="*";
-        pointer--;
-    }
-
-    return s;
-}
-
-#endif
 
 string fatal_exception( const std::exception &x )
 {
@@ -242,18 +211,22 @@ public:
     SonicAWE_Application( int& argc, char **argv)
     :   QApplication(argc, argv)
     {
-        SpectrogramRenderer::setShaderBaseDir(std::string(QApplication::applicationDirPath().toAscii()));
     }
 
     virtual bool notify(QObject * receiver, QEvent * e) {
         bool v = false;
         try {
+            if(!fatal_error.empty())
+                this->exit(-2);
+
             v = QApplication::notify(receiver,e);
         } catch (const std::exception &x) {
-            fatal_error = fatal_exception(x);
+            if(fatal_error.empty())
+                fatal_exception_cerr( fatal_error = fatal_exception(x) );
             this->exit(-2);
         } catch (...) {
-            fatal_error = fatal_unknown_exception();
+            if(fatal_error.empty())
+                fatal_exception_cerr( fatal_error = fatal_unknown_exception() );
             this->exit(-2);
         }
         return v;
@@ -369,7 +342,10 @@ int main(int argc, char *argv[])
             if (_soundfile.empty()) {
                 _soundfile = argv[0];
             } else {
-                _playback_source_test =  argv[0];;
+                fprintf(stderr, "Unknown option: %s\n", argv[0]);
+                fprintf(stderr, "Sonic AWE takes only one file (%s) as input argument.\n", _soundfile.c_str());
+                printf("%s", _sawe_usage_string);
+                exit(1);
             }
             argv++;
             argc--;
@@ -379,17 +355,18 @@ int main(int argc, char *argv[])
     validate_arguments();
 
     try {
+        CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
         boost::shared_ptr<Signal::Source> wf;
 
         if (-1<=_record)
+            // TODO use _channel
             wf.reset( new Signal::MicrophoneRecorder(_record) );
         else {
+            // TODO use _channel
             printf("Reading file: %s\n", _soundfile.c_str());
             wf.reset( new Signal::Audiofile( _soundfile.c_str() ) );
         }
-
-        // TODO compute required memory by application and adjust _samples_per_chunk thereafter
-        //unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
 
         unsigned redundant = 2*(((unsigned)(_wavelet_std_t*wf->sample_rate())+31)/32*32);
         while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
@@ -398,19 +375,25 @@ int main(int argc, char *argv[])
         }
         unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
 
-        boost::shared_ptr<Transform> wt( new Transform(wf, _channel, total_samples_per_chunk, _scales_per_octave, _wavelet_std_t, _playback ) );
+        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
+        cwt->scales_per_octave( _scales_per_octave );
+        cwt->wavelet_std_t( _wavelet_std_t );
 
         if (_extract_chunk != (unsigned)-1) {
-            wt->saveCsv(_extract_chunk);
+            Sawe::Csv().put( wf->read( _extract_chunk*total_samples_per_chunk, total_samples_per_chunk ));
             return 0;
         }
 
         if (_get_chunk_count != (unsigned)-1) {
-            return wt->getChunkIndex( wf->number_of_samples() );
+            return wf->number_of_samples() / total_samples_per_chunk;
         }
 
-        boost::shared_ptr<Spectrogram> sg( new Spectrogram(wt, _samples_per_block, _scales_per_block  ) );
-        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( sg, 0, _playback_source_test ) );
+        Signal::pWorker wk( new Signal::Worker( wf ) );
+        Heightmap::Collection* sgp( new Heightmap::Collection(wk) );
+        Signal::pSink sg( sgp );
+        sgp->samples_per_block( _samples_per_block );
+        sgp->scales_per_block( _scales_per_block );
+        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wk, sg, _playback, _selectionfile, 0 ) );
         dw->yscale = (DisplayWidget::Yscale)_yscale;
 
         w.connectLayerWindow(dw.get());
@@ -420,9 +403,9 @@ int main(int argc, char *argv[])
 
         int r = a.exec();
         if (!fatal_error.empty())
-            fatal_exception(fatal_error);
+            fatal_exception_qt(fatal_error);
 
-        // CudaException_CALL_CHECK ( cudaThreadExit() );
+        // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
         fatal_exception(fatal_exception(x));

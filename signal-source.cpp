@@ -1,4 +1,8 @@
 #include "signal-source.h"
+#include <string.h>
+#include <stdio.h>
+#include "signal-samplesintervaldescriptor.h"
+
 using namespace std;
 
 namespace Signal {
@@ -6,9 +10,6 @@ namespace Signal {
 Buffer::Buffer(Interleaved interleaved)
 :   sample_offset(0),
     sample_rate(0),
-    modified(0),
-    was_modified(0),
-    play_when_done(0),
     _interleaved(interleaved)
 {
     switch(_interleaved) {
@@ -20,13 +21,30 @@ Buffer::Buffer(Interleaved interleaved)
     }
 }
 
+Buffer::Buffer(unsigned first_sample, unsigned numberOfSamples, unsigned FS, Interleaved interleaved)
+:   sample_offset(first_sample),
+    sample_rate(FS),
+    _interleaved(interleaved)
+{
+    switch(_interleaved) {
+        case Interleaved_Complex:
+            numberOfSamples*=2;
+            break;
+        case Only_Real:
+            break;
+        default:
+            throw invalid_argument( string( __FUNCTION__ ));
+    }
 
-pBuffer Buffer::getInterleaved(Interleaved value)
+    waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, 1, 1)));
+}
+
+
+pBuffer Buffer::getInterleaved(Interleaved value) const
 {
     pBuffer chunk( new Buffer( value ));
     chunk->sample_rate = sample_rate;
     chunk->sample_offset = sample_offset;
-    chunk->valid_transform_chunks = valid_transform_chunks;
 
     if (value == _interleaved) {
         chunk->waveform_data.reset( new GpuCpuData<float>(waveform_data->getCpuMemory(), waveform_data->getNumberOfElements() ) );
@@ -75,6 +93,76 @@ pBuffer Buffer::getInterleaved(Interleaved value)
     }
 
     return chunk;
+}
+
+Buffer& Buffer::
+        operator|=(const Buffer& rb)
+{
+    pBuffer b2;
+    const Buffer *p = &rb;
+    
+    if (_interleaved != p->interleaved()) {
+        b2 = p->getInterleaved(_interleaved);
+        p = &*b2;
+    }
+
+    float* c = waveform_data->getCpuMemory();
+
+    SamplesIntervalDescriptor sid( sample_offset, sample_offset + number_of_samples());
+    SamplesIntervalDescriptor psid( p->sample_offset, p->sample_offset + p->number_of_samples());
+    sid &= psid;
+
+    if (sid.isEmpty())
+        return *this;
+
+    SamplesIntervalDescriptor::Interval i = sid.getInterval(p->number_of_samples());
+
+    unsigned offs_write = i.first - sample_offset;
+    unsigned offs_read = i.first - p->sample_offset;
+    unsigned f = _interleaved == Interleaved_Complex ? 2: 1;
+    memcpy(c+offs_write, p->waveform_data->getCpuMemory() + offs_read, f*(i.last-i.first)*sizeof(float));
+
+    return *this;
+}
+
+pBuffer Source::
+        readChecked( unsigned firstSample, unsigned numberOfSamples )
+{
+    pBuffer r = read(firstSample, numberOfSamples);
+
+    if (r->sample_offset > firstSample)
+        throw std::runtime_error("read didn't contain firstSample, r->sample_offset > firstSample");
+
+    if (r->sample_offset + r->number_of_samples() <= firstSample)
+        throw std::runtime_error("read didn't contain firstSample, r->sample_offset + r->number_of_samples() <= firstSample");
+
+    return r;
+}
+
+pBuffer Source::
+        readFixedLength( unsigned firstSample, unsigned numberOfSamples )
+{
+    // Try a simple read
+    pBuffer p = readChecked(firstSample, numberOfSamples );
+    if (p->number_of_samples() == numberOfSamples && p->sample_offset==firstSample)
+        return p;
+
+    // Didn't get exact result, prepare new Buffer
+    pBuffer r( new Buffer(firstSample, numberOfSamples, p->sample_rate) );
+    SamplesIntervalDescriptor sid(firstSample, firstSample + numberOfSamples);
+
+    while (!sid.isEmpty())
+    {
+        (*r) |= *p;
+        sid -= SamplesIntervalDescriptor( p->sample_offset, p->sample_offset + p->number_of_samples() );
+
+        if (!sid.isEmpty()) {
+            SamplesIntervalDescriptor::Interval i = sid.getInterval( SamplesIntervalDescriptor::SampleType_MAX );
+            p = readChecked( i.first, i.last - i.first );
+        }
+    }
+
+    return r;
 }
 
 } // namespace Signal
