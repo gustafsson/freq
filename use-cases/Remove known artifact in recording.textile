@@ -11,4 +11,6 @@ h4. Business case: Audio editing suite
 # Go to 4, unless satisfied!
 # If the resulting gap sounds unnatural, in-painting techniques can be used
 ## filling in estimated background
-## ...
+## propagated boundaries
+## patch based
+## ... 
