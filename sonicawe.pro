@@ -30,12 +30,14 @@ SOURCES += main.cpp \
     selection.cpp \
     signal-source.cpp \
     signal-audiofile.cpp \
+    signal-cache.cpp \
     signal-microphonerecorder.cpp \
     signal-operation.cpp \
     signal-operation-basic.cpp \
     signal-operation-composite.cpp \
     signal-samplesintervaldescriptor.cpp \
     signal-sink.cpp \
+    signal-sinksource.cpp \
     signal-playback.cpp \
     layer.cpp \
     tfr-stft.cpp \
@@ -61,6 +63,7 @@ HEADERS += mainwindow.h \
     heightmap-position.h \
     signal-source.h \
     signal-audiofile.h \
+    signal-cache.h \
     signal-microphonerecorder.h \
     signal-operation.h \
     signal-operation-basic.h \
@@ -68,6 +71,7 @@ HEADERS += mainwindow.h \
     signal-samplesintervaldescriptor.h \
     signal-playback.h \
     signal-sink.h \
+    signal-sinksource.h \
     layer.h \
     tfr-stft.h \
     tfr-cwt.h \

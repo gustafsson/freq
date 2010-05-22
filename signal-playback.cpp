@@ -38,7 +38,6 @@ Playback::
 Playback::
         ~Playback()
 {
-    QMutexLocker l(&_cache_lock);
     cout << "Clearing Playback" << endl;
     if (streamPlayback) {
         streamPlayback->stop();
@@ -98,20 +97,22 @@ float Playback::
 void Playback::
         put( pBuffer buffer )
 {
+    TaskTimer tt(TaskTimer::LogSimple, "%s: Putting buffer [%u,%u]", __FUNCTION__, buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
     buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
 
     {
-        QMutexLocker l(&_cache_lock);
-
-        if (!_cache.empty()) if (_cache[0].buffer->sample_rate != buffer->sample_rate) {
+        if (!_data.empty()) if (_data.sample_rate() != buffer->sample_rate) {
             throw std::logic_error(std::string(__FUNCTION__) + " sample rate is different from previous sample rate" );
         }
 
         _first_invalid_sample = buffer->sample_offset + buffer->number_of_samples();
 
-        BufferSlot slot = { buffer, clock() };
+        if (_data.empty())
+            _last_timestamp = _first_timestamp = clock();
+        else
+            _last_timestamp = clock();
 
-        _cache.push_back( slot );
+        _data.put( buffer );
 
         unsigned x = expected_samples_left();
         if (x < buffer->number_of_samples() )
@@ -125,16 +126,19 @@ void Playback::
                 // start over
                 streamPlayback->start();
             }
+            tt.info("Is playing");
             return;
         }
     }
 
     if (isUnderfed() ) {
+        tt.info("Waiting for more data");
         //  Wait for more data
 
     } else {
-        // start playing
         portaudio::System &sys = portaudio::System::instance();
+
+        tt.info("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
         // Set up the parameters required to open a (Callback)Stream:
         portaudio::DirectionSpecificStreamParameters outParamsPlayback(
@@ -152,8 +156,7 @@ void Playback::
                 0,
                 paNoFlag);//paClipOff);
 
-        // Create (and open) a new Stream, using the SineGenerator::generate function as a callback:
-        //cout << "Opening beep output stream on: " << sys.deviceByIndex(iOutputDevice).name() << endl;
+        // Create (and open) a new Stream:
         streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
                 paramsPlayback,
                 *this,
@@ -174,11 +177,7 @@ void Playback::
             streamPlayback->stop();
     }
 
-
-    {
-        QMutexLocker l(&_cache_lock);
-        _cache.clear();
-    }
+    _data.reset();
     _playback_itr = 0;
     expected_samples_left(0);
 }
@@ -198,23 +197,13 @@ SamplesIntervalDescriptor Playback::
 unsigned Playback::
         nAccumulatedSamples()
 {
-    QMutexLocker l(&_cache_lock);
-
-    // count previous samples
-    unsigned nAccumulated_samples = 0;
-    BOOST_FOREACH( const BufferSlot& s, _cache ) {
-        nAccumulated_samples += s.buffer->number_of_samples();
-    }
-    return nAccumulated_samples;
+    return _data.number_of_samples();
 }
 
 pBuffer Playback::
         first_buffer()
 {
-    QMutexLocker l(&_cache_lock);
-    if (_cache.empty())
-        return pBuffer();
-    return _cache[0].buffer;
+    return _data.first_buffer();
 }
 
 bool Playback::
@@ -229,24 +218,22 @@ bool Playback::
 {
     unsigned nAccumulated_samples = nAccumulatedSamples();
 
-    QMutexLocker l(&_cache_lock);
-    if (1>=_cache.size())
+    if (1>=_data.size())
         return true;
 
-    clock_t first = _cache.front().timestamp;
-    clock_t last = _cache.back().timestamp;
+    clock_t first = _first_timestamp;
+    clock_t last = _last_timestamp;
 
 
     float accumulation_time = (last-first) / (float)CLOCKS_PER_SEC;
-    float incoming_samples_per_sec = (nAccumulated_samples - _cache.front().buffer->number_of_samples()) / accumulation_time;
-    float time_left = (nAccumulated_samples - _playback_itr + expected_samples_left()) / (float)_cache[0].buffer->sample_rate;
+    float incoming_samples_per_sec = (nAccumulated_samples - _data.first_buffer()->number_of_samples()) / accumulation_time;
+    float time_left = (nAccumulated_samples - _playback_itr + expected_samples_left()) / (float)_data.sample_rate();
     float estimated_time_required = expected_samples_left() / incoming_samples_per_sec;
 
     if (expected_samples_left() == 0 || time_left > estimated_time_required )
     {
         return false; // not underfed, ok to start playing
     }
-
     return true; // underfed, don't start playing
 }
 
@@ -255,7 +242,7 @@ void Playback::
 {
     _first_invalid_sample = firstSample;
     expected_samples_left( number_of_samples );
-    _playback_itr = 0;
+    _playback_itr = firstSample;
 }
 
 int Playback::
@@ -265,56 +252,21 @@ int Playback::
                  const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
-    QMutexLocker l(&_cache_lock);
     BOOST_ASSERT( outputBuffer );
     float **out = static_cast<float **>(outputBuffer);
     float *buffer = out[0];
 
-    PaStreamCallbackResult r = paComplete;
-    unsigned iBuffer = 0;
-    unsigned nAccumulated_samples = 0;
+    TaskTimer tt("Reading %u, %u", _playback_itr, framesPerBuffer );
+    pBuffer b = _data.readFixedLength( _playback_itr, framesPerBuffer );
+    memcpy( buffer, b->waveform_data->getCpuMemory(), framesPerBuffer*sizeof(float) );
+    _playback_itr += framesPerBuffer;
 
-    static int zeroFillCounter=0;
-    while ( 0 < framesPerBuffer )
-    {
-        // count previous samples
-        for (; iBuffer<_cache.size(); iBuffer++) {
-            const BufferSlot& s = _cache[iBuffer];
-            if (_playback_itr < nAccumulated_samples + s.buffer->number_of_samples() )
-                break;
-            nAccumulated_samples += s.buffer->number_of_samples();
-        }
-
-        if (iBuffer >= _cache.size())
-        {
-            if (paComplete == r)
-                zeroFillCounter++;
-            if (10>zeroFillCounter)
-                r = paContinue;
-
-            memset(buffer, 0, framesPerBuffer*sizeof(float));
-            framesPerBuffer = 0;
-        } else {
-            zeroFillCounter=0;
-            r = paContinue;
-
-            const BufferSlot& s = _cache[iBuffer];
-
-            unsigned nSamples_to_copy = nAccumulated_samples + s.buffer->number_of_samples() - _playback_itr;
-            if (framesPerBuffer < nSamples_to_copy )
-                nSamples_to_copy = framesPerBuffer;
-
-            float *source = s.buffer->waveform_data->getCpuMemory();
-            memcpy( buffer,
-                    &source[ _playback_itr - nAccumulated_samples ],
-                    nSamples_to_copy*sizeof(float));
-
-            buffer += nSamples_to_copy;
-            framesPerBuffer -= nSamples_to_copy;
-            _playback_itr += nSamples_to_copy;
-        }
+    if (_data.first_buffer()->sample_offset + _data.number_of_samples() + 10*framesPerBuffer < _playback_itr ) {
+        tt.info("Done, %u", _data.number_of_samples());
+        return paComplete;
     }
-    return r;
+
+    return paContinue;
 }
 
 } // namespace Signal

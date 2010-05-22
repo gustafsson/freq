@@ -337,8 +337,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
     if (!ref.containsSpectrogram())
         return false;
 
-    //TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
-    TaskTimer tt(TaskTimer::LogSimple, "drawing");
+    TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
 
     Position a, b;
     ref.getArea( a, b );
@@ -349,16 +348,15 @@ bool Renderer::renderSpectrogramRef( Reference ref )
 
     pBlock block = _collection->getBlock( ref );
     if (0!=block.get()) {
-//        if (0 /* direct rendering */ )
+        if (0 /* direct rendering */ )
             block->glblock->draw_directMode();
-//        else if (1 /* vbo */ )
+        else if (1 /* vbo */ )
             block->glblock->draw();
 
     } else {
         // getBlock would try to find something else if the requested block wasn't readily available.
         // If getBlock fails, we're most likely out of memory. Indicate this silently by not drawing the surface but only a wireframe
 
-        tt.info("Ops");
         glBegin(GL_LINE_LOOP );
             glVertex3f( 0, 0, 0 );
             glVertex3f( 0, 0, 1 );
@@ -376,8 +374,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     Position a, b;
     ref.getArea( a, b );
-    //TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
-    TaskTimer tt(TaskTimer::LogSimple, "[%g, %g]", a.time, b.time);
+    TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
 
     if (!ref.containsSpectrogram())
         return false;

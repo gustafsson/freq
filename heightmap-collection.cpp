@@ -45,7 +45,7 @@ void Collection::
     put( Signal::pBuffer b, Signal::Source* s)
 {
     try {
-        TaskTimer tt(TaskTimer::LogVerbose, "Putting buffer [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
+        TaskTimer tt(TaskTimer::LogVerbose, "%s: Putting buffer [%u,%u]", __FUNCTION__, b->sample_offset, b->sample_offset+b->number_of_samples());
         // If b extends source
         static unsigned L = 0;
         unsigned nL = s->number_of_samples();

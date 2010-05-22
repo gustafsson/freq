@@ -1,8 +1,7 @@
 #ifndef SIGNALPLAYBACK_H
 #define SIGNALPLAYBACK_H
 
-#include "signal-sink.h"
-#include "signal-samplesintervaldescriptor.h"
+#include "signal-sinksource.h"
 #include <vector>
 #include <time.h>
 #include <QMutex>
@@ -32,12 +31,10 @@ public:
     void        preparePlayback( unsigned firstSample, unsigned number_of_samples );
 
 private:
-    QMutex _cache_lock;
+    clock_t _first_timestamp;
+    clock_t _last_timestamp;
 
-    struct BufferSlot {
-        pBuffer buffer;
-        clock_t timestamp;
-    };
+    SinkSource _data;
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,
@@ -48,7 +45,6 @@ private:
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<Playback> > streamPlayback;
 
-    std::vector<BufferSlot> _cache;
     unsigned _playback_itr;
     unsigned _first_invalid_sample;
     int _output_device;

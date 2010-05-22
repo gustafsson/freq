@@ -55,9 +55,9 @@ MicrophoneRecorder::~MicrophoneRecorder()
         _stream_record->close();
     }
 
-    if (!_cache.empty()) {
+    if (!_data.empty()) {
         TaskTimer tt(TaskTimer::LogVerbose, "Releasing recorded data");
-        _cache.clear();
+        _data.reset();
     }
 }
 
@@ -80,46 +80,7 @@ bool MicrophoneRecorder::isStopped()
 pBuffer MicrophoneRecorder::
         read( unsigned firstSample, unsigned numberOfSamples )
 {
-    pBuffer b( new Buffer() );
-    b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent( numberOfSamples, 1, 1) ) );
-    b->sample_offset = firstSample;
-    b->sample_rate = this->sample_rate();
-
-    // this code is close to identical to "Playback::readBuffer", they could both use a BufferSource instead.
-    // TODO refactor and use a BufferSource instead, shared with Playback::readBuffer
-    float *buffer = b->waveform_data->getCpuMemory();
-    unsigned iBuffer = 0;
-    unsigned nAccumulated_samples = 0;
-
-    while ( 0 < numberOfSamples )
-    {
-        // count previous samples
-        for (; iBuffer<_cache.size(); iBuffer++) {
-            if (firstSample < nAccumulated_samples + _cache[iBuffer]->number_of_samples() )
-                break;
-            nAccumulated_samples += _cache[iBuffer]->number_of_samples();
-        }
-
-        if (iBuffer>=_cache.size()) {
-            memset(buffer, 0, numberOfSamples*sizeof(float));
-            numberOfSamples = 0;
-
-        } else {
-            unsigned nSamples_to_copy = nAccumulated_samples + _cache[iBuffer]->number_of_samples() - firstSample;
-            if (numberOfSamples < nSamples_to_copy )
-                nSamples_to_copy = numberOfSamples;
-
-            memcpy( buffer,
-                    &_cache[iBuffer]->waveform_data->getCpuMemory()[ firstSample - nAccumulated_samples ],
-                    nSamples_to_copy*sizeof(float));
-
-            numberOfSamples -= nSamples_to_copy;
-            firstSample += nSamples_to_copy;
-            buffer += nSamples_to_copy;
-        }
-    }
-
-    return b;
+    return _data.readFixedLength( firstSample, numberOfSamples );
 }
 
 unsigned MicrophoneRecorder::
@@ -131,15 +92,7 @@ unsigned MicrophoneRecorder::
 unsigned MicrophoneRecorder::
         number_of_samples()
 {
-    unsigned n = 0;
-
-    QMutexLocker l(&_mutex);
-
-    BOOST_FOREACH( const pBuffer& s, _cache) {
-        n += s->number_of_samples();
-    }
-
-    return n;
+    return _data.number_of_samples();
 }
 
 int MicrophoneRecorder::
@@ -161,10 +114,7 @@ int MicrophoneRecorder::
     b->sample_offset = number_of_samples();
     b->sample_rate = sample_rate();
 
-    {
-        QMutexLocker l(&_mutex);
-        _cache.push_back( b );
-    }
+    _data.put( b );
 
     if (_callback)
         _callback->put( b, this );

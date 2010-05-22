@@ -1432,7 +1432,7 @@ void DisplayWidget::
     }
     float dt = myClock.elapsed() * 0.001f;
     float y = 1;
-    float t = (b->sample_offset + base_itr) / (float)b->sample_rate + dt - pb->outputLatency();
+    float t = (/*b->sample_offset + */base_itr) / (float)b->sample_rate + dt - pb->outputLatency();
     //float t = b->sample_offset / (float)b->sample_rate + pb->time();
     glEnable(GL_BLEND);
     glDepthMask(false);

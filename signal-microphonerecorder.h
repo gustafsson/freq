@@ -3,8 +3,7 @@
 
 #include <vector>
 #include <QMutex>
-#include "signal-source.h"
-#include "signal-sink.h"
+#include "signal-sinksource.h"
 #include <portaudiocpp/PortAudioCpp.hxx>
 
 namespace Signal {
@@ -26,13 +25,11 @@ public:
     unsigned recording_itr() { return number_of_samples(); }
 
 private:
-    QMutex _mutex;
+    SinkSource _data;
 
     Sink* _callback;
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<MicrophoneRecorder> > _stream_record;
-
-    std::vector<pBuffer> _cache;
 
     int writeBuffer(const void *inputBuffer,
                      void * /*outputBuffer*/,

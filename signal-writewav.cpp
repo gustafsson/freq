@@ -37,7 +37,7 @@ void WriteWav::
     expected_samples_left( x );
 
     if (0==expected_samples_left()) {
-
+        reset();
     }
 }
 
