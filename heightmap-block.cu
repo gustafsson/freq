@@ -88,11 +88,14 @@ __global__ void kernel_merge_chunk(
         return;
 
     float val = 0;
-    //unsigned n = 0;
+    float n = 0;
 
     if (writePos.x>=out_offset)
     {
-        for (float x = 0; x < resample_width; x++)
+        float xs = resample_width/4;
+        if (1>xs) xs=1;
+ //       for (float x = 0; x < resample_width; x+=xs)
+        float x = 0;
         {
             float s = in_offset + x + resample_width*(writePos.x-out_offset);
 
@@ -100,6 +103,7 @@ __global__ void kernel_merge_chunk(
                 x=resample_width;
             else for (float y = 0; y < resample_height; y++)
             {
+                //float y = 0;
                 float t = y + resample_height*writePos.y;
 
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
@@ -107,8 +111,8 @@ __global__ void kernel_merge_chunk(
                     float2 c = inChunk.elem(readPos);
                     val += sqrt(c.x*c.x + c.y*c.y);
 
- outBlock.e( writePos ) = val;
- return;
+ //outBlock.e( writePos ) = 4*val;
+ //return;
 /*
   TODO use command line argument "yscale"
                         case Yscale_Linear:
@@ -126,18 +130,18 @@ __global__ void kernel_merge_chunk(
                             v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
                             */
 
-  /*                  n ++;*/
+                    n++;
                 }
             }
         }
     }
 /*
     __syncthreads();
-
+*/
     if (0<n) {
         val/=n;
         outBlock.e( writePos ) = val;
-    }*/
+    }
 }
 
 /*

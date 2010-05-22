@@ -4,6 +4,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
+#include "signal-samplesintervaldescriptor.h"
 
 namespace Tfr {
 
@@ -21,19 +22,22 @@ struct Chunk
     float min_hz, max_hz;
 
     /**
-      chunk_offset is the start of the chunk, along the timeline, measured in samples
+      chunk_offset is the start of the chunk, along the timeline, measured in
+      samples.
       */
     unsigned chunk_offset;
     unsigned sample_rate;
+
     /**
-      first_valid_sample is the first nonredundant column. first_valid_sample is also the number of redundant column.
+      first_valid_sample is the first nonredundant column. first_valid_sample
+      is also the number of redundant columns before the nonredundant data.
       */
     unsigned first_valid_sample;
+
     /**
-      the number of nonredundant column
+      the number of nonredundant columns
       */
     unsigned n_valid_samples;
-    // bool modified;
 
     float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
     float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }
@@ -51,6 +55,7 @@ struct Chunk
     float2 getNearestCoeff( float t, float f );
     unsigned getFrequencyIndex( float f ) const;
     float getFrequency( unsigned fi ) const;
+    Signal::SamplesIntervalDescriptor::Interval getInterval() const;
 };
 typedef boost::shared_ptr< Chunk > pChunk;
 

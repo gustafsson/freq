@@ -98,15 +98,15 @@ pChunk Cwt::
 
         intermediate_wt->chunk_offset = buffer->sample_offset;
         intermediate_wt->first_valid_sample = wavelet_std_samples( buffer->sample_rate );
-		if (0==buffer->sample_offset)
-			intermediate_wt->first_valid_sample=0;
+        if (0==buffer->sample_offset)
+            intermediate_wt->first_valid_sample=0;
         intermediate_wt->max_hz = max_hz( buffer->sample_rate );
         intermediate_wt->min_hz = min_hz();
 
-        if (2*intermediate_wt->first_valid_sample >= buffer->number_of_samples())
+        if (wavelet_std_samples( buffer->sample_rate ) + intermediate_wt->first_valid_sample >= buffer->number_of_samples())
             ThrowInvalidArgument( _wavelet_std_t );
         else
-            intermediate_wt->n_valid_samples = buffer->number_of_samples() - 2*wavelet_std_samples( buffer->sample_rate );
+            intermediate_wt->n_valid_samples = buffer->number_of_samples() - wavelet_std_samples( buffer->sample_rate ) - intermediate_wt->first_valid_sample;
 
         intermediate_wt->sample_rate = buffer->sample_rate;
 

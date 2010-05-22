@@ -45,6 +45,25 @@ void Collection::
     put( Signal::pBuffer b, Signal::Source* s)
 {
     try {
+        TaskTimer tt(TaskTimer::LogVerbose, "Putting buffer [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
+        // If b extends source
+        static unsigned L = 0;
+        unsigned nL = s->number_of_samples();
+        if (nL > L)
+        {
+            unsigned std = Tfr::CwtSingleton::instance()->wavelet_std_samples( worker->source()->sample_rate());
+            //std;
+            if (L > std*8)
+            {
+                // Invalidate previous samples
+                Signal::SamplesIntervalDescriptor sid(
+                        L-std*4, L-std*0);
+                this->updateInvalidSamples( sid );
+            }
+
+            L = nL;
+        }
+
         // Get a chunk for this block
         Tfr::pChunk chunk;
 
@@ -53,21 +72,35 @@ void Collection::
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
             chunk = filterOp->pick_previous_chunk();
+
+            if (0 == chunk) {
+                // try again
+                filterOp->read( b->sample_offset, b->number_of_samples() );
+                chunk = filterOp->pick_previous_chunk();
+            }
         }
+
         if (0 == chunk) {
             // otherwise compute the Cwt of this block
             chunk = Tfr::CwtSingleton::operate( b );
+
+            // Should either read extra data off from source or just compute a smaller chunk...
+            chunk->transform_data.reset();
+            chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
+            chunk->first_valid_sample = 0;
         }
 
         // Update all blocks with this new chunk
         BOOST_FOREACH( pBlock& pb, _cache ) {
             Position p1, p2;
             pb->ref.getArea(p1, p2);
+
             if (p2.time > b->start() && p1.time < b->start()+b->length())
             {
                 mergeBlock( pb, chunk, 0 );
                 computeSlope( pb, 0 );
             }
+            pb->glblock->unmap();
         }
     } catch (const CudaException &) {
         // silently catch but don't bother to do anything
@@ -198,7 +231,7 @@ findReference( Position p, Position sampleSize )
 }
 
 pBlock Collection::
-getBlock( Reference ref )
+        getBlock( Reference ref )
 {
     // Look among cached blocks for this reference
     pBlock block;
@@ -215,16 +248,13 @@ getBlock( Reference ref )
     try {
         if (0 == block.get()) {
             block = createBlock( ref );
-            if (0 != block.get()) {
-                computeSlope( block, 0 );
-            }
         }
 
         if (0 != block.get()) 
-		{
-			Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
-			if (!(refInt-=block->valid_samples).isEmpty())
-				_unfinished_count++;
+        {
+            Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
+            if (!(refInt-=block->valid_samples).isEmpty())
+                _unfinished_count++;
         }
 
         result = block;
@@ -236,7 +266,7 @@ getBlock( Reference ref )
 }
 
 void Collection::
-gc()
+        gc()
 {
     if (_cache.empty())
         return;
@@ -250,6 +280,9 @@ gc()
     for (std::vector<pBlock>::iterator itr = _cache.begin(); itr!=_cache.end(); itr++)
     {
         if ((*itr)->frame_number_last_used < latestFrame) {
+            Position a,b;
+            (*itr)->ref.getArea(a,b);
+            TaskTimer tt("Release block [%g, %g]", a.time, b.time);
             itr = _cache.erase(itr);
         }
     }
@@ -259,6 +292,11 @@ gc()
 void Collection::
         updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
 {
+    BOOST_FOREACH( const Signal::SamplesIntervalDescriptor::Interval &i, sid.intervals() )
+    {
+        TaskTimer tt(TaskTimer::LogVerbose, "Invalidating buffer [%u,%u]", i.first, i.last);
+    }
+
     // canonical
     // BOOST_FOREACH( pBlock& b, _cache )
     // {
@@ -285,6 +323,7 @@ Signal::SamplesIntervalDescriptor Collection::
     BOOST_FOREACH( pBlock& b, _cache )
     {
         Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
+
         i -= b->valid_samples;
         r |= i;
     }
@@ -335,7 +374,7 @@ createBlock( Reference ref )
 
     if ( 0 == block.get()) {
         tt.info("Failed");
-        return block; // return null-pointer
+        return pBlock(); // return null-pointer
     }
 
     pBlock result;
@@ -368,7 +407,7 @@ createBlock( Reference ref )
                 }
             }*/
 
-            if (0) {
+            if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // start with the blocks that are just slightly more detailed
                 BOOST_FOREACH( pBlock& b, _cache ) {
@@ -392,7 +431,7 @@ createBlock( Reference ref )
                 }
             }
 
-            if (0) {
+            if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                 // then try to upscale other blocks
                 BOOST_FOREACH( pBlock& b, _cache ) {
@@ -414,6 +453,7 @@ createBlock( Reference ref )
             }
         }
 
+        computeSlope( block, 0 );
         result = block;
     }
     catch (const CudaException& )
@@ -422,7 +462,7 @@ createBlock( Reference ref )
     { }
 
     if ( 0 == result.get())
-        return result; // return null-pointer
+        return pBlock(); // return null-pointer
 
     _cache.push_back( result );
 
@@ -433,7 +473,7 @@ void Collection::
         computeSlope( pBlock block, unsigned cuda_stream )
 {
     GlBlock::pHeight h = block->glblock->height();
-    cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
+    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
 }
 
 void Collection::
@@ -453,12 +493,6 @@ void Collection::
     n_samples = ((n_samples-1)/trans.chunk_size+1)*trans.chunk_size;
 
     Signal::pBuffer buff = fast_source->readFixedLength( first_sample, n_samples );
-    /*printf("b->number_of_samples() %% chunk_size = %d\n", buff->number_of_samples() % trans.chunk_size);
-    printf("n_samples %% chunk_size = %d\n", n_samples % trans.chunk_size);
-    printf("b->number_of_samples() = %d\n", buff->number_of_samples());
-    printf("n_samples = %d\n", n_samples );
-    printf("trans.chunk_size = %d\n", trans.chunk_size );
-    fflush(stdout);*/
 
     Signal::pBuffer stft = trans( buff );
 
@@ -496,6 +530,24 @@ void Collection::
 {
     boost::shared_ptr<GpuCpuData<float> > outData;
 
+    // Find out what intervals that match
+    Signal::SamplesIntervalDescriptor::Interval outInterval =  outBlock->ref.getInterval();
+    Signal::SamplesIntervalDescriptor::Interval inInterval =  inChunk->getInterval();
+
+    Signal::SamplesIntervalDescriptor transferDesc = inInterval;
+    transferDesc &= outInterval;
+
+    // Remove already computed intervals
+    transferDesc -= outBlock->valid_samples;
+
+    // If block is already up to date, abort merge
+    if (transferDesc.isEmpty())
+        return;
+
+    // If mergeBlock is called by a separate worker thread it will also have a separate cuda context
+    // and thus cannot write directly to the cuda buffer that is mapped to the rendering thread's
+    // OpenGL buffer. Instead merge inChunk to a prepared_data buffer in outBlock now, move data to CPU
+    // and update the OpenGL block the next time it is rendered.
     if (!save_in_prepared_data)
         outData = outBlock->glblock->height()->data;
     else {
@@ -505,58 +557,66 @@ void Collection::
             outData.reset( new GpuCpuData<float>(0, make_cudaExtent( _samples_per_block, _scales_per_block, 1 ), GpuCpuVoidData::CudaGlobal ) );
     }
 
-    Position a, b;
-    outBlock->ref.getArea( a, b );
-
     float in_sample_rate = inChunk->sample_rate;
     float out_sample_rate = outBlock->sample_rate();
     float in_frequency_resolution = inChunk->nScales();
     float out_frequency_resolution = outBlock->nFrequencies();
-    float in_offset = std::max(0.f, (a.time-inChunk->startTime()))*in_sample_rate;
-    float out_offset = std::max(0.f, (inChunk->startTime()-a.time))*out_sample_rate;
 
-    in_offset += inChunk->first_valid_sample;
-    blockMergeChunk( inChunk->transform_data->getCudaGlobal(),
-                      outData->getCudaGlobal(false),
+    BOOST_FOREACH( Signal::SamplesIntervalDescriptor::Interval transfer, transferDesc.intervals())
+    {
+        // Find resolution and offest for the two blocks to be merged
+        float in_offset = transfer.first - inInterval.first;
+        float out_offset = transfer.first - outInterval.first;
+
+        // Add offset for redundant samples in inChunk
+        in_offset += inChunk->first_valid_sample;
+
+        // Rescale out_offset to out_sample_rate (samples are originally
+        // described in the inChunk sample rate)
+        out_offset *= out_sample_rate / in_sample_rate;
+
+        // Invoke CUDA kernel execution to merge blocks
+        ::blockMergeChunk( inChunk->transform_data->getCudaGlobal(),
+                           outData->getCudaGlobal(),
+
                            in_sample_rate,
                            out_sample_rate,
                            in_frequency_resolution,
                            out_frequency_resolution,
                            in_offset,
                            out_offset,
-                           inChunk->n_valid_samples,
+                           transfer.last - transfer.first,
                            cuda_stream);
 
-    outBlock->valid_samples |= Signal::SamplesIntervalDescriptor(
-            (unsigned)(inChunk->startTime()*inChunk->sample_rate +.5f),
-            (unsigned)(inChunk->endTime()*inChunk->sample_rate +.5f) );
+        outBlock->valid_samples |= transfer;
+
+        TaskTimer tt(TaskTimer::LogVerbose, "Inserting chunk [%u,%u]", transfer.first, transfer.last);
+    }
 
     if (save_in_prepared_data) {
         outData->getCpuMemory();
+        outData->freeUnused();
         outBlock->prepared_data = outData;
     }
 }
 
 void Collection::
-mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
+        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
 {
-    Signal::SamplesIntervalDescriptor in_sid = inBlock->valid_samples;
-    Signal::SamplesIntervalDescriptor& out_sid = outBlock->valid_samples;
-    Signal::SamplesIntervalDescriptor out_ref_sid = outBlock->ref.getInterval();
-    Signal::SamplesIntervalDescriptor::Interval outInterval = out_ref_sid.intervals().front();
+    Signal::SamplesIntervalDescriptor::Interval inInterval = inBlock->ref.getInterval();
+    Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
 
-    // check if inBlock has any samples that can be merged with outBlock
-    // by computing which samples to copy from in to out
-    in_sid &= out_ref_sid; // restrict to ref block
-    in_sid -= out_sid;     // remove already valid samples
+    // Find out what intervals that match
+    Signal::SamplesIntervalDescriptor transferDesc = inBlock->valid_samples;
+    transferDesc &= outInterval;
 
-    if (in_sid.isEmpty()) {
+    // Remove already computed intervals
+    transferDesc -= outBlock->valid_samples;
+
+    // If block is already up to date, abort merge
+    if (transferDesc.isEmpty()) {
         return;
     }
-
-    Signal::SamplesIntervalDescriptor::Interval read_interval;
-    read_interval = in_sid.getInterval(0, outInterval.last - outInterval.first );
-    in_sid -= read_interval;
 
     float in_sample_rate = inBlock->sample_rate();
     float out_sample_rate = outBlock->sample_rate();
@@ -564,42 +624,45 @@ mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
     float in_frequency_resolution = inBlock->nFrequencies();
     float out_frequency_resolution = outBlock->nFrequencies();
 
-    float in_offset = outInterval.first>read_interval.first?outInterval.first-read_interval.first:0;
-    float out_offset = read_interval.first>outInterval.first?read_interval.first-outInterval.first:0;
-    in_offset*=in_sample_rate/signal_sample_rate;
-    out_offset*=out_sample_rate/signal_sample_rate;
-
-    float in_valid_samples=read_interval.last-read_interval.first;
-    in_valid_samples*=in_sample_rate/signal_sample_rate;
-
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
 
-    blockMerge( in_h->data->getCudaGlobal(),
-                out_h->data->getCudaGlobal(),
-
-                           in_sample_rate,
-                           out_sample_rate,
-                           in_frequency_resolution,
-                           out_frequency_resolution,
-                           in_offset,
-                           out_offset,
-                           in_valid_samples,
-                           cuda_stream);
-
-    inBlock->glblock->unmap();
-
-    // validate block if inBlock was a valid source
-    if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] ||
-        inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
+    BOOST_FOREACH( const Signal::SamplesIntervalDescriptor::Interval& transfer, transferDesc.intervals())
     {
-        outBlock->valid_samples |= read_interval;
+        float in_offset = transfer.first - inInterval.first;
+        float out_offset = transfer.first - outInterval.first;
+        float in_valid_samples = transfer.last - transfer.first;
+
+        // Rescale to proper sample rates (samples are originally
+        // described in the signal_sample_rate)
+        in_offset *= in_sample_rate / signal_sample_rate;
+        out_offset *= out_sample_rate / signal_sample_rate;
+        in_valid_samples *= in_sample_rate / signal_sample_rate;
+
+        ::blockMerge( in_h->data->getCudaGlobal(),
+                      out_h->data->getCudaGlobal(),
+
+                      in_sample_rate,
+                      out_sample_rate,
+                      in_frequency_resolution,
+                      out_frequency_resolution,
+                      in_offset,
+                      out_offset,
+                      in_valid_samples,
+                      cuda_stream);
+
+        // Validate region of block if inBlock was source of higher resolution than outBlock
+        if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
+            inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
+        {
+            outBlock->valid_samples |= transfer;
+            TaskTimer tt(TaskTimer::LogVerbose, "Using block [%u,%u]", transfer.first, transfer.last);
+        }
     }
 
-    // keep on going merging if there are more things to read from inBlock
-    if (in_sid.intervals().size()>1) {
-        mergeBlock( outBlock, inBlock, cuda_stream );
-    }
+    // These inblocks won't be rendered and thus unmapped very soon. outBlock will however be unmapped
+    // very soon as it was requested for rendering.
+    inBlock->glblock->unmap();
 }
 
 } // namespace Heightmap

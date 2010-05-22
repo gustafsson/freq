@@ -49,4 +49,14 @@ unsigned Chunk::
     return fi;
 }
 
+Signal::SamplesIntervalDescriptor::Interval Chunk::
+        getInterval() const
+{
+    Signal::SamplesIntervalDescriptor::Interval i = {
+        chunk_offset + first_valid_sample,
+        chunk_offset + first_valid_sample + n_valid_samples
+    };
+    return i;
+}
+
 } // namespace Tfr

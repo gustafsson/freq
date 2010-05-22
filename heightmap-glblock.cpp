@@ -111,6 +111,8 @@ GlBlock( Collection* collection )
 GlBlock::
 ~GlBlock()
 {
+    unmap();
+
     cudaGLUnregisterBufferObject(*_height);
     cudaGLUnregisterBufferObject(*_slope);
 }

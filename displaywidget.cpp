@@ -523,8 +523,9 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
 void DisplayWidget::put(Signal::pBuffer b )
 {    
     float newl = _worker->source()->length();
+    newl -= 8*Tfr::CwtSingleton::instance()->wavelet_std_t();
     static float prevl = newl;
-    if (_qx == prevl || prevl == newl) // prevl == newl is true for the first put
+    if (_qx >= prevl || prevl == newl) // prevl == newl is true for the first put
         _qx = newl;
     prevl = newl;
 
@@ -918,7 +919,7 @@ void DisplayWidget::paintGL()
     	drawRoundRect(0.55, 0.55, 0.55);
     	
     	glDisable(GL_BLEND);
-    	glDisable(GL_DEPTH_TEST);
+        //glDisable(GL_DEPTH_TEST);
     
     	glMatrixMode(GL_PROJECTION);
     	glPopMatrix();
@@ -944,6 +945,7 @@ void DisplayWidget::paintGL()
         _worker->todo_list = p->getMissingSamples();
     } else {
         _worker->todo_list = _renderer->collection()->getMissingSamples();
+
         center = _worker->source()->sample_rate() * _qx;
     }
 

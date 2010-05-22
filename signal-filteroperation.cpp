@@ -38,27 +38,33 @@ pBuffer FilterOperation::
             unsigned L = numberOfSamples + 2*wavelet_std_samples;
 
             // If filter would make all these samples zero, return immediately
-            if (_filter) {
-                SamplesIntervalDescriptor work(firstSample, firstSample + L );
-                work -= _filter->getZeroSamples( _source->sample_rate() );
-                if (work.isEmpty()) {
-                    pBuffer b( new Buffer( firstSample, L, _source->sample_rate() ));
-                    ::memset( b->waveform_data->getCpuMemory(), 0, L);
-                    return b;
+            if (!_save_previous_chunk)
+            {
+                if (_filter) {
+                    SamplesIntervalDescriptor work(firstSample, firstSample + L );
+                    work -= _filter->getZeroSamples( _source->sample_rate() );
+                    if (work.isEmpty()) {
+                        pBuffer b( new Buffer( firstSample, L, _source->sample_rate() ));
+                        ::memset( b->waveform_data->getCpuMemory(), 0, L);
+                        return b;
+                    }
                 }
             }
 
             pBuffer b = _source->readFixedLength( firstSample, L );
 
             // If filter would leave these samples untouched, there is nothing to do; return
-            if (_filter) {
-                SamplesIntervalDescriptor work(firstSample, firstSample + L );
-                work -= _filter->getUntouchedSamples( _source->sample_rate() );
-                if (work.isEmpty())
+            if (!_save_previous_chunk)
+            {
+                if (_filter) {
+                    SamplesIntervalDescriptor work(firstSample, firstSample + L );
+                    work -= _filter->getUntouchedSamples( _source->sample_rate() );
+                    if (work.isEmpty())
+                        return b;
+                } else {
+                    // If there is no filter to apply, there is nothing to do; return
                     return b;
-            } else {
-                // If there is no filter to apply, there is nothing to do; return
-                return b;
+                }
             }
 
             // Compute the continous wavelet transform
