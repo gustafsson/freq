@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -55,6 +55,10 @@
    <addaction name="actionPlaySelection"/>
    <addaction name="actionActionAdd_selection"/>
    <addaction name="actionActionRemove_selection"/>
+   <addaction name="separator"/>
+   <addaction name="actionCropSelection"/>
+   <addaction name="actionMoveSelection"/>
+   <addaction name="actionMoveSelectionTime"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
@@ -98,9 +102,41 @@
        <property name="currentIndex">
         <number>0</number>
        </property>
-       <widget class="QWidget" name="layerTab">
+       <widget class="QWidget" name="operationsTab">
         <attribute name="title">
-         <string>Layers</string>
+         <string>Operations</string>
+        </attribute>
+        <widget class="QTreeWidget" name="operationsTree">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>256</width>
+           <height>241</height>
+          </rect>
+         </property>
+         <property name="autoFillBackground">
+          <bool>true</bool>
+         </property>
+         <property name="columnCount">
+          <number>1</number>
+         </property>
+         <attribute name="headerVisible">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="headerVisible">
+          <bool>false</bool>
+         </attribute>
+         <column>
+          <property name="text">
+           <string>1</string>
+          </property>
+         </column>
+        </widget>
+       </widget>
+       <widget class="QWidget" name="filterTab">
+        <attribute name="title">
+         <string>Top filter</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="margin">
@@ -296,6 +332,81 @@
    </property>
    <property name="shortcut">
     <string>A</string>
+   </property>
+  </action>
+  <action name="actionCropSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Crop Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Crop selection [C]</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionMoveSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Move selection [M]</string>
+   </property>
+   <property name="shortcut">
+    <string>M</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionMoveSelectionTime">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move Selection in Time</string>
+   </property>
+   <property name="toolTip">
+    <string>Move selection in Time [T]</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
    </property>
   </action>
  </widget>

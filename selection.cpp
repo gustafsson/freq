@@ -19,7 +19,7 @@ bool Selection::getIsInside(Position p)
 		throw std::logic_error( std::string(__FUNCTION__) + " not implemented");
 }
 
-void Selection::range(float& start_time, float& end_time)
+void Selection::range(float& start_time, float& end_time) const
 {
 		throw std::logic_error( std::string(__FUNCTION__) + " not implemented");
 }

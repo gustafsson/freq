@@ -1,15 +1,16 @@
 #ifndef SIGNALPLAYBACK_H
 #define SIGNALPLAYBACK_H
 
-#include "signal-sink.h"
+#include "signal-sinksource.h"
 #include <vector>
 #include <time.h>
+#include <QMutex>
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/scoped_ptr.hpp>
 
 namespace Signal {
 
-class Playback: public Sink
+class Playback: virtual public Sink
 {
 public:
     Playback( int outputDevice/* = -1 */);
@@ -18,18 +19,22 @@ public:
     virtual void put( pBuffer );
     virtual void reset();
 
+    SamplesIntervalDescriptor getMissingSamples();
     static void list_devices();
-    unsigned playback_itr();
-    float time();
-    float outputLatency();
-    pBuffer first_buffer();
-    unsigned output_device() { return _output_device; }
-    bool isStopped();
+    unsigned    playback_itr();
+    float       time();
+    float       outputLatency();
+    pBuffer     first_buffer();
+    unsigned    output_device() { return _output_device; }
+    bool        isStopped();
+    bool        isUnderfed();
+    void        preparePlayback( unsigned firstSample, unsigned number_of_samples );
+
 private:
-    struct BufferSlot {
-        pBuffer buffer;
-        clock_t timestamp;
-    };
+    clock_t _first_timestamp;
+    clock_t _last_timestamp;
+
+    SinkSource _data;
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,
@@ -40,8 +45,8 @@ private:
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<Playback> > streamPlayback;
 
-    std::vector<BufferSlot> _cache;
     unsigned _playback_itr;
+    unsigned _first_invalid_sample;
     int _output_device;
 
     unsigned nAccumulatedSamples();

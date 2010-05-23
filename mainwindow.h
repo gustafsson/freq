@@ -4,16 +4,13 @@
 #include <QtGui/QMainWindow>
 #include <QtGui/QListWidgetItem>
 #include "displaywidget.h"
-#include "spectrogram-renderer.h"
+#include "tfr-filter.h"
+#include <QTreeWidgetItem>
 
 #ifdef Q_WS_MAC
 void qt_mac_set_menubar_icons(bool enable);
 #endif
 
-namespace Ui
-{
-    class MainWindow;
-}
 
 class MainWindow : public QMainWindow
 {
@@ -30,7 +27,8 @@ protected:
     virtual void keyReleaseEvent ( QKeyEvent * e );
 
 public slots:
-    void updateLayerList(pTransform t);
+    void updateOperationsTree( Signal::pSource s);
+    void updateLayerList( Tfr::pFilter f );
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);
@@ -44,7 +42,7 @@ signals:
     void sendRemoveItem(int);
 
 private:
-    Ui::MainWindow *ui;
+    class Ui_MainWindow *ui;
 };
 
 #endif // MAINWINDOW_H

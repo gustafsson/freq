@@ -10,7 +10,7 @@ h4. Business case: Audio editing suite
 ## by using the eraser brush
 # Go to 4, unless satisfied!
 # If the resulting gap sounds unnatural, in-painting techniques can be used
-## estimated background
+## filling in estimated background
 ## propagated boundaries
 ## patch based
 ## ... 

@@ -1,4 +1,5 @@
 #include "signal-sink.h"
+#include "string.h"
 
 namespace Signal {
 

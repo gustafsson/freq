@@ -1,16 +1,16 @@
 <RCC>
-  <qresource prefix="/icons">
-    <file>icons/icon-play.png</file>
-    <file>icons/sonicawe.png</file>
-    <file>icons/icon-navigation.png</file>
-    <file>icons/icon-toggle-hz.png</file>
-    <file>icons/icon-save-selection.png</file>
-    <file>icons/icon-silence-selection.png</file>
-    <file>icons/icon-toggle-piano.png</file>
-    <file>icons/icon-circle-selection.png</file>
-  </qresource>
-  <qresource prefix="/shaders">
-    <file>spectrogram.vert</file>
-    <file>spectrogram.frag</file>
-  </qresource>
+    <qresource prefix="/icons" >
+        <file>icons/icon-play.png</file>
+        <file>icons/sonicawe.png</file>
+        <file>icons/icon-navigation.png</file>
+        <file>icons/icon-toggle-hz.png</file>
+        <file>icons/icon-save-selection.png</file>
+        <file>icons/icon-silence-selection.png</file>
+        <file>icons/icon-toggle-piano.png</file>
+        <file>icons/icon-circle-selection.png</file>
+    </qresource>
+    <qresource prefix="/shaders" >
+        <file>heightmap.frag</file>
+        <file>heightmap.vert</file>
+    </qresource>
 </RCC>

@@ -1,0 +1,58 @@
+*These steps will setup your development environment for Sonic Awe on Mac OS X*
+*1. Github*
+<a href="http://help.github.com/">Install git</a> and send your github user name to reep.<br/>
+
+*2. Prerequisites*
+*2.1. OS Version*
+To run CUDA on OS X you need atleast Mac OS 10.5.x or later. Either version is as good as the other at the time of writing.
+
+*2.2. Cuda*
+Download and install <a href="http://www.nvidia.com/object/cuda_get.html">cuda toolkit and cuda driver from nvidia</a>.
+
+*2.3. QT Toolkit*
+Download and install Nokia open source QT Toolkit. You will not need to build it yourself. Get it <a href="http://qt.nokia.com/downloads">here</a>.
+
+*2.4. Audiere*
+If you are running 10.5.x you should have no trouble compiling Audiere as a 32-bit dynamic library. Download the source code <a href="http://audiere.sourceforge.net/download.php">here</a>.
+<i>Note: You might need to make the configuration file executable to be able to run it properly.</i>
+<pre>$ cd /path/to/audieresource/
+$ ./configure
+$ make
+$ make install</pre>
+
+If you are running 10.6.x however you are in for a treat. How do you compile it as 32-bit? I don't know so if you, aswell as I, have no clue how to do it. Then get your 32-bit lib file at the github download section, download <b>libaudiere.dylib.zip</b>.
+
+*2.5. LibSndFile*
+Download and compile libsndfile. There should be no problem on either os-version. Get libsndfile source code <a href="http://www.mega-nerd.com/libsndfile/">here</a>.
+<i>Note: You might need to make the configuration file executable to be able to run it properly.</i>
+<pre>$ cd /path/to/libsndsource/
+$ ./configure
+$ make
+$ make install</pre>
+
+*2.6. Boost*
+Download Boost and place the boost folder in the "misc"-folder or set the header searchpaths to fit your chosen directory. Get boost <a href="http://www.boost.org/">here</a>
+
+*3. Building*
+*3.1. Building the binary*
+To build the binary do as on any unix system:
+<pre>$ qmake
+$ make</pre>
+Check for errors and you're done.
+
+*3.2. Running the binary*
+To run the binary you need to make sure your LD_LIBRARY_PATH includes the path to the CUDA libraries. You can add an entry to your bash profile or just use the following command before you run the binary. Your library path might differ slightly so check it out before you do it.
+<pre>$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib/</pre>
+
+*3.3. Packaging the application*
+Packaging the application is not very easy, The problem is the install path used by the libraries we need to use.
+
+A linux binary is actually quite similar to a OSX binary. The difference is in the way you package an application. An application on OSX  should preferably be completely standalone and this is where we find the differences. In linux you often prefer to share libraries in a global directory. So, since most of the libraries we use are compiled with another philosophy in mind we have to make some changes to them :)
+
+Find the libraries used for Sonic Awe and copy them to a location you are comfortable working in. I DO NOT recommend changing the orignal library binaries. (Input shellscript of Awesomeness here)
+Use otool and install_name_tool to set the install paths of the libraries:
+<pre>$ otool -L libcufft.dylib
+-utskrift 
+install_name_tool -id @executable_path../Frameworks/libcufft.dylib libcufft.dylib</pre>
+
+TO BE CONCLUDED
