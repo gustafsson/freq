@@ -16,6 +16,7 @@
 #include <GlException.h>
 #include <CudaException.h>
 #include "displaywidget.h"
+#include <glPushContext.h>
 
 #ifdef _MSC_VER
 #include "msc_stdc.h"
@@ -203,13 +204,6 @@ static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvecto
     return (plane-obj)%normal;
 }
 
-
-class glPushMatrixContext
-{
-public:
-    glPushMatrixContext() { glPushMatrix(); }
-    ~glPushMatrixContext() { glPopMatrix(); }
-};
 
 void Renderer::init()
 {
