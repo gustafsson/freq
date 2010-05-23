@@ -497,7 +497,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         case 'x': case 'X':
         {
             Signal::pSink s( new Sawe::Csv() );
-            s->put( Signal::pBuffer(), _worker->source().get() );
+            s->put( Signal::pBuffer(), _worker->source() );
             break;
         }
         case 'r': case 'R':

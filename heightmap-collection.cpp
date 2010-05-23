@@ -42,7 +42,7 @@ Collection( Signal::pWorker worker )
 }
 
 void Collection::
-    put( Signal::pBuffer b, Signal::Source* s)
+    put( Signal::pBuffer b, Signal::pSource s)
 {
     try {
         TaskTimer tt(TaskTimer::LogVerbose, "%s: Putting buffer [%u,%u]", __FUNCTION__, b->sample_offset, b->sample_offset+b->number_of_samples());
@@ -68,7 +68,7 @@ void Collection::
         Tfr::pChunk chunk;
 
         // If buffer comes directly from a Signal::FilterOperation
-        Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s);
+        Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s.get());
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
             chunk = filterOp->pick_previous_chunk();

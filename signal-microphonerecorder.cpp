@@ -117,7 +117,7 @@ int MicrophoneRecorder::
     _data.put( b );
 
     if (_callback)
-        _callback->put( b, this );
+        _callback->put( b );
 
     return paContinue;
 }

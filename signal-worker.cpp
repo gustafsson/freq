@@ -116,14 +116,14 @@ void Worker::
 }
 
 void Worker::
-        addCallback( Sink* c )
+        addCallback( pSink c )
 {
     QMutexLocker l( &_callbacks_lock );
     _callbacks.push_back( c );
 }
 
 void Worker::
-        removeCallback( Sink* c )
+        removeCallback( pSink c )
 {
     QMutexLocker l( &_callbacks_lock );
     _callbacks.remove( c );
@@ -134,8 +134,8 @@ void Worker::
 {
     QMutexLocker l( &_callbacks_lock );
 
-    BOOST_FOREACH( Sink* c, _callbacks ) {
-        c->put( b, _source.get() );
+    BOOST_FOREACH( pSink c, _callbacks ) {
+        c->put( b, _source );
     }
 }
 

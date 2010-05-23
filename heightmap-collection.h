@@ -118,12 +118,12 @@ public:
     /**
       @see put( pBuffer, pSource );
       */
-    virtual void put( Signal::pBuffer b) { put(b, 0); }
+    virtual void put( Signal::pBuffer b) { put(b, Signal::pSource()); }
 
     /**
       Computes the Cwt and updates the cache of blocks.
       */
-    virtual void put( Signal::pBuffer, Signal::Source* );
+    virtual void put( Signal::pBuffer, Signal::pSource );
 
 
     /**

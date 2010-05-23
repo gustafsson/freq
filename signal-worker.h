@@ -153,12 +153,12 @@ private:
     /**
       A ChunkCompleteCallback adds itself to a cwtqueue.
       */
-    void addCallback( Sink* c );
+    void addCallback( pSink c );
 
     /**
       A ChunkCompleteCallback removes itself from a cwtqueue.
       */
-    void removeCallback( Sink* c );
+    void removeCallback( pSink c );
 
     /**
       Self explanatory.
@@ -168,7 +168,7 @@ private:
     /**
       All callbacks in this list are called once for each call of workOne().
       */
-    std::list<Sink*> _callbacks; // TODO use pSink
+    std::list<pSink> _callbacks; // TODO use pSink
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
@@ -205,9 +205,9 @@ public:
         :   _w(w),
             _s(s)
     {
-        _w->addCallback( _s.get() );
+        _w->addCallback( _s );
     }
-    ~WorkerCallback( ) { _w->removeCallback( _s.get() ); }
+    ~WorkerCallback( ) { _w->removeCallback( _s ); }
 
     pWorker worker() { return _w; }
     pSink sink() { return _s; }
