@@ -1,0 +1,12 @@
+h4. Business case: Analysis tool
+
+Based on information from Olov Engwall.
+
+In conversations between individuals there's certain voice and breath cues that signals that the speakers is finnishing a sentance or that the listener has something to add, is following the argument etc.
+For research purposes the timing of these is of interest.
+
+# The user wants to find a discussion cue
+# Using the scaleogram and speakers to locate the cues
+# The cues are marked
+## If breath type the cues themselves can be isolated with a few regions
+## If voice type, like hums and words, attemps can be made to isolate the voices with regions and segmentation tools
