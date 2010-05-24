@@ -13,25 +13,10 @@ using namespace std;
 namespace Sawe
 {
 
-string hdf5_number()
-{
-    string basename = "sonicawe-";
-    for (unsigned c = 1; c<10; c++)
-    {
-        stringstream filename;
-        filename << basename << c << ".hdf5";
-        fstream hdf5(filename.str().c_str());
-        if (!hdf5.is_open())
-            return filename.str();
-    }
-    return basename+"0.hdf5";
-}
-
 void Hdf5::
 put( Signal::pBuffer b )
 {
-    string filename = hdf5_number();
-    TaskTimer tt("Saving HDF5-file %s", filename.c_str());
+    TaskTimer tt("Saving HDF5-file");
 
 	hid_t       file_id;
 	herr_t      status;
@@ -44,7 +29,7 @@ put( Signal::pBuffer b )
 	hsize_t     dims[RANK]={2,s.width,s.height};
 
 	/* create a HDF5 file */
-	file_id = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	file_id = H5Fcreate("sawe_chunk.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
 	/* create and write an integer type dataset named "dset" */
 	status = H5LTmake_dataset(file_id,"/dset",RANK,dims,H5T_NATIVE_FLOAT,p);
