@@ -360,7 +360,7 @@ void DisplayWidget::
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
     float radie = fabsf(selection[0].x - selection[1].x);
-    unsigned start = std::max(0.0, selection[0].x - radie/sqrt(2.f)) * FS;
+    unsigned start = std::max(0.f, selection[0].x - radie/sqrt(2.f)) * FS;
     unsigned end = (selection[0].x + radie/sqrt(2.f)) * FS;
 
     if (end<=start)

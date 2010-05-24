@@ -45,6 +45,7 @@ SOURCES += main.cpp \
     tfr-inversecwt.cpp \
     tfr-chunk.cpp \
     sawe-csv.cpp \
+	sawe-hdf5.cpp \
     signal-filteroperation.cpp \
     signal-worker.cpp \
     signal-writewav.cpp \
@@ -77,6 +78,7 @@ HEADERS += mainwindow.h \
     tfr-inversecwt.h \
     tfr-chunk.h \
     sawe-csv.h \
+	sawe-hdf5.h \
     sawe-mainplayback.h \
     signal-filteroperation.h \
     signal-worker.h \
@@ -129,13 +131,22 @@ win32:INCLUDEPATH += \
 	..\..\winlib\glew\include \
 	..\..\winlib\portaudio\include \
 	..\..\winlib\libsndfile\include \
+	..\..\winlib\hdf5lib\include \
+	..\..\winlib\zlib\include \
+	..\..\winlib\szip\include \
 	..\..\winlib
 win32:LIBS += \
 	-l..\..\winlib\glut\glut32 \
 	-l..\..\winlib\glew\lib\glew32 \
     -l..\..\winlib\libsndfile\libsndfile-1 \
 	-l..\..\winlib\portaudio\portaudio \
-	-l..\..\winlib\portaudio\portaudiocpp
+	-l..\..\winlib\portaudio\portaudiocpp \
+	-l..\..\winlib\hdf5lib\lib\hdf5 \
+	-l..\..\winlib\hdf5lib\lib\hdf5_cpp \
+	-l..\..\winlib\hdf5lib\lib\hdf5_hl \
+	-l..\..\winlib\hdf5lib\lib\hdf5_hl_cpp \
+	-l..\..\winlib\szip\lib\libszip \
+	-l..\..\winlib\zlib\lib\zlib
 LIBS += -lcufft 
 unix:LIBS += -L../gpumisc -lgpumisc
 macx:LIBS += -L../gpumisc -lgpumisc
