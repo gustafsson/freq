@@ -236,14 +236,16 @@ public:
 bool check_cuda() {
     stringstream ss;
     void* ptr=(void*)0;
+    CudaException namedError(cudaSuccess);
     try {
         CudaException_CALL_CHECK ( cudaMalloc( &ptr, 1024 ));
         CudaException_CALL_CHECK ( cudaFree( ptr ));
         GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
     }
     catch (const CudaException& x) {
+        namedError = x;
 #ifdef _DEBUG
-        ss << x.what() << endl;
+        ss << x.what() << endl << "Cuda error code " << x.getCudaError() << endl << endl;
 #endif
         ptr = 0;
     } catch (...) {
@@ -254,12 +256,23 @@ bool check_cuda() {
     if (ptr && CudaProperties::haveCuda())
         return true;
 
-    ss   << "Sonic AWE requires you to have installed CUDA-compatible graphics drivers from NVIDIA, and no such driver was found." << endl
-         << endl
-         << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
-         << "   www.nvidia.com/object/cuda_gpus.html" << endl
-         << endl
-         << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl
+    if (cudaErrorInsufficientDriver == namedError.getCudaError())
+    {
+        ss << "Sonic AWE requires you to have installed newer CUDA-compatible graphics drivers from NVIDIA. "
+                << "CUDA drivers are installed on this computer but they are too old. "
+                << "You can download new drivers from NVIDIA;" << endl;
+    }
+    else
+    {
+        ss   << "Sonic AWE requires you to have installed CUDA-compatible graphics drivers from NVIDIA, and no such driver was found." << endl
+             << endl
+             << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
+             << "   www.nvidia.com/object/cuda_gpus.html" << endl
+             << endl
+             << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl;
+    }
+
+    ss
 #ifdef __APPLE__
          << "   http://developer.nvidia.com/object/cuda_3_0_downloads.html#MacOS" << endl
 #else
@@ -268,6 +281,7 @@ bool check_cuda() {
          << endl
          << endl
          << "Sonic AWE cannot start." << endl;
+
     cerr << ss.str();
     cerr.flush();
 
