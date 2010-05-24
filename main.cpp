@@ -16,6 +16,7 @@
 #include <CudaException.h>
 #include "heightmap-renderer.h"
 #include "sawe-csv.h"
+#include "sawe-hdf5.h"
 #include "signal-audiofile.h"
 #include "signal-microphonerecorder.h"
 #include <demangle.h>
@@ -380,7 +381,7 @@ int main(int argc, char *argv[])
         cwt->wavelet_std_t( _wavelet_std_t );
 
         if (_extract_chunk != (unsigned)-1) {
-            Sawe::Csv().put( wf->read( _extract_chunk*total_samples_per_chunk, total_samples_per_chunk ));
+            Sawe::Hdf5().put( wf->read( _extract_chunk*total_samples_per_chunk, total_samples_per_chunk ));
             return 0;
         }
 

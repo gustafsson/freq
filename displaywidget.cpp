@@ -26,6 +26,7 @@
 #include "signal-operation-composite.h"
 #include "signal-operation-basic.h"
 #include "sawe-csv.h"
+#include "sawe-hdf5.h"
 #include "signal-writewav.h"
 
 #include <msc_stdc.h>

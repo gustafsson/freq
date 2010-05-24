@@ -19,12 +19,12 @@ string hdf5_number()
     for (unsigned c = 1; c<10; c++)
     {
         stringstream filename;
-        filename << basename << c << ".csv";
-        fstream csv(filename.str().c_str());
-        if (!csv.is_open())
+        filename << basename << c << ".hdf50";
+        fstream hdf5(filename.str().c_str());
+        if (!hdf5.is_open())
             return filename.str();
     }
-    return basename+"0.csv";
+    return basename+"0.hdf5";
 }
 
 void Hdf5::
