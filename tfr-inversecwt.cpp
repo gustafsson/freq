@@ -12,22 +12,42 @@ InverseCwt::InverseCwt(cudaStream_t stream)
 Signal::pBuffer InverseCwt::
 operator()(Tfr::Chunk& chunk)
 {
-    EllipsFilter* e = 0;
-    SquareFilter* s = 0;
-    if (filter.get()) {
-        e = dynamic_cast<EllipsFilter*>(filter.get());
-        s = dynamic_cast<SquareFilter*>(filter.get());
-
-        if (!e && !s) {
-            (*filter)( chunk );
-        }
-    }
     cudaExtent sz = make_cudaExtent( chunk.n_valid_samples, 1, 1);
-
     Signal::pBuffer r( new Signal::Buffer());
     r->sample_offset = chunk.chunk_offset + chunk.first_valid_sample;
     r->sample_rate = chunk.sample_rate;
     r->waveform_data.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
+
+    EllipsFilter* e = 0;
+    SquareFilter* s = 0;
+    if (filter.get()) {
+        //e = dynamic_cast<EllipsFilter*>(filter.get());
+        //s = dynamic_cast<SquareFilter*>(filter.get());
+
+        if (!e && !s) {
+            Signal::SamplesIntervalDescriptor
+                    chunkSid( chunk.chunk_offset + chunk.first_valid_sample,
+                              chunk.chunk_offset + chunk.first_valid_sample + chunk.n_valid_samples),
+                    chunkCopy = chunkSid;
+            if ((chunkSid -= filter->getUntouchedSamples( chunk.sample_rate )).isEmpty())
+            {
+                // Filter won't do anything
+            }
+            else if ((chunkCopy -= filter->getZeroSamples( chunk.sample_rate )).isEmpty())
+            {
+                // Filter will set everything to 0
+                cudaMemset( chunk.transform_data->getCudaGlobal().ptr(),
+                            0, chunk.transform_data->getSizeInBytes1D());
+                cudaMemset( r->waveform_data->getCudaGlobal().ptr(), 0, r->waveform_data->getSizeInBytes1D() );
+                return r;
+            }
+            else
+            {
+                // Filter would actually do something, do it
+                (*filter)( chunk );
+            }
+        }
+    }
 
     {
         TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);

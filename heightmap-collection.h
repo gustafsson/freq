@@ -107,9 +107,6 @@ class Collection: public Signal::Sink {
 public:
     Collection(Signal::pWorker worker);
 
-
-    // WorkerCallback: Implementations of virtual methods
-
     /**
       Releases all GPU resources allocated by Heightmap::Collection.
       */
@@ -125,6 +122,8 @@ public:
       */
     virtual void put( Signal::pBuffer, Signal::pSource );
 
+    virtual Signal::SamplesIntervalDescriptor expected_samples();
+    virtual void add_expected_samples( Signal::SamplesIntervalDescriptor );
 
     /**
       scales_per_block and samples_per_block are constants deciding how many blocks
@@ -163,9 +162,6 @@ public:
 
 
     void        gc();
-
-    virtual void updateInvalidSamples( Signal::SamplesIntervalDescriptor );
-    Signal::SamplesIntervalDescriptor getMissingSamples();
 
     Signal::pWorker     worker;
 private:

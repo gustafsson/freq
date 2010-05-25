@@ -3,6 +3,8 @@
 #include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <cfloat>
+#include <TaskTimer.h>
+#include <sstream>
 
 namespace Signal {
 
@@ -259,8 +261,9 @@ SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
         if (itr->first >= center)
             break;
     }
-    float distance_to_next=FLT_MAX;
-    float distance_to_prev=FLT_MAX;
+
+    SampleType distance_to_next = SampleType_MAX;
+    SampleType distance_to_prev = SampleType_MAX;
 
     if (itr != _intervals.end()) {
         distance_to_next = itr->first - center;
@@ -298,6 +301,28 @@ SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
         Interval r = {start, std::min(start+dt, f.last) };
         return r;
     }
+}
+
+void SamplesIntervalDescriptor::
+        print( std::string title )
+{
+    //TaskTimer tt("%s, %d intervals", title.empty()?"SamplesIntervalDescriptor":title.c_str(), _intervals.size());
+
+    //tt.suppressTiming();
+    //tt.attemptOneRow();
+
+    std::stringstream ss;
+    BOOST_FOREACH (const Interval& r, _intervals) {
+        ss << " [" << r.first << ", " << r.last << "]";
+        //tt.info("[%u, %u]", r.first, r.last );
+    }
+    ss << '.';
+
+    TaskTimer("%s, %d interval%s%s",
+              title.empty()?"SamplesIntervalDescriptor":title.c_str(),
+              _intervals.size(),
+              _intervals.size()==1?"":"s",
+              ss.str().c_str()).suppressTiming();
 }
 
 } // namespace Signal

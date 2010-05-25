@@ -112,8 +112,7 @@ private:
     Heightmap::pRenderer _renderer;
     Signal::pWorker _worker;
     Signal::pWorkerCallback _collectionCallback;
-    Signal::pWorkerCallback _playbackCallback;
-    Signal::pWorkerCallback _diskwriterCallback;
+    Signal::pWorkerCallback _postsinkCallback;
 
     std::string _selection_filename;
     unsigned _playback_device;

@@ -7,6 +7,8 @@
 #include <math.h>
 #endif
 
+#define M_PIf ((float)(M_PI))
+
 __global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside );
 __global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area );
 __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate );
@@ -22,6 +24,7 @@ void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_ins
         return;
     }
 
+    grid.x *= 2; // To coalesce better, one thread for each float (instead of each float2)
     kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area, save_inside );
 }
 
@@ -40,20 +43,25 @@ void removeRect( float2* wavelet, cudaExtent numElem, float4 area )
 
 __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
 {
-    const unsigned
+    unsigned
             x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
             fi = __umul24(blockIdx.y,blockDim.y) + threadIdx.y;
+
+    bool complex = x%2;
+    x/=2;
 
     if (x>=numElem.width )
         return;
 
-    float rx = area.z-(float)area.x;
-    float ry = area.w-(float)area.y;
-    float dx = x+.5f-(float)area.x;
-    float dy = fi+1.5f-(float)area.y;
+    float rx = fabs(area.z - area.x);
+    float ry = fabs(area.w - area.y);
+    float dx = fabs(x+.5f - area.x);
+    float dy = fabs(fi-.5f - area.y);
 
+    float g = dx*dx/rx/rx + dy*dy/ry/ry;
+    rx = max(0.f, rx-1000);
+    ry = max(0.f, ry-2);
     float f = dx*dx/rx/rx + dy*dy/ry/ry;
-    float g = dx*dx/(rx+1)/(rx+1) + dy*dy/(ry+1)/(ry+1);
     if (f < 1) {
         f = 0;
     } else if (g<1) {
@@ -66,11 +74,10 @@ __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 a
         f = 1-f;
 
     if (f < 1) {
-        f*=f;
-        f*=f;
+        //f*=(1-f);
+        //f*=(1-f);
 
-        wavelet[ x + fi*numElem.width ].x *= f;
-        wavelet[ x + fi*numElem.width ].y *= f;
+        ((float*)wavelet)[ 2*x + complex + fi*2*numElem.width ] *= f;
     }
 }
 
@@ -150,10 +157,10 @@ __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float st
 
             // compute how many periods have elapsed at x for readPos.y
             float time = x / sample_rate; // same time for both read and write
-            float read_angle = time * hz_read*2*M_PI;
-            float write_angle = time * hz_write*2*M_PI;
+            float read_angle = time * hz_read*2*M_PIf;
+            float write_angle = time * hz_write*2*M_PIf;
             float phaseAngle = atan2( c.y, c.x );
-            float phase = fmodf((float)(read_angle + phaseAngle + 2*M_PI), (float)(2*M_PI));
+            float phase = fmodf(read_angle + phaseAngle + 2*M_PIf, 2*M_PIf);
             float f = write_angle + phase;
 
             float amplitude = sqrt(c.x*c.x + c.y*c.y);

@@ -15,7 +15,9 @@ public:
     SinkSource(pSource src = pSource());
 
     virtual void put( pBuffer );
-    virtual void reset() { _cache.clear(); }
+    virtual void reset();
+    virtual void add_expected_samples( SamplesIntervalDescriptor s );
+
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     /**
@@ -29,7 +31,6 @@ public:
     unsigned size();
 
     SamplesIntervalDescriptor samplesDesc();
-    void invalidate(SamplesIntervalDescriptor);
 
 private:
     QMutex _mutex;

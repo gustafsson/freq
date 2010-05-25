@@ -95,7 +95,7 @@ SelectionFilter::SelectionFilter( Selection s ) {
 void SelectionFilter::operator()( Chunk& chunk) {
     TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
-    if(dynamic_cast<RectangleSelection*>(&s))
+    if (dynamic_cast<RectangleSelection*>(&s))
     {
         RectangleSelection *rs = dynamic_cast<RectangleSelection*>(&s);
         float4 area = make_float4(
@@ -107,7 +107,8 @@ void SelectionFilter::operator()( Chunk& chunk) {
         ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
                       chunk.transform_data->getNumberOfElements(),
                       area );
-    } else if(dynamic_cast<EllipseSelection*>(&s))
+    }
+    else if (dynamic_cast<EllipseSelection*>(&s))
     {
         EllipseSelection *es = dynamic_cast<EllipseSelection*>(&s);
         float4 area = make_float4(
@@ -120,7 +121,8 @@ void SelectionFilter::operator()( Chunk& chunk) {
         ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                       chunk.transform_data->getNumberOfElements(),
                       area, save_inside );
-    } else
+    }
+    else
     {
         return;
     }
@@ -134,22 +136,41 @@ Signal::SamplesIntervalDescriptor SelectionFilter::
 {
     Signal::SamplesIntervalDescriptor sid;
 
-    float start_time, end_time;
-    s.range(start_time, end_time);
+    if (!s.inverted)
+    {   float fstart_time, fend_time;
+        s.range(fstart_time, fend_time);
 
-    sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        unsigned
+            start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
+            end_time = (unsigned)(std::max(0.f, fend_time)*FS);
 
-    // TODO validate range of start_time and end_time, see EllipsFilter::getZeroSamples
-    sid -= Signal::SamplesIntervalDescriptor((unsigned)(start_time*FS), (unsigned)(end_time*FS));
+        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        if (start_time < end_time)
+                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+    }
 
     return sid;
 }
 
 Signal::SamplesIntervalDescriptor SelectionFilter::
-        getUntouchedSamples( unsigned /*FS*/ ) const
+        getUntouchedSamples( unsigned FS ) const
 {
-    // TODO implement SelectionFilter::getUntouchedSamples
-    return Signal::SamplesIntervalDescriptor();
+    Signal::SamplesIntervalDescriptor sid;
+
+    if (s.inverted) {
+        float fstart_time, fend_time;
+        s.range(fstart_time, fend_time);
+
+        unsigned
+            start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
+            end_time = (unsigned)(std::max(0.f, fend_time)*FS);
+
+        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        if (start_time < end_time)
+                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+    }
+
+    return sid;
 }
 
 //////////// EllipsFilter
@@ -170,7 +191,7 @@ void EllipsFilter::operator()( Chunk& chunk) {
             _t2 * chunk.sample_rate - chunk.chunk_offset,
             _f2 * chunk.nScales());
 
-    TaskTimer tt(__FUNCTION__);
+    TaskTimer tt(TaskTimer::LogVerbose, "EllipsFilter::operator()");
 
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
@@ -186,14 +207,13 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
 
     if (_save_inside)
     {
-        float
-                start_time = std::max(0.f, _t1 - fabsf(_t1 - _t2)),
-                end_time = std::max(0.f, _t1 + fabsf(_t1 - _t2));
+        unsigned
+            start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
+            end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-		sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
-
-		if ((unsigned)(end_time*FS)>0)
-			sid -= Signal::SamplesIntervalDescriptor((unsigned)(start_time*FS), (unsigned)(end_time*FS));
+            sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+            if (start_time < end_time)
+                    sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
     }
 
     return sid;
@@ -206,13 +226,13 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
 
     if (!_save_inside)
     {
-        float
-			start_time = std::max(0.f, _t1 - fabsf(_t1 - _t2)),
-			end_time = std::max(0.f, _t1 + fabsf(_t1 - _t2));
+        unsigned
+            start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
+            end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-		sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
-		if ((unsigned)(end_time*FS)>0)
-			sid -= Signal::SamplesIntervalDescriptor((unsigned)(start_time*FS), (unsigned)(end_time*FS));
+            sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+            if (start_time < end_time)
+                    sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
     }
 
     return sid;
@@ -251,12 +271,13 @@ Signal::SamplesIntervalDescriptor SquareFilter::
 
     if (_save_inside)
     {
-        float
-            start_time = _t1,
-            end_time = _t2;
+        unsigned
+            start_time = (unsigned)(std::max(0.f, _t1)*FS),
+            end_time = (unsigned)(std::max(0.f, _t2)*FS);
 
         sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
-        sid -= Signal::SamplesIntervalDescriptor((unsigned)(start_time*FS), (unsigned)(end_time*FS));
+        if (start_time < end_time)
+            sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
     }
 
     return sid;
@@ -269,12 +290,13 @@ Signal::SamplesIntervalDescriptor SquareFilter::
 
     if (!_save_inside)
     {
-        float
-            start_time = std::max(0.f, _t1),
-            end_time = std::max(0.f, _t2);
+        unsigned
+            start_time = (unsigned)(std::max(0.f, _t1)*FS),
+            end_time = (unsigned)(std::max(0.f, _t2)*FS);
 
         sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
-        sid -= Signal::SamplesIntervalDescriptor((unsigned)(start_time*FS), (unsigned)(end_time*FS));
+        if (start_time < end_time)
+            sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
     }
 
     return sid;

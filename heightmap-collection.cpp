@@ -45,7 +45,8 @@ void Collection::
     put( Signal::pBuffer b, Signal::pSource s)
 {
     try {
-        TaskTimer tt(TaskTimer::LogVerbose, "%s: Putting buffer [%u,%u]", __FUNCTION__, b->sample_offset, b->sample_offset+b->number_of_samples());
+//        TaskTimer tt(TaskTimer::LogVerbose, "Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
+        TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
         // If b extends source
         static unsigned L = 0;
         unsigned nL = s->number_of_samples();
@@ -58,7 +59,7 @@ void Collection::
                 // Invalidate previous samples
                 Signal::SamplesIntervalDescriptor sid(
                         L-std*4, L-std*0);
-                this->updateInvalidSamples( sid );
+                this->add_expected_samples( sid );
             }
 
             L = nL;
@@ -72,11 +73,13 @@ void Collection::
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
             chunk = filterOp->pick_previous_chunk();
+            tt.info("Stealing chunk from FilterOperation. Got %p", chunk.get());
 
             if (0 == chunk) {
                 // try again
                 filterOp->read( b->sample_offset, b->number_of_samples() );
                 chunk = filterOp->pick_previous_chunk();
+                tt.info("Failed, trying again. Got %p", chunk.get());
             }
         }
 
@@ -290,7 +293,7 @@ void Collection::
 
 
 void Collection::
-        updateInvalidSamples( Signal::SamplesIntervalDescriptor sid )
+        add_expected_samples( Signal::SamplesIntervalDescriptor sid )
 {
     BOOST_FOREACH( const Signal::SamplesIntervalDescriptor::Interval &i, sid.intervals() )
     {
@@ -316,7 +319,7 @@ void Collection::
 }
 
 Signal::SamplesIntervalDescriptor Collection::
-        getMissingSamples()
+        expected_samples()
 {
     Signal::SamplesIntervalDescriptor r;
 
@@ -328,6 +331,7 @@ Signal::SamplesIntervalDescriptor Collection::
         r |= i;
     }
 
+    _expected_samples = r;
     return r;
 }
 

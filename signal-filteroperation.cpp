@@ -79,8 +79,11 @@ pBuffer FilterOperation::
                 (*_filter)( *c );
             }
 
-            // Compute the inverse
-            r = inverse_cwt( *c );
+            // Compute the inverse, unless it is the chunk that is the interesting part
+            if (!_save_previous_chunk)
+                r = inverse_cwt( *c );
+            else
+                r = b;
 
             if (_save_previous_chunk)
                 _previous_chunk = c;
@@ -145,7 +148,7 @@ Tfr::pChunk FilterOperation::
 {
     _save_previous_chunk = true;
     Tfr::pChunk r = _previous_chunk;
-    _previous_chunk.reset();
+//    _previous_chunk.reset();
     return r;
 }
 

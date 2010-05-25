@@ -3,11 +3,12 @@
 
 #include "signal-worker.h"
 #include "signal-samplesintervaldescriptor.h"
+#include "signal-sinksource.h"
 #include <vector>
 
 namespace Signal {
 
-class WriteWav: virtual public Sink
+class WriteWav: public SinkSource
 {
 public:
     WriteWav( std::string filename );
@@ -15,14 +16,11 @@ public:
 
     virtual void put( pBuffer );
     virtual void reset();
-
-    SamplesIntervalDescriptor getMissingSamples();
+    virtual bool finished();
 
 private:
     std::string _filename;
-    std::vector<pBuffer> _cache;
 
-    unsigned nAccumulatedSamples();
     void writeToDisk();
     void writeToDisk(pBuffer);
 };

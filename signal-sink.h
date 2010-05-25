@@ -2,13 +2,13 @@
 #define SIGNALSINK_H
 
 #include "signal-source.h"
+#include "signal-samplesintervaldescriptor.h"
 
 namespace Signal {
 
 class Sink
 {
 public:
-    Sink();
     virtual ~Sink() {}
 
     /**
@@ -30,18 +30,26 @@ public:
     virtual void reset() {}
 
     /**
+      If this Sink has recieved all expected_samples and is finished with its work, the caller
+      may remove this Sink.
+      */
+    virtual bool finished() { return false; }
+
+    // TODO virtual bool isUnderfed
+
+    /**
       By telling the sink how much data the sink can expect to recieve it is possible
       for the sink to perform some optimizations (such as buffering input before starting
       playing a sound).
       */
-    virtual void expected_samples_left(unsigned);
-    virtual unsigned expected_samples_left();
+    virtual SamplesIntervalDescriptor expected_samples() { return _expected_samples; }
+    virtual void add_expected_samples( SamplesIntervalDescriptor s ) { _expected_samples |= s; }
 
-private:
+protected:
     /**
-      @see expected_samples_left
+      @see expected_samples
       */
-    unsigned _expected_samples_left;
+    SamplesIntervalDescriptor _expected_samples;
 };
 typedef boost::shared_ptr<Sink> pSink;
 

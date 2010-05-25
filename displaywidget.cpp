@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include "signal-audiofile.h"
 #include "signal-playback.h"
+#include "signal-postsink.h"
 #include "signal-microphonerecorder.h"
 #include "signal-operation-composite.h"
 #include "signal-operation-basic.h"
@@ -169,8 +170,7 @@ DisplayWidget::
   _renderer( new Heightmap::Renderer( dynamic_cast<Heightmap::Collection*>(collection.get()), this )),
   _worker( worker ),
   _collectionCallback( new Signal::WorkerCallback( worker, collection )),
-  _playbackCallback( ),
-  _diskwriterCallback( ),
+  _postsinkCallback( new Signal::WorkerCallback( worker, Signal::pSink(new Signal::PostSink)) ),
   _selection_filename(selection_filename),
   _playback_device( playback_device ),
   _px(0), _py(0), _pz(-10),
@@ -202,8 +202,6 @@ DisplayWidget::
     // no selection
     selection[0].x = selection[1].x;
     selection[0].z = selection[1].z;
-
-    getFilterOperation()->inverse_cwt.filter.reset( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z) );
 
     yscale = Yscale_LogLinear;
     //timeOut();
@@ -272,39 +270,34 @@ void DisplayWidget::receivePlaySound()
 {
     TaskTimer tt("Initiating playback of selection.\n");
 
+    Signal::PostSink* postsink = dynamic_cast<Signal::PostSink*>(_postsinkCallback->sink().get());
+    postsink->sinks.clear();
+
+    // If no filter, no selection...
+    if (!postsink->inverse_cwt.filter)
+        return;
+
     // find range of selection
-    Signal::FilterOperation *f = getFilterOperation();
-    const Signal::SamplesIntervalDescriptor::Interval i = f->inverse_cwt.filter->coveredInterval( f->sample_rate() );
+    Signal::SamplesIntervalDescriptor sid = postsink->inverse_cwt.filter->coveredInterval( _worker->source()->sample_rate() );
+    sid -= postsink->inverse_cwt.filter->getZeroSamples( _worker->source()->sample_rate() );
+    const Signal::SamplesIntervalDescriptor::Interval i = sid.getInterval(Signal::SamplesIntervalDescriptor::SampleType_MAX, 0);
+
     if (i.first == i.last)
         return;
 
-    //const Signal::SamplesIntervalDescriptor::Interval& i = sid.intervals().front();
-
-    if (!_playbackCallback)
-        _playbackCallback.reset( new Signal::WorkerCallback( _worker, Signal::pSink( new Signal::Playback( _playback_device ))));
-    else
-        _playbackCallback->sink()->reset();
-
-    if (!_diskwriterCallback)
-        _diskwriterCallback.reset( new Signal::WorkerCallback( _worker, Signal::pSink( new Signal::WriteWav( _selection_filename ))));
-    else
-        _diskwriterCallback->sink()->reset();
-
-    Signal::Playback* p = dynamic_cast<Signal::Playback*>( _playbackCallback->sink().get() );
     unsigned L = std::min(i.last, _worker->source()->number_of_samples());
     if (L<=i.first)
         return;
 
-    L -= i.first;
+    postsink->sinks.push_back(
+            Signal::pSink( new Signal::Playback( _playback_device )) );
+    postsink->sinks.push_back(
+            Signal::pSink( new Signal::WriteWav( _selection_filename )) );
 
-    if (p) {
-        p->preparePlayback( i.first, L );
-        _worker->todo_list = p->getMissingSamples();
-    }
+    _postsinkCallback->sink()->add_expected_samples( Signal::SamplesIntervalDescriptor( i.first, L) );
+    _worker->todo_list = _postsinkCallback->sink()->expected_samples();
 
-    Signal::WriteWav* w = dynamic_cast<Signal::WriteWav*>( _diskwriterCallback->sink().get() );
-    if (w)
-        w->expected_samples_left( L );
+    _worker->todo_list.print(__FUNCTION__);
 
     update();
 }
@@ -338,17 +331,22 @@ void DisplayWidget::setWorkerSource( Signal::pSource s ) {
 
 void DisplayWidget::receiveAddSelection(bool /*active*/)
 {
-    Signal::FilterOperation *f = getFilterOperation();
-    f = new Signal::FilterOperation( _worker->source(), f->inverse_cwt.filter );
-    f->meldFilters();
-    setWorkerSource( Signal::pSource(f) );
+    Signal::PostSink* postsink = dynamic_cast<Signal::PostSink*>(_postsinkCallback->sink().get());
+    BOOST_ASSERT( postsink );
+    if (!postsink->inverse_cwt.filter)
+        return;
 
+    Tfr::EllipsFilter* ef = dynamic_cast<Tfr::EllipsFilter*>( postsink->inverse_cwt.filter.get() );
+    if (ef)
+        ef->_save_inside = false;
+
+    Signal::FilterOperation *f = new Signal::FilterOperation( _worker->source(), postsink->inverse_cwt.filter );
+    f->meldFilters();
     f->filter()->enabled = false;
 
-    _renderer->collection()->updateInvalidSamples(f->filter()->getTouchedSamples(f->sample_rate()));
-    update();
+    _renderer->collection()->add_expected_samples( f->filter()->getTouchedSamples(f->sample_rate()) );
 
-    setWorkerSource();
+    setWorkerSource( Signal::pSource(f) );
     update();
 }
 
@@ -371,7 +369,7 @@ void DisplayWidget::
 
     // Invalidate rendering
     Signal::SamplesIntervalDescriptor sid(start, b->number_of_samples());
-    _renderer->collection()->updateInvalidSamples(sid);
+    _renderer->collection()->add_expected_samples(sid);
 
     // Update stream
     b->source(remove);
@@ -416,7 +414,7 @@ void DisplayWidget::
 		else         sid2 -= -delta;
 		sid |= sid2;
 
-		_renderer->collection()->updateInvalidSamples(sid);
+                _renderer->collection()->add_expected_samples(sid);
         update();
     }
 }
@@ -453,7 +451,7 @@ void DisplayWidget::
         // Invalidate rendering
         Signal::SamplesIntervalDescriptor sid(oldStart, oldStart+L);
         sid |= Signal::SamplesIntervalDescriptor(newStart, newStart+L);
-        _renderer->collection()->updateInvalidSamples(sid);
+        _renderer->collection()->add_expected_samples(sid);
 
         // update stream
         b->source(moveSelection );
@@ -616,7 +614,7 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
     if(leftButton.isDown() && rightButton.isDown())
         selectionButton.press( e->x(), this->height() - e->y() );
     
-    glDraw();
+    update();
     _prevX = e->x(),
     _prevY = e->y();
 }
@@ -649,7 +647,7 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
         default:
             break;
     }
-    glDraw();
+    update();
 }
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
@@ -674,7 +672,7 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
         //_rx -= ps * e->delta();
     }
     
-    glDraw();
+    update();
 }
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
@@ -703,7 +701,12 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
                 selection[1].x = selection[0].x + .5f*sqrtf(2.f)*rt;
                 selection[1].y = 0;
                 selection[1].z = selection[0].z + .5f*sqrtf(2.f)*rf;
-                getFilterOperation()->inverse_cwt.filter.reset( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z ));
+
+                Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(_postsinkCallback->sink().get());
+
+                BOOST_ASSERT( ps );
+
+                ps->inverse_cwt.filter.reset( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z, true ) );
             }
         }
     } 
@@ -745,7 +748,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     rotateButton.update(x, y);
     scaleButton.update(x, y);
     
-    glDraw();
+    update  ();
 }
 
 #if 0
@@ -827,7 +830,7 @@ void DisplayWidget::paintGL()
     {
         QMutexLocker l(&_invalidRangeMutex);
         if (!_invalidRange.isEmpty()) {
-            _renderer->collection()->updateInvalidSamples( _invalidRange );
+            _renderer->collection()->add_expected_samples( _invalidRange );
             _invalidRange = Signal::SamplesIntervalDescriptor();
         }
     }
@@ -860,7 +863,7 @@ void DisplayWidget::paintGL()
     computing_inverse = false;
     computing_plot = false;
     
-    if (_playbackCallback && _playbackCallback->sink()->expected_samples_left())
+    if (!_postsinkCallback->sink()->expected_samples().isEmpty())
     {
         computing_inverse = true;
     }
@@ -928,26 +931,26 @@ void DisplayWidget::paintGL()
     }
 
 
-    Signal::WriteWav* w = dynamic_cast<Signal::WriteWav*>( _diskwriterCallback?_diskwriterCallback->sink().get():0 );
-    if (w && 0 == w->expected_samples_left()) {
-        _diskwriterCallback.reset();
-    }
-
-    Signal::Playback* p = dynamic_cast<Signal::Playback*>( _playbackCallback?_playbackCallback->sink().get():0 );
-    if (p && p->isStopped() && 0 == p->expected_samples_left()) {
-        _playbackCallback.reset();
-        p = 0;
+    if (_postsinkCallback->sink()->finished()) {
+        _postsinkCallback->sink()->reset();
     }
 
     unsigned center = 0;
-//    if (p && p->isUnderfed() && p->expected_samples_left()) {
-    if (p && p->expected_samples_left()) {
-        _worker->todo_list = p->getMissingSamples();
-    } else {
-        _worker->todo_list = _renderer->collection()->getMissingSamples();
 
-        center = _worker->source()->sample_rate() * _qx;
+    //    if (p && p->isUnderfed() && p->expected_samples_left()) {
+
+    if (!_postsinkCallback->sink()->expected_samples().isEmpty())
+    {
+        _worker->todo_list = _postsinkCallback->sink()->expected_samples();
+        //_worker->todo_list.print("Displaywidget - PostSink");
     }
+    else
+    {
+        center = _worker->source()->sample_rate() * _qx;
+        _worker->todo_list = _collectionCallback->sink()->expected_samples();
+        //_worker->todo_list.print("Displaywidget - Collection");
+    }
+
 
     if (_worker->workOne( center ))
         update();
@@ -1358,12 +1361,15 @@ void DisplayWidget::setSelection(int index, bool enabled)
         selection[0].z = e->_f1;
         selection[1].x = e->_t2;
         selection[1].z = e->_f2;
-        f->inverse_cwt.filter.reset( new Tfr::EllipsFilter(*e ));
+
+        Signal::PostSink* postsink = dynamic_cast<Signal::PostSink*>(_postsinkCallback->sink().get());
+        BOOST_ASSERT( postsink );
+        postsink->inverse_cwt.filter.reset( new Tfr::EllipsFilter(*e ));
 
         if(e->enabled != enabled) {
             e->enabled = enabled;
 
-            _renderer->collection()->updateInvalidSamples( e->getTouchedSamples(f->sample_rate()) );
+            _renderer->collection()->add_expected_samples( e->getTouchedSamples(f->sample_rate()) );
         }
     }
     
@@ -1385,7 +1391,7 @@ void DisplayWidget::removeFilter(int index){
     {
         c->erase(i);
 
-        _renderer->collection()->updateInvalidSamples( e->getTouchedSamples(f->sample_rate()) );
+        _renderer->collection()->add_expected_samples( e->getTouchedSamples(f->sample_rate()) );
     }
     update();
     setWorkerSource();
@@ -1403,14 +1409,23 @@ void DisplayWidget::
     QTime copyClock = myClock;
     myClock = QTime();
 
-    if (0==_playbackCallback) {
+    if (0==_postsinkCallback) {
         base_itr = 0;
         prev_itr = 0;
         return;
     }
 
     // Draw playback marker
-    Signal::Playback* pb = dynamic_cast<Signal::Playback*>( _playbackCallback->sink().get() );
+    Signal::Playback* pb = 0;
+    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>( _postsinkCallback->sink().get() );
+
+    BOOST_ASSERT( ps );
+    BOOST_FOREACH( Signal::pSink s, ps->sinks )
+    {
+        if ( 0 != (pb = dynamic_cast<Signal::Playback*>( s.get() )))
+            break;
+    }
+
     if (!pb) return;
     if (pb->isStopped()) return;
     Signal::pBuffer b = pb->first_buffer();

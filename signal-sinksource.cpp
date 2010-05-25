@@ -1,6 +1,7 @@
 #include "signal-sinksource.h"
 #include <boost/foreach.hpp>
 #include <QMutexLocker>
+#include <sstream>
 
 namespace Signal
 {
@@ -33,6 +34,9 @@ void SinkSource::
     _cache.push_back( b );
     */
 
+    if (!_cache.empty())
+        BOOST_ASSERT(_cache.front()->sample_rate == b->sample_rate);
+
     SamplesIntervalDescriptor sid( b->sample_offset, b->sample_offset + b->number_of_samples());
     sid -= samplesDesc();
 
@@ -41,21 +45,45 @@ void SinkSource::
     {
         QMutexLocker l(&_mutex);
 
+        std::stringstream ss;
+
         // Merge
         BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals() )
         {
             if (i.first == b->sample_offset && i.last == b->sample_offset + b->number_of_samples())
             {
                 _cache.push_back( b );
-                return;
+                break;
             }
+
+            ss << " [" << i.first <<", "<<i.last<<"]";
+
             pBuffer n( new Buffer( i.first, i.last-i.first, FS));
             memcpy( n->waveform_data->getCpuMemory(),
                     b->waveform_data->getCpuMemory() + (i.first - b->sample_offset),
                     i.last-i.first );
             _cache.push_back( n );
         }
+
+        if (!ss.str().empty())
+        {
+            TaskTimer("Merged buffer [%u, %u] in chunks: %s",
+                         b->sample_offset,
+                         b->sample_offset + b->number_of_samples(),
+                         ss.str().c_str()).suppressTiming();
+        }
     }
+
+    _expected_samples -= sid;
+
+    _expected_samples.print("SinkSource _expected_samples");
+}
+
+void SinkSource::
+        reset()
+{
+    _cache.clear();
+    _expected_samples = SamplesIntervalDescriptor();
 }
 
 pBuffer SinkSource::
@@ -146,12 +174,16 @@ SamplesIntervalDescriptor SinkSource::
 }
 
 void SinkSource::
-        invalidate(SamplesIntervalDescriptor sid)
-{
+        add_expected_samples(SamplesIntervalDescriptor sid)
+{    
+    _expected_samples |= sid;
+
     BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals()) {
         BOOST_FOREACH( pBuffer& s, _cache) {
-            if (s->sample_offset + s->number_of_samples() > i.first && s->sample_offset < i.last)
+            if (s->sample_offset + s->number_of_samples() > i.first && s->sample_offset < i.last) {
+                _expected_samples |= SamplesIntervalDescriptor(s->sample_offset, s->sample_offset + s->number_of_samples());
                 s.reset();
+            }
         }
     }
 

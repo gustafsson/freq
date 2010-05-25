@@ -10,31 +10,29 @@
 
 namespace Signal {
 
-class Playback: virtual public Sink
+class Playback: public SinkSource
 {
 public:
     Playback( int outputDevice/* = -1 */);
     ~Playback();
 
+    // Overloaded from Sink
     virtual void put( pBuffer );
     virtual void reset();
+    virtual bool finished();
 
-    SamplesIntervalDescriptor getMissingSamples();
     static void list_devices();
+
     unsigned    playback_itr();
     float       time();
     float       outputLatency();
-    pBuffer     first_buffer();
     unsigned    output_device() { return _output_device; }
     bool        isStopped();
     bool        isUnderfed();
-    void        preparePlayback( unsigned firstSample, unsigned number_of_samples );
 
 private:
     clock_t _first_timestamp;
     clock_t _last_timestamp;
-
-    SinkSource _data;
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,
@@ -46,10 +44,7 @@ private:
     boost::scoped_ptr<portaudio::MemFunCallbackStream<Playback> > streamPlayback;
 
     unsigned _playback_itr;
-    unsigned _first_invalid_sample;
     int _output_device;
-
-    unsigned nAccumulatedSamples();
 };
 
 } // namespace Signal

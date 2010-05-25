@@ -47,6 +47,8 @@ public:
 
     bool isEmpty() const { return _intervals.empty(); }
     const std::list<Interval>& intervals() { return _intervals; }
+    void print( std::string title="" );
+
 private:
     std::list<Interval> _intervals;
 };

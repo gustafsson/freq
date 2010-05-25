@@ -12,7 +12,6 @@ namespace Signal {
 Playback::
         Playback( int outputDevice )
 :   _playback_itr(0),
-    _first_invalid_sample( 0 ),
     _output_device(0)
 {
     portaudio::AutoSystem autoSys;
@@ -97,38 +96,33 @@ float Playback::
 void Playback::
         put( pBuffer buffer )
 {
-    TaskTimer tt(TaskTimer::LogSimple, "%s: Putting buffer [%u,%u]", __FUNCTION__, buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
-    buffer->waveform_data->getCpuMemory(); // Make sure the buffer is moved over to CPU memory
+    TaskTimer tt("Playback::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
+    //TaskTimer tt(TaskTimer::LogVerbose, "%s: Putting buffer [%u,%u]", __FUNCTION__, buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
+    _last_timestamp = clock();
+    if (SinkSource::empty())
     {
-        if (!_data.empty()) if (_data.sample_rate() != buffer->sample_rate) {
-            throw std::logic_error(std::string(__FUNCTION__) + " sample rate is different from previous sample rate" );
+        _first_timestamp = _last_timestamp;
+        _playback_itr = buffer->sample_offset;
+        tt.info("Setting _playback_itr=%u", _playback_itr);
+    }
+
+    SinkSource::put( buffer );
+
+    // Make sure the buffer is moved over to CPU memory.
+    // (because the audio stream callpack is executed from a different thread it can't
+    // access the GPU memory)
+    buffer->waveform_data->getCpuMemory();
+    // TODO Should perhaps relase GPU memory as well...
+
+    if (streamPlayback)
+    {
+        if (streamPlayback->isStopped()) {
+            // start over
+            streamPlayback->start();
         }
-
-        _first_invalid_sample = buffer->sample_offset + buffer->number_of_samples();
-
-        if (_data.empty())
-            _last_timestamp = _first_timestamp = clock();
-        else
-            _last_timestamp = clock();
-
-        _data.put( buffer );
-
-        unsigned x = expected_samples_left();
-        if (x < buffer->number_of_samples() )
-            x = 0;
-        else
-            x -= buffer->number_of_samples();
-        expected_samples_left( x );
-
-        if (streamPlayback) {
-            if (streamPlayback->isStopped()) {
-                // start over
-                streamPlayback->start();
-            }
-            tt.info("Is playing");
-            return;
-        }
+        tt.info("Is playing");
+        return;
     }
 
     if (isUnderfed() ) {
@@ -177,33 +171,14 @@ void Playback::
             streamPlayback->stop();
     }
 
-    _data.reset();
+    SinkSource::reset();
     _playback_itr = 0;
-    expected_samples_left(0);
 }
 
-SamplesIntervalDescriptor Playback::
-        getMissingSamples()
+bool Playback::
+        finished()
 {
-    if (0 == expected_samples_left())
-        return SamplesIntervalDescriptor();
-
-    return SamplesIntervalDescriptor(
-            _first_invalid_sample,
-            _first_invalid_sample + expected_samples_left()
-            );
-}
-
-unsigned Playback::
-        nAccumulatedSamples()
-{
-    return _data.number_of_samples();
-}
-
-pBuffer Playback::
-        first_buffer()
-{
-    return _data.first_buffer();
+    return expected_samples().isEmpty() && isStopped();
 }
 
 bool Playback::
@@ -212,37 +187,41 @@ bool Playback::
     return streamPlayback?!streamPlayback->isActive() || streamPlayback->isStopped():true;
 }
 
-
 bool Playback::
         isUnderfed()
 {
-    unsigned nAccumulated_samples = nAccumulatedSamples();
+    unsigned nAccumulated_samples = SinkSource::number_of_samples();
 
-    if (1>=_data.size())
-        return true;
+    if (10>=SinkSource::size())
+        return true; // Haven't received much data, wait to do a better estimate
 
-    clock_t first = _first_timestamp;
-    clock_t last = _last_timestamp;
+    if (_expected_samples.isEmpty())
+        return false; // No more expected samples, not underfed
 
 
-    float accumulation_time = (last-first) / (float)CLOCKS_PER_SEC;
-    float incoming_samples_per_sec = (nAccumulated_samples - _data.first_buffer()->number_of_samples()) / accumulation_time;
-    float time_left = (nAccumulated_samples - _playback_itr + expected_samples_left()) / (float)_data.sample_rate();
-    float estimated_time_required = expected_samples_left() / incoming_samples_per_sec;
+    float accumulation_time = (_last_timestamp - _first_timestamp) / (float)CLOCKS_PER_SEC;
 
-    if (expected_samples_left() == 0 || time_left > estimated_time_required )
-    {
-        return false; // not underfed, ok to start playing
-    }
-    return true; // underfed, don't start playing
-}
+    // _first_timestamp is taken after the first buffer,
+    // _last_timestamp is taken after the last buffer,
+    // that means that accumulation_time is the time it took to accumulate all buffers except
+    // the first buffer.
+    float incoming_samples_per_sec = (nAccumulated_samples - SinkSource::first_buffer()->number_of_samples()) / accumulation_time;
 
-void Playback::
-        preparePlayback( unsigned firstSample, unsigned number_of_samples )
-{
-    _first_invalid_sample = firstSample;
-    expected_samples_left( number_of_samples );
-    _playback_itr = firstSample;
+    float time_left =
+            (_expected_samples.intervals().back().last
+             - _playback_itr) / (float)SinkSource::sample_rate();
+
+    // Add small margin
+    time_left += .05f;
+
+    float estimated_time_required =
+            (_expected_samples.intervals().back().last
+             - _expected_samples.intervals().front().first) / incoming_samples_per_sec;
+
+    // Return if the estimated time to receive all expected samples is greater than
+    // the time it would take to play the remaining part of the data.
+    // If it is, the sink is underfed.
+    return time_left < estimated_time_required;
 }
 
 int Playback::
@@ -256,13 +235,17 @@ int Playback::
     float **out = static_cast<float **>(outputBuffer);
     float *buffer = out[0];
 
+//    TaskTimer tt(TaskTimer::LogVerbose, "Reading %u, %u", _playback_itr, framesPerBuffer );
     TaskTimer tt("Reading %u, %u", _playback_itr, framesPerBuffer );
-    pBuffer b = _data.readFixedLength( _playback_itr, framesPerBuffer );
+    if (SinkSource::first_buffer()->sample_offset + SinkSource::number_of_samples() < _playback_itr + framesPerBuffer) {
+        tt.info("Reading past end");
+    }
+    pBuffer b = SinkSource::readFixedLength( _playback_itr, framesPerBuffer );
     memcpy( buffer, b->waveform_data->getCpuMemory(), framesPerBuffer*sizeof(float) );
     _playback_itr += framesPerBuffer;
 
-    if (_data.first_buffer()->sample_offset + _data.number_of_samples() + 10*framesPerBuffer < _playback_itr ) {
-        tt.info("Done, %u", _data.number_of_samples());
+    if (SinkSource::first_buffer()->sample_offset + SinkSource::number_of_samples() + 10*2024/*framesPerBuffer*/ < _playback_itr ) {
+        tt.info("Reading done, %u", SinkSource::number_of_samples());
         return paComplete;
     }
 

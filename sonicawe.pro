@@ -38,6 +38,7 @@ SOURCES += main.cpp \
     signal-samplesintervaldescriptor.cpp \
     signal-sink.cpp \
     signal-sinksource.cpp \
+    signal-postsink.cpp \
     signal-playback.cpp \
     layer.cpp \
     tfr-stft.cpp \
@@ -72,6 +73,7 @@ HEADERS += mainwindow.h \
     signal-playback.h \
     signal-sink.h \
     signal-sinksource.h \
+    signal-postsink.h \
     layer.h \
     tfr-stft.h \
     tfr-cwt.h \

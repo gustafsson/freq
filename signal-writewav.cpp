@@ -23,73 +23,40 @@ WriteWav::
 void WriteWav::
         put( pBuffer buffer )
 {
-    if (!_cache.empty()) if (_cache[0]->sample_rate != buffer->sample_rate) {
-        throw std::logic_error(std::string(__FUNCTION__) + " sample rate is different from previous sample rate" );
-    }
+    TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
-    _cache.push_back( buffer );
+    SinkSource::put( buffer );
 
-    unsigned x = expected_samples_left();
-    if (x < buffer->number_of_samples() )
-        x = 0;
-    else
-        x -= buffer->number_of_samples();
-    expected_samples_left( x );
-
-    if (0==expected_samples_left()) {
-        reset();
-    }
+    if (_expected_samples.isEmpty())
+        reset(); // Write to file
 }
 
 void WriteWav::
         reset()
 {
-    if (nAccumulatedSamples())
+    if (!SinkSource::empty())
         writeToDisk();
 
-    _cache.clear();
-    expected_samples_left(0);
+    SinkSource::reset();
 }
 
-SamplesIntervalDescriptor WriteWav::
-        getMissingSamples()
+bool WriteWav::
+        finished()
 {
-    return SamplesIntervalDescriptor(
-            0,
-            nAccumulatedSamples() + expected_samples_left()
-            );
-}
-
-unsigned WriteWav::
-        nAccumulatedSamples()
-{
-    // count previous samples
-    unsigned nAccumulated_samples = 0;
-    BOOST_FOREACH( const pBuffer& s, _cache ) {
-        nAccumulated_samples += s->number_of_samples();
-    }
-    return nAccumulated_samples;
+    return expected_samples().isEmpty();
 }
 
 void WriteWav::
         writeToDisk()
 {
-    unsigned N = nAccumulatedSamples();
-
-    if (0==N) {
+    if (SinkSource::empty()) {
         throw std::invalid_argument( std::string(__FUNCTION__) + ": refuse to write 0 samples to disk.");
     }
 
-    pBuffer b( new Buffer);
-    b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent(N,1,1) ));
-    b->sample_rate = _cache[0]->sample_rate;
+    SamplesIntervalDescriptor sid = samplesDesc();
+    SamplesIntervalDescriptor::Interval i = sid.getInterval( SamplesIntervalDescriptor::SampleType_MAX, 0 );
 
-    float* p = b->waveform_data->getCpuMemory();
-    BOOST_FOREACH( const pBuffer& s, _cache ) {
-        memcpy( p, s->waveform_data->getCpuMemory(), s->waveform_data->getSizeInBytes().width );
-        p += s->number_of_samples();
-    }
-
+    pBuffer b = SinkSource::readFixedLength( i.first, i.last );
     writeToDisk( b );
 }
 
