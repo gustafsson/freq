@@ -11,7 +11,7 @@
 
 __global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside );
 __global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area );
-__global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate );
+__global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate, unsigned sample_offset );
 
 
 void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
@@ -107,7 +107,7 @@ __global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 a
     wavelet[ x + fi*numElem.width ].y *= f;
 }
 
-void moveFilter( cudaPitchedPtrType<float2> chunk, float df, float min_hz, float max_hz, float sample_rate )
+void moveFilter( cudaPitchedPtrType<float2> chunk, float df, float min_hz, float max_hz, float sample_rate, unsigned sample_offset )
 {
     elemSize3_t numElem = chunk.getNumberOfElements();
     dim3 block(256,1,1);
@@ -122,10 +122,10 @@ void moveFilter( cudaPitchedPtrType<float2> chunk, float df, float min_hz, float
     float start = min_hz/2;
     float steplogsize = log(max_hz)-log(min_hz);
 
-    kernel_move<<<grid, block>>>( chunk, df, start, steplogsize, sample_rate );
+    kernel_move<<<grid, block>>>( chunk, df, start, steplogsize, sample_rate, sample_offset );
 }
 
-__global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate )
+__global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate, unsigned sample_offset )
 {
     const unsigned
             x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
@@ -156,12 +156,12 @@ __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float st
             float2 c = chunk.elem(readPos);
 
             // compute how many periods have elapsed at x for readPos.y
-            float time = x / sample_rate; // same time for both read and write
+            float time = (sample_offset+x) / sample_rate; // same time for both read and write
             float read_angle = time * hz_read*2*M_PIf;
             float write_angle = time * hz_write*2*M_PIf;
             float phaseAngle = atan2( c.y, c.x );
             float phase = fmodf(read_angle + phaseAngle + 2*M_PIf, 2*M_PIf);
-            float f = write_angle + phase;
+            float f = write_angle;// + phase;
 
             float amplitude = sqrt(c.x*c.x + c.y*c.y);
             w.x = cos(f)*amplitude;

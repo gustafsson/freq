@@ -316,7 +316,7 @@ void MoveFilter::
     float df = _df * chunk.nScales();
 
     ::moveFilter( chunk.transform_data->getCudaGlobal(),
-                  df, chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+                  df, chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate, chunk.chunk_offset );
 
     CudaException_ThreadSynchronize();
 }
