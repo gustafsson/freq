@@ -115,7 +115,9 @@ unix:LIBS = -lsndfile \
     -lGLU \
     -lGL \
     -lglut \
-    -lportaudiocpp -lportaudio
+    -lportaudiocpp -lportaudio \
+    -lhdf5 \
+    -lhdf5_hl
 macx:INCLUDEPATH += /usr/local/cuda/include \
     ../../libs/include
 macx:LIBS = -lsndfile \
