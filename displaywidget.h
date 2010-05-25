@@ -62,6 +62,7 @@ public:
     floatAni orthoview;
     float xscale;
 
+	bool isRecordSource();
     void setWorkerSource( Signal::pSource s = Signal::pSource());
 
     virtual void keyPressEvent( QKeyEvent *e );
@@ -97,6 +98,7 @@ protected slots:
     virtual void receiveCropSelection();
     virtual void receiveMoveSelection(bool);
     virtual void receiveMoveSelectionInTime(bool);
+    virtual void receiveRecord(bool);
 signals:
     void operationsUpdated( Signal::pSource s );
     void filterChainUpdated( Tfr::pFilter f );

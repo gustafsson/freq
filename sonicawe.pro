@@ -108,7 +108,6 @@ INCLUDEPATH += ../gpumisc
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS = -lsndfile \
-    -L/usr/local/cuda/lib$$IS64 \
     -lGLEW \
     -lGLU \
     -lGL \
@@ -118,7 +117,6 @@ macx:INCLUDEPATH += /usr/local/cuda/include \
     ../../libs/include
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
-    -lcufft \
     -L../misc \
     -lmisc \
     -framework GLUT \
@@ -136,7 +134,7 @@ win32:LIBS += \
     -l..\..\winlib\libsndfile\libsndfile-1 \
 	-l..\..\winlib\portaudio\portaudio \
 	-l..\..\winlib\portaudio\portaudiocpp
-LIBS += -lcufft 
+LIBS += -lcufft
 unix:LIBS += -L../gpumisc -lgpumisc
 macx:LIBS += -L../gpumisc -lgpumisc
 

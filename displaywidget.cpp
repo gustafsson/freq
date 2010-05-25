@@ -275,7 +275,7 @@ void DisplayWidget::receivePlaySound()
     // find range of selection
     Signal::FilterOperation *f = getFilterOperation();
     const Signal::SamplesIntervalDescriptor::Interval i = f->inverse_cwt.filter->coveredInterval( f->sample_rate() );
-    if (i.first == i.last)
+    if (i.first >= i.last)
         return;
 
     //const Signal::SamplesIntervalDescriptor::Interval& i = sid.intervals().front();
@@ -315,14 +315,43 @@ void DisplayWidget::receiveToggleHz(bool active)
     update();
 }
 
-void DisplayWidget::receiveAddClearSelection(bool active)
+void DisplayWidget::receiveAddSelection(bool active)
 {
-    receiveAddSelection(active);
+    Signal::FilterOperation *f = getFilterOperation();
+	f->inverse_cwt.filter->enabled = false;
 
-    getFilterOperation()->filter()->enabled = true;
+	receiveAddClearSelection(active);
 
     setWorkerSource();
     update();
+}
+	
+bool DisplayWidget::isRecordSource()
+{
+    Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+	return r != 0;
+}
+
+void DisplayWidget::receiveRecord(bool active)
+{
+	TaskTimer tt("Trying to %s recording", active?"start":"stop");
+
+    Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+
+    if (r)
+    {
+        tt.info("succeded!\n");
+		if (active == r->isStopped())
+		{
+			r->isStopped() ? r->startRecording( this ) : r->stopRecording();
+		}
+    }
+    else
+    {
+        tt.info("failed!\n");;
+    }
 }
 
 void DisplayWidget::setWorkerSource( Signal::pSource s ) {
@@ -336,14 +365,13 @@ void DisplayWidget::setWorkerSource( Signal::pSource s ) {
     emit operationsUpdated( _worker->source() );
 }
 
-void DisplayWidget::receiveAddSelection(bool /*active*/)
+void DisplayWidget::receiveAddClearSelection(bool /*active*/)
 {
     Signal::FilterOperation *f = getFilterOperation();
     f = new Signal::FilterOperation( _worker->source(), f->inverse_cwt.filter );
     f->meldFilters();
     setWorkerSource( Signal::pSource(f) );
 
-    f->filter()->enabled = false;
 
     _renderer->collection()->updateInvalidSamples(f->filter()->getTouchedSamples(f->sample_rate()));
     update();
@@ -360,7 +388,7 @@ void DisplayWidget::
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
     float radie = fabsf(selection[0].x - selection[1].x);
-    unsigned start = std::max(0.0, selection[0].x - radie/sqrt(2.f)) * FS;
+    unsigned start = std::max(0.0f, selection[0].x - radie/sqrtf(2.f)) * FS;
     unsigned end = (selection[0].x + radie/sqrt(2.f)) * FS;
 
     if (end<=start)
@@ -498,23 +526,6 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         {
             Signal::pSink s( new Sawe::Csv() );
             s->put( Signal::pBuffer(), _worker->source() );
-            break;
-        }
-        case 'r': case 'R':
-        {
-            printf("Try recording: ");
-
-            Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
-            Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
-            if (r)
-            {
-                printf("succeded!\n");
-                r->isStopped() ? r->startRecording( this ) : r->stopRecording();
-            }
-            else
-            {
-                printf("failed!\n");;
-            }
             break;
         }
     }
@@ -1383,10 +1394,11 @@ void DisplayWidget::removeFilter(int index){
     Tfr::EllipsFilter *e = dynamic_cast<Tfr::EllipsFilter*>(i->get());
     if (e)
     {
-        c->erase(i);
-
         _renderer->collection()->updateInvalidSamples( e->getTouchedSamples(f->sample_rate()) );
+
+		c->erase(i);
     }
+
     update();
     setWorkerSource();
 }
