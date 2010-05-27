@@ -44,8 +44,9 @@ SOURCES += main.cpp \
     tfr-filter.cpp \
     tfr-inversecwt.cpp \
     tfr-chunk.cpp \
+    tfr-chunksink.cpp \
     sawe-csv.cpp \
-	sawe-hdf5.cpp \
+    sawe-hdf5.cpp \
     signal-filteroperation.cpp \
     signal-worker.cpp \
     signal-writewav.cpp \
@@ -77,8 +78,9 @@ HEADERS += mainwindow.h \
     tfr-filter.h \
     tfr-inversecwt.h \
     tfr-chunk.h \
+    tfr-chunksink.h \
     sawe-csv.h \
-	sawe-hdf5.h \
+    sawe-hdf5.h \
     sawe-mainplayback.h \
     signal-filteroperation.h \
     signal-worker.h \
