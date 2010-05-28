@@ -287,9 +287,9 @@ void Collection::
         (*i)->valid_samples -= sid;
 
         // Remove cached blocks which are completely invalid
-        if ((*i)->valid_samples.isEmpty())
+/*        if ((*i)->valid_samples.isEmpty())
             i = _cache.erase( i );
-        else
+        else*/
             i++;
     }
 }

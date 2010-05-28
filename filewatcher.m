@@ -28,14 +28,16 @@ while 1
 
     data=load(datafile);
 
-    data=func(data, arguments);
+    [data, arguments]=func(data, arguments);
 
     if isfield(data,'buffer')
       buffer=data.buffer;
-      save("-hdf5",tempfile,'buffer')
+      offset=data.offset;
+      save("-hdf5",tempfile,'buffer','offset')
     elseif isfield(data,'chunk')
       chunk=data.chunk;
-      save("-hdf5",tempfile,'chunk')
+      offset=data.offset;
+      save("-hdf5",tempfile,'chunk','offset')
     endif
 
     rename(tempfile,resultfile);

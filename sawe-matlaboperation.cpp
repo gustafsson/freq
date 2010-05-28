@@ -58,7 +58,7 @@ MatlabFunction::
 std::string MatlabFunction::
         invokeAndWait( std::string source )
 {
-    TaskTimer tt("Waiting for matlab/octave");
+    TaskTimer tt("Waiting for matlab/octave.");
 
     remove(_resultFile.c_str());
     rename(source.c_str(), _dataFile.c_str());

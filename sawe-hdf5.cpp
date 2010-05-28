@@ -14,6 +14,7 @@ namespace Sawe
 
 static const char* dsetBuffer="buffer";
 static const char* dsetChunk="chunk";
+static const char* dsetOffset="offset";
 
 Hdf5::
         Hdf5( std::string filename, bool saveChunk)
@@ -64,6 +65,11 @@ void Hdf5::
     status = H5LTmake_dataset(file_id,dsetBuffer,RANK,dims,H5T_NATIVE_FLOAT,p);
     if (0>status) throw runtime_error("Could not create and write a float type dataset named '" + string(dsetBuffer) + "'");
 
+    hsize_t one[]={1};
+    hsize_t offs = b->sample_offset;
+    status = H5LTmake_dataset(file_id,dsetOffset,1,one,H5T_NATIVE_HSIZE,&offs);
+    if (0>status) throw runtime_error("Could not create and write a hsize type dataset named '" + string(dsetOffset) + "'");
+
     status = H5Fclose (file_id);
     if (0>status) throw runtime_error("Could not close HDF5 file");
 }
@@ -76,8 +82,8 @@ void Hdf5::
     float2* p = chunk.transform_data->getCpuMemory();
     cudaExtent s = chunk.transform_data->getNumberOfElements();
 
-    const unsigned RANK=3;
-    hsize_t     dims[RANK]={s.height,s.width,2};
+    const unsigned RANK=2;
+    hsize_t     dims[RANK]={s.height,s.width};
 
     hid_t       file_id;
     herr_t      status;
@@ -85,8 +91,34 @@ void Hdf5::
     file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     if (0>file_id) throw runtime_error("Could not create HDF5 file named '" + filename + "'");
 
-    status = H5LTmake_dataset(file_id,dsetChunk,RANK,dims,H5T_NATIVE_FLOAT,p);
-    if (0>status) throw runtime_error("Could not create and write a float type dataset named 'chunk'");
+    // By converting from float to double beforehand, execution time in octave dropped from 6 to 2 seconds.
+    {
+        GpuCpuData<double2> dbl(0, chunk.transform_data->getNumberOfElements());
+        double2* dp = dbl.getCpuMemory();
+        int datatype = -1;
+        datatype = H5Tcreate( H5T_COMPOUND, 16 );
+        H5Tinsert( datatype, "real", 0, H5T_NATIVE_DOUBLE );
+        H5Tinsert( datatype, "imag", 8, H5T_NATIVE_DOUBLE );
+
+        size_t N = s.height*s.width;
+
+        for (unsigned n=0; n<N; n++)
+        {
+            dp[n].x = p[n].x;
+            dp[n].y = p[n].y;
+        }
+
+        status = H5LTmake_dataset(file_id,dsetChunk,RANK,dims,datatype,dp);
+        if (0>status) throw runtime_error("Could not create and write a float type dataset named 'chunk'");
+
+        status = H5Tclose(datatype);
+        if (0>status) throw runtime_error("Could not close HDF5 datatype");
+    }
+
+    hsize_t one[]={1};
+    hsize_t offs = chunk.chunk_offset;
+    status = H5LTmake_dataset(file_id,dsetOffset,1,one,H5T_NATIVE_HSIZE,&offs);
+    if (0>status) throw runtime_error("Could not create and write a hsize type dataset named '" + string(dsetOffset) + "'");
 
     status = H5Fclose (file_id);
     if (0>status) throw runtime_error("Could not close HDF5 file");
@@ -102,11 +134,14 @@ Signal::pBuffer Hdf5::
     for (int i=0; i<2; i++) try
     {
         string sdset = dsetBuffer;
+        string soffdset = dsetOffset;
         switch(i) {
-        case 0: sdset = "/" + sdset + "/value"; break;
+        case 0: sdset = "/" + sdset + "/value";
+                soffdset = "/" + soffdset + "/value"; break;
         case 1: break;
         }
         const char*dset = sdset.c_str();
+        const char*odset = soffdset.c_str();
 
         hid_t       file_id;
         herr_t      status;
@@ -135,6 +170,11 @@ Signal::pBuffer Hdf5::
         status = H5LTread_dataset(file_id, dset, H5T_NATIVE_FLOAT, p);
         if (0>status) throw runtime_error("Could not read a float type dataset named '" + sdset + "'");
 
+        hsize_t offs=0;
+        status = H5LTread_dataset(file_id,odset,H5T_NATIVE_HSIZE,&offs);
+        if (0>status) throw runtime_error("Could not read a hsize type dataset named '" + soffdset + "'");
+        buffer->sample_offset=offs;
+
         status = H5Fclose (file_id);
         if (0>status) throw runtime_error("Could not close HDF5 file");
 
@@ -155,11 +195,14 @@ Tfr::pChunk Hdf5::
     for (int i=0; i<2; i++) try
     {
         string sdset = dsetChunk;
+        string soffdset = dsetOffset;
         switch(i) {
-        case 0: sdset = "/" + sdset + "/value"; break;
+        case 0: sdset = "/" + sdset + "/value";
+                soffdset = "/" + soffdset + "/value"; break;
         case 1: break;
         }
         const char*dset = sdset.c_str();
+        const char*odset = soffdset.c_str();
 
         hid_t       file_id;
         herr_t      status;
@@ -174,14 +217,12 @@ Tfr::pChunk Hdf5::
         int RANK=0;
         status = H5LTget_dataset_ndims ( file_id, dset, &RANK );
         if (0>status) throw runtime_error("get_dataset_ndims failed");
-        if (3!=RANK) throw runtime_error(((stringstream&)(ss << "Rank of '" << dsetChunk << "' is '" << RANK << "' instead of 3.")).str());
+        if (2!=RANK) throw runtime_error(((stringstream&)(ss << "Rank of '" << dsetChunk << "' is '" << RANK << "' instead of 3.")).str());
 
         H5T_class_t class_id=H5T_NO_CLASS;
         vector<hsize_t> dims(RANK);
         status = H5LTget_dataset_info ( file_id,dset, dims.data(), &class_id, 0 );
         if (0>status) throw runtime_error("get_dataset_info failed");
-        if (H5T_FLOAT!=class_id) throw runtime_error(((stringstream&)(ss << "Class id for '" << dsetBuffer << "' is '" << class_id << "' instead of H5T_FLOAT.")).str());
-        if (2!=dims[2]) throw runtime_error(((stringstream&)(ss << "dims[2] of '" << dsetChunk << "' is '" << dims[2] << "' instead of 2.")).str());
 
         Tfr::pChunk chunk( new Tfr::Chunk);
         chunk->min_hz = 20;
@@ -193,8 +234,49 @@ Tfr::pChunk Hdf5::
         chunk->transform_data.reset( new GpuCpuData<float2>(0, make_cudaExtent( dims[1], dims[0], 1 )));
         float2* p = chunk->transform_data->getCpuMemory();
 
-        status = H5LTread_dataset(file_id,dset,H5T_NATIVE_FLOAT,p);
-        if (0>status) throw runtime_error("Could not read a float type dataset named '" +sdset + "'");
+        if (H5T_COMPOUND==class_id)
+        {
+            GpuCpuData<double2> dbl(0, make_cudaExtent( dims[1], dims[0], 1 ));
+            double2* dp = dbl.getCpuMemory();
+            int datatype = -1;
+            datatype = H5Tcreate( H5T_COMPOUND, 16 );
+            H5Tinsert( datatype, "real", 0, H5T_NATIVE_DOUBLE );
+            H5Tinsert( datatype, "imag", 8, H5T_NATIVE_DOUBLE );
+
+            status = H5LTread_dataset(file_id,dset,datatype,dp);
+            if (0>status) throw runtime_error("Could not read a compound type dataset named '" +sdset + "'");
+
+            size_t N = dims[0]*dims[1];
+
+            for (unsigned n=0; n<N; n++)
+            {
+                p[n].x = dp[n].x;
+                p[n].y = dp[n].y;
+            }
+
+            status = H5Tclose(datatype);
+            if (0>status) throw runtime_error("Could not close HDF5 datatype");
+        } else if (H5T_FLOAT==class_id){
+            GpuCpuData<float1> dbl(0, make_cudaExtent( dims[1], dims[0], 1 ));
+            float1* dp = dbl.getCpuMemory();
+
+            status = H5LTread_dataset(file_id,dset,H5T_NATIVE_FLOAT,dp);
+            if (0>status) throw runtime_error("Could not read a compound type dataset named '" +sdset + "'");
+
+            size_t N = dims[0]*dims[1];
+            for (unsigned n=0; n<N; n++)
+            {
+                p[n].x = dp[n].x;
+                p[n].y = 0;
+            }
+        } else {
+            throw runtime_error(((stringstream&)(ss << "Class id for '" << dsetBuffer << "' is '" << class_id << "' instead of H5T_COMPOUND.")).str());
+        }
+
+        hsize_t offs=0;
+        status = H5LTread_dataset(file_id,odset,H5T_NATIVE_HSIZE,&offs);
+        if (0>status) throw runtime_error("Could not read a hsize type dataset named '" + soffdset + "'");
+        chunk->chunk_offset=offs;
 
         status = H5Fclose (file_id);
         if (0>status) throw runtime_error("Could not close HDF5 file");
