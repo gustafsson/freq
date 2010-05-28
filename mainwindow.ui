@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -61,6 +61,7 @@
    <addaction name="actionMoveSelectionTime"/>
    <addaction name="actionMatlabOperation"/>
    <addaction name="actionMatlabFilter"/>
+   <addaction name="actionRecord"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
@@ -102,7 +103,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="operationsTab">
         <attribute name="title">
@@ -268,7 +269,7 @@
     <string>Play Selection</string>
    </property>
    <property name="toolTip">
-    <string>Play the selected area</string>
+    <string>Play the selected area [Space]</string>
    </property>
    <property name="shortcut">
     <string>Space</string>
@@ -330,10 +331,10 @@
     <string>actionRemove_selection</string>
    </property>
    <property name="toolTip">
-    <string>Silences the selected region [A]</string>
+    <string>Silences the selected region [Del]</string>
    </property>
    <property name="shortcut">
-    <string>A</string>
+    <string>Del</string>
    </property>
   </action>
   <action name="actionCropSelection">
@@ -341,6 +342,9 @@
     <bool>true</bool>
    </property>
    <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="icon">
@@ -368,6 +372,9 @@
    <property name="checked">
     <bool>false</bool>
    </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>
@@ -391,6 +398,9 @@
     <bool>true</bool>
    </property>
    <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="icon">
@@ -444,6 +454,34 @@
    </property>
    <property name="toolTip">
     <string>Apply Matlab operation to everything</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionRecord">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Record</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle recording [R]</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>

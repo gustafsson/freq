@@ -72,7 +72,7 @@ static const char _sawe_usage_string[] =
 "Sonic AWE, 2010\n";
 
 static unsigned _channel=0;
-static unsigned _scales_per_octave = 40;
+static unsigned _scales_per_octave = 50;
 //static float _wavelet_std_t = 0.1;
 static float _wavelet_std_t = 0.03;
 static unsigned _samples_per_chunk = 13;
@@ -270,7 +270,7 @@ bool check_cuda() {
 #endif
         ptr = 0;
     } catch (...) {
-        ss << "ptr=0" << endl;
+        ss << "catch (...)" << endl;
         ptr = 0;
     }
     
