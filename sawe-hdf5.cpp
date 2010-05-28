@@ -26,17 +26,16 @@ put( Signal::pBuffer b )
     float2* p = chunk->transform_data->getCpuMemory();
     cudaExtent s = chunk->transform_data->getNumberOfElements();
 
-	hsize_t     dims[RANK]={2,s.width,s.height};
+    hsize_t     dims[RANK]={s.height,s.width,2};
 
-	/* create a HDF5 file */
-	file_id = H5Fcreate("sawe_chunk.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    /* create a HDF5 file */
+    file_id = H5Fcreate("sawe_chunk.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-	/* create and write an integer type dataset named "dset" */
-	status = H5LTmake_dataset(file_id,"/dset",RANK,dims,H5T_NATIVE_FLOAT,p);
+    /* create and write an integer type dataset named "dset" */
+    status = H5LTmake_dataset(file_id,"/dset",RANK,dims,H5T_NATIVE_FLOAT,p);
 
-	/* close file */
-	status = H5Fclose (file_id);
-
+    /* close file */
+    status = H5Fclose (file_id);
 }
 
 } // namespace Sawe
