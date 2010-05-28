@@ -44,7 +44,11 @@ MatlabFunction::
 
         if(0==_pid)
         {
+            ::execlp("matlab","matlab", "-q", "--eval", ss.str().c_str(), NULL );
+            // apparently failed, try matlab
             ::execlp("octave","octave", "-q", "--eval", ss.str().c_str(), NULL );
+            // failed that to... will eventually time out
+            exit(0);
         }
     }
 }
