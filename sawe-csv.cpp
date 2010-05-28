@@ -29,9 +29,7 @@ void Csv::
     TaskTimer tt("Saving CSV-file %s", filename.c_str());
     ofstream csv(filename.c_str());
 
-    // If buffer comes directly from a Signal::FilterOperation
     Tfr::pChunk chunk = getChunk( b, src );
-
     chunk = cleanChunk(chunk);
 
     float2* p = chunk->transform_data->getCpuMemory();

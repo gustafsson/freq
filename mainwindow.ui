@@ -59,6 +59,8 @@
    <addaction name="actionCropSelection"/>
    <addaction name="actionMoveSelection"/>
    <addaction name="actionMoveSelectionTime"/>
+   <addaction name="actionMatlabOperation"/>
+   <addaction name="actionMatlabFilter"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="layerWindow">
@@ -404,6 +406,44 @@
    </property>
    <property name="shortcut">
     <string>T</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionMatlabFilter">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Matlab filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Apply Matlab filter to selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionMatlabOperation">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Matlab operation</string>
+   </property>
+   <property name="toolTip">
+    <string>Apply Matlab operation to everything</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>

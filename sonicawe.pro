@@ -47,6 +47,8 @@ SOURCES += main.cpp \
     tfr-chunksink.cpp \
     sawe-csv.cpp \
     sawe-hdf5.cpp \
+    sawe-matlaboperation.cpp \
+    sawe-matlabfilter.cpp \
     signal-filteroperation.cpp \
     signal-worker.cpp \
     signal-writewav.cpp \
@@ -81,6 +83,8 @@ HEADERS += mainwindow.h \
     tfr-chunksink.h \
     sawe-csv.h \
     sawe-hdf5.h \
+    sawe-matlaboperation.h \
+    sawe-matlabfilter.h \
     sawe-mainplayback.h \
     signal-filteroperation.h \
     signal-worker.h \

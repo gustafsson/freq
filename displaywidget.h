@@ -97,6 +97,8 @@ protected slots:
     virtual void receiveCropSelection();
     virtual void receiveMoveSelection(bool);
     virtual void receiveMoveSelectionInTime(bool);
+    virtual void receiveMatlabOperation(bool);
+    virtual void receiveMatlabFilter(bool);
 signals:
     void operationsUpdated( Signal::pSource s );
     void filterChainUpdated( Tfr::pFilter f );
