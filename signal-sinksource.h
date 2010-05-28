@@ -15,6 +15,7 @@ public:
     SinkSource(pSource src = pSource());
 
     virtual void put( pBuffer );
+    virtual void put( pBuffer b, pSource ) { put (b); }
     virtual void reset() { _cache.clear(); }
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );

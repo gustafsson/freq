@@ -36,7 +36,6 @@ pChunk ChunkSink::
         chunk = Tfr::CwtSingleton::operate( b );
 
         // Don't know anything aboout the nearby data, so assume its all valid
-        chunk->transform_data.reset();
         chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
         chunk->first_valid_sample = 0;
     }

@@ -403,13 +403,13 @@ int main(int argc, char *argv[])
         if (_get_csv != (unsigned)-1) {
             Signal::pBuffer b = wf->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
 
-            Sawe::Csv().Sink::put( b, wf );
+            Sawe::Csv().put( b, wf );
         }
 
         if (_get_hdf != (unsigned)-1) {
             Signal::pBuffer b = wf->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
 
-            Sawe::Hdf5().Sink::put( b, wf );
+            Sawe::Hdf5().put( b, wf );
         }
 
         if (_get_chunk_count != false) {

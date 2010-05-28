@@ -107,6 +107,7 @@ private:
     friend class Heightmap::Renderer;
 
     virtual void put( Signal::pBuffer b);
+    virtual void put( Signal::pBuffer b, Signal::pSource ) { put (b); }
     Signal::FilterOperation* getFilterOperation();
 
     Heightmap::pRenderer _renderer;

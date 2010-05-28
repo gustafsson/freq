@@ -14,7 +14,8 @@ namespace Sawe {
 class Hdf5: public Signal::Sink
 {
 public:
-    void    put( Signal::pBuffer );
+    virtual void put( Signal::pBuffer );
+    virtual void put( Signal::pBuffer b, Signal::pSource ) { put (b); }
 };
 
 } // namespace Sawe

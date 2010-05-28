@@ -13,16 +13,13 @@ public:
 
     /**
       'put' is the main operation that is done to a sink.
-      */
-    virtual void put( pBuffer ) = 0;
 
-    /**
       As an optional parameter a caller may supply a source from which the buffer
       was extracted. the sink may use this information as it may contain valuable
       caches. But the sink is required to perform the same result if only the
       buffer is supplied.
       */
-    virtual void put( pBuffer b, pSource ) { put (b); }
+    virtual void put( pBuffer b, pSource=pSource() ) = 0;
 
     /**
       For some sinks it makes sense to reset, for some it doesn't.
