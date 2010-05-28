@@ -14,7 +14,7 @@ $ sudo ldconfig</pre>
 
 *2.2. Packages from the Ubuntu repositories*
 <pre>$ sudo apt-get install libsndfile1-dev portaudio19-dev libglew1.5-dev freeglut3-dev
-$ sudo apt-get install libboost1.37-dev libqt4-dev qt-creator</pre>
+$ sudo apt-get install libboost1.37-dev libqt4-dev qt-creator libhdf5-serial-dev</pre>
 
 *3. Sonic Awe*
 *3.1 Get source code*
