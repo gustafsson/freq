@@ -16,6 +16,7 @@
 #include <CudaException.h>
 #include "heightmap-renderer.h"
 #include "sawe-csv.h"
+#include "sawe-hdf5.h"
 #include "signal-audiofile.h"
 #include "signal-microphonerecorder.h"
 #include <demangle.h>
@@ -50,20 +51,22 @@ static const char _sawe_usage_string[] =
 "    samples_per_block  The transform chunks are downsampled to blocks for\n"
 "                       rendering, this gives the number of samples per block.\n"
 "    scales_per_block   Number of scales per block, se samples_per_block.\n"
-"    yscale             Tells how to translate the complex transform to a \n"
-"                       hightmap. Valid yscale values:\n"
-"                       0   A=amplitude of CWT coefficients, default\n"
-"                       1   A * exp(.001*fi)\n"
-"                       2   log(1 + |A|)\n"
-"                       3   log(1 + [A * exp(.001*fi)]\n"
-"    extract_chunk      Saves the given chunk number into sonicawe-n.csv which \n"
+//"    yscale             Tells how to translate the complex transform to a \n"
+//"                       hightmap. Valid yscale values:\n"
+//"                       0   A=amplitude of CWT coefficients, default\n"
+//"                       1   A * exp(.001*fi)\n"
+//"                       2   log(1 + |A|)\n"
+//"                       3   log(1 + [A * exp(.001*fi)]\n"
+"    get_csv            Saves the given chunk number into sawe.csv which \n"
 "                       then can be read by matlab or octave.\n"
-"    get_chunk_count    If assigned a value, Sonic AWE exits with the number of \n"
-"                       chunks as exit code.\n"
-"    record             If assigned a non-negative value, Sonic AWE records from the \n"
-"                       given input device, a value of -1 specifies the default \n"
-"                       microphone.\n"
-"    playback           Selects a specific device for playback. -1 specifices the\n"
+"    get_hdf            Saves the given chunk number into sawe.h5 which \n"
+"                       then can be read by matlab or octave.\n"
+"    get_chunk_count    Sonic AWE prints number of chunks needed and then exits.\n"
+"    get_sample_rate    Sonic AWE prints sample rate of source and then exits.\n"
+"    record             If set, Sonic AWE starts in record mode.\n"
+"    record_device      Selects a specific device for recording. -1 specifices\n"
+"                       the default input device/microphone.\n"
+"    playback_device    Selects a specific device for playback. -1 specifices the\n"
 "                       default output device.\n"
 "\n"
 "Sonic AWE, 2010\n";
@@ -78,11 +81,14 @@ static unsigned _samples_per_chunk = 13;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
 static unsigned _scales_per_block = 1<<8;
 static unsigned _yscale = DisplayWidget::Yscale_Linear;
-static unsigned _extract_chunk = (unsigned)-1;
-static unsigned _get_chunk_count = (unsigned)-1;
+static unsigned _get_hdf = (unsigned)-1;
+static unsigned _get_csv = (unsigned)-1;
+static bool _get_chunk_count = false;
 static std::string _selectionfile = "selection.wav";
-static int _record = -2;
-static int _playback = -1;
+static bool _get_sample_rate  = false;
+static bool _record = false;
+static int _record_device = -1;
+static int _playback_device = -1;
 static std::string _soundfile = "";
 static bool _sawe_exit=false;
 std::string fatal_error;
@@ -96,6 +102,9 @@ static int prefixcmp(const char *a, const char *prefix) {
 }
 
 
+void atoval(const char *cmd, bool& val) {
+    val = (0!=atoi(cmd));
+}
 void atoval(const char *cmd, float& val) {
     val = atof(cmd);
 }
@@ -122,6 +131,15 @@ bool tryreadarg(const char **cmd, const char* prefix, const char* name, Type &va
     return 1;
 }
 
+template<>
+bool tryreadarg(const char **cmd, const char* prefix, const char*, bool &val) {
+    if (prefixcmp(*cmd, prefix))
+        return 0;
+    *cmd += strlen(prefix);
+    val = true;
+    return 1;
+}
+
 static int handle_options(char ***argv, int *argc)
 {
     int handled = 0;
@@ -144,11 +162,14 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, samples_per_block));
         else if (readarg(&cmd, scales_per_block));
         else if (readarg(&cmd, yscale));
-        else if (readarg(&cmd, extract_chunk));
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record));
-        else if (readarg(&cmd, playback));
+        else if (readarg(&cmd, record_device));
+        else if (readarg(&cmd, playback_device));
         else if (readarg(&cmd, channel));
+        else if (readarg(&cmd, get_hdf));
+        else if (readarg(&cmd, get_csv));
+        else if (readarg(&cmd, get_sample_rate));
         // TODO use _selectionfile
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
@@ -293,7 +314,7 @@ bool check_cuda() {
 }
 
 void validate_arguments() {
-    if (-1>_record) if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
+    if (false==_record) if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
         QString fileName = QFileDialog::getOpenFileName(0, "Open sound file", NULL, QString(Signal::getFileFormatsQtFilter().c_str()));
         if (0 == fileName.length())
             exit(0);
@@ -371,14 +392,14 @@ int main(int argc, char *argv[])
     try {
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 
-        boost::shared_ptr<Signal::Source> wf;
+        Signal::pSource wf;
 
-        if (-1<=_record)
+        if (_record)
             // TODO use _channel
-            wf.reset( new Signal::MicrophoneRecorder(_record) );
+            wf.reset( new Signal::MicrophoneRecorder(_record_device) );
         else {
             // TODO use _channel
-            printf("Reading file: %s\n", _soundfile.c_str());
+            //printf("Reading file: %s\n", _soundfile.c_str());
             wf.reset( new Signal::Audiofile( _soundfile.c_str() ) );
         }
 
@@ -393,13 +414,32 @@ int main(int argc, char *argv[])
         cwt->scales_per_octave( _scales_per_octave );
         cwt->wavelet_std_t( _wavelet_std_t );
 
-        if (_extract_chunk != (unsigned)-1) {
-            Sawe::Csv().put( wf->read( _extract_chunk*total_samples_per_chunk, total_samples_per_chunk ));
-            return 0;
+        if (_get_csv != (unsigned)-1) {
+            Signal::pBuffer b = wf->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
+
+            Sawe::Csv().put( b, wf );
         }
 
-        if (_get_chunk_count != (unsigned)-1) {
-            return wf->number_of_samples() / total_samples_per_chunk;
+        if (_get_hdf != (unsigned)-1) {
+            Signal::pBuffer b = wf->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
+
+            Sawe::Hdf5().put( b, wf );
+        }
+
+        if (_get_chunk_count != false) {
+            cout << wf->number_of_samples() / total_samples_per_chunk << endl;
+        }
+
+        if (_get_sample_rate != false) {
+            cout << wf->sample_rate() << endl;
+        }
+
+        if (_get_hdf != (unsigned)-1 ||
+            _get_csv != (unsigned)-1 ||
+            _get_chunk_count != false ||
+            _get_sample_rate != false)
+        {
+            return 0;
         }
 
         Signal::pWorker wk( new Signal::Worker( wf ) );
@@ -407,7 +447,7 @@ int main(int argc, char *argv[])
         Signal::pSink sg( sgp );
         sgp->samples_per_block( _samples_per_block );
         sgp->scales_per_block( _scales_per_block );
-        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wk, sg, _playback, _selectionfile, 0 ) );
+        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wk, sg, _playback_device, _selectionfile, 0 ) );
         dw->yscale = (DisplayWidget::Yscale)_yscale;
 
         w.connectLayerWindow(dw.get());

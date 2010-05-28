@@ -17,6 +17,7 @@ public:
     ~Playback();
 
     virtual void put( pBuffer );
+    virtual void put( pBuffer b, pSource ) { put (b); }
     virtual void reset();
 
     SamplesIntervalDescriptor getMissingSamples();

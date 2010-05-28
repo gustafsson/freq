@@ -134,7 +134,7 @@ Audiofile::
     if (0==source || 0 == source.frames()) {
         stringstream ss;
 
-        ss << "Couldn't open " << filename << endl
+        ss << "Couldn't open '" << filename << "'" << endl
            << endl
            << "Supported audio file formats through Sndfile:" << endl
            << getSupportedFileFormats();
