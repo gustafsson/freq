@@ -30,14 +30,11 @@ while 1
 
     [data, arguments]=func(data, arguments);
 
+    % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
-      buffer=data.buffer;
-      offset=data.offset;
-      save("-hdf5",tempfile,'buffer','offset')
+      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate );
     elseif isfield(data,'chunk')
-      chunk=data.chunk;
-      offset=data.offset;
-      save("-hdf5",tempfile,'chunk','offset')
+      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate );
     endif
 
     rename(tempfile,resultfile);

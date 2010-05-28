@@ -62,7 +62,6 @@ static const char _sawe_usage_string[] =
 "    get_hdf            Saves the given chunk number into sawe.h5 which \n"
 "                       then can be read by matlab or octave.\n"
 "    get_chunk_count    Sonic AWE prints number of chunks needed and then exits.\n"
-"    get_sample_rate    Sonic AWE prints sample rate of source and then exits.\n"
 "    record             If set, Sonic AWE starts in record mode.\n"
 "    record_device      Selects a specific device for recording. -1 specifices\n"
 "                       the default input device/microphone.\n"
@@ -85,7 +84,6 @@ static unsigned _get_hdf = (unsigned)-1;
 static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
 static std::string _selectionfile = "selection.wav";
-static bool _get_sample_rate  = false;
 static bool _record = false;
 static int _record_device = -1;
 static int _playback_device = -1;
@@ -169,7 +167,6 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
         else if (readarg(&cmd, get_csv));
-        else if (readarg(&cmd, get_sample_rate));
         // TODO use _selectionfile
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
@@ -430,14 +427,9 @@ int main(int argc, char *argv[])
             cout << wf->number_of_samples() / total_samples_per_chunk << endl;
         }
 
-        if (_get_sample_rate != false) {
-            cout << wf->sample_rate() << endl;
-        }
-
         if (_get_hdf != (unsigned)-1 ||
             _get_csv != (unsigned)-1 ||
-            _get_chunk_count != false ||
-            _get_sample_rate != false)
+            _get_chunk_count != false)
         {
             return 0;
         }

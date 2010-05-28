@@ -15,6 +15,7 @@ namespace Sawe
 static const char* dsetBuffer="buffer";
 static const char* dsetChunk="chunk";
 static const char* dsetOffset="offset";
+static const char* dsetSamplerate="samplerate";
 
 Hdf5::
         Hdf5( std::string filename, bool saveChunk)
@@ -66,9 +67,13 @@ void Hdf5::
     if (0>status) throw runtime_error("Could not create and write a float type dataset named '" + string(dsetBuffer) + "'");
 
     hsize_t one[]={1};
-    hsize_t offs = b->sample_offset;
-    status = H5LTmake_dataset(file_id,dsetOffset,1,one,H5T_NATIVE_HSIZE,&offs);
+    double offs = b->sample_offset;
+    status = H5LTmake_dataset(file_id,dsetOffset,1,one,H5T_NATIVE_DOUBLE,&offs);
     if (0>status) throw runtime_error("Could not create and write a hsize type dataset named '" + string(dsetOffset) + "'");
+
+    double rate = b->sample_rate;
+    status = H5LTmake_dataset(file_id,dsetSamplerate,1,one,H5T_NATIVE_DOUBLE,&rate);
+    if (0>status) throw runtime_error("Could not create and write a hsize type dataset named '" + string(dsetSamplerate) + "'");
 
     status = H5Fclose (file_id);
     if (0>status) throw runtime_error("Could not close HDF5 file");
@@ -116,9 +121,13 @@ void Hdf5::
     }
 
     hsize_t one[]={1};
-    hsize_t offs = chunk.chunk_offset;
-    status = H5LTmake_dataset(file_id,dsetOffset,1,one,H5T_NATIVE_HSIZE,&offs);
+    double offs = chunk.chunk_offset;
+    status = H5LTmake_dataset(file_id,dsetOffset,1,one,H5T_NATIVE_DOUBLE,&offs);
     if (0>status) throw runtime_error("Could not create and write a hsize type dataset named '" + string(dsetOffset) + "'");
+
+    double rate = chunk.sample_rate;
+    status = H5LTmake_dataset(file_id,dsetSamplerate,1,one,H5T_NATIVE_DOUBLE,&rate);
+    if (0>status) throw runtime_error("Could not create and write a hsize type dataset named '" + string(dsetSamplerate) + "'");
 
     status = H5Fclose (file_id);
     if (0>status) throw runtime_error("Could not close HDF5 file");
@@ -135,13 +144,16 @@ Signal::pBuffer Hdf5::
     {
         string sdset = dsetBuffer;
         string soffdset = dsetOffset;
+        string sfsdset = dsetSamplerate;
         switch(i) {
         case 0: sdset = "/" + sdset + "/value";
-                soffdset = "/" + soffdset + "/value"; break;
+                soffdset = "/" + soffdset + "/value";
+                sfsdset = "/" + sfsdset + "/value"; break;
         case 1: break;
         }
         const char*dset = sdset.c_str();
         const char*odset = soffdset.c_str();
+        const char*fsdset = sfsdset.c_str();
 
         hid_t       file_id;
         herr_t      status;
@@ -170,10 +182,15 @@ Signal::pBuffer Hdf5::
         status = H5LTread_dataset(file_id, dset, H5T_NATIVE_FLOAT, p);
         if (0>status) throw runtime_error("Could not read a float type dataset named '" + sdset + "'");
 
-        hsize_t offs=0;
-        status = H5LTread_dataset(file_id,odset,H5T_NATIVE_HSIZE,&offs);
+        double offs=0;
+        status = H5LTread_dataset(file_id,odset,H5T_NATIVE_DOUBLE,&offs);
         if (0>status) throw runtime_error("Could not read a hsize type dataset named '" + soffdset + "'");
         buffer->sample_offset=offs;
+
+        double samplerate=0;
+        status = H5LTread_dataset(file_id,fsdset,H5T_NATIVE_DOUBLE,&samplerate);
+        if (0>status) throw runtime_error("Could not read a hsize type dataset named '" + sfsdset + "'");
+        buffer->sample_rate=samplerate;
 
         status = H5Fclose (file_id);
         if (0>status) throw runtime_error("Could not close HDF5 file");
@@ -196,13 +213,16 @@ Tfr::pChunk Hdf5::
     {
         string sdset = dsetChunk;
         string soffdset = dsetOffset;
+        string sfsdset = dsetSamplerate;
         switch(i) {
         case 0: sdset = "/" + sdset + "/value";
-                soffdset = "/" + soffdset + "/value"; break;
+                soffdset = "/" + soffdset + "/value";
+                sfsdset = "/" + sfsdset + "/value"; break;
         case 1: break;
         }
         const char*dset = sdset.c_str();
         const char*odset = soffdset.c_str();
+        const char*fsdset = sfsdset.c_str();
 
         hid_t       file_id;
         herr_t      status;
@@ -273,10 +293,15 @@ Tfr::pChunk Hdf5::
             throw runtime_error(((stringstream&)(ss << "Class id for '" << dsetBuffer << "' is '" << class_id << "' instead of H5T_COMPOUND.")).str());
         }
 
-        hsize_t offs=0;
-        status = H5LTread_dataset(file_id,odset,H5T_NATIVE_HSIZE,&offs);
+        double offs=0;
+        status = H5LTread_dataset(file_id,odset,H5T_NATIVE_DOUBLE,&offs);
         if (0>status) throw runtime_error("Could not read a hsize type dataset named '" + soffdset + "'");
         chunk->chunk_offset=offs;
+
+        double samplerate=0;
+        status = H5LTread_dataset(file_id,fsdset,H5T_NATIVE_DOUBLE,&samplerate);
+        if (0>status) throw runtime_error("Could not read a hsize type dataset named '" + sfsdset + "'");
+        chunk->sample_rate=samplerate;
 
         status = H5Fclose (file_id);
         if (0>status) throw runtime_error("Could not close HDF5 file");

@@ -1,3 +1,3 @@
-function data=matlaboperation(data)
+function [data,dummy]=matlaboperation(data)
 data.buffer=data.buffer*0.5;
 endfunction
