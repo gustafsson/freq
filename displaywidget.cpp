@@ -374,7 +374,7 @@ void DisplayWidget::receiveAddClearSelection(bool /*active*/)
     { // If selection is an ellips, remove tfr data inside the ellips
         Tfr::EllipsFilter* ef = dynamic_cast<Tfr::EllipsFilter*>( postsink->inverse_cwt.filter.get() );
         if (ef)
-            ef->_save_inside = false;
+            ef->_save_inside = true;
     }
 
     Signal::FilterOperation *f;

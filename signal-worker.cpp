@@ -173,6 +173,9 @@ void Worker::
         c->put( b, _source );
     }
 
+    b->waveform_data->getCpuMemory();
+    b->waveform_data->freeUnused();
+
     FilterOperation* f = dynamic_cast<FilterOperation*>(_source.get());
     if (f)
         f->release_previous_chunk();

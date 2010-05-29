@@ -50,7 +50,7 @@ void SinkSource::
     std::stringstream ss;
 
     // Look among previous caches for buffers to remove
-    for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); itr++ )
+    for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
         const pBuffer s = *itr;
 
@@ -75,10 +75,20 @@ void SinkSource::
                         i.last-i.first );
                 _cache.push_back( n );
             }
+        } else {
+            itr++;
         }
     }
 
-    _cache.push_back( b );
+    pBuffer n( new Buffer( b->sample_offset, b->number_of_samples(), b->sample_rate));
+    memcpy( n->waveform_data->getCpuMemory(),
+            b->waveform_data->getCpuMemory(),
+            b->number_of_samples());
+    _cache.push_back( n );
+
+//    b->waveform_data->getCpuMemory();
+//    b->waveform_data->freeUnused();
+//    _cache.push_back( b );
 
     if (!ss.str().empty())
     {

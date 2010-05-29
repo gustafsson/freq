@@ -84,8 +84,8 @@ unsigned Playback::
 float Playback::
         time()
 {
-    //return streamPlayback?streamPlayback->time():-1;
-    return streamPlayback?Pa_GetStreamTime(streamPlayback->paStream()):-1;
+    return streamPlayback?streamPlayback->time():0;
+    //return streamPlayback?Pa_GetStreamTime(streamPlayback->paStream()):0;
 }
 
 float Playback::
@@ -111,8 +111,8 @@ void Playback::
     SinkSource::put( buffer );
 
     // Make sure the buffer is moved over to CPU memory.
-    // (because the audio stream callpack is executed from a different thread it can't
-    // access the GPU memory)
+    // (because the audio stream callback is executed from a different thread
+    // it can't access the GPU memory)
     buffer->waveform_data->getCpuMemory();
     // TODO Should perhaps relase GPU memory as well...
 
