@@ -169,7 +169,7 @@ private:
         _samples_per_block,
         _scales_per_block,
         _unfinished_count,
-        _frame_counter; // TODO shouldn't need _frame_counter
+        _frame_counter;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.

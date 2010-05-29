@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <GpuCpuData.h>
+#include "signal-samplesintervaldescriptor.h"
 
 namespace Signal {
 
@@ -20,21 +21,25 @@ public:
         Only_Real
     };
 
-    Buffer(Interleaved interleaved=Only_Real);
-    Buffer(unsigned firstSample, unsigned numberOfSamples, unsigned FS, Interleaved interleaved=Only_Real);
+    Buffer(Interleaved interleaved = Only_Real);
+    Buffer(unsigned firstSample,
+           unsigned numberOfSamples,
+           unsigned FS,
+           Interleaved interleaved = Only_Real
+                                   );
 
-    boost::scoped_ptr<GpuCpuData<float> > waveform_data;
+    boost::scoped_ptr<GpuCpuData<float> >   waveform_data;
+    unsigned                                sample_offset;
+    unsigned                                sample_rate;
 
-    unsigned number_of_samples() const { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
-    Interleaved interleaved() const {return _interleaved; }
-    boost::shared_ptr<class Buffer> getInterleaved(Interleaved) const;
+    Interleaved                         interleaved() const {return _interleaved; }
+    unsigned                            number_of_samples() const { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
+    float                               start() const { return sample_offset/(float)sample_rate; }
+    float                               length() const { return number_of_samples()/(float)sample_rate; }
+    SamplesIntervalDescriptor::Interval getInterval() const { SamplesIntervalDescriptor::Interval i = {sample_offset, sample_offset + number_of_samples()}; return i; }
 
-    float start() { return sample_offset/(float)sample_rate; }
-    float length() { return number_of_samples()/(float)sample_rate; }
-
-    Buffer& operator|=(const Buffer& b);
-    unsigned sample_offset;
-    unsigned sample_rate;
+    Buffer&                             operator|=(const Buffer& b);
+    boost::shared_ptr<class Buffer>     getInterleaved(Interleaved) const;
 
 private:
     const Interleaved _interleaved;

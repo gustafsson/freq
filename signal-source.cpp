@@ -1,7 +1,6 @@
 #include "signal-source.h"
 #include <string.h>
 #include <stdio.h>
-#include "signal-samplesintervaldescriptor.h"
 
 using namespace std;
 
@@ -108,9 +107,8 @@ Buffer& Buffer::
 
     float* c = waveform_data->getCpuMemory();
 
-    SamplesIntervalDescriptor sid( sample_offset, sample_offset + number_of_samples());
-    SamplesIntervalDescriptor psid( p->sample_offset, p->sample_offset + p->number_of_samples());
-    sid &= psid;
+    SamplesIntervalDescriptor sid = getInterval();
+    sid &= p->getInterval();
 
     if (sid.isEmpty())
         return *this;
@@ -154,7 +152,7 @@ pBuffer Source::
     while (!sid.isEmpty())
     {
         (*r) |= *p;
-        sid -= SamplesIntervalDescriptor( p->sample_offset, p->sample_offset + p->number_of_samples() );
+        sid -= p->getInterval();
 
         if (!sid.isEmpty()) {
             SamplesIntervalDescriptor::Interval i = sid.getInterval( SamplesIntervalDescriptor::SampleType_MAX );

@@ -29,11 +29,15 @@ vec4 setWavelengthColor( float wavelengthScalar ) {
 
     int count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
     float f = float(count)*wavelengthScalar;
-    int i = int(min(f, float(count)));
-    int j = int(min(f+1.0, float(count)));
-    float t = f-float(i);
+    int i1 = int(max(0.0, min(f-1, float(count))));
+    int i2 = int(min(f, float(count)));
+    int i3 = int(min(f+1.0, float(count)));
+    int i4 = int(min(f+2.0, float(count)));
+    float s = f-float(i1);
+    float t = f-float(i2);
 
-    vec4 rgb = mix(spectrum[i], spectrum[j], t);
+    vec4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
+    rgb = mix(vec4( 1,1,1,0), rgb*0.5, wavelengthScalar);
     return rgb;
 }
 

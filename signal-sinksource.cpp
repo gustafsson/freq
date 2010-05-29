@@ -3,13 +3,18 @@
 #include <QMutexLocker>
 #include <sstream>
 
-namespace Signal
-{
-SinkSource::
-        SinkSource(pSource s)
-:   Operation(s)
-{
+using namespace std;
 
+ostream& operator<<( ostream& s, const Signal::SamplesIntervalDescriptor::Interval& i)
+{
+    return s << "[" << i.first << ", " << i.last << "]";
+}
+
+namespace Signal {
+
+SinkSource::
+        SinkSource()
+{
 }
 
 void SinkSource::
@@ -34,47 +39,57 @@ void SinkSource::
     _cache.push_back( b );
     */
 
-    if (!_cache.empty())
-        BOOST_ASSERT(_cache.front()->sample_rate == b->sample_rate);
-
-    SamplesIntervalDescriptor sid( b->sample_offset, b->sample_offset + b->number_of_samples());
-    sid -= samplesDesc();
 
     unsigned FS = sample_rate();
 
+    QMutexLocker l(&_mutex);
+
+    if (!_cache.empty())
+        BOOST_ASSERT(_cache.front()->sample_rate == b->sample_rate);
+
+    std::stringstream ss;
+
+    // Look among previous caches for buffers to remove
+    for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); itr++ )
     {
-        QMutexLocker l(&_mutex);
+        const pBuffer& s = *itr;
 
-        std::stringstream ss;
+        SamplesIntervalDescriptor toKeep = s->getInterval();
+        toKeep -= b->getInterval();
 
-        // Merge
-        BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals() )
-        {
-            if (i.first == b->sample_offset && i.last == b->sample_offset + b->number_of_samples())
+        SamplesIntervalDescriptor toRemove = s->getInterval();
+        toRemove &= b->getInterval();
+
+        if (!toRemove.isEmpty()) {
+            ss << "-" << s->getInterval() << " ";
+
+            itr = _cache.erase(itr);
+
+            BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, toKeep.intervals() )
             {
-                _cache.push_back( b );
-                break;
+                ss << "+" << i << " ";
+
+                pBuffer n( new Buffer( i.first, i.last-i.first, FS));
+                memcpy( n->waveform_data->getCpuMemory(),
+                        s->waveform_data->getCpuMemory() + (i.first - s->sample_offset),
+                        i.last-i.first );
+                _cache.push_back( n );
             }
-
-            ss << " [" << i.first <<", "<<i.last<<"]";
-
-            pBuffer n( new Buffer( i.first, i.last-i.first, FS));
-            memcpy( n->waveform_data->getCpuMemory(),
-                    b->waveform_data->getCpuMemory() + (i.first - b->sample_offset),
-                    i.last-i.first );
-            _cache.push_back( n );
-        }
-
-        if (!ss.str().empty())
-        {
-            TaskTimer("Merged buffer [%u, %u] in chunks: %s",
-                         b->sample_offset,
-                         b->sample_offset + b->number_of_samples(),
-                         ss.str().c_str()).suppressTiming();
         }
     }
 
-    _expected_samples -= sid;
+    _cache.push_back( b );
+
+    if (!ss.str().empty())
+    {
+        ss << "+" << b->getInterval() << " ";
+        TaskTimer("[%u, %u] merged: %s",
+                     b->sample_offset,
+                     b->sample_offset + b->number_of_samples(),
+                     ss.str().c_str()).suppressTiming();
+    }
+
+    _expected_samples -= b->getInterval();
 
     _expected_samples.print("SinkSource _expected_samples");
 }
@@ -99,12 +114,6 @@ pBuffer SinkSource::
                 return s;
             }
         }
-    }
-
-    if (_source) {
-        pBuffer b = _source->read( firstSample, numberOfSamples );
-        put(b);
-        return b;
     }
 
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
@@ -167,7 +176,7 @@ SamplesIntervalDescriptor SinkSource::
     SamplesIntervalDescriptor sid;
 
     BOOST_FOREACH( const pBuffer& s, _cache) {
-        sid |= SamplesIntervalDescriptor( s->sample_offset, s->sample_offset + s->number_of_samples() );
+        sid |= s->getInterval();
     }
 
     return sid;
@@ -177,16 +186,6 @@ void SinkSource::
         add_expected_samples(SamplesIntervalDescriptor sid)
 {    
     _expected_samples |= sid;
-
-    BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals()) {
-        BOOST_FOREACH( pBuffer& s, _cache) {
-            if (s->sample_offset + s->number_of_samples() > i.first && s->sample_offset < i.last) {
-                _expected_samples |= SamplesIntervalDescriptor(s->sample_offset, s->sample_offset + s->number_of_samples());
-                s.reset();
-            }
-        }
-    }
-
 }
 
 } // namespace Signal

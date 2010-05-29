@@ -1,5 +1,6 @@
 #include "signal-worker.h"
 #include "signal-samplesintervaldescriptor.h"
+#include "signal-filteroperation.h"
 #include <QTime>
 #include <QMutexLocker>
 #include <boost/foreach.hpp>
@@ -43,7 +44,7 @@ bool Worker::
 
     try {
         b = _source->read( interval.first, interval.last-interval.first );
-        todo_list -= SamplesIntervalDescriptor( b->sample_offset, b->sample_offset + b->number_of_samples() );
+        todo_list -= b->getInterval();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
             _samples_per_chunk >>=1;
@@ -137,6 +138,10 @@ void Worker::
     BOOST_FOREACH( pSink c, _callbacks ) {
         c->put( b, _source );
     }
+
+    FilterOperation* f = dynamic_cast<FilterOperation*>(_source.get());
+    if (f)
+        f->release_previous_chunk();
 }
 
 } // namespace Signal

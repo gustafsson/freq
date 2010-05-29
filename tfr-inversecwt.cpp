@@ -26,8 +26,7 @@ operator()(Tfr::Chunk& chunk)
 
         if (!e && !s) {
             Signal::SamplesIntervalDescriptor
-                    chunkSid( chunk.chunk_offset + chunk.first_valid_sample,
-                              chunk.chunk_offset + chunk.first_valid_sample + chunk.n_valid_samples),
+                    chunkSid = chunk.getInterval(),
                     chunkCopy = chunkSid;
             if ((chunkSid -= filter->getUntouchedSamples( chunk.sample_rate )).isEmpty())
             {

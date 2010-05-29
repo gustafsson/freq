@@ -33,17 +33,27 @@ public:
     virtual pSource source() const { return _source; }
     virtual void source(pSource v) { _source=v; }
 
-    virtual SamplesIntervalDescriptor updateInvalidSamples();
+    /**
+      Returns _invalid_samples merged with _source->invalid_samples.
+      */
+    SamplesIntervalDescriptor invalid_samples();
 
     static pSource first_source(pSource start);
 
     /// finds last source that does not have a slow operation (i.e. FilterOperation) among its parents.
     static pSource fast_source(pSource start);
 
-protected:    
-    // TODO define how _invalid_samples is used
-    SamplesIntervalDescriptor _invalid_samples;
+protected:
     pSource _source;
+
+    /**
+      _invalid_samples describes which samples that havn't been read off from
+      Operation yet. It is initialized to SamplesIntervalDescriptor_ALL and is
+      gradually worked off by an implementation of Operation when returning
+      from read.
+      */
+    SamplesIntervalDescriptor _invalid_samples;
+    void validate_samples( pBuffer b );
 };
 
 } // namespace Signal

@@ -32,6 +32,9 @@ public:
     Signal::SamplesIntervalDescriptor getTouchedSamples( unsigned FS ) const;
     Signal::SamplesIntervalDescriptor::Interval coveredInterval( unsigned FS ) const;
 
+    /**
+      TODO Define how/when enabled should be used
+      */
     bool enabled;
 };
 typedef boost::shared_ptr<Filter> pFilter;

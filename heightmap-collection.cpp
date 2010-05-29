@@ -36,7 +36,9 @@ Collection::
 Collection( Signal::pWorker worker )
 :   worker( worker ),
     _samples_per_block( 1<<7 ),
-    _scales_per_block( 1<<8 )
+    _scales_per_block( 1<<8 ),
+    _unfinished_count(0),
+    _frame_counter(0)
 {
 
 }
@@ -72,13 +74,13 @@ void Collection::
         Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s.get());
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
-            chunk = filterOp->pick_previous_chunk();
+            chunk = filterOp->previous_chunk();
             tt.info("Stealing chunk from FilterOperation. Got %p", chunk.get());
 
             if (0 == chunk) {
                 // try again
                 filterOp->read( b->sample_offset, b->number_of_samples() );
-                chunk = filterOp->pick_previous_chunk();
+                chunk = filterOp->previous_chunk();
                 tt.info("Failed, trying again. Got %p", chunk.get());
             }
         }
@@ -94,11 +96,11 @@ void Collection::
         }
 
         // Update all blocks with this new chunk
-        BOOST_FOREACH( pBlock& pb, _cache ) {
-            Position p1, p2;
-            pb->ref.getArea(p1, p2);
-
-            if (p2.time > b->start() && p1.time < b->start()+b->length())
+        BOOST_FOREACH( pBlock& pb, _cache )
+        {
+            Signal::SamplesIntervalDescriptor sid = pb->ref.getInterval();
+            sid &= chunk->getInterval();
+            if (!sid.isEmpty())
             {
                 mergeBlock( pb, chunk, 0 );
                 computeSlope( pb, 0 );
@@ -271,22 +273,15 @@ pBlock Collection::
 void Collection::
         gc()
 {
-    if (_cache.empty())
-        return;
-
-    unsigned latestFrame = _cache[0]->frame_number_last_used;
-    BOOST_FOREACH( pBlock& b, _cache ) {
-        if (latestFrame < b->frame_number_last_used)
-            latestFrame = b->frame_number_last_used;
-    }
-
-    for (std::vector<pBlock>::iterator itr = _cache.begin(); itr!=_cache.end(); itr++)
+    for (std::vector<pBlock>::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        if ((*itr)->frame_number_last_used < latestFrame) {
+        if ((*itr)->frame_number_last_used < _frame_counter) {
             Position a,b;
             (*itr)->ref.getArea(a,b);
             TaskTimer tt("Release block [%g, %g]", a.time, b.time);
             itr = _cache.erase(itr);
+        } else {
+            itr++;
         }
     }
 }
@@ -325,10 +320,13 @@ Signal::SamplesIntervalDescriptor Collection::
 
     BOOST_FOREACH( pBlock& b, _cache )
     {
-        Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
+        if (_frame_counter-b->frame_number_last_used < 2)
+        {
+            Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
 
-        i -= b->valid_samples;
-        r |= i;
+            i -= b->valid_samples;
+            r |= i;
+        }
     }
 
     _expected_samples = r;

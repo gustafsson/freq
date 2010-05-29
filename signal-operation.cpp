@@ -4,7 +4,8 @@
 namespace Signal {
 
 Operation::Operation(pSource source )
-:   _source( source )
+:   _source( source ),
+    _invalid_samples(SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL)
 {
 }
 
@@ -21,14 +22,16 @@ number_of_samples()
 }
 
 SamplesIntervalDescriptor Operation::
-updateInvalidSamples()
+        invalid_samples()
 {
     Operation* o = dynamic_cast<Operation*>(_source.get());
 
-    if (0!=o)
-        _invalid_samples |= o->updateInvalidSamples();
+    SamplesIntervalDescriptor r = _invalid_samples;
 
-    return _invalid_samples;
+    if (0!=o)
+        r |= invalid_samples();
+
+    return r;
 }
 
 pSource Operation::

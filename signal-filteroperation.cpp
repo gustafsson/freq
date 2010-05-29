@@ -15,8 +15,6 @@ FilterOperation::
 pBuffer FilterOperation::
         read( unsigned firstSample, unsigned numberOfSamples )
 {
-    meldFilters();
-
     unsigned wavelet_std_samples = cwt.wavelet_std_samples( _source->sample_rate());
 
     // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
@@ -144,13 +142,38 @@ void FilterOperation::
 }
 
 Tfr::pChunk FilterOperation::
-        pick_previous_chunk()
+        previous_chunk()
 {
     _save_previous_chunk = true;
-    Tfr::pChunk r = _previous_chunk;
-//    _previous_chunk.reset();
-    return r;
+    return _previous_chunk;
 }
 
+void FilterOperation::
+        release_previous_chunk()
+{
+    _previous_chunk.reset();
+}
+
+void FilterOperation::
+        filter( Tfr::pFilter f )
+{
+    // Start with the assumtion that everything will have to be recomputed
+    SamplesIntervalDescriptor a = SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+
+    if (_filter)
+    {
+        // Don't recompute what would still be zero
+        a -= (_filter->getZeroSamples( sample_rate() ) &= f->getZeroSamples( sample_rate() ));
+
+        // Don't recompute what would still be unaffected
+        a -= (_filter->getUntouchedSamples( sample_rate() ) &= f->getUntouchedSamples( sample_rate() ));
+    }
+
+    // The samples that were previously invalid are still invalid, merge
+    _invalid_samples |= a;
+
+    // Change filter
+    _filter = f;
+}
 
 } // namespace Signal

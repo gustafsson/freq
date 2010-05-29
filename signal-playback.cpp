@@ -84,7 +84,8 @@ unsigned Playback::
 float Playback::
         time()
 {
-    return streamPlayback?streamPlayback->time():0;
+    //return streamPlayback?streamPlayback->time():-1;
+    return streamPlayback?Pa_GetStreamTime(streamPlayback->paStream()):-1;
 }
 
 float Playback::

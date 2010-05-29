@@ -18,13 +18,13 @@ void PostSink::
         Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s.get());
         if (filterOp) {
             // use the Cwt chunk still stored in FilterOperation
-            chunk = filterOp->pick_previous_chunk();
+            chunk = filterOp->previous_chunk();
             tt.info("Stealing filterOp chunk. Got %p", chunk.get());
 
             if (0 == chunk) {
                 // try again
                 filterOp->read( b->sample_offset, b->number_of_samples() );
-                chunk = filterOp->pick_previous_chunk();
+                chunk = filterOp->previous_chunk();
 
                 tt.info("Failed, tried again. Got %p", chunk.get());
             }

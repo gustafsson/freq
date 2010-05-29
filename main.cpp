@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
         cwt->wavelet_std_t( _wavelet_std_t );
 
         if (_extract_chunk != (unsigned)-1) {
-            Sawe::Csv().put( wf->read( _extract_chunk*total_samples_per_chunk, total_samples_per_chunk ));
+            Sawe::Csv().put( wf->read( _extract_chunk*total_samples_per_chunk - redundant/2, (1<<_samples_per_chunk) ));
             return 0;
         }
 

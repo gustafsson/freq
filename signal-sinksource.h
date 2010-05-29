@@ -2,17 +2,17 @@
 #define SIGNALSINKSOURCE_H
 
 #include "signal-sink.h"
-#include "signal-operation.h"
+#include "signal-source.h"
 #include "signal-samplesintervaldescriptor.h"
 #include <vector>
 #include <QMutex>
 
 namespace Signal {
 
-class SinkSource: public Sink, public Operation
+class SinkSource: public Sink, public Source
 {
 public:
-    SinkSource(pSource src = pSource());
+    SinkSource();
 
     virtual void put( pBuffer );
     virtual void reset();
