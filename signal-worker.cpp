@@ -31,11 +31,11 @@ bool Worker::
 
     // todo_list &= SamplesIntervalDescriptor(0, _source->number_of_samples());
 
-    if (todo_list.isEmpty())
+    if (todo_list().isEmpty())
         return false;
 
     SamplesIntervalDescriptor::Interval interval;
-    interval = todo_list.getInterval( _samples_per_chunk, middle_chunk );
+    interval = todo_list().getInterval( _samples_per_chunk, middle_chunk );
     if (interval.first == interval.last) {
         throw std::invalid_argument(std::string(__FUNCTION__) + " todo_list.getInterval returned interval.first == interval.last" );
     }
@@ -44,7 +44,8 @@ bool Worker::
 
     try {
         b = _source->read( interval.first, interval.last-interval.first );
-        todo_list -= b->getInterval();
+        QMutexLocker l(&_todo_lock);
+        _todo_list -= b->getInterval();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
             _samples_per_chunk >>=1;
@@ -80,6 +81,22 @@ bool Worker::
 
 ///// PROPERTIES
 
+void Worker::
+        todo_list( Signal::SamplesIntervalDescriptor v )
+{
+    {
+        QMutexLocker l(&_todo_lock);
+        _todo_list = v;
+    }
+    _todo_condition.wakeAll();
+}
+
+Signal::SamplesIntervalDescriptor Worker::
+        todo_list()
+{
+    QMutexLocker l(&_todo_lock);
+    return _todo_list;
+}
 
 Signal::pSource Worker::
         source() const
@@ -117,6 +134,19 @@ void Worker::
 }
 
 void Worker::
+        run()
+{
+    while (true)
+    {
+        while(!todo_list().isEmpty())
+        {
+            workOne( center );
+        }
+        _todo_condition.wait( &_todo_lock );
+    }
+}
+
+void Worker::
         addCallback( pSink c )
 {
     QMutexLocker l( &_callbacks_lock );
@@ -133,9 +163,13 @@ void Worker::
 void Worker::
         callCallbacks( pBuffer b )
 {
-    QMutexLocker l( &_callbacks_lock );
+    std::list<pSink> worklist;
+    {
+        QMutexLocker l( &_callbacks_lock );
+        worklist = _callbacks;
+    }
 
-    BOOST_FOREACH( pSink c, _callbacks ) {
+    BOOST_FOREACH( pSink c, worklist ) {
         c->put( b, _source );
     }
 

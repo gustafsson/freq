@@ -13,8 +13,8 @@ typedef int64_t __int64_t;
 
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <QThread>
-#include <QSound>
+//#include <QThread>
+//#include <QSound>
 
 #if LEKA_FFT
 #include <cufft.h>

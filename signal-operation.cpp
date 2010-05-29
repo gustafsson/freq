@@ -5,7 +5,7 @@ namespace Signal {
 
 Operation::Operation(pSource source )
 :   _source( source ),
-    _invalid_samples(SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL)
+    _invalid_samples()
 {
 }
 
@@ -29,7 +29,7 @@ SamplesIntervalDescriptor Operation::
     SamplesIntervalDescriptor r = _invalid_samples;
 
     if (0!=o)
-        r |= invalid_samples();
+        r |= o->invalid_samples();
 
     return r;
 }

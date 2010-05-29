@@ -9,6 +9,9 @@
 #include "tfr-chunk.h"
 #include "tfr-chunksink.h"
 #include <vector>
+#include <QMutex>
+#include <QWaitCondition>
+#include <QThread>
 
 /*
 TODO: rewrite this section
@@ -114,11 +117,6 @@ public:
     virtual void reset() { gc(); }
 
     /**
-      @see put( pBuffer, pSource );
-      */
-    virtual void put( Signal::pBuffer b) { put(b, Signal::pSource()); }
-
-    /**
       Computes the Cwt and updates the cache of blocks.
       */
     virtual void put( Signal::pBuffer, Signal::pSource );
@@ -137,8 +135,9 @@ public:
 
     /**
       getBlock increases a counter for each block that hasn't been computed yet.
+      next_frame returns that counter. next_frame also calls applyUpdates().
       */
-    unsigned    read_unfinished_count();
+    unsigned    next_frame();
 
     /**
       As the cwt is of finite length and finite sample rate there is a smallest
@@ -180,6 +179,10 @@ private:
             3) if _cache is empty, Sonic AWE is terminated with an OpenGL error.
       */
     std::vector<pBlock> _cache;
+    std::vector<Tfr::pChunk> _updates;
+    QMutex _updates_mutex;
+    QWaitCondition _updates_condition;
+    ThreadChecker _constructor_thread;
 
     /**
       Attempts to allocate a new block.
@@ -192,6 +195,11 @@ private:
     pBlock      createBlock( Reference ref );
     void        computeSlope( pBlock block, unsigned cuda_stream );
     void        prepareFillStft( pBlock block );
+
+    /**
+      Work of the _updates queue of chunks to merge.
+      */
+    void        applyUpdates();
 
     /**
       Update the slope texture used by the vertex shader. Called when height data has been updated.

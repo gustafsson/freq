@@ -1,16 +1,15 @@
 #ifndef SIGNALPOSTSINK_H
 #define SIGNALPOSTSINK_H
 
-#include "signal-sink.h"
+#include "tfr-chunksink.h"
 #include "tfr-inversecwt.h"
 #include <vector>
 
 namespace Signal {
 
-class PostSink: public Sink
+class PostSink: public Tfr::ChunkSink
 {
 public:
-    virtual void put( pBuffer b ) { put(b, pSource()); }
     virtual void put( pBuffer, pSource );
 
     virtual void reset();

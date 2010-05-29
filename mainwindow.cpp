@@ -31,13 +31,11 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
 #endif
     ui->setupUi(this);
     this->setWindowTitle( title );
-    void signalDbclkFilterItem(QListWidgetItem*);
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
     connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
     connect(ui->actionToggleToolWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleToolWindow(bool)));
-    connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
     connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
 }
 

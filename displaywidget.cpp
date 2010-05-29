@@ -225,6 +225,8 @@ DisplayWidget::
 DisplayWidget::
         ~DisplayWidget()
 {
+    _worker->quit();
+
     Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
     Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
 
@@ -299,9 +301,9 @@ void DisplayWidget::receivePlaySound()
             Signal::pSink( new Signal::WriteWav( _selection_filename )) );
 
     _postsinkCallback->sink()->add_expected_samples( Signal::SamplesIntervalDescriptor( i.first, L) );
-    _worker->todo_list = _postsinkCallback->sink()->expected_samples();
+    _worker->todo_list( _postsinkCallback->sink()->expected_samples());
 
-    _worker->todo_list.print(__FUNCTION__);
+    _worker->todo_list().print(__FUNCTION__);
 
     update();
 }
@@ -511,7 +513,7 @@ void DisplayWidget::
     b->source( s );
     setWorkerSource();
     update();
-    _renderer->collection()->updateInvalidSamples(Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL);
+    _renderer->collection()->add_expected_samples(Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL);
 }
 
 void DisplayWidget::
@@ -542,7 +544,7 @@ void DisplayWidget::
 
 
     b->meldFilters();
-    _renderer->collection()->updateInvalidSamples(b->filter()->getTouchedSamples( b->sample_rate()));
+    _renderer->collection()->add_expected_samples(b->filter()->getTouchedSamples( b->sample_rate()));
 
     setWorkerSource();
     update();
@@ -937,7 +939,7 @@ void DisplayWidget::paintGL()
         computing_inverse = true;
     }
     
-    if (0 < this->_renderer->collection()->read_unfinished_count()) {
+    if (0 != this->_renderer->collection()->next_frame()) {
         computing_plot = true;
     }
     
@@ -1006,25 +1008,33 @@ void DisplayWidget::paintGL()
         _postsinkCallback->sink()->reset();
     }
 
-    unsigned center = 0;
-
     //    if (p && p->isUnderfed() && p->expected_samples_left()) {
 
     if (!_postsinkCallback->sink()->expected_samples().isEmpty())
     {
-        _worker->todo_list = _postsinkCallback->sink()->expected_samples();
-        //_worker->todo_list.print("Displaywidget - PostSink");
+        _worker->center = 0;
+        _worker->todo_list( _postsinkCallback->sink()->expected_samples() );
+        //_worker->todo_list().print("Displaywidget - PostSink");
     }
     else
     {
-        center = _worker->source()->sample_rate() * _qx;
-        _worker->todo_list = _collectionCallback->sink()->expected_samples();
-        //_worker->todo_list.print("Displaywidget - Collection");
+        _worker->center = _worker->source()->sample_rate() * _qx;
+        _worker->todo_list( _collectionCallback->sink()->expected_samples());
+        //_worker->todo_list().print("Displaywidget - Collection");
     }
 
 
-    if (_worker->workOne( center ))
+    //if (_worker->workOne( center ))
+    if (!_worker->todo_list().isEmpty())
+    {
+        // TODO use timer events to repaint
+#if (defined (_MSCVER) || defined (_MSC_VER))
+        Sleep( 10 );
+#else
+        usleep( 10000 );
+#endif
         update();
+    }
 
     // CudaException_ThreadSynchronize();
     CudaException_CHECK_ERROR();
@@ -1495,22 +1505,17 @@ void DisplayWidget::
     }
 
     // No playback instance
-    if (!pb) return;
+    if (!pb) {
+        playback_itr.clear();
+        return;
+    }
 
     // Playback has stopped
     if (pb->isStopped()) {
         playback_itr.clear();
         return;
     }
-    /*
-    myClock = copyClock;
 
-    if (myClock.isNull()) {
-        myClock = QTime::currentTime();
-        base_itr = pb->playback_itr();
-        prev_itr = pb->playback_itr();
-    }
-*/
     unsigned this_itr = pb->playback_itr();
     if (playback_itr.empty() || this_itr!=playback_itr.back()) {
         playback_itr.push_back( this_itr );
@@ -1519,10 +1524,9 @@ void DisplayWidget::
     }
     boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - myClock;
     float dt = d.total_milliseconds()*0.001f;
-    float y = 1;
-    //float t = (/*b->sample_offset + */base_itr) / (float)pb->sample_rate + dt - pb->outputLatency();
-    //float t = b->sample_offset / (float)b->sample_rate + pb->time();
     float t = playback_itr[0]/(float)pb->sample_rate() + dt - .5*pb->outputLatency();
+    if (4 != playback_itr.size()) t=0;
+
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -1530,6 +1534,7 @@ void DisplayWidget::
 
     float
         x = selection[0].x,
+        y = 1,
         z = selection[0].z,
         _rx = selection[1].x-selection[0].x,
         _rz = selection[1].z-selection[0].z,

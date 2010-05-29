@@ -6,14 +6,14 @@ namespace Signal {
 
 FilterOperation::
         FilterOperation(pSource source, Tfr::pFilter filter)
-:   Operation(source),
+:   OperationCache(source),
     _filter( filter ),
     _save_previous_chunk( false )
 {
 }
 
 pBuffer FilterOperation::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        readRaw( unsigned firstSample, unsigned numberOfSamples )
 {
     unsigned wavelet_std_samples = cwt.wavelet_std_samples( _source->sample_rate());
 

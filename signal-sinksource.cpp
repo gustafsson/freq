@@ -52,7 +52,7 @@ void SinkSource::
     // Look among previous caches for buffers to remove
     for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); itr++ )
     {
-        const pBuffer& s = *itr;
+        const pBuffer s = *itr;
 
         SamplesIntervalDescriptor toKeep = s->getInterval();
         toKeep -= b->getInterval();
@@ -63,7 +63,7 @@ void SinkSource::
         if (!toRemove.isEmpty()) {
             ss << "-" << s->getInterval() << " ";
 
-            itr = _cache.erase(itr);
+            itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
             BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, toKeep.intervals() )
             {

@@ -4,16 +4,16 @@
 #include "tfr-filter.h"
 #include "tfr-cwt.h"
 #include "tfr-inversecwt.h"
-#include "signal-operation.h"
+#include "signal-operationcache.h"
 
 namespace Signal {
 
-class FilterOperation : public Signal::Operation
+class FilterOperation : public Signal::OperationCache
 {
 public:
     FilterOperation( pSource source, Tfr::pFilter filter);
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer readRaw( unsigned firstSample, unsigned numberOfSamples );
 
     /**
       Pick previous Tfr::Chunk. Used by heightmap rendering. Not guaranteed to

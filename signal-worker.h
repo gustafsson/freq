@@ -5,6 +5,8 @@
 #include "signal-samplesintervaldescriptor.h"
 #include <boost/noncopyable.hpp>
 #include <QMutex>
+#include <QThread>
+#include <QWaitCondition>
 
 namespace Signal {
 
@@ -101,7 +103,7 @@ underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
-class Worker
+class Worker:public QThread
 {
 public:
     Worker(pSource source);
@@ -121,7 +123,8 @@ public:
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
-    SamplesIntervalDescriptor todo_list;
+    void todo_list( SamplesIntervalDescriptor v );
+    SamplesIntervalDescriptor todo_list();
 
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
@@ -151,6 +154,11 @@ private:
     friend class WorkerCallback;
 
     /**
+      Runs the worker thread.
+      */
+    virtual void run();
+
+    /**
       A ChunkCompleteCallback adds itself to a cwtqueue.
       */
     void addCallback( pSink c );
@@ -168,7 +176,7 @@ private:
     /**
       All callbacks in this list are called once for each call of workOne().
       */
-    std::list<pSink> _callbacks; // TODO use pSink
+    std::list<pSink> _callbacks;
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
@@ -179,6 +187,17 @@ private:
       @see source
       */
     Signal::pSource _source;
+
+    /**
+      Thread safety for _todo_list.
+      */
+    QMutex _todo_lock;
+    QWaitCondition _todo_condition;
+
+    /**
+      @see todo_list
+      */
+    SamplesIntervalDescriptor _todo_list;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.

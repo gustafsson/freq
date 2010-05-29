@@ -16,14 +16,16 @@ namespace Signal {
   Otherwise, cached result from previous FilterOperation reads are immediately
   returned.
   */
-class FilterCache: public Operation
+class OperationCache: public Operation
 {
 public:
-    FilterCache( pSource source );
+    OperationCache( pSource source );
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer readRaw(unsigned firstSample, unsigned numberOfSamples ) = 0;
 
 private:
+    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+
     SinkSource _data;
 };
 

@@ -47,10 +47,11 @@ protected:
     pSource _source;
 
     /**
-      _invalid_samples describes which samples that havn't been read off from
-      Operation yet. It is initialized to SamplesIntervalDescriptor_ALL and is
-      gradually worked off by an implementation of Operation when returning
-      from read.
+      _invalid_samples describes which samples that should be re-read off from
+      Operation. It is initialized to SamplesIntervalDescriptor() and can be
+      used by an implementaion to say that the previous results are out of
+      date. If an implementaion use this feature it must also gradually worked
+      it off by calls to read.
       */
     SamplesIntervalDescriptor _invalid_samples;
     void validate_samples( pBuffer b );

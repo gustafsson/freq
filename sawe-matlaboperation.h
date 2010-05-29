@@ -1,7 +1,7 @@
 #ifndef SAWEMATLABOPERATION_H
 #define SAWEMATLABOPERATION_H
 
-#include "signal-operation.h"
+#include "signal-operationcache.h"
 
 namespace Sawe {
 
@@ -53,12 +53,12 @@ private:
     float _timeout;
 };
 
-class MatlabOperation: public Signal::Operation
+class MatlabOperation: public Signal::OperationCache
 {
 public:
     MatlabOperation( Signal::pSource source, std::string matlabFunction );
 
-    virtual Signal::pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual Signal::pBuffer readRaw( unsigned firstSample, unsigned numberOfSamples );
 protected:
     MatlabFunction _matlab;
 };

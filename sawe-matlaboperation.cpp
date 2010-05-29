@@ -94,13 +94,13 @@ string MatlabFunction::
 
 MatlabOperation::
         MatlabOperation( Signal::pSource source, std::string matlabFunction )
-:   Operation(source),
+:   OperationCache(source),
     _matlab(matlabFunction)
 {
 }
 
 pBuffer MatlabOperation::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        readRaw( unsigned firstSample, unsigned numberOfSamples )
 {
     TaskTimer tt("MatlabOperation::read(%u,%u)", firstSample, numberOfSamples );
 

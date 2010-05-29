@@ -7,6 +7,7 @@
 #include <CudaException.h>
 #include <GlException.h>
 #include <string>
+#include <QThread>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -72,17 +73,33 @@ void Collection::
         // Get a chunk for this block
         Tfr::pChunk chunk = getChunk( b, s );
 
-        // Update all blocks with this new chunk
-        BOOST_FOREACH( pBlock& pb, _cache )
+        if (_constructor_thread.isSameThread())
         {
-            Signal::SamplesIntervalDescriptor sid = pb->ref.getInterval();
-            sid &= chunk->getInterval();
-            if (!sid.isEmpty())
+            _updates.push_back( chunk );
+            applyUpdates();
+        }
+        else
+        {
+            Tfr::pChunk cpuChunk(new Tfr::Chunk);
+            cpuChunk->min_hz = chunk->min_hz;
+            cpuChunk->max_hz = chunk->max_hz;
+            cpuChunk->chunk_offset = chunk->chunk_offset;
+            cpuChunk->sample_rate = chunk->sample_rate;
+            cpuChunk->first_valid_sample = chunk->first_valid_sample;
+            cpuChunk->n_valid_samples = chunk->n_valid_samples;
+            cpuChunk->transform_data.reset( new GpuCpuData<float2>(0, chunk->transform_data->getNumberOfElements()));
+            cudaMemcpy( cpuChunk->transform_data->getCpuMemory(),
+                        chunk->transform_data->getCudaGlobal().ptr(),
+                        cpuChunk->transform_data->getSizeInBytes1D(),
+                        cudaMemcpyDeviceToHost );
+
             {
-                mergeBlock( pb, chunk, 0 );
-                computeSlope( pb, 0 );
+                QMutexLocker l(&_updates_mutex);
+                _updates.push_back( cpuChunk );
+                cpuChunk.reset(); // release cpuChunk before applyUpdate have move data to GPU
             }
-            pb->glblock->unmap();
+
+            _updates_condition.wait(&_updates_mutex);
         }
     } catch (const CudaException &) {
         // silently catch but don't bother to do anything
@@ -107,7 +124,7 @@ samples_per_block(unsigned v)
 }
 
 unsigned Collection::
-read_unfinished_count()
+    next_frame()
 {
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
@@ -117,6 +134,7 @@ read_unfinished_count()
         b->glblock->unmap();
     }
 
+    applyUpdates();
     return t;
 }
 
@@ -496,6 +514,33 @@ void Collection::
                   0);
 }
 
+void Collection::
+        applyUpdates()
+{
+    {
+        QMutexLocker l(&_updates_mutex);
+
+        BOOST_FOREACH( Tfr::pChunk& chunk, _updates )
+        {
+            // Update all blocks with this new chunk
+            BOOST_FOREACH( pBlock& pb, _cache )
+            {
+                Signal::SamplesIntervalDescriptor sid = pb->ref.getInterval();
+                sid &= chunk->getInterval();
+                if (!sid.isEmpty())
+                {
+                    mergeBlock( pb, chunk, 0 );
+                    computeSlope( pb, 0 );
+                }
+                pb->glblock->unmap();
+            }
+        }
+
+        _updates.clear();
+    }
+
+    _updates_condition.wakeAll();
+}
 
 void Collection::
         updateSlope( pBlock block, unsigned cuda_stream )

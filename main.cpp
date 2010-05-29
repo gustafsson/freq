@@ -435,6 +435,7 @@ int main(int argc, char *argv[])
         }
 
         Signal::pWorker wk( new Signal::Worker( wf ) );
+        wk->start();
         Heightmap::Collection* sgp( new Heightmap::Collection(wk) );
         Signal::pSink sg( sgp );
         sgp->samples_per_block( _samples_per_block );

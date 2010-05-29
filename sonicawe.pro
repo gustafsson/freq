@@ -30,7 +30,7 @@ SOURCES += main.cpp \
     selection.cpp \
     signal-source.cpp \
     signal-audiofile.cpp \
-    signal-filtercache.cpp \
+    signal-operationcache.cpp \
     signal-microphonerecorder.cpp \
     signal-operation.cpp \
     signal-operation-basic.cpp \
@@ -68,7 +68,7 @@ HEADERS += mainwindow.h \
     heightmap-position.h \
     signal-source.h \
     signal-audiofile.h \
-    signal-filtercache.h \
+    signal-operationcache.h \
     signal-microphonerecorder.h \
     signal-operation.h \
     signal-operation-basic.h \
