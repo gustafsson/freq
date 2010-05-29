@@ -98,6 +98,8 @@ protected slots:
     virtual void receiveCropSelection();
     virtual void receiveMoveSelection(bool);
     virtual void receiveMoveSelectionInTime(bool);
+    virtual void receiveMatlabOperation(bool);
+    virtual void receiveMatlabFilter(bool);
     virtual void receiveRecord(bool);
 signals:
     void operationsUpdated( Signal::pSource s );
@@ -109,6 +111,7 @@ private:
     friend class Heightmap::Renderer;
 
     virtual void put( Signal::pBuffer b);
+    virtual void put( Signal::pBuffer b, Signal::pSource ) { put (b); }
     Signal::FilterOperation* getFilterOperation();
 
     Heightmap::pRenderer _renderer;

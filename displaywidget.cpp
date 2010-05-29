@@ -26,6 +26,9 @@
 #include "signal-operation-composite.h"
 #include "signal-operation-basic.h"
 #include "sawe-csv.h"
+#include "sawe-hdf5.h"
+#include "sawe-matlabfilter.h"
+#include "sawe-matlaboperation.h"
 #include "signal-writewav.h"
 
 #include <msc_stdc.h>
@@ -388,7 +391,7 @@ void DisplayWidget::
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
     float radie = fabsf(selection[0].x - selection[1].x);
-    unsigned start = std::max(0.0f, selection[0].x - radie/sqrtf(2.f)) * FS;
+    unsigned start = std::max(0.f, selection[0].x - radie/sqrtf(2.f)) * FS;
     unsigned end = (selection[0].x + radie/sqrt(2.f)) * FS;
 
     if (end<=start)
@@ -489,6 +492,51 @@ void DisplayWidget::
         setWorkerSource();
         update();
     }
+}
+
+void DisplayWidget::
+        receiveMatlabOperation(bool)
+{
+    Signal::Operation *b = getFilterOperation();
+    Signal::pSource s( new Sawe::MatlabOperation( b->source(), "matlaboperation") );
+    b->source( s );
+    setWorkerSource();
+    update();
+    _renderer->collection()->updateInvalidSamples(Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL);
+}
+
+void DisplayWidget::
+        receiveMatlabFilter(bool)
+{
+    Signal::FilterOperation * b = getFilterOperation();
+
+    switch(1) {
+    case 1: // Everywhere
+        {
+            Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
+            Signal::pSource s( new Signal::FilterOperation( b->source(), f));
+            b->source( s );
+        break;
+        }
+    case 2: // Only inside selection
+        {
+        Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
+        Signal::pSource s( new Signal::FilterOperation( b->source(), f));
+        Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(b->inverse_cwt.filter.get());
+        if (e)
+            e->_save_inside = true;
+        Signal::pSource s2( new Signal::FilterOperation( s, b->inverse_cwt.filter));
+        b->source( s2 );
+        break;
+        }
+    }
+
+
+    b->meldFilters();
+    _renderer->collection()->updateInvalidSamples(b->filter()->getTouchedSamples( b->sample_rate()));
+
+    setWorkerSource();
+    update();
 }
 
 void DisplayWidget::keyPressEvent( QKeyEvent *e )

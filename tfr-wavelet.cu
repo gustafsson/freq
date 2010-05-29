@@ -6,7 +6,7 @@ __global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cu
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
 __global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
-__global__ void kernel_clamp( float* in_wt, cudaExtent in_numElem, size_t in_offset, size_t last_sample, float* out_clamped_wt, cudaExtent out_numElem );
+__global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt );
 
 static const char* gLastError = 0;
 
@@ -222,3 +222,32 @@ __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_wavef
 
     out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
 }
+
+void wtClamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt, cudaStream_t stream  )
+{
+    // Multiply the coefficients together and normalize the result
+
+    dim3 grid, block;
+    unsigned block_size = 256;
+    out_clamped_wt.wrapCudaGrid2D( block_size, grid, block );
+
+    if(grid.x>65535) {
+        setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+
+    kernel_clamp<<<grid, block, 0, stream>>>( in_wt, sample_offset, out_clamped_wt );
+}
+
+__global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt )
+{
+    elemSize3_t writePos;
+    if( !out_clamped_wt.unwrapCudaGrid( writePos ))
+        return;
+
+    elemSize3_t readPos = writePos;
+    readPos.x += sample_offset;
+
+    out_clamped_wt.e( writePos ) = in_wt.elem(readPos);
+}
+
