@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <boost/foreach.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <tvector.h>
 #include <math.h>
@@ -336,17 +337,26 @@ void DisplayWidget::receiveAddSelection(bool /*active*/)
     if (!postsink->inverse_cwt.filter)
         return;
 
-    Tfr::EllipsFilter* ef = dynamic_cast<Tfr::EllipsFilter*>( postsink->inverse_cwt.filter.get() );
-    if (ef)
-        ef->_save_inside = false;
+    { // If selection is an ellips, remove tfr data inside the ellips
+        Tfr::EllipsFilter* ef = dynamic_cast<Tfr::EllipsFilter*>( postsink->inverse_cwt.filter.get() );
+        if (ef)
+            ef->_save_inside = false;
+    }
 
-    Signal::FilterOperation *f = new Signal::FilterOperation( _worker->source(), postsink->inverse_cwt.filter );
+    Signal::FilterOperation *f;
+
+    Signal::pSource postsink_filter( f = new Signal::FilterOperation( _worker->source(), postsink->inverse_cwt.filter ));
     f->meldFilters();
-    f->filter()->enabled = false;
+
+    { // Test: MoveFilter
+     /*   Tfr::pFilter move( new Tfr::MoveFilter( 10 ));
+        postsink_filter.reset(f = new Signal::FilterOperation( postsink_filter, move ));
+        f->meldFilters();*/
+    }
 
     _renderer->collection()->add_expected_samples( f->filter()->getTouchedSamples(f->sample_rate()) );
 
-    setWorkerSource( Signal::pSource(f) );
+    setWorkerSource( postsink_filter );
     update();
 }
 
@@ -358,7 +368,7 @@ void DisplayWidget::
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
     float radie = fabsf(selection[0].x - selection[1].x);
-    unsigned start = std::max(0.0, selection[0].x - radie/sqrt(2.f)) * FS;
+    unsigned start = std::max(0.f, selection[0].x - radie/sqrtf(2.f)) * FS;
     unsigned end = (selection[0].x + radie/sqrt(2.f)) * FS;
 
     if (end<=start)
@@ -530,8 +540,7 @@ void DisplayWidget::put(Signal::pBuffer b )
     if (b) {
         QMutexLocker l(&_invalidRangeMutex);
 
-        _invalidRange |= Signal::SamplesIntervalDescriptor(
-                b->sample_offset, b->sample_offset + b->number_of_samples());
+        _invalidRange |= b->getInterval();
     }
 
     update();
@@ -872,12 +881,14 @@ void DisplayWidget::paintGL()
         computing_plot = true;
     }
     
-    if (computing_inverse) {
-        glClearColor(.8f, .8f, .8f, 0.0f);
-    } else if (computing_plot) {
-        glClearColor(.9f, .9f, .9f, 0.0f);
-    } else {
-        glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    if(0) {
+        if (computing_inverse) {
+            glClearColor(.8f, .8f, .8f, 0.0f);
+        } else if (computing_plot) {
+            glClearColor(.9f, .9f, .9f, 0.0f);
+        } else {
+            glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+        }
     }
     
     if (computing_prev || computing_inverse || computing_plot)
@@ -1402,20 +1413,16 @@ void DisplayWidget::
 {
     drawSelectionCircle();
 
-    static unsigned base_itr = 0;
-    static unsigned prev_itr = 0;
-    static QTime myClock;
-
-    QTime copyClock = myClock;
-    myClock = QTime();
+    static std::vector<unsigned> playback_itr;
+    static boost::posix_time::ptime myClock = boost::posix_time::microsec_clock::local_time();
 
     if (0==_postsinkCallback) {
-        base_itr = 0;
-        prev_itr = 0;
+        playback_itr.clear();
         return;
     }
 
     // Draw playback marker
+    // Find Signal::Playback* instance
     Signal::Playback* pb = 0;
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>( _postsinkCallback->sink().get() );
 
@@ -1426,11 +1433,15 @@ void DisplayWidget::
             break;
     }
 
+    // No playback instance
     if (!pb) return;
-    if (pb->isStopped()) return;
-    Signal::pBuffer b = pb->first_buffer();
-    if (0 == b) return;
 
+    // Playback has stopped
+    if (pb->isStopped()) {
+        playback_itr.clear();
+        return;
+    }
+    /*
     myClock = copyClock;
 
     if (myClock.isNull()) {
@@ -1438,17 +1449,19 @@ void DisplayWidget::
         base_itr = pb->playback_itr();
         prev_itr = pb->playback_itr();
     }
-
+*/
     unsigned this_itr = pb->playback_itr();
-    if (this_itr!=prev_itr) {
-        base_itr=prev_itr;//2*prev_itr - this_itr;
-        prev_itr=this_itr;
-        myClock.restart();
+    if (playback_itr.empty() || this_itr!=playback_itr.back()) {
+        playback_itr.push_back( this_itr );
+        if (playback_itr.size()>4) playback_itr.erase(playback_itr.begin());
+        myClock = boost::posix_time::microsec_clock::local_time();
     }
-    float dt = myClock.elapsed() * 0.001f;
+    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - myClock;
+    float dt = d.total_milliseconds()*0.001f;
     float y = 1;
-    float t = (/*b->sample_offset + */base_itr) / (float)b->sample_rate + dt - pb->outputLatency();
+    //float t = (/*b->sample_offset + */base_itr) / (float)pb->sample_rate + dt - pb->outputLatency();
     //float t = b->sample_offset / (float)b->sample_rate + pb->time();
+    float t = playback_itr[0]/(float)pb->sample_rate() + dt - .5*pb->outputLatency();
     glEnable(GL_BLEND);
     glDepthMask(false);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
