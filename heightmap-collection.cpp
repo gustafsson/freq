@@ -49,51 +49,28 @@ void Collection::
     try {
 //        TaskTimer tt(TaskTimer::LogVerbose, "Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
         TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
-        // If b extends source
-        static unsigned L = 0;
-        unsigned nL = s->number_of_samples();
-        if (nL > L)
-        {
-            unsigned std = Tfr::CwtSingleton::instance()->wavelet_std_samples( worker->source()->sample_rate());
-            //std;
-            if (L > std*8)
-            {
-                // Invalidate previous samples
-                Signal::SamplesIntervalDescriptor sid(
-                        L-std*4, L-std*0);
-                this->add_expected_samples( sid );
-            }
 
-            L = nL;
+        { // If b extends source
+            static unsigned L = 0;
+            unsigned nL = s->number_of_samples();
+            if (nL > L)
+            {
+                unsigned std = Tfr::CwtSingleton::instance()->wavelet_std_samples( worker->source()->sample_rate());
+                //std;
+                if (L > std*8)
+                {
+                    // Invalidate previous samples
+                    Signal::SamplesIntervalDescriptor sid(
+                            L-std*4, L-std*0);
+                    this->add_expected_samples( sid );
+                }
+
+                L = nL;
+            }
         }
 
         // Get a chunk for this block
-        Tfr::pChunk chunk;
-
-        // If buffer comes directly from a Signal::FilterOperation
-        Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s.get());
-        if (filterOp) {
-            // use the Cwt chunk still stored in FilterOperation
-            chunk = filterOp->previous_chunk();
-            tt.info("Stealing chunk from FilterOperation. Got %p", chunk.get());
-
-            if (0 == chunk) {
-                // try again
-                filterOp->read( b->sample_offset, b->number_of_samples() );
-                chunk = filterOp->previous_chunk();
-                tt.info("Failed, trying again. Got %p", chunk.get());
-            }
-        }
-
-        if (0 == chunk) {
-            // otherwise compute the Cwt of this block
-            chunk = Tfr::CwtSingleton::operate( b );
-
-            // Should either read extra data off from source or just compute a smaller chunk...
-            chunk->transform_data.reset();
-            chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
-            chunk->first_valid_sample = 0;
-        }
+        Tfr::pChunk chunk = getChunk( b, s );
 
         // Update all blocks with this new chunk
         BOOST_FOREACH( pBlock& pb, _cache )
@@ -306,9 +283,9 @@ void Collection::
         (*i)->valid_samples -= sid;
 
         // Remove cached blocks which are completely invalid
-        if ((*i)->valid_samples.isEmpty())
+/*        if ((*i)->valid_samples.isEmpty())
             i = _cache.erase( i );
-        else
+        else*/
             i++;
     }
 }

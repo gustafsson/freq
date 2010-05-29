@@ -7,6 +7,7 @@
 #include "signal-source.h"
 #include "signal-worker.h"
 #include "tfr-chunk.h"
+#include "tfr-chunksink.h"
 #include <vector>
 
 /*
@@ -103,7 +104,7 @@ typedef boost::shared_ptr<Block> pBlock;
   Signal::Sink::put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection: public Signal::Sink {
+class Collection: public Tfr::ChunkSink {
 public:
     Collection(Signal::pWorker worker);
 

@@ -46,7 +46,11 @@ SOURCES += main.cpp \
     tfr-filter.cpp \
     tfr-inversecwt.cpp \
     tfr-chunk.cpp \
+    tfr-chunksink.cpp \
     sawe-csv.cpp \
+    sawe-hdf5.cpp \
+    sawe-matlaboperation.cpp \
+    sawe-matlabfilter.cpp \
     signal-filteroperation.cpp \
     signal-worker.cpp \
     signal-writewav.cpp \
@@ -80,7 +84,11 @@ HEADERS += mainwindow.h \
     tfr-filter.h \
     tfr-inversecwt.h \
     tfr-chunk.h \
+    tfr-chunksink.h \
     sawe-csv.h \
+    sawe-hdf5.h \
+    sawe-matlaboperation.h \
+    sawe-matlabfilter.h \
     sawe-mainplayback.h \
     signal-filteroperation.h \
     signal-worker.h \
@@ -112,17 +120,17 @@ INCLUDEPATH += ../gpumisc
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 unix:INCLUDEPATH += /usr/local/cuda/include
 unix:LIBS = -lsndfile \
-    -L/usr/local/cuda/lib$$IS64 \
     -lGLEW \
     -lGLU \
     -lGL \
     -lglut \
-    -lportaudiocpp -lportaudio
+    -lportaudiocpp -lportaudio \
+    -lhdf5 \
+    -lhdf5_hl
 macx:INCLUDEPATH += /usr/local/cuda/include \
     ../../libs/include
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
-    -lcufft \
     -L../misc \
     -lmisc \
     -framework GLUT \
@@ -133,13 +141,22 @@ win32:INCLUDEPATH += \
 	..\..\winlib\glew\include \
 	..\..\winlib\portaudio\include \
 	..\..\winlib\libsndfile\include \
+	..\..\winlib\hdf5lib\include \
+	..\..\winlib\zlib\include \
+	..\..\winlib\szip\include \
 	..\..\winlib
 win32:LIBS += \
 	-l..\..\winlib\glut\glut32 \
 	-l..\..\winlib\glew\lib\glew32 \
     -l..\..\winlib\libsndfile\libsndfile-1 \
 	-l..\..\winlib\portaudio\portaudio \
-	-l..\..\winlib\portaudio\portaudiocpp
+	-l..\..\winlib\portaudio\portaudiocpp \
+	-l..\..\winlib\hdf5lib\lib\hdf5 \
+	-l..\..\winlib\hdf5lib\lib\hdf5_cpp \
+	-l..\..\winlib\hdf5lib\lib\hdf5_hl \
+	-l..\..\winlib\hdf5lib\lib\hdf5_hl_cpp \
+	-l..\..\winlib\szip\lib\libszip \
+	-l..\..\winlib\zlib\lib\zlib
 LIBS += -lcufft 
 unix:LIBS += -L../gpumisc -lgpumisc
 macx:LIBS += -L../gpumisc -lgpumisc

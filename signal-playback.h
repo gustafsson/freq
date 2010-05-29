@@ -18,6 +18,7 @@ public:
 
     // Overloaded from Sink
     virtual void put( pBuffer );
+    virtual void put( pBuffer b, pSource ) { put (b); }
     virtual void reset();
     virtual bool finished();
 

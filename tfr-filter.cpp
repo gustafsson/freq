@@ -211,9 +211,9 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
             start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
             end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-            sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
-            if (start_time < end_time)
-                    sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        if (start_time < end_time)
+                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
     }
 
     return sid;
@@ -230,9 +230,9 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
             start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
             end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-            sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
-            if (start_time < end_time)
-                    sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        if (start_time < end_time)
+                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
     }
 
     return sid;

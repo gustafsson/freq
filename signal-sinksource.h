@@ -15,9 +15,10 @@ public:
     SinkSource();
 
     virtual void put( pBuffer );
+    virtual void put( pBuffer b, pSource ) { put (b); }
+
     virtual void reset();
     virtual void add_expected_samples( SamplesIntervalDescriptor s );
-
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     /**
