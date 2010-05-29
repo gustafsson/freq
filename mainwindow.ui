@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -65,7 +65,7 @@
   <widget class="QDockWidget" name="layerWindow">
    <property name="minimumSize">
     <size>
-     <width>200</width>
+     <width>215</width>
      <height>209</height>
     </size>
    </property>
@@ -107,33 +107,29 @@
         <attribute name="title">
          <string>Operations</string>
         </attribute>
-        <widget class="QTreeWidget" name="operationsTree">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>256</width>
-           <height>241</height>
-          </rect>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="margin">
+          <number>0</number>
          </property>
-         <property name="autoFillBackground">
-          <bool>true</bool>
-         </property>
-         <property name="columnCount">
-          <number>1</number>
-         </property>
-         <attribute name="headerVisible">
-          <bool>false</bool>
-         </attribute>
-         <attribute name="headerVisible">
-          <bool>false</bool>
-         </attribute>
-         <column>
-          <property name="text">
-           <string>1</string>
-          </property>
-         </column>
-        </widget>
+         <item>
+          <widget class="QTreeWidget" name="operationsTree">
+           <property name="autoFillBackground">
+            <bool>true</bool>
+           </property>
+           <property name="columnCount">
+            <number>1</number>
+           </property>
+           <attribute name="headerVisible">
+            <bool>false</bool>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>1</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
        </widget>
        <widget class="QWidget" name="filterTab">
         <attribute name="title">

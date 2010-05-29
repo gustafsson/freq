@@ -50,7 +50,8 @@ SOURCES += main.cpp \
     signal-writewav.cpp \
     heightmap-renderer.cpp \
     heightmap-collection.cpp \
-    heightmap-reference.cpp
+    heightmap-reference.cpp \
+    stroke.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     tfr-wavelet.cu.h \
@@ -117,8 +118,7 @@ macx:INCLUDEPATH += /usr/local/cuda/include \
     ../../libs/include
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
-    -L../misc \
-    -lmisc \
+    -lcufft \
     -framework GLUT \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio
