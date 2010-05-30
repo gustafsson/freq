@@ -125,13 +125,19 @@ unix:LIBS = -lsndfile \
     -lhdf5 \
     -lhdf5_hl
 macx:INCLUDEPATH += /usr/local/cuda/include \
-    ../../libs/include
+    ../../libs/include \
+    ../../libs/hdf5/include \
+    ../../libs/sziplib/include \
+    ../../libs/zlib/include 
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -lcufft \
     -framework GLUT \
     -framework OpenGL \
-    -L../../libs -lportaudiocpp -lportaudio
+    -L../../libs -lportaudiocpp -lportaudio \
+    -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
+    -L../../libs/sziplib/bin -lsz \
+    -L../../libs/zlib/bin -lz 
 win32:INCLUDEPATH += \
 	..\..\winlib\glut \
 	..\..\winlib\glew\include \
@@ -139,7 +145,7 @@ win32:INCLUDEPATH += \
 	..\..\winlib\libsndfile\include \
 	..\..\winlib\hdf5lib\include \
 	..\..\winlib\zlib\include \
-	..\..\winlib\szip\include \
+	..\..\winlib\sziplib\include \
 	..\..\winlib
 win32:LIBS += \
 	-l..\..\winlib\glut\glut32 \
