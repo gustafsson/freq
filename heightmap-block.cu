@@ -15,7 +15,7 @@ __global__ void kernel_merge(
         return;
 
     float val = 0;
-    //unsigned n = 0;
+    unsigned n = 0;
 
     if (writePos.x>=out_offset)
     {
@@ -32,19 +32,19 @@ __global__ void kernel_merge(
                 if ( inBlock.valid(readPos) ) {
                     val += inBlock.elem(readPos);
 
-                    outBlock.e( writePos ) = val;
-                    return;
+                    //outBlock.e( writePos ) = val;
+                    //return;
 
-                    //n ++;
+                    n ++;
                 }
             }
         }
     }
-/*
+
     if (0<n) {
         val/=n;
         outBlock.elem( writePos ) = val;
-    }*/
+    }
 }
 
 extern "C"
@@ -92,10 +92,11 @@ __global__ void kernel_merge_chunk(
 
     if (writePos.x>=out_offset)
     {
-        float xs = resample_width/4;
+        // TODO xs should depend on hz
+        float xs = resample_width/10;
         if (1>xs) xs=1;
- //       for (float x = 0; x < resample_width; x+=xs)
-        float x = 0;
+        for (float x = 0; x < resample_width; x+=xs)
+ //       float x = 0;
         {
             float s = in_offset + x + resample_width*(writePos.x-out_offset);
 
@@ -109,7 +110,7 @@ __global__ void kernel_merge_chunk(
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
                 if ( inChunk.valid(readPos) ) {
                     float2 c = inChunk.elem(readPos);
-                    val += sqrt(c.x*c.x + c.y*c.y);
+                    val = max(val, sqrt(c.x*c.x + c.y*c.y));
 
  //outBlock.e( writePos ) = 4*val;
  //return;
@@ -139,7 +140,7 @@ __global__ void kernel_merge_chunk(
     __syncthreads();
 */
     if (0<n) {
-        val/=n;
+        //val/=n;
         outBlock.e( writePos ) = val;
     }
 }
