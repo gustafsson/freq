@@ -13,6 +13,9 @@
 #include <msc_stdc.h>
 #endif
 
+//#define TIME_COLLECTION
+#define TIME_COLLECTION if(0)
+
 namespace Heightmap {
 
 ///// HEIGHTMAP::BLOCK
@@ -44,34 +47,41 @@ Collection( Signal::pWorker worker )
 
 }
 
+Collection::
+    ~Collection()
+{
+    _updates_condition.wakeAll();
+    QMutexLocker l(&_updates_mutex);
+    _updates.clear();
+}
+
+void Collection::
+        reset()
+{
+    _cache.clear();
+    QMutexLocker l(&_updates_mutex);
+    _updates.clear();
+}
+
 void Collection::
     put( Signal::pBuffer b, Signal::pSource s)
 {
     try {
-//        TaskTimer tt(TaskTimer::LogVerbose, "Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
-        TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
-
-        { // If b extends source
-            static unsigned L = 0;
-            unsigned nL = s->number_of_samples();
-            if (nL > L)
-            {
-                unsigned std = Tfr::CwtSingleton::instance()->wavelet_std_samples( worker->source()->sample_rate());
-                //std;
-                if (L > std*8)
-                {
-                    // Invalidate previous samples
-                    Signal::SamplesIntervalDescriptor sid(
-                            L-std*4, L-std*0);
-                    this->add_expected_samples( sid );
-                }
-
-                L = nL;
-            }
+        Signal::SamplesIntervalDescriptor expected = expected_samples();
+        if ( (expected_samples() & b->getInterval()).isEmpty() ) {
+            TaskTimer("Collection::put received non requested block [%u, %u]", b->getInterval().first, b->getInterval().last);
+            return;
         }
+
+//        TaskTimer tt(TaskTimer::LogVerbose, "Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
+        TIME_COLLECTION TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
 
         // Get a chunk for this block
         Tfr::pChunk chunk = getChunk( b, s );
+        if ( (expected_samples() & chunk->getInterval()).isEmpty() ) {
+            TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk->getInterval().first, chunk->getInterval().last);
+            return;
+        }
 
         if (_constructor_thread.isSameThread())
         {
@@ -102,9 +112,9 @@ void Collection::
             _updates_condition.wait(&_updates_mutex);
         }
     } catch (const CudaException &) {
-        // silently catch but don't bother to do anything
+        // silently catch, don't bother to do anything
     } catch (const GlException &) {
-        // silently catch but don't bother to do anything
+        // silently catch, don't bother to do anything
     }
 }
 
@@ -283,28 +293,13 @@ void Collection::
 
 
 void Collection::
-        add_expected_samples( Signal::SamplesIntervalDescriptor sid )
+        add_expected_samples( const Signal::SamplesIntervalDescriptor& sid )
 {
-    BOOST_FOREACH( const Signal::SamplesIntervalDescriptor::Interval &i, sid.intervals() )
+    sid.print("Invalidating Heightmap::Collection");
+
+    BOOST_FOREACH( pBlock& b, _cache )
     {
-        TaskTimer tt(TaskTimer::LogVerbose, "Invalidating buffer [%u,%u]", i.first, i.last);
-    }
-
-    // canonical
-    // BOOST_FOREACH( pBlock& b, _cache )
-    // {
-    //    b->valid_samples -= sid;
-    // }
-
-    for (std::vector<pBlock>::iterator i = _cache.begin(); i!=_cache.end(); )
-    {
-        (*i)->valid_samples -= sid;
-
-        // Remove cached blocks which are completely invalid
-/*        if ((*i)->valid_samples.isEmpty())
-            i = _cache.erase( i );
-        else*/
-            i++;
+        b->valid_samples -= sid;
     }
 }
 
@@ -404,6 +399,8 @@ createBlock( Reference ref )
                 }
             }*/
 
+            // TODO compute at what log2_samples_size[1] stft is more accurate
+            // than low resolution blocks.
             if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // start with the blocks that are just slightly more detailed
@@ -429,11 +426,23 @@ createBlock( Reference ref )
             }
 
             if (1) {
+                TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                // then try to upscale blocks that are just slightly less detailed
+                BOOST_FOREACH( pBlock& b, _cache ) {
+                    if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]-1 ||
+                        block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1]-1)
+                    {
+                        mergeBlock( block, b, 0 );
+                    }
+                }
+            }
+
+            if (0) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                 // then try to upscale other blocks
                 BOOST_FOREACH( pBlock& b, _cache ) {
-                    if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0] ||
-                        block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1] )
+                    if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
+                        block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
                     {
                         mergeBlock( block, b, 0 );
                     }
@@ -469,8 +478,12 @@ createBlock( Reference ref )
 void Collection::
         computeSlope( pBlock block, unsigned cuda_stream )
 {
+    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
     GlBlock::pHeight h = block->glblock->height();
-    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
+    Position a,b;
+    block->ref.getArea(a,b);
+    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, b.time-a.time, cuda_stream );
+    TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
 void Collection::
@@ -496,7 +509,8 @@ void Collection::
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
           in_max_hz = tmax;
-    float in_min_hz = in_max_hz / 4/trans.chunk_size;
+//    float in_min_hz = in_max_hz / 4/trans.chunk_size;
+    float in_min_hz = 0;
 
     float out_stft_size = (trans.chunk_size/(float)stft->sample_rate)*block->sample_rate();
 
@@ -517,20 +531,32 @@ void Collection::
 void Collection::
         applyUpdates()
 {
+    {   QMutexLocker l(&_updates_mutex);
+        if (_updates.empty())
+            return;
+    }
+
+    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+    TIME_COLLECTION expected_samples().print("Before apply updates");
+
     {
+        // Keep the lock while updating as a means to prevent more memory from being allocated
         QMutexLocker l(&_updates_mutex);
 
         BOOST_FOREACH( Tfr::pChunk& chunk, _updates )
         {
+            Signal::SamplesIntervalDescriptor chunkSid = chunk->getInterval();
+            TIME_COLLECTION chunkSid.print("Applying chunk");
+
             // Update all blocks with this new chunk
             BOOST_FOREACH( pBlock& pb, _cache )
             {
-                Signal::SamplesIntervalDescriptor sid = pb->ref.getInterval();
-                sid &= chunk->getInterval();
-                if (!sid.isEmpty())
+                // This check is done i mergeBlock as well, but do it here first
+                // for a more local and thus faster loop.
+                if (!(chunkSid & pb->ref.getInterval()).isEmpty())
                 {
-                    mergeBlock( pb, chunk, 0 );
-                    computeSlope( pb, 0 );
+                    if (mergeBlock( pb, chunk, 0 ))
+                        computeSlope( pb, 0 );
                 }
                 pb->glblock->unmap();
             }
@@ -538,25 +564,19 @@ void Collection::
 
         _updates.clear();
     }
+    TIME_COLLECTION expected_samples().print("After apply updates");
 
     _updates_condition.wakeAll();
+
+    TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
-void Collection::
-        updateSlope( pBlock block, unsigned cuda_stream )
-{
-    GlBlock::pHeight h = block->glblock->height();
-    cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, cuda_stream );
-}
-
-void Collection::
+bool Collection::
         mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data)
 {
-    boost::shared_ptr<GpuCpuData<float> > outData;
-
     // Find out what intervals that match
-    Signal::SamplesIntervalDescriptor::Interval outInterval =  outBlock->ref.getInterval();
-    Signal::SamplesIntervalDescriptor::Interval inInterval =  inChunk->getInterval();
+    Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
+    Signal::SamplesIntervalDescriptor::Interval inInterval = inChunk->getInterval();
 
     Signal::SamplesIntervalDescriptor transferDesc = inInterval;
     transferDesc &= outInterval;
@@ -566,7 +586,11 @@ void Collection::
 
     // If block is already up to date, abort merge
     if (transferDesc.isEmpty())
-        return;
+        return false;
+
+    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+
+    boost::shared_ptr<GpuCpuData<float> > outData;
 
     // If mergeBlock is called by a separate worker thread it will also have a separate cuda context
     // and thus cannot write directly to the cuda buffer that is mapped to the rendering thread's
@@ -614,7 +638,7 @@ void Collection::
 
         outBlock->valid_samples |= transfer;
 
-        TaskTimer tt(TaskTimer::LogVerbose, "Inserting chunk [%u,%u]", transfer.first, transfer.last);
+        TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Inserting chunk [%u,%u]", transfer.first, transfer.last);
     }
 
     if (save_in_prepared_data) {
@@ -622,9 +646,12 @@ void Collection::
         outData->freeUnused();
         outBlock->prepared_data = outData;
     }
+
+    TIME_COLLECTION CudaException_ThreadSynchronize();
+    return true;
 }
 
-void Collection::
+bool Collection::
         mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
 {
     Signal::SamplesIntervalDescriptor::Interval inInterval = inBlock->ref.getInterval();
@@ -638,9 +665,10 @@ void Collection::
     transferDesc -= outBlock->valid_samples;
 
     // If block is already up to date, abort merge
-    if (transferDesc.isEmpty()) {
-        return;
-    }
+    if (transferDesc.isEmpty())
+        return false;
+
+    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
 
     float in_sample_rate = inBlock->sample_rate();
     float out_sample_rate = outBlock->sample_rate();
@@ -680,13 +708,17 @@ void Collection::
             inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
         {
             outBlock->valid_samples |= transfer;
-            TaskTimer tt(TaskTimer::LogVerbose, "Using block [%u,%u]", transfer.first, transfer.last);
+            TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Using block [%u,%u]", transfer.first, transfer.last);
         }
     }
 
     // These inblocks won't be rendered and thus unmapped very soon. outBlock will however be unmapped
     // very soon as it was requested for rendering.
     inBlock->glblock->unmap();
+
+    TIME_COLLECTION CudaException_ThreadSynchronize();
+
+    return true;
 }
 
 } // namespace Heightmap

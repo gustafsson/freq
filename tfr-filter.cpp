@@ -7,6 +7,9 @@
 #include <boost/foreach.hpp>
 #include "selection.h"
 
+#define TIME_FILTER
+//#define TIME_FILTER if(0)
+
 namespace Tfr {
 
 //////////// Filter
@@ -22,23 +25,6 @@ Signal::SamplesIntervalDescriptor Filter::
     Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
     sid -= getUntouchedSamples(FS);
     return sid;
-}
-
-Signal::SamplesIntervalDescriptor::Interval Filter::
-        coveredInterval(unsigned FS) const
-{
-    Signal::SamplesIntervalDescriptor sid = getTouchedSamples(FS);
-
-    Signal::SamplesIntervalDescriptor::Interval i;
-    if (sid.isEmpty()) {
-        i.first = i.last = 0;
-        return i;
-    }
-
-    i.first = sid.intervals().front().first;
-    i.last = sid.intervals().back().last;
-
-    return i;
 }
 
 //////////// FilterChain
@@ -93,7 +79,7 @@ SelectionFilter::SelectionFilter( Selection s ) {
 }
 
 void SelectionFilter::operator()( Chunk& chunk) {
-    TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
+    TIME_FILTER TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
     if (dynamic_cast<RectangleSelection*>(&s))
     {
@@ -127,7 +113,7 @@ void SelectionFilter::operator()( Chunk& chunk) {
         return;
     }
 
-    CudaException_ThreadSynchronize();
+    TIME_FILTER CudaException_ThreadSynchronize();
     return;
 }
 
@@ -185,19 +171,19 @@ EllipsFilter::EllipsFilter(float t1, float f1, float t2, float f2, bool save_ins
 }
 
 void EllipsFilter::operator()( Chunk& chunk) {
+    TIME_FILTER TaskTimer tt("EllipsFilter");
+
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset,
             _f1 * chunk.nScales(),
             _t2 * chunk.sample_rate - chunk.chunk_offset,
             _f2 * chunk.nScales());
 
-    TaskTimer tt(TaskTimer::LogVerbose, "EllipsFilter::operator()");
-
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
                   area, _save_inside );
 
-    CudaException_ThreadSynchronize();
+    TIME_FILTER CudaException_ThreadSynchronize();
 }
 
 Signal::SamplesIntervalDescriptor EllipsFilter::
@@ -249,19 +235,19 @@ SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_ins
 }
 
 void SquareFilter::operator()( Chunk& chunk) {
+    TIME_FILTER TaskTimer tt("SquareFilter");
+
     float4 area = make_float4(
         _t1 * chunk.sample_rate - chunk.chunk_offset,
         _f1 * chunk.nScales(),
         _t2 * chunk.sample_rate - chunk.chunk_offset,
         _f2 * chunk.nScales());
 
-    TaskTimer tt(__FUNCTION__);
-
     ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
                   area );
 
-    CudaException_ThreadSynchronize();
+    TIME_FILTER CudaException_ThreadSynchronize();
 }
 
 Signal::SamplesIntervalDescriptor SquareFilter::
@@ -311,14 +297,14 @@ MoveFilter::
 void MoveFilter::
         operator()( Chunk& chunk )
 {
-    TaskTimer tt(__FUNCTION__);
+    TIME_FILTER TaskTimer tt("MoveFilter");
 
     float df = _df * chunk.nScales();
 
     ::moveFilter( chunk.transform_data->getCudaGlobal(),
                   df, chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate, chunk.chunk_offset );
 
-    CudaException_ThreadSynchronize();
+    TIME_FILTER CudaException_ThreadSynchronize();
 }
 
 Signal::SamplesIntervalDescriptor MoveFilter::

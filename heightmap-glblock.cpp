@@ -1,15 +1,25 @@
+// Must include glew.h berfore gl.h
 #ifdef _MSC_VER
 #define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
 #include <windows.h>
 #endif
 #ifndef __APPLE__
   #include <GL/glew.h>
 #endif
+
 #include <vbo.h>
-#include <stdio.h>
+#include <demangle.h>
+
 #include "heightmap-collection.h"
 #include "heightmap-renderer.h"
+
+#include <stdio.h>
 #include <QResource>
+
+#define TIME_SHADER
+//#define TIME_SHADER if(0)
 
 namespace Heightmap {
 
@@ -19,7 +29,7 @@ namespace Heightmap {
 // Attach shader to a program
 void attachShader(GLuint prg, GLenum type, const char *name)
 {
-    TaskTimer tt("Compiling shader %s", name);
+    TIME_SHADER TaskTimer tt("Compiling shader %s", name);
     try {
         GLuint shader;
         FILE * fp=0;
@@ -64,7 +74,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         glDeleteShader(shader);
     } catch (const std::exception &x) {
 #ifndef __APPLE__
-        tt.info("Failed, throwing %s", typeid(x).name());
+        TIME_SHADER TaskTimer("Failed, throwing %s", demangle(typeid(x).name()).c_str()).suppressTiming();
 #endif
         throw;
     }

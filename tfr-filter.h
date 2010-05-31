@@ -30,7 +30,6 @@ public:
     virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const = 0;
 
     Signal::SamplesIntervalDescriptor getTouchedSamples( unsigned FS ) const;
-    Signal::SamplesIntervalDescriptor::Interval coveredInterval( unsigned FS ) const;
 
     /**
       TODO Define how/when enabled should be used

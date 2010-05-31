@@ -2,6 +2,9 @@
 #include <CudaException.h>
 #include <memory.h>
 
+//#define TIME_FILTEROPERATION
+#define TIME_FILTEROPERATION if(0)
+
 namespace Signal {
 
 FilterOperation::
@@ -15,96 +18,133 @@ FilterOperation::
 pBuffer FilterOperation::
         readRaw( unsigned firstSample, unsigned numberOfSamples )
 {
+    TIME_FILTEROPERATION TaskTimer tt("FilterOperation::readRaw ( %u, %u )", firstSample, numberOfSamples);
     unsigned wavelet_std_samples = cwt.wavelet_std_samples( _source->sample_rate());
 
     // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
     // into account and create an inverse that is of the desired size.
-    unsigned first_valid_sample = 0;
-    if (firstSample < wavelet_std_samples) first_valid_sample = firstSample;
-    else first_valid_sample = wavelet_std_samples;
-    firstSample -= first_valid_sample;
+    unsigned redundant_samples = 0;
+    if (firstSample < wavelet_std_samples) redundant_samples = firstSample;
+    else redundant_samples = wavelet_std_samples;
+
+    unsigned first_valid_sample = firstSample;
+    firstSample -= redundant_samples;
 
     if (numberOfSamples<.5f*wavelet_std_samples)
         numberOfSamples=.5f*wavelet_std_samples;
 
     _previous_chunk.reset();
 
-    // Decrease the amount of memory required
+    // If we're not asked to compute a chunk, take shortcuts
+    if (!_save_previous_chunk)
+    {
+        if (!_filter) {
+            TIME_FILTEROPERATION TaskTimer("No filter, moving on").suppressTiming();
+            return _source->read(first_valid_sample, numberOfSamples);
+        }
+
+        SamplesIntervalDescriptor work(first_valid_sample, first_valid_sample + numberOfSamples);
+
+        // If filter would make all these samples zero, return immediately
+        if ((work - _filter->getZeroSamples( _source->sample_rate() )).isEmpty()) {
+            pBuffer b( new Buffer( first_valid_sample, numberOfSamples, _source->sample_rate() ));
+            ::memset( b->waveform_data->getCpuMemory(), 0, b->waveform_data->getSizeInBytes1D());
+            TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp silent");
+            return b;
+        }
+
+        // If filter would leave all these samples unchanged, return immediately
+        if ((work-_filter->getUntouchedSamples( _source->sample_rate() )).isEmpty()) {
+            // Attempt a regular simple read
+            pBuffer b = _source->read(first_valid_sample, numberOfSamples);
+            work = b->getInterval();
+            work -= _filter->getUntouchedSamples( _source->sample_rate() );
+            if (work.isEmpty()) {
+                TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp unaffected");
+                return b;
+            }
+            TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp fixed unaffected");
+            // Failed, return the exact samples validated as untouched
+            return _source->readFixedLength(first_valid_sample, numberOfSamples);
+        }
+    }
+
+    // If we've reached this far, the transform will have to be computed
+
+    // These computations require a lot of memory allocations
+    // If we encounter out of cuda memory, we decrease the required
+    // memory in this while loop.
     pBuffer r;
-    while(true) {
-        try {
-            unsigned L = numberOfSamples + 2*wavelet_std_samples;
+    while(true) try {
+        unsigned L = redundant_samples + numberOfSamples + wavelet_std_samples;
 
-            // If filter would make all these samples zero, return immediately
-            if (!_save_previous_chunk)
-            {
-                if (_filter) {
-                    SamplesIntervalDescriptor work(firstSample, firstSample + L );
-                    work -= _filter->getZeroSamples( _source->sample_rate() );
-                    if (work.isEmpty()) {
-                        pBuffer b( new Buffer( firstSample, L, _source->sample_rate() ));
-                        ::memset( b->waveform_data->getCpuMemory(), 0, L);
-                        return b;
-                    }
-                }
-            }
+        pBuffer b = _source->readFixedLength( firstSample, L );
+        TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp subread");
 
-            pBuffer b = _source->readFixedLength( firstSample, L );
+        // Compute the continous wavelet transform
+        Tfr::pChunk c = cwt( b );
 
-            // If filter would leave these samples untouched, there is nothing to do; return
-            if (!_save_previous_chunk)
-            {
-                if (_filter) {
-                    SamplesIntervalDescriptor work(firstSample, firstSample + L );
-                    work -= _filter->getUntouchedSamples( _source->sample_rate() );
-                    if (work.isEmpty())
-                        return b;
-                } else {
-                    // If there is no filter to apply, there is nothing to do; return
-                    return b;
-                }
-            }
-
-            // Compute the continous wavelet transform
-            Tfr::pChunk c = cwt( b );
-
-            c->n_valid_samples += c->first_valid_sample - first_valid_sample;
-            c->first_valid_sample = first_valid_sample;
-
-            // Apply filter
-            if (_filter)
+        // Apply filter
+        if (_filter)
+        {
+            SamplesIntervalDescriptor work(c->getInterval());
+            work -= _filter->getUntouchedSamples( _source->sample_rate() );
+            // Only apply filter if it would affect these samples
+            if (!work.isEmpty())
             {
                 (*_filter)( *c );
             }
-
-            // Compute the inverse, unless it is the chunk that is the interesting part
-            if (!_save_previous_chunk)
-                r = inverse_cwt( *c );
-            else
-                r = b;
-
-            if (_save_previous_chunk)
-                _previous_chunk = c;
-
-            break;
-        } catch (const CufftException &) {
-            if (numberOfSamples>1) {
-                numberOfSamples/=2;
-                continue;
-            }
-            throw;
-        } catch (const CudaException &x) {
-            if (x.getCudaError() == cudaErrorMemoryAllocation && numberOfSamples>1) {
-                numberOfSamples/=2;
-                continue;
-            }
-            throw;
         }
+
+        // Don't compute the inverse if the chunk was requested.
+        if (_save_previous_chunk)
+        {
+            // Just make the buffer smaller
+            SamplesIntervalDescriptor::Interval i = c->getInterval();
+            r.reset(new Buffer(i.first, i.last-i.first,b->sample_rate));
+            if (b->interleaved() != Signal::Buffer::Only_Real)
+                b = b->getInterleaved(Signal::Buffer::Only_Real);
+            memcpy(r->waveform_data->getCpuMemory(),
+                   b->waveform_data->getCpuMemory() + (i.first - b->sample_offset),
+                   r->waveform_data->getSizeInBytes1D());
+        }
+        else
+        {
+            r = inverse_cwt( *c );
+        }
+
+        TIME_FILTEROPERATION SamplesIntervalDescriptor(r->getInterval()).print("FilterOp after inverse");
+
+        if (_save_previous_chunk)
+            _previous_chunk = c;
+
+        break;
+    } catch (const CufftException &) {
+        if (numberOfSamples>1) {
+            numberOfSamples/=2;
+            continue;
+        }
+        throw;
+    } catch (const CudaException &x) {
+        if (x.getCudaError() == cudaErrorMemoryAllocation && numberOfSamples>1) {
+            numberOfSamples/=2;
+            continue;
+        }
+        throw;
     }
 
     _save_previous_chunk = false;
 
     return r;
+}
+
+bool FilterOperation::
+        cacheMiss(unsigned firstSample, unsigned numberOfSamples)
+{
+    if (_save_previous_chunk)
+        return true;
+
+    return OperationCache::cacheMiss(firstSample, numberOfSamples);
 }
 
 void FilterOperation::
@@ -157,16 +197,15 @@ void FilterOperation::
 void FilterOperation::
         filter( Tfr::pFilter f )
 {
-    // Start with the assumtion that everything will have to be recomputed
-    SamplesIntervalDescriptor a = SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+    unsigned FS = sample_rate();
+
+    // Start with the assumtion that all touched samples will have to be recomputed
+    SamplesIntervalDescriptor a = f->getTouchedSamples(FS);
 
     if (_filter)
     {
         // Don't recompute what would still be zero
-        a -= (_filter->getZeroSamples( sample_rate() ) &= f->getZeroSamples( sample_rate() ));
-
-        // Don't recompute what would still be unaffected
-        a -= (_filter->getUntouchedSamples( sample_rate() ) &= f->getUntouchedSamples( sample_rate() ));
+        a -= (_filter->getZeroSamples( sample_rate() ) & f->getZeroSamples( sample_rate() ));
     }
 
     // The samples that were previously invalid are still invalid, merge

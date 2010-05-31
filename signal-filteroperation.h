@@ -14,6 +14,7 @@ public:
     FilterOperation( pSource source, Tfr::pFilter filter);
 
     virtual pBuffer readRaw( unsigned firstSample, unsigned numberOfSamples );
+    virtual bool cacheMiss(unsigned firstSample, unsigned numberOfSamples);
 
     /**
       Pick previous Tfr::Chunk. Used by heightmap rendering. Not guaranteed to

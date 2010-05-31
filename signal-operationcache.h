@@ -21,12 +21,26 @@ class OperationCache: public Operation
 public:
     OperationCache( pSource source );
 
-    virtual pBuffer readRaw(unsigned firstSample, unsigned numberOfSamples ) = 0;
-
-private:
+    /**
+      Redirects the read to '_cache' unless cacheMiss returns true in which
+      case it reads from 'readRaw'.
+      */
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
 
-    SinkSource _data;
+    /**
+      Function to read from on a cache miss
+      */
+    virtual pBuffer readRaw(unsigned firstSample, unsigned numberOfSamples ) = 0;
+
+    /**
+      Defines what a cache miss is, default implementation checks if the entire
+      sample range exists in _data. If any sample is non-existent in _data it is
+      a cache miss.
+      */
+    virtual bool cacheMiss(unsigned firstSample, unsigned numberOfSamples);
+
+private:
+    SinkSource _cache;
 };
 
 } // namespace Signal

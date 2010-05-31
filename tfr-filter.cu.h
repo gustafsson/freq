@@ -1,7 +1,7 @@
 #ifndef FILTER_CU_H
 #define FILTER_CU_H
 
-#include <cuda_runtime.h>
+#include <cudaPitchedPtrType.h>
 
 void        removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool _save_inside );
 void        removeRect( float2* wavelet, cudaExtent numElem, float4 area );

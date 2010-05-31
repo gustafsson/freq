@@ -2,6 +2,9 @@
 #include "tfr-inversecwt.h"
 #include "tfr-wavelet.cu.h"
 
+#define TIME_ICWT
+//#define TIME_ICWT if(0)
+
 namespace Tfr {
 
 InverseCwt::InverseCwt(cudaStream_t stream)
@@ -12,6 +15,8 @@ InverseCwt::InverseCwt(cudaStream_t stream)
 Signal::pBuffer InverseCwt::
 operator()(Tfr::Chunk& chunk)
 {
+    TIME_ICWT TaskTimer tt("InverseCwt");
+
     cudaExtent sz = make_cudaExtent( chunk.n_valid_samples, 1, 1);
     Signal::pBuffer r( new Signal::Buffer());
     r->sample_offset = chunk.chunk_offset + chunk.first_valid_sample;
@@ -49,7 +54,7 @@ operator()(Tfr::Chunk& chunk)
     }
 
     {
-        TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
+        TIME_ICWT TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
 
         if (e) {
             float4 area = make_float4(
@@ -85,7 +90,7 @@ operator()(Tfr::Chunk& chunk)
                          _stream );
         }
 
-        CudaException_ThreadSynchronize();
+        TIME_ICWT CudaException_ThreadSynchronize();
     }
 
 /*    {

@@ -110,11 +110,12 @@ typedef boost::shared_ptr<Block> pBlock;
 class Collection: public Tfr::ChunkSink {
 public:
     Collection(Signal::pWorker worker);
+    ~Collection();
 
     /**
       Releases all GPU resources allocated by Heightmap::Collection.
       */
-    virtual void reset() { gc(); }
+    virtual void reset();
 
     /**
       Computes the Cwt and updates the cache of blocks.
@@ -122,7 +123,7 @@ public:
     virtual void put( Signal::pBuffer, Signal::pSource );
 
     virtual Signal::SamplesIntervalDescriptor expected_samples();
-    virtual void add_expected_samples( Signal::SamplesIntervalDescriptor );
+    virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& );
 
     /**
       scales_per_block and samples_per_block are constants deciding how many blocks
@@ -193,7 +194,17 @@ private:
       Creates a new block.
       */
     pBlock      createBlock( Reference ref );
+
+    /**
+      Update the slope texture used by the vertex shader. Called when height
+      data has been updated. Also called by 'createBlock'.
+      */
     void        computeSlope( pBlock block, unsigned cuda_stream );
+
+    /**
+      Compoute a short-time Fourier transform (stft). Usefull for filling new
+      blocks with data really fast.
+      */
     void        prepareFillStft( pBlock block );
 
     /**
@@ -201,20 +212,16 @@ private:
       */
     void        applyUpdates();
 
-    /**
-      Update the slope texture used by the vertex shader. Called when height data has been updated.
-      */
-    void        updateSlope( pBlock block, unsigned cuda_stream );
 
     /**
-      Add block information from Cwt transform.
+      Add block information from Cwt transform. Returns whether any information was merged.
       */
-    void        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
+    bool        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
 
     /**
-      Add block information from another block.
+      Add block information from another block. Returns whether any information was merged.
       */
-    void        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
+    bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
 };
 
 } // namespace Heightmap
