@@ -9,6 +9,25 @@ typedef unsigned int cufftHandle; /* from cufft.h */
 
 namespace Tfr {
 
+
+class CufftHandleContext {
+public:
+    CufftHandleContext( cudaStream_t _stream ); // type defaults to cufftPlan1d( CUFFT_C2C )
+    ~CufftHandleContext();
+
+    cufftHandle operator()( unsigned elems, unsigned batch_size );
+
+private:
+    ThreadChecker _creator_thread;
+    cufftHandle _handle;
+    cudaStream_t _stream;
+    unsigned _elems;
+    unsigned _batch_size;
+
+    void destroy();
+    void create();
+};
+
 typedef boost::shared_ptr< GpuCpuData<float2> > pFftChunk;
 
 /**
@@ -20,10 +39,20 @@ public:
     Fft( cudaStream_t stream=0 );
     ~Fft();
 
-    pFftChunk operator()( Signal::pBuffer );
+    pFftChunk operator()( Signal::pBuffer b ) { return forward(b);}
+
+    pFftChunk forward( Signal::pBuffer );
+    pFftChunk backward( Signal::pBuffer );
 
 private:
-    cudaStream_t    _stream;
+    CufftHandleContext _fft_single;
+    cudaStream_t _stream;
+    std::vector<double> w;
+    std::vector<int> ip;
+    std::vector<double> q;
+
+    pFftChunk computeWithOoura( Signal::pBuffer buffer, int direction );
+    pFftChunk computeWithCufft( Signal::pBuffer buffer, int direction );
 };
 
 /**

@@ -11,7 +11,9 @@ macx:CONFIG -= app_bundle
 CONFIG += warn_on
 QT += opengl
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
+unix:QMAKE_CXXFLAGS_RELEASE -= -O2
 unix:QMAKE_CXXFLAGS_RELEASE += -O3
+macx:QMAKE_CXXFLAGS_RELEASE -= -O2
 macx:QMAKE_CXXFLAGS_RELEASE += -O3
 
 ### Settings for using llvm instead of gcc on linux
@@ -56,7 +58,8 @@ SOURCES += main.cpp \
     signal-writewav.cpp \
     heightmap-renderer.cpp \
     heightmap-collection.cpp \
-    heightmap-reference.cpp
+    heightmap-reference.cpp \
+    fft4g.c
 HEADERS += mainwindow.h \
     displaywidget.h \
     tfr-wavelet.cu.h \
