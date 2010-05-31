@@ -2,13 +2,13 @@
 #include "signal-filteroperation.h"
 #include "tfr-wavelet.cu.h"
 
+static const bool D = false;
+
 namespace Tfr {
 
 pChunk ChunkSink::
         getChunk( Signal::pBuffer b, Signal::pSource s )
 {
-    TaskTimer tt("ChunkSink::getChunk");
-
     Tfr::pChunk chunk;
 
     // If buffer comes directly from a Signal::FilterOperation
@@ -26,20 +26,21 @@ pChunk ChunkSink::
     if (filterOp) {
         // use the Cwt chunk still stored in FilterOperation
         chunk = filterOp->previous_chunk();
-        tt.info("Stealing filterOp chunk. Got %p", chunk.get());
+        if (D) if(chunk) Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk stole filterOp chunk");
 
         if (0 == chunk) {
             // try again
-            filterOp->readRaw( b->sample_offset, b->number_of_samples() );
+            filterOp->read( b->sample_offset, b->number_of_samples() );
             chunk = filterOp->previous_chunk();
-            tt.info("Failed, tried again. Got %p", chunk.get());
+            if(chunk) Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk stole on second try");
         }
     }
 
     if (0 == chunk) {
         // otherwise compute the Cwt of this block
+        Signal::SamplesIntervalDescriptor(b->getInterval()).print("ChunkSink::getChunk compute raw chunk");
         chunk = Tfr::CwtSingleton::operate( b );
-        tt.info("Computing raw chunk. Got %p", chunk.get());
+        Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk computed raw chunk");
 
         // Don't know anything aboout the nearby data, so assume its all valid
         chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
