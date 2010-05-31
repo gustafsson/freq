@@ -1,19 +1,13 @@
-function T = extract_cwt(filename, t_start, t_stop)
+% extract chunks from a sound file
 
-%call sonicawe and get information about number the chunks corresponding to the time
-%selection via system(['sonicawe' ARGUMENT]);
+function s_cwt = extract_cwt(soundfile,first,last)
 
-Fs;
-firstChunk;
-lastChunk;
-chunkLength;
-numFreq;
+	s_cwt = [];
 
-T1 = zeros(chunkLength,numFreq,2);
-
-for chunk=firstChunk:lastChunk
-	system(['sonicawe' '--extraxt_chunk=' num2str(chunk)]);
-	T1((chunkLength*chunk+1):(chunkLength*(chunk+1)),:,:) = load('sawe_chunk.h5');
+	for k=first:last;
+		system(['./sonicawe --get_hdf=' num2str(k) ' ' soundfile]);
+		data = load('sawe_chunk.h5');
+		s_cwt_one = flipud((data.chunk)');
+		s_cwt = [s_cwt s_cwt_one];
+	end
 end
-
-T = T1(:,:,1) + i*T1(:,:,2);
