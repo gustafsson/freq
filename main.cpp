@@ -67,6 +67,9 @@ static const char _sawe_usage_string[] =
 "                       the default input device/microphone.\n"
 "    playback_device    Selects a specific device for playback. -1 specifices the\n"
 "                       default output device.\n"
+"    multithread        If set, starts a parallell worker thread. Good if heavy \n"
+"                       filters are being used as the GUI won't be lock during\n"
+"                       computation.\n"
 "\n"
 "Sonic AWE, 2010\n";
 
@@ -74,7 +77,7 @@ static unsigned _channel=0;
 static unsigned _scales_per_octave = 50;
 //static float _wavelet_std_t = 0.1;
 static float _wavelet_std_t = 0.03;
-static unsigned _samples_per_chunk = 13;
+static unsigned _samples_per_chunk = 14;
 //static float _wavelet_std_t = 0.03;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
@@ -88,6 +91,7 @@ static bool _record = false;
 static int _record_device = -1;
 static int _playback_device = -1;
 static std::string _soundfile = "";
+static bool _multithread = false;
 static bool _sawe_exit=false;
 std::string fatal_error;
 
@@ -167,6 +171,7 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
         else if (readarg(&cmd, get_csv));
+        else if (readarg(&cmd, multithread));
         // TODO use _selectionfile
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
@@ -435,7 +440,10 @@ int main(int argc, char *argv[])
         }
 
         Signal::pWorker wk( new Signal::Worker( wf ) );
-        wk->start();
+
+        if (_multithread)
+            wk->start();
+
         Heightmap::Collection* sgp( new Heightmap::Collection(wk) );
         Signal::pSink sg( sgp );
         sgp->samples_per_block( _samples_per_block );
