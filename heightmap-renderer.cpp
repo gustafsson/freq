@@ -945,16 +945,19 @@ void Renderer::drawAxes( float T )
 
             for( int tone = startTone; tone<=endTone; tone++)
             {
-                float ff = log(440 * pow(tva12,tone-44)/min_hz)/steplogsize;
-                float ffN = log(440 * pow(tva12,tone-43)/min_hz)/steplogsize;
-                float ffP = log(440 * pow(tva12,tone-45)/min_hz)/steplogsize;
+                float ff = log(440 * pow(tva12,tone-45)/min_hz)/steplogsize;
+                float ffN = log(440 * pow(tva12,tone-44)/min_hz)/steplogsize;
+                float ffP = log(440 * pow(tva12,tone-46)/min_hz)/steplogsize;
+
+                int toneTest = tone;
+                while(toneTest<0) toneTest+=12;
 
                 bool blackKey = false;
-                switch(tone%12) { case 1: case 3: case 6: case 8: case 10: blackKey = true; }
+                switch(toneTest%12) { case 1: case 3: case 6: case 8: case 10: blackKey = true; }
                 bool blackKeyP = false;
-                switch((tone+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
+                switch((toneTest+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
                 bool blackKeyN = false;
-                switch((tone+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
+                switch((toneTest+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
                 glLineWidth(1);
                 float wN = ffN-ff, wP = ff-ffP;
                 if (blackKey)
