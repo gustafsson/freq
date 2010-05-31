@@ -59,7 +59,6 @@ SOURCES += main.cpp \
     heightmap-renderer.cpp \
     heightmap-collection.cpp \
     heightmap-reference.cpp \
-    stroke.cpp \
     fft4g.c
 HEADERS += mainwindow.h \
     displaywidget.h \
