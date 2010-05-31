@@ -24,13 +24,19 @@ public:
     /**
       For some sinks it makes sense to reset, for some it doesn't.
       */
-    virtual void reset() {}
+    virtual void reset() { _expected_samples = SamplesIntervalDescriptor(); }
 
     /**
-      If this Sink has recieved all expected_samples and is finished with its work, the caller
-      may remove this Sink.
+      If this Sink has recieved all expected_samples and is finished with its
+      work, the caller may remove this Sink.
       */
-    virtual bool finished() { return false; }
+    virtual bool isFinished() { return expected_samples().isEmpty(); }
+
+    /**
+      If a Sink should do something special when it has received all Buffers,
+      do it in onFinished(). onFinished() may be invoked more than once.
+      */
+    virtual void onFinished() {}
 
     // TODO virtual bool isUnderfed
 
@@ -40,7 +46,7 @@ public:
       playing a sound).
       */
     virtual SamplesIntervalDescriptor expected_samples() { return _expected_samples; }
-    virtual void add_expected_samples( SamplesIntervalDescriptor s ) { _expected_samples |= s; }
+    virtual void add_expected_samples( const SamplesIntervalDescriptor& s ) { _expected_samples |= s; }
 
 protected:
     /**

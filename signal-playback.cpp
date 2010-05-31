@@ -6,12 +6,14 @@
 #include <stdio.h> // todo remove
 
 using namespace std;
+using namespace boost::posix_time;
 
 namespace Signal {
 
 Playback::
         Playback( int outputDevice )
-:   _playback_itr(0),
+:   _data( SinkSource::AcceptStrategy_ACCEPT_EXPECTED_ONLY ),
+    _playback_itr(0),
     _output_device(0)
 {
     portaudio::AutoSystem autoSys;
@@ -31,7 +33,7 @@ Playback::
 
     if(first) cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for output." << endl << endl;
 
-    //first = false;
+    // first = false;
 }
 
 Playback::
@@ -39,8 +41,10 @@ Playback::
 {
     cout << "Clearing Playback" << endl;
     if (streamPlayback) {
-        streamPlayback->stop();
-        streamPlayback->close();
+        if (!streamPlayback->isStopped())
+            streamPlayback->stop();
+        if (streamPlayback->isOpen())
+            streamPlayback->close();
     }
 }
 
@@ -54,7 +58,7 @@ Playback::
     int 	iIndex 				= 0;
     string	strDetails			= "";
 
-    std::cout << "Enumerating sound devices (count " << iNumDevices << ")" << std::endl;
+    cout << "Enumerating sound devices (count " << iNumDevices << ")" << endl;
     for (portaudio::System::DeviceIterator i = sys.devicesBegin(); i != sys.devicesEnd(); ++i)
     {
         strDetails = "";
@@ -84,8 +88,18 @@ unsigned Playback::
 float Playback::
         time()
 {
-    return streamPlayback?streamPlayback->time():0;
-    //return streamPlayback?Pa_GetStreamTime(streamPlayback->paStream()):0;
+    if(_data.empty())
+        return 0.f;
+
+    // streamPlayback->time() doesn't seem to work (ubuntu 10.04)
+    // float dt = streamPlayback?streamPlayback->time():0;
+    
+    time_duration d = microsec_clock::local_time() - _startPlay_timestamp;
+    float dt = d.total_milliseconds()*0.001f;
+    float t = dt;
+    t += _data.first_buffer()->sample_offset / (float)sample_rate();
+    t -= outputLatency();
+    return std::max(0.f, t);
 }
 
 float Playback::
@@ -100,15 +114,11 @@ void Playback::
     TaskTimer tt("Playback::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
     //TaskTimer tt(TaskTimer::LogVerbose, "%s: Putting buffer [%u,%u]", __FUNCTION__, buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
-    _last_timestamp = clock();
-    if (SinkSource::empty())
-    {
+    _last_timestamp = microsec_clock::local_time();
+    if (_data.empty())
         _first_timestamp = _last_timestamp;
-        _playback_itr = buffer->sample_offset;
-        tt.info("Setting _playback_itr=%u", _playback_itr);
-    }
 
-    SinkSource::put( buffer );
+    _data.put( buffer );
 
     // Make sure the buffer is moved over to CPU memory.
     // (because the audio stream callback is executed from a different thread
@@ -126,40 +136,7 @@ void Playback::
         return;
     }
 
-    if (isUnderfed() ) {
-        tt.info("Waiting for more data");
-        //  Wait for more data
-
-    } else {
-        portaudio::System &sys = portaudio::System::instance();
-
-        tt.info("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
-
-        // Set up the parameters required to open a (Callback)Stream:
-        portaudio::DirectionSpecificStreamParameters outParamsPlayback(
-                sys.deviceByIndex(_output_device),
-                1, // mono sound
-                portaudio::FLOAT32,
-                false,
-                sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
-                //sys.deviceByIndex(_output_device).defaultHighOutputLatency(),
-                NULL);
-        portaudio::StreamParameters paramsPlayback(
-                portaudio::DirectionSpecificStreamParameters::null(),
-                outParamsPlayback,
-                buffer->sample_rate,
-                0,
-                paNoFlag);//paClipOff);
-
-        // Create (and open) a new Stream:
-        streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
-                paramsPlayback,
-                *this,
-                &Signal::Playback::readBuffer) );
-
-        if (streamPlayback)
-            streamPlayback->start();
-    }
+    onFinished();
 }
 
 void Playback::
@@ -172,14 +149,54 @@ void Playback::
             streamPlayback->stop();
     }
 
-    SinkSource::reset();
+    _data.reset();
     _playback_itr = 0;
 }
 
 bool Playback::
-        finished()
+        isFinished()
 {
     return expected_samples().isEmpty() && isStopped();
+}
+
+void Playback::
+        onFinished()
+{
+    if (isUnderfed() )
+    {
+        TaskTimer(TaskTimer::LogVerbose, "Waiting for more data");
+        return;
+    }
+
+    portaudio::System &sys = portaudio::System::instance();
+
+    TaskTimer(TaskTimer::LogVerbose, "Start playing on: %s", sys.deviceByIndex(_output_device).name() );
+
+    // Set up the parameters required to open a (Callback)Stream:
+    portaudio::DirectionSpecificStreamParameters outParamsPlayback(
+            sys.deviceByIndex(_output_device),
+            1, // mono sound
+            portaudio::FLOAT32,
+            false,
+            sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
+            //sys.deviceByIndex(_output_device).defaultHighOutputLatency(),
+            NULL);
+    portaudio::StreamParameters paramsPlayback(
+            portaudio::DirectionSpecificStreamParameters::null(),
+            outParamsPlayback,
+            sample_rate(),
+            0,
+            paNoFlag);//paClipOff);
+
+    // Create (and (re)open) a new Stream:
+    streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
+            paramsPlayback,
+            *this,
+            &Signal::Playback::readBuffer) );
+
+    _playback_itr = _data.first_buffer()->sample_offset;
+
+    streamPlayback->start();
 }
 
 bool Playback::
@@ -191,37 +208,43 @@ bool Playback::
 bool Playback::
         isUnderfed()
 {
-    unsigned nAccumulated_samples = SinkSource::number_of_samples();
+    unsigned nAccumulated_samples = _data.number_of_samples();
 
-    if (10>=SinkSource::size())
-        return true; // Haven't received much data, wait to do a better estimate
-
-    if (_expected_samples.isEmpty())
+    Signal::SamplesIntervalDescriptor expect = expected_samples();
+    if (!_data.empty() && expect.isEmpty()) {
+        TaskTimer("Not underfed").suppressTiming();
         return false; // No more expected samples, not underfed
+    }
 
+    if (10>=_data.size()) {
+        TaskTimer("Underfed").suppressTiming();
+        return true; // Haven't received much data, wait to do a better estimate
+    }
 
-    float accumulation_time = (_last_timestamp - _first_timestamp) / (float)CLOCKS_PER_SEC;
+    time_duration diff = _last_timestamp - _first_timestamp;
+    float accumulation_time = diff.total_milliseconds() / (float)1000.f;
 
     // _first_timestamp is taken after the first buffer,
     // _last_timestamp is taken after the last buffer,
     // that means that accumulation_time is the time it took to accumulate all buffers except
     // the first buffer.
-    float incoming_samples_per_sec = (nAccumulated_samples - SinkSource::first_buffer()->number_of_samples()) / accumulation_time;
+    float incoming_samples_per_sec = (nAccumulated_samples - _data.first_buffer()->number_of_samples()) / accumulation_time;
 
     float time_left =
-            (_expected_samples.intervals().back().last
-             - _playback_itr) / (float)SinkSource::sample_rate();
+            (expect.intervals().back().last
+             - _playback_itr) / (float)_data.sample_rate();
 
     // Add small margin
     time_left += .05f;
 
+    Signal::SamplesIntervalDescriptor::Interval cov = expect.coveredInterval();
     float estimated_time_required =
-            (_expected_samples.intervals().back().last
-             - _expected_samples.intervals().front().first) / incoming_samples_per_sec;
+            (cov.last - cov.first) / incoming_samples_per_sec;
 
     // Return if the estimated time to receive all expected samples is greater than
     // the time it would take to play the remaining part of the data.
     // If it is, the sink is underfed.
+    TaskTimer("Computed: %s underfed", time_left < estimated_time_required?"is":"not").suppressTiming();
     return time_left < estimated_time_required;
 }
 
@@ -236,18 +259,23 @@ int Playback::
     float **out = static_cast<float **>(outputBuffer);
     float *buffer = out[0];
 
-//    TaskTimer tt(TaskTimer::LogVerbose, "Reading %u, %u", _playback_itr, framesPerBuffer );
-    TaskTimer tt("Reading %u, %u", _playback_itr, framesPerBuffer );
-    if (SinkSource::first_buffer()->sample_offset + SinkSource::number_of_samples() < _playback_itr + framesPerBuffer) {
-        tt.info("Reading past end");
+    if (_playback_itr == _data.first_buffer()->sample_offset) {
+        _startPlay_timestamp = microsec_clock::local_time();
     }
-    pBuffer b = SinkSource::readFixedLength( _playback_itr, framesPerBuffer );
+
+    pBuffer b = _data.readFixedLength( _playback_itr, framesPerBuffer );
     memcpy( buffer, b->waveform_data->getCpuMemory(), framesPerBuffer*sizeof(float) );
     _playback_itr += framesPerBuffer;
 
-    if (SinkSource::first_buffer()->sample_offset + SinkSource::number_of_samples() + 10*2024/*framesPerBuffer*/ < _playback_itr ) {
-        tt.info("Reading done, %u", SinkSource::number_of_samples());
+    if (_data.first_buffer()->sample_offset + _data.number_of_samples() + 10*2024/*framesPerBuffer*/ < _playback_itr ) {
+        TaskTimer tt("Reading %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
         return paComplete;
+    } else {
+        if (_data.first_buffer()->sample_offset + _data.number_of_samples() < _playback_itr + framesPerBuffer) {
+            TaskTimer tt("Reading %u, %u. PAST END", _playback_itr, framesPerBuffer );
+        } else {
+            TaskTimer tt("Reading %u, %u", _playback_itr, framesPerBuffer );
+        }
     }
 
     return paContinue;

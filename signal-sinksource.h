@@ -12,13 +12,16 @@ namespace Signal {
 class SinkSource: public Sink, public Source
 {
 public:
-    SinkSource();
+    enum AcceptStrategy {
+        AcceptStrategy_ACCEPT_ALL,
+        AcceptStrategy_ACCEPT_EXPECTED_ONLY
+    };
 
-    virtual void put( pBuffer );
+    SinkSource( AcceptStrategy a );
+
+    void put( pBuffer );
     virtual void put( pBuffer b, pSource ) { put (b); }
-
     virtual void reset();
-    virtual void add_expected_samples( SamplesIntervalDescriptor s );
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     /**
@@ -34,8 +37,11 @@ public:
     SamplesIntervalDescriptor samplesDesc();
 
 private:
-    QMutex _mutex;
+    QMutex _cache_mutex;
     std::vector<pBuffer> _cache;
+    AcceptStrategy _acceptStrategy;
+
+    void merge( pBuffer );
 };
 
 typedef boost::shared_ptr<Sink> pSink;

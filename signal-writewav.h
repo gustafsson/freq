@@ -8,22 +8,28 @@
 
 namespace Signal {
 
-class WriteWav: public SinkSource
+class WriteWav: public Sink
 {
 public:
     WriteWav( std::string filename );
     ~WriteWav();
 
-    virtual void put( pBuffer );
+    // Overloaded from Sink
     virtual void put( pBuffer b, pSource ) { put (b); }
     virtual void reset();
-    virtual bool finished();
+    virtual bool isFinished();
+    virtual void onFinished();
+    virtual SamplesIntervalDescriptor expected_samples() { return _data.expected_samples(); }
+    virtual void add_expected_samples( const SamplesIntervalDescriptor& s ) { _data.add_expected_samples( s ); }
 
+    static void writeToDisk(std::string filename, pBuffer b);
+
+    void put( pBuffer );
 private:
+    SinkSource _data;
     std::string _filename;
 
     void writeToDisk();
-    void writeToDisk(pBuffer);
 };
 
 } // namespace Signal

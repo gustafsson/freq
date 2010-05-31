@@ -10,7 +10,8 @@ namespace Signal {
 
 WriteWav::
         WriteWav( std::string filename )
-            :   _filename(filename)
+:   _data(SinkSource::AcceptStrategy_ACCEPT_EXPECTED_ONLY),
+    _filename(filename)
 {
 }
 
@@ -25,45 +26,55 @@ void WriteWav::
 {
     TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
-    SinkSource::put( buffer );
+    _data.put( buffer );
 
-    if (_expected_samples.isEmpty())
+    if (_data.expected_samples().isEmpty())
         reset(); // Write to file
 }
 
 void WriteWav::
         reset()
 {
-    if (!SinkSource::empty())
+    if (!_data.empty())
         writeToDisk();
 
-    SinkSource::reset();
+    _data.reset();
 }
 
 bool WriteWav::
-        finished()
+        isFinished()
 {
     return expected_samples().isEmpty();
+}
+
+void WriteWav::onFinished()
+{
+    // WriteWav::onFinished doesn't do anything. WriteWav only calls
+    // writeToDisk to disk once for each put after which
+    // _data.expected_samples().isEmpty() is true.
+    // Afterwards _data is reset.
 }
 
 void WriteWav::
         writeToDisk()
 {
-    if (SinkSource::empty()) {
-        throw std::invalid_argument( std::string(__FUNCTION__) + ": refuse to write 0 samples to disk.");
-    }
+    SamplesIntervalDescriptor sid = _data.samplesDesc();
+    SamplesIntervalDescriptor::Interval i = sid.coveredInterval();
 
-    SamplesIntervalDescriptor sid = samplesDesc();
-    SamplesIntervalDescriptor::Interval i = sid.getInterval( SamplesIntervalDescriptor::SampleType_MAX, 0 );
+    BOOST_ASSERT(i.valid());
 
-    pBuffer b = SinkSource::readFixedLength( i.first, i.last );
-    writeToDisk( b );
+    sid.print("data to write");
+    pBuffer b = _data.readFixedLength( i.first, i.last );
+    writeToDisk( _filename, b );
 }
 
 void WriteWav::
-        writeToDisk(pBuffer b)
+        writeToDisk(std::string filename, pBuffer b)
 {
-    TaskTimer tt("%s %s", __FUNCTION__, _filename.c_str());
+    std::stringstream ss;
+    ss << b->getInterval();
+
+    TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(), ss.str().c_str());
 
     // TODO: figure out a way for Sonic AWE to work with stereo sound and write stereo to disk
 
@@ -72,7 +83,7 @@ void WriteWav::
     //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
     //int number_of_channels = 1;
-    SndfileHandle outfile(_filename.c_str(), SFM_WRITE, format, 1, b->sample_rate);
+    SndfileHandle outfile(filename.c_str(), SFM_WRITE, format, 1, b->sample_rate);
 
     if (!outfile) return;
 
