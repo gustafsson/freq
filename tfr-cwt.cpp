@@ -9,7 +9,8 @@
 #include "msc_stdc.h"
 #endif
 
-#define TIME_CWT
+#define TIME_CWT if(0)
+//#define TIME_CWT
 
 namespace Tfr {
 
@@ -19,6 +20,7 @@ Cwt::
     _stream( stream ),
     _min_hz( 20 ),
     _scales_per_octave( scales_per_octave ),
+    _fft_many(stream),
     _wavelet_std_t( wavelet_std_t )
 {
 }
@@ -26,47 +28,28 @@ Cwt::
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
+    std::stringstream ss;
+    TIME_CWT TaskTimer tt("Cwt buffer %s", ((std::stringstream&)(ss<<buffer->getInterval())).str().c_str() );
+
     pFftChunk ft ( _fft( buffer ) );
 
     pChunk intermediate_wt( new Chunk() );
 
     {
-        TaskTimer tt(TaskTimer::LogVerbose, "prerequisites");
-
         cudaExtent requiredWtSz = make_cudaExtent( ft->getNumberOfElements().width, nScales(buffer->sample_rate), 1 );
+        TIME_CWT TaskTimer tt("prerequisites (%u, %u, %u)", requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth);
 
         // allocate a new chunk
         intermediate_wt->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal ));
 
-        #ifdef TIME_CWT
-            CudaException_ThreadSynchronize();
-        #endif
+        TIME_CWT CudaException_ThreadSynchronize();
     }
 
     {
-        TaskTimer tt(TaskTimer::LogVerbose, "inflating");
+        TIME_CWT TaskTimer tt("inflating");
         intermediate_wt->sample_rate =  buffer->sample_rate;
         intermediate_wt->min_hz = _min_hz;
         intermediate_wt->max_hz = max_hz(buffer->sample_rate);
-
-        /*unsigned
-            first_valid = _samples_per_chunk*n,
-            offs;
-
-        if (first_valid > _wavelet_std_samples)
-            offs = first_valid - _wavelet_std_samples;
-        else
-            offs = 0;
-
-        first_valid-=offs;
-
-        _intermediate_wt->first_valid_sample = first_valid;
-        _intermediate_wt->chunk_offset = offs;
-        _intermediate_wt->n_valid_samples = _samples_per_chunk;
-        */
-        intermediate_wt->first_valid_sample = 0;
-        intermediate_wt->chunk_offset = 0;
-        intermediate_wt->n_valid_samples = buffer->number_of_samples();
 
         ::wtCompute( ft->getCudaGlobal().ptr(),
                      intermediate_wt->transform_data->getCudaGlobal().ptr(),
@@ -76,26 +59,42 @@ pChunk Cwt::
                      intermediate_wt->transform_data->getNumberOfElements(),
                      _scales_per_octave );
 
-        #ifdef TIME_CWT
-            CudaException_ThreadSynchronize();
-        #endif
+        TIME_CWT CudaException_ThreadSynchronize();
     }
 
     {
-        TaskTimer tt(TaskTimer::LogVerbose, "inverse fft");
-
         // Transform signal back
         GpuCpuData<float2>* g = intermediate_wt->transform_data.get();
         cudaExtent n = g->getNumberOfElements();
-        cufftComplex *d = g->getCudaGlobal().ptr();
 
-        cufftHandle     fft_many;
-        CufftException_SAFE_CALL(cufftPlan1d(&fft_many, n.width, CUFFT_C2C, n.height));
+        if (0 /* cpu version */ ) {
+            TIME_CWT TaskTimer tt("inverse ooura");
 
-        CufftException_SAFE_CALL(cufftSetStream(fft_many, _stream));
-        CufftException_SAFE_CALL(cufftExecC2C(fft_many, d, d, CUFFT_INVERSE));
-        cufftDestroy(fft_many);
+            // Move to CPU
+            float2* p = g->getCpuMemory();
 
+            Signal::pBuffer b( new Signal::Buffer(Signal::Buffer::Interleaved_Complex) );
+            for (unsigned h=0; h<n.height; h++) {
+                b->waveform_data.reset(
+                        new GpuCpuData<float>(p + n.width*h,
+                                       make_cudaExtent(2*n.width,1,1),
+                                       GpuCpuVoidData::CpuMemory, true));
+                pFftChunk fc = _fft.backward( b );
+                memcpy( p + n.width*h, fc->getCpuMemory(), fc->getSizeInBytes1D() );
+            }
+
+            // Move back to GPU
+            g->getCudaGlobal( false );
+        }
+        if (1 /* gpu version */ ) {
+            TIME_CWT TaskTimer tt("inverse cufft");
+
+            cufftComplex *d = g->getCudaGlobal().ptr();
+
+            CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
+
+            TIME_CWT CudaException_ThreadSynchronize();
+        }
         intermediate_wt->chunk_offset = buffer->sample_offset;
         intermediate_wt->first_valid_sample = wavelet_std_samples( buffer->sample_rate );
         if (0==buffer->sample_offset)
@@ -103,16 +102,11 @@ pChunk Cwt::
         intermediate_wt->max_hz = max_hz( buffer->sample_rate );
         intermediate_wt->min_hz = min_hz();
 
-        if (wavelet_std_samples( buffer->sample_rate ) + intermediate_wt->first_valid_sample >= buffer->number_of_samples())
-            ThrowInvalidArgument( _wavelet_std_t );
-        else
-            intermediate_wt->n_valid_samples = buffer->number_of_samples() - wavelet_std_samples( buffer->sample_rate ) - intermediate_wt->first_valid_sample;
+        BOOST_ASSERT(wavelet_std_samples( buffer->sample_rate ) + intermediate_wt->first_valid_sample < buffer->number_of_samples());
+
+        intermediate_wt->n_valid_samples = buffer->number_of_samples() - wavelet_std_samples( buffer->sample_rate ) - intermediate_wt->first_valid_sample;
 
         intermediate_wt->sample_rate = buffer->sample_rate;
-
-        #ifdef TIME_CWT
-            CudaException_ThreadSynchronize();
-        #endif
     }
 
     return intermediate_wt;

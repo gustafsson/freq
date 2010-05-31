@@ -7,35 +7,40 @@
 #include <QMutex>
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/scoped_ptr.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace Signal {
 
-class Playback: virtual public Sink
+class Playback: public Sink
 {
 public:
     Playback( int outputDevice/* = -1 */);
     ~Playback();
 
-    virtual void put( pBuffer );
+    // Overloaded from Sink
     virtual void put( pBuffer b, pSource ) { put (b); }
     virtual void reset();
+    virtual bool isFinished();
+    virtual void onFinished();
+    virtual SamplesIntervalDescriptor expected_samples() { return _data.expected_samples(); }
+    virtual void add_expected_samples( const SamplesIntervalDescriptor& s ) { _data.add_expected_samples( s ); }
 
-    SamplesIntervalDescriptor getMissingSamples();
     static void list_devices();
+
+    void put( pBuffer );
     unsigned    playback_itr();
     float       time();
     float       outputLatency();
-    pBuffer     first_buffer();
     unsigned    output_device() { return _output_device; }
     bool        isStopped();
     bool        isUnderfed();
-    void        preparePlayback( unsigned firstSample, unsigned number_of_samples );
-
+    unsigned    sample_rate() { return _data.sample_rate(); }
 private:
-    clock_t _first_timestamp;
-    clock_t _last_timestamp;
-
     SinkSource _data;
+    boost::posix_time::ptime
+            _first_timestamp,
+            _last_timestamp,
+            _startPlay_timestamp;
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,
@@ -47,10 +52,7 @@ private:
     boost::scoped_ptr<portaudio::MemFunCallbackStream<Playback> > streamPlayback;
 
     unsigned _playback_itr;
-    unsigned _first_invalid_sample;
     int _output_device;
-
-    unsigned nAccumulatedSamples();
 };
 
 } // namespace Signal

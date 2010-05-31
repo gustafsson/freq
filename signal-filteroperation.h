@@ -4,32 +4,44 @@
 #include "tfr-filter.h"
 #include "tfr-cwt.h"
 #include "tfr-inversecwt.h"
-#include "signal-operation.h"
+#include "signal-operationcache.h"
 
 namespace Signal {
 
-class FilterOperation : public Signal::Operation
+class FilterOperation : public Signal::OperationCache
 {
 public:
     FilterOperation( pSource source, Tfr::pFilter filter);
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer readRaw( unsigned firstSample, unsigned numberOfSamples );
+    virtual bool cacheMiss(unsigned firstSample, unsigned numberOfSamples);
 
     /**
       Pick previous Tfr::Chunk. Used by heightmap rendering. Not guaranteed to
       return a chunk, will return null unless polled before each call to 'read'
       (and 'read' concluded that a chunk had to be computed).
 
-      Also returns a chunk only once. Two subsequent calls to pick_... without
-      calling 'read' in between will make the second call return null.
+      When previous_chunk is polled before calling read, read will not compute
+      the inverse of a chunk. The caller may if need compute the inverse by
+
+        pBuffer b = FilterOperation::inverse_cwt(*FilterOperation::previous_chunk())
       */
-    Tfr::pChunk pick_previous_chunk();
+    Tfr::pChunk previous_chunk();
 
     /**
-      Get/set the Tfr::Filter for this operation.
+      Releases previous chunk prior to calling read.
+      */
+    void release_previous_chunk();
+
+    /**
+      Get the Tfr::Filter for this operation.
       */
     Tfr::pFilter    filter() const { return _filter; }
-    void            filter( Tfr::pFilter f ) { _filter = f; }
+
+    /**
+      Set the Tfr::Filter for this operation and update _invalid_samples.
+      */
+    void            filter( Tfr::pFilter f );
 
     Tfr::Cwt cwt;
     Tfr::InverseCwt inverse_cwt;
@@ -40,8 +52,8 @@ public:
       as source instead.
       */
     void meldFilters();
-private:
 
+private:
     Tfr::pFilter _filter;
     Tfr::pChunk _previous_chunk;
     bool _save_previous_chunk;

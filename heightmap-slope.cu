@@ -9,7 +9,7 @@ int cuda_iDivUp(int a, int b)
 
 
 // generate slope by partial differences in spatial domain
-__global__ void calculateSlopeKernel(float* h, float2 *slopeOut, unsigned int width, unsigned int height)
+__global__ void calculateSlopeKernel(float* h, float2 *slopeOut, unsigned int width, unsigned int height, float xscale)
 {
     unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
@@ -32,7 +32,7 @@ __global__ void calculateSlopeKernel(float* h, float2 *slopeOut, unsigned int wi
         bottom = 0;
 
     float2 slope = make_float2(
-        (h[i + right] - h[i + left])/(right-left),
+        (h[i + right] - h[i + left])/((right-left)*xscale),
         (h[i + width*bottom] - h[i + width*top])/(bottom-top));
     slopeOut[i] = slope;
 }
@@ -40,9 +40,9 @@ __global__ void calculateSlopeKernel(float* h, float2 *slopeOut, unsigned int wi
 
 extern "C"
 void cudaCalculateSlopeKernel(  float* hptr, float2 *slopeOut,
-                                unsigned int width, unsigned int height, unsigned cuda_stream)
+                                unsigned int width, unsigned int height, float xscale, unsigned cuda_stream)
 {
     dim3 block(8, 8, 1);
     dim3 grid2(cuda_iDivUp(width, block.x), cuda_iDivUp(height, block.y), 1);
-    calculateSlopeKernel<<<grid2, block, cuda_stream>>>(hptr, slopeOut, width, height);
+    calculateSlopeKernel<<<grid2, block, cuda_stream>>>(hptr, slopeOut, width, height, xscale);
 }

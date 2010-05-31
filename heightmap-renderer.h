@@ -22,7 +22,7 @@ public:
     Collection* collection() { return _collection; }
 
     void draw();
-    void drawAxes();
+    void drawAxes( float T );
 
     bool draw_piano;
     bool draw_hz;

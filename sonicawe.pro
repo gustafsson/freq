@@ -11,7 +11,9 @@ macx:CONFIG -= app_bundle
 CONFIG += warn_on
 QT += opengl
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
+unix:QMAKE_CXXFLAGS_RELEASE -= -O2
 unix:QMAKE_CXXFLAGS_RELEASE += -O3
+macx:QMAKE_CXXFLAGS_RELEASE -= -O2
 macx:QMAKE_CXXFLAGS_RELEASE += -O3
 
 ### Settings for using llvm instead of gcc on linux
@@ -30,6 +32,7 @@ SOURCES += main.cpp \
     selection.cpp \
     signal-source.cpp \
     signal-audiofile.cpp \
+    signal-operationcache.cpp \
     signal-microphonerecorder.cpp \
     signal-operation.cpp \
     signal-operation-basic.cpp \
@@ -37,6 +40,7 @@ SOURCES += main.cpp \
     signal-samplesintervaldescriptor.cpp \
     signal-sink.cpp \
     signal-sinksource.cpp \
+    signal-postsink.cpp \
     signal-playback.cpp \
     layer.cpp \
     tfr-stft.cpp \
@@ -55,7 +59,8 @@ SOURCES += main.cpp \
     heightmap-renderer.cpp \
     heightmap-collection.cpp \
     heightmap-reference.cpp \
-    stroke.cpp
+    stroke.cpp \
+    fft4g.c
 HEADERS += mainwindow.h \
     displaywidget.h \
     tfr-wavelet.cu.h \
@@ -67,6 +72,7 @@ HEADERS += mainwindow.h \
     heightmap-position.h \
     signal-source.h \
     signal-audiofile.h \
+    signal-operationcache.h \
     signal-microphonerecorder.h \
     signal-operation.h \
     signal-operation-basic.h \
@@ -75,6 +81,7 @@ HEADERS += mainwindow.h \
     signal-playback.h \
     signal-sink.h \
     signal-sinksource.h \
+    signal-postsink.h \
     layer.h \
     tfr-stft.h \
     tfr-cwt.h \

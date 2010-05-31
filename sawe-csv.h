@@ -14,7 +14,6 @@ namespace Sawe {
 class Csv: public Tfr::ChunkSink
 {
 public:
-    virtual void    put( Signal::pBuffer b ) { put(b, Signal::pSource()); }
     virtual void    put( Signal::pBuffer , Signal::pSource );
 };
 

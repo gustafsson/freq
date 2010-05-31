@@ -142,7 +142,7 @@ Signal::SamplesIntervalDescriptor::Interval Reference::
     Position a,b;
     getArea(a,b);
     unsigned FS = _collection->worker->source()->sample_rate();
-    Signal::SamplesIntervalDescriptor::Interval i = { a.time * FS, b.time*FS };
+    Signal::SamplesIntervalDescriptor::Interval i = { a.time * FS, b.time*FS+1 };
     return i;
 }
 

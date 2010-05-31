@@ -2,38 +2,45 @@
 #include "signal-filteroperation.h"
 #include "tfr-wavelet.cu.h"
 
+static const bool D = false;
+
 namespace Tfr {
 
 pChunk ChunkSink::
         getChunk( Signal::pBuffer b, Signal::pSource s )
 {
-    // Get a chunk for this block
     Tfr::pChunk chunk;
 
     // If buffer comes directly from a Signal::FilterOperation
     Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s.get());
 
-    Signal::pSource s2;
-
-    if (s)
-    {
-        s2.reset( filterOp = new Signal::FilterOperation( s, Tfr::pFilter()));
+    Signal::pSource s2; // Temp variable in function scope
+    if (!filterOp) {
+        // Not directly from a filterOp, do we have a source?
+        if (s) {
+            // Yes, rely on FilterOperation to read from the source and create the chunk
+            s2.reset( filterOp = new Signal::FilterOperation( s, Tfr::pFilter()));
+        }
     }
 
     if (filterOp) {
         // use the Cwt chunk still stored in FilterOperation
-        chunk = filterOp->pick_previous_chunk();
+        chunk = filterOp->previous_chunk();
+        if (D) if(chunk) Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk stole filterOp chunk");
 
         if (0 == chunk) {
             // try again
             filterOp->read( b->sample_offset, b->number_of_samples() );
-            chunk = filterOp->pick_previous_chunk();
+            chunk = filterOp->previous_chunk();
+            if(chunk) Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk stole on second try");
         }
     }
 
     if (0 == chunk) {
         // otherwise compute the Cwt of this block
+        Signal::SamplesIntervalDescriptor(b->getInterval()).print("ChunkSink::getChunk compute raw chunk");
         chunk = Tfr::CwtSingleton::operate( b );
+        Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk computed raw chunk");
 
         // Don't know anything aboout the nearby data, so assume its all valid
         chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
