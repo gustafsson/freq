@@ -11,7 +11,7 @@ varying float intensity;
 vec4 setWavelengthColor( float wavelengthScalar ) {
     vec4 spectrum[7];
         /* white background */
-    spectrum[0] = vec4( 1, 1, 1, 0 ),
+    spectrum[0] = vec4( 1, 0, 0, 0 ),
     spectrum[1] = vec4( 0, 0, 1, 0 ),
     spectrum[2] = vec4( 0, 1, 1, 0 ),
     spectrum[3] = vec4( 0, 1, 0, 0 ),
@@ -29,15 +29,16 @@ vec4 setWavelengthColor( float wavelengthScalar ) {
 
     int count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
     float f = float(count)*wavelengthScalar;
-    int i1 = int(max(0, min(f-1, float(count))));
-    int i2 = int(min(f, float(count)));
-    int i3 = int(min(f+1.0, float(count)));
-    int i4 = int(min(f+2.0, float(count)));
-    float s = f-float(i1);
-    float t = f-float(i2);
+    int i1 = floor(max(0.0, min(f-1.0, float(count))));
+    int i2 = floor(min(f, float(count)));
+    int i3 = floor(min(f+1.0, float(count)));
+    int i4 = floor(min(f+2.0, float(count)));
+    float t = (f-float(i2))*0.5;
+    float s = 0.5 + t;
 
     vec4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
-    rgb = mix(vec4( 1,1,1,0), rgb*0.5, wavelengthScalar);
+    float x = 1-(1-wavelengthScalar)*(1-wavelengthScalar)*(1-wavelengthScalar);
+    rgb = mix(vec4( 1,1,1,0), min(0.7,rgb*0.5), x);
     return rgb;
 }
 
