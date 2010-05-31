@@ -4,6 +4,7 @@
 #include "tfr-chunksink.h"
 #include "tfr-inversecwt.h"
 #include <vector>
+#include <QMutex>
 
 namespace Signal {
 
@@ -13,13 +14,20 @@ public:
     virtual void put( pBuffer, pSource );
 
     virtual void reset();
-    virtual bool finished();
+    virtual bool isFinished();
+    virtual void onFinished();
 
     virtual SamplesIntervalDescriptor expected_samples();
-    virtual void add_expected_samples( SamplesIntervalDescriptor s );
+    virtual void add_expected_samples( const SamplesIntervalDescriptor& s );
 
-    Tfr::InverseCwt inverse_cwt;
-    std::vector<pSink> sinks;
+    std::vector<pSink>  sinks();
+    void                sinks(std::vector<pSink> v);
+    Tfr::pFilter        filter();
+    void                filter(Tfr::pFilter, pSource s);
+private:
+    Tfr::InverseCwt _inverse_cwt;
+    QMutex _sinks_lock;
+    std::vector<pSink> _sinks;
 };
 
 } // namespace Signal

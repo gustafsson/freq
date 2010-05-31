@@ -12,7 +12,6 @@
 #include <cuda_gl_interop.h>
 #include <GpuCpuData.h>
 #include <stdio.h>
-#include <TaskTimer.h>
 #include <mappedvbo.h>
 
 

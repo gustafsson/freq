@@ -8,7 +8,8 @@ using namespace std;
 namespace Signal {
 
 MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
-:   _callback(0)
+:   _data(SinkSource::AcceptStrategy_ACCEPT_ALL),
+    _callback(0)
 {
     portaudio::System &sys = portaudio::System::instance();
 

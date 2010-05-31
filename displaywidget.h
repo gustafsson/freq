@@ -8,6 +8,7 @@
 #include "heightmap-renderer.h"
 #include "sawe-mainplayback.h"
 #include "signal-filteroperation.h"
+#include "signal-postsink.h"
 #include <boost/shared_ptr.hpp>
 #include <TAni.h>
 #include <queue>
@@ -44,7 +45,10 @@ struct MyVector{
     float x, y, z;
 };
 
-class DisplayWidget : public QGLWidget, public Signal::Sink /* sink is used as microphone callback */
+class DisplayWidget :
+        public QGLWidget,
+        public Signal::Sink//, /* sink is used as microphone callback */
+//        public QTimer
 {
     Q_OBJECT
 public:
@@ -91,6 +95,7 @@ protected slots:
 
 
     virtual void receivePlaySound();
+    virtual void receiveFollowPlayMarker( bool v );
     virtual void receiveToggleHz(bool);
     virtual void receiveAddSelection(bool);
     virtual void receiveAddClearSelection(bool);
@@ -113,14 +118,17 @@ private:
     virtual void put( Signal::pBuffer b);
     virtual void put( Signal::pBuffer b, Signal::pSource ) { put (b); }
     Signal::FilterOperation* getFilterOperation();
+    Signal::PostSink* getPostSink();
 
     Heightmap::pRenderer _renderer;
     Signal::pWorker _worker;
     Signal::pWorkerCallback _collectionCallback;
     Signal::pWorkerCallback _postsinkCallback;
+    boost::scoped_ptr<TaskTimer> _work_timer;
 
     std::string _selection_filename;
     unsigned _playback_device;
+    bool _follow_play_marker;
 
     struct ListCounter {
         GLuint displayList;
@@ -137,7 +145,8 @@ private:
     float _px, _py, _pz,
 		_rx, _ry, _rz,
 		_qx, _qy, _qz,
-		_renderRatio;
+                _renderRatio,
+                _playbackMarker;
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive;
     QMutex _invalidRangeMutex;
@@ -166,6 +175,9 @@ private:
     void setSelection(int i, bool enabled);
     void removeFilter(int i);
     
+    void drawWorking();
+    void locatePlaybackMarker();
+    void drawPlaybackMarker();
     void drawSelection();
     void drawSelectionCircle();
     void drawSelectionCircle2();

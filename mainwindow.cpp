@@ -102,6 +102,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(receiveToggleSelection(bool)));
     connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(receiveToggleNavigation(bool)));
     connect(this->ui->actionPlaySelection, SIGNAL(triggered()), d, SLOT(receivePlaySound()));
+    connect(this->ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), d, SLOT(receiveFollowPlayMarker(bool)));
     connect(this->ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), d, SLOT(receiveTogglePiano(bool)));
     connect(this->ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), d, SLOT(receiveToggleHz(bool)));
     connect(this->ui->actionActionAdd_selection, SIGNAL(triggered(bool)), d, SLOT(receiveAddSelection(bool)));
