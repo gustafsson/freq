@@ -1002,7 +1002,7 @@ void Renderer::drawAxes( float T )
                     glScalef(0.00014f*ST,0.00014f*SF,1.f);
 
                     char a[100];
-                    sprintf(a,"C%d", tone/12 - 4);
+                    sprintf(a,"C%d", tone/12 - 3);
                     unsigned w=20;
                     if (sign<0) {
                         for (char*c=a;*c!=0; c++)
