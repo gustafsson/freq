@@ -668,7 +668,7 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     return true;
 }
 
-void Renderer::drawAxes()
+void Renderer::drawAxes( float T )
 {
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
@@ -691,8 +691,8 @@ void Renderer::drawAxes()
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        glEnable(GL_BLEND);
-        glBlendFunc( GL_ONE, GL_SRC_ALPHA );
+        //glEnable(GL_BLEND);
+        //glBlendFunc( GL_ONE, GL_SRC_ALPHA );
         glDisable(GL_DEPTH_TEST);
 
         glColor4f( .4f, .4f, .4f, .4f );
@@ -720,7 +720,7 @@ void Renderer::drawAxes()
 
         glEnable(GL_DEPTH_TEST);
 
-        glDisable(GL_BLEND);
+        //glDisable(GL_BLEND);
 
         glMatrixMode(GL_PROJECTION);
         glPopMatrix();
@@ -730,9 +730,9 @@ void Renderer::drawAxes()
 
     // 2 clip entire sound to frustum
     std::vector<GLvector> clippedFrustum;
-    float T = _collection->worker->source()->length();
-    GLvector closest_i;
-    {
+
+    {   //float T = _collection->worker->source()->length();
+        GLvector closest_i;
         GLvector corner[4]=
         {
             GLvector( 0, 0, 0),
@@ -749,8 +749,7 @@ void Renderer::drawAxes()
     float DT=0, DF=0, ST=0, SF=0;
     int st = 0, sf = 0;
     GLvector inside;
-    {
-        float mint=T, maxt=0, minf=1, maxf=0;
+    {   float mint=FLT_MAX, maxt=0, minf=1, maxf=0;
         for (unsigned i=0; i<clippedFrustum.size(); i++)
         {
             unsigned j=(i+1)%clippedFrustum.size();
@@ -786,14 +785,14 @@ void Renderer::drawAxes()
         }
     }
 
-    glDisable(GL_DEPTH_TEST);
 
     // 4 render
     GLvector x(1,0,0), z(0,0,1);
 
-    glEnable(GL_BLEND);
+    //glEnable(GL_BLEND);
     glDepthMask(false);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     float min_hz = Tfr::CwtSingleton::instance()->min_hz();
     float max_hz = Tfr::CwtSingleton::instance()->max_hz( _collection->worker->source()->sample_rate() );
@@ -822,7 +821,7 @@ void Renderer::drawAxes()
         // unsigned p[2]/DF; // t marker index along f
         if (v[2] > 0) f+=fc;
 
-        // decide if this side is an t or f axis
+        // decide if this side is a t or f axis
         bool taxis = fabsf(v[0]*SF) > fabsf(v[2]*ST);
 
         if (taxis || draw_hz)
@@ -942,10 +941,6 @@ void Renderer::drawAxes()
 
             int startTone = log(F1/440.f)/log(tva12) + 45;
             int endTone = log(F2/440.f)/log(tva12) + 44;
-            //if (startTone<0)
-            //    startTone = -5;
-            //if (endTone>200)
-            //    endTone = 117;
             float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
 
             for( int tone = startTone; tone<=endTone; tone++)
@@ -953,14 +948,7 @@ void Renderer::drawAxes()
                 float ff = log(440 * pow(tva12,tone-44)/min_hz)/steplogsize;
                 float ffN = log(440 * pow(tva12,tone-43)/min_hz)/steplogsize;
                 float ffP = log(440 * pow(tva12,tone-45)/min_hz)/steplogsize;
-    //            float ff = log(440 * pow(tva12,tone-49)/min_hz)/steplogsize;
-  //              float ffN = log(440 * pow(tva12,tone-48)/min_hz)/steplogsize;
-//                float ffP = log(440 * pow(tva12,tone-50)/min_hz)/steplogsize;
-//                float ff = log(exp(tone*.05)/t->min_hz())/steplogsize;
-//                float ffN = log(exp((tone+1)*.05)/t->min_hz())/steplogsize;
-//                float ffP = log(exp((tone-1)*.05)/t->min_hz())/steplogsize;
-                //if (ff>1)
-                //    break;
+
                 bool blackKey = false;
                 switch(tone%12) { case 1: case 3: case 6: case 8: case 10: blackKey = true; }
                 bool blackKeyP = false;
@@ -1008,10 +996,8 @@ void Renderer::drawAxes()
                     glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
                     glRotatef(90,1,0,0);
 
-                    // glTranslatef(.5f*pn[0]+.5f*pp[0] - .0515f,0,.15f*pn[0]+.85f*pp[0]);
-                    //float s = (wN+wP)*0.01f*.7f;
-                        glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                    //glScalef(s*.5f,s,s);
+                    glScalef(0.00014f*ST,0.00014f*SF,1.f);
+
                     char a[100];
                     sprintf(a,"C%d", tone/12 - 4);
                     unsigned w=20;
@@ -1030,7 +1016,7 @@ void Renderer::drawAxes()
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
-    glDisable(GL_BLEND);
+    //glDisable(GL_BLEND);
 }
 
 } // namespace Heightmap
