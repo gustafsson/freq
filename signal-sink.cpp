@@ -3,18 +3,17 @@
 
 namespace Signal {
 
-Sink::Sink()
-:   _expected_samples_left( 0 )
-{}
-
-unsigned Sink::expected_samples_left()
+/*
+SamplesIntervalDescriptor Sink::
+        expected_samples() const
 {
-    return _expected_samples_left;
+    return _expected_samples;
 }
 
-void Sink::expected_samples_left(unsigned expected_samples_left)
+void Sink::
+        add_expected_samples( SamplesIntervalDescriptor s)
 {
-    _expected_samples_left = expected_samples_left;
-}
+    _expected_samples |= s;
+}*/
 
 } // namespace Signal

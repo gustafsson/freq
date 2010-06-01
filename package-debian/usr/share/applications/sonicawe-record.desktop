@@ -8,7 +8,7 @@ Icon=sonicawe
 Type=Application
 Categories=AudioVideo;Audio;AudioVideoEditing;
 
-Exec=sonicawe --record=1
+Exec=sonicawe --record
 StartupNotify=false
 Terminal=false
-MimeType=application/ogg;audio/basic;audio/mpeg;audio/x-aiff;audio/x-wav;
+MimeType=

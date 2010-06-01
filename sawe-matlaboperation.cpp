@@ -44,9 +44,9 @@ MatlabFunction::
 
         if(0==_pid)
         {
-            ::execlp("matlab","matlab", "-q", "--eval", ss.str().c_str(), NULL );
+            ::execlp("matlab","matlab", "-qf", "--eval", ss.str().c_str(), NULL );
             // apparently failed, try matlab
-            ::execlp("octave","octave", "-q", "--eval", ss.str().c_str(), NULL );
+            ::execlp("octave","octave", "-qf", "--eval", ss.str().c_str(), NULL );
             // failed that to... will eventually time out
             exit(0);
         }
@@ -94,13 +94,13 @@ string MatlabFunction::
 
 MatlabOperation::
         MatlabOperation( Signal::pSource source, std::string matlabFunction )
-:   Operation(source),
+:   OperationCache(source),
     _matlab(matlabFunction)
 {
 }
 
 pBuffer MatlabOperation::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        readRaw( unsigned firstSample, unsigned numberOfSamples )
 {
     TaskTimer tt("MatlabOperation::read(%u,%u)", firstSample, numberOfSamples );
 

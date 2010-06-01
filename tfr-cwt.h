@@ -60,6 +60,7 @@ private:
     cudaStream_t    _stream;
     float           _min_hz;
     float           _scales_per_octave;
+    CufftHandleContext _fft_many;
 
     /**
       Default value: wavelet_std_samples=0.03.

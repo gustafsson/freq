@@ -1,9 +1,16 @@
 #include "signal-worker.h"
 #include "signal-samplesintervaldescriptor.h"
+#include "signal-filteroperation.h"
 #include <QTime>
 #include <QMutexLocker>
 #include <boost/foreach.hpp>
 #include <CudaException.h>
+
+#define TIME_WORKER
+//#define TIME_WORKER if(0)
+
+using namespace std;
+using namespace boost::posix_time;
 
 namespace Signal {
 
@@ -18,32 +25,41 @@ Worker::
     // but 1<< 12 works well on most GPUs
 }
 
+Worker::
+        ~Worker()
+{
+    this->quit();
+    todo_list( SamplesIntervalDescriptor() );
+}
 
 ///// OPERATIONS
 
 
 bool Worker::
-        workOne( unsigned middle_chunk )
+        workOne()
 {
-    QTime t;
-    t.start();
-
-    // todo_list &= SamplesIntervalDescriptor(0, _source->number_of_samples());
-
-    if (todo_list.isEmpty())
+    if (todo_list().isEmpty())
         return false;
 
+    unsigned center_sample = source()->sample_rate() * center;
+    stringstream ss;
+    TIME_WORKER TaskTimer tt("Working %s from %u", ((std::stringstream&)(ss<<todo_list())).str().c_str(), center_sample );
+
+    ptime startTime = microsec_clock::local_time();
+
     SamplesIntervalDescriptor::Interval interval;
-    interval = todo_list.getInterval( _samples_per_chunk, middle_chunk );
-    if (interval.first == interval.last) {
-        throw std::invalid_argument(std::string(__FUNCTION__) + " todo_list.getInterval returned interval.first == interval.last" );
-    }
+    interval = todo_list().getInterval( _samples_per_chunk, center_sample );
 
     pBuffer b;
 
-    try {
+    try
+    {
+        stringstream ss;
+        TIME_WORKER TaskTimer tt("Reading source %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
+
         b = _source->read( interval.first, interval.last-interval.first );
-        todo_list -= SamplesIntervalDescriptor( b->sample_offset, b->sample_offset + b->number_of_samples() );
+        QMutexLocker l(&_todo_lock);
+        _todo_list -= b->getInterval();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
             _samples_per_chunk >>=1;
@@ -53,9 +69,15 @@ bool Worker::
         }
     }
 
-    callCallbacks( b );
+    {   stringstream ss;
+        TIME_WORKER TaskTimer tt("Calling callbacks %s", ((std::stringstream&)(ss<<b->getInterval())).str().c_str() );
 
-    int milliseconds = t.elapsed();
+        callCallbacks( b );
+    }
+
+    time_duration diff = microsec_clock::local_time() - startTime;
+
+    unsigned milliseconds = diff.total_milliseconds();
     if (0==milliseconds) milliseconds=1;
 
     if (0) {
@@ -63,6 +85,7 @@ bool Worker::
         {
             if (1<_samples_per_chunk) {
                 _samples_per_chunk>>=1;
+                tt.info("New samples per chunk, %u", _samples_per_chunk);
             }
         }
         else if (1000.f/milliseconds > 2.5f*_requested_fps)
@@ -70,6 +93,8 @@ bool Worker::
             _samples_per_chunk<<=1;
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
+            else
+                tt.info("New samples per chunk, %u", _samples_per_chunk);
         }
     }
 
@@ -79,6 +104,24 @@ bool Worker::
 
 ///// PROPERTIES
 
+void Worker::
+        todo_list( Signal::SamplesIntervalDescriptor v )
+{
+    {
+        QMutexLocker l(&_todo_lock);
+        _todo_list = v;
+    }
+    if (!v.isEmpty())
+        _todo_condition.wakeAll();
+}
+
+Signal::SamplesIntervalDescriptor Worker::
+        todo_list()
+{
+    QMutexLocker l(&_todo_lock);
+    Signal::SamplesIntervalDescriptor c = _todo_list;
+    return c;
+}
 
 Signal::pSource Worker::
         source() const
@@ -116,6 +159,22 @@ void Worker::
 }
 
 void Worker::
+        run()
+{
+    while (true)
+    {
+        while(!todo_list().isEmpty())
+        {
+            workOne();
+            msleep(1);
+        }
+        {   TIME_WORKER TaskTimer tt("Worker is waiting for more work to do");
+            _todo_condition.wait( &_todo_lock );
+        }
+    }
+}
+
+void Worker::
         addCallback( pSink c )
 {
     QMutexLocker l( &_callbacks_lock );
@@ -132,11 +191,22 @@ void Worker::
 void Worker::
         callCallbacks( pBuffer b )
 {
-    QMutexLocker l( &_callbacks_lock );
+    list<pSink> worklist;
+    {
+        QMutexLocker l( &_callbacks_lock );
+        worklist = _callbacks;
+    }
 
-    BOOST_FOREACH( pSink c, _callbacks ) {
+    BOOST_FOREACH( pSink c, worklist ) {
         c->put( b, _source );
     }
+
+    b->waveform_data->getCpuMemory();
+    b->waveform_data->freeUnused();
+
+    FilterOperation* f = dynamic_cast<FilterOperation*>(_source.get());
+    if (f)
+        f->release_previous_chunk();
 }
 
 } // namespace Signal

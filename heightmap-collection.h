@@ -9,6 +9,9 @@
 #include "tfr-chunk.h"
 #include "tfr-chunksink.h"
 #include <vector>
+#include <QMutex>
+#include <QWaitCondition>
+#include <QThread>
 
 /*
 TODO: rewrite this section
@@ -107,25 +110,20 @@ typedef boost::shared_ptr<Block> pBlock;
 class Collection: public Tfr::ChunkSink {
 public:
     Collection(Signal::pWorker worker);
-
-
-    // WorkerCallback: Implementations of virtual methods
+    ~Collection();
 
     /**
       Releases all GPU resources allocated by Heightmap::Collection.
       */
-    virtual void reset() { gc(); }
-
-    /**
-      @see put( pBuffer, pSource );
-      */
-    virtual void put( Signal::pBuffer b) { put(b, Signal::pSource()); }
+    virtual void reset();
 
     /**
       Computes the Cwt and updates the cache of blocks.
       */
     virtual void put( Signal::pBuffer, Signal::pSource );
 
+    virtual Signal::SamplesIntervalDescriptor expected_samples();
+    virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& );
 
     /**
       scales_per_block and samples_per_block are constants deciding how many blocks
@@ -138,8 +136,9 @@ public:
 
     /**
       getBlock increases a counter for each block that hasn't been computed yet.
+      next_frame returns that counter. next_frame also calls applyUpdates().
       */
-    unsigned    read_unfinished_count();
+    unsigned    next_frame();
 
     /**
       As the cwt is of finite length and finite sample rate there is a smallest
@@ -165,16 +164,13 @@ public:
 
     void        gc();
 
-    virtual void updateInvalidSamples( Signal::SamplesIntervalDescriptor );
-    Signal::SamplesIntervalDescriptor getMissingSamples();
-
     Signal::pWorker     worker;
 private:
     unsigned
         _samples_per_block,
         _scales_per_block,
         _unfinished_count,
-        _frame_counter; // TODO shouldn't need _frame_counter
+        _frame_counter;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.
@@ -184,6 +180,10 @@ private:
             3) if _cache is empty, Sonic AWE is terminated with an OpenGL error.
       */
     std::vector<pBlock> _cache;
+    std::vector<Tfr::pChunk> _updates;
+    QMutex _updates_mutex;
+    QWaitCondition _updates_condition;
+    ThreadChecker _constructor_thread;
 
     /**
       Attempts to allocate a new block.
@@ -194,23 +194,34 @@ private:
       Creates a new block.
       */
     pBlock      createBlock( Reference ref );
+
+    /**
+      Update the slope texture used by the vertex shader. Called when height
+      data has been updated. Also called by 'createBlock'.
+      */
     void        computeSlope( pBlock block, unsigned cuda_stream );
+
+    /**
+      Compoute a short-time Fourier transform (stft). Usefull for filling new
+      blocks with data really fast.
+      */
     void        prepareFillStft( pBlock block );
 
     /**
-      Update the slope texture used by the vertex shader. Called when height data has been updated.
+      Work of the _updates queue of chunks to merge.
       */
-    void        updateSlope( pBlock block, unsigned cuda_stream );
+    void        applyUpdates();
+
 
     /**
-      Add block information from Cwt transform.
+      Add block information from Cwt transform. Returns whether any information was merged.
       */
-    void        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
+    bool        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
 
     /**
-      Add block information from another block.
+      Add block information from another block. Returns whether any information was merged.
       */
-    void        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
+    bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
 };
 
 } // namespace Heightmap

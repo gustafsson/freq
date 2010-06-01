@@ -10,7 +10,8 @@ namespace Signal {
 
 WriteWav::
         WriteWav( std::string filename )
-            :   _filename(filename)
+:   _data(SinkSource::AcceptStrategy_ACCEPT_EXPECTED_ONLY),
+    _filename(filename)
 {
 }
 
@@ -23,80 +24,57 @@ WriteWav::
 void WriteWav::
         put( pBuffer buffer )
 {
-    if (!_cache.empty()) if (_cache[0]->sample_rate != buffer->sample_rate) {
-        throw std::logic_error(std::string(__FUNCTION__) + " sample rate is different from previous sample rate" );
-    }
+    TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
-    _cache.push_back( buffer );
+    _data.put( buffer );
 
-    unsigned x = expected_samples_left();
-    if (x < buffer->number_of_samples() )
-        x = 0;
-    else
-        x -= buffer->number_of_samples();
-    expected_samples_left( x );
-
-    if (0==expected_samples_left()) {
-        reset();
-    }
+    if (_data.expected_samples().isEmpty())
+        reset(); // Write to file
 }
 
 void WriteWav::
         reset()
 {
-    if (nAccumulatedSamples())
+    if (!_data.empty())
         writeToDisk();
 
-    _cache.clear();
-    expected_samples_left(0);
+    _data.reset();
 }
 
-SamplesIntervalDescriptor WriteWav::
-        getMissingSamples()
+bool WriteWav::
+        isFinished()
 {
-    return SamplesIntervalDescriptor(
-            0,
-            nAccumulatedSamples() + expected_samples_left()
-            );
+    return expected_samples().isEmpty();
 }
 
-unsigned WriteWav::
-        nAccumulatedSamples()
+void WriteWav::onFinished()
 {
-    // count previous samples
-    unsigned nAccumulated_samples = 0;
-    BOOST_FOREACH( const pBuffer& s, _cache ) {
-        nAccumulated_samples += s->number_of_samples();
-    }
-    return nAccumulated_samples;
+    // WriteWav::onFinished doesn't do anything. WriteWav only calls
+    // writeToDisk to disk once for each put after which
+    // _data.expected_samples().isEmpty() is true.
+    // Afterwards _data is reset.
 }
 
 void WriteWav::
         writeToDisk()
 {
-    unsigned N = nAccumulatedSamples();
+    SamplesIntervalDescriptor sid = _data.samplesDesc();
+    SamplesIntervalDescriptor::Interval i = sid.coveredInterval();
 
-    if (0==N) {
-        throw std::invalid_argument( std::string(__FUNCTION__) + ": refuse to write 0 samples to disk.");
-    }
+    BOOST_ASSERT(i.valid());
 
-    pBuffer b( new Buffer);
-    b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent(N,1,1) ));
-    b->sample_rate = _cache[0]->sample_rate;
-
-    float* p = b->waveform_data->getCpuMemory();
-    BOOST_FOREACH( const pBuffer& s, _cache ) {
-        memcpy( p, s->waveform_data->getCpuMemory(), s->waveform_data->getSizeInBytes().width );
-        p += s->number_of_samples();
-    }
-
-    writeToDisk( b );
+    sid.print("data to write");
+    pBuffer b = _data.readFixedLength( i.first, i.last );
+    writeToDisk( _filename, b );
 }
 
 void WriteWav::
-        writeToDisk(pBuffer b)
+        writeToDisk(std::string filename, pBuffer b)
 {
-    TaskTimer tt("%s %s", __FUNCTION__, _filename.c_str());
+    std::stringstream ss;
+    ss << b->getInterval();
+
+    TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(), ss.str().c_str());
 
     // TODO: figure out a way for Sonic AWE to work with stereo sound and write stereo to disk
 
@@ -105,7 +83,7 @@ void WriteWav::
     //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
     //int number_of_channels = 1;
-    SndfileHandle outfile(_filename.c_str(), SFM_WRITE, format, 1, b->sample_rate);
+    SndfileHandle outfile(filename.c_str(), SFM_WRITE, format, 1, b->sample_rate);
 
     if (!outfile) return;
 
