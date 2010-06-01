@@ -124,6 +124,8 @@ private:
     Signal::pWorker _worker;
     Signal::pWorkerCallback _collectionCallback;
     Signal::pWorkerCallback _postsinkCallback;
+    Signal::pSource _matlabfilter;
+    Signal::pSource _matlaboperation;
     boost::scoped_ptr<TaskTimer> _work_timer;
 
     std::string _selection_filename;

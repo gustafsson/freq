@@ -515,8 +515,13 @@ void DisplayWidget::
         receiveMatlabOperation(bool)
 {
     Signal::Operation *b = getFilterOperation();
-    Signal::pSource s( new Sawe::MatlabOperation( b->source(), "matlaboperation") );
-    b->source( s );
+
+    Signal::pSource read = b->source();
+    if (_matlaboperation)
+        read = dynamic_cast<Signal::Operation*>(_matlaboperation.get())->source();
+
+    _matlaboperation.reset( new Sawe::MatlabOperation( read, "matlaboperation") );
+    b->source( _matlaboperation );
     setWorkerSource();
     update();
     _renderer->collection()->add_expected_samples(Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL);
@@ -527,23 +532,27 @@ void DisplayWidget::
 {
     Signal::FilterOperation * b = getFilterOperation();
 
+    Signal::pSource read = b->source();
+    if (_matlabfilter)
+        read = dynamic_cast<Signal::Operation*>(_matlabfilter.get())->source();
+
     switch(1) {
     case 1: // Everywhere
         {
             Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
-            Signal::pSource s( new Signal::FilterOperation( b->source(), f));
-            b->source( s );
+            _matlabfilter.reset( new Signal::FilterOperation( read, f));
+            b->source( _matlabfilter );
         break;
         }
     case 2: // Only inside selection
         {
         Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
-        Signal::pSource s( new Signal::FilterOperation( b->source(), f));
+        Signal::pSource s( new Signal::FilterOperation( read, f));
         Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(b->inverse_cwt.filter.get());
         if (e)
             e->_save_inside = true;
-        Signal::pSource s2( new Signal::FilterOperation( s, b->inverse_cwt.filter));
-        b->source( s2 );
+        _matlabfilter.reset( new Signal::FilterOperation( s, b->inverse_cwt.filter));
+        b->source( _matlabfilter );
         break;
         }
     }
