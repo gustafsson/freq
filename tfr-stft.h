@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
 #include "signal-source.h"
+#include <vector>
 
 typedef unsigned int cufftHandle; /* from cufft.h */
 
