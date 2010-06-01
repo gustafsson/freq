@@ -7,8 +7,8 @@
 #include <boost/foreach.hpp>
 #include "selection.h"
 
-#define TIME_FILTER
-//#define TIME_FILTER if(0)
+//#define TIME_FILTER
+#define TIME_FILTER if(0)
 
 namespace Tfr {
 

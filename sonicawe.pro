@@ -164,6 +164,8 @@ win32:LIBS += \
 	-l..\..\winlib\hdf5lib\lib\hdf5_hl \
 	-l..\..\winlib\hdf5lib\lib\hdf5_hl_cpp \
 	-l..\..\winlib\szip\lib\libszip \
+#	-l..\..\winlib\boostlib\libboost_date_time-vc90-mt-gd-1_42 \
+	-L..\..\winlib\boostlib \
 	-l..\..\winlib\zlib\lib\zlib
 LIBS += -lcufft 
 unix:LIBS += -L../gpumisc -lgpumisc

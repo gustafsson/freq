@@ -2,8 +2,8 @@
 #include "tfr-inversecwt.h"
 #include "tfr-wavelet.cu.h"
 
-#define TIME_ICWT
-//#define TIME_ICWT if(0)
+//#define TIME_ICWT
+#define TIME_ICWT if(0)
 
 namespace Tfr {
 

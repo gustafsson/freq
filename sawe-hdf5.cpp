@@ -172,7 +172,7 @@ Signal::pBuffer Hdf5::
 
         H5T_class_t class_id=H5T_NO_CLASS;
         vector<hsize_t> dims(RANK);
-        status = H5LTget_dataset_info ( file_id, dset, dims.data(), &class_id, 0 );
+        status = H5LTget_dataset_info ( file_id, dset, &dims[0], &class_id, 0 );
         if (0>status) throw runtime_error("get_dataset_info failed");
         if (H5T_FLOAT!=class_id) throw runtime_error(((stringstream&)(ss << "Class id for '" << dset << "' is '" << class_id << "' instead of H5T_FLOAT.")).str());
 
@@ -241,7 +241,7 @@ Tfr::pChunk Hdf5::
 
         H5T_class_t class_id=H5T_NO_CLASS;
         vector<hsize_t> dims(RANK);
-        status = H5LTget_dataset_info ( file_id,dset, dims.data(), &class_id, 0 );
+        status = H5LTget_dataset_info ( file_id,dset, &dims[0], &class_id, 0 );
         if (0>status) throw runtime_error("get_dataset_info failed");
 
         Tfr::pChunk chunk( new Tfr::Chunk);
