@@ -26,11 +26,11 @@ void MatlabFilter::
 
     string file = _matlab.getTempName();
 
-    Hdf5::saveChunk( file, c );
+    Hdf5Sink::saveChunk( file, c );
 
     file = _matlab.invokeAndWait( file );
 
-    Tfr::pChunk pc = Hdf5::loadChunk( file );
+    Tfr::pChunk pc = Hdf5Sink::loadChunk( file );
     c.transform_data.swap( pc->transform_data );
 
     ::remove( file.c_str());

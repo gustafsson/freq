@@ -108,11 +108,11 @@ pBuffer MatlabOperation::
 
     string file = _matlab.getTempName();
 
-    Hdf5::saveBuffer( file, *b );
+    Hdf5Sink::saveBuffer( file, *b );
 
     file = _matlab.invokeAndWait( file );
 
-    pBuffer b2 = Hdf5::loadBuffer( file );
+    pBuffer b2 = Hdf5Sink::loadBuffer( file );
     b->waveform_data.swap( b2->waveform_data );
 
     ::remove( file.c_str());
