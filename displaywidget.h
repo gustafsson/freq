@@ -52,7 +52,7 @@ class DisplayWidget :
 {
     Q_OBJECT
 public:
-    DisplayWidget( Signal::pWorker worker, Signal::pSink collection, unsigned playback_device, std::string selection_filename, int timerInterval=0  );
+    DisplayWidget( Signal::pWorker worker, Signal::pSink collection );
     ~DisplayWidget();
     int lastKey;
     static DisplayWidget* gDisplayWidget;
@@ -68,6 +68,11 @@ public:
 
 	bool isRecordSource();
     void setWorkerSource( Signal::pSource s = Signal::pSource());
+
+    Signal::pWorker worker() { return _worker; }
+    std::string selection_filename;
+    unsigned playback_device;
+    Heightmap::Collection* collection() { return _renderer->collection(); }
 
     virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );
@@ -128,8 +133,6 @@ private:
     Signal::pSource _matlaboperation;
     boost::scoped_ptr<TaskTimer> _work_timer;
 
-    std::string _selection_filename;
-    unsigned _playback_device;
     bool _follow_play_marker;
 
     struct ListCounter {

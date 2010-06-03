@@ -164,10 +164,7 @@ DisplayWidget* DisplayWidget::
 DisplayWidget::
         DisplayWidget(
                 Signal::pWorker worker,
-                Signal::pSink collection,
-                unsigned playback_device,
-                std::string selection_filename,
-                int timerInterval )
+                Signal::pSink collection )
 : QGLWidget( ),
   lastKey(0),
   xscale(1),
@@ -177,8 +174,6 @@ DisplayWidget::
   _collectionCallback( new Signal::WorkerCallback( worker, collection )),
   _postsinkCallback( new Signal::WorkerCallback( worker, Signal::pSink(new Signal::PostSink)) ),
   _work_timer( new TaskTimer("Benchmarking first work")),
-  _selection_filename(selection_filename),
-  _playback_device( playback_device ),
   _follow_play_marker( false ),
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
@@ -214,12 +209,7 @@ DisplayWidget::
 
     yscale = Yscale_LogLinear;
     //timeOut();
-    
-    if ( timerInterval != 0 )
-    {
-        startTimer(timerInterval);
-    }
-        
+            
     if (_rx<0) _rx=0;
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
@@ -295,8 +285,8 @@ void DisplayWidget::receivePlaySound()
     if (postsink->sinks().empty())
     {
         std::vector<Signal::pSink> sinks;
-        sinks.push_back( Signal::pSink( new Signal::Playback( _playback_device )) );
-        sinks.push_back( Signal::pSink( new Signal::WriteWav( _selection_filename )) );
+        sinks.push_back( Signal::pSink( new Signal::Playback( playback_device )) );
+        sinks.push_back( Signal::pSink( new Signal::WriteWav( selection_filename )) );
         postsink->sinks( sinks );
         postsink->filter( postsink->filter(), _worker->source() );
     }
@@ -408,8 +398,8 @@ void DisplayWidget::
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
     float radie = fabsf(selection[0].x - selection[1].x);
-    unsigned start = std::max(0.f, selection[0].x - radie/sqrtf(2.f)) * FS;
-    unsigned end = (selection[0].x + radie/sqrt(2.f)) * FS;
+    unsigned start = std::max(0.f, selection[0].x - radie) * FS;
+    unsigned end = (selection[0].x + radie) * FS;
 
     if (end<=start)
         return;

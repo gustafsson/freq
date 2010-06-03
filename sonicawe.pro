@@ -53,6 +53,7 @@ SOURCES += main.cpp \
     sawe-hdf5.cpp \
     sawe-matlaboperation.cpp \
     sawe-matlabfilter.cpp \
+    sawe-project.cpp \
     signal-filteroperation.cpp \
     signal-worker.cpp \
     signal-writewav.cpp \
@@ -93,6 +94,7 @@ HEADERS += mainwindow.h \
     sawe-matlaboperation.h \
     sawe-matlabfilter.h \
     sawe-mainplayback.h \
+    sawe-project.h \
     signal-filteroperation.h \
     signal-worker.h \
     signal-writewav.h \
