@@ -1031,7 +1031,6 @@ void Renderer::
 
     glDisable(GL_DEPTH_TEST);
 
-    TaskTimer tt("Drawing frustum");
     glPushMatrixContext mc;
 
     glColor4f(0,0,0,.125);

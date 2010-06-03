@@ -87,7 +87,7 @@ void TimelineWidget::
 void TimelineWidget::
         paintGL()
 {
-    TaskTimer tt("TimelineWidget::paintGL");
+    // TaskTimer tt("TimelineWidget::paintGL");
     static int exceptCount = 0;
     try {
         GlException_CHECK_ERROR();
