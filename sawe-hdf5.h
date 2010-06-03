@@ -20,15 +20,17 @@ public:
 
     hid_t file_id() const { return _file_id; }
 
-    void add( std::string name, const Signal::Buffer&);
-    void add( std::string name, const Tfr::Chunk&);
-    void add( std::string name, const double&);
-    void add( std::string name, const std::string&);
+    template<typename T> void add( std::string name, const T& );
 
 private:
     hid_t _file_id;
     boost::scoped_ptr<TaskTimer> _timer;
 };
+
+template<> void Hdf5Output::add( std::string name, const Signal::Buffer&);
+template<> void Hdf5Output::add( std::string name, const Tfr::Chunk&);
+template<> void Hdf5Output::add( std::string name, const double&);
+template<> void Hdf5Output::add( std::string name, const std::string&);
 
 /**
   Throws std::runtime_error on errors.
@@ -40,7 +42,14 @@ public:
 
     hid_t file_id() const { return _file_id; }
 
-    template<typename T> T read( std::string name )
+    /**
+      Will first try reading a dataset named as octave would name it: '/datasetname/value'
+      And then try to read a dataset as Hdf5Output would name it: 'datasetname'
+
+      read_exact is supposed to have template specializations for each supported type 'T'.
+      It is a link-time error to read a type that doesn't have a template specialization.
+      */
+    template<typename T> T read( std::string datasetname )
     {
         std::string err;
 
@@ -48,8 +57,8 @@ public:
             try
         {
             switch(i) {
-                case 0: {T a = read_exact<T>( "/" + name + "/value" ); return a;}
-                case 1: {T a = read_exact<T>( name ); return a;}
+                case 0: return read_exact<T>( "/" + datasetname + "/value" );
+                case 1: return read_exact<T>( datasetname );
             }
         } catch (const std::runtime_error& x) {
             err = err + x.what() + "\n";
@@ -61,15 +70,20 @@ private:
     hid_t _file_id;
     boost::scoped_ptr<TaskTimer> _timer;
 
-    template<typename T> T read_exact( std::string name );
+    /**
+      Reads a dataset named 'datasetname'. To be called through 'read'.
+      @see read
+      */
+    template<typename T> T read_exact( std::string datasetname );
+
     void findDataset(const std::string& name);
     std::vector<hsize_t> getInfo(const std::string& name, H5T_class_t* class_id=0);
 };
 
-template<> Signal::pBuffer  Hdf5Input::read_exact<Signal::pBuffer> ( std::string name );
-template<> Tfr::pChunk      Hdf5Input::read_exact<Tfr::pChunk>     ( std::string name );
-template<> double           Hdf5Input::read_exact<double>          ( std::string name );
-template<> std::string      Hdf5Input::read_exact<std::string>     ( std::string name );
+template<> Signal::pBuffer  Hdf5Input::read_exact<Signal::pBuffer> ( std::string datasetname );
+template<> Tfr::pChunk      Hdf5Input::read_exact<Tfr::pChunk>     ( std::string datasetname );
+template<> double           Hdf5Input::read_exact<double>          ( std::string datasetname );
+template<> std::string      Hdf5Input::read_exact<std::string>     ( std::string datasetname );
 
 /**
   Transforms a pBuffer into a pChunk with CwtSingleton and saves the chunk in a file called

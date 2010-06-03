@@ -80,6 +80,7 @@ vector<hsize_t> Hdf5Input::
     return dims;
 }
 
+template<>
 void Hdf5Output::
         add( std::string name, const Signal::Buffer& cb)
 {
@@ -127,6 +128,7 @@ Signal::pBuffer Hdf5Input::
     return buffer;
 }
 
+template<>
 void Hdf5Output::
         add( std::string name, const Tfr::Chunk& chunk)
 {
@@ -231,6 +233,7 @@ Tfr::pChunk Hdf5Input::
     return chunk;
 }
 
+template<>
 void Hdf5Output::
         add( std::string name, const double& v)
 {
@@ -258,6 +261,7 @@ double Hdf5Input::
     return v;
 }
 
+template<>
 void Hdf5Output::
         add( std::string name, const std::string& s)
 {
@@ -324,18 +328,18 @@ void Hdf5Sink::
 {
     Hdf5Output h5(filename);
 
-    h5.add( dsetBuffer, cb );
-    h5.add( dsetOffset, cb.sample_offset );
-    h5.add( dsetSamplerate, cb.sample_rate );
+    h5.add<Signal::Buffer>( dsetBuffer, cb );
+    h5.add<double>( dsetOffset, cb.sample_offset );
+    h5.add<double>( dsetSamplerate, cb.sample_rate );
 }
 
 void Hdf5Sink::
         saveChunk( string filename, const Tfr::Chunk &chunk )
 {
     Hdf5Output h5(filename);
-    h5.add( dsetChunk, chunk );
-    h5.add( dsetOffset, chunk.chunk_offset );
-    h5.add( dsetSamplerate, chunk.sample_rate );
+    h5.add<Tfr::Chunk>( dsetChunk, chunk );
+    h5.add<double>( dsetOffset, chunk.chunk_offset );
+    h5.add<double>( dsetSamplerate, chunk.sample_rate );
 }
 
 Signal::pBuffer Hdf5Sink::
