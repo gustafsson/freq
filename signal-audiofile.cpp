@@ -13,6 +13,7 @@ typedef int64_t __int64_t;
 
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/algorithm/string.hpp>
 //#include <QThread>
 //#include <QSound>
 
@@ -93,19 +94,19 @@ std::string getFileFormatsQtFilter( bool split ) {
     sf_command (NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int)) ;
 
     sfinfo.channels = 1 ;
-	bool foundogg = false;
     for (m = 0 ; m < major_count ; m++)
     {	info.format = m ;
             sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
             if (split) {
                 if (0<m) ss << ";;";
-                ss << info.name << " (*." << info.extension << " *." << info.name << ")";
+                string name = info.name;
+                boost::replace_all(name, "(", "- ");
+                boost::erase_all(name, ")");
+                ss << name << " (*." << info.extension << " *." << info.name << ")";
             } else {
                 if (0<m) ss << " ";
                 ss <<"*."<< info.extension << " *." << info.name;
             }
-            if (string(info.extension) == "ogg")
-                foundogg = true;
     }
 
     return ss.str();

@@ -31,8 +31,8 @@ pProject Project::
 
     if (0 == filename.length()) {
         string filter = Signal::getFileFormatsQtFilter( false ).c_str();
-        filter = "All files (*.sonicawe " + filter + ")";
-        filter += "Sonic AWE project (*.sonicawe);;";
+        filter = "All files (*.sonicawe " + filter + ");;";
+        filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
         filter += Signal::getFileFormatsQtFilter( true ).c_str();
 
         QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromStdString(filter));
