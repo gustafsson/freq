@@ -1,11 +1,11 @@
 #include "sawe-project.h"
+#include "sawe-application.h"
 #include <QtGui/QMessageBox>
 #include <QtGui/QFileDialog>
 #include "signal-audiofile.h"
 #include "signal-microphonerecorder.h"
 
 using namespace std;
-extern string _sawe_version_string; // main.cpp
 
 namespace Sawe {
 
@@ -30,8 +30,11 @@ pProject Project::
     }
 
     if (0 == filename.length()) {
-        string filter = Signal::getFileFormatsQtFilter().c_str();
-        filter = "Sonic AWE project (*.sonicawe), " + filter;
+        string filter = Signal::getFileFormatsQtFilter( false ).c_str();
+        filter = "All files (*.sonicawe " + filter + ")";
+        filter += "Sonic AWE project (*.sonicawe);;";
+        filter += Signal::getFileFormatsQtFilter( true ).c_str();
+
         QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromStdString(filter));
         if (0 == qfilemame.length()) {
             // User pressed cancel
@@ -96,7 +99,14 @@ void Project::
     if (_mainWindow)
         return;
 
-    _mainWindow.reset( new MainWindow(_sawe_version_string.c_str()));
+    string title = Sawe::Application::version_string();
+    Signal::Audiofile* af;
+    if (0 != (af = dynamic_cast<Signal::Audiofile*>(head_source.get()))) {
+        QFileInfo info( QString::fromStdString( af->filename() ));
+        title = info.baseName().toStdString() + " - Sonic AWE";
+    }
+
+    _mainWindow.reset( new MainWindow( title.c_str()));
 
     Signal::pWorker wk( new Signal::Worker( head_source ) );
     Heightmap::Collection* sgp( new Heightmap::Collection(wk) );

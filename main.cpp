@@ -1,29 +1,22 @@
-#include <QtGui/QApplication>
 #include "tfr-cwt.h"
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
-#include <QTime>
 #include <iostream>
 #include <stdio.h>
 #include "mainwindow.h"
 #include "displaywidget.h"
 #include "signal-audiofile.h"
 #include "signal-microphonerecorder.h"
-#include <sstream>
 #include <CudaProperties.h>
 #include <QString>
 #include <CudaException.h>
 #include "heightmap-renderer.h"
 #include "sawe-csv.h"
 #include "sawe-hdf5.h"
-#include <demangle.h>
-#include "sawe-project.h"
+#include "sawe-application.h"
 
 using namespace std;
 using namespace boost;
-
-string _sawe_version_string(
-        "Sonic AWE - development snapshot\n");
 
 static const char _sawe_usage_string[] =
         "sonicawe [--parameter=value]* [FILENAME]\n"
@@ -91,7 +84,6 @@ static int _playback_device = -1;
 static std::string _soundfile = "";
 static bool _multithread = false;
 static bool _sawe_exit=false;
-std::string fatal_error;
 
 static int prefixcmp(const char *a, const char *prefix) {
     for(;*a && *prefix;a++,prefix++) {
@@ -153,7 +145,7 @@ static int handle_options(char ***argv, int *argc)
             printf("%s", _sawe_usage_string);
             _sawe_exit = true;
         } else if (!strcmp(cmd, "--version")) {
-            printf("%s\n", _sawe_version_string.c_str());
+            printf("%s\n", Sawe::Application::version_string().c_str());
             _sawe_exit = true;
         }
         else if (readarg(&cmd, samples_per_chunk));
@@ -188,71 +180,6 @@ static int handle_options(char ***argv, int *argc)
     return handled;
 }
 
-#define STRINGIFY(x) #x
-#define TOSTR(x) STRINGIFY(x)
-
-void fatal_exception_cerr( const std::string& str )
-{
-    cerr << endl << endl
-         << "======================" << endl
-         << str << endl
-         << "======================" << endl;
-    cerr.flush();
-}
-
-void fatal_exception_qt( const std::string& str )
-{
-    QMessageBox::critical( 0,
-                 QString("Fatal error. Sonic AWE needs to close"),
-                 QString::fromStdString(str) );
-}
-
-void fatal_exception( const std::string& str )
-{
-    fatal_exception_cerr(str);
-    fatal_exception_qt(str);
-}
-
-string fatal_exception( const std::exception &x )
-{
-    std::stringstream ss;
-    ss   << "Error: " << demangle(typeid(x).name()) << endl
-         << "Message: " << x.what();
-    return ss.str();
-}
-
-string fatal_unknown_exception() {
-    return "Error: An unknown error occurred";
-}
-
-
-class SonicAWE_Application: public QApplication
-{
-public:
-    SonicAWE_Application( int& argc, char **argv)
-    :   QApplication(argc, argv)
-    {
-    }
-
-    virtual bool notify(QObject * receiver, QEvent * e) {
-        bool v = false;
-        try {
-            if(!fatal_error.empty())
-                this->exit(-2);
-
-            v = QApplication::notify(receiver,e);
-        } catch (const std::exception &x) {
-            if(fatal_error.empty())
-                fatal_exception_cerr( fatal_error = fatal_exception(x) );
-            this->exit(-2);
-        } catch (...) {
-            if(fatal_error.empty())
-                fatal_exception_cerr( fatal_error = fatal_unknown_exception() );
-            this->exit(-2);
-        }
-        return v;
-    }
-};
 
 bool check_cuda() {
     stringstream ss;
@@ -333,27 +260,7 @@ int main(int argc, char *argv[])
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
 
-    QDateTime now = QDateTime::currentDateTime();
-    now.date().year();
-    stringstream ss;
-    ss << "Sonic AWE";
-#ifndef SONICAWE_RELEASE
-    ss << " - ";
-#ifdef SONICAWE_VERSION
-    ss << TOSTR(SONICAWE_VERSION);
-#else
-    ss << __DATE__;// << " - " << __TIME__;
-#endif
-#endif
-
-#ifdef SONICAWE_BRANCH
-    if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
-        ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
-#endif
-
-    _sawe_version_string = ss.str();
-
-    SonicAWE_Application a(argc, argv);
+    Sawe::Application a(argc, argv);
     if (!check_cuda())
         return -1;
     
@@ -440,16 +347,14 @@ int main(int argc, char *argv[])
         p->displayWidget()->collection()->scales_per_block( _scales_per_block );
 
         int r = a.exec();
-        if (!fatal_error.empty())
-            fatal_exception_qt(fatal_error);
 
         // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
-        fatal_exception(fatal_exception(x));
+        Sawe::Application::display_fatal_exception(x);
         return -2;
     } catch (...) {
-        fatal_exception(fatal_unknown_exception());
+        Sawe::Application::display_fatal_exception();
         return -3;
     }
 }

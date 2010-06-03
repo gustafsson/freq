@@ -74,8 +74,9 @@ public:
     unsigned playback_device;
     Heightmap::Collection* collection() { return _renderer->collection(); }
 
-    virtual void keyPressEvent( QKeyEvent *e );
+/*    virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );
+    */
 protected:
     void open_inverse_test(std::string soundfile="");
     virtual void initializeGL();

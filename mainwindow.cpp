@@ -14,6 +14,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
+#include "sawe-application.h"
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -37,6 +38,8 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
     connect(ui->actionToggleToolWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleToolWindow(bool)));
     connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
+    connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
+    connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
 }
 
 void MainWindow::slotToggleLayerWindow(bool a){
@@ -474,7 +477,7 @@ void MainWindow::updateLayerList( Tfr::pFilter f )
     
     printf("#####Updating: Layers!\n");
 }
-
+/*
 void MainWindow::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
@@ -495,4 +498,4 @@ void MainWindow::keyReleaseEvent ( QKeyEvent * e )
         return;
 
     DisplayWidget::gDisplayWidget->keyReleaseEvent(e);
-}
+}*/

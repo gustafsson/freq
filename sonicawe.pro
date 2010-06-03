@@ -49,6 +49,7 @@ SOURCES += main.cpp \
     tfr-inversecwt.cpp \
     tfr-chunk.cpp \
     tfr-chunksink.cpp \
+    sawe-application.cpp \
     sawe-csv.cpp \
     sawe-hdf5.cpp \
     sawe-matlaboperation.cpp \
@@ -89,6 +90,7 @@ HEADERS += mainwindow.h \
     tfr-inversecwt.h \
     tfr-chunk.h \
     tfr-chunksink.h \
+    sawe-application.h \
     sawe-csv.h \
     sawe-hdf5.h \
     sawe-matlaboperation.h \

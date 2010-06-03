@@ -23,8 +23,8 @@ public:
     void connectLayerWindow(DisplayWidget *d);
 
 protected:
-    virtual void keyPressEvent( QKeyEvent *e );
-    virtual void keyReleaseEvent ( QKeyEvent * e );
+//    virtual void keyPressEvent( QKeyEvent *e );
+//    virtual void keyReleaseEvent ( QKeyEvent * e );
 
 public slots:
     void updateOperationsTree( Signal::pSource s);
@@ -36,7 +36,6 @@ public slots:
     void slotClosedLayerWindow(bool visible);
     void slotToggleToolWindow(bool);
     void slotClosedToolWindow(bool visible);
-
 signals:
     void sendCurrentSelection(int, bool);
     void sendRemoveItem(int);

@@ -191,8 +191,10 @@ DisplayWidget::
     char* dum="dum\0";
     glutInit(&c,&dum);
 #else
-    int c=0;
-    glutInit(&c,0);
+    static int c=0;
+    if (0==c)
+        glutInit(&c,0),
+        c = 1;
 #endif
     gDisplayWidget = this;
     float l = _worker->source()->length();
@@ -214,7 +216,7 @@ DisplayWidget::
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
     
-    grabKeyboard();
+    //grabKeyboard();
 }
 
 DisplayWidget::
@@ -555,7 +557,7 @@ void DisplayWidget::
     update();
 }
 
-void DisplayWidget::keyPressEvent( QKeyEvent *e )
+/*void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
         return;
@@ -594,6 +596,7 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         }
     }
 }
+*/
 
 void DisplayWidget::put(Signal::pBuffer b )
 {    
@@ -632,10 +635,10 @@ Signal::PostSink* DisplayWidget::getPostSink()
     return postsink;
 }
 
-void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
+/*void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
 {
     lastKey = 0;
-}
+}*/
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
