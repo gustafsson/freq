@@ -27,7 +27,7 @@ Hdf5Input::
 Hdf5Output::
         Hdf5Output(std::string filename)
 {
-    _timer.reset(new TaskTimer("Writing\n HDF5-file '%s'", filename.c_str()));
+    _timer.reset(new TaskTimer("Writing HDF5-file '%s'", filename.c_str()));
 
     _file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     if (0>_file_id) throw runtime_error("Could not create HDF5 file named '" + filename + "'");
@@ -237,6 +237,8 @@ template<>
 void Hdf5Output::
         add( std::string name, const double& v)
 {
+    TaskTimer tt("Adding double '%s'", name.c_str());
+
     hsize_t one[]={1};
     herr_t status = H5LTmake_dataset(_file_id,name.c_str(),1,one,H5T_NATIVE_DOUBLE,&v);
     if (0>status) throw runtime_error("Could not create and write a double type dataset named '" + name + "'");
@@ -284,7 +286,10 @@ std::string Hdf5Input::
 
     findDataset(name);
 
-    std::string v;
+    H5T_class_t class_id=H5T_NO_CLASS;
+    vector<hsize_t> dims = getInfo(name, &class_id);
+    std::string v; v.reserve( dims[0]+1 );
+
     herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_C_S1,&v[0]);
     if (0>status) throw runtime_error("Could not read a H5T_C_S1 type dataset named '" + name + "'");
 

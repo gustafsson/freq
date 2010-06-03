@@ -6,8 +6,8 @@
 #include <boost/foreach.hpp>
 #include <CudaException.h>
 
-#define TIME_WORKER
-//#define TIME_WORKER if(0)
+//#define TIME_WORKER
+#define TIME_WORKER if(0)
 
 using namespace std;
 using namespace boost::posix_time;
@@ -85,7 +85,7 @@ bool Worker::
         {
             if (1<_samples_per_chunk) {
                 _samples_per_chunk>>=1;
-                tt.info("New samples per chunk, %u", _samples_per_chunk);
+				TIME_WORKER TaskTimer("New samples per chunk, %u", _samples_per_chunk).suppressTiming();
             }
         }
         else if (1000.f/milliseconds > 2.5f*_requested_fps)
@@ -94,7 +94,7 @@ bool Worker::
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else
-                tt.info("New samples per chunk, %u", _samples_per_chunk);
+				TIME_WORKER TaskTimer("New samples per chunk, %u", _samples_per_chunk).suppressTiming();
         }
     }
 

@@ -115,7 +115,7 @@ pFftChunk Fft::
 
 
 
-    cdft(2*N, direction, q.data(), ip.data(), w.data());
+    cdft(2*N, direction, &q[0], &ip[0], &w[0]);
 
 
 
