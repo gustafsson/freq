@@ -9,8 +9,11 @@
   #include <OpenGL/gl.h>
 #endif
 #include "heightmap-glblock.h"
+#include <tmatrix.h>
 
 class DisplayWidget;
+
+typedef tvector<3,GLdouble> GLvector;
 
 namespace Heightmap {
 
@@ -23,10 +26,12 @@ public:
 
     void draw();
     void drawAxes( float T );
+    void drawFrustum();
 
     bool draw_piano;
     bool draw_hz;
 private:
+    std::vector<GLvector> clippedFrustum;
     Collection* _collection;
     DisplayWidget* _tempToRemove;
     GLuint _mesh_index_buffer;

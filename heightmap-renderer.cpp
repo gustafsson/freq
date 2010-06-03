@@ -13,7 +13,6 @@
 
 #include "heightmap-renderer.h"
 #include <float.h>
-#include <tmatrix.h>
 #include <GlException.h>
 #include <CudaException.h>
 #include "displaywidget.h"
@@ -114,8 +113,6 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-
-typedef tvector<3,GLdouble> GLvector;
 typedef tvector<4,GLdouble> GLvector4;
 typedef tmatrix<4,GLdouble> GLmatrix;
 
@@ -208,8 +205,10 @@ static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvecto
 
 void Renderer::init()
 {
+    TaskTimer tt("Initializing OpenGL");
+
     // initialize necessary OpenGL extensions
-    GlException_CHECK_ERROR_MSG("1");
+    GlException_CHECK_ERROR();
 
     int cudaDevices;
     CudaException_SAFE_CALL( cudaGetDeviceCount( &cudaDevices) );
@@ -250,17 +249,18 @@ void Renderer::init()
 
     _initialized=true;
 
-    GlException_CHECK_ERROR_MSG("2");
+    GlException_CHECK_ERROR();
 }
 
 void Renderer::draw()
 {
+    GlException_CHECK_ERROR();
     TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
     if (!_initialized) init();
 
     g_invalidFrustum = true;
 
-    glPushMatrixContext();
+    glPushMatrixContext mc;
 
     Position mss = _collection->max_sample_size();
     Reference ref = _collection->findReference(Position(0,0), mss);
@@ -280,27 +280,24 @@ void Renderer::draw()
 void Renderer::beginVboRendering()
 {
     GlException_CHECK_ERROR();
-    unsigned meshW = _collection->samples_per_block();
-    unsigned meshH = _collection->scales_per_block();
+    //unsigned meshW = _collection->samples_per_block();
+    //unsigned meshH = _collection->scales_per_block();
 
     glUseProgram(_shader_prog);
 
     // Set default uniform variables parameters for the vertex shader
-    GLuint uniHeightScale, uniChopiness, uniSize;
+    //GLuint uniHeightScale, uniChopiness, uniSize;
 
-    uniHeightScale = glGetUniformLocation(_shader_prog, "heightScale");
+/*    uniHeightScale = glGetUniformLocation(_shader_prog, "heightScale");
     glUniform1f(uniHeightScale, 0.0125f);
-
-    uniChopiness   = glGetUniformLocation(_shader_prog, "chopiness");
-    glUniform1f(uniChopiness, 1.0f);
 
     uniSize        = glGetUniformLocation(_shader_prog, "size");
     glUniform2f(uniSize, meshW, meshH);
-
+*/
     // Set default uniform variables parameters for the pixel shader
-    GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
+    //GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
 
-    uniDeepColor = glGetUniformLocation(_shader_prog, "deepColor");
+/*    uniDeepColor = glGetUniformLocation(_shader_prog, "deepColor");
     glUniform4f(uniDeepColor, 0.0f, 0.0f, 0.1f, 1.0f);
 
     uniShallowColor = glGetUniformLocation(_shader_prog, "shallowColor");
@@ -312,12 +309,14 @@ void Renderer::beginVboRendering()
     uniLightDir = glGetUniformLocation(_shader_prog, "lightDir");
     glUniform3f(uniLightDir, 0.0f, 1.0f, 0.0f);
     // end of uniform settings
-
+*/
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     glVertexPointer(4, GL_FLOAT, 0, 0);
     glEnableClientState(GL_VERTEX_ARRAY);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+
+    GlException_CHECK_ERROR();
 }
 
 void Renderer::endVboRendering() {
@@ -729,7 +728,7 @@ void Renderer::drawAxes( float T )
     }
 
     // 2 clip entire sound to frustum
-    std::vector<GLvector> clippedFrustum;
+    clippedFrustum.clear();
 
     {   //float T = _collection->worker->source()->length();
         GLvector closest_i;
@@ -1020,6 +1019,40 @@ void Renderer::drawAxes( float T )
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
     //glDisable(GL_BLEND);
+}
+
+void Renderer::
+        drawFrustum()
+{
+    if (clippedFrustum.empty())
+        return;
+
+    glPushAttribContext ac;
+
+    glDisable(GL_DEPTH_TEST);
+
+    TaskTimer tt("Drawing frustum");
+    glPushMatrixContext mc;
+
+    glColor4f(0,0,0,.125);
+    glBegin( GL_TRIANGLE_FAN );
+        for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
+                i!=clippedFrustum.end();
+                i++)
+        {
+            glVertex3dv( i->v );
+        }
+    glEnd();
+
+    glColor4f(0,0,0,.5);
+    glBegin( GL_LINE_LOOP );
+        for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
+                i!=clippedFrustum.end();
+                i++)
+        {
+            glVertex3dv( i->v );
+        }
+    glEnd();
 }
 
 } // namespace Heightmap
