@@ -21,6 +21,7 @@ public:
     ~MainWindow();
     
     void connectLayerWindow(DisplayWidget *d);
+    void setTimelineWidget( QWidget* );
 
 protected:
 //    virtual void keyPressEvent( QKeyEvent *e );
@@ -36,6 +37,9 @@ public slots:
     void slotClosedLayerWindow(bool visible);
     void slotToggleToolWindow(bool);
     void slotClosedToolWindow(bool visible);
+    void slotToggleTimelineWindow(bool);
+    void slotClosedTimelineWindow(bool visible);
+
 signals:
     void sendCurrentSelection(int, bool);
     void sendRemoveItem(int);

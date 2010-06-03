@@ -23,6 +23,7 @@ public:
       A project currently is entirely defined by its head source.
       */
     Project(Signal::pSource head_source);
+    ~Project();
 
     /**
       All sources can be reached from one head Source.
@@ -56,11 +57,14 @@ public:
     void save(std::string project_file="");
 
     boost::shared_ptr<MainWindow> mainWindow();
-    boost::shared_ptr<DisplayWidget> displayWidget();
+    DisplayWidget* displayWidget();
 
 private:
     boost::shared_ptr<MainWindow> _mainWindow;
-    boost::shared_ptr<DisplayWidget> _displayWidget;
+    Signal::pSink _displayWidget;
+    Signal::pSink _timelineWidget;
+    //Signal::pWorkerCallback _displayWidgetCallback;
+    Signal::pWorkerCallback _timelineWidgetCallback;
 
     void createMainWindow();
 

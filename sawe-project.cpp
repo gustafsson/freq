@@ -4,6 +4,7 @@
 #include <QtGui/QFileDialog>
 #include "signal-audiofile.h"
 #include "signal-microphonerecorder.h"
+#include "sawe-timelinewidget.h"
 
 using namespace std;
 
@@ -15,6 +16,16 @@ Project::
 {
 }
 
+Project::
+        ~Project()
+{
+    TaskTimer tt("~Project");
+    displayWidget()->setTimeline( Signal::pSink() );
+    _timelineWidgetCallback.reset();
+    _timelineWidget.reset();
+    _displayWidget.reset();
+    _mainWindow.reset();
+}
 
 pProject Project::
         open(std::string project_file_or_audio_file )
@@ -85,11 +96,11 @@ boost::shared_ptr<MainWindow> Project::
 }
 
 
-boost::shared_ptr<DisplayWidget> Project::
+DisplayWidget* Project::
         displayWidget()
 {
     createMainWindow();
-    return _displayWidget;
+    return dynamic_cast<DisplayWidget*>(_displayWidget.get());
 }
 
 
@@ -113,9 +124,24 @@ void Project::
     Signal::pSink sg( sgp );
     _displayWidget.reset( new DisplayWidget( wk, sg ) );
 
-    _mainWindow->connectLayerWindow( _displayWidget.get() );
-    _mainWindow->setCentralWidget( _displayWidget.get() );
-    _displayWidget->show();
+    _mainWindow->connectLayerWindow( displayWidget() );
+    _mainWindow->setCentralWidget( displayWidget() );
+
+    {
+        _timelineWidget.reset( new TimelineWidget( _displayWidget ) );
+        TaskTimer("_timelineWidget = %p, QGLWidget = %p, Sink = %p",
+                  dynamic_cast<TimelineWidget*>(_timelineWidget.get()),
+                  dynamic_cast<QGLWidget*>(_timelineWidget.get()),
+                  _timelineWidget.get()).suppressTiming();
+        _mainWindow->setTimelineWidget( dynamic_cast<QWidget*>(_timelineWidget.get()) );
+    }
+
+    //_displayWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _displayWidget ));
+    _timelineWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _timelineWidget ));
+
+    displayWidget()->setTimeline( _timelineWidget );
+    displayWidget()->show();
+    _mainWindow->hide();
     _mainWindow->show();
 }
 

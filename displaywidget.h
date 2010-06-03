@@ -29,7 +29,12 @@ public:
     
     bool worldPos(GLdouble &ox, GLdouble &oy);
     static bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy);
-    
+    /**
+      worldPos projects space coordinates onto the xz-plane. spacePos simple returns the space pos.
+      */
+    bool spacePos(GLdouble &out_x, GLdouble &out_y);
+    static bool spacePos(GLdouble in_x, GLdouble in_y, GLdouble &out_x, GLdouble &out_y);
+
     bool isDown(){return down;}
     bool isTouched();
     int getHold(){return hold;}
@@ -47,13 +52,13 @@ struct MyVector{
 
 class DisplayWidget :
         public QGLWidget,
-        public Signal::Sink//, /* sink is used as microphone callback */
+        public Signal::Sink //, /* sink is used as microphone callback */
 //        public QTimer
 {
     Q_OBJECT
 public:
     DisplayWidget( Signal::pWorker worker, Signal::pSink collection );
-    ~DisplayWidget();
+    virtual ~DisplayWidget();
     int lastKey;
     static DisplayWidget* gDisplayWidget;
     
@@ -68,11 +73,16 @@ public:
 
 	bool isRecordSource();
     void setWorkerSource( Signal::pSource s = Signal::pSource());
+    void setTimeline( Signal::pSink timelineWidget );
+    void setPosition( float time, float f );
 
     Signal::pWorker worker() { return _worker; }
     std::string selection_filename;
     unsigned playback_device;
     Heightmap::Collection* collection() { return _renderer->collection(); }
+    Heightmap::pRenderer renderer() { return _renderer; }
+
+    void drawSelection();
 
 /*    virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );
@@ -82,7 +92,8 @@ protected:
     virtual void initializeGL();
     virtual void resizeGL( int width, int height );
     virtual void paintGL();
-    
+    void setupCamera();
+
     virtual void mousePressEvent ( QMouseEvent * e );
     virtual void mouseReleaseEvent ( QMouseEvent * e );
     virtual void wheelEvent ( QWheelEvent *event );
@@ -121,8 +132,10 @@ signals:
 private:
     friend class Heightmap::Renderer;
 
-    virtual void put( Signal::pBuffer b);
-    virtual void put( Signal::pBuffer b, Signal::pSource ) { put (b); }
+    // overloaded from Signal::Sink
+    virtual void put( Signal::pBuffer b, Signal::pSource );
+    virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& s );
+
     Signal::FilterOperation* getFilterOperation();
     Signal::PostSink* getPostSink();
 
@@ -132,6 +145,7 @@ private:
     Signal::pWorkerCallback _postsinkCallback;
     Signal::pSource _matlabfilter;
     Signal::pSource _matlaboperation;
+    Signal::pSink _timeline;
     boost::scoped_ptr<TaskTimer> _work_timer;
 
     bool _follow_play_marker;
@@ -184,7 +198,6 @@ private:
     void drawWorking();
     void locatePlaybackMarker();
     void drawPlaybackMarker();
-    void drawSelection();
     void drawSelectionCircle();
     void drawSelectionCircle2();
     void drawSelectionSquare();
