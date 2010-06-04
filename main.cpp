@@ -260,6 +260,8 @@ int main(int argc, char *argv[])
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
 
+    QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
+
     Sawe::Application a(argc, argv);
     if (!check_cuda())
         return -1;
@@ -290,13 +292,13 @@ int main(int argc, char *argv[])
     try {
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 
-        Sawe::pProject p;
+        Sawe::pProject p; // p goes out of scope before a.exec()
 
         if (!_soundfile.empty())
-            p=Sawe::Project::open(_soundfile);
+            p=a.slotOpen_file( _soundfile );
 
         if (!p)
-            p=Sawe::Project::createRecording( _record_device );
+            p=a.slotNew_recording( _record_device );
 
         if (!p)
             return -1;
@@ -345,6 +347,8 @@ int main(int argc, char *argv[])
         p->displayWidget()->selection_filename = _selectionfile;
         p->displayWidget()->collection()->samples_per_block( _samples_per_block );
         p->displayWidget()->collection()->scales_per_block( _scales_per_block );
+
+        p.reset(); // a keeps a copy of pProject
 
         int r = a.exec();
 

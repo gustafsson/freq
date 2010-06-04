@@ -165,6 +165,7 @@ private:
     float _px, _py, _pz,
 		_rx, _ry, _rz,
 		_qx, _qy, _qz,
+                _prevLimit,
                 _renderRatio,
                 _playbackMarker;
     int _prevX, _prevY, _targetQ;

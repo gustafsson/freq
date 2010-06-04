@@ -23,8 +23,9 @@ public:
     virtual bool notify(QObject * receiver, QEvent * e);
 
 public slots:
-    void slotNew_recording();
-    void slotOpen_file();
+    pProject slotNew_recording( int record_device = -1 );
+    pProject slotOpen_file( std::string project_file_or_audio_file="" );
+    void slotClosed_window( QWidget* );
 
 private:
     static Application* _app;

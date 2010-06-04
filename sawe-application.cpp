@@ -131,27 +131,42 @@ bool Application::
     return v;
 }
 
-void Application::
-        slotNew_recording()
+pProject Application::
+        slotNew_recording( int record_device )
 {
     TaskTimer tt("New recording1");
-    pProject p = Project::createRecording();
-    TaskTimer tt2("New recording");
+    pProject p = Project::createRecording( record_device );
     if (p) {
         setActiveWindow( 0 );
         setActiveWindow( p->mainWindow().get() );
         p->mainWindow()->activateWindow();
         _projects.push_back( p );
     }
+    return p;
+}
+
+pProject Application::
+        slotOpen_file( std::string project_file_or_audio_file )
+{
+    pProject p = Project::open( project_file_or_audio_file );
+    if (p) {
+        setActiveWindow( 0 );
+        setActiveWindow( p->mainWindow().get() );
+        p->mainWindow()->activateWindow();
+        _projects.push_back( p );
+    }
+    return p;
 }
 
 void Application::
-        slotOpen_file()
+    slotClosed_window( QWidget* w )
 {
-    pProject p = Project::open();
-    if (p) {
-        setActiveWindow( p->mainWindow().get() );
-        _projects.push_back( p );
+    for (std::list<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
+    {
+        if (w == dynamic_cast<QWidget*>((*i)->mainWindow().get()))
+            i = _projects.erase( i );
+        else
+            i++;
     }
 }
 

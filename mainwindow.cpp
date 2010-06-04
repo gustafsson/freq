@@ -42,7 +42,13 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connect(ui->actionToggleToolWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleToolWindow(bool)));
     connect(ui->actionToggleTimelineWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleTimelineWindow(bool)));
     connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
-    connect(ui->mainToolBar, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedToolWindow(bool)));
+    connect(ui->mainToolBar, SIGNAL(actionTriggered(QAction *)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(movableChanged(bool)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(allowedAreasChanged(Qt::ToolBarAreas)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(orientationChanged(Qt::Orientation)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(iconSizeChanged(const QSize &)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(topLevelChanged(bool)), this, SLOT(slotClosedToolWindow()));
     connect(ui->dockWidgetTimeline, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedTimelineWindow(bool)));
     connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
     connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
@@ -78,8 +84,8 @@ void MainWindow::slotToggleTimelineWindow(bool a){
 void MainWindow::slotClosedLayerWindow(bool visible){
     ui->actionToggleLayerWindow->setChecked(visible);
 }
-void MainWindow::slotClosedToolWindow(bool visible){
-    ui->actionToggleToolWindow->setChecked(visible);
+void MainWindow::slotClosedToolWindow(){
+    ui->actionToggleToolWindow->setChecked(ui->actionToggleToolWindow->isVisible());
 }
 void MainWindow::slotClosedTimelineWindow(bool visible){
     ui->actionToggleTimelineWindow->setChecked(visible);
@@ -150,6 +156,16 @@ void MainWindow::
     ui->dockWidgetTimeline->setWidget( w );
     ui->dockWidgetTimeline->show();
 }
+
+void MainWindow::
+        closeEvent(QCloseEvent * e)
+{
+    // TODO add dialog asking user to save the project
+    e->ignore();
+    Sawe::Application::global_ptr()->slotClosed_window( this );
+}
+
+
 
 struct TitleAndTooltip {
     std::string title, tooltip;
