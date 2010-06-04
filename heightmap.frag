@@ -40,6 +40,19 @@ vec4 setWavelengthColor( float wavelengthScalar ) {
     return rgb*0.5;
 }
 
+float setHeightLineColor(float height)
+{
+   float value = height - floor(height);
+   value = 1.0 - value * value * value * value + 0.1;
+   
+   //float value2 = height*10.0 - floor(height*10.0);
+   //value2 = 1.0 - value2 * value2 * value2 * value2 + 0.1;
+   
+   //value2 = clamp(value2 + max(0.0 , eyeSpacePos.z - 1.0)/3.0, 0.0, 1.0);
+   //value = value * (0.5 + value2 * 0.5);
+   return clamp(sqrt(value), 0.0, 1.0);
+}
+
 void main()
 {
     vec3 eyeVector              = normalize(eyeSpacePos);
@@ -60,6 +73,7 @@ void main()
 //    gl_FragColor = waterColor*diffuse + skyColor*fresnel;
 //    gl_FragColor = vec4(pow(1.0-intensity,5.0));
 //    gl_FragColor = setWavelengthColor( intensity );
+
     float f = 1.0-pow(1.0-clamp(intensity, 0.0, 1.0),5.0);
     vec4 curveColor = setWavelengthColor( f );
     float x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
@@ -68,5 +82,7 @@ void main()
 
     curveColor = mix(vec4( 1,1,1,0), min(vec4(0.7),curveColor), x);
     curveColor.w = 1.0; //-saturate(fresnel);
+    float heightLine = setHeightLineColor( f * 10.0 );
+//    gl_FragColor = vec4(heightLine, heightLine, heightLine, 1) * curveColor;
     gl_FragColor = curveColor;
 }
