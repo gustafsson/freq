@@ -21,10 +21,12 @@ public:
     ~MainWindow();
     
     void connectLayerWindow(DisplayWidget *d);
+    void setTimelineWidget( QWidget* );
 
 protected:
-    virtual void keyPressEvent( QKeyEvent *e );
-    virtual void keyReleaseEvent ( QKeyEvent * e );
+//    virtual void keyPressEvent( QKeyEvent *e );
+//    virtual void keyReleaseEvent ( QKeyEvent * e );
+    virtual void closeEvent(QCloseEvent *);
 
 public slots:
     void updateOperationsTree( Signal::pSource s);
@@ -35,7 +37,9 @@ public slots:
     void slotToggleLayerWindow(bool);
     void slotClosedLayerWindow(bool visible);
     void slotToggleToolWindow(bool);
-    void slotClosedToolWindow(bool visible);
+    void slotClosedToolWindow();
+    void slotToggleTimelineWindow(bool);
+    void slotClosedTimelineWindow(bool visible);
 
 signals:
     void sendCurrentSelection(int, bool);

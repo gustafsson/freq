@@ -14,6 +14,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
+#include "sawe-application.h"
+#include "sawe-timelinewidget.h"
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -24,19 +26,38 @@ using namespace std;
 using namespace boost;
 
 MainWindow::MainWindow(const char* title, QWidget *parent)
-    : QMainWindow(parent), ui(new Ui_MainWindow)
+:   QMainWindow(parent),
+    ui(new Ui_MainWindow)
 {
 #ifdef Q_WS_MAC
     qt_mac_set_menubar_icons(false);
 #endif
     ui->setupUi(this);
     this->setWindowTitle( title );
+
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
     connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
     connect(ui->actionToggleToolWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleToolWindow(bool)));
+    connect(ui->actionToggleTimelineWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleTimelineWindow(bool)));
     connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
+    connect(ui->mainToolBar, SIGNAL(actionTriggered(QAction *)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(movableChanged(bool)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(allowedAreasChanged(Qt::ToolBarAreas)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(orientationChanged(Qt::Orientation)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(iconSizeChanged(const QSize &)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->mainToolBar, SIGNAL(topLevelChanged(bool)), this, SLOT(slotClosedToolWindow()));
+    connect(ui->dockWidgetTimeline, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedTimelineWindow(bool)));
+    connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
+    connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+}
+
+MainWindow::~MainWindow()
+{
+    TaskTimer tt("~MainWindow");
+    delete ui;
 }
 
 void MainWindow::slotToggleLayerWindow(bool a){
@@ -53,11 +74,21 @@ void MainWindow::slotToggleToolWindow(bool a){
         ui->mainToolBar->show();
     }
 }
+void MainWindow::slotToggleTimelineWindow(bool a){
+    if(!a) {
+        ui->dockWidgetTimeline->close();
+    } else {
+        ui->dockWidgetTimeline->show();
+    }
+}
 void MainWindow::slotClosedLayerWindow(bool visible){
     ui->actionToggleLayerWindow->setChecked(visible);
 }
-void MainWindow::slotClosedToolWindow(bool visible){
-    ui->actionToggleToolWindow->setChecked(visible);
+void MainWindow::slotClosedToolWindow(){
+    ui->actionToggleToolWindow->setChecked(ui->actionToggleToolWindow->isVisible());
+}
+void MainWindow::slotClosedTimelineWindow(bool visible){
+    ui->actionToggleTimelineWindow->setChecked(visible);
 }
 
 void MainWindow::slotDbclkFilterItem(QListWidgetItem * /*item*/)
@@ -85,11 +116,6 @@ void MainWindow::slotNewSelection(QListWidgetItem *item)
 void MainWindow::slotDeleteSelection(void)
 {
     emit sendRemoveItem(ui->layerWidget->currentRow());
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
 }
 
 void MainWindow::connectLayerWindow(DisplayWidget *d)
@@ -123,6 +149,23 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
 		this->ui->actionRecord->setEnabled(true);
 	}
 }
+
+void MainWindow::
+        setTimelineWidget( QWidget* w )
+{
+    ui->dockWidgetTimeline->setWidget( w );
+    ui->dockWidgetTimeline->show();
+}
+
+void MainWindow::
+        closeEvent(QCloseEvent * e)
+{
+    // TODO add dialog asking user to save the project
+    e->ignore();
+    Sawe::Application::global_ptr()->slotClosed_window( this );
+}
+
+
 
 struct TitleAndTooltip {
     std::string title, tooltip;
@@ -474,7 +517,7 @@ void MainWindow::updateLayerList( Tfr::pFilter f )
     
     printf("#####Updating: Layers!\n");
 }
-
+/*
 void MainWindow::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
@@ -495,4 +538,4 @@ void MainWindow::keyReleaseEvent ( QKeyEvent * e )
         return;
 
     DisplayWidget::gDisplayWidget->keyReleaseEvent(e);
-}
+}*/

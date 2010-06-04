@@ -124,12 +124,30 @@ bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
     
     ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
     oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
-    
+
     float minAngle = 7;
     if( s < 0 || world_coord[0][1]-world_coord[1][1] < sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
         return false;
     
     return test[0] && test[1];
+}
+
+bool MouseControl::spacePos(GLdouble &out_x, GLdouble &out_y)
+{
+    return spacePos(this->lastx, this->lasty, out_x, out_y);
+}
+
+bool MouseControl::spacePos(GLdouble in_x, GLdouble in_y, GLdouble &out_x, GLdouble &out_y)
+{
+    bool test;
+    GLvector win_coord, world_coord;
+
+    win_coord = GLvector(in_x, in_y, 0.1);
+
+    world_coord = gluUnProject<GLdouble>(win_coord, &test);
+    out_x = world_coord[0];
+    out_y = world_coord[1];
+    return test;
 }
 
 void MouseControl::press( float x, float y )
@@ -164,10 +182,7 @@ DisplayWidget* DisplayWidget::
 DisplayWidget::
         DisplayWidget(
                 Signal::pWorker worker,
-                Signal::pSink collection,
-                unsigned playback_device,
-                std::string selection_filename,
-                int timerInterval )
+                Signal::pSink collection )
 : QGLWidget( ),
   lastKey(0),
   xscale(1),
@@ -177,8 +192,6 @@ DisplayWidget::
   _collectionCallback( new Signal::WorkerCallback( worker, collection )),
   _postsinkCallback( new Signal::WorkerCallback( worker, Signal::pSink(new Signal::PostSink)) ),
   _work_timer( new TaskTimer("Benchmarking first work")),
-  _selection_filename(selection_filename),
-  _playback_device( playback_device ),
   _follow_play_marker( false ),
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
@@ -196,11 +209,14 @@ DisplayWidget::
     char* dum="dum\0";
     glutInit(&c,&dum);
 #else
-    int c=0;
-    glutInit(&c,0);
+    static int c=0;
+    if (0==c)
+        glutInit(&c,0),
+        c = 1;
 #endif
     gDisplayWidget = this;
     float l = _worker->source()->length();
+    _prevLimit = l;
     selection[0].x = l*.5f;
     selection[0].y = 0;
     selection[0].z = .85f;
@@ -214,22 +230,18 @@ DisplayWidget::
 
     yscale = Yscale_LogLinear;
     //timeOut();
-    
-    if ( timerInterval != 0 )
-    {
-        startTimer(timerInterval);
-    }
-        
+            
     if (_rx<0) _rx=0;
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
     
-    grabKeyboard();
+    //grabKeyboard();
 }
 
 DisplayWidget::
         ~DisplayWidget()
 {
+    TaskTimer tt("~DisplayWidget");
     _worker->quit();
 
     Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
@@ -295,8 +307,8 @@ void DisplayWidget::receivePlaySound()
     if (postsink->sinks().empty())
     {
         std::vector<Signal::pSink> sinks;
-        sinks.push_back( Signal::pSink( new Signal::Playback( _playback_device )) );
-        sinks.push_back( Signal::pSink( new Signal::WriteWav( _selection_filename )) );
+        sinks.push_back( Signal::pSink( new Signal::Playback( playback_device )) );
+        sinks.push_back( Signal::pSink( new Signal::WriteWav( selection_filename )) );
         postsink->sinks( sinks );
         postsink->filter( postsink->filter(), _worker->source() );
     }
@@ -339,7 +351,7 @@ bool DisplayWidget::isRecordSource()
 
 void DisplayWidget::receiveRecord(bool active)
 {
-	TaskTimer tt("Trying to %s recording", active?"start":"stop");
+    TaskTimer tt("Trying to %s recording", active?"start":"stop");
 
     Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
     Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
@@ -367,6 +379,29 @@ void DisplayWidget::setWorkerSource( Signal::pSource s ) {
 
     emit filterChainUpdated(fo->filter());
     emit operationsUpdated( _worker->source() );
+}
+
+
+void DisplayWidget::
+        setTimeline( Signal::pSink timelineWidget )
+{
+    _timeline = timelineWidget;
+}
+
+void DisplayWidget::
+        setPosition( float time, float f )
+{
+    float l = _worker->source()->length();
+    _qx = time * l;
+    _qz = f;
+
+    if (_qx<0) _qx=0;
+    if (_qz<0) _qz=0;
+    if (_qz>1) _qz=1;
+    if (_qx>l) _qx=l;
+
+    update();
+    TaskTimer("Set position %f, %f", _qx, _qz).suppressTiming();
 }
 
 void DisplayWidget::receiveAddClearSelection(bool /*active*/)
@@ -408,8 +443,8 @@ void DisplayWidget::
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
     float radie = fabsf(selection[0].x - selection[1].x);
-    unsigned start = std::max(0.f, selection[0].x - radie/sqrtf(2.f)) * FS;
-    unsigned end = (selection[0].x + radie/sqrt(2.f)) * FS;
+    unsigned start = std::max(0.f, selection[0].x - radie) * FS;
+    unsigned end = (selection[0].x + radie) * FS;
 
     if (end<=start)
         return;
@@ -565,7 +600,7 @@ void DisplayWidget::
     update();
 }
 
-void DisplayWidget::keyPressEvent( QKeyEvent *e )
+/*void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
         return;
@@ -604,16 +639,10 @@ void DisplayWidget::keyPressEvent( QKeyEvent *e )
         }
     }
 }
+*/
 
-void DisplayWidget::put(Signal::pBuffer b )
-{    
-/*    float newl = _worker->source()->length();
-    newl -= .1f;
-    static float prevl = newl;
-    if (_qx >= prevl || prevl == newl) // prevl == newl is true for the first put
-        _snapToEnd = true;
-    prevl = newl;*/
-
+void DisplayWidget::put( Signal::pBuffer b, Signal::pSource )
+{
     if (b) {
         QMutexLocker l(&_invalidRangeMutex);
 
@@ -622,6 +651,12 @@ void DisplayWidget::put(Signal::pBuffer b )
 
     update();
 }
+
+void DisplayWidget::add_expected_samples( const Signal::SamplesIntervalDescriptor& )
+{
+    update();
+}
+
 
 Signal::FilterOperation* DisplayWidget::getFilterOperation()
 {
@@ -642,10 +677,10 @@ Signal::PostSink* DisplayWidget::getPostSink()
     return postsink;
 }
 
-void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
+/*void DisplayWidget::keyReleaseEvent ( QKeyEvent *  )
 {
     lastKey = 0;
-}
+}*/
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
@@ -770,6 +805,8 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
+    makeCurrent();
+
     float rs = 0.2;
     
     int x = e->x(), y = this->height() - e->y();
@@ -808,12 +845,13 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
         
     }
+
     if( moveButton.isDown() )
     {
         //Controlling the position with the right button.
         GLvector last, current;
         if( moveButton.worldPos(last[0], last[1]) &&
-           moveButton.worldPos(x, y, current[0], current[1]) )
+            moveButton.worldPos(x, y, current[0], current[1]) )
         {
             float l = _worker->source()->length();
             
@@ -874,8 +912,62 @@ void DisplayWidget::timeOutSlot()
 }
 #endif
 
+static void printQGLFormat(const QGLFormat& f, std::string title)
+{
+    TaskTimer tt("QGLFormat %s", title.c_str());
+    tt.info("accum=%d",f.accum());
+    tt.info("accumBufferSize=%d",f.accumBufferSize());
+    tt.info("alpha=%d",f.alpha());
+    tt.info("alphaBufferSize=%d",f.alphaBufferSize());
+    tt.info("blueBufferSize=%d",f.blueBufferSize());
+    tt.info("depth=%d",f.depth());
+    tt.info("depthBufferSize=%d",f.depthBufferSize());
+    tt.info("directRendering=%d",f.directRendering());
+    tt.info("doubleBuffer=%d",f.doubleBuffer());
+    tt.info("greenBufferSize=%d",f.greenBufferSize());
+    tt.info("hasOverlay=%d",f.hasOverlay());
+    tt.info("redBufferSize=%d",f.redBufferSize());
+    tt.info("rgba=%d",f.rgba());
+    tt.info("sampleBuffers=%d",f.sampleBuffers());
+    tt.info("samples=%d",f.samples());
+    tt.info("stencil=%d",f.stencil());
+    tt.info("stencilBufferSize=%d",f.stencilBufferSize());
+    tt.info("stereo=%d",f.stereo());
+    tt.info("swapInterval=%d",f.swapInterval());
+    tt.info("");
+    tt.info("hasOpenGL=%d",f.hasOpenGL());
+    tt.info("hasOpenGLOverlays=%d",f.hasOpenGLOverlays());
+    QGLFormat::OpenGLVersionFlags flag = f.openGLVersionFlags();
+    tt.info("OpenGL_Version_None=%d", QGLFormat::OpenGL_Version_None == flag);
+    tt.info("OpenGL_Version_1_1=%d", QGLFormat::OpenGL_Version_1_1 & flag);
+    tt.info("OpenGL_Version_1_2=%d", QGLFormat::OpenGL_Version_1_2 & flag);
+    tt.info("OpenGL_Version_1_3=%d", QGLFormat::OpenGL_Version_1_3 & flag);
+    tt.info("OpenGL_Version_1_4=%d", QGLFormat::OpenGL_Version_1_4 & flag);
+    tt.info("OpenGL_Version_1_5=%d", QGLFormat::OpenGL_Version_1_5 & flag);
+    tt.info("OpenGL_Version_2_0=%d", QGLFormat::OpenGL_Version_2_0 & flag);
+    tt.info("OpenGL_Version_2_1=%d", QGLFormat::OpenGL_Version_2_1 & flag);
+    tt.info("OpenGL_Version_3_0=%d", QGLFormat::OpenGL_Version_3_0 & flag);
+    tt.info("OpenGL_ES_CommonLite_Version_1_0=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_0 & flag);
+    tt.info("OpenGL_ES_Common_Version_1_0=%d", QGLFormat::OpenGL_ES_Common_Version_1_0 & flag);
+    tt.info("OpenGL_ES_CommonLite_Version_1_1=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_1 & flag);
+    tt.info("OpenGL_ES_Common_Version_1_1=%d", QGLFormat::OpenGL_ES_Common_Version_1_1 & flag);
+    tt.info("OpenGL_ES_Version_2_0=%d", QGLFormat::OpenGL_ES_Version_2_0 & flag);
+}
+
+static void printQGLWidget(const QGLWidget& w, std::string title)
+{
+    TaskTimer tt("QGLWidget %s", title.c_str());
+    tt.info("doubleBuffer=%d", w.doubleBuffer());
+    tt.info("isSharing=%d", w.isSharing());
+    tt.info("isValid=%d", w.isValid());
+    printQGLFormat( w.format(), "");
+}
+
 void DisplayWidget::initializeGL()
 {
+    //printQGLWidget(*this, "this");
+    //TaskTimer("autoBufferSwap=%d", autoBufferSwap()).suppressTiming();
+
     glShadeModel(GL_SMOOTH);
     
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
@@ -921,13 +1013,12 @@ void DisplayWidget::resizeGL( int width, int height ) {
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    paintGL();
 }
 
 
 void DisplayWidget::paintGL()
 {
-    //TaskTimer tt("ma paintGL");
+    // TaskTimer tt("DisplayWidget::paintGL");
     static int tryGc = 0;
     try {
         GlException_CHECK_ERROR();
@@ -952,14 +1043,12 @@ void DisplayWidget::paintGL()
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
 
     // Set up camera position
     float length = _worker->source()->length();
     {   float limit = std::max(0.f, length - 2*Tfr::CwtSingleton::instance()->wavelet_std_t());
-        static float prevLimit = limit;
-        if (_qx>=prevLimit) {
-            // Snap just behind end so that _worker->center starts working on
+        if (_qx>=_prevLimit) {
+            // Snap just before end so that _worker->center starts working on
             // data that has been fetched. If center=length worker will start
             // at the very end and have to assume that the signal is abruptly
             // set to zero after the end. This abrupt change creates a false
@@ -967,25 +1056,32 @@ void DisplayWidget::paintGL()
             // invalid by newly recorded data).
             _qx = std::max(_qx,limit);
         }
-        prevLimit = limit;
+        _prevLimit = limit;
 
         locatePlaybackMarker();
 
-        glTranslatef( _px, _py, _pz );
-
-        glRotatef( _rx, 1, 0, 0 );
-        glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
-        glRotatef( _rz, 0, 0, 1 );
-
-        glScalef(-xscale, 1-.99*orthoview, 5);
-
-        glTranslatef( -_qx, -_qy, -_qz );
-
-        orthoview.TimeStep(.08);
+        setupCamera();
     }
 
-    {   // Find things to work on
-        _renderer->collection()->next_frame();
+    bool wasWorking = !_worker->todo_list().isEmpty();
+    { // Render
+        _renderer->collection()->next_frame(); // Discard needed blocks before this row
+
+        _renderer->draw(); // 0.6 ms
+        _renderer->drawAxes( length ); // 4.7 ms
+        drawSelection(); // 0.1 ms
+
+        if (wasWorking)
+            drawWorking();
+
+        // When drawing displaywidget, always redraw the timeline as the
+        // timeline has a marker showing the current render position of
+        // displaywidget
+        if (_timeline) dynamic_cast<QWidget*>(_timeline.get())->update();
+    }
+
+    {   // Find things to work on (ie playback and file output)
+        _renderer->collection()->next_frame(); // Check needed blocks
 
         //    if (p && p->isUnderfed() && p->expected_samples_left()) {
         if (!_postsinkCallback->sink()->expected_samples().isEmpty())
@@ -993,26 +1089,25 @@ void DisplayWidget::paintGL()
             _worker->center = 0;
             _worker->todo_list( _postsinkCallback->sink()->expected_samples() );
             //_worker->todo_list().print("Displaywidget - PostSink");
-        }
-        else
-        {
+        } else {
             _worker->center = _qx;
             _worker->todo_list( _collectionCallback->sink()->expected_samples());
             //_worker->todo_list().print("Displaywidget - Collection");
         }
     }
 
-    { // Work
-        if (!_worker->todo_list().isEmpty()) {
+    {   // Work
+        bool isWorking = !_worker->todo_list().isEmpty();
+        if (wasWorking || isWorking) {
             // _worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
             if (!_worker->isRunning()) {
                 _worker->workOne();
-                update();
+                QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
             } else {
                 //_worker->todo_list().print("Work to do");
                 // Wait a bit while the other thread work
-                QTimer::singleShot(10, this, SLOT(update()));
+                QTimer::singleShot(25, this, SLOT(update()));
             }
 
             if (!_work_timer.get())
@@ -1026,22 +1121,12 @@ void DisplayWidget::paintGL()
         }
     }
 
-    { // Render
-
-        _renderer->draw(); // 0.6 ms
-        _renderer->drawAxes( length ); // 4.7 ms
-        drawSelection(); // 0.1 ms
-
-        if (!_worker->todo_list().isEmpty())
-            drawWorking();
-    }
-
     GlException_CHECK_ERROR();
     CudaException_CHECK_ERROR();
 
     tryGc = 0;
     } catch (const CudaException &x) {
-        TaskTimer tt("CAUGHT CUDAEXCEPTION %s", x.what());
+        TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION %s", x.what());
         if (2>tryGc) {
             _renderer.reset( new Heightmap::Renderer( _renderer->collection(), this ));
             tryGc++;
@@ -1065,7 +1150,7 @@ void DisplayWidget::paintGL()
         }
         else throw;
     } catch (const GlException &x) {
-        TaskTimer tt("CAUGHT GLEXCEPTION %s", x.what());
+        TaskTimer tt("DisplayWidget::paintGL CAUGHT GLEXCEPTION %s", x.what());
         if (0==tryGc) {
             _renderer->collection()->gc();
             tryGc++;
@@ -1076,6 +1161,21 @@ void DisplayWidget::paintGL()
     }
 }
 
+void DisplayWidget::setupCamera()
+{
+    glLoadIdentity();
+    glTranslatef( _px, _py, _pz );
+
+    glRotatef( _rx, 1, 0, 0 );
+    glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
+    glRotatef( _rz, 0, 0, 1 );
+
+    glScalef(-xscale, 1-.99*orthoview, 5);
+
+    glTranslatef( -_qx, -_qy, -_qz );
+
+    orthoview.TimeStep(.08);
+}
 
 void DisplayWidget::drawArrows()
 {

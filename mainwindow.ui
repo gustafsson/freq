@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -33,12 +33,32 @@
     </property>
     <addaction name="actionToggleLayerWindow"/>
     <addaction name="actionToggleToolWindow"/>
+    <addaction name="actionToggleTimelineWindow"/>
    </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionNew_recording"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave_project"/>
+    <addaction name="separator"/>
+    <addaction name="actionImport_audio"/>
+    <addaction name="actionExport_audio"/>
+    <addaction name="actionExport_selection"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menuFile"/>
    <addaction name="menuWindows"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="enabled">
     <bool>true</bool>
+   </property>
+   <property name="windowTitle">
+    <string>Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -125,6 +145,9 @@
            <attribute name="headerVisible">
             <bool>false</bool>
            </attribute>
+           <attribute name="headerVisible">
+            <bool>false</bool>
+           </attribute>
            <column>
             <property name="text">
              <string>1</string>
@@ -176,6 +199,15 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidgetTimeline">
+   <property name="windowTitle">
+    <string>Timeline</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2"/>
   </widget>
   <action name="actionActivateSelection">
    <property name="checkable">
@@ -348,7 +380,7 @@
     <bool>false</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
@@ -376,7 +408,7 @@
     <bool>false</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
@@ -404,7 +436,7 @@
     <bool>false</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
@@ -504,6 +536,79 @@
    </property>
    <property name="toolTip">
     <string>Follow the play marker when playing</string>
+   </property>
+  </action>
+  <action name="actionNew_recording">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>New recording</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionImport_audio">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionExport_audio">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="actionSave_project">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save project</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Open </string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionExport_selection">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Export selection</string>
+   </property>
+  </action>
+  <action name="actionToggleTimelineWindow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Timeline window</string>
    </property>
   </action>
  </widget>

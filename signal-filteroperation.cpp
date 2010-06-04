@@ -119,15 +119,21 @@ pBuffer FilterOperation::
             _previous_chunk = c;
 
         break;
-    } catch (const CufftException &) {
-        if (numberOfSamples>1) {
-            numberOfSamples/=2;
+    } catch (const CufftException &x) {
+        unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
+        if (newL > redundant_samples + wavelet_std_samples)
+        {
+            numberOfSamples = newL - redundant_samples - wavelet_std_samples;
+            TaskTimer("CUFFT error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
             continue;
         }
         throw;
     } catch (const CudaException &x) {
-        if (x.getCudaError() == cudaErrorMemoryAllocation && numberOfSamples>1) {
-            numberOfSamples/=2;
+        unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
+        if (newL > redundant_samples + wavelet_std_samples)
+        {
+            numberOfSamples = newL - redundant_samples - wavelet_std_samples;
+            TaskTimer("CUDA error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
             continue;
         }
         throw;

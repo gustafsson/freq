@@ -232,7 +232,7 @@
 
 namespace Signal
 {
-std::string getFileFormatsQtFilter();
+std::string getFileFormatsQtFilter( bool split );
 
 class Audiofile: public Source
 {

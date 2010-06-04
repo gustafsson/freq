@@ -2,10 +2,12 @@
 varying vec3 eyeSpacePos;
 varying vec3 worldSpaceNormal;
 varying vec3 eyeSpaceNormal;
+/*
 uniform vec4 deepColor;    // = vec4(0.0, 0.0, 0.1, 1.0);
 uniform vec4 shallowColor; // = vec4(0.1, 0.4, 0.3, 1.0);
 uniform vec4 skyColor;     // = vec4(0.5, 0.5, 0.5, 1.0);
 uniform vec3 lightDir;     // = vec3(0.0, 1.0, 0.0);
+*/
 varying float intensity;
 
 vec4 setWavelengthColor( float wavelengthScalar ) {
@@ -61,7 +63,7 @@ void main()
 
     float facing    = max(0.0, dot(eyeSpaceNormalVector, -eyeVector));
     float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
-    float diffuse   = max(0.0, dot(worldSpaceNormalVector, lightDir));
+    float diffuse   = max(0.0, worldSpaceNormalVector.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
     
 //    vec4 waterColor = mix(shallowColor, deepColor, facing);
 

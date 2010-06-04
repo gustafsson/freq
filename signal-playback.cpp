@@ -98,7 +98,8 @@ float Playback::
     float dt = d.total_milliseconds()*0.001f;
     float t = dt;
     t += _data.first_buffer()->sample_offset / (float)sample_rate();
-    t -= outputLatency();
+        //t -= 0.25f;
+    //t -= outputLatency();
     return std::max(0.f, t);
 }
 

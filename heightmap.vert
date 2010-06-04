@@ -2,9 +2,10 @@
 varying vec3 eyeSpacePos;
 varying vec3 worldSpaceNormal;
 varying vec3 eyeSpaceNormal;
-uniform float heightScale; // = 0.5;
-uniform float chopiness;   // = 1.0;
-uniform vec2  size;        // = vec2(256.0, 256.0);
+/*uniform float heightScale; // = 0.5;
+uniform vec2  size;        // = vec2(256.0, 256.0);*/
+const float heightScale = 0.0125f;
+const vec2  size = vec2(256.0, 256.0);
 varying float intensity;
 void main()
 {

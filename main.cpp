@@ -1,31 +1,22 @@
-#include <QtGui/QApplication>
 #include "tfr-cwt.h"
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
-#include <QTime>
 #include <iostream>
 #include <stdio.h>
 #include "mainwindow.h"
 #include "displaywidget.h"
 #include "signal-audiofile.h"
 #include "signal-microphonerecorder.h"
-#include <sstream>
 #include <CudaProperties.h>
-#include <QtGui/QMessageBox>
 #include <QString>
 #include <CudaException.h>
 #include "heightmap-renderer.h"
 #include "sawe-csv.h"
 #include "sawe-hdf5.h"
-#include "signal-audiofile.h"
-#include "signal-microphonerecorder.h"
-#include <demangle.h>
+#include "sawe-application.h"
 
 using namespace std;
 using namespace boost;
-
-static string _sawe_version_string(
-        "Sonic AWE - development snapshot\n");
 
 static const char _sawe_usage_string[] =
         "sonicawe [--parameter=value]* [FILENAME]\n"
@@ -62,7 +53,7 @@ static const char _sawe_usage_string[] =
 "    get_hdf            Saves the given chunk number into sawe.h5 which \n"
 "                       then can be read by matlab or octave.\n"
 "    get_chunk_count    Sonic AWE prints number of chunks needed and then exits.\n"
-"    record             If set, Sonic AWE starts in record mode.\n"
+"    record             Starts Sonic AWE starts in record mode. [default]\n"
 "    record_device      Selects a specific device for recording. -1 specifices\n"
 "                       the default input device/microphone.\n"
 "    playback_device    Selects a specific device for playback. -1 specifices the\n"
@@ -93,7 +84,6 @@ static int _playback_device = -1;
 static std::string _soundfile = "";
 static bool _multithread = false;
 static bool _sawe_exit=false;
-std::string fatal_error;
 
 static int prefixcmp(const char *a, const char *prefix) {
     for(;*a && *prefix;a++,prefix++) {
@@ -155,7 +145,7 @@ static int handle_options(char ***argv, int *argc)
             printf("%s", _sawe_usage_string);
             _sawe_exit = true;
         } else if (!strcmp(cmd, "--version")) {
-            printf("%s\n", _sawe_version_string.c_str());
+            printf("%s\n", Sawe::Application::version_string().c_str());
             _sawe_exit = true;
         }
         else if (readarg(&cmd, samples_per_chunk));
@@ -190,71 +180,6 @@ static int handle_options(char ***argv, int *argc)
     return handled;
 }
 
-#define STRINGIFY(x) #x
-#define TOSTR(x) STRINGIFY(x)
-
-void fatal_exception_cerr( const std::string& str )
-{
-    cerr << endl << endl
-         << "======================" << endl
-         << str << endl
-         << "======================" << endl;
-    cerr.flush();
-}
-
-void fatal_exception_qt( const std::string& str )
-{
-    QMessageBox::critical( 0,
-                 QString("Fatal error. Sonic AWE needs to close"),
-                 QString::fromStdString(str) );
-}
-
-void fatal_exception( const std::string& str )
-{
-    fatal_exception_cerr(str);
-    fatal_exception_qt(str);
-}
-
-string fatal_exception( const std::exception &x )
-{
-    std::stringstream ss;
-    ss   << "Error: " << demangle(typeid(x).name()) << endl
-         << "Message: " << x.what();
-    return ss.str();
-}
-
-string fatal_unknown_exception() {
-    return "Error: An unknown error occurred";
-}
-
-
-class SonicAWE_Application: public QApplication
-{
-public:
-    SonicAWE_Application( int& argc, char **argv)
-    :   QApplication(argc, argv)
-    {
-    }
-
-    virtual bool notify(QObject * receiver, QEvent * e) {
-        bool v = false;
-        try {
-            if(!fatal_error.empty())
-                this->exit(-2);
-
-            v = QApplication::notify(receiver,e);
-        } catch (const std::exception &x) {
-            if(fatal_error.empty())
-                fatal_exception_cerr( fatal_error = fatal_exception(x) );
-            this->exit(-2);
-        } catch (...) {
-            if(fatal_error.empty())
-                fatal_exception_cerr( fatal_error = fatal_unknown_exception() );
-            this->exit(-2);
-        }
-        return v;
-    }
-};
 
 bool check_cuda() {
     stringstream ss;
@@ -316,13 +241,6 @@ bool check_cuda() {
 }
 
 void validate_arguments() {
-    if (false==_record) if (0 == _soundfile.length() || !QFile::exists(_soundfile.c_str())) {
-        QString fileName = QFileDialog::getOpenFileName(0, "Open sound file", NULL, QString(Signal::getFileFormatsQtFilter().c_str()));
-        if (0 == fileName.length())
-            exit(0);
-        _soundfile = fileName.toStdString();
-    }
-
     switch ( _yscale )
     {
         case DisplayWidget::Yscale_Linear:
@@ -342,31 +260,11 @@ int main(int argc, char *argv[])
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
 
-    QDateTime now = QDateTime::currentDateTime();
-    now.date().year();
-    stringstream ss;
-    ss << "Sonic AWE";
-#ifndef SONICAWE_RELEASE
-    ss << " - ";
-#ifdef SONICAWE_VERSION
-    ss << TOSTR(SONICAWE_VERSION);
-#else
-    ss << __DATE__;// << " - " << __TIME__;
-#endif
-#endif
+    QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
-#ifdef SONICAWE_BRANCH
-    if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
-        ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
-#endif
-
-    _sawe_version_string = ss.str();
-
-    SonicAWE_Application a(argc, argv);
+    Sawe::Application a(argc, argv);
     if (!check_cuda())
         return -1;
-
-    MainWindow w(_sawe_version_string.c_str());
     
     // skip application filename
     argv++;
@@ -394,18 +292,20 @@ int main(int argc, char *argv[])
     try {
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 
-        Signal::pSource wf;
+        Sawe::pProject p; // p goes out of scope before a.exec()
 
-        if (_record)
-            // TODO use _channel
-            wf.reset( new Signal::MicrophoneRecorder(_record_device) );
-        else {
-            // TODO use _channel
-            //printf("Reading file: %s\n", _soundfile.c_str());
-            wf.reset( new Signal::Audiofile( _soundfile.c_str() ) );
-        }
+        if (!_soundfile.empty())
+            p=a.slotOpen_file( _soundfile );
 
-        unsigned redundant = 2*(((unsigned)(_wavelet_std_t*wf->sample_rate())+31)/32*32);
+        if (!p)
+            p=a.slotNew_recording( _record_device );
+
+        if (!p)
+            return -1;
+
+        // TODO use _channel
+
+        unsigned redundant = 2*(((unsigned)(_wavelet_std_t*p->head_source->sample_rate())+31)/32*32);
         while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
             _samples_per_chunk++;
             TaskTimer("To few samples per chunk, increasing to 2^%d", _samples_per_chunk).suppressTiming();
@@ -417,19 +317,19 @@ int main(int argc, char *argv[])
         cwt->wavelet_std_t( _wavelet_std_t );
 
         if (_get_csv != (unsigned)-1) {
-            Signal::pBuffer b = wf->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
+            Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
 
-            Sawe::Csv().put( b, wf );
+            Sawe::Csv().put( b, p->head_source );
         }
 
         if (_get_hdf != (unsigned)-1) {
-            Signal::pBuffer b = wf->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
+            Signal::pBuffer b = p->head_source->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
 
-            Sawe::Hdf5().put( b, wf );
+            Sawe::Hdf5Sink().put( b, p->head_source );
         }
 
         if (_get_chunk_count != false) {
-            cout << wf->number_of_samples() / total_samples_per_chunk << endl;
+            cout << p->head_source->number_of_samples() / total_samples_per_chunk << endl;
         }
 
         if (_get_hdf != (unsigned)-1 ||
@@ -439,34 +339,26 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        Signal::pWorker wk( new Signal::Worker( wf ) );
-
         if (_multithread)
-            wk->start();
+            p->displayWidget()->worker()->start();
 
-        Heightmap::Collection* sgp( new Heightmap::Collection(wk) );
-        Signal::pSink sg( sgp );
-        sgp->samples_per_block( _samples_per_block );
-        sgp->scales_per_block( _scales_per_block );
-        boost::shared_ptr<DisplayWidget> dw( new DisplayWidget( wk, sg, _playback_device, _selectionfile, 0 ) );
-        dw->yscale = (DisplayWidget::Yscale)_yscale;
+        p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
+        p->displayWidget()->playback_device = _playback_device;
+        p->displayWidget()->selection_filename = _selectionfile;
+        p->displayWidget()->collection()->samples_per_block( _samples_per_block );
+        p->displayWidget()->collection()->scales_per_block( _scales_per_block );
 
-        w.connectLayerWindow(dw.get());
-        w.setCentralWidget( dw.get() );
-        dw->show();
-        w.show();
+        p.reset(); // a keeps a copy of pProject
 
         int r = a.exec();
-        if (!fatal_error.empty())
-            fatal_exception_qt(fatal_error);
 
         // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
-        fatal_exception(fatal_exception(x));
+        Sawe::Application::display_fatal_exception(x);
         return -2;
     } catch (...) {
-        fatal_exception(fatal_unknown_exception());
+        Sawe::Application::display_fatal_exception();
         return -3;
     }
 }

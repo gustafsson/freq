@@ -49,10 +49,13 @@ SOURCES += main.cpp \
     tfr-inversecwt.cpp \
     tfr-chunk.cpp \
     tfr-chunksink.cpp \
+    sawe-application.cpp \
     sawe-csv.cpp \
     sawe-hdf5.cpp \
     sawe-matlaboperation.cpp \
     sawe-matlabfilter.cpp \
+    sawe-project.cpp \
+    sawe-timelinewidget.cpp \
     signal-filteroperation.cpp \
     signal-worker.cpp \
     signal-writewav.cpp \
@@ -88,11 +91,14 @@ HEADERS += mainwindow.h \
     tfr-inversecwt.h \
     tfr-chunk.h \
     tfr-chunksink.h \
+    sawe-application.h \
     sawe-csv.h \
     sawe-hdf5.h \
     sawe-matlaboperation.h \
     sawe-matlabfilter.h \
     sawe-mainplayback.h \
+    sawe-project.h \
+    sawe-timelinewidget.h \
     signal-filteroperation.h \
     signal-worker.h \
     signal-writewav.h \
@@ -164,6 +170,8 @@ win32:LIBS += \
 	-l..\..\winlib\hdf5lib\lib\hdf5_hl \
 	-l..\..\winlib\hdf5lib\lib\hdf5_hl_cpp \
 	-l..\..\winlib\szip\lib\libszip \
+#	-l..\..\winlib\boostlib\libboost_date_time-vc90-mt-gd-1_42 \
+	-L..\..\winlib\boostlib \
 	-l..\..\winlib\zlib\lib\zlib
 LIBS += -lcufft 
 unix:LIBS += -L../gpumisc -lgpumisc

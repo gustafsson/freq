@@ -13,6 +13,7 @@ typedef int64_t __int64_t;
 
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/algorithm/string.hpp>
 //#include <QThread>
 //#include <QSound>
 
@@ -73,7 +74,7 @@ std::string getSupportedFileFormats (bool detailed=false) {
     return ss.str();
 }
 
-std::string getFileFormatsQtFilter() {
+std::string getFileFormatsQtFilter( bool split ) {
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
     char buffer [128] ;
@@ -88,25 +89,25 @@ std::string getFileFormatsQtFilter() {
     {
         return NULL;
     }
-    ss << "Sound files (";
 
     sf_command (NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof (int)) ;
     sf_command (NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int)) ;
 
     sfinfo.channels = 1 ;
-	bool foundogg = false;
     for (m = 0 ; m < major_count ; m++)
     {	info.format = m ;
             sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
-            ss <<" *."<< info.extension;
-			if (string(info.extension) == "ogg")
-				foundogg = true;
+            if (split) {
+                if (0<m) ss << ";;";
+                string name = info.name;
+                boost::replace_all(name, "(", "- ");
+                boost::erase_all(name, ")");
+                ss << name << " (*." << info.extension << " *." << info.name << ")";
+            } else {
+                if (0<m) ss << " ";
+                ss <<"*."<< info.extension << " *." << info.name;
+            }
     }
-
-	if (!foundogg)
-		ss<<" *.ogg";
-
-    ss <<")";
 
     return ss.str();
 }

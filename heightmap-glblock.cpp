@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <QResource>
 
-#define TIME_SHADER
-//#define TIME_SHADER if(0)
+//#define TIME_SHADER
+#define TIME_SHADER if(0)
 
 namespace Heightmap {
 
@@ -64,9 +64,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         }
 
         if (0<len) {
-// #ifndef __APPLE__
-            tt.info("Shader log:\n%s", log, "dummy");
-// #endif
+			TIME_SHADER TaskTimer("Shader log:\n%s", log).suppressTiming();
         }
 
 
