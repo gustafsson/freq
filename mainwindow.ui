@@ -414,9 +414,6 @@
    </property>
   </action>
   <action name="actionCropSelection">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="checked">
     <bool>false</bool>
    </property>
@@ -425,8 +422,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-crop.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-crop.png</iconset>
    </property>
    <property name="text">
     <string>Crop Selection</string>
@@ -503,8 +500,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-matlabfilter.png</iconset>
    </property>
    <property name="text">
     <string>Matlab filter</string>
@@ -522,8 +519,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-matlaboperation.png</iconset>
    </property>
    <property name="text">
     <string>Matlab operation</string>
@@ -547,8 +544,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-record.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-record.png</iconset>
    </property>
    <property name="text">
     <string>Record</string>
@@ -569,8 +566,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-play.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-lockplayback.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-lockplayback.png</iconset>
    </property>
    <property name="text">
     <string>Follow play marker</string>
