@@ -38,57 +38,31 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
-    connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
-    connect(ui->actionToggleToolWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleToolWindow(bool)));
-    connect(ui->actionToggleTimelineWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleTimelineWindow(bool)));
-    connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
-    connect(ui->mainToolBar, SIGNAL(actionTriggered(QAction *)), this, SLOT(slotClosedToolWindow()));
-    connect(ui->mainToolBar, SIGNAL(movableChanged(bool)), this, SLOT(slotClosedToolWindow()));
-    connect(ui->mainToolBar, SIGNAL(allowedAreasChanged(Qt::ToolBarAreas)), this, SLOT(slotClosedToolWindow()));
-    connect(ui->mainToolBar, SIGNAL(orientationChanged(Qt::Orientation)), this, SLOT(slotClosedToolWindow()));
-    connect(ui->mainToolBar, SIGNAL(iconSizeChanged(const QSize &)), this, SLOT(slotClosedToolWindow()));
-    connect(ui->mainToolBar, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this, SLOT(slotClosedToolWindow()));
-    connect(ui->mainToolBar, SIGNAL(topLevelChanged(bool)), this, SLOT(slotClosedToolWindow()));
-    connect(ui->dockWidgetTimeline, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedTimelineWindow(bool)));
+    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
+    connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
+    connectActionToWindow(ui->actionToggleHistoryWindow, ui->historyWindow);
+    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
+    
+    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolToolBox, SLOT(setVisible(bool)));
     connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
     connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+    //connectActionToWindow(ui->actionToggleToolToolBox, ui->topFilterWindow);
+    
+    //connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
+    //connect(ui->actionToggleToolWindow, SIGNAL(toggled(bool)), this, SLOT(slotToggleToolWindow(bool)));
+    //connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
+}
+
+void MainWindow::connectActionToWindow(QObject *a, QObject *b)
+{
+	connect(a, SIGNAL(triggered(bool)), b, SLOT(setVisible(bool)));
+	connect(b, SIGNAL(visibilityChanged(bool)), a, SLOT(setChecked(bool)));
 }
 
 MainWindow::~MainWindow()
 {
     TaskTimer tt("~MainWindow");
     delete ui;
-}
-
-void MainWindow::slotToggleLayerWindow(bool a){
-    if(!a) {
-        ui->layerWindow->close();
-    } else {
-        ui->layerWindow->show();
-    }
-}
-void MainWindow::slotToggleToolWindow(bool a){
-    if(!a) {
-        ui->mainToolBar->close();
-    } else {
-        ui->mainToolBar->show();
-    }
-}
-void MainWindow::slotToggleTimelineWindow(bool a){
-    if(!a) {
-        ui->dockWidgetTimeline->close();
-    } else {
-        ui->dockWidgetTimeline->show();
-    }
-}
-void MainWindow::slotClosedLayerWindow(bool visible){
-    ui->actionToggleLayerWindow->setChecked(visible);
-}
-void MainWindow::slotClosedToolWindow(){
-    ui->actionToggleToolWindow->setChecked(ui->actionToggleToolWindow->isVisible());
-}
-void MainWindow::slotClosedTimelineWindow(bool visible){
-    ui->actionToggleTimelineWindow->setChecked(visible);
 }
 
 void MainWindow::slotDbclkFilterItem(QListWidgetItem * /*item*/)

@@ -1128,7 +1128,10 @@ void DisplayWidget::paintGL()
     } catch (const CudaException &x) {
         TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION %s", x.what());
         if (2>tryGc) {
-            _renderer.reset( new Heightmap::Renderer( _renderer->collection(), this ));
+        	Heightmap::Collection* c=_renderer->collection();
+        	c->reset();
+            _renderer.reset();
+            _renderer.reset(new Heightmap::Renderer( c, this ));
             tryGc++;
             //cudaThreadExit();
             int count;
@@ -1620,6 +1623,8 @@ void DisplayWidget::
 {
     static float computing_rotation = 0.0;
 
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -1634,10 +1639,8 @@ void DisplayWidget::
     glLoadIdentity();
     glScalef(0.5, 0.5, 1);
 
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glEnable(GL_DEPTH_TEST);
-    //glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     glColor4f(1, 1, 1, 0.5);
     glPushMatrix();
@@ -1660,6 +1663,7 @@ void DisplayWidget::
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+    glDepthFunc(GL_LEQUAL);
 }
 
 void DisplayWidget::

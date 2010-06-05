@@ -79,7 +79,7 @@ static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
 static std::string _selectionfile = "selection.wav";
 static bool _record = false;
-static int _record_device = -1;
+static int _record_device = 1;
 static int _playback_device = -1;
 static std::string _soundfile = "";
 static bool _multithread = false;
@@ -155,8 +155,8 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, scales_per_block));
         else if (readarg(&cmd, yscale));
         else if (readarg(&cmd, get_chunk_count));
-        else if (readarg(&cmd, record));
         else if (readarg(&cmd, record_device));
+        else if (readarg(&cmd, record));
         else if (readarg(&cmd, playback_device));
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));

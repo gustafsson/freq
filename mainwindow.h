@@ -34,12 +34,6 @@ public slots:
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);
-    void slotToggleLayerWindow(bool);
-    void slotClosedLayerWindow(bool visible);
-    void slotToggleToolWindow(bool);
-    void slotClosedToolWindow();
-    void slotToggleTimelineWindow(bool);
-    void slotClosedTimelineWindow(bool visible);
 
 signals:
     void sendCurrentSelection(int, bool);
@@ -47,6 +41,8 @@ signals:
 
 private:
     class Ui_MainWindow *ui;
+    
+    void connectActionToWindow(QObject *a, QObject *b);
 };
 
 #endif // MAINWINDOW_H
