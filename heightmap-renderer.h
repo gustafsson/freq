@@ -24,7 +24,7 @@ public:
 
     Collection* collection() { return _collection; }
 
-    void draw();
+    void draw( float scaley );
     void drawAxes( float T );
     void drawFrustum();
 

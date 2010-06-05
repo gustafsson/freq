@@ -77,7 +77,10 @@ __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 a
         //f*=(1-f);
         //f*=(1-f);
 
-        ((float*)wavelet)[ 2*x + complex + fi*2*numElem.width ] *= f;
+        if (f != 0)
+            f *= ((float*)wavelet)[ 2*x + complex + fi*2*numElem.width ];
+
+        ((float*)wavelet)[ 2*x + complex + fi*2*numElem.width ] = f;
     }
 }
 
@@ -139,11 +142,15 @@ __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float st
                        0<df ? fc<=nFrequencies : fc>0;
                        0<df?fc++:fc--)
     {
-        unsigned fi = fc-1;
-        float ri = fi + df;
+        // fc is a counter that is off by one, it goes [1,nFrequencies] or [nFrequencies,1]
+        unsigned fi = fc-1; // fi=write index
+
+        float ri = fi + df; // read index
         float ff_read = ri/(float)nFrequencies;
         float ff_write = fi/(float)nFrequencies;
+
         //float period = start*exp(-ff*steplogsize); // start = sampleRate/minHz/numElem.width
+
         float hz_read = start*exp(ff_read*steplogsize); // start = min_hz/2
         float hz_write = start*exp(ff_write*steplogsize); // start = min_hz/2
 
@@ -166,12 +173,15 @@ __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float st
             float amplitude = sqrt(c.x*c.x + c.y*c.y);
             w.x = cos(f)*amplitude;
             w.y = sin(f)*amplitude;
+            w.x = c.x;
+            w.y = c.y;
         }
 
         elemSize3_t writePos;
         writePos.x = x;
         writePos.y = fi;
         writePos.z = 0;
+
         chunk.e(writePos) = w;
     }
 }

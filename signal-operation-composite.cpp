@@ -157,7 +157,7 @@ void OperationMoveSelection::
 		f->_save_inside = false;
 		remove.reset( new Tfr::EllipsFilter(*f) );
 		f->_save_inside = true;
-		extract = selectionFilter;
+                extract.reset( new Tfr::EllipsFilter(*f) );
 		f->_save_inside = v;
 	} else {
 		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipsFilter as selectionFilter");

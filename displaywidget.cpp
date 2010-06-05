@@ -474,32 +474,32 @@ void DisplayWidget::
         sourceSelection[1] = selection[1];
 
     } else { // Button released
-		Tfr::pFilter filter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, false ));
+        Tfr::pFilter filter(new Tfr::EllipsFilter(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, true ));
 
-		unsigned FS = b->sample_rate();
-		int delta = (int)(FS * (selection[0].x - sourceSelection[0].x));
+        unsigned FS = b->sample_rate();
+        int delta = (int)(FS * (selection[0].x - sourceSelection[0].x));
 
-		Signal::pSource moveSelection( new Signal::OperationMoveSelection( 
-			b->source(), 
-			filter, 
-			delta, 
-			sourceSelection[0].z - selection[0].z));
+        Signal::pSource moveSelection( new Signal::OperationMoveSelection(
+                b->source(),
+                filter,
+                delta,
+                sourceSelection[0].z - selection[0].z));
 
         // update stream
         b->source(moveSelection);
-		setWorkerSource();
+        setWorkerSource();
 
 
-		// Invalidate rendering
-		Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
-		sid -= filter->getUntouchedSamples( FS );
+        // Invalidate rendering
+        Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        sid -= filter->getUntouchedSamples( FS );
 
-		Signal::SamplesIntervalDescriptor sid2 = sid;
-		if (0<delta) sid2 += delta;
-		else         sid2 -= -delta;
-		sid |= sid2;
+        Signal::SamplesIntervalDescriptor sid2 = sid;
+        if (0<delta) sid2 += delta;
+        else         sid2 -= -delta;
+        sid |= sid2;
 
-                _renderer->collection()->add_expected_samples(sid);
+        _renderer->collection()->add_expected_samples(sid);
         update();
     }
 }
@@ -1067,7 +1067,7 @@ void DisplayWidget::paintGL()
     { // Render
         _renderer->collection()->next_frame(); // Discard needed blocks before this row
 
-        _renderer->draw(); // 0.6 ms
+        _renderer->draw( 1-orthoview ); // 0.6 ms
         _renderer->drawAxes( length ); // 4.7 ms
         drawSelection(); // 0.1 ms
 
@@ -1170,7 +1170,7 @@ void DisplayWidget::setupCamera()
     glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( _rz, 0, 0, 1 );
 
-    glScalef(-xscale, 1-.99*orthoview, 5);
+    glScalef(-xscale, 1, 5);
 
     glTranslatef( -_qx, -_qy, -_qz );
 

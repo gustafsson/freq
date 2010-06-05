@@ -252,7 +252,7 @@ void Renderer::init()
     GlException_CHECK_ERROR();
 }
 
-void Renderer::draw()
+void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
     TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
@@ -261,6 +261,14 @@ void Renderer::draw()
     g_invalidFrustum = true;
 
     glPushMatrixContext mc;
+
+/*    if (.01 > scaley)
+        //setSize(2,2),
+        scaley = 0.01;
+    else
+        setSize( _collection->samples_per_block(), _collection->scales_per_block() );
+*/
+    glScalef(0, scaley, 0);
 
     Position mss = _collection->max_sample_size();
     Reference ref = _collection->findReference(Position(0,0), mss);

@@ -44,9 +44,12 @@ vec4 setWavelengthColor( float wavelengthScalar ) {
 
 void main()
 {
-    vec3 eyeVector              = normalize(eyeSpacePos);
-    vec3 eyeSpaceNormalVector   = normalize(eyeSpaceNormal);
-    vec3 worldSpaceNormalVector = normalize(worldSpaceNormal);
+//    vec3 eyeVector              = normalize(eyeSpacePos);
+//    vec3 eyeSpaceNormalVector   = normalize(eyeSpaceNormal);
+//    vec3 worldSpaceNormalVector = normalize(worldSpaceNormal);
+    vec3 eyeVector              = eyeSpacePos;
+    vec3 eyeSpaceNormalVector   = eyeSpaceNormal;
+    vec3 worldSpaceNormalVector = worldSpaceNormal;
 
     float facing    = max(0.0, dot(eyeSpaceNormalVector, -eyeVector));
     float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
