@@ -329,22 +329,31 @@ Signal::SamplesIntervalDescriptor Collection::
 pBlock Collection::
 attempt( Reference ref )
 {
+    TaskTimer tt("Attempt");
     try {
         pBlock attempt( new Block(ref));
         attempt->glblock.reset( new GlBlock( this ));
-        GlBlock::pHeight h = attempt->glblock->height();
-        GlBlock::pSlope sl = attempt->glblock->slope();
+        {
+            GlBlock::pHeight h = attempt->glblock->height();
+            GlBlock::pSlope sl = attempt->glblock->slope();
+        }
         attempt->glblock->unmap();
 
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
+        tt.info("Returning attempt");
         return attempt;
     }
-    catch (const CudaException& )
-    { }
-    catch (const GlException& )
-    { }
+    catch (const CudaException& x)
+    {
+        TaskTimer("Swalloed CudaException: %s", x.what()).suppressTiming();
+    }
+    catch (const GlException& x)
+    {
+        TaskTimer("Swalloed GlException: %s", x.what()).suppressTiming();
+    }
+    tt.info("Returning pBlock()");
     return pBlock();
 }
 
@@ -374,6 +383,9 @@ createBlock( Reference ref )
         // set to zero
         GlBlock::pHeight h = block->glblock->height();
         cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
+
+        GlException_CHECK_ERROR();
+        CudaException_CHECK_ERROR();
 
         if ( 1 /* create from others */ ) {
             TaskTimer tt(TaskTimer::LogVerbose, "Stubbing new block");
@@ -425,6 +437,9 @@ createBlock( Reference ref )
                 }
             }
 
+            GlException_CHECK_ERROR();
+            CudaException_CHECK_ERROR();
+
             if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // then try to upscale blocks that are just slightly less detailed
@@ -459,13 +474,23 @@ createBlock( Reference ref )
             }
         }
 
+        GlException_CHECK_ERROR();
+        CudaException_CHECK_ERROR();
+
         computeSlope( block, 0 );
         result = block;
+
+        GlException_CHECK_ERROR();
+        CudaException_CHECK_ERROR();
     }
-    catch (const CudaException& )
-    { }
-    catch (const GlException& )
-    { }
+    catch (const CudaException& x )
+    {
+        TaskTimer("Swalloed CudaException: %s", x.what()).suppressTiming();
+    }
+    catch (const GlException& x )
+    {
+        TaskTimer("Swalloed GlException: %s", x.what()).suppressTiming();
+    }
 
     if ( 0 == result.get())
         return pBlock(); // return null-pointer
@@ -711,6 +736,9 @@ bool Collection::
             TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Using block [%u,%u]", transfer.first, transfer.last);
         }
     }
+
+    in_h.reset();
+    out_h.reset();
 
     // These inblocks won't be rendered and thus unmapped very soon. outBlock will however be unmapped
     // very soon as it was requested for rendering.

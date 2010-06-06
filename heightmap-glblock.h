@@ -30,18 +30,32 @@ public:
 
     pHeight height();
     pSlope slope();
+
+    /**
+        'unmap' releases copies of pHeight and pSlope held by GlBlock and
+        updates the OpenGL textures that are used for rendering.
+
+        It is an error for a client to call unmap while keeping an instance
+        of pHeight. Because if there is an instance of pHeight left. The Vbo
+        is not unmapped from cuda, glBindBuffer doesn't do anything and
+        glTexSubImage2D fails.
+      */
     void unmap();
 
     void draw( );
+    void draw_flat( );
     void draw_directMode( );
 private:
     Collection* _collection;
 
+    pVbo _height;
+    pVbo _slope;
+
     pHeight _mapped_height;
     pSlope _mapped_slope;
 
-    pVbo _height;
-    pVbo _slope;
+    unsigned _tex_height;
+    unsigned _tex_slope;
 };
 
 typedef boost::shared_ptr<GlBlock> pGlBlock;

@@ -11,6 +11,7 @@
 
 #include <vbo.h>
 #include <demangle.h>
+#include <GlException.h>
 
 #include "heightmap-collection.h"
 #include "heightmap-renderer.h"
@@ -18,8 +19,11 @@
 #include <stdio.h>
 #include <QResource>
 
-//#define TIME_SHADER
-#define TIME_SHADER if(0)
+//#define TIME_COMPILESHADER
+#define TIME_COMPILESHADER if(0)
+
+#define TIME_GLBLOCK
+//#define TIME_GLBLOCK if(0)
 
 namespace Heightmap {
 
@@ -29,7 +33,7 @@ namespace Heightmap {
 // Attach shader to a program
 void attachShader(GLuint prg, GLenum type, const char *name)
 {
-    TIME_SHADER TaskTimer tt("Compiling shader %s", name);
+    TIME_COMPILESHADER TaskTimer tt("Compiling shader %s", name);
     try {
         GLuint shader;
         FILE * fp=0;
@@ -64,7 +68,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         }
 
         if (0<len) {
-			TIME_SHADER TaskTimer("Shader log:\n%s", log).suppressTiming();
+                        TIME_COMPILESHADER TaskTimer("Shader log:\n%s", log).suppressTiming();
         }
 
 
@@ -72,7 +76,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         glDeleteShader(shader);
     } catch (const std::exception &x) {
 #ifndef __APPLE__
-        TIME_SHADER TaskTimer("Failed, throwing %s", demangle(typeid(x).name()).c_str()).suppressTiming();
+        TIME_COMPILESHADER TaskTimer("Failed, throwing %s", demangle(typeid(x).name()).c_str()).suppressTiming();
 #endif
         throw;
     }
@@ -109,18 +113,45 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 GlBlock::
 GlBlock( Collection* collection )
 :   _collection( collection ),
-    _height( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float)) ),
-    _slope( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float2)) )
+    _height( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float), GL_PIXEL_UNPACK_BUFFER) ),
+    _slope( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float2)) ),
+    _tex_height(0)
 {
+    TIME_GLBLOCK TaskTimer tt("GlBlock()");
+
     //_renderer->setSize(renderer->spectrogram()->samples_per_block(), renderer->spectrogram()->scales_per_block());
     cudaGLRegisterBufferObject(*_height);
     cudaGLRegisterBufferObject(*_slope);
+
+    glGenTextures(1, &_tex_height);
+    glBindTexture(GL_TEXTURE_2D, _tex_height);
+    glTexImage2D(GL_TEXTURE_2D,0,1,collection->samples_per_block(), collection->scales_per_block(),0, GL_RED, GL_FLOAT, 0);
+
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	// Linear Filtering
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	// Linear Filtering
+
+    glGenTextures(1, &_tex_slope);
+    glBindTexture(GL_TEXTURE_2D, _tex_slope);
+    glTexImage2D(GL_TEXTURE_2D,0,2,collection->samples_per_block(), collection->scales_per_block(),0, GL_RG, GL_FLOAT, 0);
+
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	// Linear Filtering
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	// Linear Filtering
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    TIME_GLBLOCK TaskTimer("_tex_height=%u, _tex_slope=%d", _tex_height, _tex_slope).suppressTiming();
 }
 
 GlBlock::
 ~GlBlock()
 {
+    TIME_GLBLOCK TaskTimer tt("~GlBlock() _tex_height=%u",_tex_height);
+
     unmap();
+
+    if (_tex_height)
+        glDeleteTextures(1, &_tex_height),
+        _tex_height = 0;
 
     cudaGLUnregisterBufferObject(*_height);
     cudaGLUnregisterBufferObject(*_slope);
@@ -145,15 +176,48 @@ slope()
 }
 
 void GlBlock::
-unmap()
+        unmap()
 {
-    if (_mapped_height) {
-        TaskTimer tt(TaskTimer::LogVerbose, "Heightmap Cuda->OpenGL");
+    if (_mapped_height)
+    {
+        TIME_GLBLOCK TaskTimer tt("Heightmap Cuda->OpenGL");
+
+        BOOST_ASSERT( _mapped_height.unique() );
+
         _mapped_height.reset();
+
+        unsigned meshW = _collection->samples_per_block();
+        unsigned meshH = _collection->scales_per_block();
+
+        TIME_GLBLOCK TaskTimer("meshW=%u, meshH=%u, _tex_height=%u, *_height=%u", meshW, meshH, _tex_height, (unsigned)*_height).suppressTiming();
+        glActiveTexture(GL_TEXTURE0);
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
+        glBindTexture(GL_TEXTURE_2D, _tex_height);
+        glPixelTransferf(GL_RED_SCALE, 0.0125f);
+        GlException_CHECK_ERROR();
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
+        GlException_CHECK_ERROR();
     }
-    if (_mapped_slope) {
-        TaskTimer tt(TaskTimer::LogVerbose, "Gradient Cuda->OpenGL");
+
+    if (_mapped_slope)
+    {
+        TIME_GLBLOCK TaskTimer tt("Gradient Cuda->OpenGL");
+
+        BOOST_ASSERT( _mapped_slope.unique() );
+
         _mapped_slope.reset();
+
+/*        unsigned meshW = _collection->samples_per_block();
+        unsigned meshH = _collection->scales_per_block();
+
+        TIME_GLBLOCK TaskTimer("meshW=%u, meshH=%u, _tex_slope=%u, *_slope=%u", meshW, meshH, _tex_slope, (unsigned)*_slope).suppressTiming();
+        glActiveTexture(GL_TEXTURE0);
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
+        glBindTexture(GL_TEXTURE_2D, _tex_slope);
+        glPixelTransferf(GL_RED_SCALE, 0.0125f);
+        GlException_CHECK_ERROR();
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
+        GlException_CHECK_ERROR();*/
     }
 }
 
@@ -165,18 +229,31 @@ void GlBlock::
 
     unmap();
 
-    glBindBuffer(GL_ARRAY_BUFFER, *_height);
-    glClientActiveTexture(GL_TEXTURE0);
-    glTexCoordPointer(1, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+/*    TaskTimer tt("Draw");
+
+    tt.info("meshW=%u, meshH=%u, _tex_height=%u, *_height=%u", meshW, meshH, _tex_height, (unsigned)*_height);
+    glActiveTexture(GL_TEXTURE0);
+    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
+    glBindTexture(GL_TEXTURE_2D, _tex_height);
+    glPixelTransferf(GL_RED_SCALE, 0.0125f);
+    GlException_CHECK_ERROR();
+    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
+    GlException_CHECK_ERROR();*/
+
+    //glPixelTransferf(GL_RED_SCALE, 1.0f);
 
     glBindBuffer(GL_ARRAY_BUFFER, *_slope);
     glClientActiveTexture(GL_TEXTURE1);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
+    //glBindBuffer(GL_ARRAY_BUFFER, *_height);
+    //glClientActiveTexture(GL_TEXTURE2);
+    //glTexCoordPointer(1, GL_FLOAT, 0, 0);
+    //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _tex_height);
 
     bool wireFrame = false;
     bool drawPoints = false;
@@ -189,6 +266,8 @@ void GlBlock::
             glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+2)*(meshH-1), GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glClientActiveTexture(GL_TEXTURE0);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -196,13 +275,45 @@ void GlBlock::
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
-int clamp(int val, int max) {
+void GlBlock::
+        draw_flat( )
+{
+    unmap();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _tex_height);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+/*    glBindBuffer(GL_ARRAY_BUFFER, *_slope);
+    glClientActiveTexture(GL_TEXTURE1);
+    glTexCoordPointer(2, GL_FLOAT, 0, 0);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+*/
+    glBegin( GL_TRIANGLE_STRIP );
+        glTexCoord2f(0.0,0.0);    glVertex3f(0,0,0);
+        glTexCoord2f(0.0,1.0);    glVertex3f(0,0,1);
+        glTexCoord2f(1.0,0.0);    glVertex3f(1,0,0);
+        glTexCoord2f(1.0,1.0);    glVertex3f(1,0,1);
+    glEnd();
+
+    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glClientActiveTexture(GL_TEXTURE0);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glClientActiveTexture(GL_TEXTURE1);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+}
+
+static int clamp(int val, int max) {
     if (val<0) return 0;
     if (val>max) return max;
     return val;
 }
 
-void setWavelengthColor( float wavelengthScalar ) {
+static void setWavelengthColor( float wavelengthScalar ) {
     const float spectrum[][3] = {
         /* white background */
         { 1, 1, 1 },
