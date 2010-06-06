@@ -326,6 +326,11 @@ void Renderer::beginVboRendering()
     //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
     glUniform1i(uniVertText0, 0); // GL_TEXTURE0
 
+    GLuint uniVertText1;
+    uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
+    //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
+    glUniform1i(uniVertText1, 1); // GL_TEXTURE0
+
     GLuint uniText0;
     uniText0 = glGetUniformLocation(_shader_prog, "Texture0");
     /*TaskTimer("uniDeepColor=%u", uniDeepColor).suppressTiming();

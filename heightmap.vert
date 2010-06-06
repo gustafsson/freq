@@ -9,6 +9,7 @@ const float heightScale = 1; // 0.0125;
 const vec2  size = vec2(128.0, 256.0);
 
 uniform sampler2D tex;
+uniform sampler2D tex_slope;
 
 void main()
 {
@@ -17,7 +18,7 @@ void main()
     //vec2  slope      = gl_MultiTexCoord1.xy;
     gl_TexCoord[0].xy= gl_Vertex.xz;
     float height     = texture2D(tex, gl_TexCoord[0].xy).x;
-    vec2 slope       = texture2D(tex, gl_TexCoord[0].xy).xy;
+    vec2 slope       = texture2D(tex_slope, gl_TexCoord[0].xy).xy;
 
     // calculate surface normal from slope for shading
     worldSpaceNormal = cross( vec3(0.0, slope.y*heightScale, 2.0 / size.x), vec3(2.0 / size.y, slope.x*heightScale, 0.0));

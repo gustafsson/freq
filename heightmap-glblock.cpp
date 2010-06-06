@@ -114,7 +114,7 @@ GlBlock::
 GlBlock( Collection* collection )
 :   _collection( collection ),
     _height( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float), GL_PIXEL_UNPACK_BUFFER) ),
-    _slope( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float2)) ),
+    _slope( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float2), GL_PIXEL_UNPACK_BUFFER) ),
     _tex_height(0)
 {
     TIME_GLBLOCK TaskTimer tt("GlBlock()");
@@ -194,9 +194,14 @@ void GlBlock::
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height);
         glPixelTransferf(GL_RED_SCALE, 0.0125f);
+
         GlException_CHECK_ERROR();
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
-        GlException_CHECK_ERROR();
+        GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+
+        glPixelTransferf(GL_RED_SCALE, 1.0f);
+
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     }
 
     if (_mapped_slope)
@@ -207,7 +212,7 @@ void GlBlock::
 
         _mapped_slope.reset();
 
-/*        unsigned meshW = _collection->samples_per_block();
+        unsigned meshW = _collection->samples_per_block();
         unsigned meshH = _collection->scales_per_block();
 
         TIME_GLBLOCK TaskTimer("meshW=%u, meshH=%u, _tex_slope=%u, *_slope=%u", meshW, meshH, _tex_slope, (unsigned)*_slope).suppressTiming();
@@ -215,9 +220,16 @@ void GlBlock::
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
         glBindTexture(GL_TEXTURE_2D, _tex_slope);
         glPixelTransferf(GL_RED_SCALE, 0.0125f);
+        glPixelTransferf(GL_GREEN_SCALE, 0.0125f);
+
         GlException_CHECK_ERROR();
-        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
-        GlException_CHECK_ERROR();*/
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RG, GL_FLOAT, 0);
+        GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+
+        glPixelTransferf(GL_RED_SCALE, 1.0f);
+        glPixelTransferf(GL_GREEN_SCALE, 1.0f);
+
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     }
 }
 
@@ -229,31 +241,10 @@ void GlBlock::
 
     unmap();
 
-/*    TaskTimer tt("Draw");
-
-    tt.info("meshW=%u, meshH=%u, _tex_height=%u, *_height=%u", meshW, meshH, _tex_height, (unsigned)*_height);
-    glActiveTexture(GL_TEXTURE0);
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
-    glPixelTransferf(GL_RED_SCALE, 0.0125f);
-    GlException_CHECK_ERROR();
-    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
-    GlException_CHECK_ERROR();*/
-
-    //glPixelTransferf(GL_RED_SCALE, 1.0f);
-
-    glBindBuffer(GL_ARRAY_BUFFER, *_slope);
-    glClientActiveTexture(GL_TEXTURE1);
-    glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    //glBindBuffer(GL_ARRAY_BUFFER, *_height);
-    //glClientActiveTexture(GL_TEXTURE2);
-    //glTexCoordPointer(1, GL_FLOAT, 0, 0);
-    //glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, _tex_slope);
 
     bool wireFrame = false;
     bool drawPoints = false;
@@ -266,13 +257,7 @@ void GlBlock::
             glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+2)*(meshH-1), GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    glClientActiveTexture(GL_TEXTURE0);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glClientActiveTexture(GL_TEXTURE1);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
 void GlBlock::
@@ -282,15 +267,9 @@ void GlBlock::
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
-
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-/*    glBindBuffer(GL_ARRAY_BUFFER, *_slope);
-    glClientActiveTexture(GL_TEXTURE1);
-    glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-*/
     glBegin( GL_TRIANGLE_STRIP );
         glTexCoord2f(0.0,0.0);    glVertex3f(0,0,0);
         glTexCoord2f(0.0,1.0);    glVertex3f(0,0,1);
@@ -298,13 +277,7 @@ void GlBlock::
         glTexCoord2f(1.0,1.0);    glVertex3f(1,0,1);
     glEnd();
 
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    glClientActiveTexture(GL_TEXTURE0);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glClientActiveTexture(GL_TEXTURE1);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
 static int clamp(int val, int max) {
