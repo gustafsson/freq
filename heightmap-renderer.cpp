@@ -39,6 +39,7 @@ Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
     _mesh_height(0),
     _initialized(false),
     _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
+    _draw_flat(false),
     _drawn_blocks(0)
 {
 }
@@ -231,12 +232,13 @@ void Renderer::init()
         exit(EXIT_FAILURE);
     }
 
-    if (!glewIsSupported( "GL_VERSION_1_5 GL_ARB_vertex_buffer_object GL_ARB_pixel_buffer_object" )) {
+    if (!glewIsSupported( "GL_VERSION_1_5 GL_ARB_vertex_buffer_object GL_ARB_pixel_buffer_object GL_ARB_texture_float" )) {
             fprintf(stderr, "Error: failed to get minimal extensions\n");
             fprintf(stderr, "Sonic AWE requires:\n");
             fprintf(stderr, "  OpenGL version 1.5\n");
             fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
             fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
+            fprintf(stderr, "  GL_ARB_texture_float\n");
             fflush(stderr);
             exit(-1);
     }
@@ -246,13 +248,13 @@ void Renderer::init()
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
     setSize( _collection->samples_per_block(), _collection->scales_per_block() );
-
+    //setSize(2,2);
     _initialized=true;
 
     GlException_CHECK_ERROR();
 }
 
-void Renderer::draw()
+void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
     TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
@@ -261,6 +263,16 @@ void Renderer::draw()
     g_invalidFrustum = true;
 
     glPushMatrixContext mc;
+
+    if (.01 > scaley)
+//        setSize(2,2),
+        scaley = 0.01,
+        _draw_flat = true;
+    else
+        _draw_flat = false;
+//        setSize( _collection->samples_per_block(), _collection->scales_per_block() );
+
+    glScalef(1, scaley, 1);
 
     Position mss = _collection->max_sample_size();
     Reference ref = _collection->findReference(Position(0,0), mss);
@@ -295,9 +307,9 @@ void Renderer::beginVboRendering()
     glUniform2f(uniSize, meshW, meshH);
 */
     // Set default uniform variables parameters for the pixel shader
-    //GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
+/*    GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
 
-/*    uniDeepColor = glGetUniformLocation(_shader_prog, "deepColor");
+    uniDeepColor = glGetUniformLocation(_shader_prog, "deepColor");
     glUniform4f(uniDeepColor, 0.0f, 0.0f, 0.1f, 1.0f);
 
     uniShallowColor = glGetUniformLocation(_shader_prog, "shallowColor");
@@ -308,8 +320,28 @@ void Renderer::beginVboRendering()
 
     uniLightDir = glGetUniformLocation(_shader_prog, "lightDir");
     glUniform3f(uniLightDir, 0.0f, 1.0f, 0.0f);
-    // end of uniform settings
 */
+    GLuint uniVertText0;
+    uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
+    //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
+    glUniform1i(uniVertText0, 0); // GL_TEXTURE0
+
+    GLuint uniVertText1;
+    uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
+    //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
+    glUniform1i(uniVertText1, 1); // GL_TEXTURE0
+
+    GLuint uniText0;
+    uniText0 = glGetUniformLocation(_shader_prog, "Texture0");
+    /*TaskTimer("uniDeepColor=%u", uniDeepColor).suppressTiming();
+    TaskTimer("uniShallowColor=%u", uniShallowColor).suppressTiming();
+    TaskTimer("uniSkyColor=%u", uniSkyColor).suppressTiming();
+    TaskTimer("uniLightDir=%u", uniLightDir).suppressTiming();*/
+    //TaskTimer("uniText0=%u", uniText0).suppressTiming();
+    glUniform1i(uniText0, 0); // GL_TEXTURE0
+
+    // end of uniform settings
+
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     glVertexPointer(4, GL_FLOAT, 0, 0);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -345,7 +377,12 @@ bool Renderer::renderSpectrogramRef( Reference ref )
         if (0 /* direct rendering */ )
             block->glblock->draw_directMode();
         else if (1 /* vbo */ )
-            block->glblock->draw();
+        {
+            if (_draw_flat)
+                block->glblock->draw_flat();
+            else
+                block->glblock->draw();
+        }
 
     } else {
         // getBlock would try to find something else if the requested block wasn't readily available.

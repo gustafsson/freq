@@ -2,8 +2,8 @@
 #include <CudaException.h>
 #include <memory.h>
 
-//#define TIME_FILTEROPERATION
-#define TIME_FILTEROPERATION if(0)
+#define TIME_FILTEROPERATION
+//#define TIME_FILTEROPERATION if(0)
 
 namespace Signal {
 
@@ -35,7 +35,7 @@ pBuffer FilterOperation::
 
     _previous_chunk.reset();
 
-    // If we're not asked to compute a chunk, take shortcuts
+    // If we're not asked to compute a chunk, try to take shortcuts
     if (!_save_previous_chunk)
     {
         if (!_filter) {

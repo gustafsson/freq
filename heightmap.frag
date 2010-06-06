@@ -9,6 +9,7 @@ uniform vec4 skyColor;     // = vec4(0.5, 0.5, 0.5, 1.0);
 uniform vec3 lightDir;     // = vec3(0.0, 1.0, 0.0);
 */
 varying float intensity;
+uniform sampler2D Texture0;
 
 vec4 setWavelengthColor( float wavelengthScalar ) {
     vec4 spectrum[7];
@@ -57,14 +58,20 @@ float setHeightLineColor(float height)
 
 void main()
 {
-    vec3 eyeVector              = normalize(eyeSpacePos);
-    vec3 eyeSpaceNormalVector   = normalize(eyeSpaceNormal);
-    vec3 worldSpaceNormalVector = normalize(worldSpaceNormal);
+//    vec3 eyeVector              = normalize(eyeSpacePos);
+//    vec3 eyeSpaceNormalVector   = normalize(eyeSpaceNormal);
+//    vec3 worldSpaceNormalVector = normalize(worldSpaceNormal);
+    vec3 eyeVector              = eyeSpacePos;
+    vec3 eyeSpaceNormalVector   = eyeSpaceNormal;
+    vec3 worldSpaceNormalVector = worldSpaceNormal;
 
     float facing    = max(0.0, dot(eyeSpaceNormalVector, -eyeVector));
     float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
     float diffuse   = max(0.0, worldSpaceNormalVector.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
-    
+    float v = texture2D(Texture0, gl_TexCoord[0].xy).x;
+//    float v=texPos.y;
+    //float v = intensity;
+
 //    vec4 waterColor = mix(shallowColor, deepColor, facing);
 
 //    gl_FragColor = gl_Color;
@@ -73,10 +80,9 @@ void main()
 //    gl_FragColor = waterColor;
 //    gl_FragColor = waterColor*diffuse;
 //    gl_FragColor = waterColor*diffuse + skyColor*fresnel;
-//    gl_FragColor = vec4(pow(1.0-intensity,5.0));
-//    gl_FragColor = setWavelengthColor( intensity );
-
-    float f = 1.0-pow(1.0-clamp(intensity, 0.0, 1.0),5.0);
+//    gl_FragColor = vec4(pow(1.0-v,5.0));
+//    gl_FragColor = setWavelengthColor( v );
+    float f = 1.0-pow(1.0-clamp(v, 0.0, 1.0),5.0);
     vec4 curveColor = setWavelengthColor( f );
     float x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
 

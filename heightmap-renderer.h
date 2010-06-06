@@ -24,7 +24,7 @@ public:
 
     Collection* collection() { return _collection; }
 
-    void draw();
+    void draw( float scaley );
     void drawAxes( float T );
     void drawFrustum();
 
@@ -40,6 +40,7 @@ private:
     pVbo _mesh_position;
     GLuint _shader_prog;
     bool _initialized;
+    bool _draw_flat;
     float _redundancy;
 
     unsigned _drawn_blocks;

@@ -115,7 +115,7 @@ void TimelineWidget::
         glEnd();
 
         { // Render
-            getDisplayWidget()->renderer()->draw();
+            getDisplayWidget()->renderer()->draw( 0.f );
             getDisplayWidget()->drawSelection();
             getDisplayWidget()->renderer()->drawFrustum();
         }
