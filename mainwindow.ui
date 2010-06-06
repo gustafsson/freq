@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1056</width>
+    <width>963</width>
     <height>570</height>
    </rect>
   </property>
@@ -26,7 +26,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1056</width>
+     <width>963</width>
      <height>22</height>
     </rect>
    </property>
@@ -95,7 +95,6 @@
    <addaction name="actionMatlabFilter"/>
    <addaction name="actionRecord"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="topFilterWindow">
    <property name="minimumSize">
     <size>
@@ -249,6 +248,18 @@
     <number>8</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2"/>
+  </widget>
+  <widget class="QDockWidget" name="toolPropertiesWindow">
+   <property name="features">
+    <set>QDockWidget::DockWidgetFeatureMask</set>
+   </property>
+   <property name="windowTitle">
+    <string>Tool properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3"/>
   </widget>
   <action name="actionActivateSelection">
    <property name="checkable">

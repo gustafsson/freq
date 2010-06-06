@@ -46,17 +46,18 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolToolBox, SLOT(setVisible(bool)));
     connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
     connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
-    //connectActionToWindow(ui->actionToggleToolToolBox, ui->topFilterWindow);
-    
-    //connect(ui->actionToggleLayerWindow, SIGNAL(triggered(bool)), this, SLOT(slotToggleLayerWindow(bool)));
-    //connect(ui->actionToggleToolWindow, SIGNAL(toggled(bool)), this, SLOT(slotToggleToolWindow(bool)));
-    //connect(ui->layerWindow, SIGNAL(visibilityChanged(bool)), this, SLOT(slotClosedLayerWindow(bool)));
+}
+
+void MainWindow::slotCheckWindowStates(bool)
+{
+	
 }
 
 void MainWindow::connectActionToWindow(QObject *a, QObject *b)
 {
-	connect(a, SIGNAL(triggered(bool)), b, SLOT(setVisible(bool)));
-	connect(b, SIGNAL(visibilityChanged(bool)), a, SLOT(setChecked(bool)));
+	connect(a, SIGNAL(toggled(bool)), b, SLOT(setVisible(bool)));
+	connect(a, SIGNAL(toggled(bool)), b, SLOT(setShown(bool)));
+	connect(b, SIGNAL(visibilityChanged(bool)), this, SLOT(slotCheckWindowStates(bool)));
 }
 
 MainWindow::~MainWindow()

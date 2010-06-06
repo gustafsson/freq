@@ -34,6 +34,7 @@ public slots:
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);
+    void slotCheckWindowStates(bool);
 
 signals:
     void sendCurrentSelection(int, bool);
