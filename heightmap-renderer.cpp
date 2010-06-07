@@ -247,7 +247,7 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    setSize( _collection->samples_per_block(), _collection->scales_per_block() );
+    setSize( _collection->samples_per_block()/2, _collection->scales_per_block()/2 );
     //setSize(2,2);
     _initialized=true;
 
@@ -262,8 +262,6 @@ void Renderer::draw( float scaley )
 
     g_invalidFrustum = true;
 
-    glPushMatrixContext mc;
-
     if (.01 > scaley)
 //        setSize(2,2),
         scaley = 0.01,
@@ -273,6 +271,8 @@ void Renderer::draw( float scaley )
 //        setSize( _collection->samples_per_block(), _collection->scales_per_block() );
 
     glScalef(1, scaley, 1);
+
+    glPushMatrixContext mc;
 
     Position mss = _collection->max_sample_size();
     Reference ref = _collection->findReference(Position(0,0), mss);
