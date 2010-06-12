@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>963</width>
-    <height>570</height>
+    <height>587</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>963</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -64,7 +64,7 @@
    <addaction name="menuFile"/>
    <addaction name="menuWindows"/>
   </widget>
-  <widget class="QToolBar" name="toolToolBox">
+  <widget class="QToolBar" name="toolBarTool">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -74,26 +74,17 @@
    <property name="windowTitle">
     <string>Toolbar</string>
    </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonIconOnly</enum>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionZoom"/>
    <addaction name="actionActivateNavigation"/>
-   <addaction name="actionAmplitudeBrush"/>
-   <addaction name="actionAirbrush"/>
-   <addaction name="actionSmoothBrush"/>
-   <addaction name="separator"/>
-   <addaction name="actionToggle_piano_grid"/>
-   <addaction name="actionToggle_hz_grid"/>
-   <addaction name="separator"/>
-   <addaction name="actionPlaySelection"/>
-   <addaction name="actionFollowPlayMarker"/>
-   <addaction name="separator"/>
-   <addaction name="actionMatlabOperation"/>
-   <addaction name="actionMatlabFilter"/>
-   <addaction name="actionRecord"/>
   </widget>
   <widget class="QDockWidget" name="topFilterWindow">
    <property name="minimumSize">
@@ -180,6 +171,9 @@
        <attribute name="headerVisible">
         <bool>false</bool>
        </attribute>
+       <attribute name="headerVisible">
+        <bool>false</bool>
+       </attribute>
        <column>
         <property name="text">
          <string>1</string>
@@ -208,32 +202,6 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2"/>
   </widget>
-  <widget class="QToolBar" name="selectionToolBox">
-   <property name="contextMenuPolicy">
-    <enum>Qt::NoContextMenu</enum>
-   </property>
-   <property name="windowTitle">
-    <string>Selection Tool Box</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionActivateSelection"/>
-   <addaction name="actionSquareSelection"/>
-   <addaction name="actionSplineSelection"/>
-   <addaction name="actionPolygonSelection"/>
-   <addaction name="actionPeakSelection"/>
-   <addaction name="actionCutoffSelection"/>
-   <addaction name="actionActionAdd_selection"/>
-   <addaction name="actionActionRemove_selection"/>
-   <addaction name="separator"/>
-   <addaction name="actionCropSelection"/>
-   <addaction name="actionMoveSelection"/>
-   <addaction name="actionMoveSelectionTime"/>
-  </widget>
   <widget class="QDockWidget" name="dockWidgetTimeline">
    <property name="contextMenuPolicy">
     <enum>Qt::NoContextMenu</enum>
@@ -250,6 +218,9 @@
    <widget class="QWidget" name="dockWidgetContents_2"/>
   </widget>
   <widget class="QDockWidget" name="toolPropertiesWindow">
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetFeatureMask</set>
    </property>
@@ -259,7 +230,72 @@
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3"/>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QFrame" name="frameProperties">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Plain</enum>
+       </property>
+       <property name="lineWidth">
+        <number>0</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QToolBar" name="toolBarPlay">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>RightToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionPausePlayBack"/>
+   <addaction name="actionPlaySelection"/>
+   <addaction name="actionStopPlayBack"/>
+   <addaction name="actionJumpBackward"/>
+   <addaction name="actionJumpForward"/>
+   <addaction name="actionRecord"/>
+   <addaction name="separator"/>
+   <addaction name="actionFollowPlayMarker"/>
+   <addaction name="actionSetPlayMarker"/>
+   <addaction name="separator"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarOperation">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionActionAdd_selection"/>
+   <addaction name="actionActionRemove_selection"/>
+   <addaction name="actionMatlabFilter"/>
+   <addaction name="actionCutoffSelection"/>
+   <addaction name="actionMatlabOperation"/>
+   <addaction name="actionCropSelection"/>
+   <addaction name="actionMoveSelection"/>
+   <addaction name="actionMoveSelectionTime"/>
   </widget>
   <action name="actionActivateSelection">
    <property name="checkable">
@@ -921,6 +957,191 @@
    </property>
    <property name="toolTip">
     <string>Smooth brush</string>
+   </property>
+  </action>
+  <action name="actionZoom">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom [z]</string>
+   </property>
+   <property name="shortcut">
+    <string>Z</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionSetPlayMarker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set playback marker</string>
+   </property>
+   <property name="toolTip">
+    <string>Set playback marker</string>
+   </property>
+  </action>
+  <action name="actionStopPlayBack">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stop playback</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop playback</string>
+   </property>
+  </action>
+  <action name="actionPausePlayBack">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause playback</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause playback</string>
+   </property>
+  </action>
+  <action name="actionJumpForward">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to next marker</string>
+   </property>
+   <property name="toolTip">
+    <string>Jump to next marker</string>
+   </property>
+  </action>
+  <action name="actionJumpBackward">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to previous marker</string>
+   </property>
+   <property name="toolTip">
+    <string>Jump to previous marker</string>
+   </property>
+  </action>
+  <action name="actionToolSelect">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Select previous operations</string>
+   </property>
+   <property name="toolTip">
+    <string>Select previous operations</string>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show morlet transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Show morlet transform</string>
+   </property>
+  </action>
+  <action name="actionTransform_Stft">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show windowed fourier transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Show windowed fourier transform</string>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt_phase">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show phase plot</string>
+   </property>
+   <property name="toolTip">
+    <string>Show phase plot</string>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt_whatnot">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show whatnot plot</string>
+   </property>
+   <property name="toolTip">
+    <string>Show whatnot plot</string>
    </property>
   </action>
  </widget>

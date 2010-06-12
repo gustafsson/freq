@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Saweui::PropertiesSelection</class>
+ <widget class="QWidget" name="Saweui::PropertiesSelection">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>310</width>
+    <height>43</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="QToolButton" name="toolButton">
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Settings for selections, such as ???</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="toolButton_2">
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionCutoffSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-cutoff-selection.png</normaloff>:/icons/icons/icon-cutoff-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cutoff selection</string>
+   </property>
+  </action>
+  <action name="actionPeakSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-peak-selection.png</normaloff>:/icons/icons/icon-peak-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Peak selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Peak selection</string>
+   </property>
+  </action>
+  <action name="actionSquareSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-square-selection.png</normaloff>:/icons/icons/icon-square-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Square selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Square selection</string>
+   </property>
+  </action>
+  <action name="actionPolygonSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-quad-selection.png</normaloff>:/icons/icons/icon-quad-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Polygon selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Polygon selection</string>
+   </property>
+  </action>
+  <action name="actionSplineSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-spline-selection.png</normaloff>:/icons/icons/icon-spline-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Spline selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Spline selection</string>
+   </property>
+  </action>
+  <action name="actionActivateSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>
+     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-circle-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Activate Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Activate selection [S]</string>
+   </property>
+   <property name="shortcut">
+    <string>S</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../icon-resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

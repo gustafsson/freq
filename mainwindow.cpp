@@ -16,6 +16,8 @@
 #include <boost/graph/adjacency_iterator.hpp>
 #include "sawe-application.h"
 #include "sawe-timelinewidget.h"
+#include "saweui/propertiesselection.h"
+#include <QToolButton>
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -43,9 +45,53 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connectActionToWindow(ui->actionToggleHistoryWindow, ui->historyWindow);
     connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
     
-    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolToolBox, SLOT(setVisible(bool)));
+    //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
+    //ui->toolPropertiesWindow-
+    new Saweui::PropertiesSelection( ui->frameProperties );
+
+    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
     connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
     connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+
+    /*QComboBoxAction * qb = new QComboBoxAction();
+    qb->addActionItem( ui->actionActivateSelection );
+    qb->addActionItem( ui->actionActivateNavigation );
+    ui->toolBarTool->addWidget( qb );*/
+
+    {   QComboBoxAction * qb = new QComboBoxAction();
+        qb->addActionItem( ui->actionActivateSelection );
+        qb->addActionItem( ui->actionSquareSelection );
+        qb->addActionItem( ui->actionSplineSelection );
+        qb->addActionItem( ui->actionPolygonSelection );
+        qb->addActionItem( ui->actionPeakSelection );
+        ui->toolBarTool->addWidget( qb );
+    }
+
+    {   QComboBoxAction * qb = new QComboBoxAction();
+        qb->addActionItem( ui->actionAmplitudeBrush );
+        qb->addActionItem( ui->actionAirbrush );
+        qb->addActionItem( ui->actionSmoothBrush );
+        ui->toolBarTool->addWidget( qb );
+    }
+
+    {   QToolButton * tb = new QToolButton();
+        tb->setDefaultAction( ui->actionToolSelect );
+        ui->toolBarTool->addWidget( tb );
+    }
+
+    {   QComboBoxAction * qb = new QComboBoxAction();
+        qb->addActionItem( ui->actionToggle_hz_grid );
+        qb->addActionItem( ui->actionToggle_piano_grid );
+        ui->toolBarPlay->addWidget( qb );
+    }
+
+    {   QComboBoxAction * qb = new QComboBoxAction();
+        qb->addActionItem( ui->actionTransform_Cwt );
+        qb->addActionItem( ui->actionTransform_Stft );
+        qb->addActionItem( ui->actionTransform_Cwt_phase );
+        qb->addActionItem( ui->actionTransform_Cwt_whatnot );
+        ui->toolBarPlay->addWidget( qb );
+    }
 }
 
 void MainWindow::slotCheckWindowStates(bool)

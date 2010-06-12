@@ -15,6 +15,7 @@ unix:QMAKE_CXXFLAGS_RELEASE -= -O2
 unix:QMAKE_CXXFLAGS_RELEASE += -O3
 macx:QMAKE_CXXFLAGS_RELEASE -= -O2
 macx:QMAKE_CXXFLAGS_RELEASE += -O3
+QMAKE_CXX = colorgcc
 
 ### Settings for using llvm instead of gcc on linux
 #unix {
@@ -62,7 +63,9 @@ SOURCES += main.cpp \
     heightmap-renderer.cpp \
     heightmap-collection.cpp \
     heightmap-reference.cpp \
-    fft4g.c
+    fft4g.c \
+    saweui/propertiesselection.cpp \
+    saweui/propertiesstroke.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     tfr-wavelet.cu.h \
@@ -104,8 +107,12 @@ HEADERS += mainwindow.h \
     signal-writewav.h \
     heightmap-renderer.h \
     heightmap-collection.h \
-    heightmap-reference.h
-FORMS += mainwindow.ui
+    heightmap-reference.h \
+    saweui/propertiesselection.h \
+    saweui/propertiesstroke.h
+FORMS += mainwindow.ui \
+    saweui/propertiesselection.ui \
+    saweui/propertiesstroke.ui
 OTHER_FILES += tfr-wavelet.cu \
     heightmap.frag \
     heightmap.vert \
