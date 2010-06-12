@@ -96,14 +96,26 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
 
 void MainWindow::slotCheckWindowStates(bool)
 {
-	
+    unsigned int size = controlledWindows.size();
+    for(unsigned int i = 0; i < size; i++)
+    {
+        controlledWindows[i].a->setChecked(!(controlledWindows[i].w->isHidden()));
+    }
+}
+void MainWindow::slotCheckActionStates(bool)
+{
+    unsigned int size = controlledWindows.size();
+    for(unsigned int i = 0; i < size; i++)
+    {
+        controlledWindows[i].w->setVisible(controlledWindows[i].a->isChecked());
+    }
 }
 
-void MainWindow::connectActionToWindow(QObject *a, QObject *b)
+void MainWindow::connectActionToWindow(QAction *a, QWidget *b)
 {
-	connect(a, SIGNAL(toggled(bool)), b, SLOT(setVisible(bool)));
-	connect(a, SIGNAL(toggled(bool)), b, SLOT(setShown(bool)));
-	connect(b, SIGNAL(visibilityChanged(bool)), this, SLOT(slotCheckWindowStates(bool)));
+    connect(a, SIGNAL(toggled(bool)), this, SLOT(slotCheckActionStates(bool)));
+    connect(b, SIGNAL(visibilityChanged(bool)), this, SLOT(slotCheckWindowStates(bool)));
+    controlledWindows.push_back(ActionWindowPair(b, a));
 }
 
 MainWindow::~MainWindow()

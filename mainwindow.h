@@ -8,6 +8,7 @@
 #include <QTreeWidgetItem>
 #include <QComboBox>
 #include <QAction>
+#include <vector>
 
 #ifdef Q_WS_MAC
 void qt_mac_set_menubar_icons(bool enable);
@@ -29,6 +30,13 @@ protected:
 //    virtual void keyPressEvent( QKeyEvent *e );
 //    virtual void keyReleaseEvent ( QKeyEvent * e );
     virtual void closeEvent(QCloseEvent *);
+    struct ActionWindowPair
+    {
+        QWidget *w; QAction *a;
+        ActionWindowPair(QWidget *iw, QAction *ia){w = iw; a = ia;}
+    };
+    std::vector<ActionWindowPair> controlledWindows;
+    
 
 public slots:
     void updateOperationsTree( Signal::pSource s);
@@ -37,6 +45,7 @@ public slots:
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);
     void slotCheckWindowStates(bool);
+    void slotCheckActionStates(bool);
 
 signals:
     void sendCurrentSelection(int, bool);
@@ -45,7 +54,7 @@ signals:
 private:
     class Ui_MainWindow *ui;
     
-    void connectActionToWindow(QObject *a, QObject *b);
+    void connectActionToWindow(QAction *a, QWidget *b);
 };
 
 
