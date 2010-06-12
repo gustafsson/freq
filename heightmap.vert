@@ -5,7 +5,7 @@ varying vec3 eyeSpaceNormal;
 /*uniform float heightScale; // = 0.5;
 uniform vec2  size;        // = vec2(256.0, 256.0);*/
 
-const float heightScale = 1; // 0.0125;
+const float heightScale = 1.0; // 0.0125;
 const vec2  size = vec2(128.0, 256.0);
 
 uniform sampler2D tex;
