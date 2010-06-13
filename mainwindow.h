@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include <QAction>
 #include <vector>
+#include <QToolButton>
 
 #ifdef Q_WS_MAC
 void qt_mac_set_menubar_icons(bool enable);
@@ -58,22 +59,16 @@ private:
 };
 
 
-class QComboBoxAction: public QComboBox {
+class QComboBoxAction: public QToolButton {
     Q_OBJECT
 public:
-    QComboBoxAction() {
-        connect( this, SIGNAL(currentIndexChanged(int)), this, SLOT(invokeAction(int)));
-    }
-
-    void addActionItem( QAction* a ) {
-        addItem( a->icon(), "" /*a->text()*/, qVariantFromValue( (QObject*)a ) );
-    }
-
+    QComboBoxAction();
+    void addActionItem( QAction* a );
+    void decheckable(bool);
 private slots:
-    virtual void invokeAction( int i ) {
-        QObject* p = itemData( i ).value<QObject*>();
-        dynamic_cast<QAction*>(p)->trigger();
-    }
+    virtual void checkAction( QAction* a );
+private:
+    bool _decheckable;
 };
 
 #endif // MAINWINDOW_H

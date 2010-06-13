@@ -17,7 +17,6 @@
 #include "sawe-application.h"
 #include "sawe-timelinewidget.h"
 #include "saweui/propertiesselection.h"
-#include <QToolButton>
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -58,12 +57,22 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     qb->addActionItem( ui->actionActivateNavigation );
     ui->toolBarTool->addWidget( qb );*/
 
+    /*ui->actionToolSelect->setEnabled( true );
+    ui->actionActivateSelection->setEnabled( true );
+    ui->actionSquareSelection->setEnabled( true );
+    ui->actionSplineSelection->setEnabled( true );
+    ui->actionPolygonSelection->setEnabled( true );
+    ui->actionPeakSelection->setEnabled( true );*/
+
+    ui->actionPeakSelection->setChecked( false );
+
     {   QComboBoxAction * qb = new QComboBoxAction();
         qb->addActionItem( ui->actionActivateSelection );
         qb->addActionItem( ui->actionSquareSelection );
         qb->addActionItem( ui->actionSplineSelection );
         qb->addActionItem( ui->actionPolygonSelection );
         qb->addActionItem( ui->actionPeakSelection );
+
         ui->toolBarTool->addWidget( qb );
     }
 
@@ -71,12 +80,16 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
         qb->addActionItem( ui->actionAmplitudeBrush );
         qb->addActionItem( ui->actionAirbrush );
         qb->addActionItem( ui->actionSmoothBrush );
+        qb->setEnabled( false );
         ui->toolBarTool->addWidget( qb );
     }
 
     {   QToolButton * tb = new QToolButton();
+
         tb->setDefaultAction( ui->actionToolSelect );
+
         ui->toolBarTool->addWidget( tb );
+        connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }
 
     {   QComboBoxAction * qb = new QComboBoxAction();
@@ -90,6 +103,7 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
         qb->addActionItem( ui->actionTransform_Stft );
         qb->addActionItem( ui->actionTransform_Cwt_phase );
         qb->addActionItem( ui->actionTransform_Cwt_whatnot );
+        qb->decheckable( false );
         ui->toolBarPlay->addWidget( qb );
     }
 }
@@ -572,3 +586,44 @@ void MainWindow::keyReleaseEvent ( QKeyEvent * e )
 
     DisplayWidget::gDisplayWidget->keyReleaseEvent(e);
 }*/
+
+QComboBoxAction::
+        QComboBoxAction()
+            :   _decheckable(true)
+{
+    connect( this, SIGNAL(triggered(QAction *)), this, SLOT(checkAction(QAction *)));
+    this->setContextMenuPolicy( Qt::ActionsContextMenu );
+}
+
+void QComboBoxAction::
+        addActionItem( QAction* a )
+{
+    addAction( a );
+    if (0 == defaultAction())
+        setDefaultAction(a);
+}
+
+void QComboBoxAction::
+        decheckable( bool a )
+{
+    _decheckable = a;
+    if (false == _decheckable)
+        setChecked( true );
+}
+
+void QComboBoxAction::
+        checkAction( QAction* a )
+{
+    if (a->isChecked())
+    {
+        QList<QAction*> l = actions();
+        for (QList<QAction*>::iterator i = l.begin(); i!=l.end(); i++)
+            if (*i != a)
+                (*i)->setChecked( false );
+    }
+
+    if (false == _decheckable)
+        a->setChecked( true );
+
+    setDefaultAction( a );
+}
