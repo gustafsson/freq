@@ -31,7 +31,7 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     ui(new Ui_MainWindow)
 {
 #ifdef Q_WS_MAC
-dwedewdw //dede    qt_mac_set_menubar_icons(false);
+//    qt_mac_set_menubar_icons(false);
 #endif
     ui->setupUi(this);
     this->setWindowTitle( title );

@@ -32,7 +32,11 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
             1, // channels
             portaudio::FLOAT32,
             false, // interleaved
+#ifdef __APPLE__
+            device.defaultHighInputLatency(),
+#else
             device.defaultLowInputLatency(),
+#endif
             NULL);
 
     portaudio::StreamParameters paramsRecord(

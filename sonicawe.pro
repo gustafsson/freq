@@ -16,6 +16,7 @@ unix:QMAKE_CXXFLAGS_RELEASE += -O3
 macx:QMAKE_CXXFLAGS_RELEASE -= -O2
 macx:QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CXX = colorgcc
+macx:QMAKE_CXX = g++
 
 ### Settings for using llvm instead of gcc on linux
 #unix {
