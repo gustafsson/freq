@@ -4,7 +4,7 @@ Section: non-free/audio
 Priority: optional
 Architecture: amd64
 Essential: no
-Installed-Size: 1214059
+Installed-Size: 9195718
 Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl
 Maintainer: Johan Gustafsson [johan@sonicawe.com]
 Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
