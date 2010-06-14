@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>963</width>
-    <height>587</height>
+    <width>886</width>
+    <height>509</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -20,13 +20,27 @@
    <iconset resource="icon-resources.qrc">
     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
   </property>
-  <widget class="QWidget" name="centralWidget"/>
+  <property name="documentMode">
+   <bool>true</bool>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>true</bool>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::VerticalTabs</set>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_3"/>
+  </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>963</width>
+     <width>886</width>
      <height>25</height>
     </rect>
    </property>
@@ -78,7 +92,7 @@
     <enum>Qt::ToolButtonIconOnly</enum>
    </property>
    <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
+    <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -86,19 +100,50 @@
    <addaction name="actionZoom"/>
    <addaction name="actionActivateNavigation"/>
   </widget>
+  <widget class="QDockWidget" name="toolPropertiesWindow">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFeatureMask</set>
+   </property>
+   <property name="windowTitle">
+    <string>Tool properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QFrame" name="frameProperties">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Plain</enum>
+       </property>
+       <property name="lineWidth">
+        <number>0</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <widget class="QDockWidget" name="topFilterWindow">
-   <property name="minimumSize">
-    <size>
-     <width>215</width>
-     <height>209</height>
-    </size>
-   </property>
-   <property name="maximumSize">
-    <size>
-     <width>300</width>
-     <height>524287</height>
-    </size>
-   </property>
    <property name="contextMenuPolicy">
     <enum>Qt::NoContextMenu</enum>
    </property>
@@ -140,6 +185,9 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="operationsWindow">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
@@ -171,8 +219,20 @@
        <attribute name="headerVisible">
         <bool>false</bool>
        </attribute>
+       <attribute name="headerDefaultSectionSize">
+        <number>10</number>
+       </attribute>
+       <attribute name="headerMinimumSectionSize">
+        <number>10</number>
+       </attribute>
+       <attribute name="headerDefaultSectionSize">
+        <number>10</number>
+       </attribute>
        <attribute name="headerVisible">
         <bool>false</bool>
+       </attribute>
+       <attribute name="headerMinimumSectionSize">
+        <number>10</number>
        </attribute>
        <column>
         <property name="text">
@@ -185,6 +245,9 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="historyWindow">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="contextMenuPolicy">
     <enum>Qt::NoContextMenu</enum>
    </property>
@@ -200,9 +263,34 @@
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2"/>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Placeholder</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QDockWidget" name="dockWidgetTimeline">
+   <property name="minimumSize">
+    <size>
+     <width>41</width>
+     <height>56</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>524287</width>
+     <height>524287</height>
+    </size>
+   </property>
    <property name="contextMenuPolicy">
     <enum>Qt::NoContextMenu</enum>
    </property>
@@ -210,59 +298,19 @@
     <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetVerticalTitleBar</set>
    </property>
    <property name="windowTitle">
-    <string>Timeline</string>
+    <string>T</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2"/>
   </widget>
-  <widget class="QDockWidget" name="toolPropertiesWindow">
-   <property name="autoFillBackground">
-    <bool>true</bool>
-   </property>
-   <property name="features">
-    <set>QDockWidget::DockWidgetFeatureMask</set>
-   </property>
-   <property name="windowTitle">
-    <string>Tool properties</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>1</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QFrame" name="frameProperties">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
-       </property>
-       <property name="lineWidth">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-  </widget>
   <widget class="QToolBar" name="toolBarPlay">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
    <attribute name="toolBarArea">
-    <enum>RightToolBarArea</enum>
+    <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -283,7 +331,7 @@
     <string>toolBar</string>
    </property>
    <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
+    <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -319,7 +367,7 @@
     <string>S</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionActivateNavigation">
@@ -344,7 +392,7 @@
     <string>N</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionToggleTopFilterWindow">
@@ -368,9 +416,6 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-toggle-piano.png</normaloff>:/icons/icons/icon-toggle-piano.png</iconset>
@@ -380,6 +425,9 @@
    </property>
    <property name="toolTip">
     <string>Toggle piano grid</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionPlaySelection">
@@ -420,7 +468,7 @@
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
@@ -431,6 +479,9 @@
    </property>
    <property name="toolTip">
     <string>Toggle frequency markers</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionActionAdd_selection">
@@ -443,6 +494,9 @@
    </property>
    <property name="toolTip">
     <string>Remember the selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionActionRemove_selection">
@@ -458,6 +512,9 @@
    </property>
    <property name="shortcut">
     <string>Del</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionCropSelection">
@@ -482,7 +539,7 @@
     <string>C</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionMoveSelection">
@@ -510,7 +567,7 @@
     <string>M</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionMoveSelectionTime">
@@ -538,7 +595,7 @@
     <string>T</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionMatlabFilter">
@@ -557,7 +614,7 @@
     <string>Apply Matlab filter to selection</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionMatlabOperation">
@@ -576,7 +633,7 @@
     <string>Apply Matlab operation to everything</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionRecord">
@@ -604,7 +661,7 @@
     <string>R</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionFollowPlayMarker">
@@ -621,6 +678,9 @@
    </property>
    <property name="toolTip">
     <string>Follow the play marker when playing</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionToggleOperationsWindow">
@@ -762,7 +822,7 @@
   </action>
   <action name="actionExit">
    <property name="enabled">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>Exit</string>
@@ -832,6 +892,9 @@
    <property name="text">
     <string>Cutoff selection</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionPeakSelection">
    <property name="checkable">
@@ -849,6 +912,9 @@
    </property>
    <property name="toolTip">
     <string>Peak selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionSquareSelection">
@@ -868,6 +934,9 @@
    <property name="toolTip">
     <string>Square selection</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionPolygonSelection">
    <property name="checkable">
@@ -885,6 +954,9 @@
    </property>
    <property name="toolTip">
     <string>Polygon selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionSplineSelection">
@@ -904,6 +976,9 @@
    <property name="toolTip">
     <string>Spline selection</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionAmplitudeBrush">
    <property name="checkable">
@@ -921,6 +996,9 @@
    </property>
    <property name="toolTip">
     <string>Amplitude brush</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionAirbrush">
@@ -940,6 +1018,9 @@
    <property name="toolTip">
     <string>Airbrush</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionSmoothBrush">
    <property name="checkable">
@@ -957,6 +1038,9 @@
    </property>
    <property name="toolTip">
     <string>Smooth brush</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionZoom">
@@ -984,7 +1068,7 @@
     <string>Z</string>
    </property>
    <property name="iconVisibleInMenu">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionSetPlayMarker">
@@ -1005,6 +1089,9 @@
    <property name="toolTip">
     <string>Set playback marker</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionStopPlayBack">
    <property name="checkable">
@@ -1023,6 +1110,9 @@
    </property>
    <property name="toolTip">
     <string>Stop playback</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionPausePlayBack">
@@ -1043,6 +1133,9 @@
    <property name="toolTip">
     <string>Pause playback</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionJumpForward">
    <property name="checkable">
@@ -1061,6 +1154,9 @@
    </property>
    <property name="toolTip">
     <string>Jump to next marker</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionJumpBackward">
@@ -1081,6 +1177,9 @@
    <property name="toolTip">
     <string>Jump to previous marker</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionToolSelect">
    <property name="checkable">
@@ -1100,6 +1199,9 @@
    <property name="toolTip">
     <string>Select previous operations</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionTransform_Cwt">
    <property name="checkable">
@@ -1115,6 +1217,9 @@
    </property>
    <property name="toolTip">
     <string>Show morlet transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionTransform_Stft">
@@ -1135,6 +1240,9 @@
    <property name="toolTip">
     <string>Show windowed fourier transform</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionTransform_Cwt_phase">
    <property name="checkable">
@@ -1154,6 +1262,9 @@
    <property name="toolTip">
     <string>Show phase plot</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionTransform_Cwt_whatnot">
    <property name="checkable">
@@ -1172,6 +1283,9 @@
    </property>
    <property name="toolTip">
     <string>Show whatnot plot</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
  </widget>

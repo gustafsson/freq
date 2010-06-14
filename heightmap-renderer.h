@@ -26,10 +26,11 @@ public:
 
     void draw( float scaley );
     void drawAxes( float T );
-    void drawFrustum();
+    void drawFrustum( float alpha=0.25f );
 
     bool draw_piano;
     bool draw_hz;
+    GLvector camera;
 private:
     std::vector<GLvector> clippedFrustum;
     Collection* _collection;

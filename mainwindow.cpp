@@ -31,7 +31,7 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     ui(new Ui_MainWindow)
 {
 #ifdef Q_WS_MAC
-    qt_mac_set_menubar_icons(false);
+dwedewdw //dede    qt_mac_set_menubar_icons(false);
 #endif
     ui->setupUi(this);
     this->setWindowTitle( title );
@@ -43,7 +43,20 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
     connectActionToWindow(ui->actionToggleHistoryWindow, ui->historyWindow);
     connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
-    
+
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
+
+    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
+    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
+    ui->topFilterWindow->raise();
+
+    this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
+    this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
+    this->addToolBar( Qt::BottomToolBarArea, ui->toolBarPlay );
+
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
     //ui->toolPropertiesWindow-
     new Saweui::PropertiesSelection( ui->frameProperties );
@@ -192,9 +205,9 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     ui->actionActivateNavigation->setChecked(true);
     d->setWorkerSource();
 
-	if (d->isRecordSource()) {
-		this->ui->actionRecord->setEnabled(true);
-	}
+    if (d->isRecordSource()) {
+        this->ui->actionRecord->setEnabled(true);
+    }
 }
 
 void MainWindow::
@@ -202,6 +215,12 @@ void MainWindow::
 {
     ui->dockWidgetTimeline->setWidget( w );
     ui->dockWidgetTimeline->show();
+}
+
+QWidget* MainWindow::
+        getTimelineDock( )
+{
+    return ui->dockWidgetTimeline;
 }
 
 void MainWindow::

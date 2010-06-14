@@ -26,6 +26,7 @@ public:
     
     void connectLayerWindow(DisplayWidget *d);
     void setTimelineWidget( QWidget* );
+    QWidget* getTimelineDock( );
 
 protected:
 //    virtual void keyPressEvent( QKeyEvent *e );
@@ -70,5 +71,12 @@ private slots:
 private:
     bool _decheckable;
 };
+
+/*class QDockArea: public QMainWindow {
+    Q_OBJECT
+public:
+    explicit QMainWindow(QWidget *parent = 0, Qt::WindowFlags flags = 0);
+    QDockArea();
+};*/
 
 #endif // MAINWINDOW_H

@@ -30,16 +30,17 @@ using namespace std;
 static bool g_invalidFrustum = true;
 
 Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
-:   draw_piano(true),
-    draw_hz(false),
+:   draw_piano(false),
+    draw_hz(true),
+    camera(0,0,0),
     _collection(collection),
     _tempToRemove( _tempToRemove ),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
-    _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
     _draw_flat(false),
+    _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
     _drawn_blocks(0)
 {
 }
@@ -63,7 +64,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     _mesh_width = w;
     _mesh_height = h;
 
-    int size = ((w*2)+2)*(h-1)*sizeof(GLuint);
+    int size = ((w*2)+3)*(h-1)*sizeof(GLuint);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
     glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, size, 0, GL_STATIC_DRAW);
@@ -82,6 +83,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
         // start new strip with degenerate triangle
         *indices++ = (y+1)*w+(w-1);
         *indices++ = (y+1)*w;
+        *indices++ = (y+1)*w;
     }
 
     glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -91,7 +93,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( w*h*4*sizeof(float)));
+    _mesh_position.reset( new Vbo( w*(h+1)*4*sizeof(float)));
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     float *pos = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -108,6 +110,15 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
             *pos++ = v;
             *pos++ = 1.0f;
         }
+    }
+
+    for(unsigned x=0; x<w; x++) {
+        float u = x / (float) (w-1);
+        float v = 1;
+        *pos++ = u;
+        *pos++ = 0.0f;
+        *pos++ = v;
+        *pos++ = 1.0f;
     }
 
     glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -247,7 +258,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    setSize( _collection->samples_per_block()/2, _collection->scales_per_block()/2 );
+    //setSize( _collection->samples_per_block(), _collection->scales_per_block() );
+    setSize( _collection->samples_per_block()/8, _collection->scales_per_block() );
     //setSize(2,2);
     _initialized=true;
 
@@ -727,11 +739,9 @@ void Renderer::drawAxes( float T )
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        //glEnable(GL_BLEND);
-        //glBlendFunc( GL_ONE, GL_SRC_ALPHA );
         glDisable(GL_DEPTH_TEST);
 
-        glColor4f( .4f, .4f, .4f, .4f );
+        glColor4f( 1.0f, 1.0f, 1.0f, .4f );
         glBegin( GL_QUADS );
             glVertex2f( 0, 0 );
             glVertex2f( w, 0 );
@@ -1059,10 +1069,20 @@ void Renderer::drawAxes( float T )
 }
 
 void Renderer::
-        drawFrustum()
+        drawFrustum(float alpha)
 {
     if (clippedFrustum.empty())
         return;
+
+    GLvector closest = clippedFrustum.front();
+    for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
+            i!=clippedFrustum.end();
+            i++)
+    {
+        if ((closest-camera).dot() > (*i - camera).dot())
+            closest = *i;
+    }
+
 
     glPushAttribContext ac;
 
@@ -1070,17 +1090,19 @@ void Renderer::
 
     glPushMatrixContext mc;
 
-    glColor4f(0,0,0,.125);
+    glColor4f(0,0,0,alpha);
     glBegin( GL_TRIANGLE_FAN );
         for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
                 i!=clippedFrustum.end();
                 i++)
         {
+            float s = (closest-camera).dot()/(*i-camera).dot();
+            glColor4f(0,0,0,s*.25f);
             glVertex3dv( i->v );
         }
     glEnd();
 
-    glColor4f(0,0,0,.5);
+    glColor4f(0,0,0,.85);
     glBegin( GL_LINE_LOOP );
         for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
                 i!=clippedFrustum.end();
