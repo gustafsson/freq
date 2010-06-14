@@ -1,5 +1,12 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>icons/icon-move.png</file>
+    <file>icons/icon-move-time.png</file>
+    <file>icons/icon-zoom.png</file>
+    <file>icons/icon-next-mark.png</file>
+    <file>icons/icon-prev-mark.png</file>
+    <file>icons/icon-set-mark.png</file>
+    <file>icons/icon-stop.png</file>
     <file>icons/icon-matlabfilter.png</file>
     <file>icons/icon-matlaboperation.png</file>
     <file>icons/icon-crop.png</file>

@@ -30,7 +30,7 @@
    <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::VerticalTabs</set>
   </property>
   <property name="unifiedTitleAndToolBarOnMac">
-   <bool>true</bool>
+   <bool>false</bool>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout_3"/>
@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -148,7 +148,7 @@
     <enum>Qt::NoContextMenu</enum>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
@@ -189,7 +189,7 @@
     <bool>false</bool>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
@@ -225,15 +225,6 @@
        <attribute name="headerMinimumSectionSize">
         <number>10</number>
        </attribute>
-       <attribute name="headerDefaultSectionSize">
-        <number>10</number>
-       </attribute>
-       <attribute name="headerVisible">
-        <bool>false</bool>
-       </attribute>
-       <attribute name="headerMinimumSectionSize">
-        <number>10</number>
-       </attribute>
        <column>
         <property name="text">
          <string>1</string>
@@ -252,7 +243,7 @@
     <enum>Qt::NoContextMenu</enum>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea|Qt::TopDockWidgetArea</set>
@@ -281,8 +272,8 @@
   <widget class="QDockWidget" name="dockWidgetTimeline">
    <property name="minimumSize">
     <size>
-     <width>41</width>
-     <height>56</height>
+     <width>42</width>
+     <height>78</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -295,7 +286,7 @@
     <enum>Qt::NoContextMenu</enum>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetVerticalTitleBar</set>
+    <set>QDockWidget::DockWidgetFeatureMask</set>
    </property>
    <property name="windowTitle">
     <string>T</string>
@@ -554,8 +545,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-move.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-move.png</iconset>
    </property>
    <property name="text">
     <string>Move Selection</string>
@@ -582,8 +573,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-move-time.png</normaloff>
+     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-move-time.png</iconset>
    </property>
    <property name="text">
     <string>Move Selection in Time</string>
@@ -1055,8 +1046,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-zoom.png</normaloff>
+     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-zoom.png</iconset>
    </property>
    <property name="text">
     <string>Zoom</string>
@@ -1080,8 +1071,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-set-mark.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-set-mark.png</iconset>
    </property>
    <property name="text">
     <string>Set playback marker</string>
@@ -1102,8 +1093,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-stop.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-stop.png</iconset>
    </property>
    <property name="text">
     <string>Stop playback</string>
@@ -1124,8 +1115,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-paus.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-paus.png</iconset>
    </property>
    <property name="text">
     <string>Pause playback</string>
@@ -1146,8 +1137,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-next-mark.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-next-mark.png</iconset>
    </property>
    <property name="text">
     <string>Jump to next marker</string>
@@ -1168,8 +1159,8 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-prev-mark.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-prev-mark.png</iconset>
    </property>
    <property name="text">
     <string>Jump to previous marker</string>
