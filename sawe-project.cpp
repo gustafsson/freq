@@ -5,6 +5,7 @@
 #include "signal-audiofile.h"
 #include "signal-microphonerecorder.h"
 #include "sawe-timelinewidget.h"
+#include <QVBoxLayout>
 
 using namespace std;
 
@@ -127,12 +128,17 @@ void Project::
     _mainWindow->connectLayerWindow( displayWidget() );
     _mainWindow->setCentralWidget( displayWidget() );
 
+    _mainWindow->setCorner( Qt::BottomLeftCorner, Qt::LeftDockWidgetArea );
+    _mainWindow->setCorner( Qt::BottomRightCorner, Qt::RightDockWidgetArea );
+    _mainWindow->setCorner( Qt::TopLeftCorner, Qt::LeftDockWidgetArea );
+    _mainWindow->setCorner( Qt::TopRightCorner, Qt::RightDockWidgetArea );
+    float L = displayWidget()->worker()->source()->length();
+    L/=2;
+    if (L>5) L = 5;
+    displayWidget()->setPosition( L, 0.5f );
+
     {
         _timelineWidget.reset( new TimelineWidget( _displayWidget ) );
-        TaskTimer("_timelineWidget = %p, QGLWidget = %p, Sink = %p",
-                  dynamic_cast<TimelineWidget*>(_timelineWidget.get()),
-                  dynamic_cast<QGLWidget*>(_timelineWidget.get()),
-                  _timelineWidget.get()).suppressTiming();
         _mainWindow->setTimelineWidget( dynamic_cast<QWidget*>(_timelineWidget.get()) );
     }
 
