@@ -146,7 +146,7 @@ bool MouseControl::spacePos(GLdouble in_x, GLdouble in_y, GLdouble &out_x, GLdou
 
     world_coord = gluUnProject<GLdouble>(win_coord, &test);
     out_x = world_coord[0];
-    out_y = world_coord[1];
+    out_y = world_coord[2];
     return test;
 }
 
@@ -185,6 +185,7 @@ DisplayWidget::
                 Signal::pSink collection )
 : QGLWidget( ),
   lastKey(0),
+  orthoview(1),
   xscale(1),
 //  _record_update(false),
   _renderer( new Heightmap::Renderer( dynamic_cast<Heightmap::Collection*>(collection.get()), this )),
@@ -196,7 +197,6 @@ DisplayWidget::
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
   _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
-  _renderRatio(1),
   _playbackMarker(-1),
   _prevX(0), _prevY(0), _targetQ(0),
   _selectionActive(true),
@@ -391,9 +391,10 @@ void DisplayWidget::
 void DisplayWidget::
         setPosition( float time, float f )
 {
-    float l = _worker->source()->length();
-    _qx = time * l;
+    _qx = time;
     _qz = f;
+
+    float l = _worker->source()->length();
 
     if (_qx<0) _qx=0;
     if (_qz<0) _qz=0;
@@ -401,7 +402,6 @@ void DisplayWidget::
     if (_qx>l) _qx=l;
 
     update();
-    TaskTimer("Set position %f, %f", _qx, _qz).suppressTiming();
 }
 
 void DisplayWidget::receiveAddClearSelection(bool /*active*/)
@@ -1001,8 +1001,6 @@ void DisplayWidget::initializeGL()
 
 
 void DisplayWidget::resizeGL( int width, int height ) {
-	_renderRatio = (float)width/(float)height;
-
     height = height?height:1;
     
     glViewport( 0, 0, (GLint)width, (GLint)height );
@@ -1067,6 +1065,7 @@ void DisplayWidget::paintGL()
     { // Render
         _renderer->collection()->next_frame(); // Discard needed blocks before this row
 
+        _renderer->camera = GLvector(_qx, _qy, _qz);
         _renderer->draw( 1-orthoview ); // 0.6 ms
         _renderer->drawAxes( length ); // 4.7 ms
         drawSelection(); // 0.1 ms
@@ -1632,12 +1631,12 @@ void DisplayWidget::
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-1 * _renderRatio, 1 * _renderRatio, 1, -1, -1, 1);
+    glOrtho( width(), 0, height(), 0, -1, 1);
 
-    glTranslatef(_renderRatio * 1 -0.15, -0.85, 0);
+    glTranslatef( 30, 30, 0 );
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glScalef(0.5, 0.5, 1);
+    glScalef(60, 60, 1);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);

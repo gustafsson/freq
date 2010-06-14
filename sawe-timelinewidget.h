@@ -7,12 +7,6 @@
 
 namespace Sawe {
 
-/**
-  Transforms a pBuffer into a pChunk with CwtSingleton and saves the chunk in a file called
-  sonicawe-x.csv, where x is a number between 1 and 9, or 0 if all the other 9 files already
-  exists. The file is saved with the csv-format comma separated values, but values are
-  actually separated by spaces. One row of the csv-file corresponds to one row of the chunk.
-*/
 class TimelineWidget:
         public QGLWidget,
         public Signal::Sink
@@ -31,12 +25,18 @@ protected:
     virtual void initializeGL();
     virtual void resizeGL( int width, int height );
     virtual void paintGL();
+    void setupCamera( bool staticTimeLine = false );
 
     // overloaded from QWidget
+    virtual void wheelEvent ( QWheelEvent *e );
     virtual void mousePressEvent ( QMouseEvent * e );
     virtual void mouseReleaseEvent ( QMouseEvent * e );
     virtual void mouseMoveEvent ( QMouseEvent * e );
 private:
+    float   _xscale,
+            _xoffs,
+            _barHeight;
+    int _movingTimeline;
     MouseControl moveButton;
 
     Signal::pSink _displayWidget;

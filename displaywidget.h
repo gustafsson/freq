@@ -12,6 +12,7 @@
 #include <boost/shared_ptr.hpp>
 #include <TAni.h>
 #include <queue>
+#include <QMainWindow>
 
 class MouseControl
 {
@@ -166,7 +167,6 @@ private:
 		_rx, _ry, _rz,
 		_qx, _qy, _qz,
                 _prevLimit,
-                _renderRatio,
                 _playbackMarker;
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive;
