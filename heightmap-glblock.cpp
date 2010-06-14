@@ -125,17 +125,32 @@ GlBlock( Collection* collection )
 
     glGenTextures(1, &_tex_height);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
-    glTexImage2D(GL_TEXTURE_2D,0,1,collection->samples_per_block(), collection->scales_per_block(),0, GL_RED, GL_FLOAT, 0);
+    unsigned w = collection->samples_per_block();
+    unsigned h = collection->scales_per_block();
+    float* p = new float[w*h];
+    memset(p, 0, sizeof(float)*w*h);
+    glTexImage2D(GL_TEXTURE_2D,0,1,w, h,0, GL_RED, GL_FLOAT, p);
+    delete[]p;
 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	// Linear Filtering
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	// Linear Filtering
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 
     glGenTextures(1, &_tex_slope);
     glBindTexture(GL_TEXTURE_2D, _tex_slope);
-    glTexImage2D(GL_TEXTURE_2D,0,2,collection->samples_per_block(), collection->scales_per_block(),0, GL_RG, GL_FLOAT, 0);
 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	// Linear Filtering
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	// Linear Filtering
+    p = new float[w*h*2];
+    memset(p, 0, sizeof(float)*w*h*2);
+    glTexImage2D(GL_TEXTURE_2D,0,2,w, h,0, GL_RG, GL_FLOAT, 0);
+    delete[]p;
+
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -246,16 +261,18 @@ void GlBlock::
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _tex_slope);
 
-    bool wireFrame = false;
-    bool drawPoints = false;
+    const bool wireFrame = false;
+    const bool drawPoints = false;
 
     glColor3f(1.0, 1.0, 1.0);
     if (drawPoints) {
         glDrawArrays(GL_POINTS, 0, meshW * meshH);
-    } else {
-        glPolygonMode(GL_FRONT_AND_BACK, wireFrame ? GL_LINE : GL_FILL);
-            glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+2)*(meshH-1), GL_UNSIGNED_INT, 0);
+    } else if (wireFrame) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+            glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+3)*(meshH-1), GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    } else {
+        glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+3)*(meshH-1), GL_UNSIGNED_INT, 0);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 }

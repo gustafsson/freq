@@ -13,10 +13,7 @@ uniform sampler2D tex_slope;
 
 void main()
 {
-    //texPos.xy = gl_Vertex.xz;
-    //float height     = gl_MultiTexCoord2.x;
-    //vec2  slope      = gl_MultiTexCoord1.xy;
-    gl_TexCoord[0].xy= gl_Vertex.xz;
+    gl_TexCoord[0].xy= gl_Vertex.xz*vec2(1,1);
     float height     = texture2D(tex, gl_TexCoord[0].xy).x;
     vec2 slope       = texture2D(tex_slope, gl_TexCoord[0].xy).xy;
 

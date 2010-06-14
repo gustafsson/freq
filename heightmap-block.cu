@@ -22,7 +22,7 @@ __global__ void kernel_merge(
         for (float x = 0; x < resample_width; x++)
         {
             float s = in_offset + x + resample_width*(writePos.x-out_offset);
-            if ( s >= in_offset + in_valid_samples )
+            if ( s >= in_offset + in_valid_samples + .25f*resample_width )
                 x=resample_width;
             else for (float y = 0; y < resample_height; y++)
             {
@@ -96,18 +96,18 @@ __global__ void kernel_merge_chunk(
         float xs = resample_width/10;
         if (1>xs) xs=1;
         for (float x = 0; x < resample_width; x+=xs)
- //       float x = 0;
         {
             float s = in_offset + x + resample_width*(writePos.x-out_offset);
 
-            if ( s >= in_offset + n_valid_samples )
-                x=resample_width;
+            if ( s > in_offset + n_valid_samples + .25f*resample_width)
+                x=resample_width; // abort for x loop, faster than "break;"
             else for (float y = 0; y < resample_height; y++)
             {
                 //float y = 0;
                 float t = y + resample_height*writePos.y;
 
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
+                //readPos = inChunk.clamp(readPos);
                 if ( inChunk.valid(readPos) ) {
                     float2 c = inChunk.elem(readPos);
                     val = max(val, sqrt(c.x*c.x + c.y*c.y));
