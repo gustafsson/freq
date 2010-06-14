@@ -611,7 +611,7 @@
     <string>Matlab filter</string>
    </property>
    <property name="toolTip">
-    <string>Apply Matlab filter to selection</string>
+    <string>Apply Matlab filter to everything</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

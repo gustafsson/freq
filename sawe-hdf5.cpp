@@ -9,6 +9,9 @@
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
+//#define TIME_HDF5
+#define TIME_HDF5 if(0)
+
 using namespace std;
 
 namespace Sawe
@@ -84,7 +87,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const Signal::Buffer& cb)
 {
-    TaskTimer tt("Adding buffer '%s'", name.c_str());
+    TIME_HDF5 TaskTimer tt("Adding buffer '%s'", name.c_str());
 
     Signal::pBuffer data;
     const Signal::Buffer* b = &cb;
@@ -107,7 +110,7 @@ template<>
 Signal::pBuffer Hdf5Input::
         read_exact<Signal::pBuffer>( std::string name )
 {
-    TaskTimer tt("Reading buffer '%s'", name.c_str());
+    TIME_HDF5 TaskTimer tt("Reading buffer '%s'", name.c_str());
 
     herr_t      status;
     stringstream ss;
@@ -132,7 +135,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const Tfr::Chunk& chunk)
 {
-    TaskTimer tt("Adding chunk '%s'", name.c_str());
+    TIME_HDF5 TaskTimer tt("Adding chunk '%s'", name.c_str());
 
     float2* p = chunk.transform_data->getCpuMemory();
     cudaExtent s = chunk.transform_data->getNumberOfElements();
@@ -171,7 +174,7 @@ template<>
 Tfr::pChunk Hdf5Input::
         read_exact<Tfr::pChunk>( std::string name)
 {
-    TaskTimer tt("Reading chunk '%s'", name.c_str());
+    TIME_HDF5 TaskTimer tt("Reading chunk '%s'", name.c_str());
 
     herr_t      status;
     stringstream ss;
@@ -237,7 +240,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const double& v)
 {
-    TaskTimer tt("Adding double '%s'", name.c_str());
+    TIME_HDF5 TaskTimer tt("Adding double '%s'", name.c_str());
 
     hsize_t one[]={1};
     herr_t status = H5LTmake_dataset(_file_id,name.c_str(),1,one,H5T_NATIVE_DOUBLE,&v);
@@ -248,7 +251,7 @@ template<>
 double Hdf5Input::
         read_exact<double>( std::string name )
 {
-    TaskTimer tt("Reading double '%s'", name.c_str());
+    TIME_HDF5 TaskTimer tt("Reading double '%s'", name.c_str());
 
     H5T_class_t class_id=H5T_NO_CLASS;
     vector<hsize_t> dims = getInfo(name, &class_id);
@@ -267,7 +270,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const std::string& s)
 {
-    TaskTimer tt("Adding string '%s'", name.c_str());
+    TIME_HDF5 TaskTimer tt("Adding string '%s'", name.c_str());
 
     const char* p = s.c_str();
 
@@ -282,7 +285,7 @@ template<>
 std::string Hdf5Input::
         read_exact<std::string>( std::string name)
 {
-    TaskTimer tt("Reading string: %s", name.c_str());
+    TIME_HDF5 TaskTimer tt("Reading string: %s", name.c_str());
 
     findDataset(name);
 

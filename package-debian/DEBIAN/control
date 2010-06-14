@@ -1,5 +1,5 @@
 Package: sonicawe
-Version: 0.4.18
+Version: 0.6.14
 Section: non-free/audio
 Priority: optional
 Architecture: amd64
@@ -18,6 +18,6 @@ Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
  Sonic AWE is built using several community developed open source libraries. In Ubuntu, some of these libraries (such as libglew1.5) are contained in the 'universe' repository. Enable settings->repositories->universe in synaptic and press the reload button in synaptic, then try installing this package again.
  
  
- "Coudln't find CUDA, cannot start Sonic AWE"
+ "Couldn't find CUDA, cannot start Sonic AWE"
  
  Sonic AWE is build using CUDA technology from NVIDIA. You need to have a CUDA compatible graphics card with the latest drivers installed. For a complete list of CUDA compatible hardware, see this url: http://www.nvidia.com/object/cuda_gpus.html

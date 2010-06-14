@@ -22,7 +22,7 @@ MatlabFilter::
 void MatlabFilter::
         operator()( Chunk& c)
 {
-    TaskTimer tt("MatlabFilter::operator()(%f,%f)", c.startTime(), c.endTime() );
+    TaskTimer tt("MatlabFilter::operator() (%f,%f)", c.startTime(), c.endTime() );
 
     string file = _matlab.getTempName();
 

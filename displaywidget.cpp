@@ -334,7 +334,11 @@ void DisplayWidget::receiveToggleHz(bool active)
 
 void DisplayWidget::receiveAddSelection(bool active)
 {
-    getPostSink()->filter()->enabled = false;
+    Signal::PostSink* postSink = getPostSink();
+    if (!postSink->filter())
+        return;
+
+    postSink->filter()->enabled = false;
 
     receiveAddClearSelection(active);
 
@@ -577,6 +581,7 @@ void DisplayWidget::
             Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
             _matlabfilter.reset( new Signal::FilterOperation( read, f));
             b->source( _matlabfilter );
+            _worker->start();
         break;
         }
     case 2: // Only inside selection
@@ -1106,17 +1111,18 @@ void DisplayWidget::paintGL()
             } else {
                 //_worker->todo_list().print("Work to do");
                 // Wait a bit while the other thread work
-                QTimer::singleShot(25, this, SLOT(update()));
+                QTimer::singleShot(1.f/30, this, SLOT(update()));
             }
 
             if (!_work_timer.get())
                 _work_timer.reset( new TaskTimer("Working"));
         } else {
             static unsigned workcount = 0;
-            if (_work_timer)
-                _work_timer->info("Finishing work %u", workcount);
-            workcount++;
-            _work_timer.reset();
+            if (_work_timer) {
+                _work_timer->info("Finished %u chunks. Work session #%u", _worker->work_chunks, workcount);
+                workcount++;
+                _work_timer.reset();
+            }
         }
     }
 

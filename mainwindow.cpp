@@ -53,8 +53,8 @@ dwedewdw //dede    qt_mac_set_menubar_icons(false);
     this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
     ui->topFilterWindow->raise();
 
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
+    this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
     this->addToolBar( Qt::BottomToolBarArea, ui->toolBarPlay );
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );

@@ -16,7 +16,8 @@ namespace Signal {
 
 Worker::
         Worker(Signal::pSource s)
-:   _source(s),
+:   work_chunks(0),
+    _source(s),
     _samples_per_chunk( 1<<12 ),
     _max_samples_per_chunk( 1<<16 )
 {
@@ -40,6 +41,8 @@ bool Worker::
 {
     if (todo_list().isEmpty())
         return false;
+
+    work_chunks++;
 
     unsigned center_sample = source()->sample_rate() * center;
     stringstream ss;

@@ -2,8 +2,8 @@
 #include <CudaException.h>
 #include <memory.h>
 
-#define TIME_FILTEROPERATION
-//#define TIME_FILTEROPERATION if(0)
+//#define TIME_FILTEROPERATION
+#define TIME_FILTEROPERATION if(0)
 
 namespace Signal {
 

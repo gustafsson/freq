@@ -329,7 +329,7 @@ Signal::SamplesIntervalDescriptor Collection::
 pBlock Collection::
 attempt( Reference ref )
 {
-    TaskTimer tt("Attempt");
+    TIME_COLLECTION TaskTimer tt("Attempt");
     try {
         pBlock attempt( new Block(ref));
         attempt->glblock.reset( new GlBlock( this ));
@@ -342,7 +342,7 @@ attempt( Reference ref )
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        tt.info("Returning attempt");
+        TIME_COLLECTION TaskTimer("Returning attempt").suppressTiming();
         return attempt;
     }
     catch (const CudaException& x)
@@ -353,7 +353,7 @@ attempt( Reference ref )
     {
         TaskTimer("Swalloed GlException: %s", x.what()).suppressTiming();
     }
-    tt.info("Returning pBlock()");
+    TIME_COLLECTION TaskTimer("Returning pBlock()").suppressTiming();
     return pBlock();
 }
 
@@ -363,18 +363,18 @@ createBlock( Reference ref )
 {
     Position a,b;
     ref.getArea(a,b);
-    TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
+    TIME_COLLECTION TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
     // Try to allocate a new block
     pBlock block = attempt( ref );
 
     if ( 0 == block.get() && !_cache.empty()) {
-        tt.info("Memory allocation failed, overwriting some older block");
+        TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Overwriting some older block", a.time, b.time);
         gc();
         block = attempt( ref );
     }
 
     if ( 0 == block.get()) {
-        tt.info("Failed");
+        TaskTimer tt("Failed creating new block [%g, %g]", a.time, b.time);
         return pBlock(); // return null-pointer
     }
 
