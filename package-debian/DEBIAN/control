@@ -13,11 +13,11 @@ Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
  
  I N S T A L L A T I O N   F A Q
  
- "Dependency is not satisfiable: libglew1.5"
- 
- Sonic AWE is built using several community developed open source libraries. In Ubuntu, some of these libraries (such as libglew1.5) are contained in the 'universe' repository. Enable settings->repositories->universe in synaptic and press the reload button in synaptic, then try installing this package again.
- 
- 
  "Couldn't find CUDA, cannot start Sonic AWE"
  
  Sonic AWE is build using CUDA technology from NVIDIA. You need to have a CUDA compatible graphics card with the latest drivers installed. For a complete list of CUDA compatible hardware, see this url: http://www.nvidia.com/object/cuda_gpus.html
+ 
+ 
+ "Dependency is not satisfiable: libglew1.5"
+ 
+ Sonic AWE is built using several community developed open source libraries. In Ubuntu, some of these libraries (such as libglew1.5) are contained in the 'universe' repository. Enable settings->repositories->universe in synaptic and press the reload button in synaptic, then try installing this package again.
