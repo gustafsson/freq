@@ -15,7 +15,7 @@ Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
  
  "Couldn't find CUDA, cannot start Sonic AWE"
  
- Sonic AWE is build using CUDA technology from NVIDIA. You need to have a CUDA compatible graphics card with the latest drivers installed. For a complete list of CUDA compatible hardware, see this url: http://www.nvidia.com/object/cuda_gpus.html
+ Sonic AWE is built using CUDA technology from NVIDIA. You need to have a CUDA compatible graphics card with the latest drivers installed. For a complete list of CUDA compatible hardware, see this url: http://www.nvidia.com/object/cuda_gpus.html
  
  
  "Dependency is not satisfiable: libglew1.5"
