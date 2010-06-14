@@ -372,6 +372,7 @@ void DisplayWidget::receiveRecord(bool active)
     {
         tt.info("failed!\n");;
     }
+    update();
 }
 
 void DisplayWidget::setWorkerSource( Signal::pSource s ) {
@@ -648,13 +649,14 @@ void DisplayWidget::
 
 void DisplayWidget::put( Signal::pBuffer b, Signal::pSource )
 {
+	QMutexLocker l(&_invalidRangeMutex);
     if (b) {
-        QMutexLocker l(&_invalidRangeMutex);
 
         _invalidRange |= b->getInterval();
     }
-
-    update();
+	
+	// This causes a crash in Mac OS
+    //update();
 }
 
 void DisplayWidget::add_expected_samples( const Signal::SamplesIntervalDescriptor& )
@@ -1097,6 +1099,12 @@ void DisplayWidget::paintGL()
             _worker->center = _qx;
             _worker->todo_list( _collectionCallback->sink()->expected_samples());
             //_worker->todo_list().print("Displaywidget - Collection");
+        }
+        Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
+    	Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+        if(r != 0 && !(r->isStopped()))
+        {
+        	wasWorking = true;
         }
     }
 
