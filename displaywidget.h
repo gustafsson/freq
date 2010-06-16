@@ -82,6 +82,7 @@ public:
     unsigned playback_device;
     Heightmap::Collection* collection() { return _renderer->collection(); }
     Heightmap::pRenderer renderer() { return _renderer; }
+    Signal::FilterOperation* getFilterOperation();
 
     void drawSelection();
 
@@ -139,7 +140,6 @@ private:
     virtual void put( Signal::pBuffer b, Signal::pSource );
     virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& s );
 
-    Signal::FilterOperation* getFilterOperation();
     Signal::PostSink* getPostSink();
 
     Heightmap::pRenderer _renderer;

@@ -1120,8 +1120,6 @@ void DisplayWidget::paintGL()
 
     {   // Find things to work on (ie playback and file output)
 
-        for(static bool once=true;once;once=false) getFilterOperation();
-
         //    if (p && p->isUnderfed() && p->expected_samples_left()) {
         if (!_postsinkCallback->sink()->expected_samples().isEmpty())
         {

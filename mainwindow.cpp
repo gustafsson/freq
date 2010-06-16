@@ -207,9 +207,12 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     ui->actionActivateNavigation->setChecked(true);
 
     updateOperationsTree( d->worker()->source() );
+    d->getFilterOperation();
 
     if (d->isRecordSource()) {
         this->ui->actionRecord->setEnabled(true);
+    } else {
+        this->ui->actionRecord->setEnabled(false);
     }
 }
 
