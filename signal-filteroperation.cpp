@@ -1,4 +1,5 @@
 #include "signal-filteroperation.h"
+#include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>
 
@@ -10,6 +11,7 @@ namespace Signal {
 FilterOperation::
         FilterOperation(pSource source, Tfr::pFilter filter)
 :   OperationCache(source),
+    cwt(*Tfr::CwtSingleton::instance()),
     _filter( filter ),
     _save_previous_chunk( false )
 {
@@ -30,8 +32,8 @@ pBuffer FilterOperation::
     unsigned first_valid_sample = firstSample;
     firstSample -= redundant_samples;
 
-    if (numberOfSamples<.5f*wavelet_std_samples)
-        numberOfSamples=.5f*wavelet_std_samples;
+    if (numberOfSamples<10)
+        numberOfSamples=10;
 
     _previous_chunk.reset();
 
@@ -120,6 +122,15 @@ pBuffer FilterOperation::
 
         break;
     } catch (const CufftException &x) {
+        switch (x.getCufftError())
+        {
+            case CUFFT_EXEC_FAILED:
+            case CUFFT_ALLOC_FAILED:
+                break;
+            default:
+                throw;
+        }
+
         unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
         if (newL > redundant_samples + wavelet_std_samples)
         {
@@ -127,8 +138,13 @@ pBuffer FilterOperation::
             TaskTimer("CUFFT error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
             continue;
         }
-        throw;
+
+        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
+                             cwt.wavelet_std_t(), cwt.wavelet_std_samples(sample_rate())*cwt.nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     } catch (const CudaException &x) {
+        if (cudaErrorMemoryAllocation != x.getCudaError() )
+            throw;
+
         unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
         if (newL > redundant_samples + wavelet_std_samples)
         {
@@ -136,7 +152,9 @@ pBuffer FilterOperation::
             TaskTimer("CUDA error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
             continue;
         }
-        throw;
+
+        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
+                             cwt.wavelet_std_t(), cwt.wavelet_std_samples(sample_rate())*cwt.nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     }
 
     _save_previous_chunk = false;

@@ -44,6 +44,9 @@
 #endif
 #include <math.h>
 
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
+
 void drawCircleSector(float x, float y, float radius, float start, float end);
 void drawRoundRect(float width, float height, float roundness);
 void drawRect(float x, float y, float width, float height);
@@ -1023,13 +1026,11 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
-    // TaskTimer tt("DisplayWidget::paintGL");
+    TIME_PAINTGL TaskTimer tt("DisplayWidget::paintGL");
     static int tryGc = 0;
     try {
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
-
-    TaskTimer tt2(TaskTimer::LogVerbose, __FUNCTION__);
 
     {   QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
         if (!_invalidRange.isEmpty()) {
@@ -1087,7 +1088,6 @@ void DisplayWidget::paintGL()
     }
 
     {   // Find things to work on (ie playback and file output)
-        _renderer->collection()->next_frame(); // Check needed blocks
 
         //    if (p && p->isUnderfed() && p->expected_samples_left()) {
         if (!_postsinkCallback->sink()->expected_samples().isEmpty())
@@ -1110,6 +1110,7 @@ void DisplayWidget::paintGL()
 
     {   // Work
         bool isWorking = !_worker->todo_list().isEmpty();
+
         if (wasWorking || isWorking) {
             // _worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
@@ -1139,7 +1140,7 @@ void DisplayWidget::paintGL()
 
     tryGc = 0;
     } catch (const CudaException &x) {
-        TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION %s", x.what());
+        TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
         if (2>tryGc) {
         	Heightmap::Collection* c=_renderer->collection();
         	c->reset();
@@ -1152,7 +1153,7 @@ void DisplayWidget::paintGL()
             TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
             e = cudaThreadExit();
             tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
-            CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+            //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
             e = cudaSetDevice( 1 );
             tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
             e = cudaSetDevice( 0 );
@@ -1166,7 +1167,7 @@ void DisplayWidget::paintGL()
         }
         else throw;
     } catch (const GlException &x) {
-        TaskTimer tt("DisplayWidget::paintGL CAUGHT GLEXCEPTION %s", x.what());
+        TaskTimer tt("DisplayWidget::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
         if (0==tryGc) {
             _renderer->collection()->gc();
             tryGc++;

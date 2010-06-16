@@ -148,6 +148,7 @@ public:
       Get number of samples computed for each iteration.
       */
     unsigned            samples_per_chunk() const;
+    void                suggest_samples_per_chunk(unsigned);
 
     /**
       Get/set requested number of frames per second.

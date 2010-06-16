@@ -66,55 +66,48 @@ void Collection::
 void Collection::
     put( Signal::pBuffer b, Signal::pSource s)
 {
-    try {
-        Signal::SamplesIntervalDescriptor expected = expected_samples();
-        if ( (expected_samples() & b->getInterval()).isEmpty() ) {
-            TaskTimer("Collection::put received non requested block [%u, %u]", b->getInterval().first, b->getInterval().last);
-            return;
-        }
+    Signal::SamplesIntervalDescriptor expected = expected_samples();
+    if ( (expected_samples() & b->getInterval()).isEmpty() ) {
+        TaskTimer("Collection::put received non requested block [%u, %u]", b->getInterval().first, b->getInterval().last);
+        return;
+    }
 
-//        TaskTimer tt(TaskTimer::LogVerbose, "Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
-        TIME_COLLECTION TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
+    TIME_COLLECTION TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
 
-        // Get a chunk for this block
-        Tfr::pChunk chunk = getChunk( b, s );
-        if ( (expected_samples() & chunk->getInterval()).isEmpty() ) {
-            TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk->getInterval().first, chunk->getInterval().last);
-            return;
-        }
+    // Get a chunk for this block
+    Tfr::pChunk chunk = getChunk( b, s );
+    if ( (expected_samples() & chunk->getInterval()).isEmpty() ) {
+        TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk->getInterval().first, chunk->getInterval().last);
+        return;
+    }
 
-        if (_constructor_thread.isSameThread())
+    if (_constructor_thread.isSameThread())
+    {
+        _updates.push_back( chunk );
+        applyUpdates();
+    }
+    else
+    {
+        Tfr::pChunk cpuChunk(new Tfr::Chunk);
+        cpuChunk->min_hz = chunk->min_hz;
+        cpuChunk->max_hz = chunk->max_hz;
+        cpuChunk->chunk_offset = chunk->chunk_offset;
+        cpuChunk->sample_rate = chunk->sample_rate;
+        cpuChunk->first_valid_sample = chunk->first_valid_sample;
+        cpuChunk->n_valid_samples = chunk->n_valid_samples;
+        cpuChunk->transform_data.reset( new GpuCpuData<float2>(0, chunk->transform_data->getNumberOfElements()));
+        cudaMemcpy( cpuChunk->transform_data->getCpuMemory(),
+                    chunk->transform_data->getCudaGlobal().ptr(),
+                    cpuChunk->transform_data->getSizeInBytes1D(),
+                    cudaMemcpyDeviceToHost );
+
         {
-            _updates.push_back( chunk );
-            applyUpdates();
+            QMutexLocker l(&_updates_mutex);
+            _updates.push_back( cpuChunk );
+            cpuChunk.reset(); // release cpuChunk before applyUpdate have move data to GPU
         }
-        else
-        {
-            Tfr::pChunk cpuChunk(new Tfr::Chunk);
-            cpuChunk->min_hz = chunk->min_hz;
-            cpuChunk->max_hz = chunk->max_hz;
-            cpuChunk->chunk_offset = chunk->chunk_offset;
-            cpuChunk->sample_rate = chunk->sample_rate;
-            cpuChunk->first_valid_sample = chunk->first_valid_sample;
-            cpuChunk->n_valid_samples = chunk->n_valid_samples;
-            cpuChunk->transform_data.reset( new GpuCpuData<float2>(0, chunk->transform_data->getNumberOfElements()));
-            cudaMemcpy( cpuChunk->transform_data->getCpuMemory(),
-                        chunk->transform_data->getCudaGlobal().ptr(),
-                        cpuChunk->transform_data->getSizeInBytes1D(),
-                        cudaMemcpyDeviceToHost );
 
-            {
-                QMutexLocker l(&_updates_mutex);
-                _updates.push_back( cpuChunk );
-                cpuChunk.reset(); // release cpuChunk before applyUpdate have move data to GPU
-            }
-
-            _updates_condition.wait(&_updates_mutex);
-        }
-    } catch (const CudaException &) {
-        // silently catch, don't bother to do anything
-    } catch (const GlException &) {
-        // silently catch, don't bother to do anything
+        _updates_condition.wait(&_updates_mutex);
     }
 }
 
@@ -248,31 +241,25 @@ pBlock Collection::
     BOOST_FOREACH( pBlock& b, _cache ) {
         if (b->ref == ref) {
             block = b;
-            b->frame_number_last_used = _frame_counter;
 
             break;
         }
     }
 
-    pBlock result = block;
-    try {
-        if (0 == block.get()) {
-            block = createBlock( ref );
-        }
-
-        if (0 != block.get()) 
-        {
-            Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
-            if (!(refInt-=block->valid_samples).isEmpty())
-                _unfinished_count++;
-        }
-
-        result = block;
-    } catch (const CudaException &) {
-    } catch (const GlException &) {
+    if (0 == block.get()) {
+        block = createBlock( ref );
     }
 
-    return result;
+    if (0 != block.get())
+    {
+        Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
+        if (!(refInt-=block->valid_samples).isEmpty())
+            _unfinished_count++;
+    }
+
+    block->frame_number_last_used = _frame_counter;
+
+    return block;
 }
 
 void Collection::
@@ -310,7 +297,7 @@ Signal::SamplesIntervalDescriptor Collection::
 
     BOOST_FOREACH( pBlock& b, _cache )
     {
-        if (_frame_counter-b->frame_number_last_used < 2)
+        if (_frame_counter == b->frame_number_last_used)
         {
             Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
 
@@ -320,6 +307,7 @@ Signal::SamplesIntervalDescriptor Collection::
     }
 
     _expected_samples = r;
+
     return r;
 }
 
@@ -347,11 +335,20 @@ attempt( Reference ref )
     }
     catch (const CudaException& x)
     {
-        TaskTimer("Swalloed CudaException: %s", x.what()).suppressTiming();
+        /*
+          Swallow silently and return null.
+          createBlock will try to release old block if we're out of memory. But
+          block allocation may still fail. In such a case, return null and
+          heightmap::renderer will render a cross instead of this block to
+          demonstrate that something went wrong. This is not a fatal error. The
+          application can still continue and use filters.
+          */
+        TaskTimer("Collection::attempt swallowed CudaException.\n%s", x.what()).suppressTiming();
     }
     catch (const GlException& x)
     {
-        TaskTimer("Swalloed GlException: %s", x.what()).suppressTiming();
+        // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
+        TaskTimer("Collection::attempt swallowed GlException.\n%s", x.what()).suppressTiming();
     }
     TIME_COLLECTION TaskTimer("Returning pBlock()").suppressTiming();
     return pBlock();
@@ -474,22 +471,22 @@ createBlock( Reference ref )
             }
         }
 
-        GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
-
         computeSlope( block, 0 );
-        result = block;
 
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
+
+        result = block;
     }
     catch (const CudaException& x )
     {
-        TaskTimer("Swalloed CudaException: %s", x.what()).suppressTiming();
+        // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
+        TaskTimer("Collection::createBlock swallowed CudaException.\n%s", x.what()).suppressTiming();
     }
     catch (const GlException& x )
     {
-        TaskTimer("Swalloed GlException: %s", x.what()).suppressTiming();
+        // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
+        TaskTimer("Collection::createBlock swallowed GlException.\n%s", x.what()).suppressTiming();
     }
 
     if ( 0 == result.get())

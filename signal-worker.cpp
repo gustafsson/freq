@@ -66,6 +66,7 @@ bool Worker::
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
             _samples_per_chunk >>=1;
+            TaskTimer("Caught cudaErrorMemoryAllocation. Decreasing worker samples_per_chunk to %u", _samples_per_chunk).suppressTiming();
             _max_samples_per_chunk = _samples_per_chunk;
         } else {
             throw;
@@ -143,6 +144,12 @@ unsigned Worker::
         samples_per_chunk() const
 {
     return _samples_per_chunk;
+}
+
+void Worker::
+        suggest_samples_per_chunk(unsigned value)
+{
+    _samples_per_chunk = value;
 }
 
 unsigned Worker::

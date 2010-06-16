@@ -79,7 +79,7 @@ namespace Heightmap {
 
 class Block {
 public:
-    Block( Reference ref ): ref(ref) {}
+    Block( Reference ref ): ref(ref), frame_number_last_used(-1) {}
 
     float sample_rate();
     float nFrequencies();

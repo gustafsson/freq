@@ -305,16 +305,18 @@ int main(int argc, char *argv[])
 
         // TODO use _channel
 
-        unsigned redundant = 2*(((unsigned)(_wavelet_std_t*p->head_source->sample_rate())+31)/32*32);
+        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
+        cwt->scales_per_octave( _scales_per_octave );
+        cwt->wavelet_std_t( _wavelet_std_t );
+
+        unsigned redundant = 2*cwt->wavelet_std_samples( p->head_source->sample_rate() );
+
         while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
             _samples_per_chunk++;
             TaskTimer("To few samples per chunk, increasing to 2^%d", _samples_per_chunk).suppressTiming();
         }
         unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
-
-        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
-        cwt->scales_per_octave( _scales_per_octave );
-        cwt->wavelet_std_t( _wavelet_std_t );
+        p->displayWidget()->worker()->suggest_samples_per_chunk( total_samples_per_chunk );
 
         if (_get_csv != (unsigned)-1) {
             Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );

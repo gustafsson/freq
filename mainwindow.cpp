@@ -203,7 +203,8 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
 
     ui->actionActivateNavigation->setChecked(true);
-    d->setWorkerSource();
+
+    updateOperationsTree( d->worker()->source() );
 
     if (d->isRecordSource()) {
         this->ui->actionRecord->setEnabled(true);
