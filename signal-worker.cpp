@@ -5,6 +5,7 @@
 #include <QMutexLocker>
 #include <boost/foreach.hpp>
 #include <CudaException.h>
+#include <tfr-cwt.h>
 
 //#define TIME_WORKER
 #define TIME_WORKER if(0)
@@ -76,7 +77,9 @@ bool Worker::
         CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
-            _samples_per_chunk = _max_samples_per_chunk = b->number_of_samples();
+            _samples_per_chunk = Tfr::CwtSingleton::instance()->prev_good_size(
+                    _samples_per_chunk, _source->sample_rate());
+            _max_samples_per_chunk = _samples_per_chunk;
             TaskTimer("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what()).suppressTiming();
         } else {
             throw;
@@ -95,13 +98,15 @@ bool Worker::
         if (1000.f/milliseconds < _requested_fps && _samples_per_chunk>1024)
         {
             if (1<_samples_per_chunk) {
-                _samples_per_chunk>>=1;
+                _samples_per_chunk = Tfr::CwtSingleton::instance()->prev_good_size(
+                        _samples_per_chunk, _source->sample_rate());
                 TIME_WORKER TaskTimer("Low framerate (%.1f fps). Decreased samples per chunk to, %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
             }
         }
-        else if (1000.f/milliseconds > 4.f*_requested_fps)
+        else if (1000.f/milliseconds > 2.5f*_requested_fps)
         {
-            //_samples_per_chunk<<=1;
+            _samples_per_chunk = Tfr::CwtSingleton::instance()->next_good_size(
+                    _samples_per_chunk, _source->sample_rate());
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else
@@ -174,7 +179,8 @@ void Worker::
 {
     if (0==value) value=1;
 
-    _requested_fps = value;
+    if (value>_requested_fps)
+        _requested_fps = value;
 }
 
 void Worker::

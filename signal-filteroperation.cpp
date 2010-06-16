@@ -131,10 +131,10 @@ pBuffer FilterOperation::
                 throw;
         }
 
-        unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
-        if (newL > redundant_samples + wavelet_std_samples)
-        {
-            numberOfSamples = newL - redundant_samples - wavelet_std_samples;
+        unsigned newL = cwt.prev_good_size( numberOfSamples, sample_rate());
+        if (newL < numberOfSamples ) {
+            numberOfSamples = newL;
+
             TaskTimer("FilterOperation reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
             continue;
         }
@@ -145,10 +145,10 @@ pBuffer FilterOperation::
         if (cudaErrorMemoryAllocation != x.getCudaError() )
             throw;
 
-        unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
-        if (newL > redundant_samples + wavelet_std_samples)
-        {
-            numberOfSamples = newL - redundant_samples - wavelet_std_samples;
+        unsigned newL = cwt.prev_good_size( numberOfSamples, sample_rate());
+        if (newL < numberOfSamples ) {
+            numberOfSamples = newL;
+
             TaskTimer("FilterOperation reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
             continue;
         }

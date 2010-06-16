@@ -140,6 +140,44 @@ unsigned Cwt::
     return (_wavelet_std_t*sample_rate+31)/32*32;
 }
 
+// Next smallest power of two
+static unsigned int
+nspo2(register unsigned int x)
+{
+    x |= (x >> 1);
+    x |= (x >> 2);
+    x |= (x >> 4);
+    x |= (x >> 8);
+    x |= (x >> 16);
+    return(x+1);
+}
+
+// Previous largest power of two
+static unsigned int
+plpo2(register unsigned int x)
+{
+    return nspo2(x-1)>>1;
+}
+
+unsigned Cwt::
+        next_good_size( unsigned current_valid_samples_per_chunk, unsigned sample_rate )
+{
+    unsigned r = wavelet_std_samples( sample_rate );
+    unsigned T = r + current_valid_samples_per_chunk + r;
+    return nspo2(T) - 2*r;
+}
+
+unsigned Cwt::
+        prev_good_size( unsigned current_valid_samples_per_chunk, unsigned sample_rate )
+{
+    unsigned r = wavelet_std_samples( sample_rate );
+    unsigned T = r + current_valid_samples_per_chunk + r;
+    unsigned nT = plpo2(T);
+    if (nT<2*r)
+        nT = nspo2(2*r);
+    return nT - 2*r;
+}
+
 pChunk CwtSingleton::
         operate( Signal::pBuffer b )
 {

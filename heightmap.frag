@@ -8,8 +8,7 @@ uniform vec4 shallowColor; // = vec4(0.1, 0.4, 0.3, 1.0);
 uniform vec4 skyColor;     // = vec4(0.5, 0.5, 0.5, 1.0);
 uniform vec3 lightDir;     // = vec3(0.0, 1.0, 0.0);
 */
-varying float intensity;
-uniform sampler2D Texture0;
+uniform sampler2D tex;
 
 vec4 setWavelengthColor( float wavelengthScalar ) {
     vec4 spectrum[7];
@@ -68,7 +67,7 @@ void main()
     float facing    = max(0.0, dot(eyeSpaceNormalVector, -eyeVector));
     float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
     float diffuse   = max(0.0, worldSpaceNormalVector.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
-    float v = texture2D(Texture0, gl_TexCoord[0].xy).x;
+    float v = texture2D(tex, gl_TexCoord[0].xy).x;
 //    float v=texPos.y;
     //float v = intensity;
 
@@ -86,7 +85,7 @@ void main()
     vec4 curveColor = setWavelengthColor( f );
     float x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
 
-    curveColor = curveColor*((diffuse+facing+2.0)*0.25); // vec4(fresnel);
+    curveColor = curveColor*((diffuse+facing+2.0)*.25); // + vec4(fresnel);
 
     curveColor = mix(vec4( 1,1,1,0), min(vec4(0.7),curveColor), x);
     curveColor.w = 1.0; //-saturate(fresnel);

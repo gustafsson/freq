@@ -58,8 +58,8 @@ __global__ void kernel_compute(
 
     float waveform = in_waveform_ft[x];
 
-    float cufft_normalize = rsqrt((float)numElem.width);
-    float jibberish_normalization =  26.0993675428f/scales_per_octave;
+    float cufft_normalize = 1.f/(float)numElem.width;
+    float jibberish_normalization =  3.5800f/scales_per_octave;
 
     // Find period for this thread
     unsigned nFrequencies = numElem.height;
@@ -125,12 +125,7 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
         a += in_wavelet[ x + fi*numElem.width ].x;
     }
 
-    float cufft_normalize = 1.f/sqrt((float)numElem.width);
-
-    // TODO wtf?
-    float jibberish_normalization = .1;
-
-    out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
+    out_inverse_waveform[x] = a;
 }
 
 void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
@@ -174,10 +169,7 @@ __global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_wa
         }
     }
 
-    float cufft_normalize = 1.f/sqrt((float)numElem.width);
-    float jibberish_normalization = .1;
-
-    out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
+    out_inverse_waveform[x] = a;
 }
 
 void wtInverseBox( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
@@ -217,10 +209,7 @@ __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_wavef
         }
     }
 
-    float cufft_normalize = 1.f/sqrt((float)numElem.width);
-    float jibberish_normalization = .1;
-
-    out_inverse_waveform[x] = jibberish_normalization*cufft_normalize*a;
+    out_inverse_waveform[x] = a;
 }
 
 void wtClamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt, cudaStream_t stream  )

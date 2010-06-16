@@ -1052,6 +1052,7 @@ void DisplayWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Set up camera position
+    bool followingPlaybackMarker = false;
     float length = _worker->source()->length();
     {   float limit = std::max(0.f, length - 2*Tfr::CwtSingleton::instance()->wavelet_std_t());
         if (_qx>=_prevLimit) {
@@ -1062,6 +1063,7 @@ void DisplayWidget::paintGL()
             // dirac peek in the transform (false because it will soon be
             // invalid by newly recorded data).
             _qx = std::max(_qx,limit);
+            followingPlaybackMarker = true;
         }
         _prevLimit = limit;
 
@@ -1097,11 +1099,20 @@ void DisplayWidget::paintGL()
         {
             _worker->center = 0;
             _worker->todo_list( _postsinkCallback->sink()->expected_samples() );
+
+            // Request at least 3 fps. Otherwise there is a risk that CUDA
+            // will screw up playback by blocking the OS and causing audio
+            // starvation.
+            worker()->requested_fps(3);
+
             //_worker->todo_list().print("Displaywidget - PostSink");
         } else {
             _worker->center = _qx;
             _worker->todo_list( _collectionCallback->sink()->expected_samples());
             //_worker->todo_list().print("Displaywidget - Collection");
+
+            if (followingPlaybackMarker)
+                worker()->requested_fps(60);
         }
         Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
     	Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
