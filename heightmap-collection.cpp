@@ -259,9 +259,9 @@ pBlock Collection::
         Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
         if (!(refInt-=block->valid_samples).isEmpty())
             _unfinished_count++;
-    }
 
-    block->frame_number_last_used = _frame_counter;
+        block->frame_number_last_used = _frame_counter;
+    }
 
     return block;
 }
