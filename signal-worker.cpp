@@ -19,7 +19,8 @@ Worker::
 :   work_chunks(0),
     _source(s),
     _samples_per_chunk( 1<<12 ),
-    _max_samples_per_chunk( 1<<16 )
+    _max_samples_per_chunk( 1<<16 ),
+    _requested_fps( 20 )
 {
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
@@ -57,26 +58,29 @@ bool Worker::
 
     try
     {
-        stringstream ss;
-        TIME_WORKER TaskTimer tt("Reading source %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
+        {
+            stringstream ss;
+            TIME_WORKER TaskTimer tt("Reading source %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
 
-        b = _source->read( interval.first, interval.last-interval.first );
-        QMutexLocker l(&_todo_lock);
-        _todo_list -= b->getInterval();
+            b = _source->read( interval.first, interval.last-interval.first );
+            QMutexLocker l(&_todo_lock);
+            _todo_list -= b->getInterval();
+        }
+
+        {   stringstream ss;
+            TIME_WORKER TaskTimer tt("Calling callbacks %s", ((std::stringstream&)(ss<<b->getInterval())).str().c_str() );
+
+            callCallbacks( b );
+        }
+
+        CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
-            _samples_per_chunk >>=1;
-            TaskTimer("Caught cudaErrorMemoryAllocation. Decreasing worker samples_per_chunk to %u", _samples_per_chunk).suppressTiming();
-            _max_samples_per_chunk = _samples_per_chunk;
+            _samples_per_chunk = _max_samples_per_chunk = b->number_of_samples();
+            TaskTimer("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what()).suppressTiming();
         } else {
             throw;
         }
-    }
-
-    {   stringstream ss;
-        TIME_WORKER TaskTimer tt("Calling callbacks %s", ((std::stringstream&)(ss<<b->getInterval())).str().c_str() );
-
-        callCallbacks( b );
     }
 
     time_duration diff = microsec_clock::local_time() - startTime;
@@ -84,21 +88,24 @@ bool Worker::
     unsigned milliseconds = diff.total_milliseconds();
     if (0==milliseconds) milliseconds=1;
 
-    if (0) {
+    if (1) {
+        _requested_fps = 99*_requested_fps/100;
+        if (1>_requested_fps)_requested_fps=1;
+
         if (1000.f/milliseconds < _requested_fps && _samples_per_chunk>1024)
         {
             if (1<_samples_per_chunk) {
                 _samples_per_chunk>>=1;
-				TIME_WORKER TaskTimer("New samples per chunk, %u", _samples_per_chunk).suppressTiming();
+                TIME_WORKER TaskTimer("Low framerate (%.1f fps). Decreased samples per chunk to, %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
             }
         }
-        else if (1000.f/milliseconds > 2.5f*_requested_fps)
+        else if (1000.f/milliseconds > 4.f*_requested_fps)
         {
-            _samples_per_chunk<<=1;
+            //_samples_per_chunk<<=1;
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else
-				TIME_WORKER TaskTimer("New samples per chunk, %u", _samples_per_chunk).suppressTiming();
+                TIME_WORKER TaskTimer("High framerate (%.1f fps). Increased samples per chunk to, %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
         }
     }
 
@@ -165,7 +172,9 @@ unsigned Worker::
 void Worker::
         requested_fps(unsigned value)
 {
-    _requested_fps = value>0?value:1;
+    if (0==value) value=1;
+
+    _requested_fps = value;
 }
 
 void Worker::

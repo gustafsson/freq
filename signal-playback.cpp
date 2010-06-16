@@ -231,21 +231,25 @@ bool Playback::
     // the first buffer.
     float incoming_samples_per_sec = (nAccumulated_samples - _data.first_buffer()->number_of_samples()) / accumulation_time;
 
-    float time_left =
-            (expect.intervals().back().last
-             - _playback_itr) / (float)_data.sample_rate();
+    unsigned marker = _playback_itr;
+    if (0==marker)
+        marker = _data.first_buffer()->sample_offset;
 
-    // Add small margin
-    time_left += .05f;
+    float time_left =
+            (expect.intervals().back().last - marker) / (float)_data.sample_rate();
 
     Signal::SamplesIntervalDescriptor::Interval cov = expect.coveredInterval();
     float estimated_time_required =
             (cov.last - cov.first) / incoming_samples_per_sec;
 
+    // Add small margin
+    estimated_time_required *= 1.11f;
+
     // Return if the estimated time to receive all expected samples is greater than
     // the time it would take to play the remaining part of the data.
     // If it is, the sink is underfed.
-    TaskTimer("Computed: %s underfed", time_left < estimated_time_required?"is":"not").suppressTiming();
+    TaskTimer("time_left %g %s %g estimated_time_required", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required).suppressTiming();
+    //TaskTimer("Computed: %s underfed", time_left < estimated_time_required?"is":"not").suppressTiming();
     return time_left < estimated_time_required;
 }
 

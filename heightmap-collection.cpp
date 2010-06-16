@@ -75,7 +75,11 @@ void Collection::
     TIME_COLLECTION TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
 
     // Get a chunk for this block
+    // The chunk might be smaller (chunk->n_valid_samples < b->number_of_samples)
+    // in which case the next call to expected_samples() will return the missing
+    // samples.
     Tfr::pChunk chunk = getChunk( b, s );
+
     if ( (expected_samples() & chunk->getInterval()).isEmpty() ) {
         TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk->getInterval().first, chunk->getInterval().last);
         return;

@@ -135,7 +135,7 @@ pBuffer FilterOperation::
         if (newL > redundant_samples + wavelet_std_samples)
         {
             numberOfSamples = newL - redundant_samples - wavelet_std_samples;
-            TaskTimer("CUFFT error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
+            TaskTimer("FilterOperation reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
             continue;
         }
 
@@ -149,7 +149,7 @@ pBuffer FilterOperation::
         if (newL > redundant_samples + wavelet_std_samples)
         {
             numberOfSamples = newL - redundant_samples - wavelet_std_samples;
-            TaskTimer("CUDA error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
+            TaskTimer("FilterOperation reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
             continue;
         }
 
