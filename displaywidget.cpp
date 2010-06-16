@@ -609,6 +609,34 @@ void DisplayWidget::
     update();
 }
 
+void DisplayWidget::
+        receiveTonalizeFilter(bool)
+{
+    Tfr::pFilter f( new Tfr::TonalizeFilter());
+    Signal::FilterOperation *m;
+    Signal::pSource tonalize( m = new Signal::FilterOperation( _worker->source(), f));
+    m->meldFilters();
+    setWorkerSource(tonalize);
+
+    _renderer->collection()->add_expected_samples( f->getTouchedSamples(tonalize->sample_rate()) );
+
+    update();
+}
+
+void DisplayWidget::
+        receiveReassignFilter(bool)
+{
+    Tfr::pFilter f( new Tfr::ReassignFilter());
+    Signal::FilterOperation *m;
+    Signal::pSource reassign( m = new Signal::FilterOperation( _worker->source(), f));
+    m->meldFilters();
+    setWorkerSource(reassign);
+
+    _renderer->collection()->add_expected_samples( f->getTouchedSamples(reassign->sample_rate()) );
+
+    update();
+}
+
 /*void DisplayWidget::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
@@ -1100,10 +1128,10 @@ void DisplayWidget::paintGL()
             _worker->center = 0;
             _worker->todo_list( _postsinkCallback->sink()->expected_samples() );
 
-            // Request at least 3 fps. Otherwise there is a risk that CUDA
+            // Request at least 10 fps. Otherwise there is a risk that CUDA
             // will screw up playback by blocking the OS and causing audio
             // starvation.
-            worker()->requested_fps(3);
+            worker()->requested_fps(10);
 
             //_worker->todo_list().print("Displaywidget - PostSink");
         } else {
@@ -1613,12 +1641,13 @@ void DisplayWidget::setSelection(int index, bool enabled)
         Tfr::pFilter sf( e2 = new Tfr::EllipsFilter(*e ));
         e2->_save_inside = true;
         getPostSink()->filter( sf, _worker->source());
+    }
 
-        if(e->enabled != enabled) {
-            e->enabled = enabled;
+    Tfr::Filter* filter = i->get();
+    if(filter->enabled != enabled) {
+        filter->enabled = enabled;
 
-            _renderer->collection()->add_expected_samples( e->getTouchedSamples(f->sample_rate()) );
-        }
+        _renderer->collection()->add_expected_samples( filter->getTouchedSamples(f->sample_rate()) );
     }
     
     update();
@@ -1634,7 +1663,7 @@ void DisplayWidget::removeFilter(int index){
     
     Tfr::FilterChain::iterator i = c->begin();
     std::advance(i, index);
-    Tfr::EllipsFilter *e = dynamic_cast<Tfr::EllipsFilter*>(i->get());
+    Tfr::Filter *e = i->get();
     if (e)
     {
         _renderer->collection()->add_expected_samples( e->getTouchedSamples(f->sample_rate()) );

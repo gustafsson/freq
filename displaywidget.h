@@ -123,6 +123,8 @@ protected slots:
     virtual void receiveMoveSelectionInTime(bool);
     virtual void receiveMatlabOperation(bool);
     virtual void receiveMatlabFilter(bool);
+    virtual void receiveTonalizeFilter(bool);
+    virtual void receiveReassignFilter(bool);
     virtual void receiveRecord(bool);
 signals:
     void operationsUpdated( Signal::pSource s );

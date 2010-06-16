@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>886</width>
-    <height>509</height>
+    <height>526</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -225,6 +225,15 @@
        <attribute name="headerMinimumSectionSize">
         <number>10</number>
        </attribute>
+       <attribute name="headerDefaultSectionSize">
+        <number>10</number>
+       </attribute>
+       <attribute name="headerVisible">
+        <bool>false</bool>
+       </attribute>
+       <attribute name="headerMinimumSectionSize">
+        <number>10</number>
+       </attribute>
        <column>
         <property name="text">
          <string>1</string>
@@ -273,7 +282,7 @@
    <property name="minimumSize">
     <size>
      <width>42</width>
-     <height>78</height>
+     <height>79</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -318,6 +327,9 @@
    <addaction name="separator"/>
   </widget>
   <widget class="QToolBar" name="toolBarOperation">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -325,7 +337,7 @@
     <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>false</bool>
+    <bool>true</bool>
    </attribute>
    <addaction name="actionActionAdd_selection"/>
    <addaction name="actionActionRemove_selection"/>
@@ -335,6 +347,8 @@
    <addaction name="actionCropSelection"/>
    <addaction name="actionMoveSelection"/>
    <addaction name="actionMoveSelectionTime"/>
+   <addaction name="actionTonalizeFilter"/>
+   <addaction name="actionReassignFilter"/>
   </widget>
   <action name="actionActivateSelection">
    <property name="checkable">
@@ -1274,6 +1288,44 @@
    </property>
    <property name="toolTip">
     <string>Show whatnot plot</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTonalizeFilter">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Tonalize transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Tonalize transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionReassignFilter">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>
+     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reassign transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Reassign transform</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
