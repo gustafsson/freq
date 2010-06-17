@@ -354,9 +354,10 @@ int main(int argc, char *argv[])
         p->displayWidget()->collection()->samples_per_block( _samples_per_block );
         p->displayWidget()->collection()->scales_per_block( _scales_per_block );
 
-        p.reset(); // a keeps a copy of pProject
+		a.openadd_project( p );
 
-		a.open_project( p );
+		p.reset(); // a keeps a copy of pProject
+
         int r = a.exec();
 
         // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );

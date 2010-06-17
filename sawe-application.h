@@ -22,7 +22,7 @@ public:
 
     virtual bool notify(QObject * receiver, QEvent * e);
 
-    void				open_project( pProject p );
+    void				openadd_project( pProject p );
 public slots:
     pProject slotNew_recording( int record_device = -1 );
     pProject slotOpen_file( std::string project_file_or_audio_file="" );

@@ -132,7 +132,7 @@ bool Application::
 }
 
 void Application::
-		open_project( pProject p )
+		openadd_project( pProject p )
 {
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow().get() );
@@ -146,7 +146,7 @@ pProject Application::
     TaskTimer tt("New recording1");
     pProject p = Project::createRecording( record_device );
     if (p)
-		open_project(p);
+		openadd_project(p);
     return p;
 }
 
@@ -155,7 +155,7 @@ pProject Application::
 {
     pProject p = Project::open( project_file_or_audio_file );
     if (p)
-		open_project(p);
+		openadd_project(p);
     return p;
 }
 
