@@ -11,7 +11,6 @@ namespace Signal {
 FilterOperation::
         FilterOperation(pSource source, Tfr::pFilter filter)
 :   OperationCache(source),
-//    cwt(*Tfr::CwtSingleton::instance()),
     _filter( filter ),
     _save_previous_chunk( false )
 {
