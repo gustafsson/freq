@@ -4,6 +4,7 @@
 #include <boost/foreach.hpp>
 #include <QMutexLocker>
 #include <stdio.h> // todo remove
+#include <QMessageBox>
 
 using namespace std;
 using namespace boost::posix_time;
@@ -169,6 +170,9 @@ void Playback::
         return;
     }
 
+    try
+    {
+    
     portaudio::System &sys = portaudio::System::instance();
 
     TaskTimer(TaskTimer::LogVerbose, "Start playing on: %s", sys.deviceByIndex(_output_device).name() );
@@ -198,6 +202,13 @@ void Playback::
     _playback_itr = _data.first_buffer()->sample_offset;
 
     streamPlayback->start();
+
+    } catch (const portaudio::PaException& x) {
+        QMessageBox::warning( 0,
+                     "Can't play sound",
+                     x.what() );
+        _data.reset();
+    }
 }
 
 bool Playback::
