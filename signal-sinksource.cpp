@@ -102,29 +102,35 @@ lpo2s(register unsigned int x)
 void SinkSource::
         selfmerge()
 {
-    if (_cache.empty())
-        return;
+	{
+		QMutexLocker l(&_cache_mutex);
+
+		if (_cache.empty())
+			return;
+	}
 
     //TaskTimer tt("SinkSource::selfmerge");
     //samplesDesc().print("selfmerged start");
     //tt.info("_cache.size()=%u", _cache.size());
 
-    std::vector<pBuffer> new_cache;
-    std::sort(_cache.begin(), _cache.end(), bufferLessThan);
-
     SamplesIntervalDescriptor sid = samplesDesc();
-    BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals() )
-    {
-        for(unsigned L=0; i.first < i.last; i.first+=L)
-        {
-            L = lpo2s( i.last - i.first + 1);
-            if (L<(1<<13))
-                L = i.last-i.first;
-            new_cache.push_back(readFixedLength( i.first, L ));
-        }
-    }
+	std::vector<pBuffer> new_cache;
 
-    _cache = new_cache;
+	BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals() )
+	{
+		for(unsigned L=0; i.first < i.last; i.first+=L)
+		{
+			L = lpo2s( i.last - i.first + 1);
+			if (L<(1<<13))
+				L = i.last-i.first;
+			new_cache.push_back(readFixedLength( i.first, L ));
+		}
+	}
+
+	{
+		QMutexLocker l(&_cache_mutex);
+	    _cache = new_cache;
+	}
 
     //samplesDesc().print("selfmerged finished");
     //tt.info("_cache.size()=%u", _cache.size());
@@ -222,6 +228,9 @@ pBuffer SinkSource::
             }
         }
     }
+
+    if (_cache.empty())
+		return pBuffer();
 
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
     pBuffer b( new Buffer(firstSample, numberOfSamples, sample_rate()));
