@@ -42,7 +42,7 @@ pChunk ChunkSink::
         chunk = Tfr::CwtSingleton::operate( b );
         Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk computed raw chunk");
 
-        // Don't know anything aboout the nearby data, so assume its all valid
+        // Don't know anything about the nearby data, so assume it's all valid
         chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
         chunk->first_valid_sample = 0;
     }
