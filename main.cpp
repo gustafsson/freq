@@ -294,10 +294,10 @@ int main(int argc, char *argv[])
         Sawe::pProject p; // p goes out of scope before a.exec()
 
         if (!_soundfile.empty())
-            p=a.slotOpen_file( _soundfile );
+			p = Sawe::Project::open( _soundfile );
 
         if (!p)
-            p=a.slotNew_recording( _record_device );
+            p = Sawe::Project::createRecording( _record_device );
 
         if (!p)
             return -1;
@@ -312,13 +312,23 @@ int main(int argc, char *argv[])
         TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
 
         if (_get_csv != (unsigned)-1) {
+			if (0==p->head_source->number_of_samples()) {
+				Sawe::Application::display_fatal_exception("Can't extract CSV without input file.");
+				return -1;
+			}
+
             Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
 
             Sawe::Csv().put( b, p->head_source );
         }
 
         if (_get_hdf != (unsigned)-1) {
-            Signal::pBuffer b = p->head_source->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
+			if (0==p->head_source->number_of_samples()) {
+				Sawe::Application::display_fatal_exception("Can't extract HDF without input file.");
+				return -1;
+			}
+
+			Signal::pBuffer b = p->head_source->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
 
             Sawe::Hdf5Sink().put( b, p->head_source );
         }
@@ -334,10 +344,11 @@ int main(int argc, char *argv[])
             return 0;
         }
 
+		p->displayWidget()->worker()->samples_per_chunk_hint( _samples_per_chunk );
         if (_multithread)
             p->displayWidget()->worker()->start();
 
-        p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
+		p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
         p->displayWidget()->playback_device = _playback_device;
         p->displayWidget()->selection_filename = _selectionfile;
         p->displayWidget()->collection()->samples_per_block( _samples_per_block );
@@ -345,6 +356,7 @@ int main(int argc, char *argv[])
 
         p.reset(); // a keeps a copy of pProject
 
+		a.open_project( p );
         int r = a.exec();
 
         // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );

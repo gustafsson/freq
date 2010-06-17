@@ -131,17 +131,22 @@ bool Application::
     return v;
 }
 
+void Application::
+		open_project( pProject p )
+{
+    setActiveWindow( 0 );
+    setActiveWindow( p->mainWindow().get() );
+    p->mainWindow()->activateWindow();
+    _projects.push_back( p );
+}
+
 pProject Application::
         slotNew_recording( int record_device )
 {
     TaskTimer tt("New recording1");
     pProject p = Project::createRecording( record_device );
-    if (p) {
-        setActiveWindow( 0 );
-        setActiveWindow( p->mainWindow().get() );
-        p->mainWindow()->activateWindow();
-        _projects.push_back( p );
-    }
+    if (p)
+		open_project(p);
     return p;
 }
 
@@ -149,12 +154,8 @@ pProject Application::
         slotOpen_file( std::string project_file_or_audio_file )
 {
     pProject p = Project::open( project_file_or_audio_file );
-    if (p) {
-        setActiveWindow( 0 );
-        setActiveWindow( p->mainWindow().get() );
-        p->mainWindow()->activateWindow();
-        _projects.push_back( p );
-    }
+    if (p)
+		open_project(p);
     return p;
 }
 

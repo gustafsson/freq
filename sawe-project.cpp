@@ -21,7 +21,8 @@ Project::
         ~Project()
 {
     TaskTimer tt("~Project");
-    displayWidget()->setTimeline( Signal::pSink() );
+    if (_mainWindow)
+		displayWidget()->setTimeline( Signal::pSink() );
     _timelineWidgetCallback.reset();
     _timelineWidget.reset();
     _displayWidget.reset();
