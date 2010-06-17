@@ -74,7 +74,7 @@ __global__ void kernel_compute(
 
 
         // Compute value of analytic FT of wavelet
-        const float f0 = .6f + 40*ff*ff*ff;
+        const float f0 = 2.0f + 35*ff*ff*ff;
         const float pi = 3.141592654f;
         const float two_pi_f0 = 2.0f * pi * f0;
         const float multiplier = 1.8827925275534296252520792527491f;
