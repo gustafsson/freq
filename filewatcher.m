@@ -11,7 +11,7 @@
 function C=filewatcher(datafile, func, arguments, dt)
 
 if nargin<2
-  error "syntax: filewatcher(datafile, function, arguments, dt). 'arguments' defaults to [], 'dt' defaults to 0.05"
+  error 'syntax: filewatcher(datafile, function, arguments, dt). \'arguments\' defaults to [], \'dt\' defaults to 0.05'
 end
 if nargin<3
   arguments=[];
@@ -23,11 +23,28 @@ end
 resultfile=[datafile '.result.h5'];
 tempfile=datafile;
 
+disp (['Monitoring ' datafile]);
 while 1
-  if ~isempty(stat(datafile))
+  if exist(datafile,'file') % matlab and octave
+% if ~isempty(stat(datafile)) % fast octave version
 
-    data=load(datafile);
+    disp (['Processing ' datafile]);
 
+    pause(0.1); % matlab, wait for slow file system in windows to finish the move
+	
+	%octave
+	%data=load(datafile); 
+
+    %matlab workaround begin
+    info=hdf5info(datafile);
+    [dset1]=info.GroupHierarchy.Datasets.Name;
+    if strcmp(dset1,'/buffer')
+        data = sawe_loadbuffer(datafile);
+    else
+        data = sawe_loadchunk(datafile);
+    end
+    %matlab workaround end
+    
     [data, arguments]=func(data, arguments);
 
     % could perhaps use fieldnames(data) somehow to export this data
@@ -35,12 +52,15 @@ while 1
       sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate );
     elseif isfield(data,'chunk')
       sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate );
-    endif
-
-    rename(tempfile,resultfile);
-    delete(tempfile);
+    end
+    
+    %rename(tempfile,resultfile);   % octave
+    movefile(tempfile,resultfile); % matlab
+    
+    disp (['Monitoring ' datafile]);
   else
-    sleep(dt);
+    %sleep(dt); % octave
+    pause(dt); % matlab
   end
 end
 

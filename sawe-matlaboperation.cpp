@@ -9,9 +9,12 @@
 #include <fstream>
 #include <sys/types.h>
 #include <time.h>
-#ifdef __GNUC__
+#if defined(__GNUC__)
 #include <unistd.h>
 #include <sys/time.h>
+#elif defined(WIN32)
+#include <windows.h>
+#include <process.h>
 #endif
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -40,19 +43,33 @@ MatlabFunction::
 
     { // Start octave
         stringstream ss;
-		#ifdef __GNUC__
-        ss << "filewatcher('" << _dataFile << "', @" << matlabFunction << ");";
+        ss << "filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
 
-        _pid = fork();
+#ifdef __GNUC__
+        _pid = (void*)fork();
 
         if(0==_pid)
         {
-            ::execlp("matlab","matlab", "-qf", "--eval", ss.str().c_str(), NULL );
-            // apparently failed, try matlab
+            ::execlp("matlab","matlab", "-r", ss.str().c_str(), NULL );
+            // apparently failed, try octave
             ::execlp("octave","octave", "-qf", "--eval", ss.str().c_str(), NULL );
             // failed that to... will eventually time out
             exit(0);
         }
+#elif defined(WIN32)
+		string statement = ss.str();
+
+		_pid = (void*)_spawnlp(_P_NOWAIT, "matlab", 
+			"matlab", "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash", "-r", statement.c_str(), NULL );
+
+		if (0 == _pid)
+		{
+			// failed, try octave
+			_pid = (void*)_spawnlp(_P_NOWAIT, "octave","octave", "-qf", "--eval", ss.str().c_str(), NULL );
+	        // will eventually time out if this fails to
+		}
+#else
+#error No implementation to spawn processes implemented for this platform/compiler.
 #endif // __GNUC__
     }
 }
@@ -62,6 +79,10 @@ MatlabFunction::
 {
 #ifdef __GNUC__
 	kill((pid_t)_pid, SIGINT);
+#elif defined(WIN32)
+	TerminateProcess((HANDLE)_pid, 0);
+#else
+#error No implementation
 #endif
 }
 
@@ -69,8 +90,8 @@ std::string MatlabFunction::
         invokeAndWait( std::string source )
 {
     TaskTimer tt("Waiting for matlab/octave.");
-#ifdef __GNUC__
-    remove(_resultFile.c_str());
+
+	remove(_resultFile.c_str());
     rename(source.c_str(), _dataFile.c_str());
 
     // Wait for result to be written
@@ -81,13 +102,21 @@ std::string MatlabFunction::
 
     while (0!=stat( _resultFile.c_str(),&dummy))
     {
-        usleep(10 * 1000); // Sleep for 10 ms
+#ifdef __GNUC__
+        usleep(10 * 1000); // Sleep in microseconds
+#elif defined(WIN32)
+        Sleep(10); // Sleep in ms
+#else
+#error TODO implement
+#endif
         time_duration d = second_clock::local_time()-start;
         if (timeout < d)
             throw std::runtime_error("Timeout in MatlabFunction::invokeAndWait");
         if (d.total_seconds() > 3)
             tt.partlyDone();
     }
+#ifdef WIN32 // wait for slow file system to finish move
+    Sleep(100);
 #endif
     return _resultFile;
 }
@@ -101,7 +130,7 @@ string MatlabFunction::
 MatlabOperation::
         MatlabOperation( Signal::pSource source, std::string matlabFunction )
 :   OperationCache(source),
-    _matlab(matlabFunction)
+    _matlab(matlabFunction, 10)
 {
 }
 

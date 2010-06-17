@@ -30,7 +30,7 @@ public:
     /**
       Name of a matlab function and timeout measuerd in seconds.
       */
-    MatlabFunction( std::string matlabFunction, float timeout=10 );
+    MatlabFunction( std::string matlabFunction, float timeout );
     ~MatlabFunction();
 
     /**
@@ -47,7 +47,7 @@ private:
     MatlabFunction( const MatlabFunction& );
     MatlabFunction& operator=(const MatlabFunction&);
 
-    int _pid;
+    void* _pid;
     std::string _dataFile;
     std::string _resultFile;
     float _timeout;
