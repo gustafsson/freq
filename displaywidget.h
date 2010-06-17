@@ -61,7 +61,6 @@ public:
     DisplayWidget( Signal::pWorker worker, Signal::pSink collection );
     virtual ~DisplayWidget();
     int lastKey;
-    static DisplayWidget* gDisplayWidget;
     
     enum Yscale {
         Yscale_Linear,

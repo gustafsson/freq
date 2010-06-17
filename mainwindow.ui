@@ -464,9 +464,6 @@
    <property name="toolTip">
     <string>Toggle the selection tool box</string>
    </property>
-   <property name="shortcut">
-    <string>S</string>
-   </property>
   </action>
   <action name="actionToggle_hz_grid">
    <property name="checkable">
@@ -768,9 +765,6 @@
    </property>
    <property name="toolTip">
     <string>Toggle the navigation tool box</string>
-   </property>
-   <property name="shortcut">
-    <string>N</string>
    </property>
   </action>
   <action name="actionToggleTimeControlToolBox">

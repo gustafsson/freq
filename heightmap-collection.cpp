@@ -68,7 +68,7 @@ void Collection::
 {
     Signal::SamplesIntervalDescriptor expected = expected_samples();
     if ( (expected_samples() & b->getInterval()).isEmpty() ) {
-        TaskTimer("Collection::put received non requested block [%u, %u]", b->getInterval().first, b->getInterval().last);
+        TIME_COLLECTION TaskTimer("Collection::put received non requested block [%u, %u]", b->getInterval().first, b->getInterval().last);
         return;
     }
 
@@ -286,7 +286,7 @@ void Collection::
 void Collection::
         add_expected_samples( const Signal::SamplesIntervalDescriptor& sid )
 {
-    sid.print("Invalidating Heightmap::Collection");
+    TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
 
     BOOST_FOREACH( pBlock& b, _cache )
     {

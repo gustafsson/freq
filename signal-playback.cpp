@@ -6,6 +6,9 @@
 #include <stdio.h> // todo remove
 #include <QMessageBox>
 
+//#define TIME_PLAYBACK
+#define TIME_PLAYBACK if(0)
+
 using namespace std;
 using namespace boost::posix_time;
 
@@ -113,8 +116,7 @@ float Playback::
 void Playback::
         put( pBuffer buffer )
 {
-    TaskTimer tt("Playback::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
-    //TaskTimer tt(TaskTimer::LogVerbose, "%s: Putting buffer [%u,%u]", __FUNCTION__, buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
+    TIME_PLAYBACK TaskTimer tt("Playback::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
     _last_timestamp = microsec_clock::local_time();
     if (_data.empty())
@@ -134,7 +136,7 @@ void Playback::
             // start over
             streamPlayback->start();
         }
-        tt.info("Is playing");
+        TIME_PLAYBACK TaskTimer("Is playing").suppressTiming();
         return;
     }
 
@@ -166,7 +168,7 @@ void Playback::
 {
     if (isUnderfed() )
     {
-        TaskTimer(TaskTimer::LogVerbose, "Waiting for more data");
+        TIME_PLAYBACK TaskTimer(TaskTimer::LogVerbose, "Waiting for more data");
         return;
     }
 
@@ -175,7 +177,7 @@ void Playback::
     
     portaudio::System &sys = portaudio::System::instance();
 
-    TaskTimer(TaskTimer::LogVerbose, "Start playing on: %s", sys.deviceByIndex(_output_device).name() );
+    TIME_PLAYBACK TaskTimer(TaskTimer::LogVerbose, "Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
     // Set up the parameters required to open a (Callback)Stream:
     portaudio::DirectionSpecificStreamParameters outParamsPlayback(
@@ -224,12 +226,12 @@ bool Playback::
 
     Signal::SamplesIntervalDescriptor expect = expected_samples();
     if (!_data.empty() && expect.isEmpty()) {
-        TaskTimer("Not underfed").suppressTiming();
+        TIME_PLAYBACK TaskTimer("Not underfed").suppressTiming();
         return false; // No more expected samples, not underfed
     }
 
     if (10>=_data.size()) {
-        TaskTimer("Underfed").suppressTiming();
+        TIME_PLAYBACK TaskTimer("Underfed").suppressTiming();
         return true; // Haven't received much data, wait to do a better estimate
     }
 
@@ -259,8 +261,7 @@ bool Playback::
     // Return if the estimated time to receive all expected samples is greater than
     // the time it would take to play the remaining part of the data.
     // If it is, the sink is underfed.
-    TaskTimer("time_left %g %s %g estimated_time_required", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required).suppressTiming();
-    //TaskTimer("Computed: %s underfed", time_left < estimated_time_required?"is":"not").suppressTiming();
+    TIME_PLAYBACK TaskTimer("time_left %g %s %g estimated_time_required. %s underfed.", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required, time_left < estimated_time_required?"Is":"Not").suppressTiming();
     return time_left < estimated_time_required;
 }
 
@@ -284,13 +285,13 @@ int Playback::
     _playback_itr += framesPerBuffer;
 
     if (_data.first_buffer()->sample_offset + _data.number_of_samples() + 10*2024/*framesPerBuffer*/ < _playback_itr ) {
-        TaskTimer tt("Reading %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
+        TIME_PLAYBACK TaskTimer tt("Reading %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
         return paComplete;
     } else {
         if (_data.first_buffer()->sample_offset + _data.number_of_samples() < _playback_itr + framesPerBuffer) {
-            TaskTimer tt("Reading %u, %u. PAST END", _playback_itr, framesPerBuffer );
+            TIME_PLAYBACK TaskTimer tt("Reading %u, %u. PAST END", _playback_itr, framesPerBuffer );
         } else {
-            TaskTimer tt("Reading %u, %u", _playback_itr, framesPerBuffer );
+            TIME_PLAYBACK TaskTimer tt("Reading %u, %u", _playback_itr, framesPerBuffer );
         }
     }
 

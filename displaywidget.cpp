@@ -179,9 +179,6 @@ bool MouseControl::isTouched()
 }
 
 
-DisplayWidget* DisplayWidget::
-        gDisplayWidget = 0;
-
 DisplayWidget::
         DisplayWidget(
                 Signal::pWorker worker,
@@ -217,7 +214,6 @@ DisplayWidget::
         glutInit(&c,0),
         c = 1;
 #endif
-    gDisplayWidget = this;
     float l = _worker->source()->length();
     _prevLimit = l;
     selection[0].x = l*.5f;
@@ -321,6 +317,11 @@ void DisplayWidget::receivePlaySound()
     _worker->todo_list( postsink->expected_samples());
     _worker->todo_list().print(__FUNCTION__);
 
+    // Work as slow as possible on the first few chunks and accelerate.
+    // This makes signal::Playback compute better estimates on how fast
+    // the computations can be expected to finish.
+    _worker->suggest_samples_per_chunk(1);
+
     update();
 }
 
@@ -409,6 +410,7 @@ void DisplayWidget::
     if (_qz>1) _qz=1;
     if (_qx>l) _qx=l;
 
+    worker()->requested_fps(30);
     update();
 }
 
@@ -913,7 +915,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     rotateButton.update(x, y);
     scaleButton.update(x, y);
     
-    worker()->requested_fps(20);
+    worker()->requested_fps(30);
     update();
 }
 
@@ -1137,8 +1139,6 @@ void DisplayWidget::paintGL()
             _worker->todo_list( _collectionCallback->sink()->expected_samples());
             //_worker->todo_list().print("Displaywidget - Collection");
 
-            if (_follow_play_marker)
-                worker()->requested_fps(20);
             if (followingRecordMarker)
                 worker()->requested_fps(10);
         }
@@ -1193,13 +1193,13 @@ void DisplayWidget::paintGL()
             int count;
             cudaError_t e = cudaGetDeviceCount(&count);
             TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
-            e = cudaThreadExit();
-            tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
+            // e = cudaThreadExit();
+            // tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
             //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-            e = cudaSetDevice( 1 );
-            tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
-            e = cudaSetDevice( 0 );
-            tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
+            //e = cudaSetDevice( 1 );
+            //tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
+            //e = cudaSetDevice( 0 );
+            //tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
             void *p=0;
             e = cudaMalloc( &p, 10 );
             tt.info("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
