@@ -320,7 +320,7 @@ void DisplayWidget::receivePlaySound()
     // Work as slow as possible on the first few chunks and accelerate.
     // This makes signal::Playback compute better estimates on how fast
     // the computations can be expected to finish.
-    _worker->suggest_samples_per_chunk(1);
+    _worker->samples_per_chunk_hint(1);
 
     update();
 }

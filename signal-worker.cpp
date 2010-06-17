@@ -5,7 +5,7 @@
 #include <QMutexLocker>
 #include <boost/foreach.hpp>
 #include <CudaException.h>
-#include <tfr-cwt.h>
+#include "tfr-cwt.h"
 
 //#define TIME_WORKER
 #define TIME_WORKER if(0)
