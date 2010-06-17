@@ -148,7 +148,6 @@ unix:LIBS = -lsndfile \
 macx:INCLUDEPATH += /usr/local/cuda/include \
     ../../libs/include \
     ../../libs/hdf5/include \
-    ../../libs/sziplib/include \
     ../../libs/zlib/include 
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
@@ -157,7 +156,6 @@ macx:LIBS = -lsndfile \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio \
     -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/sziplib/bin -lsz \
     -L../../libs/zlib/bin -lz 
 win32:INCLUDEPATH += \
 	..\..\winlib\glut \
@@ -166,7 +164,6 @@ win32:INCLUDEPATH += \
 	..\..\winlib\libsndfile\include \
 	..\..\winlib\hdf5lib\include \
 	..\..\winlib\zlib\include \
-	..\..\winlib\sziplib\include \
 	..\..\winlib
 win32:LIBS += \
 	-l..\..\winlib\glut\glut32 \
@@ -175,17 +172,12 @@ win32:LIBS += \
 	-l..\..\winlib\portaudio\portaudio \
 	-l..\..\winlib\portaudio\portaudiocpp \
 	-l..\..\winlib\hdf5lib\lib\hdf5 \
-	-l..\..\winlib\hdf5lib\lib\hdf5_cpp \
 	-l..\..\winlib\hdf5lib\lib\hdf5_hl \
-	-l..\..\winlib\hdf5lib\lib\hdf5_hl_cpp \
-	-l..\..\winlib\szip\lib\libszip \
-#	-l..\..\winlib\boostlib\libboost_date_time-vc90-mt-gd-1_42 \
-	-L..\..\winlib\boostlib \
-	-l..\..\winlib\zlib\lib\zlib
+	-L..\..\winlib\boostlib
 LIBS += -lcufft 
 !win32:LIBS += -L../gpumisc -lgpumisc
 
-win32:RCC_DIR = tmp\
+win32:RCC_DIR = tmp
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
 debug:OBJECTS_DIR = tmp/debug/
