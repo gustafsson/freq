@@ -59,7 +59,7 @@ __global__ void kernel_compute(
     float waveform = in_waveform_ft[x];
 
     float cufft_normalize = 1.f/(float)numElem.width;
-    float jibberish_normalization =  3.5800f/scales_per_octave;
+    float jibberish_normalization =  3.70/scales_per_octave;
 
     // Find period for this thread
     unsigned nFrequencies = numElem.height;
