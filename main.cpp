@@ -308,14 +308,8 @@ int main(int argc, char *argv[])
         cwt->scales_per_octave( _scales_per_octave );
         cwt->wavelet_std_t( _wavelet_std_t );
 
-        unsigned redundant = 2*cwt->wavelet_std_samples( p->head_source->sample_rate() );
-
-        while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
-            _samples_per_chunk++;
-            TaskTimer("To few samples per chunk, increasing to 2^%d", _samples_per_chunk).suppressTiming();
-        }
-        unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
-        p->displayWidget()->worker()->suggest_samples_per_chunk( total_samples_per_chunk );
+        unsigned total_samples_per_chunk = cwt->prev_good_size( 1<<_samples_per_chunk, p->head_source->sample_rate() );
+        TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
 
         if (_get_csv != (unsigned)-1) {
             Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );

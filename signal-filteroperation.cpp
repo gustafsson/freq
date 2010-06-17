@@ -11,7 +11,7 @@ namespace Signal {
 FilterOperation::
         FilterOperation(pSource source, Tfr::pFilter filter)
 :   OperationCache(source),
-    cwt(*Tfr::CwtSingleton::instance()),
+//    cwt(*Tfr::CwtSingleton::instance()),
     _filter( filter ),
     _save_previous_chunk( false )
 {
@@ -21,7 +21,7 @@ pBuffer FilterOperation::
         readRaw( unsigned firstSample, unsigned numberOfSamples )
 {
     TIME_FILTEROPERATION TaskTimer tt("FilterOperation::readRaw ( %u, %u )", firstSample, numberOfSamples);
-    unsigned wavelet_std_samples = cwt.wavelet_std_samples( _source->sample_rate());
+    unsigned wavelet_std_samples = Tfr::CwtSingleton::instance()->wavelet_std_samples( _source->sample_rate());
 
     // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
     // into account and create an inverse that is of the desired size.
@@ -84,7 +84,7 @@ pBuffer FilterOperation::
         TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp subread");
 
         // Compute the continous wavelet transform
-        Tfr::pChunk c = cwt( b );
+        Tfr::pChunk c = Tfr::CwtSingleton::operate( b );
 
         // Apply filter
         if (_filter)
@@ -131,7 +131,8 @@ pBuffer FilterOperation::
                 throw;
         }
 
-        unsigned newL = cwt.prev_good_size( numberOfSamples, sample_rate());
+        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
+        unsigned newL = cwt->prev_good_size( numberOfSamples, sample_rate());
         if (newL < numberOfSamples ) {
             numberOfSamples = newL;
 
@@ -140,12 +141,13 @@ pBuffer FilterOperation::
         }
 
         throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
-                             cwt.wavelet_std_t(), cwt.wavelet_std_samples(sample_rate())*cwt.nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
+                             cwt->wavelet_std_t(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     } catch (const CudaException &x) {
         if (cudaErrorMemoryAllocation != x.getCudaError() )
             throw;
 
-        unsigned newL = cwt.prev_good_size( numberOfSamples, sample_rate());
+        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
+        unsigned newL = cwt->prev_good_size( numberOfSamples, sample_rate());
         if (newL < numberOfSamples ) {
             numberOfSamples = newL;
 
@@ -154,7 +156,7 @@ pBuffer FilterOperation::
         }
 
         throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
-                             cwt.wavelet_std_t(), cwt.wavelet_std_samples(sample_rate())*cwt.nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
+                             cwt->wavelet_std_t(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     }
 
     _save_previous_chunk = false;
