@@ -6,6 +6,9 @@ typedef int64_t __int64_t;
 #include <sndfile.hh> // for writing various formats
 #include <boost/foreach.hpp>
 
+//#define TIME_WRITEWAV
+#define TIME_WRITEWAV if(0)
+
 namespace Signal {
 
 WriteWav::
@@ -24,7 +27,7 @@ WriteWav::
 void WriteWav::
         put( pBuffer buffer )
 {
-    TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
+    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
     _data.put( buffer );
 
@@ -63,8 +66,8 @@ void WriteWav::
 
     BOOST_ASSERT(i.valid());
 
-    sid.print("data to write");
-    pBuffer b = _data.readFixedLength( i.first, i.last );
+    TIME_WRITEWAV sid.print("data to write");
+    pBuffer b = _data.readFixedLength( i.first, i.last-i.first );
     writeToDisk( _filename, b );
 }
 
@@ -74,7 +77,10 @@ void WriteWav::
     std::stringstream ss;
     ss << b->getInterval();
 
-    TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(), ss.str().c_str());
+    TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(), ss.str().c_str());
+
+    if (Buffer::Only_Real != b->interleaved())
+        b = b->getInterleaved( Buffer::Only_Real);
 
     // TODO: figure out a way for Sonic AWE to work with stereo sound and write stereo to disk
 
@@ -87,7 +93,26 @@ void WriteWav::
 
     if (!outfile) return;
 
-    outfile.write( b->waveform_data->getCpuMemory(), b->number_of_samples()); // yes write float
+    float *data=b->waveform_data->getCpuMemory();
+    unsigned N = b->number_of_samples();
+
+    { // Normalize
+
+        float high=0, low=0;
+        for (unsigned k=0; k<N; k++) {
+            if (data[k]>high) high = data[k];
+            if (data[k]<low) low = data[k];
+        }
+
+        for (unsigned k=0; k<N; k++) {
+            float v = (data[k]-low)/(high-low)*2-1;
+            if (v>1) v = 1;
+            if (v<-1) v = -1;
+            data[k] = v;
+        }
+    }
+
+    outfile.write( data, N); // yes write float
 }
 
 } // namespace Signal

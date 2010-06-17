@@ -198,15 +198,21 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(this->ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), d, SLOT(receiveMoveSelectionInTime(bool)));
     connect(this->ui->actionMatlabOperation, SIGNAL(triggered(bool)), d, SLOT(receiveMatlabOperation(bool)));
     connect(this->ui->actionMatlabFilter, SIGNAL(triggered(bool)), d, SLOT(receiveMatlabFilter(bool)));
+    connect(this->ui->actionTonalizeFilter, SIGNAL(triggered(bool)), d, SLOT(receiveTonalizeFilter(bool)));
+    connect(this->ui->actionReassignFilter, SIGNAL(triggered(bool)), d, SLOT(receiveReassignFilter(bool)));
     connect(this->ui->actionRecord, SIGNAL(triggered(bool)), d, SLOT(receiveRecord(bool)));
     connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
 
     ui->actionActivateNavigation->setChecked(true);
-    d->setWorkerSource();
+
+    updateOperationsTree( d->worker()->source() );
+    d->getFilterOperation();
 
     if (d->isRecordSource()) {
         this->ui->actionRecord->setEnabled(true);
+    } else {
+        this->ui->actionRecord->setEnabled(false);
     }
 }
 
@@ -571,7 +577,7 @@ void MainWindow::updateLayerList( Tfr::pFilter f )
                 tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
         }*/
         else {
-            title << typeid(*f).name() << ", unknown attributes";
+            title << demangle(typeid(*f).name()) << ", unknown attributes";
         }
 
         QListWidgetItem* itm = new QListWidgetItem( title.str().c_str(), ui->layerWidget, 0 );

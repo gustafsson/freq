@@ -7,6 +7,9 @@
 
 #undef max
 
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
+
 using namespace Signal;
 
 namespace Sawe {
@@ -94,7 +97,7 @@ void TimelineWidget::
 void TimelineWidget::
         paintGL()
 {
-    // TaskTimer tt("TimelineWidget::paintGL");
+    TIME_PAINTGL TaskTimer tt("TimelineWidget::paintGL");
     static int exceptCount = 0;
     try {
         GlException_CHECK_ERROR();
@@ -173,11 +176,11 @@ void TimelineWidget::
 
         exceptCount = 0;
     } catch (const CudaException &x) {
-        TaskTimer("TimelineWidget::paintGL SWALLOWED CUDAEXCEPTION %s", x.what()).suppressTiming();;
         if (1<++exceptCount) throw;
+        else TaskTimer("TimelineWidget::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
     } catch (const GlException &x) {
-        TaskTimer("TimelineWidget::paintGL SWALLOWED GLEXCEPTION %s", x.what()).suppressTiming();
         if (1<++exceptCount) throw;
+        else TaskTimer("TimelineWidget::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
     }
 }
 

@@ -101,6 +101,30 @@ public:
     float _df;
 };
 
+class ReassignFilter: public Filter
+{
+public:
+    ReassignFilter();
+
+    virtual void operator()( Chunk& );
+
+    // No zero samples, no untouched samples
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+};
+
+class TonalizeFilter: public Filter
+{
+public:
+    TonalizeFilter();
+
+    virtual void operator()( Chunk& );
+
+    // No zero samples, no untouched samples
+    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
+    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+};
+
 } // namespace Tfr
 
 #endif // TFRFILTER_H

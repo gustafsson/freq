@@ -1,4 +1,5 @@
 #include "signal-filteroperation.h"
+#include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>
 
@@ -19,7 +20,7 @@ pBuffer FilterOperation::
         readRaw( unsigned firstSample, unsigned numberOfSamples )
 {
     TIME_FILTEROPERATION TaskTimer tt("FilterOperation::readRaw ( %u, %u )", firstSample, numberOfSamples);
-    unsigned wavelet_std_samples = cwt.wavelet_std_samples( _source->sample_rate());
+    unsigned wavelet_std_samples = Tfr::CwtSingleton::instance()->wavelet_std_samples( _source->sample_rate());
 
     // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
     // into account and create an inverse that is of the desired size.
@@ -30,8 +31,8 @@ pBuffer FilterOperation::
     unsigned first_valid_sample = firstSample;
     firstSample -= redundant_samples;
 
-    if (numberOfSamples<.5f*wavelet_std_samples)
-        numberOfSamples=.5f*wavelet_std_samples;
+    if (numberOfSamples<10)
+        numberOfSamples=10;
 
     _previous_chunk.reset();
 
@@ -82,7 +83,7 @@ pBuffer FilterOperation::
         TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp subread");
 
         // Compute the continous wavelet transform
-        Tfr::pChunk c = cwt( b );
+        Tfr::pChunk c = Tfr::CwtSingleton::operate( b );
 
         // Apply filter
         if (_filter)
@@ -120,23 +121,41 @@ pBuffer FilterOperation::
 
         break;
     } catch (const CufftException &x) {
-        unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
-        if (newL > redundant_samples + wavelet_std_samples)
+        switch (x.getCufftError())
         {
-            numberOfSamples = newL - redundant_samples - wavelet_std_samples;
-            TaskTimer("CUFFT error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
+            case CUFFT_EXEC_FAILED:
+            case CUFFT_ALLOC_FAILED:
+                break;
+            default:
+                throw;
+        }
+
+        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
+        unsigned newL = cwt->prev_good_size( numberOfSamples, sample_rate());
+        if (newL < numberOfSamples ) {
+            numberOfSamples = newL;
+
+            TaskTimer("FilterOperation reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
             continue;
         }
-        throw;
+
+        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
+                             cwt->wavelet_std_t(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     } catch (const CudaException &x) {
-        unsigned newL = (redundant_samples + numberOfSamples + wavelet_std_samples)/2;
-        if (newL > redundant_samples + wavelet_std_samples)
-        {
-            numberOfSamples = newL - redundant_samples - wavelet_std_samples;
-            TaskTimer("CUDA error (%s), reducing chunk size to FilterOperation::readRaw( %u, %u )", x.what(), first_valid_sample, numberOfSamples ).suppressTiming();
+        if (cudaErrorMemoryAllocation != x.getCudaError() )
+            throw;
+
+        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
+        unsigned newL = cwt->prev_good_size( numberOfSamples, sample_rate());
+        if (newL < numberOfSamples ) {
+            numberOfSamples = newL;
+
+            TaskTimer("FilterOperation reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
             continue;
         }
-        throw;
+
+        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
+                             cwt->wavelet_std_t(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     }
 
     _save_previous_chunk = false;

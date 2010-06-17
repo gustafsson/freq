@@ -43,7 +43,6 @@ public:
       */
     void            filter( Tfr::pFilter f );
 
-    Tfr::Cwt cwt;
     Tfr::InverseCwt inverse_cwt;
 
     /**

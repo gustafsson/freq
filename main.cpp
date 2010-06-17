@@ -66,9 +66,8 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 50;
-//static float _wavelet_std_t = 0.1;
-static float _wavelet_std_t = 0.03;
-static unsigned _samples_per_chunk = 14;
+static float _wavelet_std_t = 0.04;
+static unsigned _samples_per_chunk = 1;
 //static float _wavelet_std_t = 0.03;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
@@ -305,16 +304,12 @@ int main(int argc, char *argv[])
 
         // TODO use _channel
 
-        unsigned redundant = 2*(((unsigned)(_wavelet_std_t*p->head_source->sample_rate())+31)/32*32);
-        while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
-            _samples_per_chunk++;
-            TaskTimer("To few samples per chunk, increasing to 2^%d", _samples_per_chunk).suppressTiming();
-        }
-        unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
-
         Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
         cwt->scales_per_octave( _scales_per_octave );
         cwt->wavelet_std_t( _wavelet_std_t );
+
+        unsigned total_samples_per_chunk = cwt->prev_good_size( 1<<_samples_per_chunk, p->head_source->sample_rate() );
+        TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
 
         if (_get_csv != (unsigned)-1) {
             Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );

@@ -319,4 +319,63 @@ Signal::SamplesIntervalDescriptor MoveFilter::
     return Signal::SamplesIntervalDescriptor();
 }
 
+//////////// ReassignFilter
+ReassignFilter::
+        ReassignFilter()
+{}
+
+void ReassignFilter::
+        operator()( Chunk& chunk )
+{
+    TIME_FILTER TaskTimer tt("ReassignFilter");
+
+    for (unsigned reassignLoop=0;reassignLoop<1;reassignLoop++)
+    {
+        ::reassignFilter( chunk.transform_data->getCudaGlobal(),
+                      chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+    }
+
+    TIME_FILTER CudaException_ThreadSynchronize();
+}
+
+Signal::SamplesIntervalDescriptor ReassignFilter::
+        getZeroSamples( unsigned /* always return constant */ ) const
+{
+    return Signal::SamplesIntervalDescriptor();
+}
+
+Signal::SamplesIntervalDescriptor ReassignFilter::
+        getUntouchedSamples( unsigned /* always return constant */ ) const
+{
+    return Signal::SamplesIntervalDescriptor();
+}
+
+//////////// TonalizeFilter
+TonalizeFilter::
+        TonalizeFilter()
+{}
+
+void TonalizeFilter::
+        operator()( Chunk& chunk )
+{
+    TIME_FILTER TaskTimer tt("TonalizeFilter");
+
+    ::tonalizeFilter( chunk.transform_data->getCudaGlobal(),
+                  chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+
+    TIME_FILTER CudaException_ThreadSynchronize();
+}
+
+Signal::SamplesIntervalDescriptor TonalizeFilter::
+        getZeroSamples( unsigned /* always return constant */ ) const
+{
+    return Signal::SamplesIntervalDescriptor();
+}
+
+Signal::SamplesIntervalDescriptor TonalizeFilter::
+        getUntouchedSamples( unsigned /* always return constant */ ) const
+{
+    return Signal::SamplesIntervalDescriptor();
+}
+
 } // namespace Tfr
