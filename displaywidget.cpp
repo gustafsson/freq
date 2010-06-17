@@ -1964,17 +1964,16 @@ void DisplayWidget::drawSelectionCircle() {
 
 void DisplayWidget::drawSelectionCircle2() {
     float l = _worker->source()->length();
-    //glEnable(GL_BLEND);
     glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f( 0, 0, 0, .5);
     
     float
-    x = selection[0].x,
-    z = selection[0].z,
-    _rx = fabs(selection[1].x-selection[0].x),
-    _rz = fabs(selection[1].z-selection[0].z);
+        x = selection[0].x,
+        z = selection[0].z,
+        _rx = fabs(selection[1].x-selection[0].x),
+        _rz = fabs(selection[1].z-selection[0].z);
     float y = 1;
+
     // compute points in each quadrant, upper right
     std::vector<GLvector> pts[4];
     GLvector corner[4];
@@ -1982,13 +1981,19 @@ void DisplayWidget::drawSelectionCircle2() {
     corner[1] = GLvector(0,0,1);
     corner[2] = GLvector(0,0,0);
     corner[3] = GLvector(l,0,0);
-    for (unsigned k,j=0; j<4; j++) {
+
+    for (unsigned k,j=0; j<4; j++)
+	{
         bool addedLast=false;
-        for (k=0; k<=90; k++) {
+        for (k=0; k<=90; k++)
+		{
             float s = z + _rz*sin((k+j*90)*M_PI/180);
             float c = x + _rx*cos((k+j*90)*M_PI/180);
-            if (s>0 && s<1 && c>0&&c<l) {
-                if (pts[j].empty() && k>0) {
+
+            if (s>0 && s<1 && c>0&&c<l)
+			{
+                if (pts[j].empty() && k>0)
+				{
                     if (0==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
                     if (1==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
                     if (2==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
@@ -1998,6 +2003,7 @@ void DisplayWidget::drawSelectionCircle2() {
                 addedLast = 90==k;
             }
         }
+
         if (!addedLast) {
             if (0==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
             if (1==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
@@ -2005,7 +2011,7 @@ void DisplayWidget::drawSelectionCircle2() {
             if (3==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
         }
     }
-    
+
     for (unsigned j=0; j<4; j++) {
         glBegin(GL_TRIANGLE_STRIP);
         for (unsigned k=0; k<pts[j].size(); k++) {

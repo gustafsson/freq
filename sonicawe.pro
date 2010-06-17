@@ -6,15 +6,16 @@
 TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
+win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 QT += opengl
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
-unix:QMAKE_CXXFLAGS_RELEASE -= -O2
-unix:QMAKE_CXXFLAGS_RELEASE += -O3
-macx:QMAKE_CXXFLAGS_RELEASE -= -O2
-macx:QMAKE_CXXFLAGS_RELEASE += -O3
+!win32:QMAKE_CXXFLAGS_RELEASE -= -O2
+!win32:QMAKE_CXXFLAGS_RELEASE += -O3
+win32:QMAKE_LFLAGS += /FORCE:MULTIPLE
+
 QMAKE_CXX = colorgcc
 macx:QMAKE_CXX = g++
 
@@ -182,11 +183,13 @@ win32:LIBS += \
 	-L..\..\winlib\boostlib \
 	-l..\..\winlib\zlib\lib\zlib
 LIBS += -lcufft 
-unix:LIBS += -L../gpumisc -lgpumisc
-macx:LIBS += -L../gpumisc -lgpumisc
+!win32:LIBS += -L../gpumisc -lgpumisc
 
+win32:RCC_DIR = tmp\
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
+debug:OBJECTS_DIR = tmp/debug/
+release:OBJECTS_DIR = tmp/release/
 UI_DIR = tmp
 
 # #######################################################################

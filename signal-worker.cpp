@@ -19,7 +19,7 @@ Worker::
 :   work_chunks(0),
     _source(s),
     _samples_per_chunk( 1<<12 ),
-    _max_samples_per_chunk( 1<<16 )
+    _max_samples_per_chunk( 1<<18 )
 {
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
@@ -143,6 +143,12 @@ unsigned Worker::
         samples_per_chunk() const
 {
     return _samples_per_chunk;
+}
+
+void Worker::
+		samples_per_chunk_hint(unsigned value)
+{
+	_samples_per_chunk = value;
 }
 
 unsigned Worker::

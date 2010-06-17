@@ -1,9 +1,11 @@
+#include <CudaException.h>
 #include "sawe-timelinewidget.h"
 #include <boost/assert.hpp>
 #include <GlException.h>
-#include <CudaException.h>
 #include <glPushContext.h>
 #include <QMouseEvent>
+
+#undef max
 
 using namespace Signal;
 

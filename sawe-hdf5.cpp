@@ -77,7 +77,7 @@ vector<hsize_t> Hdf5Input::
     if (0>status) throw runtime_error("get_dataset_ndims failed");
 
     vector<hsize_t> dims(RANK);
-    status = H5LTget_dataset_info ( _file_id, name.c_str(), dims.data(), class_id, 0 );
+    status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
     if (0>status) throw runtime_error("get_dataset_info failed");
 
     return dims;

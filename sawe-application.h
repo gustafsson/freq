@@ -2,7 +2,7 @@
 #define SAWEAPPLICATION_H
 
 #include <QtGui/QApplication>
-#include <sawe-project.h>
+#include "sawe-project.h"
 #include <list>
 
 namespace Sawe {
