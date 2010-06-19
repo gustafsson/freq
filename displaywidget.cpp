@@ -209,10 +209,12 @@ DisplayWidget::
     char* dum="dum\0";
     glutInit(&c,&dum);
 #else
+#ifndef __APPLE__
     static int c=0;
     if (0==c)
         glutInit(&c,0),
         c = 1;
+#endif
 #endif
     gDisplayWidget = this;
     float l = _worker->source()->length();
