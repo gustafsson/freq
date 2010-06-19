@@ -41,6 +41,7 @@ private:
             _first_timestamp,
             _last_timestamp,
             _startPlay_timestamp;
+	unsigned _first_buffer_size;
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,

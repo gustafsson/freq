@@ -17,6 +17,7 @@ namespace Signal {
 Playback::
         Playback( int outputDevice )
 :   _data( SinkSource::AcceptStrategy_ACCEPT_EXPECTED_ONLY ),
+	_first_buffer_size(0),
     _playback_itr(0),
     _output_device(0)
 {
@@ -120,8 +121,10 @@ void Playback::
 
     _last_timestamp = microsec_clock::local_time();
     if (_data.empty())
+	{
         _first_timestamp = _last_timestamp;
-
+		_first_buffer_size = buffer->number_of_samples();
+	}
     _data.put( buffer );
 
     // Make sure the buffer is moved over to CPU memory.
@@ -230,7 +233,7 @@ bool Playback::
         return false; // No more expected samples, not underfed
     }
 
-    if (10>=_data.size()) {
+	if (nAccumulated_samples < 0.1f*_data.sample_rate() || nAccumulated_samples < 3*_first_buffer_size ) {
         TIME_PLAYBACK TaskTimer("Underfed").suppressTiming();
         return true; // Haven't received much data, wait to do a better estimate
     }
@@ -242,7 +245,7 @@ bool Playback::
     // _last_timestamp is taken after the last buffer,
     // that means that accumulation_time is the time it took to accumulate all buffers except
     // the first buffer.
-    float incoming_samples_per_sec = (nAccumulated_samples - _data.first_buffer()->number_of_samples()) / accumulation_time;
+    float incoming_samples_per_sec = (nAccumulated_samples - _first_buffer_size) / accumulation_time;
 
     unsigned marker = _playback_itr;
     if (0==marker)

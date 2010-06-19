@@ -1128,10 +1128,10 @@ void DisplayWidget::paintGL()
             _worker->center = 0;
             _worker->todo_list( _postsinkCallback->sink()->expected_samples() );
 
-            // Request at least 10 fps. Otherwise there is a risk that CUDA
+            // Request at least 1 fps. Otherwise there is a risk that CUDA
             // will screw up playback by blocking the OS and causing audio
             // starvation.
-            worker()->requested_fps(10);
+            worker()->requested_fps(1);
 
             //_worker->todo_list().print("Displaywidget - PostSink");
         } else {
@@ -1140,7 +1140,7 @@ void DisplayWidget::paintGL()
             //_worker->todo_list().print("Displaywidget - Collection");
 
             if (followingRecordMarker)
-                worker()->requested_fps(10);
+                worker()->requested_fps(1);
         }
         Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
     	Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
