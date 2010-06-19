@@ -56,7 +56,7 @@ pProject Project::
             // User pressed cancel
             return pProject();
         }
-        filename = qfilemame.toStdString();
+        filename = qfilemame.toLocal8Bit().data();
     }
 
     string err;

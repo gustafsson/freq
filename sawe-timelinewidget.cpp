@@ -295,9 +295,7 @@ void TimelineWidget::
 void TimelineWidget::
         mouseReleaseEvent ( QMouseEvent * e)
 {
-    printf("mouseReleaseEvent\n");
     if (0 == (e->buttons() & Qt::LeftButton)) {
-        printf("_movingTimeline = 0\n");
         _movingTimeline = 0;
     }
     moveButton.release();
