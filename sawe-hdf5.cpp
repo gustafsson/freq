@@ -356,8 +356,8 @@ Signal::pBuffer Hdf5Sink::
     Hdf5Input h5(filename);
 
     Signal::pBuffer b = h5.read<Signal::pBuffer>( dsetBuffer );
-    b->sample_offset = h5.read<double>( dsetOffset );
-    b->sample_rate = h5.read<double>( dsetSamplerate );
+    b->sample_offset = (unsigned)h5.read<double>( dsetOffset );
+    b->sample_rate = (unsigned)h5.read<double>( dsetSamplerate );
 
     return b;
 }
@@ -368,8 +368,8 @@ Tfr::pChunk Hdf5Sink::
     Hdf5Input h5(filename);
 
     Tfr::pChunk c = h5.read<Tfr::pChunk>( dsetChunk );
-    c->chunk_offset = h5.read<double>( dsetOffset );
-    c->sample_rate = h5.read<double>( dsetSamplerate );
+    c->chunk_offset = (unsigned)h5.read<double>( dsetOffset );
+    c->sample_rate = (unsigned)h5.read<double>( dsetSamplerate );
 
     return c;
 }

@@ -2,7 +2,7 @@
 #define SAWEHDF5_H
 
 // Define _HDF5USEDLL_ to tell HDF5 to use dynamic library linking
-//#define _HDF5USEDLL_
+#define _HDF5USEDLL_
 
 #include "tfr-chunksink.h"
 #include <H5Ipublic.h>

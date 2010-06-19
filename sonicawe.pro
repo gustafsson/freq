@@ -171,8 +171,8 @@ win32:LIBS += \
     -l..\..\winlib\libsndfile\libsndfile-1 \
 	-l..\..\winlib\portaudio\portaudio \
 	-l..\..\winlib\portaudio\portaudiocpp \
-	-l..\..\winlib\hdf5lib\lib\hdf5 \
-	-l..\..\winlib\hdf5lib\lib\hdf5_hl \
+	-l..\..\winlib\hdf5lib\dll\hdf5dll \
+	-l..\..\winlib\hdf5lib\dll\hdf5_hldll \
 	-L..\..\winlib\boostlib
 LIBS += -lcufft 
 !win32:LIBS += -L../gpumisc -lgpumisc
