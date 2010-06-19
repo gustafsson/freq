@@ -1,6 +1,6 @@
 function data=sawe_loadbuffer(filename)
 % octave
-data = load(filename);
+%data = load(filename);
 
 % matlab
 data.buffer=hdf5read(filename,'buffer');
