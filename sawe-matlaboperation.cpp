@@ -78,7 +78,7 @@ MatlabFunction::
         ~MatlabFunction()
 {
 #ifdef __GNUC__
-	kill((pid_t)_pid, SIGINT);
+        kill((pid_t)(unsigned long long)_pid, SIGINT);
 #elif defined(WIN32)
 	TerminateProcess((HANDLE)_pid, 0);
 #else

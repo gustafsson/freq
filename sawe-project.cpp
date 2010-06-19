@@ -6,6 +6,7 @@
 #include "signal-microphonerecorder.h"
 #include "sawe-timelinewidget.h"
 #include <QVBoxLayout>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -34,11 +35,13 @@ pProject Project::
 {
     string filename; filename.swap( project_file_or_audio_file );
 
-    if (!filename.empty() && !QFile::exists(filename.c_str()))
+    struct stat dummy;
+    // QFile::exists doesn't work as expected can't handle unicode names
+    if (!filename.empty() && 0!=stat( filename.c_str(),&dummy))
     {
         QMessageBox::warning( 0,
                      QString("Can't find file"),
-                     QString("File ") + QString::fromStdString(filename) );
+                     QString("File ") + QString::fromLocal8Bit(filename.c_str()));
         filename.clear();
     }
 
