@@ -34,7 +34,8 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
 //    qt_mac_set_menubar_icons(false);
 #endif
     ui->setupUi(this);
-    this->setWindowTitle( title );
+    QString qtitle = QString::fromLocal8Bit(title);
+    this->setWindowTitle( qtitle );
 
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));

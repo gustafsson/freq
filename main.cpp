@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
 
         if (_get_csv != (unsigned)-1) {
 			if (0==p->head_source->number_of_samples()) {
-				Sawe::Application::display_fatal_exception("Can't extract CSV without input file.");
+                                Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
 				return -1;
 			}
 
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 
         if (_get_hdf != (unsigned)-1) {
 			if (0==p->head_source->number_of_samples()) {
-				Sawe::Application::display_fatal_exception("Can't extract HDF without input file.");
+                            Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
 				return -1;
 			}
 
