@@ -51,7 +51,8 @@ static string fatal_unknown_exception_string() {
 
 Application::
         Application(int& argc, char **argv)
-:   QApplication(argc, argv)
+:   QApplication(argc, argv),
+	default_record_device(-1)
 {
     BOOST_ASSERT( !_app );
 
@@ -143,7 +144,12 @@ void Application::
 pProject Application::
         slotNew_recording( int record_device )
 {
-    TaskTimer tt("New recording1");
+    TaskTimer tt("New recording");
+	if (record_device<0)
+		record_device = default_record_device;
+	else
+		default_record_device = record_device;
+
     pProject p = Project::createRecording( record_device );
     if (p)
 		openadd_project(p);
