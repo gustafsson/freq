@@ -15,7 +15,7 @@ namespace Sawe {
 
 MatlabFilter::
         MatlabFilter( std::string matlabFunction )
-:   _matlab(matlabFunction)
+:   _matlab(matlabFunction, 15)
 {
 }
 

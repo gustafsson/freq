@@ -14,10 +14,10 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
     portaudio::System &sys = portaudio::System::instance();
 
     if (0>inputDevice || inputDevice>sys.deviceCount()) {
-        inputDevice = sys.defaultOutputDevice().index();
+        inputDevice = sys.defaultInputDevice().index();
     } else if ( sys.deviceByIndex(inputDevice).isOutputOnlyDevice() ) {
         cout << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output." << endl;
-        inputDevice = sys.defaultOutputDevice().index();
+        inputDevice = sys.defaultInputDevice().index();
     } else {
         inputDevice = inputDevice;
     }

@@ -6,15 +6,16 @@
 TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
+win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 QT += opengl
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
-unix:QMAKE_CXXFLAGS_RELEASE -= -O2
-unix:QMAKE_CXXFLAGS_RELEASE += -O3
-macx:QMAKE_CXXFLAGS_RELEASE -= -O2
-macx:QMAKE_CXXFLAGS_RELEASE += -O3
+!win32:QMAKE_CXXFLAGS_RELEASE -= -O2
+!win32:QMAKE_CXXFLAGS_RELEASE += -O3
+win32:QMAKE_LFLAGS += /FORCE:MULTIPLE
+
 QMAKE_CXX = colorgcc
 macx:QMAKE_CXX = g++
 
@@ -147,7 +148,6 @@ unix:LIBS = -lsndfile \
 macx:INCLUDEPATH += /usr/local/cuda/include \
     ../../libs/include \
     ../../libs/hdf5/include \
-    ../../libs/sziplib/include \
     ../../libs/zlib/include 
 macx:LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
@@ -156,7 +156,6 @@ macx:LIBS = -lsndfile \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio \
     -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/sziplib/bin -lsz \
     -L../../libs/zlib/bin -lz 
 win32:INCLUDEPATH += \
 	..\..\winlib\glut \
@@ -165,7 +164,6 @@ win32:INCLUDEPATH += \
 	..\..\winlib\libsndfile\include \
 	..\..\winlib\hdf5lib\include \
 	..\..\winlib\zlib\include \
-	..\..\winlib\sziplib\include \
 	..\..\winlib
 win32:LIBS += \
 	-l..\..\winlib\glut\glut32 \
@@ -173,20 +171,17 @@ win32:LIBS += \
     -l..\..\winlib\libsndfile\libsndfile-1 \
 	-l..\..\winlib\portaudio\portaudio \
 	-l..\..\winlib\portaudio\portaudiocpp \
-	-l..\..\winlib\hdf5lib\lib\hdf5 \
-	-l..\..\winlib\hdf5lib\lib\hdf5_cpp \
-	-l..\..\winlib\hdf5lib\lib\hdf5_hl \
-	-l..\..\winlib\hdf5lib\lib\hdf5_hl_cpp \
-	-l..\..\winlib\szip\lib\libszip \
-#	-l..\..\winlib\boostlib\libboost_date_time-vc90-mt-gd-1_42 \
-	-L..\..\winlib\boostlib \
-	-l..\..\winlib\zlib\lib\zlib
+	-l..\..\winlib\hdf5lib\dll\hdf5dll \
+	-l..\..\winlib\hdf5lib\dll\hdf5_hldll \
+	-L..\..\winlib\boostlib
 LIBS += -lcufft 
-unix:LIBS += -L../gpumisc -lgpumisc
-macx:LIBS += -L../gpumisc -lgpumisc
+!win32:LIBS += -L../gpumisc -lgpumisc
 
+win32:RCC_DIR = tmp
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
+debug:OBJECTS_DIR = tmp/debug/
+release:OBJECTS_DIR = tmp/release/
 UI_DIR = tmp
 
 # #######################################################################

@@ -44,6 +44,9 @@
 #endif
 #include <math.h>
 
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
+
 void drawCircleSector(float x, float y, float radius, float start, float end);
 void drawRoundRect(float width, float height, float roundness);
 void drawRect(float x, float y, float width, float height);
@@ -175,9 +178,6 @@ bool MouseControl::isTouched()
         return false;
 }
 
-
-DisplayWidget* DisplayWidget::
-        gDisplayWidget = 0;
 
 DisplayWidget::
         DisplayWidget(
@@ -320,6 +320,11 @@ void DisplayWidget::receivePlaySound()
     _worker->todo_list( postsink->expected_samples());
     _worker->todo_list().print(__FUNCTION__);
 
+    // Work as slow as possible on the first few chunks and accelerate.
+    // This makes signal::Playback compute better estimates on how fast
+    // the computations can be expected to finish.
+    _worker->samples_per_chunk_hint(1);
+
     update();
 }
 
@@ -408,6 +413,7 @@ void DisplayWidget::
     if (_qz>1) _qz=1;
     if (_qx>l) _qx=l;
 
+    worker()->requested_fps(30);
     update();
 }
 
@@ -605,6 +611,34 @@ void DisplayWidget::
     _renderer->collection()->add_expected_samples(b->filter()->getTouchedSamples( b->sample_rate()));
 
     setWorkerSource();
+    update();
+}
+
+void DisplayWidget::
+        receiveTonalizeFilter(bool)
+{
+    Tfr::pFilter f( new Tfr::TonalizeFilter());
+    Signal::FilterOperation *m;
+    Signal::pSource tonalize( m = new Signal::FilterOperation( _worker->source(), f));
+    m->meldFilters();
+    setWorkerSource(tonalize);
+
+    _renderer->collection()->add_expected_samples( f->getTouchedSamples(tonalize->sample_rate()) );
+
+    update();
+}
+
+void DisplayWidget::
+        receiveReassignFilter(bool)
+{
+    Tfr::pFilter f( new Tfr::ReassignFilter());
+    Signal::FilterOperation *m;
+    Signal::pSource reassign( m = new Signal::FilterOperation( _worker->source(), f));
+    m->meldFilters();
+    setWorkerSource(reassign);
+
+    _renderer->collection()->add_expected_samples( f->getTouchedSamples(reassign->sample_rate()) );
+
     update();
 }
 
@@ -884,6 +918,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     rotateButton.update(x, y);
     scaleButton.update(x, y);
     
+    worker()->requested_fps(30);
     update();
 }
 
@@ -1025,13 +1060,11 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
-    // TaskTimer tt("DisplayWidget::paintGL");
+    TIME_PAINTGL TaskTimer tt("DisplayWidget::paintGL");
     static int tryGc = 0;
     try {
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
-
-    TaskTimer tt2(TaskTimer::LogVerbose, __FUNCTION__);
 
     {   QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
         if (!_invalidRange.isEmpty()) {
@@ -1052,6 +1085,7 @@ void DisplayWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Set up camera position
+    bool followingRecordMarker = false;
     float length = _worker->source()->length();
     {   float limit = std::max(0.f, length - 2*Tfr::CwtSingleton::instance()->wavelet_std_t());
         if (_qx>=_prevLimit) {
@@ -1062,6 +1096,7 @@ void DisplayWidget::paintGL()
             // dirac peek in the transform (false because it will soon be
             // invalid by newly recorded data).
             _qx = std::max(_qx,limit);
+            followingRecordMarker = true;
         }
         _prevLimit = limit;
 
@@ -1089,18 +1124,26 @@ void DisplayWidget::paintGL()
     }
 
     {   // Find things to work on (ie playback and file output)
-        _renderer->collection()->next_frame(); // Check needed blocks
 
         //    if (p && p->isUnderfed() && p->expected_samples_left()) {
         if (!_postsinkCallback->sink()->expected_samples().isEmpty())
         {
             _worker->center = 0;
             _worker->todo_list( _postsinkCallback->sink()->expected_samples() );
+
+            // Request at least 1 fps. Otherwise there is a risk that CUDA
+            // will screw up playback by blocking the OS and causing audio
+            // starvation.
+            worker()->requested_fps(1);
+
             //_worker->todo_list().print("Displaywidget - PostSink");
         } else {
             _worker->center = _qx;
             _worker->todo_list( _collectionCallback->sink()->expected_samples());
             //_worker->todo_list().print("Displaywidget - Collection");
+
+            if (followingRecordMarker)
+                worker()->requested_fps(1);
         }
         Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
     	Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
@@ -1112,6 +1155,7 @@ void DisplayWidget::paintGL()
 
     {   // Work
         bool isWorking = !_worker->todo_list().isEmpty();
+
         if (wasWorking || isWorking) {
             // _worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
@@ -1141,7 +1185,7 @@ void DisplayWidget::paintGL()
 
     tryGc = 0;
     } catch (const CudaException &x) {
-        TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION %s", x.what());
+        TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
         if (2>tryGc) {
         	Heightmap::Collection* c=_renderer->collection();
         	c->reset();
@@ -1152,13 +1196,13 @@ void DisplayWidget::paintGL()
             int count;
             cudaError_t e = cudaGetDeviceCount(&count);
             TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
-            e = cudaThreadExit();
-            tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
-            CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-            e = cudaSetDevice( 1 );
-            tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
-            e = cudaSetDevice( 0 );
-            tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
+            // e = cudaThreadExit();
+            // tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
+            //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+            //e = cudaSetDevice( 1 );
+            //tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
+            //e = cudaSetDevice( 0 );
+            //tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
             void *p=0;
             e = cudaMalloc( &p, 10 );
             tt.info("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
@@ -1168,7 +1212,7 @@ void DisplayWidget::paintGL()
         }
         else throw;
     } catch (const GlException &x) {
-        TaskTimer tt("DisplayWidget::paintGL CAUGHT GLEXCEPTION %s", x.what());
+        TaskTimer tt("DisplayWidget::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
         if (0==tryGc) {
             _renderer->collection()->gc();
             tryGc++;
@@ -1600,12 +1644,13 @@ void DisplayWidget::setSelection(int index, bool enabled)
         Tfr::pFilter sf( e2 = new Tfr::EllipsFilter(*e ));
         e2->_save_inside = true;
         getPostSink()->filter( sf, _worker->source());
+    }
 
-        if(e->enabled != enabled) {
-            e->enabled = enabled;
+    Tfr::Filter* filter = i->get();
+    if(filter->enabled != enabled) {
+        filter->enabled = enabled;
 
-            _renderer->collection()->add_expected_samples( e->getTouchedSamples(f->sample_rate()) );
-        }
+        _renderer->collection()->add_expected_samples( filter->getTouchedSamples(f->sample_rate()) );
     }
     
     update();
@@ -1621,7 +1666,7 @@ void DisplayWidget::removeFilter(int index){
     
     Tfr::FilterChain::iterator i = c->begin();
     std::advance(i, index);
-    Tfr::EllipsFilter *e = dynamic_cast<Tfr::EllipsFilter*>(i->get());
+    Tfr::Filter *e = i->get();
     if (e)
     {
         _renderer->collection()->add_expected_samples( e->getTouchedSamples(f->sample_rate()) );
@@ -1966,17 +2011,16 @@ void DisplayWidget::drawSelectionCircle() {
 
 void DisplayWidget::drawSelectionCircle2() {
     float l = _worker->source()->length();
-    //glEnable(GL_BLEND);
     glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f( 0, 0, 0, .5);
     
     float
-    x = selection[0].x,
-    z = selection[0].z,
-    _rx = fabs(selection[1].x-selection[0].x),
-    _rz = fabs(selection[1].z-selection[0].z);
+        x = selection[0].x,
+        z = selection[0].z,
+        _rx = fabs(selection[1].x-selection[0].x),
+        _rz = fabs(selection[1].z-selection[0].z);
     float y = 1;
+
     // compute points in each quadrant, upper right
     std::vector<GLvector> pts[4];
     GLvector corner[4];
@@ -1984,13 +2028,19 @@ void DisplayWidget::drawSelectionCircle2() {
     corner[1] = GLvector(0,0,1);
     corner[2] = GLvector(0,0,0);
     corner[3] = GLvector(l,0,0);
-    for (unsigned k,j=0; j<4; j++) {
+
+    for (unsigned k,j=0; j<4; j++)
+	{
         bool addedLast=false;
-        for (k=0; k<=90; k++) {
+        for (k=0; k<=90; k++)
+		{
             float s = z + _rz*sin((k+j*90)*M_PI/180);
             float c = x + _rx*cos((k+j*90)*M_PI/180);
-            if (s>0 && s<1 && c>0&&c<l) {
-                if (pts[j].empty() && k>0) {
+
+            if (s>0 && s<1 && c>0&&c<l)
+			{
+                if (pts[j].empty() && k>0)
+				{
                     if (0==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
                     if (1==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
                     if (2==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
@@ -2000,6 +2050,7 @@ void DisplayWidget::drawSelectionCircle2() {
                 addedLast = 90==k;
             }
         }
+
         if (!addedLast) {
             if (0==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
             if (1==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
@@ -2007,7 +2058,7 @@ void DisplayWidget::drawSelectionCircle2() {
             if (3==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
         }
     }
-    
+
     for (unsigned j=0; j<4; j++) {
         glBegin(GL_TRIANGLE_STRIP);
         for (unsigned k=0; k<pts[j].size(); k++) {

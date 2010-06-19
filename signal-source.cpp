@@ -102,7 +102,7 @@ Buffer& Buffer::
     
     if (_interleaved != p->interleaved()) {
         b2 = p->getInterleaved(_interleaved);
-        p = &*b2;
+        p = b2.get();
     }
 
     float* c = waveform_data->getCpuMemory();
@@ -117,8 +117,8 @@ Buffer& Buffer::
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - p->sample_offset;
-    unsigned f = _interleaved == Interleaved_Complex ? 2: 1;
-    memcpy(c+offs_write, p->waveform_data->getCpuMemory() + offs_read, f*(i.last-i.first)*sizeof(float));
+    unsigned f = ((_interleaved == Interleaved_Complex) ? 2: 1);
+    memcpy(c+f*offs_write, p->waveform_data->getCpuMemory() + f*offs_read, f*(i.last-i.first)*sizeof(float));
 
     return *this;
 }
@@ -147,6 +147,8 @@ pBuffer Source::
 
     // Didn't get exact result, prepare new Buffer
     pBuffer r( new Buffer(firstSample, numberOfSamples, p->sample_rate) );
+    memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
+
     SamplesIntervalDescriptor sid(firstSample, firstSample + numberOfSamples);
 
     while (!sid.isEmpty())

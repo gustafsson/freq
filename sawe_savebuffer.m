@@ -1,3 +1,7 @@
 function sawe_savebuffer(filename, buffer, offset, samplerate)
-    save("-hdf5", filename, 'buffer', 'offset', 'samplerate');
-endfunction
+%octave
+% save('-hdf5', filename, 'buffer', 'offset', 'samplerate');
+
+% matlab
+hdf5write(filename,'/buffer',buffer,'/offset',offset,'/samplerate',samplerate);
+

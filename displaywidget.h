@@ -61,7 +61,6 @@ public:
     DisplayWidget( Signal::pWorker worker, Signal::pSink collection );
     virtual ~DisplayWidget();
     int lastKey;
-    static DisplayWidget* gDisplayWidget;
     
     enum Yscale {
         Yscale_Linear,
@@ -82,6 +81,7 @@ public:
     unsigned playback_device;
     Heightmap::Collection* collection() { return _renderer->collection(); }
     Heightmap::pRenderer renderer() { return _renderer; }
+    Signal::FilterOperation* getFilterOperation();
 
     void drawSelection();
 
@@ -123,6 +123,8 @@ protected slots:
     virtual void receiveMoveSelectionInTime(bool);
     virtual void receiveMatlabOperation(bool);
     virtual void receiveMatlabFilter(bool);
+    virtual void receiveTonalizeFilter(bool);
+    virtual void receiveReassignFilter(bool);
     virtual void receiveRecord(bool);
 signals:
     void operationsUpdated( Signal::pSource s );
@@ -137,7 +139,6 @@ private:
     virtual void put( Signal::pBuffer b, Signal::pSource );
     virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& s );
 
-    Signal::FilterOperation* getFilterOperation();
     Signal::PostSink* getPostSink();
 
     Heightmap::pRenderer _renderer;

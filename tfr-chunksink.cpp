@@ -42,7 +42,7 @@ pChunk ChunkSink::
         chunk = Tfr::CwtSingleton::operate( b );
         Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk computed raw chunk");
 
-        // Don't know anything aboout the nearby data, so assume its all valid
+        // Don't know anything about the nearby data, so assume it's all valid
         chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
         chunk->first_valid_sample = 0;
     }
@@ -60,10 +60,11 @@ pChunk ChunkSink::
     clamped->transform_data.reset( new GpuCpuData<float2>(0, make_cudaExtent( c->n_valid_samples, c->nScales(), c->nChannels() )));
 
     ::wtClamp( c->transform_data->getCudaGlobal(), c->first_valid_sample, clamped->transform_data->getCudaGlobal() );
-    clamped->chunk_offset = c->chunk_offset + c->first_valid_sample;
-    clamped->first_valid_sample = 0;
     clamped->max_hz = c->max_hz;
     clamped->min_hz = c->min_hz;
+    clamped->chunk_offset = c->chunk_offset + c->first_valid_sample;
+	clamped->sample_rate = c->sample_rate;
+    clamped->first_valid_sample = 0;
     clamped->n_valid_samples = c->n_valid_samples;
 
     return clamped;

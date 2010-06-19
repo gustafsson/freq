@@ -41,6 +41,7 @@ private:
     std::vector<pBuffer> _cache;
     AcceptStrategy _acceptStrategy;
 
+    void selfmerge();
     void merge( pBuffer );
 };
 

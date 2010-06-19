@@ -15,7 +15,7 @@ namespace Sawe {
 Application*    Application::_app = 0;
 std::string     Application::_fatal_error;
 
-static void fatal_exception_cerr( const std::string& str )
+static void show_fatal_exception_cerr( const std::string& str )
 {
     cerr << endl << endl
          << "======================" << endl
@@ -24,20 +24,20 @@ static void fatal_exception_cerr( const std::string& str )
     cerr.flush();
 }
 
-static void fatal_exception_qt( const std::string& str )
+static void show_fatal_exception_qt( const std::string& str )
 {
     QMessageBox::critical( 0,
                  QString("Fatal error. Sonic AWE needs to close"),
                  QString::fromStdString(str) );
 }
 
-static void fatal_exception( const std::string& str )
+static void show_fatal_exception( const std::string& str )
 {
-    fatal_exception_cerr(str);
-    fatal_exception_qt(str);
+    show_fatal_exception_cerr(str);
+    show_fatal_exception_qt(str);
 }
 
-static string fatal_exception( const std::exception &x )
+static string fatal_exception_string( const std::exception &x )
 {
     std::stringstream ss;
     ss   << "Error: " << demangle(typeid(x).name()) << endl
@@ -45,13 +45,14 @@ static string fatal_exception( const std::exception &x )
     return ss.str();
 }
 
-static string fatal_unknown_exception() {
+static string fatal_unknown_exception_string() {
     return "Error: An unknown error occurred";
 }
 
 Application::
         Application(int& argc, char **argv)
-:   QApplication(argc, argv)
+:   QApplication(argc, argv),
+	default_record_device(-1)
 {
     BOOST_ASSERT( !_app );
 
@@ -82,9 +83,6 @@ Application::
 Application::
         ~Application()
 {
-    if (!_fatal_error.empty())
-        fatal_exception_qt(_fatal_error);
-
     BOOST_ASSERT( _app );
     _app = 0;
 }
@@ -99,14 +97,14 @@ Application* Application::
 void Application::
         display_fatal_exception()
 {
-    fatal_exception(fatal_unknown_exception());
+    show_fatal_exception(fatal_unknown_exception_string());
 }
 
 
 void Application::
         display_fatal_exception(const std::exception& x)
 {
-    fatal_exception(fatal_exception(x));
+    show_fatal_exception(fatal_exception_string(x));
 }
 
 
@@ -114,34 +112,47 @@ bool Application::
         notify(QObject * receiver, QEvent * e)
 {
     bool v = false;
-    try {
-        if(!_fatal_error.empty())
-            this->exit(-2);
+    string err;
 
+    try {
         v = QApplication::notify(receiver,e);
-    } catch (const std::exception &x) {
-        if(_fatal_error.empty())
-            fatal_exception_cerr( _fatal_error = fatal_exception(x) );
-        this->exit(-2);
+    } catch (const exception &x) {
+        err = fatal_exception_string(x);
     } catch (...) {
-        if(_fatal_error.empty())
-            fatal_exception_cerr( _fatal_error = fatal_unknown_exception() );
+        err = fatal_unknown_exception_string();
+    }
+
+    if (!err.empty() && _fatal_error.empty())
+    {
+        _fatal_error = err;
+        show_fatal_exception( err );
         this->exit(-2);
     }
+
     return v;
+}
+
+void Application::
+		openadd_project( pProject p )
+{
+    setActiveWindow( 0 );
+    setActiveWindow( p->mainWindow().get() );
+    p->mainWindow()->activateWindow();
+    _projects.push_back( p );
 }
 
 pProject Application::
         slotNew_recording( int record_device )
 {
-    TaskTimer tt("New recording1");
+    TaskTimer tt("New recording");
+	if (record_device<0)
+		record_device = default_record_device;
+	else
+		default_record_device = record_device;
+
     pProject p = Project::createRecording( record_device );
-    if (p) {
-        setActiveWindow( 0 );
-        setActiveWindow( p->mainWindow().get() );
-        p->mainWindow()->activateWindow();
-        _projects.push_back( p );
-    }
+    if (p)
+		openadd_project(p);
     return p;
 }
 
@@ -149,12 +160,8 @@ pProject Application::
         slotOpen_file( std::string project_file_or_audio_file )
 {
     pProject p = Project::open( project_file_or_audio_file );
-    if (p) {
-        setActiveWindow( 0 );
-        setActiveWindow( p->mainWindow().get() );
-        p->mainWindow()->activateWindow();
-        _projects.push_back( p );
-    }
+    if (p)
+		openadd_project(p);
     return p;
 }
 

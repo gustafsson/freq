@@ -208,7 +208,7 @@ void GlBlock::
         glActiveTexture(GL_TEXTURE0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height);
-        glPixelTransferf(GL_RED_SCALE, 0.00625f);
+        glPixelTransferf(GL_RED_SCALE, 4.f);
 
         GlException_CHECK_ERROR();
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
@@ -234,8 +234,8 @@ void GlBlock::
         glActiveTexture(GL_TEXTURE0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
         glBindTexture(GL_TEXTURE_2D, _tex_slope);
-        glPixelTransferf(GL_RED_SCALE, 0.0125f);
-        glPixelTransferf(GL_GREEN_SCALE, 0.0125f);
+        glPixelTransferf(GL_RED_SCALE, 50.f);
+        glPixelTransferf(GL_GREEN_SCALE, 50.f);
 
         GlException_CHECK_ERROR();
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RG, GL_FLOAT, 0);

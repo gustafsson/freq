@@ -79,7 +79,7 @@ namespace Heightmap {
 
 class Block {
 public:
-    Block( Reference ref ): ref(ref) {}
+    Block( Reference ref ): ref(ref), frame_number_last_used(-1) {}
 
     float sample_rate();
     float nFrequencies();
@@ -180,7 +180,7 @@ private:
             3) if _cache is empty, Sonic AWE is terminated with an OpenGL error.
       */
     std::vector<pBlock> _cache;
-    std::vector<Tfr::pChunk> _updates;
+    std::vector<Tfr::pChunk> _updates; // TODO updates should be transfered as downsampled blocks between cuda contexts. It is way to slow to transfer entire chunks.
     QMutex _updates_mutex;
     QWaitCondition _updates_condition;
     ThreadChecker _constructor_thread;

@@ -66,9 +66,8 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 50;
-//static float _wavelet_std_t = 0.1;
-static float _wavelet_std_t = 0.03;
-static unsigned _samples_per_chunk = 14;
+static float _wavelet_std_t = 0.04;
+static unsigned _samples_per_chunk = 1;
 //static float _wavelet_std_t = 0.03;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
@@ -79,7 +78,7 @@ static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
 static std::string _selectionfile = "selection.wav";
 static bool _record = false;
-static int _record_device = 1;
+static int _record_device = -1;
 static int _playback_device = -1;
 static std::string _soundfile = "";
 static bool _multithread = false;
@@ -295,35 +294,41 @@ int main(int argc, char *argv[])
         Sawe::pProject p; // p goes out of scope before a.exec()
 
         if (!_soundfile.empty())
-            p=a.slotOpen_file( _soundfile );
+			p = Sawe::Project::open( _soundfile );
 
         if (!p)
-            p=a.slotNew_recording( _record_device );
+            p = Sawe::Project::createRecording( _record_device );
 
         if (!p)
             return -1;
 
         // TODO use _channel
 
-        unsigned redundant = 2*(((unsigned)(_wavelet_std_t*p->head_source->sample_rate())+31)/32*32);
-        while ( (unsigned)(1<<_samples_per_chunk) < redundant ) {
-            _samples_per_chunk++;
-            TaskTimer("To few samples per chunk, increasing to 2^%d", _samples_per_chunk).suppressTiming();
-        }
-        unsigned total_samples_per_chunk = (1<<_samples_per_chunk) - redundant;
-
         Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
         cwt->scales_per_octave( _scales_per_octave );
         cwt->wavelet_std_t( _wavelet_std_t );
 
+        unsigned total_samples_per_chunk = cwt->prev_good_size( 1<<_samples_per_chunk, p->head_source->sample_rate() );
+        TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
+
         if (_get_csv != (unsigned)-1) {
+			if (0==p->head_source->number_of_samples()) {
+                                Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
+				return -1;
+			}
+
             Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
 
             Sawe::Csv().put( b, p->head_source );
         }
 
         if (_get_hdf != (unsigned)-1) {
-            Signal::pBuffer b = p->head_source->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
+			if (0==p->head_source->number_of_samples()) {
+                            Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
+				return -1;
+			}
+
+			Signal::pBuffer b = p->head_source->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
 
             Sawe::Hdf5Sink().put( b, p->head_source );
         }
@@ -339,16 +344,19 @@ int main(int argc, char *argv[])
             return 0;
         }
 
+		p->displayWidget()->worker()->samples_per_chunk_hint( _samples_per_chunk );
         if (_multithread)
             p->displayWidget()->worker()->start();
 
-        p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
+		p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
         p->displayWidget()->playback_device = _playback_device;
         p->displayWidget()->selection_filename = _selectionfile;
         p->displayWidget()->collection()->samples_per_block( _samples_per_block );
         p->displayWidget()->collection()->scales_per_block( _scales_per_block );
 
-        p.reset(); // a keeps a copy of pProject
+		a.openadd_project( p );
+
+		p.reset(); // a keeps a copy of pProject
 
         int r = a.exec();
 

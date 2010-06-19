@@ -75,31 +75,94 @@ void SinkSource::
     }
 }
 
-void SinkSource::
-        merge( pBuffer b )
+static bool bufferLessThan(const pBuffer& a, const pBuffer& b)
 {
+    return a->sample_offset < b->sample_offset;
+}
+
+// Smallest power of two greater than x
+static unsigned int
+spo2g(register unsigned int x)
+{
+    x |= (x >> 1);
+    x |= (x >> 2);
+    x |= (x >> 4);
+    x |= (x >> 8);
+    x |= (x >> 16);
+    return(x+1);
+}
+
+// Largest power of two smaller than x
+static unsigned int
+lpo2s(register unsigned int x)
+{
+    return spo2g(x-1)>>1;
+}
+
+void SinkSource::
+        selfmerge()
+{
+	{
+		QMutexLocker l(&_cache_mutex);
+
+		if (_cache.empty())
+			return;
+	}
+
+    //TaskTimer tt("SinkSource::selfmerge");
+    //samplesDesc().print("selfmerged start");
+    //tt.info("_cache.size()=%u", _cache.size());
+
+    SamplesIntervalDescriptor sid = samplesDesc();
+	std::vector<pBuffer> new_cache;
+
+	BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals() )
+	{
+		for(unsigned L=0; i.first < i.last; i.first+=L)
+		{
+			L = lpo2s( i.last - i.first + 1);
+			if (L<(1<<13))
+				L = i.last-i.first;
+			new_cache.push_back(readFixedLength( i.first, L ));
+		}
+	}
+
+	{
+		QMutexLocker l(&_cache_mutex);
+	    _cache = new_cache;
+	}
+
+    //samplesDesc().print("selfmerged finished");
+    //tt.info("_cache.size()=%u", _cache.size());
+}
+
+void SinkSource::
+        merge( pBuffer bp )
+{
+    const Buffer& b = *bp;
     unsigned FS = sample_rate();
 
     QMutexLocker cache_locker(&_cache_mutex);
 
     if (!_cache.empty())
-        BOOST_ASSERT(_cache.front()->sample_rate == b->sample_rate);
+        BOOST_ASSERT(_cache.front()->sample_rate == b.sample_rate);
 
     std::stringstream ss;
 
     // REMOVE caches that become outdated by this new buffer 'b'
     for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        const pBuffer s = *itr;
+        const pBuffer ps = *itr;
+        const Buffer& s = *ps;
 
-        SamplesIntervalDescriptor toKeep = s->getInterval();
-        toKeep -= b->getInterval();
+        SamplesIntervalDescriptor toKeep = s.getInterval();
+        toKeep -= b.getInterval();
 
-        SamplesIntervalDescriptor toRemove = s->getInterval();
-        toRemove &= b->getInterval();
+        SamplesIntervalDescriptor toRemove = s.getInterval();
+        toRemove &= b.getInterval();
 
         if (!toRemove.isEmpty()) {
-            if(D) ss << " -" << s->getInterval();
+            if(D) ss << " -" << s.getInterval();
 
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
@@ -109,7 +172,7 @@ void SinkSource::
 
                 pBuffer n( new Buffer( i.first, i.last-i.first, FS));
                 memcpy( n->waveform_data->getCpuMemory(),
-                        s->waveform_data->getCpuMemory() + (i.first - s->sample_offset),
+                        s.waveform_data->getCpuMemory() + (i.first - s.sample_offset),
                         n->waveform_data->getSizeInBytes1D() );
                 itr = _cache.insert(itr, n );
                 itr++; // Move past inserted element
@@ -119,10 +182,10 @@ void SinkSource::
         }
     }
 
-    pBuffer n( new Buffer( b->sample_offset, b->number_of_samples(), b->sample_rate));
+    pBuffer n( new Buffer( b.sample_offset, b.number_of_samples(), b.sample_rate));
     memcpy( n->waveform_data->getCpuMemory(),
-            b->waveform_data->getCpuMemory(),
-            b->waveform_data->getSizeInBytes1D());
+            b.waveform_data->getCpuMemory(),
+            b.waveform_data->getSizeInBytes1D());
     _cache.push_back( n );
     cache_locker.unlock(); // done with _cache, samplesDesc() below needs the lock
 
@@ -132,8 +195,9 @@ void SinkSource::
         TaskTimer("M:%s", ss.str().c_str()).suppressTiming();
     }
 
-    _expected_samples -= b->getInterval();
+    _expected_samples -= b.getInterval();
 
+    selfmerge();
     //samplesDesc().print("SinkSource received samples");
     //_expected_samples.print("SinkSource expected samples");
 }
@@ -164,6 +228,9 @@ pBuffer SinkSource::
             }
         }
     }
+
+    if (_cache.empty())
+		return pBuffer();
 
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
     pBuffer b( new Buffer(firstSample, numberOfSamples, sample_rate()));
