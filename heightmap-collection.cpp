@@ -394,7 +394,16 @@ createBlock( Reference ref )
             // fill block by STFT
             {
                 TaskTimer tt(TaskTimer::LogVerbose, "stft");
-                prepareFillStft( block );
+				try {
+					prepareFillStft( block );
+					CudaException_CHECK_ERROR();
+				} catch (const CudaException& x ) {
+					// prepareFillStft doesn't have a limit on how large 
+					// waveform buffer that it tries to work on. Thus it
+					// will run out of memory when attempting to work on
+					// really large buffers.
+					tt.info("Couldn't fill new block with stft\n%s", x.what());
+				}
             }
 
             /*if (0) {
@@ -438,8 +447,8 @@ createBlock( Reference ref )
                 }
             }
 
-            GlException_CHECK_ERROR();
-            CudaException_CHECK_ERROR();
+//            GlException_CHECK_ERROR();
+//            CudaException_CHECK_ERROR();
 
             if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
@@ -477,11 +486,14 @@ createBlock( Reference ref )
 
         computeSlope( block, 0 );
 
-        GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
+//        GlException_CHECK_ERROR();
+//        CudaException_CHECK_ERROR();
 
         result = block;
-    }
+
+		GlException_CHECK_ERROR();
+		CudaException_CHECK_ERROR();
+	}
     catch (const CudaException& x )
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
