@@ -293,7 +293,7 @@ __global__ void kernel_expand_stft(
 
     p-=(unsigned)p;
     float val = .02f*(val1*(1-p)+val2*p);
-    const float f0 = .6f + 40*ff*ff*ff;
+    const float f0 = 2.0f + 35*ff*ff*ff;
     val*=f0;
 
     elemSize3_t writePos = make_elemSize3_t( 0, y, 0 );
@@ -388,10 +388,11 @@ __global__ void kernel_expand_complete_stft(
         p = 3*p*p-2*p*p*p;
         q = 3*q*q-2*q*q*q;
         val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
-        const float f0 = .6f + 40*ff*ff*ff;
+        const float f0 = 2.0f + 35*ff*ff*ff;
         val*=f0;
     }
 
+    val *= 2.5;
     val /= in_stft_size;
 
     elemSize3_t writePos = make_elemSize3_t( x, y, 0 );
