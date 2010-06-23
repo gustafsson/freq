@@ -463,8 +463,8 @@ void updateOperationsTree( OperationGraph::vertex_descriptor v, OperationGraph& 
 
     const TitleAndTooltip& tat = graph[v];
     QTreeWidgetItem* child = new QTreeWidgetItem( 0 );
-    child->setText(0, QString::fromStdString( tat.title ));
-    child->setToolTip(0, QString::fromStdString( tat.tooltip ));
+    child->setText(0, QString::fromLocal8Bit( tat.title.c_str() ));
+    child->setToolTip(0, QString::fromLocal8Bit( tat.tooltip.c_str() ));
     child->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled );
     w->addChild( child );
 
