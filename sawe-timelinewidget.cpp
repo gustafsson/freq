@@ -24,6 +24,11 @@ TimelineWidget::
     _displayWidget(displayWidget)
 {
     BOOST_ASSERT( dynamic_cast<DisplayWidget*>(displayWidget.get()) );
+
+    if (!context() || !context()->isValid())
+    {
+        throw std::invalid_argument("Failed to open a second OpenGL window. Couldn't find a valid rendering context to share.");
+    }
 }
 
 TimelineWidget::
@@ -98,6 +103,7 @@ void TimelineWidget::
         paintGL()
 {
     TIME_PAINTGL TaskTimer tt("TimelineWidget::paintGL");
+
     static int exceptCount = 0;
     try {
         GlException_CHECK_ERROR();
