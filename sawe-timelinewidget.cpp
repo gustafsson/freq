@@ -25,7 +25,7 @@ TimelineWidget::
 {
     BOOST_ASSERT( dynamic_cast<DisplayWidget*>(displayWidget.get()) );
 
-    if (!context() || !context()->isValid())
+    if (!context() || !context()->isSharing())
     {
         throw std::invalid_argument("Failed to open a second OpenGL window. Couldn't find a valid rendering context to share.");
     }
