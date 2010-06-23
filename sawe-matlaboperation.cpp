@@ -42,30 +42,29 @@ MatlabFunction::
     }
 
     { // Start octave
-        stringstream ss;
-        ss << "filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
+        stringstream matlab_command, octave_command;
+        matlab_command << "filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
+        octave_command << "filewatcher_oct('" << _dataFile << "',@" << matlabFunction << ");";
 
 #ifdef __GNUC__
         _pid = (void*)fork();
 
         if(0==_pid)
         {
-            ::execlp("matlab","matlab", "-r", ss.str().c_str(), NULL );
+            ::execlp("matlab","matlab", "-r", matlab_command.str().c_str(), NULL );
             // apparently failed, try octave
-            ::execlp("octave","octave", "-qf", "--eval", ss.str().c_str(), NULL );
+            ::execlp("octave","octave", "-qf", "--eval", octave_command.str().c_str(), NULL );
             // failed that to... will eventually time out
             exit(0);
         }
 #elif defined(WIN32)
-		string statement = ss.str();
-
 		_pid = (void*)_spawnlp(_P_NOWAIT, "matlab", 
-			"matlab", "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash", "-r", statement.c_str(), NULL );
+                        "matlab", "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash", "-r", matlab_command.str().c_str(), NULL );
 
 		if (0 == _pid)
 		{
 			// failed, try octave
-			_pid = (void*)_spawnlp(_P_NOWAIT, "octave","octave", "-qf", "--eval", ss.str().c_str(), NULL );
+                        _pid = (void*)_spawnlp(_P_NOWAIT, "octave","octave", "-qf", "--eval", octave_command.str().c_str(), NULL );
 	        // will eventually time out if this fails to
 		}
 #else
