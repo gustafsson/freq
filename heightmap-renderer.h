@@ -20,6 +20,11 @@ namespace Heightmap {
 class Renderer
 {
 public:
+    enum ColorMode {
+        ColorMode_Rainbow = 0,
+        ColorMode_Grayscale = 1
+    };
+
     Renderer( Collection* collection, DisplayWidget* _tempToRemove );
 
     Collection* collection() { return _collection; }
@@ -31,6 +36,10 @@ public:
     bool draw_piano;
     bool draw_hz;
     GLvector camera;
+
+    bool draw_height_lines;
+    ColorMode color_mode;
+    float y_scale;
 private:
     std::vector<GLvector> clippedFrustum;
     Collection* _collection;

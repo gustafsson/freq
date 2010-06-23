@@ -287,6 +287,35 @@ void DisplayWidget::receiveTogglePiano(bool active)
     update();
 }
 
+void DisplayWidget::
+        receiveSetRainbowColors()
+{
+    _renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
+    update();
+}
+
+void DisplayWidget::
+        receiveSetGrayscaleColors()
+{
+    _renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
+    update();
+}
+
+void DisplayWidget::
+        receiveSetHeightlines( bool value )
+{
+    TaskTimer("was _renderer->draw_height_lines = %d", _renderer->draw_height_lines).suppressTiming();
+    _renderer->draw_height_lines = value;
+    TaskTimer("now _renderer->draw_height_lines = %d", _renderer->draw_height_lines).suppressTiming();
+    update();
+}
+
+void DisplayWidget::
+        receiveSetYScale( int value )
+{
+    _renderer->y_scale = value / 10.f;
+    update();
+}
 
 void DisplayWidget::receivePlaySound()
 {
@@ -835,6 +864,8 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
             xscale *= (1-ps * e->delta());
         else
 	        _pz *= (1+ps * e->delta());
+
+        if (_pz<-40) _pz = -40;
         //_pz -= ps * e->delta();
         
         //_rx -= ps * e->delta();
@@ -1048,7 +1079,7 @@ void DisplayWidget::resizeGL( int width, int height ) {
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.1f,100.0f);
+    gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.1f,10000.0f);
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QKeyEvent>
+#include <QSlider>
 #include "displaywidget.h"
 #include <boost/foreach.hpp>
 #include <sstream>
@@ -113,6 +114,13 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     }
 
     {   QComboBoxAction * qb = new QComboBoxAction();
+        qb->decheckable( false );
+        qb->addActionItem( ui->actionSet_rainbow_colors );
+        qb->addActionItem( ui->actionSet_grayscale );
+        ui->toolBarPlay->addWidget( qb );
+    }
+
+    {   QComboBoxAction * qb = new QComboBoxAction();
         qb->addActionItem( ui->actionTransform_Cwt );
         qb->addActionItem( ui->actionTransform_Stft );
         qb->addActionItem( ui->actionTransform_Cwt_phase );
@@ -204,7 +212,19 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(this->ui->actionRecord, SIGNAL(triggered(bool)), d, SLOT(receiveRecord(bool)));
     connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
+    connect(this->ui->actionSet_rainbow_colors, SIGNAL(triggered()), d, SLOT(receiveSetRainbowColors()));
+    connect(this->ui->actionSet_grayscale, SIGNAL(triggered()), d, SLOT(receiveSetGrayscaleColors()));
+    connect(this->ui->actionSet_heightlines, SIGNAL(toggled(bool)), d, SLOT(receiveSetHeightlines(bool)));
 
+    {   QSlider * qs = new QSlider();
+        qs->setOrientation( Qt::Horizontal );
+        qs->setValue( 10 );
+        connect(qs, SIGNAL(valueChanged(int)), d, SLOT(receiveSetYScale(int)));
+
+
+        ui->toolBarPlay->addWidget( qs );
+
+    }
     ui->actionActivateNavigation->setChecked(true);
 
     updateOperationsTree( d->worker()->source() );

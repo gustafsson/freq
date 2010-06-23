@@ -33,6 +33,9 @@ Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
 :   draw_piano(false),
     draw_hz(true),
     camera(0,0,0),
+    draw_height_lines(false),
+    color_mode( ColorMode_Rainbow ),
+    y_scale( 1 ),
     _collection(collection),
     _tempToRemove( _tempToRemove ),
     _mesh_index_buffer(0),
@@ -266,6 +269,11 @@ void Renderer::init()
     GlException_CHECK_ERROR();
 }
 
+/**
+  Note: the parameter scaley is used by displaywidget to go seamlessly from 3D to 2D.
+  This is different from the 'attribute' Renderer::y_scale which is used to change the
+  height of the mountains.
+  */
 void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
@@ -341,7 +349,7 @@ void Renderer::beginVboRendering()
     GLuint uniVertText1;
     uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
     //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
-    glUniform1i(uniVertText1, 1); // GL_TEXTURE0
+    glUniform1i(uniVertText1, 1); // GL_TEXTURE1
 
     GLuint uniText0;
     uniText0 = glGetUniformLocation(_shader_prog, "Texture0");
@@ -351,6 +359,19 @@ void Renderer::beginVboRendering()
     TaskTimer("uniLightDir=%u", uniLightDir).suppressTiming();*/
     //TaskTimer("uniText0=%u", uniText0).suppressTiming();
     glUniform1i(uniText0, 0); // GL_TEXTURE0
+
+    GLuint uniColorMode;
+    uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
+    glUniform1i(uniColorMode, (int)color_mode);
+
+    GLuint uniHeightLines;
+    uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
+    glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
+
+    GLuint uniYScale;
+    uniYScale = glGetUniformLocation(_shader_prog, "yScale");
+    glUniform1f(uniYScale, y_scale);
+    glScalef(1, y_scale, 1 );
 
     // end of uniform settings
 

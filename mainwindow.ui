@@ -325,6 +325,7 @@
    <addaction name="actionFollowPlayMarker"/>
    <addaction name="actionSetPlayMarker"/>
    <addaction name="separator"/>
+   <addaction name="actionSet_heightlines"/>
   </widget>
   <widget class="QToolBar" name="toolBarOperation">
    <property name="enabled">
@@ -1320,6 +1321,69 @@
    </property>
    <property name="toolTip">
     <string>Reassign transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_rainbow_colors">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rainbow colors</string>
+   </property>
+   <property name="toolTip">
+    <string>Rainbow colors</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_grayscale">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Grayscale</string>
+   </property>
+   <property name="toolTip">
+    <string>Grayscale</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_heightlines">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Heightlines</string>
+   </property>
+   <property name="toolTip">
+    <string>Heightlines</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

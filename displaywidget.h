@@ -111,6 +111,10 @@ protected slots:
     virtual void receiveToggleNavigation(bool);
     virtual void receiveTogglePiano(bool);
 
+    virtual void receiveSetRainbowColors();
+    virtual void receiveSetGrayscaleColors();
+    virtual void receiveSetHeightlines( bool value );
+    virtual void receiveSetYScale( int value );
 
     virtual void receivePlaySound();
     virtual void receiveFollowPlayMarker( bool v );
