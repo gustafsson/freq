@@ -30,7 +30,7 @@ pBuffer OperationRemoveSection::
     return b;
 }
 
-unsigned OperationRemoveSection::
+long unsigned OperationRemoveSection::
         number_of_samples()
 {
     unsigned N = Operation::number_of_samples();
@@ -77,7 +77,7 @@ pBuffer OperationInsertSilence::
     return r;
 }
 
-unsigned OperationInsertSilence::
+long unsigned OperationInsertSilence::
         number_of_samples()
 {
     return Operation::number_of_samples() + _numberOfSilentSamples;

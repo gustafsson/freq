@@ -29,7 +29,7 @@ public:
     }
 
     virtual unsigned sample_rate();
-    virtual unsigned number_of_samples();
+    virtual long unsigned number_of_samples();
     virtual pSource source() const { return _source; }
     virtual void source(pSource v) { _source=v; }
 

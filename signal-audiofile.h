@@ -242,7 +242,7 @@ public:
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     virtual unsigned sample_rate();
-    virtual unsigned number_of_samples();
+    virtual long unsigned number_of_samples();
 
     pBuffer getChunkBehind() { return _waveform; }
     void setChunk( pBuffer chunk ) { _waveform = chunk; }

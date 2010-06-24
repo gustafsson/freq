@@ -248,7 +248,7 @@ unsigned SinkSource::
     return _cache.front()->sample_rate;
 }
 
-unsigned SinkSource::
+long unsigned SinkSource::
         number_of_samples()
 {
     unsigned n = 0;

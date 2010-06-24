@@ -65,7 +65,7 @@ public:
     virtual pBuffer readChecked( unsigned firstSample, unsigned numberOfSamples );
     virtual pBuffer readFixedLength( unsigned firstSample, unsigned numberOfSamples );
     virtual unsigned sample_rate() = 0;
-    virtual unsigned number_of_samples() = 0;
+    virtual long unsigned number_of_samples() = 0;
 
     float length() { return number_of_samples() / (float)sample_rate(); }
 };

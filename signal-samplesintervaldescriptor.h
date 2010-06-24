@@ -9,7 +9,7 @@ namespace Signal {
 class SamplesIntervalDescriptor
 {
 public:
-    typedef unsigned SampleType;
+    typedef long unsigned SampleType;
 
     struct Interval {
         /**
