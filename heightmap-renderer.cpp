@@ -317,63 +317,24 @@ void Renderer::beginVboRendering()
 
     glUseProgram(_shader_prog);
 
-    // Set default uniform variables parameters for the vertex shader
-    //GLuint uniHeightScale, uniChopiness, uniSize;
+    {   // Set default uniform variables parameters for the vertex and pixel shader
+        GLuint uniVertText0, uniVertText1, uniColorMode, uniHeightLines, uniYScale;
 
-/*    uniHeightScale = glGetUniformLocation(_shader_prog, "heightScale");
-    glUniform1f(uniHeightScale, 0.0125f);
+        uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
+        glUniform1i(uniVertText0, 0); // GL_TEXTURE0
 
-    uniSize        = glGetUniformLocation(_shader_prog, "size");
-    glUniform2f(uniSize, meshW, meshH);
-*/
-    // Set default uniform variables parameters for the pixel shader
-/*    GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
+        uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
+        glUniform1i(uniVertText1, 1); // GL_TEXTURE1
 
-    uniDeepColor = glGetUniformLocation(_shader_prog, "deepColor");
-    glUniform4f(uniDeepColor, 0.0f, 0.0f, 0.1f, 1.0f);
+        uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
+        glUniform1i(uniColorMode, (int)color_mode);
 
-    uniShallowColor = glGetUniformLocation(_shader_prog, "shallowColor");
-    glUniform4f(uniShallowColor, 0.1f, 0.4f, 0.3f, 1.0f);
+        uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
+        glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
 
-    uniSkyColor = glGetUniformLocation(_shader_prog, "skyColor");
-    glUniform4f(uniSkyColor, 0.5f, 0.5f, 0.5f, 1.0f);
-
-    uniLightDir = glGetUniformLocation(_shader_prog, "lightDir");
-    glUniform3f(uniLightDir, 0.0f, 1.0f, 0.0f);
-*/
-    GLuint uniVertText0;
-    uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
-    //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
-    glUniform1i(uniVertText0, 0); // GL_TEXTURE0
-
-    GLuint uniVertText1;
-    uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
-    //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
-    glUniform1i(uniVertText1, 1); // GL_TEXTURE1
-
-    GLuint uniText0;
-    uniText0 = glGetUniformLocation(_shader_prog, "Texture0");
-    /*TaskTimer("uniDeepColor=%u", uniDeepColor).suppressTiming();
-    TaskTimer("uniShallowColor=%u", uniShallowColor).suppressTiming();
-    TaskTimer("uniSkyColor=%u", uniSkyColor).suppressTiming();
-    TaskTimer("uniLightDir=%u", uniLightDir).suppressTiming();*/
-    //TaskTimer("uniText0=%u", uniText0).suppressTiming();
-    glUniform1i(uniText0, 0); // GL_TEXTURE0
-
-    GLuint uniColorMode;
-    uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
-    glUniform1i(uniColorMode, (int)color_mode);
-
-    GLuint uniHeightLines;
-    uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
-    glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
-
-    GLuint uniYScale;
-    uniYScale = glGetUniformLocation(_shader_prog, "yScale");
-    glUniform1f(uniYScale, y_scale);
-    //glScalef(1, y_scale, 1 );
-
-    // end of uniform settings
+        uniYScale = glGetUniformLocation(_shader_prog, "yScale");
+        glUniform1f(uniYScale, y_scale);
+    }
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     glVertexPointer(4, GL_FLOAT, 0, 0);
