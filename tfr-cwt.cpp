@@ -20,6 +20,7 @@ Cwt::
     _stream( stream ),
     _min_hz( 20 ),
     _scales_per_octave( scales_per_octave ),
+    _tf_resolution( 1 ),
     _fft_many(stream),
     _wavelet_std_t( wavelet_std_t )
 {
@@ -57,7 +58,7 @@ pChunk Cwt::
                      intermediate_wt->min_hz,
                      intermediate_wt->max_hz,
                      intermediate_wt->transform_data->getNumberOfElements(),
-                     _scales_per_octave );
+                     _scales_per_octave, _tf_resolution );
 
         TIME_CWT CudaException_ThreadSynchronize();
     }
@@ -132,6 +133,14 @@ void Cwt::
     if (value==_scales_per_octave) return;
 
     _scales_per_octave=value;
+}
+
+void Cwt::
+        tf_resolution( float value )
+{
+    if (value == _tf_resolution) return;
+
+    _tf_resolution = value;
 }
 
 unsigned Cwt::

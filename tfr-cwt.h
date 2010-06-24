@@ -39,6 +39,8 @@ public:
     unsigned  nScales(unsigned FS) { return (unsigned)(number_of_octaves(FS) * scales_per_octave()); }
     unsigned  scales_per_octave() const { return _scales_per_octave; }
     void      scales_per_octave( unsigned );
+    float     tf_resolution() const { return _tf_resolution; }
+    void      tf_resolution( float );
 
     /**
       wavelet_std_t is the size of overlapping required in the windowed cwt, measured in time units (i.e seconds).
@@ -67,6 +69,7 @@ private:
     cudaStream_t    _stream;
     float           _min_hz;
     float           _scales_per_octave;
+    float           _tf_resolution;
     CufftHandleContext _fft_many;
 
     /**

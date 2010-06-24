@@ -115,6 +115,7 @@ protected slots:
     virtual void receiveSetGrayscaleColors();
     virtual void receiveSetHeightlines( bool value );
     virtual void receiveSetYScale( int value );
+    virtual void receiveSetTimeFrequencyResolution( int value );
 
     virtual void receivePlaySound();
     virtual void receiveFollowPlayMarker( bool v );
@@ -168,9 +169,9 @@ private:
     std::map<void*, ListCounter> _chunkGlList;
     
     QTimer *_timer;
+    double _qx, _qy, _qz;
     float _px, _py, _pz,
 		_rx, _ry, _rz,
-		_qx, _qy, _qz,
                 _prevLimit,
                 _playbackMarker;
     int _prevX, _prevY, _targetQ;

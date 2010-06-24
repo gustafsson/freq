@@ -218,13 +218,23 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
 
     {   QSlider * qs = new QSlider();
         qs->setOrientation( Qt::Horizontal );
-        qs->setValue( 10 );
+        qs->setValue( 50 );
+        qs->setToolTip( "Intensity level" );
         connect(qs, SIGNAL(valueChanged(int)), d, SLOT(receiveSetYScale(int)));
 
+        ui->toolBarPlay->addWidget( qs );
+    }
+
+    {   QSlider * qs = new QSlider();
+        qs->setOrientation( Qt::Horizontal );
+        qs->setValue( 50 );
+        qs->setToolTip( "Time/frequency resolution. If set higher than the middle, the audio reconstruction will be incorrect." );
+        connect(qs, SIGNAL(valueChanged(int)), d, SLOT(receiveSetTimeFrequencyResolution(int)));
 
         ui->toolBarPlay->addWidget( qs );
-
     }
+
+
     ui->actionActivateNavigation->setChecked(true);
 
     updateOperationsTree( d->worker()->source() );

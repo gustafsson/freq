@@ -194,9 +194,9 @@ DisplayWidget::
   _postsinkCallback( new Signal::WorkerCallback( worker, Signal::pSink(new Signal::PostSink)) ),
   _work_timer( new TaskTimer("Benchmarking first work")),
   _follow_play_marker( false ),
+  _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
-  _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
   _playbackMarker(-1),
   _prevX(0), _prevY(0), _targetQ(0),
   _selectionActive(true),
@@ -304,16 +304,23 @@ void DisplayWidget::
 void DisplayWidget::
         receiveSetHeightlines( bool value )
 {
-    TaskTimer("was _renderer->draw_height_lines = %d", _renderer->draw_height_lines).suppressTiming();
     _renderer->draw_height_lines = value;
-    TaskTimer("now _renderer->draw_height_lines = %d", _renderer->draw_height_lines).suppressTiming();
     update();
 }
 
 void DisplayWidget::
         receiveSetYScale( int value )
 {
-    _renderer->y_scale = value / 10.f;
+    float f = value / 50.f - 1.f;
+    _renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
+    update();
+}
+
+void DisplayWidget::
+        receiveSetTimeFrequencyResolution( int value )
+{
+    Tfr::CwtSingleton::instance()->tf_resolution( exp( 4*(value / 50.f - 1.f)) );
+    _renderer->collection()->add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
     update();
 }
 
@@ -1115,7 +1122,7 @@ void DisplayWidget::paintGL()
     // Set up camera position
     bool followingRecordMarker = false;
     float length = _worker->source()->length();
-    {   float limit = std::max(0.f, length - 2*Tfr::CwtSingleton::instance()->wavelet_std_t());
+    {   double limit = std::max(0.f, length - 2*Tfr::CwtSingleton::instance()->wavelet_std_t());
         if (_qx>=_prevLimit) {
             // Snap just before end so that _worker->center starts working on
             // data that has been fetched. If center=length worker will start
