@@ -371,7 +371,7 @@ void Renderer::beginVboRendering()
     GLuint uniYScale;
     uniYScale = glGetUniformLocation(_shader_prog, "yScale");
     glUniform1f(uniYScale, y_scale);
-    glScalef(1, y_scale, 1 );
+    //glScalef(1, y_scale, 1 );
 
     // end of uniform settings
 
@@ -839,8 +839,8 @@ void Renderer::drawAxes( float T )
         if (clippedFrustum.size())
         {
             st = 0, sf = 0;
-            while( powf(10, st) < ST*.5f ) st++;
-            while( powf(10, st) > ST*.5f ) st--;
+            while( powf(10, st) < ST*.53f ) st++;
+            while( powf(10, st) > ST*.53f ) st--;
             while( powf(10, sf) < SF*.5f ) sf++;
             while( powf(10, sf) > SF*.5f ) sf--;
 
@@ -928,8 +928,9 @@ void Renderer::drawAxes( float T )
                         glScalef(0.00012f*ST,0.00012f*SF,1.f);
                         char a[100];
                         char b[100];
-                        sprintf(b,"%%.%df", st<0?-1-st:0);
-                        sprintf(a, b, t*DT);
+                        sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
+                        int minutes = (int)(t*DT/60);
+                        sprintf(a, b, minutes,t*DT-60*minutes);
                         float w=0;
                         float letter_spacing=15;
 

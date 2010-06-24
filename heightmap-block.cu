@@ -109,8 +109,11 @@ __global__ void kernel_merge_chunk(
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
                 //readPos = inChunk.clamp(readPos);
                 if ( inChunk.valid(readPos) ) {
+                    float ff = t/(float)inChunk.getNumberOfElements().y;
+                    float if0 = 40.f/(2.0f + 35*ff*ff*ff);
+
                     float2 c = inChunk.elem(readPos);
-                    val = max(val, sqrt(c.x*c.x + c.y*c.y));
+                    val = max(val, if0*sqrt(if0*(c.x*c.x + c.y*c.y)));
 
  //outBlock.e( writePos ) = 4*val;
  //return;
