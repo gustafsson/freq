@@ -128,11 +128,9 @@ pBuffer Source::
 {
     pBuffer r = read(firstSample, numberOfSamples);
 
-    if (r->sample_offset > firstSample)
-        throw std::runtime_error("read didn't contain firstSample, r->sample_offset > firstSample");
-
-    if (r->sample_offset + r->number_of_samples() <= firstSample)
-        throw std::runtime_error("read didn't contain firstSample, r->sample_offset + r->number_of_samples() <= firstSample");
+    // Check if read contains firstSample
+    BOOST_ASSERT(r->sample_offset <= firstSample);
+	BOOST_ASSERT(r->sample_offset + r->number_of_samples() > firstSample);
 
     return r;
 }

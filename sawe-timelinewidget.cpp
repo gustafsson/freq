@@ -19,7 +19,7 @@ TimelineWidget::
 :   QGLWidget( 0, dynamic_cast<QGLWidget*>(displayWidget.get()), Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
-    _barHeight( 0.1 ),
+    _barHeight( 0.1f ),
     _movingTimeline( 0 ),
     _displayWidget(displayWidget)
 {
@@ -215,7 +215,7 @@ void TimelineWidget::
     setupCamera();
 
     int x = e->x(), y = height() - e->y();
-    float ps = 0.0005;
+    float ps = 0.0005f;
 
     GLvector current;
     moveButton.spacePos(x, y, current[0], current[1]);

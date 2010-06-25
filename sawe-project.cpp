@@ -51,7 +51,7 @@ pProject Project::
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
         filter += Signal::getFileFormatsQtFilter( true ).c_str();
 
-        QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromStdString(filter));
+		QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilemame.length()) {
             // User pressed cancel
             return pProject();
@@ -72,7 +72,7 @@ pProject Project::
 
     QMessageBox::warning( 0,
                  QString("Can't open file"),
-                 QString::fromStdString(err) );
+				 QString::fromLocal8Bit(err.c_str()) );
     return pProject();
 }
 
@@ -118,8 +118,8 @@ void Project::
     string title = Sawe::Application::version_string();
     Signal::Audiofile* af;
     if (0 != (af = dynamic_cast<Signal::Audiofile*>(head_source.get()))) {
-        QFileInfo info( QString::fromStdString( af->filename() ));
-        title = info.baseName().toStdString() + " - Sonic AWE";
+		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
+        title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
     }
 
     _mainWindow.reset( new MainWindow( title.c_str()));

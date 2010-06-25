@@ -66,7 +66,7 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 50;
-static float _wavelet_std_t = 0.04;
+static float _wavelet_std_t = 0.04f;
 static unsigned _samples_per_chunk = 1;
 //static float _wavelet_std_t = 0.03;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
@@ -234,7 +234,7 @@ bool check_cuda() {
 
     QMessageBox::critical( 0,
                  "Couldn't find CUDA, cannot start Sonic AWE",
-                 QString::fromStdString(ss.str()) );
+				 QString::fromLocal8Bit(ss.str().c_str()) );
 
     return false;
 }
