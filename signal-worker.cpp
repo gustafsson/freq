@@ -22,8 +22,8 @@ Worker::
     _samples_per_chunk( 1<<12 ),
     _max_samples_per_chunk( 1<<16 ),
     _requested_fps( 20 ),
-	_caught_exception( "" ),
-	_caught_invalid_argument("")
+    _caught_exception( "" ),
+    _caught_invalid_argument("")
 {
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
@@ -198,8 +198,8 @@ void Worker::
 	}
 	
 	if (_caught_exception.what() && 0 != *_caught_exception.what()) {
-		exception x = _caught_exception;
-		_caught_exception = exception("");
+                runtime_error x = _caught_exception;
+                _caught_exception = runtime_error("");
 		throw x;
 	}
 }
@@ -220,7 +220,7 @@ void Worker::
 				_caught_invalid_argument = x;
 		} catch ( const std::exception& x ) {
 			if (0 == _caught_exception.what())
-				_caught_exception = x;
+                                _caught_exception = runtime_error(x.what());
 		} catch ( ... ) {
 			if (0 == _caught_exception.what())
 				_caught_exception = std::runtime_error("Unknown exception");
@@ -231,7 +231,7 @@ void Worker::
             QMutexLocker l(&_todo_lock);
 			_todo_condition.wait( &_todo_lock );}
 		} catch ( const std::exception& x ) {
-			_caught_exception = x;
+                        _caught_exception = runtime_error(x.what());
 			return;
 		}
 	}

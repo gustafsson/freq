@@ -230,7 +230,7 @@ private:
 	/**
 	  If an exception is caught while executing Worker::run, caught_exception.what() is non-zero.
 	  */
-	std::exception _caught_exception;
+        std::runtime_error _caught_exception;
 	std::invalid_argument _caught_invalid_argument;
 };
 typedef boost::shared_ptr<Worker> pWorker;
