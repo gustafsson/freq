@@ -603,6 +603,7 @@ void DisplayWidget::
 
     _matlaboperation.reset( new Sawe::MatlabOperation( read, "matlaboperation") );
     b->source( _matlaboperation );
+    _worker->start();
     setWorkerSource();
     update();
     _renderer->collection()->add_expected_samples(Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL);
@@ -1200,7 +1201,9 @@ void DisplayWidget::paintGL()
             } else {
                 //_worker->todo_list().print("Work to do");
                 // Wait a bit while the other thread work
-                QTimer::singleShot(1.f/30, this, SLOT(update()));
+                QTimer::singleShot(200, this, SLOT(update()));
+
+				_worker->checkForErrors();
             }
 
             if (!_work_timer.get())

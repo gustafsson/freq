@@ -30,7 +30,10 @@ void MatlabFilter::
 
     file = _matlab.invokeAndWait( file );
 
-    Tfr::pChunk pc = Hdf5Sink::loadChunk( file );
+	if (file.empty())
+		return;
+
+	Tfr::pChunk pc = Hdf5Sink::loadChunk( file );
     c.transform_data.swap( pc->transform_data );
 
     ::remove( file.c_str());

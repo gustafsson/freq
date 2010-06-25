@@ -16,12 +16,12 @@ namespace Tfr {
 
 Cwt::
         Cwt( float scales_per_octave, float wavelet_std_t, cudaStream_t stream )
-:   _fft( stream ),
+:   _fft( /*stream*/ ),
     _stream( stream ),
     _min_hz( 20 ),
     _scales_per_octave( scales_per_octave ),
     _tf_resolution( 1 ),
-    _fft_many(stream),
+//    _fft_many(stream),
     _wavelet_std_t( wavelet_std_t )
 {
 }
@@ -92,6 +92,7 @@ pChunk Cwt::
 
             cufftComplex *d = g->getCudaGlobal().ptr();
 
+			CufftHandleContext _fft_many;
             CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
 
             TIME_CWT CudaException_ThreadSynchronize();
@@ -128,7 +129,7 @@ float Cwt::
 }
 
 void Cwt::
-        scales_per_octave( unsigned value)
+        scales_per_octave( float value)
 {
     if (value==_scales_per_octave) return;
 

@@ -47,6 +47,9 @@ private:
     MatlabFunction( const MatlabFunction& );
     MatlabFunction& operator=(const MatlabFunction&);
 
+	void kill();
+	void abort();
+
     void* _pid;
     std::string _dataFile;
     std::string _resultFile;

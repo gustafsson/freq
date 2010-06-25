@@ -37,8 +37,8 @@ public:
     float     max_hz(unsigned sample_rate) const { return sample_rate/2.f; }
     float     number_of_octaves( unsigned sample_rate ) const;
     unsigned  nScales(unsigned FS) { return (unsigned)(number_of_octaves(FS) * scales_per_octave()); }
-    unsigned  scales_per_octave() const { return _scales_per_octave; }
-    void      scales_per_octave( unsigned );
+    float	  scales_per_octave() const { return _scales_per_octave; }
+    void      scales_per_octave( float );
     float     tf_resolution() const { return _tf_resolution; }
     void      tf_resolution( float );
 
@@ -70,7 +70,7 @@ private:
     float           _min_hz;
     float           _scales_per_octave;
     float           _tf_resolution;
-    CufftHandleContext _fft_many;
+//    CufftHandleContext _fft_many;
 
     /**
       Default value: wavelet_std_samples=0.03.

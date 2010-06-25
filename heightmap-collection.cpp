@@ -58,9 +58,12 @@ Collection::
 void Collection::
         reset()
 {
-    _cache.clear();
-    QMutexLocker l(&_updates_mutex);
-    _updates.clear();
+	{	QMutexLocker l(&_cache_mutex);
+		_cache.clear();
+	}
+	{	QMutexLocker l(&_updates_mutex);
+		_updates.clear();
+	}
 }
 
 void Collection::
@@ -109,9 +112,9 @@ void Collection::
             QMutexLocker l(&_updates_mutex);
             _updates.push_back( cpuChunk );
             cpuChunk.reset(); // release cpuChunk before applyUpdate have move data to GPU
-        }
-
-        _updates_condition.wait(&_updates_mutex);
+	
+			_updates_condition.wait(&_updates_mutex);
+		}
     }
 }
 
@@ -119,6 +122,7 @@ void Collection::
 void Collection::
 scales_per_block(unsigned v)
 {
+	QMutexLocker l(&_cache_mutex);
     _cache.clear();
     _scales_per_block=v;
 }
@@ -126,6 +130,7 @@ scales_per_block(unsigned v)
 void Collection::
 samples_per_block(unsigned v)
 {
+	QMutexLocker l(&_cache_mutex);
     _cache.clear();
     _samples_per_block=v;
 }
@@ -137,9 +142,11 @@ unsigned Collection::
     _unfinished_count = 0;
     _frame_counter++;
 
-    BOOST_FOREACH( pBlock& b, _cache ) {
-        b->glblock->unmap();
-    }
+	{   QMutexLocker l(&_cache_mutex);
+		BOOST_FOREACH( pBlock& b, _cache ) {
+			b->glblock->unmap();
+		}
+	}
 
     applyUpdates();
     return t;
@@ -242,13 +249,15 @@ pBlock Collection::
 {
     // Look among cached blocks for this reference
     pBlock block;
-    BOOST_FOREACH( pBlock& b, _cache ) {
-        if (b->ref == ref) {
-            block = b;
+	{   QMutexLocker l(&_cache_mutex);
+		BOOST_FOREACH( pBlock& b, _cache ) {
+			if (b->ref == ref) {
+				block = b;
 
-            break;
-        }
-    }
+				break;
+			}
+		}
+	}
 
     if (0 == block.get()) {
         block = createBlock( ref );
@@ -269,6 +278,7 @@ pBlock Collection::
 void Collection::
         gc()
 {
+	QMutexLocker l(&_cache_mutex);
     for (std::vector<pBlock>::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
         if ((*itr)->frame_number_last_used < _frame_counter) {
@@ -288,6 +298,7 @@ void Collection::
 {
     TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
 
+	QMutexLocker l(&_cache_mutex);
     BOOST_FOREACH( pBlock& b, _cache )
     {
         b->valid_samples -= sid;
@@ -299,6 +310,7 @@ Signal::SamplesIntervalDescriptor Collection::
 {
     Signal::SamplesIntervalDescriptor r;
 
+	QMutexLocker l(&_cache_mutex);
     BOOST_FOREACH( pBlock& b, _cache )
     {
         if (_frame_counter == b->frame_number_last_used)
@@ -368,6 +380,7 @@ createBlock( Reference ref )
     // Try to allocate a new block
     pBlock block = attempt( ref );
 
+	QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
     if ( 0 == block.get() && !_cache.empty()) {
         TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Overwriting some older block", a.time, b.time);
         gc();
@@ -580,6 +593,7 @@ void Collection::
     {
         // Keep the lock while updating as a means to prevent more memory from being allocated
         QMutexLocker l(&_updates_mutex);
+		QMutexLocker l2(&_cache_mutex);
 
         BOOST_FOREACH( Tfr::pChunk& chunk, _updates )
         {

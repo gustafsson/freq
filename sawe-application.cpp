@@ -28,7 +28,7 @@ static void show_fatal_exception_qt( const std::string& str )
 {
     QMessageBox::critical( 0,
                  QString("Fatal error. Sonic AWE needs to close"),
-                 QString::fromStdString(str) );
+				 QString::fromLocal8Bit(str.c_str()) );
 }
 
 static void show_fatal_exception( const std::string& str )
@@ -116,6 +116,15 @@ bool Application::
 
     try {
         v = QApplication::notify(receiver,e);
+	} catch (const std::invalid_argument &x) {
+		if (1 == QMessageBox::warning( 0,
+					 QString("Sonic AWE couldn't complete the requested action"),
+					 QString("Sonic AWE couldn't complete the requested action.\nDetails on the error follow:\n\n")+
+					 QString::fromLocal8Bit(x.what()),
+					 "Ignore", "Exit Sonic AWE", QString::null, 0, 0 ))
+		{
+			err = fatal_exception_string(x);
+		}
     } catch (const exception &x) {
         err = fatal_exception_string(x);
     } catch (...) {
