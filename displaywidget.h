@@ -28,8 +28,8 @@ public:
     float deltaX( float x );
     float deltaY( float y );
     
-    bool worldPos(GLdouble &ox, GLdouble &oy);
-    static bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy);
+    bool worldPos(GLdouble &ox, GLdouble &oy, float scale);
+    static bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale);
     /**
       worldPos projects space coordinates onto the xz-plane. spacePos simple returns the space pos.
       */
@@ -109,6 +109,7 @@ protected slots:
     
     virtual void receiveToggleSelection(bool);
     virtual void receiveToggleNavigation(bool);
+    virtual void receiveToggleInfoTool(bool);
     virtual void receiveTogglePiano(bool);
 
     virtual void receiveSetRainbowColors();
@@ -136,7 +137,8 @@ signals:
     void filterChainUpdated( Tfr::pFilter f );
     void setSelectionActive(bool);
     void setNavigationActive(bool);
-    
+    void setInfoToolActive(bool);
+
 private:
     friend class Heightmap::Renderer;
 
@@ -175,7 +177,7 @@ private:
                 _prevLimit,
                 _playbackMarker;
     int _prevX, _prevY, _targetQ;
-    bool _selectionActive, _navigationActive;
+    bool _selectionActive, _navigationActive, _infoToolActive;
     QMutex _invalidRangeMutex;
     Signal::SamplesIntervalDescriptor _invalidRange;
 
@@ -212,10 +214,11 @@ private:
     bool insideCircle( float x1, float z1 );
     
 
-    MouseControl leftButton;
-    MouseControl rightButton;
-    MouseControl middleButton;
+//    MouseControl leftButton;
+//    MouseControl rightButton;
+//    MouseControl middleButton;
     MouseControl selectionButton;
+    MouseControl infoToolButton;
     MouseControl moveButton;
     MouseControl rotateButton;
     MouseControl scaleButton;

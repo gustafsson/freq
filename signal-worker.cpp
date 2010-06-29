@@ -70,8 +70,6 @@ bool Worker::
             _todo_list -= b->getInterval();
         }
 
-		int L = b->number_of_samples();
-
         {   stringstream ss;
             TIME_WORKER TaskTimer tt("Calling callbacks %s", ((std::stringstream&)(ss<<b->getInterval())).str().c_str() );
 

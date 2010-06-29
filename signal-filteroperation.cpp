@@ -139,8 +139,21 @@ pBuffer FilterOperation::
             continue;
         }
 
-        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
-                             cwt->wavelet_std_t(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
+        // Try to decrease tf_resolution
+        if (cwt->tf_resolution() > 1)
+            cwt->tf_resolution(1/0.8f);
+
+        if (cwt->tf_resolution() > exp(-2.f ))
+        {
+            cwt->tf_resolution( cwt->tf_resolution()*0.8f );
+            float std_t = cwt->morlet_std_t(0, sample_rate());
+            cwt->wavelet_std_t( std_t );
+
+            TaskTimer("FilterOperation reducing tf_resolution to %g\n%s", cwt->tf_resolution(), x.what() ).suppressTiming();
+            continue;
+        }
+        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g, tf_resolution=%g' yields a chunk size of %u MB.\n\n%s)",
+                             cwt->wavelet_std_t(), cwt->tf_resolution(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     } catch (const CudaException &x) {
         if (cudaErrorMemoryAllocation != x.getCudaError() )
             throw;
@@ -154,8 +167,22 @@ pBuffer FilterOperation::
             continue;
         }
 
-        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g' yields a chunk size of %u MB.\n\n%s)",
-                             cwt->wavelet_std_t(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
+        // Try to decrease tf_resolution
+        if (cwt->tf_resolution() > 1)
+            cwt->tf_resolution(1/0.8f);
+
+        if (cwt->tf_resolution() > exp(-2.f ))
+        {
+            cwt->tf_resolution( cwt->tf_resolution()*0.8f );
+            float std_t = cwt->morlet_std_t(0, sample_rate());
+            cwt->wavelet_std_t( std_t );
+
+            TaskTimer("FilterOperation reducing tf_resolution to %g\n%s", cwt->tf_resolution(), x.what() ).suppressTiming();
+            continue;
+        }
+
+        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g, tf_resolution=%g' yields a chunk size of %u MB.\n\n%s)",
+                             cwt->wavelet_std_t(), cwt->tf_resolution(), cwt->wavelet_std_samples(sample_rate())*cwt->nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
     }
 
     _save_previous_chunk = false;

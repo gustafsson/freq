@@ -99,6 +99,7 @@
    </attribute>
    <addaction name="actionZoom"/>
    <addaction name="actionActivateNavigation"/>
+   <addaction name="actionActivateInfoTool"/>
   </widget>
   <widget class="QDockWidget" name="toolPropertiesWindow">
    <property name="enabled">
@@ -781,9 +782,6 @@
    <property name="toolTip">
     <string>Toggle the time control tool box</string>
    </property>
-   <property name="shortcut">
-    <string>I</string>
-   </property>
   </action>
   <action name="actionNew_recording">
    <property name="enabled">
@@ -1384,6 +1382,30 @@
    </property>
    <property name="toolTip">
     <string>Heightlines</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionActivateInfoTool">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Get info</string>
+   </property>
+   <property name="toolTip">
+    <string>Get info</string>
+   </property>
+   <property name="shortcut">
+    <string>I</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

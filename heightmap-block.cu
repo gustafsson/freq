@@ -93,7 +93,9 @@ __global__ void kernel_merge_chunk(
     if (writePos.x>=out_offset)
     {
         // TODO xs should depend on hz
-        float xs = resample_width/10;
+        float ff = writePos.y/((float)outBlock.getNumberOfElements().y - 1);
+
+        float xs = 2.f/(ff*ff);//resample_width/10;
         if (1>xs) xs=1;
         for (float x = 0; x < resample_width; x+=xs)
         {
@@ -107,7 +109,7 @@ __global__ void kernel_merge_chunk(
                 float t = y + resample_height*writePos.y;
 
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
-                //readPos = inChunk.clamp(readPos);
+                readPos = inChunk.clamp(readPos);
                 if ( inChunk.valid(readPos) ) {
                     float ff = t/(float)inChunk.getNumberOfElements().y;
                     float if0 = 40.f/(2.0f + 35*ff*ff*ff);
@@ -394,8 +396,9 @@ __global__ void kernel_expand_complete_stft(
         const float f0 = 2.0f + 35*ff*ff*ff;
         val*=f0;
 
-        float if0 = 40.f/(2.0f + 35*ff*ff*ff);
-        val*=if0*sqrt(if0);
+        //float if0 = 40.f/(2.0f + 35*ff*ff*ff);
+        //val*=if0*sqrt(if0);
+        val*=9.f;
     }
 
     val /= in_stft_size;

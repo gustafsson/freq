@@ -383,7 +383,9 @@ createBlock( Reference ref )
 	QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
     if ( 0 == block.get() && !_cache.empty()) {
         TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Overwriting some older block", a.time, b.time);
+        l.unlock();
         gc();
+        l.relock();
         block = attempt( ref );
     }
 

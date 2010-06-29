@@ -144,6 +144,74 @@ void Cwt::
     _tf_resolution = value;
 }
 
+float Cwt::
+        compute_frequency(float normalized_scale, unsigned FS ) const
+{
+    float start = min_hz();
+    float steplogsize = log(max_hz(FS))-log(min_hz());
+
+    float ff = normalized_scale;
+    float hz = start*exp(ff*steplogsize);
+    return hz;
+}
+
+float Cwt::
+        morlet_std_t( float normalized_scale, unsigned FS )
+{
+    float start = 1.f/min_hz();
+    float steplogsize = log(max_hz(FS))-log(min_hz());
+
+    float ff = normalized_scale;
+    float period = start*exp(-ff*steplogsize);
+
+    // Compute value of analytic FT of wavelet
+    float f0 = 2.0f + 35*ff*ff*ff;
+    f0 *= tf_resolution();
+    //const float pi = 3.141592654f;
+    //const float two_pi_f0 = 2.0f * pi * f0;
+    //const float multiplier = 1.8827925275534296252520792527491f;
+
+    period *= f0;
+
+    //float factor = 4*pi*(ff)*period-two_pi_f0;
+    // float basic = multiplier * exp(-0.5f*factor*factor);
+
+    //float m = jibberish_normalization*cufft_normalize*basic*f0/sqrt(tf_resolution);
+
+    // morlet time space:      const*exp(-.5t^2+i*freq*t)
+    // morlet frequency space: const*exp(-.5(freq-w)^2)
+    // w = two_pi_f0
+    // freq = factor + two_pi_f0
+//    return period;
+    return period;
+}
+
+float Cwt::
+        morlet_std_f( float normalized_scale, unsigned FS )
+{
+    float start = .5f*FS/min_hz();
+    float steplogsize = log(max_hz(FS))-log(min_hz());
+
+    float ff = normalized_scale;
+    float period = start*exp(-ff*steplogsize);
+
+    // Compute value of analytic FT of wavelet
+    float f0 = 2.0f + 35*ff*ff*ff;
+    f0 *= tf_resolution();
+    const float pi = 3.141592654f;
+    const float two_pi_f0 = 2.0f * pi * f0;
+    // const float multiplier = 1.8827925275534296252520792527491f;
+
+    period *= f0;
+
+    float freq = compute_frequency( normalized_scale, FS );
+    freq = (freq-min_hz())/(max_hz(FS)-min_hz());
+    float factor = 4*pi*(freq)*period-two_pi_f0;
+    // float basic = multiplier * exp(-0.5f*factor*factor);
+
+    return factor;//*(max_hz(FS)-min_hz());
+}
+
 unsigned Cwt::
         wavelet_std_samples( unsigned sample_rate ) const
 {

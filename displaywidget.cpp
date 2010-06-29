@@ -4,6 +4,7 @@
 #include <QTimer>
 #include <QTime>
 #include <QKeyEvent>
+#include <QToolTip>
 
 #include <QtGui/QFileDialog>
 #include <CudaException.h>
@@ -104,11 +105,11 @@ float MouseControl::deltaY( float y )
     return 0;
 }
 
-bool MouseControl::worldPos(GLdouble &ox, GLdouble &oy)
+bool MouseControl::worldPos(GLdouble &ox, GLdouble &oy, float scale)
 {
-    return worldPos(this->lastx, this->lasty, ox, oy);
+    return worldPos(this->lastx, this->lasty, ox, oy, scale);
 }
-bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
+bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale)
 {
     GLdouble s;
     bool test[2];
@@ -128,8 +129,8 @@ bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy)
     ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
     oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
 
-    float minAngle = 7;
-    if( s < 0 || world_coord[0][1]-world_coord[1][1] < sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
+    float minAngle = 3;
+    if( s < 0 || world_coord[0][1]-world_coord[1][1] < scale*sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
         return false;
     
     return test[0] && test[1];
@@ -201,6 +202,7 @@ DisplayWidget::
   _prevX(0), _prevY(0), _targetQ(0),
   _selectionActive(true),
   _navigationActive(false),
+  _infoToolActive(false),
   _enqueueGcDisplayList( false ),
   selecting(false)
 {
@@ -230,6 +232,8 @@ DisplayWidget::
     yscale = Yscale_LogLinear;
     //timeOut();
             
+    receiveSetTimeFrequencyResolution( 50 );
+
     if (_rx<0) _rx=0;
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
@@ -263,22 +267,38 @@ void DisplayWidget::receiveFilterRemoval(int index)
 
 void DisplayWidget::receiveToggleSelection(bool active)
 {
-    if(active && _selectionActive != active){
-        _navigationActive = false;
-        TaskTimer("Setting navigation false").suppressTiming();
-        emit setNavigationActive(false);
+    if (active) {
+        receiveToggleNavigation( false );
+        receiveToggleInfoTool( false );
+    } else if(!active) {
+        emit setSelectionActive( false );
     }
+
     _selectionActive = active;
 }
 
 void DisplayWidget::receiveToggleNavigation(bool active)
 {
-    if(active && _navigationActive != active){
-        _selectionActive = false;
-        TaskTimer("Setting selection false").suppressTiming();
-        emit setSelectionActive(false);
+    if (active) {
+        receiveToggleInfoTool( false );
+        receiveToggleSelection( false );
+    } else if(!active) {
+        emit setNavigationActive( false );
     }
+
     _navigationActive = active;
+}
+
+void DisplayWidget::receiveToggleInfoTool(bool active)
+{
+    if (active) {
+        receiveToggleNavigation( false );
+        receiveToggleSelection( false );
+    } else if(!active) {
+        emit setInfoToolActive( false );
+    }
+
+    _infoToolActive = active;
 }
 
 void DisplayWidget::receiveTogglePiano(bool active)
@@ -319,7 +339,14 @@ void DisplayWidget::
 void DisplayWidget::
         receiveSetTimeFrequencyResolution( int value )
 {
-    Tfr::CwtSingleton::instance()->tf_resolution( exp( 4*(value / 50.f - 1.f)) );
+    unsigned FS = _worker->source()->sample_rate();
+
+    Tfr::pCwt c = Tfr::CwtSingleton::instance();
+    c->tf_resolution( exp( 4*(value / 50.f - 1.f)) );
+
+    float std_t = c->morlet_std_t(0, FS);
+    c->wavelet_std_t( std_t );
+
     _renderer->collection()->add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
     update();
 }
@@ -788,36 +815,29 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
     }*/
     
     if(_navigationActive) {
-        switch ( e->button() )
-        {
-            case Qt::LeftButton:
-                moveButton.press( e->x(), this->height() - e->y() );
-                break;
+        if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
+            moveButton.press( e->x(), this->height() - e->y() );
 
-            case Qt::RightButton:
-                rotateButton.press( e->x(), this->height() - e->y() );
-                break;
-            default:
-                break;
-        }
-    }else if(_selectionActive)
+        if( (e->button() & Qt::RightButton) == Qt::RightButton)
+            rotateButton.press( e->x(), this->height() - e->y() );
+
+    } else if(_selectionActive)
     {
-        switch ( e->button() )
-        {
-            case Qt::LeftButton:
-                selectionButton.press( e->x(), this->height() - e->y() );
-                break;
-                
-            case Qt::RightButton:
-                scaleButton.press( e->x(), this->height() - e->y() );
-                break;
-            default:
-                break;
+        if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
+            selectionButton.press( e->x(), this->height() - e->y() );
+
+        if( (e->button() & Qt::RightButton) == Qt::RightButton)
+            scaleButton.press( e->x(), this->height() - e->y() );
+
+    } else if(_infoToolActive) {
+        if( (e->button() & Qt::LeftButton) == Qt::LeftButton) {
+            infoToolButton.press( e->x(), this->height() - e->y() );
+            mouseMoveEvent( e );
         }
     }
     
-    if(leftButton.isDown() && rightButton.isDown())
-        selectionButton.press( e->x(), this->height() - e->y() );
+//    if(leftButton.isDown() && rightButton.isDown())
+//        selectionButton.press( e->x(), this->height() - e->y() );
     
     update();
     _prevX = e->x(),
@@ -829,20 +849,21 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
     switch ( e->button() )
     {
         case Qt::LeftButton:
-            leftButton.release();
+            //leftButton.release();
             selectionButton.release();
             moveButton.release();
+            infoToolButton.release();
             //printf("LeftButton: Release\n");
             selecting = false;
             break;
             
         case Qt::MidButton:
-            middleButton.release();
+            //middleButton.release();
             //printf("MidButton: Release\n");
             break;
             
         case Qt::RightButton:
-            rightButton.release();
+            //rightButton.release();
             selectionButton.release();
             scaleButton.release();
             rotateButton.release();
@@ -874,6 +895,7 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
 	        _pz *= (1+ps * e->delta());
 
         if (_pz<-40) _pz = -40;
+        if (_pz>-.4) _pz = -.4;
         //_pz -= ps * e->delta();
         
         //_rx -= ps * e->delta();
@@ -894,7 +916,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     if ( selectionButton.isDown() )
     {
         GLdouble p[2];
-        if (selectionButton.worldPos(x, y, p[0], p[1]))
+        if (selectionButton.worldPos(x, y, p[0], p[1], xscale))
         {
             if (!selecting) {
                 selection[0].x = selection[1].x = selectionStart.x = p[0];
@@ -914,7 +936,10 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
                 getPostSink()->filter( Tfr::pFilter( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z, true )), _worker->source() );
             }
         }
-    } 
+    }
+    if (scaleButton.isDown()) {
+        // TODO scale selection
+    }
     if( rotateButton.isDown() ){
         //Controlling the rotation with the left button.
         _ry += (1-orthoview)*rs * rotateButton.deltaX( x );
@@ -929,8 +954,8 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
     {
         //Controlling the position with the right button.
         GLvector last, current;
-        if( moveButton.worldPos(last[0], last[1]) &&
-            moveButton.worldPos(x, y, current[0], current[1]) )
+        if( moveButton.worldPos(last[0], last[1], xscale) &&
+            moveButton.worldPos(x, y, current[0], current[1], xscale) )
         {
             float l = _worker->source()->length();
             
@@ -943,16 +968,39 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
             if (_qx>l) _qx=l;
         }
     }
-    
+
+    if (infoToolButton.isDown())
+    {
+        GLvector current;
+        if( infoToolButton.worldPos(x, y, current[0], current[1], xscale) )
+        {
+            const Tfr::pCwt c = Tfr::CwtSingleton::instance();
+            unsigned FS = _worker->source()->sample_rate();
+            float t = ((unsigned)(current[0]*FS+.5f))/(float)FS;
+            current[1] = ((unsigned)(current[1]*c->nScales(FS)+.5f))/(float)c->nScales(FS);
+            float f = c->compute_frequency( current[1], FS );
+            float std_t = c->morlet_std_t(current[1], FS);
+            float std_f = c->morlet_std_f(current[1], FS);
+
+            stringstream ss;
+            ss << setiosflags(ios::fixed)
+               << "Time: " << setprecision(3) << t << " s" << endl
+               << "Frequency: " << setprecision(1) << f << " Hz" << endl
+               << "Standard deviation: " << setprecision(3) << std_t << " s, " << setprecision(1) << std_f << " Hz";
+            QToolTip::showText( e->globalPos(), QString::fromLocal8Bit("..."), this ); // Force tooltip to change position even if the text is the same as in previous tooltip
+            QToolTip::showText( e->globalPos(), QString::fromLocal8Bit(ss.str().c_str()), this );
+        }
+    }
     
     //Updating the buttons
-    leftButton.update( x, y );
-    rightButton.update( x, y );
-    middleButton.update( x, y );
+    //leftButton.update( x, y );
+    //rightButton.update( x, y );
+    //middleButton.update( x, y );
     selectionButton.update( x, y );
     moveButton.update(x, y);
     rotateButton.update(x, y);
     scaleButton.update(x, y);
+    infoToolButton.update(x, y);
     
     worker()->requested_fps(30);
     update();

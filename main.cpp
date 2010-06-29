@@ -38,7 +38,6 @@ static const char _sawe_usage_string[] =
 "                       2^samples_per_chunk.\n"
 "    scales_per_octave  Accuracy of transform, higher accuracy takes more time\n"
 "                       to compute.\n"
-"    wavelet_std_t      Transform chunks overlap this much, given in seconds.\n"
 "    samples_per_block  The transform chunks are downsampled to blocks for\n"
 "                       rendering, this gives the number of samples per block.\n"
 "    scales_per_block   Number of scales per block, se samples_per_block.\n"
@@ -53,6 +52,8 @@ static const char _sawe_usage_string[] =
 "    get_hdf            Saves the given chunk number into sawe.h5 which \n"
 "                       then can be read by matlab or octave.\n"
 "    get_chunk_count    Sonic AWE prints number of chunks needed and then exits.\n"
+"    wavelet_std_t      Transform chunks used when computing get_* overlap this\n"
+"                       much, given in seconds.\n"
 "    record             Starts Sonic AWE starts in record mode. [default]\n"
 "    record_device      Selects a specific device for recording. -1 specifices\n"
 "                       the default input device/microphone.\n"
@@ -66,7 +67,7 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 50;
-static float _wavelet_std_t = 0.04f;
+static float _wavelet_std_t = 0.06f;
 static unsigned _samples_per_chunk = 1;
 //static float _wavelet_std_t = 0.03;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
