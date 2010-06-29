@@ -104,7 +104,9 @@ float Playback::
     float t = dt;
     t += _data.first_buffer()->sample_offset / (float)sample_rate();
     t -= 0.08f;
+#ifdef _WIN32
     t -= outputLatency();
+#endif
     return std::max(0.f, t);
 }
 

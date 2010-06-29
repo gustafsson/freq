@@ -345,7 +345,7 @@ void DisplayWidget::
     c->tf_resolution( exp( 4*(value / 50.f - 1.f)) );
 
     float std_t = c->morlet_std_t(0, FS);
-    c->wavelet_std_t( std_t );
+    c->wavelet_std_t( 1.5f * std_t ); // One standard deviation is not enough, but heavy. Two standard deviations are even more heavy.
 
     _renderer->collection()->add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
     update();
@@ -1259,7 +1259,9 @@ void DisplayWidget::paintGL()
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
-                _work_timer->info("Finished %u chunks. Work session #%u", _worker->work_chunks, workcount);
+                _work_timer->info("Finished %u chunks, %g s. Work session #%u", _worker->work_chunks, _worker->work_time, workcount);
+                _worker->work_chunks = 0;
+                _worker->work_time = 0;
                 workcount++;
                 _work_timer.reset();
             }

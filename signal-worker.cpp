@@ -18,6 +18,7 @@ namespace Signal {
 Worker::
         Worker(Signal::pSource s)
 :   work_chunks(0),
+    work_time(0),
     _source(s),
     _samples_per_chunk( 1<<12 ),
     _max_samples_per_chunk( 1<<16 ),
@@ -66,6 +67,7 @@ bool Worker::
             TIME_WORKER TaskTimer tt("Reading source %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
 
             b = _source->readFixedLength( interval.first, interval.last-interval.first );
+            work_time += b->length();
             QMutexLocker l(&_todo_lock);
             _todo_list -= b->getInterval();
         }

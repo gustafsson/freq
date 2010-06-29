@@ -124,6 +124,11 @@ public:
     unsigned work_chunks;
 
     /**
+      work_time is incremented each time workOne is invoked.
+      */
+    float work_time;
+
+    /**
       The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
