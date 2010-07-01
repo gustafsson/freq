@@ -89,9 +89,9 @@ void Hdf5Output::
 {
     TIME_HDF5 TaskTimer tt("Adding buffer '%s'", name.c_str());
 
-    Signal::pBuffer data;
+	Signal::pBuffer data;
     const Signal::Buffer* b = &cb;
-    if (b->interleaved()==Signal::Buffer::Interleaved_Complex) {
+	if (b->interleaved()==Signal::Buffer::Interleaved_Complex) {
         data = b->getInterleaved(Signal::Buffer::Only_Real);
         b = &*data;
     }
@@ -102,7 +102,7 @@ void Hdf5Output::
     const unsigned RANK=1;
     hsize_t     dims[RANK]={s.width};
 
-    herr_t      status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_FLOAT,p);
+	herr_t      status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_FLOAT,p);
     if (0>status) throw runtime_error("Could not create and write a H5T_NATIVE_FLOAT type dataset named '" + name + "'");
 }
 

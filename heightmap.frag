@@ -2,6 +2,7 @@
 varying vec3 eyeSpacePos;
 varying vec3 worldSpaceNormal;
 varying vec3 eyeSpaceNormal;
+varying float vertex_height;
 /*
 uniform vec4 deepColor;    // = vec4(0.0, 0.0, 0.1, 1.0);
 uniform vec4 shallowColor; // = vec4(0.1, 0.4, 0.3, 1.0);
@@ -9,6 +10,9 @@ uniform vec4 skyColor;     // = vec4(0.5, 0.5, 0.5, 1.0);
 uniform vec3 lightDir;     // = vec3(0.0, 1.0, 0.0);
 */
 uniform sampler2D tex;
+uniform int colorMode;
+uniform int heightLines;
+uniform float yScale;
 
 vec4 setWavelengthColor( float wavelengthScalar ) {
     vec4 spectrum[7];
@@ -68,6 +72,9 @@ void main()
     float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
     float diffuse   = max(0.0, worldSpaceNormalVector.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
     float v = texture2D(tex, gl_TexCoord[0].xy).x;
+
+    v *= yScale;
+
 //    float v=texPos.y;
     //float v = intensity;
 
@@ -82,14 +89,27 @@ void main()
 //    gl_FragColor = vec4(pow(1.0-v,5.0));
 //    gl_FragColor = setWavelengthColor( v );
     float f = 1.0-pow(1.0-clamp(v, 0.0, 1.0),5.0);
-    vec4 curveColor = setWavelengthColor( f );
-    float x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
+    vec4 curveColor;
+    float x;
 
-    curveColor = curveColor*((diffuse+facing+2.0)*.25); // + vec4(fresnel);
+    switch (colorMode) {
+        case 0: curveColor = setWavelengthColor( f );
+                x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
+                curveColor = curveColor*((diffuse+facing+2.0)*.25); // + vec4(fresnel);
+                curveColor = mix(vec4( 1,1,1,0), min(vec4(0.7),curveColor), x);
+        break;
+        case 1: f = 1-f;
+                curveColor = vec4( f, f, f, 0 );
+                x = 1-f;
+        break;
+    }
 
-    curveColor = mix(vec4( 1,1,1,0), min(vec4(0.7),curveColor), x);
+    if (0!=heightLines)
+    {
+        float heightLine = setHeightLineColor( log(vertex_height+ 0.000001f) );
+        curveColor = vec4(heightLine, heightLine, heightLine, 1) * curveColor;
+    }
+
     curveColor.w = 1.0; //-saturate(fresnel);
-    float heightLine = setHeightLineColor( f * 10.0 );
-//    gl_FragColor = vec4(heightLine, heightLine, heightLine, 1) * curveColor;
     gl_FragColor = curveColor;
 }

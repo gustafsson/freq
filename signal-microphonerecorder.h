@@ -20,7 +20,7 @@ public:
 
     virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     virtual unsigned sample_rate();
-    virtual unsigned number_of_samples();
+    virtual long unsigned number_of_samples();
 
     unsigned recording_itr() { return number_of_samples(); }
 

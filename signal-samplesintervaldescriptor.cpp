@@ -58,7 +58,7 @@ SamplesIntervalDescriptor::
 }
 
 SamplesIntervalDescriptor::
-        SamplesIntervalDescriptor(unsigned first, unsigned last)
+        SamplesIntervalDescriptor(SampleType first, SampleType last)
 {
     BOOST_ASSERT( first < last );
     Interval r = { first, last };

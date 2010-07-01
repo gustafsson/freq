@@ -205,6 +205,7 @@ void SinkSource::
 void SinkSource::
         reset()
 {
+    QMutexLocker l(&_cache_mutex);
     _cache.clear();
     _expected_samples = SamplesIntervalDescriptor();
 }
@@ -227,10 +228,10 @@ pBuffer SinkSource::
                 return s;
             }
         }
-    }
 
-    if (_cache.empty())
-		return pBuffer();
+		if (_cache.empty())
+			return pBuffer();
+    }
 
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
     pBuffer b( new Buffer(firstSample, numberOfSamples, sample_rate()));
@@ -248,7 +249,7 @@ unsigned SinkSource::
     return _cache.front()->sample_rate;
 }
 
-unsigned SinkSource::
+long unsigned SinkSource::
         number_of_samples()
 {
     unsigned n = 0;

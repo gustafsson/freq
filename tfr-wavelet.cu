@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "tfr-wavelet.cu.h"
 
-__global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float scales_per_octave, float steplogsize  );
+__global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float steplogsize, float scales_per_octave, float tf_resolution );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
 __global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
@@ -24,7 +24,7 @@ void setError(const char* staticErrorMessage) {
 #define TOSTR(x) #x
 #define setError(x) setError(TOSTR(__FUNCTION__) ": " x)
 
-void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem, float scales_per_octave, cudaStream_t stream )
+void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem, float scales_per_octave, float tf_resolution, cudaStream_t stream )
 {
     // in this scope, work on arrays of float* instead of float2* to coalesce better
     numElem.width *= 2;
@@ -41,13 +41,13 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleR
     }
 
 	// float scales_per_octave = numElem.height/((log(maxHz)/log(2.f)-(log(minHz)/log(2.f));
-    kernel_compute<<<grid, block, 0, stream>>>( (float*)in_waveform_ft, (float*)out_wavelet_ft, numElem, start, steplogsize, scales_per_octave );
+    kernel_compute<<<grid, block, 0, stream>>>( (float*)in_waveform_ft, (float*)out_wavelet_ft, numElem, start, steplogsize, scales_per_octave, tf_resolution );
 }
 
 __global__ void kernel_compute(
         float* in_waveform_ft,
         float* out_wavelet_ft,
-        cudaExtent numElem, float start, float steplogsize, float scales_per_octave )
+        cudaExtent numElem, float start, float steplogsize, float scales_per_octave, float tf_resolution )
 {
     // Element number
     const unsigned
@@ -74,7 +74,8 @@ __global__ void kernel_compute(
 
 
         // Compute value of analytic FT of wavelet
-        const float f0 = 2.0f + 35*ff*ff*ff;
+        float f0 = 2.0f + 35*ff*ff*ff;
+        f0 *= tf_resolution;
         const float pi = 3.141592654f;
         const float two_pi_f0 = 2.0f * pi * f0;
         const float multiplier = 1.8827925275534296252520792527491f;
@@ -85,7 +86,7 @@ __global__ void kernel_compute(
         float factor = 4*pi*y*period-two_pi_f0;
         float basic = multiplier * exp(-0.5f*factor*factor);
 
-        float m = jibberish_normalization*cufft_normalize*basic*f0;
+        float m = jibberish_normalization*cufft_normalize*basic*f0/sqrt(tf_resolution);
         //float m = cufft_normalize*basic*f0;
         //float m = basic*f0;
         out_wavelet_ft[offset + x] = m * waveform;

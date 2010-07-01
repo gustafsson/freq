@@ -129,7 +129,7 @@ GlBlock( Collection* collection )
     unsigned h = collection->scales_per_block();
     float* p = new float[w*h];
     memset(p, 0, sizeof(float)*w*h);
-    glTexImage2D(GL_TEXTURE_2D,0,1,w, h,0, GL_RED, GL_FLOAT, p);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_RED, GL_FLOAT, p);
     delete[]p;
 
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -143,7 +143,7 @@ GlBlock( Collection* collection )
 
     p = new float[w*h*2];
     memset(p, 0, sizeof(float)*w*h*2);
-    glTexImage2D(GL_TEXTURE_2D,0,2,w, h,0, GL_RG, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_ALPHA32F_ARB,w, h,0, GL_RG, GL_FLOAT, 0);
     delete[]p;
 
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);

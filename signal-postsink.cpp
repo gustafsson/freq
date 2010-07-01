@@ -111,7 +111,7 @@ void PostSink::
         SamplesIntervalDescriptor::Interval i =
                 (f->getTouchedSamples(FS) - f->getZeroSamples(FS)).coveredInterval();
 
-        i.last = std::min( i.last, s->number_of_samples() );
+        i.last = std::min( i.last, (SamplesIntervalDescriptor::SampleType)s->number_of_samples() );
 
         if (!i.valid())
             f.reset();

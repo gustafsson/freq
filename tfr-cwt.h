@@ -37,16 +37,25 @@ public:
     float     max_hz(unsigned sample_rate) const { return sample_rate/2.f; }
     float     number_of_octaves( unsigned sample_rate ) const;
     unsigned  nScales(unsigned FS) { return (unsigned)(number_of_octaves(FS) * scales_per_octave()); }
-    unsigned  scales_per_octave() const { return _scales_per_octave; }
-    void      scales_per_octave( unsigned );
+    float	  scales_per_octave() const { return _scales_per_octave; }
+    void      scales_per_octave( float );
+    float     tf_resolution() const { return _tf_resolution; }
+    void      tf_resolution( float );
+    float     compute_frequency(float normalized_scale, unsigned FS ) const;
 
     /**
       wavelet_std_t is the size of overlapping required in the windowed cwt, measured in time units (i.e seconds).
       Cwt does not use this parameter at all, but it is provided here so that clients can compute how much
-      overlap they need to provide to get a transform that is continous over window borders.
+      overlap they need to provide to get a transform that is approximately continous over window borders.
       */
     float     wavelet_std_t() const { return _wavelet_std_t; }
     void      wavelet_std_t( float value ) { _wavelet_std_t = value; }
+
+    /**
+      Computes the standard deviation in time and frequency using the tf_resolution value. For a given frequency.
+      */
+    float     morlet_std_t( float normalized_scale, unsigned sample_rate );
+    float     morlet_std_f( float normalized_scale, unsigned sample_rate );
 
     /**
       Provided so that clients can compute 'good' overlapping sizes. This gives the number of samples that
@@ -67,7 +76,8 @@ private:
     cudaStream_t    _stream;
     float           _min_hz;
     float           _scales_per_octave;
-    CufftHandleContext _fft_many;
+    float           _tf_resolution;
+//    CufftHandleContext _fft_many;
 
     /**
       Default value: wavelet_std_samples=0.03.

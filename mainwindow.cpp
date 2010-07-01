@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QKeyEvent>
+#include <QSlider>
 #include "displaywidget.h"
 #include <boost/foreach.hpp>
 #include <sstream>
@@ -113,6 +114,13 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     }
 
     {   QComboBoxAction * qb = new QComboBoxAction();
+        qb->decheckable( false );
+        qb->addActionItem( ui->actionSet_rainbow_colors );
+        qb->addActionItem( ui->actionSet_grayscale );
+        ui->toolBarPlay->addWidget( qb );
+    }
+
+    {   QComboBoxAction * qb = new QComboBoxAction();
         qb->addActionItem( ui->actionTransform_Cwt );
         qb->addActionItem( ui->actionTransform_Stft );
         qb->addActionItem( ui->actionTransform_Cwt_phase );
@@ -188,6 +196,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     
     connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(receiveToggleSelection(bool)));
     connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(receiveToggleNavigation(bool)));
+    connect(this->ui->actionActivateInfoTool, SIGNAL(toggled(bool)), d, SLOT(receiveToggleInfoTool(bool)));
     connect(this->ui->actionPlaySelection, SIGNAL(triggered()), d, SLOT(receivePlaySound()));
     connect(this->ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), d, SLOT(receiveFollowPlayMarker(bool)));
     connect(this->ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), d, SLOT(receiveTogglePiano(bool)));
@@ -204,6 +213,29 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(this->ui->actionRecord, SIGNAL(triggered(bool)), d, SLOT(receiveRecord(bool)));
     connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
+    connect(d, SIGNAL(setInfoToolActive(bool)), this->ui->actionActivateInfoTool, SLOT(setChecked(bool)));
+    connect(this->ui->actionSet_rainbow_colors, SIGNAL(triggered()), d, SLOT(receiveSetRainbowColors()));
+    connect(this->ui->actionSet_grayscale, SIGNAL(triggered()), d, SLOT(receiveSetGrayscaleColors()));
+    connect(this->ui->actionSet_heightlines, SIGNAL(toggled(bool)), d, SLOT(receiveSetHeightlines(bool)));
+
+    {   QSlider * qs = new QSlider();
+        qs->setOrientation( Qt::Horizontal );
+        qs->setValue( 50 );
+        qs->setToolTip( "Intensity level" );
+        connect(qs, SIGNAL(valueChanged(int)), d, SLOT(receiveSetYScale(int)));
+
+        ui->toolBarPlay->addWidget( qs );
+    }
+
+    {   QSlider * qs = new QSlider();
+        qs->setOrientation( Qt::Horizontal );
+        qs->setValue( 50 );
+        qs->setToolTip( "Time/frequency resolution. If set higher than the middle, the audio reconstruction will be incorrect." );
+        connect(qs, SIGNAL(valueChanged(int)), d, SLOT(receiveSetTimeFrequencyResolution(int)));
+
+        ui->toolBarPlay->addWidget( qs );
+    }
+
 
     ui->actionActivateNavigation->setChecked(true);
 
@@ -443,8 +475,8 @@ void updateOperationsTree( OperationGraph::vertex_descriptor v, OperationGraph& 
 
     const TitleAndTooltip& tat = graph[v];
     QTreeWidgetItem* child = new QTreeWidgetItem( 0 );
-    child->setText(0, QString::fromStdString( tat.title ));
-    child->setToolTip(0, QString::fromStdString( tat.tooltip ));
+    child->setText(0, QString::fromLocal8Bit( tat.title.c_str() ));
+    child->setToolTip(0, QString::fromLocal8Bit( tat.tooltip.c_str() ));
     child->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled );
     w->addChild( child );
 

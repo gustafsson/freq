@@ -15,7 +15,7 @@ sample_rate()
     return _source->sample_rate();
 }
 
-unsigned Operation::
+long unsigned Operation::
 number_of_samples()
 {
     return _source->number_of_samples();

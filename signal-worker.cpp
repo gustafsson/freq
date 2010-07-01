@@ -18,10 +18,13 @@ namespace Signal {
 Worker::
         Worker(Signal::pSource s)
 :   work_chunks(0),
+    work_time(0),
     _source(s),
     _samples_per_chunk( 1<<12 ),
     _max_samples_per_chunk( 1<<16 ),
-    _requested_fps( 20 )
+    _requested_fps( 20 ),
+    _caught_exception( "" ),
+    _caught_invalid_argument("")
 {
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
@@ -63,7 +66,8 @@ bool Worker::
             stringstream ss;
             TIME_WORKER TaskTimer tt("Reading source %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
 
-            b = _source->read( interval.first, interval.last-interval.first );
+            b = _source->readFixedLength( interval.first, interval.last-interval.first );
+            work_time += b->length();
             QMutexLocker l(&_todo_lock);
             _todo_list -= b->getInterval();
         }
@@ -100,7 +104,7 @@ bool Worker::
                     _samples_per_chunk, _source->sample_rate());
             TIME_WORKER TaskTimer("Low framerate (%.1f fps). Decreased samples per chunk to %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
         }
-        else if (current_fps > 2.5f*_requested_fps && _samples_per_chunk <= b->number_of_samples())
+        else if (current_fps > 2.5f*_requested_fps && _samples_per_chunk <= b->number_of_samples() && _samples_per_chunk < _max_samples_per_chunk)
         {
             _samples_per_chunk = Tfr::CwtSingleton::instance()->next_good_size(
                     _samples_per_chunk, _source->sample_rate());
@@ -111,7 +115,7 @@ bool Worker::
         }
 
         _requested_fps = 99*_requested_fps/100;
-        if (1>_requested_fps)_requested_fps=1;
+        //if (1>_requested_fps)_requested_fps=1;
     }
 
     return true;
@@ -185,19 +189,52 @@ void Worker::
 }
 
 void Worker::
+		checkForErrors()
+{
+	if (_caught_invalid_argument.what() && 0 != *_caught_invalid_argument.what()) {
+		invalid_argument x = _caught_invalid_argument;
+		_caught_invalid_argument = invalid_argument("");
+		throw x;
+	}
+	
+	if (_caught_exception.what() && 0 != *_caught_exception.what()) {
+                runtime_error x = _caught_exception;
+                _caught_exception = runtime_error("");
+		throw x;
+	}
+}
+
+void Worker::
         run()
 {
-    while (true)
-    {
-        while(!todo_list().isEmpty())
-        {
-            workOne();
-            msleep(1);
-        }
-        {   TIME_WORKER TaskTimer tt("Worker is waiting for more work to do");
-            _todo_condition.wait( &_todo_lock );
-        }
-    }
+	while (true)
+	{
+		try {
+			while(!todo_list().isEmpty())
+			{
+				workOne();
+				msleep(1);
+			}
+		} catch ( const std::invalid_argument& x ) {
+			if (0 == *_caught_invalid_argument.what())
+				_caught_invalid_argument = x;
+		} catch ( const std::exception& x ) {
+			if (0 == _caught_exception.what())
+                                _caught_exception = runtime_error(x.what());
+		} catch ( ... ) {
+			if (0 == _caught_exception.what())
+				_caught_exception = std::runtime_error("Unknown exception");
+		}
+
+		try {
+			{ TIME_WORKER TaskTimer tt("Worker is waiting for more work to do");
+            QMutexLocker l(&_todo_lock);
+			_todo_condition.wait( &_todo_lock );}
+		} catch ( const std::exception& x ) {
+                        _caught_exception = runtime_error(x.what());
+			return;
+		}
+	}
 }
 
 void Worker::

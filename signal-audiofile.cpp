@@ -279,6 +279,6 @@ pSource Audiofile::crop() {
 
 
 unsigned Audiofile::sample_rate() {          return _waveform->sample_rate;    }
-unsigned Audiofile::number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
+long unsigned Audiofile::number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
 
 } // namespace Signal

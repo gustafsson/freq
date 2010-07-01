@@ -42,30 +42,29 @@ MatlabFunction::
     }
 
     { // Start octave
-        stringstream ss;
-        ss << "filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
+        stringstream matlab_command, octave_command;
+        matlab_command << "filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
+        octave_command << "filewatcher_oct('" << _dataFile << "',@" << matlabFunction << ");";
 
 #ifdef __GNUC__
         _pid = (void*)fork();
 
         if(0==_pid)
         {
-            ::execlp("matlab","matlab", "-r", ss.str().c_str(), NULL );
+            ::execlp("matlab","matlab", "-r", matlab_command.str().c_str(), NULL );
             // apparently failed, try octave
-            ::execlp("octave","octave", "-qf", "--eval", ss.str().c_str(), NULL );
+            ::execlp("octave","octave", "-qf", "--eval", octave_command.str().c_str(), NULL );
             // failed that to... will eventually time out
             exit(0);
         }
 #elif defined(WIN32)
-		string statement = ss.str();
-
 		_pid = (void*)_spawnlp(_P_NOWAIT, "matlab", 
-			"matlab", "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash", "-r", statement.c_str(), NULL );
+                        "matlab", "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash", "-r", matlab_command.str().c_str(), NULL );
 
 		if (0 == _pid)
 		{
 			// failed, try octave
-			_pid = (void*)_spawnlp(_P_NOWAIT, "octave","octave", "-qf", "--eval", ss.str().c_str(), NULL );
+            _pid = (void*)_spawnlp(_P_NOWAIT, "octave","octave", "-qf", "--eval", octave_command.str().c_str(), NULL );
 	        // will eventually time out if this fails to
 		}
 #else
@@ -77,18 +76,18 @@ MatlabFunction::
 MatlabFunction::
         ~MatlabFunction()
 {
-#ifdef __GNUC__
-        kill((pid_t)(unsigned long long)_pid, SIGINT);
-#elif defined(WIN32)
-	TerminateProcess((HANDLE)_pid, 0);
-#else
-#error No implementation
-#endif
+	kill();
 }
 
 std::string MatlabFunction::
         invokeAndWait( std::string source )
 {
+	if (0==_pid)
+	{
+	    TaskTimer tt("Matlab/octave failed, ignoring.");
+		return "";
+	}
+
     TaskTimer tt("Waiting for matlab/octave.");
 
 	remove(_resultFile.c_str());
@@ -111,7 +110,9 @@ std::string MatlabFunction::
 #endif
         time_duration d = second_clock::local_time()-start;
         if (timeout < d)
-            throw std::runtime_error("Timeout in MatlabFunction::invokeAndWait");
+		{
+            abort(); // throws
+		}
         if (d.total_seconds() > 3)
             tt.partlyDone();
     }
@@ -127,10 +128,33 @@ string MatlabFunction::
     return _dataFile + "~";
 }
 
+void MatlabFunction::
+		kill()
+{
+	if (_pid)
+	{
+		#ifdef __GNUC__
+			::kill((pid_t)(unsigned long long)_pid, SIGINT);
+		#elif defined(WIN32)
+			TerminateProcess((HANDLE)_pid, 0);
+		#else
+			#error No implementation
+		#endif
+		_pid = 0;
+	}
+}
+
+void MatlabFunction::
+		abort()
+{
+	kill();
+	throw std::invalid_argument("Timeout in MatlabFunction::invokeAndWait");
+}
+
 MatlabOperation::
         MatlabOperation( Signal::pSource source, std::string matlabFunction )
 :   OperationCache(source),
-    _matlab(matlabFunction, 10)
+    _matlab(matlabFunction, 4)
 {
 }
 
@@ -141,16 +165,19 @@ pBuffer MatlabOperation::
 
     pBuffer b = _source->read( firstSample, numberOfSamples );
 
-    string file = _matlab.getTempName();
+	string file = _matlab.getTempName();
 
-    Hdf5Sink::saveBuffer( file, *b );
+	Hdf5Sink::saveBuffer( file, *b );
 
     file = _matlab.invokeAndWait( file );
 
-    pBuffer b2 = Hdf5Sink::loadBuffer( file );
-    b->waveform_data.swap( b2->waveform_data );
+	if (file.empty())
+		return b;
 
-    ::remove( file.c_str());
+	pBuffer b2 = Hdf5Sink::loadBuffer( file );
+	b->waveform_data.swap( b2->waveform_data );
+
+	::remove( file.c_str());
 
     return b;
 }

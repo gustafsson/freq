@@ -19,11 +19,16 @@ TimelineWidget::
 :   QGLWidget( 0, dynamic_cast<QGLWidget*>(displayWidget.get()), Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
-    _barHeight( 0.1 ),
+    _barHeight( 0.1f ),
     _movingTimeline( 0 ),
     _displayWidget(displayWidget)
 {
     BOOST_ASSERT( dynamic_cast<DisplayWidget*>(displayWidget.get()) );
+
+    if (!context() || !context()->isSharing())
+    {
+        throw std::invalid_argument("Failed to open a second OpenGL window. Couldn't find a valid rendering context to share.");
+    }
 }
 
 TimelineWidget::
@@ -98,6 +103,7 @@ void TimelineWidget::
         paintGL()
 {
     TIME_PAINTGL TaskTimer tt("TimelineWidget::paintGL");
+
     static int exceptCount = 0;
     try {
         GlException_CHECK_ERROR();
@@ -209,7 +215,7 @@ void TimelineWidget::
     setupCamera();
 
     int x = e->x(), y = height() - e->y();
-    float ps = 0.0005;
+    float ps = 0.0005f;
 
     GLvector current;
     moveButton.spacePos(x, y, current[0], current[1]);
@@ -295,9 +301,7 @@ void TimelineWidget::
 void TimelineWidget::
         mouseReleaseEvent ( QMouseEvent * e)
 {
-    printf("mouseReleaseEvent\n");
     if (0 == (e->buttons() & Qt::LeftButton)) {
-        printf("_movingTimeline = 0\n");
         _movingTimeline = 0;
     }
     moveButton.release();

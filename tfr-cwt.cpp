@@ -16,11 +16,12 @@ namespace Tfr {
 
 Cwt::
         Cwt( float scales_per_octave, float wavelet_std_t, cudaStream_t stream )
-:   _fft( stream ),
+:   _fft( /*stream*/ ),
     _stream( stream ),
     _min_hz( 20 ),
     _scales_per_octave( scales_per_octave ),
-    _fft_many(stream),
+    _tf_resolution( 1 ),
+//    _fft_many(stream),
     _wavelet_std_t( wavelet_std_t )
 {
 }
@@ -57,7 +58,7 @@ pChunk Cwt::
                      intermediate_wt->min_hz,
                      intermediate_wt->max_hz,
                      intermediate_wt->transform_data->getNumberOfElements(),
-                     _scales_per_octave );
+                     _scales_per_octave, _tf_resolution );
 
         TIME_CWT CudaException_ThreadSynchronize();
     }
@@ -91,6 +92,7 @@ pChunk Cwt::
 
             cufftComplex *d = g->getCudaGlobal().ptr();
 
+			CufftHandleContext _fft_many;
             CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
 
             TIME_CWT CudaException_ThreadSynchronize();
@@ -127,11 +129,87 @@ float Cwt::
 }
 
 void Cwt::
-        scales_per_octave( unsigned value)
+        scales_per_octave( float value)
 {
     if (value==_scales_per_octave) return;
 
     _scales_per_octave=value;
+}
+
+void Cwt::
+        tf_resolution( float value )
+{
+    if (value == _tf_resolution) return;
+
+    _tf_resolution = value;
+}
+
+float Cwt::
+        compute_frequency(float normalized_scale, unsigned FS ) const
+{
+    float start = min_hz();
+    float steplogsize = log(max_hz(FS))-log(min_hz());
+
+    float ff = normalized_scale;
+    float hz = start*exp(ff*steplogsize);
+    return hz;
+}
+
+float Cwt::
+        morlet_std_t( float normalized_scale, unsigned FS )
+{
+    float start = 1.f/min_hz();
+    float steplogsize = log(max_hz(FS))-log(min_hz());
+
+    float ff = normalized_scale;
+    float period = start*exp(-ff*steplogsize);
+
+    // Compute value of analytic FT of wavelet
+    float f0 = 2.0f + 35*ff*ff*ff;
+    f0 *= tf_resolution();
+    //const float pi = 3.141592654f;
+    //const float two_pi_f0 = 2.0f * pi * f0;
+    //const float multiplier = 1.8827925275534296252520792527491f;
+
+    period *= f0;
+
+    //float factor = 4*pi*(ff)*period-two_pi_f0;
+    // float basic = multiplier * exp(-0.5f*factor*factor);
+
+    //float m = jibberish_normalization*cufft_normalize*basic*f0/sqrt(tf_resolution);
+
+    // morlet time space:      const*exp(-.5t^2+i*freq*t)
+    // morlet frequency space: const*exp(-.5(freq-w)^2)
+    // w = two_pi_f0
+    // freq = factor + two_pi_f0
+//    return period;
+    return period;
+}
+
+float Cwt::
+        morlet_std_f( float normalized_scale, unsigned FS )
+{
+    float start = .5f*FS/min_hz();
+    float steplogsize = log(max_hz(FS))-log(min_hz());
+
+    float ff = normalized_scale;
+    float period = start*exp(-ff*steplogsize);
+
+    // Compute value of analytic FT of wavelet
+    float f0 = 2.0f + 35*ff*ff*ff;
+    f0 *= tf_resolution();
+    const float pi = 3.141592654f;
+    const float two_pi_f0 = 2.0f * pi * f0;
+    // const float multiplier = 1.8827925275534296252520792527491f;
+
+    period *= f0;
+
+    float freq = compute_frequency( normalized_scale, FS );
+    freq = (freq-min_hz())/(max_hz(FS)-min_hz());
+    float factor = 4*pi*(freq)*period-two_pi_f0;
+    // float basic = multiplier * exp(-0.5f*factor*factor);
+
+    return factor;//*(max_hz(FS)-min_hz());
 }
 
 unsigned Cwt::

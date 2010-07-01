@@ -94,7 +94,7 @@ unsigned MicrophoneRecorder::
     return _stream_record->sampleRate();
 }
 
-unsigned MicrophoneRecorder::
+long unsigned MicrophoneRecorder::
         number_of_samples()
 {
     return _data.number_of_samples();

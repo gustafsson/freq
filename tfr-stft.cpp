@@ -32,7 +32,9 @@ cufftHandle CufftHandleContext::
         _elems = elems;
         _batch_size = batch_size;
         create();
-    }
+	} else {
+		_creator_thread.throwIfNotSame(__FUNCTION__);
+	}
     return _handle;
 }
 
@@ -49,15 +51,17 @@ void CufftHandleContext::
         destroy()
 {
     if (_handle) {
-        if (_creator_thread.isSameThread())
-            CufftException_SAFE_CALL(cufftDestroy(_handle));
+		_creator_thread.throwIfNotSame(__FUNCTION__);
+
+		CufftException_SAFE_CALL(cufftDestroy(_handle));
+
         _handle = 0;
     }
 }
 
 Fft::
-        Fft(cudaStream_t stream)
-:   _fft_single( stream )
+        Fft(/*cudaStream_t stream*/)
+//:   _fft_single( stream )
 {
 }
 
@@ -123,7 +127,7 @@ pFftChunk Fft::
     intermediate_fft.reset(new GpuCpuData<float2>( 0, make_cudaExtent( N, 1, 1 ) ));
     p = (float*)intermediate_fft->getCpuMemory();
     for (unsigned i=0; i<2*N; i++)
-        p[i] = q[i];
+        p[i] = (float)q[i];
 
     return intermediate_fft;
 }
@@ -155,7 +159,8 @@ pFftChunk Fft::
                 cudaMemcpyDeviceToDevice );
 
     // Transform signal
-    CufftException_SAFE_CALL(cufftExecC2C(
+	CufftHandleContext _fft_single;
+	CufftException_SAFE_CALL(cufftExecC2C(
             _fft_single(intermediate_fft->getNumberOfElements().width, 1),
             d, d,
             direction==-1?CUFFT_FORWARD:CUFFT_INVERSE));

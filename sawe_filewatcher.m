@@ -26,15 +26,11 @@ tempfile=datafile;
 disp (['Monitoring ' datafile]);
 while 1
   if exist(datafile,'file') % matlab and octave
-% if ~isempty(stat(datafile)) % fast octave version
 
     disp (['Processing ' datafile]);
 
     pause(0.1); % matlab, wait for slow file system in windows to finish the move
 	
-	%octave
-	%data=load(datafile); 
-
     %matlab workaround begin
     info=hdf5info(datafile);
     [dset1]=info.GroupHierarchy.Datasets.Name;
@@ -54,14 +50,11 @@ while 1
       sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate );
     end
     
-    %rename(tempfile,resultfile);   % octave
     movefile(tempfile,resultfile); % matlab
     
     disp (['Monitoring ' datafile]);
   else
-    %sleep(dt); % octave
     pause(dt); % matlab
   end
 end
 
-endfunction

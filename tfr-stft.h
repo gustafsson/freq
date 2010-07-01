@@ -13,7 +13,7 @@ namespace Tfr {
 
 class CufftHandleContext {
 public:
-    CufftHandleContext( cudaStream_t _stream ); // type defaults to cufftPlan1d( CUFFT_C2C )
+    CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlan1d( CUFFT_C2C )
     ~CufftHandleContext();
 
     cufftHandle operator()( unsigned elems, unsigned batch_size );
@@ -37,7 +37,7 @@ Computes the complex Fast Fourier Transform of a Signal::Buffer.
 class Fft
 {
 public:
-    Fft( cudaStream_t stream=0 );
+    Fft( /*cudaStream_t stream=0*/ );
     ~Fft();
 
     pFftChunk operator()( Signal::pBuffer b ) { return forward(b);}
@@ -46,7 +46,7 @@ public:
     pFftChunk backward( Signal::pBuffer );
 
 private:
-    CufftHandleContext _fft_single;
+//    CufftHandleContext _fft_single;
     cudaStream_t _stream;
     std::vector<double> w;
     std::vector<int> ip;

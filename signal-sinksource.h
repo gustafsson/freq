@@ -28,7 +28,7 @@ public:
       sample rate is defined as (unsigned)-1 if _cache is empty.
       */
     virtual unsigned sample_rate();
-    virtual unsigned number_of_samples();
+    virtual long unsigned number_of_samples();
 
     pBuffer first_buffer();
     bool empty();

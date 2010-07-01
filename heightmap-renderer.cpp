@@ -33,6 +33,9 @@ Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
 :   draw_piano(false),
     draw_hz(true),
     camera(0,0,0),
+    draw_height_lines(false),
+    color_mode( ColorMode_Rainbow ),
+    y_scale( 1 ),
     _collection(collection),
     _tempToRemove( _tempToRemove ),
     _mesh_index_buffer(0),
@@ -259,13 +262,18 @@ void Renderer::init()
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
     //setSize( _collection->samples_per_block(), _collection->scales_per_block() );
-    setSize( _collection->samples_per_block()/4, _collection->scales_per_block() );
+    setSize( _collection->samples_per_block()/2, _collection->scales_per_block() );
     //setSize(2,2);
     _initialized=true;
 
     GlException_CHECK_ERROR();
 }
 
+/**
+  Note: the parameter scaley is used by displaywidget to go seamlessly from 3D to 2D.
+  This is different from the 'attribute' Renderer::y_scale which is used to change the
+  height of the mountains.
+  */
 void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
@@ -309,50 +317,24 @@ void Renderer::beginVboRendering()
 
     glUseProgram(_shader_prog);
 
-    // Set default uniform variables parameters for the vertex shader
-    //GLuint uniHeightScale, uniChopiness, uniSize;
+    {   // Set default uniform variables parameters for the vertex and pixel shader
+        GLuint uniVertText0, uniVertText1, uniColorMode, uniHeightLines, uniYScale;
 
-/*    uniHeightScale = glGetUniformLocation(_shader_prog, "heightScale");
-    glUniform1f(uniHeightScale, 0.0125f);
+        uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
+        glUniform1i(uniVertText0, 0); // GL_TEXTURE0
 
-    uniSize        = glGetUniformLocation(_shader_prog, "size");
-    glUniform2f(uniSize, meshW, meshH);
-*/
-    // Set default uniform variables parameters for the pixel shader
-/*    GLuint uniDeepColor, uniShallowColor, uniSkyColor, uniLightDir;
+        uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
+        glUniform1i(uniVertText1, 1); // GL_TEXTURE1
 
-    uniDeepColor = glGetUniformLocation(_shader_prog, "deepColor");
-    glUniform4f(uniDeepColor, 0.0f, 0.0f, 0.1f, 1.0f);
+        uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
+        glUniform1i(uniColorMode, (int)color_mode);
 
-    uniShallowColor = glGetUniformLocation(_shader_prog, "shallowColor");
-    glUniform4f(uniShallowColor, 0.1f, 0.4f, 0.3f, 1.0f);
+        uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
+        glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
 
-    uniSkyColor = glGetUniformLocation(_shader_prog, "skyColor");
-    glUniform4f(uniSkyColor, 0.5f, 0.5f, 0.5f, 1.0f);
-
-    uniLightDir = glGetUniformLocation(_shader_prog, "lightDir");
-    glUniform3f(uniLightDir, 0.0f, 1.0f, 0.0f);
-*/
-    GLuint uniVertText0;
-    uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
-    //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
-    glUniform1i(uniVertText0, 0); // GL_TEXTURE0
-
-    GLuint uniVertText1;
-    uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
-    //TaskTimer("uniVertText0=%u", uniVertText0).suppressTiming();
-    glUniform1i(uniVertText1, 1); // GL_TEXTURE0
-
-    GLuint uniText0;
-    uniText0 = glGetUniformLocation(_shader_prog, "Texture0");
-    /*TaskTimer("uniDeepColor=%u", uniDeepColor).suppressTiming();
-    TaskTimer("uniShallowColor=%u", uniShallowColor).suppressTiming();
-    TaskTimer("uniSkyColor=%u", uniSkyColor).suppressTiming();
-    TaskTimer("uniLightDir=%u", uniLightDir).suppressTiming();*/
-    //TaskTimer("uniText0=%u", uniText0).suppressTiming();
-    glUniform1i(uniText0, 0); // GL_TEXTURE0
-
-    // end of uniform settings
+        uniYScale = glGetUniformLocation(_shader_prog, "yScale");
+        glUniform1f(uniYScale, y_scale);
+    }
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     glVertexPointer(4, GL_FLOAT, 0, 0);
@@ -818,8 +800,8 @@ void Renderer::drawAxes( float T )
         if (clippedFrustum.size())
         {
             st = 0, sf = 0;
-            while( powf(10, st) < ST*.5f ) st++;
-            while( powf(10, st) > ST*.5f ) st--;
+            while( powf(10, st) < ST*.53f ) st++;
+            while( powf(10, st) > ST*.53f ) st--;
             while( powf(10, sf) < SF*.5f ) sf++;
             while( powf(10, sf) > SF*.5f ) sf--;
 
@@ -907,8 +889,9 @@ void Renderer::drawAxes( float T )
                         glScalef(0.00012f*ST,0.00012f*SF,1.f);
                         char a[100];
                         char b[100];
-                        sprintf(b,"%%.%df", st<0?-1-st:0);
-                        sprintf(a, b, t*DT);
+                        sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
+                        int minutes = (int)(t*DT/60);
+                        sprintf(a, b, minutes,t*DT-60*minutes);
                         float w=0;
                         float letter_spacing=15;
 

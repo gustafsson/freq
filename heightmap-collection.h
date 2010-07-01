@@ -181,7 +181,7 @@ private:
       */
     std::vector<pBlock> _cache;
     std::vector<Tfr::pChunk> _updates; // TODO updates should be transfered as downsampled blocks between cuda contexts. It is way to slow to transfer entire chunks.
-    QMutex _updates_mutex;
+    QMutex _cache_mutex, _updates_mutex;
     QWaitCondition _updates_condition;
     ThreadChecker _constructor_thread;
 
