@@ -156,6 +156,7 @@ private:
     Signal::pSource _matlaboperation;
     Signal::pSink _timeline;
     boost::scoped_ptr<TaskTimer> _work_timer;
+    boost::scoped_ptr<TaskTimer> _render_timer;
 
     bool _follow_play_marker;
 

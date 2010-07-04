@@ -45,8 +45,8 @@
 #endif
 #include <math.h>
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
+#define TIME_PAINTGL
+//#define TIME_PAINTGL if(0)
 
 void drawCircleSector(float x, float y, float radius, float start, float end);
 void drawRoundRect(float width, float height, float roundness);
@@ -353,7 +353,7 @@ void DisplayWidget::
 
 void DisplayWidget::receivePlaySound()
 {
-    TaskTimer tt("Initiating playback of selection.\n");
+    TaskTimer tt("Initiating playback of selection");
 
     Signal::PostSink* postsink = getPostSink();
 
@@ -658,10 +658,12 @@ void DisplayWidget::
         {
         Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
         Signal::pSource s( new Signal::FilterOperation( read, f));
-        Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(b->inverse_cwt.filter.get());
+
+        Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(getPostSink()->filter().get());
         if (e)
             e->_save_inside = true;
-        _matlabfilter.reset( new Signal::FilterOperation( s, b->inverse_cwt.filter));
+
+        _matlabfilter.reset( new Signal::FilterOperation( s, getPostSink()->filter()));
         b->source( _matlabfilter );
         break;
         }
@@ -1144,7 +1146,9 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
-    TIME_PAINTGL TaskTimer tt("DisplayWidget::paintGL");
+    TIME_PAINTGL _render_timer.reset();
+    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last DisplayWidget::paintGL"));
+
     static int tryGc = 0;
     try {
         GlException_CHECK_ERROR();
