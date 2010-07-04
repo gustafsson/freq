@@ -17,6 +17,7 @@
 #include <CudaException.h>
 #include "displaywidget.h"
 #include <glPushContext.h>
+#include <cuda_vector_types_op.h>
 
 #ifdef _MSC_VER
 #include "msc_stdc.h"
@@ -262,11 +263,56 @@ void Renderer::init()
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
     //setSize( _collection->samples_per_block(), _collection->scales_per_block() );
-    setSize( _collection->samples_per_block()/2, _collection->scales_per_block() );
+    setSize( _collection->samples_per_block()/1, _collection->scales_per_block() );
     //setSize(2,2);
+
+    createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
+
     _initialized=true;
 
     GlException_CHECK_ERROR();
+}
+
+typedef float4 vec4;
+
+vec4 getWavelengthColorCompute( float wavelengthScalar ) {
+    vec4 spectrum[7];
+        /* white background */
+    spectrum[0] = make_float4( 1, 0, 0, 0 ),
+    spectrum[1] = make_float4( 0, 0, 1, 0 ),
+    spectrum[2] = make_float4( 0, 1, 1, 0 ),
+    spectrum[3] = make_float4( 0, 1, 0, 0 ),
+    spectrum[4] = make_float4( 1, 1, 0, 0 ),
+    spectrum[5] = make_float4( 1, 0, 1, 0 ),
+    spectrum[6] = make_float4( 1, 0, 0, 0 );
+        /* black background
+        { 0, 0, 0 },
+        { 1, 0, 1 },
+        { 0, 0, 1 },
+        { 0, 1, 1 },
+        { 0, 1, 0 },
+        { 1, 1, 0 },
+        { 1, 0, 0 }}; */
+
+    int count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
+    float f = float(count)*wavelengthScalar;
+    int i1 = int(floor(max(0.f, min(f-1.f, float(count)))));
+    int i2 = int(floor(min(f, float(count))));
+    int i3 = int(floor(min(f+1.f, float(count))));
+    int i4 = int(floor(min(f+2.f, float(count))));
+    float t = (f-float(i2))*0.5;
+    float s = 0.5 + t;
+
+    vec4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
+    return rgb*0.5;
+}
+
+void Renderer::createColorTexture(unsigned N) {
+    std::vector<float4> texture(N);
+    for (unsigned i=0; i<N; ++i) {
+        texture[i] = getWavelengthColorCompute( i/(float)(N-1) );
+    }
+    colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
 }
 
 /**
@@ -318,13 +364,16 @@ void Renderer::beginVboRendering()
     glUseProgram(_shader_prog);
 
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        GLuint uniVertText0, uniVertText1, uniColorMode, uniHeightLines, uniYScale;
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniHeightLines, uniYScale;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
 
         uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
         glUniform1i(uniVertText1, 1); // GL_TEXTURE1
+
+        uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
+        glUniform1i(uniVertText2, 2); // GL_TEXTURE2
 
         uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
         glUniform1i(uniColorMode, (int)color_mode);
@@ -335,6 +384,10 @@ void Renderer::beginVboRendering()
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
     }
+
+    glActiveTexture(GL_TEXTURE2);
+    colorTexture->bindTexture2D();
+    glActiveTexture(GL_TEXTURE0);
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     glVertexPointer(4, GL_FLOAT, 0, 0);
@@ -347,6 +400,9 @@ void Renderer::beginVboRendering()
 
 void Renderer::endVboRendering() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glActiveTexture(GL_TEXTURE2);
+    colorTexture->unbindTexture2D();
+    glActiveTexture(GL_TEXTURE0);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glUseProgram(0);
