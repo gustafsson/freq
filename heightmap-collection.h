@@ -81,9 +81,6 @@ class Block {
 public:
     Block( Reference ref ): ref(ref), frame_number_last_used(-1) {}
 
-    float sample_rate();
-    float nFrequencies();
-
     // Zoom level for this slot, determines size of elements
     Reference ref;
     unsigned frame_number_last_used;
@@ -216,7 +213,7 @@ private:
     /**
       Add block information from Cwt transform. Returns whether any information was merged.
       */
-    bool        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
+    bool        mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
 
     /**
       Add block information from another block. Returns whether any information was merged.

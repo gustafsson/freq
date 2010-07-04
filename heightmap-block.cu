@@ -74,6 +74,11 @@ void blockMerge( cudaPitchedPtrType<float> inBlock,
         in_offset, out_offset, in_valid_samples );
 }
 
+texture<float2, 1, cudaReadModeElementType> chunkTexture;
+
+/**
+ kernel_merge_chunk has one thread for each output element
+*/
 __global__ void kernel_merge_chunk(
                 cudaPitchedPtrType<float2> inChunk,
                 cudaPitchedPtrType<float> outBlock,
@@ -81,7 +86,7 @@ __global__ void kernel_merge_chunk(
                 float resample_height,
                 float in_offset,
                 float out_offset,
-                unsigned n_valid_samples )
+                unsigned in_count )
 {
     elemSize3_t writePos;
     if( !outBlock.unwrapCudaGrid( writePos ))
@@ -101,7 +106,7 @@ __global__ void kernel_merge_chunk(
         {
             float s = in_offset + x + resample_width*(writePos.x-out_offset);
 
-            if ( s > in_offset + n_valid_samples + .25f*resample_width)
+            if ( s > in_offset + in_count + .25f*resample_width)
                 x=resample_width; // abort for x loop, faster than "break;"
             else for (float y = 0; y < resample_height; y++)
             {
@@ -114,7 +119,8 @@ __global__ void kernel_merge_chunk(
                     float ff = t/(float)inChunk.getNumberOfElements().y;
                     float if0 = 40.f/(2.0f + 35*ff*ff*ff);
 
-                    float2 c = inChunk.elem(readPos);
+                    //float2 c = inChunk.elem(readPos);
+                    float2 c = tex1Dfetch(chunkTexture, inChunk.eOffs(readPos));
                     val = max(val, if0*sqrt(if0*(c.x*c.x + c.y*c.y)));
 
  //outBlock.e( writePos ) = 4*val;
@@ -150,62 +156,198 @@ __global__ void kernel_merge_chunk(
     }
 }
 
-/*
-#define WARP 32
+#define BLOCK_SIZE 64 // manally adjusted to increase performance
 
-__global__ void kernel_merge_chunk(
+struct read_params {
+    unsigned
+        block_first_read,
+        block_last_read,
+        num_reads,
+        thread_first_read,
+        thread_last_read,
+        start_y,
+        end_y;
+};
+
+__device__ __host__ read_params computeReadParams( unsigned in_offset, unsigned in_count, float out_offset,
+                                                   float resample_height, float resample_width,
+                                                   elemSize3_t writePos, bool firstThreadInBlock )
+{
+    read_params p;
+
+    float threadFirstWrite = writePos.x;
+    float threadLastWrite = writePos.x+1;
+
+    // Here, BLOCK_SIZE is the number of elements that each block is responsible for writing
+    float blockFirstWrite = writePos.x/BLOCK_SIZE*BLOCK_SIZE; // integer division
+    float blockLastWrite = blockFirstWrite + BLOCK_SIZE;
+
+    // Don't write anything before out_offset, if the entire range is before out_offset the range will be
+    // [out_offset, out_offset[ which is an empty set. However, [blockFirstWrite, blockLastWrite[ might be
+    // non-empty even though [myFirstWrite, myLastWrite[ is empty.
+    if (threadFirstWrite < out_offset) threadFirstWrite = out_offset;
+    if (threadLastWrite  < out_offset) threadLastWrite  = out_offset;
+    if (blockFirstWrite  < out_offset) blockFirstWrite  = out_offset;
+    if (blockLastWrite   < out_offset) blockLastWrite   = out_offset;
+
+    p.thread_first_read = in_offset + (threadFirstWrite - out_offset) * resample_width;
+    p.thread_last_read  = in_offset + (threadLastWrite  - out_offset) * resample_width;
+
+    if (p.thread_first_read < in_offset)          p.thread_first_read = in_offset;
+    if (p.thread_last_read  > in_offset+in_count) p.thread_last_read  = in_offset+in_count;
+
+    if (firstThreadInBlock)
+    {
+        p.block_first_read = in_offset + (blockFirstWrite - out_offset) * resample_width;
+        p.block_last_read  = in_offset + (blockLastWrite  - out_offset) * resample_width;
+
+        if (p.block_first_read < in_offset)          p.block_first_read = in_offset;
+        if (p.block_last_read  > in_offset+in_count) p.block_last_read  = in_offset+in_count;
+
+        // Here, BLOCK_SIZE is the number of elements that a block reads in each read chunk
+        p.block_first_read =  p.block_first_read              /BLOCK_SIZE; // integer division
+        p.block_last_read  = (p.block_last_read+ BLOCK_SIZE-1)/BLOCK_SIZE;
+
+        if (p.block_first_read<p.block_last_read)
+            p.num_reads = p.block_last_read-p.block_first_read;
+        else
+            p.num_reads = 0;
+
+        p.block_first_read *= BLOCK_SIZE;
+        p.block_last_read  *= BLOCK_SIZE;
+
+        p.start_y = resample_height *  writePos.y;
+        p.end_y   = resample_height * (writePos.y+1);
+        if (p.end_y == p.start_y) p.end_y++;
+    }
+
+    return p;
+}
+
+/**
+    kernel_merge_chunk2 has one thread for each output element.
+    Threads collaborate in warps to serve eachother. Each block only have one warp.
+
+    @param resample_width is the number of input elements that should be taken into
+           account for the output element that each thread is to write.
+*/
+__global__ void kernel_merge_chunk2(
                 cudaPitchedPtrType<float2> inChunk,
                 cudaPitchedPtrType<float> outBlock,
                 float resample_width,
                 float resample_height,
-                float in_offset,
-                float out_offset)
+                unsigned in_offset,
+                float out_offset,
+                unsigned in_count)
 {
-    elemSize3_t writePos;
-    if( !outBlock.unwrapCudaGrid( writePos ))
-        return;
+/**
+    Merging like this for resample_width = 3, resample_height=1, in_offset=1, out_offset=0
+    chunk: 1|1234575652165761|9682657451433|321
+    out:    |  5  7  5  7  9 | 8  7  5  4  | => |57576|8754|
 
-    // __shared__ float val[WARP] = 0;
-    unsigned n = 0;
+    That is; discard element that begins before outBlock but don't discard fraction of element that end after outBlock.
 
-    if (writePos.x>=out_offset)
+    If an element would include more than BLOCK_SIZE, the last elements are discarded.
+*/
+    __shared__ float val[BLOCK_SIZE];
+
+    elemSize3_t writePos = make_elemSize3_t(
+                            __umul24(blockIdx.x, blockDim.x) + threadIdx.x,
+                            __umul24(blockIdx.y, blockDim.y) + threadIdx.y,
+                            __umul24(blockIdx.z, blockDim.z) + threadIdx.z);
+    //outBlock.elem(writePos) = 0;
+    //return;
+
+    read_params thread_p = computeReadParams( in_offset, in_count, out_offset,
+                                       resample_height, resample_width,
+                                       writePos, 0==threadIdx.x );
+
+    __shared__ read_params block_read;
+    if (0==threadIdx.x)
+        block_read = thread_p;
+
+    float myVal = -1; // Negative value that indicates that no value was fetched
+
+    __syncthreads();
+
+    if (0 != block_read.num_reads) for (unsigned y = block_read.start_y; y < block_read.end_y; y++)
     {
-        for (float x = 0; x < resample_width; x++)
+        float ff = y/(float)inChunk.getNumberOfElements().y;
+        float if0 = 20.f/(2.0f + 35.f*ff*ff*ff);
+        if0=if0*if0*if0;
+
+        for (unsigned i=0; i<block_read.num_reads; i++)
         {
-            float s = in_offset + x + resample_width*(writePos.x-out_offset);
+            unsigned base = block_read.block_first_read + i*BLOCK_SIZE;
+            elemSize3_t readPos = make_elemSize3_t( base + threadIdx.x, y, 0 );
 
-            if ( s >= in_offset + n_valid_samples )
-                x=resample_width;
-            else for (float y = 0; y < resample_height; y++)
-            {
-                float t = y + resample_height*writePos.y;
+            bool valid = readPos.x >= in_offset &&
+                         readPos.x < in_offset + in_count &&
+                         inChunk.valid(readPos);
 
-                elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
-                if ( inChunk.valid(readPos) ) {
-                    unsigned o = inChunk.eOffs(readPos);
-                    float* i = (float*)inChunk.ptr();
-                    i[2*o + WARP%2];
-                    float2 c
-                    //val = max(val, sqrt(c.x*c.x + c.y*c.y)); n=0;
-                    val += sqrt(c.x*c.x + c.y*c.y);
-                    //val += c.x;
+            // Read from global memory
+            float2 c = valid ? inChunk.elem(readPos) : make_float2(0,0);
 
-                    //outBlock.e( writePos ) = val;
-                    //return;
+            val[threadIdx.x] = if0*(c.x*c.x + c.y*c.y);
 
-                    n ++;
+            __syncthreads();
+
+            if (0) { // Each thread minds its own business
+                if ( thread_p.thread_last_read  > base &&
+                     thread_p.thread_first_read < thread_p.thread_last_read &&
+                     thread_p.thread_first_read < base+BLOCK_SIZE )
+                {
+                    unsigned start = max(thread_p.thread_first_read, base) - base;
+                    unsigned end = min(thread_p.thread_last_read, base + BLOCK_SIZE) - base;
+    //                myVal = val[start];
+                    for (unsigned x = start; x<end; x++)
+                        myVal = max(myVal, val[x]);
+                }
+            } else {
+                // Find the maxima in all of val and use that, half of the threads go to sleep at each step
+                // This is not as exact as "Each thread minds its own business" but differences are rarely visible.
+                if (128==BLOCK_SIZE) {
+                    if (threadIdx.x<64) val[threadIdx.x] = max(val[threadIdx.x], val[64 + threadIdx.x]);
+                    if (threadIdx.x<32) val[threadIdx.x] = max(val[threadIdx.x], val[32 + threadIdx.x]);
+                }
+                if (128==BLOCK_SIZE || 32==BLOCK_SIZE) {
+                    if (threadIdx.x<16) val[threadIdx.x] = max(val[threadIdx.x], val[16 + threadIdx.x]);
+                    if (threadIdx.x<8) val[threadIdx.x] = max(val[threadIdx.x], val[8 + threadIdx.x]);
+                    if (threadIdx.x<4) val[threadIdx.x] = max(val[threadIdx.x], val[4 + threadIdx.x]);
+                    if (threadIdx.x<2) val[threadIdx.x] = max(val[threadIdx.x], val[2 + threadIdx.x]);
+                    if (threadIdx.x<1) val[0] = max(val[0], val[1]);
+                }
+                if (64==BLOCK_SIZE) {
+                    if (threadIdx.x<16) {
+                        val[threadIdx.x] = max(max(val[threadIdx.x], val[48 + threadIdx.x]),
+                                               max(val[32 + threadIdx.x], val[16 + threadIdx.x]));
+
+                    if (threadIdx.x<4) {
+                        val[threadIdx.x] = max(max(val[threadIdx.x], val[4 + threadIdx.x]),
+                                               max(val[8 + threadIdx.x], val[12 + threadIdx.x]));
+
+                    if (threadIdx.x<1) {
+                        val[0] = max(max(val[0], val[1]), max(val[2], val[3]));
+                    }}}
+                }
+
+                __syncthreads();
+
+                if ( thread_p.thread_last_read  > base &&
+                     thread_p.thread_first_read < thread_p.thread_last_read &&
+                     thread_p.thread_first_read < base+BLOCK_SIZE )
+                {
+                    myVal = max(myVal, val[0]);
                 }
             }
         }
     }
 
-    __syncthreads();
-
-    if (0<n && threadIdx.x < WARP) {
-        val/=n;
-        outBlock.e( writePos ) = val;
+    if (outBlock.valid( writePos ) && 0<=myVal)
+    {
+        outBlock.elem( writePos ) = sqrtf(myVal);
     }
-}*/
+}
 
 extern "C"
 void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
@@ -214,31 +356,62 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  float out_sample_rate,
                  float in_frequency_resolution,
                  float out_frequency_resolution,
-                 float in_offset,
+                 unsigned in_offset,
                  float out_offset,
-                 unsigned n_valid_samples,
+                 unsigned in_count,
                  unsigned cuda_stream)
 {
-    dim3 grid, block;
-    unsigned block_size = 128;
+    unsigned block_size;
 
-    outBlock.wrapCudaGrid2D( block_size, grid, block );
+    const unsigned version = 2;
+    switch (version)
+    {   case 1: block_size = 128; break;
+        case 2: block_size = BLOCK_SIZE; break;
+    }
+
+    // For version 2
+    dim3 block(block_size,1,1);
+    uint3 nElems = outBlock.getNumberOfElements();
+
+    // Limit kernel size
+    {
+        unsigned last_write = ceil(out_offset + in_count*out_sample_rate/in_sample_rate);
+        nElems.x = min(nElems.x, last_write);
+        unsigned unused = out_offset/block_size;
+        unused*=block_size;
+        // printf("unused = %u\n", unused);
+        nElems.x -= unused;
+        out_offset -= unused;
+        cudaPitchedPtr cpp = outBlock.getCudaPitchedPtr();
+        cpp.ptr = &((float*)cpp.ptr)[unused];
+        outBlock =  cudaPitchedPtrType<float>(cpp);
+    }
+
+    dim3 grid;
+
+    switch (version)
+    {   case 1: outBlock.wrapCudaGrid2D(block_size, grid, block); break;
+        case 2: grid = make_uint3(
+                    int_div_ceil(nElems.x, block.x),
+                    int_div_ceil(nElems.y, block.y),
+                    int_div_ceil(nElems.z, block.z));
+            break;
+    }
 
     float resample_width = in_sample_rate/out_sample_rate;
     float resample_height = (in_frequency_resolution+2)/out_frequency_resolution;
 
-    if(0) {
+    if (0) {
         elemSize3_t sz_o = outBlock.getNumberOfElements();
         elemSize3_t sz_i = inChunk.getNumberOfElements();
         //fprintf(stdout,"sz_o (%d, %d, %d)\tsz_i (%d, %d, %d)\n", sz_o.x, sz_o.y, sz_o.z, sz_i.x, sz_i.y, sz_i.z );
 
 
-        fprintf(stdout,"grid (%d, %d, %d)\tblock (%d, %d, %d)\n", grid.x, grid.y, grid.z, block.x, block.y, block.z );
-        fprintf(stdout,"in sr %g, out sr %g, in f %g, out f %g, in o %g, out o %g\n\tw=%g, h=%g\n",
-            in_sample_rate, out_sample_rate,
-            in_frequency_resolution, out_frequency_resolution,
-            in_offset, out_offset,
-            resample_width, resample_height);
+        fprintf(stdout,"\ngrid (%d, %d, %d)\tblock (%d, %d, %d)\n", grid.x, grid.y, grid.z, block.x, block.y, block.z );
+        fprintf(stdout,"(in sr %g, out sr %g, w=%g) (in f %g, out f %g, h=%g)\n\tin o %u, out o %g, in count %u\n",
+            in_sample_rate, out_sample_rate, resample_width,
+            in_frequency_resolution, out_frequency_resolution, resample_height,
+            in_offset, out_offset, in_count);
         fprintf(stdout,"outBlock(%d,%d,%d) pitch %lu\n",
             outBlock.getNumberOfElements().x,
             outBlock.getNumberOfElements().y,
@@ -253,11 +426,52 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
 
     }
 
-    kernel_merge_chunk<<<grid, block, cuda_stream>>>(
-        inChunk, outBlock,
-        resample_width,
-        resample_height,
-        in_offset, out_offset, n_valid_samples );
+    if (0)
+    {
+        unsigned x_count = grid.x*block.x;
+        printf("nElems.x = %u, x_count = %u\n", nElems.x, x_count);
+
+        if(1) for (int x=0; x<x_count; x++)
+        {
+            elemSize3_t writePos = make_elemSize3_t(x,0,0);
+            elemSize3_t myThreadIdx = make_elemSize3_t(0,0,0);
+
+            read_params p = computeReadParams( in_offset, in_count, out_offset,
+                                               resample_height, resample_width,
+                                               writePos, 0==myThreadIdx.x );
+
+            printf("%3u [%u, %u](%u) > [%u, %u]\n", x,
+                p.block_first_read, p.block_last_read, p.num_reads,
+                p.thread_first_read, p.thread_last_read);
+        }
+    }
+
+    switch (version)
+    {
+    case 1:
+        {
+            cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float2>();
+            cudaBindTexture(0, &chunkTexture, inChunk.ptr(), &channelDesc, inChunk.getCudaPitchedPtr().pitch * inChunk.getCudaPitchedPtr().ysize);
+
+            kernel_merge_chunk<<<grid, block, cuda_stream>>>(
+                inChunk, outBlock,
+                resample_width,
+                resample_height,
+                in_offset, out_offset, in_count );
+            break;
+        }
+    case 2:
+        {
+            kernel_merge_chunk2<<<grid, block, cuda_stream>>>(
+                inChunk, outBlock,
+                resample_width,
+                resample_height,
+                in_offset, out_offset, in_count );
+            break;
+        }
+    }
+
+    cudaUnbindTexture(&chunkTexture);
 }
 
 __global__ void kernel_expand_stft(
@@ -390,15 +604,20 @@ __global__ void kernel_expand_complete_stft(
         c.y = inStft.elem(make_elemSize3_t( read_secondline+2*in_stft_size+1, 0, 0 ));
         float val4 = sqrt(c.x*c.x + c.y*c.y);
 
+        // Perform a kind of bicubic interpolation
         p = 3*p*p-2*p*p*p;
         q = 3*q*q-2*q*q*q;
         val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
+
         const float f0 = 2.0f + 35*ff*ff*ff;
-        val*=f0;
+        val*=sqrt(f0);
 
         //float if0 = 40.f/(2.0f + 35*ff*ff*ff);
-        //val*=if0*sqrt(if0);
-        val*=9.f;
+        //float if0 = 40.f/(2.0f + 35.f*ff*ff*ff);
+        //if0=if0*if0*if0;
+        //val=sqrt(if0*val);
+
+        val*=19.f;
     }
 
     val /= in_stft_size;

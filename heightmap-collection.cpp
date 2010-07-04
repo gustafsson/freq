@@ -4,10 +4,12 @@
 #include "signal-filteroperation.h"
 #include "tfr-cwt.h"
 #include <boost/foreach.hpp>
+#include <InvokeOnDestruction.hpp>
 #include <CudaException.h>
 #include <GlException.h>
 #include <string>
 #include <QThread>
+#include <neat_math.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -17,21 +19,6 @@
 #define TIME_COLLECTION if(0)
 
 namespace Heightmap {
-
-///// HEIGHTMAP::BLOCK
-float Block::
-sample_rate()
-{
-    Position a, b;
-    ref.getArea( a, b );
-    return pow(2, -ref.log2_samples_size[0]) - 1/(b.time-a.time);
-}
-
-float Block::
-nFrequencies()
-{
-    return pow(2, -ref.log2_samples_size[1]);
-}
 
 
 ///// HEIGHTMAP::COLLECTION
@@ -171,7 +158,10 @@ max_sample_size()
                      std::max(minima.scale, 1.f/_scales_per_block) );
 }
 
-/*Reference Collection::findReferenceCanonical( Position p, Position sampleSize )
+/*
+  Canonical implementation of findReference
+
+Reference Collection::findReferenceCanonical( Position p, Position sampleSize )
 {
     // doesn't ASSERT(r.containsSpectrogram() && !r.toLarge())
     Reference r(this);
@@ -217,7 +207,7 @@ findReference( Position p, Position sampleSize )
     if (p.scale > 1) p.scale=1;
 
     // Compute sample size
-    r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
+    r.log2_samples_size = tvector<2,int>( floor_log2( sampleSize.time ), floor_log2( sampleSize.scale ));
     r.block_index = tvector<2,unsigned>(0,0);
     //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
@@ -230,8 +220,8 @@ findReference( Position p, Position sampleSize )
     //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Compute chunk index
-    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2.f, -r.log2_samples_size[0]),
-                                        p.scale / _scales_per_block * pow(2.f, -r.log2_samples_size[1]));
+    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * ldexpf(1.f, -r.log2_samples_size[0]),
+                                        p.scale / _scales_per_block * ldexpf(1.f, -r.log2_samples_size[1]));
 
     // Validate chunk index
     r.getArea(a,b);
@@ -565,9 +555,9 @@ void Collection::
 //    float in_min_hz = in_max_hz / 4/trans.chunk_size;
     float in_min_hz = 0;
 
-    float out_stft_size = (trans.chunk_size/(float)stft->sample_rate)*block->sample_rate();
+    float out_stft_size = (trans.chunk_size/(float)stft->sample_rate)*block->ref.sample_rate();
 
-    float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->sample_rate();
+    float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->ref.sample_rate();
 
     ::expandCompleteStft( stft->waveform_data->getCudaGlobal(),
                   block->glblock->height()->data->getCudaGlobal(),
@@ -584,6 +574,11 @@ void Collection::
 void Collection::
         applyUpdates()
 {
+    // Make sure _updates_condition.wakeAll() is called on all exit paths.
+    // This is to release the block of other threads waiting for applyUpdates to process data.
+    // They should be released even if applyUpdates for some reason fails.
+    InvokeOnDestrcution scopedVariable( boost::bind(&QWaitCondition::wakeAll, &_updates_condition ) );
+
     {   QMutexLocker l(&_updates_mutex);
         if (_updates.empty())
             return;
@@ -591,6 +586,8 @@ void Collection::
 
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
     TIME_COLLECTION expected_samples().print("Before apply updates");
+
+    TIME_COLLECTION { TaskTimer t2("cudaThreadSynchronize"); CudaException_ThreadSynchronize();}
 
     {
         // Keep the lock while updating as a means to prevent more memory from being allocated
@@ -609,7 +606,7 @@ void Collection::
                 // for a more local and thus faster loop.
                 if (!(chunkSid & pb->ref.getInterval()).isEmpty())
                 {
-                    if (mergeBlock( pb, chunk, 0 ))
+                    if (mergeBlock( &*pb, &*chunk, 0 ))
                         computeSlope( pb, 0 );
                 }
                 pb->glblock->unmap();
@@ -620,13 +617,11 @@ void Collection::
     }
     TIME_COLLECTION expected_samples().print("After apply updates");
 
-    _updates_condition.wakeAll();
-
     TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
 bool Collection::
-        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data)
+        mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data)
 {
     // Find out what intervals that match
     Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
@@ -642,7 +637,12 @@ bool Collection::
     if (transferDesc.isEmpty())
         return false;
 
-    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+    std::stringstream ss;
+    Position a,b;
+    outBlock->ref.getArea(a,b);
+    TIME_COLLECTION TaskTimer tt("%s chunk t=[%g, %g[ into block t=[%g,%g] ff=[%g,%g]%s", __FUNCTION__,
+                                 inChunk->startTime(), inChunk->endTime(), a.time, b.time, a.scale, b.scale,
+                                 save_in_prepared_data?" save_in_prepared_data":"");
 
     boost::shared_ptr<GpuCpuData<float> > outData;
 
@@ -650,9 +650,9 @@ bool Collection::
     // and thus cannot write directly to the cuda buffer that is mapped to the rendering thread's
     // OpenGL buffer. Instead merge inChunk to a prepared_data buffer in outBlock now, move data to CPU
     // and update the OpenGL block the next time it is rendered.
-    if (!save_in_prepared_data)
+    if (!save_in_prepared_data) {
         outData = outBlock->glblock->height()->data;
-    else {
+    } else {
         if (outBlock->prepared_data)
             outData = outBlock->prepared_data;
         else
@@ -660,12 +660,22 @@ bool Collection::
     }
 
     float in_sample_rate = inChunk->sample_rate;
-    float out_sample_rate = outBlock->sample_rate();
+    float out_sample_rate = outBlock->ref.sample_rate();
     float in_frequency_resolution = inChunk->nScales();
-    float out_frequency_resolution = outBlock->nFrequencies();
+    float out_frequency_resolution = outBlock->ref.nFrequencies();
 
     BOOST_FOREACH( Signal::SamplesIntervalDescriptor::Interval transfer, transferDesc.intervals())
     {
+        TIME_COLLECTION TaskTimer tt("Inserting chunk [%u,%u]", transfer.first, transfer.last);
+
+        if (0)
+        TIME_COLLECTION {
+            TaskTimer("inInterval [%u,%u]", inInterval.first, inInterval.last).suppressTiming();
+            TaskTimer("outInterval [%u,%u]", outInterval.first, outInterval.last).suppressTiming();
+            TaskTimer("inChunk->first_valid_sample = %u", inChunk->first_valid_sample).suppressTiming();
+            TaskTimer("inChunk->n_valid_samples = %u", inChunk->n_valid_samples).suppressTiming();
+        }
+
         // Find resolution and offest for the two blocks to be merged
         float in_offset = transfer.first - inInterval.first;
         float out_offset = transfer.first - outInterval.first;
@@ -691,8 +701,7 @@ bool Collection::
                            cuda_stream);
 
         outBlock->valid_samples |= transfer;
-
-        TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Inserting chunk [%u,%u]", transfer.first, transfer.last);
+        TIME_COLLECTION CudaException_ThreadSynchronize();
     }
 
     if (save_in_prepared_data) {
@@ -724,11 +733,11 @@ bool Collection::
 
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
 
-    float in_sample_rate = inBlock->sample_rate();
-    float out_sample_rate = outBlock->sample_rate();
+    float in_sample_rate = inBlock->ref.sample_rate();
+    float out_sample_rate = outBlock->ref.sample_rate();
     unsigned signal_sample_rate = worker->source()->sample_rate();
-    float in_frequency_resolution = inBlock->nFrequencies();
-    float out_frequency_resolution = outBlock->nFrequencies();
+    float in_frequency_resolution = inBlock->ref.nFrequencies();
+    float out_frequency_resolution = outBlock->ref.nFrequencies();
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
