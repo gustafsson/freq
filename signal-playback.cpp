@@ -173,16 +173,23 @@ void Playback::
 {
     if (isUnderfed() )
     {
-        TIME_PLAYBACK TaskTimer(TaskTimer::LogVerbose, "Waiting for more data");
+        TIME_PLAYBACK TaskTimer("Waiting for more data");
         return;
     }
 
     try
     {
-    
+
+    // Be nice, don't just destroy the previous one but ask it to stop first
+    if (streamPlayback && !streamPlayback->isStopped())
+    {
+        streamPlayback->stop();
+    }
+    streamPlayback.reset();
+
     portaudio::System &sys = portaudio::System::instance();
 
-    TIME_PLAYBACK TaskTimer(TaskTimer::LogVerbose, "Start playing on: %s", sys.deviceByIndex(_output_device).name() );
+    TIME_PLAYBACK TaskTimer("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
     // Set up the parameters required to open a (Callback)Stream:
     portaudio::DirectionSpecificStreamParameters outParamsPlayback(
@@ -266,7 +273,7 @@ bool Playback::
     // Return if the estimated time to receive all expected samples is greater than
     // the time it would take to play the remaining part of the data.
     // If it is, the sink is underfed.
-    TIME_PLAYBACK TaskTimer("time_left %g %s %g estimated_time_required. %s underfed.", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required, time_left < estimated_time_required?"Is":"Not").suppressTiming();
+    TIME_PLAYBACK TaskTimer("Time left %g %s %g estimated time required. %s underfed", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required, time_left < estimated_time_required?"Is":"Not").suppressTiming();
     return time_left < estimated_time_required;
 }
 
