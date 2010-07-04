@@ -4,9 +4,10 @@
 #include <throwInvalidArgument.h>
 #include <CudaException.h>
 #include "tfr-wavelet.cu.h"
+#include <neat_math.h>
 
 #ifdef _MSC_VER
-#include "msc_stdc.h"
+#include <msc_stdc.h>
 #endif
 
 #define TIME_CWT if(0)
@@ -30,7 +31,7 @@ pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
     std::stringstream ss;
-    TIME_CWT TaskTimer tt("Cwt buffer %s", ((std::stringstream&)(ss<<buffer->getInterval())).str().c_str() );
+    TIME_CWT TaskTimer tt("Cwt buffer %s, %u samples. [%g, %g] s", ((std::stringstream&)(ss<<buffer->getInterval())).str().c_str(), buffer->number_of_samples(), buffer->start(), buffer->length()+buffer->start() );
 
     pFftChunk ft ( _fft( buffer ) );
 
@@ -68,8 +69,26 @@ pChunk Cwt::
         GpuCpuData<float2>* g = intermediate_wt->transform_data.get();
         cudaExtent n = g->getNumberOfElements();
 
+        intermediate_wt->chunk_offset = buffer->sample_offset;
+        intermediate_wt->first_valid_sample = wavelet_std_samples( buffer->sample_rate );
+
+        if (0==buffer->sample_offset)
+            intermediate_wt->first_valid_sample=0;
+
+        intermediate_wt->max_hz = max_hz( buffer->sample_rate );
+        intermediate_wt->min_hz = min_hz();
+
+        BOOST_ASSERT(wavelet_std_samples( buffer->sample_rate ) + intermediate_wt->first_valid_sample < buffer->number_of_samples());
+
+        intermediate_wt->n_valid_samples = buffer->number_of_samples() - wavelet_std_samples( buffer->sample_rate ) - intermediate_wt->first_valid_sample;
+
+        intermediate_wt->sample_rate = buffer->sample_rate;
+
         if (0 /* cpu version */ ) {
-            TIME_CWT TaskTimer tt("inverse ooura");
+            TIME_CWT TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
+                                  intermediate_wt->first_valid_sample,
+                                  intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
+                                  intermediate_wt->n_valid_samples);
 
             // Move to CPU
             float2* p = g->getCpuMemory();
@@ -88,27 +107,18 @@ pChunk Cwt::
             g->getCudaGlobal( false );
         }
         if (1 /* gpu version */ ) {
-            TIME_CWT TaskTimer tt("inverse cufft");
+            TIME_CWT TaskTimer tt("inverse cufft, redundant=%u+%u valid=%u",
+                                  intermediate_wt->first_valid_sample,
+                                  intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
+                                  intermediate_wt->n_valid_samples);
 
             cufftComplex *d = g->getCudaGlobal().ptr();
 
-			CufftHandleContext _fft_many;
+            CufftHandleContext _fft_many;
             CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
 
             TIME_CWT CudaException_ThreadSynchronize();
         }
-        intermediate_wt->chunk_offset = buffer->sample_offset;
-        intermediate_wt->first_valid_sample = wavelet_std_samples( buffer->sample_rate );
-        if (0==buffer->sample_offset)
-            intermediate_wt->first_valid_sample=0;
-        intermediate_wt->max_hz = max_hz( buffer->sample_rate );
-        intermediate_wt->min_hz = min_hz();
-
-        BOOST_ASSERT(wavelet_std_samples( buffer->sample_rate ) + intermediate_wt->first_valid_sample < buffer->number_of_samples());
-
-        intermediate_wt->n_valid_samples = buffer->number_of_samples() - wavelet_std_samples( buffer->sample_rate ) - intermediate_wt->first_valid_sample;
-
-        intermediate_wt->sample_rate = buffer->sample_rate;
     }
 
     return intermediate_wt;
@@ -215,26 +225,7 @@ float Cwt::
 unsigned Cwt::
         wavelet_std_samples( unsigned sample_rate ) const
 {
-    return (_wavelet_std_t*sample_rate+31)/32*32;
-}
-
-// Smallest power of two greater than x
-static unsigned int
-spo2g(register unsigned int x)
-{
-    x |= (x >> 1);
-    x |= (x >> 2);
-    x |= (x >> 4);
-    x |= (x >> 8);
-    x |= (x >> 16);
-    return(x+1);
-}
-
-// Largest power of two smaller than x
-static unsigned int
-lpo2s(register unsigned int x)
-{
-    return spo2g(x-1)>>1;
+    return ((unsigned)(_wavelet_std_t*sample_rate+31))/32*32;
 }
 
 unsigned Cwt::
