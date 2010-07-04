@@ -18,7 +18,7 @@
 //#define TIME_COLLECTION
 #define TIME_COLLECTION if(0)
 
-#define MAX_REDUNDANT_SIZE 4
+#define MAX_REDUNDANT_SIZE 32
 
 namespace Heightmap {
 
@@ -547,7 +547,7 @@ createBlock( Reference ref )
             {
                 Position a,b;
                 (*oldest)->ref.getArea(a,b);
-                TIME_COLLECTION TaskTimer tt("Removing block [%g, %g]. %u remaining blocks.", a.time, b.time, _cache.size());
+                TaskTimer tt("Removing block [%g, %g]. %u remaining blocks.", a.time, b.time, _cache.size());
 
                 _cache.erase( oldest ); // A slow operation for std::vector, but the beneftis of vector is way bigger than this penalty in this case
             }
