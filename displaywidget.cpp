@@ -45,8 +45,8 @@
 #endif
 #include <math.h>
 
-#define TIME_PAINTGL
-//#define TIME_PAINTGL if(0)
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
 
 void drawCircleSector(float x, float y, float radius, float start, float end);
 void drawRoundRect(float width, float height, float roundness);
@@ -422,22 +422,20 @@ bool DisplayWidget::isRecordSource()
 
 void DisplayWidget::receiveRecord(bool active)
 {
-    TaskTimer tt("Trying to %s recording", active?"start":"stop");
-
     Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
     Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
 
     if (r)
     {
-        tt.info("succeded!\n");
-		if (active == r->isStopped())
-		{
-			r->isStopped() ? r->startRecording( this ) : r->stopRecording();
-		}
+        TaskTimer tt("%s recording", active?"Starting":"Stoping");
+        if (active == r->isStopped())
+        {
+                r->isStopped() ? r->startRecording( this ) : r->stopRecording();
+        }
     }
     else
     {
-        tt.info("failed!\n");;
+        TaskTimer tt("receiveRecord was called without a MicrophoneRecorder source");
     }
     update();
 }

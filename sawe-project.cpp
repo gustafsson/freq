@@ -41,7 +41,7 @@ pProject Project::
     {
         QMessageBox::warning( 0,
                      QString("Can't find file"),
-                     QString("File ") + QString::fromLocal8Bit(filename.c_str()));
+                     QString("Can't find file '") + QString::fromLocal8Bit(filename.c_str()) + "'");
         filename.clear();
     }
 

@@ -18,6 +18,8 @@
 //#define TIME_COLLECTION
 #define TIME_COLLECTION if(0)
 
+#define MAX_REDUNDANT_SIZE 4
+
 namespace Heightmap {
 
 
@@ -240,7 +242,7 @@ pBlock Collection::
     // Look among cached blocks for this reference
     pBlock block;
 	{   QMutexLocker l(&_cache_mutex);
-		BOOST_FOREACH( pBlock& b, _cache ) {
+                BOOST_FOREACH( pBlock& b, _cache ) {
 			if (b->ref == ref) {
 				block = b;
 
@@ -512,6 +514,45 @@ createBlock( Reference ref )
 
     if ( 0 == result.get())
         return pBlock(); // return null-pointer
+
+    if (0!= "Remove old redundant blocks")
+    {
+        unsigned youngest_age = -1, youngest_count = 0;
+        BOOST_FOREACH( pBlock & b, _cache )
+        {
+            unsigned age = _frame_counter - b->frame_number_last_used;
+            if (youngest_age > age) {
+                youngest_age = age;
+                youngest_count = 1;
+            } else if(youngest_age == age) {
+                ++youngest_count;
+            }
+        }
+
+        while (MAX_REDUNDANT_SIZE*youngest_count < _cache.size()+1 && 16<_cache.size())
+        {
+
+            unsigned oldest_age = 0;
+            std::vector<pBlock>::iterator oldest = _cache.end();
+            for(std::vector<pBlock>::iterator i = _cache.begin(); i!=_cache.end(); ++i )
+            {
+                unsigned age = _frame_counter - (*i)->frame_number_last_used;
+                if (oldest_age < age) {
+                    oldest_age = age;
+                    oldest = i;
+                }
+            }
+
+            if (oldest!=_cache.end())
+            {
+                Position a,b;
+                (*oldest)->ref.getArea(a,b);
+                TIME_COLLECTION TaskTimer tt("Removing block [%g, %g]. %u remaining blocks.", a.time, b.time, _cache.size());
+
+                _cache.erase( oldest ); // A slow operation for std::vector, but the beneftis of vector is way bigger than this penalty in this case
+            }
+        }
+    }
 
     _cache.push_back( result );
 
