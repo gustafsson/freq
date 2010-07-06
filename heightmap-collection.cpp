@@ -49,6 +49,7 @@ void Collection::
 {
 	{	QMutexLocker l(&_cache_mutex);
 		_cache.clear();
+		_recent.clear();
 	}
 	{	QMutexLocker l(&_updates_mutex);
 		_updates.clear();
@@ -113,6 +114,7 @@ scales_per_block(unsigned v)
 {
 	QMutexLocker l(&_cache_mutex);
     _cache.clear();
+	_recent.clear();
     _scales_per_block=v;
 }
 
@@ -121,6 +123,7 @@ samples_per_block(unsigned v)
 {
 	QMutexLocker l(&_cache_mutex);
     _cache.clear();
+	_recent.clear();
     _samples_per_block=v;
 }
 
@@ -129,13 +132,17 @@ unsigned Collection::
 {
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
-    _frame_counter++;
 
 	{   QMutexLocker l(&_cache_mutex);
-		BOOST_FOREACH( pBlock& b, _cache ) {
+		BOOST_FOREACH(recent_t::value_type& b, _recent)
+		{
+			if (b->frame_number_last_used != _frame_counter)
+				break;
 			b->glblock->unmap();
 		}
 	}
+
+	_frame_counter++;
 
     applyUpdates();
     return t;
@@ -240,15 +247,11 @@ pBlock Collection::
         getBlock( Reference ref )
 {
     // Look among cached blocks for this reference
-    pBlock block;
+    pBlock block; // smart pointer defaults to 0
 	{   QMutexLocker l(&_cache_mutex);
-                BOOST_FOREACH( pBlock& b, _cache ) {
-			if (b->ref == ref) {
-				block = b;
-
-				break;
-			}
-		}
+		cache_t::iterator itr = _cache.find( ref );
+		if (itr != _cache.end())
+			block = itr->second;
 	}
 
     if (0 == block.get()) {
@@ -261,6 +264,14 @@ pBlock Collection::
         if (!(refInt-=block->valid_samples).isEmpty())
             _unfinished_count++;
 
+		for( recent_t::iterator& i = _recent.begin(); i!=_recent.end(); ++i )
+			if ((*i)->ref == ref ) {
+				_recent.erase( i );
+				break;
+			}
+
+		_recent.push_front( block );
+
         block->frame_number_last_used = _frame_counter;
     }
 
@@ -271,12 +282,15 @@ void Collection::
         gc()
 {
 	QMutexLocker l(&_cache_mutex);
-    for (std::vector<pBlock>::iterator itr = _cache.begin(); itr!=_cache.end(); )
+
+	for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        if ((*itr)->frame_number_last_used < _frame_counter) {
+        if (itr->second->frame_number_last_used < _frame_counter) {
             Position a,b;
-            (*itr)->ref.getArea(a,b);
+            itr->second->ref.getArea(a,b);
             TaskTimer tt("Release block [%g, %g]", a.time, b.time);
+			
+			_recent.remove(itr->second);
             itr = _cache.erase(itr);
         } else {
             itr++;
@@ -291,10 +305,8 @@ void Collection::
     TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
 
 	QMutexLocker l(&_cache_mutex);
-    BOOST_FOREACH( pBlock& b, _cache )
-    {
-        b->valid_samples -= sid;
-    }
+	BOOST_FOREACH( cache_t::value_type& c, _cache )
+		c.second->valid_samples -= sid;
 }
 
 Signal::SamplesIntervalDescriptor Collection::
@@ -303,18 +315,18 @@ Signal::SamplesIntervalDescriptor Collection::
     Signal::SamplesIntervalDescriptor r;
 
 	QMutexLocker l(&_cache_mutex);
-    BOOST_FOREACH( pBlock& b, _cache )
-    {
+
+	BOOST_FOREACH( recent_t::value_type& b, _recent )
+	{
         if (_frame_counter == b->frame_number_last_used)
         {
             Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
 
             i -= b->valid_samples;
             r |= i;
-        }
+        } else
+			break;
     }
-
-    _expected_samples = r;
 
     return r;
 }
@@ -433,19 +445,18 @@ createBlock( Reference ref )
             if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // start with the blocks that are just slightly more detailed
-                BOOST_FOREACH( pBlock& b, _cache ) {
-                    if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]+1 ||
-                        block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1]+1)
-                    {
-                        mergeBlock( block, b, 0 );
-                    }
-                }
-            }
+				mergeBlock( block, block->ref.left(), 0 );
+				mergeBlock( block, block->ref.right(), 0 );
+				mergeBlock( block, block->ref.top(), 0 );
+				mergeBlock( block, block->ref.bottom(), 0 );
+			}
 
             if (0) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
                 // then try using the blocks that are even more detailed
-                BOOST_FOREACH( pBlock& b, _cache ) {
+				BOOST_FOREACH( cache_t::value_type& c, _cache )
+				{
+					pBlock& b = c.second;
                     if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
                         block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
                     {
@@ -460,19 +471,19 @@ createBlock( Reference ref )
             if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // then try to upscale blocks that are just slightly less detailed
-                BOOST_FOREACH( pBlock& b, _cache ) {
-                    if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]-1 ||
-                        block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1]-1)
-                    {
-                        mergeBlock( block, b, 0 );
-                    }
-                }
+				mergeBlock( block, block->ref.parent(), 0 );
+				mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
+				mergeBlock( block, block->ref.parent().right(), 0 );
+				mergeBlock( block, block->ref.parent().top(), 0 );
+				mergeBlock( block, block->ref.parent().bottom(), 0 );
             }
 
             if (0) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                 // then try to upscale other blocks
-                BOOST_FOREACH( pBlock& b, _cache ) {
+				BOOST_FOREACH( cache_t::value_type& c, _cache )
+				{
+					pBlock& b = c.second;
                     if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
                         block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
                     {
@@ -518,43 +529,31 @@ createBlock( Reference ref )
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
-        BOOST_FOREACH( pBlock & b, _cache )
-        {
-            unsigned age = _frame_counter - b->frame_number_last_used;
+		BOOST_FOREACH( recent_t::value_type& b, _recent )
+		{
+			unsigned age = _frame_counter - b->frame_number_last_used;
             if (youngest_age > age) {
                 youngest_age = age;
                 youngest_count = 1;
             } else if(youngest_age == age) {
                 ++youngest_count;
-            }
+			} else {
+				break; // _recent is ordered with the most recently accessed blocks first
+			}
         }
 
-        while (MAX_REDUNDANT_SIZE*youngest_count < _cache.size()+1 && 16<_cache.size())
+        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 16<_recent.size())
         {
+            Position a,b;
+            _recent.back()->ref.getArea(a,b);
+            TaskTimer tt("Removing block [%g, %g]. %u remaining blocks, recent %u blocks.", a.time, b.time, _cache.size(), _recent.size());
 
-            unsigned oldest_age = 0;
-            std::vector<pBlock>::iterator oldest = _cache.end();
-            for(std::vector<pBlock>::iterator i = _cache.begin(); i!=_cache.end(); ++i )
-            {
-                unsigned age = _frame_counter - (*i)->frame_number_last_used;
-                if (oldest_age < age) {
-                    oldest_age = age;
-                    oldest = i;
-                }
-            }
-
-            if (oldest!=_cache.end())
-            {
-                Position a,b;
-                (*oldest)->ref.getArea(a,b);
-                TaskTimer tt("Removing block [%g, %g]. %u remaining blocks.", a.time, b.time, _cache.size());
-
-                _cache.erase( oldest ); // A slow operation for std::vector, but the beneftis of vector is way bigger than this penalty in this case
-            }
+			_cache.erase(_recent.back()->ref);
+			_recent.pop_back();
         }
     }
 
-    _cache.push_back( result );
+	_cache[ result->ref ] = result;
 
     return result;
 }
@@ -641,10 +640,11 @@ void Collection::
             TIME_COLLECTION chunkSid.print("Applying chunk");
 
             // Update all blocks with this new chunk
-            BOOST_FOREACH( pBlock& pb, _cache )
+			BOOST_FOREACH( cache_t::value_type& c, _cache )
             {
-                // This check is done i mergeBlock as well, but do it here first
-                // for a more local and thus faster loop.
+				pBlock& pb = c.second;
+                // This check is done in mergeBlock as well, but do it here first
+                // for a hopefully more local and thus faster loop.
                 if (!(chunkSid & pb->ref.getInterval()).isEmpty())
                 {
                     if (mergeBlock( &*pb, &*chunk, 0 ))
@@ -826,6 +826,15 @@ bool Collection::
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
     return true;
+}
+
+bool Collection::
+	mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream )
+{
+	cache_t::iterator i = _cache.find(ref);
+	if (i!=_cache.end())
+		return mergeBlock(outBlock, i->second, cuda_stream );
+	return false;
 }
 
 } // namespace Heightmap
