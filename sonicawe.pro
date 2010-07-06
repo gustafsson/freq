@@ -152,7 +152,7 @@ unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HE
 
 INCLUDEPATH += ../gpumisc
 
-!macx&!win32 {
+unix:!macx {
 INCLUDEPATH += \
     /usr/local/cuda/include
 LIBS = -lsndfile \
