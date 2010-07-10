@@ -194,6 +194,13 @@ void TimelineWidget::
         setupCamera( bool staticTimeLine )
 {
     float length = std::max( 1.f, getDisplayWidget()->worker()->source()->length());
+	
+	if (0 == "Make sure that the camera focus point is within the timeline")
+	{
+		float t = getDisplayWidget()->renderer()->camera[0];
+		if (t < _xoffs) _xoffs = t;
+		if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
+	}
 
     glLoadIdentity();
 
