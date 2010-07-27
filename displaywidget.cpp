@@ -218,7 +218,6 @@ DisplayWidget::
         c = 1;
 #endif
 #endif
-    gDisplayWidget = this;
     float l = _worker->source()->length();
     _prevLimit = l;
     selection[0].x = l*.5f;
