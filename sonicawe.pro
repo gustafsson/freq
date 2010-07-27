@@ -2,7 +2,10 @@
 # Project created by QtCreator 2009-11-06T11:26:14
 # -------------------------------------------------
 
-### Compiler settings
+
+####################
+# Compiler settings
+
 TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
@@ -15,18 +18,22 @@ unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
 win32:QMAKE_LFLAGS += /FORCE:MULTIPLE
+QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-QMAKE_CXX = colorgcc
-macx:QMAKE_CXX = g++
+!macx&!win32: QMAKE_CXX = colorgcc
+#macx:QMAKE_CXX = g++ # Should not need this macx: with CONFIG(unix|!macx) above
 
 ### Settings for using llvm instead of gcc on linux
-#unix {
-#    QMAKE_CXX = llvm-g++
-#    QMAKE_CC = llvm-gcc
-#    QMAKE_LINK = llvm-g++
-#}
+llvm {
+    QMAKE_CXX = llvm-g++
+    QMAKE_CC = llvm-gcc
+    QMAKE_LINK = llvm-g++
+}
 
-### Source code
+
+####################
+# Source code
+
 RESOURCES += icon-resources.qrc
 SOURCES += main.cpp \
     mainwindow.cpp \
@@ -128,36 +135,53 @@ CUDA_SOURCES += tfr-wavelet.cu \
 OTHER_SOURCES += heightmap.frag \
     heightmap.vert \
     sonicawe.pro
+
+# Make shaders show up in project file list in Visual Studio
 win32 { 
     othersources.input = OTHER_SOURCES
     othersources.output = ${QMAKE_FILE_NAME}
     QMAKE_EXTRA_UNIX_COMPILERS += othersources
 }
+
+
+####################
+# Build settings
+
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
-INCLUDEPATH += ../gpumisc
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
-unix:INCLUDEPATH += /usr/local/cuda/include
-unix:LIBS = -lsndfile \
+
+INCLUDEPATH += ../gpumisc
+
+unix:!macx {
+INCLUDEPATH += \
+    /usr/local/cuda/include
+LIBS = -lsndfile \
     -lGLEW \
     -lGLU \
     -lGL \
     -lglut \
     -lportaudiocpp -lportaudio \
-    -lhdf5 \
-    -lhdf5_hl
-macx:INCLUDEPATH += /usr/local/cuda/include \
+    -lhdf5 -lhdf5_hl \
+    -L../gpumisc -lgpumisc
+}
+
+macx {
+INCLUDEPATH += /usr/local/cuda/include \
     ../../libs/include \
     ../../libs/hdf5/include \
     ../../libs/zlib/include 
-macx:LIBS = -lsndfile \
+LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
-    -lcufft \
     -framework GLUT \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio \
     -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/zlib/bin -lz 
-win32:INCLUDEPATH += \
+    -L../../libs/zlib/bin -lz \
+    -L../gpumisc -lgpumisc
+}
+
+win32 {
+INCLUDEPATH += \
 	..\..\winlib\glut \
 	..\..\winlib\glew\include \
 	..\..\winlib\portaudio\include \
@@ -165,31 +189,43 @@ win32:INCLUDEPATH += \
 	..\..\winlib\hdf5lib\include \
 	..\..\winlib\zlib\include \
 	..\..\winlib
-win32:LIBS += \
+LIBS += \
 	-l..\..\winlib\glut\glut32 \
 	-l..\..\winlib\glew\lib\glew32 \
-    -l..\..\winlib\libsndfile\libsndfile-1 \
+	-l..\..\winlib\libsndfile\libsndfile-1 \
 	-l..\..\winlib\portaudio\portaudio \
 	-l..\..\winlib\portaudio\portaudiocpp \
 	-l..\..\winlib\hdf5lib\dll\hdf5dll \
 	-l..\..\winlib\hdf5lib\dll\hdf5_hldll \
 	-L..\..\winlib\boostlib
-LIBS += -lcufft 
-!win32:LIBS += -L../gpumisc -lgpumisc
+}
+
+
+####################
+# Temporary output
 
 win32:RCC_DIR = tmp
 MOC_DIR = tmp
 OBJECTS_DIR = tmp/
-debug:OBJECTS_DIR = tmp/debug/
-release:OBJECTS_DIR = tmp/release/
 UI_DIR = tmp
+
+CONFIG(debug, debug|release):OBJECTS_DIR = tmp/debug/
+else:OBJECTS_DIR = tmp/release/
 
 # #######################################################################
 # CUDA
 # #######################################################################
+
+### CUDA Compiler flags
+emulation: CUDA_FLAGS += --device-emulation
+emulation: LIBS += -lcufftemu -lcudartemu
+!emulation: LIBS += -lcufft -lcudart
+CONFIG(debug, debug|release): CUDA_FLAGS += -g
+CUDA_FLAGS += --use_fast_math
+
 win32 { 
     INCLUDEPATH += $(CUDA_INC_PATH)
-    LIBS += -L$(CUDA_LIB_PATH) -lcudart
+    LIBS += -L$(CUDA_LIB_PATH)
 	QMAKE_CXXFLAGS -= -Zc:wchar_t-
 	QMAKE_CXXFLAGS += -Zc:wchar_t
     cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
@@ -198,7 +234,7 @@ win32 {
         -Xcompiler \
         \"$$join(QMAKE_CXXFLAGS," ")\" \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        --use_fast_math \
+        $$CUDA_FLAGS \
         ${QMAKE_FILE_BASE}.cu \
         -o \
         ${QMAKE_FILE_OUT}
@@ -209,14 +245,13 @@ unix {
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
-    LIBS += -lcudart
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
         -c \
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        --use_fast_math \
+        $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}
@@ -248,14 +283,13 @@ macx {
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib
-    LIBS += -lcudart
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
         -c \
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        --use_fast_math \
+        $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \
         ${QMAKE_FILE_OUT}
@@ -277,6 +311,7 @@ macx {
         -d \
         '\\\n'
 }
+
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
 # end of cuda section #######################################################################

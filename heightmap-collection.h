@@ -9,9 +9,12 @@
 #include "tfr-chunk.h"
 #include "tfr-chunksink.h"
 #include <vector>
+#include <boost/unordered_map.hpp>
 #include <QMutex>
 #include <QWaitCondition>
 #include <QThread>
+
+#include <boost/functional/hash.hpp>
 
 /*
 TODO: rewrite this section
@@ -81,9 +84,6 @@ class Block {
 public:
     Block( Reference ref ): ref(ref), frame_number_last_used(-1) {}
 
-    float sample_rate();
-    float nFrequencies();
-
     // Zoom level for this slot, determines size of elements
     Reference ref;
     unsigned frame_number_last_used;
@@ -102,6 +102,15 @@ public:
 };
 typedef boost::shared_ptr<Block> pBlock;
 
+inline std::size_t hash_value(Reference const& ref)
+{
+	std::size_t seed = 0;
+    boost::hash_combine(seed, ref.log2_samples_size[0]);
+    boost::hash_combine(seed, ref.log2_samples_size[1]);
+    boost::hash_combine(seed, ref.block_index[0]);
+    boost::hash_combine(seed, ref.block_index[1]);
+    return seed;
+}
 
 /**
   Signal::Sink::put is used to insert information into this collection.
@@ -179,8 +188,13 @@ private:
             2) if no unused blocks are found and _cache is non-empty, the entire _cache is cleared.
             3) if _cache is empty, Sonic AWE is terminated with an OpenGL error.
       */
-    std::vector<pBlock> _cache;
-    std::vector<Tfr::pChunk> _updates; // TODO updates should be transfered as downsampled blocks between cuda contexts. It is way to slow to transfer entire chunks.
+
+	typedef boost::unordered_map<Reference, pBlock> cache_t;
+	typedef std::list<pBlock> recent_t;
+    cache_t _cache;
+	recent_t _recent; // Ordered with the most recently accessed blocks first
+
+	std::vector<Tfr::pChunk> _updates; // TODO updates should be transfered as downsampled blocks between cuda contexts. It is way to slow to transfer entire chunks.
     QMutex _cache_mutex, _updates_mutex;
     QWaitCondition _updates_condition;
     ThreadChecker _constructor_thread;
@@ -216,12 +230,13 @@ private:
     /**
       Add block information from Cwt transform. Returns whether any information was merged.
       */
-    bool        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
+    bool        mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
 
     /**
       Add block information from another block. Returns whether any information was merged.
       */
     bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
+    bool        mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream );
 };
 
 } // namespace Heightmap

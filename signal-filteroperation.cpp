@@ -111,7 +111,7 @@ pBuffer FilterOperation::
         }
         else
         {
-            r = inverse_cwt( *c );
+            r = Tfr::InverseCwt()( *c );
         }
 
         TIME_FILTEROPERATION SamplesIntervalDescriptor(r->getInterval()).print("FilterOp after inverse");

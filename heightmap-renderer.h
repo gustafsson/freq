@@ -10,6 +10,7 @@
 #endif
 #include "heightmap-glblock.h"
 #include <tmatrix.h>
+#include <GlTexture.h>
 
 class DisplayWidget;
 
@@ -53,6 +54,8 @@ private:
     bool _draw_flat;
     float _redundancy;
 
+    boost::scoped_ptr<GlTexture> colorTexture;
+
     unsigned _drawn_blocks;
 
     friend class Heightmap::GlBlock;
@@ -61,6 +64,7 @@ private:
     void setSize( unsigned w, unsigned h);
     void createMeshIndexBuffer(unsigned w, unsigned h);
     void createMeshPositionVBO(unsigned w, unsigned h);
+    void createColorTexture(unsigned N);
 
     void beginVboRendering();
     void endVboRendering();

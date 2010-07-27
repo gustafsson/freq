@@ -19,28 +19,31 @@ public:
     unsigned scaleOffset() const;
     unsigned samplesPerBlock() const;
 
+    float sample_rate() const;
+    float nFrequencies() const;
+
     bool containsSpectrogram() const;
     bool toLarge() const;
 
     /** child references */
-    Reference left();
-    Reference right();
-    Reference top();
-    Reference bottom();
+    Reference left() const;
+    Reference right() const;
+    Reference top() const;
+    Reference bottom() const;
 
     /** sibblings, 3 other references who share the same parent */
-    Reference sibbling1();
-    Reference sibbling2();
-    Reference sibbling3();
+    Reference sibbling1() const;
+    Reference sibbling2() const;
+    Reference sibbling3() const;
 
     /** parent */
-    Reference parent();
+    Reference parent() const;
 
     /**
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
       invalid samples.
       */
-    Signal::SamplesIntervalDescriptor::Interval getInterval();
+    Signal::SamplesIntervalDescriptor::Interval getInterval() const;
 private:
     friend class Collection;
 

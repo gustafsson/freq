@@ -27,7 +27,7 @@ static void show_fatal_exception_cerr( const std::string& str )
 static void show_fatal_exception_qt( const std::string& str )
 {
     QMessageBox::critical( 0,
-                 QString("Fatal error. Sonic AWE needs to close"),
+                 QString("Error, closing application"),
 				 QString::fromLocal8Bit(str.c_str()) );
 }
 
@@ -59,8 +59,8 @@ Application::
     _app = this;
     _version_string = "Sonic AWE - development snapshot\n";
 
-    QDateTime now = QDateTime::currentDateTime();
-    now.date().year();
+    //QDateTime now = QDateTime::currentDateTime();
+    //now.date().year();
     stringstream ss;
     ss << "Sonic AWE";
 #ifndef SONICAWE_RELEASE
@@ -118,10 +118,10 @@ bool Application::
         v = QApplication::notify(receiver,e);
 	} catch (const std::invalid_argument &x) {
 		if (1 == QMessageBox::warning( 0,
-					 QString("Sonic AWE couldn't complete the requested action"),
-					 QString("Sonic AWE couldn't complete the requested action.\nDetails on the error follow:\n\n")+
+                                         QString("Couldn't complete the requested action"),
+                                         QString("Couldn't complete the requested action.\nDetails on the error follow:\n\n")+
 					 QString::fromLocal8Bit(x.what()),
-					 "Ignore", "Exit Sonic AWE", QString::null, 0, 0 ))
+                                         "Ignore", "Exit program", QString::null, 0, 0 ))
 		{
 			err = fatal_exception_string(x);
 		}

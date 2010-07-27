@@ -4,10 +4,12 @@
 #include "signal-filteroperation.h"
 #include "tfr-cwt.h"
 #include <boost/foreach.hpp>
+#include <InvokeOnDestruction.hpp>
 #include <CudaException.h>
 #include <GlException.h>
 #include <string>
 #include <QThread>
+#include <neat_math.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -16,22 +18,9 @@
 //#define TIME_COLLECTION
 #define TIME_COLLECTION if(0)
 
+#define MAX_REDUNDANT_SIZE 32
+
 namespace Heightmap {
-
-///// HEIGHTMAP::BLOCK
-float Block::
-sample_rate()
-{
-    Position a, b;
-    ref.getArea( a, b );
-    return pow(2, -ref.log2_samples_size[0]) - 1/(b.time-a.time);
-}
-
-float Block::
-nFrequencies()
-{
-    return pow(2, -ref.log2_samples_size[1]);
-}
 
 
 ///// HEIGHTMAP::COLLECTION
@@ -60,6 +49,7 @@ void Collection::
 {
 	{	QMutexLocker l(&_cache_mutex);
 		_cache.clear();
+		_recent.clear();
 	}
 	{	QMutexLocker l(&_updates_mutex);
 		_updates.clear();
@@ -124,6 +114,7 @@ scales_per_block(unsigned v)
 {
 	QMutexLocker l(&_cache_mutex);
     _cache.clear();
+	_recent.clear();
     _scales_per_block=v;
 }
 
@@ -132,6 +123,7 @@ samples_per_block(unsigned v)
 {
 	QMutexLocker l(&_cache_mutex);
     _cache.clear();
+	_recent.clear();
     _samples_per_block=v;
 }
 
@@ -140,13 +132,17 @@ unsigned Collection::
 {
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
-    _frame_counter++;
 
 	{   QMutexLocker l(&_cache_mutex);
-		BOOST_FOREACH( pBlock& b, _cache ) {
+		BOOST_FOREACH(recent_t::value_type& b, _recent)
+		{
+			if (b->frame_number_last_used != _frame_counter)
+				break;
 			b->glblock->unmap();
 		}
 	}
+
+	_frame_counter++;
 
     applyUpdates();
     return t;
@@ -171,7 +167,10 @@ max_sample_size()
                      std::max(minima.scale, 1.f/_scales_per_block) );
 }
 
-/*Reference Collection::findReferenceCanonical( Position p, Position sampleSize )
+/*
+  Canonical implementation of findReference
+
+Reference Collection::findReferenceCanonical( Position p, Position sampleSize )
 {
     // doesn't ASSERT(r.containsSpectrogram() && !r.toLarge())
     Reference r(this);
@@ -217,7 +216,7 @@ findReference( Position p, Position sampleSize )
     if (p.scale > 1) p.scale=1;
 
     // Compute sample size
-    r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
+    r.log2_samples_size = tvector<2,int>( floor_log2( sampleSize.time ), floor_log2( sampleSize.scale ));
     r.block_index = tvector<2,unsigned>(0,0);
     //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
@@ -230,8 +229,8 @@ findReference( Position p, Position sampleSize )
     //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
 
     // Compute chunk index
-    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2.f, -r.log2_samples_size[0]),
-                                        p.scale / _scales_per_block * pow(2.f, -r.log2_samples_size[1]));
+    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * ldexpf(1.f, -r.log2_samples_size[0]),
+                                        p.scale / _scales_per_block * ldexpf(1.f, -r.log2_samples_size[1]));
 
     // Validate chunk index
     r.getArea(a,b);
@@ -248,15 +247,11 @@ pBlock Collection::
         getBlock( Reference ref )
 {
     // Look among cached blocks for this reference
-    pBlock block;
+    pBlock block; // smart pointer defaults to 0
 	{   QMutexLocker l(&_cache_mutex);
-		BOOST_FOREACH( pBlock& b, _cache ) {
-			if (b->ref == ref) {
-				block = b;
-
-				break;
-			}
-		}
+		cache_t::iterator itr = _cache.find( ref );
+		if (itr != _cache.end())
+			block = itr->second;
 	}
 
     if (0 == block.get()) {
@@ -269,6 +264,14 @@ pBlock Collection::
         if (!(refInt-=block->valid_samples).isEmpty())
             _unfinished_count++;
 
+		for( recent_t::iterator& i = _recent.begin(); i!=_recent.end(); ++i )
+			if ((*i)->ref == ref ) {
+				_recent.erase( i );
+				break;
+			}
+
+		_recent.push_front( block );
+
         block->frame_number_last_used = _frame_counter;
     }
 
@@ -279,12 +282,15 @@ void Collection::
         gc()
 {
 	QMutexLocker l(&_cache_mutex);
-    for (std::vector<pBlock>::iterator itr = _cache.begin(); itr!=_cache.end(); )
+
+	for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        if ((*itr)->frame_number_last_used < _frame_counter) {
+        if (itr->second->frame_number_last_used < _frame_counter) {
             Position a,b;
-            (*itr)->ref.getArea(a,b);
+            itr->second->ref.getArea(a,b);
             TaskTimer tt("Release block [%g, %g]", a.time, b.time);
+			
+			_recent.remove(itr->second);
             itr = _cache.erase(itr);
         } else {
             itr++;
@@ -299,10 +305,8 @@ void Collection::
     TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
 
 	QMutexLocker l(&_cache_mutex);
-    BOOST_FOREACH( pBlock& b, _cache )
-    {
-        b->valid_samples -= sid;
-    }
+	BOOST_FOREACH( cache_t::value_type& c, _cache )
+		c.second->valid_samples -= sid;
 }
 
 Signal::SamplesIntervalDescriptor Collection::
@@ -311,18 +315,18 @@ Signal::SamplesIntervalDescriptor Collection::
     Signal::SamplesIntervalDescriptor r;
 
 	QMutexLocker l(&_cache_mutex);
-    BOOST_FOREACH( pBlock& b, _cache )
-    {
+
+	BOOST_FOREACH( recent_t::value_type& b, _recent )
+	{
         if (_frame_counter == b->frame_number_last_used)
         {
             Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
 
             i -= b->valid_samples;
             r |= i;
-        }
+        } else
+			break;
     }
-
-    _expected_samples = r;
 
     return r;
 }
@@ -441,19 +445,18 @@ createBlock( Reference ref )
             if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // start with the blocks that are just slightly more detailed
-                BOOST_FOREACH( pBlock& b, _cache ) {
-                    if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]+1 ||
-                        block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1]+1)
-                    {
-                        mergeBlock( block, b, 0 );
-                    }
-                }
-            }
+				mergeBlock( block, block->ref.left(), 0 );
+				mergeBlock( block, block->ref.right(), 0 );
+				mergeBlock( block, block->ref.top(), 0 );
+				mergeBlock( block, block->ref.bottom(), 0 );
+			}
 
             if (0) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
                 // then try using the blocks that are even more detailed
-                BOOST_FOREACH( pBlock& b, _cache ) {
+				BOOST_FOREACH( cache_t::value_type& c, _cache )
+				{
+					pBlock& b = c.second;
                     if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
                         block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
                     {
@@ -468,19 +471,19 @@ createBlock( Reference ref )
             if (1) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                 // then try to upscale blocks that are just slightly less detailed
-                BOOST_FOREACH( pBlock& b, _cache ) {
-                    if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]-1 ||
-                        block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1]-1)
-                    {
-                        mergeBlock( block, b, 0 );
-                    }
-                }
+				mergeBlock( block, block->ref.parent(), 0 );
+				mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
+				mergeBlock( block, block->ref.parent().right(), 0 );
+				mergeBlock( block, block->ref.parent().top(), 0 );
+				mergeBlock( block, block->ref.parent().bottom(), 0 );
             }
 
             if (0) {
                 TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                 // then try to upscale other blocks
-                BOOST_FOREACH( pBlock& b, _cache ) {
+				BOOST_FOREACH( cache_t::value_type& c, _cache )
+				{
+					pBlock& b = c.second;
                     if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
                         block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
                     {
@@ -523,7 +526,34 @@ createBlock( Reference ref )
     if ( 0 == result.get())
         return pBlock(); // return null-pointer
 
-    _cache.push_back( result );
+    if (0!= "Remove old redundant blocks")
+    {
+        unsigned youngest_age = -1, youngest_count = 0;
+		BOOST_FOREACH( recent_t::value_type& b, _recent )
+		{
+			unsigned age = _frame_counter - b->frame_number_last_used;
+            if (youngest_age > age) {
+                youngest_age = age;
+                youngest_count = 1;
+            } else if(youngest_age == age) {
+                ++youngest_count;
+			} else {
+				break; // _recent is ordered with the most recently accessed blocks first
+			}
+        }
+
+        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 16<_recent.size())
+        {
+            Position a,b;
+            _recent.back()->ref.getArea(a,b);
+            TaskTimer tt("Removing block [%g, %g]. %u remaining blocks, recent %u blocks.", a.time, b.time, _cache.size(), _recent.size());
+
+			_cache.erase(_recent.back()->ref);
+			_recent.pop_back();
+        }
+    }
+
+	_cache[ result->ref ] = result;
 
     return result;
 }
@@ -565,9 +595,9 @@ void Collection::
 //    float in_min_hz = in_max_hz / 4/trans.chunk_size;
     float in_min_hz = 0;
 
-    float out_stft_size = (trans.chunk_size/(float)stft->sample_rate)*block->sample_rate();
+    float out_stft_size = (trans.chunk_size/(float)stft->sample_rate)*block->ref.sample_rate();
 
-    float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->sample_rate();
+    float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->ref.sample_rate();
 
     ::expandCompleteStft( stft->waveform_data->getCudaGlobal(),
                   block->glblock->height()->data->getCudaGlobal(),
@@ -584,6 +614,11 @@ void Collection::
 void Collection::
         applyUpdates()
 {
+    // Make sure _updates_condition.wakeAll() is called on all exit paths.
+    // This is to release the block of other threads waiting for applyUpdates to process data.
+    // They should be released even if applyUpdates for some reason fails.
+    InvokeOnDestrcution scopedVariable( boost::bind(&QWaitCondition::wakeAll, &_updates_condition ) );
+
     {   QMutexLocker l(&_updates_mutex);
         if (_updates.empty())
             return;
@@ -591,6 +626,8 @@ void Collection::
 
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
     TIME_COLLECTION expected_samples().print("Before apply updates");
+
+    TIME_COLLECTION { TaskTimer t2("cudaThreadSynchronize"); CudaException_ThreadSynchronize();}
 
     {
         // Keep the lock while updating as a means to prevent more memory from being allocated
@@ -603,13 +640,14 @@ void Collection::
             TIME_COLLECTION chunkSid.print("Applying chunk");
 
             // Update all blocks with this new chunk
-            BOOST_FOREACH( pBlock& pb, _cache )
+			BOOST_FOREACH( cache_t::value_type& c, _cache )
             {
-                // This check is done i mergeBlock as well, but do it here first
-                // for a more local and thus faster loop.
+				pBlock& pb = c.second;
+                // This check is done in mergeBlock as well, but do it here first
+                // for a hopefully more local and thus faster loop.
                 if (!(chunkSid & pb->ref.getInterval()).isEmpty())
                 {
-                    if (mergeBlock( pb, chunk, 0 ))
+                    if (mergeBlock( &*pb, &*chunk, 0 ))
                         computeSlope( pb, 0 );
                 }
                 pb->glblock->unmap();
@@ -620,13 +658,11 @@ void Collection::
     }
     TIME_COLLECTION expected_samples().print("After apply updates");
 
-    _updates_condition.wakeAll();
-
     TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
 bool Collection::
-        mergeBlock( pBlock outBlock, Tfr::pChunk inChunk, unsigned cuda_stream, bool save_in_prepared_data)
+        mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data)
 {
     // Find out what intervals that match
     Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
@@ -642,7 +678,12 @@ bool Collection::
     if (transferDesc.isEmpty())
         return false;
 
-    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+    std::stringstream ss;
+    Position a,b;
+    outBlock->ref.getArea(a,b);
+    TIME_COLLECTION TaskTimer tt("%s chunk t=[%g, %g[ into block t=[%g,%g] ff=[%g,%g]%s", __FUNCTION__,
+                                 inChunk->startTime(), inChunk->endTime(), a.time, b.time, a.scale, b.scale,
+                                 save_in_prepared_data?" save_in_prepared_data":"");
 
     boost::shared_ptr<GpuCpuData<float> > outData;
 
@@ -650,9 +691,9 @@ bool Collection::
     // and thus cannot write directly to the cuda buffer that is mapped to the rendering thread's
     // OpenGL buffer. Instead merge inChunk to a prepared_data buffer in outBlock now, move data to CPU
     // and update the OpenGL block the next time it is rendered.
-    if (!save_in_prepared_data)
+    if (!save_in_prepared_data) {
         outData = outBlock->glblock->height()->data;
-    else {
+    } else {
         if (outBlock->prepared_data)
             outData = outBlock->prepared_data;
         else
@@ -660,12 +701,22 @@ bool Collection::
     }
 
     float in_sample_rate = inChunk->sample_rate;
-    float out_sample_rate = outBlock->sample_rate();
+    float out_sample_rate = outBlock->ref.sample_rate();
     float in_frequency_resolution = inChunk->nScales();
-    float out_frequency_resolution = outBlock->nFrequencies();
+    float out_frequency_resolution = outBlock->ref.nFrequencies();
 
     BOOST_FOREACH( Signal::SamplesIntervalDescriptor::Interval transfer, transferDesc.intervals())
     {
+        TIME_COLLECTION TaskTimer tt("Inserting chunk [%u,%u]", transfer.first, transfer.last);
+
+        if (0)
+        TIME_COLLECTION {
+            TaskTimer("inInterval [%u,%u]", inInterval.first, inInterval.last).suppressTiming();
+            TaskTimer("outInterval [%u,%u]", outInterval.first, outInterval.last).suppressTiming();
+            TaskTimer("inChunk->first_valid_sample = %u", inChunk->first_valid_sample).suppressTiming();
+            TaskTimer("inChunk->n_valid_samples = %u", inChunk->n_valid_samples).suppressTiming();
+        }
+
         // Find resolution and offest for the two blocks to be merged
         float in_offset = transfer.first - inInterval.first;
         float out_offset = transfer.first - outInterval.first;
@@ -691,8 +742,7 @@ bool Collection::
                            cuda_stream);
 
         outBlock->valid_samples |= transfer;
-
-        TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Inserting chunk [%u,%u]", transfer.first, transfer.last);
+        TIME_COLLECTION CudaException_ThreadSynchronize();
     }
 
     if (save_in_prepared_data) {
@@ -724,11 +774,11 @@ bool Collection::
 
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
 
-    float in_sample_rate = inBlock->sample_rate();
-    float out_sample_rate = outBlock->sample_rate();
+    float in_sample_rate = inBlock->ref.sample_rate();
+    float out_sample_rate = outBlock->ref.sample_rate();
     unsigned signal_sample_rate = worker->source()->sample_rate();
-    float in_frequency_resolution = inBlock->nFrequencies();
-    float out_frequency_resolution = outBlock->nFrequencies();
+    float in_frequency_resolution = inBlock->ref.nFrequencies();
+    float out_frequency_resolution = outBlock->ref.nFrequencies();
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
@@ -776,6 +826,15 @@ bool Collection::
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
     return true;
+}
+
+bool Collection::
+	mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream )
+{
+	cache_t::iterator i = _cache.find(ref);
+	if (i!=_cache.end())
+		return mergeBlock(outBlock, i->second, cuda_stream );
+	return false;
 }
 
 } // namespace Heightmap

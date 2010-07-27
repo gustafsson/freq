@@ -241,8 +241,8 @@ void GlBlock::
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RG, GL_FLOAT, 0);
         GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
 
-        glPixelTransferf(GL_RED_SCALE, 1.0f);
         glPixelTransferf(GL_GREEN_SCALE, 1.0f);
+        glPixelTransferf(GL_RED_SCALE, 1.0f);
 
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     }
@@ -256,10 +256,10 @@ void GlBlock::
 
     unmap();
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _tex_slope);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _tex_height);
 
     const bool wireFrame = false;
     const bool drawPoints = false;
@@ -282,10 +282,10 @@ void GlBlock::
 {
     unmap();
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _tex_height);
 
     glBegin( GL_TRIANGLE_STRIP );
         glTexCoord2f(0.0,0.0);    glVertex3f(0,0,0);

@@ -43,8 +43,6 @@ public:
       */
     void            filter( Tfr::pFilter f );
 
-    Tfr::InverseCwt inverse_cwt;
-
     /**
       If source also is a FilterOperation, take out its pFilter and do both
       filters in this FilterOperation. Then remove source by taking source->source

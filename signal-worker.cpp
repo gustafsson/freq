@@ -10,6 +10,8 @@
 //#define TIME_WORKER
 #define TIME_WORKER if(0)
 
+#define TESTING_PERFORMANCE false
+
 using namespace std;
 using namespace boost::posix_time;
 
@@ -47,6 +49,7 @@ bool Worker::
     if (todo_list().isEmpty())
         return false;
 
+    if (TESTING_PERFORMANCE) _samples_per_chunk = 19520;
     work_chunks++;
 
     unsigned center_sample = source()->sample_rate() * center;
@@ -95,7 +98,7 @@ bool Worker::
     unsigned milliseconds = diff.total_milliseconds();
     if (0==milliseconds) milliseconds=1;
 
-    if (1) {
+    if (!TESTING_PERFORMANCE) {
         unsigned minSize = Tfr::CwtSingleton::instance()->next_good_size( 1, _source->sample_rate());
         float current_fps = 1000.f/milliseconds;
         if (current_fps < _requested_fps && _samples_per_chunk >= minSize)

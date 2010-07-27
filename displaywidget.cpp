@@ -356,7 +356,7 @@ void DisplayWidget::
 
 void DisplayWidget::receivePlaySound()
 {
-    TaskTimer tt("Initiating playback of selection.\n");
+    TaskTimer tt("Initiating playback of selection");
 
     Signal::PostSink* postsink = getPostSink();
 
@@ -425,22 +425,20 @@ bool DisplayWidget::isRecordSource()
 
 void DisplayWidget::receiveRecord(bool active)
 {
-    TaskTimer tt("Trying to %s recording", active?"start":"stop");
-
     Signal::pSource first_source = Signal::Operation::first_source(_worker->source() );
     Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
 
     if (r)
     {
-        tt.info("succeded!\n");
-		if (active == r->isStopped())
-		{
-			r->isStopped() ? r->startRecording( this ) : r->stopRecording();
-		}
+        TaskTimer tt("%s recording", active?"Starting":"Stoping");
+        if (active == r->isStopped())
+        {
+                r->isStopped() ? r->startRecording( this ) : r->stopRecording();
+        }
     }
     else
     {
-        tt.info("failed!\n");;
+        TaskTimer tt("receiveRecord was called without a MicrophoneRecorder source");
     }
     update();
 }
@@ -661,10 +659,12 @@ void DisplayWidget::
         {
         Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
         Signal::pSource s( new Signal::FilterOperation( read, f));
-        Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(b->inverse_cwt.filter.get());
+
+        Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(getPostSink()->filter().get());
         if (e)
             e->_save_inside = true;
-        _matlabfilter.reset( new Signal::FilterOperation( s, b->inverse_cwt.filter));
+
+        _matlabfilter.reset( new Signal::FilterOperation( s, getPostSink()->filter()));
         b->source( _matlabfilter );
         break;
         }
@@ -1147,7 +1147,9 @@ void DisplayWidget::resizeGL( int width, int height ) {
 
 void DisplayWidget::paintGL()
 {
-    TIME_PAINTGL TaskTimer tt("DisplayWidget::paintGL");
+    TIME_PAINTGL _render_timer.reset();
+    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last DisplayWidget::paintGL"));
+
     static int tryGc = 0;
     try {
         GlException_CHECK_ERROR();

@@ -101,7 +101,7 @@ void PostSink::
         filter(Tfr::pFilter f, pSource s)
 {
     if (f!=_inverse_cwt.filter) {
-        _sinks.clear();
+        sinks(std::vector<pSink>());
     }
 
     reset();
