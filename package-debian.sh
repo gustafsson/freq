@@ -24,4 +24,4 @@ for i in `find -name *~`; do rm $i; done && \
 for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done && \
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done && \
 popd && \
-dpkg -b package-debian sonicawe_0.6.25_amd64.deb
+dpkg -b package-debian sonicawe_0.8.8_amd64.deb
