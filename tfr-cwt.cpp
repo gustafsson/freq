@@ -139,7 +139,7 @@ float Cwt::
 }
 
 void Cwt::
-        scales_per_octave( float value)
+        scales_per_octave( float value )
 {
     if (value==_scales_per_octave) return;
 

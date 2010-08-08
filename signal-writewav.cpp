@@ -1,8 +1,10 @@
-#include "signal-writewav.h"
-#include <stdint.h> // defines int64_t which is expected by sndfile.h
 #ifdef _MSC_VER
-typedef int64_t __int64_t;
+typedef __int64 __int64_t;
+#else
+#include <stdint.h> // defines __int64_t which is expected by sndfile.h
 #endif
+
+#include "signal-writewav.h"
 #include <sndfile.hh> // for writing various formats
 #include <boost/foreach.hpp>
 

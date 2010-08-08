@@ -47,7 +47,11 @@ pChunk ChunkSink::
         chunk->first_valid_sample = 0;
     }
 
-    return chunk;
+	if (get_chunk_filter) {
+		(*get_chunk_filter)(*chunk);
+	}
+
+	return chunk;
 }
 
 pChunk ChunkSink::

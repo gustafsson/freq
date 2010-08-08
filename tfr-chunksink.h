@@ -3,11 +3,14 @@
 
 #include "signal-sink.h"
 #include "tfr-chunk.h"
+#include "tfr-filter.h"
 
 namespace Tfr {
 
 class ChunkSink: public Signal::Sink
 {
+public:
+	pFilter get_chunk_filter;
 protected:
     pChunk getChunk( Signal::pBuffer , Signal::pSource );
 
