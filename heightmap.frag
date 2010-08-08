@@ -16,7 +16,7 @@ uniform int heightLines;
 uniform float yScale;
 
 vec4 getWavelengthColor( float wavelengthScalar ) {
-    return texture2D(tex_color, wavelengthScalar);
+    return texture2D(tex_color, vec2(wavelengthScalar, wavelengthScalar) );
 }
 
 /* Tremendously slow... way faster to interpolate from a small texture 'tex_color' instead */
@@ -98,16 +98,15 @@ void main()
     vec4 curveColor;
     float x;
 
-    switch (colorMode) {
-        case 0: curveColor = getWavelengthColor( f );
-                x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
-                curveColor = curveColor*((diffuse+facing+2.0)*.25); // + vec4(fresnel);
-                curveColor = mix(vec4( 1,1,1,0), min(vec4(0.7),curveColor), x);
-        break;
-        case 1: f = 1.0-f;
-                curveColor = vec4( f, f, f, 0 );
-                x = 1.0-f;
-        break;
+    if (colorMode == 0) {
+        curveColor = getWavelengthColor( f );
+		x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
+		curveColor = curveColor*((diffuse+facing+2.0)*.25); // + vec4(fresnel);
+		curveColor = mix(vec4( 1.0,1.0,1.0,0.0), min(vec4(0.7),curveColor), x);
+    }else{
+        f = 1.0-f;
+		curveColor = vec4( f, f, f, 0.0 );
+		x = 1.0-f;
     }
 
     if (0!=heightLines)
