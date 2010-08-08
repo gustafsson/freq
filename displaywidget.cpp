@@ -5,6 +5,7 @@
 #include <QTime>
 #include <QKeyEvent>
 #include <QToolTip>
+#include <QHBoxLayout>
 
 #include <QtGui/QFileDialog>
 #include <CudaException.h>
@@ -218,6 +219,7 @@ DisplayWidget::
         c = 1;
 #endif
 #endif
+	
     float l = _worker->source()->length();
     _prevLimit = l;
     selection[0].x = l*.5f;
@@ -240,6 +242,14 @@ DisplayWidget::
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
     
+    
+    toolz = new Sawe::BasicTool();
+	QVBoxLayout *verticalLayout = new QVBoxLayout();
+	verticalLayout->addWidget(toolz);
+	verticalLayout->setContentsMargins(0, 0, 0, 0);
+	setLayout(verticalLayout);
+	//toolz->setParent(this);
+	
     //grabKeyboard();
 }
 

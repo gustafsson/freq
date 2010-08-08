@@ -13,6 +13,7 @@
 #include <TAni.h>
 #include <queue>
 #include <QMainWindow>
+#include "sawe-basictool.h"
 
 class MouseControl
 {
@@ -61,6 +62,8 @@ public:
     DisplayWidget( Signal::pWorker worker, Signal::pSink collection );
     virtual ~DisplayWidget();
     int lastKey;
+    
+    Sawe::BasicTool *toolz;
     
     enum Yscale {
         Yscale_Linear,

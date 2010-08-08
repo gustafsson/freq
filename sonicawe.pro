@@ -20,7 +20,7 @@ unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 win32:QMAKE_LFLAGS += /FORCE:MULTIPLE
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-!macx&!win32: QMAKE_CXX = colorgcc
+#!macx&!win32: QMAKE_CXX = colorgcc
 #macx:QMAKE_CXX = g++ # Should not need this macx: with CONFIG(unix|!macx) above
 
 ### Settings for using llvm instead of gcc on linux
