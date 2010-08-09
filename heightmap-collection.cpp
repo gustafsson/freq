@@ -264,13 +264,13 @@ pBlock Collection::
         if (!(refInt-=block->valid_samples).isEmpty())
             _unfinished_count++;
 
-		for( recent_t::iterator i = _recent.begin(); i!=_recent.end(); ++i )
-			if ((*i)->ref == ref ) {
-				_recent.erase( i );
-				break;
-			}
+        for( recent_t::iterator i = _recent.begin(); i!=_recent.end(); ++i )
+            if ((*i)->ref == ref ) {
+                _recent.erase( i );
+                break;
+            }
 
-		_recent.push_front( block );
+        _recent.push_front( block );
 
         block->frame_number_last_used = _frame_counter;
     }

@@ -458,6 +458,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                 resample_width,
                 resample_height,
                 in_offset, out_offset, in_count );
+            cudaUnbindTexture(&chunkTexture);
             break;
         }
     case 2:

@@ -1,9 +1,11 @@
+#ifdef _MSC_VER
+typedef __int64 __int64_t;
+#else
+#include <stdint.h> // defines __int64_t which is expected by sndfile.h
+#endif
+
 #include "signal-audiofile.h"
 #include "signal-playback.h"
-#include <stdint.h> // defines int64_t which is expected by sndfile.h
-#ifdef _MSC_VER
-typedef int64_t __int64_t;
-#endif
 #include <sndfile.hh> // for reading various formats
 #include <math.h>
 #include "Statistics.h"
