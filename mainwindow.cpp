@@ -125,6 +125,7 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
         qb->addActionItem( ui->actionTransform_Stft );
         qb->addActionItem( ui->actionTransform_Cwt_phase );
         qb->addActionItem( ui->actionTransform_Cwt_reassign );
+        qb->addActionItem( ui->actionTransform_Cwt_ridge );
         qb->decheckable( false );
         ui->toolBarPlay->addWidget( qb );
     }
@@ -222,6 +223,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(this->ui->actionTransform_Stft, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Stft()));
     connect(this->ui->actionTransform_Cwt_phase, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Cwt_phase()));
     connect(this->ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Cwt_reassign()));
+    connect(this->ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Cwt_ridge()));
 
     {   QSlider * qs = new QSlider();
         qs->setOrientation( Qt::Horizontal );

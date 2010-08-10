@@ -238,7 +238,8 @@ __global__ void kernel_merge_chunk2(
                 float resample_height,
                 unsigned in_offset,
                 float out_offset,
-                unsigned in_count)
+                unsigned in_count,
+                Heightmap::TransformMethod transformMethod )
 {
 /**
     Merging like this for resample_width = 3, resample_height=1, in_offset=1, out_offset=0
@@ -288,7 +289,10 @@ __global__ void kernel_merge_chunk2(
             // Read from global memory
             float2 c = valid ? inChunk.elem(readPos) : make_float2(0,0);
 
-            val[threadIdx.x] = if0*(c.x*c.x + c.y*c.y);
+            if (transformMethod==Heightmap::TransformMethod_Cwt_phase)
+                val[threadIdx.x] = 0.1f*(M_PI + atan2(c.y, c.x))*(1.f/(2*M_PI));
+            else
+                val[threadIdx.x] = if0*(c.x*c.x + c.y*c.y);
 
             __syncthreads();
 
@@ -345,7 +349,10 @@ __global__ void kernel_merge_chunk2(
 
     if (outBlock.valid( writePos ) && 0<=myVal)
     {
-        outBlock.elem( writePos ) = sqrtf(myVal);
+        if (transformMethod!=Heightmap::TransformMethod_Cwt_phase)
+            myVal = sqrtf(myVal);
+
+        outBlock.elem( writePos ) = myVal;
     }
 }
 
@@ -359,6 +366,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  unsigned in_offset,
                  float out_offset,
                  unsigned in_count,
+                 Heightmap::TransformMethod transformMethod,
                  unsigned cuda_stream)
 {
     unsigned block_size;
@@ -467,7 +475,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                 inChunk, outBlock,
                 resample_width,
                 resample_height,
-                in_offset, out_offset, in_count );
+                in_offset, out_offset, in_count, transformMethod );
             break;
         }
     }

@@ -78,14 +78,10 @@ Spectogram. For altering the output refer to transform-inverse.h.
 The term scaleogram is not used in the source code, in favor of spectrogram.
 */
 
+#include "heightmap-block.cu.h"
+
 namespace Heightmap {
 
-    enum TransformMethod{
-        TransformMethod_Cwt,
-        TransformMethod_Cwt_phase,
-        TransformMethod_Cwt_reassign,
-        TransformMethod_Stft
-    };
 
 class Block {
 public:

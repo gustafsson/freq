@@ -3,6 +3,16 @@
 
 #include <cudaPitchedPtrType.h>
 
+namespace Heightmap {
+    enum TransformMethod {
+        TransformMethod_Cwt,
+        TransformMethod_Cwt_phase,
+        TransformMethod_Cwt_reassign,
+        TransformMethod_Cwt_ridge,
+        TransformMethod_Stft
+    };
+};
+
 extern "C"
 void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  cudaPitchedPtrType<float> outBlock,
@@ -13,6 +23,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  unsigned in_offset,
                  float out_offset,
                  unsigned in_count,
+                 Heightmap::TransformMethod transformMethod,
                  unsigned cuda_stream);
 
 extern "C"

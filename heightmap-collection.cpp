@@ -78,6 +78,77 @@ void Collection::
         return;
     }
 
+    unsigned i1 = chunk->getFrequencyIndex( 100 );
+    unsigned i2 = chunk->getFrequencyIndex( 1000 );
+    unsigned i3 = chunk->getFrequencyIndex( 10000 );
+
+    printf("i = %u, %u, %u. N = %u\n", i1, i2, i3, chunk->nScales());
+
+    switch(_transformMethod){
+        case TransformMethod_Cwt_ridge:{
+            float2* p = chunk->transform_data->getCpuMemory();
+            for (unsigned x=0; x<chunk->nSamples(); x++) {
+
+                std::vector<float2> q(chunk->nScales());
+                for (unsigned y=0; y<chunk->nScales(); y++)
+                    q[y] = make_float2(0,0);
+
+                for (unsigned y=1; y<chunk->nScales()-1; y++)
+                {
+                    float2 a = p[(y-1)*chunk->nSamples() + x];
+                    float2 b = p[(y+0)*chunk->nSamples() + x];
+                    float2 c = p[(y+1)*chunk->nSamples() + x];
+                    if (b.x*b.x+b.y*b.y > a.x*a.x+a.y*a.y && b.x*b.x+b.y*b.y>c.x*c.x+c.y*c.y)
+                         q[y] = b;
+                }
+
+                for (unsigned y=0; y<chunk->nScales(); y++)
+                    p[y*chunk->nSamples() + x] = q[y];
+            }
+
+            for (unsigned x=0; x<chunk->nSamples(); x++) {
+                p[(chunk->nScales()-1)*chunk->nSamples() + x] = make_float2(0,0);
+                p[x] = make_float2(0,0);
+            }
+            break;
+        }
+       case TransformMethod_Cwt_reassign: {
+            float2* p = chunk->transform_data->getCpuMemory();
+            for (unsigned x=1; x<chunk->nSamples();x++) {
+
+                std::vector<float2> q(chunk->nScales());
+                for (unsigned y=0; y<chunk->nScales(); y++)
+                    q[y] = make_float2(0,0);
+
+                for (unsigned y=0; y<chunk->nScales(); y++)
+                {
+                    float2 a = p[y*chunk->nSamples() + x - 1];
+                    float2 b = p[y*chunk->nSamples() + x];
+                    float pa = atan2(a.y, a.x);
+                    float pb = atan2(b.y, b.x);
+                    float FS = s->sample_rate();
+                    float f = ((pb-pa)*FS)/(2*M_PI);
+                    unsigned i = chunk->getFrequencyIndex( fabsf(f) );
+
+                    if (i>=chunk->nScales())
+                        i=chunk->nScales()-1;
+
+                    q[i].x += a.x;
+                    q[i].y += a.y;
+                }
+
+                for (unsigned y=0; y<chunk->nScales(); y++)
+                    p[y*chunk->nSamples() + x - 1] = q[y];
+            }
+
+            for (unsigned y=0; y<chunk->nScales(); y++)
+                p[y*chunk->nSamples() + chunk->nSamples() - 1] = make_float2(0,0);
+            break;
+        }
+    default:
+            break;
+    }
+
     if (_constructor_thread.isSameThread())
     {
         _updates.push_back( chunk );
@@ -291,9 +362,7 @@ void Collection::
             _cache.clear();
             break;
         }
-    case TransformMethod_Cwt:
-    case TransformMethod_Cwt_phase:
-    case TransformMethod_Cwt_reassign:
+    default:
         add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
         break;
     }
@@ -453,10 +522,10 @@ createBlock( Reference ref )
             }
 
             switch( _transformMethod ) {
-                case TransformMethod_Cwt:
-                case TransformMethod_Cwt_phase:
-                case TransformMethod_Cwt_reassign:
-
+                case TransformMethod_Stft:
+                    block->valid_samples = block->ref.getInterval();
+                    break;
+                default:
                     // TODO compute at what log2_samples_size[1] stft is more accurate
                     // than low resolution blocks.
                     if (1) {
@@ -508,10 +577,6 @@ createBlock( Reference ref )
                             }
                         }
                     }
-                    break;
-
-                case TransformMethod_Stft:
-                    block->valid_samples = block->ref.getInterval();
                     break;
             }
 
@@ -762,6 +827,7 @@ bool Collection::
                            in_offset,
                            out_offset,
                            transfer.last - transfer.first,
+                           _transformMethod,
                            cuda_stream);
 
         outBlock->valid_samples |= transfer;

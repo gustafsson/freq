@@ -468,6 +468,13 @@ void DisplayWidget::receiveSetTransform_Cwt_reassign()
     update();
 }
 
+void DisplayWidget::receiveSetTransform_Cwt_ridge()
+{
+    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt_ridge);
+
+    update();
+}
+
 void DisplayWidget::setWorkerSource( Signal::pSource s ) {
     if (s.get())
         _worker->source( s );

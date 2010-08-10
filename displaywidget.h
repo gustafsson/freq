@@ -137,6 +137,7 @@ protected slots:
     virtual void receiveSetTransform_Stft();
     virtual void receiveSetTransform_Cwt_phase();
     virtual void receiveSetTransform_Cwt_reassign();
+    virtual void receiveSetTransform_Cwt_ridge();
 
 signals:
     void operationsUpdated( Signal::pSource s );
