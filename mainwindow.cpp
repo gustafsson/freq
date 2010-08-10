@@ -124,7 +124,7 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
         qb->addActionItem( ui->actionTransform_Cwt );
         qb->addActionItem( ui->actionTransform_Stft );
         qb->addActionItem( ui->actionTransform_Cwt_phase );
-        qb->addActionItem( ui->actionTransform_Cwt_whatnot );
+        qb->addActionItem( ui->actionTransform_Cwt_reassign );
         qb->decheckable( false );
         ui->toolBarPlay->addWidget( qb );
     }
@@ -217,6 +217,11 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(this->ui->actionSet_rainbow_colors, SIGNAL(triggered()), d, SLOT(receiveSetRainbowColors()));
     connect(this->ui->actionSet_grayscale, SIGNAL(triggered()), d, SLOT(receiveSetGrayscaleColors()));
     connect(this->ui->actionSet_heightlines, SIGNAL(toggled(bool)), d, SLOT(receiveSetHeightlines(bool)));
+
+    connect(this->ui->actionTransform_Cwt, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Cwt()));
+    connect(this->ui->actionTransform_Stft, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Stft()));
+    connect(this->ui->actionTransform_Cwt_phase, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Cwt_phase()));
+    connect(this->ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), d, SLOT(receiveSetTransform_Cwt_reassign()));
 
     {   QSlider * qs = new QSlider();
         qs->setOrientation( Qt::Horizontal );

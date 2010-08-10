@@ -440,6 +440,34 @@ void DisplayWidget::receiveRecord(bool active)
     update();
 }
 
+void DisplayWidget::receiveSetTransform_Cwt()
+{
+    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt);
+
+    update();
+}
+
+void DisplayWidget::receiveSetTransform_Stft()
+{
+    _renderer->collection()->setTransform(Heightmap::TransformMethod_Stft);
+
+    update();
+}
+
+void DisplayWidget::receiveSetTransform_Cwt_phase()
+{
+    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt_phase);
+
+    update();
+}
+
+void DisplayWidget::receiveSetTransform_Cwt_reassign()
+{
+    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt_reassign);
+
+    update();
+}
+
 void DisplayWidget::setWorkerSource( Signal::pSource s ) {
     if (s.get())
         _worker->source( s );

@@ -279,6 +279,33 @@ pBlock Collection::
 }
 
 void Collection::
+        setTransform(TransformMethod transformMethod)
+{
+    _transformMethod = transformMethod;
+
+    switch(transformMethod)
+    {
+    case TransformMethod_Stft:
+        {
+            QMutexLocker l(&_cache_mutex);
+            _cache.clear();
+            break;
+        }
+    case TransformMethod_Cwt:
+    case TransformMethod_Cwt_phase:
+    case TransformMethod_Cwt_reassign:
+        add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
+        break;
+    }
+}
+
+TransformMethod Collection::
+        getTransform()
+{
+    return _transformMethod;
+}
+
+void Collection::
         gc()
 {
 	QMutexLocker l(&_cache_mutex);
@@ -425,71 +452,67 @@ createBlock( Reference ref )
 				}
             }
 
-            /*if (0) {
-                TaskTimer tt(TaskTimer::LogVerbose, "Preventing wavelet transform");
-                Position a,b;
-                block->ref.getArea(a,b);
-                unsigned start = a.time * worker()->source()->sample_rate();
-                unsigned end = b.time * worker()->source()->sample_rate();
+            switch( _transformMethod ) {
+                case TransformMethod_Cwt:
+                case TransformMethod_Cwt_phase:
+                case TransformMethod_Cwt_reassign:
 
-                for (Transform::ChunkIndex n = _transform->getChunkIndex(start);
-                     n <= _transform->getChunkIndex(end);
-                     n++)
-                {
-                    block->valid_chunks.insert( n );
-                }
-            }*/
+                    // TODO compute at what log2_samples_size[1] stft is more accurate
+                    // than low resolution blocks.
+                    if (1) {
+                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                        // start with the blocks that are just slightly more detailed
+                                        mergeBlock( block, block->ref.left(), 0 );
+                                        mergeBlock( block, block->ref.right(), 0 );
+                                        mergeBlock( block, block->ref.top(), 0 );
+                                        mergeBlock( block, block->ref.bottom(), 0 );
+                                }
 
-            // TODO compute at what log2_samples_size[1] stft is more accurate
-            // than low resolution blocks.
-            if (1) {
-                TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
-                // start with the blocks that are just slightly more detailed
-				mergeBlock( block, block->ref.left(), 0 );
-				mergeBlock( block, block->ref.right(), 0 );
-				mergeBlock( block, block->ref.top(), 0 );
-				mergeBlock( block, block->ref.bottom(), 0 );
-			}
-
-            if (0) {
-                TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
-                // then try using the blocks that are even more detailed
-				BOOST_FOREACH( cache_t::value_type& c, _cache )
-				{
-					pBlock& b = c.second;
-                    if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
-                        block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
-                    {
-                        mergeBlock( block, b, 0 );
+                    if (0) {
+                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
+                        // then try using the blocks that are even more detailed
+                                        BOOST_FOREACH( cache_t::value_type& c, _cache )
+                                        {
+                                                pBlock& b = c.second;
+                            if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
+                                block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
+                            {
+                                mergeBlock( block, b, 0 );
+                            }
+                        }
                     }
-                }
-            }
 
-//            GlException_CHECK_ERROR();
-//            CudaException_CHECK_ERROR();
+        //            GlException_CHECK_ERROR();
+        //            CudaException_CHECK_ERROR();
 
-            if (1) {
-                TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
-                // then try to upscale blocks that are just slightly less detailed
-				mergeBlock( block, block->ref.parent(), 0 );
-				mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
-				mergeBlock( block, block->ref.parent().right(), 0 );
-				mergeBlock( block, block->ref.parent().top(), 0 );
-				mergeBlock( block, block->ref.parent().bottom(), 0 );
-            }
-
-            if (0) {
-                TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
-                // then try to upscale other blocks
-				BOOST_FOREACH( cache_t::value_type& c, _cache )
-				{
-					pBlock& b = c.second;
-                    if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
-                        block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
-                    {
-                        mergeBlock( block, b, 0 );
+                    if (1) {
+                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                        // then try to upscale blocks that are just slightly less detailed
+                                        mergeBlock( block, block->ref.parent(), 0 );
+                                        mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
+                                        mergeBlock( block, block->ref.parent().right(), 0 );
+                                        mergeBlock( block, block->ref.parent().top(), 0 );
+                                        mergeBlock( block, block->ref.parent().bottom(), 0 );
                     }
-                }
+
+                    if (0) {
+                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
+                        // then try to upscale other blocks
+                                        BOOST_FOREACH( cache_t::value_type& c, _cache )
+                                        {
+                                                pBlock& b = c.second;
+                            if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
+                                block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
+                            {
+                                mergeBlock( block, b, 0 );
+                            }
+                        }
+                    }
+                    break;
+
+                case TransformMethod_Stft:
+                    block->valid_samples = block->ref.getInterval();
+                    break;
             }
 
         } else if ( 0 /* set dummy values */ ) {

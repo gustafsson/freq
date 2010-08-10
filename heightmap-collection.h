@@ -80,6 +80,13 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 
 namespace Heightmap {
 
+    enum TransformMethod{
+        TransformMethod_Cwt,
+        TransformMethod_Cwt_phase,
+        TransformMethod_Cwt_reassign,
+        TransformMethod_Stft
+    };
+
 class Block {
 public:
     Block( Reference ref ): ref(ref), frame_number_last_used(-1) {}
@@ -170,7 +177,8 @@ public:
       */
     pBlock      getBlock( Reference ref );
 
-
+    void        setTransform(TransformMethod);
+    TransformMethod   getTransform();
     void        gc();
 
     Signal::pWorker     worker;
@@ -180,6 +188,8 @@ private:
         _scales_per_block,
         _unfinished_count,
         _frame_counter;
+
+    TransformMethod _transformMethod;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.

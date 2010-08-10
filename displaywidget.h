@@ -132,6 +132,12 @@ protected slots:
     virtual void receiveTonalizeFilter(bool);
     virtual void receiveReassignFilter(bool);
     virtual void receiveRecord(bool);
+
+    virtual void receiveSetTransform_Cwt();
+    virtual void receiveSetTransform_Stft();
+    virtual void receiveSetTransform_Cwt_phase();
+    virtual void receiveSetTransform_Cwt_reassign();
+
 signals:
     void operationsUpdated( Signal::pSource s );
     void filterChainUpdated( Tfr::pFilter f );
