@@ -88,12 +88,12 @@ void BrushTool::render()
 {
     int size = stroke.size();
     
-    glDisable(GL_CULL_FACE);
+    /*glDisable(GL_CULL_FACE);
     glColor4f( 0, 0, 0, 1);
     for(int i = 0; i < size - 1; i++)
     {
         drawBlock(stroke[i].y, stroke[i].x, stroke[i].size * 0.1, stroke[i + 1].y, stroke[i + 1].x, stroke[i + 1].size * 0.1);
-    }
+    }*/
     
     /*glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);

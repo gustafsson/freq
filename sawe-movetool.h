@@ -11,6 +11,9 @@ public:
     virtual QWidget *getSettingsWidget();
 
 protected:
+    MouseControl moveButton;
+    MouseControl rotateButton;
+
     void mousePressEvent(QMouseEvent * e);
     void mouseMoveEvent(QMouseEvent * e);
     void mouseReleaseEvent(QMouseEvent * e);

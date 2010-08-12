@@ -30,6 +30,7 @@ public:
     float deltaY( float y );
     
     bool worldPos(GLdouble &ox, GLdouble &oy, float scale);
+    bool worldPos(GLdouble &ox, GLdouble &oy, float scale, DisplayWidget *dw);
     static bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale);
     /**
       worldPos projects space coordinates onto the xz-plane. spacePos simple returns the space pos.
@@ -88,6 +89,14 @@ public:
     bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale);
 
     void drawSelection();
+    
+    void getqxyz(double &qx, double &qy, double &qz){qx = _qx; qy = _qy; qz = _qz;}
+    void getpxyz(float &px, float &py, float &pz){px = _px; py = _py; pz = _pz;}
+    void getrxyz(float &rx, float &ry, float &rz){rx = _rx; ry = _ry; rz = _rz;}
+    
+    void setqxyz(double &qx, double &qy, double &qz){_qx = qx; _qy = qy; _qz = qz;}
+    void setpxyz(float &px, float &py, float &pz){_px = px; _py = py; _pz = pz;}
+    void setrxyz(float &rx, float &ry, float &rz){_rx = rx; _ry = ry; _rz = rz;}
 
 /*    virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );

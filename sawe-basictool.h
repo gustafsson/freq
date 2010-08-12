@@ -1,4 +1,5 @@
 #include <QWidget>
+#include <QMouseEvent>
 #include <QVBoxLayout>
 #include "displaywidget.h"
 

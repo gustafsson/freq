@@ -171,6 +171,10 @@ bool MouseControl::worldPos(GLdouble &ox, GLdouble &oy, float scale)
 {
     return worldPos(this->lastx, this->lasty, ox, oy, scale);
 }
+bool MouseControl::worldPos(GLdouble &ox, GLdouble &oy, float scale, DisplayWidget *dw)
+{
+    return dw->worldPos(this->lastx, this->lasty, ox, oy, scale);
+}
 bool MouseControl::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale)
 {
     GLdouble s;
@@ -309,7 +313,6 @@ DisplayWidget::
 	verticalLayout->addWidget(toolz);
 	verticalLayout->setContentsMargins(0, 0, 0, 0);
 	setLayout(verticalLayout);
-	toolz->push(new Sawe::NavigationTool(this));
 	//toolz->setParent(this);
 	//addTool(new Sawe::BrushTool(this));
 	
@@ -1013,7 +1016,6 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
     tool_mouseMoveEvent(e);
     makeCurrent();
-    return;
 
     float rs = 0.2;
     
