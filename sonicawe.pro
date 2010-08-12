@@ -74,7 +74,9 @@ SOURCES += main.cpp \
     heightmap-reference.cpp \
     fft4g.c \
     saweui/propertiesselection.cpp \
-    saweui/propertiesstroke.cpp
+    saweui/propertiesstroke.cpp \
+    sawe-brushtool.cpp \ 
+    sawe-movetool.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     tfr-wavelet.cu.h \
@@ -118,7 +120,10 @@ HEADERS += mainwindow.h \
     heightmap-collection.h \
     heightmap-reference.h \
     saweui/propertiesselection.h \
-    saweui/propertiesstroke.h
+    saweui/propertiesstroke.h \
+    sawe-basictool.h \
+    sawe-brushtool.h \ 
+    sawe-movetool.h
 FORMS += mainwindow.ui \
     saweui/propertiesselection.ui \
     saweui/propertiesstroke.ui

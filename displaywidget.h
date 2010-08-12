@@ -85,6 +85,7 @@ public:
     Heightmap::Collection* collection() { return _renderer->collection(); }
     Heightmap::pRenderer renderer() { return _renderer; }
     Signal::FilterOperation* getFilterOperation();
+    bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale);
 
     void drawSelection();
 
@@ -195,7 +196,7 @@ private:
     bool _enqueueGcDisplayList;
     void gcDisplayList();
     
-    GLint viewport[4];
+    GLint viewportMatrix[4];
     GLdouble modelMatrix[16];
     GLdouble projectionMatrix[16];
     

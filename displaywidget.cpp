@@ -34,6 +34,8 @@
 #include "sawe-matlabfilter.h"
 #include "sawe-matlaboperation.h"
 #include "signal-writewav.h"
+#include "sawe-brushtool.h"
+#include "sawe-movetool.h"
 
 #include <msc_stdc.h>
 #include <CudaProperties.h>
@@ -48,6 +50,65 @@
 
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
+
+std::vector<Sawe::ToolInterface*> toolStack;
+
+void addTool(Sawe::ToolInterface *tool)
+{
+    if(toolStack.size() == 0)
+    {
+        toolStack.push_back(tool);
+        return;
+    }   
+    vector<Sawe::ToolInterface*>::iterator t;
+    for(t=toolStack.begin() ; t < toolStack.end(); t++)
+    {
+        if(tool->getPriority() < (*t)->getPriority())
+        {
+            toolStack.insert(t, tool);
+            return;
+        }
+    }
+}
+
+void setTopTool(Sawe::ToolInterface *tool)
+{
+    toolStack.pop_back();
+    toolStack.push_back(tool);
+}
+
+void tool_mouseMoveEvent(QMouseEvent * e)
+{
+    if(toolStack.size() <= 0) return;
+    printf("StackSize: %d\n", toolStack.size());
+    int i = 0;
+    while(!toolStack[i++]->mouseMoveEvent(e)) ;
+}
+void tool_wheelEvent(QWheelEvent *e)
+{
+    if(toolStack.size() <= 0) return;
+    int i = 0;
+    while(!toolStack[i++]->wheelEvent(e)) ;
+}
+void tool_mouseReleaseEvent(QMouseEvent * e)
+{
+    if(toolStack.size() <= 0) return;
+    int i = 0;
+    while(!toolStack[i++]->mouseReleaseEvent(e)) ;
+}
+void tool_mousePressEvent(QMouseEvent * e)
+{
+    if(toolStack.size() <= 0) return;
+    printf("StackSize: %d\n", toolStack.size());
+    int i = 0;
+    while(!toolStack[i++]->mousePressEvent(e)) ;
+}
+void tool_tabletEvent(QTabletEvent *e)
+{
+    if(toolStack.size() <= 0) return;
+    int i = 0;
+    while(!toolStack[i++]->tabletEvent(e)) ;
+}
 
 void drawCircleSector(float x, float y, float radius, float start, float end);
 void drawRoundRect(float width, float height, float roundness);
@@ -243,12 +304,14 @@ DisplayWidget::
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
     
     
-    toolz = new Sawe::BasicTool();
+    toolz = new Sawe::BrushTool(this);
 	QVBoxLayout *verticalLayout = new QVBoxLayout();
 	verticalLayout->addWidget(toolz);
 	verticalLayout->setContentsMargins(0, 0, 0, 0);
 	setLayout(verticalLayout);
+	toolz->push(new Sawe::NavigationTool(this));
 	//toolz->setParent(this);
+	//addTool(new Sawe::BrushTool(this));
 	
     //grabKeyboard();
 }
@@ -468,6 +531,33 @@ void DisplayWidget::
         setTimeline( Signal::pSink timelineWidget )
 {
     _timeline = timelineWidget;
+}
+
+bool DisplayWidget::worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale)
+{
+    GLdouble s;
+    bool test[2];
+    GLvector win_coord, world_coord[2];
+    
+    win_coord = GLvector(x, y, 0.1);
+    
+    world_coord[0] = gluUnProject<GLdouble>(win_coord, modelMatrix, projectionMatrix, viewportMatrix, &test[0]);
+    //printf("CamPos1: %f: %f: %f\n", world_coord[0][0], world_coord[0][1], world_coord[0][2]);
+    
+    win_coord[2] = 0.6;
+    world_coord[1] = gluUnProject<GLdouble>(win_coord, modelMatrix, projectionMatrix, viewportMatrix, &test[1]);
+    //printf("CamPos2: %f: %f: %f\n", world_coord[1][0], world_coord[1][1], world_coord[1][2]);
+    
+    s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
+    
+    ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
+    oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
+
+    float minAngle = 3;
+    if( s < 0 || world_coord[0][1]-world_coord[1][1] < scale*sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
+        return false;
+    
+    return test[0] && test[1];
 }
 
 void DisplayWidget::
@@ -800,6 +890,7 @@ Signal::PostSink* DisplayWidget::getPostSink()
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
+    tool_mousePressEvent(e);
     /*switch ( e->button() )
     {
         case Qt::LeftButton:
@@ -858,6 +949,7 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 
 void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 {
+    tool_mouseReleaseEvent(e);
     switch ( e->button() )
     {
         case Qt::LeftButton:
@@ -890,6 +982,7 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
 {
+    tool_wheelEvent(e);
     float ps = 0.0005;
     float rs = 0.08;
     if( e->orientation() == Qt::Horizontal )
@@ -918,7 +1011,9 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
+    tool_mouseMoveEvent(e);
     makeCurrent();
+    return;
 
     float rs = 0.2;
     
@@ -1211,6 +1306,7 @@ void DisplayWidget::paintGL()
         _renderer->draw( 1-orthoview ); // 0.6 ms
         _renderer->drawAxes( length ); // 4.7 ms
         drawSelection(); // 0.1 ms
+        if(toolz) toolz->render();
 
         if (wasWorking)
             drawWorking();
@@ -1323,6 +1419,10 @@ void DisplayWidget::paintGL()
         }
         else throw;
     }
+    
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
+    glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+    glGetIntegerv(GL_VIEWPORT, viewportMatrix);
 }
 
 void DisplayWidget::setupCamera()
