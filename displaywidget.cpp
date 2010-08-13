@@ -52,64 +52,9 @@
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
 
-std::vector<Sawe::ToolInterface*> toolStack;
-
-void addTool(Sawe::ToolInterface *tool)
-{
-    if(toolStack.size() == 0)
-    {
-        toolStack.push_back(tool);
-        return;
-    }   
-    vector<Sawe::ToolInterface*>::iterator t;
-    for(t=toolStack.begin() ; t < toolStack.end(); t++)
-    {
-        if(tool->getPriority() < (*t)->getPriority())
-        {
-            toolStack.insert(t, tool);
-            return;
-        }
-    }
-}
-
-void setTopTool(Sawe::ToolInterface *tool)
-{
-    toolStack.pop_back();
-    toolStack.push_back(tool);
-}
-
-void tool_mouseMoveEvent(QMouseEvent * e)
-{
-    if(toolStack.size() <= 0) return;
-    printf("StackSize: %d\n", toolStack.size());
-    int i = 0;
-    while(!toolStack[i++]->mouseMoveEvent(e)) ;
-}
-void tool_wheelEvent(QWheelEvent *e)
-{
-    if(toolStack.size() <= 0) return;
-    int i = 0;
-    while(!toolStack[i++]->wheelEvent(e)) ;
-}
-void tool_mouseReleaseEvent(QMouseEvent * e)
-{
-    if(toolStack.size() <= 0) return;
-    int i = 0;
-    while(!toolStack[i++]->mouseReleaseEvent(e)) ;
-}
-void tool_mousePressEvent(QMouseEvent * e)
-{
-    if(toolStack.size() <= 0) return;
-    printf("StackSize: %d\n", toolStack.size());
-    int i = 0;
-    while(!toolStack[i++]->mousePressEvent(e)) ;
-}
-void tool_tabletEvent(QTabletEvent *e)
-{
-    if(toolStack.size() <= 0) return;
-    int i = 0;
-    while(!toolStack[i++]->tabletEvent(e)) ;
-}
+#define SELECTIONTOOL 0
+#define NAVIGATIONTOOL 1
+#define BRUSHTOOL 2
 
 void drawCircleSector(float x, float y, float radius, float start, float end);
 void drawRoundRect(float width, float height, float roundness);
@@ -308,12 +253,12 @@ DisplayWidget::
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
     
+    toolz = 0;
+    _toolList.push_back(new Sawe::SelectionTool(this));
+    _toolList.push_back(new Sawe::NavigationTool(this));
+    _toolList.push_back(new Sawe::BrushTool(this));
     
-    toolz = new Sawe::SelectionTool(this);
-	QVBoxLayout *verticalLayout = new QVBoxLayout();
-	verticalLayout->addWidget(toolz);
-	verticalLayout->setContentsMargins(0, 0, 0, 0);
-	setLayout(verticalLayout);
+    setTool(1);
 	//toolz->setParent(this);
 	//addTool(new Sawe::BrushTool(this));
 	
@@ -334,6 +279,28 @@ DisplayWidget::
     }
 }
 
+void DisplayWidget::setTool(unsigned int tool)
+{
+    printf("setTool:\n");
+    if(tool >= _toolList.size())
+        return;
+        
+    printf(" -toolNum: %d\n", tool);
+    
+    if(toolz != 0)
+        toolz->setParent(0);
+    toolz = _toolList[tool];
+    toolz->setParent(0);
+        
+	QVBoxLayout *verticalLayout = new QVBoxLayout();
+	verticalLayout->addWidget(toolz);
+	verticalLayout->setContentsMargins(0, 0, 0, 0);
+	
+	if(layout() != 0)
+        delete layout();
+	setLayout(verticalLayout);
+}
+
 void DisplayWidget::receiveCurrentSelection(int index, bool enabled)
 {
     setSelection(index, enabled);
@@ -349,11 +316,11 @@ void DisplayWidget::receiveToggleSelection(bool active)
     if (active) {
         receiveToggleNavigation( false );
         receiveToggleInfoTool( false );
+        setTool(SELECTIONTOOL);
     } else if(!active) {
         emit setSelectionActive( false );
     }
-
-    _selectionActive = active;
+        
 }
 
 void DisplayWidget::receiveToggleNavigation(bool active)
@@ -361,11 +328,11 @@ void DisplayWidget::receiveToggleNavigation(bool active)
     if (active) {
         receiveToggleInfoTool( false );
         receiveToggleSelection( false );
+        setTool(NAVIGATIONTOOL);
     } else if(!active) {
         emit setNavigationActive( false );
     }
-
-    _navigationActive = active;
+        
 }
 
 void DisplayWidget::receiveToggleInfoTool(bool active)
@@ -894,7 +861,6 @@ Signal::PostSink* DisplayWidget::getPostSink()
 
 void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 {
-    tool_mousePressEvent(e);
     /*switch ( e->button() )
     {
         case Qt::LeftButton:
@@ -953,7 +919,6 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 
 void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 {
-    tool_mouseReleaseEvent(e);
     switch ( e->button() )
     {
         case Qt::LeftButton:
@@ -986,7 +951,6 @@ void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
 
 void DisplayWidget::wheelEvent ( QWheelEvent *e )
 {
-    tool_wheelEvent(e);
     float ps = 0.0005;
     float rs = 0.08;
     if( e->orientation() == Qt::Horizontal )
@@ -1015,7 +979,6 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
 
 void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
 {
-    tool_mouseMoveEvent(e);
     makeCurrent();
 
     float rs = 0.2;
@@ -1829,6 +1792,7 @@ void DisplayWidget::gcDisplayList()
 
 void DisplayWidget::setSelection(int index, bool enabled)
 {
+    printf("Selection happen!\n");
     Signal::FilterOperation* f = getFilterOperation();
     Tfr::FilterChain* c = dynamic_cast<Tfr::FilterChain*>( f->filter().get());
     if (0 == c || (index < 0 || index>=(int)c->size()))
@@ -1858,6 +1822,15 @@ void DisplayWidget::setSelection(int index, bool enabled)
         _renderer->collection()->add_expected_samples( filter->getTouchedSamples(f->sample_rate()) );
     }
     
+    update();
+}
+
+void DisplayWidget::setSelection(MyVector start, MyVector end, bool enabled)
+{
+    selection[0].x = start.x;
+    selection[0].z = start.z;
+    selection[1].x = end.x;
+    selection[1].z = end.z;
     update();
 }
 

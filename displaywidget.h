@@ -97,6 +97,9 @@ public:
     void setqxyz(double &qx, double &qy, double &qz){_qx = qx; _qy = qy; _qz = qz;}
     void setpxyz(float &px, float &py, float &pz){_px = px; _py = py; _pz = pz;}
     void setrxyz(float &rx, float &ry, float &rz){_rx = rx; _ry = ry; _rz = rz;}
+    
+    
+    void setSelection(MyVector start, MyVector end, bool enabled);
 
 /*    virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );
@@ -158,8 +161,11 @@ private:
     // overloaded from Signal::Sink
     virtual void put( Signal::pBuffer b, Signal::pSource );
     virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& s );
+    void setTool(unsigned int tool);
 
     Signal::PostSink* getPostSink();
+
+    std::vector<Sawe::BasicTool*> _toolList;
 
     Heightmap::pRenderer _renderer;
     Signal::pWorker _worker;

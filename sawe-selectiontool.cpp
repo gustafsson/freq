@@ -25,7 +25,7 @@ void drawBlock(float z1, float x1, float z2, float x2)
     glEnd();
     
     
-    glLineWidth(1.0f);
+    glLineWidth(2.0f);
     glBegin(GL_LINES);
     glVertex3f(x1, 1.0, z1);
     glVertex3f(x1, 1.0, z2);
@@ -52,6 +52,7 @@ void SelectionTool::render()
 
 void SelectionTool::mousePressEvent(QMouseEvent * e)
 {
+    printf("SelectionTool\n");
     int x = e->x(), y = this->height() - e->y();
 
     GLvector current;
@@ -81,6 +82,7 @@ void SelectionTool::mouseMoveEvent(QMouseEvent * e)
         end.x = current[0];
         end.z = current[1];
         
+        displayWidget->setSelection(start, end, true);
         displayWidget->update();
     }
     else
@@ -95,7 +97,10 @@ void SelectionTool::mouseReleaseEvent(QMouseEvent * e)
         selection = false;
     }
     else
+    {
+        displayWidget->setSelection(start, end, true);
         e->ignore();
+    }
 }
 
 };
