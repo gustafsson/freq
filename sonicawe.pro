@@ -76,7 +76,8 @@ SOURCES += main.cpp \
     saweui/propertiesselection.cpp \
     saweui/propertiesstroke.cpp \
     sawe-brushtool.cpp \ 
-    sawe-movetool.cpp
+    sawe-movetool.cpp \ 
+    sawe-selectiontool.cpp
 HEADERS += mainwindow.h \
     displaywidget.h \
     tfr-wavelet.cu.h \
@@ -123,7 +124,8 @@ HEADERS += mainwindow.h \
     saweui/propertiesstroke.h \
     sawe-basictool.h \
     sawe-brushtool.h \ 
-    sawe-movetool.h
+    sawe-movetool.h \ 
+    sawe-selectiontool.h
 FORMS += mainwindow.ui \
     saweui/propertiesselection.ui \
     saweui/propertiesstroke.ui

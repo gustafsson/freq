@@ -17,8 +17,8 @@ public:
         displayWidget = dw;
     }
     
-    virtual void render() = 0;
-    virtual QWidget *getSettingsWidget() = 0;
+    virtual void render(){}
+    virtual QWidget *getSettingsWidget(){return 0;}
     
     virtual bool mouseMoveEvent(QMouseEvent * e){return false;}
     virtual bool wheelEvent(QWheelEvent *e){return false;}
@@ -47,8 +47,8 @@ public:
         displayWidget = dw;
     }
     
-    virtual void render() = 0;
-    virtual QWidget *getSettingsWidget() = 0;
+    virtual void render(){}
+    virtual QWidget *getSettingsWidget(){return 0;}
     
     void push(BasicTool *tool)
     {

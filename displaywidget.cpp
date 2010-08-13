@@ -36,6 +36,7 @@
 #include "signal-writewav.h"
 #include "sawe-brushtool.h"
 #include "sawe-movetool.h"
+#include "sawe-selectiontool.h"
 
 #include <msc_stdc.h>
 #include <CudaProperties.h>
@@ -308,7 +309,7 @@ DisplayWidget::
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
     
     
-    toolz = new Sawe::BrushTool(this);
+    toolz = new Sawe::SelectionTool(this);
 	QVBoxLayout *verticalLayout = new QVBoxLayout();
 	verticalLayout->addWidget(toolz);
 	verticalLayout->setContentsMargins(0, 0, 0, 0);
