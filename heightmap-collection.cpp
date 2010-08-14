@@ -31,7 +31,8 @@ Collection( Signal::pWorker worker )
     _samples_per_block( 1<<7 ),
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
-    _frame_counter(0)
+    _frame_counter(0),
+    _transformMethod(TransformMethod_Cwt)
 {
 
 }
@@ -77,12 +78,6 @@ void Collection::
         TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk->getInterval().first, chunk->getInterval().last);
         return;
     }
-
-    unsigned i1 = chunk->getFrequencyIndex( 100 );
-    unsigned i2 = chunk->getFrequencyIndex( 1000 );
-    unsigned i3 = chunk->getFrequencyIndex( 10000 );
-
-    printf("i = %u, %u, %u. N = %u\n", i1, i2, i3, chunk->nScales());
 
     switch(_transformMethod){
         case TransformMethod_Cwt_ridge:{

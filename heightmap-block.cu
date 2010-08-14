@@ -289,10 +289,19 @@ __global__ void kernel_merge_chunk2(
             // Read from global memory
             float2 c = valid ? inChunk.elem(readPos) : make_float2(0,0);
 
-            if (transformMethod==Heightmap::TransformMethod_Cwt_phase)
+            switch (transformMethod) {
+            case Heightmap::TransformMethod_Cwt_phase:
                 val[threadIdx.x] = 0.1f*(M_PI + atan2(c.y, c.x))*(1.f/(2*M_PI));
-            else
+                break;
+            case Heightmap::TransformMethod_Cwt_reassign:
+                val[threadIdx.x] = c.x*c.x + c.y*c.y;
+                break;
+            // case Heightmap::TransformMethod_Cwt_ridge:
+            // case Heightmap::TransformMethod_Cwt:
+            default:
                 val[threadIdx.x] = if0*(c.x*c.x + c.y*c.y);
+                break;
+            }
 
             __syncthreads();
 
