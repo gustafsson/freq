@@ -1827,10 +1827,13 @@ void DisplayWidget::setSelection(int index, bool enabled)
 
 void DisplayWidget::setSelection(MyVector start, MyVector end, bool enabled)
 {
-    selection[0].x = start.x;
-    selection[0].z = start.z;
+    selection[0].x = (start.x + end.x)/2;
+    selection[0].z = (start.z + end.z)/2;
     selection[1].x = end.x;
     selection[1].z = end.z;
+    
+    getPostSink()->filter( Tfr::pFilter( new Tfr::EllipsFilter(selection[0].x, selection[0].z, selection[1].x, selection[1].z, true )), _worker->source() );
+    
     update();
 }
 
