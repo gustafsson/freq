@@ -1,3 +1,6 @@
+#ifndef _SELECTIONTOOL_H_
+#define _SELECTIONTOOL_H_
+
 #include "sawe-basictool.h"
 
 namespace Sawe {
@@ -20,3 +23,4 @@ protected:
 
 
 };
+#endif

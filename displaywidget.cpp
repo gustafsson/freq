@@ -259,7 +259,7 @@ DisplayWidget::
     _toolList.push_back(new Sawe::SelectionTool(this));
     _toolList.push_back(new Sawe::NavigationTool(this));
     _toolList.push_back(new Sawe::BrushTool(this));
-    _toolList.push_back(new Sawe::InfoTool(this));
+    _toolList.push_back(new Sawe::InfoToolWithNavigation(this));
     
     setTool(1);
 	//toolz->setParent(this);
@@ -319,11 +319,27 @@ void DisplayWidget::receiveToggleSelection(bool active)
     if (active) {
         receiveToggleNavigation( false );
         receiveToggleInfoTool( false );
+        receiveToggleBrush( false );
         setTool(SELECTIONTOOL);
+        
     } else if(!active) {
         emit setSelectionActive( false );
     }
         
+}
+
+void DisplayWidget::receiveToggleBrush(bool active)
+{
+    if (active) {
+        receiveToggleNavigation( false );
+        receiveToggleInfoTool( false );
+        receiveToggleSelection( false );
+        setTool(BRUSHTOOL);
+        
+    } else if(!active) {
+        emit setBrushActive( false );
+        
+    }
 }
 
 void DisplayWidget::receiveToggleNavigation(bool active)
@@ -331,6 +347,7 @@ void DisplayWidget::receiveToggleNavigation(bool active)
     if (active) {
         receiveToggleInfoTool( false );
         receiveToggleSelection( false );
+        receiveToggleBrush( false );
         setTool(NAVIGATIONTOOL);
     } else if(!active) {
         emit setNavigationActive( false );

@@ -1,4 +1,8 @@
+#ifndef _INFOTOOL_H_
+#define _INFOTOOL_H_
+
 #include "sawe-basictool.h"
+#include "sawe-movetool.h"
 
 namespace Sawe {
 
@@ -17,4 +21,23 @@ protected:
 };
 
 
+class InfoToolWithNavigation: public BasicTool
+{
+public:
+    InfoToolWithNavigation(DisplayWidget *dw):BasicTool(dw)
+    {
+        MotionTool *motionTool = new MotionTool(dw);
+        RotationTool *rotationTool = new RotationTool(dw);
+        ZoomTool *zoomTool = new ZoomTool(dw);
+        InfoTool *infoTool = new InfoTool(dw);
+        
+        zoomTool->push(infoTool);
+        rotationTool->push(zoomTool);
+        motionTool->push(rotationTool);
+        push(motionTool);
+    }
 };
+
+};
+
+#endif

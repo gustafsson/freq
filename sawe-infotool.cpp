@@ -7,7 +7,7 @@ namespace Sawe{
 
 void InfoTool::mousePressEvent(QMouseEvent * e)
 {
-    if( (e->button() & Qt::LeftButton) == Qt::LeftButton )
+    if( (e->button() & Qt::LeftButton) == Qt::LeftButton && !e->modifiers().testFlag(Qt::AltModifier))
     {
         usingInfo = true;
         mouseMoveEvent( e );
@@ -18,7 +18,7 @@ void InfoTool::mousePressEvent(QMouseEvent * e)
 
 void InfoTool::mouseReleaseEvent(QMouseEvent * e)
 {
-    if( (e->button() & Qt::LeftButton) == Qt::LeftButton )
+    if( (e->button() & Qt::LeftButton) == Qt::LeftButton && usingInfo)
     {
         usingInfo = false;
     }

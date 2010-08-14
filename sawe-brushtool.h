@@ -1,3 +1,6 @@
+#ifndef _BRUSHTOOL_H_
+#define _BRUSHTOOL_H_
+
 #include "sawe-basictool.h"
 #include <vector.h>
 
@@ -30,3 +33,5 @@ protected:
 
 
 };
+
+#endif

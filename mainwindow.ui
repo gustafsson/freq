@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -222,15 +222,6 @@
        </attribute>
        <attribute name="headerDefaultSectionSize">
         <number>10</number>
-       </attribute>
-       <attribute name="headerMinimumSectionSize">
-        <number>10</number>
-       </attribute>
-       <attribute name="headerDefaultSectionSize">
-        <number>10</number>
-       </attribute>
-       <attribute name="headerVisible">
-        <bool>false</bool>
        </attribute>
        <attribute name="headerMinimumSectionSize">
         <number>10</number>
@@ -983,7 +974,7 @@
     <bool>true</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">

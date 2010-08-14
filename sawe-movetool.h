@@ -1,5 +1,8 @@
 #include "sawe-basictool.h"
 
+#ifndef _MOVETOOL_H_
+#define _MOVETOOL_H_
+
 namespace Sawe {
 
 class NavigationTool: public BasicTool
@@ -48,3 +51,5 @@ protected:
 
 
 };
+
+#endif

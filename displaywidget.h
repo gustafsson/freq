@@ -123,6 +123,7 @@ protected slots:
     virtual void receiveToggleSelection(bool);
     virtual void receiveToggleNavigation(bool);
     virtual void receiveToggleInfoTool(bool);
+    virtual void receiveToggleBrush(bool);
     virtual void receiveTogglePiano(bool);
 
     virtual void receiveSetRainbowColors();
@@ -151,6 +152,7 @@ signals:
     void setSelectionActive(bool);
     void setNavigationActive(bool);
     void setInfoToolActive(bool);
+    void setBrushActive(bool);
 
 private:
     friend class Heightmap::Renderer;

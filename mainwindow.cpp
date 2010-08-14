@@ -95,7 +95,7 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
         qb->addActionItem( ui->actionAmplitudeBrush );
         qb->addActionItem( ui->actionAirbrush );
         qb->addActionItem( ui->actionSmoothBrush );
-        qb->setEnabled( false );
+        qb->setEnabled( true );
         ui->toolBarTool->addWidget( qb );
     }
 
@@ -197,6 +197,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(this->ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(receiveToggleSelection(bool)));
     connect(this->ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(receiveToggleNavigation(bool)));
     connect(this->ui->actionActivateInfoTool, SIGNAL(toggled(bool)), d, SLOT(receiveToggleInfoTool(bool)));
+    connect(this->ui->actionAmplitudeBrush, SIGNAL(toggled(bool)), d, SLOT(receiveToggleBrush(bool)));
     connect(this->ui->actionPlaySelection, SIGNAL(triggered()), d, SLOT(receivePlaySound()));
     connect(this->ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), d, SLOT(receiveFollowPlayMarker(bool)));
     connect(this->ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), d, SLOT(receiveTogglePiano(bool)));
@@ -214,6 +215,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     connect(d, SIGNAL(setSelectionActive(bool)), this->ui->actionActivateSelection, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setNavigationActive(bool)), this->ui->actionActivateNavigation, SLOT(setChecked(bool)));
     connect(d, SIGNAL(setInfoToolActive(bool)), this->ui->actionActivateInfoTool, SLOT(setChecked(bool)));
+    connect(d, SIGNAL(setBrushActive(bool)), this->ui->actionAmplitudeBrush, SLOT(setChecked(bool)));
     connect(this->ui->actionSet_rainbow_colors, SIGNAL(triggered()), d, SLOT(receiveSetRainbowColors()));
     connect(this->ui->actionSet_grayscale, SIGNAL(triggered()), d, SLOT(receiveSetGrayscaleColors()));
     connect(this->ui->actionSet_heightlines, SIGNAL(toggled(bool)), d, SLOT(receiveSetHeightlines(bool)));
