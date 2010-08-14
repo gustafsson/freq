@@ -44,7 +44,7 @@ unsigned Chunk::
     if (f>max_hz) f=max_hz;
 
     unsigned fi = (unsigned)((log(f)-log(min_hz))/(log(max_hz)-log(min_hz))*nScales());
-    if (fi>nScales()) fi = nScales()-1;
+    if (fi>=nScales()) fi = nScales()-1;
 
     return fi;
 }
