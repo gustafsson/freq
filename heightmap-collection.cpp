@@ -790,13 +790,15 @@ void Collection::
     float tmin = Tfr::CwtSingleton::instance()->min_hz();
     float tmax = Tfr::CwtSingleton::instance()->max_hz( worker->source()->sample_rate() );
 
-    Tfr::Stft trans;
+    Tfr::pStft ptrans = Tfr::StftSingleton::instance();
+    Tfr::Stft& trans = *ptrans;
+
     Signal::pSource fast_source = Signal::Operation::fast_source( worker->source() );
 
     unsigned first_sample = (unsigned)(a.time*fast_source->sample_rate()),
              n_samples = (unsigned)((b.time-a.time)*fast_source->sample_rate());
-    first_sample = ((first_sample-1)/trans.chunk_size+1)*trans.chunk_size;
-    n_samples = ((n_samples-1)/trans.chunk_size+1)*trans.chunk_size;
+    first_sample = ((first_sample-1)/trans.chunk_size+1) * trans.chunk_size;
+    n_samples = ((n_samples+1)/trans.chunk_size+3) * trans.chunk_size;
 
     Signal::pBuffer buff = fast_source->readFixedLength( first_sample, n_samples );
 

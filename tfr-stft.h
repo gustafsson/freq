@@ -82,6 +82,13 @@ private:
     cudaStream_t    _stream;
 };
 
+typedef boost::shared_ptr<Stft> pStft;
+
+class StftSingleton
+{
+public:
+    static pStft instance();
+};
 
 } // namespace Tfr
 

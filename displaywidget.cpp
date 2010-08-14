@@ -15,6 +15,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <tvector.h>
+#include <neat_math.h>
 #include <math.h>
 #ifndef __APPLE__
 #include <GL/glut.h>
@@ -346,6 +347,13 @@ void DisplayWidget::
 
     float std_t = c->morlet_std_t(0, FS);
     c->wavelet_std_t( 1.5f * std_t ); // One standard deviation is not enough, but heavy. Two standard deviations are even more heavy.
+
+    Tfr::pStft s = Tfr::StftSingleton::instance();
+    s->chunk_size = ((unsigned)(c->wavelet_std_t() * FS/32))*32;
+    //s->chunk_size = spo2g(c->wavelet_std_t() * FS);
+
+    if (_renderer->collection()->getTransform() == Heightmap::TransformMethod_Stft)
+        receiveSetTransform_Stft();
 
     _renderer->collection()->add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
     update();

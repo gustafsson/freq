@@ -276,6 +276,7 @@ __global__ void kernel_merge_chunk2(
         float ff = y/(float)inChunk.getNumberOfElements().y;
         float if0 = 20.f/(2.0f + 35.f*ff*ff*ff);
         if0=if0*if0*if0;
+        if0 *= 0.4f;
 
         for (unsigned i=0; i<block_read.num_reads; i++)
         {

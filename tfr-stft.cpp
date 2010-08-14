@@ -216,12 +216,31 @@ Signal::pBuffer Stft::
     cufftHandle fft_many;
     unsigned count = b->number_of_samples();
     count/=chunk_size;
-    if (0<count) {
-        CufftException_SAFE_CALL(cufftPlan1d(&fft_many, chunk_size, CUFFT_C2C, count));
 
-        CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
-        CufftException_SAFE_CALL(cufftExecC2C(fft_many, d, d, CUFFT_FORWARD));
-        cufftDestroy(fft_many);
+    if (0<count)
+    {
+        unsigned
+                slice = count,
+                n = 0;
+
+        while(n < count)
+        {
+            try
+            {
+                CufftException_SAFE_CALL(cufftPlan1d(&fft_many, chunk_size, CUFFT_C2C, slice));
+
+                CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
+                CufftException_SAFE_CALL(cufftExecC2C(fft_many, &d[n], &d[n], CUFFT_FORWARD));
+                cufftDestroy(fft_many);
+
+                n += slice;
+            } catch (const CufftException&) {
+                if (slice>0)
+                    slice/=2;
+                else
+                    throw;
+            }
+        }
     }
 
     // Clean leftovers with 0
@@ -230,6 +249,13 @@ Signal::pBuffer Stft::
     }
 
     return b;
+}
+
+pStft StftSingleton::
+        instance()
+{
+    static pStft stft( new Stft ());
+    return stft;
 }
 
 } // namespace Tfr
