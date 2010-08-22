@@ -21,7 +21,7 @@ win32:QMAKE_LFLAGS += /FORCE:MULTIPLE
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 !macx&!win32: QMAKE_CXX = colorgcc
-#macx:QMAKE_CXX = g++ # Should not need this macx: with CONFIG(unix|!macx) above
+#macx:QMAKE_CXX = g++ # Should not need this macx: with !macx&!win32 above
 
 ### Settings for using llvm instead of gcc on linux
 llvm {
@@ -34,107 +34,120 @@ llvm {
 ####################
 # Source code
 
-RESOURCES += icon-resources.qrc
-SOURCES += main.cpp \
-    mainwindow.cpp \
-    displaywidget.cpp \
-    heightmap-glblock.cpp \
-    selection.cpp \
-    signal-source.cpp \
-    signal-audiofile.cpp \
-    signal-operationcache.cpp \
-    signal-microphonerecorder.cpp \
-    signal-operation.cpp \
-    signal-operation-basic.cpp \
-    signal-operation-composite.cpp \
-    signal-samplesintervaldescriptor.cpp \
-    signal-sink.cpp \
-    signal-sinksource.cpp \
-    signal-postsink.cpp \
-    signal-playback.cpp \
-    layer.cpp \
-    tfr-stft.cpp \
-    tfr-cwt.cpp \
-    tfr-filter.cpp \
-    tfr-inversecwt.cpp \
-    tfr-chunk.cpp \
-    tfr-chunksink.cpp \
-    sawe-application.cpp \
-    sawe-csv.cpp \
-    sawe-hdf5.cpp \
-    sawe-matlaboperation.cpp \
-    sawe-matlabfilter.cpp \
-    sawe-project.cpp \
-    sawe-timelinewidget.cpp \
-    signal-filteroperation.cpp \
-    signal-worker.cpp \
-    signal-writewav.cpp \
-    heightmap-renderer.cpp \
-    heightmap-collection.cpp \
-    heightmap-reference.cpp \
-    fft4g.c \
+RESOURCES += \
+    saweui/icon-resources.qrc \
+
+SOURCES += \
+    heightmap/collection.cpp \
+    heightmap/glblock.cpp \
+    heightmap/reference.cpp \
+    heightmap/renderer.cpp \
+    sawe/application.cpp \
+    sawe/csv.cpp \
+    sawe/hdf5.cpp \
+    sawe/layer.cpp \
+    sawe/main.cpp \
+    sawe/matlabfilter.cpp \
+    sawe/matlaboperation.cpp \
+    sawe/project.cpp \
+    sawe/selection.cpp \
+    sawe/timelinewidget.cpp \
+    saweui/displaywidget.cpp \
+    saweui/mainwindow.cpp \
     saweui/propertiesselection.cpp \
-    saweui/propertiesstroke.cpp
-HEADERS += mainwindow.h \
-    displaywidget.h \
-    tfr-wavelet.cu.h \
-    heightmap-glblock.h \
-    heightmap-slope.cu.h \
-    heightmap-block.cu.h \
-    tfr-filter.cu.h \
-    selection.h \
-    heightmap-position.h \
-    signal-source.h \
-    signal-audiofile.h \
-    signal-operationcache.h \
-    signal-microphonerecorder.h \
-    signal-operation.h \
-    signal-operation-basic.h \
-    signal-operation-composite.h \
-    signal-samplesintervaldescriptor.h \
-    signal-playback.h \
-    signal-sink.h \
-    signal-sinksource.h \
-    signal-postsink.h \
-    layer.h \
-    tfr-stft.h \
-    tfr-cwt.h \
-    tfr-filter.h \
-    tfr-inversecwt.h \
-    tfr-chunk.h \
-    tfr-chunksink.h \
-    sawe-application.h \
-    sawe-csv.h \
-    sawe-hdf5.h \
-    sawe-matlaboperation.h \
-    sawe-matlabfilter.h \
-    sawe-mainplayback.h \
-    sawe-project.h \
-    sawe-timelinewidget.h \
-    signal-filteroperation.h \
-    signal-worker.h \
-    signal-writewav.h \
-    heightmap-renderer.h \
-    heightmap-collection.h \
-    heightmap-reference.h \
+    saweui/propertiesstroke.cpp \
+    signal/audiofile.cpp \
+    signal/filteroperation.cpp \
+    signal/microphonerecorder.cpp \
+    signal/operation-basic.cpp \
+    signal/operationcache.cpp \
+    signal/operation-composite.cpp \
+    signal/operation.cpp \
+    signal/playback.cpp \
+    signal/postsink.cpp \
+    signal/samplesintervaldescriptor.cpp \
+    signal/sink.cpp \
+    signal/sinksource.cpp \
+    signal/source.cpp \
+    signal/worker.cpp \
+    signal/writewav.cpp \
+    tfr/chunk.cpp \
+    tfr/chunksink.cpp \
+    tfr/cwt.cpp \
+    tfr/fft4g.c \
+    tfr/filter.cpp \
+    tfr/inversecwt.cpp \
+    tfr/stft.cpp \
+
+HEADERS += \
+    heightmap/block.cu.h \
+    heightmap/collection.h \
+    heightmap/glblock.h \
+    heightmap/position.h \
+    heightmap/reference.h \
+    heightmap/renderer.h \
+    heightmap/slope.cu.h \
+    sawe/application.h \
+    sawe/csv.h \
+    sawe/hdf5.h \
+    sawe/layer.h \
+    sawe/mainplayback.h \
+    sawe/matlabfilter.h \
+    sawe/matlaboperation.h \
+    sawe/project.h \
+    sawe/selection.h \
+    sawe/timelinewidget.h \
+    saweui/displaywidget.h \
+    saweui/mainwindow.h \
     saweui/propertiesselection.h \
-    saweui/propertiesstroke.h
-FORMS += mainwindow.ui \
+    saweui/propertiesstroke.h \
+    signal/audiofile.h \
+    signal/filteroperation.h \
+    signal/microphonerecorder.h \
+    signal/operation-basic.h \
+    signal/operationcache.h \
+    signal/operation-composite.h \
+    signal/operation.h \
+    signal/playback.h \
+    signal/postsink.h \
+    signal/samplesintervaldescriptor.h \
+    signal/sink.h \
+    signal/sinksource.h \
+    signal/source.h \
+    signal/worker.h \
+    signal/writewav.h \
+    tfr/chunk.h \
+    tfr/chunksink.h \
+    tfr/cwt.h \
+    tfr/filter.cu.h \
+    tfr/filter.h \
+    tfr/inversecwt.h \
+    tfr/stft.h \
+    tfr/wavelet.cu.h \
+
+FORMS += \
+    saweui/mainwindow.ui \
     saweui/propertiesselection.ui \
-    saweui/propertiesstroke.ui
-OTHER_FILES += tfr-wavelet.cu \
-    heightmap.frag \
-    heightmap.vert \
-    heightmap-slope.cu \
-    heightmap-block.cu \
-    tfr-filter.cu
-CUDA_SOURCES += tfr-wavelet.cu \
-    heightmap-slope.cu \
-    heightmap-block.cu \
-    tfr-filter.cu
-OTHER_SOURCES += heightmap.frag \
-    heightmap.vert \
-    sonicawe.pro
+    saweui/propertiesstroke.ui \
+
+OTHER_FILES += \
+    heightmap/block.cu \
+    heightmap/heightmap.frag \
+    heightmap/heightmap.vert \
+    heightmap/slope.cu \
+    tfr/filter.cu \
+    tfr/wavelet.cu \
+
+CUDA_SOURCES += \
+    heightmap/block.cu \
+    heightmap/slope.cu \
+    tfr/filter.cu \
+    tfr/wavelet.cu \
+
+OTHER_SOURCES += \
+    heightmap/heightmap.frag \
+    heightmap/heightmap.vert \
+    sonicawe.pro \
 
 # Make shaders show up in project file list in Visual Studio
 win32 { 
@@ -150,7 +163,7 @@ win32 {
 unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 
-INCLUDEPATH += ../gpumisc
+INCLUDEPATH += ../gpumisc .
 
 unix:!macx {
 INCLUDEPATH += \
@@ -315,3 +328,4 @@ macx {
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
 # end of cuda section #######################################################################
+
