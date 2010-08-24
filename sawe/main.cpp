@@ -305,11 +305,11 @@ int main(int argc, char *argv[])
 
         // TODO use _channel
 
-        Tfr::pCwt cwt = Tfr::CwtSingleton::instance();
-        cwt->scales_per_octave( _scales_per_octave );
-        cwt->wavelet_std_t( _wavelet_std_t );
+        Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
+        cwt.scales_per_octave( _scales_per_octave );
+        cwt.wavelet_std_t( _wavelet_std_t );
 
-        unsigned total_samples_per_chunk = cwt->prev_good_size( 1<<_samples_per_chunk, p->head_source->sample_rate() );
+        unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source->sample_rate() );
         TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
 
         if (_get_csv != (unsigned)-1) {

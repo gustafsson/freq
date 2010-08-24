@@ -28,18 +28,36 @@ Cwt::
 {
 }
 
+
+// static
+Cwt& Cwt::
+        Singleton()
+{
+    return *dynamic_cast<Cwt*>(SingletonP().get());
+}
+
+
+// static
+pTransform Cwt::
+        SingletonP()
+{
+    static pTransform P(new Cwt());
+    return P;
+}
+
+
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
     std::stringstream ss;
     TIME_CWT TaskTimer tt("Cwt buffer %s, %u samples. [%g, %g] s", ((std::stringstream&)(ss<<buffer->getInterval())).str().c_str(), buffer->number_of_samples(), buffer->start(), buffer->length()+buffer->start() );
 
-    pFftChunk ft ( _fft( buffer ) );
+    pChunk ft ( _fft( buffer ) );
 
     pChunk intermediate_wt( new Chunk() );
 
     {
-        cudaExtent requiredWtSz = make_cudaExtent( ft->getNumberOfElements().width, nScales(buffer->sample_rate), 1 );
+        cudaExtent requiredWtSz = make_cudaExtent( ft->transform_data->getNumberOfElements().width, nScales(buffer->sample_rate), 1 );
         TIME_CWT TaskTimer tt("prerequisites (%u, %u, %u)", requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth);
 
         // allocate a new chunk
@@ -54,7 +72,7 @@ pChunk Cwt::
         intermediate_wt->min_hz = _min_hz;
         intermediate_wt->max_hz = max_hz(buffer->sample_rate);
 
-        ::wtCompute( ft->getCudaGlobal().ptr(),
+        ::wtCompute( ft->transform_data->getCudaGlobal().ptr(),
                      intermediate_wt->transform_data->getCudaGlobal().ptr(),
                      intermediate_wt->sample_rate,
                      intermediate_wt->min_hz,
@@ -70,6 +88,8 @@ pChunk Cwt::
         GpuCpuData<float2>* g = intermediate_wt->transform_data.get();
         cudaExtent n = g->getNumberOfElements();
 
+        intermediate_wt->axis_scale = AxisScale_Logarithmic;
+
         intermediate_wt->chunk_offset = buffer->sample_offset;
         intermediate_wt->first_valid_sample = wavelet_std_samples( buffer->sample_rate );
 
@@ -83,6 +103,8 @@ pChunk Cwt::
 
         intermediate_wt->n_valid_samples = buffer->number_of_samples() - wavelet_std_samples( buffer->sample_rate ) - intermediate_wt->first_valid_sample;
 
+        intermediate_wt->order = Chunk::Order_row_major;
+
         intermediate_wt->sample_rate = buffer->sample_rate;
 
         if (0 /* cpu version */ ) {
@@ -94,14 +116,14 @@ pChunk Cwt::
             // Move to CPU
             float2* p = g->getCpuMemory();
 
-            Signal::pBuffer b( new Signal::Buffer(Signal::Buffer::Interleaved_Complex) );
+            pChunk c( new Chunk );
             for (unsigned h=0; h<n.height; h++) {
-                b->waveform_data.reset(
-                        new GpuCpuData<float>(p + n.width*h,
-                                       make_cudaExtent(2*n.width,1,1),
+                c->transform_data.reset(
+                        new GpuCpuData<float2>(p + n.width*h,
+                                       make_cudaExtent(n.width,1,1),
                                        GpuCpuVoidData::CpuMemory, true));
-                pFftChunk fc = _fft.backward( b );
-                memcpy( p + n.width*h, fc->getCpuMemory(), fc->getSizeInBytes1D() );
+                Signal::pBuffer fb = _fft.backward( c );
+                memcpy( p + n.width*h, fb->waveform_data->getCpuMemory(), fb->waveform_data->getSizeInBytes1D() );
             }
 
             // Move back to GPU
@@ -125,6 +147,7 @@ pChunk Cwt::
     return intermediate_wt;
 }
 
+
 void Cwt::
         min_hz(float value)
 {
@@ -133,11 +156,13 @@ void Cwt::
     _min_hz = value;
 }
 
+
 float Cwt::
         number_of_octaves( unsigned sample_rate ) const
 {
     return log2(max_hz(sample_rate)) - log2(_min_hz);
 }
+
 
 void Cwt::
         scales_per_octave( float value )
@@ -147,6 +172,7 @@ void Cwt::
     _scales_per_octave=value;
 }
 
+
 void Cwt::
         tf_resolution( float value )
 {
@@ -154,6 +180,7 @@ void Cwt::
 
     _tf_resolution = value;
 }
+
 
 float Cwt::
         compute_frequency(float normalized_scale, unsigned FS ) const
@@ -165,6 +192,7 @@ float Cwt::
     float hz = start*exp(ff*steplogsize);
     return hz;
 }
+
 
 float Cwt::
         morlet_std_t( float normalized_scale, unsigned FS )
@@ -197,6 +225,7 @@ float Cwt::
     return period;
 }
 
+
 float Cwt::
         morlet_std_f( float normalized_scale, unsigned FS )
 {
@@ -223,11 +252,13 @@ float Cwt::
     return factor;//*(max_hz(FS)-min_hz());
 }
 
+
 unsigned Cwt::
         wavelet_std_samples( unsigned sample_rate ) const
 {
     return ((unsigned)(_wavelet_std_t*sample_rate+31))/32*32;
 }
+
 
 unsigned Cwt::
         next_good_size( unsigned current_valid_samples_per_chunk, unsigned sample_rate )
@@ -240,6 +271,7 @@ unsigned Cwt::
     return nT - 2*r;
 }
 
+
 unsigned Cwt::
         prev_good_size( unsigned current_valid_samples_per_chunk, unsigned sample_rate )
 {
@@ -251,11 +283,14 @@ unsigned Cwt::
     return nT - 2*r;
 }
 
+/* TODO remove
+
 pChunk CwtSingleton::
         operate( Signal::pBuffer b )
 {
     return (*instance())( b );
 }
+
 
 pCwt CwtSingleton::
         instance()
@@ -263,5 +298,5 @@ pCwt CwtSingleton::
     static pCwt cwt( new Cwt ());
     return cwt;
 }
-
+*/
 } // namespace Tfr

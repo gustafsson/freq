@@ -186,7 +186,7 @@ Tfr::pChunk Hdf5Input::
 
     if (2!=dims.size()) throw runtime_error(((stringstream&)(ss << "Rank of '" << name << "' is '" << dims.size() << "' instead of 3.")).str());
 
-    Tfr::pChunk chunk( new Tfr::Chunk);
+    Tfr::pChunk chunk( new Tfr::Chunk );
     chunk->min_hz = 20;
     chunk->max_hz = 22050;
     chunk->chunk_offset = 0;

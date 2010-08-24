@@ -1,14 +1,13 @@
 #ifndef TFRCWT_H
 #define TFRCWT_H
 
+#include "transform.h"
 #include "signal/source.h"
-#include "tfr/stft.h"
-#include "tfr/chunk.h"
+#include "stft.h"
 
 namespace Tfr {
 
-
-class Cwt
+class Cwt:public Transform
 {
 public:
     /**
@@ -30,14 +29,17 @@ public:
     */
     Cwt( float scales_per_octave=40, float wavelet_std_t=0.03f, cudaStream_t stream=0 );
 
-    pChunk operator()( Signal::pBuffer );
+    static Cwt& Singleton();
+    static pTransform SingletonP();
+
+    virtual pChunk operator()( Signal::pBuffer );
 
     float     min_hz() const { return _min_hz; }
     void      min_hz(float f);
     float     max_hz(unsigned sample_rate) const { return sample_rate/2.f; }
     float     number_of_octaves( unsigned sample_rate ) const;
     unsigned  nScales(unsigned FS) { return (unsigned)(number_of_octaves(FS) * scales_per_octave()); }
-    float	  scales_per_octave() const { return _scales_per_octave; }
+    float     scales_per_octave() const { return _scales_per_octave; }
     void      scales_per_octave( float );
     float     tf_resolution() const { return _tf_resolution; }
     void      tf_resolution( float );
@@ -84,15 +86,6 @@ private:
       @see wavelet_std_t
       */
     float  _wavelet_std_t;
-};
-typedef boost::shared_ptr<Cwt> pCwt;
-
-class CwtSingleton
-{
-public:
-    static pChunk operate( Signal::pBuffer );
-
-    static pCwt instance();
 };
 
 } // namespace Tfr

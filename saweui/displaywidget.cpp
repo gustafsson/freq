@@ -342,22 +342,23 @@ void DisplayWidget::
 {
     unsigned FS = _worker->source()->sample_rate();
 
-    Tfr::pCwt c = Tfr::CwtSingleton::instance();
-    c->tf_resolution( exp( 4*(value / 50.f - 1.f)) );
+    Tfr::Cwt& c = Tfr::Cwt::Singleton();
+    c.tf_resolution( exp( 4*(value / 50.f - 1.f)) );
 
-    float std_t = c->morlet_std_t(0, FS);
-    c->wavelet_std_t( 1.5f * std_t ); // One standard deviation is not enough, but heavy. Two standard deviations are even more heavy.
+    float std_t = c.morlet_std_t(0, FS);
+    c.wavelet_std_t( 1.5f * std_t ); // One standard deviation is not enough, but heavy. Two standard deviations are even more heavy.
 
-    Tfr::pStft s = Tfr::StftSingleton::instance();
-    s->chunk_size = ((unsigned)(c->wavelet_std_t() * FS/32))*32;
-    //s->chunk_size = spo2g(c->wavelet_std_t() * FS);
+    Tfr::Stft& s = Tfr::Stft::Singleton();
+    s.chunk_size = ((unsigned)(c.wavelet_std_t() * FS/32))*32;
+    //s.chunk_size = spo2g(c.wavelet_std_t() * FS);
 
-    if (_renderer->collection()->getTransform() == Heightmap::TransformMethod_Stft)
+    if ( 0 != dynamic_cast<Tfr::Stft*>( _renderer->collection()->ChunkSink::chunk_transform().get() ))
         receiveSetTransform_Stft();
 
     _renderer->collection()->add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
     update();
 }
+
 
 void DisplayWidget::receivePlaySound()
 {
@@ -450,35 +451,47 @@ void DisplayWidget::receiveRecord(bool active)
 
 void DisplayWidget::receiveSetTransform_Cwt()
 {
-    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt);
+    _renderer->collection()->chunk_transform( Tfr::Cwt::SingletonP() );
+    _renderer->collection()->complexInfo( Heightmap::ComplexInfo_Amplitude_Weighted );
+    _renderer->collection()->chunk_filter( Tfr::pFilter() );
 
     update();
 }
 
 void DisplayWidget::receiveSetTransform_Stft()
 {
-    _renderer->collection()->setTransform(Heightmap::TransformMethod_Stft);
+    _renderer->collection()->chunk_transform( Tfr::Stft::SingletonP() );
+    _renderer->collection()->complexInfo( Heightmap::ComplexInfo_Amplitude_Non_Weighted );
+    _renderer->collection()->chunk_filter( Tfr::pFilter() );
 
     update();
 }
 
 void DisplayWidget::receiveSetTransform_Cwt_phase()
 {
-    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt_phase);
+    _renderer->collection()->chunk_transform( Tfr::Stft::SingletonP() );
+    _renderer->collection()->complexInfo( Heightmap::ComplexInfo_Phase );
+    _renderer->collection()->chunk_filter( Tfr::pFilter() );
 
     update();
 }
 
 void DisplayWidget::receiveSetTransform_Cwt_reassign()
 {
-    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt_reassign);
+    _renderer->collection()->chunk_transform( Tfr::Cwt::SingletonP() );
+    _renderer->collection()->complexInfo( Heightmap::ComplexInfo_Amplitude_Non_Weighted );
+    // TODO implement reassign as a filter with code from Heightmap::put
+    _renderer->collection()->chunk_filter( Tfr::pFilter() );
 
     update();
 }
 
 void DisplayWidget::receiveSetTransform_Cwt_ridge()
 {
-    _renderer->collection()->setTransform(Heightmap::TransformMethod_Cwt_ridge);
+    _renderer->collection()->chunk_transform( Tfr::Cwt::SingletonP() );
+    _renderer->collection()->complexInfo( Heightmap::ComplexInfo_Amplitude_Non_Weighted );
+    // TODO implement ridge as a filter with code from Heightmap::put
+    _renderer->collection()->chunk_filter( Tfr::pFilter() );
 
     update();
 }
@@ -534,7 +547,7 @@ void DisplayWidget::receiveAddClearSelection(bool /*active*/)
 
     Signal::FilterOperation *f;
 
-    Signal::pSource postsink_filter( f = new Signal::FilterOperation( _worker->source(), postsink->filter() ));
+    Signal::pSource postsink_filter( f = new Signal::FilterOperation( _worker->source(), Tfr::Cwt::SingletonP(), postsink->filter() ));
     f->meldFilters();
 
     { // Test: MoveFilter
@@ -690,7 +703,7 @@ void DisplayWidget::
     case 1: // Everywhere
         {
             Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
-            _matlabfilter.reset( new Signal::FilterOperation( read, f));
+            _matlabfilter.reset( new Signal::FilterOperation( read, Tfr::Cwt::SingletonP(), f));
             b->source( _matlabfilter );
             _worker->start();
         break;
@@ -698,13 +711,13 @@ void DisplayWidget::
     case 2: // Only inside selection
         {
         Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
-        Signal::pSource s( new Signal::FilterOperation( read, f));
+        Signal::pSource s( new Signal::FilterOperation( read, Tfr::Cwt::SingletonP(), f));
 
         Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(getPostSink()->filter().get());
         if (e)
             e->_save_inside = true;
 
-        _matlabfilter.reset( new Signal::FilterOperation( s, getPostSink()->filter()));
+        _matlabfilter.reset( new Signal::FilterOperation( s, Tfr::Cwt::SingletonP(), getPostSink()->filter()));
         b->source( _matlabfilter );
         break;
         }
@@ -723,7 +736,7 @@ void DisplayWidget::
 {
     Tfr::pFilter f( new Tfr::TonalizeFilter());
     Signal::FilterOperation *m;
-    Signal::pSource tonalize( m = new Signal::FilterOperation( _worker->source(), f));
+    Signal::pSource tonalize( m = new Signal::FilterOperation( _worker->source(), Tfr::Cwt::SingletonP(), f));
     m->meldFilters();
     setWorkerSource(tonalize);
 
@@ -737,7 +750,7 @@ void DisplayWidget::
 {
     Tfr::pFilter f( new Tfr::ReassignFilter());
     Signal::FilterOperation *m;
-    Signal::pSource reassign( m = new Signal::FilterOperation( _worker->source(), f));
+    Signal::pSource reassign( m = new Signal::FilterOperation( _worker->source(), Tfr::Cwt::SingletonP(), f));
     m->meldFilters();
     setWorkerSource(reassign);
 
@@ -810,7 +823,7 @@ Signal::FilterOperation* DisplayWidget::getFilterOperation()
     Signal::pSource s = _worker->source();
     Signal::FilterOperation* f = dynamic_cast<Signal::FilterOperation*>( s.get() );
     if (0 == f) {
-        f = new Signal::FilterOperation(s, Tfr::pFilter());
+        f = new Signal::FilterOperation(s, Tfr::Cwt::SingletonP(), Tfr::pFilter());
         s.reset( f );
         _worker->source( s );
     }
@@ -1017,13 +1030,13 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         GLvector current;
         if( infoToolButton.worldPos(x, y, current[0], current[1], xscale) )
         {
-            const Tfr::pCwt c = Tfr::CwtSingleton::instance();
+            Tfr::Cwt& c = Tfr::Cwt::Singleton();
             unsigned FS = _worker->source()->sample_rate();
             float t = ((unsigned)(current[0]*FS+.5f))/(float)FS;
-            current[1] = ((unsigned)(current[1]*c->nScales(FS)+.5f))/(float)c->nScales(FS);
-            float f = c->compute_frequency( current[1], FS );
-            float std_t = c->morlet_std_t(current[1], FS);
-            float std_f = c->morlet_std_f(current[1], FS);
+            current[1] = ((unsigned)(current[1]*c.nScales(FS)+.5f))/(float)c.nScales(FS);
+            float f = c.compute_frequency( current[1], FS );
+            float std_t = c.morlet_std_t(current[1], FS);
+            float std_f = c.morlet_std_f(current[1], FS);
 
             stringstream ss;
             ss << setiosflags(ios::fixed)
@@ -1125,6 +1138,7 @@ static void printQGLFormat(const QGLFormat& f, std::string title)
     tt.info("OpenGL_ES_Version_2_0=%d", QGLFormat::OpenGL_ES_Version_2_0 & flag);
 }
 
+
 static void printQGLWidget(const QGLWidget& w, std::string title)
 {
     TaskTimer tt("QGLWidget %s", title.c_str());
@@ -1133,6 +1147,7 @@ static void printQGLWidget(const QGLWidget& w, std::string title)
     tt.info("isValid=%d", w.isValid());
     printQGLFormat( w.format(), "");
 }
+
 
 void DisplayWidget::initializeGL()
 {
@@ -1198,7 +1213,7 @@ void DisplayWidget::paintGL()
     {   QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
         if (!_invalidRange.isEmpty()) {
             Signal::SamplesIntervalDescriptor blur = _invalidRange;
-            unsigned fuzzy = Tfr::CwtSingleton::instance()->wavelet_std_samples(_worker->source()->sample_rate());
+            unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_std_samples(_worker->source()->sample_rate());
             blur += fuzzy;
             _invalidRange |= blur;
 
@@ -1216,7 +1231,7 @@ void DisplayWidget::paintGL()
     // Set up camera position
     bool followingRecordMarker = false;
     float length = _worker->source()->length();
-    {   double limit = std::max(0.f, length - 2*Tfr::CwtSingleton::instance()->wavelet_std_t());
+    {   double limit = std::max(0.f, length - 2*Tfr::Cwt::Singleton().wavelet_std_t());
         if (_qx>=_prevLimit) {
             // Snap just before end so that _worker->center starts working on
             // data that has been fetched. If center=length worker will start
@@ -1224,7 +1239,7 @@ void DisplayWidget::paintGL()
             // set to zero after the end. This abrupt change creates a false
             // dirac peek in the transform (false because it will soon be
             // invalid by newly recorded data).
-            _qx = std::max(_qx,limit);
+            _qx = std::max(_qx, limit);
             followingRecordMarker = true;
         }
         _prevLimit = limit;

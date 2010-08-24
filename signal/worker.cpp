@@ -86,7 +86,7 @@ bool Worker::
         CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
-            _samples_per_chunk = Tfr::CwtSingleton::instance()->prev_good_size(
+            _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate());
             _max_samples_per_chunk = _samples_per_chunk;
             TaskTimer("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what()).suppressTiming();
@@ -101,17 +101,17 @@ bool Worker::
     if (0==milliseconds) milliseconds=1;
 
     if (!TESTING_PERFORMANCE) {
-        unsigned minSize = Tfr::CwtSingleton::instance()->next_good_size( 1, _source->sample_rate());
+        unsigned minSize = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
         float current_fps = 1000.f/milliseconds;
         if (current_fps < _requested_fps && _samples_per_chunk >= minSize)
         {
-            _samples_per_chunk = Tfr::CwtSingleton::instance()->prev_good_size(
+            _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate());
             TIME_WORKER TaskTimer("Low framerate (%.1f fps). Decreased samples per chunk to %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
         }
         else if (current_fps > 2.5f*_requested_fps && _samples_per_chunk <= b->number_of_samples() && _samples_per_chunk < _max_samples_per_chunk)
         {
-            _samples_per_chunk = Tfr::CwtSingleton::instance()->next_good_size(
+            _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(
                     _samples_per_chunk, _source->sample_rate());
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;

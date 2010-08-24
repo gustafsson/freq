@@ -5,28 +5,54 @@
 #include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
 #include "signal/samplesintervaldescriptor.h"
+#include "freqaxis.h"
 
 namespace Tfr {
 
-struct Chunk
+
+// TODO perhaps Chunk should extend Signal::Bufer
+class Chunk
 {
-    Chunk();
+public:
+    Chunk( );
 
     /**
-      transform_data contains the complex wavelet transform rowwise.
-      use as transform_data[ sample + f_index*nSamples ];
+      A FreqAxis is used to translate frequencies to indicies and vice versa.
+      */
+    FreqAxis freqAxis();
+
+    enum Order {
+        Order_row_major,
+        Order_column_major,
+    } order;
+
+    /**
+      transform_data contains the complex transform.
+      If order is Order_row_major they are stored rowwise such as:
+       float2 value = transform_data[ sample + f_index*nSamples ];
+
+      If order is Order_column_major they are stored columnwise such as:
+       float2 value = transform_data[ sample*nScales + f_index ];
+
       See getNearestCoeff for an example on how to find f_index.
+      'offset' can be used to give coordinates that takes order into account
+      for computing the offset into the array.
     */
     boost::scoped_ptr<GpuCpuData<float2> > transform_data;
 
+
+    unsigned offset(unsigned sample, unsigned f_index);
+
+
     float min_hz, max_hz;
+    AxisScale axis_scale;
 
     /**
       chunk_offset is the start of the chunk, along the timeline, measured in
       samples.
       */
     unsigned chunk_offset;
-    unsigned sample_rate;
+    float sample_rate; // columns per second
 
     /**
       first_valid_sample is the first nonredundant column. first_valid_sample
@@ -52,9 +78,8 @@ struct Chunk
                min_hz < max_hz;
     }
 
-    float2 getNearestCoeff( float t, float f );
-    unsigned getFrequencyIndex( float f ) const;
-    float getFrequency( unsigned fi ) const;
+    float2 debug_getNearestCoeff( float t, float f );  /// For debugging
+
     Signal::SamplesIntervalDescriptor::Interval getInterval() const;
 };
 typedef boost::shared_ptr< Chunk > pChunk;

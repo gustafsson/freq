@@ -78,6 +78,7 @@ SOURCES += \
     tfr/filter.cpp \
     tfr/inversecwt.cpp \
     tfr/stft.cpp \
+    tfr/transform.cpp \
 
 HEADERS += \
     heightmap/block.cu.h \
@@ -121,8 +122,10 @@ HEADERS += \
     tfr/cwt.h \
     tfr/filter.cu.h \
     tfr/filter.h \
+    tfr/freqaxis.h \
     tfr/inversecwt.h \
     tfr/stft.h \
+    tfr/transform.h \
     tfr/wavelet.cu.h \
 
 FORMS += \

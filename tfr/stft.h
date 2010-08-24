@@ -1,9 +1,7 @@
 #ifndef TFRSTFT_H
 #define TFRSTFT_H
 
-#include <boost/shared_ptr.hpp>
-#include "GpuCpuData.h"
-#include "signal/source.h"
+#include "transform.h"
 #include <vector>
 
 typedef unsigned int cufftHandle; /* from cufft.h */
@@ -11,6 +9,9 @@ typedef unsigned int cufftHandle; /* from cufft.h */
 namespace Tfr {
 
 
+/**
+  CufftHandleContext is used by Cwt but could also be used by Stft and Fft.
+  */
 class CufftHandleContext {
 public:
     CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlan1d( CUFFT_C2C )
@@ -29,65 +30,58 @@ private:
     void create();
 };
 
-typedef boost::shared_ptr< GpuCpuData<float2> > pFftChunk;
+// typedef boost::shared_ptr< GpuCpuData<float2> > pFftChunk;
 
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
 */
-class Fft
+class Fft: public Transform
 {
 public:
     Fft( /*cudaStream_t stream=0*/ );
     ~Fft();
 
-    pFftChunk operator()( Signal::pBuffer b ) { return forward(b);}
+    pChunk operator()( Signal::pBuffer b ) { return forward(b); }
 
-    pFftChunk forward( Signal::pBuffer );
-    pFftChunk backward( Signal::pBuffer );
+    pChunk forward( Signal::pBuffer );
+    Signal::pBuffer backward( pChunk );
 
 private:
 //    CufftHandleContext _fft_single;
     cudaStream_t _stream;
-    std::vector<double> w;
+    std::vector<double> w; // used by Ooura
     std::vector<int> ip;
     std::vector<double> q;
 
-    pFftChunk computeWithOoura( Signal::pBuffer buffer, int direction );
-    pFftChunk computeWithCufft( Signal::pBuffer buffer, int direction );
+    void computeWithOoura( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
+    void computeWithCufft( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
 };
 
 /**
 Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 @see Stft::operator()
 */
-class Stft
+class Stft: public Transform
 {
 public:
     Stft( cudaStream_t stream=0 );
 
+    static Stft& Singleton();
+    static pTransform SingletonP();
+
     /**
-      Signal::pBuffer is used as data structure for output as well as input, this is to simplify the fourier transform which thus can be done inplace.
-      The number of elements divided by chunk_size gives the number of windows. pFftChunk will have a width equal to chunk_size and a height
-      equal to the number of windows.
+      The contents of the input Signal::pBuffer is converted to complex values.
       */
-    Signal::pBuffer operator()( Signal::pBuffer);
+    pChunk operator()( Signal::pBuffer );
 
     /**
         Default window size for the windowed fourier transform, or short-time fourier transform, stft
         Default value: chunk_size=1<<11
     */
     unsigned chunk_size;
+
 private:
-
     cudaStream_t    _stream;
-};
-
-typedef boost::shared_ptr<Stft> pStft;
-
-class StftSingleton
-{
-public:
-    static pStft instance();
 };
 
 } // namespace Tfr

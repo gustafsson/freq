@@ -117,7 +117,7 @@ __global__ void kernel_merge_chunk(
                 readPos = inChunk.clamp(readPos);
                 if ( inChunk.valid(readPos) ) {
                     float ff = t/(float)inChunk.getNumberOfElements().y;
-                    float if0 = 40.f/(2.0f + 35*ff*ff*ff);
+                    float if0 = 40.f/(2 + 35*ff*ff*ff);
 
                     //float2 c = inChunk.elem(readPos);
                     float2 c = tex1Dfetch(chunkTexture, inChunk.eOffs(readPos));
@@ -239,7 +239,7 @@ __global__ void kernel_merge_chunk2(
                 unsigned in_offset,
                 float out_offset,
                 unsigned in_count,
-                Heightmap::TransformMethod transformMethod )
+                Heightmap::ComplexInfo complexInfo )
 {
 /**
     Merging like this for resample_width = 3, resample_height=1, in_offset=1, out_offset=0
@@ -274,7 +274,7 @@ __global__ void kernel_merge_chunk2(
     if (0 != block_read.num_reads) for (unsigned y = block_read.start_y; y < block_read.end_y; y++)
     {
         float ff = y/(float)inChunk.getNumberOfElements().y;
-        float if0 = 20.f/(2.0f + 35.f*ff*ff*ff);
+        float if0 = 20.f/(2 + 35*ff*ff*ff);
         if0=if0*if0*if0;
         if0 *= 0.4f;
 
@@ -290,16 +290,18 @@ __global__ void kernel_merge_chunk2(
             // Read from global memory
             float2 c = valid ? inChunk.elem(readPos) : make_float2(0,0);
 
-            switch (transformMethod) {
-            case Heightmap::TransformMethod_Cwt_phase:
-                val[threadIdx.x] = 0.1f*(M_PI + atan2(c.y, c.x))*(1.f/(2*M_PI));
-                break;
-            case Heightmap::TransformMethod_Cwt_reassign:
+            switch (complexInfo)
+            {
+            case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
                 val[threadIdx.x] = c.x*c.x + c.y*c.y;
                 break;
-            // case Heightmap::TransformMethod_Cwt_ridge:
-            // case Heightmap::TransformMethod_Cwt:
+
+            case Heightmap::ComplexInfo_Phase:
+                val[threadIdx.x] = 0.1f*(((float)M_PI) + atan2(c.y, c.x))*(1.f/(2*(float)M_PI));
+                break;
+
             default:
+            // case Heightmap::ComplexInfo_Amplitude_Weighted
                 val[threadIdx.x] = if0*(c.x*c.x + c.y*c.y);
                 break;
             }
@@ -359,8 +361,17 @@ __global__ void kernel_merge_chunk2(
 
     if (outBlock.valid( writePos ) && 0<=myVal)
     {
-        if (transformMethod!=Heightmap::TransformMethod_Cwt_phase)
+        switch (complexInfo)
+        {
+        case Heightmap::ComplexInfo_Phase:
+            break;
+
+        default:
+        // case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
+        // case Heightmap::ComplexInfo_Amplitude_Weighted:
             myVal = sqrtf(myVal);
+            break;
+        }
 
         outBlock.elem( writePos ) = myVal;
     }
@@ -376,7 +387,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  unsigned in_offset,
                  float out_offset,
                  unsigned in_count,
-                 Heightmap::TransformMethod transformMethod,
+                 Heightmap::ComplexInfo complexInfo,
                  unsigned cuda_stream)
 {
     unsigned block_size;
@@ -485,7 +496,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                 inChunk, outBlock,
                 resample_width,
                 resample_height,
-                in_offset, out_offset, in_count, transformMethod );
+                in_offset, out_offset, in_count, complexInfo );
             break;
         }
     }
@@ -572,7 +583,7 @@ void expandStft( cudaPitchedPtrType<float2> inStft,
 
 
 __global__ void kernel_expand_complete_stft(
-                cudaPitchedPtrType<float> inStft,
+                cudaPitchedPtrType<float2> inStft,
                 cudaPitchedPtrType<float> outBlock,
                 float start,
                 float steplogsize,
@@ -603,24 +614,20 @@ __global__ void kernel_expand_complete_stft(
         unsigned chunk = (unsigned)q;
         q-=chunk;
         float p = ((chunk+read_f)*in_stft_size);
-        unsigned read_start = ((unsigned)p)*2;
+        unsigned read_start = ((unsigned)p);
         p-=(unsigned)p;
 
-        c.x = inStft.elem(make_elemSize3_t( read_start, 0, 0 ));
-        c.y = inStft.elem(make_elemSize3_t( read_start+1, 0, 0 ));
+        c = inStft.elem(make_elemSize3_t( read_start, 0, 0 ));
         float val1 = sqrt(c.x*c.x + c.y*c.y);
 
-        c.x = inStft.elem(make_elemSize3_t( read_start+2*in_stft_size, 0, 0 ));
-        c.y = inStft.elem(make_elemSize3_t( read_start+2*in_stft_size+1, 0, 0 ));
+        c = inStft.elem(make_elemSize3_t( read_start+in_stft_size, 0, 0 ));
         float val2 = sqrt(c.x*c.x + c.y*c.y);
 
-        unsigned read_secondline = min(read_start+2, 2*((1+chunk)*in_stft_size-1));
-        c.x = inStft.elem(make_elemSize3_t( read_secondline, 0, 0 ));
-        c.y = inStft.elem(make_elemSize3_t( read_secondline+1, 0, 0 ));
+        unsigned read_secondline = min(read_start+1, (1+chunk)*in_stft_size-1);
+        c = inStft.elem(make_elemSize3_t( read_secondline, 0, 0 ));
         float val3 = sqrt(c.x*c.x + c.y*c.y);
 
-        c.x = inStft.elem(make_elemSize3_t( read_secondline+2*in_stft_size, 0, 0 ));
-        c.y = inStft.elem(make_elemSize3_t( read_secondline+2*in_stft_size+1, 0, 0 ));
+        c = inStft.elem(make_elemSize3_t( read_secondline+in_stft_size, 0, 0 ));
         float val4 = sqrt(c.x*c.x + c.y*c.y);
 
         // Perform a kind of bicubic interpolation
@@ -636,7 +643,7 @@ __global__ void kernel_expand_complete_stft(
         //if0=if0*if0*if0;
         //val=sqrt(if0*val);
 
-        val*=19.f;
+        val*=19;
     }
 
     val /= in_stft_size;
@@ -647,7 +654,7 @@ __global__ void kernel_expand_complete_stft(
 
 
 extern "C"
-void expandCompleteStft( cudaPitchedPtrType<float> inStft,
+void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
                  cudaPitchedPtrType<float> outBlock,
                  float out_min_hz,
                  float out_max_hz,

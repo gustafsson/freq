@@ -83,6 +83,10 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 namespace Heightmap {
 
 
+// TODO it would probably look awesome if new blocks weren't displayed
+// instantaneously but rather faded in from 0 or from their previous value.
+// This method could be used to slide between the images of two different
+// signals or channels as well.
 class Block {
 public:
     Block( Reference ref ): ref(ref), frame_number_last_used(-1) {}
@@ -105,15 +109,17 @@ public:
 };
 typedef boost::shared_ptr<Block> pBlock;
 
+
 inline std::size_t hash_value(Reference const& ref)
 {
-	std::size_t seed = 0;
+    std::size_t seed = 0;
     boost::hash_combine(seed, ref.log2_samples_size[0]);
     boost::hash_combine(seed, ref.log2_samples_size[1]);
     boost::hash_combine(seed, ref.block_index[0]);
     boost::hash_combine(seed, ref.block_index[1]);
     return seed;
 }
+
 
 /**
   Signal::Sink::put is used to insert information into this collection.
@@ -124,18 +130,22 @@ public:
     Collection(Signal::pWorker worker);
     ~Collection();
 
+
     /**
       Releases all GPU resources allocated by Heightmap::Collection.
       */
     virtual void reset();
+
 
     /**
       Computes the Cwt and updates the cache of blocks.
       */
     virtual void put( Signal::pBuffer, Signal::pSource );
 
+
     virtual Signal::SamplesIntervalDescriptor expected_samples();
     virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& );
+
 
     /**
       scales_per_block and samples_per_block are constants deciding how many blocks
@@ -146,11 +156,13 @@ public:
     unsigned    samples_per_block() { return _samples_per_block; }
     void        samples_per_block(unsigned v);
 
+
     /**
       getBlock increases a counter for each block that hasn't been computed yet.
       next_frame returns that counter. next_frame also calls applyUpdates().
       */
     unsigned    next_frame();
+
 
     /**
       As the cwt is of finite length and finite sample rate there is a smallest
@@ -159,11 +171,13 @@ public:
     Position min_sample_size();
     Position max_sample_size();
 
+
     /**
       Returns a Reference for a block containing 'p' in which a block element
       is as big as possible yet smaller than or equal to 'sampleSize'.
       */
     Reference   findReference( Position p, Position sampleSize );
+
 
     /**
       Get a heightmap block. If the referenced block doesn't exist it is created.
@@ -173,9 +187,33 @@ public:
       */
     pBlock      getBlock( Reference ref );
 
-    void        setTransform(TransformMethod);
-    TransformMethod   getTransform();
+
+    /**
+      Tells the "chunk-to-block" what information to extract from the complex
+      time-frequency-representation. Such as phase, amplitude or weighted
+      amplitude. The weighted ampltidue mode is default for the morlet
+      transform to accommodate for low frequencies being smoothed out and
+      appear low in amplitude even though they contain frequencies of high
+      amplitude.
+      */
+    void        complexInfo(ComplexInfo);
+    ComplexInfo complexInfo();
+
+
+    /**
+      When changing filter you might want to change complexInfo accordingly.
+      */
+    virtual void chunk_filter(Tfr::pFilter filter);
+
+
+    /**
+      When changing transform you might want to change complexInfo accordingly.
+      */
+    virtual void chunk_transform(Tfr::pTransform transform);
+
+
     void        gc();
+
 
     Signal::pWorker     worker;
 private:
@@ -185,7 +223,7 @@ private:
         _unfinished_count,
         _frame_counter;
 
-    TransformMethod _transformMethod;
+    ComplexInfo _complexInfo;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.
@@ -195,12 +233,13 @@ private:
             3) if _cache is empty, Sonic AWE is terminated with an OpenGL error.
       */
 
-	typedef boost::unordered_map<Reference, pBlock> cache_t;
-	typedef std::list<pBlock> recent_t;
-    cache_t _cache;
-	recent_t _recent; // Ordered with the most recently accessed blocks first
+    typedef boost::unordered_map<Reference, pBlock> cache_t;
+    typedef std::list<pBlock> recent_t;
 
-	std::vector<Tfr::pChunk> _updates; // TODO updates should be transfered as downsampled blocks between cuda contexts. It is way to slow to transfer entire chunks.
+    cache_t _cache;
+    recent_t _recent; // Ordered with the most recently accessed blocks first
+
+    std::vector<Tfr::pChunk> _updates; // TODO updates should be transfered as downsampled blocks between cuda contexts. It is way to slow to transfer entire chunks.
     QMutex _cache_mutex, _updates_mutex;
     QWaitCondition _updates_condition;
     ThreadChecker _constructor_thread;

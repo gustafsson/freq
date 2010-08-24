@@ -72,34 +72,98 @@ Fft::
 {
 }
 
-pFftChunk Fft::
+pChunk Fft::
         forward( Signal::pBuffer b)
 {
     // cufft is faster for larger ffts, but as the GPU is the bottleneck we can
     // just as well do it on the CPU instead
 
-    // return computeWithCufft(b, -1);
-    return computeWithOoura(b,-1);
+    if (b->interleaved() != Signal::Buffer::Interleaved_Complex)
+    {
+        // TODO implement void computeWithOoura( GpuCpuData<double2>& input, GpuCpuData<double2>& output, int direction );
+        b = b->getInterleaved( Signal::Buffer::Interleaved_Complex );
+    }
+
+    cudaExtent input_n = b->waveform_data->getNumberOfElements();
+    cudaExtent output_n = input_n;
+
+    // The in-signal is padded to a power of 2 (cufft manual suggest a "power
+    // of a small prime") for faster fft calculations
+    output_n.width = spo2g( output_n.width / 2 - 1 );
+
+    pChunk chunk( new Chunk );
+    chunk->transform_data.reset( new GpuCpuData<float2>(
+            0,
+            output_n,
+            GpuCpuVoidData::CpuMemory ));
+
+    input_n.width /= 2;
+    GpuCpuData<float2> input(
+            b->waveform_data->getCpuMemory(),
+            input_n,
+            GpuCpuVoidData::CpuMemory,
+            true );
+
+    // computeWithCufft( input, *chunk->transform_data, -1);
+    computeWithOoura( input, *chunk->transform_data, -1 );
+
+    chunk->axis_scale = AxisScale_Linear;
+    chunk->chunk_offset = b->sample_offset;
+    chunk->first_valid_sample = 0;
+    chunk->max_hz = b->sample_rate / 2;
+    chunk->min_hz = chunk->max_hz / chunk->nSamples();
+    chunk->n_valid_samples = chunk->nSamples();
+    chunk->order = Chunk::Order_column_major;
+    chunk->sample_rate = b->sample_rate / chunk->nSamples();
+
+    return chunk;
 }
 
-pFftChunk Fft::
-        backward( Signal::pBuffer b)
+Signal::pBuffer Fft::
+        backward( pChunk chunk)
 {
-    // return computeWithCufft(b,1);
-    return computeWithOoura(b,1);
+    cudaExtent output_n = chunk->transform_data->getNumberOfElements();
+
+    // The in-signal is padded to a power of 2 (cufft manual suggest a "power
+    // of a small prime") for faster fft calculations
+    output_n.width = spo2g( output_n.width - 1 );
+
+    Signal::pBuffer ret( new Signal::Buffer( Signal::Buffer::Interleaved_Complex) );
+    ret->waveform_data.reset( new GpuCpuData<float>(
+            0,
+            output_n,
+            GpuCpuVoidData::CpuMemory ));
+
+    cudaExtent output_n2 = output_n;
+    output_n2.width *= 2;
+
+    GpuCpuData<float2> output(
+                ret->waveform_data->getCpuMemory(),
+                output_n2,
+                GpuCpuVoidData::CpuMemory,
+                true );
+
+    // chunk = computeWithCufft(*chunk->transform_data, output, 1);
+    computeWithOoura(*chunk->transform_data, output, 1);
+
+    // output shares ptr with ret
+    ret->sample_offset = chunk->chunk_offset;
+    ret->sample_rate = chunk->sample_rate * chunk->nSamples();
+
+    return ret;
 }
 
+// TODO translate cdft to take floats instead of doubles
 //extern "C" { void cdft(int, int, double *); }
 extern "C" { void cdft(int, int, double *, int *, double *); }
 
-pFftChunk Fft::
-        computeWithOoura( Signal::pBuffer buffer, int direction )
+void Fft::
+        computeWithOoura( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction )
 {
     TIME_STFT TaskTimer tt("Fft Ooura");
 
-    unsigned n = buffer->number_of_samples();
-    BOOST_ASSERT( 0 < n );
-    unsigned N = spo2g(n-1);
+    unsigned n = input.getNumberOfElements().width;
+    unsigned N = output.getNumberOfElements().width;
 
     if (q.size() != 2*N) {
         TIME_STFT TaskTimer tt("Resizing buffers");
@@ -111,9 +175,19 @@ pFftChunk Fft::
         TIME_STFT TaskTimer("Reusing data").suppressTiming();
     }
 
-    float* p=buffer->waveform_data->getCpuMemory();
+    float* p = (float*)input.getCpuMemory();
 
     {
+        TIME_STFT TaskTimer tt("Converting from float2 to double2" );
+
+        for (unsigned i=0; i<2*n; i++)
+            q[i] = p[i];
+
+        for (unsigned i=2*n; i<2*N; i++)
+            q[i] = 0;
+    }
+
+    /*TODO remove {
         TIME_STFT TaskTimer tt("Converting from float%c to double2", buffer->interleaved() == Signal::Buffer::Interleaved_Complex?'2':'1');
 
         if (buffer->interleaved() == Signal::Buffer::Interleaved_Complex) {
@@ -129,7 +203,7 @@ pFftChunk Fft::
 
         for (unsigned i=2*n; i<2*N; i++)
             q[i] = 0;
-    }
+    }*/
 
 
     {
@@ -140,56 +214,33 @@ pFftChunk Fft::
     {
         TIME_STFT TaskTimer tt("Converting from double2 to float2");
 
-        pFftChunk intermediate_fft;
-        intermediate_fft.reset(new GpuCpuData<float2>( 0, make_cudaExtent( N, 1, 1 ) ));
-        p = (float*)intermediate_fft->getCpuMemory();
+        p = (float*)output.getCpuMemory();
         for (unsigned i=0; i<2*N; i++)
             p[i] = (float)q[i];
-
-        return intermediate_fft;
     }
 }
 
-pFftChunk Fft::
-        computeWithCufft( Signal::pBuffer buffer, int direction )
+
+void Fft::
+        computeWithCufft( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction )
 {
     TIME_STFT TaskTimer tt("FFt cufft");
-    if (buffer->interleaved() != Signal::Buffer::Interleaved_Complex) {
-        TIME_STFT TaskTimer tt("getInterleaved(Complex)");
-        buffer = buffer->getInterleaved( Signal::Buffer::Interleaved_Complex );
-    }
 
-    unsigned n = buffer->number_of_samples();
-    BOOST_ASSERT( 0 < n );
-    unsigned N = spo2g(n-1);
-
-    // The in-signal is padded to a power of 2 (cufft manual suggest a "power of a small prime") for faster fft calculations
-    cudaExtent required_stft_sz = make_cudaExtent( N, 1, 1 );
-
-    pFftChunk intermediate_fft;
-    {
-    TIME_STFT TaskTimer ttf("Allocating %u float2", N);
-    intermediate_fft.reset(new GpuCpuData<float2>( 0, required_stft_sz, GpuCpuVoidData::CudaGlobal ));
-    }
-
-    TIME_STFT TaskTimer ttf("forward fft");
-    cufftComplex* d = intermediate_fft->getCudaGlobal().ptr();
-    cudaMemset( d, 0, intermediate_fft->getSizeInBytes1D() );
+    cufftComplex* d = output.getCudaGlobal().ptr();
+    cudaMemset( d, 0, output.getSizeInBytes1D() );
     cudaMemcpy( d,
-                buffer->waveform_data->getCudaGlobal().ptr(),
-                buffer->waveform_data->getSizeInBytes().width,
+                input.getCudaGlobal().ptr(),
+                input.getSizeInBytes().width,
                 cudaMemcpyDeviceToDevice );
 
     // Transform signal
-	CufftHandleContext _fft_single;
-	CufftException_SAFE_CALL(cufftExecC2C(
-            _fft_single(intermediate_fft->getNumberOfElements().width, 1),
-            d, d,
-            direction==-1?CUFFT_FORWARD:CUFFT_INVERSE));
+    CufftHandleContext _fft_single;
+    CufftException_SAFE_CALL(cufftExecC2C(
+        _fft_single(output.getNumberOfElements().width, 1),
+        d, d,
+        direction==-1?CUFFT_FORWARD:CUFFT_INVERSE));
 
     TIME_STFT CudaException_ThreadSynchronize();
-
-    return intermediate_fft;
 }
 
 
@@ -204,14 +255,46 @@ Stft::
 {
 }
 
-Signal::pBuffer Stft::
+
+// static
+Stft& Stft::
+        Singleton()
+{
+    return *dynamic_cast<Stft*>(SingletonP().get());
+}
+
+
+// static
+pTransform Stft::
+        SingletonP()
+{
+    static pTransform P(new Stft());
+    return P;
+}
+
+
+Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
     const unsigned stream = 0;
 
-    b = b->getInterleaved( Signal::Buffer::Interleaved_Complex );
+    if (b->interleaved() != Signal::Buffer::Interleaved_Complex)
+    {
+        b = b->getInterleaved( Signal::Buffer::Interleaved_Complex );
+    }
 
-    cufftComplex* d = (cufftComplex*)b->waveform_data->getCudaGlobal().ptr();
+    Tfr::pChunk chunk( new Tfr::Chunk() );
+    cudaExtent n = b->waveform_data->getNumberOfElements();
+    n.width /= 2; // convert from float to float2
+
+    chunk->transform_data.reset( new GpuCpuData<float2>(
+            0,
+            n,
+            GpuCpuVoidData::CudaGlobal ));
+
+
+    cufftComplex* input = (cufftComplex*)b->waveform_data->getCudaGlobal().ptr();
+    cufftComplex* output = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
 
     // Transform signal
     cufftHandle fft_many;
@@ -231,7 +314,7 @@ Signal::pBuffer Stft::
                 CufftException_SAFE_CALL(cufftPlan1d(&fft_many, chunk_size, CUFFT_C2C, slice));
 
                 CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
-                CufftException_SAFE_CALL(cufftExecC2C(fft_many, &d[n], &d[n], CUFFT_FORWARD));
+                CufftException_SAFE_CALL(cufftExecC2C(fft_many, &input[n], &output[n], CUFFT_FORWARD));
                 cufftDestroy(fft_many);
 
                 n += slice;
@@ -245,18 +328,20 @@ Signal::pBuffer Stft::
     }
 
     // Clean leftovers with 0
-    if (b->number_of_samples() % chunk_size != 0) {
-        cudaMemset( d + ((b->number_of_samples() / chunk_size)*chunk_size), 0, (b->number_of_samples() % chunk_size)*sizeof(cufftComplex) );
+    if (chunk->nSamples() % chunk_size != 0) {
+        cudaMemset( output + ((chunk->nSamples() / chunk_size)*chunk_size), 0, (chunk->nSamples() % chunk_size)*sizeof(cufftComplex) );
     }
 
-    return b;
-}
+    chunk->axis_scale = AxisScale_Linear;
+    chunk->chunk_offset = b->sample_offset;
+    chunk->first_valid_sample = 0;
+    chunk->max_hz = b->sample_rate / 2;
+    chunk->min_hz = chunk->max_hz / chunk_size;
+    chunk->n_valid_samples = (chunk->nSamples() / chunk_size)*chunk_size;
+    chunk->order = Chunk::Order_column_major;
+    chunk->sample_rate = b->sample_rate / (float)chunk_size;
 
-pStft StftSingleton::
-        instance()
-{
-    static pStft stft( new Stft ());
-    return stft;
+    return chunk;
 }
 
 } // namespace Tfr

@@ -878,8 +878,8 @@ void Renderer::drawAxes( float T )
     glDisable(GL_DEPTH_TEST);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    float min_hz = Tfr::CwtSingleton::instance()->min_hz();
-    float max_hz = Tfr::CwtSingleton::instance()->max_hz( _collection->worker->source()->sample_rate() );
+    float min_hz = Tfr::Cwt::Singleton().min_hz();
+    float max_hz = Tfr::Cwt::Singleton().max_hz( _collection->worker->source()->sample_rate() );
     float steplogsize = log(max_hz) - log(min_hz);
     //float steplogsize = log(max_hz-min_hz);
     // loop along all sides

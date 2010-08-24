@@ -2,14 +2,18 @@
 #define HEIGHTMAPBLOCK_CU_H
 
 #include <cudaPitchedPtrType.h>
+#include "tfr/freqaxis.h"
 
+/**
+  The namespace Tfr does not know about the namespace Heightmap
+  */
 namespace Heightmap {
-    enum TransformMethod {
-        TransformMethod_Cwt,
-        TransformMethod_Cwt_phase,
-        TransformMethod_Cwt_reassign,
-        TransformMethod_Cwt_ridge,
-        TransformMethod_Stft
+
+    // TODO find a better name
+    enum ComplexInfo {
+        ComplexInfo_Amplitude_Weighted,
+        ComplexInfo_Amplitude_Non_Weighted,
+        ComplexInfo_Phase
     };
 };
 
@@ -23,7 +27,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  unsigned in_offset,
                  float out_offset,
                  unsigned in_count,
-                 Heightmap::TransformMethod transformMethod,
+                 Heightmap::ComplexInfo transformMethod,
                  unsigned cuda_stream);
 
 extern "C"
@@ -49,7 +53,7 @@ void expandStft( cudaPitchedPtrType<float2> inStft,
 
 
 extern "C"
-void expandCompleteStft( cudaPitchedPtrType<float> inStft,
+void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
                  cudaPitchedPtrType<float> outBlock,
                  float out_min_hz,
                  float out_max_hz,

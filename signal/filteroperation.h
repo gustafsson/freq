@@ -5,13 +5,14 @@
 #include "tfr/cwt.h"
 #include "tfr/inversecwt.h"
 #include "signal/operationcache.h"
+#include "tfr/transform.h"
 
 namespace Signal {
 
 class FilterOperation : public Signal::OperationCache
 {
 public:
-    FilterOperation( pSource source, Tfr::pFilter filter);
+    FilterOperation( pSource source, Tfr::pTransform transform, Tfr::pFilter filter);
 
     virtual pBuffer readRaw( unsigned firstSample, unsigned numberOfSamples );
     virtual bool cacheMiss(unsigned firstSample, unsigned numberOfSamples);
@@ -34,6 +35,16 @@ public:
     void release_previous_chunk();
 
     /**
+      Get the Tfr::Transform for this operation.
+      */
+    Tfr::pTransform transform() const { return _transform; }
+
+    /**
+      Set the Tfr::Transform for this operation and update _invalid_samples.
+      */
+    void transform( Tfr::pTransform m );
+
+    /**
       Get the Tfr::Filter for this operation.
       */
     Tfr::pFilter    filter() const { return _filter; }
@@ -51,6 +62,7 @@ public:
     void meldFilters();
 
 private:
+    Tfr::pTransform _transform;
     Tfr::pFilter _filter;
     Tfr::pChunk _previous_chunk;
     bool _save_previous_chunk;

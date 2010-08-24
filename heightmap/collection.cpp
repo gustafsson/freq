@@ -1,6 +1,6 @@
-#include "heightmap/collection.h"
-#include "heightmap/slope.cu.h"
-#include "heightmap/block.cu.h"
+#include "collection.h"
+#include "slope.cu.h"
+#include "block.cu.h"
 #include "signal/filteroperation.h"
 #include "tfr/cwt.h"
 #include <boost/foreach.hpp>
@@ -32,10 +32,11 @@ Collection::
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _frame_counter(0),
-    _transformMethod(TransformMethod_Cwt)
+    _complexInfo(ComplexInfo_Amplitude_Weighted)
 {
-
+    chunk_transform( Tfr::Cwt::SingletonP() );
 }
+
 
 Collection::
         ~Collection()
@@ -44,6 +45,7 @@ Collection::
     QMutexLocker l(&_updates_mutex);
     _updates.clear();
 }
+
 
 void Collection::
         reset()
@@ -56,6 +58,7 @@ void Collection::
 		_updates.clear();
 	}
 }
+
 
 void Collection::
         put( Signal::pBuffer b, Signal::pSource s)
@@ -79,8 +82,9 @@ void Collection::
         return;
     }
 
-    switch(_transformMethod){
-        case TransformMethod_Cwt_ridge:
+    // TODO these are filter operations, move them into filters
+    switch(0){
+        case 1:
         {
             float2* p     = chunk->transform_data->getCpuMemory();
 
@@ -123,7 +127,7 @@ void Collection::
 
             break;
         }
-        case TransformMethod_Cwt_reassign:
+        case 2:
         if (1) {
             TaskTimer tt("Limited reassign");
             float2* p = chunk->transform_data->getCpuMemory();
@@ -175,7 +179,7 @@ void Collection::
                         float pb = atan2(b.y, b.x);
                         float FS = s->sample_rate();
                         float f = ((pb-pa)*FS)/(2*M_PI);
-                        unsigned i = chunk->getFrequencyIndex( fabsf(f) );
+                        unsigned i = chunk->freqAxis().getFrequencyIndex( fabsf(f) );
 
                         if (i >= H)
                             i = H-1;
@@ -254,7 +258,7 @@ void Collection::
                     float pb = atan2(b.y, b.x);
                     float FS = s->sample_rate();
                     float f = ((pb-pa)*FS)/(2*M_PI);
-                    unsigned i = chunk->getFrequencyIndex( fabsf(f) );
+                    unsigned i = chunk->freqAxis().getFrequencyIndex( fabsf(f) );
 
                     this_q[ i ].x += a.x;
                     this_q[ i ].y += a.y;
@@ -281,7 +285,7 @@ void Collection::
     }
     else
     {
-        Tfr::pChunk cpuChunk(new Tfr::Chunk);
+        Tfr::pChunk cpuChunk(new Tfr::Chunk );
         cpuChunk->min_hz = chunk->min_hz;
         cpuChunk->max_hz = chunk->max_hz;
         cpuChunk->chunk_offset = chunk->chunk_offset;
@@ -349,7 +353,7 @@ Position Collection::
 {
     unsigned FS = worker->source()->sample_rate();
     return Position( 1.f/FS,
-                     1.f/Tfr::CwtSingleton::instance()->nScales( FS ) );
+                     1.f/Tfr::Cwt::Singleton().nScales( FS ) );
 }
 
 Position Collection::
@@ -439,6 +443,7 @@ Reference Collection::
     return r;
 }
 
+
 pBlock Collection::
         getBlock( Reference ref )
 {
@@ -474,30 +479,51 @@ pBlock Collection::
     return block;
 }
 
+
 void Collection::
-        setTransform(TransformMethod transformMethod)
+        complexInfo(ComplexInfo info)
 {
-    _transformMethod = transformMethod;
+    _complexInfo = info;
+}
 
-    switch(transformMethod)
+
+ComplexInfo Collection::
+        complexInfo()
+{
+    return _complexInfo;
+}
+
+
+void Collection::
+        chunk_filter( Tfr::pFilter filter )
+{
+    // even if (filter == _filter) then do all this, some parameter could have been changed
+    // that makes the client want to reset everything
+
+    ChunkSink::chunk_filter( filter );
+
+    add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
+}
+
+
+void Collection::
+        chunk_transform( Tfr::pTransform transform )
+{
+    // even if (transform == _transform) then do all this, some parameter could have been changed
+    // that makes the client want to reset everything
+
+    ChunkSink::chunk_transform( transform );
+
+    // Remove this special case, it should be equally fast without this and more responsive
+    if ( 0 != dynamic_cast<Tfr::Stft*>(transform.get()) )
     {
-    case TransformMethod_Stft:
-        {
-            QMutexLocker l(&_cache_mutex);
-            _cache.clear();
-            break;
-        }
-    default:
-        add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
-        break;
+        QMutexLocker l(&_cache_mutex);
+        _cache.clear();
     }
+
+    add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
 }
 
-TransformMethod Collection::
-        getTransform()
-{
-    return _transformMethod;
-}
 
 void Collection::
         gc()
@@ -646,63 +672,61 @@ pBlock Collection::
 				}
             }
 
-            switch( _transformMethod ) {
-                case TransformMethod_Stft:
-                    block->valid_samples = block->ref.getInterval();
-                    break;
-                default:
-                    // TODO compute at what log2_samples_size[1] stft is more accurate
-                    // than low resolution blocks.
-                    if (1) {
-                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
-                        // start with the blocks that are just slightly more detailed
-                                        mergeBlock( block, block->ref.left(), 0 );
-                                        mergeBlock( block, block->ref.right(), 0 );
-                                        mergeBlock( block, block->ref.top(), 0 );
-                                        mergeBlock( block, block->ref.bottom(), 0 );
-                                }
-
-                    if (0) {
-                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
-                        // then try using the blocks that are even more detailed
-                                        BOOST_FOREACH( cache_t::value_type& c, _cache )
-                                        {
-                                                pBlock& b = c.second;
-                            if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
-                                block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
-                            {
-                                mergeBlock( block, b, 0 );
+            if ( 0 != dynamic_cast<Tfr::Stft*>(_transform.get()))
+            {
+                block->valid_samples = block->ref.getInterval();
+            } else {
+                // TODO compute at what log2_samples_size[1] stft is more accurate
+                // than low resolution blocks.
+                if (1) {
+                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                    // start with the blocks that are just slightly more detailed
+                                    mergeBlock( block, block->ref.left(), 0 );
+                                    mergeBlock( block, block->ref.right(), 0 );
+                                    mergeBlock( block, block->ref.top(), 0 );
+                                    mergeBlock( block, block->ref.bottom(), 0 );
                             }
+
+                if (0) {
+                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
+                    // then try using the blocks that are even more detailed
+                                    BOOST_FOREACH( cache_t::value_type& c, _cache )
+                                    {
+                                            pBlock& b = c.second;
+                        if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
+                            block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
+                        {
+                            mergeBlock( block, b, 0 );
                         }
                     }
+                }
 
-        //            GlException_CHECK_ERROR();
-        //            CudaException_CHECK_ERROR();
+    //            GlException_CHECK_ERROR();
+    //            CudaException_CHECK_ERROR();
 
-                    if (1) {
-                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
-                        // then try to upscale blocks that are just slightly less detailed
-                                        mergeBlock( block, block->ref.parent(), 0 );
-                                        mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
-                                        mergeBlock( block, block->ref.parent().right(), 0 );
-                                        mergeBlock( block, block->ref.parent().top(), 0 );
-                                        mergeBlock( block, block->ref.parent().bottom(), 0 );
-                    }
+                if (1) {
+                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                    // then try to upscale blocks that are just slightly less detailed
+                                    mergeBlock( block, block->ref.parent(), 0 );
+                                    mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
+                                    mergeBlock( block, block->ref.parent().right(), 0 );
+                                    mergeBlock( block, block->ref.parent().top(), 0 );
+                                    mergeBlock( block, block->ref.parent().bottom(), 0 );
+                }
 
-                    if (0) {
-                        TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
-                        // then try to upscale other blocks
-                                        BOOST_FOREACH( cache_t::value_type& c, _cache )
-                                        {
-                                                pBlock& b = c.second;
-                            if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
-                                block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
-                            {
-                                mergeBlock( block, b, 0 );
-                            }
+                if (0) {
+                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
+                    // then try to upscale other blocks
+                                    BOOST_FOREACH( cache_t::value_type& c, _cache )
+                                    {
+                                            pBlock& b = c.second;
+                        if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
+                            block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
+                        {
+                            mergeBlock( block, b, 0 );
                         }
                     }
-                    break;
+                }
             }
 
         } else if ( 0 /* set dummy values */ ) {
@@ -782,16 +806,16 @@ void Collection::
     TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
+// TODO prepareFillStft should be the same as putting any other chunk
 void Collection::
         prepareFillStft( pBlock block )
 {
     Position a, b;
     block->ref.getArea(a,b);
-    float tmin = Tfr::CwtSingleton::instance()->min_hz();
-    float tmax = Tfr::CwtSingleton::instance()->max_hz( worker->source()->sample_rate() );
+    float tmin = Tfr::Cwt::Singleton().min_hz();
+    float tmax = Tfr::Cwt::Singleton().max_hz( worker->source()->sample_rate() );
 
-    Tfr::pStft ptrans = Tfr::StftSingleton::instance();
-    Tfr::Stft& trans = *ptrans;
+    Tfr::Stft& trans = Tfr::Stft::Singleton();
 
     Signal::pSource fast_source = Signal::Operation::fast_source( worker->source() );
 
@@ -802,7 +826,7 @@ void Collection::
 
     Signal::pBuffer buff = fast_source->readFixedLength( first_sample, n_samples );
 
-    Signal::pBuffer stft = trans( buff );
+    Tfr::pChunk stft = trans( buff );
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
@@ -810,11 +834,11 @@ void Collection::
 //    float in_min_hz = in_max_hz / 4/trans.chunk_size;
     float in_min_hz = 0;
 
-    float out_stft_size = (trans.chunk_size/(float)stft->sample_rate)*block->ref.sample_rate();
+    float out_stft_size = (trans.chunk_size / (float)stft->sample_rate) * block->ref.sample_rate();
 
-    float out_offset = (a.time - (stft->sample_offset/(float)stft->sample_rate)) * block->ref.sample_rate();
+    float out_offset = (a.time - (stft->chunk_offset / (float)stft->sample_rate)) * block->ref.sample_rate();
 
-    ::expandCompleteStft( stft->waveform_data->getCudaGlobal(),
+    ::expandCompleteStft( stft->transform_data->getCudaGlobal(),
                   block->glblock->height()->data->getCudaGlobal(),
                   out_min_hz,
                   out_max_hz,
@@ -954,7 +978,7 @@ bool Collection::
                            in_offset,
                            out_offset,
                            transfer.last - transfer.first,
-                           _transformMethod,
+                           _complexInfo,
                            cuda_stream);
 
         outBlock->valid_samples |= transfer;

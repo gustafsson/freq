@@ -39,12 +39,12 @@ public:
     SamplesIntervalDescriptor::Interval getInterval() const { SamplesIntervalDescriptor::Interval i = {sample_offset, sample_offset + number_of_samples()}; return i; }
 
     Buffer&                             operator|=(const Buffer& b);
-    boost::shared_ptr<class Buffer>     getInterleaved(Interleaved) const;
+    boost::shared_ptr<Buffer>           getInterleaved(Interleaved) const;
 
 private:
     const Interleaved _interleaved;
 };
-typedef boost::shared_ptr<class Buffer> pBuffer;
+typedef boost::shared_ptr<Buffer> pBuffer;
 
 
 /**
@@ -69,7 +69,7 @@ public:
 
     float length() { return number_of_samples() / (float)sample_rate(); }
 };
-typedef boost::shared_ptr<class Source> pSource;
+typedef boost::shared_ptr<Source> pSource;
 
 
 } // namespace Signal
