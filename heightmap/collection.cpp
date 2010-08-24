@@ -654,22 +654,23 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        if ( 1 /* create from others */ ) {
+        if ( 1 /* create from others */ )
+        {
             TaskTimer tt(TaskTimer::LogVerbose, "Stubbing new block");
 
             // fill block by STFT
             {
                 TaskTimer tt(TaskTimer::LogVerbose, "stft");
-				try {
-					prepareFillStft( block );
-					CudaException_CHECK_ERROR();
-				} catch (const CudaException& x ) {
-					// prepareFillStft doesn't have a limit on how large 
-					// waveform buffer that it tries to work on. Thus it
-					// will run out of memory when attempting to work on
-					// really large buffers.
-					tt.info("Couldn't fill new block with stft\n%s", x.what());
-				}
+                try {
+                    prepareFillStft( block );
+                    CudaException_CHECK_ERROR();
+                } catch (const CudaException& x ) {
+                    // prepareFillStft doesn't have a limit on how large
+                    // waveform buffer that it tries to work on. Thus it
+                    // will run out of memory when attempting to work on
+                    // really large buffers.
+                    tt.info("Couldn't fill new block with stft\n%s", x.what());
+                }
             }
 
             if ( 0 != dynamic_cast<Tfr::Stft*>(_transform.get()))
@@ -681,18 +682,18 @@ pBlock Collection::
                 if (1) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // start with the blocks that are just slightly more detailed
-                                    mergeBlock( block, block->ref.left(), 0 );
-                                    mergeBlock( block, block->ref.right(), 0 );
-                                    mergeBlock( block, block->ref.top(), 0 );
-                                    mergeBlock( block, block->ref.bottom(), 0 );
-                            }
+                    mergeBlock( block, block->ref.left(), 0 );
+                    mergeBlock( block, block->ref.right(), 0 );
+                    mergeBlock( block, block->ref.top(), 0 );
+                    mergeBlock( block, block->ref.bottom(), 0 );
+                }
 
                 if (0) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
                     // then try using the blocks that are even more detailed
-                                    BOOST_FOREACH( cache_t::value_type& c, _cache )
-                                    {
-                                            pBlock& b = c.second;
+                    BOOST_FOREACH( cache_t::value_type& c, _cache )
+                    {
+                        pBlock& b = c.second;
                         if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
                             block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
                         {
@@ -707,19 +708,19 @@ pBlock Collection::
                 if (1) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
-                                    mergeBlock( block, block->ref.parent(), 0 );
-                                    mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
-                                    mergeBlock( block, block->ref.parent().right(), 0 );
-                                    mergeBlock( block, block->ref.parent().top(), 0 );
-                                    mergeBlock( block, block->ref.parent().bottom(), 0 );
+                    mergeBlock( block, block->ref.parent(), 0 );
+                    mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
+                    mergeBlock( block, block->ref.parent().right(), 0 );
+                    mergeBlock( block, block->ref.parent().top(), 0 );
+                    mergeBlock( block, block->ref.parent().bottom(), 0 );
                 }
 
                 if (0) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                     // then try to upscale other blocks
-                                    BOOST_FOREACH( cache_t::value_type& c, _cache )
-                                    {
-                                            pBlock& b = c.second;
+                    BOOST_FOREACH( cache_t::value_type& c, _cache )
+                    {
+                        pBlock& b = c.second;
                         if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
                             block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
                         {
@@ -746,9 +747,9 @@ pBlock Collection::
 
         result = block;
 
-		GlException_CHECK_ERROR();
-		CudaException_CHECK_ERROR();
-	}
+        GlException_CHECK_ERROR();
+        CudaException_CHECK_ERROR();
+    }
     catch (const CudaException& x )
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
@@ -766,17 +767,17 @@ pBlock Collection::
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
-		BOOST_FOREACH( recent_t::value_type& b, _recent )
-		{
-			unsigned age = _frame_counter - b->frame_number_last_used;
+        BOOST_FOREACH( recent_t::value_type& b, _recent )
+        {
+            unsigned age = _frame_counter - b->frame_number_last_used;
             if (youngest_age > age) {
                 youngest_age = age;
                 youngest_count = 1;
             } else if(youngest_age == age) {
                 ++youngest_count;
-			} else {
-				break; // _recent is ordered with the most recently accessed blocks first
-			}
+            } else {
+                break; // _recent is ordered with the most recently accessed blocks first
+            }
         }
 
         while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 16<_recent.size())
@@ -785,8 +786,8 @@ pBlock Collection::
             _recent.back()->ref.getArea(a,b);
             TaskTimer tt("Removing block [%g, %g]. %u remaining blocks, recent %u blocks.", a.time, b.time, _cache.size(), _recent.size());
 
-			_cache.erase(_recent.back()->ref);
-			_recent.pop_back();
+            _cache.erase(_recent.back()->ref);
+            _recent.pop_back();
         }
     }
 
@@ -820,10 +821,18 @@ void Collection::
     Signal::pSource fast_source = Signal::Operation::fast_source( worker->source() );
 
     unsigned first_sample = (unsigned)(a.time*fast_source->sample_rate()),
-             n_samples = (unsigned)((b.time-a.time)*fast_source->sample_rate());
-    first_sample = ((first_sample-1)/trans.chunk_size+1) * trans.chunk_size;
-    n_samples = ((n_samples+1)/trans.chunk_size+3) * trans.chunk_size;
+             last_sample = (unsigned)(b.time*fast_source->sample_rate()),
+             margin = trans.chunk_size;
+    if (first_sample >= margin)
+        first_sample = ((first_sample - margin)/trans.chunk_size) * trans.chunk_size;
+    else
+        first_sample = 0;
 
+    last_sample = ((last_sample + margin)/trans.chunk_size) * trans.chunk_size;
+
+    unsigned n_samples = last_sample - first_sample;
+//    first_sample = 0;
+//    n_samples = (fast_source->number_of_samples()/trans.chunk_size)*trans.chunk_size;
     Signal::pBuffer buff = fast_source->readFixedLength( first_sample, n_samples );
 
     Tfr::pChunk stft = trans( buff );
@@ -834,9 +843,8 @@ void Collection::
 //    float in_min_hz = in_max_hz / 4/trans.chunk_size;
     float in_min_hz = 0;
 
-    float out_stft_size = (trans.chunk_size / (float)stft->sample_rate) * block->ref.sample_rate();
-
-    float out_offset = (a.time - (stft->chunk_offset / (float)stft->sample_rate)) * block->ref.sample_rate();
+    float out_stft_size = block->ref.sample_rate() / stft->sample_rate;
+    float out_offset = (a.time - (stft->chunk_offset / (float)fast_source->sample_rate())) * block->ref.sample_rate();
 
     ::expandCompleteStft( stft->transform_data->getCudaGlobal(),
                   block->glblock->height()->data->getCudaGlobal(),

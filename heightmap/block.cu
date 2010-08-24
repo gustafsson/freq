@@ -582,6 +582,7 @@ void expandStft( cudaPitchedPtrType<float2> inStft,
 }
 
 
+// TODO optimize this reading/writing pattern
 __global__ void kernel_expand_complete_stft(
                 cudaPitchedPtrType<float2> inStft,
                 cudaPitchedPtrType<float> outBlock,
@@ -600,30 +601,52 @@ __global__ void kernel_expand_complete_stft(
 
     float val;
     /*if (1 || 0==threadIdx.x)*/ {
-            unsigned nFrequencies = outBlock.getNumberOfElements().y;
+        unsigned nFrequencies = outBlock.getNumberOfElements().y;
+
+        // abort if this thread would have written outside outBlock
         if( y >= nFrequencies )
             return;
 
+        // which frequency should this thread write
         float ff = y/(float)nFrequencies;
-        float hz_out = start*exp(ff*steplogsize);
+        float hz_write = start*exp(ff*steplogsize);
 
-        float read_f = max(0.f,min(1.f,(hz_out-in_min_hz)/(in_max_hz-in_min_hz)));
+        // which timestep column should this thread write
+        float ts_write = x + out_offset;
+
+        // which normalized frequency should we start reading from
+        float hz_read_norm = saturate( (hz_write - in_min_hz)/(in_max_hz - in_min_hz) );
+
+        // which timestep column should we start reading from
+        float ts_read = ts_write / out_stft_size - 1.0f;
+
+        if ( 0 > ts_read )
+            return;
+
+        // Compute read coordinates
+        float q = ts_read;
+        unsigned ts_start = (unsigned)q;
+        float p = min( hz_read_norm*in_stft_size, in_stft_size-1.f );
+        unsigned read_start = in_stft_size*ts_start + (unsigned)p;
+
+        // q and p measures how bad read_start is an approximation to ts_read
+        // and hz_read_norm
+        q -= (unsigned)q;
+        p -= (unsigned)p;
+
+        // if the next timestep column is required to compute this outBlock
+        // pixel don't compute it unless the next timestep column is provided
+        if (0 < q && ts_start+1>=inStft.getNumberOfElements().x)
+            return;
 
         float2 c;
-        float q = max(0.f, (x+out_offset)/out_stft_size);
-        unsigned chunk = (unsigned)q;
-        q-=chunk;
-        float p = ((chunk+read_f)*in_stft_size);
-        unsigned read_start = ((unsigned)p);
-        p-=(unsigned)p;
-
         c = inStft.elem(make_elemSize3_t( read_start, 0, 0 ));
         float val1 = sqrt(c.x*c.x + c.y*c.y);
 
         c = inStft.elem(make_elemSize3_t( read_start+in_stft_size, 0, 0 ));
         float val2 = sqrt(c.x*c.x + c.y*c.y);
 
-        unsigned read_secondline = min(read_start+1, (1+chunk)*in_stft_size-1);
+        unsigned read_secondline = min(read_start+1, (1+ts_start)*in_stft_size-1);
         c = inStft.elem(make_elemSize3_t( read_secondline, 0, 0 ));
         float val3 = sqrt(c.x*c.x + c.y*c.y);
 
@@ -631,8 +654,8 @@ __global__ void kernel_expand_complete_stft(
         float val4 = sqrt(c.x*c.x + c.y*c.y);
 
         // Perform a kind of bicubic interpolation
-        p = 3*p*p-2*p*p*p;
-        q = 3*q*q-2*q*q*q;
+        p = 3*p*p-2*p*p*p; // p and q are saturated, these equations compute
+        q = 3*q*q-2*q*q*q; // an 'S' curve from 0 to 1.
         val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
 
         const float f0 = 2.0f + 35*ff*ff*ff;
