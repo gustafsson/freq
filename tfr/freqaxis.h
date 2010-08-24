@@ -28,7 +28,7 @@ public:
             return f_min + fi*f_step;
 
         case AxisScale_Logarithmic:
-            return exp(logf_min + (fi*logf_step));
+            return f_min*exp( fi*logf_step );
 
         default:
             return 0.f;
@@ -51,11 +51,11 @@ public:
 
         case AxisScale_Logarithmic:
             {
-                float log_f = log(f);
+                float log_f = log(f/f_min);
 
-                if (log_f > logf_min)
+                if (log_f > 1)
                 {
-                    fi = (unsigned)((log_f - logf_min)/logf_step +.5f);
+                    fi = (unsigned)(log_f/logf_step +.5f);
                     if (fi >= nscales) fi = nscales-1;
                 }
             }
@@ -70,10 +70,7 @@ private:
 
     AxisScale axis_scale;
 
-    union {
-        float logf_min;
-        float f_min;
-    };
+    float f_min;
 
     union {
         float logf_step;

@@ -350,7 +350,8 @@ void DisplayWidget::
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.chunk_size = ((unsigned)(c.wavelet_std_t() * FS/32))*32;
-    //s.chunk_size = spo2g(c.wavelet_std_t() * FS);
+    if (s.chunk_size > 1<<12)
+        s.chunk_size = spo2g(c.wavelet_std_t() * FS);
 
     if ( 0 != dynamic_cast<Tfr::Stft*>( _renderer->collection()->ChunkSink::chunk_transform().get() ))
         receiveSetTransform_Stft();
@@ -951,7 +952,7 @@ void DisplayWidget::wheelEvent ( QWheelEvent *e )
 	        _pz *= (1+ps * e->delta());
 
         if (_pz<-40) _pz = -40;
-        if (_pz>-.4) _pz = -.4;
+        if (_pz>-.1) _pz = -.1;
         //_pz -= ps * e->delta();
         
         //_rx -= ps * e->delta();
@@ -1033,7 +1034,8 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
             Tfr::Cwt& c = Tfr::Cwt::Singleton();
             unsigned FS = _worker->source()->sample_rate();
             float t = ((unsigned)(current[0]*FS+.5f))/(float)FS;
-            current[1] = ((unsigned)(current[1]*c.nScales(FS)+.5f))/(float)c.nScales(FS);
+            //current[1] = ((unsigned)(current[1]*c.nScales(FS)+.5f))/(float)c.nScales(FS);
+            current[1] = ((current[1]*c.nScales(FS)+.5f))/(float)c.nScales(FS);
             float f = c.compute_frequency( current[1], FS );
             float std_t = c.morlet_std_t(current[1], FS);
             float std_f = c.morlet_std_f(current[1], FS);
@@ -1193,7 +1195,7 @@ void DisplayWidget::resizeGL( int width, int height ) {
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.1f,10000.0f);
+    gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.01f,1000.0f);
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

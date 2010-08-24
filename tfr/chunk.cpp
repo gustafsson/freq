@@ -59,19 +59,18 @@ FreqAxis Chunk::
 {
     FreqAxis x;
     x.axis_scale = this->axis_scale;
+    x.f_min = min_hz;
 
     switch (axis_scale)
     {
     case AxisScale_Logarithmic:
         x.nscales = nScales();
-        x.logf_min = log(min_hz);
-        x.logf_step = (1.f/nScales()) * (log(max_hz)-log(min_hz));
+        x.logf_step = (1.f/(nScales()-1)) * (log(max_hz)-log(min_hz));
         break;
 
     case AxisScale_Linear:
         x.nscales = nScales() / 2; // just discard half of the scales
-        x.f_min = min_hz;
-        x.f_step = (1.f/x.nscales) * (max_hz - min_hz);
+        x.f_step = (1.f/(x.nscales-1)) * (max_hz - min_hz);
         break;
 
     default:

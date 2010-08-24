@@ -353,7 +353,7 @@ Position Collection::
 {
     unsigned FS = worker->source()->sample_rate();
     return Position( 1.f/FS,
-                     1.f/Tfr::Cwt::Singleton().nScales( FS ) );
+                     0.01f/Tfr::Cwt::Singleton().nScales( FS ) );
 }
 
 Position Collection::
@@ -838,10 +838,7 @@ void Collection::
     Tfr::pChunk stft = trans( buff );
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
-          out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin)))),
-          in_max_hz = tmax;
-//    float in_min_hz = in_max_hz / 4/trans.chunk_size;
-    float in_min_hz = 0;
+          out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
 
     float out_stft_size = block->ref.sample_rate() / stft->sample_rate;
     float out_offset = (a.time - (stft->chunk_offset / (float)fast_source->sample_rate())) * block->ref.sample_rate();
@@ -852,8 +849,8 @@ void Collection::
                   out_max_hz,
                   out_stft_size,
                   out_offset,
-                  in_min_hz,
-                  in_max_hz,
+                  stft->min_hz,
+                  stft->max_hz,
                   trans.chunk_size,
                   0);
 }
@@ -965,15 +962,22 @@ bool Collection::
         }
 
         // Find resolution and offest for the two blocks to be merged
-        float in_offset = transfer.first - inInterval.first;
-        float out_offset = transfer.first - outInterval.first;
+        float in_sample_offset = transfer.first - inInterval.first;
+        float out_sample_offset = transfer.first - outInterval.first;
 
         // Add offset for redundant samples in inChunk
-        in_offset += inChunk->first_valid_sample;
+        in_sample_offset += inChunk->first_valid_sample;
 
         // Rescale out_offset to out_sample_rate (samples are originally
         // described in the inChunk sample rate)
-        out_offset *= out_sample_rate / in_sample_rate;
+        out_sample_offset *= out_sample_rate / in_sample_rate;
+
+        float in_frequency_offset = a.scale * in_frequency_resolution;
+        float out_frequency_offset = 0;
+
+        TaskTimer("a.scale = %g", a.scale).suppressTiming();
+        TaskTimer("in_frequency_resolution = %g", in_frequency_resolution).suppressTiming();
+        TaskTimer("out_frequency_resolution = %g", out_frequency_resolution).suppressTiming();
 
         // Invoke CUDA kernel execution to merge blocks
         ::blockMergeChunk( inChunk->transform_data->getCudaGlobal(),
@@ -983,8 +987,10 @@ bool Collection::
                            out_sample_rate,
                            in_frequency_resolution,
                            out_frequency_resolution,
-                           in_offset,
-                           out_offset,
+                           in_sample_offset,
+                           out_sample_offset,
+                           in_frequency_offset,
+                           out_frequency_offset,
                            transfer.last - transfer.first,
                            _complexInfo,
                            cuda_stream);

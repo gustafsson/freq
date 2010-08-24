@@ -169,7 +169,8 @@ struct read_params {
         end_y;
 };
 
-__device__ __host__ read_params computeReadParams( unsigned in_offset, unsigned in_count, float out_offset,
+__device__ __host__ read_params computeReadParams( unsigned in_sample_offset, unsigned in_count, float out_sample_offset,
+                                                   float in_frequency_offset, float out_frequency_offset,
                                                    float resample_height, float resample_width,
                                                    elemSize3_t writePos, bool firstThreadInBlock )
 {
@@ -182,27 +183,27 @@ __device__ __host__ read_params computeReadParams( unsigned in_offset, unsigned 
     float blockFirstWrite = writePos.x/BLOCK_SIZE*BLOCK_SIZE; // integer division
     float blockLastWrite = blockFirstWrite + BLOCK_SIZE;
 
-    // Don't write anything before out_offset, if the entire range is before out_offset the range will be
-    // [out_offset, out_offset[ which is an empty set. However, [blockFirstWrite, blockLastWrite[ might be
+    // Don't write anything before out_sample_offset, if the entire range is before out_sample_offset the range will be
+    // [out_sample_offset, out_sample_offset[ which is an empty set. However, [blockFirstWrite, blockLastWrite[ might be
     // non-empty even though [myFirstWrite, myLastWrite[ is empty.
-    if (threadFirstWrite < out_offset) threadFirstWrite = out_offset;
-    if (threadLastWrite  < out_offset) threadLastWrite  = out_offset;
-    if (blockFirstWrite  < out_offset) blockFirstWrite  = out_offset;
-    if (blockLastWrite   < out_offset) blockLastWrite   = out_offset;
+    if (threadFirstWrite < out_sample_offset) threadFirstWrite = out_sample_offset;
+    if (threadLastWrite  < out_sample_offset) threadLastWrite  = out_sample_offset;
+    if (blockFirstWrite  < out_sample_offset) blockFirstWrite  = out_sample_offset;
+    if (blockLastWrite   < out_sample_offset) blockLastWrite   = out_sample_offset;
 
-    p.thread_first_read = in_offset + (threadFirstWrite - out_offset) * resample_width;
-    p.thread_last_read  = in_offset + (threadLastWrite  - out_offset) * resample_width;
+    p.thread_first_read = in_sample_offset + (threadFirstWrite - out_sample_offset) * resample_width;
+    p.thread_last_read  = in_sample_offset + (threadLastWrite  - out_sample_offset) * resample_width;
 
-    if (p.thread_first_read < in_offset)          p.thread_first_read = in_offset;
-    if (p.thread_last_read  > in_offset+in_count) p.thread_last_read  = in_offset+in_count;
+    if (p.thread_first_read < in_sample_offset)          p.thread_first_read = in_sample_offset;
+    if (p.thread_last_read  > in_sample_offset+in_count) p.thread_last_read  = in_sample_offset+in_count;
 
     if (firstThreadInBlock)
     {
-        p.block_first_read = in_offset + (blockFirstWrite - out_offset) * resample_width;
-        p.block_last_read  = in_offset + (blockLastWrite  - out_offset) * resample_width;
+        p.block_first_read = in_sample_offset + (blockFirstWrite - out_sample_offset) * resample_width;
+        p.block_last_read  = in_sample_offset + (blockLastWrite  - out_sample_offset) * resample_width;
 
-        if (p.block_first_read < in_offset)          p.block_first_read = in_offset;
-        if (p.block_last_read  > in_offset+in_count) p.block_last_read  = in_offset+in_count;
+        if (p.block_first_read < in_sample_offset)          p.block_first_read = in_sample_offset;
+        if (p.block_last_read  > in_sample_offset+in_count) p.block_last_read  = in_sample_offset+in_count;
 
         // Here, BLOCK_SIZE is the number of elements that a block reads in each read chunk
         p.block_first_read =  p.block_first_read              /BLOCK_SIZE; // integer division
@@ -216,8 +217,9 @@ __device__ __host__ read_params computeReadParams( unsigned in_offset, unsigned 
         p.block_first_read *= BLOCK_SIZE;
         p.block_last_read  *= BLOCK_SIZE;
 
-        p.start_y = resample_height *  writePos.y;
-        p.end_y   = resample_height * (writePos.y+1);
+        writePos.y += out_frequency_offset;
+        p.start_y = resample_height *  writePos.y    + in_frequency_offset;
+        p.end_y   = resample_height * (writePos.y+1) + in_frequency_offset;
         if (p.end_y == p.start_y) p.end_y++;
     }
 
@@ -236,8 +238,10 @@ __global__ void kernel_merge_chunk2(
                 cudaPitchedPtrType<float> outBlock,
                 float resample_width,
                 float resample_height,
-                unsigned in_offset,
-                float out_offset,
+                unsigned in_sample_offset,
+                float out_sample_offset,
+                float in_frequency_offset,
+                float out_frequency_offset,
                 unsigned in_count,
                 Heightmap::ComplexInfo complexInfo )
 {
@@ -259,7 +263,8 @@ __global__ void kernel_merge_chunk2(
     //outBlock.elem(writePos) = 0;
     //return;
 
-    read_params thread_p = computeReadParams( in_offset, in_count, out_offset,
+    read_params thread_p = computeReadParams( in_sample_offset, in_count, out_sample_offset,
+                                              in_frequency_offset, out_frequency_offset,
                                        resample_height, resample_width,
                                        writePos, 0==threadIdx.x );
 
@@ -283,8 +288,8 @@ __global__ void kernel_merge_chunk2(
             unsigned base = block_read.block_first_read + i*BLOCK_SIZE;
             elemSize3_t readPos = make_elemSize3_t( base + threadIdx.x, y, 0 );
 
-            bool valid = readPos.x >= in_offset &&
-                         readPos.x < in_offset + in_count &&
+            bool valid = readPos.x >= in_sample_offset &&
+                         readPos.x < in_sample_offset + in_count &&
                          inChunk.valid(readPos);
 
             // Read from global memory
@@ -384,8 +389,10 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  float out_sample_rate,
                  float in_frequency_resolution,
                  float out_frequency_resolution,
-                 unsigned in_offset,
-                 float out_offset,
+                 unsigned in_sample_offset,
+                 float out_sample_offset,
+                 float in_frequency_offset,
+                 float out_frequency_offset,
                  unsigned in_count,
                  Heightmap::ComplexInfo complexInfo,
                  unsigned cuda_stream)
@@ -404,13 +411,13 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
 
     // Limit kernel size
     {
-        unsigned last_write = ceil(out_offset + in_count*out_sample_rate/in_sample_rate);
+        unsigned last_write = ceil(out_sample_offset + in_count*out_sample_rate/in_sample_rate);
         nElems.x = min(nElems.x, last_write);
-        unsigned unused = out_offset/block_size;
+        unsigned unused = out_sample_offset/block_size;
         unused*=block_size;
         // printf("unused = %u\n", unused);
         nElems.x -= unused;
-        out_offset -= unused;
+        out_sample_offset -= unused;
         cudaPitchedPtr cpp = outBlock.getCudaPitchedPtr();
         cpp.ptr = &((float*)cpp.ptr)[unused];
         outBlock =  cudaPitchedPtrType<float>(cpp);
@@ -440,7 +447,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
         fprintf(stdout,"(in sr %g, out sr %g, w=%g) (in f %g, out f %g, h=%g)\n\tin o %u, out o %g, in count %u\n",
             in_sample_rate, out_sample_rate, resample_width,
             in_frequency_resolution, out_frequency_resolution, resample_height,
-            in_offset, out_offset, in_count);
+            in_sample_offset, out_sample_offset, in_count);
         fprintf(stdout,"outBlock(%d,%d,%d) pitch %lu\n",
             outBlock.getNumberOfElements().x,
             outBlock.getNumberOfElements().y,
@@ -465,7 +472,8 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
             elemSize3_t writePos = make_elemSize3_t(x,0,0);
             elemSize3_t myThreadIdx = make_elemSize3_t(0,0,0);
 
-            read_params p = computeReadParams( in_offset, in_count, out_offset,
+            read_params p = computeReadParams( in_sample_offset, in_count, out_sample_offset,
+                                               in_frequency_offset, out_frequency_offset,
                                                resample_height, resample_width,
                                                writePos, 0==myThreadIdx.x );
 
@@ -486,7 +494,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                 inChunk, outBlock,
                 resample_width,
                 resample_height,
-                in_offset, out_offset, in_count );
+                in_sample_offset, out_sample_offset, in_count );
             cudaUnbindTexture(&chunkTexture);
             break;
         }
@@ -496,7 +504,9 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                 inChunk, outBlock,
                 resample_width,
                 resample_height,
-                in_offset, out_offset, in_count, complexInfo );
+                in_sample_offset, out_sample_offset,
+                in_frequency_offset, out_frequency_offset,
+                in_count, complexInfo );
             break;
         }
     }
@@ -601,10 +611,10 @@ __global__ void kernel_expand_complete_stft(
 
     float val;
     /*if (1 || 0==threadIdx.x)*/ {
-        unsigned nFrequencies = outBlock.getNumberOfElements().y;
+        unsigned nFrequencies = outBlock.getNumberOfElements().y-1;
 
         // abort if this thread would have written outside outBlock
-        if( y >= nFrequencies )
+        if( y > nFrequencies )
             return;
 
         // which frequency should this thread write
@@ -615,7 +625,7 @@ __global__ void kernel_expand_complete_stft(
         float ts_write = x + out_offset;
 
         // which normalized frequency should we start reading from
-        float hz_read_norm = saturate( (hz_write - in_min_hz)/(in_max_hz - in_min_hz) );
+        float hz_read_norm = 0.5f * saturate( (hz_write - in_min_hz)/(in_max_hz - in_min_hz) );
 
         // which timestep column should we start reading from
         float ts_read = ts_write / out_stft_size - 1.0f;
@@ -658,7 +668,8 @@ __global__ void kernel_expand_complete_stft(
         q = 3*q*q-2*q*q*q; // an 'S' curve from 0 to 1.
         val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
 
-        const float f0 = 2.0f + 35*ff*ff*ff;
+//        const float f0 = 2.0f + 35*ff*ff*ff;
+        const float f0 = 15.f;
         val*=sqrt(f0);
 
         //float if0 = 40.f/(2.0f + 35*ff*ff*ff);
@@ -696,7 +707,7 @@ void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
         return;
     }
 
-    float start = out_min_hz/2;
+    float start = out_min_hz;
     float steplogsize = log(out_max_hz)-log(out_min_hz);
 
     kernel_expand_complete_stft<<<grid, block, cuda_stream>>>(
