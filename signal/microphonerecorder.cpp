@@ -22,7 +22,7 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
         inputDevice = inputDevice;
     }
 
-    cout << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for input." << endl << endl;
+    cout << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input." << endl << endl;
 
     portaudio::Device& device = sys.deviceByIndex(inputDevice);
 

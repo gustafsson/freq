@@ -31,13 +31,13 @@ Playback::
     if (0>outputDevice || outputDevice>sys.deviceCount()) {
         _output_device = sys.defaultOutputDevice().index();
     } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
-        if(first) cout << "Requested device '" << sys.deviceByIndex(outputDevice).name() << "' can only be used for input." << endl;
+        if(first) cout << "Requested audio device '" << sys.deviceByIndex(outputDevice).name() << "' can only be used for input." << endl;
         _output_device = sys.defaultOutputDevice().index();
     } else {
         _output_device = outputDevice;
     }
 
-    if(first) cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for output." << endl << endl;
+    if(first) cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for audio output." << endl << endl;
 
     // first = false;
 }
