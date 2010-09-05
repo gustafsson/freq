@@ -2,7 +2,7 @@
 #define SIGNALWRITEWAV_H
 
 #include "signal/worker.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 #include "signal/sinksource.h"
 #include <vector>
 
@@ -19,8 +19,8 @@ public:
     virtual void reset();
     virtual bool isFinished();
     virtual void onFinished();
-    virtual SamplesIntervalDescriptor expected_samples() { return _data.expected_samples(); }
-    virtual void add_expected_samples( const SamplesIntervalDescriptor& s ) { _data.add_expected_samples( s ); }
+    virtual Intervals expected_samples() { return _data.expected_samples(); }
+    virtual void add_expected_samples( const Intervals& s ) { _data.add_expected_samples( s ); }
 
     static void writeToDisk(std::string filename, pBuffer b);
 

@@ -354,7 +354,7 @@ void DisplayWidget::
     if ( 0 != dynamic_cast<Tfr::Stft*>( _renderer->collection()->ChunkSink::chunk_transform().get() ))
         receiveSetTransform_Stft();
 
-    _renderer->collection()->add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
+    _renderer->collection()->add_expected_samples( Signal::Intervals::SamplesIntervalDescriptor_ALL );
     update();
 }
 
@@ -579,7 +579,7 @@ void DisplayWidget::
     Signal::pSource remove(new Signal::OperationRemoveSection( b->source(), start, end-start ));
 
     // Invalidate rendering
-    Signal::SamplesIntervalDescriptor sid(start, b->number_of_samples());
+    Signal::Intervals sid(start, b->number_of_samples());
     _renderer->collection()->add_expected_samples(sid);
 
     // Update stream
@@ -617,10 +617,10 @@ void DisplayWidget::
 
 
         // Invalidate rendering
-        Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        Signal::Intervals sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
         sid -= filter->getUntouchedSamples( FS );
 
-        Signal::SamplesIntervalDescriptor sid2 = sid;
+        Signal::Intervals sid2 = sid;
         if (0<delta) sid2 += delta;
         else         sid2 -= -delta;
         sid |= sid2;
@@ -660,8 +660,8 @@ void DisplayWidget::
                                                     newStart));
 
         // Invalidate rendering
-        Signal::SamplesIntervalDescriptor sid(oldStart, oldStart+L);
-        sid |= Signal::SamplesIntervalDescriptor(newStart, newStart+L);
+        Signal::Intervals sid(oldStart, oldStart+L);
+        sid |= Signal::Intervals(newStart, newStart+L);
         _renderer->collection()->add_expected_samples(sid);
 
         // update stream
@@ -686,7 +686,7 @@ void DisplayWidget::
     _worker->start();
     setWorkerSource();
     update();
-    _renderer->collection()->add_expected_samples(Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL);
+    _renderer->collection()->add_expected_samples(Signal::Intervals::SamplesIntervalDescriptor_ALL);
 }
 
 void DisplayWidget::
@@ -811,7 +811,7 @@ void DisplayWidget::put( Signal::pBuffer b, Signal::pSource )
     //update();
 }
 
-void DisplayWidget::add_expected_samples( const Signal::SamplesIntervalDescriptor& )
+void DisplayWidget::add_expected_samples( const Signal::Intervals& )
 {
     update();
 }
@@ -1212,7 +1212,7 @@ void DisplayWidget::paintGL()
 
     {   QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
         if (!_invalidRange.isEmpty()) {
-            Signal::SamplesIntervalDescriptor blur = _invalidRange;
+            Signal::Intervals blur = _invalidRange;
             unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_std_samples(_worker->source()->sample_rate());
             blur += fuzzy;
             _invalidRange |= blur;
@@ -1222,7 +1222,7 @@ void DisplayWidget::paintGL()
             _invalidRange |= blur;
 
             _renderer->collection()->add_expected_samples( _invalidRange );
-            _invalidRange = Signal::SamplesIntervalDescriptor();
+            _invalidRange = Signal::Intervals();
         }
     }
 

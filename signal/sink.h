@@ -2,7 +2,7 @@
 #define SIGNALSINK_H
 
 #include "signal/source.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 
 namespace Signal {
 
@@ -24,7 +24,7 @@ public:
     /**
       For some sinks it makes sense to reset, for some it doesn't.
       */
-    virtual void reset() { _expected_samples = SamplesIntervalDescriptor(); }
+    virtual void reset() { _expected_samples = Intervals(); }
 
     /**
       If this Sink has recieved all expected_samples and is finished with its
@@ -45,14 +45,14 @@ public:
       for the sink to perform some optimizations (such as buffering input before starting
       playing a sound).
       */
-    virtual SamplesIntervalDescriptor expected_samples() { return _expected_samples; }
-    virtual void add_expected_samples( const SamplesIntervalDescriptor& s ) { _expected_samples |= s; }
+    virtual Intervals expected_samples() { return _expected_samples; }
+    virtual void add_expected_samples( const Intervals& s ) { _expected_samples |= s; }
 
 protected:
     /**
       @see expected_samples
       */
-    SamplesIntervalDescriptor _expected_samples;
+    Intervals _expected_samples;
 };
 typedef boost::shared_ptr<Sink> pSink;
 

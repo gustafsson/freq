@@ -1,4 +1,4 @@
-#include "samplesintervaldescriptor.h"
+#include "intervals.h"
 
 #include <stdexcept>
 #include <boost/foreach.hpp>
@@ -9,30 +9,30 @@
 
 namespace Signal {
 
-const SamplesIntervalDescriptor::SampleType SamplesIntervalDescriptor::SampleType_MIN = (SamplesIntervalDescriptor::SampleType)0;
-const SamplesIntervalDescriptor::SampleType SamplesIntervalDescriptor::SampleType_MAX = (SamplesIntervalDescriptor::SampleType)-1;
-const SamplesIntervalDescriptor SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL = SamplesIntervalDescriptor(SamplesIntervalDescriptor::SampleType_MIN, SamplesIntervalDescriptor::SampleType_MAX);
-const SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::SamplesInterval_ALL = { SamplesIntervalDescriptor::SampleType_MIN, SamplesIntervalDescriptor::SampleType_MAX };
+const Intervals::SampleType Intervals::SampleType_MIN = (Intervals::SampleType)0;
+const Intervals::SampleType Intervals::SampleType_MAX = (Intervals::SampleType)-1;
+const Intervals Intervals::SamplesIntervalDescriptor_ALL = Intervals(Intervals::SampleType_MIN, Intervals::SampleType_MAX);
+const Intervals::Interval Intervals::SamplesInterval_ALL = { Intervals::SampleType_MIN, Intervals::SampleType_MAX };
 
-bool SamplesIntervalDescriptor::Interval::
+bool Intervals::Interval::
         valid() const
 {
     return first < last;
 }
 
-bool SamplesIntervalDescriptor::Interval::
+bool Intervals::Interval::
         isConnectedTo(const Interval& r) const
 {
     return last >= r.first && r.last >= first;
 }
 
-bool SamplesIntervalDescriptor::Interval::
+bool Intervals::Interval::
         operator<(const Interval& r) const
 {
     return first < r.first;
 }
 
-SamplesIntervalDescriptor::Interval& SamplesIntervalDescriptor::Interval::
+Intervals::Interval& Intervals::Interval::
         operator|=(const Interval& r)
 {
     first = std::min(first, r.first);
@@ -40,41 +40,41 @@ SamplesIntervalDescriptor::Interval& SamplesIntervalDescriptor::Interval::
     return *this;
 }
 
-bool SamplesIntervalDescriptor::Interval::
+bool Intervals::Interval::
         operator==(const Interval& r) const
 {
     return first==r.first && last==r.last;
 }
 
-SamplesIntervalDescriptor::
-        SamplesIntervalDescriptor()
+Intervals::
+        Intervals()
 {
 }
 
-SamplesIntervalDescriptor::
-        SamplesIntervalDescriptor(Interval r)
+Intervals::
+        Intervals(Interval r)
 {
     BOOST_ASSERT( r.first < r.last );
     _intervals.push_back( r );
 }
 
-SamplesIntervalDescriptor::
-        SamplesIntervalDescriptor(SampleType first, SampleType last)
+Intervals::
+        Intervals(SampleType first, SampleType last)
 {
     BOOST_ASSERT( first < last );
     Interval r = { first, last };
     _intervals.push_back( r );
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-        operator |= (const SamplesIntervalDescriptor& b)
+Intervals& Intervals::
+        operator |= (const Intervals& b)
 {
     BOOST_FOREACH (const Interval& r,  b._intervals)
         operator|=( r );
     return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+Intervals& Intervals::
         operator |= (const Interval& r)
 {
     _intervals.push_back( r );
@@ -102,15 +102,15 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
     return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-        operator -= (const SamplesIntervalDescriptor& b)
+Intervals& Intervals::
+        operator -= (const Intervals& b)
 {
     BOOST_FOREACH (const Interval& r,  b._intervals)
         operator-=( r );
     return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+Intervals& Intervals::
         operator -= (const Interval& r)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
@@ -154,7 +154,7 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
     return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+Intervals& Intervals::
 		operator -= (const SampleType& b)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
@@ -174,7 +174,7 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
 	return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+Intervals& Intervals::
 		operator += (const SampleType& b)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
@@ -194,12 +194,12 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
 	return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
-        operator &= (const SamplesIntervalDescriptor& b)
+Intervals& Intervals::
+        operator &= (const Intervals& b)
 {
-	SamplesIntervalDescriptor rebuild;
+	Intervals rebuild;
 	BOOST_FOREACH (const Interval& r,  b._intervals) {
-		SamplesIntervalDescriptor copy = *this;
+		Intervals copy = *this;
         copy&=( r );
 		rebuild |= copy;
 	}
@@ -212,7 +212,7 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
 	return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+Intervals& Intervals::
         operator &= (const Interval& r)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
@@ -252,7 +252,7 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
     return *this;
 }
 
-SamplesIntervalDescriptor& SamplesIntervalDescriptor::
+Intervals& Intervals::
         operator*=(const float& scale)
 {
     std::list<Interval>::iterator itr;
@@ -264,7 +264,7 @@ SamplesIntervalDescriptor& SamplesIntervalDescriptor::
     return *this;
 }
 
-SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
+Intervals::Interval Intervals::
         getInterval( SampleType dt, SampleType center ) const
 {
     if (0 == _intervals.size()) {
@@ -319,10 +319,10 @@ SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
     }
 }
 
-SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
+Intervals::Interval Intervals::
         getInterval( Interval n ) const
 {
-    SamplesIntervalDescriptor sid = *this & n;
+    Intervals sid = *this & n;
 
     if (0 == sid._intervals.size()) {
         Interval r = {SampleType_MIN, SampleType_MIN};
@@ -332,7 +332,7 @@ SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
     return sid.intervals().front();
 }
 
-SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
+Intervals::Interval Intervals::
         coveredInterval() const
 {
     Interval i;
@@ -347,7 +347,7 @@ SamplesIntervalDescriptor::Interval SamplesIntervalDescriptor::
     return i;
 }
 
-void SamplesIntervalDescriptor::
+void Intervals::
         print( std::string title ) const
 {
     std::stringstream ss;
@@ -358,17 +358,17 @@ void SamplesIntervalDescriptor::
               ss.str().c_str()).suppressTiming();
 }
 
-std::ostream& operator<<( std::ostream& s, const SamplesIntervalDescriptor& i)
+std::ostream& operator<<( std::ostream& s, const Intervals& i)
 {
     s << "{" << i.intervals().size() << " interval" << ((i.intervals().size()==1)?"":"s");
 
-    BOOST_FOREACH (const SamplesIntervalDescriptor::Interval& r, i.intervals())
+    BOOST_FOREACH (const Intervals::Interval& r, i.intervals())
         s << " " << r;
 
     return s << "}";
 }
 
-std::ostream& operator<<( std::ostream& s, const SamplesIntervalDescriptor::Interval& i)
+std::ostream& operator<<( std::ostream& s, const Intervals::Interval& i)
 {
     return s << "[" << i.first << ", " << i.last << "]";
 }

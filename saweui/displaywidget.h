@@ -151,7 +151,7 @@ private:
 
     // overloaded from Signal::Sink
     virtual void put( Signal::pBuffer b, Signal::pSource );
-    virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& s );
+    virtual void add_expected_samples( const Signal::Intervals& s );
 
     Signal::PostSink* getPostSink();
 
@@ -187,7 +187,7 @@ private:
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive, _infoToolActive;
     QMutex _invalidRangeMutex;
-    Signal::SamplesIntervalDescriptor _invalidRange;
+    Signal::Intervals _invalidRange;
 
     void drawArrows();
     void drawColorFace();

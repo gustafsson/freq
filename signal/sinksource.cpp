@@ -45,13 +45,13 @@ void SinkSource::
         break;
     case AcceptStrategy_ACCEPT_EXPECTED_ONLY:
         {
-            SamplesIntervalDescriptor expected = expected_samples();
-            if ((SamplesIntervalDescriptor(b->getInterval()) - expected).isEmpty())
+            Intervals expected = expected_samples();
+            if ((Intervals(b->getInterval()) - expected).isEmpty())
                 // This entire buffer was expected, merge
                 merge(b);
             else
             {
-                SamplesIntervalDescriptor sid = expected & b->getInterval();
+                Intervals sid = expected & b->getInterval();
 
                 // Signal::Source have readFixedLength which can divide a
                 // Buffer into sections if it is presented as a Source which
@@ -62,7 +62,7 @@ void SinkSource::
                 // accomplished the same
                 ss._cache.push_back( b );
 
-                BOOST_FOREACH( const SamplesIntervalDescriptor::Interval i, sid.intervals() )
+                BOOST_FOREACH( const Intervals::Interval i, sid.intervals() )
                 {
                     pBuffer s = ss.readFixedLength( i.first, i.last-i.first );
                     merge( s );
@@ -114,10 +114,10 @@ void SinkSource::
     //samplesDesc().print("selfmerged start");
     //tt.info("_cache.size()=%u", _cache.size());
 
-    SamplesIntervalDescriptor sid = samplesDesc();
+    Intervals sid = samplesDesc();
 	std::vector<pBuffer> new_cache;
 
-	BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, sid.intervals() )
+	BOOST_FOREACH( Intervals::Interval i, sid.intervals() )
 	{
 		for(unsigned L=0; i.first < i.last; i.first+=L)
 		{
@@ -156,10 +156,10 @@ void SinkSource::
         const pBuffer ps = *itr;
         const Buffer& s = *ps;
 
-        SamplesIntervalDescriptor toKeep = s.getInterval();
+        Intervals toKeep = s.getInterval();
         toKeep -= b.getInterval();
 
-        SamplesIntervalDescriptor toRemove = s.getInterval();
+        Intervals toRemove = s.getInterval();
         toRemove &= b.getInterval();
 
         if (!toRemove.isEmpty()) {
@@ -167,7 +167,7 @@ void SinkSource::
 
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            BOOST_FOREACH( SamplesIntervalDescriptor::Interval i, toKeep.intervals() )
+            BOOST_FOREACH( Intervals::Interval i, toKeep.intervals() )
             {
                 if(D) ss << " +" << i;
 
@@ -208,7 +208,7 @@ void SinkSource::
 {
     QMutexLocker l(&_cache_mutex);
     _cache.clear();
-    _expected_samples = SamplesIntervalDescriptor();
+    _expected_samples = Intervals();
 }
 
 pBuffer SinkSource::
@@ -286,12 +286,12 @@ unsigned SinkSource::size()
     return _cache.size();
 }
 
-SamplesIntervalDescriptor SinkSource::
+Intervals SinkSource::
         samplesDesc()
 {
     QMutexLocker l(&_cache_mutex);
 
-    SamplesIntervalDescriptor sid;
+    Intervals sid;
 
     BOOST_FOREACH( const pBuffer& s, _cache) {
         sid |= s->getInterval();

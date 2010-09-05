@@ -108,13 +108,13 @@ Buffer& Buffer::
 
     float* c = waveform_data->getCpuMemory();
 
-    SamplesIntervalDescriptor sid = getInterval();
+    Intervals sid = getInterval();
     sid &= p->getInterval();
 
     if (sid.isEmpty())
         return *this;
 
-    SamplesIntervalDescriptor::Interval i = sid.getInterval(p->number_of_samples());
+    Intervals::Interval i = sid.getInterval(p->number_of_samples());
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - p->sample_offset;
@@ -148,7 +148,7 @@ pBuffer Source::
     pBuffer r( new Buffer(firstSample, numberOfSamples, p->sample_rate) );
     memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
 
-    SamplesIntervalDescriptor sid(firstSample, firstSample + numberOfSamples);
+    Intervals sid(firstSample, firstSample + numberOfSamples);
 
     while (!sid.isEmpty())
     {
@@ -156,7 +156,7 @@ pBuffer Source::
         sid -= p->getInterval();
 
         if (!sid.isEmpty()) {
-            SamplesIntervalDescriptor::Interval i = sid.getInterval( SamplesIntervalDescriptor::SampleType_MAX );
+            Intervals::Interval i = sid.getInterval( Intervals::SampleType_MAX );
             p = readChecked( i.first, i.last - i.first );
         }
     }

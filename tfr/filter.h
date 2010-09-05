@@ -2,7 +2,7 @@
 #define TFRFILTER_H
 
 #include "sawe/selection.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 
 #include <list>
 #include <boost/shared_ptr.hpp>
@@ -11,7 +11,7 @@
 namespace Tfr {
 struct Chunk;
 
-class Filter
+class Filter: Signal::
 {
 public:
     Filter();
@@ -22,12 +22,12 @@ public:
     /**
       These samples are definitely set to 0 by the filter.
       */
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const = 0;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const = 0;
 
     /**
       These samples are definitely left as is by the filter.
       */
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const = 0;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const = 0;
 
     /**
       TODO Define how/when enabled should be used. Should all sources have an
@@ -42,8 +42,8 @@ class FilterChain: public Filter, public std::list<pFilter>
 {
 public:
     virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 };
 
 
@@ -53,8 +53,8 @@ public:
     SelectionFilter( Selection s );
 
     virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 
     Selection s;
 
@@ -71,8 +71,8 @@ public:
     EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
     virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 
     float _t1, _f1, _t2, _f2;
 	bool _save_inside;
@@ -85,8 +85,8 @@ public:
     SquareFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
 
     virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 
     float _t1, _f1, _t2, _f2;
     bool _save_inside;
@@ -99,8 +99,8 @@ public:
     MoveFilter(float df);
 
     virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 
     float _df;
 };
@@ -114,8 +114,8 @@ public:
     virtual void operator()( Chunk& );
 
     // No zero samples, no untouched samples
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 };
 
 
@@ -127,8 +127,8 @@ public:
     virtual void operator()( Chunk& );
 
     // No zero samples, no untouched samples
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 };
 
 } // namespace Tfr

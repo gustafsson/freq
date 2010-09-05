@@ -12,8 +12,8 @@ public:
     MatlabFilter( std::string matlabFunction );
 
     virtual void operator()( Tfr::Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
+    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
 
 protected:
     MatlabFunction _matlab;

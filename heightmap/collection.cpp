@@ -74,7 +74,7 @@ void Collection::
 void Collection::
         put( Signal::pBuffer b, Signal::pSource s)
 {
-    Signal::SamplesIntervalDescriptor expected = expected_samples();
+    Signal::Intervals expected = expected_samples();
     if ( (expected_samples() & b->getInterval()).isEmpty() ) {
         TIME_COLLECTION TaskTimer("Collection::put received non requested block [%u, %u]", b->getInterval().first, b->getInterval().last);
         return;
@@ -482,7 +482,7 @@ pBlock Collection::
 
     if (0 != block.get())
     {
-        Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
+        Signal::Intervals refInt = block->ref.getInterval();
         if (!(refInt-=block->valid_samples).isEmpty())
             _unfinished_count++;
 
@@ -523,7 +523,7 @@ void Collection::
 
     ChunkSink::chunk_filter( filter );
 
-    add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
+    add_expected_samples( Signal::Intervals::SamplesIntervalDescriptor_ALL );
 }
 
 
@@ -542,7 +542,7 @@ void Collection::
         _cache.clear();
     }*/
 
-    add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
+    add_expected_samples( Signal::Intervals::SamplesIntervalDescriptor_ALL );
 }
 
 
@@ -568,7 +568,7 @@ void Collection::
 
 
 void Collection::
-        add_expected_samples( const Signal::SamplesIntervalDescriptor& sid )
+        add_expected_samples( const Signal::Intervals& sid )
 {
     TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
 
@@ -577,10 +577,10 @@ void Collection::
 		c.second->valid_samples -= sid;
 }
 
-Signal::SamplesIntervalDescriptor Collection::
+Signal::Intervals Collection::
         expected_samples()
 {
-    Signal::SamplesIntervalDescriptor r;
+    Signal::Intervals r;
 
 	QMutexLocker l(&_cache_mutex);
 
@@ -588,7 +588,7 @@ Signal::SamplesIntervalDescriptor Collection::
 	{
         if (_frame_counter == b->frame_number_last_used)
         {
-            Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
+            Signal::Intervals i ( b->ref.getInterval() );
 
             i -= b->valid_samples;
             r |= i;
@@ -919,7 +919,7 @@ void Collection::
 
         BOOST_FOREACH( Tfr::pChunk& chunk, _updates )
         {
-            Signal::SamplesIntervalDescriptor chunkSid = chunk->getInterval();
+            Signal::Intervals chunkSid = chunk->getInterval();
             TIME_COLLECTION chunkSid.print("Applying chunk");
 
             // Update all blocks with this new chunk
@@ -956,10 +956,10 @@ bool Collection::
         mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data)
 {
     // Find out what intervals that match
-    Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
-    Signal::SamplesIntervalDescriptor::Interval inInterval = inChunk->getInterval();
+    Signal::Intervals::Interval outInterval = outBlock->ref.getInterval();
+    Signal::Intervals::Interval inInterval = inChunk->getInterval();
 
-    Signal::SamplesIntervalDescriptor transferDesc = inInterval;
+    Signal::Intervals transferDesc = inInterval;
     transferDesc &= outInterval;
 
     // Remove already computed intervals
@@ -996,7 +996,7 @@ bool Collection::
     float in_frequency_resolution = inChunk->nScales();
     float out_frequency_resolution = outBlock->ref.nFrequencies();
 
-    BOOST_FOREACH( Signal::SamplesIntervalDescriptor::Interval transfer, transferDesc.intervals())
+    BOOST_FOREACH( Signal::Intervals::Interval transfer, transferDesc.intervals())
     {
         TIME_COLLECTION TaskTimer tt("Inserting chunk [%u,%u]", transfer.first, transfer.last);
 
@@ -1059,11 +1059,11 @@ bool Collection::
 bool Collection::
         mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
 {
-    Signal::SamplesIntervalDescriptor::Interval inInterval = inBlock->ref.getInterval();
-    Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
+    Signal::Intervals::Interval inInterval = inBlock->ref.getInterval();
+    Signal::Intervals::Interval outInterval = outBlock->ref.getInterval();
 
     // Find out what intervals that match
-    Signal::SamplesIntervalDescriptor transferDesc = inBlock->valid_samples;
+    Signal::Intervals transferDesc = inBlock->valid_samples;
     transferDesc &= outInterval;
 
     // Remove already computed intervals
@@ -1084,7 +1084,7 @@ bool Collection::
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
 
-    BOOST_FOREACH( const Signal::SamplesIntervalDescriptor::Interval& transfer, transferDesc.intervals())
+    BOOST_FOREACH( const Signal::Intervals::Interval& transfer, transferDesc.intervals())
     {
         float in_offset = transfer.first - inInterval.first;
         float out_offset = transfer.first - outInterval.first;

@@ -44,7 +44,7 @@ void TimelineWidget::
 }
 
 void TimelineWidget::
-        add_expected_samples( const Signal::SamplesIntervalDescriptor& )
+        add_expected_samples( const Signal::Intervals& )
 {
     update();
 }

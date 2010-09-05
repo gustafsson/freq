@@ -17,8 +17,8 @@ public:
     virtual bool isFinished();
     virtual void onFinished();
 
-    virtual SamplesIntervalDescriptor expected_samples();
-    virtual void add_expected_samples( const SamplesIntervalDescriptor& s );
+    virtual Intervals expected_samples();
+    virtual void add_expected_samples( const Intervals& s );
 
     std::vector<pSink>  sinks();
     void                sinks(std::vector<pSink> v);

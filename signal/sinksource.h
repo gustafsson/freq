@@ -3,7 +3,7 @@
 
 #include "signal/sink.h"
 #include "signal/source.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 #include <vector>
 #include <QMutex>
 
@@ -34,7 +34,7 @@ public:
     bool empty();
     unsigned size();
 
-    SamplesIntervalDescriptor samplesDesc();
+    Intervals samplesDesc();
 
 private:
     QMutex _cache_mutex;

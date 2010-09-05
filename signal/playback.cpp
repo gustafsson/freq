@@ -237,7 +237,7 @@ bool Playback::
 {
     unsigned nAccumulated_samples = _data.number_of_samples();
 
-    Signal::SamplesIntervalDescriptor expect = expected_samples();
+    Signal::Intervals expect = expected_samples();
     if (!_data.empty() && expect.isEmpty()) {
         TIME_PLAYBACK TaskTimer("Not underfed").suppressTiming();
         return false; // No more expected samples, not underfed
@@ -264,7 +264,7 @@ bool Playback::
     float time_left =
             (expect.intervals().back().last - marker) / (float)_data.sample_rate();
 
-    Signal::SamplesIntervalDescriptor::Interval cov = expect.coveredInterval();
+    Signal::Intervals::Interval cov = expect.coveredInterval();
     float estimated_time_required =
             (cov.last - cov.first) / incoming_samples_per_sec;
 

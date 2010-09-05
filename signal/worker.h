@@ -2,7 +2,7 @@
 #define SIGNALWORKER_H
 
 #include "signal/sink.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 #include <boost/noncopyable.hpp>
 #include <QMutex>
 #include <QThread>
@@ -133,8 +133,8 @@ public:
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
-    void todo_list( SamplesIntervalDescriptor v );
-    SamplesIntervalDescriptor todo_list();
+    void todo_list( Intervals v );
+    Intervals todo_list();
 
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
@@ -217,7 +217,7 @@ private:
     /**
       @see todo_list
       */
-    SamplesIntervalDescriptor _todo_list;
+    Intervals _todo_list;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.

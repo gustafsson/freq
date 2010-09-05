@@ -20,10 +20,10 @@ Filter()
 {
 }
 
-Signal::SamplesIntervalDescriptor Filter::
+Signal::Intervals Filter::
         getTouchedSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+    Signal::Intervals sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
     sid -= getUntouchedSamples(FS);
     return sid;
 }
@@ -48,10 +48,10 @@ void FilterChain::operator()( Chunk& t) {
     std::for_each(begin(), end(), apply_filter( t ));
 }
 
-Signal::SamplesIntervalDescriptor FilterChain::
+Signal::Intervals FilterChain::
         getZeroSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid;
+    Signal::Intervals sid;
 
     BOOST_FOREACH( pFilter f, *this ) {
         sid |= f->getZeroSamples( FS );
@@ -60,10 +60,10 @@ Signal::SamplesIntervalDescriptor FilterChain::
 	return sid;
 }
 
-Signal::SamplesIntervalDescriptor FilterChain::
+Signal::Intervals FilterChain::
         getUntouchedSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+    Signal::Intervals sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
 
     BOOST_FOREACH( pFilter f, *this ) {
         sid &= f->getUntouchedSamples( FS );
@@ -118,10 +118,10 @@ void SelectionFilter::operator()( Chunk& chunk) {
     return;
 }
 
-Signal::SamplesIntervalDescriptor SelectionFilter::
+Signal::Intervals SelectionFilter::
         getZeroSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid;
+    Signal::Intervals sid;
 
     if (!s.inverted)
     {   float fstart_time, fend_time;
@@ -131,18 +131,18 @@ Signal::SamplesIntervalDescriptor SelectionFilter::
             start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
             end_time = (unsigned)(std::max(0.f, fend_time)*FS);
 
-        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
         if (start_time < end_time)
-                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+                sid -= Signal::Intervals(start_time, end_time);
     }
 
     return sid;
 }
 
-Signal::SamplesIntervalDescriptor SelectionFilter::
+Signal::Intervals SelectionFilter::
         getUntouchedSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid;
+    Signal::Intervals sid;
 
     if (s.inverted) {
         float fstart_time, fend_time;
@@ -152,9 +152,9 @@ Signal::SamplesIntervalDescriptor SelectionFilter::
             start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
             end_time = (unsigned)(std::max(0.f, fend_time)*FS);
 
-        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
         if (start_time < end_time)
-                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+                sid -= Signal::Intervals(start_time, end_time);
     }
 
     return sid;
@@ -187,10 +187,10 @@ void EllipsFilter::operator()( Chunk& chunk) {
     TIME_FILTER CudaException_ThreadSynchronize();
 }
 
-Signal::SamplesIntervalDescriptor EllipsFilter::
+Signal::Intervals EllipsFilter::
         getZeroSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid;
+    Signal::Intervals sid;
 
     if (_save_inside)
     {
@@ -198,18 +198,18 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
             start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
             end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
         if (start_time < end_time)
-                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+                sid -= Signal::Intervals(start_time, end_time);
     }
 
     return sid;
 }
 
-Signal::SamplesIntervalDescriptor EllipsFilter::
+Signal::Intervals EllipsFilter::
         getUntouchedSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid;
+    Signal::Intervals sid;
 
     if (!_save_inside)
     {
@@ -217,9 +217,9 @@ Signal::SamplesIntervalDescriptor EllipsFilter::
             start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
             end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
         if (start_time < end_time)
-                sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+                sid -= Signal::Intervals(start_time, end_time);
     }
 
     return sid;
@@ -251,10 +251,10 @@ void SquareFilter::operator()( Chunk& chunk) {
     TIME_FILTER CudaException_ThreadSynchronize();
 }
 
-Signal::SamplesIntervalDescriptor SquareFilter::
+Signal::Intervals SquareFilter::
         getZeroSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid;
+    Signal::Intervals sid;
 
     if (_save_inside)
     {
@@ -262,18 +262,18 @@ Signal::SamplesIntervalDescriptor SquareFilter::
             start_time = (unsigned)(std::max(0.f, _t1)*FS),
             end_time = (unsigned)(std::max(0.f, _t2)*FS);
 
-        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
         if (start_time < end_time)
-            sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+            sid -= Signal::Intervals(start_time, end_time);
     }
 
     return sid;
 }
 
-Signal::SamplesIntervalDescriptor SquareFilter::
+Signal::Intervals SquareFilter::
         getUntouchedSamples( unsigned FS ) const
 {
-    Signal::SamplesIntervalDescriptor sid;
+    Signal::Intervals sid;
 
     if (!_save_inside)
     {
@@ -281,9 +281,9 @@ Signal::SamplesIntervalDescriptor SquareFilter::
             start_time = (unsigned)(std::max(0.f, _t1)*FS),
             end_time = (unsigned)(std::max(0.f, _t2)*FS);
 
-        sid = Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
         if (start_time < end_time)
-            sid -= Signal::SamplesIntervalDescriptor(start_time, end_time);
+            sid -= Signal::Intervals(start_time, end_time);
     }
 
     return sid;
@@ -308,16 +308,16 @@ void MoveFilter::
     TIME_FILTER CudaException_ThreadSynchronize();
 }
 
-Signal::SamplesIntervalDescriptor MoveFilter::
+Signal::Intervals MoveFilter::
         getZeroSamples( unsigned /* always return constant */ ) const
 {
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
-Signal::SamplesIntervalDescriptor MoveFilter::
+Signal::Intervals MoveFilter::
         getUntouchedSamples( unsigned /* always return constant */ ) const
 {
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
 //////////// ReassignFilter
@@ -339,16 +339,16 @@ void ReassignFilter::
     TIME_FILTER CudaException_ThreadSynchronize();
 }
 
-Signal::SamplesIntervalDescriptor ReassignFilter::
+Signal::Intervals ReassignFilter::
         getZeroSamples( unsigned /* always return constant */ ) const
 {
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
-Signal::SamplesIntervalDescriptor ReassignFilter::
+Signal::Intervals ReassignFilter::
         getUntouchedSamples( unsigned /* always return constant */ ) const
 {
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
 //////////// TonalizeFilter
@@ -367,16 +367,16 @@ void TonalizeFilter::
     TIME_FILTER CudaException_ThreadSynchronize();
 }
 
-Signal::SamplesIntervalDescriptor TonalizeFilter::
+Signal::Intervals TonalizeFilter::
         getZeroSamples( unsigned /* always return constant */ ) const
 {
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
-Signal::SamplesIntervalDescriptor TonalizeFilter::
+Signal::Intervals TonalizeFilter::
         getUntouchedSamples( unsigned /* always return constant */ ) const
 {
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
 } // namespace Tfr

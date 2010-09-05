@@ -31,7 +31,7 @@ operator()(Tfr::Chunk& chunk)
         //s = dynamic_cast<SquareFilter*>(filter.get());
 
         if (!e && !s) {
-            Signal::SamplesIntervalDescriptor
+            Signal::Intervals
                     chunkSid = chunk.getInterval(),
                     chunkCopy = chunkSid;
             if ((chunkSid -= filter->getUntouchedSamples( chunk.sample_rate )).isEmpty())

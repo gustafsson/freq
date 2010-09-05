@@ -4,7 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <GpuCpuData.h>
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 
 namespace Signal {
 
@@ -36,7 +36,7 @@ public:
     unsigned                            number_of_samples() const { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
     float                               start() const { return sample_offset/(float)sample_rate; }
     float                               length() const { return number_of_samples()/(float)sample_rate; }
-    SamplesIntervalDescriptor::Interval getInterval() const { SamplesIntervalDescriptor::Interval i = {sample_offset, sample_offset + number_of_samples()}; return i; }
+    Intervals::Interval getInterval() const { Intervals::Interval i = {sample_offset, sample_offset + number_of_samples()}; return i; }
 
     Buffer&                             operator|=(const Buffer& b);
     boost::shared_ptr<Buffer>           getInterleaved(Interleaved) const;

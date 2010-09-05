@@ -21,12 +21,12 @@ number_of_samples()
     return _source->number_of_samples();
 }
 
-SamplesIntervalDescriptor Operation::
+Intervals Operation::
         invalid_samples()
 {
     Operation* o = dynamic_cast<Operation*>(_source.get());
 
-    SamplesIntervalDescriptor r = _invalid_samples;
+    Intervals r = _invalid_samples;
 
     if (0!=o)
         r |= o->invalid_samples();

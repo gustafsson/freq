@@ -16,13 +16,13 @@ OperationCache::
 bool OperationCache::
         cacheMiss(unsigned firstSample, unsigned /*numberOfSamples*/)
 {
-    SamplesIntervalDescriptor cached = _cache.samplesDesc();
+    Intervals cached = _cache.samplesDesc();
     cached -= this->invalid_samples(); // cached samples doesn't count if they are marked as invalid
 
     // read is only required to return firstSample, not the entire interval.
     // If the entire interval is needed for some other reason, cacheMiss can
     // be overloaded, such as in FilterOperation.
-    SamplesIntervalDescriptor need(firstSample, firstSample+1);
+    Intervals need(firstSample, firstSample+1);
     need -= cached;
 
     // If we need something more, this is a cache miss

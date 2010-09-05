@@ -48,13 +48,13 @@ pBuffer FilterOperation::
             return _source->read(first_valid_sample, numberOfSamples);
         }
 
-        SamplesIntervalDescriptor work(first_valid_sample, first_valid_sample + numberOfSamples);
+        Intervals work(first_valid_sample, first_valid_sample + numberOfSamples);
 
         // If filter would make all these samples zero, return immediately
         if ((work - _filter->getZeroSamples( _source->sample_rate() )).isEmpty()) {
             pBuffer b( new Buffer( first_valid_sample, numberOfSamples, _source->sample_rate() ));
             ::memset( b->waveform_data->getCpuMemory(), 0, b->waveform_data->getSizeInBytes1D());
-            TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp silent");
+            TIME_FILTEROPERATION Intervals(b->getInterval()).print("FilterOp silent");
             return b;
         }
 
@@ -65,10 +65,10 @@ pBuffer FilterOperation::
             work = b->getInterval();
             work -= _filter->getUntouchedSamples( _source->sample_rate() );
             if (work.isEmpty()) {
-                TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp unaffected");
+                TIME_FILTEROPERATION Intervals(b->getInterval()).print("FilterOp unaffected");
                 return b;
             }
-            TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp fixed unaffected");
+            TIME_FILTEROPERATION Intervals(b->getInterval()).print("FilterOp fixed unaffected");
             // Failed, return the exact samples validated as untouched
             return _source->readFixedLength(first_valid_sample, numberOfSamples);
         }
@@ -84,7 +84,7 @@ pBuffer FilterOperation::
         unsigned L = redundant_samples + numberOfSamples + wavelet_std_samples;
 
         pBuffer b = _source->readFixedLength( firstSample, L );
-        TIME_FILTEROPERATION SamplesIntervalDescriptor(b->getInterval()).print("FilterOp subread");
+        TIME_FILTEROPERATION Intervals(b->getInterval()).print("FilterOp subread");
 
         // Compute the continous wavelet transform
         Tfr::pChunk c = (*_transform)( b );
@@ -92,7 +92,7 @@ pBuffer FilterOperation::
         // Apply filter
         if (_filter)
         {
-            SamplesIntervalDescriptor work(c->getInterval());
+            Intervals work(c->getInterval());
             work -= _filter->getUntouchedSamples( _source->sample_rate() );
             // Only apply filter if it would affect these samples
             if (!work.isEmpty())
@@ -105,7 +105,7 @@ pBuffer FilterOperation::
         if (_save_previous_chunk)
         {
             // Just make the buffer smaller
-            SamplesIntervalDescriptor::Interval i = c->getInterval();
+            Intervals::Interval i = c->getInterval();
             r.reset(new Buffer(i.first, i.last-i.first,b->sample_rate));
             if (b->interleaved() != Signal::Buffer::Only_Real)
                 b = b->getInterleaved(Signal::Buffer::Only_Real);
@@ -118,7 +118,7 @@ pBuffer FilterOperation::
             r = Tfr::InverseCwt()( *c );
         }
 
-        TIME_FILTEROPERATION SamplesIntervalDescriptor(r->getInterval()).print("FilterOp after inverse");
+        TIME_FILTEROPERATION Intervals(r->getInterval()).print("FilterOp after inverse");
 
         if (_save_previous_chunk)
             _previous_chunk = c;
@@ -256,7 +256,7 @@ void FilterOperation::
     unsigned FS = sample_rate();
 
     // Start with the assumtion that all touched samples will have to be recomputed
-    SamplesIntervalDescriptor a = f->getTouchedSamples(FS);
+    Intervals a = f->getTouchedSamples(FS);
 
     if (_filter)
     {
@@ -275,7 +275,7 @@ void FilterOperation::
         transform( Tfr::pTransform t )
 {
     _transform = t;
-    _invalid_samples = SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL;
+    _invalid_samples = Intervals::SamplesIntervalDescriptor_ALL;
     _previous_chunk.reset();
 
     // Some filters works regardless of transform

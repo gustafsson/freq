@@ -4,7 +4,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "GpuCpuData.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 #include "freqaxis.h"
 
 namespace Tfr {
@@ -84,7 +84,7 @@ public:
 
     float2 debug_getNearestCoeff( float t, float f );  /// For debugging
 
-    Signal::SamplesIntervalDescriptor::Interval getInterval() const;
+    Signal::Intervals::Interval getInterval() const;
 };
 typedef boost::shared_ptr< Chunk > pChunk;
 

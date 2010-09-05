@@ -8,7 +8,7 @@ namespace Signal {
 void PostSink::
         put( pBuffer b, pSource s)
 {
-    Signal::SamplesIntervalDescriptor expected = expected_samples();
+    Signal::Intervals expected = expected_samples();
     if ( (expected & b->getInterval()).isEmpty() )
         return;  // Don't forward data that wasn't requested
 
@@ -57,10 +57,10 @@ void PostSink::
         s->onFinished( );
 }
 
-SamplesIntervalDescriptor PostSink::
+Intervals PostSink::
         expected_samples()
 {
-    SamplesIntervalDescriptor x;
+    Intervals x;
 
     BOOST_FOREACH( pSink s, sinks() )
         x |= s->expected_samples();
@@ -70,7 +70,7 @@ SamplesIntervalDescriptor PostSink::
 }
 
 void PostSink::
-        add_expected_samples( const SamplesIntervalDescriptor& x )
+        add_expected_samples( const Intervals& x )
 {
     BOOST_FOREACH( pSink s, sinks() )
         s->add_expected_samples( x );
@@ -109,10 +109,10 @@ void PostSink::
 
     if (f) {
         unsigned FS = s->sample_rate();
-        SamplesIntervalDescriptor::Interval i =
+        Intervals::Interval i =
                 (f->getTouchedSamples(FS) - f->getZeroSamples(FS)).coveredInterval();
 
-        i.last = std::min( i.last, (SamplesIntervalDescriptor::SampleType)s->number_of_samples() );
+        i.last = std::min( i.last, (Intervals::SampleType)s->number_of_samples() );
 
         if (!i.valid())
             f.reset();

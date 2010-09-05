@@ -2,7 +2,7 @@
 #define SIGNALOPERATION_H
 
 #include "signal/source.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 
 namespace Signal {
 
@@ -36,7 +36,7 @@ public:
     /**
       Returns _invalid_samples merged with _source->invalid_samples.
       */
-    SamplesIntervalDescriptor invalid_samples();
+    Intervals invalid_samples();
 
     static pSource first_source(pSource start);
 
@@ -53,7 +53,7 @@ protected:
       date. If an implementaion use this feature it must also gradually worked
       it off by calls to read.
       */
-    SamplesIntervalDescriptor _invalid_samples;
+    Intervals _invalid_samples;
     void validate_samples( pBuffer b );
 };
 

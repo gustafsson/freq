@@ -39,18 +39,18 @@ void MatlabFilter::
     ::remove( file.c_str());
 }
 
-Signal::SamplesIntervalDescriptor MatlabFilter::
+Signal::Intervals MatlabFilter::
         getZeroSamples( unsigned /*FS*/ ) const
 {
     // As far as we know, the matlab filter doesn't set anything to zero for sure
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
-Signal::SamplesIntervalDescriptor MatlabFilter::
+Signal::Intervals MatlabFilter::
         getUntouchedSamples( unsigned /*FS*/ ) const
 {
     // As far as we know, the matlab filter may touch anything
-    return Signal::SamplesIntervalDescriptor();
+    return Signal::Intervals();
 }
 
 

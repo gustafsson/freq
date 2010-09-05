@@ -1,5 +1,5 @@
 #include "worker.h"
-#include "samplesintervaldescriptor.h"
+#include "intervals.h"
 #include "filteroperation.h"
 
 #include "tfr/cwt.h"
@@ -39,7 +39,7 @@ Worker::
         ~Worker()
 {
     this->quit();
-    todo_list( SamplesIntervalDescriptor() );
+    todo_list( Intervals() );
 }
 
 ///// OPERATIONS
@@ -60,7 +60,7 @@ bool Worker::
 
     ptime startTime = microsec_clock::local_time();
 
-    SamplesIntervalDescriptor::Interval interval;
+    Intervals::Interval interval;
     interval = todo_list().getInterval( _samples_per_chunk, center_sample );
 
     pBuffer b;
@@ -130,7 +130,7 @@ bool Worker::
 ///// PROPERTIES
 
 void Worker::
-        todo_list( Signal::SamplesIntervalDescriptor v )
+        todo_list( Signal::Intervals v )
 {
     {
         QMutexLocker l(&_todo_lock);
@@ -140,11 +140,11 @@ void Worker::
         _todo_condition.wakeAll();
 }
 
-Signal::SamplesIntervalDescriptor Worker::
+Signal::Intervals Worker::
         todo_list()
 {
     QMutexLocker l(&_todo_lock);
-    Signal::SamplesIntervalDescriptor c = _todo_list;
+    Signal::Intervals c = _todo_list;
     return c;
 }
 

@@ -65,7 +65,7 @@ SOURCES += \
     signal/operation.cpp \
     signal/playback.cpp \
     signal/postsink.cpp \
-    signal/samplesintervaldescriptor.cpp \
+    signal/intervals.cpp \
     signal/sink.cpp \
     signal/sinksource.cpp \
     signal/source.cpp \
@@ -110,7 +110,7 @@ HEADERS += \
     signal/operation.h \
     signal/playback.h \
     signal/postsink.h \
-    signal/samplesintervaldescriptor.h \
+    signal/intervals.h \
     signal/sink.h \
     signal/sinksource.h \
     signal/source.h \

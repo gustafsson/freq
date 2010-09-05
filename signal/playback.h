@@ -22,8 +22,8 @@ public:
     virtual void reset();
     virtual bool isFinished();
     virtual void onFinished();
-    virtual SamplesIntervalDescriptor expected_samples() { return _data.expected_samples(); }
-    virtual void add_expected_samples( const SamplesIntervalDescriptor& s ) { _data.add_expected_samples( s ); }
+    virtual Intervals expected_samples() { return _data.expected_samples(); }
+    virtual void add_expected_samples( const Intervals& s ) { _data.add_expected_samples( s ); }
 
     static void list_devices();
 

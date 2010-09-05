@@ -2,7 +2,7 @@
 #define HEIGHTMAPREFERENCE_H
 
 #include "heightmap/position.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 
 namespace Heightmap {
 
@@ -43,7 +43,7 @@ public:
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
       invalid samples.
       */
-    Signal::SamplesIntervalDescriptor::Interval getInterval() const;
+    Signal::Intervals::Interval getInterval() const;
 private:
     friend class Collection;
 

@@ -18,7 +18,7 @@ public:
 
     // overloaded from Signal::Sink
     virtual void    put( Signal::pBuffer , Signal::pSource );
-    virtual void    add_expected_samples( const Signal::SamplesIntervalDescriptor& );
+    virtual void    add_expected_samples( const Signal::Intervals& );
 
 protected:
     // overloaded from QGLWidget

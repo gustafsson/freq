@@ -3,7 +3,7 @@
 
 #include "heightmap/reference.h"
 #include "heightmap/glblock.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 #include "signal/source.h"
 #include "signal/worker.h"
 #include "tfr/chunk.h"
@@ -105,7 +105,7 @@ public:
       the first block in the heightmap. The samplerate is the sample rate of the full
       resolution signal.
       */
-    Signal::SamplesIntervalDescriptor valid_samples;
+    Signal::Intervals valid_samples;
 };
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -143,8 +143,8 @@ public:
     virtual void put( Signal::pBuffer, Signal::pSource );
 
 
-    virtual Signal::SamplesIntervalDescriptor expected_samples();
-    virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& );
+    virtual Signal::Intervals expected_samples();
+    virtual void add_expected_samples( const Signal::Intervals& );
 
 
     /**

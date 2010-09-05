@@ -57,21 +57,21 @@ pChunk ChunkSink::
     if (filterOp) {
         // use the Cwt chunk still stored in FilterOperation
         chunk = filterOp->previous_chunk();
-        if (D) if(chunk) Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk stole filterOp chunk");
+        if (D) if(chunk) Signal::Intervals(chunk->getInterval()).print("ChunkSink::getChunk stole filterOp chunk");
 
         if (0 == chunk) {
             // try again
             filterOp->read( b->sample_offset, b->number_of_samples() );
             chunk = filterOp->previous_chunk();
-            if(chunk) Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk stole on second try");
+            if(chunk) Signal::Intervals(chunk->getInterval()).print("ChunkSink::getChunk stole on second try");
         }
     }
 
     if (0 == chunk) {
         // otherwise compute the Cwt of this block
-        Signal::SamplesIntervalDescriptor(b->getInterval()).print("ChunkSink::getChunk compute raw chunk");
+        Signal::Intervals(b->getInterval()).print("ChunkSink::getChunk compute raw chunk");
         chunk = Tfr::Cwt::Singleton()( b );
-        Signal::SamplesIntervalDescriptor(chunk->getInterval()).print("ChunkSink::getChunk computed raw chunk");
+        Signal::Intervals(chunk->getInterval()).print("ChunkSink::getChunk computed raw chunk");
 
         // Don't know anything about the nearby data, so assume it's all valid
         chunk->n_valid_samples = chunk->transform_data->getNumberOfElements().width;
