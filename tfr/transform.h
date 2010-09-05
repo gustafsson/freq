@@ -35,11 +35,17 @@ public:
 
 
     /**
-      Each transform computes different frequency distributions. An instance of
-      FreqAxis is used for translating frequencies to chunk indicies and vice
-      versa. FreqAxis can be used within Cuda kernels.
+      At what time resolution (1/sample rate) it is meaningful to display the
+      computed Chunks.
       */
-    FreqAxis freqInfo();
+    virtual float displayedTimeResolution() { return 1/44100.f;}
+
+
+    /**
+      At what frequency resolution (smallest f(i+1)/f(i)) it is meaningful to
+      display the computed Chunks.
+      */
+    virtual float displayedFrequencyResolution() { return 0.f;}
 
 
     /**

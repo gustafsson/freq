@@ -165,14 +165,6 @@ public:
 
 
     /**
-      As the cwt is of finite length and finite sample rate there is a smallest
-      and a largest sample size that is meaningful for the heightmap to render.
-      */
-    Position min_sample_size();
-    Position max_sample_size();
-
-
-    /**
       Returns a Reference for a block containing 'p' in which a block element
       is as big as possible yet smaller than or equal to 'sampleSize'.
       */
@@ -186,6 +178,15 @@ public:
       blocks that has been decided for rendering.
       */
     pBlock      getBlock( Reference ref );
+
+
+    /**
+      As the transform is of finite length and finite sample rate there is a
+      smallest and a largest sample size that is meaningful for the heightmap
+      to render.
+      */
+    Position min_sample_size() { return _min_sample_size; }
+    Position max_sample_size() { return _max_sample_size; }
 
 
     /**
@@ -223,7 +224,19 @@ private:
         _unfinished_count,
         _frame_counter;
 
+
+    Position
+            _min_sample_size,
+            _max_sample_size;
+
     ComplexInfo _complexInfo;
+
+
+    /**
+      Heightmap blocks are rather agnostic to FreqAxis.
+      */
+    Tfr::FreqAxis _display_scale;
+
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.
@@ -264,12 +277,26 @@ private:
       Compoute a short-time Fourier transform (stft). Usefull for filling new
       blocks with data really fast.
       */
-    void        prepareFillStft( pBlock block );
+    void        prepareFillStft( Tfr::Transform* trans, pBlock block );
+
 
     /**
       Work of the _updates queue of chunks to merge.
       */
     void        applyUpdates();
+
+
+    /**
+      Given a chunk and this->_worker->source(), compute how small and big
+      samples that are meanginful to display.
+      */
+    void        update_sample_size( Tfr::Chunk* inChunk = 0 );
+
+
+    /**
+      TODO comment
+      */
+    void        mergeStftBlock( Tfr::pChunk stft, pBlock block );
 
 
     /**

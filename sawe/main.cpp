@@ -254,8 +254,12 @@ void validate_arguments() {
     }
 }
 
+
 int main(int argc, char *argv[])
 {
+//    printf("Fastest size = %u\n", Tfr::Stft::build_performance_statistics(true));
+//    return 0;
+
 //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif

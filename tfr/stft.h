@@ -74,14 +74,20 @@ public:
       */
     pChunk operator()( Signal::pBuffer );
 
+    unsigned chunk_size() { return _chunk_size; }
+    unsigned set_approximate_chunk_size( unsigned preferred_size );
+
+    static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal = 1);
+private:
+    cudaStream_t    _stream;
+
+    static std::vector<unsigned> _ok_chunk_sizes;
+
     /**
         Default window size for the windowed fourier transform, or short-time fourier transform, stft
         Default value: chunk_size=1<<11
     */
-    unsigned chunk_size;
-
-private:
-    cudaStream_t    _stream;
+    unsigned _chunk_size;
 };
 
 } // namespace Tfr

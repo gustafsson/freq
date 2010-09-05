@@ -78,7 +78,6 @@ SOURCES += \
     tfr/filter.cpp \
     tfr/inversecwt.cpp \
     tfr/stft.cpp \
-    tfr/transform.cpp \
 
 HEADERS += \
     heightmap/block.cu.h \
@@ -169,9 +168,8 @@ unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HE
 INCLUDEPATH += ../gpumisc .
 
 unix:!macx {
-INCLUDEPATH += \
-    /usr/local/cuda/include
-LIBS = -lsndfile \
+LIBS = \
+    -lsndfile \
     -lGLEW \
     -lGLU \
     -lGL \
@@ -182,7 +180,7 @@ LIBS = -lsndfile \
 }
 
 macx {
-INCLUDEPATH += /usr/local/cuda/include \
+INCLUDEPATH += \
     ../../libs/include \
     ../../libs/hdf5/include \
     ../../libs/zlib/include 
@@ -255,7 +253,7 @@ win32 {
         -o \
         ${QMAKE_FILE_OUT}
 }
-unix {
+unix:!macx {
     # auto-detect CUDA path
     # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     CUDA_DIR = /usr/local/cuda

@@ -349,9 +349,7 @@ void DisplayWidget::
     c.wavelet_std_t( 1.5f * std_t ); // One standard deviation is not enough, but heavy. Two standard deviations are even more heavy.
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.chunk_size = ((unsigned)(c.wavelet_std_t() * FS/32))*32;
-    if (s.chunk_size > 1<<12)
-        s.chunk_size = spo2g(c.wavelet_std_t() * FS);
+    s.set_approximate_chunk_size( c.wavelet_std_t() * FS );
 
     if ( 0 != dynamic_cast<Tfr::Stft*>( _renderer->collection()->ChunkSink::chunk_transform().get() ))
         receiveSetTransform_Stft();

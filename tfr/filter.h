@@ -29,14 +29,14 @@ public:
       */
     virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const = 0;
 
-    Signal::SamplesIntervalDescriptor getTouchedSamples( unsigned FS ) const;
-
     /**
-      TODO Define how/when enabled should be used
+      TODO Define how/when enabled should be used. Should all sources have an
+      enabled property?
       */
     bool enabled;
 };
 typedef boost::shared_ptr<Filter> pFilter;
+
 
 class FilterChain: public Filter, public std::list<pFilter>
 {
@@ -45,6 +45,7 @@ public:
     virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
     virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 };
+
 
 class SelectionFilter: public Filter
 {
@@ -63,6 +64,7 @@ private:
     SelectionFilter(const SelectionFilter& );
 };
 
+
 class EllipsFilter: public Filter
 {
 public:
@@ -75,6 +77,7 @@ public:
     float _t1, _f1, _t2, _f2;
 	bool _save_inside;
 };
+
 
 class SquareFilter: public Filter
 {
@@ -89,6 +92,7 @@ public:
     bool _save_inside;
 };
 
+
 class MoveFilter: public Filter
 {
 public:
@@ -101,6 +105,7 @@ public:
     float _df;
 };
 
+
 class ReassignFilter: public Filter
 {
 public:
@@ -112,6 +117,7 @@ public:
     virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
     virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
 };
+
 
 class TonalizeFilter: public Filter
 {

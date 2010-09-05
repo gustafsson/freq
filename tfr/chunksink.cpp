@@ -16,7 +16,7 @@ pChunk ChunkSink::
         return getChunkStft( b, s );
 
     if ( !_transform )
-        throw std::invalid_argument("'chunk_transform' is null, should be an instance of Tfr::Transform");
+        throw std::invalid_argument("'chunk_transform' must be set to an instance of Tfr::Transform after initialization");
 
     throw std::invalid_argument("'chunk_transform' is neither an instance of Tfr::Stft or Tfr::Cwt");
 }

@@ -10,14 +10,17 @@
 namespace Tfr {
 
 
-// TODO perhaps Chunk should extend Signal::Bufer
+// TODO perhaps Chunk should extend Signal::Buffer? Or would that be too
+// confusing?
 class Chunk
 {
 public:
     Chunk( );
 
     /**
-      A FreqAxis is used to translate frequencies to indicies and vice versa.
+      Each transform computes different frequency distributions. An instance of
+      FreqAxis is used for translating frequencies to chunk indicies and vice
+      versa. FreqAxis can be used within Cuda kernels.
       */
     FreqAxis freqAxis();
 
@@ -75,7 +78,8 @@ public:
     bool valid() const {
         return 0 != transform_data->getSizeInBytes1D() &&
                0 != sample_rate &&
-               min_hz < max_hz;
+               min_hz < max_hz &&
+               (order == Order_row_major || order == Order_column_major);
     }
 
     float2 debug_getNearestCoeff( float t, float f );  /// For debugging

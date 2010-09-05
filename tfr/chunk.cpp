@@ -34,6 +34,9 @@ unsigned Chunk::
 
     case Order_column_major:
         return sample*nScales() + f_index;
+
+    default:
+        return 0;
     }
 }
 
@@ -42,15 +45,15 @@ float2 Chunk::
         debug_getNearestCoeff( float t, float f )
 {
     if (!valid())
-        return make_float2(0,0);
+        return make_float2(0.f/0.f, 0.f/0.f);
 
     if ( t < 0 ) t = 0;
-    unsigned s = (unsigned)(t*sample_rate+.5);
-    if ( s >= nSamples() ) s=nSamples()-1;
+
+    unsigned s = (unsigned)(t*sample_rate+.5f);
 
     unsigned fi = freqAxis().getFrequencyIndex(f);
 
-    return transform_data->getCpuMemoryConst()[ fi*nSamples() + s ];
+    return transform_data->getCpuMemoryConst()[ offset(s, fi) ];
 }
 
 
@@ -64,13 +67,13 @@ FreqAxis Chunk::
     switch (axis_scale)
     {
     case AxisScale_Logarithmic:
-        x.nscales = nScales();
-        x.logf_step = (1.f/(nScales()-1)) * (log(max_hz)-log(min_hz));
+        x.max_frequency_scalar = nScales() - 1;
+        x.logf_step = (1.f/x.max_frequency_scalar) * (log(max_hz)-log(min_hz));
         break;
 
     case AxisScale_Linear:
-        x.nscales = nScales() / 2; // just discard half of the scales
-        x.f_step = (1.f/(x.nscales-1)) * (max_hz - min_hz);
+        x.max_frequency_scalar = nScales()/2 - 1; // real transform, discard upper redundant half of spectra
+        x.f_step = (1.f/x.max_frequency_scalar) * (max_hz - min_hz);
         break;
 
     default:

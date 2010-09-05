@@ -35,6 +35,17 @@ Collection::
     _complexInfo(ComplexInfo_Amplitude_Weighted)
 {
     chunk_transform( Tfr::Cwt::SingletonP() );
+
+    // Updated as soon as the first chunk is received
+    _min_sample_size.scale = 1;
+    _min_sample_size.time = 1;
+    update_sample_size();
+
+
+    _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
+    _display_scale.f_min = 20;
+    _display_scale.max_frequency_scalar = 1;
+    _display_scale.logf_step = log(22050)-log(20);
 }
 
 
@@ -81,6 +92,8 @@ void Collection::
         TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk->getInterval().first, chunk->getInterval().last);
         return;
     }
+
+    update_sample_size( chunk.get() );
 
     // TODO these are filter operations, move them into filters
     switch(0){
@@ -348,24 +361,32 @@ unsigned Collection::
     return t;
 }
 
-Position Collection::
-        min_sample_size()
-{
-    unsigned FS = worker->source()->sample_rate();
-    return Position( 1.f/FS,
-                     0.01f/Tfr::Cwt::Singleton().nScales( FS ) );
-}
-
-Position Collection::
-        max_sample_size()
+void Collection::
+        update_sample_size( Tfr::Chunk* chunk )
 {
     Signal::pSource wf = worker->source();
-    float length = wf->length();
-    Position minima=min_sample_size();
 
-    return Position( std::max(minima.time, 2.f*length/_samples_per_block),
-                     std::max(minima.scale, 1.f/_scales_per_block) );
+    if (chunk)
+    {
+        Tfr::FreqAxis fx = chunk->freqAxis();
+
+        _min_sample_size.time = 1.f / chunk->sample_rate;
+
+        // Assuming frequency resolution (in Hz, not log Hz) is the highest near 0.
+        unsigned bottom_index = fx.getFrequencyIndex( _display_scale.f_min );
+        float min_delta_hz = fx.getFrequency( bottom_index + 1) - fx.getFrequency( bottom_index );
+        _min_sample_size.scale = _display_scale.getFrequencyScalar( min_delta_hz );
+        // Old naive one: _min_sample_size.scale = 1.f/Tfr::Cwt::Singleton().nScales( FS ) );
+    }
+
+    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);;
+    _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
+
+    // Allow for some bicubic mesh interpolation when zooming in
+    _min_sample_size.scale *= 0.25;
+    _min_sample_size.time *= 0.25;
 }
+
 
 /*
   Canonical implementation of findReference
@@ -398,8 +419,8 @@ Reference Collection::
     sampleSize.time = fabs(sampleSize.time);
     sampleSize.scale = fabs(sampleSize.scale);
 
-    Position minSampleSize = min_sample_size();
-    Position maxSampleSize = max_sample_size();
+    Position minSampleSize = _min_sample_size;
+    Position maxSampleSize = _max_sample_size;
     if (sampleSize.time > maxSampleSize.time)
         sampleSize.time = maxSampleSize.time;
     if (sampleSize.scale > maxSampleSize.scale)
@@ -514,12 +535,12 @@ void Collection::
 
     ChunkSink::chunk_transform( transform );
 
-    // Remove this special case, it should be equally fast without this and more responsive
-    if ( 0 != dynamic_cast<Tfr::Stft*>(transform.get()) )
+    // TODO Remove this special case, it should be equally fast without this and more responsive
+    /*if ( 0 != dynamic_cast<Tfr::Stft*>(transform.get()) )
     {
         QMutexLocker l(&_cache_mutex);
         _cache.clear();
-    }
+    }*/
 
     add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
 }
@@ -660,9 +681,11 @@ pBlock Collection::
 
             // fill block by STFT
             {
+                Tfr::Stft trans;
+                trans.set_approximate_chunk_size(1 << 12); // 4096
                 TaskTimer tt(TaskTimer::LogVerbose, "stft");
                 try {
-                    prepareFillStft( block );
+                    prepareFillStft( &trans, block );
                     CudaException_CHECK_ERROR();
                 } catch (const CudaException& x ) {
                     // prepareFillStft doesn't have a limit on how large
@@ -673,10 +696,11 @@ pBlock Collection::
                 }
             }
 
-            if ( 0 != dynamic_cast<Tfr::Stft*>(_transform.get()))
+/*            if ( 0 != dynamic_cast<Tfr::Stft*>(_transform.get()))
             {
                 block->valid_samples = block->ref.getInterval();
-            } else {
+            } else */
+            {
                 // TODO compute at what log2_samples_size[1] stft is more accurate
                 // than low resolution blocks.
                 if (1) {
@@ -809,26 +833,28 @@ void Collection::
 
 // TODO prepareFillStft should be the same as putting any other chunk
 void Collection::
-        prepareFillStft( pBlock block )
+        prepareFillStft( Tfr::Transform* transp, pBlock block )
 {
+    Tfr::Stft* transfp = dynamic_cast<Tfr::Stft*>(transp);
+    if (0 == transfp)
+        throw std::invalid_argument("transp must be an instance of Tfr::Stft*");
+
+    Tfr::Stft& trans = *transfp;
+
     Position a, b;
     block->ref.getArea(a,b);
-    float tmin = Tfr::Cwt::Singleton().min_hz();
-    float tmax = Tfr::Cwt::Singleton().max_hz( worker->source()->sample_rate() );
-
-    Tfr::Stft& trans = Tfr::Stft::Singleton();
 
     Signal::pSource fast_source = Signal::Operation::fast_source( worker->source() );
 
     unsigned first_sample = (unsigned)(a.time*fast_source->sample_rate()),
              last_sample = (unsigned)(b.time*fast_source->sample_rate()),
-             margin = trans.chunk_size;
+             margin = trans.chunk_size();
     if (first_sample >= margin)
-        first_sample = ((first_sample - margin)/trans.chunk_size) * trans.chunk_size;
+        first_sample = ((first_sample - margin)/trans.chunk_size()) * trans.chunk_size();
     else
         first_sample = 0;
 
-    last_sample = ((last_sample + margin)/trans.chunk_size) * trans.chunk_size;
+    last_sample = ((last_sample + margin)/trans.chunk_size()) * trans.chunk_size();
 
     unsigned n_samples = last_sample - first_sample;
 //    first_sample = 0;
@@ -836,6 +862,19 @@ void Collection::
     Signal::pBuffer buff = fast_source->readFixedLength( first_sample, n_samples );
 
     Tfr::pChunk stft = trans( buff );
+
+    mergeStftBlock(stft, block);
+}
+
+void Collection::
+        mergeStftBlock( Tfr::pChunk stft, pBlock block )
+{
+    Position a, b;
+    block->ref.getArea(a,b);
+    Signal::pSource fast_source = Signal::Operation::fast_source( worker->source() );
+
+    float tmin = Tfr::Cwt::Singleton().min_hz();
+    float tmax = Tfr::Cwt::Singleton().max_hz( worker->source()->sample_rate() );
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
@@ -851,7 +890,7 @@ void Collection::
                   out_offset,
                   stft->min_hz,
                   stft->max_hz,
-                  trans.chunk_size,
+                  stft->nScales(),
                   0);
 }
 
@@ -891,8 +930,16 @@ void Collection::
                 // for a hopefully more local and thus faster loop.
                 if (!(chunkSid & pb->ref.getInterval()).isEmpty())
                 {
-                    if (mergeBlock( &*pb, &*chunk, 0 ))
+                    if ( 0 != dynamic_cast<Tfr::Stft*>(_transform.get ()))
+                    {
+                        mergeStftBlock( chunk, pb );
                         computeSlope( pb, 0 );
+                    }
+                    else
+                    {
+                        if (mergeBlock( &*pb, &*chunk, 0 ))
+                            computeSlope( pb, 0 );
+                    }
                 }
                 pb->glblock->unmap();
             }
