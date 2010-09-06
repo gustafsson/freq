@@ -1,6 +1,8 @@
 #ifndef SIGNALAUDIOFILE_H
 #define SIGNALAUDIOFILE_H
 
+#include "buffersource.h"
+
 /*
     TODO update reference manual
     input signal, 1D, can be sound, matlab vector or data-file
@@ -97,17 +99,17 @@
         a resampling operation if the two signals don't have the same sample rate. These kind of operations are
         called Layers.
 
-        Some non-so-trivial operations require Filters on the Cwt domain and are called FilterOperations. The
-        filter of a FilterOperation is always a FilterChain and might in turn invoke several filters.
+        Some non-so-trivial operations require Filters on the Cwt domain and are called CwtFilters. The
+        filter of a CwtFilter is always a FilterChain and might in turn invoke several filters.
 
         Buffer = Tfr::InverseCwt( _filter_chain ( Tfr::Cwt ( buffer ) ) )
-        (If the filterchain is empty, the FilterOperation doesn't do anything and returns the Buffer immediately.)
+        (If the filterchain is empty, the CwtFilter doesn't do anything and returns the Buffer immediately.)
 
         Filters suited for the filterchain is for instance to move a Buffer in frequency, or to scale a signal in
         frequency.
 
-        FilterOperations are the only part of Signal:: that is aware of Tfr.
-        Tfr is well aware of Signal, but not FilterOperations.
+        CwtFilters are the only part of Signal:: that is aware of Tfr.
+        Tfr is well aware of Signal, but not CwtFilters.
 
         This kind of structure is called streams or image streams.
         Operations are connected to form a chain of operations, and there are an OperationIterator which can travel
@@ -132,8 +134,8 @@
         the tree once each frame.
 
         If an operation has been altered, but in a way such that most parts of the Source remain unaffected (for instance
-        a small circle-remove filter is inserted in a FilterOperation). The InvalidSamplesDescriptor for that
-        FilterOperation is updated by _myIsd |= oldFilter->updateIsd(). Each filter is responsible for maintaining
+        a small circle-remove filter is inserted in a CwtFilter). The InvalidSamplesDescriptor for that
+        CwtFilter is updated by _myIsd |= oldFilter->updateIsd(). Each filter is responsible for maintaining
         its own InvalidSamplesDescriptor for data that has not been requested for.
 
     Time Frequency Representation/Distribution transform,
@@ -232,38 +234,17 @@
 
 namespace Signal
 {
-std::string getFileFormatsQtFilter( bool split );
-
-class Audiofile: public Source
+class Audiofile: public BufferSource
 {
 public:
+    static std::string getFileFormatsQtFilter( bool split );
 
     Audiofile(std::string filename);
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
-    virtual unsigned sample_rate();
-    virtual long unsigned number_of_samples();
-
-    pBuffer getChunkBehind() { return _waveform; }
-    void setChunk( pBuffer chunk ) { _waveform = chunk; }
     std::string filename() const { return _original_filename; }
 
 private:
-    Audiofile();
-
-    pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
-    void appendChunk( pBuffer chunk );
-
-    pSource crop();
-
-    unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
-
-private:
-
-    pBuffer _waveform;
-
     std::string _original_filename;
-    std::string _last_filename;
 };
 
 } // namespace Signal

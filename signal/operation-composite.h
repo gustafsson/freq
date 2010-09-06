@@ -2,7 +2,7 @@
 #define SIGNALOPERATIONCOMPOSITE_H
 
 #include "signal/operation.h"
-#include "signal/filteroperation.h"
+#include "tfr/cwtfilter.h"
 
 namespace Signal {
 
@@ -143,9 +143,9 @@ public:
 
 class OperationMoveSelection: public OperationSubOperations {
 public:
-	OperationMoveSelection( pSource source, Tfr::pFilter selectionFilter, int sampleShift, float freqDelta );
+    OperationMoveSelection( pSource source, Signal::pSource selectionFilter, int sampleShift, float freqDelta );
 
-	void reset( Tfr::pFilter selectionFilter, int sampleShift, float freqDelta );
+    void reset( Signal::pSource selectionFilter, int sampleShift, float freqDelta );
 };
 
 } // namespace Signal

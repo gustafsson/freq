@@ -7,7 +7,7 @@
 #include <QGLWidget>
 #include "heightmap/renderer.h"
 #include "sawe/mainplayback.h"
-#include "signal/filteroperation.h"
+#include "tfr/cwtfilter.h"
 #include "signal/postsink.h"
 #include <boost/shared_ptr.hpp>
 #include <TAni.h>
@@ -54,11 +54,11 @@ struct MyVector{
 class DisplayWidget :
         public QGLWidget,
         public Signal::Sink //, /* sink is used as microphone callback */
-//        public QTimer
+//        public QTimer && // TODO tidy
 {
     Q_OBJECT
 public:
-    DisplayWidget( Signal::pWorker worker, Signal::pSink collection );
+    DisplayWidget( Signal::pWorker worker, Heightmap::pCollection collection );
     virtual ~DisplayWidget();
     int lastKey;
     
@@ -73,7 +73,7 @@ public:
 
 	bool isRecordSource();
     void setWorkerSource( Signal::pSource s = Signal::pSource());
-    void setTimeline( Signal::pSink timelineWidget );
+    void setTimeline( QWidget* timelineWidget );
     void setPosition( float time, float f );
 
     Signal::pWorker worker() { return _worker; }
@@ -81,7 +81,7 @@ public:
     unsigned playback_device;
     Heightmap::Collection* collection() { return _renderer->collection(); }
     Heightmap::pRenderer renderer() { return _renderer; }
-    Signal::FilterOperation* getFilterOperation();
+    Tfr::CwtFilter* getCwtFilter();
 
     void drawSelection();
 
@@ -141,7 +141,6 @@ protected slots:
 
 signals:
     void operationsUpdated( Signal::pSource s );
-    void filterChainUpdated( Tfr::pFilter f );
     void setSelectionActive(bool);
     void setNavigationActive(bool);
     void setInfoToolActive(bool);
@@ -153,7 +152,7 @@ private:
     virtual void put( Signal::pBuffer b, Signal::pSource );
     virtual void add_expected_samples( const Signal::Intervals& s );
 
-    Signal::PostSink* getPostSink();
+// TODO remove    Signal::PostSink* getPostSink();
 
     Heightmap::pRenderer _renderer;
     Signal::pWorker _worker;
@@ -161,7 +160,7 @@ private:
     Signal::pWorkerCallback _postsinkCallback;
     Signal::pSource _matlabfilter;
     Signal::pSource _matlaboperation;
-    Signal::pSink _timeline;
+    QWidget* _timeline;
     boost::scoped_ptr<TaskTimer> _work_timer;
     boost::scoped_ptr<TaskTimer> _render_timer;
 

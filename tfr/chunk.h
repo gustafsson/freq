@@ -10,8 +10,6 @@
 namespace Tfr {
 
 
-// TODO perhaps Chunk should extend Signal::Buffer? Or would that be too
-// confusing?
 class Chunk
 {
 public:
@@ -84,7 +82,7 @@ public:
 
     float2 debug_getNearestCoeff( float t, float f );  /// For debugging
 
-    Signal::Intervals::Interval getInterval() const;
+    Signal::Interval getInterval() const;
 };
 typedef boost::shared_ptr< Chunk > pChunk;
 

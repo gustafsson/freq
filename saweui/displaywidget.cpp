@@ -354,7 +354,7 @@ void DisplayWidget::
     if ( 0 != dynamic_cast<Tfr::Stft*>( _renderer->collection()->ChunkSink::chunk_transform().get() ))
         receiveSetTransform_Stft();
 
-    _renderer->collection()->add_expected_samples( Signal::Intervals::SamplesIntervalDescriptor_ALL );
+    _renderer->collection()->add_expected_samples( Signal::Intervals_ALL );
     update();
 }
 
@@ -500,9 +500,6 @@ void DisplayWidget::setWorkerSource( Signal::pSource s ) {
         _worker->source( s );
 
     // Update worker structure
-    Signal::FilterOperation* fo = getFilterOperation();
-
-    emit filterChainUpdated(fo->filter());
     emit operationsUpdated( _worker->source() );
 }
 
@@ -544,14 +541,14 @@ void DisplayWidget::receiveAddClearSelection(bool /*active*/)
             ef->_save_inside = false;
     }
 
-    Signal::FilterOperation *f;
+    Tfr::CwtFilter *f;
 
-    Signal::pSource postsink_filter( f = new Signal::FilterOperation( _worker->source(), Tfr::Cwt::SingletonP(), postsink->filter() ));
+    Signal::pSource postsink_filter( f = new Tfr::CwtFilter( _worker->source(), Tfr::Cwt::SingletonP(), postsink->filter() ));
     f->meldFilters();
 
     { // Test: MoveFilter
      /*   Tfr::pFilter move( new Tfr::MoveFilter( 10 ));
-        postsink_filter.reset(f = new Signal::FilterOperation( postsink_filter, move ));
+        postsink_filter.reset(f = new Tfr::CwtFilter( postsink_filter, move ));
         f->meldFilters();*/
     }
 
@@ -564,7 +561,7 @@ void DisplayWidget::receiveAddClearSelection(bool /*active*/)
 void DisplayWidget::
         receiveCropSelection()
 {
-    Signal::Operation *b = getFilterOperation();
+    Signal::Operation *b = getCwtFilter();
 
     // Find out what to crop based on selection
     unsigned FS = b->sample_rate();
@@ -592,7 +589,7 @@ void DisplayWidget::
 void DisplayWidget::
         receiveMoveSelection(bool v)
 {
-    Signal::Operation *b = getFilterOperation();
+    Signal::Operation *b = getCwtFilter();
 
     if (true==v) { // Button pressed
         // Remember selection
@@ -617,8 +614,8 @@ void DisplayWidget::
 
 
         // Invalidate rendering
-        Signal::Intervals sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-        sid -= filter->getUntouchedSamples( FS );
+        Signal::Intervals sid = Signal::Intervals_ALL;
+        sid -= filter->AffectedSamples();
 
         Signal::Intervals sid2 = sid;
         if (0<delta) sid2 += delta;
@@ -633,7 +630,7 @@ void DisplayWidget::
 void DisplayWidget::
         receiveMoveSelectionInTime(bool v)
 {
-    Signal::Operation *b = getFilterOperation();
+    Signal::Operation *b = getCwtFilter();
 
     if (true==v) { // Button pressed
         // Remember selection
@@ -675,7 +672,7 @@ void DisplayWidget::
 void DisplayWidget::
         receiveMatlabOperation(bool)
 {
-    Signal::Operation *b = getFilterOperation();
+    Signal::Operation *b = getCwtFilter();
 
     Signal::pSource read = b->source();
     if (_matlaboperation)
@@ -686,13 +683,13 @@ void DisplayWidget::
     _worker->start();
     setWorkerSource();
     update();
-    _renderer->collection()->add_expected_samples(Signal::Intervals::SamplesIntervalDescriptor_ALL);
+    _renderer->collection()->add_expected_samples(Signal::Intervals_ALL);
 }
 
 void DisplayWidget::
         receiveMatlabFilter(bool)
 {
-    Signal::FilterOperation * b = getFilterOperation();
+    Tfr::CwtFilter * b = getCwtFilter();
 
     Signal::pSource read = b->source();
     if (_matlabfilter)
@@ -702,7 +699,7 @@ void DisplayWidget::
     case 1: // Everywhere
         {
             Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
-            _matlabfilter.reset( new Signal::FilterOperation( read, Tfr::Cwt::SingletonP(), f));
+            _matlabfilter.reset( new Tfr::CwtFilter( read, Tfr::Cwt::SingletonP(), f));
             b->source( _matlabfilter );
             _worker->start();
         break;
@@ -710,13 +707,13 @@ void DisplayWidget::
     case 2: // Only inside selection
         {
         Tfr::pFilter f( new Sawe::MatlabFilter( "matlabfilter" ));
-        Signal::pSource s( new Signal::FilterOperation( read, Tfr::Cwt::SingletonP(), f));
+        Signal::pSource s( new Tfr::CwtFilter( read, Tfr::Cwt::SingletonP(), f));
 
         Tfr::EllipsFilter* e = dynamic_cast<Tfr::EllipsFilter*>(getPostSink()->filter().get());
         if (e)
             e->_save_inside = true;
 
-        _matlabfilter.reset( new Signal::FilterOperation( s, Tfr::Cwt::SingletonP(), getPostSink()->filter()));
+        _matlabfilter.reset( new Tfr::CwtFilter( s, Tfr::Cwt::SingletonP(), getPostSink()->filter()));
         b->source( _matlabfilter );
         break;
         }
@@ -734,8 +731,8 @@ void DisplayWidget::
         receiveTonalizeFilter(bool)
 {
     Tfr::pFilter f( new Tfr::TonalizeFilter());
-    Signal::FilterOperation *m;
-    Signal::pSource tonalize( m = new Signal::FilterOperation( _worker->source(), Tfr::Cwt::SingletonP(), f));
+    Tfr::CwtFilter *m;
+    Signal::pSource tonalize( m = new Tfr::CwtFilter( _worker->source(), Tfr::Cwt::SingletonP(), f));
     m->meldFilters();
     setWorkerSource(tonalize);
 
@@ -748,8 +745,8 @@ void DisplayWidget::
         receiveReassignFilter(bool)
 {
     Tfr::pFilter f( new Tfr::ReassignFilter());
-    Signal::FilterOperation *m;
-    Signal::pSource reassign( m = new Signal::FilterOperation( _worker->source(), Tfr::Cwt::SingletonP(), f));
+    Tfr::CwtFilter *m;
+    Signal::pSource reassign( m = new Tfr::CwtFilter( _worker->source(), Tfr::Cwt::SingletonP(), f));
     m->meldFilters();
     setWorkerSource(reassign);
 
@@ -774,7 +771,7 @@ void DisplayWidget::
         }
         case 'c': case 'C':
         {
-            Signal::FilterOperation* f = getFilterOperation();
+            Tfr::CwtFilter* f = getCwtFilter();
 
             Signal::SamplesIntervalDescriptor sid;
 
@@ -785,7 +782,7 @@ void DisplayWidget::
             setWorkerSource( f->source() );
             
             update();
-            // getFilterOperation will recreate an empty FilterOperation
+            // getCwtFilter will recreate an empty CwtFilter
             setWorkerSource();
             break;
         }
@@ -817,12 +814,12 @@ void DisplayWidget::add_expected_samples( const Signal::Intervals& )
 }
 
 
-Signal::FilterOperation* DisplayWidget::getFilterOperation()
+Tfr::CwtFilter* DisplayWidget::getCwtFilter()
 {
     Signal::pSource s = _worker->source();
-    Signal::FilterOperation* f = dynamic_cast<Signal::FilterOperation*>( s.get() );
+    Tfr::CwtFilter* f = dynamic_cast<Tfr::CwtFilter*>( s.get() );
     if (0 == f) {
-        f = new Signal::FilterOperation(s, Tfr::Cwt::SingletonP(), Tfr::pFilter());
+        f = new Tfr::CwtFilter(s, Tfr::Cwt::SingletonP(), Tfr::pFilter());
         s.reset( f );
         _worker->source( s );
     }
@@ -1264,7 +1261,7 @@ void DisplayWidget::paintGL()
         // When drawing displaywidget, always redraw the timeline as the
         // timeline has a marker showing the current render position of
         // displaywidget
-        if (_timeline) dynamic_cast<QWidget*>(_timeline.get())->update();
+        if (_timeline) _timeline->update();
     }
 
     {   // Find things to work on (ie playback and file output)
@@ -1772,7 +1769,7 @@ void DisplayWidget::gcDisplayList()
 
 void DisplayWidget::setSelection(int index, bool enabled)
 {
-    Signal::FilterOperation* f = getFilterOperation();
+    Tfr::CwtFilter* f = getCwtFilter();
     Tfr::FilterChain* c = dynamic_cast<Tfr::FilterChain*>( f->filter().get());
     if (0 == c || (index < 0 || index>=(int)c->size()))
         return;
@@ -1805,7 +1802,7 @@ void DisplayWidget::setSelection(int index, bool enabled)
 }
 
 void DisplayWidget::removeFilter(int index){
-    Signal::FilterOperation* f = getFilterOperation();
+    Tfr::CwtFilter* f = getCwtFilter();
     Tfr::FilterChain* c = dynamic_cast<Tfr::FilterChain*>( f->filter().get());
 
     if (0==c || index < 0) return;
@@ -1887,7 +1884,7 @@ void DisplayWidget::
     // Find Signal::Playback* instance
     Signal::Playback* pb = 0;
 
-    BOOST_FOREACH( Signal::pSink s, getPostSink()->sinks() )
+    BOOST_FOREACH( Signal::pSource s, worker()->callbacks() )
     {
         if ( 0 != (pb = dynamic_cast<Signal::Playback*>( s.get() )))
             break;

@@ -18,7 +18,7 @@ public:
     void stopRecording();
     bool isStopped();
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer read( const Interval& I );
     virtual unsigned sample_rate();
     virtual long unsigned number_of_samples();
 

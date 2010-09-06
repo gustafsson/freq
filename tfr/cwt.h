@@ -33,6 +33,8 @@ public:
     static pTransform SingletonP();
 
     virtual pChunk operator()( Signal::pBuffer );
+    virtual Signal::pBuffer inverse( pChunk );
+    static pChunk cleanChunk( const Chunk& );
 
     float     min_hz() const { return _min_hz; }
     void      min_hz(float f);

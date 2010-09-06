@@ -1,19 +1,19 @@
 #ifndef SAWEMATLABFILTER_H
 #define SAWEMATLABFILTER_H
 
-#include "tfr/filter.h"
+#include "tfr/cwtfilter.h"
 #include "sawe/matlaboperation.h"
 
 namespace Sawe {
 
-class MatlabFilter: public Tfr::Filter
+class MatlabFilter: public Tfr::CwtFilter
 {
 public:
     MatlabFilter( std::string matlabFunction );
 
     virtual void operator()( Tfr::Chunk& );
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
+    virtual Signal::Intervals ZeroedSamples() const;
+    virtual Signal::Intervals AffectedSamples() const;
 
 protected:
     MatlabFunction _matlab;

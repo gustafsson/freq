@@ -19,7 +19,7 @@ public:
     virtual void reset();
     virtual bool isFinished();
     virtual void onFinished();
-    virtual Intervals expected_samples() { return _data.expected_samples(); }
+    virtual Intervals expected_samples() { return _data.invalid_samples(); }
     virtual void add_expected_samples( const Intervals& s ) { _data.add_expected_samples( s ); }
 
     static void writeToDisk(std::string filename, pBuffer b);

@@ -4,6 +4,7 @@
 // Define _HDF5USEDLL_ to tell HDF5 to use dynamic library linking
 #define _HDF5USEDLL_
 
+#include "tfr/cwtfilter.h"
 #include "tfr/chunksink.h"
 #include <H5Ipublic.h>
 #include <H5Tpublic.h>
@@ -94,27 +95,31 @@ template<> std::string      Hdf5Input::read_exact<std::string>     ( std::string
   exists. The file is saved with the csv-format comma separated values, but values are
   actually separated by spaces. One row of the csv-file corresponds to one row of the chunk.
 */
-class Hdf5Sink: public Tfr::ChunkSink
+class Hdf5Chunk: public Tfr::CwtFilter
 {
 public:
-    enum DataType {
-        DataType_CHUNK,
-        DataType_BUFFER
-    };
+    Hdf5Chunk(std::string filename="sawe_chunk.h5");
 
-    Hdf5Sink(std::string filename="sawe_chunk.h5", bool saveChunk=true);
+    virtual void operator()( Tfr::Chunk& );
 
-    void    put( Signal::pBuffer , Signal::pSource );
-
-    static void             saveBuffer( std::string filename, const Signal::Buffer& );
     static void             saveChunk( std::string filename, const Tfr::Chunk& );
-
-    static Signal::pBuffer  loadBuffer( std::string filename );
     static Tfr::pChunk      loadChunk( std::string filename );
 
 private:
+    std::string _filename;
+};
 
-    bool _saveChunk;
+class Hdf5Buffer: public Signal::Sink
+{
+public:
+    Hdf5Buffer(std::string filename="sawe_buffer.h5");
+
+    virtual void put(Signal::pBuffer);
+
+    static void             saveBuffer( std::string filename, const Signal::Buffer& );
+    static Signal::pBuffer  loadBuffer( std::string filename );
+
+private:
     std::string _filename;
 };
 

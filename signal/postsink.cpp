@@ -1,5 +1,5 @@
 #include "postsink.h"
-#include "filteroperation.h"
+#include "cwtfilter.h"
 
 #include <boost/foreach.hpp>
 
@@ -109,8 +109,8 @@ void PostSink::
 
     if (f) {
         unsigned FS = s->sample_rate();
-        Intervals::Interval i =
-                (f->getTouchedSamples(FS) - f->getZeroSamples(FS)).coveredInterval();
+        Interval i =
+                (f->getTouchedSamples(FS) - f->ZeroedSamples(FS)).coveredInterval();
 
         i.last = std::min( i.last, (Intervals::SampleType)s->number_of_samples() );
 

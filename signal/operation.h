@@ -15,46 +15,55 @@ class Operation: public Source
 {
 public:
     /**
-      This constructor by itself creates a dummy Operation that redirects any
-      method calls to its _source.
+      This constructor by itself creates a dummy Operation that redirects 'read'
+      to its _source.
       */
     Operation( pSource source );
 
-    /**
-      The default implementation of read is to read from source()
-      */
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples )
+    /// The default implementation of read is to read from source()
+    virtual pBuffer read( Interval I )
     {
-        return source()->read(firstSample, numberOfSamples);
+        return source()->read( I );
     }
+
+    /**
+      If this Operation acts as a passive operation multiple Operations that
+      would otherwise run in parallell can be chained into eachother. An
+      operation is allowed to be passive in some parts and nonpassive in others.
+      'nonpassive_operation' describes where. 'nonpassive_operation' is allowed
+      to change over time as well, but invalid_samples must be changed
+      accordingly for new intervals to be computed.
+      */
+    virtual Intervals nonpassive_operation() { return Intervals(); }
+
 
     virtual unsigned sample_rate();
     virtual long unsigned number_of_samples();
     virtual pSource source() const { return _source; }
     virtual void source(pSource v) { _source=v; }
 
-    /**
-      Returns _invalid_samples merged with _source->invalid_samples.
-      */
-    Intervals invalid_samples();
+    /// Returns _invalid_samples merged with _source->invalid_samples.
+    virtual Intervals invalid_samples();
 
     static pSource first_source(pSource start);
 
-    /// finds last source that does not have a slow operation (i.e. FilterOperation) among its parents.
+    /// finds last source that does not have a slow operation (i.e. CwtFilter) among its sources.
     static pSource fast_source(pSource start);
+
+    /// Finds
+    static pSource non_place_holder(pSource start);
 
 protected:
     pSource _source;
 
     /**
       _invalid_samples describes which samples that should be re-read off from
-      Operation. It is initialized to SamplesIntervalDescriptor() and can be
+      Operation. It is initialized to an empty interval and can be
       used by an implementaion to say that the previous results are out of
-      date. If an implementaion use this feature it must also gradually worked
-      it off by calls to read.
+      date. If an implementaion use this feature it must also gradually work
+      it off by calls to validate_samples.
       */
     Intervals _invalid_samples;
-    void validate_samples( pBuffer b );
 };
 
 } // namespace Signal

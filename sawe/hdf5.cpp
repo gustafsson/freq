@@ -29,6 +29,7 @@ Hdf5Input::
     if (0>_file_id) throw runtime_error("Could not open HDF5 file named '" + filename + "'");
 }
 
+
 Hdf5Output::
         Hdf5Output(std::string filename)
 {
@@ -38,6 +39,7 @@ Hdf5Output::
     if (0>_file_id) throw runtime_error("Could not create HDF5 file named '" + filename + "'");
 }
 
+
 Hdf5Input::
         ~Hdf5Input()
 {
@@ -46,6 +48,7 @@ Hdf5Input::
         TaskTimer("Could not close HDF5 file (%d), got %d", _file_id, status).suppressTiming();;
 }
 
+
 Hdf5Output::
         ~Hdf5Output()
 {
@@ -53,6 +56,7 @@ Hdf5Output::
     if (0>status)
         TaskTimer("Could not close HDF5 file (%d), got %d", _file_id, status).suppressTiming();;
 }
+
 
 void Hdf5Input::
         findDataset(const std::string& name)
@@ -69,6 +73,7 @@ void Hdf5Input::
     if (1!=status) throw runtime_error("Hdf5 file does not contain a dataset named '" + strs[0] + "'");
 }
 
+
 vector<hsize_t> Hdf5Input::
         getInfo(const std::string& name, H5T_class_t* class_id)
 {
@@ -84,6 +89,7 @@ vector<hsize_t> Hdf5Input::
 
     return dims;
 }
+
 
 template<>
 void Hdf5Output::
@@ -107,6 +113,7 @@ void Hdf5Output::
 	herr_t      status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_FLOAT,p);
     if (0>status) throw runtime_error("Could not create and write a H5T_NATIVE_FLOAT type dataset named '" + name + "'");
 }
+
 
 template<>
 Signal::pBuffer Hdf5Input::
@@ -132,6 +139,7 @@ Signal::pBuffer Hdf5Input::
 
     return buffer;
 }
+
 
 template<>
 void Hdf5Output::
@@ -171,6 +179,7 @@ void Hdf5Output::
         if (0>status) throw runtime_error("Could not close HDF5 datatype");
     }
 }
+
 
 template<>
 Tfr::pChunk Hdf5Input::
@@ -238,6 +247,7 @@ Tfr::pChunk Hdf5Input::
     return chunk;
 }
 
+
 template<>
 void Hdf5Output::
         add( std::string name, const double& v)
@@ -248,6 +258,7 @@ void Hdf5Output::
     herr_t status = H5LTmake_dataset(_file_id,name.c_str(),1,one,H5T_NATIVE_DOUBLE,&v);
     if (0>status) throw runtime_error("Could not create and write a double type dataset named '" + name + "'");
 }
+
 
 template<>
 double Hdf5Input::
@@ -268,6 +279,7 @@ double Hdf5Input::
     return v;
 }
 
+
 template<>
 void Hdf5Output::
         add( std::string name, const std::string& s)
@@ -282,6 +294,7 @@ void Hdf5Output::
     herr_t status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_C_S1,p);
     if (0>status) throw runtime_error("Could not create and write a H5T_C_S1 type dataset named '" + name + "'");
 }
+
 
 template<>
 std::string Hdf5Input::
@@ -301,39 +314,36 @@ std::string Hdf5Input::
     return v;
 }
 
+
 static const char* dsetBuffer="buffer";
 static const char* dsetChunk="chunk";
 static const char* dsetOffset="offset";
 static const char* dsetSamplerate="samplerate";
 
-Hdf5Sink::
-        Hdf5Sink( std::string filename, bool saveChunk)
-:   _saveChunk(saveChunk),
-    _filename(filename)
+Hdf5Chunk::Hdf5Chunk( std::string filename)
+:   _filename(filename) {}
+Hdf5Buffer::Hdf5Buffer( std::string filename)
+:   _filename(filename) {}
+
+
+void Hdf5Chunk::
+        operator()( Tfr::Chunk& c )
 {
+    Tfr::pChunk chunk = Tfr::Cwt::cleanChunk(c);
+    Hdf5Chunk::saveChunk(_filename, *chunk);
 }
 
-void Hdf5Sink::
-        put( Signal::pBuffer b, Signal::pSource src )
+
+void Hdf5Buffer::
+    put( Signal::pBuffer b)
 {
-    if (_saveChunk) {
-        Tfr::pChunk chunk = getChunk( b, src );
-        chunk = cleanChunk(chunk);
-
-        if (chunk->n_valid_samples != b->number_of_samples()) {
-            TaskTimer("!!! Warning: requested %u sampels but chunk contains %u samples",
-                      b->number_of_samples(), chunk->n_valid_samples).suppressTiming();
-        }
-
-        Hdf5Sink::saveChunk(_filename, *chunk);
-    } else {
-        Hdf5Sink::saveBuffer(_filename, *b);
-    }
+    Hdf5Buffer::saveBuffer(_filename, *b);
 }
+
 
 // TODO save and load all properties of chunks and buffers, not only raw data.
 // The Hdf5 file is well suited for storing such data as well.
-void Hdf5Sink::
+void Hdf5Buffer::
         saveBuffer( string filename, const Signal::Buffer& cb)
 {
     Hdf5Output h5(filename);
@@ -343,7 +353,8 @@ void Hdf5Sink::
     h5.add<double>( dsetSamplerate, cb.sample_rate );
 }
 
-void Hdf5Sink::
+
+void Hdf5Chunk::
         saveChunk( string filename, const Tfr::Chunk &chunk )
 {
     Hdf5Output h5(filename);
@@ -352,7 +363,8 @@ void Hdf5Sink::
     h5.add<double>( dsetSamplerate, chunk.sample_rate );
 }
 
-Signal::pBuffer Hdf5Sink::
+
+Signal::pBuffer Hdf5Buffer::
         loadBuffer( string filename )
 {
     Hdf5Input h5(filename);
@@ -364,7 +376,8 @@ Signal::pBuffer Hdf5Sink::
     return b;
 }
 
-Tfr::pChunk Hdf5Sink::
+
+Tfr::pChunk Hdf5Chunk::
         loadChunk( string filename )
 {
     Hdf5Input h5(filename);

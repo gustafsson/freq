@@ -28,18 +28,22 @@ public:
            Interleaved interleaved = Only_Real
                                    );
 
-    boost::scoped_ptr<GpuCpuData<float> >   waveform_data;
-    unsigned                                sample_offset;
-    unsigned                                sample_rate;
+    boost::scoped_ptr<GpuCpuData<float> >
+                    waveform_data;
 
-    Interleaved                         interleaved() const {return _interleaved; }
-    unsigned                            number_of_samples() const { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
-    float                               start() const { return sample_offset/(float)sample_rate; }
-    float                               length() const { return number_of_samples()/(float)sample_rate; }
-    Intervals::Interval getInterval() const { Intervals::Interval i = {sample_offset, sample_offset + number_of_samples()}; return i; }
+    unsigned        sample_offset;
+    unsigned        sample_rate;
 
-    Buffer&                             operator|=(const Buffer& b);
-    boost::shared_ptr<Buffer>           getInterleaved(Interleaved) const;
+    Interleaved     interleaved() const { return _interleaved; }
+    unsigned        number_of_samples() const { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
+    float           start() const { return sample_offset/(float)sample_rate; }
+    float           length() const { return number_of_samples()/(float)sample_rate; }
+    Interval        getInterval() const { return Interval(sample_offset, sample_offset + number_of_samples()); }
+
+    Buffer&         operator|=(const Buffer& b);
+
+    boost::shared_ptr<Buffer>
+                    getInterleaved(Interleaved) const;
 
 private:
     const Interleaved _interleaved;
@@ -61,9 +65,9 @@ public:
     But it has to start at firstSample. The caller of read must allow for read
     to return Buffers of arbitrary sizes.
     */
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples ) = 0;
-    virtual pBuffer readChecked( unsigned firstSample, unsigned numberOfSamples );
-    virtual pBuffer readFixedLength( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer read( const Interval& I ) = 0;
+    virtual pBuffer readChecked( const Interval& I );
+    virtual pBuffer readFixedLength( const Interval& I );
     virtual unsigned sample_rate() = 0;
     virtual long unsigned number_of_samples() = 0;
 

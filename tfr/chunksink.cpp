@@ -1,6 +1,6 @@
 #include "chunksink.h"
 
-#include "signal/filteroperation.h"
+#include "tfr/cwtfilter.h"
 #include "tfr/wavelet.cu.h"
 
 static const bool D = false;
@@ -37,8 +37,8 @@ pChunk ChunkSink::
 {
     Tfr::pChunk chunk;
 
-    // If buffer comes directly from a Signal::FilterOperation
-    Signal::FilterOperation* filterOp = dynamic_cast<Signal::FilterOperation*>(s.get());
+    // If buffer comes directly from a Tfr::CwtFilter
+    Tfr::CwtFilter* filterOp = dynamic_cast<Tfr::CwtFilter*>(s.get());
 
     if (filterOp->transform() != this->_transform )
         filterOp = 0;
@@ -48,14 +48,14 @@ pChunk ChunkSink::
         // Not directly from a filterOp, do we have a source?
         if (s)
         {
-            // Yes, rely on FilterOperation to read from the source and create the chunk
+            // Yes, rely on CwtFilter to read from the source and create the chunk
             // We'll apply our own filter (chunk_filter) by the end of this method
-            s2.reset( filterOp = new Signal::FilterOperation( s, _transform, Tfr::pFilter()));
+            s2.reset( filterOp = new Tfr::CwtFilter( s, _transform, Tfr::pFilter()));
         }
     }
 
     if (filterOp) {
-        // use the Cwt chunk still stored in FilterOperation
+        // use the Cwt chunk still stored in CwtFilter
         chunk = filterOp->previous_chunk();
         if (D) if(chunk) Signal::Intervals(chunk->getInterval()).print("ChunkSink::getChunk stole filterOp chunk");
 

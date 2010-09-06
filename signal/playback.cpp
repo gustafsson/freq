@@ -264,7 +264,7 @@ bool Playback::
     float time_left =
             (expect.intervals().back().last - marker) / (float)_data.sample_rate();
 
-    Signal::Intervals::Interval cov = expect.coveredInterval();
+    Signal::Interval cov = expect.coveredInterval();
     float estimated_time_required =
             (cov.last - cov.first) / incoming_samples_per_sec;
 

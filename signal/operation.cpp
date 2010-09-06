@@ -1,5 +1,5 @@
 #include "signal/operation.h"
-#include "signal/filteroperation.h"
+#include "tfr/cwtfilter.h"
 
 namespace Signal {
 
@@ -56,7 +56,7 @@ pSource Operation::
         if (!o)
             break;
 
-        FilterOperation* f = dynamic_cast<FilterOperation*>(itr.get());
+        CwtFilter* f = dynamic_cast<CwtFilter*>(itr.get());
         if (f)
             r = f->source();
 

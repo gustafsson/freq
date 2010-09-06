@@ -42,7 +42,7 @@ protected:
 
 public slots:
     void updateOperationsTree( Signal::pSource s);
-    void updateLayerList( Tfr::pFilter f );
+    void updateLayerList( Signal::pSource s );
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);

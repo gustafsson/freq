@@ -83,9 +83,9 @@ bool MicrophoneRecorder::isStopped()
 }
 
 pBuffer MicrophoneRecorder::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
-    return _data.readFixedLength( firstSample, numberOfSamples );
+    return _data.readFixedLength( I );
 }
 
 unsigned MicrophoneRecorder::

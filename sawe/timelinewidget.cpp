@@ -15,15 +15,14 @@ using namespace Signal;
 namespace Sawe {
 
 TimelineWidget::
-        TimelineWidget(  pSink displayWidget )
-:   QGLWidget( 0, dynamic_cast<QGLWidget*>(displayWidget.get()), Qt::WindowFlags(0) ),
+        TimelineWidget( QGLWidget* displayWidget )
+:   QGLWidget( 0, displayWidget, Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
-    _movingTimeline( 0 ),
-    _displayWidget(displayWidget)
+    _movingTimeline( 0 )
 {
-    BOOST_ASSERT( dynamic_cast<DisplayWidget*>(displayWidget.get()) );
+    BOOST_ASSERT( dynamic_cast<DisplayWidget*>(displayWidget) );
 
     if (!context() || !context()->isSharing())
     {

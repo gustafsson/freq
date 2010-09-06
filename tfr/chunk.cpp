@@ -84,10 +84,10 @@ FreqAxis Chunk::
 }
 
 
-Signal::Intervals::Interval Chunk::
+Signal::Interval Chunk::
         getInterval() const
 {
-    Signal::Intervals::Interval i = {
+    Signal::Interval i = {
         chunk_offset + first_valid_sample,
         chunk_offset + first_valid_sample + n_valid_samples
     };

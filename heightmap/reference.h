@@ -43,7 +43,7 @@ public:
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
       invalid samples.
       */
-    Signal::Intervals::Interval getInterval() const;
+    Signal::Interval getInterval() const;
 private:
     friend class Collection;
 

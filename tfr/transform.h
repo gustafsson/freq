@@ -35,17 +35,23 @@ public:
 
 
     /**
+      Well, transform a chunk back into a buffer.
+      */
+    virtual Signal::pBuffer inverse( pChunk chunk ) = 0;
+
+
+    /**
       At what time resolution (1/sample rate) it is meaningful to display the
       computed Chunks.
       */
-    virtual float displayedTimeResolution() { return 1/44100.f;}
+    virtual float displayedTimeResolution() { return 1/44100.f; }
 
 
     /**
       At what frequency resolution (smallest f(i+1)/f(i)) it is meaningful to
       display the computed Chunks.
       */
-    virtual float displayedFrequencyResolution() { return 0.f;}
+    virtual float displayedFrequencyResolution() { return 1.01f; }
 
 
     /**

@@ -3,133 +3,64 @@
 
 #include "sawe/selection.h"
 #include "signal/intervals.h"
+#include "signal/operation.h"
+#include "tfr/transform.h"
 
 #include <list>
 #include <boost/shared_ptr.hpp>
 
 
 namespace Tfr {
-struct Chunk;
 
-class Filter: Signal::
+class Filter: public Signal::Operation
 {
 public:
+    /**
+      To simplify logic within Filters they can be put inside an Operation
+      group and get their sources set explicitly.
+      */
     Filter();
+    Filter( Signal::pSource source );
+
     virtual ~Filter() {}
+
+    virtual Signal::pBuffer read( const Signal::Interval& I );
 
     virtual void operator()( Chunk& ) = 0;
 
-    /**
-      These samples are definitely set to 0 by the filter.
-      */
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const = 0;
+    virtual Tfr::pTransform transform() const = 0;
+    virtual void transform( Tfr::pTransform m ) = 0;
+
 
     /**
-      These samples are definitely left as is by the filter.
+      These samples are definitely set to 0 by the filter. As default non are
+      known to always be set to zero.
       */
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const = 0;
+    virtual Signal::Intervals ZeroedSamples() const { return Signal::Intervals(); }
 
     /**
-      TODO Define how/when enabled should be used. Should all sources have an
-      enabled property?
+      These samples are needed and possibly affected by the filter.
+      ZeroedSamples is assumed to be a subset of AffectedSamples. As default all
+      samples are possibly affected by the filter.
+      */
+    virtual Signal::Intervals AffectedSamples() { return Signal::Intervals::Intervals_ALL; }
+
+    /**
+      TODO Define how/when enabled should be used. Should all sources (or all
+      Operationshave) an enabled property?
       */
     bool enabled;
-};
-typedef boost::shared_ptr<Filter> pFilter;
 
+protected:
+    /**
+      Meant to be used between Filters of the same kind to avoid transforming
+      back and forth multiple times.
+      */
+    virtual pChunk readChunk( const Signal::Interval& I ) = 0;
 
-class FilterChain: public Filter, public std::list<pFilter>
-{
-public:
-    virtual void operator()( Chunk& );
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
-};
-
-
-class SelectionFilter: public Filter
-{
-public:
-    SelectionFilter( Selection s );
-
-    virtual void operator()( Chunk& );
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
-
-    Selection s;
-
-private:
-	// Why not copyable?
-    SelectionFilter& operator=(const SelectionFilter& );
-    SelectionFilter(const SelectionFilter& );
+    Tfr::pTransform _transform;
 };
 
-
-class EllipsFilter: public Filter
-{
-public:
-    EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
-
-    virtual void operator()( Chunk& );
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
-
-    float _t1, _f1, _t2, _f2;
-	bool _save_inside;
-};
-
-
-class SquareFilter: public Filter
-{
-public:
-    SquareFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
-
-    virtual void operator()( Chunk& );
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
-
-    float _t1, _f1, _t2, _f2;
-    bool _save_inside;
-};
-
-
-class MoveFilter: public Filter
-{
-public:
-    MoveFilter(float df);
-
-    virtual void operator()( Chunk& );
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
-
-    float _df;
-};
-
-
-class ReassignFilter: public Filter
-{
-public:
-    ReassignFilter();
-
-    virtual void operator()( Chunk& );
-
-    // No zero samples, no untouched samples
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
-};
-
-
-class TonalizeFilter: public Filter
-{
-public:
-    TonalizeFilter();
-
-    virtual void operator()( Chunk& );
-
-    // No zero samples, no untouched samples
-    virtual Signal::Intervals getZeroSamples( unsigned FS ) const;
-    virtual Signal::Intervals getUntouchedSamples( unsigned FS ) const;
-};
 
 } // namespace Tfr
 

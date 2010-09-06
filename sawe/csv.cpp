@@ -22,15 +22,15 @@ string csv_number()
     return basename+"0.csv";
 }
 
+
 void Csv::
-        put( Signal::pBuffer b, Signal::pSource src )
+        operator()( Tfr::Chunk& c )
 {
     string filename = csv_number();
     TaskTimer tt("Saving CSV-file %s", filename.c_str());
     ofstream csv(filename.c_str());
 
-    Tfr::pChunk chunk = getChunk( b, src );
-    chunk = cleanChunk(chunk);
+    Tfr::pChunk chunk = Tfr::Cwt::cleanChunk(c);
 
     float2* p = chunk->transform_data->getCpuMemory();
     cudaExtent s = chunk->transform_data->getNumberOfElements();

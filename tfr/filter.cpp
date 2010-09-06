@@ -1,382 +1,75 @@
 #include "filter.h"
-#include "chunk.h"
-#include "filter.cu.h"
-#include "sawe/selection.h"
-
-#include <functional>
-#include <CudaException.h>
-#include <float.h>
-#include <boost/foreach.hpp>
-
-//#define TIME_FILTER
-#define TIME_FILTER if(0)
 
 namespace Tfr {
 
 //////////// Filter
 Filter::
-Filter()
-:   enabled(true)
-{
-}
-
-Signal::Intervals Filter::
-        getTouchedSamples( unsigned FS ) const
-{
-    Signal::Intervals sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-    sid -= getUntouchedSamples(FS);
-    return sid;
-}
-
-//////////// FilterChain
-
-class apply_filter
-{
-    Chunk& t;
-public:
-    apply_filter( Chunk& t):t(t) {}
-
-    void operator()( pFilter p) {
-        if(!p.get()->enabled)
-            return;
-
-        (*p)( t );
-    }
-};
-
-void FilterChain::operator()( Chunk& t) {
-    std::for_each(begin(), end(), apply_filter( t ));
-}
-
-Signal::Intervals FilterChain::
-        getZeroSamples( unsigned FS ) const
-{
-    Signal::Intervals sid;
-
-    BOOST_FOREACH( pFilter f, *this ) {
-        sid |= f->getZeroSamples( FS );
-    }
-
-	return sid;
-}
-
-Signal::Intervals FilterChain::
-        getUntouchedSamples( unsigned FS ) const
-{
-    Signal::Intervals sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-
-    BOOST_FOREACH( pFilter f, *this ) {
-        sid &= f->getUntouchedSamples( FS );
-    }
-
-    return sid;
-}
-
-//////////// SelectionFilter
-
-SelectionFilter::SelectionFilter( Selection s ) {
-    this->s = s;
-    enabled = true;
-}
-
-void SelectionFilter::operator()( Chunk& chunk) {
-    TIME_FILTER TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
-
-    if (dynamic_cast<RectangleSelection*>(&s))
-    {
-        RectangleSelection *rs = dynamic_cast<RectangleSelection*>(&s);
-        float4 area = make_float4(
-            rs->p1.time * chunk.sample_rate - chunk.chunk_offset,
-            rs->p1.scale * chunk.nScales(),
-            rs->p2.time * chunk.sample_rate - chunk.chunk_offset,
-            rs->p2.scale * chunk.nScales());
-
-        ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
-                      chunk.transform_data->getNumberOfElements(),
-                      area );
-    }
-    else if (dynamic_cast<EllipseSelection*>(&s))
-    {
-        EllipseSelection *es = dynamic_cast<EllipseSelection*>(&s);
-        float4 area = make_float4(
-            es->p1.time * chunk.sample_rate - chunk.chunk_offset,
-            es->p1.scale * chunk.nScales(),
-            es->p2.time * chunk.sample_rate - chunk.chunk_offset,
-            es->p2.scale * chunk.nScales());
-
-        bool save_inside = false;
-        ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
-                      chunk.transform_data->getNumberOfElements(),
-                      area, save_inside );
-    }
-    else
-    {
-        return;
-    }
-
-    TIME_FILTER CudaException_ThreadSynchronize();
-    return;
-}
-
-Signal::Intervals SelectionFilter::
-        getZeroSamples( unsigned FS ) const
-{
-    Signal::Intervals sid;
-
-    if (!s.inverted)
-    {   float fstart_time, fend_time;
-        s.range(fstart_time, fend_time);
-
-        unsigned
-            start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
-            end_time = (unsigned)(std::max(0.f, fend_time)*FS);
-
-        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-        if (start_time < end_time)
-                sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid;
-}
-
-Signal::Intervals SelectionFilter::
-        getUntouchedSamples( unsigned FS ) const
-{
-    Signal::Intervals sid;
-
-    if (s.inverted) {
-        float fstart_time, fend_time;
-        s.range(fstart_time, fend_time);
-
-        unsigned
-            start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
-            end_time = (unsigned)(std::max(0.f, fend_time)*FS);
-
-        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-        if (start_time < end_time)
-                sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid;
-}
-
-//////////// EllipsFilter
-EllipsFilter::EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside)
-{
-    _t1 = t1;
-    _f1 = f1;
-    _t2 = t2;
-    _f2 = f2;
-    _save_inside = save_inside;
-    enabled = true;
-}
-
-void EllipsFilter::operator()( Chunk& chunk) {
-    TIME_FILTER TaskTimer tt("EllipsFilter");
-
-    float4 area = make_float4(
-            _t1 * chunk.sample_rate - chunk.chunk_offset,
-            _f1 * chunk.nScales(),
-            _t2 * chunk.sample_rate - chunk.chunk_offset,
-            _f2 * chunk.nScales());
-
-    ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
-                  chunk.transform_data->getNumberOfElements(),
-                  area, _save_inside );
-
-    TIME_FILTER CudaException_ThreadSynchronize();
-}
-
-Signal::Intervals EllipsFilter::
-        getZeroSamples( unsigned FS ) const
-{
-    Signal::Intervals sid;
-
-    if (_save_inside)
-    {
-        unsigned
-            start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
-            end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
-
-        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-        if (start_time < end_time)
-                sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid;
-}
-
-Signal::Intervals EllipsFilter::
-        getUntouchedSamples( unsigned FS ) const
-{
-    Signal::Intervals sid;
-
-    if (!_save_inside)
-    {
-        unsigned
-            start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
-            end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
-
-        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-        if (start_time < end_time)
-                sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid;
-}
-
-//////////// SquareFilter
-SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_inside) {
-    _t1 = std::min(t1, t2);
-    _f1 = std::min(f1, f2);
-    _t2 = std::max(t1, t2);
-    _f2 = std::max(f1, f2);
-    _save_inside = save_inside;
-    enabled = true;
-}
-
-void SquareFilter::operator()( Chunk& chunk) {
-    TIME_FILTER TaskTimer tt("SquareFilter");
-
-    float4 area = make_float4(
-        _t1 * chunk.sample_rate - chunk.chunk_offset,
-        _f1 * chunk.nScales(),
-        _t2 * chunk.sample_rate - chunk.chunk_offset,
-        _f2 * chunk.nScales());
-
-    ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
-                  chunk.transform_data->getNumberOfElements(),
-                  area );
-
-    TIME_FILTER CudaException_ThreadSynchronize();
-}
-
-Signal::Intervals SquareFilter::
-        getZeroSamples( unsigned FS ) const
-{
-    Signal::Intervals sid;
-
-    if (_save_inside)
-    {
-        unsigned
-            start_time = (unsigned)(std::max(0.f, _t1)*FS),
-            end_time = (unsigned)(std::max(0.f, _t2)*FS);
-
-        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-        if (start_time < end_time)
-            sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid;
-}
-
-Signal::Intervals SquareFilter::
-        getUntouchedSamples( unsigned FS ) const
-{
-    Signal::Intervals sid;
-
-    if (!_save_inside)
-    {
-        unsigned
-            start_time = (unsigned)(std::max(0.f, _t1)*FS),
-            end_time = (unsigned)(std::max(0.f, _t2)*FS);
-
-        sid = Signal::Intervals::SamplesIntervalDescriptor_ALL;
-        if (start_time < end_time)
-            sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid;
-}
-
-//////////// MoveFilter
-MoveFilter::
-        MoveFilter(float df)
-:   _df(df)
+        Filter()
+            :
+            Operation( pSource() ),
+            enabled(true)
 {}
 
-void MoveFilter::
-        operator()( Chunk& chunk )
-{
-    TIME_FILTER TaskTimer tt("MoveFilter");
-
-    float df = _df * chunk.nScales();
-
-    ::moveFilter( chunk.transform_data->getCudaGlobal(),
-                  df, chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate, chunk.chunk_offset );
-
-    TIME_FILTER CudaException_ThreadSynchronize();
-}
-
-Signal::Intervals MoveFilter::
-        getZeroSamples( unsigned /* always return constant */ ) const
-{
-    return Signal::Intervals();
-}
-
-Signal::Intervals MoveFilter::
-        getUntouchedSamples( unsigned /* always return constant */ ) const
-{
-    return Signal::Intervals();
-}
-
-//////////// ReassignFilter
-ReassignFilter::
-        ReassignFilter()
+Filter::
+        Filter( pSource source )
+            :
+            Operation( source ),
+            enabled(true)
 {}
 
-void ReassignFilter::
-        operator()( Chunk& chunk )
-{
-    TIME_FILTER TaskTimer tt("ReassignFilter");
 
-    for (unsigned reassignLoop=0;reassignLoop<1;reassignLoop++)
+Signal::pBuffer Filter::
+        read(  const Signal::Interval& I )
+{
+    unsigned firstSample = I.first;
+    unsigned numberOfSamples = I.count;
+
+    // If we're not asked to compute a chunk, try to take shortcuts
+    if (!_save_previous_chunk)
     {
-        ::reassignFilter( chunk.transform_data->getCudaGlobal(),
-                      chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+        Intervals work(first_valid_sample, first_valid_sample + numberOfSamples);
+
+        // If filter would make all these samples zero, make them zero and return immediately
+        if ((work - _filter->ZeroedSamples( _source->sample_rate() )).isEmpty())
+        {
+            // Doesn't have to read from source, just create a buffer with all samples set to 0
+            pBuffer b( new Buffer( first_valid_sample, numberOfSamples, _source->sample_rate() ));
+
+            ::memset( b->waveform_data->getCpuMemory(), 0, b->waveform_data->getSizeInBytes1D());
+
+            TIME_CwtFilter Intervals(b->getInterval()).print("CwtFilter silent");
+            return b;
+        }
+
+        // If filter would leave all these samples unchanged, return immediately
+        if ((work & _filter->NeededSamples()).isEmpty())
+        {
+            // Attempt a regular simple read
+            pBuffer b = _source->read(first_valid_sample, numberOfSamples);
+            work = b->getInterval();
+            work -= _filter->NeededSamples().inverse();
+
+            if (work.isEmpty()) {
+                TIME_CwtFilter Intervals(b->getInterval()).print("CwtFilter unaffected");
+                return b;
+            }
+
+            // If _source returned some parts that we didn't ask for,
+            // try again and explicitly take out those samples
+
+            TIME_CwtFilter Intervals(b->getInterval()).print("FilterOp fixed unaffected");
+            // Failed, return the exact samples validated as untouched
+            return _source->readFixedLength(first_valid_sample, numberOfSamples);
+        }
     }
 
-    TIME_FILTER CudaException_ThreadSynchronize();
-}
+    // If we've reached this far, the transform will have to be computed
+    pChunk c = readChunk(firstSample, numberOfSamples);
 
-Signal::Intervals ReassignFilter::
-        getZeroSamples( unsigned /* always return constant */ ) const
-{
-    return Signal::Intervals();
-}
+    Signal::pBuffer r = transform()->inverse( c );
 
-Signal::Intervals ReassignFilter::
-        getUntouchedSamples( unsigned /* always return constant */ ) const
-{
-    return Signal::Intervals();
-}
-
-//////////// TonalizeFilter
-TonalizeFilter::
-        TonalizeFilter()
-{}
-
-void TonalizeFilter::
-        operator()( Chunk& chunk )
-{
-    TIME_FILTER TaskTimer tt("TonalizeFilter");
-
-    ::tonalizeFilter( chunk.transform_data->getCudaGlobal(),
-                  chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
-
-    TIME_FILTER CudaException_ThreadSynchronize();
-}
-
-Signal::Intervals TonalizeFilter::
-        getZeroSamples( unsigned /* always return constant */ ) const
-{
-    return Signal::Intervals();
-}
-
-Signal::Intervals TonalizeFilter::
-        getUntouchedSamples( unsigned /* always return constant */ ) const
-{
-    return Signal::Intervals();
+    _invalid_samples -= r->getInterval();
+    return r;
 }
 
 } // namespace Tfr

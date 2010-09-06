@@ -13,7 +13,7 @@ class TimelineWidget:
 {
     Q_OBJECT
 public:
-    TimelineWidget( Signal::pSink displayWidget );
+    TimelineWidget(QGLWidget* displayWidget);
     virtual ~TimelineWidget();
 
     // overloaded from Signal::Sink
@@ -39,7 +39,7 @@ private:
     int _movingTimeline;
     MouseControl moveButton;
 
-    Signal::pSink _displayWidget;
+    Signal::pSource _displayWidget;
     DisplayWidget * getDisplayWidget();
 };
 

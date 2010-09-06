@@ -50,8 +50,8 @@ Playback is notified via Signal::Sink::put( pBuffer, pSource ) as a callback
 function by registering itself as a Signal::Sink in tfr-worker. Tr::Waveform
 is notified by the same callback. Heightmap rendering is also notified by the
 same callback and will have to compute the cwt of the Buffer, unless
-dynamic_cast<FilterOperation*>(source.get())==true in which case Heightmap
-rendering can reuse the cwt previously computed in the FilterOperation.
+dynamic_cast<CwtFilter*>(source.get())==true in which case Heightmap
+rendering can reuse the cwt previously computed in the CwtFilter.
 
 These callbacks are invoked by different threads if there are multiple GPUs
 available, one thread per GPU and CUDA context. The callback may use any CUDA
@@ -75,14 +75,14 @@ created by the GroupOperation.
 1/ GroupOperation: MergeOperation Root
 9 Operation remove section [Rendering]
 8 Operation: Amplitude*0.5
-7 FilterOperation: remove ellips
+7 CwtFilter: remove ellips
 6 GroupOperation: move selection in frequency
   2 Operation: merge extracted selection at new location in time
-  2 FilterOperation: resample at new frequency
-  1 FilterOperation: extract selection
+  2 CwtFilter: resample at new frequency
+  1 CwtFilter: extract selection
 5 GroupOperation: move selection in time
   2 Operation: merge extracted selection at new location in time
-  1 FilterOperation: extract selection
+  1 CwtFilter: extract selection
 4 Operation: remove section
 3 Operation: remove section
 2 GroupOperation: move section
@@ -170,6 +170,11 @@ public:
 	  */
 	void				checkForErrors();
 
+    /**
+      Get all callbacks that data are sent to after each workOne.
+      */
+    std::vector<pSource> callbacks();
+
 private:
     friend class WorkerCallback;
 
@@ -179,24 +184,26 @@ private:
     virtual void run();
 
     /**
-      A ChunkCompleteCallback adds itself to a cwtqueue.
+      A WorkerCallback adds itself to a Worker.
+    @throws invalid_argument if 'c' is not an instance of Signal::Sink.
       */
-    void addCallback( pSink c );
+    void addCallback( pSource c );
 
     /**
-      A ChunkCompleteCallback removes itself from a cwtqueue.
+      A WorkerCallback removes itself from a Worker.
+    @throws invalid_argument if 'c' is not an instance of Signal::Sink.
       */
-    void removeCallback( pSink c );
+    void removeCallback( pSource c );
 
     /**
       Self explanatory.
       */
-    void callCallbacks( pBuffer );
+    pBuffer callCallbacks( Interval i );
 
     /**
       All callbacks in this list are called once for each call of workOne().
       */
-    std::list<pSink> _callbacks;
+    std::vector<pSource> _callbacks;
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
@@ -233,9 +240,11 @@ private:
     unsigned _requested_fps;
 
 	/**
-	  If an exception is caught while executing Worker::run, caught_exception.what() is non-zero.
-	  */
-        std::runtime_error _caught_exception;
+      Worker::run is intended to be executed by a separate worker thread. To
+      simplify error handling in the GUI thread exceptions are caught by
+      Worker::run and stored. A client may poll with: caught_exception.what()
+      */
+    std::runtime_error _caught_exception;
 	std::invalid_argument _caught_invalid_argument;
 };
 typedef boost::shared_ptr<Worker> pWorker;
@@ -246,20 +255,21 @@ typedef boost::shared_ptr<Worker> pWorker;
   */
 class WorkerCallback: boost::noncopyable {
 public:
-    WorkerCallback( pWorker w, pSink s )
+    WorkerCallback( pWorker w, pSource s )
         :   _w(w),
             _s(s)
     {
+        // Relies on addCallback for error detection
         _w->addCallback( _s );
     }
     ~WorkerCallback( ) { _w->removeCallback( _s ); }
 
     pWorker worker() { return _w; }
-    pSink sink() { return _s; }
+    Sink* sink() { return (Sink*)_s.get(); }
 
 private:
     pWorker _w;
-    pSink _s;
+    pSource _s;
 };
 typedef boost::shared_ptr<WorkerCallback> pWorkerCallback;
 

@@ -161,22 +161,22 @@ MatlabOperation::
 }
 
 pBuffer MatlabOperation::
-        readRaw( unsigned firstSample, unsigned numberOfSamples )
+        readRaw( const Interval& I )
 {
-    TaskTimer tt("MatlabOperation::read(%u,%u)", firstSample, numberOfSamples );
+    TaskTimer tt("MatlabOperation::read(%u,%u), count = %u", I.first, I.last, (Signal::IntervalType)I.count );
 
-    pBuffer b = _source->read( firstSample, numberOfSamples );
+    pBuffer b = _source->read( I );
 
 	string file = _matlab.getTempName();
 
-	Hdf5Sink::saveBuffer( file, *b );
+    Hdf5Buffer::saveBuffer( file, *b );
 
     file = _matlab.invokeAndWait( file );
 
 	if (file.empty())
 		return b;
 
-	pBuffer b2 = Hdf5Sink::loadBuffer( file );
+    pBuffer b2 = Hdf5Buffer::loadBuffer( file );
 	b->waveform_data.swap( b2->waveform_data );
 
 	::remove( file.c_str());

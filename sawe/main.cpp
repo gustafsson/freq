@@ -322,9 +322,9 @@ int main(int argc, char *argv[])
 				return -1;
 			}
 
-            Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
-
-            Sawe::Csv().put( b, p->head_source );
+            Sawe::Csv csv;
+            csv.source( p->head_source );
+            csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
         }
 
         if (_get_hdf != (unsigned)-1) {
@@ -333,9 +333,9 @@ int main(int argc, char *argv[])
 				return -1;
 			}
 
-			Signal::pBuffer b = p->head_source->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
-
-            Sawe::Hdf5Sink().put( b, p->head_source );
+            Sawe::Hdf5Chunk hdf5;
+            hdf5.source( p->head_source );
+            hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
         }
 
         if (_get_chunk_count != false) {

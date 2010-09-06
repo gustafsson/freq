@@ -6,7 +6,7 @@
 #ifndef SELECTION_H
 #define SELECTION_H
 
-// TODO move to after Selection
+// TODO move to after definition of class Selection
 typedef boost::shared_ptr<class Selection> pSelection;
 
 // TODO never use "using namespace" in header file
@@ -61,4 +61,5 @@ public:
 class SplineSelection: public PolySelection
 {};
 
+// TODO end files with #endif // SELECTION_H
 #endif

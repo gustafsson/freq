@@ -38,6 +38,9 @@ RESOURCES += \
     saweui/icon-resources.qrc \
 
 SOURCES += \
+    filters/reassign.cpp \
+    filters/ridge.cpp \
+    heightmap/blockfilter.cpp \
     heightmap/collection.cpp \
     heightmap/glblock.cpp \
     heightmap/reference.cpp \
@@ -57,16 +60,15 @@ SOURCES += \
     saweui/propertiesselection.cpp \
     saweui/propertiesstroke.cpp \
     signal/audiofile.cpp \
-    signal/filteroperation.cpp \
+    signal/buffersource.cpp \
     signal/microphonerecorder.cpp \
-    signal/operation-basic.cpp \
-    signal/operationcache.cpp \
-    signal/operation-composite.cpp \
     signal/operation.cpp \
+    signal/operation-basic.cpp \
+    signal/operation-composite.cpp \
+    signal/operationcache.cpp \
     signal/playback.cpp \
     signal/postsink.cpp \
     signal/intervals.cpp \
-    signal/sink.cpp \
     signal/sinksource.cpp \
     signal/source.cpp \
     signal/worker.cpp \
@@ -74,13 +76,19 @@ SOURCES += \
     tfr/chunk.cpp \
     tfr/chunksink.cpp \
     tfr/cwt.cpp \
+    tfr/cwtfilter.cpp \
     tfr/fft4g.c \
     tfr/filter.cpp \
+    tfr/filters.cpp \
     tfr/inversecwt.cpp \
     tfr/stft.cpp \
+    tfr/stftfilter.cpp \
 
 HEADERS += \
+    filters/reassign.h \
+    filters/ridge.h \
     heightmap/block.cu.h \
+    heightmap/blockfilter.h \
     heightmap/collection.h \
     heightmap/glblock.h \
     heightmap/position.h \
@@ -102,12 +110,12 @@ HEADERS += \
     saweui/propertiesselection.h \
     saweui/propertiesstroke.h \
     signal/audiofile.h \
-    signal/filteroperation.h \
+    signal/buffersource.h \
     signal/microphonerecorder.h \
-    signal/operation-basic.h \
-    signal/operationcache.h \
-    signal/operation-composite.h \
     signal/operation.h \
+    signal/operation-basic.h \
+    signal/operation-composite.h \
+    signal/operationcache.h \
     signal/playback.h \
     signal/postsink.h \
     signal/intervals.h \
@@ -119,13 +127,16 @@ HEADERS += \
     tfr/chunk.h \
     tfr/chunksink.h \
     tfr/cwt.h \
+    tfr/cwtfilter.h \
     tfr/filter.cu.h \
     tfr/filter.h \
+    tfr/filters.h \
     tfr/freqaxis.h \
     tfr/inversecwt.h \
     tfr/stft.h \
     tfr/transform.h \
     tfr/wavelet.cu.h \
+    tfr/stftfilter.h \
 
 FORMS += \
     saweui/mainwindow.ui \

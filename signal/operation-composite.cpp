@@ -172,15 +172,15 @@ void OperationMoveSelection::
 		pchain->push_back(extract);
 		pchain->push_back(moveFilter);
 
-		// Create FilterOperation for applying filters
-                extractAndMoveSelection.reset(new Signal::FilterOperation( Operation::source(), Tfr::Cwt::SingletonP(), chain ));
+		// Create CwtFilter for applying filters
+                extractAndMoveSelection.reset(new Tfr::CwtFilter( Operation::source(), Tfr::Cwt::SingletonP(), chain ));
 
 		// Create operation to move selection
 		if (0!=sampleShift)
 			extractAndMoveSelection.reset( new OperationShift( extractAndMoveSelection, sampleShift ));
 	}
 
-        Signal::pSource removeSelection( new Signal::FilterOperation( Operation::source(), Tfr::Cwt::SingletonP(), remove ));
+        Signal::pSource removeSelection( new Tfr::CwtFilter( Operation::source(), Tfr::Cwt::SingletonP(), remove ));
 
 	Signal::pSource mergeSelection( new Signal::OperationSuperposition( removeSelection, extractAndMoveSelection ));
 

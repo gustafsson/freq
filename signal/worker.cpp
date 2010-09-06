@@ -1,8 +1,9 @@
 #include "worker.h"
 #include "intervals.h"
-#include "filteroperation.h"
+#include "cwtfilter.h"
+#include "buffersource.h"
 
-#include "tfr/cwt.h"
+#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory
 
 #include <QTime>
 #include <QMutexLocker>
@@ -60,27 +61,18 @@ bool Worker::
 
     ptime startTime = microsec_clock::local_time();
 
-    Intervals::Interval interval;
+    Interval interval;
     interval = todo_list().getInterval( _samples_per_chunk, center_sample );
 
     pBuffer b;
 
     try
     {
-        {
-            stringstream ss;
-            TIME_WORKER TaskTimer tt("Reading source %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
-
-            b = _source->readFixedLength( interval.first, interval.last-interval.first );
-            work_time += b->length();
-            QMutexLocker l(&_todo_lock);
-            _todo_list -= b->getInterval();
-        }
-
         {   stringstream ss;
-            TIME_WORKER TaskTimer tt("Calling callbacks %s", ((std::stringstream&)(ss<<b->getInterval())).str().c_str() );
+            TIME_WORKER TaskTimer tt("Reading source and calling callbacks %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
 
-            callCallbacks( b );
+            pBuffer b = callCallbacks( interval );
+            work_time += b->length();
         }
 
         CudaException_CHECK_ERROR();
@@ -180,9 +172,6 @@ unsigned Worker::
 }
 
 
-///// PRIVATE
-
-
 void Worker::
         requested_fps(unsigned value)
 {
@@ -192,6 +181,7 @@ void Worker::
         _requested_fps = value;
     }
 }
+
 
 void Worker::
 		checkForErrors()
@@ -208,6 +198,19 @@ void Worker::
 		throw x;
 	}
 }
+
+
+std::vector<pSource> Worker::
+        callbacks()
+{
+    QMutexLocker l(&_callbacks_lock);
+    std::vector<pSource> c = _callbacks;
+    return c;
+}
+
+
+///// PRIVATE
+
 
 void Worker::
         run()
@@ -245,6 +248,8 @@ void Worker::
 void Worker::
         addCallback( pSink c )
 {
+    BOOST_ASSERT(dynamic_cast<Sink*>(c.get()));
+
     QMutexLocker l( &_callbacks_lock );
     _callbacks.push_back( c );
 }
@@ -252,29 +257,63 @@ void Worker::
 void Worker::
         removeCallback( pSink c )
 {
+    BOOST_ASSERT(dynamic_cast<Sink*>(c.get()));
+
     QMutexLocker l( &_callbacks_lock );
     _callbacks.remove( c );
 }
 
-void Worker::
-        callCallbacks( pBuffer b )
+pBuffer Worker::
+        callCallbacks( Interval i )
 {
-    list<pSink> worklist;
+    vector<pSource> worklist;
     {
         QMutexLocker l( &_callbacks_lock );
         worklist = _callbacks;
     }
+    vector<pSource> passive_operations;
+    vector<pSource> active_operations;
 
-    BOOST_FOREACH( pSink c, worklist ) {
-        c->put( b, _source );
+    BOOST_FOREACH( pSource c, worklist ) {
+        Sink* s = (Sink*)c.get();
+        if (s->nonpassive_operation() & I )
+            active_operations.push_back(c);
+        else
+            passive_operations.push_back(c);
     }
 
-    b->waveform_data->getCpuMemory();
-    b->waveform_data->freeUnused();
+    pSource prev = source();
+    BOOST_FOREACH( pSource c, passive_operations) {
+        Sink* s = (Sink*)c.get();
+        s->source(prev);
+        prev = c;
+    }
 
-    FilterOperation* f = dynamic_cast<FilterOperation*>(_source.get());
-    if (f)
-        f->release_previous_chunk();
+    if (1==active_operations.size())
+    {
+        Sink* s = (Sink*)active_operations.front();
+        s->source(prev);
+        prev = c;
+        active_operations.clear();
+    }
+
+    pBuffer b = prev->read( I );
+
+    QMutexLocker l(&_todo_lock);
+    _todo_list -= b->getInterval();
+
+    if (!active_operations.empty())
+    {
+        prev.reset( new BufferSource( b ));
+        BOOST_FOREACH( pSource c, active_operations) {
+            Sink* s = (Sink*)c.get();
+            s->source(prev);
+            prev = c;
+        }
+        prev->read( I );
+    }
+
+    return b;
 }
 
 } // namespace Signal

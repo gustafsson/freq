@@ -114,7 +114,7 @@ Buffer& Buffer::
     if (sid.isEmpty())
         return *this;
 
-    Intervals::Interval i = sid.getInterval(p->number_of_samples());
+    Interval i = sid.getInterval(p->number_of_samples());
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - p->sample_offset;
@@ -156,7 +156,7 @@ pBuffer Source::
         sid -= p->getInterval();
 
         if (!sid.isEmpty()) {
-            Intervals::Interval i = sid.getInterval( Intervals::SampleType_MAX );
+            Interval i = sid.getInterval( Intervals::SampleType_MAX );
             p = readChecked( i.first, i.last - i.first );
         }
     }

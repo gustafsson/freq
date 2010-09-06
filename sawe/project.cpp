@@ -23,10 +23,10 @@ Project::
 {
     TaskTimer tt("~Project");
     if (_mainWindow)
-		displayWidget()->setTimeline( Signal::pSink() );
+        displayWidget()->setTimeline( 0 );
     _timelineWidgetCallback.reset();
-    _timelineWidget.reset();
-    _displayWidget.reset();
+    // _timelineWidget.reset(); // TODO howto clear QWidgets?
+    // _displayWidget.reset();
     _mainWindow.reset();
 }
 
@@ -46,10 +46,10 @@ pProject Project::
     }
 
     if (0 == filename.length()) {
-        string filter = Signal::getFileFormatsQtFilter( false ).c_str();
+        string filter = Signal::Audiofile::getFileFormatsQtFilter( false ).c_str();
         filter = "All files (*.sonicawe " + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
-        filter += Signal::getFileFormatsQtFilter( true ).c_str();
+        filter += Signal::Audiofile::getFileFormatsQtFilter( true ).c_str();
 
 		QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilemame.length()) {
@@ -125,9 +125,9 @@ void Project::
     _mainWindow.reset( new MainWindow( title.c_str()));
 
     Signal::pWorker wk( new Signal::Worker( head_source ) );
-    Heightmap::Collection* sgp( new Heightmap::Collection(wk) );
-    Signal::pSink sg( sgp );
-    _displayWidget.reset( new DisplayWidget( wk, sg ) );
+    Heightmap::pCollection cl( new Heightmap::Collection(wk) );
+    // TODO Qt memory management?
+    _displayWidget.reset( new DisplayWidget( wk, cl ) );
 
     _mainWindow->connectLayerWindow( displayWidget() );
     _mainWindow->setCentralWidget( displayWidget() );
@@ -142,14 +142,15 @@ void Project::
     displayWidget()->setPosition( L, 0.5f );
 
     {
-        _timelineWidget.reset( new TimelineWidget( _displayWidget ) );
-        _mainWindow->setTimelineWidget( dynamic_cast<QWidget*>(_timelineWidget.get()) );
+        // TODO Qt memory management?
+        _timelineWidget.reset( new TimelineWidget( dynamic_cast<QGLWidget*>(_displayWidget.get()) ));
+        _mainWindow->setTimelineWidget( dynamic_cast<QGLWidget*>(_timelineWidget.get()) );
     }
 
     //_displayWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _displayWidget ));
     _timelineWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _timelineWidget ));
 
-    displayWidget()->setTimeline( _timelineWidget );
+    displayWidget()->setTimeline( dynamic_cast<QGLWidget*>( _timelineWidget.get() ));
     displayWidget()->show();
     _mainWindow->hide();
     _mainWindow->show();

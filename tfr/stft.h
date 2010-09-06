@@ -41,7 +41,8 @@ public:
     Fft( /*cudaStream_t stream=0*/ );
     ~Fft();
 
-    pChunk operator()( Signal::pBuffer b ) { return forward(b); }
+    virtual pChunk operator()( Signal::pBuffer b ) { return forward(b); }
+    virtual Signal::pBuffer inverse( pChunk c ) { return backward(c); }
 
     pChunk forward( Signal::pBuffer );
     Signal::pBuffer backward( pChunk );
@@ -72,7 +73,8 @@ public:
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
       */
-    pChunk operator()( Signal::pBuffer );
+    virtual pChunk operator()( Signal::pBuffer );
+    virtual Signal::pBuffer inverse( pChunk ) { throw std::logic_error("Not implemented"); }
 
     unsigned chunk_size() { return _chunk_size; }
     unsigned set_approximate_chunk_size( unsigned preferred_size );

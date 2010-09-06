@@ -190,7 +190,7 @@ void MainWindow::slotDeleteSelection(void)
 
 void MainWindow::connectLayerWindow(DisplayWidget *d)
 {
-    connect(d, SIGNAL(filterChainUpdated(Tfr::pFilter)), this, SLOT(updateLayerList(Tfr::pFilter)));
+    connect(d, SIGNAL(operationsUpdated(Signal::pSource)), this, SLOT(updateLayerList(Signal::pSource)));
     connect(d, SIGNAL(operationsUpdated(Signal::pSource)), this, SLOT(updateOperationsTree(Signal::pSource)));
     connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(receiveCurrentSelection(int, bool)));
     connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(receiveFilterRemoval(int)));
@@ -247,7 +247,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     ui->actionActivateNavigation->setChecked(true);
 
     updateOperationsTree( d->worker()->source() );
-    d->getFilterOperation();
+    d->getCwtFilter();
 
     if (d->isRecordSource()) {
         this->ui->actionRecord->setEnabled(true);
@@ -374,7 +374,7 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pSource s, OperationGra
         title << file->filename();
         tooltip << "Reading from file: " << file->filename();
     }
-    else if ( Signal::FilterOperation* filter_operation = dynamic_cast<Signal::FilterOperation*>(s.get()))
+    else if ( Tfr::CwtFilter* filter_operation = dynamic_cast<Tfr::CwtFilter*>(s.get()))
     {
         title << "Filter";
         tooltip << "Filter Operation";
@@ -574,7 +574,7 @@ void MainWindow::updateOperationsTree( Signal::pSource s )
     ::updateOperationsTree( head, graph, w, vertex_descriptor_null );
 }
 
-void MainWindow::updateLayerList( Tfr::pFilter f )
+void MainWindow::updateLayerList( Signal::pSource s )
 {
     ui->layerWidget->clear();
 

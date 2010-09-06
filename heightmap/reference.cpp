@@ -137,7 +137,7 @@ unsigned Reference::
     return _collection->samples_per_block();
 }
 
-Signal::Intervals::Interval Reference::
+Signal::Interval Reference::
         getInterval() const
 {
     // Similiar to getArea, but uses 1./sample_rate() instead of
@@ -155,7 +155,7 @@ Signal::Intervals::Interval Reference::
     float endTime = startTime + blockLocalSize;
 
     unsigned FS = _collection->worker->source()->sample_rate();
-    Signal::Intervals::Interval i = { startTime * FS, endTime * FS };
+    Signal::Interval i( startTime * FS, endTime * FS );
 
     //Position a, b;
     //getArea( a, b );

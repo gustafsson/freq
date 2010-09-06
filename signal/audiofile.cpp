@@ -27,9 +27,8 @@ typedef __int64 __int64_t;
 using namespace std;
 
 namespace Signal {
-const char *selection_name = "selection.wav";
 
-std::string getSupportedFileFormats (bool detailed=false) {
+static std::string getSupportedFileFormats (bool detailed=false) {
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
     char buffer [128] ;
@@ -76,7 +75,11 @@ std::string getSupportedFileFormats (bool detailed=false) {
     return ss.str();
 }
 
-std::string getFileFormatsQtFilter( bool split ) {
+
+// static
+std::string Audiofile::
+        getFileFormatsQtFilter( bool split )
+{
     SF_FORMAT_INFO	info ;
     SF_INFO 		sfinfo ;
     char buffer [128] ;
@@ -115,18 +118,13 @@ std::string getFileFormatsQtFilter( bool split ) {
 }
 
 
-Audiofile::
-        Audiofile()
-{
-    _waveform.reset( new Buffer());
-}
-
 /**
   Reads an audio file using libsndfile
   */
 Audiofile::
         Audiofile(std::string filename)
-:   _original_filename(filename)
+:   _selected_channel(0),
+    _original_filename(filename)
 {
     _waveform.reset( new Buffer());
 
@@ -243,6 +241,10 @@ pBuffer Audiofile::getChunk( unsigned firstSample, unsigned numberOfSamples, uns
     return chunk;
 }
 
+
+/**
+  Remove zeros from the beginning and end
+  */
 pSource Audiofile::crop() {
     unsigned num_frames = _waveform->waveform_data->getNumberOfElements().width;
     unsigned channel_count = _waveform->waveform_data->getNumberOfElements().height;

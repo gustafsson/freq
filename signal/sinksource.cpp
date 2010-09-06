@@ -62,7 +62,7 @@ void SinkSource::
                 // accomplished the same
                 ss._cache.push_back( b );
 
-                BOOST_FOREACH( const Intervals::Interval i, sid.intervals() )
+                BOOST_FOREACH( const Interval i, sid.intervals() )
                 {
                     pBuffer s = ss.readFixedLength( i.first, i.last-i.first );
                     merge( s );
@@ -117,7 +117,7 @@ void SinkSource::
     Intervals sid = samplesDesc();
 	std::vector<pBuffer> new_cache;
 
-	BOOST_FOREACH( Intervals::Interval i, sid.intervals() )
+	BOOST_FOREACH( Interval i, sid.intervals() )
 	{
 		for(unsigned L=0; i.first < i.last; i.first+=L)
 		{
@@ -167,7 +167,7 @@ void SinkSource::
 
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            BOOST_FOREACH( Intervals::Interval i, toKeep.intervals() )
+            BOOST_FOREACH( Interval i, toKeep.intervals() )
             {
                 if(D) ss << " +" << i;
 

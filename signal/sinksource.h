@@ -9,7 +9,7 @@
 
 namespace Signal {
 
-class SinkSource: public Sink, public Source
+class SinkSource: public Operation
 {
 public:
     enum AcceptStrategy {
@@ -19,11 +19,10 @@ public:
 
     SinkSource( AcceptStrategy a );
 
-    void put( pBuffer );
-    virtual void put( pBuffer b, pSource ) { put (b); }
-    virtual void reset();
+    void put( pBuffer b );
+    void reset();
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer read( const Interval& I );
     /**
       sample rate is defined as (unsigned)-1 if _cache is empty.
       */
@@ -35,6 +34,7 @@ public:
     unsigned size();
 
     Intervals samplesDesc();
+    virtual void add_expected_samples( const Intervals& s ) { _invalid_samples |= s; }
 
 private:
     QMutex _cache_mutex;

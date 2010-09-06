@@ -7,7 +7,7 @@
 #include <QMutex>
 
 namespace Signal {
-
+/*
 class PostSink: public Tfr::ChunkSink
 {
 public:
@@ -29,7 +29,7 @@ private:
     QMutex _sinks_lock;
     std::vector<pSink> _sinks;
 };
-
+*/
 } // namespace Signal
 
 #endif // SIGNALPOSTSINK_H

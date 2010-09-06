@@ -61,7 +61,7 @@ class MatlabOperation: public Signal::OperationCache
 public:
     MatlabOperation( Signal::pSource source, std::string matlabFunction );
 
-    virtual Signal::pBuffer readRaw( unsigned firstSample, unsigned numberOfSamples );
+    virtual Signal::pBuffer readRaw( const Signal::Interval& I );
 protected:
     MatlabFunction _matlab;
 };

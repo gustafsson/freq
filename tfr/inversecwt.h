@@ -1,3 +1,5 @@
+// TODO remove file
+
 #ifndef TFRINVERSECWT_H
 #define TFRINVERSECWT_H
 
@@ -24,7 +26,7 @@ length dt.
   caching and may block execution if it is fed with data too fast.
 6 Start over, overwrite the transform of the chunk furthest away from [t,t+dt).
   */
-class InverseCwt
+/*class InverseCwt
 {
 public:
     InverseCwt(cudaStream_t stream=0);
@@ -34,7 +36,7 @@ public:
     pFilter filter;
 private:
     cudaStream_t _stream;
-};
+};*/
 
 } // namespace Tfr
 

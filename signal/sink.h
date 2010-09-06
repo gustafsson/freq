@@ -1,60 +1,77 @@
 #ifndef SIGNALSINK_H
 #define SIGNALSINK_H
 
-#include "signal/source.h"
+#include "signal/buffersource.h"
+#include "signal/operation.h"
 #include "signal/intervals.h"
 
 namespace Signal {
 
-class Sink
+/**
+  Any operation can be used as a sink in the sense that a sink is something
+  that swallos data. This class hopefully makes it a little bit more clear
+  by providing some convenient methods as examples.
+  */
+class Sink: public Operation
 {
 public:
-    virtual ~Sink() {}
+    Sink():Operation(pSource()) {}
 
-    /**
-      'put' is the main operation that is done to a sink.
+    virtual pBuffer read(const Interval& I) {
+        BOOST_ASSERT(source());
+        pBuffer b = source()->read(I);
+        put(b);
+        return b;
+    }
 
-      As an optional parameter a caller may supply a source from which the buffer
-      was extracted. the sink may use this information as it may contain valuable
-      caches. But the sink is required to perform the same result if only the
-      buffer is supplied.
-      */
-    virtual void put( pBuffer b, pSource=pSource() ) = 0;
-
-    /**
-      For some sinks it makes sense to reset, for some it doesn't.
-      */
-    virtual void reset() { _expected_samples = Intervals(); }
-
-    /**
-      If this Sink has recieved all expected_samples and is finished with its
-      work, the caller may remove this Sink.
-      */
-    virtual bool isFinished() { return expected_samples().isEmpty(); }
-
-    /**
-      If a Sink should do something special when it has received all Buffers,
-      do it in onFinished(). onFinished() may be invoked more than once.
-      */
-    virtual void onFinished() {}
-
-    // TODO virtual bool isUnderfed
-
-    /**
-      By telling the sink how much data the sink can expect to recieve it is possible
-      for the sink to perform some optimizations (such as buffering input before starting
-      playing a sound).
-      */
-    virtual Intervals expected_samples() { return _expected_samples; }
-    virtual void add_expected_samples( const Intervals& s ) { _expected_samples |= s; }
+    static void put(Operation* receiver, pBuffer buffer) {
+        pSource s( new BufferSource(buffer));
+        pSource old = receiver->source();
+        receiver->source(s);
+        receiver->read(buffer->getInterval());
+        receiver->source(old);
+    }
 
 protected:
-    /**
-      @see expected_samples
-      */
-    Intervals _expected_samples;
+    virtual void put(pBuffer) { throw std::logic_error(
+            "Neither read or put seems to have been overridden from Sink."); }
 };
-typedef boost::shared_ptr<Sink> pSink;
+
+//{
+//public:
+//    virtual ~Sink() {}
+
+//    /**
+//      For some sinks it makes sense to reset, for some it doesn't.
+//      */
+//    virtual void reset() { _invalid_samples = Intervals(); }
+
+
+//    /**
+//      If this Sink has recieved all expected_samples and is finished with its
+//      work, the caller may remove this Sink.
+//      */
+//    virtual bool isFinished() { return expected_samples().isEmpty(); }
+
+
+//    /**
+//      If a Sink should do something special when it has received all Buffers,
+//      do it in onFinished(). onFinished() may be invoked more than once.
+//      */
+//    virtual void onFinished() {}
+
+
+//    // TODO virtual bool isUnderfed()
+
+
+//    /**
+//      By telling the sink through 'add_expected_samples' how much data the sink
+//      can expect to recieve it is possible for the sink to perform some
+//      optimizations (such as buffering input before starting playing a sound).
+//      */
+//    virtual Intervals expected_samples() { return _invalid_samples; }
+//    virtual void add_expected_samples( const Intervals& s ) { _invalid_samples |= s; }
+//};
 
 } // namespace Signal
 

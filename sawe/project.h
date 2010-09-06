@@ -32,7 +32,7 @@ public:
 
       For a source to be writable, there must exists a template specialization to Hdf5Input::read_exact.
 
-      Selections are saved by saving the list of filters i the first FilterOperation.
+      Selections are saved by saving the list of filters i the first CwtFilter.
       */
     Signal::pSource head_source;
 
@@ -61,8 +61,8 @@ public:
 
 private:
     boost::shared_ptr<MainWindow> _mainWindow;
-    Signal::pSink _displayWidget;
-    Signal::pSink _timelineWidget;
+    Signal::pSource _displayWidget;
+    Signal::pSource _timelineWidget;
     //Signal::pWorkerCallback _displayWidgetCallback;
     Signal::pWorkerCallback _timelineWidgetCallback;
 

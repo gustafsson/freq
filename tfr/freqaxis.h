@@ -2,6 +2,7 @@
 #define TFRFREQAXIS_H
 
 #include <cuda_runtime.h> // defines __device__ and __host__
+#include <math.h>
 
 namespace Tfr {
 

@@ -1,7 +1,7 @@
 #ifndef SAWECSV_H
 #define SAWECSV_H
 
-#include "tfr/chunksink.h"
+#include "tfr/cwtfilter.h"
 
 namespace Sawe {
 
@@ -11,10 +11,10 @@ namespace Sawe {
   exists. The file is saved with the csv-format comma separated values, but values are
   actually separated by spaces. One row of the csv-file corresponds to one row of the chunk.
 */
-class Csv: public Tfr::ChunkSink
+class Csv: public Tfr::CwtFilter
 {
 public:
-    virtual void    put( Signal::pBuffer , Signal::pSource );
+    virtual void operator()( Tfr::Chunk& );
 };
 
 } // namespace Sawe

@@ -65,7 +65,7 @@ void WriteWav::
         writeToDisk()
 {
     Intervals sid = _data.samplesDesc();
-    Intervals::Interval i = sid.coveredInterval();
+    Interval i = sid.coveredInterval();
 
     BOOST_ASSERT(i.valid());
 

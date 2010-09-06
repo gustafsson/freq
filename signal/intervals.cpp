@@ -9,30 +9,30 @@
 
 namespace Signal {
 
-const Intervals::SampleType Intervals::SampleType_MIN = (Intervals::SampleType)0;
-const Intervals::SampleType Intervals::SampleType_MAX = (Intervals::SampleType)-1;
-const Intervals Intervals::SamplesIntervalDescriptor_ALL = Intervals(Intervals::SampleType_MIN, Intervals::SampleType_MAX);
-const Intervals::Interval Intervals::SamplesInterval_ALL = { Intervals::SampleType_MIN, Intervals::SampleType_MAX };
+const IntervalType IntervalType_MIN = (IntervalType)0;
+const IntervalType IntervalType_MAX = (IntervalType)-1;
+const Intervals Intervals_ALL = Intervals(IntervalType_MIN, IntervalType_MAX);
+const Interval Interval_ALL = { IntervalType_MIN, IntervalType_MAX };
 
-bool Intervals::Interval::
+bool Interval::
         valid() const
 {
     return first < last;
 }
 
-bool Intervals::Interval::
+bool Interval::
         isConnectedTo(const Interval& r) const
 {
     return last >= r.first && r.last >= first;
 }
 
-bool Intervals::Interval::
+bool Interval::
         operator<(const Interval& r) const
 {
     return first < r.first;
 }
 
-Intervals::Interval& Intervals::Interval::
+Interval& Interval::
         operator|=(const Interval& r)
 {
     first = std::min(first, r.first);
@@ -40,7 +40,7 @@ Intervals::Interval& Intervals::Interval::
     return *this;
 }
 
-bool Intervals::Interval::
+bool Interval::
         operator==(const Interval& r) const
 {
     return first==r.first && last==r.last;
@@ -59,7 +59,7 @@ Intervals::
 }
 
 Intervals::
-        Intervals(SampleType first, SampleType last)
+        Intervals(IntervalType first, IntervalType last)
 {
     BOOST_ASSERT( first < last );
     Interval r = { first, last };
@@ -155,17 +155,17 @@ Intervals& Intervals::
 }
 
 Intervals& Intervals::
-		operator -= (const SampleType& b)
+        operator -= (const IntervalType& b)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
         Interval& i = *itr;
 	
-		if (SampleType_MIN + b > i.first ) i.first = SampleType_MIN;
+        if (IntervalType_MIN + b > i.first ) i.first = IntervalType_MIN;
 		else i.first -= b;
-		if (SampleType_MIN + b > i.last ) i.last = SampleType_MIN;
+        if (IntervalType_MIN + b > i.last ) i.last = IntervalType_MIN;
 		else i.last -= b;
 
-		if ( SampleType_MIN == i.first && SampleType_MIN == i.last )
+        if ( IntervalType_MIN == i.first && IntervalType_MIN == i.last )
 			itr = _intervals.erase( itr );
 		else
 			itr++;
@@ -175,17 +175,17 @@ Intervals& Intervals::
 }
 
 Intervals& Intervals::
-		operator += (const SampleType& b)
+        operator += (const IntervalType& b)
 {
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
         Interval& i = *itr;
 	
-		if (SampleType_MAX - b < i.first ) i.first = SampleType_MAX;
+        if (IntervalType_MAX - b < i.first ) i.first = IntervalType_MAX;
 		else i.first += b;
-		if (SampleType_MAX - b < i.last ) i.last = SampleType_MAX;
+        if (IntervalType_MAX - b < i.last ) i.last = IntervalType_MAX;
 		else i.last += b;
 
-		if ( SampleType_MAX == i.first && SampleType_MAX == i.last )
+        if ( IntervalType_MAX == i.first && IntervalType_MAX == i.last )
 			itr = _intervals.erase( itr );
 		else
 			itr++;
@@ -264,11 +264,11 @@ Intervals& Intervals::
     return *this;
 }
 
-Intervals::Interval Intervals::
-        getInterval( SampleType dt, SampleType center ) const
+Interval Intervals::
+        getInterval( IntervalType dt, IntervalType center ) const
 {
     if (0 == _intervals.size()) {
-        Interval r = {SampleType_MIN, SampleType_MIN};
+        Interval r = {IntervalType_MIN, IntervalType_MIN};
         return r;
     }
 
@@ -278,8 +278,8 @@ Intervals::Interval Intervals::
             break;
     }
 
-    SampleType distance_to_next = SampleType_MAX;
-    SampleType distance_to_prev = SampleType_MAX;
+    IntervalType distance_to_next = IntervalType_MAX;
+    IntervalType distance_to_prev = IntervalType_MAX;
 
     if (itr != _intervals.end()) {
         distance_to_next = itr->first - center;
@@ -313,26 +313,34 @@ Intervals::Interval Intervals::
             return r;
         }
 
-        SampleType start = f.first + dt*(unsigned)((center-f.first) / dt);
+        IntervalType start = f.first + dt*(unsigned)((center-f.first) / dt);
         Interval r = {start, std::min(start+dt, f.last) };
         return r;
     }
 }
 
-Intervals::Interval Intervals::
+
+Intervals Intervals::
+        inverse() const
+{
+    return Intervals_ALL - *this;
+}
+
+
+Interval Intervals::
         getInterval( Interval n ) const
 {
     Intervals sid = *this & n;
 
     if (0 == sid._intervals.size()) {
-        Interval r = {SampleType_MIN, SampleType_MIN};
+        Interval r = {IntervalType_MIN, IntervalType_MIN};
         return r;
     }
 
     return sid.intervals().front();
 }
 
-Intervals::Interval Intervals::
+Interval Intervals::
         coveredInterval() const
 {
     Interval i;
@@ -362,13 +370,13 @@ std::ostream& operator<<( std::ostream& s, const Intervals& i)
 {
     s << "{" << i.intervals().size() << " interval" << ((i.intervals().size()==1)?"":"s");
 
-    BOOST_FOREACH (const Intervals::Interval& r, i.intervals())
+    BOOST_FOREACH (const Interval& r, i.intervals())
         s << " " << r;
 
     return s << "}";
 }
 
-std::ostream& operator<<( std::ostream& s, const Intervals::Interval& i)
+std::ostream& operator<<( std::ostream& s, const Interval& i)
 {
     return s << "[" << i.first << ", " << i.last << "]";
 }

@@ -26,28 +26,28 @@ void MatlabFilter::
 
     string file = _matlab.getTempName();
 
-    Hdf5Sink::saveChunk( file, c );
+    Hdf5Chunk::saveChunk( file, c );
 
     file = _matlab.invokeAndWait( file );
 
 	if (file.empty())
 		return;
 
-	Tfr::pChunk pc = Hdf5Sink::loadChunk( file );
+    Tfr::pChunk pc = Hdf5Chunk::loadChunk( file );
     c.transform_data.swap( pc->transform_data );
 
     ::remove( file.c_str());
 }
 
 Signal::Intervals MatlabFilter::
-        getZeroSamples( unsigned /*FS*/ ) const
+        ZeroedSamples( ) const
 {
     // As far as we know, the matlab filter doesn't set anything to zero for sure
     return Signal::Intervals();
 }
 
 Signal::Intervals MatlabFilter::
-        getUntouchedSamples( unsigned /*FS*/ ) const
+        AffectedSamples( ) const
 {
     // As far as we know, the matlab filter may touch anything
     return Signal::Intervals();
