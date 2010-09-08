@@ -1,7 +1,0 @@
-Sonic AWE is developed by REEP. Sonic AWE makes use of several open source 
-libraries. Two of these are licensed under LGPL: sndfile 
-(http://www.mega-nerd.com/libsndfile/) and Qt4 (http://qt.nokia.com/), their 
-respective license terms may be found in sndfile-license.txt and 
-qt4-license.txt which accompany the binary libraries in this distribution. 
-Other open source libraries include portaudio, glew, boost, hdf5, zlib and 
-slib. Non open source libraries include glut and cuda.

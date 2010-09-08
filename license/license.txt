@@ -1,0 +1,176 @@
+Sonic AWE: A Cross-Platform Digital Audio Visualizer
+Maintainer: sonicawe@reep.se
+
+--------------------------------------------------------------------------
+
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+--------------------------------------------------------------------------
+
+
+Sonic AWE is developed by REEP. Sonic AWE makes use of the following 
+libraries (in alphabetic order with system libraries excluded):
+
+ * cuda
+ * freeglut
+ * boost
+ * glew
+ * hdf5
+ * oourafft
+ * portaudio
+ * qt4
+ * sndfile
+ * zlib
+
+The remaining sections of this document contains copyright and licensing
+information for the libraries that explicitly requires it.
+
+--------------------------------------------------------------------------
+
+
+freeglut
+
+Copyright (c) 1999-2000 Pawel W. Olszta. All Rights Reserved.
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies or substantial portions of the Software.
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+PAWEL W. OLSZTA BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Except as contained in this notice, the name of Pawel W. Olszta shall not
+be used in advertising or otherwise to promote the sale, use or other
+dealings in this Software without prior written authorization from Pawel
+W. Olszta.
+
+--------------------------------------------------------------------------
+
+
+glew
+
+http://glew.sourceforge.net/khronos.txt
+
+Copyright (c) 2007 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+
+--------------------------------------------------------------------------
+
+
+hdf5
+
+HDF5 (Hierarchical Data Format 5) Software Library and Utilities 
+Copyright 2006-2010 by The HDF Group.
+
+NCSA HDF5 (Hierarchical Data Format 5) Software Library and Utilities 
+Copyright 1998-2006 by the Board of Trustees of the University of Illinois.
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted for any purpose (including commercial purposes)
+provided that the following conditions are met:
+
+1 Redistributions of source code must retain the above copyright notice, 
+this list of conditions, and the following disclaimer.
+2 Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions, and the following disclaimer in the documentation
+and/or materials provided with the distribution.
+3 In addition, redistributions of modified forms of the source or binary 
+code must carry prominent notices stating that the original code was 
+changed and the date of the change.
+4 All publications or advertising materials mentioning features or use of
+this software are asked, but not required, to acknowledge that it was 
+developed by The HDF Group and by the National Center for Supercomputing 
+Applications at the University of Illinois at Urbana-Champaign and credit 
+the contributors.
+5 Neither the name of The HDF Group, the name of the University, nor the 
+name of any Contributor may be used to endorse or promote products derived
+from this software without specific prior written permission from The HDF 
+Group, the University, or the Contributor, respectively.
+
+DISCLAIMER: THIS SOFTWARE IS PROVIDED BY THE HDF GROUP AND THE CONTRIBUTORS
+"AS IS" WITH NO WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED. In no
+event shall The HDF Group or the Contributors be liable for any damages 
+suffered by the users arising out of the use of this software, even if 
+advised of the possibility of such damage.
+
+-------------------------------------------------------------------------------
+
+
+Portaudio
+
+PortAudio Portable Real-Time Audio Library
+PortAudio API Header File
+Latest version available at: http://www.audiomulch.com/portaudio/
+
+Copyright (c) 1999-2000 Ross Bencina and Phil Burk
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files
+(the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+Any person wishing to distribute modifications to the Software is
+requested to send the modifications to the original developer so that
+they can be incorporated into the canonical version.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+-------------------------------------------------------------------------------
+
+
+sndfile
+
+http://www.gnu.org/licenses/lgpl-3.0.txt
+
+-------------------------------------------------------------------------------
+
+
+qt4
+
+http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+
+-------------------------------------------------------------------------------

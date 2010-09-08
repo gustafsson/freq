@@ -1,29 +1,58 @@
 #!/bin/bash
-rm -f package-debian/DEBIAN/*~ && \
+bury_copy() { mkdir -p "`dirname $2`" && cp "$1" "$2"; }
+
+if [ "$1" ] && [ -z "$2" ] && [ "$(basename `pwd`)" -eq "dist" ] ; then
+        version=$1
+else
+        echo "Creates a Sonic AWE package for Debian linux"
+	echo
+        echo "SYNOPSIS"
+	echo "    package-debian.sh version_string"
+	echo
+	echo "DESCRIPTIION"
+	echo "     'version_string' is on the form"
+	echo "         0.8.26"
+	echo "         0.8.26-unstable"
+	echo
+	echo "Run this script from the sonic/sonicawe/dist directory"
+        exit
+fi
+
+package=dist/package-debian~
+share=$package/usr/share/sonicawe/.
+
 pushd .. && \
-cp sonicawe dist/package-debian/usr/bin && \
-cp sonicawe.1 dist/package-debian/usr/share/man/man1 && \
-cp matlab/sawe_extract_cwt.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_extract_cwt_time.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_filewatcher.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_filewatcher_oct.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/matlabfilter.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/matlaboperation.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_loadbuffer.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_loadbuffer_oct.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_loadchunk.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_loadchunk_oct.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_savebuffer.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_savebuffer_oct.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_savechunk.m dist/package-debian/usr/share/sonicawe && \
-cp matlab/sawe_savechunk_oct.m dist/package-debian/usr/share/sonicawe && \
-cp credits.txt dist/package-debian/usr/share/sonicawe && \
-popd && \
-pushd package-debian && \
+rm -rf $package && \
+cp -r dist/package-debian $package && \
+bury_copy /usr/local/cuda/lib/libcudart.so* $package/usr/bin/. && \
+cp -r $package && \
+bury_copy sonicawe $package/usr/bin/. && \
+bury_copy sonicawe.1 $P/usr/share/man/man1/. && \
+mkdir -p $share && \
+cp matlab/sawe_extract_cwt.m $share && \
+cp matlab/sawe_extract_cwt_time.m $share && \
+cp matlab/sawe_filewatcher.m $share && \
+cp matlab/sawe_filewatcher_oct.m $share && \
+cp matlab/matlabfilter.m $share && \
+cp matlab/matlaboperation.m $share && \
+cp matlab/sawe_loadbuffer.m $share && \
+cp matlab/sawe_loadbuffer_oct.m $share && \
+cp matlab/sawe_loadchunk.m $share && \
+cp matlab/sawe_loadchunk_oct.m $share && \
+cp matlab/sawe_savebuffer.m $share && \
+cp matlab/sawe_savebuffer_oct.m $share && \
+cp matlab/sawe_savechunk.m $share && \
+cp matlab/sawe_savechunk_oct.m $share && \
+cp -r license $share && \
+pushd $package && \
 gzip -f usr/share/man/man1/sonicawe.1 && \
 rm -f DEBIAN/md5sums && \
 for i in `find -name *~`; do rm $i; done && \
 for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done && \
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done && \
 popd && \
-dpkg -b package-debian sonicawe_0.8.26-unstable_amd64.deb
+output_deb=sonicawe_$version_`uname -m`.deb && \
+dpkg -b $package $output_deb && \
+echo "OUTPUT" && \
+echo "    `pwd`/$output_deb" && \
+popd
