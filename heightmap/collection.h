@@ -7,7 +7,6 @@
 #include "signal/source.h"
 #include "signal/worker.h"
 #include "tfr/chunk.h"
-#include "tfr/chunksink.h"
 #include <vector>
 #include <boost/unordered_map.hpp>
 #include <QMutex>
@@ -239,6 +238,12 @@ audiofile              source
     void        gc();
 
 
+    /**
+      PostSink fetches data
+      */
+    Signal::pOperation postsink() { return _postsink; }
+
+
     Signal::pWorker     worker;
 private:
     // TODO remove friends
@@ -256,6 +261,9 @@ private:
     Position
             _min_sample_size,
             _max_sample_size;
+
+
+    Signal::pOperation _postsink;
 
 
     /**

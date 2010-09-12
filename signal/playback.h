@@ -18,12 +18,13 @@ public:
     ~Playback();
 
     // Overloaded from Sink
-    virtual void put( pBuffer b, pSource ) { put (b); }
-    virtual void reset();
+    virtual void put( pBuffer b, pOperation ) { put (b); }
     virtual bool isFinished();
-    virtual void onFinished();
-    virtual Intervals expected_samples() { return _data.invalid_samples(); }
-    virtual void add_expected_samples( const Intervals& s ) { _data.add_expected_samples( s ); }
+    virtual Intervals invalid_samples() { return _data.invalid_samples(); }
+    virtual void invalidate_samples( const Intervals& s ) { _data.invalidate_samples( s ); }
+
+    void reset();
+    void onFinished();
 
     static void list_devices();
 

@@ -1,5 +1,6 @@
 #include "signal/operation-composite.h"
 #include "signal/operation-basic.h"
+#include "filters/filters.h"
 #include <demangle.h>
 
 namespace Signal {
@@ -8,20 +9,20 @@ namespace Signal {
     // OperationSubOperations  /////////////////////////////////////////////////////////////////
 
 OperationSubOperations::
-	OperationSubOperations(pSource source, std::string name)
+	OperationSubOperations(pOperation source, std::string name)
 :   Operation(source),
     _sourceSubOperation( new Operation(source)),
 	_name(name)
 {}
 
 pBuffer OperationSubOperations ::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval &I )
 {
-    return _readSubOperation->read( firstSample, numberOfSamples );
+    return _readSubOperation->read( I );
 }
 
 void OperationSubOperations ::
-        source(pSource v)
+        source(pOperation v)
 {
     Operation *o = dynamic_cast<Operation*>(_sourceSubOperation.get());
     if (0 == o) throw std::runtime_error("0==o");
@@ -34,7 +35,7 @@ void OperationSubOperations ::
     // OperationCrop  /////////////////////////////////////////////////////////////////
 
 OperationCrop::
-        OperationCrop( pSource source, unsigned firstSample, unsigned numberOfSamples )
+        OperationCrop( pOperation source, unsigned firstSample, unsigned numberOfSamples )
 :   OperationSubOperations( source )
 {
     reset(firstSample, numberOfSamples);
@@ -43,8 +44,8 @@ OperationCrop::
 void OperationCrop::
         reset( unsigned firstSample, unsigned numberOfSamples )
 {
-    pSource cropBefore( new OperationRemoveSection( _source, 0, firstSample ));
-    pSource cropAfter( new OperationRemoveSection( cropBefore, numberOfSamples,
+    pOperation cropBefore( new OperationRemoveSection( _source, 0, firstSample ));
+    pOperation cropAfter( new OperationRemoveSection( cropBefore, numberOfSamples,
                                                    cropBefore->number_of_samples() - numberOfSamples ));
 
     _sourceSubOperation = cropBefore;
@@ -54,7 +55,7 @@ void OperationCrop::
 
     // OperationSetSilent  /////////////////////////////////////////////////////////////////
 OperationSetSilent::
-        OperationSetSilent( pSource source, unsigned firstSample, unsigned numberOfSamples )
+        OperationSetSilent( pOperation source, unsigned firstSample, unsigned numberOfSamples )
 :   OperationSubOperations( source )
 {
     reset(firstSample, numberOfSamples);
@@ -63,8 +64,8 @@ OperationSetSilent::
 void OperationSetSilent::
         reset( unsigned firstSample, unsigned numberOfSamples )
 {
-    pSource remove( new OperationRemoveSection( _sourceSubOperation, firstSample, numberOfSamples ));
-    pSource addSilence( new OperationInsertSilence (remove, firstSample, numberOfSamples ));
+    pOperation remove( new OperationRemoveSection( _sourceSubOperation, firstSample, numberOfSamples ));
+    pOperation addSilence( new OperationInsertSilence (remove, firstSample, numberOfSamples ));
 
     _readSubOperation = addSilence;
 }
@@ -73,7 +74,7 @@ void OperationSetSilent::
     // OperationMove  /////////////////////////////////////////////////////////////////
 
 OperationMove::
-        OperationMove( pSource source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
+        OperationMove( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
 :   OperationSubOperations( source )
 {
     reset(firstSample, numberOfSamples, newFirstSample);
@@ -83,11 +84,11 @@ void OperationMove::
         reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
 {
     // Note: difference to OperationMoveMerge is that OperationMove has the silenceTarget step
-    pSource silenceTarget( new OperationSetSilent(_sourceSubOperation, newFirstSample, numberOfSamples ));
-    pSource silence( new OperationSetSilent(silenceTarget, firstSample, numberOfSamples ));
-    pSource crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
-    pSource moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
-    pSource addition( new OperationSuperposition (moveToNewPos, silence ));
+    pOperation silenceTarget( new OperationSetSilent(_sourceSubOperation, newFirstSample, numberOfSamples ));
+    pOperation silence( new OperationSetSilent(silenceTarget, firstSample, numberOfSamples ));
+    pOperation crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
+    pOperation moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
+    pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
     _readSubOperation = addition;
 }
@@ -96,7 +97,7 @@ void OperationMove::
     // OperationMoveMerge  /////////////////////////////////////////////////////////////////
 
 OperationMoveMerge::
-        OperationMoveMerge( pSource source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
+        OperationMoveMerge( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
 :   OperationSubOperations( source )
 {
     reset(firstSample, numberOfSamples, newFirstSample);
@@ -105,10 +106,10 @@ OperationMoveMerge::
 void OperationMoveMerge::
         reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
 {
-    pSource silence( new OperationSetSilent (_sourceSubOperation, firstSample, numberOfSamples ));
-    pSource crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
-    pSource moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
-    pSource addition( new OperationSuperposition (moveToNewPos, silence ));
+    pOperation silence( new OperationSetSilent (_sourceSubOperation, firstSample, numberOfSamples ));
+    pOperation crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
+    pOperation moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
+    pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
     _readSubOperation = addition;
 }
@@ -117,7 +118,7 @@ void OperationMoveMerge::
     // OperationShift  /////////////////////////////////////////////////////////////////
 
 OperationShift::
-        OperationShift( pSource source, int sampleShift )
+        OperationShift( pOperation source, int sampleShift )
 :   OperationSubOperations( source )
 {
     reset(sampleShift);
@@ -128,10 +129,10 @@ void OperationShift::
 {
     if ( 0 < sampleShift )
     {
-        pSource addSilence( new OperationInsertSilence( Operation::source(), 0u, (unsigned)sampleShift ));
+        pOperation addSilence( new OperationInsertSilence( Operation::source(), 0u, (unsigned)sampleShift ));
         _sourceSubOperation = _readSubOperation = addSilence;
     } else if (0 > sampleShift ){
-        pSource removeStart( new OperationRemoveSection( Operation::source(), 0u, (unsigned)-sampleShift ));
+        pOperation removeStart( new OperationRemoveSection( Operation::source(), 0u, (unsigned)-sampleShift ));
         _sourceSubOperation = _readSubOperation = removeStart;
 	} else {
         _sourceSubOperation = _readSubOperation = _source;
@@ -142,47 +143,53 @@ void OperationShift::
     // OperationShift  /////////////////////////////////////////////////////////////////
 
 OperationMoveSelection::
-		OperationMoveSelection( pSource source, Tfr::pFilter selectionFilter, int sampleShift, float freqDelta )
+        OperationMoveSelection( pOperation source, pOperation selectionFilter, int sampleShift, float freqDelta )
 :	OperationSubOperations( source, "OperationMoveSelection" )
 {
 	reset(selectionFilter, sampleShift, freqDelta );
 }
 
+
 void OperationMoveSelection::
-	reset( Tfr::pFilter selectionFilter, int sampleShift, float freqDelta )
+    reset( pOperation selectionFilter, int sampleShift, float freqDelta )
 {
-	Tfr::pFilter extract, remove;
-	if (Tfr::EllipsFilter* f = dynamic_cast<Tfr::EllipsFilter*>(selectionFilter.get())) {
-		bool v = f->_save_inside;
-		f->_save_inside = false;
-		remove.reset( new Tfr::EllipsFilter(*f) );
-		f->_save_inside = true;
-                extract.reset( new Tfr::EllipsFilter(*f) );
-		f->_save_inside = v;
+    // Take out the samples affected by selectionFilter and move them
+    // 'sampleShift' in time and 'freqDelta' in frequency
+
+    pOperation  extract, remove;
+    if (Filters::EllipsFilter* f = dynamic_cast<Filters::EllipsFilter*>(selectionFilter.get())) {
+
+        // Create filter for extracting selection
+        extract.reset( new Filters::EllipsFilter(*f) );
+        dynamic_cast<Filters::EllipsFilter*>(extract.get())->_save_inside = true;
+        extract->source( source() );
+
+        // Create filter for removing selection
+        remove.reset( new Filters::EllipsFilter(*f) );
+        dynamic_cast<Filters::EllipsFilter*>(remove.get())->_save_inside = false;
+        remove->source( source() );
+
 	} else {
 		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipsFilter as selectionFilter");
 	}
 
-	Signal::pSource extractAndMoveSelection;
-	{
-		// Create filter for extracting selection
-		Tfr::pFilter moveFilter(new Tfr::MoveFilter( freqDelta ));
-		Tfr::FilterChain* pchain(new Tfr::FilterChain);
-		Tfr::pFilter chain(pchain);
-		pchain->push_back(extract);
-		pchain->push_back(moveFilter);
+    Signal::pOperation extractAndMove = extract;
+    {
+        // Create operation for moving extracted selection in time
+        if (0!=sampleShift)
+        extractAndMove.reset( new OperationShift( extractAndMove, sampleShift ));
 
-		// Create CwtFilter for applying filters
-                extractAndMoveSelection.reset(new Tfr::CwtFilter( Operation::source(), Tfr::Cwt::SingletonP(), chain ));
+        // Create operation for moving extracted selection in frequency
+        if (0!=freqDelta)
+        {
+            Signal::pOperation t( new Filters::MoveFilter( freqDelta ));
+            t->source( extractAndMove );
+            extractAndMove = t;
+        }
 
-		// Create operation to move selection
-		if (0!=sampleShift)
-			extractAndMoveSelection.reset( new OperationShift( extractAndMoveSelection, sampleShift ));
 	}
 
-        Signal::pSource removeSelection( new Tfr::CwtFilter( Operation::source(), Tfr::Cwt::SingletonP(), remove ));
-
-	Signal::pSource mergeSelection( new Signal::OperationSuperposition( removeSelection, extractAndMoveSelection ));
+    Signal::pOperation mergeSelection( new Signal::OperationSuperposition( remove, extractAndMove ));
 
 	_readSubOperation = mergeSelection;
 }

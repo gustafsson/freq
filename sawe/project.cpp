@@ -13,7 +13,7 @@ using namespace std;
 namespace Sawe {
 
 Project::
-        Project( Signal::pSource head_source )
+        Project( Signal::pOperation head_source )
 :   head_source(head_source)
 {
 }
@@ -80,7 +80,7 @@ pProject Project::
 pProject Project::
         createRecording(int record_device)
 {
-    Signal::pSource s( new Signal::MicrophoneRecorder(record_device) );
+    Signal::pOperation s( new Signal::MicrophoneRecorder(record_device) );
     return pProject( new Project( s ));
 }
 
@@ -168,7 +168,7 @@ pProject Project::
 pProject Project::
         openAudio(std::string audio_file)
 {
-    Signal::pSource s( new Signal::Audiofile( audio_file.c_str() ) );
+    Signal::pOperation s( new Signal::Audiofile( audio_file.c_str() ) );
     return pProject( new Project( s ));
 }
 

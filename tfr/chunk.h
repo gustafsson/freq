@@ -12,8 +12,11 @@ namespace Tfr {
 
 class Chunk
 {
-public:
+protected:
     Chunk( );
+    virtual ~Chunk() {}
+
+public:
 
     /**
       Each transform computes different frequency distributions. An instance of

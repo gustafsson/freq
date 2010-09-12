@@ -55,15 +55,15 @@ typedef boost::shared_ptr<Buffer> pBuffer;
 Signal::Source is a very important class in the Signal namespace. It declares 
 an interface through which buffers can be read.
 */
-class Source
+class SourceBase
 {
 public:
-    virtual ~Source() {}
+    virtual ~SourceBase() {}
 
     /**
-    read does not have to return a Buffer of the same size as numberOfSamples.
-    But it has to start at firstSample. The caller of read must allow for read
-    to return Buffers of arbitrary sizes.
+      read does not have to return a Buffer of the same size as I. But it has
+      to start at I.first. The caller of read must allow for read to return
+      Buffers of arbitrary sizes.
     */
     virtual pBuffer read( const Interval& I ) = 0;
     virtual pBuffer readChecked( const Interval& I );
@@ -73,7 +73,6 @@ public:
 
     float length() { return number_of_samples() / (float)sample_rate(); }
 };
-typedef boost::shared_ptr<Source> pSource;
 
 
 } // namespace Signal

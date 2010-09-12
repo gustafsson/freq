@@ -12,7 +12,8 @@ namespace Signal {
 
 SinkSource::
         SinkSource( AcceptStrategy a )
-:   _acceptStrategy( a )
+:   Operation( pOperation() ),
+    _acceptStrategy( a )
 {
 }
 
@@ -45,7 +46,7 @@ void SinkSource::
         break;
     case AcceptStrategy_ACCEPT_EXPECTED_ONLY:
         {
-            Intervals expected = expected_samples();
+            Intervals expected = invalid_samples();
             if ((Intervals(b->getInterval()) - expected).isEmpty())
                 // This entire buffer was expected, merge
                 merge(b);
@@ -64,7 +65,7 @@ void SinkSource::
 
                 BOOST_FOREACH( const Interval i, sid.intervals() )
                 {
-                    pBuffer s = ss.readFixedLength( i.first, i.last-i.first );
+                    pBuffer s = ss.readFixedLength( i );
                     merge( s );
                 }
             }
@@ -121,10 +122,11 @@ void SinkSource::
 	{
 		for(unsigned L=0; i.first < i.last; i.first+=L)
 		{
-			L = lpo2s( i.last - i.first + 1);
+            L = lpo2s( i.count + 1);
 			if (L<(1<<13))
-				L = i.last-i.first;
-			new_cache.push_back(readFixedLength( i.first, L ));
+                L = i.count;
+
+            new_cache.push_back(readFixedLength( Interval( i.first, i.first + L) ));
 		}
 	}
 
@@ -196,7 +198,7 @@ void SinkSource::
         TaskTimer("M:%s", ss.str().c_str()).suppressTiming();
     }
 
-    _expected_samples -= b.getInterval();
+    _invalid_samples -= b.getInterval();
 
     selfmerge();
     //samplesDesc().print("SinkSource received samples");
@@ -208,22 +210,22 @@ void SinkSource::
 {
     QMutexLocker l(&_cache_mutex);
     _cache.clear();
-    _expected_samples = Intervals();
+    _invalid_samples = Intervals();
 }
 
 pBuffer SinkSource::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
     {
         QMutexLocker l(&_cache_mutex);
 
         BOOST_FOREACH( const pBuffer& s, _cache) {
-            if (s->sample_offset <= firstSample && s->sample_offset + s->number_of_samples() > firstSample )
+            if (s->sample_offset <= I.first && s->sample_offset + s->number_of_samples() > I.first )
             {
                 if(D) TaskTimer("%s: sinksource [%u, %u] got [%u, %u]",
                              __FUNCTION__,
-                             firstSample,
-                             firstSample+numberOfSamples,
+                             I.first,
+                             I.last,
                              s->getInterval().first,
                              s->getInterval().last).suppressTiming();
                 return s;
@@ -235,7 +237,7 @@ pBuffer SinkSource::
     }
 
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
-    pBuffer b( new Buffer(firstSample, numberOfSamples, sample_rate()));
+    pBuffer b( new Buffer(I.first, I.count, sample_rate()));
     memset( b->waveform_data->getCpuMemory(), 0, b->waveform_data->getSizeInBytes1D() );
     return b;
 }
@@ -247,22 +249,10 @@ unsigned SinkSource::
 
     if (_cache.empty())
         return (unsigned)-1;
+
     return _cache.front()->sample_rate;
 }
 
-long unsigned SinkSource::
-        number_of_samples()
-{
-    unsigned n = 0;
-
-    QMutexLocker l(&_cache_mutex);
-
-    BOOST_FOREACH( const pBuffer& s, _cache) {
-        n += s->number_of_samples();
-    }
-
-    return n;
-}
 
 pBuffer SinkSource::
         first_buffer()
@@ -273,17 +263,11 @@ pBuffer SinkSource::
     return _cache.front();
 }
 
+
 bool SinkSource::empty()
 {
     QMutexLocker l(&_cache_mutex);
-
     return _cache.empty();
-}
-
-unsigned SinkSource::size()
-{
-    QMutexLocker l(&_cache_mutex);
-    return _cache.size();
 }
 
 Intervals SinkSource::

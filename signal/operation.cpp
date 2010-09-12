@@ -3,28 +3,17 @@
 
 namespace Signal {
 
-Operation::Operation(pSource source )
+Operation::Operation(pOperation source )
 :   _source( source ),
     _invalid_samples()
 {
 }
 
-unsigned Operation::
-sample_rate()
-{
-    return _source->sample_rate();
-}
-
-long unsigned Operation::
-number_of_samples()
-{
-    return _source->number_of_samples();
-}
 
 Intervals Operation::
         invalid_samples()
 {
-    Operation* o = dynamic_cast<Operation*>(_source.get());
+    Operation* o = dynamic_cast<Operation*>(source().get());
 
     Intervals r = _invalid_samples;
 
@@ -34,8 +23,8 @@ Intervals Operation::
     return r;
 }
 
-pSource Operation::
-        first_source(pSource start)
+pOperation Operation::
+        first_source(pOperation start)
 {
     Operation* o = dynamic_cast<Operation*>(start.get());
     if (o)
@@ -44,11 +33,11 @@ pSource Operation::
     return start;
 }
 
-pSource Operation::
-        fast_source(pSource start)
+pOperation Operation::
+        fast_source(pOperation start)
 {
-    pSource r = start;
-    pSource itr = start;
+    pOperation r = start;
+    pOperation itr = start;
 
     while(true)
     {
@@ -56,7 +45,7 @@ pSource Operation::
         if (!o)
             break;
 
-        CwtFilter* f = dynamic_cast<CwtFilter*>(itr.get());
+        Tfr::CwtFilter* f = dynamic_cast<Tfr::CwtFilter*>(itr.get());
         if (f)
             r = f->source();
 

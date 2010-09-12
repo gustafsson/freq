@@ -34,7 +34,7 @@ void WriteWav::
 
     _data.put( buffer );
 
-    if (_data.expected_samples().isEmpty())
+    if (_data.invalid_samples().isEmpty())
         reset(); // Write to file
 }
 
@@ -47,19 +47,6 @@ void WriteWav::
     _data.reset();
 }
 
-bool WriteWav::
-        isFinished()
-{
-    return expected_samples().isEmpty();
-}
-
-void WriteWav::onFinished()
-{
-    // WriteWav::onFinished doesn't do anything. WriteWav only calls
-    // writeToDisk to disk once for each put after which
-    // _data.expected_samples().isEmpty() is true.
-    // Afterwards _data is reset.
-}
 
 void WriteWav::
         writeToDisk()
@@ -70,7 +57,7 @@ void WriteWav::
     BOOST_ASSERT(i.valid());
 
     TIME_WRITEWAV sid.print("data to write");
-    pBuffer b = _data.readFixedLength( i.first, i.last-i.first );
+    pBuffer b = _data.readFixedLength( i );
     writeToDisk( _filename, b );
 }
 

@@ -21,7 +21,7 @@ multiple threads (and hence one or multiple GPUs). The calling thread
 calls Worker::workOne as a blocking operation performing the following
 steps:
 
-1. Ask pSource Signal::Worker::_source for a pBuffer over some samples.
+1. Ask pOperation Signal::Worker::_source for a pBuffer over some samples.
 2. The pBuffer is sent to the callback(s).
 
 WorkerCallback takes a Worker as constructing argument and can thus add itself
@@ -46,7 +46,7 @@ enough for a responsive UI, yet big enough for efficient computations.
 
 --- Solution ---
 Signal::Source::read is called by an asynchronous worker thread instead.
-Playback is notified via Signal::Sink::put( pBuffer, pSource ) as a callback
+Playback is notified via Signal::Sink::put( pBuffer, pOperation ) as a callback
 function by registering itself as a Signal::Sink in tfr-worker. Tr::Waveform
 is notified by the same callback. Heightmap rendering is also notified by the
 same callback and will have to compute the cwt of the Buffer, unless
@@ -92,7 +92,7 @@ created by the GroupOperation.
   1 Operation: insert silence
 1 Source: Recording
 
-The pSource for Signal::Worker can be set to any pSource and results are fed to
+The pOperation for Signal::Worker can be set to any pOperation and results are fed to
 the callbacks when they are ready. Note that if the source is changed while
 Playback is active, sound will be heard from the new source at the same
 location in time. Playback will not remember its entire previous tree.
@@ -106,7 +106,7 @@ priority.
 class Worker:public QThread
 {
 public:
-    Worker(pSource source);
+    Worker(pOperation source);
     ~Worker();
 
     /**
@@ -146,8 +146,8 @@ public:
     /**
       Get/set the data source for this worker.
       */
-    Signal::pSource     source() const;
-    void                source(Signal::pSource s);
+    Signal::pOperation     source() const;
+    void                source(Signal::pOperation s);
 
     /**
       Get number of samples computed for each iteration.
@@ -173,7 +173,7 @@ public:
     /**
       Get all callbacks that data are sent to after each workOne.
       */
-    std::vector<pSource> callbacks();
+    std::vector<pOperation> callbacks();
 
 private:
     friend class WorkerCallback;
@@ -187,13 +187,13 @@ private:
       A WorkerCallback adds itself to a Worker.
     @throws invalid_argument if 'c' is not an instance of Signal::Sink.
       */
-    void addCallback( pSource c );
+    void addCallback( pOperation c );
 
     /**
       A WorkerCallback removes itself from a Worker.
     @throws invalid_argument if 'c' is not an instance of Signal::Sink.
       */
-    void removeCallback( pSource c );
+    void removeCallback( pOperation c );
 
     /**
       Self explanatory.
@@ -203,7 +203,7 @@ private:
     /**
       All callbacks in this list are called once for each call of workOne().
       */
-    std::vector<pSource> _callbacks;
+    std::vector<pOperation> _callbacks;
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
@@ -213,7 +213,7 @@ private:
     /**
       @see source
       */
-    Signal::pSource _source;
+    Signal::pOperation _source;
 
     /**
       Thread safety for _todo_list.
@@ -255,21 +255,20 @@ typedef boost::shared_ptr<Worker> pWorker;
   */
 class WorkerCallback: boost::noncopyable {
 public:
-    WorkerCallback( pWorker w, pSource s )
+    WorkerCallback( pWorker w, pOperation s )
         :   _w(w),
             _s(s)
     {
-        // Relies on addCallback for error detection
         _w->addCallback( _s );
     }
     ~WorkerCallback( ) { _w->removeCallback( _s ); }
 
     pWorker worker() { return _w; }
-    Sink* sink() { return (Sink*)_s.get(); }
+    pOperation sink() { return _s; }
 
 private:
     pWorker _w;
-    pSource _s;
+    pOperation _s;
 };
 typedef boost::shared_ptr<WorkerCallback> pWorkerCallback;
 

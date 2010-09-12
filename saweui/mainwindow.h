@@ -41,8 +41,8 @@ protected:
     
 
 public slots:
-    void updateOperationsTree( Signal::pSource s);
-    void updateLayerList( Signal::pSource s );
+    void updateOperationsTree( Signal::pOperation s);
+    //void updateLayerList( Signal::pOperation s );
     void slotDbclkFilterItem(QListWidgetItem*);
     void slotNewSelection(QListWidgetItem*);
     void slotDeleteSelection(void);

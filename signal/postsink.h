@@ -1,35 +1,41 @@
 #ifndef SIGNALPOSTSINK_H
 #define SIGNALPOSTSINK_H
 
-#include "tfr/chunksink.h"
-#include "tfr/inversecwt.h"
+#include "signal/operation.h"
 #include <vector>
 #include <QMutex>
 
 namespace Signal {
-/*
-class PostSink: public Tfr::ChunkSink
+
+/**
+  PostSink directs reads through a filter and lets sources chain-read through
+  that filter if they promise not to change the outputs betweeen eachother.
+
+  If they however will change their outputs PostSink will cache the read in a
+  Buffer and let each source read from the same Buffer.
+  */
+class PostSink: public Operation
 {
 public:
-    virtual void put( pBuffer, pSource );
+    PostSink(pOperation s=pOperation()):Operation(s) {}
+    virtual Signal::pBuffer read( const Signal::Interval& I );
 
-    virtual void reset();
-    virtual bool isFinished();
-    virtual void onFinished();
+    virtual Intervals affected_samples() { return _filter ? Intervals::Intervals_ALL : Intervals(); }
+    virtual Intervals invalid_samples();
+    virtual void invalidate_samples( const Intervals& s );
 
-    virtual Intervals expected_samples();
-    virtual void add_expected_samples( const Intervals& s );
+    std::vector<pOperation> sinks();
+    void                    sinks(std::vector<pOperation> v);
+    pOperation              filter();
+    void                    filter(pOperation f);
 
-    std::vector<pSink>  sinks();
-    void                sinks(std::vector<pSink> v);
-    Tfr::pFilter        filter();
-    void                filter(Tfr::pFilter, pSource s);
 private:
-    Tfr::InverseCwt _inverse_cwt;
-    QMutex _sinks_lock;
-    std::vector<pSink> _sinks;
+
+    pOperation              _filter;
+    QMutex                  _sinks_lock;
+    std::vector<pOperation> _sinks;
 };
-*/
+
 } // namespace Signal
 
 #endif // SIGNALPOSTSINK_H

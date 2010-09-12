@@ -1,34 +1,29 @@
 #ifndef SIGNALBUFFERSOURCE_H
 #define SIGNALBUFFERSOURCE_H
 
-#include "signal/source.h"
+#include "signal/operation.h"
 
 namespace Signal
 {
 
-class BufferSource: public Source
+class BufferSource: public FinalSource
 {
 public:
     BufferSource( pBuffer _waveform = pBuffer() );
 
-    virtual pBuffer read( const Interval& I );
+    virtual pBuffer read( const Interval& ) { return _waveform; }
     virtual unsigned sample_rate() { return _waveform->sample_rate; }
     virtual long unsigned number_of_samples() { return _waveform->number_of_samples(); }
 
-    pBuffer getChunkBehind() { return _waveform; }
-    void setChunk( pBuffer chunk ) { _waveform = chunk; }
-
-    unsigned read_channel;
-
 private:
-    pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
-    pSource crop();
+/*    pBuffer getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved );
+    pOperation crop();
 
     unsigned channel_count() {        return _waveform->waveform_data->getNumberOfElements().height; }
-
-private:
-
+*/
+protected:
     pBuffer _waveform;
+
 };
 
 } // namespace Signal

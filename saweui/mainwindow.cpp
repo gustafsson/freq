@@ -18,6 +18,7 @@
 #include "sawe/application.h"
 #include "sawe/timelinewidget.h"
 #include "saweui/propertiesselection.h"
+#include "filters/filters.h"
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -190,8 +191,8 @@ void MainWindow::slotDeleteSelection(void)
 
 void MainWindow::connectLayerWindow(DisplayWidget *d)
 {
-    connect(d, SIGNAL(operationsUpdated(Signal::pSource)), this, SLOT(updateLayerList(Signal::pSource)));
-    connect(d, SIGNAL(operationsUpdated(Signal::pSource)), this, SLOT(updateOperationsTree(Signal::pSource)));
+    // connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateLayerList(Signal::pOperation)));
+    connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateOperationsTree(Signal::pOperation)));
     connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(receiveCurrentSelection(int, bool)));
     connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(receiveFilterRemoval(int)));
     
@@ -247,7 +248,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     ui->actionActivateNavigation->setChecked(true);
 
     updateOperationsTree( d->worker()->source() );
-    d->getCwtFilter();
+    d->getCwtFilterHead();
 
     if (d->isRecordSource()) {
         this->ui->actionRecord->setEnabled(true);
@@ -287,7 +288,7 @@ struct TitleAndTooltip {
 typedef boost::adjacency_list<vecS,vecS, bidirectionalS, TitleAndTooltip> OperationGraph;
 const OperationGraph::vertex_descriptor vertex_descriptor_null = (OperationGraph::vertex_descriptor)-1;
 
-OperationGraph::vertex_descriptor populateGraph( Tfr::pFilter f, OperationGraph& graph )
+/*OperationGraph::vertex_descriptor populateGraph( Signal::pOperation f, OperationGraph& graph )
 {
     // Search for vertex in graph
     OperationGraph::vertex_iterator i, end;
@@ -301,21 +302,24 @@ OperationGraph::vertex_descriptor populateGraph( Tfr::pFilter f, OperationGraph&
     title << fixed << setprecision(1);
     tooltip << fixed << setprecision(2);
 
-    Tfr::FilterChain* filter_chain=0;
+//    TODO ta bort
+//    Tfr::FilterChain* filter_chain=0;
 
-    if ( 0 != (filter_chain = dynamic_cast<Tfr::FilterChain*>(f.get())))
-    {
-        title << "Chain #" << filter_chain->size() << "";
-        tooltip << "Chain contains " << filter_chain->size() << " subfilters";
+//    if ( 0 != (filter_chain = dynamic_cast<Tfr::FilterChain*>(f.get())))
+//    {
+//        title << "Chain #" << filter_chain->size() << "";
+//        tooltip << "Chain contains " << filter_chain->size() << " subfilters";
 
-    } else if (Tfr::EllipsFilter* c = dynamic_cast<Tfr::EllipsFilter*>(f.get())) {
+//    } else
+
+    if (Filters::EllipsFilter* c = dynamic_cast<Filters::EllipsFilter*>(f.get())) {
             float r = fabsf(c->_t1-c->_t2);
             title << "Ellips [" << c->_t1-r << ", " << c->_t1 + r << "]";
             tooltip << "Ellips p(" << c->_t1 << ", " << c->_f1 << "), "
                             << "r(" << r << ", " << fabsf(c->_f2-c->_f1) << "), "
                             << "area " << r*fabsf((c->_f1-c->_f2)*M_PI);
 
-    } else if (Tfr::SquareFilter* c = dynamic_cast<Tfr::SquareFilter*>(f.get())) {
+    } else if (Filters::SquareFilter* c = dynamic_cast<Filters::SquareFilter*>(f.get())) {
         title << "Square [" << c->_t1 << ", " << c->_t2 << "]";
         tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], "
                         << "f[" << c->_f1 << ", " << c->_f2 << "], "
@@ -335,20 +339,21 @@ OperationGraph::vertex_descriptor populateGraph( Tfr::pFilter f, OperationGraph&
 
     TaskTimer tt("%d %s", (unsigned)v, tat.title.c_str()); tt.suppressTiming();
 
-    if (filter_chain) {
-        BOOST_FOREACH( Tfr::pFilter f, *filter_chain ) {
-            OperationGraph::vertex_descriptor c;
-            c = populateGraph( f, graph );
+//  TODO remove
+//  if (filter_chain) {
+//        BOOST_FOREACH( Tfr::pFilter f, *filter_chain ) {
+//            OperationGraph::vertex_descriptor c;
+//            c = populateGraph( f, graph );
 
-            add_edge(v,c,graph);
-            tt.info("%d -> %d", v,c);
-        }
-    }
+//            add_edge(v,c,graph);
+//            tt.info("%d -> %d", v,c);
+//        }
+//    }
 
     return v;
-}
+}*/
 
-OperationGraph::vertex_descriptor populateGraph( Signal::pSource s, OperationGraph& graph )
+OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, OperationGraph& graph )
 {
     // Search for vertex in graph
     OperationGraph::vertex_iterator i, end;
@@ -362,8 +367,8 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pSource s, OperationGra
     title << fixed << setprecision(1);
     tooltip << fixed << setprecision(2);
 
-    Signal::pSource childSource;
-    Tfr::pFilter childFilter;
+    Signal::pOperation childSource;
+    // Signal::pOperation childFilter;
     if (Signal::MicrophoneRecorder* mic = dynamic_cast<Signal::MicrophoneRecorder*>(s.get()))
     {
         title << "Microphone";
@@ -376,15 +381,16 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pSource s, OperationGra
     }
     else if ( Tfr::CwtFilter* filter_operation = dynamic_cast<Tfr::CwtFilter*>(s.get()))
     {
-        title << "Filter";
-        tooltip << "Filter Operation";
+        filter_operation;
+        title << "Filter " << demangle(typeid(*s).name());
+        tooltip << "Filter Operation " << demangle(typeid(*s).name());;
 
-        childFilter = filter_operation->filter();
+        // childFilter = filter_operation->filter();
     }
     else if (Signal::OperationSubOperations* sub_operations = dynamic_cast<Signal::OperationSubOperations*>(s.get()))
     {
         title << demangle( typeid(*s).name() );
-        tooltip << "Composite operation" << demangle(typeid(*s).name());
+        tooltip << "Composite operation " << demangle(typeid(*s).name());
 
         childSource = sub_operations->subSource();
     }
@@ -418,11 +424,19 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pSource s, OperationGra
         tt.info("%d -> %d", v,c);
     }
 
-    if (childFilter || childSource) {
+//    if (childFilter || childSource) {
+//        OperationGraph::vertex_descriptor c =
+//             (0!=childFilter)
+//             ? populateGraph( childFilter, graph )
+//             : populateGraph( childSource, graph );
+
+//        add_edge(v,c,graph);
+//        tt.info("%d -> %d", v,c);
+//    }
+
+    if (childSource) {
         OperationGraph::vertex_descriptor c =
-             (0!=childFilter)
-             ? populateGraph( childFilter, graph )
-             : populateGraph( childSource, graph );
+             populateGraph( childSource, graph );
 
         add_edge(v,c,graph);
         tt.info("%d -> %d", v,c);
@@ -560,7 +574,7 @@ void updateOperationsTree( OperationGraph::vertex_descriptor v, OperationGraph& 
     }
 }
 
-void MainWindow::updateOperationsTree( Signal::pSource s )
+void MainWindow::updateOperationsTree( Signal::pOperation s )
 {
     TaskTimer tt("Updating operations tree");
 
@@ -574,7 +588,8 @@ void MainWindow::updateOperationsTree( Signal::pSource s )
     ::updateOperationsTree( head, graph, w, vertex_descriptor_null );
 }
 
-void MainWindow::updateLayerList( Signal::pSource s )
+/*
+void MainWindow::updateLayerList( Signal::pOperation s )
 {
     ui->layerWidget->clear();
 
@@ -607,15 +622,16 @@ void MainWindow::updateLayerList( Signal::pSource s )
                             << "f[" << c->_f1 << ", " << c->_f2 << "], "
                             << "area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2));
 
-        }/* else if (Tfr::SelectionFilter* c = dynamic_cast<Tfr::SelectionFilter>(f.get())) {
-            if (EllipsSelection* c = dynamic_cast<EllipsSelection>(c->selection)) {
-                title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
-                tooltip << "Ellips pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
+        }
+//        else if (Tfr::SelectionFilter* c = dynamic_cast<Tfr::SelectionFilter>(f.get())) {
+//            if (EllipsSelection* c = dynamic_cast<EllipsSelection>(c->selection)) {
+//                title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
+//                tooltip << "Ellips pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
 
-            } else if (Tfr::SquareSelection* c = dynamic_cast<Tfr::SquareSelection>(c->selection)) {
-                title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
-                tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
-        }*/
+//            } else if (Tfr::SquareSelection* c = dynamic_cast<Tfr::SquareSelection>(c->selection)) {
+//                title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
+//                tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
+//        }
         else {
             title << demangle(typeid(*f).name()) << ", unknown attributes";
         }
@@ -629,6 +645,8 @@ void MainWindow::updateLayerList( Signal::pSource s )
     
     printf("#####Updating: Layers!\n");
 }
+*/
+
 /*
 void MainWindow::keyPressEvent( QKeyEvent *e )
 {

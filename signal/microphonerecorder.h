@@ -8,7 +8,7 @@
 
 namespace Signal {
 
-class MicrophoneRecorder: public Source
+class MicrophoneRecorder: public FinalSource
 {
 public:
     MicrophoneRecorder(int inputDevice/*=-1*/);

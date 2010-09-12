@@ -1,7 +1,6 @@
 #ifndef SAWEPROJECT_H
 #define SAWEPROJECT_H
 
-#include "tfr/chunksink.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include "saweui/mainwindow.h"
@@ -22,7 +21,7 @@ public:
     /**
       A project currently is entirely defined by its head source.
       */
-    Project(Signal::pSource head_source);
+    Project(Signal::pOperation head_source);
     ~Project();
 
     /**
@@ -34,7 +33,7 @@ public:
 
       Selections are saved by saving the list of filters i the first CwtFilter.
       */
-    Signal::pSource head_source;
+    Signal::pOperation head_source;
 
     /**
       If the file can't be found it is regared as empty.
@@ -61,8 +60,8 @@ public:
 
 private:
     boost::shared_ptr<MainWindow> _mainWindow;
-    Signal::pSource _displayWidget;
-    Signal::pSource _timelineWidget;
+    Signal::pOperation _displayWidget;
+    Signal::pOperation _timelineWidget;
     //Signal::pWorkerCallback _displayWidgetCallback;
     Signal::pWorkerCallback _timelineWidgetCallback;
 

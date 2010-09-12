@@ -3,16 +3,13 @@
 
 #include "tfr/filter.h"
 #include "tfr/cwt.h"
-#include "tfr/inversecwt.h"
 
 namespace Tfr {
 
-class StftFilter : public Filter
+class StftFilter : public virtual Filter
 {
 public:
-    StftFilter() {}
-    StftFilter( Signal::pSource source );
-    StftFilter( Signal::pSource source, Tfr::pTransform transform );
+    StftFilter( Signal::pOperation source=Signal::pOperation(), Tfr::pTransform transform=Tfr::pTransform() );
 
     virtual pChunk readChunk( const Signal::Interval& I );
 
@@ -21,6 +18,7 @@ public:
       Get the Tfr::Transform for this operation.
       */
     Tfr::pTransform transform() const;
+
 
     /**
       Set the Tfr::Transform for this operation and update _invalid_samples.

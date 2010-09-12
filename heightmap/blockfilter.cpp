@@ -16,7 +16,7 @@ namespace Heightmap
 {
 
 void BlockFilter::
-        mergeChunk( Chunk& chunk )
+        operator()( Tfr::Chunk& chunk )
 {
     Signal::Intervals expected = _collection->expected_samples();
 
@@ -132,7 +132,7 @@ void CwtToBlock::
                            out_sample_offset,
                            in_frequency_offset,
                            out_frequency_offset,
-                           transfer.last - transfer.first,
+                           transfer.count,
                            complex_info,
                            cuda_stream);
 

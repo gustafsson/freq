@@ -1,6 +1,6 @@
 #include "cudaUtil.h"
 #include <stdio.h>
-#include "tfr/filter.cu.h"
+#include "filters.cu.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES

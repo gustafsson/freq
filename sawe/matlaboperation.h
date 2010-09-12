@@ -59,7 +59,7 @@ private:
 class MatlabOperation: public Signal::OperationCache
 {
 public:
-    MatlabOperation( Signal::pSource source, std::string matlabFunction );
+    MatlabOperation( Signal::pOperation source, std::string matlabFunction );
 
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
 protected:

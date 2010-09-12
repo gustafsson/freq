@@ -3,14 +3,13 @@
 
 #include "tfr/filter.h"
 #include "tfr/cwt.h"
-#include "tfr/inversecwt.h"
 
 namespace Tfr {
 
-class CwtFilter : public Filter
+class CwtFilter : public virtual Filter
 {
 public:
-    CwtFilter( Signal::pSource source=Signal::pSource(),
+    CwtFilter( Signal::pOperation source=Signal::pOperation(),
                Tfr::pTransform transform=Tfr::pTransform() );
 
     virtual pChunk readChunk( const Signal::Interval& I );
@@ -29,6 +28,11 @@ public:
     void transform( Tfr::pTransform m );
 };
 
+// TODO remove
+class DummyCwtFilter: public CwtFilter {
+public:
+    virtual void operator()( Chunk& ) {}
+};
 } // namespace Tfr
 
 #endif // SIGNALCWTFILTER_H

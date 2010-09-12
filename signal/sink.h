@@ -9,32 +9,39 @@ namespace Signal {
 
 /**
   Any operation can be used as a sink in the sense that a sink is something
-  that swallos data. This class hopefully makes it a little bit more clear
+  that swallows data. This class hopefully makes it a little bit more clear
   by providing some convenient methods as examples.
   */
 class Sink: public Operation
 {
 public:
-    Sink():Operation(pSource()) {}
+    Sink(): Operation(pOperation()) {}
+
+    /**
+      If this Sink has recieved all expected_samples and is finished with its
+      work, the caller may remove this Sink.
+      */
+    virtual bool isFinished() { return invalid_samples().isEmpty(); }
 
     virtual pBuffer read(const Interval& I) {
         BOOST_ASSERT(source());
         pBuffer b = source()->read(I);
         put(b);
+        _invalid_samples |= b->getInterval();
         return b;
     }
 
     static void put(Operation* receiver, pBuffer buffer) {
-        pSource s( new BufferSource(buffer));
-        pSource old = receiver->source();
+        pOperation s( new BufferSource(buffer));
+        pOperation old = receiver->source();
         receiver->source(s);
         receiver->read(buffer->getInterval());
         receiver->source(old);
     }
 
-protected:
     virtual void put(pBuffer) { throw std::logic_error(
-            "Neither read or put seems to have been overridden from Sink."); }
+            "Neither read nor put seems to have been overridden from Sink."); }
+protected:
 };
 
 //{
@@ -45,13 +52,6 @@ protected:
 //      For some sinks it makes sense to reset, for some it doesn't.
 //      */
 //    virtual void reset() { _invalid_samples = Intervals(); }
-
-
-//    /**
-//      If this Sink has recieved all expected_samples and is finished with its
-//      work, the caller may remove this Sink.
-//      */
-//    virtual bool isFinished() { return expected_samples().isEmpty(); }
 
 
 //    /**

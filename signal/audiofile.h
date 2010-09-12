@@ -160,7 +160,7 @@
         Heightmap::TfrHeightmap
             implements abstract HeightCollection
             implements abstract ChunkCompleteCallback
-            takes a Signal::pSource as constructing argument, source can be Signal::MicrophoneRecorder,
+            takes a Signal::pOperation as constructing argument, source can be Signal::MicrophoneRecorder,
                 multiple sources is implemented after layer have been implemented
             also takes a Tfr::ChunkQueue
 
@@ -185,7 +185,7 @@
        CwtQueue
             is a queue of ranges, might be worked off by one or multiple GPUs
 
-            1. ask pSource for a Buffer over those samples
+            1. ask pOperation for a Buffer over those samples
             2. The retrieved Signal::Buffer is sent to Tfr::Cwt,
             3. The Tfr::Chunk is sent to this->operation (which is likely is an operationlist).
             4. The Tfr::Chunk is sent to the callback, there might be multiple callbacks on each queue.
@@ -244,6 +244,7 @@ public:
     std::string filename() const { return _original_filename; }
 
 private:
+
     std::string _original_filename;
 };
 

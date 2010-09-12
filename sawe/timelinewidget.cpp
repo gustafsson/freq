@@ -37,7 +37,7 @@ TimelineWidget::
 }
 
 void TimelineWidget::
-        put(Signal::pBuffer , Signal::pSource )
+        put(Signal::pBuffer , Signal::pOperation )
 {
     update();
 }

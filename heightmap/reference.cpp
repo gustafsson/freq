@@ -110,7 +110,7 @@ bool Reference::
     if (b.scale-a.scale < _collection->min_sample_size().scale*_collection->scales_per_block() )
         return false;
 
-    Signal::pSource wf = _collection->worker->source();
+    Signal::pOperation wf = _collection->worker->source();
     if (a.time >= wf->length() )
         return false;
 
@@ -125,7 +125,7 @@ bool Reference::
 {
     Position a, b;
     getArea( a, b );
-    Signal::pSource wf = _collection->worker->source();
+    Signal::pOperation wf = _collection->worker->source();
     if (b.time > 2 * wf->length() && b.scale > 2 )
         return true;
     return false;

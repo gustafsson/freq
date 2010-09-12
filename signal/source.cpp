@@ -124,31 +124,31 @@ Buffer& Buffer::
     return *this;
 }
 
-pBuffer Source::
-        readChecked( unsigned firstSample, unsigned numberOfSamples )
+pBuffer SourceBase::
+        readChecked( const Interval& I )
 {
-    pBuffer r = read(firstSample, numberOfSamples);
+    pBuffer r = read(I);
 
     // Check if read contains firstSample
-    BOOST_ASSERT(r->sample_offset <= firstSample);
-	BOOST_ASSERT(r->sample_offset + r->number_of_samples() > firstSample);
+    BOOST_ASSERT(r->sample_offset <= I.first);
+    BOOST_ASSERT(r->sample_offset + r->number_of_samples() > I.first);
 
     return r;
 }
 
-pBuffer Source::
-        readFixedLength( unsigned firstSample, unsigned numberOfSamples )
+pBuffer SourceBase::
+        readFixedLength( const Interval& I )
 {
     // Try a simple read
-    pBuffer p = readChecked(firstSample, numberOfSamples );
-    if (p->number_of_samples() == numberOfSamples && p->sample_offset==firstSample)
+    pBuffer p = readChecked( I );
+    if (p->number_of_samples() == I.count && p->sample_offset==I.first)
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r( new Buffer(firstSample, numberOfSamples, p->sample_rate) );
+    pBuffer r( new Buffer(I.first, I.count, p->sample_rate) );
     memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
 
-    Intervals sid(firstSample, firstSample + numberOfSamples);
+    Intervals sid(I);
 
     while (!sid.isEmpty())
     {
@@ -156,8 +156,7 @@ pBuffer Source::
         sid -= p->getInterval();
 
         if (!sid.isEmpty()) {
-            Interval i = sid.getInterval( Intervals::SampleType_MAX );
-            p = readChecked( i.first, i.last - i.first );
+            p = readChecked( sid.getInterval() );
         }
     }
 

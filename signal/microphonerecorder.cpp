@@ -60,7 +60,7 @@ MicrophoneRecorder::~MicrophoneRecorder()
         _stream_record->close();
     }
 
-    if (!_data.empty()) {
+    if (0<_data.length()) {
         TaskTimer tt(TaskTimer::LogVerbose, "Releasing recorded data");
         _data.reset();
     }
@@ -121,8 +121,13 @@ int MicrophoneRecorder::
 
     _data.put( b );
 
+    // TODO rewrite
     if (_callback)
-        _callback->put( b );
+    {
+        pOperation bs( new BufferSource(b));
+        _callback->source(bs);
+        _callback->read(b->getInterval());
+    }
 
     return paContinue;
 }

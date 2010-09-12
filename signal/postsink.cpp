@@ -1,15 +1,66 @@
 #include "postsink.h"
-#include "cwtfilter.h"
-
+#include "buffersource.h"
+#include "tfr/filter.h"
 #include <boost/foreach.hpp>
+
+using namespace std;
 
 namespace Signal {
 
+Signal::pBuffer PostSink::
+        read( const Signal::Interval& I )
+{
+    vector<pOperation> passive_operations;
+    vector<pOperation> active_operations;
+
+    {
+        QMutexLocker l(&_sinks_lock);
+
+        BOOST_FOREACH( pOperation c, _sinks )
+        {
+            Operation* s = (Operation*)c.get();
+            if (s->affected_samples() & I )
+                active_operations.push_back(c);
+            else
+                passive_operations.push_back(c);
+        }
+    }
+
+    pOperation prev = source();
+    BOOST_FOREACH( pOperation c, passive_operations) {
+        c->source(prev);
+        prev = c;
+    }
+
+    if (1==active_operations.size())
+    {
+        pOperation c = active_operations.front();
+        c->source(prev);
+        prev = c;
+        active_operations.clear();
+    }
+
+    pBuffer b = prev->read( I );
+
+    if (!active_operations.empty())
+    {
+        prev.reset( new BufferSource( b ));
+        BOOST_FOREACH( pOperation c, active_operations) {
+            c->source(prev);
+            prev = c;
+        }
+        prev->read( I );
+    }
+
+    return b;
+}
+
+/* TODO remove
 void PostSink::
-        put( pBuffer b, pSource s)
+        operator()( Chunk& chunk )
 {
     Signal::Intervals expected = expected_samples();
-    if ( (expected & b->getInterval()).isEmpty() )
+    if ( !(expected & chunk.getInterval()) )
         return;  // Don't forward data that wasn't requested
 
     if (_inverse_cwt.filter.get())
@@ -28,8 +79,10 @@ void PostSink::
 
     BOOST_FOREACH( pSink sink, sinks() )
         sink->put(b, s);
-}
+}*/
 
+
+/* TODO remove
 void PostSink::
         reset()
 {
@@ -37,8 +90,10 @@ void PostSink::
         s->reset( );
 
     Tfr::ChunkSink::reset();
-}
+}*/
 
+
+/* TODO remove
 bool PostSink::
         isFinished()
 {
@@ -49,80 +104,78 @@ bool PostSink::
 
     return r;
 }
+*/
 
-void PostSink::
-        onFinished()
-{
-    BOOST_FOREACH( pSink s, sinks() )
-        s->onFinished( );
-}
 
 Intervals PostSink::
-        expected_samples()
+        invalid_samples()
 {
-    Intervals x;
+    Intervals I = invalid_samples();
 
-    BOOST_FOREACH( pSink s, sinks() )
-        x |= s->expected_samples();
+    BOOST_FOREACH( pOperation s, sinks() )
+    {
+        Operation* o = dynamic_cast<Operation*>(s.get());
+        if (o)
+            I |= o->invalid_samples();
+    }
 
-    _expected_samples = x;
-    return x;
+    return I;
 }
+
 
 void PostSink::
-        add_expected_samples( const Intervals& x )
+        invalidate_samples( const Intervals& I )
 {
-    BOOST_FOREACH( pSink s, sinks() )
-        s->add_expected_samples( x );
+    BOOST_FOREACH( pOperation s, sinks() )
+    {
+        Operation* o = dynamic_cast<Operation*>(s.get());
+        if (o)
+            o->invalidate_samples( I );
+    }
 
-    _expected_samples |= x;
+    Operation::invalidate_samples( I );
 }
 
-std::vector<pSink> PostSink::
+
+std::vector<pOperation> PostSink::
         sinks()
 {
     QMutexLocker l(&_sinks_lock);
     return _sinks;
 }
 
+
 void PostSink::
-        sinks(std::vector<pSink> v)
+        sinks(std::vector<pOperation> v)
 {
     QMutexLocker l(&_sinks_lock);
     _sinks = v;
 }
 
-Tfr::pFilter PostSink::
+
+pOperation PostSink::
         filter()
 {
-    return _inverse_cwt.filter;
+    return _filter;
 }
 
+
 void PostSink::
-        filter(Tfr::pFilter f, pSource s)
+        filter(pOperation f)
 {
-    if (f!=_inverse_cwt.filter) {
-        sinks(std::vector<pSink>());
-    }
+    Intervals I;
 
-    reset();
+    I |= f->affected_samples();
+    I |= _filter->affected_samples();
 
-    if (f) {
-        unsigned FS = s->sample_rate();
-        Interval i =
-                (f->getTouchedSamples(FS) - f->ZeroedSamples(FS)).coveredInterval();
+    Tfr::Filter* filt = dynamic_cast<Tfr::Filter*>(f.get());
+    if (filt)
+        I -= filt->zeroed_samples();
 
-        i.last = std::min( i.last, (Intervals::SampleType)s->number_of_samples() );
-
-        if (!i.valid())
-            f.reset();
-        else
-            add_expected_samples( i );
-
-    }
+    invalidate_samples( I );
 
     // Change filter
-    _inverse_cwt.filter = f;
+    _filter = f;
 }
 
 } // namespace Signal

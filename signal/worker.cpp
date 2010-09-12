@@ -1,7 +1,6 @@
 #include "worker.h"
 #include "intervals.h"
-#include "cwtfilter.h"
-#include "buffersource.h"
+#include "postsink.h"
 
 #include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory
 
@@ -21,7 +20,7 @@ using namespace boost::posix_time;
 namespace Signal {
 
 Worker::
-        Worker(Signal::pSource s)
+        Worker(Signal::pOperation s)
 :   work_chunks(0),
     work_time(0),
     _source(s),
@@ -61,8 +60,7 @@ bool Worker::
 
     ptime startTime = microsec_clock::local_time();
 
-    Interval interval;
-    interval = todo_list().getInterval( _samples_per_chunk, center_sample );
+    Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
 
     pBuffer b;
 
@@ -140,14 +138,14 @@ Signal::Intervals Worker::
     return c;
 }
 
-Signal::pSource Worker::
+Signal::pOperation Worker::
         source() const
 {
     return _source;
 }
 
 void Worker::
-        source(Signal::pSource value)
+        source(Signal::pOperation value)
 {
     _source = value;
     // todo_list.clear();
@@ -200,11 +198,11 @@ void Worker::
 }
 
 
-std::vector<pSource> Worker::
+std::vector<pOperation> Worker::
         callbacks()
 {
     QMutexLocker l(&_callbacks_lock);
-    std::vector<pSource> c = _callbacks;
+    std::vector<pOperation> c = _callbacks;
     return c;
 }
 
@@ -246,74 +244,33 @@ void Worker::
 }
 
 void Worker::
-        addCallback( pSink c )
+        addCallback( pOperation c )
 {
-    BOOST_ASSERT(dynamic_cast<Sink*>(c.get()));
-
     QMutexLocker l( &_callbacks_lock );
     _callbacks.push_back( c );
 }
 
 void Worker::
-        removeCallback( pSink c )
+        removeCallback( pOperation c )
 {
-    BOOST_ASSERT(dynamic_cast<Sink*>(c.get()));
-
     QMutexLocker l( &_callbacks_lock );
-    _callbacks.remove( c );
+    // todo, check if this works
+    std::remove( _callbacks.begin(), _callbacks.end(), c );
 }
 
 pBuffer Worker::
         callCallbacks( Interval i )
 {
-    vector<pSource> worklist;
+    vector<pOperation> worklist;
     {
         QMutexLocker l( &_callbacks_lock );
         worklist = _callbacks;
     }
-    vector<pSource> passive_operations;
-    vector<pSource> active_operations;
 
-    BOOST_FOREACH( pSource c, worklist ) {
-        Sink* s = (Sink*)c.get();
-        if (s->nonpassive_operation() & I )
-            active_operations.push_back(c);
-        else
-            passive_operations.push_back(c);
-    }
-
-    pSource prev = source();
-    BOOST_FOREACH( pSource c, passive_operations) {
-        Sink* s = (Sink*)c.get();
-        s->source(prev);
-        prev = c;
-    }
-
-    if (1==active_operations.size())
-    {
-        Sink* s = (Sink*)active_operations.front();
-        s->source(prev);
-        prev = c;
-        active_operations.clear();
-    }
-
-    pBuffer b = prev->read( I );
-
-    QMutexLocker l(&_todo_lock);
-    _todo_list -= b->getInterval();
-
-    if (!active_operations.empty())
-    {
-        prev.reset( new BufferSource( b ));
-        BOOST_FOREACH( pSource c, active_operations) {
-            Sink* s = (Sink*)c.get();
-            s->source(prev);
-            prev = c;
-        }
-        prev->read( I );
-    }
-
-    return b;
+    PostSink ps;
+    ps.source(source());
+    ps.sinks( worklist );
+    return ps.read(i);
 }
 
 } // namespace Signal

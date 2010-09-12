@@ -31,12 +31,11 @@ namespace Signal {
 
 BufferSource::
         BufferSource( pBuffer waveform )
-:   read_channel(0),
-    _waveform(waveform)
+:    _waveform(waveform)
 {
 }
 
-
+/*
 pBuffer BufferSource::
         read( Interval I )
 {
@@ -44,7 +43,7 @@ pBuffer BufferSource::
 }
 
 // TODO rewrite getChunk and use only 'read'. Buffer has functions for transfering between real and complex data
-/* returns a chunk with numberOfSamples samples. If the requested range exceeds the source signal it is padded with 0. */
+// returns a chunk with numberOfSamples samples. If the requested range exceeds the source signal it is padded with 0.
 pBuffer BufferSource::
         getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved )
 {
@@ -113,10 +112,8 @@ pBuffer BufferSource::
 }
 
 
-/**
-  Remove zeros from the beginning and end
-  */
-pSource BufferSource::
+/// Remove zeros from the beginning and end
+pOperation BufferSource::
         crop()
 {
     unsigned num_frames = _waveform->waveform_data->getNumberOfElements().width;
@@ -132,10 +129,10 @@ pSource BufferSource::
                 firstNonzero = f+1;
 
     if (firstNonzero > lastNonzero)
-        return pSource();
+        return pOperation();
 
     BufferSource* wf(new BufferSource());
-    pSource rwf(wf);
+    pOperation rwf(wf);
     wf->_waveform->sample_offset = firstNonzero + _waveform->sample_offset;
     wf->_waveform->sample_rate = sample_rate();
     wf->_waveform->waveform_data.reset (new GpuCpuData<float>(0, make_cudaExtent((lastNonzero-firstNonzero+1) , channel_count, 1)));
@@ -153,5 +150,5 @@ pSource BufferSource::
 
     return rwf;
 }
-
+*/
 } // namespace Signal

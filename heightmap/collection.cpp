@@ -5,6 +5,7 @@
 
 #include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
+#include "signal/postsink.h"
 
 #include <boost/foreach.hpp>
 #include <InvokeOnDestruction.hpp>
@@ -36,7 +37,8 @@ Collection::
     _samples_per_block( 1<<7 ),
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
-    _frame_counter(0)
+    _frame_counter(0),
+    _postsink( new Signal::PostSink() )
 {
     // Updated as soon as the first chunk is received
     _min_sample_size.scale = 1;
@@ -108,7 +110,7 @@ unsigned Collection::
 void Collection::
         update_sample_size( Tfr::Chunk* chunk )
 {
-    pSource wf = worker->source();
+    pOperation wf = worker->source();
 
     if (chunk)
     {
@@ -156,7 +158,7 @@ Reference Collection::
     Reference r(this);
 
     // make sure the reference becomes valid
-    pSource wf = worker->source();
+    pOperation wf = worker->source();
     float length = wf->length();
 
     // Validate requested sampleSize
@@ -562,7 +564,7 @@ void Collection::
     Position a, b;
     block->ref.getArea(a,b);
 
-    pSource fast_source = Operation::fast_source( worker->source() );
+    pOperation fast_source = Operation::fast_source( worker->source() );
 
     unsigned first_sample = (unsigned)floor(a.time*fast_source->sample_rate()),
              last_sample = (unsigned)ceil(b.time*fast_source->sample_rate()),
@@ -620,7 +622,7 @@ bool Collection::
     {
         float in_offset = transfer.first - inInterval.first;
         float out_offset = transfer.first - outInterval.first;
-        float in_valid_samples = transfer.last - transfer.first;
+        float in_valid_samples = transfer.count;
 
         // Rescale to proper sample rates (samples are originally
         // described in the signal_sample_rate)

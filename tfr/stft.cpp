@@ -94,7 +94,7 @@ pChunk Fft::
     // of a small prime") for faster fft calculations
     output_n.width = spo2g( output_n.width / 2 - 1 );
 
-    pChunk chunk( new Chunk );
+    pChunk chunk( new StftChunk );
     chunk->transform_data.reset( new GpuCpuData<float2>(
             0,
             output_n,
@@ -190,24 +190,6 @@ void Fft::
             q[i] = 0;
     }
 
-    /*TODO remove {
-        TIME_STFT TaskTimer tt("Converting from float%c to double2", buffer->interleaved() == Signal::Buffer::Interleaved_Complex?'2':'1');
-
-        if (buffer->interleaved() == Signal::Buffer::Interleaved_Complex) {
-            for (unsigned i=0; i<2*n; i++)
-                q[i] = p[i];
-        } else {
-            for (unsigned i=0; i<n; i++)
-            {
-                q[2*i + 0] = p[i];
-                q[2*i + 1] = 0;
-            }
-        }
-
-        for (unsigned i=2*n; i<2*N; i++)
-            q[i] = 0;
-    }*/
-
 
     {
         TIME_STFT TaskTimer tt("Computing fft");
@@ -260,23 +242,6 @@ Stft::
 }
 
 
-// static
-Stft& Stft::
-        Singleton()
-{
-    return *dynamic_cast<Stft*>(SingletonP().get());
-}
-
-
-// static
-pTransform Stft::
-        SingletonP()
-{
-    static pTransform P(new Stft());
-    return P;
-}
-
-
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
@@ -295,7 +260,7 @@ Tfr::pChunk Stft::
     if (0==n.height)
         return Tfr::pChunk();
 
-    Tfr::pChunk chunk( new Tfr::Chunk() );
+    Tfr::pChunk chunk( new Tfr::StftChunk() );
 
     chunk->transform_data.reset( new GpuCpuData<float2>(
             0,

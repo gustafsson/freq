@@ -3,6 +3,7 @@
 
 #include "transform.h"
 #include <vector>
+#include "HasSingleton.h"
 
 typedef unsigned int cufftHandle; /* from cufft.h */
 
@@ -35,7 +36,7 @@ private:
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
 */
-class Fft: public Transform
+class Fft: public Transform, public HasSingleton<Fft, Transform>
 {
 public:
     Fft( /*cudaStream_t stream=0*/ );
@@ -62,13 +63,10 @@ private:
 Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 @see Stft::operator()
 */
-class Stft: public Transform
+class Stft: public Transform, public HasSingleton<Stft,Transform>
 {
 public:
     Stft( cudaStream_t stream=0 );
-
-    static Stft& Singleton();
-    static pTransform SingletonP();
 
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
@@ -90,6 +88,10 @@ private:
         Default value: chunk_size=1<<11
     */
     unsigned _chunk_size;
+};
+
+class StftChunk: public Chunk
+{
 };
 
 } // namespace Tfr

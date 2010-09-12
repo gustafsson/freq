@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <boost/foreach.hpp>
 #include <QMutexLocker>
-#include <stdio.h> // todo remove
 #include <QMessageBox>
 
 //#define TIME_PLAYBACK
@@ -94,7 +93,7 @@ unsigned Playback::
 float Playback::
         time()
 {
-    if(_data.empty())
+    if (_data.empty())
         return 0.f;
 
     // streamPlayback->time() doesn't seem to work (ubuntu 10.04)
@@ -166,7 +165,7 @@ void Playback::
 bool Playback::
         isFinished()
 {
-    return expected_samples().isEmpty() && isStopped();
+    return invalid_samples().isEmpty() && isStopped();
 }
 
 void Playback::
@@ -237,7 +236,7 @@ bool Playback::
 {
     unsigned nAccumulated_samples = _data.number_of_samples();
 
-    Signal::Intervals expect = expected_samples();
+    Signal::Intervals expect = invalid_samples();
     if (!_data.empty() && expect.isEmpty()) {
         TIME_PLAYBACK TaskTimer("Not underfed").suppressTiming();
         return false; // No more expected samples, not underfed
@@ -265,8 +264,7 @@ bool Playback::
             (expect.intervals().back().last - marker) / (float)_data.sample_rate();
 
     Signal::Interval cov = expect.coveredInterval();
-    float estimated_time_required =
-            (cov.last - cov.first) / incoming_samples_per_sec;
+    float estimated_time_required = cov.count / incoming_samples_per_sec;
 
     // Add small margin
     estimated_time_required *= 1.11f;
@@ -293,7 +291,7 @@ int Playback::
         _startPlay_timestamp = microsec_clock::local_time();
     }
 
-    pBuffer b = _data.readFixedLength( _playback_itr, framesPerBuffer );
+    pBuffer b = _data.readFixedLength( Interval(_playback_itr, _playback_itr+framesPerBuffer) );
     memcpy( buffer, b->waveform_data->getCpuMemory(), framesPerBuffer*sizeof(float) );
     _playback_itr += framesPerBuffer;
 

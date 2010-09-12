@@ -6,26 +6,35 @@ namespace Signal {
     // OperationRemoveSection ///////////////////////////////////////////////////////////
 
 OperationRemoveSection::
-        OperationRemoveSection( pSource source, unsigned firstSample, unsigned numberOfRemovedSamples )
+        OperationRemoveSection( pOperation source, unsigned firstSample, unsigned numberOfRemovedSamples )
 :   Operation( source ),
     _firstSample( firstSample ),
     _numberOfRemovedSamples( numberOfRemovedSamples )
 {}
 
 pBuffer OperationRemoveSection::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
+    unsigned firstSample = I.first;
+    unsigned numberOfSamples = I.count;
+
     if (firstSample + numberOfSamples <= _firstSample )
     {
-        return _source->read( firstSample, numberOfSamples );
+        return _source->read( I );
     }
 
     if (firstSample < _firstSample)
     {
-        return _source->read( firstSample, _firstSample - firstSample );
+        Interval I2(firstSample,_firstSample);
+
+        return _source->read( I2 );
     }
 
-    pBuffer b = _source->read( firstSample + _numberOfRemovedSamples, numberOfSamples );
+    Interval I2(0,0);
+    I2.first = firstSample + _numberOfRemovedSamples;
+    I2.last = I2.first + numberOfSamples;
+
+    pBuffer b = _source->read( I2 );
     b->sample_offset -= _numberOfRemovedSamples;
     return b;
 }
@@ -42,7 +51,7 @@ long unsigned OperationRemoveSection::
     // OperationInsertSilence ///////////////////////////////////////////////////////////
 
 OperationInsertSilence::
-        OperationInsertSilence( pSource source, unsigned firstSample, unsigned numberOfSilentSamples )
+        OperationInsertSilence( pOperation source, unsigned firstSample, unsigned numberOfSilentSamples )
 :   Operation( source ),
     _firstSample( firstSample ),
     _numberOfSilentSamples( numberOfSilentSamples )
@@ -50,16 +59,20 @@ OperationInsertSilence::
 
 
 pBuffer OperationInsertSilence::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
+    unsigned firstSample = I.first;
+    unsigned numberOfSamples = I.count;
+
     if (firstSample + numberOfSamples <= _firstSample )
-        return _source->read( firstSample, numberOfSamples );
+        return _source->read( I );
 
     if (firstSample < _firstSample)
-        return _source->read( firstSample, _firstSample - firstSample );
+        return _source->read( Interval(I.first, _firstSample - I.first) );
 
     if (firstSample >= _firstSample +  _numberOfSilentSamples) {
-        pBuffer b = _source->read( firstSample - _numberOfSilentSamples, numberOfSamples );
+        pBuffer b = _source->read(
+                Interval( I.first - _numberOfSilentSamples, I.first - _numberOfSilentSamples + numberOfSamples ));
         b->sample_offset += _numberOfSilentSamples;
         return b;
     }
@@ -86,7 +99,7 @@ long unsigned OperationInsertSilence::
 // OperationSuperposition ///////////////////////////////////////////////////////////
 
 OperationSuperposition::
-        OperationSuperposition( pSource source, pSource source2 )
+        OperationSuperposition( pOperation source, pOperation source2 )
 :   Operation( source ),
     _source2( source2 )
 {
@@ -95,10 +108,10 @@ OperationSuperposition::
 }
 
 pBuffer OperationSuperposition::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
-    pBuffer a = _source->read(firstSample, numberOfSamples );
-    pBuffer b = _source2->read(firstSample, numberOfSamples );
+    pBuffer a = _source->read( I );
+    pBuffer b = _source2->read( I );
     if (a->interleaved()!=Buffer::Only_Real) a = a->getInterleaved(Buffer::Only_Real);
     if (b->interleaved()!=Buffer::Only_Real) b = b->getInterleaved(Buffer::Only_Real);
 

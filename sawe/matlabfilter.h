@@ -13,7 +13,7 @@ public:
 
     virtual void operator()( Tfr::Chunk& );
     virtual Signal::Intervals ZeroedSamples() const;
-    virtual Signal::Intervals AffectedSamples() const;
+    virtual Signal::Intervals affected_samples() const;
 
 protected:
     MatlabFunction _matlab;

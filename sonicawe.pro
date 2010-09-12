@@ -38,6 +38,7 @@ RESOURCES += \
     saweui/icon-resources.qrc \
 
 SOURCES += \
+    filters/filters.cpp \
     filters/reassign.cpp \
     filters/ridge.cpp \
     heightmap/blockfilter.cpp \
@@ -74,17 +75,17 @@ SOURCES += \
     signal/worker.cpp \
     signal/writewav.cpp \
     tfr/chunk.cpp \
-    tfr/chunksink.cpp \
     tfr/cwt.cpp \
+    tfr/cwtchunk.cpp \
     tfr/cwtfilter.cpp \
     tfr/fft4g.c \
     tfr/filter.cpp \
-    tfr/filters.cpp \
-    tfr/inversecwt.cpp \
     tfr/stft.cpp \
     tfr/stftfilter.cpp \
 
 HEADERS += \
+    filters/filters.cu.h \
+    filters/filters.h \
     filters/reassign.h \
     filters/ridge.h \
     heightmap/block.cu.h \
@@ -125,14 +126,11 @@ HEADERS += \
     signal/worker.h \
     signal/writewav.h \
     tfr/chunk.h \
-    tfr/chunksink.h \
     tfr/cwt.h \
+    tfr/cwtchunk.h \
     tfr/cwtfilter.h \
-    tfr/filter.cu.h \
     tfr/filter.h \
-    tfr/filters.h \
     tfr/freqaxis.h \
-    tfr/inversecwt.h \
     tfr/stft.h \
     tfr/transform.h \
     tfr/wavelet.cu.h \
@@ -144,17 +142,17 @@ FORMS += \
     saweui/propertiesstroke.ui \
 
 OTHER_FILES += \
+    filters/filters.cu \
     heightmap/block.cu \
     heightmap/heightmap.frag \
     heightmap/heightmap.vert \
     heightmap/slope.cu \
-    tfr/filter.cu \
     tfr/wavelet.cu \
 
 CUDA_SOURCES += \
+    filters/filters.cu \
     heightmap/block.cu \
     heightmap/slope.cu \
-    tfr/filter.cu \
     tfr/wavelet.cu \
 
 OTHER_SOURCES += \
@@ -275,7 +273,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "','-I "','"') \
+        $$join(INCLUDEPATH,'" -I "../../sonic/sonicawe/','-I "../../sonic/sonicawe/','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \

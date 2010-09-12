@@ -72,7 +72,7 @@ public:
     float xscale;
 
 	bool isRecordSource();
-    void setWorkerSource( Signal::pSource s = Signal::pSource());
+    void setWorkerSource( Signal::pOperation s = Signal::pOperation());
     void setTimeline( QWidget* timelineWidget );
     void setPosition( float time, float f );
 
@@ -81,7 +81,7 @@ public:
     unsigned playback_device;
     Heightmap::Collection* collection() { return _renderer->collection(); }
     Heightmap::pRenderer renderer() { return _renderer; }
-    Tfr::CwtFilter* getCwtFilter();
+    Tfr::CwtFilter* getCwtFilterHead();
 
     void drawSelection();
 
@@ -140,7 +140,7 @@ protected slots:
     virtual void receiveSetTransform_Cwt_ridge();
 
 signals:
-    void operationsUpdated( Signal::pSource s );
+    void operationsUpdated( Signal::pOperation s );
     void setSelectionActive(bool);
     void setNavigationActive(bool);
     void setInfoToolActive(bool);
@@ -149,17 +149,17 @@ private:
     friend class Heightmap::Renderer;
 
     // overloaded from Signal::Sink
-    virtual void put( Signal::pBuffer b, Signal::pSource );
+    virtual void put( Signal::pBuffer b, Signal::pOperation );
     virtual void add_expected_samples( const Signal::Intervals& s );
 
-// TODO remove    Signal::PostSink* getPostSink();
+    Signal::PostSink* getPostSink();
 
     Heightmap::pRenderer _renderer;
     Signal::pWorker _worker;
     Signal::pWorkerCallback _collectionCallback;
     Signal::pWorkerCallback _postsinkCallback;
-    Signal::pSource _matlabfilter;
-    Signal::pSource _matlaboperation;
+    Signal::pOperation _matlabfilter;
+    Signal::pOperation _matlaboperation;
     QWidget* _timeline;
     boost::scoped_ptr<TaskTimer> _work_timer;
     boost::scoped_ptr<TaskTimer> _render_timer;
@@ -190,7 +190,7 @@ private:
 
     void drawArrows();
     void drawColorFace();
-    void drawWaveform( Signal::pSource waveform );
+    void drawWaveform( Signal::pOperation waveform );
     static void drawWaveform_chunk_directMode( Signal::pBuffer chunk);
     static void drawSpectrogram_borders_directMode( Heightmap::pRenderer renderer );
     template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw=false );

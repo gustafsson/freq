@@ -11,7 +11,7 @@ namespace Signal {
   by combining sequences of several other Operations.
 
   _sourceSubOperation is an Operation that gets updated on changes of source
-  by calls to void source(pSource).
+  by calls to void source(pOperation).
 
   _readSubOperation is read from by pBuffer read(unsigned,unsigned).
 
@@ -21,18 +21,19 @@ namespace Signal {
   */
 class OperationSubOperations : public Operation {
 public:
-    pSource subSource() { return _readSubOperation; }
+    pOperation subSource() { return _readSubOperation; }
 
 	std::string name() { return _name; }
 
 protected:
-	OperationSubOperations(pSource source, std::string name = "");
+	OperationSubOperations(pOperation source, std::string name = "");
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
-    virtual void source(pSource v);
+    virtual pBuffer read( const Interval&  I);
+    virtual pOperation source() { return Operation::source(); }
+    virtual void source(pOperation v);
 
-    pSource _sourceSubOperation;
-    pSource _readSubOperation;
+    pOperation _sourceSubOperation;
+    pOperation _readSubOperation;
 	std::string _name;
 };
 
@@ -44,7 +45,7 @@ protected:
 */
 class OperationSetSilent: public OperationSubOperations {
 public:
-    OperationSetSilent( pSource source, unsigned firstSample, unsigned numberOfSamples );
+    OperationSetSilent( pOperation source, unsigned firstSample, unsigned numberOfSamples );
 
     void reset( unsigned firstSample, unsigned numberOfSamples );
 };
@@ -57,7 +58,7 @@ public:
 */
 class OperationCrop: public OperationSubOperations {
 public:
-    OperationCrop( pSource source, unsigned firstSample, unsigned numberOfSamples );
+    OperationCrop( pOperation source, unsigned firstSample, unsigned numberOfSamples );
 
     void reset( unsigned firstSample, unsigned numberOfSamples );
 };
@@ -85,7 +86,7 @@ public:
   */
 class OperationMove: public OperationSubOperations {
 public:
-    OperationMove( pSource source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    OperationMove( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 
     void reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 };
@@ -113,7 +114,7 @@ public:
   */
 class OperationMoveMerge: public OperationSubOperations {
 public:
-    OperationMoveMerge( pSource source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    OperationMoveMerge( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 
     void reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 };
@@ -136,16 +137,16 @@ public:
   */
 class OperationShift: public OperationSubOperations {
 public:
-    OperationShift( pSource source, int sampleShift );
+    OperationShift( pOperation source, int sampleShift );
 
     void reset( int sampleShift );
 };
 
 class OperationMoveSelection: public OperationSubOperations {
 public:
-    OperationMoveSelection( pSource source, Signal::pSource selectionFilter, int sampleShift, float freqDelta );
+    OperationMoveSelection( pOperation source, Signal::pOperation selectionFilter, int sampleShift, float freqDelta );
 
-    void reset( Signal::pSource selectionFilter, int sampleShift, float freqDelta );
+    void reset( Signal::pOperation selectionFilter, int sampleShift, float freqDelta );
 };
 
 } // namespace Signal

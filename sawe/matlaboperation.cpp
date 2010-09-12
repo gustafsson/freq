@@ -154,7 +154,7 @@ void MatlabFunction::
 }
 
 MatlabOperation::
-        MatlabOperation( Signal::pSource source, std::string matlabFunction )
+        MatlabOperation( Signal::pOperation source, std::string matlabFunction )
 :   OperationCache(source),
     _matlab(matlabFunction, 4)
 {

@@ -2,6 +2,7 @@
 #include <sstream>
 #include <fstream>
 #include "tfr/cwt.h"
+#include "tfr/cwtchunk.h"
 
 using namespace std;
 
@@ -30,7 +31,17 @@ void Csv::
     TaskTimer tt("Saving CSV-file %s", filename.c_str());
     ofstream csv(filename.c_str());
 
-    Tfr::pChunk chunk = Tfr::Cwt::cleanChunk(c);
+    Tfr::Chunk* chunk;
+    Tfr::pChunk pchunk;
+    Tfr::CwtChunk* cwt = dynamic_cast<Tfr::CwtChunk*>(&c);
+
+    if (cwt)
+    {
+        pchunk = cwt->cleanChunk();
+        chunk = pchunk.get();
+    }
+    else
+        chunk = &c;
 
     float2* p = chunk->transform_data->getCpuMemory();
     cudaExtent s = chunk->transform_data->getNumberOfElements();

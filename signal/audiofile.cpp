@@ -123,8 +123,7 @@ std::string Audiofile::
   */
 Audiofile::
         Audiofile(std::string filename)
-:   _selected_channel(0),
-    _original_filename(filename)
+:   _original_filename(filename)
 {
     _waveform.reset( new Buffer());
 
@@ -189,100 +188,5 @@ Audiofile::
         printf("\t%g  \t%g\n",fdata[2*i], fdata[2*i+1]);
 #endif
 }
-
-
-pBuffer Audiofile::read( unsigned firstSample, unsigned numberOfSamples ) {
-    return  getChunk( firstSample, numberOfSamples, 0, Buffer::Only_Real );
-}
-
-/* returns a chunk with numberOfSamples samples. If the requested range exceeds the source signal it is padded with 0. */
-pBuffer Audiofile::getChunk( unsigned firstSample, unsigned numberOfSamples, unsigned channel, Buffer::Interleaved interleaved )
-{
-    if (firstSample+numberOfSamples < firstSample)
-        throw std::invalid_argument("Overflow: firstSample+numberOfSamples");
-
-    if (channel >= _waveform->waveform_data->getNumberOfElements().height)
-        throw std::invalid_argument("channel >= _waveform.waveform_data->getNumberOfElements().height");
-
-    char m=1+(Buffer::Interleaved_Complex == interleaved);
-    char sourcem = 1+(Buffer::Interleaved_Complex == _waveform->interleaved());
-
-    pBuffer chunk( new Buffer( interleaved ));
-    chunk->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(m*numberOfSamples, 1, 1) ) );
-    chunk->sample_rate = sample_rate();
-    chunk->sample_offset = firstSample;
-    size_t sourceSamples = _waveform->waveform_data->getNumberOfElements().width/sourcem;
-
-    unsigned validSamples;
-    if (firstSample > sourceSamples)
-        validSamples = 0;
-    else if ( firstSample + numberOfSamples > sourceSamples )
-        validSamples = sourceSamples - firstSample;
-    else // default case
-        validSamples = numberOfSamples;
-
-    float *target = chunk->waveform_data->getCpuMemory();
-    float *source = _waveform->waveform_data->getCpuMemory()
-                  + firstSample*sourcem
-                  + channel * _waveform->waveform_data->getNumberOfElements().width;
-
-    bool interleavedSource = Buffer::Interleaved_Complex == _waveform->interleaved();
-    for (unsigned i=0; i<validSamples; i++) {
-        target[i*m + 0] = source[i*sourcem + 0];
-        if (Buffer::Interleaved_Complex == interleaved)
-            target[i*m + 1] = interleavedSource ? source[i*sourcem + 1]:0;
-    }
-
-    for (unsigned i=validSamples; i<numberOfSamples; i++) {
-        target[i*m + 0] = 0;
-        if (Buffer::Interleaved_Complex == interleaved)
-            target[i*m + 1] = 0;
-    }
-    return chunk;
-}
-
-
-/**
-  Remove zeros from the beginning and end
-  */
-pSource Audiofile::crop() {
-    unsigned num_frames = _waveform->waveform_data->getNumberOfElements().width;
-    unsigned channel_count = _waveform->waveform_data->getNumberOfElements().height;
-    float *fdata = _waveform->waveform_data->getCpuMemory();
-    unsigned firstNonzero = 0;
-    unsigned lastNonzero = 0;
-    for (unsigned f=0; f<num_frames; f++)
-        for (unsigned c=0; c<channel_count; c++)
-            if (fdata[f*channel_count + c])
-                lastNonzero = f;
-            else if (firstNonzero==f)
-                firstNonzero = f+1;
-
-    if (firstNonzero > lastNonzero)
-        return pSource();
-
-    Audiofile* wf(new Audiofile());
-    pSource rwf(wf);
-    wf->_waveform->sample_offset = firstNonzero + _waveform->sample_offset;
-    wf->_waveform->sample_rate = sample_rate();
-    wf->_waveform->waveform_data.reset (new GpuCpuData<float>(0, make_cudaExtent((lastNonzero-firstNonzero+1) , channel_count, 1)));
-    float *data = wf->_waveform->waveform_data->getCpuMemory();
-
-
-    for (unsigned f=firstNonzero; f<=lastNonzero; f++)
-        for (unsigned c=0; c<channel_count; c++) {
-            float rampup = min(1.f, (f-firstNonzero)/(sample_rate()*0.01f));
-            float rampdown = min(1.f, (lastNonzero-f)/(sample_rate()*0.01f));
-            rampup = 3*rampup*rampup-2*rampup*rampup*rampup;
-            rampdown = 3*rampdown*rampdown-2*rampdown*rampdown*rampdown;
-            data[f-firstNonzero + c*num_frames] = 0.5f*rampup*rampdown*fdata[ f + c*num_frames];
-        }
-
-    return rwf;
-}
-
-
-unsigned Audiofile::sample_rate() {          return _waveform->sample_rate;    }
-long unsigned Audiofile::number_of_samples() {    return _waveform->waveform_data->getNumberOfElements().width; }
 
 } // namespace Signal

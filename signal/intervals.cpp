@@ -9,10 +9,10 @@
 
 namespace Signal {
 
-const IntervalType IntervalType_MIN = (IntervalType)0;
-const IntervalType IntervalType_MAX = (IntervalType)-1;
-const Intervals Intervals_ALL = Intervals(IntervalType_MIN, IntervalType_MAX);
-const Interval Interval_ALL = { IntervalType_MIN, IntervalType_MAX };
+const IntervalType Interval::Interval::IntervalType_MIN = (IntervalType)0;
+const IntervalType Interval::Interval::IntervalType_MAX = (IntervalType)-1;
+const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Interval::IntervalType_MAX);
+const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
 
 bool Interval::
         valid() const
@@ -52,7 +52,7 @@ Intervals::
 }
 
 Intervals::
-        Intervals(Interval r)
+        Intervals(const Interval& r)
 {
     BOOST_ASSERT( r.first < r.last );
     _intervals.push_back( r );
@@ -62,8 +62,7 @@ Intervals::
         Intervals(IntervalType first, IntervalType last)
 {
     BOOST_ASSERT( first < last );
-    Interval r = { first, last };
-    _intervals.push_back( r );
+    _intervals.push_back( Interval( first, last ) );
 }
 
 Intervals& Intervals::
@@ -136,11 +135,10 @@ Intervals& Intervals::
 
             // Check if intersection is in the middle of 'itr'
             else if (i.first < r.first && i.last > r.last) {
-                Interval j = {r.last, i.last};
+                Interval j(r.last, i.last);
                 itr->last = r.first;
                 itr++;
                 _intervals.insert(itr, j);
-//                itr++;
 
             // Else, error
             } else {
@@ -160,12 +158,12 @@ Intervals& Intervals::
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
         Interval& i = *itr;
 	
-        if (IntervalType_MIN + b > i.first ) i.first = IntervalType_MIN;
+        if (Interval::IntervalType_MIN + b > i.first ) i.first = Interval::Interval::IntervalType_MIN;
 		else i.first -= b;
-        if (IntervalType_MIN + b > i.last ) i.last = IntervalType_MIN;
+        if (Interval::IntervalType_MIN + b > i.last ) i.last = Interval::IntervalType_MIN;
 		else i.last -= b;
 
-        if ( IntervalType_MIN == i.first && IntervalType_MIN == i.last )
+        if ( Interval::IntervalType_MIN == i.first && Interval::IntervalType_MIN == i.last )
 			itr = _intervals.erase( itr );
 		else
 			itr++;
@@ -180,12 +178,12 @@ Intervals& Intervals::
     for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
         Interval& i = *itr;
 	
-        if (IntervalType_MAX - b < i.first ) i.first = IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b < i.first ) i.first = Interval::IntervalType_MAX;
 		else i.first += b;
-        if (IntervalType_MAX - b < i.last ) i.last = IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b < i.last ) i.last = Interval::IntervalType_MAX;
 		else i.last += b;
 
-        if ( IntervalType_MAX == i.first && IntervalType_MAX == i.last )
+        if ( Interval::IntervalType_MAX == i.first && Interval::IntervalType_MAX == i.last )
 			itr = _intervals.erase( itr );
 		else
 			itr++;
@@ -268,8 +266,7 @@ Interval Intervals::
         getInterval( IntervalType dt, IntervalType center ) const
 {
     if (0 == _intervals.size()) {
-        Interval r = {IntervalType_MIN, IntervalType_MIN};
-        return r;
+        return Interval( Interval::IntervalType_MIN, Interval::IntervalType_MIN );
     }
 
     std::list<Interval>::const_iterator itr;
@@ -278,8 +275,8 @@ Interval Intervals::
             break;
     }
 
-    IntervalType distance_to_next = IntervalType_MAX;
-    IntervalType distance_to_prev = IntervalType_MAX;
+    IntervalType distance_to_next = Interval::IntervalType_MAX;
+    IntervalType distance_to_prev = Interval::IntervalType_MAX;
 
     if (itr != _intervals.end()) {
         distance_to_next = itr->first - center;
@@ -294,28 +291,24 @@ Interval Intervals::
     }
     if (distance_to_next<=distance_to_prev) {
         const Interval &f = *itr;
-        if (f.last - f.first < dt ) {
-            Interval r = f;
-            return r;
+        if (f.count < dt ) {
+            return f;
         }
-        Interval r = { f.first, f.first + dt };
-        return r;
+        return Interval( f.first, f.first + dt );
+
     } else { // distance_to_next>distance_to_prev
         itr--; // get previous Interval
         const Interval &f = *itr;
-        if (f.last - f.first < dt ) {
-            Interval r = f;
-            return r;
+        if (f.count < dt ) {
+            return f;
         }
 
         if (f.last <= center ) {
-            Interval r = { f.last-dt, f.last };
-            return r;
+            return Interval( f.last-dt, f.last );
         }
 
         IntervalType start = f.first + dt*(unsigned)((center-f.first) / dt);
-        Interval r = {start, std::min(start+dt, f.last) };
-        return r;
+        return Interval( start, std::min(start+dt, f.last) );
     }
 }
 
@@ -333,8 +326,7 @@ Interval Intervals::
     Intervals sid = *this & n;
 
     if (0 == sid._intervals.size()) {
-        Interval r = {IntervalType_MIN, IntervalType_MIN};
-        return r;
+        return Interval( Interval::IntervalType_MIN, Interval::IntervalType_MIN );
     }
 
     return sid.intervals().front();
@@ -343,16 +335,11 @@ Interval Intervals::
 Interval Intervals::
         coveredInterval() const
 {
-    Interval i;
     if (_intervals.empty()) {
-        i.first = i.last = 0;
-        return i;
+        return Interval( 0, 0 );
     }
 
-    i.first = _intervals.front().first;
-    i.last = _intervals.back().last;
-
-    return i;
+    return Interval( _intervals.front().first, _intervals.back().last );
 }
 
 void Intervals::

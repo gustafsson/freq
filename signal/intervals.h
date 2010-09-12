@@ -18,6 +18,10 @@ typedef long unsigned IntervalType;
   */
 class Interval {
 public:
+    static const IntervalType IntervalType_MIN;
+    static const IntervalType IntervalType_MAX;
+    static const Interval Interval_ALL;
+
     Interval& operator=( const Interval& i)
                        { first = i.first, last = i.last; return *this; }
     Interval( IntervalType first, IntervalType last )
@@ -57,13 +61,10 @@ public:
 class Intervals
 {
 public:
-    static const IntervalType IntervalType_MIN;
-    static const IntervalType IntervalType_MAX;
     static const Intervals Intervals_ALL;
-    static const Interval Interval_ALL;
 
     Intervals( );
-    Intervals( Interval );
+    Intervals( const Interval& );
     Intervals( IntervalType first, IntervalType last );
     Intervals  operator |  (const Intervals& b) const { Intervals a = *this; return a|=b; }
     Intervals& operator |= (const Intervals&);
@@ -77,14 +78,14 @@ public:
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
     Intervals& operator *= (const float& scale);
-
-    operator bool() const { return !isEmpty(); }
+    Intervals  operator ~  () const { return inverse(); }
+    operator   bool        () const { return !isEmpty(); }
 
     Intervals                       inverse() const;
 
     bool                            isEmpty() const { return _intervals.empty(); }
-    Interval                        getInterval( IntervalType dt, IntervalType center = IntervalType_MIN ) const;
-    Interval                        getInterval( Interval n = Interval_ALL ) const;
+    Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
+    Interval                        getInterval( Interval n = Interval::Interval_ALL ) const;
     Interval                        coveredInterval() const;
     const std::list<Interval>&      intervals() const { return _intervals; }
 

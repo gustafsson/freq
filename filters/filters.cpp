@@ -1,6 +1,5 @@
 #include "filters.h"
-#include "chunk.h"
-#include "filter.cu.h"
+#include "filters.cu.h"
 #include "sawe/selection.h"
 
 #include <functional>
@@ -11,7 +10,10 @@
 //#define TIME_FILTER
 #define TIME_FILTER if(0)
 
-namespace Tfr {
+using namespace Tfr;
+using namespace Signal;
+
+namespace Filters {
 
 //////////// SelectionFilter
 
@@ -60,8 +62,10 @@ void SelectionFilter::operator()( Chunk& chunk) {
 }
 
 Signal::Intervals SelectionFilter::
-        ZeroedSamples( unsigned FS ) const
+        zeroed_samples()
 {
+    unsigned FS = sample_rate();
+
     Signal::Intervals sid;
 
     if (!s.inverted)
@@ -72,7 +76,7 @@ Signal::Intervals SelectionFilter::
             start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
             end_time = (unsigned)(std::max(0.f, fend_time)*FS);
 
-        sid = Signal::Intervals_ALL;
+        sid = Intervals::Intervals_ALL;
         if (start_time < end_time)
                 sid -= Signal::Intervals(start_time, end_time);
     }
@@ -81,8 +85,10 @@ Signal::Intervals SelectionFilter::
 }
 
 Signal::Intervals SelectionFilter::
-        AffectedSamples() const
+        affected_samples()
 {
+    unsigned FS = sample_rate();
+
     Signal::Intervals sid;
 
     if (s.inverted) {
@@ -93,7 +99,7 @@ Signal::Intervals SelectionFilter::
             start_time = (unsigned)(std::max(0.f, fstart_time)*FS),
             end_time = (unsigned)(std::max(0.f, fend_time)*FS);
 
-        sid = Signal::Intervals_ALL;
+        sid = Signal::Intervals::Intervals_ALL;
         if (start_time < end_time)
                 sid -= Signal::Intervals(start_time, end_time);
     }
@@ -129,8 +135,10 @@ void EllipsFilter::operator()( Chunk& chunk) {
 }
 
 Signal::Intervals EllipsFilter::
-        ZeroedSamples( unsigned FS ) const
+        zeroed_samples()
 {
+    unsigned FS = sample_rate();
+
     Signal::Intervals sid;
 
     if (_save_inside)
@@ -139,7 +147,7 @@ Signal::Intervals EllipsFilter::
             start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
             end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-        sid = Signal::Intervals_ALL;
+        sid = Signal::Intervals::Intervals_ALL;
         if (start_time < end_time)
                 sid -= Signal::Intervals(start_time, end_time);
     }
@@ -148,8 +156,10 @@ Signal::Intervals EllipsFilter::
 }
 
 Signal::Intervals EllipsFilter::
-        AffectedSamples() const
+        affected_samples()
 {
+    unsigned FS = sample_rate();
+
     Signal::Intervals sid;
 
     if (!_save_inside)
@@ -158,7 +168,7 @@ Signal::Intervals EllipsFilter::
             start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
             end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-        sid = Signal::Intervals_ALL;
+        sid = Signal::Intervals::Intervals_ALL;
         if (start_time < end_time)
                 sid -= Signal::Intervals(start_time, end_time);
     }
@@ -193,8 +203,9 @@ void SquareFilter::operator()( Chunk& chunk) {
 }
 
 Signal::Intervals SquareFilter::
-        ZeroedSamples( unsigned FS ) const
+        zeroed_samples()
 {
+    unsigned FS = sample_rate();
     Signal::Intervals sid;
 
     if (_save_inside)
@@ -203,7 +214,7 @@ Signal::Intervals SquareFilter::
             start_time = (unsigned)(std::max(0.f, _t1)*FS),
             end_time = (unsigned)(std::max(0.f, _t2)*FS);
 
-        sid = Signal::Intervals_ALL;
+        sid = Signal::Intervals::Intervals_ALL;
         if (start_time < end_time)
             sid -= Signal::Intervals(start_time, end_time);
     }
@@ -212,8 +223,9 @@ Signal::Intervals SquareFilter::
 }
 
 Signal::Intervals SquareFilter::
-        AffectedSamples() const
+        affected_samples()
 {
+    unsigned FS = sample_rate();
     Signal::Intervals sid;
 
     if (!_save_inside)
@@ -222,7 +234,7 @@ Signal::Intervals SquareFilter::
             start_time = (unsigned)(std::max(0.f, _t1)*FS),
             end_time = (unsigned)(std::max(0.f, _t2)*FS);
 
-        sid = Signal::Intervals_ALL;
+        sid = Signal::Intervals::Intervals_ALL;
         if (start_time < end_time)
             sid -= Signal::Intervals(start_time, end_time);
     }
@@ -267,9 +279,6 @@ void ReassignFilter::
 
 
 //////////// TonalizeFilter
-TonalizeFilter::
-        TonalizeFilter()
-{}
 
 void TonalizeFilter::
         operator()( Chunk& chunk )
@@ -282,4 +291,4 @@ void TonalizeFilter::
     TIME_FILTER CudaException_ThreadSynchronize();
 }
 
-} // namespace Tfr
+} // namespace Filters

@@ -8,11 +8,12 @@
 namespace Heightmap
 {
 
-class BlockFilter
+class BlockFilter: public virtual Tfr::Filter
 {
 public:
-    BlockFilter( Collection* collection ) :  _collection (collection) {}
-    void mergeChunk( Tfr::Chunk& chunk );
+    BlockFilter( Collection* collection ) : Filter(), _collection (collection) {}
+
+    virtual void operator()( Tfr::Chunk& chunk );
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
@@ -36,7 +37,6 @@ public:
       */
     ComplexInfo complex_info;
 
-    virtual void operator()( Tfr::Chunk& chunk ) { BlockFilter::mergeChunk(chunk);}
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };
 
@@ -46,7 +46,6 @@ class StftToBlock: public Tfr::StftFilter, public BlockFilter
 public:
     StftToBlock( Collection* collection ) :  BlockFilter(collection) {}
 
-    virtual void operator()( Tfr::Chunk& chunk ) { BlockFilter::mergeChunk(chunk);}
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };
 

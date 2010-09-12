@@ -2,6 +2,7 @@
 #include <sstream>
 #include <fstream>
 #include "tfr/cwt.h"
+#include "tfr/cwtchunk.h"
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
@@ -195,7 +196,7 @@ Tfr::pChunk Hdf5Input::
 
     if (2!=dims.size()) throw runtime_error(((stringstream&)(ss << "Rank of '" << name << "' is '" << dims.size() << "' instead of 3.")).str());
 
-    Tfr::pChunk chunk( new Tfr::Chunk );
+    Tfr::pChunk chunk( new Tfr::CwtChunk );
     chunk->min_hz = 20;
     chunk->max_hz = 22050;
     chunk->chunk_offset = 0;
@@ -322,6 +323,7 @@ static const char* dsetSamplerate="samplerate";
 
 Hdf5Chunk::Hdf5Chunk( std::string filename)
 :   _filename(filename) {}
+
 Hdf5Buffer::Hdf5Buffer( std::string filename)
 :   _filename(filename) {}
 
@@ -329,7 +331,18 @@ Hdf5Buffer::Hdf5Buffer( std::string filename)
 void Hdf5Chunk::
         operator()( Tfr::Chunk& c )
 {
-    Tfr::pChunk chunk = Tfr::Cwt::cleanChunk(c);
+    Tfr::Chunk* chunk;
+    Tfr::pChunk pchunk;
+    Tfr::CwtChunk* cwt = dynamic_cast<Tfr::CwtChunk*>(&c);
+
+    if (cwt)
+    {
+        pchunk = cwt->cleanChunk();
+        chunk = pchunk.get();
+    }
+    else
+        chunk = &c;
+
     Hdf5Chunk::saveChunk(_filename, *chunk);
 }
 

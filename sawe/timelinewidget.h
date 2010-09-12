@@ -17,7 +17,7 @@ public:
     virtual ~TimelineWidget();
 
     // overloaded from Signal::Sink
-    virtual void    put( Signal::pBuffer , Signal::pSource );
+    virtual void    put( Signal::pBuffer , Signal::pOperation );
     virtual void    add_expected_samples( const Signal::Intervals& );
 
 protected:
@@ -39,7 +39,7 @@ private:
     int _movingTimeline;
     MouseControl moveButton;
 
-    Signal::pSource _displayWidget;
+    Signal::pOperation _displayWidget;
     DisplayWidget * getDisplayWidget();
 };
 

@@ -6,24 +6,20 @@
 //#define TIME_CwtFilter
 #define TIME_CwtFilter if(0)
 
-namespace Signal {
+using namespace Signal;
 
-CwtFilter::
-        CwtFilter(pSource source)
-:   Filter(source),
-    _filter( filter ),
-    _save_previous_chunk( false )
-{
-    transform( Tfr::Cwt::SingletonP() );
-}
+namespace Tfr {
 
 
 CwtFilter::
-        CwtFilter(pSource source, Tfr::pTransform t)
-:   Filter(source),
-    _filter( filter ),
-    _save_previous_chunk( false )
+        CwtFilter(pOperation source, Tfr::pTransform t)
+:   Filter(source)
 {
+    if (!t)
+        t = Tfr::Cwt::SingletonP();
+
+    BOOST_ASSERT( dynamic_cast<Tfr::Cwt*>(t.get()));
+
     transform( t );
 }
 
@@ -33,7 +29,7 @@ Tfr::pChunk CwtFilter::
 {
     unsigned firstSample = I.first, numberOfSamples = I.count;
 
-    TIME_CwtFilter TaskTimer tt("CwtFilter::read ( %u, %u )", firstSample, numberOfSamples);
+    TIME_CwtFilter TaskTimer tt("CwtFilter::readChunk ( %u, %u )", firstSample, numberOfSamples);
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
 
     unsigned wavelet_std_samples = cwt.wavelet_std_samples( sample_rate() );
@@ -55,35 +51,34 @@ Tfr::pChunk CwtFilter::
     // memory in this while loop.
     while(true) try
     {
-        TIME_CwtFilter Intervals(b->getInterval()).print("CwtFilter subread");
-
+        TIME_CwtFilter Intervals(I).print("CwtFilter subread");
         Tfr::pChunk c;
 
-        CwtFilter* f = dynamic_cast<CwtFilter*>(source());
+        CwtFilter* f = dynamic_cast<CwtFilter*>(source().get());
         if ( f && f->transform() == transform()) {
             c = f->readChunk( I );
 
         } else {
             unsigned L = redundant_samples + numberOfSamples + wavelet_std_samples;
 
-            pBuffer b = _source->readFixedLength( firstSample, L );
+            pBuffer b = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
 
             // Compute the continous wavelet transform
             c = (*transform())( b );
         }
 
-        // Apply filter
-        Intervals work(c->getInterval());
-        work -= _filter->NeededSamples().inverse();
-
         // Only apply filter if it would affect these samples
-        if (!work.isEmpty())
+        Intervals work(c->getInterval());
+        work -= affected_samples().inverse();
+
+        // Apply filter
+        if (work)
         {
-            Filter& f = *this;
-            f( *c );
+            TIME_CwtFilter Intervals(c->getInterval()).print("CwtFilter applying filter");
+            (*this)( *c );
         }
 
-        TIME_CwtFilter Intervals(r->getInterval()).print("CwtFilter after inverse");
+        TIME_CwtFilter Intervals(c->getInterval()).print("CwtFilter after filter");
 
         return c;
     } catch (const CufftException &x) {
@@ -164,9 +159,9 @@ void CwtFilter::
     if (0 == dynamic_cast<Tfr::Cwt*>(t.get ()))
         throw std::invalid_argument("'transform' must be an instance of Tfr::Cwt");
 
-    // even if '_transform == t || _transform == transform()' the client
+    // even if '0 == t || transform() == t' the client
     // probably wants to reset everything when transform( t ) is called
-    _invalid_samples = Intervals_ALL;
+    _invalid_samples = Intervals::Intervals_ALL;
 
     _transform = t;
 }

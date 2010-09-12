@@ -1,17 +1,16 @@
 #include "filter.h"
+#include "signal/buffersource.h"
+
+//#define TIME_Filter
+#define TIME_Filter if(0)
+
+using namespace Signal;
 
 namespace Tfr {
 
 //////////// Filter
 Filter::
-        Filter()
-            :
-            Operation( pSource() ),
-            enabled(true)
-{}
-
-Filter::
-        Filter( pSource source )
+        Filter( pOperation source )
             :
             Operation( source ),
             enabled(true)
@@ -21,54 +20,51 @@ Filter::
 Signal::pBuffer Filter::
         read(  const Signal::Interval& I )
 {
-    unsigned firstSample = I.first;
-    unsigned numberOfSamples = I.count;
+    const Signal::Intervals work(I);
 
-    // If we're not asked to compute a chunk, try to take shortcuts
-    if (!_save_previous_chunk)
+
+    // Try to take shortcuts and avoid unnecessary work
     {
-        Intervals work(first_valid_sample, first_valid_sample + numberOfSamples);
-
-        // If filter would make all these samples zero, make them zero and return immediately
-        if ((work - _filter->ZeroedSamples( _source->sample_rate() )).isEmpty())
+        // If no samples would be non-zero, return zeros
+        if (!(work - zeroed_samples()))
         {
             // Doesn't have to read from source, just create a buffer with all samples set to 0
-            pBuffer b( new Buffer( first_valid_sample, numberOfSamples, _source->sample_rate() ));
+            pBuffer b( new Buffer( I.first, I.count, sample_rate() ));
 
             ::memset( b->waveform_data->getCpuMemory(), 0, b->waveform_data->getSizeInBytes1D());
 
-            TIME_CwtFilter Intervals(b->getInterval()).print("CwtFilter silent");
+            TIME_Filter Intervals(b->getInterval()).print("Filter silent");
             return b;
         }
 
-        // If filter would leave all these samples unchanged, return immediately
-        if ((work & _filter->NeededSamples()).isEmpty())
+        // If no samples would be affected, return from source
+        if (!(work & affected_samples()))
         {
             // Attempt a regular simple read
-            pBuffer b = _source->read(first_valid_sample, numberOfSamples);
-            work = b->getInterval();
-            work -= _filter->NeededSamples().inverse();
+            pBuffer b = _source->read( I );
 
-            if (work.isEmpty()) {
-                TIME_CwtFilter Intervals(b->getInterval()).print("CwtFilter unaffected");
+            // Check if we can guarantee that everything returned from _source
+            // is unaffected
+            if (!(affected_samples() & b->getInterval())) {
+                TIME_Filter Intervals(b->getInterval()).print("Filter unaffected");
                 return b;
             }
 
-            // If _source returned some parts that we didn't ask for,
-            // try again and explicitly take out those samples
-
-            TIME_CwtFilter Intervals(b->getInterval()).print("FilterOp fixed unaffected");
-            // Failed, return the exact samples validated as untouched
-            return _source->readFixedLength(first_valid_sample, numberOfSamples);
+            // Explicitly return only the unaffected samples
+            TIME_Filter Intervals(b->getInterval()).print("FilterOp fixed unaffected");
+            BufferSource bs(b);
+            return bs.readFixedLength( (~affected_samples() & b->getInterval()).getInterval() );
         }
     }
 
+
     // If we've reached this far, the transform will have to be computed
-    pChunk c = readChunk(firstSample, numberOfSamples);
+    pChunk c = readChunk( I );
 
     Signal::pBuffer r = transform()->inverse( c );
 
     _invalid_samples -= r->getInterval();
+    TIME_Filter Intervals(c->getInterval()).print("Filter after inverse");
     return r;
 }
 

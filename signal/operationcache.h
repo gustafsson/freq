@@ -17,7 +17,7 @@ namespace Signal {
 class OperationCache: public Operation
 {
 public:
-    OperationCache( pSource source );
+    OperationCache( pOperation source );
 
     /**
       Redirects the read to '_cache' unless cacheMiss returns true in which
