@@ -252,13 +252,16 @@ Tfr::pChunk Stft::
         b = b->getInterleaved( Signal::Buffer::Interleaved_Complex );
     }
 
+    BOOST_ASSERT( 0!=_chunk_size );
+
     cudaExtent n = make_cudaExtent(
             _chunk_size,
             b->number_of_samples()/_chunk_size,
             1 );
 
-    if (0==n.height)
+    if (0==n.height || 32768<n.height)
         return Tfr::pChunk();
+
 
     Tfr::pChunk chunk( new Tfr::StftChunk() );
 
@@ -313,7 +316,7 @@ Tfr::pChunk Stft::
 
 static unsigned absdiff(unsigned a, unsigned b)
 {
-    return a < b ? a - b : b-a;
+    return a < b ? b - a : a - b;
 }
 
 
@@ -326,13 +329,15 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
             std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
 
     unsigned N1 = *itr, N2;
-    if (itr != _ok_chunk_sizes.end())
-        N2 = *++itr;
-    else
+    if (itr == _ok_chunk_sizes.end())
     {
         N2 = spo2g( preferred_size - 1 );
         N1 = lpo2s( preferred_size + 1 );
     }
+    else if (itr == _ok_chunk_sizes.begin())
+        N2 = N1;
+    else
+        N2 = *--itr;
 
     _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
     return _chunk_size;
@@ -416,7 +421,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
 
             latest_time[selectedBase] = diff;
 
-            if (diff.total_milliseconds() < fastest_time.total_microseconds()*1.2)
+            if (diff.total_milliseconds() < fastest_time.total_milliseconds()*1.2)
                 ok_size = S._chunk_size;
 
             if (diff < fastest_time || 0==fastest_size)

@@ -40,11 +40,14 @@ Collection::
     _frame_counter(0),
     _postsink( new Signal::PostSink() )
 {
+    TaskTimer tt("%s = %p", __FUNCTION__, this);
+
     // Updated as soon as the first chunk is received
     _min_sample_size.scale = 1;
     _min_sample_size.time = 1;
     update_sample_size();
 
+    QMutexLocker l(&_cache_mutex);
 
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.f_min = 20;
@@ -56,6 +59,7 @@ Collection::
 Collection::
         ~Collection()
 {
+    TaskTimer tt("%s = %p", __FUNCTION__, this);
 }
 
 
@@ -90,10 +94,15 @@ void Collection::
 unsigned Collection::
         next_frame()
 {
+    TaskTimer tt("%s = %p", __FUNCTION__, this);
+
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
 
 	{   QMutexLocker l(&_cache_mutex);
+
+        printf("_recent.size() = %lu\n", _recent.size());
+
 		BOOST_FOREACH(recent_t::value_type& b, _recent)
 		{
 			if (b->frame_number_last_used != _frame_counter)
@@ -240,6 +249,8 @@ pBlock Collection::
         if (!(refInt-=block->valid_samples).isEmpty())
             _unfinished_count++;
 
+        QMutexLocker l(&_cache_mutex);
+
         for( recent_t::iterator i = _recent.begin(); i!=_recent.end(); ++i )
             if ((*i)->ref == ref ) {
                 _recent.erase( i );
@@ -258,6 +269,8 @@ std::vector<pBlock> Collection::
         getIntersectingBlocks( Interval I )
 {
     std::vector<pBlock> r;
+
+    QMutexLocker l(&_cache_mutex);
 
     BOOST_FOREACH( cache_t::value_type& c, _cache )
     {
@@ -666,6 +679,7 @@ bool Collection::
 bool Collection::
 	mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream )
 {
+    // assume _cache_mutex is locked
 	cache_t::iterator i = _cache.find(ref);
 	if (i!=_cache.end())
 		return mergeBlock(outBlock, i->second, cuda_stream );

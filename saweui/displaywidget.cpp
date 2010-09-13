@@ -187,20 +187,14 @@ bool MouseControl::isTouched()
 
 DisplayWidget::
         DisplayWidget(
-                Signal::pWorker worker,
-                Heightmap::pCollection collection )
-: QGLWidget( ),
+                Sawe::Project* project, QWidget* parent )
+: QGLWidget( parent ),
   lastKey(0),
   orthoview(1),
   xscale(1),
 //  _record_update(false),
-  _renderer( new Heightmap::Renderer( dynamic_cast<Heightmap::Collection*>(collection.get()), this )),
-  _worker( worker ),
-  _collectionCallback( new Signal::WorkerCallback( worker, collection->postsink() )),
-  _postsinkCallback( new Signal::WorkerCallback( worker, Signal::pOperation(new Signal::PostSink)) ),
   _work_timer( new TaskTimer("Benchmarking first work")),
   _follow_play_marker( false ),
-  _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
   _px(0), _py(0), _pz(-10),
   _rx(91), _ry(180), _rz(0),
   _playbackMarker(-1),
@@ -211,28 +205,36 @@ DisplayWidget::
   _enqueueGcDisplayList( false ),
   selecting(false)
 {
+    // Todo should they really be constructed here?
+    project->tools.render_model.collection.reset( new Heightmap::Collection(project->worker));
+    project->tools.render_view.renderer.reset( new Heightmap::Renderer( project->tools.render_model.collection ));
+    project->tools.selection_model.postsinkCallback.reset( new Signal::WorkerCallback( worker, Signal::pOperation(new Signal::PostSink)) );
+    project->tools.render_model.collectionCallback.reset( new Signal::WorkerCallback( worker, collection->postsink() ));
+
 #ifdef _WIN32
     int c=1;
-    char* dum="dum\0";
-    glutInit(&c,&dum);
+    char* dummy="dummy\0";
+    glutInit(&c,&dummy);
 #else
     static int c=0;
     if (0==c)
         glutInit(&c,0),
         c = 1;
 #endif
-    float l = _worker->source()->length();
+    float l = _project->worker->source()->length();
+    displayWidget()->setPosition( std::min(l, 10)*0.5f, 0.5f );
+
     _prevLimit = l;
-    selection[0].x = l*.5f;
-    selection[0].y = 0;
-    selection[0].z = .85f;
-    selection[1].x = l*sqrt(2.0f);
-    selection[1].y = 0;
-    selection[1].z = 2;
+    selectionModel.selection[0].x = l*.5f;
+    selectionModel.selection[0].y = 0;
+    selectionModel.selection[0].z = .85f;
+    selectionModel.selection[1].x = l*sqrt(2.0f);
+    selectionModel.selection[1].y = 0;
+    selectionModel.selection[1].z = 2;
     
     // no selection
-    selection[0].x = selection[1].x;
-    selection[0].z = selection[1].z;
+    selectionModel.selection[0].x = selectionModel.selection[1].x;
+    selectionModel.selection[0].z = selectionModel.selection[1].z;
 
     yscale = Yscale_LogLinear;
     //timeOut();
@@ -461,7 +463,7 @@ void DisplayWidget::receiveSetTransform_Cwt()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection().get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -478,7 +480,7 @@ void DisplayWidget::receiveSetTransform_Stft()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(_renderer->collection());
+    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(_renderer->collection().get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
 
@@ -494,7 +496,7 @@ void DisplayWidget::receiveSetTransform_Cwt_phase()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection().get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
@@ -511,7 +513,7 @@ void DisplayWidget::receiveSetTransform_Cwt_reassign()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection().get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
@@ -530,7 +532,7 @@ void DisplayWidget::receiveSetTransform_Cwt_ridge()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(_renderer->collection().get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -549,28 +551,7 @@ void DisplayWidget::setWorkerSource( Signal::pOperation s ) {
 }
 
 
-void DisplayWidget::
-        setTimeline( QWidget* timelineWidget )
-{
-    _timeline = timelineWidget;
-}
 
-void DisplayWidget::
-        setPosition( float time, float f )
-{
-    _qx = time;
-    _qz = f;
-
-    float l = _worker->source()->length();
-
-    if (_qx<0) _qx=0;
-    if (_qz<0) _qz=0;
-    if (_qz>1) _qz=1;
-    if (_qx>l) _qx=l;
-
-    worker()->requested_fps(30);
-    update();
-}
 
 void DisplayWidget::receiveAddClearSelection(bool /*active*/)
 {
@@ -1306,11 +1287,6 @@ void DisplayWidget::paintGL()
 
         if (wasWorking)
             drawWorking();
-
-        // When drawing displaywidget, always redraw the timeline as the
-        // timeline has a marker showing the current render position of
-        // displaywidget
-        if (_timeline) _timeline->update();
     }
 
     {   // Find things to work on (ie playback and file output)
@@ -1381,8 +1357,8 @@ void DisplayWidget::paintGL()
     } catch (const CudaException &x) {
         TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
         if (2>tryGc) {
-        	Heightmap::Collection* c=_renderer->collection();
-        	c->reset();
+            Heightmap::pCollection c=_renderer->collection();
+            c->reset(); // note, not c.reset()
             _renderer.reset();
             _renderer.reset(new Heightmap::Renderer( c, this ));
             tryGc++;
@@ -2012,323 +1988,3 @@ void DisplayWidget::
     QTimer::singleShot(10, this, SLOT(update()));
 }
 
-void DisplayWidget::
-        drawSelection()
-{
-    drawSelectionCircle();
-    drawPlaybackMarker();
-}
-
-void DisplayWidget::drawSelectionSquare() {
-    float l = _worker->source()->length();
-    //glEnable(GL_BLEND);
-    glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f( 0, 0, 0, .5);
-    float
-    x1 = max(0.f, min(selection[0].x, selection[1].x)),
-    z1 = max(0.f, min(selection[0].z, selection[1].z)),
-    x2 = min(l, max(selection[0].x, selection[1].x)),
-    z2 = min(1.f, max(selection[0].z, selection[1].z));
-    float y = 1;
-    
-    
-    glBegin(GL_QUADS);
-    glVertex3f( 0, y, 0 );
-    glVertex3f( 0, y, 1 );
-    glVertex3f( x1, y, 1 );
-    glVertex3f( x1, y, 0 );
-    
-    glVertex3f( x1, y, 0 );
-    glVertex3f( x2, y, 0 );
-    glVertex3f( x2, y, z1 );
-    glVertex3f( x1, y, z1 );
-    
-    glVertex3f( x1, y, 1 );
-    glVertex3f( x2, y, 1 );
-    glVertex3f( x2, y, z2 );
-    glVertex3f( x1, y, z2 );
-    
-    glVertex3f( l, y, 0 );
-    glVertex3f( l, y, 1 );
-    glVertex3f( x2, y, 1 );
-    glVertex3f( x2, y, 0 );
-    
-    
-    if (x1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x1, y, z2 );
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( 0, y, 1 );
-    } else {
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 0, 0, z1 );
-        glVertex3f( 0, y, z1 );
-        glVertex3f( 0, y, z2 );
-        glVertex3f( 0, 0, z2 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( 0, y, 1 );
-    }
-    
-    if (x2<l) {
-        glVertex3f( x2, y, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-        glVertex3f( l, y, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    } else {
-        glVertex3f( l, y, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, 0, z1 );
-        glVertex3f( l, y, z1 );
-        glVertex3f( l, y, z2 );
-        glVertex3f( l, 0, z2 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    }
-    
-    if (z1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, y, z1 );
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, y, 0 );
-    } else {
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( x1, 0, 0 );
-        glVertex3f( x1, y, 0 );
-        glVertex3f( x2, y, 0 );
-        glVertex3f( x2, 0, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, y, 0 );
-    }
-    
-    if (z2<1) {
-        glVertex3f( x1, y, z2 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-        glVertex3f( 0, y, 1 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    } else {
-        glVertex3f( 0, y, 1 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( x1, 0, 1 );
-        glVertex3f( x1, y, 1 );
-        glVertex3f( x2, y, 1 );
-        glVertex3f( x2, 0, 1 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    }
-    glEnd();
-    //glDisable(GL_BLEND);
-    glDepthMask(true);
-    
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
-    glBegin(GL_QUADS);
-    if (x1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x1, y, z2 );
-    }
-    
-    if (x2<l) {
-        glVertex3f( x2, y, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-    }
-    
-    if (z1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, y, z1 );
-    }
-    
-    if (z2<1) {
-        glVertex3f( x1, y, z2 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-    }
-    glEnd();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
-
-bool DisplayWidget::insideCircle( float x1, float z1 ) {
-    float
-    x = selection[0].x,
-    z = selection[0].z,
-    _rx = selection[1].x,
-    _rz = selection[1].z;
-    return (x-x1)*(x-x1)/_rx/_rx + (z-z1)*(z-z1)/_rz/_rz < 1;
-}
-
-void DisplayWidget::drawSelectionCircle() {
-    float
-    x = selection[0].x,
-    z = selection[0].z,
-    _rx = fabs(selection[1].x-selection[0].x),
-    _rz = fabs(selection[1].z-selection[0].z);
-    float y = 1;
-    
-    //glEnable(GL_BLEND);
-    glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f( 0, 0, 0, .5);
-    glBegin(GL_TRIANGLE_STRIP);
-    for (unsigned k=0; k<=360; k++) {
-        float s = z + _rz*sin(k*M_PI/180);
-        float c = x + _rx*cos(k*M_PI/180);
-        glVertex3f( c, 0, s );
-        glVertex3f( c, y, s );
-    }
-    glEnd();
-    
-    glLineWidth(3.2f);
-    glPolygonOffset(1.f, 1.f);
-    glBegin(GL_LINE_LOOP);
-    for (unsigned k=0; k<360; k++) {
-        float s = z + _rz*sin(k*M_PI/180);
-        float c = x + _rx*cos(k*M_PI/180);
-        glVertex3f( c, y, s );
-    }
-    glEnd();
-    glLineWidth(0.5f);
-    glDepthMask(true);
-    //glDisable(GL_BLEND);
-}
-
-void DisplayWidget::drawSelectionCircle2() {
-    float l = _worker->source()->length();
-    glDepthMask(false);
-    glColor4f( 0, 0, 0, .5);
-    
-    float
-        x = selection[0].x,
-        z = selection[0].z,
-        _rx = fabs(selection[1].x-selection[0].x),
-        _rz = fabs(selection[1].z-selection[0].z);
-    float y = 1;
-
-    // compute points in each quadrant, upper right
-    std::vector<GLvector> pts[4];
-    GLvector corner[4];
-    corner[0] = GLvector(l,0,1);
-    corner[1] = GLvector(0,0,1);
-    corner[2] = GLvector(0,0,0);
-    corner[3] = GLvector(l,0,0);
-
-    for (unsigned k,j=0; j<4; j++)
-	{
-        bool addedLast=false;
-        for (k=0; k<=90; k++)
-		{
-            float s = z + _rz*sin((k+j*90)*M_PI/180);
-            float c = x + _rx*cos((k+j*90)*M_PI/180);
-
-            if (s>0 && s<1 && c>0&&c<l)
-			{
-                if (pts[j].empty() && k>0)
-				{
-                    if (0==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
-                    if (1==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
-                    if (2==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
-                    if (3==j) pts[j].push_back(GLvector( x + _rx*cos(asin((0-z)/_rz)), 0, 0));
-                }
-                pts[j].push_back(GLvector( c, 0, s));
-                addedLast = 90==k;
-            }
-        }
-
-        if (!addedLast) {
-            if (0==j) pts[j].push_back(GLvector( x + _rx*cos(asin((1-z)/_rz)), 0, 1));
-            if (1==j) pts[j].push_back(GLvector( 0, 0, z + _rz*sin(acos((0-x)/_rx))));
-            if (2==j) pts[j].push_back(GLvector( x + _rx*cos(asin((0-z)/_rz)), 0, 0));
-            if (3==j) pts[j].push_back(GLvector( l, 0, z + _rz*sin(acos((l-x)/_rx))));
-        }
-    }
-
-    for (unsigned j=0; j<4; j++) {
-        glBegin(GL_TRIANGLE_STRIP);
-        for (unsigned k=0; k<pts[j].size(); k++) {
-            glVertex3f( pts[j][k][0], 0, pts[j][k][2] );
-            glVertex3f( pts[j][k][0], y, pts[j][k][2] );
-        }
-        glEnd();
-    }
-    
-    
-    for (unsigned j=0; j<4; j++) {
-        if ( !insideCircle(corner[j][0], corner[j][2]) )
-        {
-            glBegin(GL_TRIANGLE_FAN);
-            GLvector middle1( 0==j?l:2==j?0:corner[j][0], 0, 1==j?1:3==j?0:corner[j][2]);
-            GLvector middle2( 3==j?l:1==j?0:corner[j][0], 0, 0==j?1:2==j?0:corner[j][2]);
-            if ( !insideCircle(middle1[0], middle1[2]) )
-                glVertex3f( middle1[0], y, middle1[2] );
-            for (unsigned k=0; k<pts[j].size(); k++) {
-                glVertex3f( pts[j][k][0], y, pts[j][k][2] );
-            }
-            if ( !insideCircle(middle2[0], middle2[2]) )
-                glVertex3f( middle2[0], y, middle2[2] );
-            glEnd();
-        }
-    }
-    for (unsigned j=0; j<4; j++) {
-        bool b1 = insideCircle(corner[j][0], corner[j][2]);
-        bool b2 = insideCircle(0==j?l:2==j?0:corner[j][0], 1==j?1:3==j?0:corner[j][2]);
-        bool b3 = insideCircle(corner[(j+1)%4][0], corner[(j+1)%4][2]);
-        glBegin(GL_TRIANGLE_STRIP);
-        if ( b1 )
-        {
-            glVertex3f( corner[j][0], 0, corner[j][2] );
-            glVertex3f( corner[j][0], y, corner[j][2] );
-            if ( !b2 && pts[(j+1)%4].size()>0 ) {
-                glVertex3f( pts[j].back()[0], 0, pts[j].back()[2] );
-                glVertex3f( pts[j].back()[0], y, pts[j].back()[2] );
-            }
-        }
-        if ( b3 ) {
-            if ( !b2 && pts[(j+1)%4].size()>1) {
-                glVertex3f( pts[(j+1)%4][1][0], 0, pts[(j+1)%4][1][2] );
-                glVertex3f( pts[(j+1)%4][1][0], y, pts[(j+1)%4][1][2] );
-            }
-            glVertex3f( corner[(j+1)%4][0], 0, corner[(j+1)%4][2] );
-            glVertex3f( corner[(j+1)%4][0], y, corner[(j+1)%4][2] );
-        }
-        glEnd();
-    }
-    //glDisable(GL_BLEND);
-    glDepthMask(true);
-    
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
-    
-    for (unsigned j=0; j<4; j++) {
-        glBegin(GL_LINE_STIPPLE);
-        for (unsigned k=0; k<pts[j].size(); k++) {
-            glVertex3f( pts[j][k][0], y, pts[j][k][2] );
-        }
-        glEnd();
-    }
-    
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}

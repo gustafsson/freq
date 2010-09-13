@@ -145,7 +145,7 @@ void Application::
 		openadd_project( pProject p )
 {
     setActiveWindow( 0 );
-    setActiveWindow( p->mainWindow().get() );
+    setActiveWindow( p->mainWindow() );
     p->mainWindow()->activateWindow();
     _projects.push_back( p );
 }
@@ -179,7 +179,7 @@ void Application::
 {
     for (std::list<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
-        if (w == dynamic_cast<QWidget*>((*i)->mainWindow().get()))
+        if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))
             i = _projects.erase( i );
         else
             i++;

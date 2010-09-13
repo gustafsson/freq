@@ -230,7 +230,10 @@
    available cpu memory.
 */
 
-#include "signal/source.h"
+#include "signal/buffersource.h"
+
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/split_member.hpp>
 
 namespace Signal
 {
@@ -244,8 +247,25 @@ public:
     std::string filename() const { return _original_filename; }
 
 private:
+    void load(std::string filename);
 
     std::string _original_filename;
+
+
+    friend class boost::serialization::access;
+    template<class archive> void save(archive& ar, const unsigned int version) {
+        using boost::serialization::make_nvp;
+
+        //ar & make_nvp("Operation", boost::serialization::base_object<Operation>(*this));
+        boost::serialization::base_object<Operation>(*this); // don't write any Operation data
+        ar & make_nvp("Filename", _original_filename);
+    }
+    template<class archive> void load(archive& ar, const unsigned int version) {
+        save(ar, version); // serialization structure is the same, post processing (loading) is not
+
+        load( _original_filename );
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 } // namespace Signal

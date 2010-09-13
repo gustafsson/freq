@@ -28,8 +28,10 @@
 using namespace std;
 using namespace boost;
 
-MainWindow::MainWindow(const char* title, QWidget *parent)
+MainWindow::
+        MainWindow(const char* title, Sawe::Project* project, QWidget *parent)
 :   QMainWindow(parent),
+    _project( project ),
     ui(new Ui_MainWindow)
 {
 #ifdef Q_WS_MAC
@@ -39,6 +41,13 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     QString qtitle = QString::fromLocal8Bit(title);
     this->setWindowTitle( qtitle );
 
+    add_widgets();
+}
+
+
+void MainWindow::
+        add_widgets()
+{
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
     connect(ui->layerWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(slotNewSelection(QListWidgetItem*)));
     connect(ui->deleteFilterButton, SIGNAL(clicked(void)), this, SLOT(slotDeleteSelection(void)));
@@ -46,6 +55,11 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
     connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
     connectActionToWindow(ui->actionToggleHistoryWindow, ui->historyWindow);
     connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
+
+    setCorner( Qt::BottomLeftCorner, Qt::LeftDockWidgetArea );
+    setCorner( Qt::BottomRightCorner, Qt::RightDockWidgetArea );
+    setCorner( Qt::TopLeftCorner, Qt::LeftDockWidgetArea );
+    setCorner( Qt::TopRightCorner, Qt::RightDockWidgetArea );
 
     this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
     this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
@@ -130,7 +144,31 @@ MainWindow::MainWindow(const char* title, QWidget *parent)
         qb->decheckable( false );
         ui->toolBarPlay->addWidget( qb );
     }
+
+    create_renderingwidgets();
 }
+
+
+void MainWindow::
+        create_renderingwidgets()
+{
+    Heightmap::pCollection cl( new Heightmap::Collection(worker) );
+    displayWidget = new DisplayWidget( project, this );
+
+    _mainWindow->connectLayerWindow( displayWidget() );
+    _mainWindow->setCentralWidget( displayWidget() );
+
+    _timelineWidget.reset( new TimelineWidget( dynamic_cast<QGLWidget*>(_displayWidget.get()) ));
+    _mainWindow->setTimelineWidget( dynamic_cast<QGLWidget*>(_timelineWidget.get()) );
+
+    hide();
+    show();
+    // TODO
+    // When drawing displaywidget, always redraw the timeline as the
+    // timeline has a marker showing the current render position of
+    // displaywidget
+}
+
 
 void MainWindow::slotCheckWindowStates(bool)
 {
@@ -264,11 +302,6 @@ void MainWindow::
     ui->dockWidgetTimeline->show();
 }
 
-QWidget* MainWindow::
-        getTimelineDock( )
-{
-    return ui->dockWidgetTimeline;
-}
 
 void MainWindow::
         closeEvent(QCloseEvent * e)
@@ -416,9 +449,9 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, Operation
 
     TaskTimer tt("%d %s", (unsigned)v, tat.title.c_str()); tt.suppressTiming();
 
-    if ( Signal::Operation* op = dynamic_cast<Signal::Operation*>(s.get())) {
+    if ( s->source() ) {
         OperationGraph::vertex_descriptor c;
-        c = populateGraph( op->source(), graph );
+        c = populateGraph( s->source(), graph );
 
         add_edge(v,c,graph);
         tt.info("%d -> %d", v,c);

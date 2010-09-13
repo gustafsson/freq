@@ -283,10 +283,10 @@ private:
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 
+    QMutex _cache_mutex; // Mutex for _cache and _recent
     cache_t _cache;
     recent_t _recent; // Ordered with the most recently accessed blocks first
 
-    QMutex _cache_mutex;
     // QMutex _updates_mutex;
     // QWaitCondition _updates_condition;
     ThreadChecker _constructor_thread;

@@ -3,6 +3,8 @@
 
 #include "signal/source.h"
 #include "signal/intervals.h"
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 
 namespace Signal {
 
@@ -65,7 +67,7 @@ public:
     static pOperation fast_source(pOperation start);
 
     /// Finds
-    static pOperation non_place_holder(pOperation start);
+    // todo remove static pOperation non_place_holder(pOperation start);
 
 protected:
     pOperation _source;
@@ -78,6 +80,16 @@ protected:
       it off in calls to read.
       */
     Intervals _invalid_samples;
+
+private:
+    Operation() {} // used by serialization
+    friend class boost::serialization::access;
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        using boost::serialization::make_nvp;
+        ar & make_nvp("Source", _source);
+    }
 };
 
 
@@ -91,7 +103,7 @@ public:
     virtual long unsigned number_of_samples() = 0;
 
 private:
-    virtual pOperation source() const { throw std::logic_error("Invalid call"); }
+    virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
 };
 

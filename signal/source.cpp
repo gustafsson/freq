@@ -129,6 +129,9 @@ pBuffer SourceBase::
 {
     pBuffer r = read(I);
 
+    printf("r->sample_offset = %u\n", r->sample_offset);
+    printf("r->number_of_samples() = %u\n", r->number_of_samples());
+
     // Check if read contains firstSample
     BOOST_ASSERT(r->sample_offset <= I.first);
     BOOST_ASSERT(r->sample_offset + r->number_of_samples() > I.first);

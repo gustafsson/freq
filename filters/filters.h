@@ -46,6 +46,16 @@ public:
 
     float _t1, _f1, _t2, _f2;
     bool _save_inside;
+
+    friend class boost::serialization::access;
+    template<class archive> void serialize(archive& ar, const unsigned int version) {
+        using boost::serialization::make_nvp;
+
+        ar & make_nvp("Operation", boost::serialization::base_object<Operation>(*this))
+           & make_nvp("t1", _t1) & make_nvp("f1", _f1)
+           & make_nvp("t2", _t2) & make_nvp("f2", _f2)
+           & make_nvp("save_inside", _save_inside);
+    }
 };
 
 

@@ -12,8 +12,7 @@ namespace Signal {
 
 SinkSource::
         SinkSource( AcceptStrategy a )
-:   Operation( pOperation() ),
-    _acceptStrategy( a )
+:   _acceptStrategy( a )
 {
 }
 
@@ -231,9 +230,6 @@ pBuffer SinkSource::
                 return s;
             }
         }
-
-		if (_cache.empty())
-			return pBuffer();
     }
 
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
@@ -251,6 +247,13 @@ unsigned SinkSource::
         return (unsigned)-1;
 
     return _cache.front()->sample_rate;
+}
+
+
+long unsigned SinkSource::
+        number_of_samples()
+{
+    return samplesDesc().coveredInterval().count;
 }
 
 

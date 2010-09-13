@@ -82,6 +82,14 @@ SOURCES += \
     tfr/filter.cpp \
     tfr/stft.cpp \
     tfr/stftfilter.cpp \
+    tools/brushmodel.cpp \
+    tools/rendercontroller.cpp \
+    tools/rendermodel.cpp \
+    tools/renderview.cpp \
+    tools/sectionmodel.cpp \
+    tools/selectionview.cpp \
+    tools/selectionmodel.cpp \
+    tools/toolfactory.cpp \
 
 HEADERS += \
     filters/filters.cu.h \
@@ -135,6 +143,14 @@ HEADERS += \
     tfr/transform.h \
     tfr/wavelet.cu.h \
     tfr/stftfilter.h \
+    tools/brushmodel.h \
+    tools/rendercontroller.h \
+    tools/rendermodel.h \
+    tools/renderview.h \
+    tools/sectionmodel.h \
+    tools/selectionview.h \
+    tools/selectionmodel.h \
+    tools/toolfactory.h \
 
 FORMS += \
     saweui/mainwindow.ui \

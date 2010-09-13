@@ -123,8 +123,14 @@ std::string Audiofile::
   */
 Audiofile::
         Audiofile(std::string filename)
-:   _original_filename(filename)
 {
+    load(filename);
+}
+
+void load(std::string filename)
+{
+    _original_filename = filename;
+
     _waveform.reset( new Buffer());
 
     TaskTimer tt("%s %s",__FUNCTION__,filename.c_str());

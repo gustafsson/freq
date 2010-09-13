@@ -21,16 +21,20 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(const char* title, QWidget *parent = 0);
+    MainWindow(const char* title, Sawe::Project* project, QWidget *parent = 0);
     ~MainWindow();
     
     void connectLayerWindow(DisplayWidget *d);
     void setTimelineWidget( QWidget* );
     QWidget* getTimelineDock( );
 
+    // These will be released by MainWindow::~QObject
+    QGLWidget* displayWidget;
+    QGLWidget* timelineWidget;
+
+    //Signal::pWorkerCallback _displayWidgetCallback;
+    //Signal::pWorkerCallback _timelineWidgetCallback;
 protected:
-//    virtual void keyPressEvent( QKeyEvent *e );
-//    virtual void keyReleaseEvent ( QKeyEvent * e );
     virtual void closeEvent(QCloseEvent *);
     struct ActionWindowPair
     {
@@ -54,8 +58,11 @@ signals:
     void sendRemoveItem(int);
 
 private:
+    Sawe::Project* _project;
     class Ui_MainWindow *ui;
     
+    void add_widgets();
+    void create_renderingwidgets();
     void connectActionToWindow(QAction *a, QWidget *b);
 };
 

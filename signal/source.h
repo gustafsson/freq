@@ -64,6 +64,9 @@ public:
       read does not have to return a Buffer of the same size as I. But it has
       to start at I.first. The caller of read must allow for read to return
       Buffers of arbitrary sizes.
+
+      However, read shall never return pBuffer(). Either throw an logic_error()
+      exception or create a new Buffer with zeros.
     */
     virtual pBuffer read( const Interval& I ) = 0;
     virtual pBuffer readChecked( const Interval& I );

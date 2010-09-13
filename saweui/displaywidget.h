@@ -13,6 +13,7 @@
 #include <TAni.h>
 #include <queue>
 #include <QMainWindow>
+#include "sawe/project.h"
 
 class MouseControl
 {
@@ -47,18 +48,15 @@ public:
     void untouch(){hold++;}
 };
 
-struct MyVector{
-    float x, y, z;
-};
-
 class DisplayWidget :
-        public QGLWidget,
-        public Signal::Sink //, /* sink is used as microphone callback */
+        public QGLWidget
+//        public Signal::Sink //, /* sink is used as microphone callback */
 //        public QTimer && // TODO tidy
 {
     Q_OBJECT
 public:
-    DisplayWidget( Signal::pWorker worker, Heightmap::pCollection collection );
+    DisplayWidget( Sawe::Project* project, QWidget* parent );
+
     virtual ~DisplayWidget();
     int lastKey;
     
@@ -73,14 +71,11 @@ public:
 
 	bool isRecordSource();
     void setWorkerSource( Signal::pOperation s = Signal::pOperation());
-    void setTimeline( QWidget* timelineWidget );
-    void setPosition( float time, float f );
 
-    Signal::pWorker worker() { return _worker; }
     std::string selection_filename;
     unsigned playback_device;
-    Heightmap::Collection* collection() { return _renderer->collection(); }
-    Heightmap::pRenderer renderer() { return _renderer; }
+    Heightmap::pCollection collection() { return project->tools.render_model.collection; }
+    Heightmap::pRenderer renderer() { return project->tools.render_view.renderer; }
     Tfr::CwtFilter* getCwtFilterHead();
 
     void drawSelection();
@@ -152,15 +147,12 @@ private:
     virtual void put( Signal::pBuffer b, Signal::pOperation );
     virtual void add_expected_samples( const Signal::Intervals& s );
 
+    Sawe::Project* project;
+
     Signal::PostSink* getPostSink();
 
-    Heightmap::pRenderer _renderer;
-    Signal::pWorker _worker;
-    Signal::pWorkerCallback _collectionCallback;
-    Signal::pWorkerCallback _postsinkCallback;
     Signal::pOperation _matlabfilter;
     Signal::pOperation _matlaboperation;
-    QWidget* _timeline;
     boost::scoped_ptr<TaskTimer> _work_timer;
     boost::scoped_ptr<TaskTimer> _render_timer;
 
@@ -178,7 +170,6 @@ private:
     std::map<void*, ListCounter> _chunkGlList;
     
     QTimer *_timer;
-    double _qx, _qy, _qz;
     float _px, _py, _pz,
 		_rx, _ry, _rz,
                 _prevLimit,
@@ -203,7 +194,7 @@ private:
     GLdouble projectionMatrix[16];
     
     MyVector v1, v2;
-    MyVector selection[2], selectionStart;
+    MyVector selectionStart;
     bool selecting;
 
     MyVector sourceSelection[2];
@@ -219,7 +210,7 @@ private:
     void drawSelectionSquare();
     
     bool insideCircle( float x1, float z1 );
-    
+
 
 //    MouseControl leftButton;
 //    MouseControl rightButton;

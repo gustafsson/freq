@@ -110,7 +110,7 @@ bool PostSink::
 Intervals PostSink::
         invalid_samples()
 {
-    Intervals I = invalid_samples();
+    Intervals I = Operation::invalid_samples();
 
     BOOST_FOREACH( pOperation s, sinks() )
     {

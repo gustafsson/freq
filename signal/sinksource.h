@@ -27,7 +27,7 @@ namespace Signal {
   could otherwise be both much larger and much smaller than the requested
   length. Use 'Source::readFixedLength' if you need specific samples.
   */
-class SinkSource: public Operation
+class SinkSource: public FinalSource
 {
 public:
     /// @see put
@@ -65,9 +65,10 @@ public:
     virtual unsigned sample_rate();
 
     /**
-      Total number of sampels cached. Use samplesDesc.coveredInterval().count
+      Total number of sampels in cached interval, equal to
+        'samplesDesc().coveredInterval().count'.
       */
-    // virtual long unsigned number_of_samples();
+    virtual long unsigned number_of_samples();
 
     /// The first buffer in the cache, or pBuffer() if cache is empty
     pBuffer first_buffer();

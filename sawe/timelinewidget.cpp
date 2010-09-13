@@ -15,14 +15,15 @@ using namespace Signal;
 namespace Sawe {
 
 TimelineWidget::
-        TimelineWidget( QGLWidget* displayWidget )
-:   QGLWidget( 0, displayWidget, Qt::WindowFlags(0) ),
+        TimelineWidget( Sawe::Project* p, QGLWidget* displaywidget )
+:   QGLWidget( (QWidget*)displaywidget->parent(), displaywidget, Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
-    _movingTimeline( 0 )
+    _movingTimeline( 0 ),
+    _project( p )
 {
-    BOOST_ASSERT( dynamic_cast<DisplayWidget*>(displayWidget) );
+    BOOST_ASSERT( displaywidget );
 
     if (!context() || !context()->isSharing())
     {
@@ -113,7 +114,7 @@ void TimelineWidget::
 
         { // Render
             // Set up camera position
-            float length = std::max( 1.f, getDisplayWidget()->worker()->source()->length());
+            float length = std::max( 1.f, _project->worker->source()->length());
             float h = 1 - 0.5f*length/_xscale;
             if (_xscale<1) _xscale = 1;
             if (_xoffs<h) _xoffs = h;
@@ -132,9 +133,9 @@ void TimelineWidget::
             {
                 glPushMatrixContext a;
 
-                getDisplayWidget()->renderer()->draw( 0.f );
-                getDisplayWidget()->drawSelection();
-                getDisplayWidget()->renderer()->drawFrustum();
+                _project->tools.render_view.renderer->draw( 0.f );
+                _project->tools.selection_view.drawSelection();
+                _project->tools.render_view.renderer->drawFrustum();
             }
         }
 
@@ -145,9 +146,9 @@ void TimelineWidget::
 
             glScalef(1,1,_barHeight);
             glTranslatef(0,0,-1);
-            getDisplayWidget()->renderer()->draw( 0.f );
+            _project->tools.render_view.renderer->draw( 0.f );
 
-            float length = std::max( 1.f, getDisplayWidget()->worker()->source()->length());
+            float length = std::max( 1.f, _project->worker->source()->length());
             glColor4f( 0.75, 0.75,0.75, .5);
             glLineWidth(2);
             glBegin(GL_LINES);
@@ -173,7 +174,7 @@ void TimelineWidget::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            getDisplayWidget()->renderer()->drawFrustum(0.75);
+            _project->tools.render_view.renderer->drawFrustum(0.75);
         }
 
         GlException_CHECK_ERROR();
@@ -192,11 +193,11 @@ void TimelineWidget::
 void TimelineWidget::
         setupCamera( bool staticTimeLine )
 {
-    float length = std::max( 1.f, getDisplayWidget()->worker()->source()->length());
+    float length = std::max( 1.f, _project->worker->source()->length());
 	
 	if (0 == "Make sure that the camera focus point is within the timeline")
 	{
-		float t = getDisplayWidget()->renderer()->camera[0];
+        float t = _project->tools.render_view.renderer->camera[0];
 		if (t < _xoffs) _xoffs = t;
 		if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
 	}
@@ -281,14 +282,14 @@ void TimelineWidget::
         switch ( _movingTimeline )
         {
         case 1:
-            getDisplayWidget()->setPosition( current[0], current[1] );
+            _project->tools.render_view.setPosition( current[0], current[1] );
             break;
         case 2:
             {
                 setupCamera( true );
                 moveButton.spacePos(x, y, current[0], current[1]);
 
-                float length = std::max( 1.f, getDisplayWidget()->worker()->source()->length());
+                float length = std::max( 1.f, _project->worker->source()->length());
                 _xoffs = current[0] - 0.5f*length/_xscale;
             }
             break;
@@ -320,12 +321,5 @@ void TimelineWidget::
     mousePressEvent(e);
 }
 
-DisplayWidget * TimelineWidget::
-        getDisplayWidget()
-{
-    DisplayWidget* w = dynamic_cast<DisplayWidget*>(_displayWidget.get());
-    BOOST_ASSERT( w );
-    return w;
-}
 
 } // namespace Sawe

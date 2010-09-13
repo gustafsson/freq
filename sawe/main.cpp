@@ -153,7 +153,7 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, wavelet_std_t));
         else if (readarg(&cmd, samples_per_block));
         else if (readarg(&cmd, scales_per_block));
-        else if (readarg(&cmd, yscale));
+        // else if (readarg(&cmd, yscale)); // TODO remove?
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record_device));
         else if (readarg(&cmd, record));
@@ -313,33 +313,33 @@ int main(int argc, char *argv[])
         cwt.scales_per_octave( _scales_per_octave );
         cwt.wavelet_std_t( _wavelet_std_t );
 
-        unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source->sample_rate() );
+        unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source()->sample_rate() );
         TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
 
         if (_get_csv != (unsigned)-1) {
-			if (0==p->head_source->number_of_samples()) {
+            if (0==p->head_source()->number_of_samples()) {
                                 Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
 				return -1;
 			}
 
             Sawe::Csv csv;
-            csv.source( p->head_source );
+            csv.source( p->head_source() );
             csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
         }
 
         if (_get_hdf != (unsigned)-1) {
-			if (0==p->head_source->number_of_samples()) {
+            if (0==p->head_source()->number_of_samples()) {
                             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
 				return -1;
 			}
 
             Sawe::Hdf5Chunk hdf5;
-            hdf5.source( p->head_source );
+            hdf5.source( p->head_source() );
             hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
         }
 
         if (_get_chunk_count != false) {
-            cout << p->head_source->number_of_samples() / total_samples_per_chunk << endl;
+            cout << p->head_source()->number_of_samples() / total_samples_per_chunk << endl;
         }
 
         if (_get_hdf != (unsigned)-1 ||
@@ -349,15 +349,15 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-		p->displayWidget()->worker()->samples_per_chunk_hint( _samples_per_chunk );
+        p->worker->samples_per_chunk_hint( _samples_per_chunk );
         if (_multithread)
-            p->displayWidget()->worker()->start();
+            p->worker->start();
 
-		p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
-        p->displayWidget()->playback_device = _playback_device;
-        p->displayWidget()->selection_filename = _selectionfile;
-        p->displayWidget()->collection()->samples_per_block( _samples_per_block );
-        p->displayWidget()->collection()->scales_per_block( _scales_per_block );
+        // p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
+        // todo p->tools.playback_view.playback_device = _playback_device;
+        // todo p->tools.diskwriter_view.selection_filename  = _selectionfile;
+        //p->displayWidget()->collection()->samples_per_block( _samples_per_block );
+        //p->displayWidget()->collection()->scales_per_block( _scales_per_block );
 
 		a.openadd_project( p );
 

@@ -8,13 +8,20 @@
 #include <QVBoxLayout>
 #include <sys/stat.h>
 
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <fstream>
+
+#include "saweui/mainwindow.h"
+
 using namespace std;
 
 namespace Sawe {
 
 Project::
         Project( Signal::pOperation head_source )
-:   head_source(head_source)
+:   worker( new Signal::Worker(head_source)),
+    tools(this)
 {
 }
 
@@ -22,12 +29,6 @@ Project::
         ~Project()
 {
     TaskTimer tt("~Project");
-    if (_mainWindow)
-        displayWidget()->setTimeline( 0 );
-    _timelineWidgetCallback.reset();
-    // _timelineWidget.reset(); // TODO howto clear QWidgets?
-    // _displayWidget.reset();
-    _mainWindow.reset();
 }
 
 pProject Project::
@@ -85,27 +86,11 @@ pProject Project::
 }
 
 
-void Project::
-        save(std::string /*project_file*/)
-{
-    // TODO implement
-    throw std::runtime_error("TODO implement Project::save");
-}
-
-
-boost::shared_ptr<MainWindow> Project::
+QMainWindow* Project::
         mainWindow()
 {
     createMainWindow();
-    return _mainWindow;
-}
-
-
-DisplayWidget* Project::
-        displayWidget()
-{
-    createMainWindow();
-    return dynamic_cast<DisplayWidget*>(_displayWidget.get());
+    return _mainWindow.data();
 }
 
 
@@ -117,51 +102,58 @@ void Project::
 
     string title = Sawe::Application::version_string();
     Signal::Audiofile* af;
-    if (0 != (af = dynamic_cast<Signal::Audiofile*>(head_source.get()))) {
+    if (0 != (af = dynamic_cast<Signal::Audiofile*>(worker->source().get()))) {
 		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
         title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
     }
 
-    _mainWindow.reset( new MainWindow( title.c_str()));
+    _mainWindow.reset( new MainWindow( title.c_str(), this ));
+}
 
-    Signal::pWorker wk( new Signal::Worker( head_source ) );
-    Heightmap::pCollection cl( new Heightmap::Collection(wk) );
-    // TODO Qt memory management?
-    _displayWidget.reset( new DisplayWidget( wk, cl ) );
 
-    _mainWindow->connectLayerWindow( displayWidget() );
-    _mainWindow->setCentralWidget( displayWidget() );
+void Project::
+        save(std::string project_file)
+{
+    if (project_file.empty()) {
+        string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
 
-    _mainWindow->setCorner( Qt::BottomLeftCorner, Qt::LeftDockWidgetArea );
-    _mainWindow->setCorner( Qt::BottomRightCorner, Qt::RightDockWidgetArea );
-    _mainWindow->setCorner( Qt::TopLeftCorner, Qt::LeftDockWidgetArea );
-    _mainWindow->setCorner( Qt::TopRightCorner, Qt::RightDockWidgetArea );
-    float L = displayWidget()->worker()->source()->length();
-    L/=2;
-    if (L>5) L = 5;
-    displayWidget()->setPosition( L, 0.5f );
-
-    {
-        // TODO Qt memory management?
-        _timelineWidget.reset( new TimelineWidget( dynamic_cast<QGLWidget*>(_displayWidget.get()) ));
-        _mainWindow->setTimelineWidget( dynamic_cast<QGLWidget*>(_timelineWidget.get()) );
+        QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
+        if (0 == qfilemame.length()) {
+            // User pressed cancel
+            return;
+        }
+        project_file = qfilemame.toLocal8Bit().data();
     }
 
-    //_displayWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _displayWidget ));
-    _timelineWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _timelineWidget ));
-
-    displayWidget()->setTimeline( dynamic_cast<QGLWidget*>( _timelineWidget.get() ));
-    displayWidget()->show();
-    _mainWindow->hide();
-    _mainWindow->show();
+    try
+    {
+        std::ofstream ofs(project_file.c_str());
+        boost::archive::xml_oarchive xml(ofs);
+        xml << boost::serialization::make_nvp("Sonicawe", this);
+    }
+    catch (const std::exception& x)
+    {
+        QMessageBox::warning( 0,
+                     QString("Can't save file"),
+                     QString::fromLocal8Bit(x.what()) );
+    }
 }
 
 
 pProject Project::
-        openProject(std::string /*project_file*/)
-{
-    // TODO implement
-    throw std::runtime_error("TODO implement Project::openProject");
+        openProject(std::string project_file)
+{    
+    pProject project( new Project );
+
+    std::ifstream ifs(project_file.c_str());
+    boost::archive::xml_iarchive xml(ifs);
+    Project* new_project = project.get();
+    xml >> boost::serialization::make_nvp("Sonicawe", new_project);
+
+    // TODO is new_project a new pointer?
+    project.reset( new_project );
+
+    return project;
 }
 
 

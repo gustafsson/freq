@@ -13,7 +13,7 @@ class TimelineWidget:
 {
     Q_OBJECT
 public:
-    TimelineWidget(QGLWidget* displayWidget);
+    TimelineWidget(Sawe::Project* p, QGLWidget* displayWidget);
     virtual ~TimelineWidget();
 
     // overloaded from Signal::Sink
@@ -37,10 +37,8 @@ private:
             _xoffs,
             _barHeight;
     int _movingTimeline;
+    Sawe::Project* _project;
     MouseControl moveButton;
-
-    Signal::pOperation _displayWidget;
-    DisplayWidget * getDisplayWidget();
 };
 
 } // namespace Sawe

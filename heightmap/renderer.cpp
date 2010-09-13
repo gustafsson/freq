@@ -15,9 +15,9 @@
 #include <float.h>
 #include <GlException.h>
 #include <CudaException.h>
-#include "saweui/displaywidget.h"
 #include <glPushContext.h>
 #include <cuda_vector_types_op.h>
+#include "tfr/cwt.h" // TODO remove
 
 #ifdef _MSC_VER
 #include "msc_stdc.h"
@@ -30,7 +30,7 @@ using namespace std;
 
 static bool g_invalidFrustum = true;
 
-Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
+Renderer::Renderer( pCollection collection )
 :   draw_piano(false),
     draw_hz(true),
     camera(0,0,0),
@@ -38,7 +38,6 @@ Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
     color_mode( ColorMode_Rainbow ),
     y_scale( 1 ),
     _collection(collection),
-    _tempToRemove( _tempToRemove ),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -877,6 +876,7 @@ void Renderer::drawAxes( float T )
     glDepthMask(false);
     glDisable(GL_DEPTH_TEST);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
 
     float min_hz = Tfr::Cwt::Singleton().min_hz();
     float max_hz = Tfr::Cwt::Singleton().max_hz( _collection->worker->source()->sample_rate() );
