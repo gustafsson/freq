@@ -127,7 +127,8 @@ Audiofile::
     load(filename);
 }
 
-void load(std::string filename)
+void Audiofile::
+        load(std::string filename)
 {
     _original_filename = filename;
 

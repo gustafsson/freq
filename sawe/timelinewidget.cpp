@@ -114,7 +114,7 @@ void TimelineWidget::
 
         { // Render
             // Set up camera position
-            float length = std::max( 1.f, _project->worker->source()->length());
+            float length = std::max( 1.f, _project->worker.source()->length());
             float h = 1 - 0.5f*length/_xscale;
             if (_xscale<1) _xscale = 1;
             if (_xoffs<h) _xoffs = h;
@@ -148,7 +148,7 @@ void TimelineWidget::
             glTranslatef(0,0,-1);
             _project->tools.render_view.renderer->draw( 0.f );
 
-            float length = std::max( 1.f, _project->worker->source()->length());
+            float length = std::max( 1.f, _project->worker.source()->length());
             glColor4f( 0.75, 0.75,0.75, .5);
             glLineWidth(2);
             glBegin(GL_LINES);
@@ -193,7 +193,7 @@ void TimelineWidget::
 void TimelineWidget::
         setupCamera( bool staticTimeLine )
 {
-    float length = std::max( 1.f, _project->worker->source()->length());
+    float length = std::max( 1.f, _project->worker.source()->length());
 	
 	if (0 == "Make sure that the camera focus point is within the timeline")
 	{
@@ -289,7 +289,7 @@ void TimelineWidget::
                 setupCamera( true );
                 moveButton.spacePos(x, y, current[0], current[1]);
 
-                float length = std::max( 1.f, _project->worker->source()->length());
+                float length = std::max( 1.f, _project->worker.source()->length());
                 _xoffs = current[0] - 0.5f*length/_xscale;
             }
             break;

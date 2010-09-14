@@ -13,7 +13,9 @@ win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
+CONFIG += console # console output
 QT += opengl
+
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
@@ -198,6 +200,7 @@ LIBS = \
     -lGLEW \
     -lGLU \
     -lGL \
+    -lboost_serialization \
     -lglut \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \

@@ -1,14 +1,14 @@
-#include "rendermodel.h"
+#include "sawe/project.h"
 
 namespace Tools
 {
 
 RenderModel::
-        RenderModel(pProject p)
-        : _project(p)
+        RenderModel(Sawe::Project* p)
+        : project(p)
 {
-    collection.reset( new Heightmap::Collection(_project->worker));
-    collectionCallback.reset( new Signal::WorkerCallback( _project->worker, collection->postsink() ));
+    collection.reset( new Heightmap::Collection(&project->worker));
+    collectionCallback.reset( new Signal::WorkerCallback( &project->worker, collection->postsink() ));
 }
 
 } // namespace Tools

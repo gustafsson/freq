@@ -106,7 +106,7 @@ priority.
 class Worker:public QThread
 {
 public:
-    Worker(pOperation source);
+    Worker(pOperation source=pOperation());
     ~Worker();
 
     /**
@@ -247,7 +247,7 @@ private:
     std::runtime_error _caught_exception;
 	std::invalid_argument _caught_invalid_argument;
 };
-typedef boost::shared_ptr<Worker> pWorker;
+// typedef boost::shared_ptr<Worker> pWorker;
 
 
 /**
@@ -255,7 +255,7 @@ typedef boost::shared_ptr<Worker> pWorker;
   */
 class WorkerCallback: boost::noncopyable {
 public:
-    WorkerCallback( pWorker w, pOperation s )
+    WorkerCallback( Worker* w, pOperation s )
         :   _w(w),
             _s(s)
     {
@@ -263,11 +263,11 @@ public:
     }
     ~WorkerCallback( ) { _w->removeCallback( _s ); }
 
-    pWorker worker() { return _w; }
+    Worker* worker() { return _w; }
     pOperation sink() { return _s; }
 
 private:
-    pWorker _w;
+    Worker* _w;
     pOperation _s;
 };
 typedef boost::shared_ptr<WorkerCallback> pWorkerCallback;

@@ -11,14 +11,16 @@ namespace Tools
     class SelectionView
     {
     public:
-        SelectionView(SelectionModel* model):model(model) {}
+        SelectionView(SelectionModel* model);
 
         void drawSelection();
         void drawSelectionSquare();
         bool insideCircle( float x1, float z1 );
         void drawSelectionCircle();
         void drawSelectionCircle2();
+        void drawPlaybackMarker();
 
+        float _playbackMarker;
     private:
         SelectionModel* model;
     };

@@ -349,9 +349,9 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        p->worker->samples_per_chunk_hint( _samples_per_chunk );
+        p->worker.samples_per_chunk_hint( _samples_per_chunk );
         if (_multithread)
-            p->worker->start();
+            p->worker.start();
 
         // p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
         // todo p->tools.playback_view.playback_device = _playback_device;

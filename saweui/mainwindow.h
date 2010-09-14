@@ -58,7 +58,7 @@ signals:
     void sendRemoveItem(int);
 
 private:
-    Sawe::Project* _project;
+    Sawe::Project* project;
     class Ui_MainWindow *ui;
     
     void add_widgets();

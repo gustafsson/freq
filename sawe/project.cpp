@@ -20,7 +20,7 @@ namespace Sawe {
 
 Project::
         Project( Signal::pOperation head_source )
-:   worker( new Signal::Worker(head_source)),
+:   worker( head_source ),
     tools(this)
 {
 }
@@ -102,7 +102,7 @@ void Project::
 
     string title = Sawe::Application::version_string();
     Signal::Audiofile* af;
-    if (0 != (af = dynamic_cast<Signal::Audiofile*>(worker->source().get()))) {
+    if (0 != (af = dynamic_cast<Signal::Audiofile*>(worker.source().get()))) {
 		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
         title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
     }
@@ -127,6 +127,7 @@ void Project::
 
     try
     {
+        // todo use
         std::ofstream ofs(project_file.c_str());
         boost::archive::xml_oarchive xml(ofs);
         xml << boost::serialization::make_nvp("Sonicawe", this);
@@ -142,9 +143,10 @@ void Project::
 
 pProject Project::
         openProject(std::string project_file)
-{    
+{
     pProject project( new Project );
 
+    // todo use
     std::ifstream ifs(project_file.c_str());
     boost::archive::xml_iarchive xml(ifs);
     Project* new_project = project.get();

@@ -19,6 +19,7 @@
 #include "sawe/timelinewidget.h"
 #include "saweui/propertiesselection.h"
 #include "filters/filters.h"
+#include "sawe/timelinewidget.h"
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -31,7 +32,7 @@ using namespace boost;
 MainWindow::
         MainWindow(const char* title, Sawe::Project* project, QWidget *parent)
 :   QMainWindow(parent),
-    _project( project ),
+    project( project ),
     ui(new Ui_MainWindow)
 {
 #ifdef Q_WS_MAC
@@ -152,17 +153,17 @@ void MainWindow::
 void MainWindow::
         create_renderingwidgets()
 {
-    Heightmap::pCollection cl( new Heightmap::Collection(worker) );
     displayWidget = new DisplayWidget( project, this );
 
-    _mainWindow->connectLayerWindow( displayWidget() );
-    _mainWindow->setCentralWidget( displayWidget() );
+    connectLayerWindow( (DisplayWidget*)displayWidget );
+    setCentralWidget( displayWidget);
 
-    _timelineWidget.reset( new TimelineWidget( dynamic_cast<QGLWidget*>(_displayWidget.get()) ));
-    _mainWindow->setTimelineWidget( dynamic_cast<QGLWidget*>(_timelineWidget.get()) );
+    timelineWidget = new Sawe::TimelineWidget( project, displayWidget );
+    setTimelineWidget( timelineWidget );
 
     hide();
     show();
+
     // TODO
     // When drawing displaywidget, always redraw the timeline as the
     // timeline has a marker showing the current render position of
@@ -285,7 +286,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
 
     ui->actionActivateNavigation->setChecked(true);
 
-    updateOperationsTree( d->worker()->source() );
+    updateOperationsTree( project->worker.source() );
     d->getCwtFilterHead();
 
     if (d->isRecordSource()) {

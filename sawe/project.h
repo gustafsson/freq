@@ -30,7 +30,7 @@ namespace Sawe {
 class Project
 {
 public:
-    /**
+/**
       A project currently is entirely defined by its head source.
       */
     Project(Signal::pOperation head_source);
@@ -45,10 +45,10 @@ public:
 
       Selections are saved by saving the list of filters i the first CwtFilter.
       */
-    Signal::pWorker worker;
+    Signal::Worker worker;
 
-    Signal::pOperation head_source() { return worker->source(); }
-    void head_source(Signal::pOperation s) { worker->source(s); }
+    Signal::pOperation head_source() const { return worker.source(); }
+    void head_source(Signal::pOperation s) { worker.source(s); }
 
 
     /**
@@ -93,21 +93,14 @@ private:
 
 
     friend class boost::serialization::access;
-    template<class archive> void save(archive& ar, const unsigned int /*version*/) const {
-        Signal::pOperation head_source = worker->source();
+    template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
+        Signal::pOperation head = head_source();
 
         using boost::serialization::make_nvp;
-        ar & make_nvp("Headsource", head_source);
-    }
-    template<class archive> void load(archive& ar, const unsigned int /*version*/) {
-        Signal::pOperation head_source;
+        ar & make_nvp("Headsource", head);
 
-        using boost::serialization::make_nvp;
-        ar & make_nvp("Headsource", head_source);
-
-        worker->source(head_source);
+        head_source(head);
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 typedef boost::shared_ptr<Project> pProject;
 

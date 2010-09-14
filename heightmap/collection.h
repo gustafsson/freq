@@ -145,7 +145,7 @@ inline std::size_t hash_value(Reference const& ref)
   */
 class Collection {
 public:
-    Collection(Signal::pWorker worker);
+    Collection(Signal::Worker* worker);
     ~Collection();
 
 
@@ -244,7 +244,7 @@ audiofile              source
     Signal::pOperation postsink() { return _postsink; }
 
 
-    Signal::pWorker     worker;
+    Signal::Worker*     worker;
 private:
     // TODO remove friends
     friend class BlockFilter;

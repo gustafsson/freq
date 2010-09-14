@@ -15,7 +15,8 @@ namespace Tools
         Signal::pWorkerCallback collectionCallback;
 
     private:
-        Sawe::Project* _project;
+        friend class RenderView; // todo remove
+        Sawe::Project* project;
     };
 } // namespace Tools
 

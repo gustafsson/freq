@@ -76,9 +76,7 @@ public:
     unsigned playback_device;
     Heightmap::pCollection collection() { return project->tools.render_model.collection; }
     Heightmap::pRenderer renderer() { return project->tools.render_view.renderer; }
-    Tfr::CwtFilter* getCwtFilterHead();
-
-    void drawSelection();
+    Tfr::CwtFilter* getCwtFilterHead(); // todo remove
 
 /*    virtual void keyPressEvent( QKeyEvent *e );
     virtual void keyReleaseEvent ( QKeyEvent * e );
@@ -149,8 +147,6 @@ private:
 
     Sawe::Project* project;
 
-    Signal::PostSink* getPostSink();
-
     Signal::pOperation _matlabfilter;
     Signal::pOperation _matlaboperation;
     boost::scoped_ptr<TaskTimer> _work_timer;
@@ -172,8 +168,7 @@ private:
     QTimer *_timer;
     float _px, _py, _pz,
 		_rx, _ry, _rz,
-                _prevLimit,
-                _playbackMarker;
+                _prevLimit;
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive, _infoToolActive;
     QMutex _invalidRangeMutex;
@@ -197,17 +192,13 @@ private:
     MyVector selectionStart;
     bool selecting;
 
-    MyVector sourceSelection[2];
+    MyVector sourceSelection[2]; // todo, used for tool move selection
     
     void setSelection(int i, bool enabled);
     void removeFilter(int i);
     
     void drawWorking();
     void locatePlaybackMarker();
-    void drawPlaybackMarker();
-    void drawSelectionCircle();
-    void drawSelectionCircle2();
-    void drawSelectionSquare();
     
     bool insideCircle( float x1, float z1 );
 

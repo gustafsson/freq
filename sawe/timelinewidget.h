@@ -1,6 +1,8 @@
 #ifndef SAWETIMELINEWIDGET_H
 #define SAWETIMELINEWIDGET_H
 
+// TODO move to saweui
+
 #include <QGLWidget>
 #include "signal/sink.h"
 #include "saweui/displaywidget.h"

@@ -8,8 +8,7 @@ using namespace std;
 namespace Signal {
 
 MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
-:   _data(SinkSource::AcceptStrategy_ACCEPT_ALL),
-    _callback(0)
+:   _data(SinkSource::AcceptStrategy_ACCEPT_ALL)
 {
     portaudio::System &sys = portaudio::System::instance();
 
@@ -66,9 +65,8 @@ MicrophoneRecorder::~MicrophoneRecorder()
     }
 }
 
-void MicrophoneRecorder::startRecording( Signal::Sink* p )
+void MicrophoneRecorder::startRecording()
 {
-    _callback = p;
     _stream_record->start();
 }
 
@@ -121,13 +119,8 @@ int MicrophoneRecorder::
 
     _data.put( b );
 
-    // TODO rewrite
-    if (_callback)
-    {
-        pOperation bs( new BufferSource(b));
-        _callback->source(bs);
-        _callback->read(b->getInterval());
-    }
+    // todo solve
+    // emit data_available(this);
 
     return paContinue;
 }

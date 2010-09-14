@@ -1,14 +1,14 @@
-#include "toolfactory.h"
+#include "sawe/project.h"
 
 namespace Tools
 {
 
 ToolFactory::
-        ToolFactory(pProject p)
+        ToolFactory(Sawe::Project* p)
 :   render_model(p),
     selection_model(p),
 
-    render_view(&selection_model)
+    render_view(&render_model),
     selection_view(&selection_model)
 {}
 

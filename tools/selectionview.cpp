@@ -1,5 +1,19 @@
-#include "selectionview.h"
+#include "sawe/project.h"
 #include <GL/gl.h>
+#include <QTimer>
+
+using namespace std;
+
+namespace Tools
+{
+
+SelectionView::
+        SelectionView(SelectionModel* model)
+            :
+            _playbackMarker(-1),
+            model(model)
+{}
+
 
 void SelectionView::
         drawSelection()
@@ -171,11 +185,12 @@ void SelectionView::
 bool SelectionView::
         insideCircle( float x1, float z1 )
 {
+    MyVector* selection = model->selection;
     float
-    x = selection[0].x,
-    z = selection[0].z,
-    _rx = selection[1].x,
-    _rz = selection[1].z;
+        x = selection[0].x,
+        z = selection[0].z,
+        _rx = selection[1].x,
+        _rz = selection[1].z;
     return (x-x1)*(x-x1)/_rx/_rx + (z-z1)*(z-z1)/_rz/_rz < 1;
 }
 
@@ -183,11 +198,12 @@ bool SelectionView::
 void SelectionView::
         drawSelectionCircle()
 {
+    MyVector* selection = model->selection;
     float
-    x = selection[0].x,
-    z = selection[0].z,
-    _rx = fabs(selection[1].x-selection[0].x),
-    _rz = fabs(selection[1].z-selection[0].z);
+        x = selection[0].x,
+        z = selection[0].z,
+        _rx = fabs(selection[1].x-selection[0].x),
+        _rz = fabs(selection[1].z-selection[0].z);
     float y = 1;
 
     //glEnable(GL_BLEND);
@@ -221,10 +237,11 @@ void SelectionView::
 void SelectionView::
         drawSelectionCircle2()
 {
-    float l = _worker->source()->length();
+    float l = model->project->worker.source()->length();
     glDepthMask(false);
     glColor4f( 0, 0, 0, .5);
 
+    MyVector* selection = model->selection;
     float
         x = selection[0].x,
         z = selection[0].z,
@@ -336,3 +353,54 @@ void SelectionView::
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
+
+void SelectionView::
+        drawPlaybackMarker()
+{
+    if (0>_playbackMarker)
+        return;
+
+    //glEnable(GL_BLEND);
+    glDepthMask(false);
+    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f( 0, 0, 0, .5);
+
+    MyVector* selection = model->project->tools.selection_model.selection;
+
+    float
+        t = _playbackMarker,
+        x = selection[0].x,
+        y = 1,
+        z = selection[0].z,
+        _rx = selection[1].x-selection[0].x,
+        _rz = selection[1].z-selection[0].z,
+        z1 = z-sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz,
+        z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
+
+
+    glBegin(GL_QUADS);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z2 );
+        glVertex3f( t, y, z1 );
+    glEnd();
+
+    //glDisable(GL_BLEND);
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_QUADS);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z2 );
+        glVertex3f( t, y, z1 );
+    glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // TODO make sure to repaint the area as the selection marker move
+    // with time
+    QTimer::singleShot(10, model->project->mainWindow(), SLOT(update()));
+}
+
+} // namespace Tools

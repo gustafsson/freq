@@ -21,7 +21,7 @@
 
 //#define TIME_COLLECTION
 #define TIME_COLLECTION if(0)
-
+// todo remove?
 #define MAX_REDUNDANT_SIZE 32
 
 using namespace Signal;
@@ -32,7 +32,7 @@ namespace Heightmap {
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-        Collection( pWorker worker )
+        Collection( Worker* worker )
 :   worker( worker ),
     _samples_per_block( 1<<7 ),
     _scales_per_block( 1<<8 ),

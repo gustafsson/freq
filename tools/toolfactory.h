@@ -17,6 +17,7 @@ namespace Tools
     {
     public:
         ToolFactory(Sawe::Project* p);
+        ~ToolFactory();
 
         RenderModel render_model;
         SelectionModel selection_model;
