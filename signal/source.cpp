@@ -144,26 +144,34 @@ pBuffer SourceBase::
 {
     // Try a simple read
     pBuffer p = readChecked( I );
-    if (p->number_of_samples() == I.count && p->sample_offset==I.first)
+    if (p->number_of_samples() == I.count() && p->sample_offset==I.first)
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r( new Buffer(I.first, I.count, p->sample_rate) );
-    memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
+    pBuffer r = zeros(I);
 
     Intervals sid(I);
 
     while (!sid.isEmpty())
     {
-        (*r) |= *p;
-        sid -= p->getInterval();
-
-        if (!sid.isEmpty()) {
+        if (!p)
             p = readChecked( sid.getInterval() );
-        }
+
+        sid -= p->getInterval();
+        (*r) |= *p;
+        p.reset();
     }
 
     return r;
 }
+
+pBuffer SourceBase::
+        zeros( const Interval& I )
+{
+    pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
+    memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
+    return r;
+}
+
 
 } // namespace Signal

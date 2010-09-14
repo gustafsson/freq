@@ -75,6 +75,9 @@ public:
     virtual long unsigned number_of_samples() = 0;
 
     float length() { return number_of_samples() / (float)sample_rate(); }
+
+protected:
+    virtual pBuffer zeros( const Interval& I );
 };
 
 

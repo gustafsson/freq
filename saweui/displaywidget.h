@@ -141,10 +141,6 @@ signals:
 private:
     friend class Heightmap::Renderer;
 
-    // overloaded from Signal::Sink
-    virtual void put( Signal::pBuffer b, Signal::pOperation );
-    virtual void add_expected_samples( const Signal::Intervals& s );
-
     Sawe::Project* project;
 
     Signal::pOperation _matlabfilter;

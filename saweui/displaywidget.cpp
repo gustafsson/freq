@@ -193,6 +193,7 @@ DisplayWidget::
   orthoview(1),
   xscale(1),
 //  _record_update(false),
+  project( project ),
   _work_timer( new TaskTimer("Benchmarking first work")),
   _follow_play_marker( false ),
   _px(0), _py(0), _pz(-10),
@@ -352,8 +353,7 @@ void DisplayWidget::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_std_t() * FS );
 
-    dynamic_cast<Signal::Operation*>(project->tools.render_model.collection->postsink().get())->
-            invalidate_samples( Signal::Intervals::Intervals_ALL );
+    project->tools.render_model.collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
     update();
 }
 
@@ -599,7 +599,7 @@ void DisplayWidget::
 
     // Invalidate rendering
     Signal::Intervals sid(start, b->number_of_samples());
-    project->tools.render_view.renderer->collection()->add_expected_samples(sid);
+    project->tools.render_view.renderer->collection()->invalidate_samples(sid);
 
     // Update stream
     b->source(remove);
@@ -645,7 +645,7 @@ void DisplayWidget::
         else         sid2 -= -delta;
         sid |= sid2;
 
-        project->tools.render_view.renderer->collection()->add_expected_samples(sid);
+        project->tools.render_view.renderer->collection()->invalidate_samples(sid);
         update();
     }
 }
@@ -683,7 +683,7 @@ void DisplayWidget::
         // Invalidate rendering
         Signal::Intervals sid(oldStart, oldStart+L);
         sid |= Signal::Intervals(newStart, newStart+L);
-        project->tools.render_view.renderer->collection()->add_expected_samples(sid);
+        project->tools.render_view.renderer->collection()->invalidate_samples(sid);
 
         // update stream
         b->source(moveSelection );
@@ -707,7 +707,7 @@ void DisplayWidget::
     project->worker.start();
     setWorkerSource();
     update();
-    project->tools.render_view.renderer->collection()->add_expected_samples(Signal::Intervals::Intervals_ALL);
+    project->tools.render_view.renderer->collection()->invalidate_samples(Signal::Intervals::Intervals_ALL);
 }
 
 void DisplayWidget::
@@ -749,7 +749,7 @@ void DisplayWidget::
     }
 
 
-    project->tools.render_view.renderer->collection()->add_expected_samples(b->affected_samples());
+    project->tools.render_view.renderer->collection()->invalidate_samples(b->affected_samples());
 
     setWorkerSource();
     update();
@@ -763,7 +763,7 @@ void DisplayWidget::
 
     setWorkerSource(tonalize);
 
-    project->tools.render_view.renderer->collection()->add_expected_samples( tonalize->affected_samples());
+    project->tools.render_view.renderer->collection()->invalidate_samples( tonalize->affected_samples());
 
     update();
 }
@@ -775,7 +775,7 @@ void DisplayWidget::
     reassign->source(project->worker.source());
     setWorkerSource(reassign);
 
-    project->tools.render_view.renderer->collection()->add_expected_samples( reassign->affected_samples() );
+    project->tools.render_view.renderer->collection()->invalidate_samples( reassign->affected_samples() );
 
     update();
 }
@@ -821,22 +821,23 @@ void DisplayWidget::
 }
 */
 
+/*todo remove
 void DisplayWidget::put( Signal::pBuffer b, Signal::pOperation )
 {
-	QMutexLocker l(&_invalidRangeMutex);
+    QMutexLocker l(&_invalidRangeMutex);
     if (b) {
-
         _invalidRange |= b->getInterval();
     }
 	
-	// This causes a crash in Mac OS
+    // This causes a crash in Mac OS
+    // reason: update is a slot in a QObject whose thread is different from the calling thread (put was called from microphonerecorder)
+    // solution was to invokeMethod or declare a signal, connect it and emit the signal
+    // http://stackoverflow.com/questions/1144240/qt-how-to-call-slot-from-custom-c-code-running-in-a-different-thread
+    // strange that it resulted in a crash instead of an assertion failure on
+    // Q_ASSERT(qApp && qApp->thread() == QThread::currentThread());
+    // maybe it did, but we didn't see it in the dev environment on Mac?
     //update();
-}
-
-void DisplayWidget::add_expected_samples( const Signal::Intervals& )
-{
-    update();
-}
+}*/
 
 
 Tfr::CwtFilter* DisplayWidget::getCwtFilterHead()
@@ -1244,7 +1245,7 @@ void DisplayWidget::paintGL()
             blur -= fuzzy;
             _invalidRange |= blur;
 
-            project->tools.render_view.renderer->collection()->add_expected_samples( _invalidRange );
+            project->tools.render_view.renderer->collection()->invalidate_samples( _invalidRange );
             _invalidRange = Signal::Intervals();
         }
     }
@@ -1831,7 +1832,7 @@ void DisplayWidget::setSelection(int index, bool enabled)
     {
         filter->enabled = enabled;
 
-        project->tools.render_view.renderer->collection()->add_expected_samples( filter->affected_samples() );
+        project->tools.render_view.renderer->collection()->invalidate_samples( filter->affected_samples() );
     }
     
     update();
@@ -1852,7 +1853,7 @@ void DisplayWidget::removeFilter(int index){
     if (index || !next)
         return;
 
-    project->tools.render_view.renderer->collection()->add_expected_samples( next->affected_samples() );
+    project->tools.render_view.renderer->collection()->invalidate_samples( next->affected_samples() );
 
     if (!prev)
     {

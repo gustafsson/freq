@@ -119,11 +119,12 @@ void SinkSource::
 
 	BOOST_FOREACH( Interval i, sid.intervals() )
 	{
-		for(unsigned L=0; i.first < i.last; i.first+=L)
+        for (unsigned L=0; i.first < i.last; i.first+=L)
 		{
-            L = lpo2s( i.count + 1);
-			if (L<(1<<13))
-                L = i.count;
+            L = lpo2s( i.count() + 1);
+
+            if (L < (1<<13))
+                L = i.count();
 
             new_cache.push_back(readFixedLength( Interval( i.first, i.first + L) ));
 		}
@@ -233,9 +234,7 @@ pBuffer SinkSource::
     }
 
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
-    pBuffer b( new Buffer(I.first, I.count, sample_rate()));
-    memset( b->waveform_data->getCpuMemory(), 0, b->waveform_data->getSizeInBytes1D() );
-    return b;
+    return zeros(I);
 }
 
 unsigned SinkSource::
@@ -244,7 +243,7 @@ unsigned SinkSource::
     QMutexLocker l(&_cache_mutex);
 
     if (_cache.empty())
-        return (unsigned)-1;
+        return 0;
 
     return _cache.front()->sample_rate;
 }
@@ -253,7 +252,7 @@ unsigned SinkSource::
 long unsigned SinkSource::
         number_of_samples()
 {
-    return samplesDesc().coveredInterval().count;
+    return samplesDesc().coveredInterval().count();
 }
 
 

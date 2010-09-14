@@ -105,4 +105,45 @@ void WriteWav::
     outfile.write( data, N); // yes write float
 }
 
+pBuffer WriteWav::
+        crop(pBuffer buffer)
+{
+    if (buffer->interleaved() != Buffer::Only_Real)
+        buffer = buffer->getInterleaved(Buffer::Only_Real);
+
+    /// Remove zeros from the beginning and end
+    unsigned num_frames = buffer->waveform_data->getNumberOfElements().width;
+    unsigned channel_count = buffer->waveform_data->getNumberOfElements().height;
+    float *fdata = buffer->waveform_data->getCpuMemory();
+
+    unsigned firstNonzero = 0;
+    unsigned lastNonzero = 0;
+
+    for (unsigned f=0; f<num_frames; f++)
+        for (unsigned c=0; c<channel_count; c++)
+            if (fdata[f*channel_count + c])
+                lastNonzero = f;
+            else if (firstNonzero==f)
+                firstNonzero = f+1;
+
+    if (firstNonzero > lastNonzero)
+        return pBuffer();
+
+    pBuffer result(new Buffer(firstNonzero, lastNonzero-firstNonzero+1, buffer->sample_rate ));
+    float *data = result->waveform_data->getCpuMemory();
+
+
+    for (unsigned f=firstNonzero; f<=lastNonzero; f++)
+        for (unsigned c=0; c<channel_count; c++) {
+            float u = std::min(1.f, (f-firstNonzero)/(buffer->sample_rate*0.01f));
+            float d = std::min(1.f, (lastNonzero-f )/(buffer->sample_rate*0.01f));
+            float rampup   = 3*u*u - 2*u*u*u;
+            float rampdown = 3*d*d - 2*d*d*d;
+
+            data[f-firstNonzero + c*num_frames] = 0.5f*rampup*rampdown*fdata[ f + c*num_frames];
+        }
+
+    return result;
+}
+
 } // namespace Signal

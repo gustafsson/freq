@@ -14,6 +14,7 @@
 #include <string>
 #include <QThread>
 #include <neat_math.h>
+#include <debugmacros.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -28,6 +29,20 @@ using namespace Signal;
 
 namespace Heightmap {
 
+class CollectionSink: public Signal::PostSink
+{
+public:
+    CollectionSink( Collection* c ) : c(c) {}
+
+    virtual Intervals invalid_samples()
+    {
+        return PostSink::invalid_samples() | c->invalid_samples();
+    }
+
+private:
+    Collection* c;
+};
+
 
 ///// HEIGHTMAP::COLLECTION
 
@@ -38,16 +53,15 @@ Collection::
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _frame_counter(0),
-    _postsink( new Signal::PostSink() )
+    _postsink( new CollectionSink(this) )
 {
+    COUTVAL( _postsink->invalid_samples() ); // todo remove
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
     // Updated as soon as the first chunk is received
     _min_sample_size.scale = 1;
     _min_sample_size.time = 1;
     update_sample_size();
-
-    QMutexLocker l(&_cache_mutex);
 
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.f_min = 20;
@@ -309,7 +323,7 @@ void Collection::
 
 
 void Collection::
-        add_expected_samples( const Intervals& sid )
+        invalidate_samples( const Intervals& sid )
 {
     TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
 
@@ -319,7 +333,7 @@ void Collection::
 }
 
 Intervals Collection::
-        expected_samples()
+        invalid_samples()
 {
     Intervals r;
 
@@ -635,7 +649,7 @@ bool Collection::
     {
         float in_offset = transfer.first - inInterval.first;
         float out_offset = transfer.first - outInterval.first;
-        float in_valid_samples = transfer.count;
+        float in_valid_samples = transfer.count();
 
         // Rescale to proper sample rates (samples are originally
         // described in the signal_sample_rate)

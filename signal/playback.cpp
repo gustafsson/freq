@@ -264,7 +264,7 @@ bool Playback::
             (expect.intervals().back().last - marker) / (float)_data.sample_rate();
 
     Signal::Interval cov = expect.coveredInterval();
-    float estimated_time_required = cov.count / incoming_samples_per_sec;
+    float estimated_time_required = cov.count() / incoming_samples_per_sec;
 
     // Add small margin
     estimated_time_required *= 1.11f;

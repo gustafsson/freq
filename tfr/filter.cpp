@@ -29,12 +29,8 @@ Signal::pBuffer Filter::
         if (!(work - zeroed_samples()))
         {
             // Doesn't have to read from source, just create a buffer with all samples set to 0
-            pBuffer b( new Buffer( I.first, I.count, sample_rate() ));
-
-            ::memset( b->waveform_data->getCpuMemory(), 0, b->waveform_data->getSizeInBytes1D());
-
-            TIME_Filter Intervals(b->getInterval()).print("Filter silent");
-            return b;
+            TIME_Filter Intervals(I).print("Filter silent");
+            return zeros(I);
         }
 
         // If no samples would be affected, return from source

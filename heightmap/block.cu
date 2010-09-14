@@ -184,8 +184,8 @@ __device__ __host__ read_params computeReadParams( unsigned in_sample_offset, un
     float blockLastWrite = blockFirstWrite + BLOCK_SIZE;
 
     // Don't write anything before out_sample_offset, if the entire range is before out_sample_offset the range will be
-    // [out_sample_offset, out_sample_offset[ which is an empty set. However, [blockFirstWrite, blockLastWrite[ might be
-    // non-empty even though [myFirstWrite, myLastWrite[ is empty.
+    // [out_sample_offset, out_sample_offset) which is an empty set. However, [blockFirstWrite, blockLastWrite) might be
+    // non-empty even though [myFirstWrite, myLastWrite) is empty.
     if (threadFirstWrite < out_sample_offset) threadFirstWrite = out_sample_offset;
     if (threadLastWrite  < out_sample_offset) threadLastWrite  = out_sample_offset;
     if (blockFirstWrite  < out_sample_offset) blockFirstWrite  = out_sample_offset;
@@ -703,7 +703,12 @@ void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
     dim3 grid( outBlock.getNumberOfElements().x/block.x, outBlock.getNumberOfElements().y, 1);
 
     if(grid.x>65535 || grid.y>65535 || 0!=(in_stft_size%32)) {
-        printf("====================\nInvalid argument, expandCompleteStft.\n===================\n");
+        printf("====================\n"
+               "Invalid argument, expandCompleteStft.\n"
+               "grid.x=%u || grid.y=%u || in_stft_size=%u\n"
+               "===================\n",
+               grid.x, grid.y, in_stft_size
+               );
         return;
     }
 

@@ -16,7 +16,7 @@ StftFilter::
 :   Filter(source)
 {
     if (!t)
-        t = Cwt::SingletonP();
+        t = Stft::SingletonP();
 
     BOOST_ASSERT( dynamic_cast<Stft*>(t.get()));
 
@@ -27,7 +27,7 @@ StftFilter::
 pChunk StftFilter::
         readChunk( const Signal::Interval& I )
 {
-    unsigned firstSample = I.first, numberOfSamples = I.count;
+    unsigned firstSample = I.first, numberOfSamples = I.count();
 
     TIME_StftFilter TaskTimer tt("StftFilter::readChunk ( %u, %u )", firstSample, numberOfSamples);
 

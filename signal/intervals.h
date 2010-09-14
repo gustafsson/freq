@@ -13,7 +13,7 @@ typedef long unsigned IntervalType;
   signal they are referring to. So, one 'Interval' is given an including
   beginning 'first' and exclusive end 'last' in integers such that
 
-     I = [first, last[
+     I = [first, last)
 
   */
 class Interval {
@@ -25,7 +25,7 @@ public:
     Interval& operator=( const Interval& i)
                        { first = i.first, last = i.last; return *this; }
     Interval( IntervalType first, IntervalType last )
-        :   first(first), last(last), count(*this)
+        :   first(first), last(last)
     {}
 
     /**
@@ -33,14 +33,7 @@ public:
        the length of the interval can be computed as "last-first".
       */
     IntervalType first, last;
-
-    class Count { public: Count( Interval& i ): i(i) {}
-        operator IntervalType() const
-        {
-            return i.last - i.first;
-        }
-    private: Interval& i;
-    } count; // I really wanted this to behave like a read-only property
+    IntervalType count() const { return last - first; }
 
     bool valid() const;
     bool isConnectedTo(const Interval& r) const;
@@ -55,7 +48,7 @@ public:
   signal they are referring to. So, one 'Interval' is given an including
   beginning 'first' and exclusive end 'last' in integers such that
 
-     I = [first, last[
+     I = [first, last)
 
   */
 class Intervals
@@ -84,8 +77,8 @@ public:
     Intervals                       inverse() const;
 
     bool                            isEmpty() const { return _intervals.empty(); }
+    Interval                        getInterval() const;
     Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
-    Interval                        getInterval( Interval n = Interval::Interval_ALL ) const;
     Interval                        coveredInterval() const;
     const std::list<Interval>&      intervals() const { return _intervals; }
 

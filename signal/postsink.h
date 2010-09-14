@@ -20,7 +20,7 @@ public:
     PostSink(pOperation s=pOperation()):Operation(s) {}
     virtual Signal::pBuffer read( const Signal::Interval& I );
 
-    virtual Intervals affected_samples() { return _filter ? Intervals::Intervals_ALL : Intervals(); }
+    virtual Intervals affected_samples();
     virtual Intervals invalid_samples();
     virtual void invalidate_samples( const Intervals& s );
 

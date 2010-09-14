@@ -18,9 +18,9 @@ namespace Heightmap
 void BlockFilter::
         operator()( Tfr::Chunk& chunk )
 {
-    Signal::Intervals expected = _collection->expected_samples();
+    Signal::Intervals expected = _collection->invalid_samples();
 
-    if ( (expected & chunk.getInterval()).isEmpty() ) {
+    if ( !(expected & chunk.getInterval()) ) {
         // TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk.getInterval().first, chunk.getInterval().last);
         return;
     }
@@ -39,7 +39,9 @@ void BlockFilter::
         {
             QMutexLocker l(&block->cpu_copy_mutex);
             if (!block->cpu_copy)
-                throw std::logic_error("Multi GPU code is not implemented yet");
+                throw std::logic_error(
+                    "Multi threaded code is not usefull unless using multiple "
+                    "GPUs, and multi GPU code is not implemented yet.");
 
             mergeChunk( block, chunk, block->cpu_copy );
 
@@ -82,7 +84,7 @@ void CwtToBlock::
     std::stringstream ss;
     Position a,b;
     block->ref.getArea(a,b);
-    TIME_CWTTOBLOCK TaskTimer tt("%s chunk t=[%g, %g[ into block t=[%g,%g] ff=[%g,%g]", __FUNCTION__,
+    TIME_CWTTOBLOCK TaskTimer tt("%s chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]", __FUNCTION__,
                                  chunk.startTime(), chunk.endTime(), a.time, b.time, a.scale, b.scale);
 
     float in_sample_rate = chunk.sample_rate;
@@ -132,7 +134,7 @@ void CwtToBlock::
                            out_sample_offset,
                            in_frequency_offset,
                            out_frequency_offset,
-                           transfer.count,
+                           transfer.count(),
                            complex_info,
                            cuda_stream);
 

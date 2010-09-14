@@ -27,7 +27,7 @@ CwtFilter::
 Tfr::pChunk CwtFilter::
         readChunk( const Signal::Interval& I )
 {
-    unsigned firstSample = I.first, numberOfSamples = I.count;
+    unsigned firstSample = I.first, numberOfSamples = I.count();
 
     TIME_CwtFilter TaskTimer tt("CwtFilter::readChunk ( %u, %u )", firstSample, numberOfSamples);
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());

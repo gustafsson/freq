@@ -9,7 +9,7 @@ Operation::Operation(pOperation source )
 {
 }
 
-
+#include <stdio.h> // todo remove
 Intervals Operation::
         invalid_samples()
 {
@@ -18,7 +18,9 @@ Intervals Operation::
     Intervals r = _invalid_samples;
 
     if (0!=o)
+    {
         r |= o->invalid_samples();
+    }
 
     return r;
 }

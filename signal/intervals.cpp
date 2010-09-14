@@ -262,6 +262,18 @@ Intervals& Intervals::
     return *this;
 }
 
+
+Interval Intervals::
+        getInterval() const
+{
+    if (_intervals.empty())
+        return Interval( Interval::IntervalType_MIN,
+                         Interval::IntervalType_MIN );
+
+    return _intervals.front();
+}
+
+
 Interval Intervals::
         getInterval( IntervalType dt, IntervalType center ) const
 {
@@ -291,7 +303,7 @@ Interval Intervals::
     }
     if (distance_to_next<=distance_to_prev) {
         const Interval &f = *itr;
-        if (f.count < dt ) {
+        if (f.count() < dt ) {
             return f;
         }
         return Interval( f.first, f.first + dt );
@@ -299,7 +311,7 @@ Interval Intervals::
     } else { // distance_to_next>distance_to_prev
         itr--; // get previous Interval
         const Interval &f = *itr;
-        if (f.count < dt ) {
+        if (f.count() < dt ) {
             return f;
         }
 
@@ -319,18 +331,6 @@ Intervals Intervals::
     return Intervals_ALL - *this;
 }
 
-
-Interval Intervals::
-        getInterval( Interval n ) const
-{
-    Intervals sid = *this & n;
-
-    if (0 == sid._intervals.size()) {
-        return Interval( Interval::IntervalType_MIN, Interval::IntervalType_MIN );
-    }
-
-    return sid.intervals().front();
-}
 
 Interval Intervals::
         coveredInterval() const

@@ -56,7 +56,7 @@ public:
     virtual pBuffer read( const Interval& I );
 
     /**
-      'sample_rate' is defined as (unsigned)-1 if _cache is empty.
+      'sample_rate' is defined as 0 if _cache is empty.
       If buffers with different are attempted to be 'put' then 'put' will throw
       an invalid_argument exception. So all buffers in the cache are guaranteed
       to have the same sample rate as the buffer that was first inserted with

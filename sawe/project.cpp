@@ -144,16 +144,14 @@ void Project::
 pProject Project::
         openProject(std::string project_file)
 {
-    pProject project( new Project );
-
     // todo use
     std::ifstream ifs(project_file.c_str());
     boost::archive::xml_iarchive xml(ifs);
-    Project* new_project = project.get();
-    xml >> boost::serialization::make_nvp("Sonicawe", new_project);
 
-    // TODO is new_project a new pointer?
-    project.reset( new_project );
+    Project* new_project;
+    xml >> boost::serialization::make_nvp("SonicaweProject", new_project);
+
+    pProject project( new_project );
 
     return project;
 }

@@ -155,8 +155,8 @@ public:
     virtual void reset();
 
 
-    virtual Signal::Intervals expected_samples();
-    virtual void add_expected_samples( const Signal::Intervals& );
+    virtual Signal::Intervals invalid_samples();
+    virtual void invalidate_samples( const Signal::Intervals& );
 
 
     /**

@@ -16,7 +16,7 @@ pBuffer OperationRemoveSection::
         read( const Interval& I )
 {
     unsigned firstSample = I.first;
-    unsigned numberOfSamples = I.count;
+    unsigned numberOfSamples = I.count();
 
     if (firstSample + numberOfSamples <= _firstSample )
     {
@@ -62,7 +62,7 @@ pBuffer OperationInsertSilence::
         read( const Interval& I )
 {
     unsigned firstSample = I.first;
-    unsigned numberOfSamples = I.count;
+    unsigned numberOfSamples = I.count();
 
     if (firstSample + numberOfSamples <= _firstSample )
         return _source->read( I );
@@ -82,12 +82,7 @@ pBuffer OperationInsertSilence::
     if ( length > numberOfSamples )
         length = numberOfSamples;
 
-    pBuffer r(new Buffer );
-    r->sample_offset = firstSample;
-    r->sample_rate = _source->sample_rate();
-    r->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent(length,1,1) ));
-    memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
-    return r;
+    return zeros(Signal::Interval(firstSample, firstSample+length));
 }
 
 long unsigned OperationInsertSilence::

@@ -163,7 +163,7 @@ MatlabOperation::
 pBuffer MatlabOperation::
         readRaw( const Interval& I )
 {
-    TaskTimer tt("MatlabOperation::read(%u,%u), count = %u", I.first, I.last, (Signal::IntervalType)I.count );
+    TaskTimer tt("MatlabOperation::read(%u,%u), count = %u", I.first, I.last, (Signal::IntervalType)I.count() );
 
     pBuffer b = _source->read( I );
 

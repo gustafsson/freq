@@ -71,7 +71,7 @@ bool Worker::
         {   stringstream ss;
             TIME_WORKER TaskTimer tt("Reading source and calling callbacks %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
 
-            pBuffer b = callCallbacks( interval );
+            b = callCallbacks( interval );
             work_time += b->length();
         }
 

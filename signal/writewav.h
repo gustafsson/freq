@@ -23,6 +23,8 @@ public:
     static void writeToDisk(std::string filename, pBuffer b);
 
     void put( pBuffer );
+
+    static pBuffer crop(pBuffer b);
 private:
     SinkSource _data;
     std::string _filename;

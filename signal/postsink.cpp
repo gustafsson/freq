@@ -2,6 +2,8 @@
 #include "buffersource.h"
 #include "tfr/filter.h"
 #include <boost/foreach.hpp>
+#include <demangle.h>
+#include <typeinfo>
 
 using namespace std;
 
@@ -10,6 +12,8 @@ namespace Signal {
 Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
+    TaskTimer tt("%s in %s", __FUNCTION__, demangle(typeid(*this).name()).c_str());
+
     vector<pOperation> passive_operations;
     vector<pOperation> active_operations;
 
@@ -105,6 +109,25 @@ bool PostSink::
     return r;
 }
 */
+
+
+Intervals PostSink::
+        affected_samples()
+{
+    Intervals I = Operation::affected_samples();
+
+    if (_filter)
+        I |= _filter->affected_samples();
+
+    BOOST_FOREACH( pOperation s, sinks() )
+    {
+        Operation* o = dynamic_cast<Operation*>(s.get());
+        if (o)
+            I |= o->affected_samples();
+    }
+
+    return I;
+}
 
 
 Intervals PostSink::
