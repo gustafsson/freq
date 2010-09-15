@@ -12,8 +12,6 @@ namespace Signal {
 Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
-    TaskTimer tt("%s in %s", __FUNCTION__, demangle(typeid(*this).name()).c_str());
-
     vector<pOperation> passive_operations;
     vector<pOperation> active_operations;
 

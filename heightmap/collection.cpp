@@ -96,6 +96,7 @@ void Collection::
     _scales_per_block=v;
 }
 
+
 void Collection::
         samples_per_block(unsigned v)
 {
@@ -105,30 +106,29 @@ void Collection::
     _samples_per_block=v;
 }
 
+
 unsigned Collection::
         next_frame()
 {
-    TaskTimer tt("%s = %p", __FUNCTION__, this);
+    QMutexLocker l(&_cache_mutex);
+
+    TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
 
-	{   QMutexLocker l(&_cache_mutex);
-
-        printf("_recent.size() = %lu\n", _recent.size());
-
-		BOOST_FOREACH(recent_t::value_type& b, _recent)
-		{
-			if (b->frame_number_last_used != _frame_counter)
-				break;
-			b->glblock->unmap();
-		}
-	}
+    BOOST_FOREACH(recent_t::value_type& b, _recent)
+    {
+        if (b->frame_number_last_used != _frame_counter)
+            break;
+        b->glblock->unmap();
+    }
 
 	_frame_counter++;
 
     return t;
 }
+
 
 void Collection::
         update_sample_size( Tfr::Chunk* chunk )

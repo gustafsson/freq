@@ -153,8 +153,9 @@ void StftToBlock::
     Position a, b;
     block->ref.getArea(a,b);
 
-    float tmin = Tfr::Cwt::Singleton().min_hz();
-    float tmax = Tfr::Cwt::Singleton().max_hz( chunk.sample_rate );
+
+    float tmin = chunk.min_hz;
+    float tmax = chunk.max_hz;
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));

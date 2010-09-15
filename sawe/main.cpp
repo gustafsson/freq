@@ -257,8 +257,9 @@ void validate_arguments() {
 
 int main(int argc, char *argv[])
 {
-//    printf("Fastest size = %u\n", Tfr::Stft::build_performance_statistics(true));
-//    return 0;
+    printf("Fastest size = %u\n", Tfr::Stft::build_performance_statistics(true));
+
+    //    return 0;
 
 //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
@@ -365,7 +366,10 @@ int main(int argc, char *argv[])
 
         int r = a.exec();
 
-        // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );
+        // This row might crash with a segfault if there has been an access
+        // violation in the cuda driver.
+        // TODO check if it is related to OpenGL bindings.
+        CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
         Sawe::Application::display_fatal_exception(x);

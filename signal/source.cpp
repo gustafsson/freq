@@ -2,6 +2,8 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <demangle.h>
+#include <typeinfo>
 
 using namespace std;
 
@@ -127,10 +129,8 @@ Buffer& Buffer::
 pBuffer SourceBase::
         readChecked( const Interval& I )
 {
+    cout << demangle(typeid(*this).name()) << "." << __FUNCTION__ << " " << I << endl;
     pBuffer r = read(I);
-
-    printf("r->sample_offset = %u\n", r->sample_offset);
-    printf("r->number_of_samples() = %u\n", r->number_of_samples());
 
     // Check if read contains firstSample
     BOOST_ASSERT(r->sample_offset <= I.first);
@@ -148,7 +148,7 @@ pBuffer SourceBase::
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r = zeros(I);
+    pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
 
     Intervals sid(I);
 
@@ -158,7 +158,7 @@ pBuffer SourceBase::
             p = readChecked( sid.getInterval() );
 
         sid -= p->getInterval();
-        (*r) |= *p;
+        (*r) |= *p; // Fill buffer
         p.reset();
     }
 

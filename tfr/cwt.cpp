@@ -103,14 +103,6 @@ pChunk Cwt::
         intermediate_wt->max_hz = max_hz( buffer->sample_rate );
         intermediate_wt->min_hz = min_hz();
 
-        #define PRINTVAR(x) std::cout << #x << " = " << x << std::endl
-
-        PRINTVAR( _wavelet_std_t );
-        PRINTVAR( buffer->sample_rate );
-        PRINTVAR( wavelet_std_samples( buffer->sample_rate ) );
-        PRINTVAR( intermediate_wt->first_valid_sample );
-        PRINTVAR( buffer->number_of_samples() );
-
         BOOST_ASSERT(wavelet_std_samples( buffer->sample_rate ) + intermediate_wt->first_valid_sample < buffer->number_of_samples());
 
         intermediate_wt->n_valid_samples = buffer->number_of_samples() - wavelet_std_samples( buffer->sample_rate ) - intermediate_wt->first_valid_sample;
