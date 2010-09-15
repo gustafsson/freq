@@ -361,7 +361,7 @@ Position Collection::
 {
     Signal::pSource wf = worker->source();
     float length = wf->length();
-    Position minima=min_sample_size();
+    Position minima = min_sample_size();
 
     return Position( std::max(minima.time, 2.f*length/_samples_per_block),
                      std::max(minima.scale, 1.f/_scales_per_block) );
