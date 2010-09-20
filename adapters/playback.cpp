@@ -12,7 +12,7 @@
 using namespace std;
 using namespace boost::posix_time;
 
-namespace Signal {
+namespace Adapters {
 
 Playback::
         Playback( int outputDevice )
@@ -116,7 +116,7 @@ float Playback::
 }
 
 void Playback::
-        put( pBuffer buffer )
+        put( Signal::pBuffer buffer )
 {
     TIME_PLAYBACK TaskTimer tt("Playback::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
@@ -214,7 +214,7 @@ void Playback::
     streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
             paramsPlayback,
             *this,
-            &Signal::Playback::readBuffer) );
+            &Playback::readBuffer) );
 
     _playback_itr = _data.first_buffer()->sample_offset;
 
@@ -294,7 +294,7 @@ int Playback::
         _startPlay_timestamp = microsec_clock::local_time();
     }
 
-    pBuffer b = _data.readFixedLength( Interval(_playback_itr, _playback_itr+framesPerBuffer) );
+    Signal::pBuffer b = _data.readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
     memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
     _playback_itr += framesPerBuffer;
 
@@ -312,4 +312,4 @@ int Playback::
     return paContinue;
 }
 
-} // namespace Signal
+} // namespace Adapters

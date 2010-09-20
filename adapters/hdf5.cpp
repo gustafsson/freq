@@ -1,23 +1,23 @@
-#include "sawe/hdf5.h"
-#include <sstream>
-#include <fstream>
+#include "hdf5.h"
+
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
+
+#include <sstream>
+#include <fstream>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 #include <H5Fpublic.h>
 
-#include "hdf5.h"
 #include "hdf5_hl.h"
-
 
 //#define TIME_HDF5
 #define TIME_HDF5 if(0)
 
 using namespace std;
 
-namespace Sawe
+namespace Adapters
 {
 
 
@@ -397,4 +397,4 @@ Tfr::pChunk Hdf5Chunk::
     return c;
 }
 
-} // namespace Sawe
+} // namespace Adapters

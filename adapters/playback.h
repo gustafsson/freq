@@ -1,7 +1,8 @@
-#ifndef SIGNALPLAYBACK_H
-#define SIGNALPLAYBACK_H
+#ifndef ADAPTERS_PLAYBACK_H
+#define ADAPTERS_PLAYBACK_H
 
 #include "signal/sinksource.h"
+
 #include <vector>
 #include <time.h>
 #include <QMutex>
@@ -9,26 +10,26 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-namespace Signal {
+namespace Adapters {
 
-class Playback: public Sink
+class Playback: public Signal::Sink
 {
 public:
     Playback( int outputDevice/* = -1 */);
     ~Playback();
 
     // Overloaded from Sink
-    virtual void put( pBuffer b, pOperation ) { put (b); }
+    virtual void put( Signal::pBuffer b, Signal::pOperation ) { put (b); }
     virtual bool isFinished();
-    virtual Intervals fetch_invalid_samples() { return _data.fetch_invalid_samples(); }
-    virtual void invalidate_samples( const Intervals& s ) { _data.invalidate_samples( s ); }
+    virtual Signal::Intervals fetch_invalid_samples() { return _data.fetch_invalid_samples(); }
+    virtual void invalidate_samples( const Signal::Intervals& s ) { _data.invalidate_samples( s ); }
 
     void reset();
     void onFinished();
 
     static void list_devices();
 
-    void put( pBuffer );
+    void put( Signal::pBuffer );
     unsigned    playback_itr();
     float       time();
     float       outputLatency();
@@ -36,8 +37,9 @@ public:
     bool        isStopped();
     bool        isUnderfed();
     unsigned    sample_rate() { return _data.sample_rate(); }
+
 private:
-    SinkSource _data;
+    Signal::SinkSource _data;
     boost::posix_time::ptime
             _first_timestamp,
             _last_timestamp,
@@ -57,6 +59,6 @@ private:
     int _output_device;
 };
 
-} // namespace Signal
+} // namespace Adapters
 
-#endif // SIGNALPLAYBACK_H
+#endif // ADAPTERS_PLAYBACK_H

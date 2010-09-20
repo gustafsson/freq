@@ -1,9 +1,9 @@
-#ifndef SAWEMATLABOPERATION_H
-#define SAWEMATLABOPERATION_H
+#ifndef ADAPTERS_MATLABOPERATION_H
+#define ADAPTERS_MATLABOPERATION_H
 
 #include "signal/operationcache.h"
 
-namespace Sawe {
+namespace Adapters {
 
 /**
   Several files are used to cooperate with matlab functions:
@@ -66,6 +66,6 @@ protected:
     MatlabFunction _matlab;
 };
 
-} // namespace Sawe
+} // namespace Adapters
 
-#endif // SAWEMATLABOPERATION_H
+#endif // ADAPTERS_MATLABOPERATION_H

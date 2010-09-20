@@ -40,6 +40,14 @@ RESOURCES += \
     ui/icon-resources.qrc \
 
 SOURCES += \
+    adapters/audiofile.cpp \
+    adapters/csv.cpp \
+    adapters/hdf5.cpp \
+    adapters/matlabfilter.cpp \
+    adapters/matlaboperation.cpp \
+    adapters/microphonerecorder.cpp \
+    adapters/playback.cpp \
+    adapters/writewav.cpp \
     filters/filters.cpp \
     filters/reassign.cpp \
     filters/ridge.cpp \
@@ -49,12 +57,8 @@ SOURCES += \
     heightmap/reference.cpp \
     heightmap/renderer.cpp \
     sawe/application.cpp \
-    sawe/csv.cpp \
-    sawe/hdf5.cpp \
     sawe/layer.cpp \
     sawe/main.cpp \
-    sawe/matlabfilter.cpp \
-    sawe/matlaboperation.cpp \
     sawe/project.cpp \
     sawe/selection.cpp \
     ui/displaywidget.cpp \
@@ -63,20 +67,16 @@ SOURCES += \
     ui/propertiesstroke.cpp \
     ui/timelinewidget.cpp \
     ui/updatewidgetsink.cpp \
-    signal/audiofile.cpp \
     signal/buffersource.cpp \
-    signal/microphonerecorder.cpp \
     signal/operation.cpp \
     signal/operation-basic.cpp \
     signal/operation-composite.cpp \
     signal/operationcache.cpp \
-    signal/playback.cpp \
     signal/postsink.cpp \
     signal/intervals.cpp \
     signal/sinksource.cpp \
     signal/source.cpp \
     signal/worker.cpp \
-    signal/writewav.cpp \
     tfr/chunk.cpp \
     tfr/complexbuffer.cpp \
     tfr/cwt.cpp \
@@ -97,6 +97,14 @@ SOURCES += \
     tools/toolfactory.cpp \
 
 HEADERS += \
+    adapters/audiofile.h \
+    adapters/csv.h \
+    adapters/hdf5.h \
+    adapters/matlabfilter.h \
+    adapters/matlaboperation.h \
+    adapters/microphonerecorder.h \
+    adapters/playback.h \
+    adapters/writewav.h \
     filters/filters.cu.h \
     filters/filters.h \
     filters/reassign.h \
@@ -110,12 +118,8 @@ HEADERS += \
     heightmap/renderer.h \
     heightmap/slope.cu.h \
     sawe/application.h \
-    sawe/csv.h \
-    sawe/hdf5.h \
     sawe/layer.h \
     sawe/mainplayback.h \
-    sawe/matlabfilter.h \
-    sawe/matlaboperation.h \
     sawe/project.h \
     sawe/selection.h \
     ui/displaywidget.h \
@@ -124,21 +128,17 @@ HEADERS += \
     ui/propertiesstroke.h \
     ui/timelinewidget.h \
     ui/updatewidgetsink.h \
-    signal/audiofile.h \
     signal/buffersource.h \
-    signal/microphonerecorder.h \
     signal/operation.h \
     signal/operation-basic.h \
     signal/operation-composite.h \
     signal/operationcache.h \
-    signal/playback.h \
     signal/postsink.h \
     signal/intervals.h \
     signal/sink.h \
     signal/sinksource.h \
     signal/source.h \
     signal/worker.h \
-    signal/writewav.h \
     tfr/chunk.h \
     tfr/complexbuffer.h \
     tfr/cwt.h \

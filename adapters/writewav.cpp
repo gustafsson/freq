@@ -12,7 +12,7 @@ typedef __int64 __int64_t;
 //#define TIME_WRITEWAV
 #define TIME_WRITEWAV if(0)
 
-namespace Signal {
+namespace Adapters {
 
 WriteWav::
         WriteWav( std::string filename )
@@ -27,7 +27,7 @@ WriteWav::
 }
 
 void WriteWav::
-        put( pBuffer buffer )
+        put( Signal::pBuffer buffer )
 {
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
@@ -51,18 +51,18 @@ void WriteWav::
 void WriteWav::
         writeToDisk()
 {
-    Intervals sid = _data.samplesDesc();
-    Interval i = sid.coveredInterval();
+    Signal::Intervals sid = _data.samplesDesc();
+    Signal::Interval i = sid.coveredInterval();
 
     BOOST_ASSERT(i.valid());
 
     TIME_WRITEWAV sid.print("data to write");
-    pBuffer b = _data.readFixedLength( i );
+    Signal::pBuffer b = _data.readFixedLength( i );
     writeToDisk( _filename, b );
 }
 
 void WriteWav::
-        writeToDisk(std::string filename, pBuffer b)
+        writeToDisk(std::string filename, Signal::pBuffer b)
 {
     std::stringstream ss;
     ss << b->getInterval();
@@ -102,8 +102,8 @@ void WriteWav::
     outfile.write( data, N); // yes write float
 }
 
-pBuffer WriteWav::
-        crop(pBuffer buffer)
+Signal::pBuffer WriteWav::
+        crop(Signal::pBuffer buffer)
 {
     /// Remove zeros from the beginning and end
     GpuCpuData<float>* waveform_data = buffer->waveform_data();
@@ -122,9 +122,9 @@ pBuffer WriteWav::
                 firstNonzero = f+1;
 
     if (firstNonzero > lastNonzero)
-        return pBuffer();
+        return Signal::pBuffer();
 
-    pBuffer result(new Buffer(firstNonzero, lastNonzero-firstNonzero+1, buffer->sample_rate ));
+    Signal::pBuffer result(new Signal::Buffer(firstNonzero, lastNonzero-firstNonzero+1, buffer->sample_rate ));
     float *data = result->waveform_data()->getCpuMemory();
 
 
@@ -141,4 +141,4 @@ pBuffer WriteWav::
     return result;
 }
 
-} // namespace Signal
+} // namespace Adapters

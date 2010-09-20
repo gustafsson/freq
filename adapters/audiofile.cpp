@@ -4,11 +4,11 @@ typedef __int64 __int64_t;
 #include <stdint.h> // defines __int64_t which is expected by sndfile.h
 #endif
 
-#include "signal/audiofile.h"
-#include "signal/playback.h"
+#include "audiofile.h"
+#include "Statistics.h" // to play around for debugging
+
 #include <sndfile.hh> // for reading various formats
 #include <math.h>
-#include "Statistics.h"
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
@@ -16,8 +16,6 @@ typedef __int64 __int64_t;
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/algorithm/string.hpp>
-//#include <QThread>
-//#include <QSound>
 
 #if LEKA_FFT
 #include <cufft.h>
@@ -26,7 +24,7 @@ typedef __int64 __int64_t;
 
 using namespace std;
 
-namespace Signal {
+namespace Adapters {
 
 static std::string getSupportedFileFormats (bool detailed=false) {
     SF_FORMAT_INFO	info ;
@@ -151,7 +149,7 @@ void Audiofile::
     source.read(completeFile.getCpuMemory(), source.channels()*source.frames()); // yes float
     float* data = completeFile.getCpuMemory();
 
-    _waveform.reset( new Buffer(0, source.frames(), source.samplerate(), source.channels()));
+    _waveform.reset( new Signal::Buffer(0, source.frames(), source.samplerate(), source.channels()));
     float* target = _waveform->waveform_data()->getCpuMemory();
 
     // Compute transpose of signal
@@ -195,4 +193,4 @@ void Audiofile::
 #endif
 }
 
-} // namespace Signal
+} // namespace Adapters

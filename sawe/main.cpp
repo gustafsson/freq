@@ -1,19 +1,24 @@
+#include "sawe/application.h"
 #include "tfr/cwt.h"
-#include <QtGui/QFileDialog>
-#include <QtGui/QMessageBox>
-#include <iostream>
-#include <stdio.h>
+#include "heightmap/renderer.h"
+
 #include "ui/mainwindow.h"
 #include "ui/displaywidget.h"
-#include "signal/audiofile.h"
-#include "signal/microphonerecorder.h"
+
+#include "adapters/audiofile.h"
+#include "adapters/microphonerecorder.h"
+#include "adapters/csv.h"
+#include "adapters/hdf5.h"
+
 #include <CudaProperties.h>
-#include <QString>
 #include <CudaException.h>
-#include "heightmap/renderer.h"
-#include "sawe/csv.h"
-#include "sawe/hdf5.h"
-#include "sawe/application.h"
+
+#include <iostream>
+#include <stdio.h>
+
+#include <QString>
+#include <QtGui/QFileDialog>
+#include <QtGui/QMessageBox>
 
 using namespace std;
 using namespace boost;
@@ -324,7 +329,7 @@ int main(int argc, char *argv[])
 				return -1;
 			}
 
-            Sawe::Csv csv;
+            Adapters::Csv csv;
             csv.source( p->head_source() );
             csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
         }
@@ -335,7 +340,7 @@ int main(int argc, char *argv[])
 				return -1;
 			}
 
-            Sawe::Hdf5Chunk hdf5;
+            Adapters::Hdf5Chunk hdf5;
             hdf5.source( p->head_source() );
             hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
         }

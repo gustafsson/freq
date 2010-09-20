@@ -23,17 +23,17 @@
 #include <GLUT/glut.h>
 #endif
 #include <stdio.h>
-#include "signal/audiofile.h"
-#include "signal/playback.h"
+#include "adapters/audiofile.h"
+#include "adapters/playback.h"
 #include "signal/postsink.h"
-#include "signal/microphonerecorder.h"
+#include "adapters/microphonerecorder.h"
 #include "signal/operation-composite.h"
 #include "signal/operation-basic.h"
-#include "sawe/csv.h"
-#include "sawe/hdf5.h"
-#include "sawe/matlabfilter.h"
-#include "sawe/matlaboperation.h"
-#include "signal/writewav.h"
+#include "adapters/csv.h"
+#include "adapters/hdf5.h"
+#include "adapters/matlabfilter.h"
+#include "adapters/matlaboperation.h"
+#include "adapters/writewav.h"
 #include "heightmap/blockfilter.h"
 #include "filters/reassign.h"
 #include "filters/ridge.h"
@@ -253,7 +253,7 @@ DisplayWidget::
     project->worker.quit();
 
     Signal::Operation* first_source =project->worker.source()->root();
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
+    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
 
     if (r && !r->isStopped())
          r->stopRecording();
@@ -378,8 +378,8 @@ void DisplayWidget::receivePlaySound()
     if (selection_operations->sinks().empty())
     {
         std::vector<Signal::pOperation> sinks;
-        sinks.push_back( Signal::pOperation( new Signal::Playback( playback_device )) );
-        sinks.push_back( Signal::pOperation( new Signal::WriteWav( selection_filename )) );
+        sinks.push_back( Signal::pOperation( new Adapters::Playback( playback_device )) );
+        sinks.push_back( Signal::pOperation( new Adapters::WriteWav( selection_filename )) );
         selection_operations->sinks( sinks );
     }
 
@@ -388,7 +388,7 @@ void DisplayWidget::receivePlaySound()
 
     // Work 'as slow as possible' on the first few chunks and accelerate.
     // It will soon accelerate to maximum speed.
-    // This makes Signal::Playback compute better estimates on how fast
+    // This makes Adapters::Playback compute better estimates on how fast
     // the computations can be expected to finish (and thus start playing
     // sound before the entire sound has been computed).
     project->worker.samples_per_chunk_hint(1);
@@ -426,14 +426,14 @@ void DisplayWidget::receiveAddSelection(bool active)
 bool DisplayWidget::isRecordSource()
 {
     Signal::Operation* first_source = project->worker.source()->root();
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
+    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
 	return r != 0;
 }
 
 void DisplayWidget::receiveRecord(bool active)
 {
     Signal::Operation* first_source = project->worker.source()->root();
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
+    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
 
     // TODO make connection elsewhere
     //connect(r, SIGNAL(data_available(MicrophoneRecorder*)), SLOT(update()), Qt::UniqueConnection );
@@ -705,7 +705,7 @@ void DisplayWidget::
     if (_matlaboperation)
         read = dynamic_cast<Signal::Operation*>(_matlaboperation.get())->source();
 
-    _matlaboperation.reset( new Sawe::MatlabOperation( read, "matlaboperation") );
+    _matlaboperation.reset( new Adapters::MatlabOperation( read, "matlaboperation") );
     b->source( _matlaboperation );
     project->worker.start();
     setWorkerSource();
@@ -725,7 +725,7 @@ void DisplayWidget::
     switch(1) {
     case 1: // Everywhere
         {
-            _matlabfilter.reset( new Sawe::MatlabFilter( "matlabfilter" ) );
+            _matlabfilter.reset( new Adapters::MatlabFilter( "matlabfilter" ) );
             _matlabfilter->source( read );
             b->source( _matlabfilter );
             project->worker.start();
@@ -733,7 +733,7 @@ void DisplayWidget::
         }
     case 2: // Only inside selection
         {
-        Signal::pOperation s( new Sawe::MatlabFilter( "matlabfilter" ));
+        Signal::pOperation s( new Adapters::MatlabFilter( "matlabfilter" ));
         s->source( read );
 
         Signal::PostSink* postsink = project->tools.selection_model.getPostSink();
@@ -1318,7 +1318,7 @@ void DisplayWidget::paintGL()
                 project->worker.requested_fps(1);
         }
         Signal::Operation* first_source = project->worker.source()->root();
-        Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
+        Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
         if(r != 0 && !(r->isStopped()))
         {
         	wasWorking = true;
@@ -1929,13 +1929,13 @@ void DisplayWidget::
     }
 
     // Draw playback marker
-    // Find Signal::Playback* instance
-    Signal::Playback* pb = 0;
+    // Find Adapters::Playback* instance
+    Adapters::Playback* pb = 0;
 
     // todo grab it from tool
     BOOST_FOREACH( Signal::pOperation s, project->worker.callbacks() )
     {
-        if ( 0 != (pb = dynamic_cast<Signal::Playback*>( s.get() )))
+        if ( 0 != (pb = dynamic_cast<Adapters::Playback*>( s.get() )))
             break;
     }
 

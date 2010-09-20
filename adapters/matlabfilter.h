@@ -1,10 +1,10 @@
-#ifndef SAWEMATLABFILTER_H
-#define SAWEMATLABFILTER_H
+#ifndef ADAPTERS_MATLABFILTER_H
+#define ADAPTERS_MATLABFILTER_H
 
 #include "tfr/cwtfilter.h"
-#include "sawe/matlaboperation.h"
+#include "matlaboperation.h"
 
-namespace Sawe {
+namespace Adapters {
 
 class MatlabFilter: public Tfr::CwtFilter
 {
@@ -19,6 +19,6 @@ protected:
     MatlabFunction _matlab;
 };
 
-} // namespace Sawe
+} // namespace Adapters
 
-#endif // SAWEMATLABFILTER_H
+#endif // ADAPTERS_MATLABFILTER_H

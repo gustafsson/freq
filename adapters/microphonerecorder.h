@@ -1,20 +1,17 @@
-#ifndef SIGNALMICROPHONERECORDER_H
-#define SIGNALMICROPHONERECORDER_H
+#ifndef ADAPETERS_MICROPHONERECORDER_H
+#define ADAPETERS_MICROPHONERECORDER_H
+
+#include "signal/sinksource.h"
+#include "signal/postsink.h"
 
 #include <vector>
 #include <QMutex>
-#include "signal/sinksource.h"
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <QObject>
 
-namespace Signal {
+namespace Adapters {
 
-/**
-QObject has to be first.
-  */
-class MicrophoneRecorder: public QObject, public FinalSource
+class MicrophoneRecorder: public Signal::FinalSource
 {
-    Q_OBJECT
 public:
     MicrophoneRecorder(int inputDevice/*=-1*/);
     ~MicrophoneRecorder();
@@ -23,17 +20,16 @@ public:
     void stopRecording();
     bool isStopped();
 
-    virtual pBuffer read( const Interval& I );
+    virtual Signal::pBuffer read( const Signal::Interval& I );
     virtual unsigned sample_rate();
     virtual long unsigned number_of_samples();
 
     unsigned recording_itr() { return number_of_samples(); }
 
-//signals:
-//    void data_available(MicrophoneRecorder*);
-
+    Signal::PostSink* getPostSink() { return &_postsink; }
 private:
-    SinkSource _data;
+    Signal::SinkSource _data;
+    Signal::PostSink _postsink;
 
     // todo remove Sink* _callback;
     portaudio::AutoSystem _autoSys;
@@ -55,6 +51,6 @@ private:
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-} // namespace Waveform
+} // namespace Adapters
 
-#endif // SIGNALMICROPHONERECORDER_H
+#endif // ADAPETERS_MICROPHONERECORDER_H

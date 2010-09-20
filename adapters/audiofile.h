@@ -1,7 +1,7 @@
-#ifndef SIGNALAUDIOFILE_H
-#define SIGNALAUDIOFILE_H
+#ifndef ADAPTERS_AUDIOFILE_H
+#define ADAPTERS_AUDIOFILE_H
 
-#include "buffersource.h"
+#include "signal/buffersource.h"
 
 /*
     TODO update reference manual
@@ -235,9 +235,9 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/split_member.hpp>
 
-namespace Signal
+namespace Adapters
 {
-class Audiofile: public BufferSource
+class Audiofile: public Signal::BufferSource
 {
 public:
     static std::string getFileFormatsQtFilter( bool split );
@@ -257,7 +257,7 @@ private:
         using boost::serialization::make_nvp;
 
         //ar & make_nvp("Operation", boost::serialization::base_object<Operation>(*this));
-        boost::serialization::base_object<Operation>(*this); // don't write any Operation data
+        boost::serialization::base_object<Signal::Operation>(*this); // don't write any Operation data
         ar & make_nvp("Filename", _original_filename);
     }
     template<class archive> void load(archive& ar, const unsigned int version) {
@@ -268,6 +268,6 @@ private:
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-} // namespace Signal
+} // namespace Adapters
 
-#endif // SIGNALAUDIOFILE_H
+#endif // ADAPTERS_AUDIOFILE_H

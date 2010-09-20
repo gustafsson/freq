@@ -1,5 +1,6 @@
-#include "sawe/matlabfilter.h"
-#include "sawe/hdf5.h"
+#include "matlabfilter.h"
+#include "hdf5.h"
+
 #include <signal.h>
 #include <sys/stat.h>
 #include <sstream>
@@ -11,7 +12,7 @@ using namespace std;
 using namespace Signal;
 using namespace Tfr;
 
-namespace Sawe {
+namespace Adapters {
 
 MatlabFilter::
         MatlabFilter( std::string matlabFunction )
@@ -54,4 +55,4 @@ Signal::Intervals MatlabFilter::
 }
 
 
-} // namespace Sawe
+} // namespace Adapters

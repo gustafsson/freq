@@ -1,5 +1,5 @@
-#ifndef SAWEHDF5_H
-#define SAWEHDF5_H
+#ifndef ADAPTERS_HDF5_H
+#define ADAPTERS_HDF5_H
 
 // Define _HDF5USEDLL_ to tell HDF5 to use dynamic library linking
 #define _HDF5USEDLL_
@@ -12,7 +12,7 @@
 
 //typedef int hid_t; // from H5Ipublic
 
-namespace Sawe {
+namespace Adapters {
 
 /**
   Throws std::runtime_error on errors.
@@ -124,6 +124,6 @@ private:
     std::string _filename;
 };
 
-} // namespace Sawe
+} // namespace Adapters
 
-#endif // SAWEHDF5_H
+#endif // ADAPTERS_HDF5_H

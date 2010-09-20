@@ -1,6 +1,8 @@
 #ifndef SIGNALOPERATIONCOMPOSITE_H
 #define SIGNALOPERATIONCOMPOSITE_H
 
+// TODO these belong to their respective tool
+
 #include "signal/operation.h"
 #include "tfr/cwtfilter.h"
 

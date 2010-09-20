@@ -1,10 +1,11 @@
 #include "sawe/project.h"
 #include "sawe/application.h"
+#include "adapters/audiofile.h"
+#include "adapters/microphonerecorder.h"
+#include "ui/timelinewidget.h"
+
 #include <QtGui/QMessageBox>
 #include <QtGui/QFileDialog>
-#include "signal/audiofile.h"
-#include "signal/microphonerecorder.h"
-#include "ui/timelinewidget.h"
 #include <QVBoxLayout>
 #include <sys/stat.h>
 
@@ -47,10 +48,10 @@ pProject Project::
     }
 
     if (0 == filename.length()) {
-        string filter = Signal::Audiofile::getFileFormatsQtFilter( false ).c_str();
+        string filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
         filter = "All files (*.sonicawe " + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
-        filter += Signal::Audiofile::getFileFormatsQtFilter( true ).c_str();
+        filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
 
 		QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilemame.length()) {
@@ -81,7 +82,7 @@ pProject Project::
 pProject Project::
         createRecording(int record_device)
 {
-    Signal::pOperation s( new Signal::MicrophoneRecorder(record_device) );
+    Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
     return pProject( new Project( s ));
 }
 
@@ -101,8 +102,8 @@ void Project::
         return;
 
     string title = Sawe::Application::version_string();
-    Signal::Audiofile* af;
-    if (0 != (af = dynamic_cast<Signal::Audiofile*>(worker.source().get()))) {
+    Adapters::Audiofile* af;
+    if (0 != (af = dynamic_cast<Adapters::Audiofile*>(worker.source().get()))) {
 		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
         title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
     }
@@ -160,7 +161,7 @@ pProject Project::
 pProject Project::
         openAudio(std::string audio_file)
 {
-    Signal::pOperation s( new Signal::Audiofile( audio_file.c_str() ) );
+    Signal::pOperation s( new Adapters::Audiofile( audio_file.c_str() ) );
     return pProject( new Project( s ));
 }
 

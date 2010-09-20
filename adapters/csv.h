@@ -1,9 +1,9 @@
-#ifndef SAWECSV_H
-#define SAWECSV_H
+#ifndef ADAPTERS_CSV_H
+#define ADAPTERS_CSV_H
 
 #include "tfr/cwtfilter.h"
 
-namespace Sawe {
+namespace Adapters {
 
 /**
   Transforms a pBuffer into a pChunk with CwtSingleton and saves the chunk in a file called
@@ -17,6 +17,6 @@ public:
     virtual void operator()( Tfr::Chunk& );
 };
 
-} // namespace Sawe
+} // namespace Adapters
 
-#endif // SAWECSV_H
+#endif // ADAPTERS_CSV_H

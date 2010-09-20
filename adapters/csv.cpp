@@ -1,12 +1,13 @@
-#include "sawe/csv.h"
-#include <sstream>
-#include <fstream>
+#include "csv.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 
+#include <sstream>
+#include <fstream>
+
 using namespace std;
 
-namespace Sawe
+namespace Adapters
 {
 
 string csv_number()
@@ -56,4 +57,4 @@ void Csv::
     }
 }
 
-} // namespace Sawe
+} // namespace Adapters

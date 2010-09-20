@@ -10,8 +10,8 @@
 #include "tfr/filter.h"
 #include "signal/operation-basic.h"
 #include "signal/operation-composite.h"
-#include "signal/microphonerecorder.h"
-#include "signal/audiofile.h"
+#include "adapters/microphonerecorder.h"
+#include "adapters/audiofile.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
@@ -406,12 +406,12 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, Operation
 
     Signal::pOperation childSource;
     // Signal::pOperation childFilter;
-    if (Signal::MicrophoneRecorder* mic = dynamic_cast<Signal::MicrophoneRecorder*>(s.get()))
+    if (Adapters::MicrophoneRecorder* mic = dynamic_cast<Adapters::MicrophoneRecorder*>(s.get()))
     {
         title << "Microphone";
         tooltip << "Microphone recording, FS=" << mic->sample_rate();
     }
-    else if (Signal::Audiofile* file = dynamic_cast<Signal::Audiofile*>(s.get()))
+    else if (Adapters::Audiofile* file = dynamic_cast<Adapters::Audiofile*>(s.get()))
     {
         title << file->filename();
         tooltip << "Reading from file: " << file->filename();

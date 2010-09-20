@@ -1,5 +1,6 @@
-#include "sawe/matlaboperation.h"
-#include "sawe/hdf5.h"
+#include "matlaboperation.h"
+#include "hdf5.h"
+
 #include <signal.h>
 #include <sys/stat.h>
 #include <sstream>
@@ -27,7 +28,7 @@ using namespace Signal;
 using namespace boost;
 using namespace boost::posix_time;
 
-namespace Sawe {
+namespace Adapters {
 
 MatlabFunction::
         MatlabFunction( std::string matlabFunction, float timeout )
@@ -183,4 +184,4 @@ pBuffer MatlabOperation::
     return b2;
 }
 
-} // namespace Sawe
+} // namespace Adapters

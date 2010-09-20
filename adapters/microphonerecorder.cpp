@@ -1,11 +1,27 @@
-#include "signal/microphonerecorder.h"
+#include "microphonerecorder.h"
+
 #include <iostream>
 #include <memory.h>
 #include <boost/foreach.hpp>
 
 using namespace std;
 
-namespace Signal {
+namespace Adapters {
+
+class OperationProxy: public Signal::Operation
+{
+public:
+    OperationProxy(Signal::Operation* p)
+        :
+        Operation(Signal::pOperation()),
+        p(p)
+    {}
+
+    virtual Signal::pBuffer read( const Signal::Interval& I ) { return p->read( I ); }
+
+private:
+    Signal::Operation*p;
+};
 
 MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
 {
@@ -48,6 +64,9 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
             paramsRecord,
             *this,
             &MicrophoneRecorder::writeBuffer));
+
+    Signal::pOperation proxy(new OperationProxy(&_data));
+    _postsink.source( proxy );
 }
 
 MicrophoneRecorder::~MicrophoneRecorder()
@@ -79,8 +98,8 @@ bool MicrophoneRecorder::isStopped()
     return _stream_record->isStopped();
 }
 
-pBuffer MicrophoneRecorder::
-        read( const Interval& I )
+Signal::pBuffer MicrophoneRecorder::
+        read( const Signal::Interval& I )
 {
     return _data.readFixedLength( I );
 }
@@ -97,6 +116,7 @@ long unsigned MicrophoneRecorder::
     return _data.number_of_samples();
 }
 
+
 int MicrophoneRecorder::
         writeBuffer(const void *inputBuffer,
                  void * /*outputBuffer*/,
@@ -108,7 +128,7 @@ int MicrophoneRecorder::
     const float **in = (const float **)inputBuffer;
     const float *buffer = in[0];
 
-    pBuffer b( new Buffer(0, framesPerBuffer, sample_rate() ) );
+    Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
     memcpy ( b->waveform_data()->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
 
     b->sample_offset = number_of_samples();
@@ -116,10 +136,9 @@ int MicrophoneRecorder::
 
     _data.put( b );
 
-    // todo put to a postsink as well
-    // data_available(this);
+    _postsink.read( b->getInterval() );
 
     return paContinue;
 }
 
-} // namespace Waveform
+} // namespace Adapters
