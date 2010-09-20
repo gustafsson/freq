@@ -17,6 +17,8 @@
 
 #include "mousecontrol.h"
 #include "tools/selectionmodel.h"
+#include "tools/rendermodel.h"
+
 namespace Ui {
 
 class DisplayWidget :
@@ -26,7 +28,7 @@ class DisplayWidget :
 {
     Q_OBJECT
 public:
-    DisplayWidget( Sawe::Project* project, QWidget* parent );
+    DisplayWidget( Sawe::Project* project, QWidget* parent, Tools::RenderModel* model );
 
     virtual ~DisplayWidget();
     int lastKey;
@@ -114,6 +116,8 @@ private:
     friend class Heightmap::Renderer;
 
     Sawe::Project* project;
+
+    Tools::RenderModel* _model;
 
     Signal::pOperation _matlabfilter;
     Signal::pOperation _matlaboperation;

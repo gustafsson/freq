@@ -71,13 +71,14 @@ using namespace std;
 
 DisplayWidget::
         DisplayWidget(
-                Sawe::Project* project, QWidget* parent )
+                Sawe::Project* project, QWidget* parent, Tools::RenderModel* model )
 : QGLWidget( parent ),
   lastKey(0),
   orthoview(1),
   xscale(1),
 //  _record_update(false),
   project( project ),
+  _model( model ),
   _work_timer( new TaskTimer("Benchmarking first work")),
   _follow_play_marker( false ),
   _px(0), _py(0), _pz(-10),
@@ -100,20 +101,9 @@ DisplayWidget::
         c = 1;
 #endif
     float l = project->worker.source()->length();
-    project->tools().render_view.setPosition( std::min(l, 10.f)*0.5f, 0.5f );
 
     _prevLimit = l;
-    Tools::SelectionModel& selection_model = project->tools().selection_model;
-    selection_model.selection[0].x = l*.5f;
-    selection_model.selection[0].y = 0;
-    selection_model.selection[0].z = .85f;
-    selection_model.selection[1].x = l*sqrt(2.0f);
-    selection_model.selection[1].y = 0;
-    selection_model.selection[1].z = 2;
-    
-    // no selection
-    selection_model.selection[0].x = selection_model.selection[1].x;
-    selection_model.selection[0].z = selection_model.selection[1].z;
+
 
     yscale = Yscale_LogLinear;
     //timeOut();
@@ -237,7 +227,7 @@ void DisplayWidget::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_std_t() * FS );
 
-    project->tools().render_model.collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    _model->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
     update();
 }
 

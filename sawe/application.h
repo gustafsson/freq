@@ -3,7 +3,7 @@
 
 #include <QtGui/QApplication>
 #include "sawe/project.h"
-#include <list>
+#include <set>
 
 namespace Sawe {
 
@@ -34,7 +34,7 @@ private:
     static Application* _app;
     static std::string _fatal_error;
     std::string _version_string;
-    std::list<pProject> _projects;
+    std::set<pProject> _projects;
 };
 
 } // namespace Sawe

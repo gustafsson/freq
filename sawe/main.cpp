@@ -263,10 +263,6 @@ void validate_arguments() {
 
 int main(int argc, char *argv[])
 {
-    printf("Fastest size = %u\n", Tfr::Stft::build_performance_statistics(true));
-
-    //    return 0;
-
 //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
@@ -276,7 +272,9 @@ int main(int argc, char *argv[])
     Sawe::Application a(argc, argv);
     if (!check_cuda())
         return -1;
-    
+
+    printf("Fastest size = %u\n", Tfr::Stft::build_performance_statistics(true, 0.1f));
+
     // skip application filename
     argv++;
     argc--;
@@ -288,7 +286,7 @@ int main(int argc, char *argv[])
             if (_soundfile.empty()) {
                 _soundfile = argv[0];
             } else {
-                fprintf(stderr, "Unknown option: %s\n", argv[0]);
+                fprintf(stderr, "Unknown option: Broman was here %s\n", argv[0]);
                 fprintf(stderr, "Sonic AWE takes only one file (%s) as input argument.\n", _soundfile.c_str());
                 printf("%s", _sawe_usage_string);
                 exit(1);
@@ -373,9 +371,10 @@ int main(int argc, char *argv[])
         int r = a.exec();
 
         // This row might crash with a segfault if there has been an access
-        // violation in the cuda driver.
-        // TODO check if it is related to OpenGL bindings.
-        //CudaException_CALL_CHECK ( cudaThreadExit() );
+        // violation in the cuda driver. Do not uncomment it but roll back
+        // and find the cause of access violation. Even if it doesn't
+        // explicitly crash on your computer it might crash for someone else.
+        CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
         Sawe::Application::display_fatal_exception(x);

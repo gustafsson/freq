@@ -354,10 +354,11 @@ pBlock Collection::
         pBlock attempt( new Block(ref));
         attempt->glblock.reset( new GlBlock( this ));
         {
-            GlBlock::pHeight h = attempt->glblock->height();
-            GlBlock::pSlope sl = attempt->glblock->slope();
+            //GlBlock::pHeight h = attempt->glblock->height();
+            //GlBlock::pSlope sl = attempt->glblock->slope();
         }
-        attempt->glblock->unmap();
+        //attempt->glblock->unmap();
+        attempt->glblock.reset();
 
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
@@ -394,7 +395,9 @@ pBlock Collection::
     ref.getArea(a,b);
     TIME_COLLECTION TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
     // Try to allocate a new block
+
     pBlock block = attempt( ref );
+    return pBlock(); // return null-pointer
 
 	QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
     if ( 0 == block.get() && !_cache.empty()) {

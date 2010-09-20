@@ -12,6 +12,7 @@
 #include <vbo.h>
 #include <demangle.h>
 #include <GlException.h>
+#include <CudaException.h>
 
 #include "heightmap/collection.h"
 #include "heightmap/renderer.h"
@@ -120,6 +121,13 @@ GlBlock( Collection* collection )
     TIME_GLBLOCK TaskTimer tt("GlBlock()");
 
     //_renderer->setSize(renderer->spectrogram()->samples_per_block(), renderer->spectrogram()->scales_per_block());
+    unsigned height_vbo = *_height;
+    unsigned slope_vbo = *_slope;
+//    cudaGLRegisterBufferObject(height_vbo);
+    CudaException_CALL_CHECK( cudaGLRegisterBufferObject(slope_vbo) );
+    CudaException_CALL_CHECK( cudaGLUnregisterBufferObject(slope_vbo) );
+//    cudaGLUnregisterBufferObject(height_vbo);
+    return;
     cudaGLRegisterBufferObject(*_height);
     cudaGLRegisterBufferObject(*_slope);
 
@@ -162,11 +170,17 @@ GlBlock::
 {
     TIME_GLBLOCK TaskTimer tt("~GlBlock() _tex_height=%u",_tex_height);
 
+    unsigned height_vbo = *_height;
+    unsigned slope_vbo = *_slope;
+
     unmap();
+    return;
 
     if (_tex_height)
-        glDeleteTextures(1, &_tex_height),
+    {
+        glDeleteTextures(1, &_tex_height);
         _tex_height = 0;
+    }
 
     cudaGLUnregisterBufferObject(*_height);
     cudaGLUnregisterBufferObject(*_slope);

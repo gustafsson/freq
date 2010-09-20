@@ -29,13 +29,18 @@ namespace Tools
 
         RenderView render_view;
         SelectionView selection_view;
+
         // PlaybackView playback_view;
         // DiskwriterView diskwriter_view;
 
         // map<string, QWidget*> SelectionView selection_widget;
 
     private:
-        class Timeline* t;
+        class RenderController* _render_controller;
+
+        class TimelineView* _timeline_view;
+        //boost::scoped_ptr<class TimelineModel> _timeline_model;
+        //boost::scoped_ptr<class TimelineController> _timeline_controller;
 
         Sawe::Project* _project;
     };

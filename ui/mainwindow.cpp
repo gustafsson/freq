@@ -45,6 +45,9 @@ SaweMainWindow::
     this->setWindowTitle( qtitle );
 
     add_widgets();
+
+    hide();
+    show();
 }
 
 

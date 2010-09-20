@@ -257,11 +257,11 @@ Tfr::pChunk Stft::
             CufftException_SAFE_CALL(cufftPlan1d(&fft_many, _chunk_size, CUFFT_C2C, slices));
 
             CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
-            CufftException_SAFE_CALL(cufftExecC2C(fft_many, &input[i*n.height], &output[i*n.height], CUFFT_FORWARD));
+            CufftException_SAFE_CALL(cufftExecC2C(fft_many, &input[i*n.width], &output[i*n.width], CUFFT_FORWARD));
             cufftDestroy(fft_many);
 
             i += slices;
-        } catch (const CufftException&) {
+        } catch (const CufftException& x) {
             if (slices>0)
                 slices/=2;
             else
@@ -336,7 +336,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     time_duration latest_time[4];
     unsigned max_base = 3;
     double base[] = {2,3,5,7};
-    for (unsigned n = 2; n<10000000; n++ )
+    for (unsigned n = 2; n < B->number_of_samples(); n++ )
     {
         unsigned N = -1;
         unsigned selectedBase = 0;
@@ -377,7 +377,12 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
                                                      log(S._chunk_size)/log(base[selectedBase])));
 
             ptime startTime = microsec_clock::local_time();
+
             C = S( B );
+
+            if (!C)
+                continue;
+
             time_duration diff = microsec_clock::local_time() - startTime;
 
             if (0<selectedBase)

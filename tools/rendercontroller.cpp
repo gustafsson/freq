@@ -12,6 +12,7 @@ namespace Tools
 RenderController::
         RenderController( RenderView *view )
             :
+            QWidget(view->model->project->mainWindow()),
             model(view->model),
             view(view)
 {
@@ -47,8 +48,16 @@ RenderController::
         toolBarRender->addWidget( qb );
     }
 
-    Ui::DisplayWidget* d = new Ui::DisplayWidget( model->project, this );
+    QLayout* layout = new QVBoxLayout();
+    this->setLayout( layout );
+
+    Ui::DisplayWidget* d = new Ui::DisplayWidget( model->project, this, model );
+    layout->addWidget( d );
     view->displayWidget = d;
+
+    float l = model->project->worker.source()->length();
+    view->setPosition( std::min(l, 10.f)*0.5f, 0.5f );
+
 
     main->setCentralWidget(this);
 

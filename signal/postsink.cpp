@@ -201,11 +201,12 @@ void PostSink::
 {
     Intervals I;
 
-    I |= f->affected_samples();
-    I |= _filter->affected_samples();
+    if (f)          I |= f->affected_samples();
+    if (_filter)    I |= _filter->affected_samples();
 
     Tfr::Filter* newfilt = dynamic_cast<Tfr::Filter*>(f.get());
     Tfr::Filter* oldfilt = dynamic_cast<Tfr::Filter*>(_filter.get());
+
     if (newfilt && oldfilt)
         I -= newfilt->zeroed_samples() & oldfilt->zeroed_samples();
 

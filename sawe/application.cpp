@@ -145,10 +145,10 @@ bool Application::
 void Application::
 		openadd_project( pProject p )
 {
+    p->mainWindow()->activateWindow();
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
-    p->mainWindow()->activateWindow();
-    _projects.push_back( p );
+    _projects.insert( p );
 }
 
 pProject Application::
@@ -180,10 +180,13 @@ void Application::
 {
     // QWidget* w = dynamic_cast<QWidget*>(sender());
 
-    for (std::list<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
+    for (std::set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
         if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))
-            i = _projects.erase( i );
+        {
+            _projects.erase( i );
+            i = _projects.begin();
+        }
         else
             i++;
     }
