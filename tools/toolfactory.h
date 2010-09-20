@@ -5,6 +5,7 @@ namespace Sawe {
     class Project;
 }
 
+// TODO remove
 #include "rendermodel.h"
 #include "selectionmodel.h"
 
@@ -22,6 +23,7 @@ namespace Tools
         ToolFactory(Sawe::Project* p);
         ~ToolFactory();
 
+        // TODO remove
         RenderModel render_model;
         SelectionModel selection_model;
 
@@ -31,7 +33,10 @@ namespace Tools
         // DiskwriterView diskwriter_view;
 
         // map<string, QWidget*> SelectionView selection_widget;
+
     private:
+        class Timeline* t;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

@@ -3,11 +3,13 @@
 
 #include <QWidget>
 
-namespace Ui {
-
+namespace Saweui {
 namespace Ui {
     class PropertiesSelection;
 }
+}
+namespace Ui {
+
 
 class PropertiesSelection : public QWidget {
     Q_OBJECT
@@ -19,7 +21,7 @@ protected:
     void changeEvent(QEvent *e);
 
 private:
-    Ui::PropertiesSelection *ui;
+    Saweui::Ui::PropertiesSelection *ui;
 };
 
 

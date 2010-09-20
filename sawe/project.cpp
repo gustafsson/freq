@@ -2,7 +2,8 @@
 #include "sawe/application.h"
 #include "adapters/audiofile.h"
 #include "adapters/microphonerecorder.h"
-#include "ui/timelinewidget.h"
+#include "tools/toolfactory.h"
+#include "ui/mainwindow.h"
 
 #include <QtGui/QMessageBox>
 #include <QtGui/QFileDialog>
@@ -13,24 +14,33 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
 
-#include "ui/mainwindow.h"
-
 using namespace std;
 
 namespace Sawe {
 
 Project::
         Project( Signal::pOperation head_source )
-:   worker( head_source ),
-    tools(this)
+:   worker( head_source )
 {
 }
+
 
 Project::
         ~Project()
 {
     TaskTimer tt("~Project");
 }
+
+
+Tools::ToolFactory& Project::
+        tools()
+{
+    if (!_tools)
+        throw std::logic_error("tools() was called before createMainWindow()");
+
+    return *_tools;
+}
+
 
 pProject Project::
         open(std::string project_file_or_audio_file )
@@ -87,12 +97,17 @@ pProject Project::
 }
 
 
-QMainWindow* Project::
+Ui::SaweMainWindow* Project::
         mainWindow()
 {
     createMainWindow();
-    return _mainWindow.data();
+    return dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
 }
+
+
+Project::
+        Project()
+{}
 
 
 void Project::
@@ -109,6 +124,8 @@ void Project::
     }
 
     _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));
+
+    _tools.reset( new Tools::ToolFactory(this) );
 }
 
 

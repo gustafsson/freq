@@ -8,7 +8,7 @@ namespace Ui {
 
 PropertiesSelection::PropertiesSelection(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::PropertiesSelection)
+    ui(new Saweui::Ui::PropertiesSelection)
 {
     ui->setupUi(this);
 

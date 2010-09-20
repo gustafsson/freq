@@ -1,3 +1,4 @@
+#include "rendermodel.h"
 #include "sawe/project.h"
 
 namespace Tools

@@ -4,9 +4,11 @@
 #include "rendermodel.h"
 #include "heightmap/renderer.h"
 
+#include <QGLWidget>
+
 namespace Tools
 {
-    class RenderView
+    class RenderView: QWidget
     {
     public:
         RenderView(RenderModel* model);
@@ -19,8 +21,10 @@ namespace Tools
 
         // TODO need to be able to update a QWidget, signal?
         // is this data/function model or view?
-    private:
+
         RenderModel* model;
+
+        QGLWidget* displayWidget;
     };
 } // namespace Tools
 

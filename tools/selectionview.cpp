@@ -1,6 +1,13 @@
+#include "selectionview.h"
+#include "heightmap/renderer.h" // GLvector
 #include "sawe/project.h"
+#include "ui/comboboxaction.h"
+#include "ui/mainwindow.h"
+#include "ui_mainwindow.h"
+
 #include <GL/gl.h>
 #include <QTimer>
+#include <QToolBar>
 
 using namespace std;
 
@@ -12,7 +19,33 @@ SelectionView::
             :
             _playbackMarker(-1),
             model(model)
-{}
+{
+    /*ui->actionToolSelect->setEnabled( true );
+    ui->actionActivateSelection->setEnabled( true );
+    ui->actionSquareSelection->setEnabled( true );
+    ui->actionSplineSelection->setEnabled( true );
+    ui->actionPolygonSelection->setEnabled( true );
+    ui->actionPeakSelection->setEnabled( true );*/
+    // ui->actionPeakSelection->setChecked( false );
+
+    Ui::SaweMainWindow* main = model->project->mainWindow();
+    QToolBar* toolBarTool = new QToolBar(main);
+    toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
+    toolBarTool->setEnabled(true);
+    toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
+    toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    main->addToolBar(Qt::LeftToolBarArea, toolBarTool);
+
+    {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
+        qb->addActionItem( main->ui->actionActivateSelection );
+        qb->addActionItem( main->ui->actionSquareSelection );
+        qb->addActionItem( main->ui->actionSplineSelection );
+        qb->addActionItem( main->ui->actionPolygonSelection );
+        qb->addActionItem( main->ui->actionPeakSelection );
+
+        toolBarTool->addWidget( qb );
+    }
+}
 
 
 void SelectionView::
@@ -365,7 +398,7 @@ void SelectionView::
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f( 0, 0, 0, .5);
 
-    MyVector* selection = model->project->tools.selection_model.selection;
+    MyVector* selection = model->selection;
 
     float
         t = _playbackMarker,

@@ -3,11 +3,14 @@
 
 #include <QWidget>
 
-namespace Ui {
-
+namespace Saweui {
 namespace Ui {
     class PropertiesStroke;
 }
+}
+
+namespace Ui {
+
 
 class PropertiesStroke : public QWidget {
     Q_OBJECT
@@ -19,7 +22,7 @@ protected:
     void changeEvent(QEvent *e);
 
 private:
-    Ui::PropertiesStroke *ui;
+    Saweui::Ui::PropertiesStroke *ui;
 };
 
 

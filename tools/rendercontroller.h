@@ -10,7 +10,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        RenderController( RenderModel *model, RenderView *view ): model(model), view(view) {}
+        RenderController( RenderView *view );
 
     private:
         RenderModel *model;

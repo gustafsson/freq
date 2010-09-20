@@ -19,6 +19,7 @@ namespace Tools
 
     private:
         friend class RenderView; // todo remove
+        friend class RenderController; // todo remove
         Sawe::Project* project;
     };
 } // namespace Tools

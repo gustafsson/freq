@@ -61,12 +61,6 @@ SOURCES += \
     sawe/main.cpp \
     sawe/project.cpp \
     sawe/selection.cpp \
-    ui/displaywidget.cpp \
-    ui/mainwindow.cpp \
-    ui/propertiesselection.cpp \
-    ui/propertiesstroke.cpp \
-    ui/timelinewidget.cpp \
-    ui/updatewidgetsink.cpp \
     signal/buffersource.cpp \
     signal/operation.cpp \
     signal/operation-basic.cpp \
@@ -87,6 +81,9 @@ SOURCES += \
     tfr/stft.cpp \
     tfr/stftfilter.cpp \
     tools/brushmodel.cpp \
+    tools/graphcontroller.cpp \
+    tools/graphmodel.cpp \
+    tools/graphview.cpp \
     tools/rendercontroller.cpp \
     tools/rendermodel.cpp \
     tools/renderview.cpp \
@@ -94,7 +91,18 @@ SOURCES += \
     tools/selectioncontroller.cpp \
     tools/selectionmodel.cpp \
     tools/selectionview.cpp \
+    tools/selectionviewmodel.cpp \
+    tools/timelinecontroller.cpp \
+    tools/timelinemodel.cpp \
+    tools/timelineview.cpp \
     tools/toolfactory.cpp \
+    ui/comboboxaction.cpp \
+    ui/displaywidget.cpp \
+    ui/mainwindow.cpp \
+    ui/mousecontrol.cpp \
+    ui/propertiesselection.cpp \
+    ui/propertiesstroke.cpp \
+    ui/updatewidgetsink.cpp \
 
 HEADERS += \
     adapters/audiofile.h \
@@ -122,12 +130,6 @@ HEADERS += \
     sawe/mainplayback.h \
     sawe/project.h \
     sawe/selection.h \
-    ui/displaywidget.h \
-    ui/mainwindow.h \
-    ui/propertiesselection.h \
-    ui/propertiesstroke.h \
-    ui/timelinewidget.h \
-    ui/updatewidgetsink.h \
     signal/buffersource.h \
     signal/operation.h \
     signal/operation-basic.h \
@@ -151,6 +153,9 @@ HEADERS += \
     tfr/wavelet.cu.h \
     tfr/stftfilter.h \
     tools/brushmodel.h \
+    tools/graphcontroller.h \
+    tools/graphmodel.h \
+    tools/graphview.h \
     tools/rendercontroller.h \
     tools/rendermodel.h \
     tools/renderview.h \
@@ -158,9 +163,21 @@ HEADERS += \
     tools/selectioncontroller.h \
     tools/selectionmodel.h \
     tools/selectionview.h \
+    tools/selectionviewmodel.h \
+    tools/timelinecontroller.h \
+    tools/timelinemodel.h \
+    tools/timelineview.h \
     tools/toolfactory.h \
+    ui/comboboxaction.h \
+    ui/displaywidget.h \
+    ui/mainwindow.h \
+    ui/mousecontrol.h \
+    ui/propertiesselection.h \
+    ui/propertiesstroke.h \
+    ui/updatewidgetsink.h \
 
 FORMS += \
+    tools/selectionviewmodel.ui \
     ui/mainwindow.ui \
     ui/propertiesselection.ui \
     ui/propertiesstroke.ui \

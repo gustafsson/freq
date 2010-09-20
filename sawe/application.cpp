@@ -3,6 +3,7 @@
 #include <sstream>
 #include <QtGui/QMessageBox>
 #include <demangle.h>
+#include "ui/mainwindow.h"
 
 using namespace std;
 
@@ -177,6 +178,8 @@ pProject Application::
 void Application::
     slotClosed_window( QWidget* w )
 {
+    // QWidget* w = dynamic_cast<QWidget*>(sender());
+
     for (std::list<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
         if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))

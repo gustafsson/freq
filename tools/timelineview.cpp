@@ -1,9 +1,13 @@
 #include <CudaException.h>
-#include "ui/timelinewidget.h"
+#include "timelineview.h"
 #include <boost/assert.hpp>
 #include <GlException.h>
 #include <glPushContext.h>
 #include <QMouseEvent>
+#include "ui/displaywidget.h"
+#include "ui/displaywidget.h"
+#include <QDockWidget>
+#include "toolfactory.h"
 
 #undef max
 
@@ -12,11 +16,11 @@
 
 using namespace Signal;
 
-namespace Ui {
+namespace Tools {
 
-TimelineWidget::
-        TimelineWidget( Sawe::Project* p, QGLWidget* displaywidget )
-:   QGLWidget( (QWidget*)displaywidget->parent(), displaywidget, Qt::WindowFlags(0) ),
+TimelineView::
+        TimelineView( Sawe::Project* p, QGLWidget* displaywidget )
+:   QGLWidget( 0, displaywidget, Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
@@ -29,27 +33,45 @@ TimelineWidget::
     {
         throw std::invalid_argument("Failed to open a second OpenGL window. Couldn't find a valid rendering context to share.");
     }
+
+    QMainWindow *MainWindow = dynamic_cast<QMainWindow*>(displaywidget->parentWidget());
+    QDockWidget* dock = new QDockWidget(MainWindow);
+    dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
+    dock->setMinimumSize(QSize(42, 79));
+    dock->setMaximumSize(QSize(524287, 524287));
+    dock->setContextMenuPolicy(Qt::NoContextMenu);
+    dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
+    dock->setWidget(this);
+    dock->show();
+    MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
+
+    Ui::DisplayWidget* d = dynamic_cast<Ui::DisplayWidget*>(displaywidget);
+    connect(d, SIGNAL(renderingParametersChanged()), this, SLOT(update()));
 }
 
-TimelineWidget::
-        ~TimelineWidget()
+
+TimelineView::
+        ~TimelineView()
 {
-    TaskTimer tt("~TimelineWidget");
+    TaskTimer tt("~TimelineView");
 }
 
-void TimelineWidget::
+
+/*void TimelineView::
         put(Signal::pBuffer , Signal::pOperation )
 {
     update();
 }
 
-void TimelineWidget::
+
+void TimelineView::
         add_expected_samples( const Signal::Intervals& )
 {
     update();
-}
+}*/
 
-void TimelineWidget::
+
+void TimelineView::
         initializeGL()
 {
     glShadeModel(GL_SMOOTH);
@@ -83,7 +105,8 @@ void TimelineWidget::
     glEnable(GL_COLOR_MATERIAL);
 }
 
-void TimelineWidget::
+
+void TimelineView::
         resizeGL( int width, int height )
 {
     height = height?height:1;
@@ -99,10 +122,11 @@ void TimelineWidget::
     glLoadIdentity();
 }
 
-void TimelineWidget::
+
+void TimelineView::
         paintGL()
 {
-    TIME_PAINTGL TaskTimer tt("TimelineWidget::paintGL");
+    TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
     static int exceptCount = 0;
     try {
@@ -133,9 +157,9 @@ void TimelineWidget::
             {
                 glPushMatrixContext a;
 
-                _project->tools.render_view.renderer->draw( 0.f );
-                _project->tools.selection_view.drawSelection();
-                _project->tools.render_view.renderer->drawFrustum();
+                _project->tools().render_view.renderer->draw( 0.f );
+                _project->tools().selection_view.drawSelection();
+                _project->tools().render_view.renderer->drawFrustum();
             }
         }
 
@@ -146,7 +170,7 @@ void TimelineWidget::
 
             glScalef(1,1,_barHeight);
             glTranslatef(0,0,-1);
-            _project->tools.render_view.renderer->draw( 0.f );
+            _project->tools().render_view.renderer->draw( 0.f );
 
             float length = std::max( 1.f, _project->worker.source()->length());
             glColor4f( 0.75, 0.75,0.75, .5);
@@ -174,7 +198,7 @@ void TimelineWidget::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            _project->tools.render_view.renderer->drawFrustum(0.75);
+            _project->tools().render_view.renderer->drawFrustum(0.75);
         }
 
         GlException_CHECK_ERROR();
@@ -183,24 +207,25 @@ void TimelineWidget::
         exceptCount = 0;
     } catch (const CudaException &x) {
         if (1<++exceptCount) throw;
-        else TaskTimer("TimelineWidget::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
+        else TaskTimer("TimelineView::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
     } catch (const GlException &x) {
         if (1<++exceptCount) throw;
-        else TaskTimer("TimelineWidget::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
+        else TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
     }
 }
 
-void TimelineWidget::
+
+void TimelineView::
         setupCamera( bool staticTimeLine )
 {
     float length = std::max( 1.f, _project->worker.source()->length());
-	
-	if (0 == "Make sure that the camera focus point is within the timeline")
-	{
-        float t = _project->tools.render_view.renderer->camera[0];
-		if (t < _xoffs) _xoffs = t;
-		if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
-	}
+
+    if (0 == "Make sure that the camera focus point is within the timeline")
+    {
+        float t = _project->tools().render_view.renderer->camera[0];
+        if (t < _xoffs) _xoffs = t;
+        if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
+    }
 
     glLoadIdentity();
 
@@ -215,7 +240,8 @@ void TimelineWidget::
     }
 }
 
-void TimelineWidget::
+
+void TimelineView::
         wheelEvent ( QWheelEvent *e )
 {
     makeCurrent();
@@ -257,7 +283,7 @@ void TimelineWidget::
 }
 
 
-void TimelineWidget::
+void TimelineView::
         mousePressEvent ( QMouseEvent * e )
 {
     makeCurrent();
@@ -282,7 +308,7 @@ void TimelineWidget::
         switch ( _movingTimeline )
         {
         case 1:
-            _project->tools.render_view.setPosition( current[0], current[1] );
+            _project->tools().render_view.setPosition( current[0], current[1] );
             break;
         case 2:
             {
@@ -305,7 +331,8 @@ void TimelineWidget::
     update();
 }
 
-void TimelineWidget::
+
+void TimelineView::
         mouseReleaseEvent ( QMouseEvent * e)
 {
     if (0 == (e->buttons() & Qt::LeftButton)) {
@@ -315,11 +342,11 @@ void TimelineWidget::
 }
 
 
-void TimelineWidget::
+void TimelineView::
         mouseMoveEvent ( QMouseEvent * e )
 {
     mousePressEvent(e);
 }
 
 
-} // namespace Sawe
+} // namespace Tools

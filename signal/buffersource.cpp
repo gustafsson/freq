@@ -1,11 +1,13 @@
+#include "buffersource.h"
+
+// TODO remove
 #ifdef _MSC_VER
-typedef __int64 __int64_t;
+//typedef __int64 __int64_t;
 #else
-#include <stdint.h> // defines __int64_t which is expected by sndfile.h
+//#include <stdint.h> // defines __int64_t which is expected by sndfile.h
 #endif
 
-#include "signal/buffersource.h"
-#include "signal/playback.h"
+/*
 #include <sndfile.hh> // for reading various formats
 #include <math.h>
 #include "Statistics.h"
@@ -16,14 +18,7 @@ typedef __int64 __int64_t;
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/algorithm/string.hpp>
-//#include <QThread>
-//#include <QSound>
-
-#if LEKA_FFT
-#include <cufft.h>
-
-#endif
-
+*/
 using namespace std;
 
 namespace Signal {

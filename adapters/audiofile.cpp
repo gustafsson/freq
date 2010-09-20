@@ -19,7 +19,6 @@ typedef __int64 __int64_t;
 
 #if LEKA_FFT
 #include <cufft.h>
-
 #endif
 
 using namespace std;

@@ -1,3 +1,4 @@
+#include "selectionmodel.h"
 #include "sawe/project.h"
 
 namespace Tools
@@ -13,8 +14,7 @@ SelectionModel::
 Signal::PostSink* SelectionModel::
         getPostSink()
 {
-    return dynamic_cast<Signal::PostSink*>(
-            project->tools.selection_model.postsinkCallback->sink().get());
+    return dynamic_cast<Signal::PostSink*>(postsinkCallback->sink().get());
 }
 
 } // namespace Tools

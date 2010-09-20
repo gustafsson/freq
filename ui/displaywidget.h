@@ -15,40 +15,9 @@
 #include <QMainWindow>
 #include "sawe/project.h"
 
+#include "mousecontrol.h"
+#include "tools/selectionmodel.h"
 namespace Ui {
-
-class MouseControl
-{
-private:
-    float lastx;
-    float lasty;
-    bool down;
-    unsigned int hold;
-    
-public:
-    MouseControl(): down( false ), hold( 0 ) {}
-    
-    float deltaX( float x );
-    float deltaY( float y );
-    
-    bool worldPos(GLdouble &ox, GLdouble &oy, float scale);
-    static bool worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale);
-    /**
-      worldPos projects space coordinates onto the xz-plane. spacePos simple returns the space pos.
-      */
-    bool spacePos(GLdouble &out_x, GLdouble &out_y);
-    static bool spacePos(GLdouble in_x, GLdouble in_y, GLdouble &out_x, GLdouble &out_y);
-
-    bool isDown(){return down;}
-    bool isTouched();
-    int getHold(){return hold;}
-    
-    void press( float x, float y );
-    void update( float x, float y );
-    void release();
-    void touch(){hold = 0;}
-    void untouch(){hold++;}
-};
 
 class DisplayWidget :
         public QGLWidget
@@ -76,8 +45,8 @@ public:
 
     std::string selection_filename;
     unsigned playback_device;
-    Heightmap::pCollection collection() { return project->tools.render_model.collection; }
-    Heightmap::pRenderer renderer() { return project->tools.render_view.renderer; }
+    Heightmap::pCollection collection();
+    Heightmap::pRenderer renderer();
     Tfr::CwtFilter* getCwtFilterHead(); // todo remove
 
 /*    virtual void keyPressEvent( QKeyEvent *e );
@@ -135,6 +104,7 @@ protected slots:
     virtual void receiveSetTransform_Cwt_ridge();
 
 signals:
+    void renderingParametersChanged();
     void operationsUpdated( Signal::pOperation s );
     void setSelectionActive(bool);
     void setNavigationActive(bool);

@@ -1,23 +1,28 @@
-#ifndef UI_TIMELINEWIDGET_H
-#define UI_TIMELINEWIDGET_H
+#ifndef TOOLS_TIMELINEVIEW_H
+#define TOOLS_TIMELINEVIEW_H
 
 #include <QGLWidget>
 #include "signal/sink.h"
-#include "ui/displaywidget.h"
+#include "ui/mousecontrol.h"
 
-namespace Ui {
 
-class TimelineWidget:
+namespace Sawe {
+    class Project;
+};
+
+namespace Tools {
+class TimelineView:
         public QGLWidget
 {
     Q_OBJECT
 public:
-    TimelineWidget(Sawe::Project* p, QGLWidget* displayWidget);
-    virtual ~TimelineWidget();
+    TimelineView(Sawe::Project* p, QGLWidget* displayWidget);
+    virtual ~TimelineView();
 
     // overloaded from Signal::Sink
-    virtual void    put( Signal::pBuffer , Signal::pOperation );
-    virtual void    add_expected_samples( const Signal::Intervals& );
+    // TODO move into TimelineController or TimelineModel?
+    //virtual void    put( Signal::pBuffer , Signal::pOperation );
+    //virtual void    add_expected_samples( const Signal::Intervals& );
 
 protected:
     // overloaded from QGLWidget
@@ -37,9 +42,9 @@ private:
             _barHeight;
     int _movingTimeline;
     Sawe::Project* _project;
-    MouseControl moveButton;
+    Ui::MouseControl moveButton;
 };
 
-} // namespace Ui
+} // namespace Tools
 
-#endif // UI_TIMELINEWIDGET_H
+#endif // TOOLS_TIMELINEVIEW_H

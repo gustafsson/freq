@@ -5,7 +5,7 @@ namespace Ui {
 
 PropertiesStroke::PropertiesStroke(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::PropertiesStroke)
+    ui(new Saweui::Ui::PropertiesStroke)
 {
     ui->setupUi(this);
 }

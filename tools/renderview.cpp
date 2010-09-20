@@ -1,3 +1,4 @@
+#include "renderview.h"
 #include "sawe/project.h"
 
 namespace Tools
@@ -27,7 +28,7 @@ void RenderView::
     if (_qz>1) _qz=1;
     if (_qx>l) _qx=l;
 
-    // todo requested fps is a renderview property
+    // todo isn't requested fps is a renderview property?
     model->project->worker.requested_fps(30);
 //    update();
 }

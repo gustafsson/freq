@@ -15,17 +15,24 @@
 namespace Sawe {
     class Project;
 }
-#include "tools/toolfactory.h"
-class SaweMainWindow;
+namespace Tools {
+    class ToolFactory;
+}
+
+namespace Ui {
+    class SaweMainWindow;
+}
 
 namespace Sawe {
 
 /**
   Saves, restores and creates Sonic AWE project files. '*.sonicawe'
 
-  Shows Qt Message boxes if files can't be found or access is denied and returns null.
+  Shows Qt Message boxes if files can't be found or access is denied and
+  returns null.
 
-  MainWindow and displaywidget are created and shown by their Sawe::Project.
+  SaweMainWindow is created, shown and owned by its Sawe::Project.
+  SaweMainWindow owns displaywidget.
 */
 class Project
 {
@@ -52,10 +59,11 @@ public:
 
 
     /**
-        'head_source' can be taken as model, 'tools' as controller and
-        '_mainWindow' as view.
+      Roughly speaking 'head_source' can be taken as model, 'tools' as
+      controller and '_mainWindow' as view.
       */
-    Tools::ToolFactory tools;
+    Tools::ToolFactory& tools();
+
 
     /**
       Opens a Sonic AWE project or imports an audio file. If
@@ -80,13 +88,16 @@ public:
      */
     void save(std::string project_file="");
 
-    QMainWindow* mainWindow();
+    Ui::SaweMainWindow* mainWindow();
+
 
 private:
-    Project() : tools(this) {} // used by deserialization
+    Project(); // used by deserialization
     void createMainWindow();
 
-    QScopedPointer<QMainWindow> _mainWindow; // MainWindow owns all other widgets
+    boost::scoped_ptr<Tools::ToolFactory> _tools;
+    // MainWindow owns all other widgets together with their ToolFactory
+    QScopedPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
     static boost::shared_ptr<Project> openAudio(std::string audio_file);
