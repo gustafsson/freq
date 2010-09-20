@@ -29,20 +29,6 @@ using namespace Signal;
 
 namespace Heightmap {
 
-class CollectionSink: public Signal::PostSink
-{
-public:
-    CollectionSink( Collection* c ) : c(c) {}
-
-    virtual Intervals invalid_samples()
-    {
-        return PostSink::invalid_samples() | c->invalid_samples();
-    }
-
-private:
-    Collection* c;
-};
-
 
 ///// HEIGHTMAP::COLLECTION
 
@@ -53,15 +39,13 @@ Collection::
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _frame_counter(0),
-    _postsink( new CollectionSink(this) )
+    _postsink( new PostSink )
 {
-    COUTVAL( _postsink->invalid_samples() ); // todo remove
+    COUTVAL( _postsink->fetch_invalid_samples() ); // todo remove
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
     // Updated as soon as the first chunk is received
-    _min_sample_size.scale = 1;
-    _min_sample_size.time = 1;
-    update_sample_size();
+    update_sample_size( 0 );
 
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.f_min = 20;
@@ -146,6 +130,11 @@ void Collection::
         float min_delta_hz = fx.getFrequency( bottom_index + 1) - fx.getFrequency( bottom_index );
         _min_sample_size.scale = _display_scale.getFrequencyScalar( min_delta_hz );
         // Old naive one: _min_sample_size.scale = 1.f/Tfr::Cwt::Singleton().nScales( FS ) );
+    }
+    else
+    {
+        _min_sample_size.time = 1.f/_samples_per_block;
+        _min_sample_size.scale = 1.f/_scales_per_block;
     }
 
     _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);;
@@ -582,6 +571,33 @@ void Collection::
 }
 
 
+/**
+  finds last source that does not have a slow operation (i.e. CwtFilter)
+  among its sources.
+*/
+static pOperation
+        fast_source(pOperation start)
+{
+    pOperation r = start;
+    pOperation itr = start;
+
+    while(true)
+    {
+        Operation* o = itr.get();
+        if (!o)
+            break;
+
+        Tfr::CwtFilter* f = dynamic_cast<Tfr::CwtFilter*>(itr.get());
+        if (f)
+            r = f->source();
+
+        itr = o->source();
+    }
+
+    return r;
+}
+
+
 void Collection::
         fillBlock( pBlock block )
 {
@@ -591,7 +607,7 @@ void Collection::
     Position a, b;
     block->ref.getArea(a,b);
 
-    pOperation fast_source = Operation::fast_source( worker->source() );
+    pOperation fast_source = ::fast_source( worker->source() );
 
     unsigned first_sample = (unsigned)floor(a.time*fast_source->sample_rate()),
              last_sample = (unsigned)ceil(b.time*fast_source->sample_rate()),

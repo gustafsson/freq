@@ -1,4 +1,6 @@
-#include "tfr/cwtfilter.h"
+#include "cwtfilter.h"
+#include "cwt.h"
+
 #include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>

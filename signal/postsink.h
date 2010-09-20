@@ -1,7 +1,7 @@
 #ifndef SIGNALPOSTSINK_H
 #define SIGNALPOSTSINK_H
 
-#include "signal/operation.h"
+#include "sink.h"
 #include <vector>
 #include <QMutex>
 
@@ -14,18 +14,51 @@ namespace Signal {
   If they however will change their outputs PostSink will cache the read in a
   Buffer and let each source read from the same Buffer.
   */
-class PostSink: public Operation
+class PostSink: public Sink
 {
-public:
-    PostSink(pOperation s=pOperation()):Operation(s) {}
+public:    
+    /**
+      For each Operation in sinks(), sets up a source and calls read(I). For
+      performance reasons, different Operation's in sinks() may be chained into
+      eachother rather than coupled to this->filter() directly. This only
+      happens if they with affected_samples() promise to not change the data.
+
+      this->filter() is coupled to this->source().
+
+      @see Operation::affected_samples()
+      */
     virtual Signal::pBuffer read( const Signal::Interval& I );
 
-    virtual Intervals affected_samples();
-    virtual Intervals invalid_samples();
-    virtual void invalidate_samples( const Intervals& s );
 
+    /**
+      Merges affected_samples() from all Operation's in sinks().
+      */
+    virtual Intervals affected_samples();
+
+
+    /**
+      Merges fetch_invalid_samples() from all Operation's in sinks(). Recursive
+      behaviour is prevented by clearing Operation::source in each Operation
+      first. Also, this->source()->fetch_invalid_samples() is not called.
+      */
+    virtual Intervals fetch_invalid_samples();
+
+
+    /**
+      Will call invalidate_samples on all instances of Signal::Sink in sinks().
+      */
+    virtual void invalidate_samples( const Intervals& I );
+
+
+    /// @see read()
     std::vector<pOperation> sinks();
     void                    sinks(std::vector<pOperation> v);
+
+    /**
+      this->read() redirects reads through this filter which in turn reads from
+      this->source(). When the filter is changed this->invalidate_samples( I )
+      is called on all sinks() for those 'I' that might be changed.
+      */
     pOperation              filter();
     void                    filter(pOperation f);
 

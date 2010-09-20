@@ -1,8 +1,12 @@
 #ifndef SELECTIONMODEL_H
 #define SELECTIONMODEL_H
 
-#include "sawe/project.h"
+namespace Sawe {
+    class Project;
+}
+
 #include "signal/postsink.h"
+#include "signal/worker.h"
 
 struct MyVector { // TODO use gpumisc/tvector
     float x, y, z;
@@ -16,8 +20,9 @@ namespace Tools
         SelectionModel(Sawe::Project* p);
 
         Signal::PostSink* getPostSink();
-
         Signal::pWorkerCallback postsinkCallback;
+
+        Signal::pOperation filter;
 
         MyVector selection[2];
 

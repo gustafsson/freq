@@ -4,7 +4,7 @@
 #include <QtGui/QFileDialog>
 #include "signal/audiofile.h"
 #include "signal/microphonerecorder.h"
-#include "sawe/timelinewidget.h"
+#include "ui/timelinewidget.h"
 #include <QVBoxLayout>
 #include <sys/stat.h>
 
@@ -12,7 +12,7 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
 
-#include "saweui/mainwindow.h"
+#include "ui/mainwindow.h"
 
 using namespace std;
 
@@ -107,7 +107,7 @@ void Project::
         title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
     }
 
-    _mainWindow.reset( new MainWindow( title.c_str(), this ));
+    _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));
 }
 
 

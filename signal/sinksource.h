@@ -27,24 +27,23 @@ namespace Signal {
   could otherwise be both much larger and much smaller than the requested
   length. Use 'Source::readFixedLength' if you need specific samples.
   */
-class SinkSource: public FinalSource
+class SinkSource: public Sink
 {
 public:
-    /// @see put
-    enum AcceptStrategy {
-        AcceptStrategy_ACCEPT_ALL,
-        AcceptStrategy_ACCEPT_EXPECTED_ONLY
-    };
-
     /// @see SinkSource
-    SinkSource( AcceptStrategy a );
+    SinkSource();
 
     /**
-      Insert data into SinkSource, if the AcceptStrategy is 'excepted only'
-      samples will only be accepted if they are first announced with
-      'invalidate_samples', i.e. 'invalidate_samples(b->getInterval())'.
+      Insert data into SinkSource
       */
     void put( pBuffer b );
+
+
+    /**
+      Samples in 'b' will only be accepted if they are present in 'expected'.
+      */
+    void putExpectedSamples( pBuffer b, const Intervals& expected );
+
 
     /// Clear cache
     void reset();
@@ -79,10 +78,15 @@ public:
     /// Get what samples that are described in the containing buffer
     Intervals samplesDesc();
 
+    /// @see Operation::fetch_invalid_samples()
+    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+
 private:
     QMutex _cache_mutex;
     std::vector<pBuffer> _cache;
-    AcceptStrategy _acceptStrategy;
+
+    virtual pOperation source() const { return pOperation(); }
+    virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
 
     void selfmerge();
     void merge( pBuffer );

@@ -126,8 +126,8 @@ pChunk Cwt::
                         new GpuCpuData<float2>(p + n.width*h,
                                        make_cudaExtent(n.width,1,1),
                                        GpuCpuVoidData::CpuMemory, true));
-                Signal::pBuffer fb = _fft.backward( c );
-                memcpy( p + n.width*h, fb->waveform_data->getCpuMemory(), fb->waveform_data->getSizeInBytes1D() );
+                GpuCpuData<float>* fb = _fft.backward( c )->waveform_data();
+                memcpy( p + n.width*h, fb->getCpuMemory(), fb->getSizeInBytes1D() );
             }
 
             // Move back to GPU
@@ -158,17 +158,17 @@ Signal::pBuffer Cwt::
 
     Chunk &chunk = *pchunk;
 
-    cudaExtent sz = make_cudaExtent( chunk.n_valid_samples, 1, 1);
-    Signal::pBuffer r( new Signal::Buffer());
-    r->sample_offset = chunk.chunk_offset + chunk.first_valid_sample;
-    r->sample_rate = chunk.sample_rate;
-    r->waveform_data.reset( new GpuCpuData<float>(0, sz, GpuCpuVoidData::CudaGlobal) );
+    Signal::pBuffer r( new Signal::Buffer(
+            chunk.chunk_offset + chunk.first_valid_sample,
+            chunk.n_valid_samples,
+            chunk.sample_rate
+            ));
 
     {
         TIME_ICWT TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
         {
             ::wtInverse( chunk.transform_data->getCudaGlobal().ptr() + chunk.first_valid_sample,
-                         r->waveform_data->getCudaGlobal().ptr(),
+                         r->waveform_data()->getCudaGlobal().ptr(),
                          chunk.transform_data->getNumberOfElements(),
                          chunk.n_valid_samples,
                          _stream );

@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-namespace Saweui {
+namespace Ui {
 
 namespace Ui {
     class PropertiesSelection;
@@ -23,5 +23,5 @@ private:
 };
 
 
-} // namespace Saweui
+} // namespace Ui
 #endif // PROPERTIESSELECTION_H

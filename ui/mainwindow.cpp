@@ -16,10 +16,9 @@
 #include <boost/unordered_set.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
 #include "sawe/application.h"
-#include "sawe/timelinewidget.h"
-#include "saweui/propertiesselection.h"
+#include "ui/timelinewidget.h"
+#include "ui/propertiesselection.h"
 #include "filters/filters.h"
-#include "sawe/timelinewidget.h"
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -29,8 +28,10 @@
 using namespace std;
 using namespace boost;
 
-MainWindow::
-        MainWindow(const char* title, Sawe::Project* project, QWidget *parent)
+namespace Ui {
+
+SaweMainWindow::
+        SaweMainWindow(const char* title, Sawe::Project* project, QWidget *parent)
 :   QMainWindow(parent),
     project( project ),
     ui(new Ui_MainWindow)
@@ -46,7 +47,7 @@ MainWindow::
 }
 
 
-void MainWindow::
+void SaweMainWindow::
         add_widgets()
 {
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
@@ -77,7 +78,7 @@ void MainWindow::
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
     //ui->toolPropertiesWindow-
-    new Saweui::PropertiesSelection( ui->frameProperties );
+    //new Saweui::PropertiesSelection( ui->frameProperties ); // TODO fix, tidy, what?
 
     connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
     connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
@@ -150,7 +151,7 @@ void MainWindow::
 }
 
 
-void MainWindow::
+void SaweMainWindow::
         create_renderingwidgets()
 {
     displayWidget = new DisplayWidget( project, this );
@@ -158,7 +159,9 @@ void MainWindow::
     connectLayerWindow( (DisplayWidget*)displayWidget );
     setCentralWidget( displayWidget);
 
-    timelineWidget = new Sawe::TimelineWidget( project, displayWidget );
+    TimelineWidget * t;
+    t = new TimelineWidget( project, displayWidget );
+    timelineWidget = t;
     setTimelineWidget( timelineWidget );
 
     hide();
@@ -171,7 +174,7 @@ void MainWindow::
 }
 
 
-void MainWindow::slotCheckWindowStates(bool)
+void SaweMainWindow::slotCheckWindowStates(bool)
 {
     unsigned int size = controlledWindows.size();
     for(unsigned int i = 0; i < size; i++)
@@ -179,7 +182,7 @@ void MainWindow::slotCheckWindowStates(bool)
         controlledWindows[i].a->setChecked(!(controlledWindows[i].w->isHidden()));
     }
 }
-void MainWindow::slotCheckActionStates(bool)
+void SaweMainWindow::slotCheckActionStates(bool)
 {
     unsigned int size = controlledWindows.size();
     for(unsigned int i = 0; i < size; i++)
@@ -188,25 +191,25 @@ void MainWindow::slotCheckActionStates(bool)
     }
 }
 
-void MainWindow::connectActionToWindow(QAction *a, QWidget *b)
+void SaweMainWindow::connectActionToWindow(QAction *a, QWidget *b)
 {
     connect(a, SIGNAL(toggled(bool)), this, SLOT(slotCheckActionStates(bool)));
     connect(b, SIGNAL(visibilityChanged(bool)), this, SLOT(slotCheckWindowStates(bool)));
     controlledWindows.push_back(ActionWindowPair(b, a));
 }
 
-MainWindow::~MainWindow()
+SaweMainWindow::~SaweMainWindow()
 {
-    TaskTimer tt("~MainWindow");
+    TaskTimer tt("~SaweMainWindow");
     delete ui;
 }
 
-void MainWindow::slotDbclkFilterItem(QListWidgetItem * /*item*/)
+void SaweMainWindow::slotDbclkFilterItem(QListWidgetItem * /*item*/)
 {
     //emit sendCurrentSelection(ui->layerWidget->row(item), );
 }
 
-void MainWindow::slotNewSelection(QListWidgetItem *item)
+void SaweMainWindow::slotNewSelection(QListWidgetItem *item)
 {
     int index = ui->layerWidget->row(item);
     if(index < 0){
@@ -223,12 +226,12 @@ void MainWindow::slotNewSelection(QListWidgetItem *item)
     emit sendCurrentSelection(index, checked);
 }
 
-void MainWindow::slotDeleteSelection(void)
+void SaweMainWindow::slotDeleteSelection(void)
 {
     emit sendRemoveItem(ui->layerWidget->currentRow());
 }
 
-void MainWindow::connectLayerWindow(DisplayWidget *d)
+void SaweMainWindow::connectLayerWindow(DisplayWidget *d)
 {
     // connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateLayerList(Signal::pOperation)));
     connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateOperationsTree(Signal::pOperation)));
@@ -296,7 +299,7 @@ void MainWindow::connectLayerWindow(DisplayWidget *d)
     }
 }
 
-void MainWindow::
+void SaweMainWindow::
         setTimelineWidget( QWidget* w )
 {
     ui->dockWidgetTimeline->setWidget( w );
@@ -304,7 +307,7 @@ void MainWindow::
 }
 
 
-void MainWindow::
+void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
     // TODO add dialog asking user to save the project
@@ -524,7 +527,7 @@ vertex_descriptor first_common_vertex(const vertex_descriptor& source, const ver
     return vertex_descriptor_null;
 }
 
-void updateOperationsTree( OperationGraph::vertex_descriptor v, OperationGraph& graph, QTreeWidgetItem* w, OperationGraph::vertex_descriptor stop )
+static void updateOperationsTree( OperationGraph::vertex_descriptor v, OperationGraph& graph, QTreeWidgetItem* w, OperationGraph::vertex_descriptor stop )
 {
     BOOST_ASSERT( w );
 
@@ -608,7 +611,7 @@ void updateOperationsTree( OperationGraph::vertex_descriptor v, OperationGraph& 
     }
 }
 
-void MainWindow::updateOperationsTree( Signal::pOperation s )
+void SaweMainWindow::updateOperationsTree( Signal::pOperation s )
 {
     TaskTimer tt("Updating operations tree");
 
@@ -619,11 +622,12 @@ void MainWindow::updateOperationsTree( Signal::pOperation s )
     ui->operationsTree->clear();
 
     QTreeWidgetItem* w = ui->operationsTree->invisibleRootItem();
-    ::updateOperationsTree( head, graph, w, vertex_descriptor_null );
+
+    ::Ui::updateOperationsTree( head, graph, w, vertex_descriptor_null );
 }
 
 /*
-void MainWindow::updateLayerList( Signal::pOperation s )
+void SaweMainWindow::updateLayerList( Signal::pOperation s )
 {
     ui->layerWidget->clear();
 
@@ -682,7 +686,7 @@ void MainWindow::updateLayerList( Signal::pOperation s )
 */
 
 /*
-void MainWindow::keyPressEvent( QKeyEvent *e )
+void SaweMainWindow::keyPressEvent( QKeyEvent *e )
 {
     if (e->isAutoRepeat())
         return;
@@ -696,7 +700,7 @@ void MainWindow::keyPressEvent( QKeyEvent *e )
     }
 }
 
-void MainWindow::keyReleaseEvent ( QKeyEvent * e )
+void SaweMainWindow::keyReleaseEvent ( QKeyEvent * e )
 {
     if (e->isAutoRepeat())
         return;
@@ -744,3 +748,5 @@ void QComboBoxAction::
 
     setDefaultAction( a );
 }
+
+} // namespace Ui

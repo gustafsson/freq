@@ -4,7 +4,7 @@
 #include <QToolButton>
 #include <QLayout>
 
-namespace Saweui {
+namespace Ui {
 
 PropertiesSelection::PropertiesSelection(QWidget *parent) :
     QWidget(parent),
@@ -37,4 +37,4 @@ void PropertiesSelection::changeEvent(QEvent *e)
     }
 }
 
-} // namespace Saweui
+} // namespace Ui

@@ -72,8 +72,8 @@ public:
     float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
     float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }
     float endTime() const {            return startTime() + timeInterval(); }
-    unsigned nSamples() const {        return transform_data->getNumberOfElements().width; }
-    unsigned nScales() const {         return transform_data->getNumberOfElements().height; }
+    unsigned nSamples() const {        return order==Order_row_major ? transform_data->getNumberOfElements().width : transform_data->getNumberOfElements().height; }
+    unsigned nScales() const {         return order==Order_row_major ? transform_data->getNumberOfElements().height: transform_data->getNumberOfElements().width;  }
     unsigned nChannels() const {       return transform_data->getNumberOfElements().depth; }
 
     bool valid() const {

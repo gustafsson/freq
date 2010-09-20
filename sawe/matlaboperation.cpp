@@ -177,11 +177,10 @@ pBuffer MatlabOperation::
 		return b;
 
     pBuffer b2 = Hdf5Buffer::loadBuffer( file );
-	b->waveform_data.swap( b2->waveform_data );
 
 	::remove( file.c_str());
 
-    return b;
+    return b2;
 }
 
 } // namespace Sawe

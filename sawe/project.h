@@ -16,7 +16,7 @@ namespace Sawe {
     class Project;
 }
 #include "tools/toolfactory.h"
-class MainWindow;
+class SaweMainWindow;
 
 namespace Sawe {
 

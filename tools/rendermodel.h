@@ -1,7 +1,10 @@
 #ifndef RENDERMODEL_H
 #define RENDERMODEL_H
 
-#include "sawe/project.h"
+namespace Sawe {
+    class Project;
+}
+
 #include "heightmap/collection.h"
 
 namespace Tools

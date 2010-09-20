@@ -1,60 +1,53 @@
 #include "signal/operation.h"
-#include "tfr/cwtfilter.h"
+
 
 namespace Signal {
 
 Operation::Operation(pOperation source )
 :   _source( source ),
+    _enabled( true ),
     _invalid_samples()
 {
 }
 
-#include <stdio.h> // todo remove
-Intervals Operation::
-        invalid_samples()
-{
-    Operation* o = dynamic_cast<Operation*>(source().get());
 
+Operation* Operation::
+        affecting_source( const Interval& I )
+{
+    if ((affected_samples() & I) || !source())
+        return this;
+
+    return source()->affecting_source(I);
+}
+
+
+// todo rename fetch_invalid_samples to read_invalid_samples
+Intervals Operation::
+        fetch_invalid_samples()
+{
     Intervals r = _invalid_samples;
 
+    Operation* o = source().get();
     if (0!=o)
     {
-        r |= o->invalid_samples();
+        r |= o->fetch_invalid_samples();
     }
+
+    if (_invalid_samples)
+        _invalid_samples = Intervals();
 
     return r;
 }
 
-pOperation Operation::
-        first_source(pOperation start)
-{
-    Operation* o = dynamic_cast<Operation*>(start.get());
-    if (o)
-        return first_source(o->source());
 
-    return start;
+Operation* Operation::
+        root()
+{
+    if (source())
+        return source()->root();
+
+    return this;
 }
 
-pOperation Operation::
-        fast_source(pOperation start)
-{
-    pOperation r = start;
-    pOperation itr = start;
-
-    while(true)
-    {
-        Operation* o = dynamic_cast<Operation*>(itr.get());
-        if (!o)
-            break;
-
-        Tfr::CwtFilter* f = dynamic_cast<Tfr::CwtFilter*>(itr.get());
-        if (f)
-            r = f->source();
-
-        itr = o->source();
-    }
-
-    return r;
-}
 
 } // namespace Signal

@@ -12,8 +12,7 @@ namespace Tfr {
 Filter::
         Filter( pOperation source )
             :
-            Operation( source ),
-            enabled(true)
+            Operation( source )
 {}
 
 
@@ -33,23 +32,25 @@ Signal::pBuffer Filter::
             return zeros(I);
         }
 
+        const Signal::Intervals affected = affected_samples();
         // If no samples would be affected, return from source
-        if (!(work & affected_samples()))
+        if (!(work & affected))
         {
             // Attempt a regular simple read
-            pBuffer b = _source->read( I );
+            pBuffer b = Signal::Operation::read( I );
 
             // Check if we can guarantee that everything returned from _source
             // is unaffected
-            if (!(affected_samples() & b->getInterval())) {
-                TIME_Filter Intervals(b->getInterval()).print("Filter unaffected");
+            const Signal::Intervals b_interval = b->getInterval();
+            if (!(affected & b_interval)) {
+                TIME_Filter Intervals(b_interval).print("Filter unaffected");
                 return b;
             }
 
             // Explicitly return only the unaffected samples
-            TIME_Filter Intervals(b->getInterval()).print("FilterOp fixed unaffected");
+            TIME_Filter Intervals(b_interval).print("FilterOp fixed unaffected");
             BufferSource bs(b);
-            return bs.readFixedLength( (~affected_samples() & b->getInterval()).getInterval() );
+            return bs.readFixedLength( (~affected & b_interval).getInterval() );
         }
     }
 
@@ -57,10 +58,10 @@ Signal::pBuffer Filter::
     // If we've reached this far, the transform will have to be computed
     pChunk c = readChunk( I );
 
-    Signal::pBuffer r = transform()->inverse( c );
+    pBuffer r = _transform->inverse( c );
 
-    _invalid_samples -= r->getInterval();
     TIME_Filter Intervals(c->getInterval()).print("Filter after inverse");
+
     return r;
 }
 

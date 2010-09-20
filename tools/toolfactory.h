@@ -1,7 +1,10 @@
 #ifndef TOOLFACTORY_H
 #define TOOLFACTORY_H
 
-#include "sawe/project.h"
+namespace Sawe {
+    class Project;
+}
+
 #include "rendermodel.h"
 #include "selectionmodel.h"
 
@@ -27,6 +30,7 @@ namespace Tools
         // PlaybackView playback_view;
         // DiskwriterView diskwriter_view;
 
+        // map<string, QWidget*> SelectionView selection_widget;
     private:
         Sawe::Project* _project;
     };

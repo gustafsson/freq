@@ -15,14 +15,17 @@
 void qt_mac_set_menubar_icons(bool enable);
 #endif
 
+class Ui_MainWindow;
 
-class MainWindow : public QMainWindow
+namespace Ui {
+
+class SaweMainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(const char* title, Sawe::Project* project, QWidget *parent = 0);
-    ~MainWindow();
+    SaweMainWindow(const char* title, Sawe::Project* project, QWidget *parent = 0);
+    ~SaweMainWindow();
     
     void connectLayerWindow(DisplayWidget *d);
     void setTimelineWidget( QWidget* );
@@ -59,7 +62,7 @@ signals:
 
 private:
     Sawe::Project* project;
-    class Ui_MainWindow *ui;
+    Ui_MainWindow *ui;
     
     void add_widgets();
     void create_renderingwidgets();
@@ -85,5 +88,7 @@ public:
     explicit QMainWindow(QWidget *parent = 0, Qt::WindowFlags flags = 0);
     QDockArea();
 };*/
+
+} // namespace Ui
 
 #endif // MAINWINDOW_H

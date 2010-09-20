@@ -1,17 +1,14 @@
-#ifndef SAWETIMELINEWIDGET_H
-#define SAWETIMELINEWIDGET_H
-
-// TODO move to saweui
+#ifndef UI_TIMELINEWIDGET_H
+#define UI_TIMELINEWIDGET_H
 
 #include <QGLWidget>
 #include "signal/sink.h"
-#include "saweui/displaywidget.h"
+#include "ui/displaywidget.h"
 
-namespace Sawe {
+namespace Ui {
 
 class TimelineWidget:
-        public QGLWidget,
-        public Signal::Sink
+        public QGLWidget
 {
     Q_OBJECT
 public:
@@ -43,6 +40,6 @@ private:
     MouseControl moveButton;
 };
 
-} // namespace Sawe
+} // namespace Ui
 
-#endif // SAWECSV_H
+#endif // UI_TIMELINEWIDGET_H

@@ -20,7 +20,7 @@ public:
     // Overloaded from Sink
     virtual void put( pBuffer b, pOperation ) { put (b); }
     virtual bool isFinished();
-    virtual Intervals invalid_samples() { return _data.invalid_samples(); }
+    virtual Intervals fetch_invalid_samples() { return _data.fetch_invalid_samples(); }
     virtual void invalidate_samples( const Intervals& s ) { _data.invalidate_samples( s ); }
 
     void reset();

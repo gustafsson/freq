@@ -91,7 +91,12 @@ namespace Heightmap {
 // transfer results between them.
 class Block {
 public:
-    Block( Reference ref ): frame_number_last_used(-1), ref(ref) {}
+    Block( Reference ref )
+        :
+        frame_number_last_used(-1),
+        ref(ref),
+        new_data_available( false )
+    {}
 
     // TODO move this value to a complementary class
     unsigned frame_number_last_used;
@@ -324,7 +329,7 @@ private:
       Given a chunk and this->_worker->source(), compute how small and big
       samples that are meanginful to display.
       */
-    void        update_sample_size( Tfr::Chunk* inChunk = 0 );
+    void        update_sample_size( Tfr::Chunk* inChunk );
 
 
     /**

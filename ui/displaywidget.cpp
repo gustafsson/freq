@@ -38,6 +38,7 @@
 #include "filters/reassign.h"
 #include "filters/ridge.h"
 #include "filters/filters.h"
+#include "tfr/cwt.h"
 
 #include <msc_stdc.h>
 #include <CudaProperties.h>
@@ -52,6 +53,8 @@
 
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
+
+namespace Ui {
 
 void drawCircleSector(float x, float y, float radius, float start, float end);
 void drawRoundRect(float width, float height, float roundness);
@@ -69,7 +72,7 @@ GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* pro
 template<typename f>
 GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
     GLvector obj;
-    bool s = (GLU_TRUE == gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
+    bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
     if(r) *r=s;
     return obj;
 }
@@ -249,8 +252,8 @@ DisplayWidget::
     TaskTimer tt("~DisplayWidget");
     project->worker.quit();
 
-    Signal::pOperation first_source = Signal::Operation::first_source(project->worker.source() );
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+    Signal::Operation* first_source =project->worker.source()->root();
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
 
     if (r && !r->isStopped())
          r->stopRecording();
@@ -362,25 +365,25 @@ void DisplayWidget::receivePlaySound()
 {
     TaskTimer tt("Initiating playback of selection");
 
-    Signal::PostSink* postsink = project->tools.selection_model.getPostSink();
+    Signal::PostSink* selection_operations = project->tools.selection_model.getPostSink();
 
     // TODO define selections by a selection structure. Currently selections
     // are defined from the first sampels that is non-zero affected by a
     // filter, to the last non-zero affected sample.
-    if (!postsink->filter()) {
+    if (!selection_operations->filter()) {
         tt.info("No filter, no selection");
         return; // No filter, no selection...
     }
 
-    if (postsink->sinks().empty())
+    if (selection_operations->sinks().empty())
     {
         std::vector<Signal::pOperation> sinks;
         sinks.push_back( Signal::pOperation( new Signal::Playback( playback_device )) );
         sinks.push_back( Signal::pOperation( new Signal::WriteWav( selection_filename )) );
-        postsink->sinks( sinks );
+        selection_operations->sinks( sinks );
     }
 
-    project->worker.todo_list( postsink->invalid_samples() );
+    project->worker.todo_list( selection_operations->fetch_invalid_samples() );
     project->worker.todo_list().print(__FUNCTION__);
 
     // Work 'as slow as possible' on the first few chunks and accelerate.
@@ -412,7 +415,7 @@ void DisplayWidget::receiveAddSelection(bool active)
     if (!f)
         return;
 
-    f->enabled = false;
+    f->enabled(false);
 
     receiveAddClearSelection(active);
 
@@ -422,15 +425,15 @@ void DisplayWidget::receiveAddSelection(bool active)
 	
 bool DisplayWidget::isRecordSource()
 {
-    Signal::pOperation first_source = Signal::Operation::first_source(project->worker.source() );
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+    Signal::Operation* first_source = project->worker.source()->root();
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
 	return r != 0;
 }
 
 void DisplayWidget::receiveRecord(bool active)
 {
-    Signal::pOperation first_source = Signal::Operation::first_source(project->worker.source() );
-    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+    Signal::Operation* first_source = project->worker.source()->root();
+    Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
 
     // TODO make connection elsewhere
     //connect(r, SIGNAL(data_available(MicrophoneRecorder*)), SLOT(update()), Qt::UniqueConnection );
@@ -1292,7 +1295,7 @@ void DisplayWidget::paintGL()
 
         //    if (p && p->isUnderfed() && p->invalid_samples_left()) {
         Signal::Intervals missing_in_selection =
-                project->tools.selection_model.postsinkCallback->sink()->invalid_samples();
+                project->tools.selection_model.postsinkCallback->sink()->fetch_invalid_samples();
         if (missing_in_selection)
         {
             project->worker.center = 0;
@@ -1308,14 +1311,14 @@ void DisplayWidget::paintGL()
             Tools::RenderView& r = project->tools.render_view;
             project->worker.center = r._qx;
             project->worker.todo_list(
-                    project->tools.render_model.collectionCallback->sink()->invalid_samples());
+                    project->tools.render_model.collectionCallback->sink()->fetch_invalid_samples());
             //project->worker.todo_list().print("Displaywidget - Collection");
 
             if (followingRecordMarker)
                 project->worker.requested_fps(1);
         }
-        Signal::pOperation first_source = Signal::Operation::first_source(project->worker.source() );
-    	Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source.get() );
+        Signal::Operation* first_source = project->worker.source()->root();
+        Signal::MicrophoneRecorder* r = dynamic_cast<Signal::MicrophoneRecorder*>( first_source );
         if(r != 0 && !(r->isStopped()))
         {
         	wasWorking = true;
@@ -1543,8 +1546,8 @@ void DisplayWidget::drawWaveform(Signal::pOperation /*waveform*/)
 void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
 {
     TaskTimer tt(__FUNCTION__);
-    cudaExtent n = chunk->waveform_data->getNumberOfElements();
-    const float* data = chunk->waveform_data->getCpuMemory();
+    cudaExtent n = chunk->waveform_data()->getNumberOfElements();
+    const float* data = chunk->waveform_data()->getCpuMemory();
     
     n.height = 1;
     float ifs = 1./chunk->sample_rate; // step per sample
@@ -1820,7 +1823,7 @@ void DisplayWidget::setSelection(int index, bool enabled)
 
         Filters::EllipsFilter *e2 = new Filters::EllipsFilter(*e );
         e2->_save_inside = true;
-        e2->enabled = true;
+        e2->enabled( true );
 
         Signal::pOperation selectionfilter( e2 );
         selectionfilter->source( Signal::pOperation() );
@@ -1828,9 +1831,9 @@ void DisplayWidget::setSelection(int index, bool enabled)
         project->tools.selection_model.getPostSink()->filter( selectionfilter );
     }
 
-    if(filter->enabled != enabled)
+    if(filter->enabled() != enabled)
     {
-        filter->enabled = enabled;
+        filter->enabled( enabled );
 
         project->tools.render_view.renderer->collection()->invalidate_samples( filter->affected_samples() );
     }
@@ -1953,3 +1956,5 @@ void DisplayWidget::
         r._qx = project->tools.selection_view._playbackMarker;
     }
 }
+
+} // namespace Ui

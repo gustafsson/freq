@@ -1,4 +1,5 @@
 #include "stft.h"
+#include "complexbuffer.h"
 
 #include <cufft.h>
 #include <throwInvalidArgument.h>
@@ -76,23 +77,19 @@ Fft::
 }
 
 pChunk Fft::
-        forward( Signal::pBuffer b)
+        forward( Signal::pBuffer real_buffer)
 {
     // cufft is faster for larger ffts, but as the GPU is the bottleneck we can
-    // just as well do it on the CPU instead
+    // just as well offload it some and do it on the CPU instead
 
-    if (b->interleaved() != Signal::Buffer::Interleaved_Complex)
-    {
-        // TODO implement void computeWithOoura( GpuCpuData<double2>& input, GpuCpuData<double2>& output, int direction );
-        b = b->getInterleaved( Signal::Buffer::Interleaved_Complex );
-    }
+    ComplexBuffer b( *real_buffer );
 
-    cudaExtent input_n = b->waveform_data->getNumberOfElements();
+    cudaExtent input_n = b.complex_waveform_data()->getNumberOfElements();
     cudaExtent output_n = input_n;
 
     // The in-signal is padded to a power of 2 (cufft manual suggest a "power
     // of a small prime") for faster fft calculations
-    output_n.width = spo2g( output_n.width / 2 - 1 );
+    output_n.width = spo2g( output_n.width - 1 );
 
     pChunk chunk( new StftChunk );
     chunk->transform_data.reset( new GpuCpuData<float2>(
@@ -100,61 +97,35 @@ pChunk Fft::
             output_n,
             GpuCpuVoidData::CpuMemory ));
 
-    input_n.width /= 2;
-    GpuCpuData<float2> input(
-            b->waveform_data->getCpuMemory(),
-            input_n,
-            GpuCpuVoidData::CpuMemory,
-            true );
+    GpuCpuData<float2>* input = b.complex_waveform_data();
 
     // computeWithCufft( input, *chunk->transform_data, -1);
-    computeWithOoura( input, *chunk->transform_data, -1 );
+    computeWithOoura( *input, *chunk->transform_data, -1 );
 
     chunk->axis_scale = AxisScale_Linear;
-    chunk->chunk_offset = b->sample_offset;
-    chunk->first_valid_sample = 0;
-    chunk->max_hz = b->sample_rate / 2;
-    chunk->min_hz = chunk->max_hz / chunk->nSamples();
-    chunk->n_valid_samples = chunk->nSamples();
     chunk->order = Chunk::Order_column_major;
-    chunk->sample_rate = b->sample_rate / chunk->nSamples();
+    chunk->chunk_offset = b.sample_offset;
+    chunk->first_valid_sample = 0;
+    chunk->max_hz = b.sample_rate / 2;
+    chunk->min_hz = chunk->max_hz / chunk->nScales();
+    chunk->n_valid_samples = chunk->nSamples();
+    chunk->sample_rate = b.sample_rate / chunk->nScales();
 
     return chunk;
 }
 
+
 Signal::pBuffer Fft::
         backward( pChunk chunk)
 {
-    cudaExtent output_n = chunk->transform_data->getNumberOfElements();
+    ComplexBuffer buffer( chunk->chunk_offset, chunk->nScales(), chunk->sample_rate * chunk->nScales() );
 
-    // The in-signal is padded to a power of 2 (cufft manual suggest a "power
-    // of a small prime") for faster fft calculations
-    output_n.width = spo2g( output_n.width - 1 );
+    // chunk = computeWithCufft(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
+    computeWithOoura(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
 
-    Signal::pBuffer ret( new Signal::Buffer( Signal::Buffer::Interleaved_Complex) );
-    ret->waveform_data.reset( new GpuCpuData<float>(
-            0,
-            output_n,
-            GpuCpuVoidData::CpuMemory ));
-
-    cudaExtent output_n2 = output_n;
-    output_n2.width *= 2;
-
-    GpuCpuData<float2> output(
-                ret->waveform_data->getCpuMemory(),
-                output_n2,
-                GpuCpuVoidData::CpuMemory,
-                true );
-
-    // chunk = computeWithCufft(*chunk->transform_data, output, 1);
-    computeWithOoura(*chunk->transform_data, output, 1);
-
-    // output shares ptr with ret
-    ret->sample_offset = chunk->chunk_offset;
-    ret->sample_rate = chunk->sample_rate * chunk->nSamples();
-
-    return ret;
+    return buffer.get_real();
 }
+
 
 // TODO translate cdft to take floats instead of doubles
 //extern "C" { void cdft(int, int, double *); }
@@ -243,20 +214,17 @@ Stft::
 
 
 Tfr::pChunk Stft::
-        operator() (Signal::pBuffer b)
+        operator() (Signal::pBuffer breal)
 {
     const unsigned stream = 0;
 
-    if (b->interleaved() != Signal::Buffer::Interleaved_Complex)
-    {
-        b = b->getInterleaved( Signal::Buffer::Interleaved_Complex );
-    }
+    ComplexBuffer b(*breal);
 
     BOOST_ASSERT( 0!=_chunk_size );
 
     cudaExtent n = make_cudaExtent(
             _chunk_size,
-            b->number_of_samples()/_chunk_size,
+            b.number_of_samples()/_chunk_size,
             1 );
 
     if (0==n.height || 32768<n.height)
@@ -271,7 +239,7 @@ Tfr::pChunk Stft::
             GpuCpuVoidData::CudaGlobal ));
 
 
-    cufftComplex* input = (cufftComplex*)b->waveform_data->getCudaGlobal().ptr();
+    cufftComplex* input = (cufftComplex*)b.complex_waveform_data()->getCudaGlobal().ptr();
     cufftComplex* output = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
 
     // Transform signal
@@ -302,13 +270,13 @@ Tfr::pChunk Stft::
     }
 
     chunk->axis_scale = AxisScale_Linear;
-    chunk->chunk_offset = b->sample_offset;
+    chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
-    chunk->max_hz = b->sample_rate / 2;
+    chunk->max_hz = b.sample_rate / 2;
     chunk->min_hz = chunk->max_hz / _chunk_size;
     chunk->n_valid_samples = (chunk->nSamples() / _chunk_size)*_chunk_size;
     chunk->order = Chunk::Order_column_major;
-    chunk->sample_rate = b->sample_rate / (float)_chunk_size;
+    chunk->sample_rate = b.sample_rate / (float)_chunk_size;
 
     return chunk;
 }
@@ -353,7 +321,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     {
         if(writeOutput) tt.reset( new TaskTimer("Filling buffer with random data"));
 
-        float* p = B->waveform_data->getCpuMemory();
+        float* p = B->waveform_data()->getCpuMemory();
         for (unsigned i = 0; i < B->number_of_samples(); i++)
             p[i] = rand() / (float)RAND_MAX;
 

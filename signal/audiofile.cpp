@@ -128,11 +128,9 @@ Audiofile::
 }
 
 void Audiofile::
-        load(std::string filename)
+        load(std::string filename )
 {
     _original_filename = filename;
-
-    _waveform.reset( new Buffer());
 
     TaskTimer tt("%s %s",__FUNCTION__,filename.c_str());
 
@@ -150,12 +148,13 @@ void Audiofile::
     }
 
     GpuCpuData<float> completeFile(0, make_uint3( source.channels(), source.frames(), 1));
-    _waveform->waveform_data.reset( new GpuCpuData<float>(0, make_uint3( source.frames(), source.channels(), 1)) );
-    _waveform->sample_rate = source.samplerate();
     source.read(completeFile.getCpuMemory(), source.channels()*source.frames()); // yes float
-    float* target = _waveform->waveform_data->getCpuMemory();
     float* data = completeFile.getCpuMemory();
 
+    _waveform.reset( new Buffer(0, source.frames(), source.samplerate(), source.channels()));
+    float* target = _waveform->waveform_data()->getCpuMemory();
+
+    // Compute transpose of signal
     for (unsigned i=0; i<source.frames(); i++) {
         for (int c=0; c<source.channels(); c++) {
             target[i + c*source.frames()] = data[i*source.channels() + c];

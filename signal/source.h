@@ -16,37 +16,27 @@ as when created by Signal::MicrophoneRecorder.
 */
 class Buffer {
 public:
-    enum Interleaved {
-        Interleaved_Complex,
-        Only_Real
-    };
-
-    Buffer(Interleaved interleaved = Only_Real);
     Buffer(unsigned firstSample,
            unsigned numberOfSamples,
            unsigned FS,
-           Interleaved interleaved = Only_Real
-                                   );
+           unsigned numberOfChannels=1);
 
-    boost::scoped_ptr<GpuCpuData<float> >
-                    waveform_data;
+    GpuCpuData<float>*  waveform_data() const;
+    unsigned            number_of_samples() const;
+    void                release_extra_resources();
 
     unsigned        sample_offset;
     unsigned        sample_rate;
 
-    Interleaved     interleaved() const { return _interleaved; }
-    unsigned        number_of_samples() const { return waveform_data->getNumberOfElements().width/(_interleaved==Interleaved_Complex?2:1); }
-    float           start() const { return sample_offset/(float)sample_rate; }
-    float           length() const { return number_of_samples()/(float)sample_rate; }
-    Interval        getInterval() const { return Interval(sample_offset, sample_offset + number_of_samples()); }
+    float           start() const;
+    float           length() const;
+    Interval        getInterval() const;
 
     Buffer&         operator|=(const Buffer& b);
 
-    boost::shared_ptr<Buffer>
-                    getInterleaved(Interleaved) const;
-
-private:
-    const Interleaved _interleaved;
+protected:
+    boost::scoped_ptr<GpuCpuData<float> >
+                    _waveform_data;
 };
 typedef boost::shared_ptr<Buffer> pBuffer;
 
@@ -62,7 +52,7 @@ public:
 
     /**
       read does not have to return a Buffer of the same size as I. But it has
-      to start at I.first. The caller of read must allow for read to return
+      to include I.first. The caller of read must allow for read to return
       Buffers of arbitrary sizes.
 
       However, read shall never return pBuffer(). Either throw an logic_error()

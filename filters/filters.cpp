@@ -19,7 +19,6 @@ namespace Filters {
 
 SelectionFilter::SelectionFilter( Selection s ) {
     this->s = s;
-    enabled = true;
 }
 
 void SelectionFilter::operator()( Chunk& chunk) {
@@ -115,7 +114,6 @@ EllipsFilter::EllipsFilter(float t1, float f1, float t2, float f2, bool save_ins
     _t2 = t2;
     _f2 = f2;
     _save_inside = save_inside;
-    enabled = true;
 }
 
 void EllipsFilter::operator()( Chunk& chunk) {
@@ -183,7 +181,6 @@ SquareFilter::SquareFilter(float t1, float f1, float t2, float f2, bool save_ins
     _t2 = std::max(t1, t2);
     _f2 = std::max(f1, f2);
     _save_inside = save_inside;
-    enabled = true;
 }
 
 void SquareFilter::operator()( Chunk& chunk) {

@@ -1,8 +1,7 @@
-#ifndef SIGNALCWTFILTER_H
-#define SIGNALCWTFILTER_H
+#ifndef TFRCWTFILTER_H
+#define TFRCWTFILTER_H
 
-#include "tfr/filter.h"
-#include "tfr/cwt.h"
+#include "filter.h"
 
 namespace Tfr {
 
@@ -20,6 +19,7 @@ public:
       */
     Tfr::pTransform transform() const;
 
+
     /**
       Set the Tfr::Transform for this operation and update _invalid_samples.
       Will throw throw std::invalid_argument if 'm' is not an instance of
@@ -35,4 +35,4 @@ public:
 };
 } // namespace Tfr
 
-#endif // SIGNALCWTFILTER_H
+#endif // TFRCWTFILTER_H

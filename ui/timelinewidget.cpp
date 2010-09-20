@@ -1,5 +1,5 @@
 #include <CudaException.h>
-#include "sawe/timelinewidget.h"
+#include "ui/timelinewidget.h"
 #include <boost/assert.hpp>
 #include <GlException.h>
 #include <glPushContext.h>
@@ -12,7 +12,7 @@
 
 using namespace Signal;
 
-namespace Sawe {
+namespace Ui {
 
 TimelineWidget::
         TimelineWidget( Sawe::Project* p, QGLWidget* displaywidget )

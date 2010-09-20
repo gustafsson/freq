@@ -29,6 +29,12 @@ Signal::pBuffer PostSink::
     }
 
     pOperation prev = source();
+    if (_filter)
+    {
+        _filter->source(prev);
+        prev = _filter;
+    }
+
     BOOST_FOREACH( pOperation c, passive_operations) {
         c->source(prev);
         prev = c;
@@ -53,6 +59,12 @@ Signal::pBuffer PostSink::
         }
         prev->read( I );
     }
+
+    BOOST_FOREACH( pOperation c, passive_operations )
+        c->source(pOperation());
+
+    BOOST_FOREACH( pOperation c, active_operations )
+        c->source(pOperation());
 
     return b;
 }
@@ -129,15 +141,19 @@ Intervals PostSink::
 
 
 Intervals PostSink::
-        invalid_samples()
+        fetch_invalid_samples()
 {
-    Intervals I = Operation::invalid_samples();
+    Intervals I;
 
     BOOST_FOREACH( pOperation s, sinks() )
     {
         Operation* o = dynamic_cast<Operation*>(s.get());
+
+        // Don't do anything recursively
+        o->source(pOperation());
+
         if (o)
-            I |= o->invalid_samples();
+            I |= o->fetch_invalid_samples();
     }
 
     return I;
@@ -147,14 +163,13 @@ Intervals PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
-    BOOST_FOREACH( pOperation s, sinks() )
+    BOOST_FOREACH( pOperation o, sinks() )
     {
-        Operation* o = dynamic_cast<Operation*>(s.get());
-        if (o)
-            o->invalidate_samples( I );
-    }
+        Sink* s = dynamic_cast<Sink*>(o.get());
 
-    Operation::invalidate_samples( I );
+        if (s)
+            s->invalidate_samples( I );
+    }
 }
 
 
@@ -189,9 +204,10 @@ void PostSink::
     I |= f->affected_samples();
     I |= _filter->affected_samples();
 
-    Tfr::Filter* filt = dynamic_cast<Tfr::Filter*>(f.get());
-    if (filt)
-        I -= filt->zeroed_samples();
+    Tfr::Filter* newfilt = dynamic_cast<Tfr::Filter*>(f.get());
+    Tfr::Filter* oldfilt = dynamic_cast<Tfr::Filter*>(_filter.get());
+    if (newfilt && oldfilt)
+        I -= newfilt->zeroed_samples() & oldfilt->zeroed_samples();
 
     invalidate_samples( I );
 

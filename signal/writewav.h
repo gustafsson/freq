@@ -17,9 +17,8 @@ public:
     // Overloaded from Sink
     virtual void put( pBuffer b, pOperation ) { put (b); }
     virtual void reset();
-    virtual Intervals expected_samples() { return _data.invalid_samples(); }
+    // virtual Intervals expected_samples() { return _data.invalid_samples(); }
     virtual void invalidate_samples( const Intervals& s ) { _data.invalidate_samples( s ); }
-
     static void writeToDisk(std::string filename, pBuffer b);
 
     void put( pBuffer );

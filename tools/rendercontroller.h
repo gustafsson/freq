@@ -2,11 +2,13 @@
 #define RENDERCONTROLLER_H
 
 #include "renderview.h"
+#include <QWidget>
 
 namespace Tools
 {
-    class RenderController
+    class RenderController:public QWidget
     {
+        Q_OBJECT
     public:
         RenderController( RenderModel *model, RenderView *view ): model(model), view(view) {}
 

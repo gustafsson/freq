@@ -251,6 +251,11 @@ private:
 
 
 /**
+  TODO this functionality is build upon the purpose of PostSink that is used by Worker. But not in worker itself.
+
+  And also, shouldn't be used like this.
+
+  Hmm, this class is probably not needed at all. But some more refactoring will have to be done.
    @see Worker
   */
 class WorkerCallback: boost::noncopyable {

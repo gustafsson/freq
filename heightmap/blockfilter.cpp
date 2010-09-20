@@ -54,6 +54,22 @@ void BlockFilter::
 }
 
 
+Signal::Operation* BlockFilter::
+        affecting_source( const Signal::Interval& )
+{
+    return this;
+}
+
+
+Signal::Intervals BlockFilter::
+        fetch_invalid_samples()
+{
+    _invalid_samples = _collection->invalid_samples();
+
+    return Tfr::Filter::fetch_invalid_samples();
+}
+
+
 CwtToBlock::
         CwtToBlock( Collection* collection )
             :

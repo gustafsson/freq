@@ -16,8 +16,7 @@ namespace Signal {
 
 WriteWav::
         WriteWav( std::string filename )
-:   _data(SinkSource::AcceptStrategy_ACCEPT_EXPECTED_ONLY),
-    _filename(filename)
+:   _filename(filename)
 {
 }
 
@@ -32,9 +31,10 @@ void WriteWav::
 {
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
-    _data.put( buffer );
+    _data.putExpectedSamples( buffer, _invalid_samples );
+    _invalid_samples -= buffer->getInterval();
 
-    if (_data.invalid_samples().isEmpty())
+    if (isFinished())
         reset(); // Write to file
 }
 
@@ -69,11 +69,8 @@ void WriteWav::
 
     TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(), ss.str().c_str());
 
-    if (Buffer::Only_Real != b->interleaved())
-        b = b->getInterleaved( Buffer::Only_Real);
-
-    // TODO: figure out a way for Sonic AWE to work with stereo sound and write stereo to disk
-
+    // TODO: figure out a way for Sonic AWE to work with stereo sound as this
+    // method could easily write stereo sound if pBuffer had multiple channels.
 
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
     //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
@@ -83,7 +80,7 @@ void WriteWav::
 
     if (!outfile) return;
 
-    float *data=b->waveform_data->getCpuMemory();
+    float *data=b->waveform_data()->getCpuMemory();
     unsigned N = b->number_of_samples();
 
     { // Normalize
@@ -108,13 +105,11 @@ void WriteWav::
 pBuffer WriteWav::
         crop(pBuffer buffer)
 {
-    if (buffer->interleaved() != Buffer::Only_Real)
-        buffer = buffer->getInterleaved(Buffer::Only_Real);
-
     /// Remove zeros from the beginning and end
-    unsigned num_frames = buffer->waveform_data->getNumberOfElements().width;
-    unsigned channel_count = buffer->waveform_data->getNumberOfElements().height;
-    float *fdata = buffer->waveform_data->getCpuMemory();
+    GpuCpuData<float>* waveform_data = buffer->waveform_data();
+    unsigned num_frames = waveform_data->getNumberOfElements().width;
+    unsigned channel_count = waveform_data->getNumberOfElements().height;
+    float *fdata = waveform_data->getCpuMemory();
 
     unsigned firstNonzero = 0;
     unsigned lastNonzero = 0;
@@ -130,7 +125,7 @@ pBuffer WriteWav::
         return pBuffer();
 
     pBuffer result(new Buffer(firstNonzero, lastNonzero-firstNonzero+1, buffer->sample_rate ));
-    float *data = result->waveform_data->getCpuMemory();
+    float *data = result->waveform_data()->getCpuMemory();
 
 
     for (unsigned f=firstNonzero; f<=lastNonzero; f++)

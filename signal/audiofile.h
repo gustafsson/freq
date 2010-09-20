@@ -247,7 +247,7 @@ public:
     std::string filename() const { return _original_filename; }
 
 private:
-    void load(std::string filename);
+    void load(std::string filename );
 
     std::string _original_filename;
 

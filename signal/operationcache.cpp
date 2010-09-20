@@ -8,7 +8,7 @@ namespace Signal {
 OperationCache::
         OperationCache( pOperation source )
 :   Operation(source),
-    _cache( SinkSource::AcceptStrategy_ACCEPT_ALL)
+    _cache()
 {
 
 }
@@ -19,7 +19,7 @@ bool OperationCache::
     unsigned firstSample = I.first;
 
     Intervals cached = _cache.samplesDesc();
-    cached -= this->invalid_samples(); // cached samples doesn't count if they are marked as invalid
+    cached -= _invalid_samples; // cached samples doesn't count if they are marked as invalid
 
     // read is only required to return firstSample, not the entire interval.
     // If the entire interval is needed for some other reason, cacheMiss can

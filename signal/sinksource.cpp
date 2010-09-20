@@ -11,8 +11,7 @@ using namespace std;
 namespace Signal {
 
 SinkSource::
-        SinkSource( AcceptStrategy a )
-:   _acceptStrategy( a )
+        SinkSource()
 {
 }
 
@@ -38,43 +37,21 @@ void SinkSource::
     _cache.push_back( b );
     */
 
-    switch (_acceptStrategy)
+    merge(b);
+}
+
+
+void SinkSource::
+        putExpectedSamples( pBuffer buffer, const Intervals& expected )
+{
+    BufferSource bs( buffer );
+    BOOST_FOREACH( const Interval i, (expected & buffer->getInterval()).intervals() )
     {
-    case AcceptStrategy_ACCEPT_ALL:
-        merge(b);
-        break;
-    case AcceptStrategy_ACCEPT_EXPECTED_ONLY:
-        {
-            Intervals expected = invalid_samples();
-            if ((Intervals(b->getInterval()) - expected).isEmpty())
-                // This entire buffer was expected, merge
-                merge(b);
-            else
-            {
-                Intervals sid = expected & b->getInterval();
-
-                // Signal::Source have readFixedLength which can divide a
-                // Buffer into sections if it is presented as a Source which
-                // is accomplished by a SinkSource.
-                SinkSource ss(AcceptStrategy_ACCEPT_ALL);
-
-                // shortcut to _cache instead of put which would have
-                // accomplished the same
-                ss._cache.push_back( b );
-
-                BOOST_FOREACH( const Interval i, sid.intervals() )
-                {
-                    pBuffer s = ss.readFixedLength( i );
-                    merge( s );
-                }
-            }
-        }
-        break;
-    default:
-        BOOST_ASSERT(false);
-        break;
+        pBuffer s = bs.readFixedLength( i );
+        put( s );
     }
 }
+
 
 static bool bufferLessThan(const pBuffer& a, const pBuffer& b)
 {
@@ -139,9 +116,12 @@ void SinkSource::
     //tt.info("_cache.size()=%u", _cache.size());
 }
 
+
 void SinkSource::
         merge( pBuffer bp )
 {
+    bp->release_extra_resources();
+
     const Buffer& b = *bp;
     unsigned FS = sample_rate();
 
@@ -173,10 +153,11 @@ void SinkSource::
             {
                 if(D) ss << " +" << i;
 
-                pBuffer n( new Buffer( i.first, i.last-i.first, FS));
-                memcpy( n->waveform_data->getCpuMemory(),
-                        s.waveform_data->getCpuMemory() + (i.first - s.sample_offset),
-                        n->waveform_data->getSizeInBytes1D() );
+                pBuffer n( new Buffer( i.first, i.count(), FS));
+                GpuCpuData<float>* dest = n->waveform_data();
+                memcpy( dest->getCpuMemory(),
+                        s.waveform_data()->getCpuMemory() + (i.first - s.sample_offset),
+                        dest->getSizeInBytes1D() );
                 itr = _cache.insert(itr, n );
                 itr++; // Move past inserted element
             }
@@ -186,9 +167,10 @@ void SinkSource::
     }
 
     pBuffer n( new Buffer( b.sample_offset, b.number_of_samples(), b.sample_rate));
-    memcpy( n->waveform_data->getCpuMemory(),
-            b.waveform_data->getCpuMemory(),
-            b.waveform_data->getSizeInBytes1D());
+    GpuCpuData<float>* src = b.waveform_data();
+    memcpy( n->waveform_data()->getCpuMemory(),
+            src->getCpuMemory(),
+            src->getSizeInBytes1D());
     _cache.push_back( n );
     cache_locker.unlock(); // done with _cache, samplesDesc() below needs the lock
 

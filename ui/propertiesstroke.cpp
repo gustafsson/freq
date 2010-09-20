@@ -1,7 +1,7 @@
 #include "propertiesstroke.h"
 #include "ui_propertiesstroke.h"
 
-namespace Saweui {
+namespace Ui {
 
 PropertiesStroke::PropertiesStroke(QWidget *parent) :
     QWidget(parent),
@@ -27,4 +27,4 @@ void PropertiesStroke::changeEvent(QEvent *e)
     }
 }
 
-} // namespace Saweui
+} // namespace Ui

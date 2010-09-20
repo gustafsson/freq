@@ -16,8 +16,7 @@ namespace Signal {
 
 Playback::
         Playback( int outputDevice )
-:   _data( SinkSource::AcceptStrategy_ACCEPT_EXPECTED_ONLY ),
-	_first_buffer_size(0),
+:   _first_buffer_size(0),
     _playback_itr(0),
     _output_device(0)
 {
@@ -127,13 +126,15 @@ void Playback::
         _first_timestamp = _last_timestamp;
 		_first_buffer_size = buffer->number_of_samples();
 	}
-    _data.put( buffer );
 
     // Make sure the buffer is moved over to CPU memory.
     // (because the audio stream callback is executed from a different thread
     // it can't access the GPU memory)
-    buffer->waveform_data->getCpuMemory();
-    // TODO Should perhaps relase GPU memory as well...
+    GpuCpuData<float>* bdata = buffer->waveform_data();
+    bdata->getCpuMemory();
+    bdata->freeUnused(); // relase GPU memory as well...
+
+    _data.put( buffer );
 
     if (streamPlayback)
     {
@@ -162,11 +163,13 @@ void Playback::
     _playback_itr = 0;
 }
 
+
 bool Playback::
         isFinished()
 {
-    return invalid_samples().isEmpty() && isStopped();
+    return _invalid_samples.isEmpty() && isStopped();
 }
+
 
 void Playback::
         onFinished()
@@ -236,7 +239,7 @@ bool Playback::
 {
     unsigned nAccumulated_samples = _data.number_of_samples();
 
-    Signal::Intervals expect = invalid_samples();
+    Signal::Intervals expect = _invalid_samples;
     if (!_data.empty() && expect.isEmpty()) {
         TIME_PLAYBACK TaskTimer("Not underfed").suppressTiming();
         return false; // No more expected samples, not underfed
@@ -292,7 +295,7 @@ int Playback::
     }
 
     pBuffer b = _data.readFixedLength( Interval(_playback_itr, _playback_itr+framesPerBuffer) );
-    memcpy( buffer, b->waveform_data->getCpuMemory(), framesPerBuffer*sizeof(float) );
+    memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
     _playback_itr += framesPerBuffer;
 
     if (_data.first_buffer()->sample_offset + _data.number_of_samples() + 10*2024/*framesPerBuffer*/ < _playback_itr ) {

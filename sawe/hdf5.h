@@ -31,6 +31,7 @@ private:
     boost::scoped_ptr<TaskTimer> _timer;
 };
 
+
 template<> void Hdf5Output::add( std::string name, const Signal::Buffer&);
 template<> void Hdf5Output::add( std::string name, const Tfr::Chunk&);
 template<> void Hdf5Output::add( std::string name, const double&);

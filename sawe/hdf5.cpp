@@ -98,20 +98,15 @@ void Hdf5Output::
 {
     TIME_HDF5 TaskTimer tt("Adding buffer '%s'", name.c_str());
 
-	Signal::pBuffer data;
-    const Signal::Buffer* b = &cb;
-	if (b->interleaved()==Signal::Buffer::Interleaved_Complex) {
-        data = b->getInterleaved(Signal::Buffer::Only_Real);
-        b = &*data;
-    }
+    GpuCpuData<float>& b = *cb.waveform_data();
 
-    float* p = b->waveform_data->getCpuMemory();
-    cudaExtent s = b->waveform_data->getNumberOfElements();
+    float* p = b.getCpuMemory();
+    cudaExtent s = b.getNumberOfElements();
 
     const unsigned RANK=1;
     hsize_t     dims[RANK]={s.width};
 
-	herr_t      status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_FLOAT,p);
+    herr_t      status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_FLOAT,p);
     if (0>status) throw runtime_error("Could not create and write a H5T_NATIVE_FLOAT type dataset named '" + name + "'");
 }
 
@@ -133,7 +128,7 @@ Signal::pBuffer Hdf5Input::
     if (H5T_FLOAT!=class_id) throw runtime_error(((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_FLOAT.")).str());
 
     Signal::pBuffer buffer( new Signal::Buffer(0, dims[0], 44100 ) );
-    float* p = buffer->waveform_data->getCpuMemory();
+    float* p = buffer->waveform_data()->getCpuMemory();
 
     status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
     if (0>status) throw runtime_error("Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'");
@@ -325,7 +320,7 @@ Hdf5Chunk::Hdf5Chunk( std::string filename)
 :   _filename(filename) {}
 
 Hdf5Buffer::Hdf5Buffer( std::string filename)
-:   _filename(filename) {}
+    :   _filename(filename) {}
 
 
 void Hdf5Chunk::

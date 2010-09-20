@@ -3,8 +3,8 @@
 #include <QtGui/QMessageBox>
 #include <iostream>
 #include <stdio.h>
-#include "saweui/mainwindow.h"
-#include "saweui/displaywidget.h"
+#include "ui/mainwindow.h"
+#include "ui/displaywidget.h"
 #include "signal/audiofile.h"
 #include "signal/microphonerecorder.h"
 #include <CudaProperties.h>
@@ -17,6 +17,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace Ui;
 
 static const char _sawe_usage_string[] =
         "sonicawe [--parameter=value]* [FILENAME]\n"
@@ -369,7 +370,7 @@ int main(int argc, char *argv[])
         // This row might crash with a segfault if there has been an access
         // violation in the cuda driver.
         // TODO check if it is related to OpenGL bindings.
-        CudaException_CALL_CHECK ( cudaThreadExit() );
+        //CudaException_CALL_CHECK ( cudaThreadExit() );
         return r;
     } catch (const std::exception &x) {
         Sawe::Application::display_fatal_exception(x);

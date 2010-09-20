@@ -1,4 +1,6 @@
-#include "tfr/stftfilter.h"
+#include "stftfilter.h"
+#include "stft.h"
+
 #include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>

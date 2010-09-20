@@ -37,7 +37,7 @@ llvm {
 # Source code
 
 RESOURCES += \
-    saweui/icon-resources.qrc \
+    ui/icon-resources.qrc \
 
 SOURCES += \
     filters/filters.cpp \
@@ -57,11 +57,12 @@ SOURCES += \
     sawe/matlaboperation.cpp \
     sawe/project.cpp \
     sawe/selection.cpp \
-    sawe/timelinewidget.cpp \
-    saweui/displaywidget.cpp \
-    saweui/mainwindow.cpp \
-    saweui/propertiesselection.cpp \
-    saweui/propertiesstroke.cpp \
+    ui/displaywidget.cpp \
+    ui/mainwindow.cpp \
+    ui/propertiesselection.cpp \
+    ui/propertiesstroke.cpp \
+    ui/timelinewidget.cpp \
+    ui/updatewidgetsink.cpp \
     signal/audiofile.cpp \
     signal/buffersource.cpp \
     signal/microphonerecorder.cpp \
@@ -77,6 +78,7 @@ SOURCES += \
     signal/worker.cpp \
     signal/writewav.cpp \
     tfr/chunk.cpp \
+    tfr/complexbuffer.cpp \
     tfr/cwt.cpp \
     tfr/cwtchunk.cpp \
     tfr/cwtfilter.cpp \
@@ -89,8 +91,9 @@ SOURCES += \
     tools/rendermodel.cpp \
     tools/renderview.cpp \
     tools/sectionmodel.cpp \
-    tools/selectionview.cpp \
+    tools/selectioncontroller.cpp \
     tools/selectionmodel.cpp \
+    tools/selectionview.cpp \
     tools/toolfactory.cpp \
 
 HEADERS += \
@@ -115,11 +118,12 @@ HEADERS += \
     sawe/matlaboperation.h \
     sawe/project.h \
     sawe/selection.h \
-    sawe/timelinewidget.h \
-    saweui/displaywidget.h \
-    saweui/mainwindow.h \
-    saweui/propertiesselection.h \
-    saweui/propertiesstroke.h \
+    ui/displaywidget.h \
+    ui/mainwindow.h \
+    ui/propertiesselection.h \
+    ui/propertiesstroke.h \
+    ui/timelinewidget.h \
+    ui/updatewidgetsink.h \
     signal/audiofile.h \
     signal/buffersource.h \
     signal/microphonerecorder.h \
@@ -136,6 +140,7 @@ HEADERS += \
     signal/worker.h \
     signal/writewav.h \
     tfr/chunk.h \
+    tfr/complexbuffer.h \
     tfr/cwt.h \
     tfr/cwtchunk.h \
     tfr/cwtfilter.h \
@@ -150,14 +155,15 @@ HEADERS += \
     tools/rendermodel.h \
     tools/renderview.h \
     tools/sectionmodel.h \
-    tools/selectionview.h \
+    tools/selectioncontroller.h \
     tools/selectionmodel.h \
+    tools/selectionview.h \
     tools/toolfactory.h \
 
 FORMS += \
-    saweui/mainwindow.ui \
-    saweui/propertiesselection.ui \
-    saweui/propertiesstroke.ui \
+    ui/mainwindow.ui \
+    ui/propertiesselection.ui \
+    ui/propertiesstroke.ui \
 
 OTHER_FILES += \
     filters/filters.cu \

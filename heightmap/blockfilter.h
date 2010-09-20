@@ -5,6 +5,7 @@
 #include "tfr/stftfilter.h"
 #include "heightmap/collection.h"
 #include <iostream>
+
 namespace Heightmap
 {
 
@@ -14,6 +15,11 @@ public:
     BlockFilter( Collection* collection ) : Filter(), _collection (collection) {}
 
     virtual void operator()( Tfr::Chunk& chunk );
+
+    virtual Signal::Operation* affecting_source( const Signal::Interval& );
+
+    virtual Signal::Intervals fetch_invalid_samples();
+
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;

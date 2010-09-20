@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-namespace Saweui {
+namespace Ui {
 
 namespace Ui {
     class PropertiesStroke;
@@ -23,5 +23,5 @@ private:
 };
 
 
-} // namespace Saweui
+} // namespace Ui
 #endif // PROPERTIESSTROKE_H

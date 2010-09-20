@@ -1,15 +1,15 @@
-#ifndef SIGNALSTFTFILTER_H
-#define SIGNALSTFTFILTER_H
+#ifndef TFRSTFTFILTER_H
+#define TFRSTFTFILTER_H
 
 #include "tfr/filter.h"
-#include "tfr/cwt.h"
 
 namespace Tfr {
 
 class StftFilter : public virtual Filter
 {
 public:
-    StftFilter( Signal::pOperation source=Signal::pOperation(), Tfr::pTransform transform=Tfr::pTransform() );
+    StftFilter( Signal::pOperation source=Signal::pOperation(),
+                Tfr::pTransform transform=Tfr::pTransform() );
 
     virtual pChunk readChunk( const Signal::Interval& I );
 
@@ -30,4 +30,4 @@ public:
 
 } // namespace Tfr
 
-#endif // SIGNALSTFTFILTER_H
+#endif // TFRSTFTFILTER_H

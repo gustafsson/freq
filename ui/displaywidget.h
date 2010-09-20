@@ -15,6 +15,8 @@
 #include <QMainWindow>
 #include "sawe/project.h"
 
+namespace Ui {
+
 class MouseControl
 {
 private:
@@ -209,6 +211,7 @@ private:
     MouseControl scaleButton;
 };
 
+} // namespace Ui
 
 #endif // DISPLAYWIDGET_H
 

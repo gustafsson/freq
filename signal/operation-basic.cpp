@@ -107,21 +107,20 @@ pBuffer OperationSuperposition::
 {
     pBuffer a = _source->read( I );
     pBuffer b = _source2->read( I );
-    if (a->interleaved()!=Buffer::Only_Real) a = a->getInterleaved(Buffer::Only_Real);
-    if (b->interleaved()!=Buffer::Only_Real) b = b->getInterleaved(Buffer::Only_Real);
 
-    pBuffer r(new Buffer);
-    r->sample_rate = sample_rate();
-    r->sample_offset = std::max( a->sample_offset, b->sample_offset );
-    unsigned l = std::min( a->sample_offset + a->number_of_samples(), b->sample_offset + b->number_of_samples() );
-    l -= r->sample_offset;
+    unsigned offset = std::max( a->sample_offset, b->sample_offset );
+    unsigned length = std::min( a->sample_offset + a->number_of_samples(), b->sample_offset + b->number_of_samples() );
+    length -= offset;
 
-    r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(l,1,1)));
-    float *pa = a->waveform_data->getCpuMemory();
-    float *pb = b->waveform_data->getCpuMemory();
-    float *pr = r->waveform_data->getCpuMemory();
-    pa += r->sample_offset-a->sample_offset;
-    pb += r->sample_offset-b->sample_offset;
+    pBuffer r(new Buffer( offset, length, sample_rate() ));
+
+    float *pa = a->waveform_data()->getCpuMemory();
+    float *pb = b->waveform_data()->getCpuMemory();
+    float *pr = r->waveform_data()->getCpuMemory();
+
+    pa += r->sample_offset - a->sample_offset;
+    pb += r->sample_offset - b->sample_offset;
+
     for (unsigned i=0; i<r->number_of_samples(); i++)
         pr[i] = pa[i] + pb[i];
 

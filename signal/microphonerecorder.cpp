@@ -8,7 +8,6 @@ using namespace std;
 namespace Signal {
 
 MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
-:   _data(SinkSource::AcceptStrategy_ACCEPT_ALL)
 {
     portaudio::System &sys = portaudio::System::instance();
 
@@ -109,18 +108,16 @@ int MicrophoneRecorder::
     const float **in = (const float **)inputBuffer;
     const float *buffer = in[0];
 
-    pBuffer b( new Buffer() );
-    b->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent( framesPerBuffer, 1, 1) ) );
-
-    memcpy ( b->waveform_data->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
+    pBuffer b( new Buffer(0, framesPerBuffer, sample_rate() ) );
+    memcpy ( b->waveform_data()->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
 
     b->sample_offset = number_of_samples();
     b->sample_rate = sample_rate();
 
     _data.put( b );
 
-    // todo solve
-    // emit data_available(this);
+    // todo put to a postsink as well
+    // data_available(this);
 
     return paContinue;
 }
