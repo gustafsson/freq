@@ -30,7 +30,7 @@ using namespace std;
 
 static bool g_invalidFrustum = true;
 
-Renderer::Renderer( pCollection collection )
+Renderer::Renderer( Collection* collection )
 :   draw_piano(false),
     draw_hz(true),
     camera(0,0,0),
@@ -434,14 +434,26 @@ bool Renderer::renderSpectrogramRef( Reference ref )
         }
 
     } else {
-        // getBlock would try to find something else if the requested block wasn't readily available.
-        // If getBlock fails, we're most likely out of memory. Indicate this silently by not drawing the surface but only a wireframe
+        // getBlock would try to find something else if the requested block
+        // wasn't readily available.
 
-        glBegin(GL_LINE_LOOP );
+        // If getBlock fails, we're most likely out of memory. Indicate this
+        // silently by not drawing the surface but only a wireframe.
+
+        glPushAttribContext attribs;
+
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+        glDisable(GL_COLOR_MATERIAL);
+        glColor4f( 1.0f, 0.0f, 0.0f, 1.0f );
+
+        glBegin(GL_LINES );
             glVertex3f( 0, 0, 0 );
             glVertex3f( 0, 0, 1 );
             glVertex3f( 1, 0, 0 );
             glVertex3f( 1, 0, 1 );
+            glVertex3f( 0.5f, 0, 0.5f );
+            glVertex3f( 0.25f, 0, 0.5f );
         glEnd();
     }
 

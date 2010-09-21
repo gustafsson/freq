@@ -54,20 +54,34 @@ public:
     /**
       chunk_offset is the start of the chunk, along the timeline, measured in
       samples.
+
+        @see first_valid_sample
       */
     unsigned chunk_offset;
-    float sample_rate; // columns per second
+
 
     /**
-      first_valid_sample is the first nonredundant column. first_valid_sample
-      is also the number of redundant columns before the nonredundant data.
+      first_valid_sample and n_valid_samples are such that the inverse
+      transform would produce a buffer with this interval:
+
+        Interval(
+            chunk_offset + first_valid_sample,
+            chunk_offset + first_valid_sample + n_valid_samples )
       */
     unsigned first_valid_sample;
 
+
     /**
-      the number of nonredundant columns
+        @see first_valid_sample
       */
     unsigned n_valid_samples;
+
+
+    /**
+      Columns per second.
+      */
+    float sample_rate;
+
 
     float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
     float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }

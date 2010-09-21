@@ -10,7 +10,7 @@ RenderView::
             _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
             model(model)
 {
-    renderer.reset( new Heightmap::Renderer( model->collection ));
+    renderer.reset( new Heightmap::Renderer( model->collection.get() ));
 }
 
 

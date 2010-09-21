@@ -47,8 +47,8 @@ public:
 
     std::string selection_filename;
     unsigned playback_device;
-    Heightmap::pCollection collection();
-    Heightmap::pRenderer renderer();
+    Heightmap::Collection* collection();
+    Heightmap::Renderer* renderer();
     Tfr::CwtFilter* getCwtFilterHead(); // todo remove
 
 /*    virtual void keyPressEvent( QKeyEvent *e );

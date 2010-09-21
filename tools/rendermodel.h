@@ -14,7 +14,7 @@ namespace Tools
     public:
         RenderModel(Sawe::Project* p);
 
-        Heightmap::pCollection collection;
+        boost::scoped_ptr<Heightmap::Collection> collection;
         Signal::pWorkerCallback collectionCallback;
 
     private:

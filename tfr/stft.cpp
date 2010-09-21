@@ -108,7 +108,7 @@ pChunk Fft::
     chunk->first_valid_sample = 0;
     chunk->max_hz = b.sample_rate / 2;
     chunk->min_hz = chunk->max_hz / chunk->nScales();
-    chunk->n_valid_samples = chunk->nSamples();
+    chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
     chunk->sample_rate = b.sample_rate / chunk->nScales();
 
     return chunk;
@@ -257,7 +257,7 @@ Tfr::pChunk Stft::
             CufftException_SAFE_CALL(cufftPlan1d(&fft_many, _chunk_size, CUFFT_C2C, slices));
 
             CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
-            CufftException_SAFE_CALL(cufftExecC2C(fft_many, &input[i*n.width], &output[i*n.width], CUFFT_FORWARD));
+            CufftException_SAFE_CALL(cufftExecC2C(fft_many, input + i*n.width, output + i*n.width, CUFFT_FORWARD));
             cufftDestroy(fft_many);
 
             i += slices;
@@ -270,13 +270,13 @@ Tfr::pChunk Stft::
     }
 
     chunk->axis_scale = AxisScale_Linear;
+    chunk->order = Chunk::Order_column_major;
     chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
     chunk->max_hz = b.sample_rate / 2;
-    chunk->min_hz = chunk->max_hz / _chunk_size;
-    chunk->n_valid_samples = (chunk->nSamples() / _chunk_size)*_chunk_size;
-    chunk->order = Chunk::Order_column_major;
-    chunk->sample_rate = b.sample_rate / (float)_chunk_size;
+    chunk->min_hz = chunk->max_hz / chunk->nScales();
+    chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
+    chunk->sample_rate = b.sample_rate / chunk->nScales();
 
     return chunk;
 }

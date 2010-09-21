@@ -24,9 +24,9 @@ public:
         ColorMode_Grayscale = 1
     };
 
-    Renderer( pCollection collection );
+    Renderer( Collection* collection );
 
-    pCollection collection() { return _collection; }
+    Collection* collection() { return _collection; }
 
     void draw( float scaley );
     void drawAxes( float T );
@@ -41,7 +41,7 @@ public:
     float y_scale;
 private:
     std::vector<GLvector> clippedFrustum;
-    pCollection _collection;
+    Collection* _collection;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;

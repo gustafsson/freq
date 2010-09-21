@@ -40,4 +40,18 @@ pBuffer BufferSource::
     return zeros(I);
 }
 
+
+unsigned BufferSource::
+        sample_rate()
+{
+    return _waveform->sample_rate;
+}
+
+
+long unsigned BufferSource::
+        number_of_samples()
+{
+    return _waveform->number_of_samples();
+}
+
 } // namespace Signal

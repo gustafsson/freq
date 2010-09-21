@@ -177,7 +177,7 @@ void StftToBlock::
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
 
     float out_stft_size = block->ref.sample_rate() / chunk.sample_rate;
-    float out_offset = (a.time - (chunk.chunk_offset / chunk.sample_rate))
+    float out_offset = (a.time - (chunk.chunk_offset / this->sample_rate() ))
                        * block->ref.sample_rate();
 
     ::expandCompleteStft( chunk.transform_data->getCudaGlobal(),

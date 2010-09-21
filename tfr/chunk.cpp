@@ -14,9 +14,9 @@ Chunk::
     max_hz(0),
     axis_scale(AxisScale_Linear),
     chunk_offset(0),
-    sample_rate(0),
     first_valid_sample(0),
-    n_valid_samples(0)
+    n_valid_samples(0),
+    sample_rate(0)
 {}
 
 unsigned Chunk::

@@ -28,6 +28,9 @@ ToolFactory::
 {
     // TODO figure out a way to make sure that the rendering thread is not
     // doing anything with the views
+
+    // The _render_controller widget is released by MainWindow that owns the
+    // widget
 }
 
 

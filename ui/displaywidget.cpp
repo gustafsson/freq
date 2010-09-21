@@ -333,7 +333,7 @@ void DisplayWidget::receiveSetTransform_Cwt()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection().get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -350,7 +350,7 @@ void DisplayWidget::receiveSetTransform_Stft()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(project->tools().render_view.renderer->collection().get());
+    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(project->tools().render_view.renderer->collection());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
 
@@ -366,7 +366,7 @@ void DisplayWidget::receiveSetTransform_Cwt_phase()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection().get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
@@ -383,7 +383,7 @@ void DisplayWidget::receiveSetTransform_Cwt_reassign()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection().get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
@@ -402,7 +402,7 @@ void DisplayWidget::receiveSetTransform_Cwt_ridge()
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection().get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -714,17 +714,17 @@ void DisplayWidget::put( Signal::pBuffer b, Signal::pOperation )
 }*/
 
 
-Heightmap::pCollection DisplayWidget::
+Heightmap::Collection* DisplayWidget::
         collection()
 {
-    return project->tools().render_model.collection;
+    return project->tools().render_model.collection.get();
 }
 
 
-Heightmap::pRenderer DisplayWidget::
+Heightmap::Renderer* DisplayWidget::
         renderer()
 {
-    return project->tools().render_view.renderer;
+    return project->tools().render_view.renderer.get();
 }
 
 
@@ -800,9 +800,10 @@ void DisplayWidget::mousePressEvent ( QMouseEvent * e )
 //    if(leftButton.isDown() && rightButton.isDown())
 //        selectionButton.press( e->x(), this->height() - e->y() );
     
-    update();
     _prevX = e->x(),
     _prevY = e->y();
+
+    update();
 }
 
 void DisplayWidget::mouseReleaseEvent ( QMouseEvent * e )
@@ -1008,57 +1009,59 @@ void DisplayWidget::timeOutSlot()
 }
 #endif
 
-static void printQGLFormat(const QGLFormat& f, std::string title)
-{
-    TaskTimer tt("QGLFormat %s", title.c_str());
-    tt.info("accum=%d",f.accum());
-    tt.info("accumBufferSize=%d",f.accumBufferSize());
-    tt.info("alpha=%d",f.alpha());
-    tt.info("alphaBufferSize=%d",f.alphaBufferSize());
-    tt.info("blueBufferSize=%d",f.blueBufferSize());
-    tt.info("depth=%d",f.depth());
-    tt.info("depthBufferSize=%d",f.depthBufferSize());
-    tt.info("directRendering=%d",f.directRendering());
-    tt.info("doubleBuffer=%d",f.doubleBuffer());
-    tt.info("greenBufferSize=%d",f.greenBufferSize());
-    tt.info("hasOverlay=%d",f.hasOverlay());
-    tt.info("redBufferSize=%d",f.redBufferSize());
-    tt.info("rgba=%d",f.rgba());
-    tt.info("sampleBuffers=%d",f.sampleBuffers());
-    tt.info("samples=%d",f.samples());
-    tt.info("stencil=%d",f.stencil());
-    tt.info("stencilBufferSize=%d",f.stencilBufferSize());
-    tt.info("stereo=%d",f.stereo());
-    tt.info("swapInterval=%d",f.swapInterval());
-    tt.info("");
-    tt.info("hasOpenGL=%d",f.hasOpenGL());
-    tt.info("hasOpenGLOverlays=%d",f.hasOpenGLOverlays());
-    QGLFormat::OpenGLVersionFlags flag = f.openGLVersionFlags();
-    tt.info("OpenGL_Version_None=%d", QGLFormat::OpenGL_Version_None == flag);
-    tt.info("OpenGL_Version_1_1=%d", QGLFormat::OpenGL_Version_1_1 & flag);
-    tt.info("OpenGL_Version_1_2=%d", QGLFormat::OpenGL_Version_1_2 & flag);
-    tt.info("OpenGL_Version_1_3=%d", QGLFormat::OpenGL_Version_1_3 & flag);
-    tt.info("OpenGL_Version_1_4=%d", QGLFormat::OpenGL_Version_1_4 & flag);
-    tt.info("OpenGL_Version_1_5=%d", QGLFormat::OpenGL_Version_1_5 & flag);
-    tt.info("OpenGL_Version_2_0=%d", QGLFormat::OpenGL_Version_2_0 & flag);
-    tt.info("OpenGL_Version_2_1=%d", QGLFormat::OpenGL_Version_2_1 & flag);
-    tt.info("OpenGL_Version_3_0=%d", QGLFormat::OpenGL_Version_3_0 & flag);
-    tt.info("OpenGL_ES_CommonLite_Version_1_0=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_0 & flag);
-    tt.info("OpenGL_ES_Common_Version_1_0=%d", QGLFormat::OpenGL_ES_Common_Version_1_0 & flag);
-    tt.info("OpenGL_ES_CommonLite_Version_1_1=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_1 & flag);
-    tt.info("OpenGL_ES_Common_Version_1_1=%d", QGLFormat::OpenGL_ES_Common_Version_1_1 & flag);
-    tt.info("OpenGL_ES_Version_2_0=%d", QGLFormat::OpenGL_ES_Version_2_0 & flag);
-}
+// todo remove
+//static void printQGLFormat(const QGLFormat& f, std::string title)
+//{
+//    TaskTimer tt("QGLFormat %s", title.c_str());
+//    tt.info("accum=%d",f.accum());
+//    tt.info("accumBufferSize=%d",f.accumBufferSize());
+//    tt.info("alpha=%d",f.alpha());
+//    tt.info("alphaBufferSize=%d",f.alphaBufferSize());
+//    tt.info("blueBufferSize=%d",f.blueBufferSize());
+//    tt.info("depth=%d",f.depth());
+//    tt.info("depthBufferSize=%d",f.depthBufferSize());
+//    tt.info("directRendering=%d",f.directRendering());
+//    tt.info("doubleBuffer=%d",f.doubleBuffer());
+//    tt.info("greenBufferSize=%d",f.greenBufferSize());
+//    tt.info("hasOverlay=%d",f.hasOverlay());
+//    tt.info("redBufferSize=%d",f.redBufferSize());
+//    tt.info("rgba=%d",f.rgba());
+//    tt.info("sampleBuffers=%d",f.sampleBuffers());
+//    tt.info("samples=%d",f.samples());
+//    tt.info("stencil=%d",f.stencil());
+//    tt.info("stencilBufferSize=%d",f.stencilBufferSize());
+//    tt.info("stereo=%d",f.stereo());
+//    tt.info("swapInterval=%d",f.swapInterval());
+//    tt.info("");
+//    tt.info("hasOpenGL=%d",f.hasOpenGL());
+//    tt.info("hasOpenGLOverlays=%d",f.hasOpenGLOverlays());
+//    QGLFormat::OpenGLVersionFlags flag = f.openGLVersionFlags();
+//    tt.info("OpenGL_Version_None=%d", QGLFormat::OpenGL_Version_None == flag);
+//    tt.info("OpenGL_Version_1_1=%d", QGLFormat::OpenGL_Version_1_1 & flag);
+//    tt.info("OpenGL_Version_1_2=%d", QGLFormat::OpenGL_Version_1_2 & flag);
+//    tt.info("OpenGL_Version_1_3=%d", QGLFormat::OpenGL_Version_1_3 & flag);
+//    tt.info("OpenGL_Version_1_4=%d", QGLFormat::OpenGL_Version_1_4 & flag);
+//    tt.info("OpenGL_Version_1_5=%d", QGLFormat::OpenGL_Version_1_5 & flag);
+//    tt.info("OpenGL_Version_2_0=%d", QGLFormat::OpenGL_Version_2_0 & flag);
+//    tt.info("OpenGL_Version_2_1=%d", QGLFormat::OpenGL_Version_2_1 & flag);
+//    tt.info("OpenGL_Version_3_0=%d", QGLFormat::OpenGL_Version_3_0 & flag);
+//    tt.info("OpenGL_ES_CommonLite_Version_1_0=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_0 & flag);
+//    tt.info("OpenGL_ES_Common_Version_1_0=%d", QGLFormat::OpenGL_ES_Common_Version_1_0 & flag);
+//    tt.info("OpenGL_ES_CommonLite_Version_1_1=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_1 & flag);
+//    tt.info("OpenGL_ES_Common_Version_1_1=%d", QGLFormat::OpenGL_ES_Common_Version_1_1 & flag);
+//    tt.info("OpenGL_ES_Version_2_0=%d", QGLFormat::OpenGL_ES_Version_2_0 & flag);
+//}
 
 
-static void printQGLWidget(const QGLWidget& w, std::string title)
-{
-    TaskTimer tt("QGLWidget %s", title.c_str());
-    tt.info("doubleBuffer=%d", w.doubleBuffer());
-    tt.info("isSharing=%d", w.isSharing());
-    tt.info("isValid=%d", w.isValid());
-    printQGLFormat( w.format(), "");
-}
+// todo remove
+//static void printQGLWidget(const QGLWidget& w, std::string title)
+//{
+//    TaskTimer tt("QGLWidget %s", title.c_str());
+//    tt.info("doubleBuffer=%d", w.doubleBuffer());
+//    tt.info("isSharing=%d", w.isSharing());
+//    tt.info("isValid=%d", w.isValid());
+//    printQGLFormat( w.format(), "");
+//}
 
 
 void DisplayWidget::initializeGL()
@@ -1094,7 +1097,7 @@ void DisplayWidget::initializeGL()
     glLightfv(GL_LIGHT1, GL_POSITION,LightPosition);
     glEnable(GL_LIGHT1);
     glEnable(GL_LIGHTING);
-    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_COLOR_MATERIAL); // TODO disable?
 }
 
 
@@ -1248,7 +1251,7 @@ void DisplayWidget::paintGL()
     } catch (const CudaException &x) {
         TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
         if (2>tryGc) {
-            Heightmap::pCollection c=project->tools().render_view.renderer->collection();
+            Heightmap::Collection* c=project->tools().render_view.renderer->collection();
             c->reset(); // note, not c.reset()
             project->tools().render_view.renderer.reset();
             project->tools().render_view.renderer.reset(new Heightmap::Renderer( c ));

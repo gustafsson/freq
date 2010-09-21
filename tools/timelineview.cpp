@@ -126,6 +126,8 @@ void TimelineView::
 void TimelineView::
         paintGL()
 {
+    return;
+
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
     static int exceptCount = 0;

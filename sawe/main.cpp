@@ -19,6 +19,7 @@
 #include <QString>
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
+#include <cuda.h>
 
 using namespace std;
 using namespace boost;
@@ -187,14 +188,29 @@ static int handle_options(char ***argv, int *argc)
 }
 
 
-bool check_cuda() {
+static bool check_cuda( bool use_OpenGL_bindings ) {
     stringstream ss;
     void* ptr=(void*)0;
     CudaException namedError(cudaSuccess);
+
+
     try {
-        CudaException_CALL_CHECK ( cudaMalloc( &ptr, 1024 ));
-        CudaException_CALL_CHECK ( cudaFree( ptr ));
-        GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
+        if (CudaProperties::haveCuda())
+        {
+            // Might need cudaGLSetGLDevice later on, but it can't be called
+            // until we have created an OpenGL context.
+            if (use_OpenGL_bindings)
+            {
+                CudaException_SAFE_CALL( cudaThreadExit() );
+                CudaException_SAFE_CALL( cudaGLSetGLDevice( 0 ) );
+            }
+
+            CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));
+            CudaException_SAFE_CALL( cudaFree( ptr ));
+            GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
+
+            return true;
+        }
     }
     catch (const CudaException& x) {
         namedError = x;
@@ -207,8 +223,7 @@ bool check_cuda() {
         ptr = 0;
     }
     
-    if (ptr && CudaProperties::haveCuda())
-        return true;
+    // Show error messages:
 
     if (cudaErrorInsufficientDriver == namedError.getCudaError())
     {
@@ -261,6 +276,8 @@ void validate_arguments() {
 }
 
 
+#include <QGLContext>
+
 int main(int argc, char *argv[])
 {
 //#ifndef __GNUC__
@@ -270,7 +287,8 @@ int main(int argc, char *argv[])
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
     Sawe::Application a(argc, argv);
-    if (!check_cuda())
+
+    if (!check_cuda( false ))
         return -1;
 
     printf("Fastest size = %u\n", Tfr::Stft::build_performance_statistics(true, 0.1f));
@@ -366,15 +384,23 @@ int main(int argc, char *argv[])
 
 		a.openadd_project( p );
 
+        p->mainWindow(); // Ensures that an OpenGL context is created
+        BOOST_ASSERT( QGLContext::currentContext() );
+
+        // Recreate the cuda context and use OpenGL bindings
+        if (!check_cuda( true ))
+            return -1;
+
 		p.reset(); // a keeps a copy of pProject
 
         int r = a.exec();
 
-        // This row might crash with a segfault if there has been an access
-        // violation in the cuda driver. Do not uncomment it but roll back
-        // and find the cause of access violation. Even if it doesn't
-        // explicitly crash on your computer it might crash for someone else.
-        CudaException_CALL_CHECK ( cudaThreadExit() );
+        // When the OpenGL context is destroyed, the Cuda context becomes
+        // invalid. Check that some kind of cleanup took place and that the
+        // cuda context doesn't think it is still valid.
+        BOOST_ASSERT( 0 == QGLContext::currentContext() );
+        BOOST_ASSERT( CUDA_ERROR_INVALID_CONTEXT == cuCtxGetDevice( 0 ));
+
         return r;
     } catch (const std::exception &x) {
         Sawe::Application::display_fatal_exception(x);

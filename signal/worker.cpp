@@ -51,7 +51,7 @@ bool Worker::
     if (todo_list().isEmpty())
         return false;
 
-    todo_list().print(__FUNCTION__);
+    // todo_list().print(__FUNCTION__);
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = 19520;
     work_chunks++;
@@ -129,7 +129,7 @@ void Worker::
         _todo_list = v;
     }
 
-    todo_list().print(__FUNCTION__);
+    // todo_list().print(__FUNCTION__);
 
     if (!v.isEmpty())
         _todo_condition.wakeAll();

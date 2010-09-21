@@ -74,7 +74,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
 
         glAttachShader(prg, shader);
-        glDeleteShader(shader);
+        glDeleteShader(shader); // TODO why delete shader?
     } catch (const std::exception &x) {
 #ifndef __APPLE__
         TIME_COMPILESHADER TaskTimer("Failed, throwing %s", demangle(typeid(x).name()).c_str()).suppressTiming();
@@ -120,14 +120,7 @@ GlBlock( Collection* collection )
 {
     TIME_GLBLOCK TaskTimer tt("GlBlock()");
 
-    //_renderer->setSize(renderer->spectrogram()->samples_per_block(), renderer->spectrogram()->scales_per_block());
-    unsigned height_vbo = *_height;
-    unsigned slope_vbo = *_slope;
-//    cudaGLRegisterBufferObject(height_vbo);
-    CudaException_CALL_CHECK( cudaGLRegisterBufferObject(slope_vbo) );
-    CudaException_CALL_CHECK( cudaGLUnregisterBufferObject(slope_vbo) );
-//    cudaGLUnregisterBufferObject(height_vbo);
-    return;
+    // TODO read up on OpenGL interop in CUDA 3.0, cudaGLRegisterBufferObject is old, like CUDA 1.0 or something ;)
     cudaGLRegisterBufferObject(*_height);
     cudaGLRegisterBufferObject(*_slope);
 
@@ -170,11 +163,7 @@ GlBlock::
 {
     TIME_GLBLOCK TaskTimer tt("~GlBlock() _tex_height=%u",_tex_height);
 
-    unsigned height_vbo = *_height;
-    unsigned slope_vbo = *_slope;
-
     unmap();
-    return;
 
     if (_tex_height)
     {
@@ -265,10 +254,10 @@ void GlBlock::
 void GlBlock::
         draw()
 {
+    unmap();
+
     unsigned meshW = _collection->samples_per_block();
     unsigned meshH = _collection->scales_per_block();
-
-    unmap();
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _tex_slope);

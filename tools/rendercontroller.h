@@ -11,6 +11,7 @@ namespace Tools
         Q_OBJECT
     public:
         RenderController( RenderView *view );
+        ~RenderController();
 
     private:
         RenderModel *model;

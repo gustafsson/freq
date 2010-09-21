@@ -283,8 +283,8 @@ else:OBJECTS_DIR = tmp/release/
 
 ### CUDA Compiler flags
 emulation: CUDA_FLAGS += --device-emulation
-emulation: LIBS += -lcufftemu -lcudartemu
-!emulation: LIBS += -lcufft -lcudart
+emulation: LIBS += -lcufftemu -lcudartemu -lcudaemu
+!emulation: LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
 

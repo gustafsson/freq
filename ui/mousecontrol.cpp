@@ -112,7 +112,7 @@ bool MouseControl::
     oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
 
     float minAngle = 3;
-    if( s < 0 || world_coord[0][1]-world_coord[1][1] < scale*sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
+    if (0) if( s < 0 || world_coord[0][1]-world_coord[1][1] < scale*sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
         return false;
 
     return test[0] && test[1];
@@ -144,7 +144,6 @@ bool MouseControl::
 void MouseControl::
         press( float x, float y )
 {
-    touch();
     update( x, y );
     down = true;
 }

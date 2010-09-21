@@ -15,6 +15,7 @@
 #include <QThread>
 #include <neat_math.h>
 #include <debugmacros.h>
+#include <Statistics.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -42,6 +43,7 @@ Collection::
     _postsink( new PostSink )
 {
     COUTVAL( _postsink->fetch_invalid_samples() ); // todo remove
+
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
     // Updated as soon as the first chunk is received
@@ -96,7 +98,7 @@ unsigned Collection::
 {
     QMutexLocker l(&_cache_mutex);
 
-    TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
+    // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
@@ -354,11 +356,10 @@ pBlock Collection::
         pBlock attempt( new Block(ref));
         attempt->glblock.reset( new GlBlock( this ));
         {
-            //GlBlock::pHeight h = attempt->glblock->height();
-            //GlBlock::pSlope sl = attempt->glblock->slope();
+            GlBlock::pHeight h = attempt->glblock->height();
+            GlBlock::pSlope sl = attempt->glblock->slope();
         }
-        //attempt->glblock->unmap();
-        attempt->glblock.reset();
+        attempt->glblock->unmap();
 
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
@@ -377,6 +378,9 @@ pBlock Collection::
           application can still continue and use filters.
           */
         TaskTimer("Collection::attempt swallowed CudaException.\n%s", x.what()).suppressTiming();
+
+        QMutexLocker l(&_cache_mutex);
+        _cache.clear();
     }
     catch (const GlException& x)
     {
@@ -397,7 +401,6 @@ pBlock Collection::
     // Try to allocate a new block
 
     pBlock block = attempt( ref );
-    return pBlock(); // return null-pointer
 
 	QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
     if ( 0 == block.get() && !_cache.empty()) {
@@ -495,12 +498,14 @@ pBlock Collection::
                 }
             }
 
-        } else if ( 0 /* set dummy values */ ) {
+        }
+
+        if ( 1 /* set dummy values */ ) {
             GlBlock::pHeight h = block->glblock->height();
             float* p = h->data->getCpuMemory();
-            for (unsigned s = 0; s<_samples_per_block; s++) {
+            for (unsigned s = 0; s<_samples_per_block/2; s++) {
                 for (unsigned f = 0; f<_scales_per_block; f++) {
-                    p[ f*_samples_per_block + s] = sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
+                    p[ f*_samples_per_block + s] = 0.05f+0.05f*sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
                 }
             }
         }
@@ -545,11 +550,11 @@ pBlock Collection::
             }
         }
 
-        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 16<_recent.size())
+        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 0<youngest_count)
         {
             Position a,b;
             _recent.back()->ref.getArea(a,b);
-            TaskTimer tt("Removing block [%g, %g]. %u remaining blocks, recent %u blocks.", a.time, b.time, _cache.size(), _recent.size());
+            TaskTimer tt("Removing block [%g:%g, %g:%g]. %u remaining blocks, recent %u blocks.", a.time, a.scale, b.time, b.scale, _cache.size(), _recent.size());
 
             _cache.erase(_recent.back()->ref);
             _recent.pop_back();
@@ -628,11 +633,18 @@ void Collection::
 
     pBuffer buff = fast_source->readFixedLength( Interval( first_sample, last_sample) );
 
+    Statistics<float> stat( buff->waveform_data() );
+
     Tfr::pChunk stft = trans( buff );
 
+    GpuCpuData<float> f2( stft->transform_data->getCpuMemory(), stft->transform_data->getNumberOfElements() );
+    Statistics<float> stat2( &f2 );
+
     StftToBlock stftmerger(this);
+    stftmerger.source( fast_source );
     stftmerger.mergeChunk(block, *stft, block->glblock->height()->data);
     block->valid_samples = Intervals();
+    block->valid_samples = Intervals::Intervals_ALL;
 }
 
 

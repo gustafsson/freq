@@ -349,7 +349,6 @@ private:
     bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
     bool        mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream );
 };
-typedef boost::shared_ptr<Collection> pCollection;
 
 } // namespace Heightmap
 

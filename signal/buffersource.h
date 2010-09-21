@@ -12,8 +12,8 @@ public:
     BufferSource( pBuffer _waveform = pBuffer() );
 
     virtual pBuffer read( const Interval& I );
-    virtual unsigned sample_rate() { return _waveform->sample_rate; }
-    virtual long unsigned number_of_samples() { return _waveform->number_of_samples(); }
+    virtual unsigned sample_rate();
+    virtual long unsigned number_of_samples();
 
 protected:
     pBuffer _waveform;

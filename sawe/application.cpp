@@ -163,6 +163,7 @@ pProject Application::
     pProject p = Project::createRecording( record_device );
     if (p)
 		openadd_project(p);
+
     return p;
 }
 
