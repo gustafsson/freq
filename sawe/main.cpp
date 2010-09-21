@@ -186,8 +186,8 @@ bool check_cuda() {
     void* ptr=(void*)0;
     CudaException namedError(cudaSuccess);
     try {
-        CudaException_CALL_CHECK ( cudaMalloc( &ptr, 1024 ));
-        CudaException_CALL_CHECK ( cudaFree( ptr ));
+        CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));
+        CudaException_SAFE_CALL( cudaFree( ptr ));
         GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
     }
     catch (const CudaException& x) {
