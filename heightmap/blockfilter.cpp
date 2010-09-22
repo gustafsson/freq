@@ -180,6 +180,8 @@ void StftToBlock::
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
 
+    float block_fs = block->ref.sample_rate();
+//    float out_stft_size = block->ref.sample_rate() / chunk.sample_rate;
     float out_stft_size = block->ref.sample_rate() / chunk.sample_rate;
     float out_offset = (a.time - (chunk.chunk_offset / this->sample_rate() ))
                        * block->ref.sample_rate();

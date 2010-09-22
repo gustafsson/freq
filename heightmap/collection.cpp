@@ -626,11 +626,14 @@ void Collection::
     // interpolations so that there won't be any edges between blocks
 
     if (first_sample >= margin)
-        first_sample = ((first_sample - margin)/trans.chunk_size()) * trans.chunk_size();
+        first_sample = ((first_sample - margin)/margin) * margin;
     else
         first_sample = 0;
 
-    last_sample = ((last_sample + margin)/trans.chunk_size()) * trans.chunk_size();
+    last_sample = ((last_sample + 2*margin)/margin) * margin;
+
+    //first_sample = 0;
+    //last_sample = fast_source->number_of_samples();
 
     pBuffer buff = fast_source->readFixedLength( Interval( first_sample, last_sample) );
 

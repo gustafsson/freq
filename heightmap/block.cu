@@ -637,7 +637,7 @@ __global__ void kernel_expand_complete_stft(
         float q = ts_read;
         unsigned ts_start = (unsigned)q;
         float p = min( hz_read_norm*in_stft_size, in_stft_size-1.f );
-        unsigned read_start = in_stft_size*ts_start + (unsigned)p;
+        unsigned read_start = (unsigned)p;
 
         // q and p measures how bad read_start is an approximation to ts_read
         // and hz_read_norm
@@ -650,17 +650,17 @@ __global__ void kernel_expand_complete_stft(
             return;
 
         float2 c;
-        c = inStft.elem(make_elemSize3_t( read_start, 0, 0 ));
+        c = inStft.elem(make_elemSize3_t( read_start, ts_start, 0 ));
         float val1 = sqrt(c.x*c.x + c.y*c.y);
 
-        c = inStft.elem(make_elemSize3_t( read_start+in_stft_size, 0, 0 ));
+        c = inStft.elem(make_elemSize3_t( read_start, ts_start+1, 0 ));
         float val2 = sqrt(c.x*c.x + c.y*c.y);
 
-        unsigned read_secondline = min(read_start+1, (1+ts_start)*in_stft_size-1);
-        c = inStft.elem(make_elemSize3_t( read_secondline, 0, 0 ));
+        unsigned read_secondline = min(read_start+1, in_stft_size-1);
+        c = inStft.elem(make_elemSize3_t( read_secondline, ts_start, 0 ));
         float val3 = sqrt(c.x*c.x + c.y*c.y);
 
-        c = inStft.elem(make_elemSize3_t( read_secondline+in_stft_size, 0, 0 ));
+        c = inStft.elem(make_elemSize3_t( read_secondline, ts_start+1, 0 ));
         float val4 = sqrt(c.x*c.x + c.y*c.y);
 
         // Perform a kind of bicubic interpolation

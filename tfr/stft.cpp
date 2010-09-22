@@ -276,7 +276,7 @@ Tfr::pChunk Stft::
     chunk->max_hz = b.sample_rate / 2;
     chunk->min_hz = chunk->max_hz / chunk->nScales();
     chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
-    chunk->sample_rate = b.sample_rate / chunk->nScales();
+    chunk->sample_rate = b.sample_rate / (float)chunk->nScales();
 
     return chunk;
 }
