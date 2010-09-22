@@ -19,6 +19,7 @@
 #include <QString>
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
+#include <QGLContext>
 #include <cuda.h>
 
 using namespace std;
@@ -276,8 +277,6 @@ void validate_arguments() {
 }
 
 
-#include <QGLContext>
-
 int main(int argc, char *argv[])
 {
 //#ifndef __GNUC__
@@ -410,4 +409,3 @@ int main(int argc, char *argv[])
         return -3;
     }
 }
-
