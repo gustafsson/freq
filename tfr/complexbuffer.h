@@ -33,7 +33,7 @@ public:
     /**
         Overloaded from buffer
     */
-    virtual unsigned number_of_samples() const { return _complex_waveform_data->getNumberOfElements().width/2; }
+    virtual unsigned number_of_samples() const { return _complex_waveform_data->getNumberOfElements().width; }
 
 
     unsigned        sample_offset;

@@ -500,7 +500,7 @@ pBlock Collection::
 
         }
 
-        if ( 1 /* set dummy values */ ) {
+        if ( 0 /* set dummy values */ ) {
             GlBlock::pHeight h = block->glblock->height();
             float* p = h->data->getCpuMemory();
             for (unsigned s = 0; s<_samples_per_block/2; s++) {
@@ -611,6 +611,7 @@ void Collection::
 {
     Tfr::Stft trans;
     trans.set_approximate_chunk_size(1 << 12); // 4096
+    trans.set_approximate_chunk_size(1 << 13); // 8192
 
     Position a, b;
     block->ref.getArea(a,b);

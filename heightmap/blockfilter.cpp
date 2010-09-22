@@ -170,8 +170,12 @@ void StftToBlock::
     block->ref.getArea(a,b);
 
 
-    float tmin = chunk.min_hz;
-    float tmax = chunk.max_hz;
+    // float tmin = chunk.min_hz;
+    // float tmax = chunk.max_hz;
+    // These doesn't depent on the transform of choice but depend on what
+    // parameters are set for the heightmap plot
+    float tmin = 20;
+    float tmax = 22050;
 
     float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
