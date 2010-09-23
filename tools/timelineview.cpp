@@ -8,6 +8,7 @@
 #include "ui/displaywidget.h"
 #include <QDockWidget>
 #include "toolfactory.h"
+#include "ui/mainwindow.h"
 
 #undef max
 
@@ -34,7 +35,7 @@ TimelineView::
         throw std::invalid_argument("Failed to open a second OpenGL window. Couldn't find a valid rendering context to share.");
     }
 
-    QMainWindow *MainWindow = dynamic_cast<QMainWindow*>(displaywidget->parentWidget());
+    Ui::SaweMainWindow* MainWindow = dynamic_cast<Ui::SaweMainWindow*>(p->mainWindow());
     QDockWidget* dock = new QDockWidget(MainWindow);
     dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
     dock->setMinimumSize(QSize(42, 79));
@@ -42,6 +43,7 @@ TimelineView::
     dock->setContextMenuPolicy(Qt::NoContextMenu);
     dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
     dock->setWidget(this);
+    dock->setWindowTitle("Timeline");
     dock->show();
     MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
 
@@ -126,8 +128,6 @@ void TimelineView::
 void TimelineView::
         paintGL()
 {
-    return;
-
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
     static int exceptCount = 0;

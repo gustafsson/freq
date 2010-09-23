@@ -80,20 +80,21 @@ void SaweMainWindow::
 //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
 
-//    this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
-//    this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
-//    this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
-//    this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
+    // TODO move into each tool
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
 
     // todo move into toolfactory
-//    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
-//    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
-//    ui->topFilterWindow->raise();
+    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
+    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
+    ui->topFilterWindow->raise();
 
     // todo move into toolfactory
-//    this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
-//    this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
-//    this->addToolBar( Qt::BottomToolBarArea, ui->toolBarPlay );
+    this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
+    this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
+    this->addToolBar( Qt::BottomToolBarArea, ui->toolBarPlay );
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
     //ui->toolPropertiesWindow-
@@ -106,13 +107,13 @@ void SaweMainWindow::
 
 
     // TODO move into brush tool
-    /*{   ComboBoxAction * qb = new ComboBoxAction();
+    {   ComboBoxAction * qb = new ComboBoxAction();
         qb->addActionItem( ui->actionAmplitudeBrush );
         qb->addActionItem( ui->actionAirbrush );
         qb->addActionItem( ui->actionSmoothBrush );
         qb->setEnabled( false );
         ui->toolBarTool->addWidget( qb );
-    }*/
+    }
 
 
     // TODO what does actionToolSelect do?
@@ -126,7 +127,7 @@ void SaweMainWindow::
 }
 
 /*
- todo remove
+ todo move into each separate tool
 void SaweMainWindow::slotCheckWindowStates(bool)
 {
     unsigned int size = controlledWindows.size();
@@ -146,7 +147,7 @@ void SaweMainWindow::slotCheckActionStates(bool)
 */
 
 /*
- todo remove
+ todo create some generic solution for showing/hiding tool windows
 void SaweMainWindow::connectActionToWindow(QAction *a, QWidget *b)
 {
     connect(a, SIGNAL(toggled(bool)), this, SLOT(slotCheckActionStates(bool)));

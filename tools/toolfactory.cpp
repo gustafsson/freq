@@ -18,7 +18,7 @@ ToolFactory::
     _render_controller = new RenderController(&render_view);
 
     //_timeline_model = new TimelineModel();
-    //_timeline_view.reset( new TimelineView(p, render_view.displayWidget));
+    _timeline_view = new TimelineView(p, render_view.displayWidget);
     //_timeline_controller = new TimelineController(view);
 }
 

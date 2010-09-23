@@ -153,9 +153,6 @@ void CwtToBlock::
         float in_frequency_offset = a.scale * in_frequency_resolution;
         float out_frequency_offset = 0;
 
-        TaskTimer("a.scale = %g", a.scale).suppressTiming();
-        TaskTimer("in_frequency_resolution = %g", in_frequency_resolution).suppressTiming();
-        TaskTimer("out_frequency_resolution = %g", out_frequency_resolution).suppressTiming();
 
         // Invoke CUDA kernel execution to merge blocks
         ::blockMergeChunk( chunk.transform_data->getCudaGlobal(),

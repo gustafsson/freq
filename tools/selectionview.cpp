@@ -34,7 +34,7 @@ SelectionView::
     toolBarTool->setEnabled(true);
     toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
     toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    main->addToolBar(Qt::LeftToolBarArea, toolBarTool);
+    main->addToolBar(Qt::TopToolBarArea, toolBarTool);
 
     {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
         qb->addActionItem( main->ui->actionActivateSelection );
