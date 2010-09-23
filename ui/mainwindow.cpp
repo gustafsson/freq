@@ -85,6 +85,10 @@ void SaweMainWindow::
     this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
     this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
     this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
+    /*this->removeDockWidget( ui->toolPropertiesWindow );
+    this->removeDockWidget( ui->operationsWindow );
+    this->removeDockWidget( ui->topFilterWindow );
+    this->removeDockWidget( ui->historyWindow );*/
 
     // todo move into toolfactory
     this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);

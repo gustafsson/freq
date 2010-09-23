@@ -3,6 +3,7 @@
 #include "timelineview.h"
 #include "timelinemodel.h"
 #include "rendercontroller.h"
+#include "renderview.h"
 
 namespace Tools
 {
@@ -12,13 +13,13 @@ ToolFactory::
 :   render_model(p),
     selection_model(p),
 
-    render_view(&render_model),
     selection_view(&selection_model)
 {
-    _render_controller = new RenderController(&render_view);
+    _render_view = new RenderView(&render_model);
+    _render_controller = new RenderController(_render_view);
 
     //_timeline_model = new TimelineModel();
-    _timeline_view = new TimelineView(p, render_view.displayWidget);
+    _timeline_view = new TimelineView(p, _render_view);
     //_timeline_controller = new TimelineController(view);
 }
 
@@ -26,11 +27,14 @@ ToolFactory::
 ToolFactory::
         ~ToolFactory()
 {
+    delete _render_controller;
+
     // TODO figure out a way to make sure that the rendering thread is not
     // doing anything with the views
 
-    // The _render_controller widget is released by MainWindow that owns the
-    // widget
+    // The _render_view and _timeline_view widget are released by MainWindow
+    // that owns the widget. This might happen both before and after this
+    // destructor.
 }
 
 

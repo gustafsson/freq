@@ -9,7 +9,6 @@ namespace Sawe {
 #include "rendermodel.h"
 #include "selectionmodel.h"
 
-#include "renderview.h"
 #include "selectionview.h"
 
 namespace Tools
@@ -27,7 +26,6 @@ namespace Tools
         RenderModel render_model;
         SelectionModel selection_model;
 
-        RenderView render_view;
         SelectionView selection_view;
 
         // PlaybackView playback_view;
@@ -37,6 +35,7 @@ namespace Tools
 
     private:
         class RenderController* _render_controller;
+        class RenderView* _render_view;
 
         class TimelineView* _timeline_view;
         //boost::scoped_ptr<class TimelineModel> _timeline_model;

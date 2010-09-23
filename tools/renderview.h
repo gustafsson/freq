@@ -8,10 +8,12 @@
 
 namespace Tools
 {
-    class RenderView: QWidget
+    class RenderView: public QWidget
     {
+        Q_OBJECT
     public:
         RenderView(RenderModel* model);
+        virtual ~RenderView();
 
         Heightmap::pRenderer renderer;
 
@@ -25,6 +27,10 @@ namespace Tools
         RenderModel* model;
 
         QGLWidget* displayWidget;
+
+    signals:
+        void destroyingRenderView();
+
     };
 } // namespace Tools
 

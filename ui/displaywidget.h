@@ -19,6 +19,8 @@
 #include "tools/selectionmodel.h"
 #include "tools/rendermodel.h"
 
+namespace Tools{ class RenderView; }
+
 namespace Ui {
 
 class DisplayWidget :
@@ -28,7 +30,7 @@ class DisplayWidget :
 {
     Q_OBJECT
 public:
-    DisplayWidget( Sawe::Project* project, QWidget* parent, Tools::RenderModel* model );
+    DisplayWidget( Sawe::Project* project, Tools::RenderView* render_view, Tools::RenderModel* render_model );
 
     virtual ~DisplayWidget();
     int lastKey;
@@ -76,17 +78,10 @@ protected slots:
     virtual void receiveToggleSelection(bool);
     virtual void receiveToggleNavigation(bool);
     virtual void receiveToggleInfoTool(bool);
-    virtual void receiveTogglePiano(bool);
 
-    virtual void receiveSetRainbowColors();
-    virtual void receiveSetGrayscaleColors();
-    virtual void receiveSetHeightlines( bool value );
-    virtual void receiveSetYScale( int value );
-    virtual void receiveSetTimeFrequencyResolution( int value );
 
     virtual void receivePlaySound();
     virtual void receiveFollowPlayMarker( bool v );
-    virtual void receiveToggleHz(bool);
     virtual void receiveAddSelection(bool);
     virtual void receiveAddClearSelection(bool);
 
@@ -98,12 +93,6 @@ protected slots:
     virtual void receiveTonalizeFilter(bool);
     virtual void receiveReassignFilter(bool);
     virtual void receiveRecord(bool);
-
-    virtual void receiveSetTransform_Cwt();
-    virtual void receiveSetTransform_Stft();
-    virtual void receiveSetTransform_Cwt_phase();
-    virtual void receiveSetTransform_Cwt_reassign();
-    virtual void receiveSetTransform_Cwt_ridge();
 
 signals:
     void renderingParametersChanged();
@@ -117,7 +106,8 @@ private:
 
     Sawe::Project* project;
 
-    Tools::RenderModel* _model;
+    Tools::RenderModel* _render_model;
+    Tools::RenderView* _render_view;
 
     Signal::pOperation _matlabfilter;
     Signal::pOperation _matlaboperation;

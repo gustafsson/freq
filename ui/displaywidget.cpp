@@ -39,7 +39,7 @@
 #include "filters/filters.h"
 #include "tfr/cwt.h"
 #include "tools/toolfactory.h"
-
+#include "tools/renderview.h"
 #include <msc_stdc.h>
 #include <CudaProperties.h>
 
@@ -71,14 +71,15 @@ using namespace std;
 
 DisplayWidget::
         DisplayWidget(
-                Sawe::Project* project, QWidget* parent, Tools::RenderModel* model )
-: QGLWidget( parent ),
+                Sawe::Project* project, Tools::RenderView* render_view, Tools::RenderModel* render_model )
+: QGLWidget(render_view),
   lastKey(0),
   orthoview(1),
   xscale(1),
 //  _record_update(false),
   project( project ),
-  _model( model ),
+  _render_model( render_model ),
+  _render_view( render_view ),
   _work_timer( new TaskTimer("Benchmarking first work")),
   _follow_play_marker( false ),
   _px(0), _py(0), _pz(-10),
@@ -108,8 +109,6 @@ DisplayWidget::
     yscale = Yscale_LogLinear;
     //timeOut();
             
-    receiveSetTimeFrequencyResolution( 50 );
-
     if (_rx<0) _rx=0;
     if (_rx>90) { _rx=90; orthoview=1; }
     if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
@@ -176,60 +175,6 @@ void DisplayWidget::receiveToggleInfoTool(bool active)
     _infoToolActive = active;
 }
 
-void DisplayWidget::receiveTogglePiano(bool active)
-{
-    project->tools().render_view.renderer->draw_piano = active;
-    update();
-}
-
-void DisplayWidget::
-        receiveSetRainbowColors()
-{
-    project->tools().render_view.renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
-    update();
-}
-
-void DisplayWidget::
-        receiveSetGrayscaleColors()
-{
-    project->tools().render_view.renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
-    update();
-}
-
-void DisplayWidget::
-        receiveSetHeightlines( bool value )
-{
-    project->tools().render_view.renderer->draw_height_lines = value;
-    update();
-}
-
-void DisplayWidget::
-        receiveSetYScale( int value )
-{
-    float f = value / 50.f - 1.f;
-    project->tools().render_view.renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
-    update();
-}
-
-void DisplayWidget::
-        receiveSetTimeFrequencyResolution( int value )
-{
-    unsigned FS = project->worker.source()->sample_rate();
-
-    Tfr::Cwt& c = Tfr::Cwt::Singleton();
-    c.tf_resolution( exp( 4*(value / 50.f - 1.f)) );
-
-    float std_t = c.morlet_std_t(0, FS);
-
-    // One standard deviation is not enough, but heavy. Two standard deviations are even more heavy.
-    c.wavelet_std_t( 1.5f * std_t );
-
-    Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_std_t() * FS );
-
-    _model->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
-    update();
-}
 
 
 void DisplayWidget::receivePlaySound()
@@ -272,11 +217,6 @@ void DisplayWidget::receiveFollowPlayMarker( bool v )
     _follow_play_marker = v;
 }
 
-void DisplayWidget::receiveToggleHz(bool active)
-{
-    project->tools().render_view.renderer->draw_hz = active;
-    update();
-}
 
 void DisplayWidget::receiveAddSelection(bool active)
 {
@@ -324,93 +264,6 @@ void DisplayWidget::receiveRecord(bool active)
     update();
 }
 
-void DisplayWidget::receiveSetTransform_Cwt()
-{
-    Signal::pOperation s = project->tools().render_view.renderer->collection()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
-
-    update();
-}
-
-void DisplayWidget::receiveSetTransform_Stft()
-{
-    Signal::pOperation s = project->tools().render_view.renderer->collection()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(project->tools().render_view.renderer->collection());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-
-    update();
-}
-
-void DisplayWidget::receiveSetTransform_Cwt_phase()
-{
-    Signal::pOperation s = project->tools().render_view.renderer->collection()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
-
-    update();
-}
-
-void DisplayWidget::receiveSetTransform_Cwt_reassign()
-{
-    Signal::pOperation s = project->tools().render_view.renderer->collection()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
-
-    ps->filter( Signal::pOperation(new Filters::Reassign()));
-
-    update();
-}
-
-void DisplayWidget::receiveSetTransform_Cwt_ridge()
-{
-    Signal::pOperation s = project->tools().render_view.renderer->collection()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(project->tools().render_view.renderer->collection());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
-
-    ps->filter( Signal::pOperation(new Filters::Ridge()));
-
-    update();
-}
 
 void DisplayWidget::setWorkerSource( Signal::pOperation s ) {
     if (s.get())
@@ -419,8 +272,6 @@ void DisplayWidget::setWorkerSource( Signal::pOperation s ) {
     // Update worker structure
     emit operationsUpdated( project->worker.source() );
 }
-
-
 
 
 void DisplayWidget::receiveAddClearSelection(bool /*active*/)
@@ -445,7 +296,7 @@ void DisplayWidget::receiveAddClearSelection(bool /*active*/)
      /*   Signal::pOperation move( new Tfr::MoveFilter( 10 ));
         postsink_filter.reset(f = new Tfr::CwtFilter( postsink_filter, move ));
         f->meldFilters();*/
-        // project->tools().render_view.renderer->collection()->add_expected_samples( f->affected_samples() );
+        // _render_view->renderer->collection()->add_expected_samples( f->affected_samples() );
     }
 
     postsink_filter->source( project->worker.source() );
@@ -473,7 +324,7 @@ void DisplayWidget::
 
     // Invalidate rendering
     Signal::Intervals sid(start, b->number_of_samples());
-    project->tools().render_view.renderer->collection()->invalidate_samples(sid);
+    _render_view->renderer->collection()->invalidate_samples(sid);
 
     // Update stream
     b->source(remove);
@@ -519,7 +370,7 @@ void DisplayWidget::
         else         sid2 -= -delta;
         sid |= sid2;
 
-        project->tools().render_view.renderer->collection()->invalidate_samples(sid);
+        _render_view->renderer->collection()->invalidate_samples(sid);
         update();
     }
 }
@@ -557,7 +408,7 @@ void DisplayWidget::
         // Invalidate rendering
         Signal::Intervals sid(oldStart, oldStart+L);
         sid |= Signal::Intervals(newStart, newStart+L);
-        project->tools().render_view.renderer->collection()->invalidate_samples(sid);
+        _render_view->renderer->collection()->invalidate_samples(sid);
 
         // update stream
         b->source(moveSelection );
@@ -581,7 +432,7 @@ void DisplayWidget::
     project->worker.start();
     setWorkerSource();
     update();
-    project->tools().render_view.renderer->collection()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    _render_view->renderer->collection()->invalidate_samples(Signal::Intervals::Intervals_ALL);
 }
 
 void DisplayWidget::
@@ -623,7 +474,7 @@ void DisplayWidget::
     }
 
 
-    project->tools().render_view.renderer->collection()->invalidate_samples(b->affected_samples());
+    _render_view->renderer->collection()->invalidate_samples(b->affected_samples());
 
     setWorkerSource();
     update();
@@ -637,7 +488,7 @@ void DisplayWidget::
 
     setWorkerSource(tonalize);
 
-    project->tools().render_view.renderer->collection()->invalidate_samples( tonalize->affected_samples());
+    _render_view->renderer->collection()->invalidate_samples( tonalize->affected_samples());
 
     update();
 }
@@ -649,7 +500,7 @@ void DisplayWidget::
     reassign->source(project->worker.source());
     setWorkerSource(reassign);
 
-    project->tools().render_view.renderer->collection()->invalidate_samples( reassign->affected_samples() );
+    _render_view->renderer->collection()->invalidate_samples( reassign->affected_samples() );
 
     update();
 }
@@ -660,7 +511,7 @@ void DisplayWidget::
         return;
     
     lastKey = e->key();
-    // pTransform t = project->tools().render_view.renderer->spectrogram()->transform();
+    // pTransform t = _render_view->renderer->spectrogram()->transform();
     switch (lastKey )
     {
         case ' ':
@@ -717,14 +568,14 @@ void DisplayWidget::put( Signal::pBuffer b, Signal::pOperation )
 Heightmap::Collection* DisplayWidget::
         collection()
 {
-    return project->tools().render_model.collection.get();
+    return _render_model->collection.get();
 }
 
 
 Heightmap::Renderer* DisplayWidget::
         renderer()
 {
-    return project->tools().render_view.renderer.get();
+    return _render_view->renderer.get();
 }
 
 
@@ -926,7 +777,7 @@ void DisplayWidget::mouseMoveEvent ( QMouseEvent * e )
         {
             float l = project->worker.source()->length();
             
-            Tools::RenderView& r = project->tools().render_view;
+            Tools::RenderView& r = *_render_view;
             r._qx -= current[0] - last[0];
             r._qz -= current[1] - last[1];
             
@@ -1070,10 +921,10 @@ void DisplayWidget::initializeGL()
     //TaskTimer("autoBufferSwap=%d", autoBufferSwap()).suppressTiming();
 
     glShadeModel(GL_SMOOTH);
-    
+
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
-    
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
@@ -1103,13 +954,13 @@ void DisplayWidget::initializeGL()
 
 void DisplayWidget::resizeGL( int width, int height ) {
     height = height?height:1;
-    
+
     glViewport( 0, 0, (GLint)width, (GLint)height );
-    
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.01f,1000.0f);
-    
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -1136,7 +987,7 @@ void DisplayWidget::paintGL()
             blur -= fuzzy;
             _invalidRange |= blur;
 
-            project->tools().render_view.renderer->collection()->invalidate_samples( _invalidRange );
+            _render_view->renderer->collection()->invalidate_samples( _invalidRange );
             _invalidRange = Signal::Intervals();
         }
     }
@@ -1147,7 +998,7 @@ void DisplayWidget::paintGL()
     bool followingRecordMarker = false;
     float length = project->worker.source()->length();
     {   double limit = std::max(0.f, length - 2*Tfr::Cwt::Singleton().wavelet_std_t());
-        Tools::RenderView& r = project->tools().render_view;
+        Tools::RenderView& r = *_render_view;
         if (r._qx>=_prevLimit) {
             // Snap just before end so that project->worker.center starts working on
             // data that has been fetched. If center=length worker will start
@@ -1167,12 +1018,12 @@ void DisplayWidget::paintGL()
 
     bool wasWorking = !project->worker.todo_list().isEmpty();
     { // Render
-        project->tools().render_view.renderer->collection()->next_frame(); // Discard needed blocks before this row
+        _render_view->renderer->collection()->next_frame(); // Discard needed blocks before this row
 
-        Tools::RenderView& r = project->tools().render_view;
-        project->tools().render_view.renderer->camera = GLvector(r._qx, r._qy, r._qz);
-        project->tools().render_view.renderer->draw( 1-orthoview ); // 0.6 ms
-        project->tools().render_view.renderer->drawAxes( length ); // 4.7 ms
+        Tools::RenderView& r = *_render_view;
+        _render_view->renderer->camera = GLvector(r._qx, r._qy, r._qz);
+        _render_view->renderer->draw( 1-orthoview ); // 0.6 ms
+        _render_view->renderer->drawAxes( length ); // 4.7 ms
         project->tools().selection_view.drawSelection(); // 0.1 ms
 
         if (wasWorking)
@@ -1196,10 +1047,10 @@ void DisplayWidget::paintGL()
 
             //project->worker.todo_list().print("Displaywidget - PostSink");
         } else {
-            Tools::RenderView& r = project->tools().render_view;
+            Tools::RenderView& r = *_render_view;
             project->worker.center = r._qx;
             project->worker.todo_list(
-                    project->tools().render_model.collectionCallback->sink()->fetch_invalid_samples());
+                    _render_model->collectionCallback->sink()->fetch_invalid_samples());
             //project->worker.todo_list().print("Displaywidget - Collection");
 
             if (followingRecordMarker)
@@ -1209,7 +1060,7 @@ void DisplayWidget::paintGL()
         Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
         if(r != 0 && !(r->isStopped()))
         {
-        	wasWorking = true;
+            wasWorking = true;
         }
     }
 
@@ -1251,10 +1102,10 @@ void DisplayWidget::paintGL()
     } catch (const CudaException &x) {
         TaskTimer tt("DisplayWidget::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
         if (2>tryGc) {
-            Heightmap::Collection* c=project->tools().render_view.renderer->collection();
+            Heightmap::Collection* c=_render_view->renderer->collection();
             c->reset(); // note, not c.reset()
-            project->tools().render_view.renderer.reset();
-            project->tools().render_view.renderer.reset(new Heightmap::Renderer( c ));
+            _render_view->renderer.reset();
+            _render_view->renderer.reset(new Heightmap::Renderer( c ));
             tryGc++;
             //cudaThreadExit();
             int count;
@@ -1278,7 +1129,7 @@ void DisplayWidget::paintGL()
     } catch (const GlException &x) {
         TaskTimer tt("DisplayWidget::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
         if (0==tryGc) {
-            project->tools().render_view.renderer->collection()->gc();
+            _render_view->renderer->collection()->gc();
             tryGc++;
             //cudaThreadExit();
             cudaGetLastError();
@@ -1298,7 +1149,7 @@ void DisplayWidget::setupCamera()
 
     glScalef(-xscale, 1, 5);
 
-    Tools::RenderView& r = project->tools().render_view;
+    Tools::RenderView& r = *_render_view;
     glTranslatef( -r._qx, -r._qy, -r._qz );
 
     orthoview.TimeStep(.08);
@@ -1336,7 +1187,7 @@ void DisplayWidget::drawArrows()
     glVertex3f( 0.0f, 0.0f, 1.0f);
     glVertex3f( 0.0f, 0.0f, 0.0f);
     glColor3f(1,1,1);
-    Tools::RenderView& r = project->tools().render_view;
+    Tools::RenderView& r = *_render_view;
     glVertex3f( r._qx, r._qy, r._qz );
     glEnd();
 }
@@ -1344,58 +1195,58 @@ void DisplayWidget::drawArrows()
 
 void drawCircleSector(float x, float y, float radius, float start, float end)
 {
-	int numSteps = ((end - start) * radius) * 50.0;
-	float step = (end - start) / numSteps;
-	
-	glBegin(GL_TRIANGLE_FAN);
-	glVertex3f( x, y, 0.0f);
+    int numSteps = ((end - start) * radius) * 50.0;
+    float step = (end - start) / numSteps;
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f( x, y, 0.0f);
     for(int i = 0; i <= numSteps; i++)
     {
-    	glVertex3f( x + radius * cos(start + i * step), y - radius * sin(start + i * step), 0.0f);
+        glVertex3f( x + radius * cos(start + i * step), y - radius * sin(start + i * step), 0.0f);
     }
     glEnd();
 }
 
 void drawRect(float x, float y, float width, float height)
 {
-	glBegin(GL_QUADS);
-	glVertex3f(x, y, 0.0f);
-	glVertex3f(x + width, y, 0.0f);
-	glVertex3f(x + width, y + height, 0.0f);
-	glVertex3f(x, y + height, 0.0f);
-	glEnd();
+    glBegin(GL_QUADS);
+    glVertex3f(x, y, 0.0f);
+    glVertex3f(x + width, y, 0.0f);
+    glVertex3f(x + width, y + height, 0.0f);
+    glVertex3f(x, y + height, 0.0f);
+    glEnd();
 }
 
 void drawRectRing(int rects, float irad, float orad)
 {
-	float height = (irad / rects) * M_PI * 1.2;
-	float width = orad - irad;
-	float step = 360.0 / rects; 
-	
-	for(int i = 0; i < rects; i++)
-	{
-		glPushMatrix();
-		glRotatef(step * i, 0, 0, 1);
-		drawRect(irad, -height/2, width, height);
-		glPopMatrix();
-	}
+    float height = (irad / rects) * M_PI * 1.2;
+    float width = orad - irad;
+    float step = 360.0 / rects;
+
+    for(int i = 0; i < rects; i++)
+    {
+        glPushMatrix();
+        glRotatef(step * i, 0, 0, 1);
+        drawRect(irad, -height/2, width, height);
+        glPopMatrix();
+    }
 }
 
 void drawRoundRect(float width, float height, float roundness)
 {
-	roundness = fmax(0.01f, roundness);
-	float radius = fmin(width, height) * roundness * 0.5;
-	width = width - 2.0 * radius;
-	height = height - 2.0 * radius;
-	
-	drawRect(-width/2.0f, -height/2.0f, width, height);
-	drawRect(-(width + 2.0 * radius)/2.0f, -height/2.0f, (width + 2.0 * radius), height);
-	drawRect(-width/2.0f, -(height + 2.0 * radius)/2.0f, width, (height + 2.0 * radius));
-	
-	drawCircleSector(-width/2.0f, -height/2.0f, radius, M_PI/2.0f, M_PI);
-	drawCircleSector(width/2.0f, -height/2.0f, radius, 0, M_PI/2.0f);
-	drawCircleSector(width/2.0f, height/2.0f, radius, -M_PI/2.0f, 0);
-	drawCircleSector(-width/2.0f, height/2.0f, radius, -M_PI, -M_PI/2.0f);
+    roundness = fmax(0.01f, roundness);
+    float radius = fmin(width, height) * roundness * 0.5;
+    width = width - 2.0 * radius;
+    height = height - 2.0 * radius;
+
+    drawRect(-width/2.0f, -height/2.0f, width, height);
+    drawRect(-(width + 2.0 * radius)/2.0f, -height/2.0f, (width + 2.0 * radius), height);
+    drawRect(-width/2.0f, -(height + 2.0 * radius)/2.0f, width, (height + 2.0 * radius));
+
+    drawCircleSector(-width/2.0f, -height/2.0f, radius, M_PI/2.0f, M_PI);
+    drawCircleSector(width/2.0f, -height/2.0f, radius, 0, M_PI/2.0f);
+    drawCircleSector(width/2.0f, height/2.0f, radius, -M_PI/2.0f, 0);
+    drawCircleSector(-width/2.0f, height/2.0f, radius, -M_PI, -M_PI/2.0f);
 }
 
 void DisplayWidget::drawColorFace()
@@ -1436,7 +1287,7 @@ void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
     TaskTimer tt(__FUNCTION__);
     cudaExtent n = chunk->waveform_data()->getNumberOfElements();
     const float* data = chunk->waveform_data()->getCpuMemory();
-    
+
     n.height = 1;
     float ifs = 1./chunk->sample_rate; // step per sample
     /*    float max = 1e-6;
@@ -1449,11 +1300,11 @@ void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
      }
      float s = 1/max;
      */
-	float s = 1;
+    float s = 1;
     //glEnable(GL_BLEND);
     glDepthMask(false);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    
+
     unsigned c=0;
     //    for (unsigned c=0; c<n.height; c++)
     {
@@ -1477,7 +1328,7 @@ void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
         glEnd();
         //        glTranslatef(0, 0, -.5); // different channels along y
     }
-    
+
     glDepthMask(true);
     //glDisable(GL_BLEND);
 }
@@ -1485,19 +1336,19 @@ void DisplayWidget::drawWaveform_chunk_directMode( Signal::pBuffer chunk)
 /**
  draw_glList renders 'chunk' by passing it as argument to 'renderFunction' and caches the results in an OpenGL display list.
  When draw_glList is called again with the same 'chunk' it will not call 'renderFunction' but instead draw the previously cached results.
- If 'force_redraw' is set to true, 'renderFunction' will be called again to replace the old cache. 
+ If 'force_redraw' is set to true, 'renderFunction' will be called again to replace the old cache.
  */
 template<typename RenderData>
 void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw )
 {
-	// do a cache lookup
+    // do a cache lookup
     std::map<void*, ListCounter>::iterator itr = _chunkGlList.find(chunk.get());
-    
-	if (_chunkGlList.end() == itr && force_redraw) {
-		force_redraw = false;
-	}
-    
-	// cache miss or force_redraw
+
+    if (_chunkGlList.end() == itr && force_redraw) {
+        force_redraw = false;
+    }
+
+    // cache miss or force_redraw
     if (_chunkGlList.end() == itr || force_redraw) {
         ListCounter cnt;
         if (force_redraw) {
@@ -1507,23 +1358,23 @@ void DisplayWidget::draw_glList( boost::shared_ptr<RenderData> chunk, void (*ren
             cnt.age = ListCounter::Age_JustCreated;
             cnt.displayList = glGenLists(1);
         }
-        
+
         if (0 != cnt.displayList) {
             glNewList(cnt.displayList, GL_COMPILE_AND_EXECUTE );
             renderFunction( chunk );
             glEndList();
             _chunkGlList[chunk.get()] = cnt;
-            
+
         } else {
             // render anyway, but not into display list and enqueue gc
             _enqueueGcDisplayList = true;
             renderFunction( chunk );
         }
-        
+
     } else {
-		// render cache
+        // render cache
         itr->second.age = ListCounter::Age_InUse; // don't remove
-        
+
         glCallList( itr->second.displayList );
     }
 }
@@ -1543,7 +1394,7 @@ void DisplayWidget::gcDisplayList()
             itr = _chunkGlList.begin();
         }
     }
-    
+
     /* at next gc, remove those that haven't been used since this gc */
     typedef pair<void* const,ListCounter> lcp;
     BOOST_FOREACH( lcp& cnt, _chunkGlList)
@@ -1554,7 +1405,7 @@ void DisplayWidget::gcDisplayList()
          {*/
         cnt.second.age = ListCounter::Age_ProposedForRemoval;
     }
-    
+
     _enqueueGcDisplayList = false;
 }
 
@@ -1594,7 +1445,7 @@ void DisplayWidget::setSelection(int index, bool enabled)
     {
         filter->enabled( enabled );
 
-        project->tools().render_view.renderer->collection()->invalidate_samples( filter->affected_samples() );
+        _render_view->renderer->collection()->invalidate_samples( filter->affected_samples() );
     }
     
     update();
@@ -1615,7 +1466,7 @@ void DisplayWidget::removeFilter(int index){
     if (index || !next)
         return;
 
-    project->tools().render_view.renderer->collection()->invalidate_samples( next->affected_samples() );
+    _render_view->renderer->collection()->invalidate_samples( next->affected_samples() );
 
     if (!prev)
     {
@@ -1635,8 +1486,8 @@ void DisplayWidget::
 {
     static float computing_rotation = 0.0;
 
-	glDepthFunc(GL_LEQUAL);
-	glDisable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDisable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -1711,7 +1562,7 @@ void DisplayWidget::
     project->tools().selection_view._playbackMarker = pb->time();
     if (_follow_play_marker)
     {
-        Tools::RenderView& r = project->tools().render_view;
+        Tools::RenderView& r = *_render_view;
         r._qx = project->tools().selection_view._playbackMarker;
     }
 }

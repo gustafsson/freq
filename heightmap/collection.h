@@ -158,6 +158,7 @@ public:
       Releases all GPU resources allocated by Heightmap::Collection.
       */
     virtual void reset();
+    virtual bool empty();
 
 
     virtual Signal::Intervals invalid_samples();

@@ -9,6 +9,7 @@
 #include <QDockWidget>
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
+#include "renderview.h"
 
 #undef max
 
@@ -20,15 +21,16 @@ using namespace Signal;
 namespace Tools {
 
 TimelineView::
-        TimelineView( Sawe::Project* p, QGLWidget* displaywidget )
-:   QGLWidget( 0, displaywidget, Qt::WindowFlags(0) ),
+        TimelineView( Sawe::Project* p, RenderView* render_view )
+:   QGLWidget( 0, render_view->displayWidget, Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
     _movingTimeline( 0 ),
-    _project( p )
+    _project( p ),
+    _render_view( render_view )
 {
-    BOOST_ASSERT( displaywidget );
+    BOOST_ASSERT( render_view );
 
     if (!context() || !context()->isSharing())
     {
@@ -42,12 +44,15 @@ TimelineView::
     dock->setMaximumSize(QSize(524287, 524287));
     dock->setContextMenuPolicy(Qt::NoContextMenu);
     dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
+    dock->setEnabled(true);
+    dock->setAutoFillBackground(true);
     dock->setWidget(this);
     dock->setWindowTitle("Timeline");
     dock->show();
     MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
 
-    Ui::DisplayWidget* d = dynamic_cast<Ui::DisplayWidget*>(displaywidget);
+
+    Ui::DisplayWidget* d = dynamic_cast<Ui::DisplayWidget*>(render_view->displayWidget);
     connect(d, SIGNAL(renderingParametersChanged()), this, SLOT(update()));
 }
 
@@ -159,9 +164,9 @@ void TimelineView::
             {
                 glPushMatrixContext a;
 
-                _project->tools().render_view.renderer->draw( 0.f );
+                _render_view->renderer->draw( 0.f );
                 _project->tools().selection_view.drawSelection();
-                _project->tools().render_view.renderer->drawFrustum();
+                _render_view->renderer->drawFrustum();
             }
         }
 
@@ -172,7 +177,7 @@ void TimelineView::
 
             glScalef(1,1,_barHeight);
             glTranslatef(0,0,-1);
-            _project->tools().render_view.renderer->draw( 0.f );
+            _render_view->renderer->draw( 0.f );
 
             float length = std::max( 1.f, _project->worker.source()->length());
             glColor4f( 0.75, 0.75,0.75, .5);
@@ -200,7 +205,7 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            _project->tools().render_view.renderer->drawFrustum(0.75);
+            _render_view->renderer->drawFrustum(0.75);
         }
 
         GlException_CHECK_ERROR();
@@ -224,7 +229,7 @@ void TimelineView::
 
     if (0 == "Make sure that the camera focus point is within the timeline")
     {
-        float t = _project->tools().render_view.renderer->camera[0];
+        float t = _render_view->renderer->camera[0];
         if (t < _xoffs) _xoffs = t;
         if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
     }
@@ -310,7 +315,7 @@ void TimelineView::
         switch ( _movingTimeline )
         {
         case 1:
-            _project->tools().render_view.setPosition( current[0], current[1] );
+            _render_view->setPosition( current[0], current[1] );
             break;
         case 2:
             {

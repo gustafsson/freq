@@ -11,12 +11,15 @@ namespace Sawe {
 };
 
 namespace Tools {
+
+class RenderView;
+
 class TimelineView:
         public QGLWidget
 {
     Q_OBJECT
 public:
-    TimelineView(Sawe::Project* p, QGLWidget* displayWidget);
+    TimelineView(Sawe::Project* p, RenderView* render_view);
     virtual ~TimelineView();
 
     // overloaded from Signal::Sink
@@ -42,6 +45,7 @@ private:
             _barHeight;
     int _movingTimeline;
     Sawe::Project* _project;
+    RenderView* _render_view;
     Ui::MouseControl moveButton;
 };
 

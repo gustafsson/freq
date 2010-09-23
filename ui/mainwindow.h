@@ -63,7 +63,6 @@ private:
     class MainWindow *ui;
 
     void add_widgets();
-    //void create_renderingwidgets();
     void connectActionToWindow(QAction *a, QWidget *b);
 };
 

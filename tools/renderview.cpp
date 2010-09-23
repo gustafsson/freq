@@ -1,6 +1,8 @@
 #include "renderview.h"
 #include "sawe/project.h"
 
+#include <QVBoxLayout>
+
 namespace Tools
 {
 
@@ -8,9 +10,19 @@ RenderView::
         RenderView(RenderModel* model)
             :
             _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
-            model(model)
+            model(model),
+            displayWidget(0)
 {
+    setLayout( new QHBoxLayout() );
+
     renderer.reset( new Heightmap::Renderer( model->collection.get() ));
+}
+
+
+RenderView::
+        ~RenderView()
+{
+    emit destroyingRenderView();
 }
 
 
@@ -30,7 +42,8 @@ void RenderView::
 
     // todo isn't requested fps is a renderview property?
     model->project->worker.requested_fps(30);
-//    update();
+
+    update();
 }
 
 } // namespace Tools

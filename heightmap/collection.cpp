@@ -70,10 +70,17 @@ Collection::
 void Collection::
         reset()
 {
-    {   QMutexLocker l(&_cache_mutex);
-        _cache.clear();
-        _recent.clear();
-    }
+    QMutexLocker l(&_cache_mutex);
+    _cache.clear();
+    _recent.clear();
+}
+
+
+bool Collection::
+        empty()
+{
+    QMutexLocker l(&_cache_mutex);
+    return _cache.empty() && _recent.empty();
 }
 
 

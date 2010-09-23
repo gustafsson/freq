@@ -270,33 +270,6 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockWidgetTimeline">
-   <property name="minimumSize">
-    <size>
-     <width>42</width>
-     <height>79</height>
-    </size>
-   </property>
-   <property name="maximumSize">
-    <size>
-     <width>524287</width>
-     <height>524287</height>
-    </size>
-   </property>
-   <property name="contextMenuPolicy">
-    <enum>Qt::NoContextMenu</enum>
-   </property>
-   <property name="features">
-    <set>QDockWidget::DockWidgetFeatureMask</set>
-   </property>
-   <property name="windowTitle">
-    <string>T</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_4"/>
-  </widget>
   <widget class="QToolBar" name="toolBarPlay">
    <property name="windowTitle">
     <string>toolBar</string>
