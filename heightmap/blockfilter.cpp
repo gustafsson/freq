@@ -100,8 +100,10 @@ void CwtToBlock::
     std::stringstream ss;
     Position a,b;
     block->ref.getArea(a,b);
+//    TIME_CWTTOBLOCK TaskTimer tt("%s chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]", __FUNCTION__,
+//                                 chunk.startTime(), chunk.endTime(), a.time, b.time, a.scale, b.scale);
     TIME_CWTTOBLOCK TaskTimer tt("%s chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]", __FUNCTION__,
-                                 chunk.startTime(), chunk.endTime(), a.time, b.time, a.scale, b.scale);
+                                 -1, -1, a.time, b.time, a.scale, b.scale);
 
     float in_sample_rate = chunk.sample_rate;
     float out_sample_rate = block->ref.sample_rate();
@@ -181,9 +183,8 @@ void StftToBlock::
           out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
 
     float block_fs = block->ref.sample_rate();
-//    float out_stft_size = block->ref.sample_rate() / chunk.sample_rate;
-    float out_stft_size = block->ref.sample_rate() / chunk.sample_rate;
-    float out_offset = (a.time - (chunk.chunk_offset / this->sample_rate() ))
+    float out_stft_size = block_fs / chunk.sample_rate;
+    float out_offset = (a.time - (chunk.chunk_offset / (float)this->sample_rate() ))
                        * block->ref.sample_rate();
 
     ::expandCompleteStft( chunk.transform_data->getCudaGlobal(),

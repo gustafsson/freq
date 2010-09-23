@@ -53,7 +53,7 @@ public:
 
     /**
       chunk_offset is the start of the chunk, along the timeline, measured in
-      samples.
+      original signal samples.
 
         @see first_valid_sample
       */
@@ -83,9 +83,13 @@ public:
     float sample_rate;
 
 
-    float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
-    float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }
-    float endTime() const {            return startTime() + timeInterval(); }
+// sample_rate is not 'signal samples' per second, but 'chunk columns' per
+// second. Thus, a chunk can't figure out 'timeInterval' for instance (note
+// that nSamples()*sample_rate != n_valid_samples).
+//    float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
+//    float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }
+//    float endTime() const {            return startTime() + timeInterval(); }
+
     unsigned nSamples() const {        return order==Order_row_major ? transform_data->getNumberOfElements().width : transform_data->getNumberOfElements().height; }
     unsigned nScales() const {         return order==Order_row_major ? transform_data->getNumberOfElements().height: transform_data->getNumberOfElements().width;  }
     unsigned nChannels() const {       return transform_data->getNumberOfElements().depth; }

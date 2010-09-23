@@ -290,7 +290,10 @@ int main(int argc, char *argv[])
     if (!check_cuda( false ))
         return -1;
 
-    printf("Fastest size = %u\n", Tfr::Stft::build_performance_statistics(true, 0.1f));
+    {
+        TaskTimer tt("Building performance statistics for %s", CudaProperties::getCudaDeviceProp().name);
+        tt.info("Fastest size = %u", Tfr::Stft::build_performance_statistics(true, 2));
+    }
 
     // skip application filename
     argv++;

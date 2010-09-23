@@ -77,7 +77,7 @@ public:
     unsigned chunk_size() { return _chunk_size; }
     unsigned set_approximate_chunk_size( unsigned preferred_size );
 
-    static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_minutes = 1);
+    static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 60);
 private:
     cudaStream_t    _stream;
 

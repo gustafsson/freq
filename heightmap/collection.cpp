@@ -620,29 +620,25 @@ void Collection::
 
     unsigned first_sample = (unsigned)floor(a.time*fast_source->sample_rate()),
              last_sample = (unsigned)ceil(b.time*fast_source->sample_rate()),
-             margin = trans.chunk_size();
+             chunk_size = trans.chunk_size();
     // Margin makes sure that the STFT is computed for one block before and one
     // block after the signal. This makes it possible to do proper
     // interpolations so that there won't be any edges between blocks
 
-    if (first_sample >= margin)
-        first_sample = ((first_sample - margin)/margin) * margin;
-    else
-        first_sample = 0;
+    unsigned first_chunk = 0,
+             last_chunk = (last_sample + 1.5*chunk_size)/chunk_size;
 
-    last_sample = ((last_sample + 2*margin)/margin) * margin;
+    if (first_sample >= 1.5*chunk_size)
+        first_chunk = (first_sample - 1.5*chunk_size)/chunk_size;
 
-    //first_sample = 0;
-    //last_sample = fast_source->number_of_samples();
 
-    pBuffer buff = fast_source->readFixedLength( Interval( first_sample, last_sample) );
+    pBuffer buff = fast_source->readFixedLength( Interval(
+            first_chunk*chunk_size,
+            last_chunk*chunk_size) );
 
-    Statistics<float> stat( buff->waveform_data() );
 
     Tfr::pChunk stft = trans( buff );
 
-    GpuCpuData<float> f2( stft->transform_data->getCpuMemory(), stft->transform_data->getNumberOfElements() );
-    Statistics<float> stat2( &f2 );
 
     StftToBlock stftmerger(this);
     stftmerger.source( fast_source );

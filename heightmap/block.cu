@@ -628,40 +628,57 @@ __global__ void kernel_expand_complete_stft(
         float hz_read_norm = 0.5f * saturate( (hz_write - in_min_hz)/(in_max_hz - in_min_hz) );
 
         // which timestep column should we start reading from
-        float ts_read = ts_write / out_stft_size - 1.0f;
+        float ts_read = ts_write / out_stft_size;
 
         if ( 0 > ts_read )
+            // only happens if 0>out_offse (or if out_stft_size is negative which is an error)
             return;
 
         // Compute read coordinates
-        float q = ts_read;
-        unsigned ts_start = (unsigned)q;
-        float p = min( hz_read_norm*in_stft_size, in_stft_size-1.f );
-        unsigned read_start = (unsigned)p;
-
         // q and p measures how bad read_start is an approximation to ts_read
         // and hz_read_norm
-        q -= (unsigned)q;
-        p -= (unsigned)p;
+        float q = ts_read - 0.5f;
+        float p = max(0.f, min( hz_read_norm*in_stft_size - 0.5f, in_stft_size-1.f ));
+
+        unsigned ts_start = 0 > q ? (unsigned)-1 : (unsigned)q;
+        unsigned hz_start = (unsigned)p;
+        q -= floor(q);
+        p -= hz_start;
 
         // if the next timestep column is required to compute this outBlock
         // pixel don't compute it unless the next timestep column is provided
-        if (0 < q && ts_start+1>=inStft.getNumberOfElements().x)
+        if (0 < q && ts_start+1>=inStft.getNumberOfElements().y)
             return;
 
+        // if a previous timestep column is before the first column, use 0
+        // instead
+
+        // if the next or previous frequency row is needed, just clamp to the
+        // provided range. Not generic but wil have to work for now.
+
+        unsigned hz_secondline = min(hz_start+1, in_stft_size-1);
+
         float2 c;
-        c = inStft.elem(make_elemSize3_t( read_start, ts_start, 0 ));
-        float val1 = sqrt(c.x*c.x + c.y*c.y);
+        float val1, val2, val3, val4;
+        if (ts_start == (unsigned)-1)
+        {
+            val1 = 0;
+            val3 = 0;
+        }
+        else
+        {
+            c = inStft.elem(make_elemSize3_t( hz_start, ts_start, 0 ));
+            val1 = sqrt(c.x*c.x + c.y*c.y);
 
-        c = inStft.elem(make_elemSize3_t( read_start, ts_start+1, 0 ));
-        float val2 = sqrt(c.x*c.x + c.y*c.y);
+            c = inStft.elem(make_elemSize3_t( hz_secondline, ts_start, 0 ));
+            val3 = sqrt(c.x*c.x + c.y*c.y);
+        }
 
-        unsigned read_secondline = min(read_start+1, in_stft_size-1);
-        c = inStft.elem(make_elemSize3_t( read_secondline, ts_start, 0 ));
-        float val3 = sqrt(c.x*c.x + c.y*c.y);
+        c = inStft.elem(make_elemSize3_t( hz_start, ts_start+1, 0 ));
+        val2 = sqrt(c.x*c.x + c.y*c.y);
 
-        c = inStft.elem(make_elemSize3_t( read_secondline, ts_start+1, 0 ));
-        float val4 = sqrt(c.x*c.x + c.y*c.y);
+        c = inStft.elem(make_elemSize3_t( hz_secondline, ts_start+1, 0 ));
+        val4 = sqrt(c.x*c.x + c.y*c.y);
 
         // Perform a kind of bicubic interpolation
         p = 3*p*p-2*p*p*p; // p and q are saturated, these equations compute

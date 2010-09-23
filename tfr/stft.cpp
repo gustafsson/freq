@@ -312,12 +312,12 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 }
 
 
-unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test_signal)
+unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test_signal_in_seconds)
 {
     _ok_chunk_sizes.clear();
     Tfr::Stft S;
     scoped_ptr<TaskTimer> tt;
-    Signal::pBuffer B = boost::shared_ptr<Signal::Buffer>( new Signal::Buffer( 0, 44100*60*size_of_test_signal, 44100 ) );
+    Signal::pBuffer B = boost::shared_ptr<Signal::Buffer>( new Signal::Buffer( 0, 44100*size_of_test_signal_in_seconds, 44100 ) );
     {
         if(writeOutput) tt.reset( new TaskTimer("Filling buffer with random data"));
 
@@ -336,7 +336,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     time_duration latest_time[4];
     unsigned max_base = 3;
     double base[] = {2,3,5,7};
-    for (unsigned n = 2; n < B->number_of_samples(); n++ )
+    for (unsigned n = 128; n < B->number_of_samples(); n++ )
     {
         unsigned N = -1;
         unsigned selectedBase = 0;
