@@ -122,7 +122,7 @@ bool Worker::
 ///// PROPERTIES
 
 void Worker::
-        todo_list( Signal::Intervals v )
+        todo_list( const Signal::Intervals& v )
 {
     {
         QMutexLocker l(&_todo_lock);

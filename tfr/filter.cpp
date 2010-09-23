@@ -12,7 +12,8 @@ namespace Tfr {
 Filter::
         Filter( pOperation source )
             :
-            Operation( source )
+            Operation( source ),
+            _try_shortcuts( true )
 {}
 
 
@@ -23,7 +24,7 @@ Signal::pBuffer Filter::
 
 
     // Try to take shortcuts and avoid unnecessary work
-    {
+    if (_try_shortcuts) {
         // If no samples would be non-zero, return zeros
         if (!(work - zeroed_samples()))
         {
@@ -56,11 +57,17 @@ Signal::pBuffer Filter::
 
 
     // If we've reached this far, the transform will have to be computed
-    pChunk c = readChunk( I );
+    ChunkAndInverse ci = readChunk( I );
 
-    pBuffer r = _transform->inverse( c );
+    pBuffer r;
+    if (false && ci.inverse)
+        r = ci.inverse;
+    else
+    {
+        r = _transform->inverse( ci.chunk );
+    }
 
-    TIME_Filter Intervals(c->getInterval()).print("Filter after inverse");
+    TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter after inverse");
 
     return r;
 }

@@ -638,7 +638,7 @@ __global__ void kernel_expand_complete_stft(
         // q and p measures how bad read_start is an approximation to ts_read
         // and hz_read_norm
         float q = ts_read - 0.5f;
-        float p = max(0.f, min( hz_read_norm*in_stft_size - 0.5f, in_stft_size-1.f ));
+        float p = max(0.f, min( hz_read_norm*in_stft_size + 0.5f, in_stft_size-1.f ));
 
         unsigned ts_start = 0 > q ? (unsigned)-1 : (unsigned)q;
         unsigned hz_start = (unsigned)p;

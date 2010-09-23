@@ -49,6 +49,10 @@ Collection::
     // Updated as soon as the first chunk is received
     update_sample_size( 0 );
 
+    std::vector<pOperation> sinks;
+    sinks.push_back( pOperation(new CwtToBlock(this)));
+    ((PostSink*)_postsink.get())->sinks( sinks );
+
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.f_min = 20;
     _display_scale.max_frequency_scalar = 1;
@@ -436,18 +440,12 @@ pBlock Collection::
                     fillBlock( block );
                     CudaException_CHECK_ERROR();
                 } catch (const CudaException& x ) {
-                    // prepareFillStft doesn't have a limit on how large
-                    // waveform buffer that it tries to work on. Thus it
-                    // will run out of memory when attempting to work on
-                    // really large buffers.
-                    tt.info("Couldn't fill new block with stft\n%s", x.what());
+                    tt.info("Collection::createBlock, fillBlock swallowed GlException.\n%s", x.what());
                 }
             }
 
             {
-                // TODO compute at what log2_samples_size[1] stft is more accurate
-                // than low resolution blocks.
-                if (1) {
+                if (0) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // start with the blocks that are just slightly more detailed
                     mergeBlock( block, block->ref.left(), 0 );
@@ -470,10 +468,10 @@ pBlock Collection::
                     }
                 }
 
-    //            GlException_CHECK_ERROR();
-    //            CudaException_CHECK_ERROR();
 
-                if (1) {
+                // TODO compute at what log2_samples_size[1] stft is more accurate
+                // than low resolution blocks.
+                if (0) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
                     mergeBlock( block, block->ref.parent(), 0 );
@@ -611,7 +609,6 @@ void Collection::
 {
     Tfr::Stft trans;
     trans.set_approximate_chunk_size(1 << 12); // 4096
-    trans.set_approximate_chunk_size(1 << 13); // 8192
 
     Position a, b;
     block->ref.getArea(a,b);
@@ -643,8 +640,9 @@ void Collection::
     StftToBlock stftmerger(this);
     stftmerger.source( fast_source );
     stftmerger.mergeChunk(block, *stft, block->glblock->height()->data);
+
+    // StftToBlock (rather BlockFilter) validates samples, Discard those.
     block->valid_samples = Intervals();
-    block->valid_samples = Intervals::Intervals_ALL;
 }
 
 

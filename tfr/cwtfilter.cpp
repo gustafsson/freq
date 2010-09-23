@@ -26,7 +26,7 @@ CwtFilter::
 }
 
 
-Tfr::pChunk CwtFilter::
+Filter::ChunkAndInverse CwtFilter::
         readChunk( const Signal::Interval& I )
 {
     unsigned firstSample = I.first, numberOfSamples = I.count();
@@ -54,35 +54,38 @@ Tfr::pChunk CwtFilter::
     while(true) try
     {
         TIME_CwtFilter Intervals(I).print("CwtFilter subread");
-        Tfr::pChunk c;
+        Filter::ChunkAndInverse ci;
 
         CwtFilter* f = dynamic_cast<CwtFilter*>(source().get());
         if ( f && f->transform() == transform()) {
-            c = f->readChunk( I );
+            ci = f->readChunk( I );
 
         } else {
             unsigned L = redundant_samples + numberOfSamples + wavelet_std_samples;
 
-            pBuffer b = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
+            ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
 
             // Compute the continous wavelet transform
-            c = (*transform())( b );
+            ci.chunk = (*transform())( ci.inverse );
         }
 
         // Only apply filter if it would affect these samples
-        Intervals work(c->getInterval());
+        Intervals work(ci.chunk->getInterval());
         work -= affected_samples().inverse();
 
-        // Apply filter
         if (work)
+            ci.inverse.reset();
+
+        // Apply filter
+        if (work || !_try_shortcuts)
         {
-            TIME_CwtFilter Intervals(c->getInterval()).print("CwtFilter applying filter");
-            (*this)( *c );
+            TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter applying filter");
+            (*this)( *ci.chunk );
         }
 
-        TIME_CwtFilter Intervals(c->getInterval()).print("CwtFilter after filter");
+        TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter after filter");
 
-        return c;
+        return ci;
     } catch (const CufftException &x) {
         switch (x.getCufftError())
         {

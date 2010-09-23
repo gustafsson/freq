@@ -133,7 +133,7 @@ public:
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
-    void todo_list( Intervals v );
+    void todo_list( const Intervals& v );
     Intervals todo_list();
 
     /**

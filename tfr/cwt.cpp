@@ -141,8 +141,13 @@ pChunk Cwt::
 
             cufftComplex *d = g->getCudaGlobal().ptr();
 
-            CufftHandleContext _fft_many;
-            CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
+            //Stft stft;
+            //stft.set_exact_chunk_size(n.width);
+
+            {
+                CufftHandleContext _fft_many;
+                CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
+            }
 
             TIME_CWT CudaException_ThreadSynchronize();
         }
@@ -163,6 +168,10 @@ Signal::pBuffer Cwt::
             chunk.n_valid_samples,
             chunk.sample_rate
             ));
+
+    r->waveform_data()->getCudaGlobal();
+    chunk.transform_data->getCudaGlobal();
+    r->waveform_data()->getCudaGlobal();
 
     {
         TIME_ICWT TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);

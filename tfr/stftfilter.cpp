@@ -26,40 +26,43 @@ StftFilter::
 }
 
 
-pChunk StftFilter::
+Filter::ChunkAndInverse StftFilter::
         readChunk( const Signal::Interval& I )
 {
     unsigned firstSample = I.first, numberOfSamples = I.count();
 
     TIME_StftFilter TaskTimer tt("StftFilter::readChunk ( %u, %u )", firstSample, numberOfSamples);
 
-    pChunk c;
+    Filter::ChunkAndInverse ci;
 
     StftFilter* f = dynamic_cast<StftFilter*>(source().get());
     if ( f && f->transform() == transform()) {
-        c = f->readChunk( I );
+        ci = f->readChunk( I );
 
     } else {
-        pBuffer b = _source->readFixedLength( I );
+        ci.inverse = _source->readFixedLength( I );
 
         // Compute the continous wavelet transform
-        c = (*transform())( b );
+        ci.chunk = (*transform())( ci.inverse );
     }
 
     // Apply filter
-    Intervals work(c->getInterval());
+    Intervals work(ci.chunk->getInterval());
     work -= affected_samples().inverse();
 
-    // Only apply filter if it would affect these samples
     if (work)
+        ci.inverse.reset();
+
+    // Only apply filter if it would affect these samples
+    if (work || !_try_shortcuts)
     {
-        TIME_StftFilter Intervals(c->getInterval()).print("StftFilter applying filter");
-        (*this)( *c );
+        TIME_StftFilter Intervals(ci.chunk->getInterval()).print("StftFilter applying filter");
+        (*this)( *ci.chunk );
     }
 
-    TIME_StftFilter Intervals(c->getInterval()).print("StftFilter after filter");
+    TIME_StftFilter Intervals(ci.chunk->getInterval()).print("StftFilter after filter");
 
-    return c;
+    return ci;
 }
 
 

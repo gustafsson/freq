@@ -55,9 +55,8 @@ Signal::pBuffer PostSink::
         prev.reset( new BufferSource( b ));
         BOOST_FOREACH( pOperation c, active_operations) {
             c->source(prev);
-            prev = c;
+            c->read( I );
         }
-        prev->read( I );
     }
 
     BOOST_FOREACH( pOperation c, passive_operations )
@@ -124,7 +123,7 @@ bool PostSink::
 Intervals PostSink::
         affected_samples()
 {
-    Intervals I = Operation::affected_samples();
+    Intervals I;
 
     if (_filter)
         I |= _filter->affected_samples();

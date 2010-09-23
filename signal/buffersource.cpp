@@ -34,7 +34,7 @@ BufferSource::
 pBuffer BufferSource::
         read( const Interval& I )
 {
-    if (Intervals(I) & _waveform->getInterval())
+    if (Intervals(I.first, I.first+1) & _waveform->getInterval())
         return _waveform;
 
     return zeros(I);

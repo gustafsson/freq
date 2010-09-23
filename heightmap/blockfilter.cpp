@@ -15,6 +15,16 @@ using namespace Tfr;
 namespace Heightmap
 {
 
+BlockFilter::
+        BlockFilter( Collection* collection )
+            :
+            Filter(),
+            _collection (collection)
+{
+    _try_shortcuts = false;
+}
+
+
 void BlockFilter::
         operator()( Tfr::Chunk& chunk )
 {
@@ -51,6 +61,13 @@ void BlockFilter::
             block->new_data_available = true;
         }
     }
+}
+
+
+Signal::Intervals BlockFilter::
+        affected_samples()
+{
+    return Signal::Intervals::Intervals();
 }
 
 

@@ -12,12 +12,18 @@ namespace Heightmap
 class BlockFilter: public virtual Tfr::Filter
 {
 public:
-    BlockFilter( Collection* collection ) : Filter(), _collection (collection) {}
+    BlockFilter( Collection* collection );
 
+    /// @overload Tfr::Filter::operator ()(Tfr::Chunk&)
     virtual void operator()( Tfr::Chunk& chunk );
 
+    /// @overload Signal::Operation::affected_samples()
+    virtual Signal::Intervals affected_samples();
+
+    /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     virtual Signal::Operation* affecting_source( const Signal::Interval& );
 
+    /// @overload Signal::Operation::fetch_invalid_samples()
     virtual Signal::Intervals fetch_invalid_samples();
 
 

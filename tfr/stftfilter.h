@@ -11,7 +11,7 @@ public:
     StftFilter( Signal::pOperation source=Signal::pOperation(),
                 Tfr::pTransform transform=Tfr::pTransform() );
 
-    virtual pChunk readChunk( const Signal::Interval& I );
+    virtual Filter::ChunkAndInverse readChunk( const Signal::Interval& I );
 
 
     /**

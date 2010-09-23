@@ -18,11 +18,13 @@ using namespace boost;
 
 namespace Tfr {
 
+
 CufftHandleContext::
         CufftHandleContext( cudaStream_t stream )
 :   _handle(0),
     _stream(stream)
 {}
+
 
 CufftHandleContext::
         ~CufftHandleContext()
@@ -30,6 +32,7 @@ CufftHandleContext::
     destroy();
     _creator_thread.reset();
 }
+
 
 cufftHandle CufftHandleContext::
         operator()( unsigned elems, unsigned batch_size )
@@ -39,25 +42,35 @@ cufftHandle CufftHandleContext::
         _batch_size = batch_size;
         create();
 	} else {
-		_creator_thread.throwIfNotSame(__FUNCTION__);
+        _creator_thread.throwIfNotSame(__FUNCTION__);
 	}
     return _handle;
 }
+
 
 void CufftHandleContext::
         create()
 {
     destroy();
-    CufftException_SAFE_CALL(cufftPlan1d(&_handle, _elems, CUFFT_C2C, _batch_size));
+    int n = _elems;
+    CufftException_SAFE_CALL(cufftPlanMany(
+            &_handle,
+            1,
+            &n,
+            NULL, 1, 0,
+            NULL, 1, 0,
+            CUFFT_C2C,
+            _batch_size));
     CufftException_SAFE_CALL(cufftSetStream(_handle, _stream ));
     _creator_thread.reset();
 }
 
+
 void CufftHandleContext::
         destroy()
 {
-    if (_handle) {
-		_creator_thread.throwIfNotSame(__FUNCTION__);
+    if (_handle!=0 && _handle!=(cufftHandle)-1) {
+        _creator_thread.throwIfNotSame(__FUNCTION__);
 
 		CufftException_SAFE_CALL(cufftDestroy(_handle));
 
@@ -65,16 +78,19 @@ void CufftHandleContext::
     }
 }
 
+
 Fft::
         Fft(/*cudaStream_t stream*/)
 //:   _fft_single( stream )
 {
 }
 
+
 Fft::
         ~Fft()
 {
 }
+
 
 pChunk Fft::
         forward( Signal::pBuffer real_buffer)
@@ -254,7 +270,15 @@ Tfr::pChunk Stft::
     {
         try
         {
-            CufftException_SAFE_CALL(cufftPlan1d(&fft_many, _chunk_size, CUFFT_C2C, slices));
+            int nx = _chunk_size;
+            CufftException_SAFE_CALL(cufftPlanMany(
+                    &fft_many,
+                    1,
+                    &nx,
+                    NULL, 1, 0,
+                    NULL, 1, 0,
+                    CUFFT_C2C,
+                    slices));
 
             CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
             CufftException_SAFE_CALL(cufftExecC2C(fft_many, input + i*n.width, output + i*n.width, CUFFT_FORWARD));

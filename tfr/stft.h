@@ -15,7 +15,7 @@ namespace Tfr {
   */
 class CufftHandleContext {
 public:
-    CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlan1d( CUFFT_C2C )
+    CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlanMany( CUFFT_C2C )
     ~CufftHandleContext();
 
     cufftHandle operator()( unsigned elems, unsigned batch_size );
@@ -76,6 +76,9 @@ public:
 
     unsigned chunk_size() { return _chunk_size; }
     unsigned set_approximate_chunk_size( unsigned preferred_size );
+
+    /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
+    void set_exact_chunk_size( unsigned chunk_size ) { _chunk_size = chunk_size; }
 
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 60);
 private:
