@@ -46,6 +46,7 @@ namespace Tools
         RenderModel *model;
         RenderView *view;
 
+    private: // GUI stuff
         // These are never used outside setupGui, but they are named here
         // to make it clear what class that is responsible for them.
         QToolBar* toolbar_render;
@@ -57,9 +58,13 @@ namespace Tools
 
         void setupGui();
 
+    private: // Controlling
+        QMutex _invalidRangeMutex;
+        Signal::Intervals _invalidRange;
+
     private slots:
         void clearCachedHeightmap();
-
+        void frameTick();
     };
 } // namespace Tools
 

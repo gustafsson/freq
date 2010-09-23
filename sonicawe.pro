@@ -93,9 +93,10 @@ SOURCES += \
     tools/selectionview.cpp \
     tools/selectionviewmodel.cpp \
     tools/timelinecontroller.cpp \
-    tools/timelinemodel.cpp \
     tools/timelineview.cpp \
     tools/toolfactory.cpp \
+    tools/support/drawworking.cpp \
+    tools/support/drawwaveform.cpp \
     ui/comboboxaction.cpp \
     ui/displaywidget.cpp \
     ui/mainwindow.cpp \
@@ -165,9 +166,10 @@ HEADERS += \
     tools/selectionview.h \
     tools/selectionviewmodel.h \
     tools/timelinecontroller.h \
-    tools/timelinemodel.h \
     tools/timelineview.h \
     tools/toolfactory.h \
+    tools/support/drawworking.h \
+    tools/support/drawwaveform.h \
     ui/comboboxaction.h \
     ui/displaywidget.h \
     ui/mainwindow.h \

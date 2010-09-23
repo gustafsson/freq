@@ -34,19 +34,14 @@ protected:
     virtual void paintGL();
     void setupCamera( bool staticTimeLine = false );
 
-    // overloaded from QWidget
-    virtual void wheelEvent ( QWheelEvent *e );
-    virtual void mousePressEvent ( QMouseEvent * e );
-    virtual void mouseReleaseEvent ( QMouseEvent * e );
-    virtual void mouseMoveEvent ( QMouseEvent * e );
 private:
+    friend class TimelineController; // TODO remove
+
     float   _xscale,
             _xoffs,
             _barHeight;
-    int _movingTimeline;
     Sawe::Project* _project;
     RenderView* _render_view;
-    Ui::MouseControl moveButton;
 };
 
 } // namespace Tools

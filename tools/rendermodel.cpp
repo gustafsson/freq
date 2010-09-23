@@ -10,6 +10,8 @@ RenderModel::
 {
     collection.reset( new Heightmap::Collection(&project->worker));
     collectionCallback.reset( new Signal::WorkerCallback( &project->worker, collection->postsink() ));
+
+    renderer.reset( new Heightmap::Renderer( collection.get() ));
 }
 
 } // namespace Tools

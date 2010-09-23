@@ -1,7 +1,6 @@
 #include "toolfactory.h"
 #include "timelinecontroller.h"
 #include "timelineview.h"
-#include "timelinemodel.h"
 #include "rendercontroller.h"
 #include "renderview.h"
 
@@ -18,9 +17,8 @@ ToolFactory::
     _render_view = new RenderView(&render_model);
     _render_controller = new RenderController(_render_view);
 
-    //_timeline_model = new TimelineModel();
     _timeline_view = new TimelineView(p, _render_view);
-    //_timeline_controller = new TimelineController(view);
+    _timeline_controller = new TimelineController(_timeline_view);
 }
 
 

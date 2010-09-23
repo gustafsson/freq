@@ -24,7 +24,7 @@ namespace Tools{ class RenderView; }
 namespace Ui {
 
 class DisplayWidget :
-        public QGLWidget
+        public QWidget
 //        public Signal::Sink //, /* sink is used as microphone callback */
 //        public QTimer && // TODO tidy
 {
@@ -42,26 +42,17 @@ public:
         Yscale_LogExpLinear
     } yscale;
     floatAni orthoview;
-    float xscale;
 
 	bool isRecordSource();
     void setWorkerSource( Signal::pOperation s = Signal::pOperation());
 
     std::string selection_filename;
     unsigned playback_device;
-    Heightmap::Collection* collection();
-    Heightmap::Renderer* renderer();
+    //Heightmap::Renderer* renderer();
     Tfr::CwtFilter* getCwtFilterHead(); // todo remove
 
-/*    virtual void keyPressEvent( QKeyEvent *e );
-    virtual void keyReleaseEvent ( QKeyEvent * e );
-    */
 protected:
     void open_inverse_test(std::string soundfile="");
-    virtual void initializeGL();
-    virtual void resizeGL( int width, int height );
-    virtual void paintGL();
-    void setupCamera();
 
     virtual void mousePressEvent ( QMouseEvent * e );
     virtual void mouseReleaseEvent ( QMouseEvent * e );
@@ -103,6 +94,7 @@ signals:
 
 private:
     friend class Heightmap::Renderer;
+    friend class Tools::RenderView;
 
     Sawe::Project* project;
 
@@ -111,30 +103,12 @@ private:
 
     Signal::pOperation _matlabfilter;
     Signal::pOperation _matlaboperation;
-    boost::scoped_ptr<TaskTimer> _work_timer;
-    boost::scoped_ptr<TaskTimer> _render_timer;
 
     bool _follow_play_marker;
-
-    struct ListCounter {
-        GLuint displayList;
-        enum Age {
-            Age_JustCreated,
-            Age_InUse,
-            Age_ProposedForRemoval
-        } age;
-        //ListAge age;
-    };
-    std::map<void*, ListCounter> _chunkGlList;
     
     QTimer *_timer;
-    float _px, _py, _pz,
-		_rx, _ry, _rz,
-                _prevLimit;
     int _prevX, _prevY, _targetQ;
     bool _selectionActive, _navigationActive, _infoToolActive;
-    QMutex _invalidRangeMutex;
-    Signal::Intervals _invalidRange;
 
     void drawArrows();
     void drawColorFace();
@@ -143,8 +117,6 @@ private:
     static void drawSpectrogram_borders_directMode( Heightmap::pRenderer renderer );
     template<typename RenderData> void draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw=false );
     
-    bool _enqueueGcDisplayList;
-    void gcDisplayList();
     
     GLint viewport[4];
     GLdouble modelMatrix[16];
@@ -159,7 +131,6 @@ private:
     void setSelection(int i, bool enabled);
     void removeFilter(int i);
     
-    void drawWorking();
     void locatePlaybackMarker();
     
     bool insideCircle( float x1, float z1 );

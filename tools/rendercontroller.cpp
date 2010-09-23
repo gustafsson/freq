@@ -52,7 +52,7 @@ RenderController::
 void RenderController::
         receiveSetRainbowColors()
 {
-    view->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
+    model->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
     view->update();
 }
 
@@ -60,7 +60,7 @@ void RenderController::
 void RenderController::
         receiveSetGrayscaleColors()
 {
-    view->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
+    model->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
     view->update();
 }
 
@@ -68,7 +68,7 @@ void RenderController::
 void RenderController::
         receiveToogleHeightlines(bool value)
 {
-    view->renderer->draw_height_lines = value;
+    model->renderer->draw_height_lines = value;
     view->update();
 }
 
@@ -76,7 +76,7 @@ void RenderController::
 void RenderController::
         receiveTogglePiano(bool value)
 {
-    view->renderer->draw_piano = value;
+    model->renderer->draw_piano = value;
     view->update();
 }
 
@@ -84,7 +84,7 @@ void RenderController::
 void RenderController::
         receiveToggleHz(bool value)
 {
-    view->renderer->draw_hz = value;
+    model->renderer->draw_hz = value;
     view->update();
 }
 
@@ -93,7 +93,7 @@ void RenderController::
         receiveSetYScale( int value )
 {
     float f = value / 50.f - 1.f;
-    view->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
+    model->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
     view->update();
 }
 
@@ -122,14 +122,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Signal::pOperation s = view->renderer->collection()->postsink();
+    Signal::pOperation s = model->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(view->renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -141,14 +141,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Signal::pOperation s = view->renderer->collection()->postsink();
+    Signal::pOperation s = model->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(view->renderer->collection());
+    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(model->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
 
@@ -159,14 +159,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Signal::pOperation s = view->renderer->collection()->postsink();
+    Signal::pOperation s = model->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(view->renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
@@ -178,14 +178,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Signal::pOperation s = view->renderer->collection()->postsink();
+    Signal::pOperation s = model->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(view->renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
@@ -199,14 +199,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Signal::pOperation s = view->renderer->collection()->postsink();
+    Signal::pOperation s = model->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(view->renderer->collection());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -303,18 +303,20 @@ void RenderController::
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroyingRenderView()), SLOT(clearCachedHeightmap()));
+    connect(view, SIGNAL(paintedView()), SLOT(frameTick()));
 
 
     // Embed the god object: DisplayWidget
     Ui::DisplayWidget* d = new Ui::DisplayWidget( model->project, view, model );
-    d->makeCurrent();
+    view->makeCurrent();
     view->displayWidget = d;
 
-    view->layout()->setMargin(0);
-    view->layout()->addWidget(d);
+    d->setLayout(new QHBoxLayout());
+    d->layout()->setMargin(0);
+    d->layout()->addWidget(view);
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(view);
+    main->centralWidget()->layout()->addWidget(d);
 
 
     // TODO remove
@@ -375,6 +377,26 @@ void RenderController::
 
     // Destroy the cuda context for this thread
     CudaException_SAFE_CALL( cudaThreadExit() );
+}
+
+
+void RenderController::
+        frameTick()
+{
+    QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
+    if (!_invalidRange.isEmpty()) {
+        Signal::Intervals blur = _invalidRange;
+        unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_std_samples(model->project->worker.source()->sample_rate());
+        blur += fuzzy;
+        _invalidRange |= blur;
+
+        blur = _invalidRange;
+        blur -= fuzzy;
+        _invalidRange |= blur;
+
+        model->collection->invalidate_samples( _invalidRange );
+        _invalidRange = Signal::Intervals();
+    }
 }
 
 } // namespace Tools

@@ -22,11 +22,10 @@ namespace Tools {
 
 TimelineView::
         TimelineView( Sawe::Project* p, RenderView* render_view )
-:   QGLWidget( 0, render_view->displayWidget, Qt::WindowFlags(0) ),
+:   QGLWidget( 0, render_view, Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
-    _movingTimeline( 0 ),
     _project( p ),
     _render_view( render_view )
 {
@@ -36,24 +35,6 @@ TimelineView::
     {
         throw std::invalid_argument("Failed to open a second OpenGL window. Couldn't find a valid rendering context to share.");
     }
-
-    Ui::SaweMainWindow* MainWindow = dynamic_cast<Ui::SaweMainWindow*>(p->mainWindow());
-    QDockWidget* dock = new QDockWidget(MainWindow);
-    dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
-    dock->setMinimumSize(QSize(42, 79));
-    dock->setMaximumSize(QSize(524287, 524287));
-    dock->setContextMenuPolicy(Qt::NoContextMenu);
-    dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
-    dock->setEnabled(true);
-    dock->setAutoFillBackground(true);
-    dock->setWidget(this);
-    dock->setWindowTitle("Timeline");
-    dock->show();
-    MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
-
-
-    Ui::DisplayWidget* d = dynamic_cast<Ui::DisplayWidget*>(render_view->displayWidget);
-    connect(d, SIGNAL(renderingParametersChanged()), this, SLOT(update()));
 }
 
 
@@ -62,20 +43,6 @@ TimelineView::
 {
     TaskTimer tt("~TimelineView");
 }
-
-
-/*void TimelineView::
-        put(Signal::pBuffer , Signal::pOperation )
-{
-    update();
-}
-
-
-void TimelineView::
-        add_expected_samples( const Signal::Intervals& )
-{
-    update();
-}*/
 
 
 void TimelineView::
@@ -164,9 +131,9 @@ void TimelineView::
             {
                 glPushMatrixContext a;
 
-                _render_view->renderer->draw( 0.f );
+                _render_view->model->renderer->draw( 0.f );
                 _project->tools().selection_view.drawSelection();
-                _render_view->renderer->drawFrustum();
+                _render_view->model->renderer->drawFrustum();
             }
         }
 
@@ -177,7 +144,7 @@ void TimelineView::
 
             glScalef(1,1,_barHeight);
             glTranslatef(0,0,-1);
-            _render_view->renderer->draw( 0.f );
+            _render_view->model->renderer->draw( 0.f );
 
             float length = std::max( 1.f, _project->worker.source()->length());
             glColor4f( 0.75, 0.75,0.75, .5);
@@ -205,7 +172,7 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            _render_view->renderer->drawFrustum(0.75);
+            _render_view->model->renderer->drawFrustum(0.75);
         }
 
         GlException_CHECK_ERROR();
@@ -229,7 +196,7 @@ void TimelineView::
 
     if (0 == "Make sure that the camera focus point is within the timeline")
     {
-        float t = _render_view->renderer->camera[0];
+        float t = _render_view->model->renderer->camera[0];
         if (t < _xoffs) _xoffs = t;
         if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
     }
@@ -245,114 +212,6 @@ void TimelineView::
         glScalef(_xscale, 1, 1);
         glTranslatef(-_xoffs, 0, 0);
     }
-}
-
-
-void TimelineView::
-        wheelEvent ( QWheelEvent *e )
-{
-    makeCurrent();
-    setupCamera();
-
-    int x = e->x(), y = height() - e->y();
-    float ps = 0.0005f;
-
-    GLvector current;
-    moveButton.spacePos(x, y, current[0], current[1]);
-
-    float f = 1.f - ps * e->delta();
-    _xscale *= f;
-
-    setupCamera();
-
-    GLvector newPos;
-    moveButton.spacePos(x, y, newPos[0], newPos[1]);
-
-    //_xoffs -= current[0]/prevscale*_xscale-newPos[0];
-    //_xoffs = current[0] - _xscale*(x/(float)width());
-    _xoffs -= newPos[0]-current[0];
-
-    setupCamera();
-
-    GLvector newPos2;
-    moveButton.spacePos(x, y, newPos2[0], newPos2[1]);
-
-    // float tg = _oldoffs + x * prevscale;
-    // float tg2 = _newoffs + x/(float)width() * _xscale;
-    //_xoffs -= x/(float)width() * (prevscale-_xscale);
-
-    if (0) printf("[%d, %d] -> [%g, %g, %g] -> (%g, %g)\n",
-           x, y,
-           current[0], newPos[0], newPos2[0],
-           _xscale, _xoffs);
-
-    update();
-}
-
-
-void TimelineView::
-        mousePressEvent ( QMouseEvent * e )
-{
-    makeCurrent();
-    setupCamera();
-
-    int x = e->x(), y = height() - e->y();
-
-    GLvector prev;
-    moveButton.spacePos(prev[0], prev[1]);
-
-    GLvector current;
-    moveButton.spacePos(x, y, current[0], current[1]);
-
-    if (e->buttons() & Qt::LeftButton)
-    {
-        if (0 == _movingTimeline)
-        {
-            if (current[1]>=0)  _movingTimeline = 1;
-            else                _movingTimeline = 2;
-        }
-
-        switch ( _movingTimeline )
-        {
-        case 1:
-            _render_view->setPosition( current[0], current[1] );
-            break;
-        case 2:
-            {
-                setupCamera( true );
-                moveButton.spacePos(x, y, current[0], current[1]);
-
-                float length = std::max( 1.f, _project->worker.source()->length());
-                _xoffs = current[0] - 0.5f*length/_xscale;
-            }
-            break;
-        }
-    }
-
-    if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
-    {
-        _xoffs -= current[0] - prev[0];
-    }
-
-    moveButton.press( x, y );
-    update();
-}
-
-
-void TimelineView::
-        mouseReleaseEvent ( QMouseEvent * e)
-{
-    if (0 == (e->buttons() & Qt::LeftButton)) {
-        _movingTimeline = 0;
-    }
-    moveButton.release();
-}
-
-
-void TimelineView::
-        mouseMoveEvent ( QMouseEvent * e )
-{
-    mousePressEvent(e);
 }
 
 

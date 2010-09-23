@@ -6,6 +6,7 @@ namespace Sawe {
 }
 
 #include "heightmap/collection.h"
+#include "heightmap/renderer.h"
 
 namespace Tools
 {
@@ -16,11 +17,13 @@ namespace Tools
 
         boost::scoped_ptr<Heightmap::Collection> collection;
         Signal::pWorkerCallback collectionCallback;
+        Heightmap::pRenderer renderer;
 
     private:
         friend class RenderView; // todo remove
         friend class RenderController; // todo remove
-        Sawe::Project* project;
+        friend class TimelineController; // todo remove
+        Sawe::Project* project; // project should probably be a member of RenderController instead
     };
 } // namespace Tools
 

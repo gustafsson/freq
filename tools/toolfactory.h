@@ -38,8 +38,7 @@ namespace Tools
         class RenderView* _render_view;
 
         class TimelineView* _timeline_view;
-        //boost::scoped_ptr<class TimelineModel> _timeline_model;
-        //boost::scoped_ptr<class TimelineController> _timeline_controller;
+        class TimelineController* _timeline_controller;
 
         Sawe::Project* _project;
     };
