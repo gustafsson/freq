@@ -19,11 +19,13 @@ namespace Tools
         Signal::pWorkerCallback collectionCallback;
         Heightmap::pRenderer renderer;
 
+        Sawe::Project* project() { return _project; }
+
     private:
         friend class RenderView; // todo remove
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
-        Sawe::Project* project; // project should probably be a member of RenderController instead
+        Sawe::Project* _project; // project should probably be a member of RenderController instead
     };
 } // namespace Tools
 

@@ -42,6 +42,10 @@ public:
       */
     std::string invokeAndWait( std::string source );
     std::string getTempName();
+
+    std::string matlabFunction();
+    float timeout();
+
 private:
     // Not copyable
     MatlabFunction( const MatlabFunction& );
@@ -53,6 +57,7 @@ private:
     void* _pid;
     std::string _dataFile;
     std::string _resultFile;
+    std::string _matlab_function;
     float _timeout;
 };
 
@@ -62,8 +67,11 @@ public:
     MatlabOperation( Signal::pOperation source, std::string matlabFunction );
 
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
+
+    void restart();
+
 protected:
-    MatlabFunction _matlab;
+    boost::scoped_ptr<MatlabFunction> _matlab;
 };
 
 } // namespace Adapters

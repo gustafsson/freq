@@ -6,7 +6,8 @@
 #include "signal/operation.h"
 #include "tfr/cwtfilter.h"
 
-namespace Signal {
+namespace Tools {
+    namespace Support {
 
 /**
   OperationSubOperations is used by complex Operations that are built
@@ -21,21 +22,21 @@ namespace Signal {
   reads from _source. _readSubOperation is supposed to be created by another
   class subclassing OperationSubOperations. Hence the protected constructor.
   */
-class OperationSubOperations : public Operation {
+class OperationSubOperations : public Signal::Operation {
 public:
-    pOperation subSource() { return _readSubOperation; }
+    Signal::pOperation subSource() { return _readSubOperation; }
 
 	std::string name() { return _name; }
 
 protected:
-	OperationSubOperations(pOperation source, std::string name = "");
+    OperationSubOperations(Signal::pOperation source, std::string name = "");
 
-    virtual pBuffer read( const Interval&  I);
-    virtual pOperation source() { return Operation::source(); }
-    virtual void source(pOperation v);
+    virtual Signal::pBuffer read( const Signal::Interval&  I);
+    virtual Signal::pOperation source() { return Signal::Operation::source(); }
+    virtual void source(Signal::pOperation v);
 
-    pOperation _sourceSubOperation;
-    pOperation _readSubOperation;
+    Signal::pOperation _sourceSubOperation;
+    Signal::pOperation _readSubOperation;
 	std::string _name;
 };
 
@@ -47,7 +48,7 @@ protected:
 */
 class OperationSetSilent: public OperationSubOperations {
 public:
-    OperationSetSilent( pOperation source, unsigned firstSample, unsigned numberOfSamples );
+    OperationSetSilent( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
 
     void reset( unsigned firstSample, unsigned numberOfSamples );
 };
@@ -60,7 +61,7 @@ public:
 */
 class OperationCrop: public OperationSubOperations {
 public:
-    OperationCrop( pOperation source, unsigned firstSample, unsigned numberOfSamples );
+    OperationCrop( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
 
     void reset( unsigned firstSample, unsigned numberOfSamples );
 };
@@ -88,7 +89,7 @@ public:
   */
 class OperationMove: public OperationSubOperations {
 public:
-    OperationMove( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    OperationMove( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 
     void reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 };
@@ -116,7 +117,7 @@ public:
   */
 class OperationMoveMerge: public OperationSubOperations {
 public:
-    OperationMoveMerge( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    OperationMoveMerge( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 
     void reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
 };
@@ -139,18 +140,19 @@ public:
   */
 class OperationShift: public OperationSubOperations {
 public:
-    OperationShift( pOperation source, int sampleShift );
+    OperationShift( Signal::pOperation source, int sampleShift );
 
     void reset( int sampleShift );
 };
 
 class OperationMoveSelection: public OperationSubOperations {
 public:
-    OperationMoveSelection( pOperation source, Signal::pOperation selectionFilter, int sampleShift, float freqDelta );
+    OperationMoveSelection( Signal::pOperation source, Signal::pOperation selectionFilter, int sampleShift, float freqDelta );
 
     void reset( Signal::pOperation selectionFilter, int sampleShift, float freqDelta );
 };
 
-} // namespace Signal
+} // namespace Support
+} // namespace Tools
 
 #endif // SIGNALOPERATIONCOMPOSITE_H

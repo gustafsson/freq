@@ -8,8 +8,9 @@ namespace Sawe {
 // TODO remove
 #include "rendermodel.h"
 #include "selectionmodel.h"
+#include "playbackmodel.h"
 
-#include "selectionview.h"
+#include <typeinfo>
 
 namespace Tools
 {
@@ -22,16 +23,9 @@ namespace Tools
         ToolFactory(Sawe::Project* p);
         ~ToolFactory();
 
-        // TODO remove
         RenderModel render_model;
         SelectionModel selection_model;
-
-        SelectionView selection_view;
-
-        // PlaybackView playback_view;
-        // DiskwriterView diskwriter_view;
-
-        // map<string, QWidget*> SelectionView selection_widget;
+        PlaybackModel playback_model;
 
     private:
         class RenderController* _render_controller;
@@ -39,6 +33,9 @@ namespace Tools
 
         class TimelineView* _timeline_view;
         class TimelineController* _timeline_controller;
+
+        class SelectionView* _selection_view;
+        class SelectionController* _selection_controller;
 
         Sawe::Project* _project;
     };

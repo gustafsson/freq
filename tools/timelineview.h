@@ -28,10 +28,15 @@ public:
     //virtual void    add_expected_samples( const Signal::Intervals& );
 
 protected:
-    // overloaded from QGLWidget
+    /// @overload QGLWidget::initializeGL()
     virtual void initializeGL();
+
+    /// @overload QGLWidget::resizeGL()
     virtual void resizeGL( int width, int height );
+
+    /// @overload QGLWidget::paintGL()
     virtual void paintGL();
+
     void setupCamera( bool staticTimeLine = false );
 
 private:

@@ -1,8 +1,8 @@
 #ifndef SIGNALWORKER_H
 #define SIGNALWORKER_H
 
-#include "signal/sink.h"
 #include "signal/intervals.h"
+#include "signal/postsink.h"
 #include <boost/noncopyable.hpp>
 #include <QMutex>
 #include <QThread>
@@ -148,6 +148,7 @@ public:
       */
     Signal::pOperation     source() const;
     void                source(Signal::pOperation s);
+    void                appendOperation(Signal::pOperation s);
 
     /**
       Get number of samples computed for each iteration.
@@ -170,10 +171,13 @@ public:
 	  */
 	void				checkForErrors();
 
+
     /**
       Get all callbacks that data are sent to after each workOne.
+
+      TODO Shouldn't be exposed like this.
       */
-    std::vector<pOperation> callbacks();
+    PostSink* postSink();
 
 private:
     friend class WorkerCallback;
@@ -203,7 +207,8 @@ private:
     /**
       All callbacks in this list are called once for each call of workOne().
       */
-    std::vector<pOperation> _callbacks;
+    PostSink _post_sink;
+    //std::vector<pOperation> _callbacks;
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.

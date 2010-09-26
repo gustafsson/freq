@@ -1,19 +1,25 @@
-#include "signal/operation-composite.h"
+#include "operation-composite.h"
+
 #include "signal/operation-basic.h"
-#include "filters/filters.h"
+#include "filters/move.h"
+#include "filters/ellips.h"
 #include <demangle.h>
 
-namespace Signal {
+using namespace Signal;
+
+namespace Tools {
+    namespace Support {
 
 
     // OperationSubOperations  /////////////////////////////////////////////////////////////////
 
 OperationSubOperations::
-	OperationSubOperations(pOperation source, std::string name)
+        OperationSubOperations(pOperation source, std::string name)
 :   Operation(source),
     _sourceSubOperation( new Operation(source)),
 	_name(name)
 {}
+
 
 pBuffer OperationSubOperations ::
         read( const Interval &I )
@@ -157,23 +163,23 @@ void OperationMoveSelection::
     // 'sampleShift' in time and 'freqDelta' in frequency
 
     pOperation  extract, remove;
-    if (Filters::EllipsFilter* f = dynamic_cast<Filters::EllipsFilter*>(selectionFilter.get())) {
+    if (Filters::Ellips* f = dynamic_cast<Filters::Ellips*>(selectionFilter.get())) {
 
         // Create filter for extracting selection
-        extract.reset( new Filters::EllipsFilter(*f) );
-        dynamic_cast<Filters::EllipsFilter*>(extract.get())->_save_inside = true;
+        extract.reset( new Filters::Ellips(*f) );
+        dynamic_cast<Filters::Ellips*>(extract.get())->_save_inside = true;
         extract->source( source() );
 
         // Create filter for removing selection
-        remove.reset( new Filters::EllipsFilter(*f) );
-        dynamic_cast<Filters::EllipsFilter*>(remove.get())->_save_inside = false;
+        remove.reset( new Filters::Ellips(*f) );
+        dynamic_cast<Filters::Ellips*>(remove.get())->_save_inside = false;
         remove->source( source() );
 
 	} else {
 		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipsFilter as selectionFilter");
 	}
 
-    Signal::pOperation extractAndMove = extract;
+    pOperation extractAndMove = extract;
     {
         // Create operation for moving extracted selection in time
         if (0!=sampleShift)
@@ -182,17 +188,17 @@ void OperationMoveSelection::
         // Create operation for moving extracted selection in frequency
         if (0!=freqDelta)
         {
-            Signal::pOperation t( new Filters::MoveFilter( freqDelta ));
+            pOperation t( new Filters::Move( freqDelta ));
             t->source( extractAndMove );
             extractAndMove = t;
         }
 
 	}
 
-    Signal::pOperation mergeSelection( new Signal::OperationSuperposition( remove, extractAndMove ));
+    pOperation mergeSelection( new OperationSuperposition( remove, extractAndMove ));
 
 	_readSubOperation = mergeSelection;
 }
 
-} // namespace Signal
-
+    } // namespace Support
+} // namespace Tools

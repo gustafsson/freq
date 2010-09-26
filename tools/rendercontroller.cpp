@@ -1,19 +1,26 @@
 #include "rendercontroller.h"
+
+// tools
+#include "support/sinksignalproxy.h"
+#include "signal/worker.h"
+
+// ui
 #include "ui/comboboxaction.h"
-#include "ui/displaywidget.h"
 #include "ui_mainwindow.h" // Locate actions for binding
 #include "ui/mainwindow.h"
 
-// Setting different transforms for rendering
-#include "tfr/cwt.h"
-#include "heightmap/blockfilter.h"
+// Sonic AWE, Setting different transforms for rendering
 #include "filters/reassign.h"
 #include "filters/ridge.h"
+#include "heightmap/blockfilter.h"
+#include "signal/postsink.h"
+#include "tfr/cwt.h"
 
+// gpumisc
 #include <CudaException.h>
 #include <cuda.h>
 
-// To create Gui
+// Qt
 #include <QToolBar>
 #include <QSlider>
 
@@ -25,7 +32,6 @@ namespace Tools
 RenderController::
         RenderController( RenderView *view )
             :
-            model(view->model),
             view(view),
             toolbar_render(0),
             hzmarker(0),
@@ -35,7 +41,7 @@ RenderController::
     setupGui();
 
     // Default values
-    float l = model->project->worker.source()->length();
+    float l = model()->project()->worker.source()->length();
     view->setPosition( std::min(l, 10.f)*0.5f, 0.5f );
 
     receiveSetTimeFrequencyResolution( 50 );
@@ -52,7 +58,7 @@ RenderController::
 void RenderController::
         receiveSetRainbowColors()
 {
-    model->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
     view->update();
 }
 
@@ -60,7 +66,7 @@ void RenderController::
 void RenderController::
         receiveSetGrayscaleColors()
 {
-    model->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
     view->update();
 }
 
@@ -68,7 +74,7 @@ void RenderController::
 void RenderController::
         receiveToogleHeightlines(bool value)
 {
-    model->renderer->draw_height_lines = value;
+    model()->renderer->draw_height_lines = value;
     view->update();
 }
 
@@ -76,7 +82,7 @@ void RenderController::
 void RenderController::
         receiveTogglePiano(bool value)
 {
-    model->renderer->draw_piano = value;
+    model()->renderer->draw_piano = value;
     view->update();
 }
 
@@ -84,7 +90,7 @@ void RenderController::
 void RenderController::
         receiveToggleHz(bool value)
 {
-    model->renderer->draw_hz = value;
+    model()->renderer->draw_hz = value;
     view->update();
 }
 
@@ -93,7 +99,7 @@ void RenderController::
         receiveSetYScale( int value )
 {
     float f = value / 50.f - 1.f;
-    model->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
+    model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
     view->update();
 }
 
@@ -101,7 +107,7 @@ void RenderController::
 void RenderController::
         receiveSetTimeFrequencyResolution( int value )
 {
-    unsigned FS = model->project->worker.source()->sample_rate();
+    unsigned FS = model()->project()->worker.source()->sample_rate();
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
     c.tf_resolution( exp( 4*(value / 50.f - 1.f)) );
@@ -114,7 +120,7 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_std_t() * FS );
 
-    model->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    model()->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
     view->update();
 }
 
@@ -122,14 +128,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Signal::pOperation s = model->collection->postsink();
+    Signal::pOperation s = model()->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -141,14 +147,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Signal::pOperation s = model->collection->postsink();
+    Signal::pOperation s = model()->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(model->collection.get());
+    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
 
@@ -159,14 +165,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Signal::pOperation s = model->collection->postsink();
+    Signal::pOperation s = model()->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
@@ -178,14 +184,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Signal::pOperation s = model->collection->postsink();
+    Signal::pOperation s = model()->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
@@ -199,14 +205,14 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Signal::pOperation s = model->collection->postsink();
+    Signal::pOperation s = model()->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     if (!ps)
         return;
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model->collection.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
@@ -217,10 +223,17 @@ void RenderController::
 }
 
 
+RenderModel *RenderController::
+        model()
+{
+    return view->model;
+}
+
+
 void RenderController::
         setupGui()
 {
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model->project->mainWindow());
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
     toolbar_render = new QToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarTool"));
     toolbar_render->setEnabled(true);
@@ -229,7 +242,7 @@ void RenderController::
     //main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
 
     // Find Qt Creator managed actions
-    Ui::MainWindow* ui = main->ui;
+    Ui::MainWindow* ui = main->getItems();
 
 
     // ComboBoxAction* hzmarker
@@ -300,75 +313,43 @@ void RenderController::
     connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
 
+    // Update view whenever worker is invalidated
+    Support::SinkSignalProxy* proxy;
+    _updateViewSink.reset( proxy = new Support::SinkSignalProxy() );
+    _updateViewCallback.reset( new Signal::WorkerCallback( &model()->project()->worker, _updateViewSink ));
+    connect( proxy, SIGNAL(recievedInvalidSamples(Intervals)), view, SLOT(update()));
+
+
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroyingRenderView()), SLOT(clearCachedHeightmap()));
-    connect(view, SIGNAL(paintedView()), SLOT(frameTick()));
+    connect(view, SIGNAL(postPaint()), SLOT(frameTick()));
 
-
-    // Embed the god object: DisplayWidget
-    Ui::DisplayWidget* d = new Ui::DisplayWidget( model->project, view, model );
+    // Create the OpenGL rendering context early. Before it is required by
+    // painting the widget we want to create the cuda context (in main.cpp)
+    // and bind it to an OpenGL context.
     view->makeCurrent();
-    view->displayWidget = d;
-
-    d->setLayout(new QHBoxLayout());
-    d->layout()->setMargin(0);
-    d->layout()->addWidget(view);
+    view->setLayout(new QHBoxLayout());
+    view->layout()->setMargin(0);
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(d);
-
-
-    // TODO remove
-    // connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateLayerList(Signal::pOperation)));
-    // connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateOperationsTree(Signal::pOperation)));
-    //connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(receiveCurrentSelection(int, bool)));
-    //connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(receiveFilterRemoval(int)));
-
-    connect(ui->actionActivateSelection, SIGNAL(toggled(bool)), d, SLOT(receiveToggleSelection(bool)));
-    connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), d, SLOT(receiveToggleNavigation(bool)));
-    connect(ui->actionActivateInfoTool, SIGNAL(toggled(bool)), d, SLOT(receiveToggleInfoTool(bool)));
-    connect(ui->actionPlaySelection, SIGNAL(triggered()), d, SLOT(receivePlaySound()));
-    connect(ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), d, SLOT(receiveFollowPlayMarker(bool)));
-    connect(ui->actionActionAdd_selection, SIGNAL(triggered(bool)), d, SLOT(receiveAddSelection(bool)));
-    connect(ui->actionActionRemove_selection, SIGNAL(triggered(bool)), d, SLOT(receiveAddClearSelection(bool)));
-    connect(ui->actionCropSelection, SIGNAL(triggered()), d, SLOT(receiveCropSelection()));
-    connect(ui->actionMoveSelection, SIGNAL(triggered(bool)), d, SLOT(receiveMoveSelection(bool)));
-    connect(ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), d, SLOT(receiveMoveSelectionInTime(bool)));
-    connect(ui->actionMatlabOperation, SIGNAL(triggered(bool)), d, SLOT(receiveMatlabOperation(bool)));
-    connect(ui->actionMatlabFilter, SIGNAL(triggered(bool)), d, SLOT(receiveMatlabFilter(bool)));
-    connect(ui->actionTonalizeFilter, SIGNAL(triggered(bool)), d, SLOT(receiveTonalizeFilter(bool)));
-    connect(ui->actionReassignFilter, SIGNAL(triggered(bool)), d, SLOT(receiveReassignFilter(bool)));
-    connect(ui->actionRecord, SIGNAL(triggered(bool)), d, SLOT(receiveRecord(bool)));
-    connect(d, SIGNAL(setSelectionActive(bool)), ui->actionActivateSelection, SLOT(setChecked(bool)));
-    connect(d, SIGNAL(setNavigationActive(bool)), ui->actionActivateNavigation, SLOT(setChecked(bool)));
-    connect(d, SIGNAL(setInfoToolActive(bool)), ui->actionActivateInfoTool, SLOT(setChecked(bool)));
-
-
-    ui->actionActivateNavigation->setChecked(true);
-
-    // updateOperationsTree( project->worker.source() );
-    //d->getCwtFilterHead();
-
-    if (d->isRecordSource()) {
-        ui->actionRecord->setEnabled(true);
-    } else {
-        ui->actionRecord->setEnabled(false);
-    }
+    main->centralWidget()->layout()->addWidget(view);
 }
 
 
 void RenderController::
         clearCachedHeightmap()
 {
-    if (model->collection->empty())
+    model()->project()->worker.quit();
+
+    if (model()->collection->empty())
         return;
 
     // Assuming calling thread is the GUI thread.
 
     // Clear all cached blocks and release cuda memory befure destroying cuda
     // context
-    model->collection->reset();
+    model()->collection->reset();
 
     // Because the cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
@@ -386,7 +367,7 @@ void RenderController::
     QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
     if (!_invalidRange.isEmpty()) {
         Signal::Intervals blur = _invalidRange;
-        unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_std_samples(model->project->worker.source()->sample_rate());
+        unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_std_samples(model()->project()->worker.source()->sample_rate());
         blur += fuzzy;
         _invalidRange |= blur;
 
@@ -394,7 +375,7 @@ void RenderController::
         blur -= fuzzy;
         _invalidRange |= blur;
 
-        model->collection->invalidate_samples( _invalidRange );
+        model()->collection->invalidate_samples( _invalidRange );
         _invalidRange = Signal::Intervals();
     }
 }

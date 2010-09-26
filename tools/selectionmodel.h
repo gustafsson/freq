@@ -8,6 +8,8 @@ namespace Sawe {
 #include "signal/postsink.h"
 #include "signal/worker.h"
 
+#include <vector>
+
 struct MyVector { // TODO use gpumisc/tvector
     float x, y, z;
 };
@@ -26,7 +28,13 @@ namespace Tools
 
         MyVector selection[2];
 
+        // Tool move selection is not a method of the selection tool
+        // TODO move to its own tool
+        MyVector sourceSelection[2];
+
         Sawe::Project* project;
+
+        std::vector<Signal::pOperation> all_filters;
     };
 } // namespace Tools
 

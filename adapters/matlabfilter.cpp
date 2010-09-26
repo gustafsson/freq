@@ -16,7 +16,7 @@ namespace Adapters {
 
 MatlabFilter::
         MatlabFilter( std::string matlabFunction )
-:   _matlab(matlabFunction, 15)
+:   _matlab(new MatlabFunction(matlabFunction, 15))
 {
 }
 
@@ -26,11 +26,11 @@ void MatlabFilter::
     TaskTimer tt("MatlabFilter::operator()");
 //    TaskTimer tt("MatlabFilter::operator() (%f,%f)", c.startTime(), c.endTime() );
 
-    string file = _matlab.getTempName();
+    string file = _matlab->getTempName();
 
     Hdf5Chunk::saveChunk( file, c );
 
-    file = _matlab.invokeAndWait( file );
+    file = _matlab->invokeAndWait( file );
 
 	if (file.empty())
 		return;
@@ -53,6 +53,17 @@ Signal::Intervals MatlabFilter::
 {
     // As far as we know, the matlab filter may touch anything
     return Signal::Intervals();
+}
+
+
+void MatlabFilter::
+        restart()
+{
+    std::string fn = _matlab->matlabFunction();
+    float t = _matlab->timeout();
+
+    _matlab.reset();
+    _matlab.reset( new MatlabFunction( fn, t ));
 }
 
 

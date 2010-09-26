@@ -2,14 +2,12 @@
 #include "ui_mainwindow.h"
 #include <QKeyEvent>
 #include <QSlider>
-#include "displaywidget.h"
 #include <boost/foreach.hpp>
 #include <sstream>
 #include <iomanip>
 #include <demangle.h>
 #include "tfr/filter.h"
 #include "signal/operation-basic.h"
-#include "signal/operation-composite.h"
 #include "adapters/microphonerecorder.h"
 #include "adapters/audiofile.h"
 #include <boost/graph/adjacency_list.hpp>

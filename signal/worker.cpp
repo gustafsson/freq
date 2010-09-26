@@ -135,6 +135,7 @@ void Worker::
         _todo_condition.wakeAll();
 }
 
+
 Signal::Intervals Worker::
         todo_list()
 {
@@ -143,18 +144,32 @@ Signal::Intervals Worker::
     return c;
 }
 
+
 Signal::pOperation Worker::
         source() const
 {
     return _source;
 }
 
+
 void Worker::
         source(Signal::pOperation value)
 {
     _source = value;
+    _post_sink.invalidate_samples( Intervals::Intervals_ALL );
     // todo_list.clear();
 }
+
+
+void Worker::
+        appendOperation(Signal::pOperation s)
+{
+    s->source( _source );
+    _source = s;
+    _post_sink.invalidate_samples( s->affected_samples() );
+    return;
+}
+
 
 unsigned Worker::
         samples_per_chunk() const
@@ -162,11 +177,13 @@ unsigned Worker::
     return _samples_per_chunk;
 }
 
+
 void Worker::
 		samples_per_chunk_hint(unsigned value)
 {
 	_samples_per_chunk = value;
 }
+
 
 unsigned Worker::
         requested_fps() const
@@ -203,13 +220,21 @@ void Worker::
 }
 
 
-std::vector<pOperation> Worker::
+PostSink* Worker::
+        postSink()
+{
+    return &_post_sink;
+}
+
+
+// TODO remove
+/*std::vector<pOperation> Worker::
         callbacks()
 {
     QMutexLocker l(&_callbacks_lock);
     std::vector<pOperation> c = _callbacks;
     return c;
-}
+}*/
 
 
 ///// PRIVATE
@@ -248,34 +273,33 @@ void Worker::
 	}
 }
 
+
 void Worker::
         addCallback( pOperation c )
 {
     QMutexLocker l( &_callbacks_lock );
-    _callbacks.push_back( c );
+    std::vector<pOperation> callbacks = postSink()->sinks();
+    callbacks.push_back( c );
+    postSink()->sinks(callbacks);
 }
+
 
 void Worker::
         removeCallback( pOperation c )
 {
     QMutexLocker l( &_callbacks_lock );
+    std::vector<pOperation> callbacks = postSink()->sinks();
     // todo, check if this works
-    std::remove( _callbacks.begin(), _callbacks.end(), c );
+    std::remove( callbacks.begin(), callbacks.end(), c );
+    postSink()->sinks(callbacks);
 }
+
 
 pBuffer Worker::
         callCallbacks( Interval i )
 {
-    vector<pOperation> worklist;
-    {
-        QMutexLocker l( &_callbacks_lock );
-        worklist = _callbacks;
-    }
-
-    PostSink ps;
-    ps.source(source());
-    ps.sinks( worklist );
-    return ps.read(i);
+    _post_sink.source( source() );
+    return _post_sink.read( i );
 }
 
 } // namespace Signal

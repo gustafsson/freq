@@ -1,3 +1,4 @@
+// TODO use these
 #include "heightmap/position.h"
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -12,7 +13,11 @@ typedef boost::shared_ptr<class Selection> pSelection;
 // TODO never use "using namespace" in header file
 using namespace Heightmap;
 
-class Selection
+// TODO use
+// namespace Tools {
+//    namespace Support {
+
+class SelectionParams
 {
 public:
 	bool inverted;
@@ -23,11 +28,11 @@ public:
 	virtual void scale(Position p);
         virtual void range(float& start_time, float& end_time) const;
 	
-	virtual ~Selection();
+    virtual ~SelectionParams();
 };
 
 
-class RectangleSelection: public Selection
+class RectangleSelection: public SelectionParams
 {
 public:
 	Position p1, p2;
@@ -38,7 +43,7 @@ public:
 };
 
 
-class EllipseSelection: public Selection
+class EllipseSelection: public SelectionParams
 {
 public:
 	Position p1, p2;
@@ -49,7 +54,7 @@ public:
 };
 
 
-class PolySelection: public Selection
+class PolySelection: public SelectionParams
 {
 public:
 	std::vector<Position> point;

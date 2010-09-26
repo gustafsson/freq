@@ -1,3 +1,4 @@
+// TODO remove
 #ifndef SELECTIONVIEWMODEL_H
 #define SELECTIONVIEWMODEL_H
 

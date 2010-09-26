@@ -6,10 +6,10 @@ namespace Tools
 
 RenderModel::
         RenderModel(Sawe::Project* p)
-        : project(p)
+        : _project(p)
 {
-    collection.reset( new Heightmap::Collection(&project->worker));
-    collectionCallback.reset( new Signal::WorkerCallback( &project->worker, collection->postsink() ));
+    collection.reset( new Heightmap::Collection(&_project->worker));
+    collectionCallback.reset( new Signal::WorkerCallback( &_project->worker, collection->postsink() ));
 
     renderer.reset( new Heightmap::Renderer( collection.get() ));
 }

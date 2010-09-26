@@ -8,6 +8,7 @@
 // Qt
 #include <QDockWidget>
 #include <QWheelEvent>
+#include <QHBoxLayout>
 
 namespace Tools
 {
@@ -20,14 +21,14 @@ TimelineController::
             view(timeline_view),
             _movingTimeline( 0 )
 {
-
+    setupGui();
 }
 
 
 void TimelineController::
         setupGui()
 {
-    Ui::SaweMainWindow* MainWindow = dynamic_cast<Ui::SaweMainWindow*>(model->project->mainWindow());
+    Ui::SaweMainWindow* MainWindow = dynamic_cast<Ui::SaweMainWindow*>(model->project()->mainWindow());
     dock = new QDockWidget(MainWindow);
     dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
     dock->setMinimumSize(QSize(42, 79));
@@ -41,22 +42,18 @@ void TimelineController::
     dock->show();
     MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
 
-    connect(view->_render_view, SIGNAL(paintedView()), view, SLOT(update()));
+    setLayout(new QHBoxLayout);
+    layout()->setMargin(0);
+    layout()->addWidget( view );
+
+    // Always redraw the timeline whenever the main render view is painted.
+    // User input events that changes the state of this widget often need to
+    // repaint the main render view also. For them it is enough to issue an
+    // update() on the main render view only since this connection makes
+    // the timeline updated as well. Some user input events only need to
+    // repaint the timeline view.
+    connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
 }
-
-
-/*void TimelineView::
-        put(Signal::pBuffer , Signal::pOperation )
-{
-    update();
-}
-
-
-void TimelineView::
-        add_expected_samples( const Signal::Intervals& )
-{
-    update();
-}*/
 
 
 void TimelineController::
@@ -97,7 +94,8 @@ void TimelineController::
            current[0], newPos[0], newPos2[0],
            view->_xscale, view->_xoffs);
 
-    view->_render_view->update();
+    // Only update the timeline, leave the main render view unaffected
+    view->update();
 }
 
 
@@ -115,38 +113,49 @@ void TimelineController::
     GLvector current;
     moveButton.spacePos(x, y, current[0], current[1]);
 
-    if (e->buttons() & Qt::LeftButton)
+    if (0 == _movingTimeline)
     {
-        if (0 == _movingTimeline)
-        {
-            if (current[1]>=0)  _movingTimeline = 1;
-            else                _movingTimeline = 2;
-        }
-
-        switch ( _movingTimeline )
-        {
-        case 1:
-            view->_render_view->setPosition( current[0], current[1] );
-            break;
-        case 2:
-            {
-                view->setupCamera( true );
-                moveButton.spacePos(x, y, current[0], current[1]);
-
-                float length = std::max( 1.f, model->project->worker.source()->length());
-                view->_xoffs = current[0] - 0.5f*length/view->_xscale;
-            }
-            break;
-        }
+        if (current[1]>=0)  _movingTimeline = 1;
+        else                _movingTimeline = 2;
     }
 
-    if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
+    switch ( _movingTimeline )
     {
-        view->_xoffs -= current[0] - prev[0];
+    case 1:
+        if (e->buttons() & Qt::LeftButton)
+        {
+            view->_render_view->setPosition( current[0], current[1] );
+
+            // Update both the timeline and the main render view (the timeline
+            // is redrawn whenever the main render view is redrawn).
+            view->_render_view->update();
+        }
+
+        if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
+        {
+            view->_xoffs -= current[0] - prev[0];
+
+            // Only update the timeline, leave the main render view unaffected
+            view->update();
+        }
+        break;
+
+   case 2:
+        if (e->buttons() & Qt::LeftButton)
+        {
+            view->setupCamera( true );
+            moveButton.spacePos(x, y, current[0], current[1]);
+
+            float length = std::max( 1.f, model->project()->worker.source()->length());
+            view->_xoffs = current[0] - 0.5f*length/view->_xscale;
+
+            // Only update the timeline, leave the main render view unaffected
+            view->update();
+        }
+        break;
     }
 
     moveButton.press( x, y );
-    view->_render_view->update();
 }
 
 

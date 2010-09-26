@@ -620,7 +620,7 @@ void Collection::
     Position a, b;
     block->ref.getArea(a,b);
 
-    pOperation fast_source = ::fast_source( worker->source() );
+    pOperation fast_source = Heightmap::fast_source( worker->source() );
 
     unsigned first_sample = (unsigned)floor(a.time*fast_source->sample_rate()),
              last_sample = (unsigned)ceil(b.time*fast_source->sample_rate()),

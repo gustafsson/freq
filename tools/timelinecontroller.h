@@ -22,14 +22,18 @@ namespace Tools
         RenderModel *model;
         TimelineView *view;
 
-    private: // GUI
+    private:
+        // GUI
         // These are never used outside setupGui, but they are named here
-        // to make it clear what class that is responsible for them.
+        // to make it clear what class that is "responsible" for them.
+        // By responsible I mean to create them, insert them to their proper
+        // place in the GUI and take care of events. The objects lifetime
+        // depends on the parent QObject which they are inserted into.
         QDockWidget* dock;
 
         void setupGui();
 
-    private: // UI events
+        // UI events
         // overloaded from QWidget
         virtual void wheelEvent ( QWheelEvent *e );
         virtual void mousePressEvent ( QMouseEvent * e );

@@ -4,7 +4,7 @@
 namespace Ui
 {
 
-class MouseControl
+class MouseControl // TODO move to Tools::Support
 {
 private:
     float lastx;

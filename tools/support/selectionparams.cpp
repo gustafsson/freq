@@ -1,30 +1,30 @@
-#include "selection.h"
+#include "selectionparams.h"
 #include <stdexcept>
 #include <float.h>
 #include <math.h>
 #include <string>
 
-void Selection::scale(Position p)
+void SelectionParams::scale(Position p)
 {
 		throw std::logic_error( std::string(__FUNCTION__) + " not implemented");
 }
 
-void Selection::move(Position p)
+void SelectionParams::move(Position p)
 {
 		throw std::logic_error( std::string(__FUNCTION__) + " not implemented");
 }
 
-bool Selection::getIsInside(Position p)
+bool SelectionParams::getIsInside(Position p)
 {
 		throw std::logic_error( std::string(__FUNCTION__) + " not implemented");
 }
 
-void Selection::range(float& start_time, float& end_time) const
+void SelectionParams::range(float& start_time, float& end_time) const
 {
 		throw std::logic_error( std::string(__FUNCTION__) + " not implemented");
 }
 
-Selection::~Selection(){}
+SelectionParams::~SelectionParams(){}
 
 
 RectangleSelection::RectangleSelection(Position p1, Position p2)

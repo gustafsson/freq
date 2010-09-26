@@ -3,14 +3,16 @@
 
 #include "renderview.h"
 #include <QWidget>
+#include "signal/worker.h"
 
 class QToolBar;
 class QSlider;
+
 namespace Ui { class ComboBoxAction; }
 
 namespace Tools
 {
-    class RenderController: public QObject
+    class RenderController: public QObject // This should not be a QWidget. User input is handled by tools.
     {
         Q_OBJECT
     public:
@@ -42,13 +44,20 @@ namespace Tools
         void receiveSetTransform_Cwt_reassign();
         void receiveSetTransform_Cwt_ridge();
 
+    private slots:
+        void clearCachedHeightmap();
+        void frameTick();
+
     private:
-        RenderModel *model;
+        RenderModel *model();
         RenderView *view;
 
-    private: // GUI stuff
+        // GUI stuff
         // These are never used outside setupGui, but they are named here
-        // to make it clear what class that is responsible for them.
+        // to make it clear what class that is "responsible" for them.
+        // By responsible I mean to create them, insert them to their proper
+        // place in the GUI and take care of events. The objects lifetime
+        // depends on the parent QObject which they are inserted into.
         QToolBar* toolbar_render;
         Ui::ComboBoxAction* hzmarker;
         Ui::ComboBoxAction* color;
@@ -58,13 +67,11 @@ namespace Tools
 
         void setupGui();
 
-    private: // Controlling
+        // Controlling
         QMutex _invalidRangeMutex;
         Signal::Intervals _invalidRange;
-
-    private slots:
-        void clearCachedHeightmap();
-        void frameTick();
+        Signal::pOperation _updateViewSink;
+        Signal::pWorkerCallback _updateViewCallback;
     };
 } // namespace Tools
 

@@ -2,10 +2,13 @@
 #define RENDERVIEW_H
 
 #include "rendermodel.h"
+#include "support/toolselector.h"
 
+// gpumisc
+#include <TAni.h>
+
+// Qt
 #include <QGLWidget>
-
-namespace Ui { class DisplayWidget; }
 
 namespace Tools
 {
@@ -23,18 +26,20 @@ namespace Tools
         float _px, _py, _pz, // TODO beautify
             _rx, _ry, _rz;
         float xscale;
+        floatAni orthoview;
 
         // TODO need to be able to update a QWidget, signal?
         // is this data/function model or view?
 
         RenderModel* model;
 
-        QWidget* displayWidget;
+        Support::ToolSelector* toolSelector();
 
     signals:
         void destroyingRenderView();
-        void paintedView();
-
+        void postPaint();
+        void prePaint();
+        void painting();
 
     private:
         /// @overload QGLWidget::initializeGL()
@@ -54,7 +59,7 @@ namespace Tools
 
         float _prevLimit;
 
-        Ui::DisplayWidget* dw();
+        boost::scoped_ptr<Support::ToolSelector> _tool_selector;
     };
 } // namespace Tools
 

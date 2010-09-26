@@ -24,6 +24,8 @@ namespace Tools
 
 namespace Ui {
 
+class MainWindow;
+
 class SaweMainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -32,6 +34,7 @@ public:
     SaweMainWindow(const char* title, Sawe::Project* project, QWidget *parent = 0);
     ~SaweMainWindow();
     
+    MainWindow* getItems() { return ui; }
 protected:
     virtual void closeEvent(QCloseEvent *);
 
@@ -58,9 +61,7 @@ protected:
 
 private:
     Sawe::Project* project;
-    friend class Tools::RenderController;
-    friend class Tools::SelectionView;
-    class MainWindow *ui;
+    MainWindow *ui;
 
     void add_widgets();
     void connectActionToWindow(QAction *a, QWidget *b);

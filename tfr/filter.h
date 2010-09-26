@@ -1,7 +1,6 @@
 #ifndef TFRFILTER_H
 #define TFRFILTER_H
 
-#include "sawe/selection.h"
 #include "signal/intervals.h"
 #include "signal/operation.h"
 #include "tfr/transform.h"

@@ -48,9 +48,7 @@ SOURCES += \
     adapters/microphonerecorder.cpp \
     adapters/playback.cpp \
     adapters/writewav.cpp \
-    filters/filters.cpp \
-    filters/reassign.cpp \
-    filters/ridge.cpp \
+    filters/*.cpp \
     heightmap/blockfilter.cpp \
     heightmap/collection.cpp \
     heightmap/glblock.cpp \
@@ -60,11 +58,9 @@ SOURCES += \
     sawe/layer.cpp \
     sawe/main.cpp \
     sawe/project.cpp \
-    sawe/selection.cpp \
     signal/buffersource.cpp \
     signal/operation.cpp \
     signal/operation-basic.cpp \
-    signal/operation-composite.cpp \
     signal/operationcache.cpp \
     signal/postsink.cpp \
     signal/intervals.cpp \
@@ -80,25 +76,9 @@ SOURCES += \
     tfr/filter.cpp \
     tfr/stft.cpp \
     tfr/stftfilter.cpp \
-    tools/brushmodel.cpp \
-    tools/graphcontroller.cpp \
-    tools/graphmodel.cpp \
-    tools/graphview.cpp \
-    tools/rendercontroller.cpp \
-    tools/rendermodel.cpp \
-    tools/renderview.cpp \
-    tools/sectionmodel.cpp \
-    tools/selectioncontroller.cpp \
-    tools/selectionmodel.cpp \
-    tools/selectionview.cpp \
-    tools/selectionviewmodel.cpp \
-    tools/timelinecontroller.cpp \
-    tools/timelineview.cpp \
-    tools/toolfactory.cpp \
-    tools/support/drawworking.cpp \
-    tools/support/drawwaveform.cpp \
+    tools/*.cpp \
+    tools/support/*.cpp \
     ui/comboboxaction.cpp \
-    ui/displaywidget.cpp \
     ui/mainwindow.cpp \
     ui/mousecontrol.cpp \
     ui/propertiesselection.cpp \
@@ -114,10 +94,7 @@ HEADERS += \
     adapters/microphonerecorder.h \
     adapters/playback.h \
     adapters/writewav.h \
-    filters/filters.cu.h \
-    filters/filters.h \
-    filters/reassign.h \
-    filters/ridge.h \
+    filters/*.h \
     heightmap/block.cu.h \
     heightmap/blockfilter.h \
     heightmap/collection.h \
@@ -130,11 +107,9 @@ HEADERS += \
     sawe/layer.h \
     sawe/mainplayback.h \
     sawe/project.h \
-    sawe/selection.h \
     signal/buffersource.h \
     signal/operation.h \
     signal/operation-basic.h \
-    signal/operation-composite.h \
     signal/operationcache.h \
     signal/postsink.h \
     signal/intervals.h \
@@ -153,25 +128,9 @@ HEADERS += \
     tfr/transform.h \
     tfr/wavelet.cu.h \
     tfr/stftfilter.h \
-    tools/brushmodel.h \
-    tools/graphcontroller.h \
-    tools/graphmodel.h \
-    tools/graphview.h \
-    tools/rendercontroller.h \
-    tools/rendermodel.h \
-    tools/renderview.h \
-    tools/sectionmodel.h \
-    tools/selectioncontroller.h \
-    tools/selectionmodel.h \
-    tools/selectionview.h \
-    tools/selectionviewmodel.h \
-    tools/timelinecontroller.h \
-    tools/timelineview.h \
-    tools/toolfactory.h \
-    tools/support/drawworking.h \
-    tools/support/drawwaveform.h \
+    tools/*.h \
+    tools/support/*.h \
     ui/comboboxaction.h \
-    ui/displaywidget.h \
     ui/mainwindow.h \
     ui/mousecontrol.h \
     ui/propertiesselection.h \
@@ -184,23 +143,26 @@ FORMS += \
     ui/propertiesselection.ui \
     ui/propertiesstroke.ui \
 
-OTHER_FILES += \
-    filters/filters.cu \
-    heightmap/block.cu \
-    heightmap/heightmap.frag \
-    heightmap/heightmap.vert \
-    heightmap/slope.cu \
-    tfr/wavelet.cu \
-
 CUDA_SOURCES += \
     filters/filters.cu \
+    filters/reassign.cu \
+    filters/*.cu \
     heightmap/block.cu \
     heightmap/slope.cu \
     tfr/wavelet.cu \
 
-OTHER_SOURCES += \
+SHADER_SOURCS += \
     heightmap/heightmap.frag \
     heightmap/heightmap.vert \
+
+# "Other files" for Qt Creator
+OTHER_FILES += \
+    $$CUDA_SOURCES \
+    $$SHADER_SOURCS \ 
+
+# "Other files" for Visual Studio
+OTHER_SOURCES += \
+    $$SHADERS \
     sonicawe.pro \
 
 # Make shaders show up in project file list in Visual Studio

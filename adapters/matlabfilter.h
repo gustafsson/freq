@@ -15,8 +15,9 @@ public:
     virtual Signal::Intervals ZeroedSamples() const;
     virtual Signal::Intervals affected_samples() const;
 
+    void restart();
 protected:
-    MatlabFunction _matlab;
+    boost::scoped_ptr<MatlabFunction> _matlab;
 };
 
 } // namespace Adapters

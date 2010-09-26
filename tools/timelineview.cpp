@@ -4,8 +4,6 @@
 #include <GlException.h>
 #include <glPushContext.h>
 #include <QMouseEvent>
-#include "ui/displaywidget.h"
-#include "ui/displaywidget.h"
 #include <QDockWidget>
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
@@ -132,7 +130,9 @@ void TimelineView::
                 glPushMatrixContext a;
 
                 _render_view->model->renderer->draw( 0.f );
-                _project->tools().selection_view.drawSelection();
+                // TODO what should be rendered in the timelineview?
+                // Not arbitrary tools but
+                // _project->tools().selection_view.drawSelection();
                 _render_view->model->renderer->drawFrustum();
             }
         }
@@ -194,11 +194,32 @@ void TimelineView::
 {
     float length = std::max( 1.f, _project->worker.source()->length());
 
-    if (0 == "Make sure that the camera focus point is within the timeline")
+    // Make sure that the camera focus point is within the timeline
     {
         float t = _render_view->model->renderer->camera[0];
-        if (t < _xoffs) _xoffs = t;
-        if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
+        float new_t = -1;
+
+        switch(0) // Both 1 and 2 might feel annoying, don't do them :)
+        {
+        case 1: // Clamp the timeline, prevent moving to much.
+                // This might be both annoying and confusing
+            if (t < _xoffs) _xoffs = t;
+            if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
+            break;
+
+        case 2: // Clamp the render view
+                // This might be just annoying
+            if (t < _xoffs) new_t = _xoffs;
+            if (t > _xoffs + length/_xscale ) new_t = _xoffs + length/_xscale;
+
+            if (0<=new_t)
+            {
+                float f = _render_view->model->renderer->camera[2];
+                _render_view->setPosition( new_t, f);
+                _render_view->update();
+            }
+            break;
+        }
     }
 
     glLoadIdentity();

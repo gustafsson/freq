@@ -328,7 +328,7 @@ void Renderer::createColorTexture(unsigned N) {
 }
 
 /**
-  Note: the parameter scaley is used by displaywidget to go seamlessly from 3D to 2D.
+  Note: the parameter scaley is used by RenderView to go seamlessly from 3D to 2D.
   This is different from the 'attribute' Renderer::y_scale which is used to change the
   height of the mountains.
   */

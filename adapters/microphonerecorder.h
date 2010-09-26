@@ -27,6 +27,7 @@ public:
     unsigned recording_itr() { return number_of_samples(); }
 
     Signal::PostSink* getPostSink() { return &_postsink; }
+
 private:
     Signal::SinkSource _data;
     Signal::PostSink _postsink;

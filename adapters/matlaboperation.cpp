@@ -33,6 +33,7 @@ namespace Adapters {
 MatlabFunction::
         MatlabFunction( std::string matlabFunction, float timeout )
 :   _pid(0),
+    _matlab_function(matlabFunction),
     _timeout( timeout )
 {
     BOOST_ASSERT(!matlabFunction.empty());
@@ -131,6 +132,21 @@ string MatlabFunction::
     return _dataFile + "~";
 }
 
+
+std::string MatlabFunction::
+        matlabFunction()
+{
+    return _matlab_function;
+}
+
+
+float MatlabFunction::
+        timeout()
+{
+    return _timeout;
+}
+
+
 void MatlabFunction::
 		kill()
 {
@@ -157,7 +173,7 @@ void MatlabFunction::
 MatlabOperation::
         MatlabOperation( Signal::pOperation source, std::string matlabFunction )
 :   OperationCache(source),
-    _matlab(matlabFunction, 4)
+    _matlab(new MatlabFunction(matlabFunction, 4))
 {
 }
 
@@ -168,11 +184,11 @@ pBuffer MatlabOperation::
 
     pBuffer b = _source->read( I );
 
-	string file = _matlab.getTempName();
+    string file = _matlab->getTempName();
 
     Hdf5Buffer::saveBuffer( file, *b );
 
-    file = _matlab.invokeAndWait( file );
+    file = _matlab->invokeAndWait( file );
 
 	if (file.empty())
 		return b;
@@ -182,6 +198,16 @@ pBuffer MatlabOperation::
 	::remove( file.c_str());
 
     return b2;
+}
+
+void MatlabOperation::
+        restart()
+{
+    std::string fn = _matlab->matlabFunction();
+    float t = _matlab->timeout();
+
+    _matlab.reset();
+    _matlab.reset( new MatlabFunction( fn, t ));
 }
 
 } // namespace Adapters

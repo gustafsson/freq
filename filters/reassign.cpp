@@ -1,4 +1,11 @@
 #include "reassign.h"
+#include "reassign.cu.h"
+
+// gpumisc
+#include <CudaException.h>
+
+//#define TIME_FILTER
+#define TIME_FILTER if(0)
 
 using namespace Tfr;
 
@@ -158,6 +165,42 @@ void Reassign::
         p[y*W + W - 1] = this_q[y];
 
     tt.info("Failed reassignments: %u, %.3g%% of all elements. Average distance: %.3g", c, c*100.f/(W*H), ((double)d)/c);
+}
+
+
+void Reassign::
+        brokenGpu(Tfr::Chunk& chunk )
+{
+    TIME_FILTER TaskTimer tt("ReassignFilter");
+
+    for (unsigned reassignLoop=0;reassignLoop<1;reassignLoop++)
+    {
+        ::reassignFilter( chunk.transform_data->getCudaGlobal(),
+                      chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+    }
+
+    TIME_FILTER CudaException_ThreadSynchronize();
+}
+
+
+//////////// Tonalize
+
+void Tonalize::
+        operator()( Chunk& chunk )
+{
+    brokenGpu(chunk);
+}
+
+
+void Tonalize::
+        brokenGpu(Tfr::Chunk& chunk )
+{
+    TIME_FILTER TaskTimer tt("TonalizeFilter");
+
+    ::tonalizeFilter( chunk.transform_data->getCudaGlobal(),
+                  chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+
+    TIME_FILTER CudaException_ThreadSynchronize();
 }
 
 }

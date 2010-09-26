@@ -58,6 +58,7 @@ static bool bufferLessThan(const pBuffer& a, const pBuffer& b)
     return a->sample_offset < b->sample_offset;
 }
 
+
 // Smallest power of two greater than x
 static unsigned int
 spo2g(register unsigned int x)
@@ -70,12 +71,14 @@ spo2g(register unsigned int x)
     return(x+1);
 }
 
+
 // Largest power of two smaller than x
 static unsigned int
 lpo2s(register unsigned int x)
 {
     return spo2g(x-1)>>1;
 }
+
 
 void SinkSource::
         selfmerge()
@@ -187,6 +190,7 @@ void SinkSource::
     //_expected_samples.print("SinkSource expected samples");
 }
 
+
 void SinkSource::
         reset()
 {
@@ -194,6 +198,7 @@ void SinkSource::
     _cache.clear();
     _invalid_samples = Intervals();
 }
+
 
 pBuffer SinkSource::
         read( const Interval& I )
@@ -218,6 +223,7 @@ pBuffer SinkSource::
     TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
     return zeros(I);
 }
+
 
 unsigned SinkSource::
         sample_rate()
@@ -253,6 +259,7 @@ bool SinkSource::empty()
     QMutexLocker l(&_cache_mutex);
     return _cache.empty();
 }
+
 
 Intervals SinkSource::
         samplesDesc()

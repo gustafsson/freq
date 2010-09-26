@@ -32,7 +32,11 @@ namespace Sawe {
   returns null.
 
   SaweMainWindow is created, shown and owned by its Sawe::Project.
-  SaweMainWindow owns displaywidget.
+  SaweMainWindow owns a centralwidget which owns the current tool which is
+  parent to RenderView. RenderView is not however considered to be owned by the
+  current tool (even though it is a child in the Qt object tree). Rather
+  RenderController controls the lifetime of RenderView and ToolSelector is used
+  to move RenderView around in the Qt object tree.
 */
 class Project
 {
@@ -88,6 +92,10 @@ public:
      */
     void save(std::string project_file="");
 
+
+    /**
+      Obtain the main window for this project.
+      */
     Ui::SaweMainWindow* mainWindow();
 
 

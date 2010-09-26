@@ -3,7 +3,7 @@
 #include "heightmap/renderer.h"
 
 #include "ui/mainwindow.h"
-#include "ui/displaywidget.h"
+#include "tools/toolfactory.h"
 
 #include "adapters/audiofile.h"
 #include "adapters/microphonerecorder.h"
@@ -49,12 +49,6 @@ static const char _sawe_usage_string[] =
 "    samples_per_block  The transform chunks are downsampled to blocks for\n"
 "                       rendering, this gives the number of samples per block.\n"
 "    scales_per_block   Number of scales per block, se samples_per_block.\n"
-//"    yscale             Tells how to translate the complex transform to a \n"
-//"                       hightmap. Valid yscale values:\n"
-//"                       0   A=amplitude of CWT coefficients, default\n"
-//"                       1   A * exp(.001*fi)\n"
-//"                       2   log(1 + |A|)\n"
-//"                       3   log(1 + [A * exp(.001*fi)]\n"
 "    get_csv            Saves the given chunk number into sawe.csv which \n"
 "                       then can be read by matlab or octave.\n"
 "    get_hdf            Saves the given chunk number into sawe.h5 which \n"
@@ -81,7 +75,6 @@ static unsigned _samples_per_chunk = 1;
 //static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
 static unsigned _scales_per_block = 1<<8;
-static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static unsigned _get_hdf = (unsigned)-1;
 static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
@@ -262,18 +255,11 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     return false;
 }
 
-void validate_arguments() {
-    switch ( _yscale )
-    {
-        case DisplayWidget::Yscale_Linear:
-        case DisplayWidget::Yscale_ExpLinear:
-        case DisplayWidget::Yscale_LogLinear:
-        case DisplayWidget::Yscale_LogExpLinear:
-            break;
-        default:
-            printf("Invalid yscale value, must be one of {1, 2, 3, 4}\n\n%s", _sawe_usage_string);
-            exit(-1);
-    }
+
+void validate_arguments()
+{
+    // TODO
+    return;
 }
 
 
@@ -378,11 +364,12 @@ int main(int argc, char *argv[])
         if (_multithread)
             p->worker.start();
 
-        // p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
-        // todo p->tools.playback_view.playback_device = _playback_device;
-        // todo p->tools.diskwriter_view.selection_filename  = _selectionfile;
-        //p->displayWidget()->collection()->samples_per_block( _samples_per_block );
-        //p->displayWidget()->collection()->scales_per_block( _scales_per_block );
+        Tools::ToolFactory &tools = p->tools();
+
+        tools.playback_model.playback_device = _playback_device;
+        tools.playback_model.selection_filename  = _selectionfile;
+        tools.render_model.collection->samples_per_block( _samples_per_block );
+        tools.render_model.collection->scales_per_block( _scales_per_block );
 
 		a.openadd_project( p );
 
