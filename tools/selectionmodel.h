@@ -20,6 +20,7 @@ namespace Tools
     {
     public:
         SelectionModel(Sawe::Project* p);
+        ~SelectionModel();
 
         Signal::PostSink* getPostSink();
         Signal::pWorkerCallback postsinkCallback;

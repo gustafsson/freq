@@ -11,7 +11,7 @@ namespace Tools
     class PlaybackView;
     class RenderView;
 
-    class PlaybackController: QObject
+    class PlaybackController: public QObject
     {
         Q_OBJECT
     public:

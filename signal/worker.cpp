@@ -38,6 +38,8 @@ Worker::
 Worker::
         ~Worker()
 {
+    TaskTimer(__FUNCTION__).suppressTiming();
+
     this->quit();
     todo_list( Intervals() );
 }
@@ -277,7 +279,8 @@ void Worker::
 void Worker::
         addCallback( pOperation c )
 {
-    QMutexLocker l( &_callbacks_lock );
+    c->source(source());
+
     std::vector<pOperation> callbacks = postSink()->sinks();
     callbacks.push_back( c );
     postSink()->sinks(callbacks);
@@ -287,10 +290,11 @@ void Worker::
 void Worker::
         removeCallback( pOperation c )
 {
+    c->source(pOperation());
+
     QMutexLocker l( &_callbacks_lock );
     std::vector<pOperation> callbacks = postSink()->sinks();
-    // todo, check if this works
-    std::remove( callbacks.begin(), callbacks.end(), c );
+    callbacks.resize( std::remove( callbacks.begin(), callbacks.end(), c ) - callbacks.begin() );
     postSink()->sinks(callbacks);
 }
 

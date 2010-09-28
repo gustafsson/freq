@@ -36,10 +36,28 @@ namespace Tools
         Support::ToolSelector* toolSelector();
 
     signals:
-        void destroyingRenderView();
-        void postPaint();
+        /**
+          Emitted in the destructor, before the OpenGL context is destroyed.
+          QObject::destroyed() is emitted shortly after, but after the OpenGL
+          context is destroyed.
+          */
+        void destroying();
+
+        /**
+          Emitted right before camera setup. A tool have the option to affect
+          the renderview camera for this frame.
+          */
         void prePaint();
+
+        /**
+          Emitted during painting, but after the heightmap has been rendered.
+          Tool specific stuff is rendered here.
+          */
         void painting();
+
+        /**
+          */
+        void postPaint();
 
     private:
         /// @overload QGLWidget::initializeGL()

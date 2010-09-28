@@ -24,6 +24,10 @@
 #include <QToolBar>
 #include <QSlider>
 
+
+// todo remove
+#include "navigationcontroller.h"
+
 using namespace Ui;
 
 namespace Tools
@@ -239,7 +243,8 @@ void RenderController::
     toolbar_render->setEnabled(true);
     toolbar_render->setContextMenuPolicy(Qt::NoContextMenu);
     toolbar_render->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    //main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
+    main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
+
 
     // Find Qt Creator managed actions
     Ui::MainWindow* ui = main->getItems();
@@ -317,17 +322,18 @@ void RenderController::
     Support::SinkSignalProxy* proxy;
     _updateViewSink.reset( proxy = new Support::SinkSignalProxy() );
     _updateViewCallback.reset( new Signal::WorkerCallback( &model()->project()->worker, _updateViewSink ));
-    connect( proxy, SIGNAL(recievedInvalidSamples(Intervals)), view, SLOT(update()));
+    connect( proxy, SIGNAL(recievedInvalidSamples(const Signal::Intervals &)), view, SLOT(update()));
 
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
-    connect(view, SIGNAL(destroyingRenderView()), SLOT(clearCachedHeightmap()));
+    connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
     connect(view, SIGNAL(postPaint()), SLOT(frameTick()));
 
-    // Create the OpenGL rendering context early. Before it is required by
-    // painting the widget we want to create the cuda context (in main.cpp)
-    // and bind it to an OpenGL context.
+    // Create the OpenGL rendering context early. Because we want to create the
+    // cuda context (in main.cpp) and bind it to an OpenGL context before the
+    // context is required to be created by lazy initialization when painting
+    // the widget
     view->makeCurrent();
     view->setLayout(new QHBoxLayout());
     view->layout()->setMargin(0);
@@ -340,16 +346,19 @@ void RenderController::
 void RenderController::
         clearCachedHeightmap()
 {
-    model()->project()->worker.quit();
-
     if (model()->collection->empty())
         return;
+
+    // Stop worker from producing any more heightmaps by disconnecting
+    // the collection callback from worker.
+    model()->collectionCallback.reset();
 
     // Assuming calling thread is the GUI thread.
 
     // Clear all cached blocks and release cuda memory befure destroying cuda
     // context
     model()->collection->reset();
+
 
     // Because the cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context

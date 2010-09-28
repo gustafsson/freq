@@ -15,6 +15,7 @@ namespace Tools
         Q_OBJECT
     public:
         SelectionView(SelectionModel* model);
+        ~SelectionView();
 
         void drawSelection();
         void drawSelectionSquare();

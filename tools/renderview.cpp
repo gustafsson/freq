@@ -34,8 +34,6 @@ RenderView::
             model(model),
             _work_timer( new TaskTimer("Benchmarking first work"))
 {
-    setLayout( new QHBoxLayout() );
-
     float l = model->project()->worker.source()->length();
     _prevLimit = l;
 
@@ -49,7 +47,9 @@ RenderView::
 RenderView::
         ~RenderView()
 {
-    emit destroyingRenderView();
+    TaskTimer tt(__FUNCTION__);
+
+    emit destroying();
 }
 
 
@@ -67,7 +67,7 @@ void RenderView::
     if (_qz>1) _qz=1;
     if (_qx>l) _qx=l;
 
-    // todo isn't requested fps is a renderview property?
+    // todo isn't "requested fps" is a renderview property?
     model->project()->worker.requested_fps(30);
 
     update();

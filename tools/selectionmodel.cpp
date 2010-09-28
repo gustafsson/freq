@@ -23,6 +23,14 @@ SelectionModel::
     selection[0].z = selection[1].z;
 }
 
+
+SelectionModel::
+        ~SelectionModel()
+{
+    TaskTimer(__FUNCTION__).suppressTiming();
+}
+
+
 Signal::PostSink* SelectionModel::
         getPostSink()
 {

@@ -30,6 +30,14 @@ public:
     virtual Signal::pBuffer read( const Signal::Interval& I );
 
 
+    /// @overload Operation::source()
+    virtual pOperation source() { return Sink::source(); }
+
+
+    /// @overload Operation::source(pOperation)
+    virtual void source(pOperation v);
+
+
     /**
       Merges affected_samples() from all Operation's in sinks().
       */

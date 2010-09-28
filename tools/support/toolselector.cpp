@@ -15,7 +15,8 @@ namespace Tools {
 ToolSelector::
         ToolSelector(RenderView* render_view)
             :
-            _render_view(render_view)
+            _render_view(render_view),
+            _current_tool(0)
 {
 
 }
@@ -31,37 +32,27 @@ QWidget* ToolSelector::
 void ToolSelector::
         setCurrentTool( QWidget* tool )
 {
-    // If the tool doesn't have a layout policy, create one for it. QHBoxLayout
-    // makes children (i.e _render_view) expand to fill the entire tool widget.
-    // A tool implementation can break layout if it wants to. This code works
-    // with widgets created with default settings as in "new QWidget()".
-    if (!tool->layout())
+    if (tool != _current_tool)
     {
-        tool->setLayout( new QHBoxLayout );
-        tool->layout()->setMargin(0);
+        if (_current_tool)
+        {
+            // Remove the current tool from the render view. Memory management
+            // is supposed to be taken care of by someone else. QPointer is a
+            // good way of handling memory managment of QObject, as is done in
+            // toolfactory.
+            _current_tool->setParent( 0 );
+            _current_tool->setEnabled( false );
+        }
+
+        _current_tool = tool;
+
+        if (_current_tool)
+        {
+            // Put tool as a child of _render_view.
+            _render_view->layout()->addWidget( _current_tool );
+            _current_tool->setEnabled( true );
+        }
     }
-
-    // Put render view as a child of tool, this effectively removes render
-    // view as child of any previous tool.
-    // Since _render_view doesn't implement any event handlers all events on
-    // the render view are passed on to tool.
-    tool->layout()->addWidget( _render_view );
-
-    if (_current_tool)
-    {
-        // Remove the current tool from the central widget. Memory management
-        // is supposed to be taken care of by someone else
-        _current_tool->setParent( 0 );
-        _current_tool->setEnabled( false );
-    }
-
-    // Add the tool as a child (the only child) of the central widget
-    _render_view->model->project()->mainWindow()->centralWidget()->layout()->addWidget( tool );
-    _current_tool = tool;
-    _current_tool->setEnabled( true );
-
-    // The tool can find out when it is enabled and disabled by implementing the
-    // changeEvent() handler with type QEvent::EnabledChange.
 }
 
     } // namespace Support

@@ -1,13 +1,14 @@
 #include "playbackmodel.h"
 
+#include "selectionmodel.h"
+
 namespace Tools
 {
     PlaybackModel::
-            PlaybackModel( Signal::Worker* worker )
+            PlaybackModel( SelectionModel* selection )
                 :
                 playback_device(0),
-                selection(0),
-                worker(worker),
+                selection(selection),
                 playback(0)
     {
     }

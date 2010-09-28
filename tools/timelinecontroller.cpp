@@ -22,13 +22,15 @@ TimelineController::
             _movingTimeline( 0 )
 {
     setupGui();
+
+    setAttribute(Qt::WA_DontShowOnScreen, true);
 }
 
 
 void TimelineController::
         setupGui()
 {
-    Ui::SaweMainWindow* MainWindow = dynamic_cast<Ui::SaweMainWindow*>(model->project()->mainWindow());
+    Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
     dock = new QDockWidget(MainWindow);
     dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
     dock->setMinimumSize(QSize(42, 79));
@@ -37,14 +39,14 @@ void TimelineController::
     dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
     dock->setEnabled(true);
     dock->setAutoFillBackground(true);
-    dock->setWidget(this);
+    dock->setWidget(view);
     dock->setWindowTitle("Timeline");
     dock->show();
     MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
 
-    setLayout(new QHBoxLayout);
-    layout()->setMargin(0);
-    layout()->addWidget( view );
+    view->setLayout(new QHBoxLayout);
+    view->layout()->setMargin(0);
+    view->layout()->addWidget( this );
 
     // Always redraw the timeline whenever the main render view is painted.
     // User input events that changes the state of this widget often need to

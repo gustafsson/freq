@@ -193,24 +193,29 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
         {
             // Might need cudaGLSetGLDevice later on, but it can't be called
             // until we have created an OpenGL context.
+            CudaException_SAFE_CALL( cudaThreadExit() );
             if (use_OpenGL_bindings)
             {
-                CudaException_SAFE_CALL( cudaThreadExit() );
                 CudaException_SAFE_CALL( cudaGLSetGLDevice( 0 ) );
+            }
+            else
+            {
+                CudaException_SAFE_CALL( cudaSetDevice( 0 ) );
             }
 
             CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));
             CudaException_SAFE_CALL( cudaFree( ptr ));
             GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
+            a.getCudaGlobal();
 
             return true;
         }
     }
     catch (const CudaException& x) {
         namedError = x;
-#ifdef _DEBUG
+
         ss << x.what() << endl << "Cuda error code " << x.getCudaError() << endl << endl;
-#endif
+
         ptr = 0;
     } catch (...) {
         ss << "catch (...)" << endl;
@@ -219,25 +224,29 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     
     // Show error messages:
 
-    if (cudaErrorInsufficientDriver == namedError.getCudaError())
+    switch (namedError.getCudaError())
     {
+    case cudaErrorInsufficientDriver:
         ss << "Sonic AWE requires you to have installed newer CUDA-compatible graphics drivers from NVIDIA. "
                 << "CUDA drivers are installed on this computer but they are too old. "
                 << "You can download new drivers from NVIDIA;" << endl;
-    }
-    else
-    {
+        break;
+    case cudaErrorDevicesUnavailable:
+        ss << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
+                << "If you're not intentionally using the GPU right now the driver might have been left in an inconsistent state after a previous crash. Rebooting your computer could solve work around this. "
+                << "Also make sure that you have installed the latest CUDA drivers." << endl;
+        break;
+    default:
         ss   << "Sonic AWE requires you to have installed CUDA-compatible graphics drivers from NVIDIA, and no such driver was found." << endl
-             << endl
-             << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
-             << "   www.nvidia.com/object/cuda_gpus.html" << endl
-             << endl
-             << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl;
+                << endl
+                << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
+                << "   www.nvidia.com/object/cuda_gpus.html" << endl
+                << endl
+                << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl;
     }
-
     ss
 #ifdef __APPLE__
-         << "   http://developer.nvidia.com/object/cuda_3_0_downloads.html#MacOS" << endl
+         << "   http://www.nvidia.com/object/cuda_get.html#MacOS" << endl
 #else
          << "   www.nvidia.com" << endl
 #endif
@@ -292,7 +301,7 @@ int main(int argc, char *argv[])
             if (_soundfile.empty()) {
                 _soundfile = argv[0];
             } else {
-                fprintf(stderr, "Unknown option: Broman was here %s\n", argv[0]);
+                fprintf(stderr, "Unknown option: %s\n", argv[0]);
                 fprintf(stderr, "Sonic AWE takes only one file (%s) as input argument.\n", _soundfile.c_str());
                 printf("%s", _sawe_usage_string);
                 exit(1);
@@ -364,21 +373,22 @@ int main(int argc, char *argv[])
         if (_multithread)
             p->worker.start();
 
+		a.openadd_project( p );
+
+        p->mainWindow(); // Ensures that an OpenGL context is created
+
+        BOOST_ASSERT( QGLContext::currentContext() );
+
+        // Recreate the cuda context and use OpenGL bindings
+        if (!check_cuda( true ))
+            return -1;
+
         Tools::ToolFactory &tools = p->tools();
 
         tools.playback_model.playback_device = _playback_device;
         tools.playback_model.selection_filename  = _selectionfile;
         tools.render_model.collection->samples_per_block( _samples_per_block );
         tools.render_model.collection->scales_per_block( _scales_per_block );
-
-		a.openadd_project( p );
-
-        p->mainWindow(); // Ensures that an OpenGL context is created
-        BOOST_ASSERT( QGLContext::currentContext() );
-
-        // Recreate the cuda context and use OpenGL bindings
-        if (!check_cuda( true ))
-            return -1;
 
 		p.reset(); // a keeps a copy of pProject
 

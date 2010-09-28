@@ -6,8 +6,12 @@
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
+#include "ui/comboboxaction.h"
 #include "signal/operation-basic.h"
 #include "support/operation-composite.h"
+
+// gpumisc
+#include <TaskTimer.h>
 
 // Qt
 #include <QMouseEvent>
@@ -21,6 +25,16 @@ namespace Tools
             selecting(false)
     {
         setupGui();
+
+        setAttribute(Qt::WA_DontShowOnScreen, true);
+        setEnabled( false );
+    }
+
+
+    SelectionController::
+            ~SelectionController()
+    {
+        TaskTimer(__FUNCTION__).suppressTiming();
     }
 
 
@@ -29,8 +43,10 @@ namespace Tools
     {
         Ui::MainWindow* ui = _render_view->model->project()->mainWindow()->getItems();
         connect(ui->actionActivateSelection, SIGNAL(toggled(bool)), SLOT(receiveToggleSelection(bool)));
+        connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateSelection, SLOT(setChecked(bool)));
 
         connect(_render_view, SIGNAL(painting()), _view, SLOT(draw()));
+        connect(_render_view, SIGNAL(destroying()), SLOT(close()));
 
         connect(ui->actionActionAdd_selection, SIGNAL(triggered(bool)), SLOT(receiveAddSelection(bool)));
         connect(ui->actionActionRemove_selection, SIGNAL(triggered(bool)), SLOT(receiveAddClearSelection(bool)));
@@ -38,8 +54,32 @@ namespace Tools
         connect(ui->actionMoveSelection, SIGNAL(triggered(bool)), SLOT(receiveMoveSelection(bool)));
         connect(ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), SLOT(receiveMoveSelectionInTime(bool)));
 
-        // todo remove
-        // connect(d, SIGNAL(setSelectionActive(bool)), ui->actionActivateSelection, SLOT(setChecked(bool)));
+        /*ui->actionToolSelect->setEnabled( true );
+        ui->actionActivateSelection->setEnabled( true );
+        ui->actionSquareSelection->setEnabled( true );
+        ui->actionSplineSelection->setEnabled( true );
+        ui->actionPolygonSelection->setEnabled( true );
+        ui->actionPeakSelection->setEnabled( true );*/
+        // ui->actionPeakSelection->setChecked( false );
+
+        Ui::SaweMainWindow* main = model()->project->mainWindow();
+        QToolBar* toolBarTool = new QToolBar(main);
+        toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
+        toolBarTool->setEnabled(true);
+        toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
+        toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        main->addToolBar(Qt::TopToolBarArea, toolBarTool);
+
+        {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
+            Ui::MainWindow* ui = main->getItems();
+            qb->addActionItem( ui->actionActivateSelection );
+            qb->addActionItem( ui->actionSquareSelection );
+            qb->addActionItem( ui->actionSplineSelection );
+            qb->addActionItem( ui->actionPolygonSelection );
+            qb->addActionItem( ui->actionPeakSelection );
+
+            toolBarTool->addWidget( qb );
+        }
     }
 
 
@@ -62,9 +102,16 @@ namespace Tools
         switch ( e->button() )
         {
             case Qt::LeftButton:
+            {
+                MyVector* selection = model()->selection;
+
                 selectionButton.release();
                 selecting = false;
+
+                Signal::pOperation newFilter( new Filters::Ellips(selection[0].x, selection[0].z, selection[1].x, selection[1].z, true ));
+                model()->getPostSink()->filter( newFilter );
                 break;
+            }
 
             case Qt::MidButton:
                 break;
@@ -109,12 +156,6 @@ namespace Tools
                     selection[1].x = selection[0].x + .5f*sqrtf(2.f)*rt;
                     selection[1].y = 0;
                     selection[1].z = selection[0].z + .5f*sqrtf(2.f)*rf;
-
-                    Signal::PostSink* postsink = model()->getPostSink();
-
-                    Signal::pOperation newFilter( new Filters::Ellips(selection[0].x, selection[0].z, selection[1].x, selection[1].z, true ));
-                    newFilter->source( model()->project->worker.source());
-                    postsink->filter( newFilter );
                 }
             }
         }
@@ -130,20 +171,18 @@ namespace Tools
     void SelectionController::
             changeEvent ( QEvent * event )
     {
-        if (QEvent::EnabledChange == event->type())
+        if (event->type() & QEvent::EnabledChange)
+        {
             _view->enabled = isEnabled();
+            emit enabledChanged(isEnabled());
+        }
     }
 
 
     void SelectionController::
             receiveToggleSelection(bool active)
     {
-        if (active)
-        {
-            _render_view->toolSelector()->setCurrentTool( this );
-        }
-
-        setEnabled(active);
+        _render_view->toolSelector()->setCurrentTool( active ? this : 0 );
     }
 
 

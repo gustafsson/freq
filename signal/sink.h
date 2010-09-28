@@ -42,7 +42,7 @@ public:
 
       @overload Operation::fetch_invalid_samples()
       */
-    virtual Intervals fetch_invalid_samples() { return _invalid_samples; }
+    virtual Intervals fetch_invalid_samples() { return _invalid_samples; _invalid_samples = Intervals(); }
 
 
     /**
@@ -55,7 +55,7 @@ public:
     virtual void put(pBuffer) { throw std::logic_error(
             "Neither read nor put seems to have been overridden from Sink."); }
 
-    /// @see Operation::fetch_invalid_samples()
+    /// @see fetch_invalid_samples()
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
 

@@ -3,9 +3,6 @@
 #include "selectionmodel.h"
 #include "heightmap/renderer.h" // GLvector
 #include "sawe/project.h"
-#include "ui/comboboxaction.h"
-#include "ui/mainwindow.h"
-#include "ui_mainwindow.h"
 
 #include <GL/gl.h>
 #include <QTimer>
@@ -21,32 +18,14 @@ SelectionView::
             :
             model(model)
 {
-    /*ui->actionToolSelect->setEnabled( true );
-    ui->actionActivateSelection->setEnabled( true );
-    ui->actionSquareSelection->setEnabled( true );
-    ui->actionSplineSelection->setEnabled( true );
-    ui->actionPolygonSelection->setEnabled( true );
-    ui->actionPeakSelection->setEnabled( true );*/
-    // ui->actionPeakSelection->setChecked( false );
 
-    Ui::SaweMainWindow* main = model->project->mainWindow();
-    QToolBar* toolBarTool = new QToolBar(main);
-    toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
-    toolBarTool->setEnabled(true);
-    toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
-    toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    main->addToolBar(Qt::TopToolBarArea, toolBarTool);
+}
 
-    {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
-        Ui::MainWindow* ui = main->getItems();
-        qb->addActionItem( ui->actionActivateSelection );
-        qb->addActionItem( ui->actionSquareSelection );
-        qb->addActionItem( ui->actionSplineSelection );
-        qb->addActionItem( ui->actionPolygonSelection );
-        qb->addActionItem( ui->actionPeakSelection );
 
-        toolBarTool->addWidget( qb );
-    }
+SelectionView::
+        ~SelectionView()
+{
+    TaskTimer(__FUNCTION__).suppressTiming();
 }
 
 

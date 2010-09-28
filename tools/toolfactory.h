@@ -11,6 +11,8 @@ namespace Sawe {
 #include "playbackmodel.h"
 
 #include <typeinfo>
+#include <QScopedPointer>
+#include <QPointer>
 
 namespace Tools
 {
@@ -28,14 +30,30 @@ namespace Tools
         PlaybackModel playback_model;
 
     private:
-        class RenderController* _render_controller;
-        class RenderView* _render_view;
+        // QPointer only to tools that are owned by ToolFactory but may be
+        // removed by their parent QObject during destruction.
+        // QScopedPointer objects are owned by tool factory.
+        // Other objects are stored as raw pointers and are guaranteed to be
+        // removed by destorying the main window. ToolFactory will also be
+        // destroyed shortly after the destruction of the main window.
+        //
+        // The currently active tool is already deleted prior to ~ToolFactory
+        // when the main window is closed.
 
-        class TimelineView* _timeline_view;
-        class TimelineController* _timeline_controller;
+        class RenderView* _render_view; // owned by centralwidget
+        QScopedPointer<class RenderController> _render_controller;
 
-        class SelectionView* _selection_view;
-        class SelectionController* _selection_controller;
+        class TimelineView* _timeline_view; // owned by timelinedock which is owned by mainwindow
+        class TimelineController* _timeline_controller; // owned by _timeline_view
+
+        QScopedPointer<class SelectionView> _selection_view;
+        QPointer<class SelectionController> _selection_controller; // might be deleted by _render_view
+
+        QPointer<class NavigationController> _navigation_controller; // might be deleted by _render_view
+
+        QScopedPointer<class PlaybackView> _playback_view;
+        QPointer<class PlaybackController> _playback_controller;
+
 
         Sawe::Project* _project;
     };

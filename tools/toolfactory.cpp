@@ -1,16 +1,22 @@
 #include "toolfactory.h"
 
 // Tools
-#include "timelinecontroller.h"
-#include "timelineview.h"
+#include "navigationcontroller.h"
 #include "rendercontroller.h"
 #include "renderview.h"
 #include "selectioncontroller.h"
 #include "selectionview.h"
+#include "timelinecontroller.h"
+#include "timelineview.h"
+#include "playbackcontroller.h"
+#include "playbackview.h"
 
 // Sonic AWE
 #include "sawe/project.h"
 #include "ui/mainwindow.h"
+
+// gpumisc
+#include <TaskTimer.h>
 
 // Qt
 #include <QHBoxLayout>
@@ -22,26 +28,37 @@ ToolFactory::
         ToolFactory(Sawe::Project* p)
 :   render_model( p ),
     selection_model( p ),
-    playback_model( &p->worker )
+    playback_model( &selection_model )
 {
     _render_view = new RenderView(&render_model);
-    _render_controller = new RenderController(_render_view);
+    _render_controller.reset( new RenderController(_render_view) );
 
     _timeline_view = new TimelineView(p, _render_view);
     _timeline_controller = new TimelineController(_timeline_view);
 
-    _selection_view = new SelectionView(&selection_model);
-    _selection_controller = new SelectionController(_selection_view, _render_view );
+    _selection_view.reset( new SelectionView(&selection_model) );
+    _selection_controller = new SelectionController(_selection_view.data(), _render_view );
+
+    _navigation_controller = new NavigationController(_render_view);
+
+    _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
+    _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
 }
 
 
 ToolFactory::
         ~ToolFactory()
 {
-    delete _render_controller;
+    TaskTimer(__FUNCTION__).suppressTiming();
 
-    // TODO figure out a way to make sure that the rendering thread is not
-    // doing anything with the views
+    if (!_navigation_controller .isNull())
+        delete _navigation_controller;
+
+    if (!_selection_controller.isNull())
+        delete _selection_controller;
+
+    if (!_playback_controller.isNull())
+        delete _playback_controller;
 
     // The _render_view and _timeline_view widget are released by MainWindow
     // that owns the widget. This might happen both before and after this

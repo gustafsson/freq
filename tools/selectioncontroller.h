@@ -19,6 +19,10 @@ namespace Tools
         Q_OBJECT
     public:
         SelectionController( SelectionView* view, RenderView* render_view);
+        ~SelectionController();
+
+    signals:
+        void enabledChanged(bool active);
 
     private slots:
         // Action slots

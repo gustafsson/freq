@@ -20,19 +20,24 @@ NavigationController::
             :
             _view(view)
 {
-    setupGui();
+    connectGui();
+
+    setAttribute(Qt::WA_DontShowOnScreen, true);
+    setEnabled( false );
+}
+
+
+NavigationController::
+        ~NavigationController()
+{
+    TaskTimer(__FUNCTION__).suppressTiming();
 }
 
 
 void NavigationController::
         receiveToggleNavigation(bool active)
 {
-    if (active)
-    {
-        _view->toolSelector()->setCurrentTool( this );
-    }
-
-    setEnabled( active );
+    _view->toolSelector()->setCurrentTool( active ? this : 0 );
 }
 
 
@@ -189,12 +194,19 @@ void NavigationController::
 
 
 void NavigationController::
-        setupGui()
+        changeEvent(QEvent * event)
+{
+    if (event->type() & QEvent::EnabledChange)
+        emit enabledChanged(isEnabled());
+}
+
+
+void NavigationController::
+        connectGui()
 {
     Ui::MainWindow* ui = _view->model->project()->mainWindow()->getItems();
-    connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), SLOT(receiveToggleNavigation(bool)));
-
-    ui->actionActivateNavigation->setChecked(true);
+    connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), this, SLOT(receiveToggleNavigation(bool)));
+    connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateNavigation, SLOT(setChecked(bool)));
 }
 
 

@@ -60,10 +60,10 @@ Signal::pBuffer PostSink::
     }
 
     BOOST_FOREACH( pOperation c, passive_operations )
-        c->source(pOperation());
+        c->source(source());
 
     BOOST_FOREACH( pOperation c, active_operations )
-        c->source(pOperation());
+        c->source(source());
 
     return b;
 }
@@ -120,6 +120,21 @@ bool PostSink::
 */
 
 
+void PostSink::
+        source(pOperation v)
+{
+    Operation::source(v);
+
+    if (_filter)
+        _filter->source( v );
+
+    BOOST_FOREACH( pOperation s, sinks() )
+    {
+        s->source( v );
+    }
+}
+
+
 Intervals PostSink::
         affected_samples()
 {
@@ -130,9 +145,7 @@ Intervals PostSink::
 
     BOOST_FOREACH( pOperation s, sinks() )
     {
-        Operation* o = dynamic_cast<Operation*>(s.get());
-        if (o)
-            I |= o->affected_samples();
+        I |= s->affected_samples();
     }
 
     return I;
@@ -146,13 +159,8 @@ Intervals PostSink::
 
     BOOST_FOREACH( pOperation s, sinks() )
     {
-        Operation* o = dynamic_cast<Operation*>(s.get());
-
-        // Don't do anything recursively
-        o->source(pOperation());
-
-        if (o)
-            I |= o->fetch_invalid_samples();
+        // Sinks doesn't fetch invalid sampels recursively
+        I |= s->fetch_invalid_samples();
     }
 
     return I;
@@ -199,6 +207,8 @@ void PostSink::
         filter(pOperation f)
 {
     Intervals I;
+
+    f->source(source());
 
     if (f)          I |= f->affected_samples();
     if (_filter)    I |= _filter->affected_samples();

@@ -14,6 +14,10 @@ namespace Tools
         Q_OBJECT
     public:
         NavigationController(RenderView* view);
+        ~NavigationController();
+
+    signals:
+        void enabledChanged(bool active);
 
     private slots:
         void receiveToggleNavigation(bool active);
@@ -24,6 +28,7 @@ namespace Tools
         virtual void mouseReleaseEvent ( QMouseEvent * e );
         virtual void wheelEvent ( QWheelEvent *event );
         virtual void mouseMoveEvent ( QMouseEvent * e );
+        virtual void changeEvent(QEvent *);
 
         // View
         // View that is controlled, this controller doesn't have a model
@@ -31,7 +36,7 @@ namespace Tools
         RenderView* _view;
 
         // GUI
-        void setupGui();
+        void connectGui();
 
         // State
         Ui::MouseControl moveButton;

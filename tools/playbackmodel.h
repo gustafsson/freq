@@ -13,13 +13,12 @@ namespace Tools
     class PlaybackModel
     {
     public:
-        PlaybackModel( Signal::Worker* worker );
+        PlaybackModel( SelectionModel* selection );
 
         unsigned playback_device;
         std::string selection_filename;
 
         SelectionModel* selection;
-        Signal::Worker* worker;
         Adapters::Playback* playback;
     };
 } // namespace Tools
