@@ -68,7 +68,7 @@ static const char _sawe_usage_string[] =
 "Sonic AWE, 2010\n";
 
 static unsigned _channel=0;
-static unsigned _scales_per_octave = 50;
+static unsigned _scales_per_octave = 60;
 static float _wavelet_std_t = 0.06f;
 static unsigned _samples_per_chunk = 1;
 //static float _wavelet_std_t = 0.03;

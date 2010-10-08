@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "tfr/wavelet.cu.h"
 
-__global__ void kernel_compute( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, float start, float steplogsize, float scales_per_octave, float tf_resolution );
+__global__ void kernel_compute_wavelet_coefficients( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, unsigned first_j, float v, float sigma_t0 );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
 __global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
@@ -24,16 +24,30 @@ void setError(const char* staticErrorMessage) {
 #define TOSTR(x) #x
 #define setError(x) setError(TOSTR(__FUNCTION__) ": " x)
 
-void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleRate, float minHz, float maxHz, cudaExtent numElem, float scales_per_octave, float tf_resolution, cudaStream_t stream )
+void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned fs, float /*minHz*/, float maxHz, cudaExtent numElem, float scales_per_octave, float tf_resolution, cudaStream_t stream )
 {
-    // in this scope, work on arrays of float* instead of float2* to coalesce better
-    numElem.width *= 2;
+    tf_resolution = scales_per_octave / 2.5f;
 
-    float start = sampleRate/minHz/numElem.width;
-    float steplogsize = log(maxHz)-log(minHz);
+//    nyqvist = FS/2
+//    a = 2 ^ (1/v)
+//    aj = a^j
+//    hz = fs/2/aj
+//    maxHz = fs/2/(a^j)
+//    (a^j) = fs/2/maxHz
+//    exp(log(a)*j) = fs/2/maxHz
+//    j = log(fs/2/maxHz) / log(a)
+//    const float log2_a = log2f(2.f) / v = 1.f/v; // a = 2^(1/v)
+    float j = log2(fs/2/maxHz) * scales_per_octave;
+    unsigned first_scale = max(0.f, floor(j));
+
+    if (j<0) {
+        setError("Invalid argument, maxHz must be less than or equal to fs/2.");
+        return;
+    }
 
     dim3 block(256,1,1);
-    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.depth, 1);
+    // work on elements of float instead of float2 to coalesce better, hence numElem.width*2
+    dim3 grid( int_div_ceil(numElem.width*2, block.x), numElem.depth, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
@@ -41,55 +55,102 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned sampleR
     }
 
 	// float scales_per_octave = numElem.height/((log(maxHz)/log(2.f)-(log(minHz)/log(2.f));
-    kernel_compute<<<grid, block, 0, stream>>>( (float*)in_waveform_ft, (float*)out_wavelet_ft, numElem, start, steplogsize, scales_per_octave, tf_resolution );
+    kernel_compute_wavelet_coefficients<<<grid, block, 0, stream>>>(
+            (float*)in_waveform_ft,
+            (float*)out_wavelet_ft,
+            numElem,
+            first_scale,
+            scales_per_octave,
+            tf_resolution );
 }
 
-__global__ void kernel_compute(
+
+/**
+  Well, strictly speaking this doesn't produce the 'true' wavelet coefficients
+  but rather the coefficients resulting from inversing the wavelet coefficients,
+  still in the fourier domain.
+
+  Each thread computes the scale corresponding to the highest frequency first
+  and loops down to the scale corresponding to the lowest frequency.
+
+  TODO see matlab file
+
+  @param in_waveform_ft
+  Given input signal in fourier domain.
+
+  @param out_wavelet_ft
+  Preallocated output coefficients in fourier domain
+
+  @param numElem
+  2D size of out_wavelet_ft. numElem.x is size of in_waveform_ft.
+  numElem.y is number of scales.
+
+  @param first_scale
+  The first scale to compute, first_scale=0 corresponds to the nyqvist
+  frequency.
+
+  @param v
+  Scales per octave is commonly refered to as 'v' in the wavelet bible.
+
+  @param sigma_t0
+  Sigma of the mother gabor wavelet in the time domain. Describes the
+  time-frequency resolution ratio.
+  */
+__global__ void kernel_compute_wavelet_coefficients(
         float* in_waveform_ft,
         float* out_wavelet_ft,
-        cudaExtent numElem, float start, float steplogsize, float scales_per_octave, float tf_resolution )
+        cudaExtent numElem, unsigned first_scale, float v, float sigma_t0 )
 {
-    // Element number
+    // x is an index that refers to which value in the discrete fourier
+    // transform this thread should work with. Even x refers to real parts and
+    // odd refers to imaginary parts.
     const unsigned
             x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
 
-    if (x>=numElem.width)
+    if (x>=numElem.width*2)
         return;
 
-    float waveform = in_waveform_ft[x];
-
     float cufft_normalize = 1.f/(float)numElem.width;
-    float jibberish_normalization =  3.70/scales_per_octave;
+    const float waveform_ft = cufft_normalize * in_waveform_ft[x];
+
+    // Which frequency bin in the discrete fourier transform this thread
+    // should work with
+    unsigned
+            w_bin = x/2;
+    const float pi = 3.141592654f;
+    const float
+            w = w_bin*2*pi/numElem.width;
 
     // Find period for this thread
-    unsigned nFrequencies = numElem.height;
-    unsigned channel = blockIdx.y;
-    unsigned n = numElem.width;
-    for( unsigned fi = 0; fi<nFrequencies; fi++) {
-        float ff = fi/(float)nFrequencies;
-        float period = start*exp(-ff*steplogsize);
+    const unsigned nScales = numElem.height;
+    const unsigned nFrequencyBins = numElem.width;
+    const float log2_a = 1.f / v; // a = 2^(1/v)
 
-        // Find offset for this wavelet scale
-        unsigned offset = fi*n + channel*n*nFrequencies;
+    for( unsigned j=0; j<nScales; j++)
+    {
+        // Compute the child wavelet
+        // a = 2^(1/v)
+        // aj = a^j
+        // aj = pow(a,j) = exp(log(a)*j)
+        float aj = exp2f(log2_a * (j + first_scale) );
 
+        {
+            // Different scales may have different mother wavelets, kind of
+            // That is, different sigma_t0j for different j
+            // ff = j / (float)total_nScales
+            // float f0 = 2.0f + 35*ff*ff*ff
+        }
+        float sigma_t0j = sigma_t0;
+        float q = (-w*aj + pi)*sigma_t0j;
+        float phi_star = exp( -q*q ) * sqrt( 4*pi*sigma_t0j );
 
-        // Compute value of analytic FT of wavelet
-        float f0 = 2.0f + 35*ff*ff*ff;
-        f0 *= tf_resolution;
-        const float pi = 3.141592654f;
-        const float two_pi_f0 = 2.0f * pi * f0;
-        const float multiplier = 1.8827925275534296252520792527491f;
+        // Find offset for this wavelet coefficient. Writes the scale
+        // corresponding to the lowest frequency on the first row of the
+        // output matrix
+        unsigned offset = (nScales-1-j)*2*nFrequencyBins;
 
-        period *= f0;
-
-        unsigned y = x/2; // compute equal results for the complex and scalar part
-        float factor = 4*pi*y*period-two_pi_f0;
-        float basic = multiplier * exp(-0.5f*factor*factor);
-
-        float m = jibberish_normalization*cufft_normalize*basic*f0/sqrt(tf_resolution);
-        //float m = cufft_normalize*basic*f0;
-        //float m = basic*f0;
-        out_wavelet_ft[offset + x] = m * waveform;
+        // Write wavelet coefficient in output matrix
+        out_wavelet_ft[offset + x] = phi_star * waveform_ft;
     }
 }
 
