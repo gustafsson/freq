@@ -53,6 +53,12 @@ public:
 
 
     /**
+      Postsinks are removed by some controller when appropriate.
+      */
+    virtual bool isFinished() { return false; }
+
+
+    /**
       Will call invalidate_samples on all instances of Signal::Sink in sinks().
       */
     virtual void invalidate_samples( const Intervals& I );

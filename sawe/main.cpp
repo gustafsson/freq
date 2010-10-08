@@ -201,6 +201,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
             else
             {
                 CudaException_SAFE_CALL( cudaSetDevice( 0 ) );
+                CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
             }
 
             CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));

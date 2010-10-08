@@ -11,6 +11,26 @@ Operation::Operation(pOperation source )
 }
 
 
+Intervals Operation::
+        zeroed_samples()
+{
+    pOperation s = source();
+    if (s)
+        return s->zeroed_samples();
+    return Intervals();
+}
+
+
+pBuffer Operation::
+        read( const Interval& I )
+{
+    if (Intervals(I) - zeroed_samples())
+        return source()->read( I );
+
+    return zeros(I);
+}
+
+
 Operation* Operation::
         affecting_source( const Interval& I )
 {

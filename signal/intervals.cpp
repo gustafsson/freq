@@ -20,17 +20,20 @@ bool Interval::
     return first < last;
 }
 
+
 bool Interval::
         isConnectedTo(const Interval& r) const
 {
     return last >= r.first && r.last >= first;
 }
 
+
 bool Interval::
         operator<(const Interval& r) const
 {
     return first < r.first;
 }
+
 
 Interval& Interval::
         operator|=(const Interval& r)
@@ -40,56 +43,62 @@ Interval& Interval::
     return *this;
 }
 
+
 bool Interval::
         operator==(const Interval& r) const
 {
     return first==r.first && last==r.last;
 }
 
+
 Intervals::
         Intervals()
 {
 }
 
+
 Intervals::
         Intervals(const Interval& r)
 {
     BOOST_ASSERT( r.first < r.last );
-    _intervals.push_back( r );
+    this->push_back( r );
 }
+
 
 Intervals::
         Intervals(IntervalType first, IntervalType last)
 {
     BOOST_ASSERT( first < last );
-    _intervals.push_back( Interval( first, last ) );
+    this->push_back( Interval( first, last ) );
 }
+
 
 Intervals& Intervals::
         operator |= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b._intervals)
+    BOOST_FOREACH (const Interval& r,  b)
         operator|=( r );
     return *this;
 }
 
+
 Intervals& Intervals::
         operator |= (const Interval& r)
 {
-    _intervals.push_back( r );
-    _intervals.sort();
+    this->push_back( r );
+    this->sort();
 
-    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end(); ) {
+    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end(); ) {
         std::list<Interval>::iterator next = itr;
         next++;
-        if (next!=_intervals.end()) {
+        if (next!=this->end()) {
             Interval& a = *itr;
             Interval& b = *next;
 
             if (a.isConnectedTo(b))
             {
                 a |= b;
-                itr = _intervals.erase( next );
+                itr = this->erase( next );
                 itr--;
             } else {
                 itr++;
@@ -101,18 +110,20 @@ Intervals& Intervals::
     return *this;
 }
 
+
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b._intervals)
+    BOOST_FOREACH (const Interval& r,  b)
         operator-=( r );
     return *this;
 }
 
+
 Intervals& Intervals::
         operator -= (const Interval& r)
 {
-    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
         // Check if interval 'itr' intersects with 'r'
         if (i.isConnectedTo(r)) {
@@ -131,14 +142,14 @@ Intervals& Intervals::
 
             // Check if intersection is over the entire 'itr'
             else if (i.first >= r.first && i.last <= r.last)
-                itr = _intervals.erase( itr );
+                itr = this->erase( itr );
 
             // Check if intersection is in the middle of 'itr'
             else if (i.first < r.first && i.last > r.last) {
                 Interval j(r.last, i.last);
                 itr->last = r.first;
                 itr++;
-                _intervals.insert(itr, j);
+                this->insert(itr, j);
 
             // Else, error
             } else {
@@ -152,10 +163,11 @@ Intervals& Intervals::
     return *this;
 }
 
+
 Intervals& Intervals::
-        operator -= (const IntervalType& b)
+        operator >>= (const IntervalType& b)
 {
-    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 	
         if (Interval::IntervalType_MIN + b > i.first ) i.first = Interval::Interval::IntervalType_MIN;
@@ -164,7 +176,7 @@ Intervals& Intervals::
 		else i.last -= b;
 
         if ( Interval::IntervalType_MIN == i.first && Interval::IntervalType_MIN == i.last )
-			itr = _intervals.erase( itr );
+            itr = this->erase( itr );
 		else
 			itr++;
 	}
@@ -172,10 +184,11 @@ Intervals& Intervals::
 	return *this;
 }
 
+
 Intervals& Intervals::
-        operator += (const IntervalType& b)
+        operator <<= (const IntervalType& b)
 {
-    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 	
         if (Interval::IntervalType_MAX - b < i.first ) i.first = Interval::IntervalType_MAX;
@@ -184,7 +197,7 @@ Intervals& Intervals::
 		else i.last += b;
 
         if ( Interval::IntervalType_MAX == i.first && Interval::IntervalType_MAX == i.last )
-			itr = _intervals.erase( itr );
+            itr = this->erase( itr );
 		else
 			itr++;
 	}
@@ -192,33 +205,35 @@ Intervals& Intervals::
 	return *this;
 }
 
+
 Intervals& Intervals::
         operator &= (const Intervals& b)
 {
 	Intervals rebuild;
-	BOOST_FOREACH (const Interval& r,  b._intervals) {
+    BOOST_FOREACH (const Interval& r,  b) {
 		Intervals copy = *this;
         copy&=( r );
 		rebuild |= copy;
 	}
 
-	this->_intervals = rebuild._intervals;
+    *this = rebuild;
 
-	if (b._intervals.empty())
-		_intervals.clear();
+    if (b.empty())
+        this->clear();
 
 	return *this;
 }
 
+
 Intervals& Intervals::
         operator &= (const Interval& r)
 {
-    for (std::list<Interval>::iterator itr = _intervals.begin(); itr!=_intervals.end();) {
+    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 
         // Check if interval 'itr' does not intersect with 'r'
         if ((i.last<=r.first) || (r.last<=i.first)) {
-            itr = _intervals.erase(itr);
+            itr = this->erase(itr);
 
         } else {
             BOOST_ASSERT(i.isConnectedTo(r));
@@ -250,11 +265,12 @@ Intervals& Intervals::
     return *this;
 }
 
+
 Intervals& Intervals::
         operator*=(const float& scale)
 {
     std::list<Interval>::iterator itr;
-    for (itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
+    for (itr = this->begin(); itr!=this->end(); itr++) {
         itr->first*=scale;
         itr->last*=scale;
     }
@@ -266,23 +282,23 @@ Intervals& Intervals::
 Interval Intervals::
         getInterval() const
 {
-    if (_intervals.empty())
+    if (this->empty())
         return Interval( Interval::IntervalType_MIN,
                          Interval::IntervalType_MIN );
 
-    return _intervals.front();
+    return this->front();
 }
 
 
 Interval Intervals::
         getInterval( IntervalType dt, IntervalType center ) const
 {
-    if (0 == _intervals.size()) {
+    if (0 == this->size()) {
         return Interval( Interval::IntervalType_MIN, Interval::IntervalType_MIN );
     }
 
     std::list<Interval>::const_iterator itr;
-    for (itr = _intervals.begin(); itr!=_intervals.end(); itr++) {
+    for (itr = this->begin(); itr!=this->end(); itr++) {
         if (itr->first >= center)
             break;
     }
@@ -290,10 +306,10 @@ Interval Intervals::
     IntervalType distance_to_next = Interval::IntervalType_MAX;
     IntervalType distance_to_prev = Interval::IntervalType_MAX;
 
-    if (itr != _intervals.end()) {
+    if (itr != this->end()) {
         distance_to_next = itr->first - center;
     }
-    if (itr != _intervals.begin()) {
+    if (itr != this->begin()) {
         std::list<Interval>::const_iterator itrp = itr;
         itrp--;
         if (itrp->last < center )
@@ -335,12 +351,13 @@ Intervals Intervals::
 Interval Intervals::
         coveredInterval() const
 {
-    if (_intervals.empty()) {
+    if (this->empty()) {
         return Interval( 0, 0 );
     }
 
-    return Interval( _intervals.front().first, _intervals.back().last );
+    return Interval( this->front().first, this->back().last );
 }
+
 
 void Intervals::
         print( std::string title ) const
@@ -353,15 +370,17 @@ void Intervals::
               ss.str().c_str()).suppressTiming();
 }
 
-std::ostream& operator<<( std::ostream& s, const Intervals& i)
-{
-    s << "{" << i.intervals().size() << " interval" << ((i.intervals().size()==1)?"":"s");
 
-    BOOST_FOREACH (const Interval& r, i.intervals())
+std::ostream& operator<<( std::ostream& s, const Intervals& I)
+{
+    s << "{" << I.size() << " interval" << ((I.size()==1)?"":"s");
+
+    BOOST_FOREACH (const Interval& r, I)
         s << " " << r;
 
     return s << "}";
 }
+
 
 std::ostream& operator<<( std::ostream& s, const Interval& i)
 {

@@ -50,16 +50,6 @@ public:
     virtual void transform( Tfr::pTransform m ) = 0;
 
 
-    /**
-      These samples are definitely set to 0 by the filter. As default none are
-      known to always be set to zero.
-
-      @remarks zeroed_samples is _assumed_ (but never checked) to be a subset
-      of Signal::Operation::affected_samples().
-      */
-    virtual Signal::Intervals zeroed_samples() const { return Signal::Intervals(); }
-
-
 protected:
     /**
       Apply the filter to a computed Tfr::Chunk. This is the method that should

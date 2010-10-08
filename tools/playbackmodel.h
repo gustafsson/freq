@@ -2,6 +2,7 @@
 #define PLAYBACKMODEL_H
 
 #include <string>
+#include "signal/operation.h"
 
 namespace Signal { class Worker; }
 namespace Adapters { class Playback; }
@@ -19,7 +20,9 @@ namespace Tools
         std::string selection_filename;
 
         SelectionModel* selection;
-        Adapters::Playback* playback;
+        Signal::pOperation adapter_playback;
+
+        Adapters::Playback* playback();
     };
 } // namespace Tools
 #endif // PLAYBACKMODEL_H

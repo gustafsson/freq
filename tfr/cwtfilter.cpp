@@ -51,7 +51,7 @@ Filter::ChunkAndInverse CwtFilter::
     // These computations require a lot of memory allocations
     // If we encounter out of cuda memory, we decrease the required
     // memory in this while loop.
-    while(true) try
+    while (true) //try
     {
         TIME_CwtFilter Intervals(I).print("CwtFilter subread");
         Filter::ChunkAndInverse ci;
@@ -86,7 +86,7 @@ Filter::ChunkAndInverse CwtFilter::
         TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter after filter");
 
         return ci;
-    } catch (const CufftException &x) {
+    }/* catch (const CufftException &x) {
         switch (x.getCufftError())
         {
             case CUFFT_EXEC_FAILED:
@@ -147,7 +147,7 @@ Filter::ChunkAndInverse CwtFilter::
 
         throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g, tf_resolution=%g' yields a chunk size of %u MB.\n\n%s)",
                              cwt.wavelet_std_t(), cwt.tf_resolution(), cwt.wavelet_std_samples(sample_rate())*cwt.nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
-    }
+    }*/
 }
 
 

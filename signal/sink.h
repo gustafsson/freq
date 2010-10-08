@@ -29,7 +29,7 @@ public:
         BOOST_ASSERT(source());
         pBuffer b = source()->read(I);
         put(b);
-        _invalid_samples |= b->getInterval();
+        _invalid_samples -= b->getInterval();
         return b;
     }
 
@@ -42,14 +42,14 @@ public:
 
       @overload Operation::fetch_invalid_samples()
       */
-    virtual Intervals fetch_invalid_samples() { return _invalid_samples; _invalid_samples = Intervals(); }
+    virtual Intervals fetch_invalid_samples() { return _invalid_samples; }
 
 
     /**
       If this Sink has recieved all expected_samples and is finished with its
       work, the caller may remove this Sink.
       */
-    virtual bool isFinished() { return _invalid_samples.isEmpty(); }
+    virtual bool isFinished() { return !fetch_invalid_samples(); }
 
 
     virtual void put(pBuffer) { throw std::logic_error(

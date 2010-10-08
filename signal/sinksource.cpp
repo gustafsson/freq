@@ -15,6 +15,7 @@ SinkSource::
 {
 }
 
+
 void SinkSource::
         put( pBuffer b )
 {
@@ -45,7 +46,9 @@ void SinkSource::
         putExpectedSamples( pBuffer buffer, const Intervals& expected )
 {
     BufferSource bs( buffer );
-    BOOST_FOREACH( const Interval i, (expected & buffer->getInterval()).intervals() )
+
+    Intervals I = expected & buffer->getInterval();
+    BOOST_FOREACH( const Interval& i, I )
     {
         pBuffer s = bs.readFixedLength( i );
         put( s );
@@ -53,6 +56,7 @@ void SinkSource::
 }
 
 
+// todo remove
 static bool bufferLessThan(const pBuffer& a, const pBuffer& b)
 {
     return a->sample_offset < b->sample_offset;
@@ -97,7 +101,7 @@ void SinkSource::
     Intervals sid = samplesDesc();
 	std::vector<pBuffer> new_cache;
 
-	BOOST_FOREACH( Interval i, sid.intervals() )
+    BOOST_FOREACH( Interval i, sid )
 	{
         for (unsigned L=0; i.first < i.last; i.first+=L)
 		{
@@ -147,12 +151,13 @@ void SinkSource::
         Intervals toRemove = s.getInterval();
         toRemove &= b.getInterval();
 
-        if (!toRemove.isEmpty()) {
+        if (toRemove)
+        {
             if(D) ss << " -" << s.getInterval();
 
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            BOOST_FOREACH( Interval i, toKeep.intervals() )
+            BOOST_FOREACH( Interval i, toKeep )
             {
                 if(D) ss << " +" << i;
 

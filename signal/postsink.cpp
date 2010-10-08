@@ -18,10 +18,22 @@ Signal::pBuffer PostSink::
     {
         QMutexLocker l(&_sinks_lock);
 
+        for(std::vector<pOperation>::iterator i = _sinks.begin(); i!=_sinks.end(); )
+        {
+            Sink* s = dynamic_cast<Sink*>(i->get());
+
+            if (s && s->isFinished())
+            {
+                TaskTimer tt("Removing %s from postsink", demangle( typeid(*s).name() ).c_str());
+                i = _sinks.erase( i );
+            }
+            else
+                i++;
+        }
+
         BOOST_FOREACH( pOperation c, _sinks )
         {
-            Operation* s = (Operation*)c.get();
-            if (s->affected_samples() & I )
+            if (c->affected_samples() & I )
                 active_operations.push_back(c);
             else
                 passive_operations.push_back(c);
@@ -64,6 +76,7 @@ Signal::pBuffer PostSink::
 
     BOOST_FOREACH( pOperation c, active_operations )
         c->source(source());
+
 
     return b;
 }
@@ -213,11 +226,12 @@ void PostSink::
     if (f)          I |= f->affected_samples();
     if (_filter)    I |= _filter->affected_samples();
 
-    Tfr::Filter* newfilt = dynamic_cast<Tfr::Filter*>(f.get());
-    Tfr::Filter* oldfilt = dynamic_cast<Tfr::Filter*>(_filter.get());
-
-    if (newfilt && oldfilt)
-        I -= newfilt->zeroed_samples() & oldfilt->zeroed_samples();
+    if (f && _filter)
+        I -= f->zeroed_samples() & _filter->zeroed_samples();
+    else if(f)
+        I -= f->zeroed_samples();
+    else if(_filter)
+        I -= _filter->zeroed_samples();
 
     invalidate_samples( I );
 

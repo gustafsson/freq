@@ -16,7 +16,6 @@
 #include "sawe/application.h"
 #include "tools/timelineview.h"
 #include "ui/propertiesselection.h"
-#include "filters/filters.h"
 #include "comboboxaction.h"
 
 #if defined(_MSC_VER)

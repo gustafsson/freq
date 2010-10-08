@@ -31,7 +31,7 @@ public:
 
       Note that read doesn't have to be called. See affected_samples().
       */
-    virtual pBuffer read( const Interval& I ) { return source()->read( I ); }
+    virtual pBuffer read( const Interval& I );
     virtual unsigned sample_rate() { return source()->sample_rate(); }  /// @see read(const Interval&)
     virtual long unsigned number_of_samples() { return source()->number_of_samples(); } /// @see read(const Interval&)
 
@@ -61,6 +61,17 @@ public:
       As default all samples are possibly affected by an Operation.
       */
     virtual Signal::Intervals affected_samples() { return Signal::Intervals::Intervals_ALL; }
+
+
+    /**
+      These samples are definitely set to 0 by the filter. As default returns
+      source()->zeroed_samples if source() is not null, or no samples if
+      source() is null.
+
+      @remarks zeroed_samples is _assumed_ (but never checked) to be a subset
+      of Signal::Operation::affected_samples().
+      */
+    virtual Signal::Intervals zeroed_samples();
 
 
     /**
@@ -105,8 +116,9 @@ public:
          requested recently. Heightmap::Collection will return the other
          invalidated samples from invalid_samples() at a later occassion if
          they are requested by rendering.
-         Signal::Playback will abort the playback and just stop, waiting to be
-         deleted and possibly recreated later.
+         Signal::Playback will abort the playback and just stop, returning true
+         from isFinished() and waiting to be deleted by the calling postsink
+         and possibly recreated later.
       4. fetch_invalid_samples is not const with respect to Operation, because
          fetch_invalid_samples clears _invalid_samples after each call.
     */

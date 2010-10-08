@@ -374,14 +374,15 @@ void RenderController::
         frameTick()
 {
     QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
-    if (!_invalidRange.isEmpty()) {
+    if (_invalidRange)
+    {
         Signal::Intervals blur = _invalidRange;
         unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_std_samples(model()->project()->worker.source()->sample_rate());
-        blur += fuzzy;
+        blur <<= fuzzy;
         _invalidRange |= blur;
 
         blur = _invalidRange;
-        blur -= fuzzy;
+        blur >>= fuzzy;
         _invalidRange |= blur;
 
         model()->collection->invalidate_samples( _invalidRange );

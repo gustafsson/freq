@@ -262,7 +262,7 @@ pBlock Collection::
     if (0 != block.get())
     {
         Intervals refInt = block->ref.getInterval();
-        if (!(refInt-=block->valid_samples).isEmpty())
+        if (!(refInt-=block->valid_samples).empty())
             _unfinished_count++;
 
         QMutexLocker l(&_cache_mutex);
@@ -667,7 +667,7 @@ bool Collection::
     transferDesc -= outBlock->valid_samples;
 
     // If block is already up to date, abort merge
-    if (transferDesc.isEmpty())
+    if (transferDesc.empty())
         return false;
 
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
@@ -681,7 +681,7 @@ bool Collection::
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
 
-    BOOST_FOREACH( const Interval& transfer, transferDesc.intervals())
+    BOOST_FOREACH( const Interval& transfer, transferDesc)
     {
         float in_offset = transfer.first - inInterval.first;
         float out_offset = transfer.first - outInterval.first;

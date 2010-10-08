@@ -28,7 +28,7 @@ bool OperationCache::
     need -= cached;
 
     // If we need something more, this is a cache miss
-    return !need.isEmpty();
+    return (bool)need;
 }
 
 pBuffer OperationCache::

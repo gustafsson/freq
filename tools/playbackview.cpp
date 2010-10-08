@@ -48,22 +48,24 @@ void PlaybackView::
         return;
 
     // No playback instance
-    if (!model->playback) {
+    if (!model->playback()) {
         return;
     }
 
     // Playback has stopped
-    if (model->playback->isStopped()) {
+    if (model->playback()->isStopped()) {
         return;
     }
 
-    _playbackMarker = model->playback->time();
+    _playbackMarker = model->playback()->time();
 
     if (follow_play_marker)
     {
         Tools::RenderView& r = *_render_view;
         r._qx = _playbackMarker;
     }
+
+    update();
 }
 
 

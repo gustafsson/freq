@@ -51,7 +51,7 @@ public:
      I = [first, last)
 
   */
-class Intervals
+class Intervals: public std::list<Interval>
 {
 public:
     static const Intervals Intervals_ALL;
@@ -65,27 +65,23 @@ public:
     Intervals  operator -  (const Intervals& b) const { Intervals a = *this; return a-=b; }
     Intervals& operator -= (const Intervals&);
     Intervals& operator -= (const Interval&);
-    Intervals& operator -= (const IntervalType&);
-    Intervals& operator += (const IntervalType&);
     Intervals  operator &  (const Intervals& b) const { Intervals a = *this; return a&=b; }
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
+    Intervals& operator >>= (const IntervalType&);
+    Intervals& operator <<= (const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
-    operator   bool        () const { return !isEmpty(); }
+    operator   bool        () const { return !empty(); }
 
     Intervals                       inverse() const;
 
-    bool                            isEmpty() const { return _intervals.empty(); }
     Interval                        getInterval() const;
     Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                        coveredInterval() const;
-    const std::list<Interval>&      intervals() const { return _intervals; }
 
     void                            print( std::string title="" ) const;
 
-private:
-    std::list<Interval> _intervals;
 };
 
 std::ostream& operator<<( std::ostream& s, const Intervals& i);

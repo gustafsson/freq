@@ -110,6 +110,7 @@ namespace Tools
 
                 Signal::pOperation newFilter( new Filters::Ellips(selection[0].x, selection[0].z, selection[1].x, selection[1].z, true ));
                 model()->getPostSink()->filter( newFilter );
+                model()->getPostSink()->sinks( std::vector<Signal::pOperation>() );
                 break;
             }
 

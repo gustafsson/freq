@@ -22,7 +22,7 @@ namespace Tools
         virtual void receiveFollowPlayMarker( bool v );
 
     private:
-        // View (and model inside view)
+        PlaybackModel* model();
         PlaybackView* _view;
 
         // GUI

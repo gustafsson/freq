@@ -5,6 +5,9 @@
 #include <demangle.h>
 #include <typeinfo>
 
+#define TIME_READCHECKED
+//#define TIME_READCHECKED if(0)
+
 using namespace std;
 
 namespace Signal {
@@ -69,7 +72,7 @@ Buffer& Buffer::
     Intervals sid = getInterval();
     sid &= b.getInterval();
 
-    if (sid.isEmpty())
+    if (sid.empty())
         return *this;
 
     Interval i = sid.getInterval(b.number_of_samples());
@@ -84,7 +87,8 @@ Buffer& Buffer::
 pBuffer SourceBase::
         readChecked( const Interval& I )
 {
-    cout << demangle(typeid(*this).name()) << "." << __FUNCTION__ << " " << I << endl;
+    BOOST_ASSERT( I.valid() );
+
     pBuffer r = read(I);
 
     // Check if read contains firstSample
@@ -97,6 +101,12 @@ pBuffer SourceBase::
 pBuffer SourceBase::
         readFixedLength( const Interval& I )
 {
+    std::stringstream ss;
+    TIME_READCHECKED ss << I;
+    TIME_READCHECKED TaskTimer tt("%s.%s %s",
+                  demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
+                  ss.str().c_str() );
+
     // Try a simple read
     pBuffer p = readChecked( I );
     if (p->number_of_samples() == I.count() && p->sample_offset==I.first)
@@ -107,7 +117,7 @@ pBuffer SourceBase::
 
     Intervals sid(I);
 
-    while (!sid.isEmpty())
+    while (sid)
     {
         if (!p)
             p = readChecked( sid.getInterval() );
@@ -123,6 +133,13 @@ pBuffer SourceBase::
 pBuffer SourceBase::
         zeros( const Interval& I )
 {
+    BOOST_ASSERT( I.valid() );
+    std::stringstream ss;
+    TIME_READCHECKED ss << I;
+    TIME_READCHECKED TaskTimer tt("%s.%s %s",
+                  demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
+                  ss.str().c_str() );
+
     pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
     memset(r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D());
     return r;

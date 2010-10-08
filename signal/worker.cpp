@@ -50,7 +50,7 @@ Worker::
 bool Worker::
         workOne()
 {
-    if (todo_list().isEmpty())
+    if (todo_list().empty())
         return false;
 
     // todo_list().print(__FUNCTION__);
@@ -94,7 +94,7 @@ bool Worker::
     unsigned milliseconds = diff.total_milliseconds();
     if (0==milliseconds) milliseconds=1;
 
-    if (!TESTING_PERFORMANCE) {
+    if (b) if (!TESTING_PERFORMANCE) {
         unsigned minSize = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
         float current_fps = 1000.f/milliseconds;
         if (current_fps < _requested_fps && _samples_per_chunk >= minSize)
@@ -133,7 +133,7 @@ void Worker::
 
     // todo_list().print(__FUNCTION__);
 
-    if (!v.isEmpty())
+    if (v)
         _todo_condition.wakeAll();
 }
 
@@ -248,7 +248,7 @@ void Worker::
 	while (true)
 	{
 		try {
-			while(!todo_list().isEmpty())
+            while (todo_list())
 			{
 				workOne();
 				msleep(1);

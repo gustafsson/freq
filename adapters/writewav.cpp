@@ -20,23 +20,25 @@ WriteWav::
 {
 }
 
+
 WriteWav::
         ~WriteWav()
 {
     reset();
 }
 
+
 void WriteWav::
         put( Signal::pBuffer buffer )
 {
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
 
-    _data.putExpectedSamples( buffer, _invalid_samples );
-    _invalid_samples -= buffer->getInterval();
+    _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
 
-    if (isFinished())
+    if (_data.isFinished())
         reset(); // Write to file
 }
+
 
 void WriteWav::
         reset()
@@ -60,6 +62,7 @@ void WriteWav::
     Signal::pBuffer b = _data.readFixedLength( i );
     writeToDisk( _filename, b );
 }
+
 
 void WriteWav::
         writeToDisk(std::string filename, Signal::pBuffer b)
@@ -101,6 +104,7 @@ void WriteWav::
 
     outfile.write( data, N); // yes write float
 }
+
 
 Signal::pBuffer WriteWav::
         crop(Signal::pBuffer buffer)

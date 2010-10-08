@@ -111,7 +111,7 @@ void CwtToBlock::
     transferDesc -= block->valid_samples;
 
     // If block is already up to date, abort merge
-    if (transferDesc.isEmpty())
+    if (transferDesc.empty())
         return;
 
     std::stringstream ss;
@@ -127,7 +127,7 @@ void CwtToBlock::
     float in_frequency_resolution = chunk.nScales();
     float out_frequency_resolution = block->ref.nFrequencies();
 
-    BOOST_FOREACH( Signal::Interval transfer, transferDesc.intervals())
+    BOOST_FOREACH( Signal::Interval transfer, transferDesc)
     {
         TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u]", transfer.first, transfer.last);
 

@@ -10,6 +10,10 @@
 #include "ui_mainwindow.h"
 #include "adapters/writewav.h"
 #include "adapters/playback.h"
+#include "tfr/filter.h"
+
+// gpumisc
+#include "demangle.h"
 
 namespace Tools
 {
@@ -58,12 +62,27 @@ void PlaybackController::
         return; // No filter, no selection...
     }
 
+
     if (selection_operations->sinks().empty())
     {
+        model()->adapter_playback.reset();
+        model()->adapter_playback.reset( new Adapters::Playback( _view->model->playback_device ));
         std::vector<Signal::pOperation> sinks;
-        sinks.push_back( Signal::pOperation( new Adapters::Playback( _view->model->playback_device )) );
+        sinks.push_back( model()->adapter_playback );
         sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
         selection_operations->sinks( sinks );
+        Signal::Intervals a = selection_operations->filter()->affected_samples();
+
+        a.print(__FUNCTION__);
+
+        a -= selection_operations->filter()->zeroed_samples();
+
+        a.print(__FUNCTION__);
+        selection_operations->invalidate_samples( a );
+    }
+    else
+    {
+        model()->playback()->restart_playback();
     }
 
     _view->update();
@@ -74,6 +93,13 @@ void PlaybackController::
         receiveFollowPlayMarker( bool v )
 {
     _view->follow_play_marker = v;
+}
+
+
+PlaybackModel* PlaybackController::
+        model()
+{
+    return _view->model;
 }
 
 

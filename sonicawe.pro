@@ -144,8 +144,6 @@ FORMS += \
     ui/propertiesstroke.ui \
 
 CUDA_SOURCES += \
-    filters/filters.cu \
-    filters/reassign.cu \
     filters/*.cu \
     heightmap/block.cu \
     heightmap/slope.cu \

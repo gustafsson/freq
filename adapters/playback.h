@@ -38,6 +38,7 @@ public:
     bool        isUnderfed();
     unsigned    sample_rate() { return _data.sample_rate(); }
 
+    void        restart_playback();
 private:
     Signal::SinkSource _data;
     boost::posix_time::ptime

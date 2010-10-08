@@ -6,8 +6,8 @@
 #include <QMutexLocker>
 #include <QMessageBox>
 
-//#define TIME_PLAYBACK
-#define TIME_PLAYBACK if(0)
+#define TIME_PLAYBACK
+//#define TIME_PLAYBACK if(0)
 
 using namespace std;
 using namespace boost::posix_time;
@@ -40,17 +40,21 @@ Playback::
     // first = false;
 }
 
+
 Playback::
         ~Playback()
 {
-    cout << "Clearing Playback" << endl;
-    if (streamPlayback) {
+    TaskTimer tt(__FUNCTION__);
+
+    if (streamPlayback)
+    {
         if (!streamPlayback->isStopped())
             streamPlayback->stop();
         if (streamPlayback->isOpen())
             streamPlayback->close();
     }
 }
+
 
 /*static*/ void Playback::
         list_devices()
@@ -62,7 +66,7 @@ Playback::
     int 	iIndex 				= 0;
     string	strDetails			= "";
 
-    cout << "Enumerating sound devices (count " << iNumDevices << ")" << endl;
+    TaskTimer tt("Enumerating sound devices (count %d)", iNumDevices);
     for (portaudio::System::DeviceIterator i = sys.devicesBegin(); i != sys.devicesEnd(); ++i)
     {
         strDetails = "";
@@ -71,23 +75,24 @@ Playback::
         if ((*i).isSystemDefaultOutputDevice())
                 strDetails += ", default output";
 
-        cout << " ";
-        cout << (*i).index() << ": " << (*i).name() << ", ";
-        cout << "in=" << (*i).maxInputChannels() << " ";
-        cout << "out=" << (*i).maxOutputChannels() << ", ";
-        cout << (*i).hostApi().name();
-
-        cout << strDetails.c_str() << endl;
+        tt.info( "%d: %s, in=%d out=%d, %s%s",
+                 (*i).index(), (*i).name(),
+                 (*i).maxInputChannels(),
+                 (*i).maxOutputChannels(),
+                 (*i).hostApi().name(),
+                 strDetails.c_str());
 
         iIndex++;
     }
 }
+
 
 unsigned Playback::
         playback_itr()
 {
     return _playback_itr;
 }
+
 
 float Playback::
         time()
@@ -109,11 +114,13 @@ float Playback::
     return std::max(0.f, t);
 }
 
+
 float Playback::
         outputLatency()
 {
     return streamPlayback?streamPlayback->outputLatency():0;
 }
+
 
 void Playback::
         put( Signal::pBuffer buffer )
@@ -134,7 +141,7 @@ void Playback::
     bdata->getCpuMemory();
     bdata->freeUnused(); // relase GPU memory as well...
 
-    _data.put( buffer );
+    _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
 
     if (streamPlayback)
     {
@@ -148,6 +155,7 @@ void Playback::
 
     onFinished();
 }
+
 
 void Playback::
         reset()
@@ -167,7 +175,8 @@ void Playback::
 bool Playback::
         isFinished()
 {
-    return _invalid_samples.isEmpty() && isStopped();
+    return false;
+//    return _data.isFinished() && isStopped();
 }
 
 
@@ -228,19 +237,20 @@ void Playback::
     }
 }
 
+
 bool Playback::
         isStopped()
 {
-    return streamPlayback?!streamPlayback->isActive() || streamPlayback->isStopped():true;
+    return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
 }
+
 
 bool Playback::
         isUnderfed()
 {
     unsigned nAccumulated_samples = _data.number_of_samples();
 
-    Signal::Intervals expect = _invalid_samples;
-    if (!_data.empty() && expect.isEmpty()) {
+    if (!_data.empty() && _data.isFinished()) {
         TIME_PLAYBACK TaskTimer("Not underfed").suppressTiming();
         return false; // No more expected samples, not underfed
     }
@@ -263,10 +273,10 @@ bool Playback::
     if (0==marker)
         marker = _data.first_buffer()->sample_offset;
 
+    Signal::Interval cov = _data.fetch_invalid_samples().coveredInterval();
     float time_left =
-            (expect.intervals().back().last - marker) / (float)_data.sample_rate();
+            (cov.last - marker) / (float)_data.sample_rate();
 
-    Signal::Interval cov = expect.coveredInterval();
     float estimated_time_required = cov.count() / incoming_samples_per_sec;
 
     // Add small margin
@@ -278,6 +288,19 @@ bool Playback::
     TIME_PLAYBACK TaskTimer("Time left %g %s %g estimated time required. %s underfed", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required, time_left < estimated_time_required?"Is":"Not").suppressTiming();
     return time_left < estimated_time_required;
 }
+
+
+void Playback::
+        restart_playback()
+{
+    if (streamPlayback)
+    {
+        TIME_PLAYBACK TaskTimer tt("Restaring playback");
+
+        onFinished();
+    }
+}
+
 
 int Playback::
         readBuffer(const void * /*inputBuffer*/,
@@ -299,13 +322,13 @@ int Playback::
     _playback_itr += framesPerBuffer;
 
     if (_data.first_buffer()->sample_offset + _data.number_of_samples() + 10*2024/*framesPerBuffer*/ < _playback_itr ) {
-        TIME_PLAYBACK TaskTimer tt("Reading %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
+        TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() ).suppressTiming();
         return paComplete;
     } else {
         if (_data.first_buffer()->sample_offset + _data.number_of_samples() < _playback_itr + framesPerBuffer) {
-            TIME_PLAYBACK TaskTimer tt("Reading %u, %u. PAST END", _playback_itr, framesPerBuffer );
+            TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer ).suppressTiming();
         } else {
-            TIME_PLAYBACK TaskTimer tt("Reading %u, %u", _playback_itr, framesPerBuffer );
+            TIME_PLAYBACK TaskTimer("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer ).suppressTiming();
         }
     }
 

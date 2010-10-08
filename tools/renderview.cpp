@@ -175,7 +175,7 @@ void RenderView::
     }
 
     // TODO move to rendercontroller
-    bool wasWorking = !model->project()->worker.todo_list().isEmpty();
+    bool wasWorking = !model->project()->worker.todo_list().empty();
 
     { // Render
         model->collection->next_frame(); // Discard needed blocks before this row
@@ -225,7 +225,7 @@ void RenderView::
     }
 
     {   // Work
-        bool isWorking = !model->project()->worker.todo_list().isEmpty();
+        bool isWorking = !model->project()->worker.todo_list().empty();
 
         if (wasWorking || isWorking) {
             // project->worker can be run in one or more separate threads, but if it isn't
