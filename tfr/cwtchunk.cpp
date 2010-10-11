@@ -2,7 +2,8 @@
 #include "tfr/wavelet.cu.h"
 
 namespace Tfr {
-pChunk CwtChunk::
+
+pChunk CwtChunkPart::
         cleanChunk() const
 {
     const Chunk* c = this;
@@ -20,4 +21,25 @@ pChunk CwtChunk::
 
     return clamped;
 }
+
+
+Signal::Interval CwtChunkPart::
+        getInterval() const
+{
+    return Signal::Interval(
+        (chunk_offset + first_valid_sample)*(original_sample_rate/sample_rate),
+        (chunk_offset + first_valid_sample + n_valid_samples)*(original_sample_rate/sample_rate)
+    );
+}
+
+
+Signal::Interval CwtChunk::
+        getInterval() const
+{
+    return Signal::Interval(
+        (chunk_offset + first_valid_sample)*(original_sample_rate/sample_rate),
+        (chunk_offset + first_valid_sample + n_valid_samples)*(original_sample_rate/sample_rate)
+    );
+}
+
 } // namespace Tfr

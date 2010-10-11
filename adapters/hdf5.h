@@ -91,7 +91,7 @@ template<> double           Hdf5Input::read_exact<double>          ( std::string
 template<> std::string      Hdf5Input::read_exact<std::string>     ( std::string datasetname );
 
 /**
-  Transforms a pBuffer into a pChunk with CwtSingleton and saves the chunk in a file called
+  Transforms a pBuffer into a pChunk with Cwt and saves the chunk in a file called
   sonicawe-x.csv, where x is a number between 1 and 9, or 0 if all the other 9 files already
   exists. The file is saved with the csv-format comma separated values, but values are
   actually separated by spaces. One row of the csv-file corresponds to one row of the chunk.

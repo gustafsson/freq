@@ -31,7 +31,7 @@ WriteWav::
 void WriteWav::
         put( Signal::pBuffer buffer )
 {
-    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
+    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", (long unsigned)buffer->sample_offset, (long unsigned)(buffer->sample_offset + buffer->number_of_samples()));
 
     _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
 
@@ -115,8 +115,8 @@ Signal::pBuffer WriteWav::
     unsigned channel_count = waveform_data->getNumberOfElements().height;
     float *fdata = waveform_data->getCpuMemory();
 
-    unsigned firstNonzero = 0;
-    unsigned lastNonzero = 0;
+    long unsigned firstNonzero = 0;
+    long unsigned lastNonzero = 0;
 
     for (unsigned f=0; f<num_frames; f++)
         for (unsigned c=0; c<channel_count; c++)

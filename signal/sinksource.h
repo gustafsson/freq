@@ -61,7 +61,7 @@ public:
       to have the same sample rate as the buffer that was first inserted with
       'put'.
       */
-    virtual unsigned sample_rate();
+    virtual float sample_rate();
 
     /**
       Total number of sampels in cached interval, equal to
@@ -83,7 +83,7 @@ public:
 
 private:
     QMutex _cache_mutex;
-    std::vector<pBuffer> _cache;
+    std::vector<pBuffer> _cache; // todo use set instead
 
     virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }

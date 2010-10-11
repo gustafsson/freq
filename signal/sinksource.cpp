@@ -59,7 +59,7 @@ void SinkSource::
 // todo remove
 static bool bufferLessThan(const pBuffer& a, const pBuffer& b)
 {
-    return a->sample_offset < b->sample_offset;
+    return (IntervalType)a->sample_offset < (IntervalType)b->sample_offset;
 }
 
 
@@ -130,7 +130,7 @@ void SinkSource::
     bp->release_extra_resources();
 
     const Buffer& b = *bp;
-    unsigned FS = sample_rate();
+    float FS = sample_rate();
 
     QMutexLocker cache_locker(&_cache_mutex);
 
@@ -164,7 +164,7 @@ void SinkSource::
                 pBuffer n( new Buffer( i.first, i.count(), FS));
                 GpuCpuData<float>* dest = n->waveform_data();
                 memcpy( dest->getCpuMemory(),
-                        s.waveform_data()->getCpuMemory() + (i.first - s.sample_offset),
+                        s.waveform_data()->getCpuMemory() + (i.first - (IntervalType)s.sample_offset),
                         dest->getSizeInBytes1D() );
                 itr = _cache.insert(itr, n );
                 itr++; // Move past inserted element
@@ -230,7 +230,7 @@ pBuffer SinkSource::
 }
 
 
-unsigned SinkSource::
+float SinkSource::
         sample_rate()
 {
     QMutexLocker l(&_cache_mutex);

@@ -68,7 +68,7 @@ FreqAxis Chunk::
     {
     case AxisScale_Logarithmic:
         x.max_frequency_scalar = nScales() - 1;
-        x.logf_step = (1.f/x.max_frequency_scalar) * (log(max_hz)-log(min_hz));
+        x.log2f_step = (1.f/x.max_frequency_scalar) * (log2(max_hz)-log2(min_hz));
         break;
 
     case AxisScale_Linear:

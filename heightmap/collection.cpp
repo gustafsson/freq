@@ -56,7 +56,7 @@ Collection::
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.f_min = 20;
     _display_scale.max_frequency_scalar = 1;
-    _display_scale.logf_step = log(22050)-log(20);
+    _display_scale.log2f_step = log2(22050)-log2(20);
 }
 
 
@@ -136,12 +136,14 @@ void Collection::
     {
         Tfr::FreqAxis fx = chunk->freqAxis();
 
-        _min_sample_size.time = 1.f / chunk->sample_rate;
+        _min_sample_size.time = std::min( _min_sample_size.time, 1.f / chunk->sample_rate );
 
         // Assuming frequency resolution (in Hz, not log Hz) is the highest near 0.
         unsigned bottom_index = fx.getFrequencyIndex( _display_scale.f_min );
         float min_delta_hz = fx.getFrequency( bottom_index + 1) - fx.getFrequency( bottom_index );
-        _min_sample_size.scale = _display_scale.getFrequencyScalar( min_delta_hz );
+        _min_sample_size.scale = std::min(
+                _min_sample_size.scale,
+                _display_scale.getFrequencyScalar( _display_scale.f_min  + min_delta_hz ) );
         // Old naive one: _min_sample_size.scale = 1.f/Tfr::Cwt::Singleton().nScales( FS ) );
     }
     else
@@ -674,9 +676,9 @@ bool Collection::
 
     float in_sample_rate = inBlock->ref.sample_rate();
     float out_sample_rate = outBlock->ref.sample_rate();
-    unsigned signal_sample_rate = worker->source()->sample_rate();
-    float in_frequency_resolution = inBlock->ref.nFrequencies();
-    float out_frequency_resolution = outBlock->ref.nFrequencies();
+    float signal_sample_rate = worker->source()->sample_rate();
+    float in_frequency_resolution = inBlock->ref.frequency_resolution();
+    float out_frequency_resolution = outBlock->ref.frequency_resolution();
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();

@@ -5,8 +5,10 @@
 #include <boost/scoped_ptr.hpp>
 #include <GpuCpuData.h>
 #include "signal/intervals.h"
+#include "unsignedf.h"
 
 namespace Signal {
+
 
 /**
 The Signal::Buffer class is _the_ container class for data in the Signal 
@@ -16,23 +18,24 @@ as when created by Signal::MicrophoneRecorder.
 */
 class Buffer {
 public:
-    Buffer(unsigned firstSample,
-           unsigned numberOfSamples,
-           unsigned FS,
-           unsigned numberOfChannels=1);
+    Buffer(UnsignedF firstSample,
+           IntervalType numberOfSamples,
+           float sample_rate,
+           unsigned numberOfChannels = 1);
 
     GpuCpuData<float>*  waveform_data() const;
-    unsigned            number_of_samples() const;
+    IntervalType        number_of_samples() const;
     void                release_extra_resources();
 
-    unsigned        sample_offset;
-    unsigned        sample_rate;
+    UnsignedF       sample_offset;
+    float           sample_rate;
 
     float           start() const;
     float           length() const;
     Interval        getInterval() const;
 
     Buffer&         operator|=(const Buffer& b);
+    Buffer&         operator+=(const Buffer& b);
 
 protected:
     boost::scoped_ptr<GpuCpuData<float> >
@@ -61,10 +64,10 @@ public:
     virtual pBuffer read( const Interval& I ) = 0;
     virtual pBuffer readChecked( const Interval& I );
     virtual pBuffer readFixedLength( const Interval& I );
-    virtual unsigned sample_rate() = 0;
+    virtual float sample_rate() = 0;
     virtual long unsigned number_of_samples() = 0;
 
-    float length() { return number_of_samples() / (float)sample_rate(); }
+    float length() { return number_of_samples() / sample_rate(); }
 
 protected:
     virtual pBuffer zeros( const Interval& I );

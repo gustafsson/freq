@@ -226,7 +226,7 @@ namespace Tools
             receiveCropSelection()
     {
         // Find out what to crop based on selection
-        unsigned FS = _worker->source()->sample_rate();
+        float FS = _worker->source()->sample_rate();
         MyVector* selection = model()->selection;
         float radie = fabsf(selection[0].x - selection[1].x);
         unsigned start = std::max(0.f, selection[0].x - radie) * FS;
@@ -255,7 +255,7 @@ namespace Tools
         } else { // Button released
             Signal::pOperation filter(new Filters::Ellips(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, true ));
 
-            unsigned FS = _worker->source()->sample_rate();
+            float FS = _worker->source()->sample_rate();
             int delta = (int)(FS * (selection[0].x - sourceSelection[0].x));
 
             Signal::pOperation moveSelection( new Support::OperationMoveSelection(
@@ -283,7 +283,7 @@ namespace Tools
         } else { // Button released
 
             // Create operation to move and merge selection,
-            unsigned FS = _worker->source()->sample_rate();
+            float FS = _worker->source()->sample_rate();
             float fL = fabsf(sourceSelection[0].x - sourceSelection[1].x);
             if (sourceSelection[0].x < 0)
                 fL -= sourceSelection[0].x;

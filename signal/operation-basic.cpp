@@ -6,7 +6,7 @@ namespace Signal {
     // OperationRemoveSection ///////////////////////////////////////////////////////////
 
 OperationRemoveSection::
-        OperationRemoveSection( pOperation source, unsigned firstSample, unsigned numberOfRemovedSamples )
+        OperationRemoveSection( pOperation source, IntervalType firstSample, IntervalType numberOfRemovedSamples )
 :   Operation( source ),
     _firstSample( firstSample ),
     _numberOfRemovedSamples( numberOfRemovedSamples )
@@ -15,8 +15,8 @@ OperationRemoveSection::
 pBuffer OperationRemoveSection::
         read( const Interval& I )
 {
-    unsigned firstSample = I.first;
-    unsigned numberOfSamples = I.count();
+    IntervalType firstSample = I.first;
+    IntervalType numberOfSamples = I.count();
 
     if (firstSample + numberOfSamples <= _firstSample )
     {
@@ -39,10 +39,10 @@ pBuffer OperationRemoveSection::
     return b;
 }
 
-long unsigned OperationRemoveSection::
+IntervalType OperationRemoveSection::
         number_of_samples()
 {
-    unsigned N = Operation::number_of_samples();
+    IntervalType N = Operation::number_of_samples();
     if (N<_numberOfRemovedSamples)
         return 0;
     return N - _numberOfRemovedSamples;
@@ -51,7 +51,7 @@ long unsigned OperationRemoveSection::
     // OperationInsertSilence ///////////////////////////////////////////////////////////
 
 OperationInsertSilence::
-        OperationInsertSilence( pOperation source, unsigned firstSample, unsigned numberOfSilentSamples )
+        OperationInsertSilence( pOperation source, IntervalType firstSample, IntervalType numberOfSilentSamples )
 :   Operation( source ),
     _firstSample( firstSample ),
     _numberOfSilentSamples( numberOfSilentSamples )
@@ -61,8 +61,8 @@ OperationInsertSilence::
 pBuffer OperationInsertSilence::
         read( const Interval& I )
 {
-    unsigned firstSample = I.first;
-    unsigned numberOfSamples = I.count();
+    IntervalType firstSample = I.first;
+    IntervalType numberOfSamples = I.count();
 
     if (firstSample + numberOfSamples <= _firstSample )
         return _source->read( I );
@@ -78,14 +78,14 @@ pBuffer OperationInsertSilence::
     }
 
     // Create silence
-    unsigned length = _numberOfSilentSamples - (firstSample - _firstSample);
+    IntervalType length = _numberOfSilentSamples - (firstSample - _firstSample);
     if ( length > numberOfSamples )
         length = numberOfSamples;
 
     return zeros(Signal::Interval(firstSample, firstSample+length));
 }
 
-long unsigned OperationInsertSilence::
+IntervalType OperationInsertSilence::
         number_of_samples()
 {
     return Operation::number_of_samples() + _numberOfSilentSamples;
@@ -108,8 +108,10 @@ pBuffer OperationSuperposition::
     pBuffer a = _source->read( I );
     pBuffer b = _source2->read( I );
 
-    unsigned offset = std::max( a->sample_offset, b->sample_offset );
-    unsigned length = std::min( a->sample_offset + a->number_of_samples(), b->sample_offset + b->number_of_samples() );
+    IntervalType offset = std::max( (IntervalType)a->sample_offset, (IntervalType)b->sample_offset );
+    IntervalType length = std::min(
+            (IntervalType)a->sample_offset + a->number_of_samples(),
+            (IntervalType)b->sample_offset + b->number_of_samples() );
     length -= offset;
 
     pBuffer r(new Buffer( offset, length, sample_rate() ));
@@ -118,8 +120,8 @@ pBuffer OperationSuperposition::
     float *pb = b->waveform_data()->getCpuMemory();
     float *pr = r->waveform_data()->getCpuMemory();
 
-    pa += r->sample_offset - a->sample_offset;
-    pb += r->sample_offset - b->sample_offset;
+    pa += (IntervalType)(r->sample_offset - a->sample_offset);
+    pb += (IntervalType)(r->sample_offset - b->sample_offset);
 
     for (unsigned i=0; i<r->number_of_samples(); i++)
         pr[i] = pa[i] + pb[i];

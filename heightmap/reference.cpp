@@ -154,7 +154,7 @@ Signal::Interval Reference::
     float startTime = blockSize * block_index[0];
     float endTime = startTime + blockLocalSize;
 
-    unsigned FS = _collection->worker->source()->sample_rate();
+    float FS = _collection->worker->source()->sample_rate();
     Signal::Interval i( startTime * FS, endTime * FS );
 
     //Position a, b;
@@ -171,9 +171,9 @@ float Reference::
     return ldexpf(1.f, -log2_samples_size[0]) - 1/(b.time-a.time);
 }
 
-float Reference::
-        nFrequencies() const
+unsigned Reference::
+        frequency_resolution() const
 {
-    return ldexpf(1.0f, -log2_samples_size[1]);
+    return 1 << -log2_samples_size[1];
 }
 } // namespace Heightmap

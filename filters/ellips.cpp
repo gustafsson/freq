@@ -28,9 +28,9 @@ void Ellips::
     TIME_FILTER TaskTimer tt("Ellips");
 
     float4 area = make_float4(
-            _t1 * chunk.sample_rate - chunk.chunk_offset,
+            _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
             _f1 * chunk.nScales(),
-            _t2 * chunk.sample_rate - chunk.chunk_offset,
+            _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
             _f2 * chunk.nScales());
 
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
@@ -44,7 +44,7 @@ void Ellips::
 Signal::Intervals Ellips::
         zeroed_samples()
 {
-    unsigned FS = sample_rate();
+    float FS = sample_rate();
 
     Signal::Intervals sid;
 
@@ -66,7 +66,7 @@ Signal::Intervals Ellips::
 Signal::Intervals Ellips::
         affected_samples()
 {
-    unsigned FS = sample_rate();
+    float FS = sample_rate();
 
     Signal::Intervals sid;
 

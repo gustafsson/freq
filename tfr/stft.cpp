@@ -1,5 +1,6 @@
 #include "stft.h"
 #include "complexbuffer.h"
+#include "signal/buffersource.h"
 
 #include <cufft.h>
 #include <throwInvalidArgument.h>
@@ -122,11 +123,11 @@ pChunk Fft::
     chunk->order = Chunk::Order_column_major;
     chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
-    chunk->max_hz = b.sample_rate / 2;
+    chunk->max_hz = b.sample_rate / 2.f;
     chunk->min_hz = chunk->max_hz / chunk->nScales();
-    chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
-    chunk->sample_rate = b.sample_rate / chunk->nScales();
-
+    chunk->n_valid_samples = input_n.width;
+    chunk->sample_rate = b.sample_rate / chunk->n_valid_samples;
+    ((StftChunk*)chunk.get())->original_sample_rate = real_buffer->sample_rate;
     return chunk;
 }
 
@@ -134,18 +135,25 @@ pChunk Fft::
 Signal::pBuffer Fft::
         backward( pChunk chunk)
 {
-    ComplexBuffer buffer( chunk->chunk_offset, chunk->nScales(), chunk->sample_rate * chunk->nScales() );
+    unsigned scales = chunk->nScales();
+    float fs = chunk->sample_rate;
+    ComplexBuffer buffer( 0, scales, fs * scales );
 
     // chunk = computeWithCufft(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
     computeWithOoura(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
 
-    return buffer.get_real();
+    Signal::BufferSource bs( buffer.get_real() );
+
+    Signal::pBuffer r = bs.readFixedLength( Signal::Interval(0, chunk->n_valid_samples ));
+    r->sample_offset = chunk->chunk_offset;
+    return r;
 }
 
 
 // TODO translate cdft to take floats instead of doubles
 //extern "C" { void cdft(int, int, double *); }
 extern "C" { void cdft(int, int, double *, int *, double *); }
+// extern "C" { void cdft(int, int, float *, int *, float *); }
 
 void Fft::
         computeWithOoura( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction )
@@ -155,11 +163,24 @@ void Fft::
     unsigned n = input.getNumberOfElements().width;
     unsigned N = output.getNumberOfElements().width;
 
+    if (-1 != direction)
+        BOOST_ASSERT( n == N );
+
+    int magic = 12345678;
+    bool vector_length_test = true;
+
     if (q.size() != 2*N) {
         TIME_STFT TaskTimer tt("Resizing buffers");
-        q.resize(2*N);
-        w.resize(N/2);
-        ip.resize(N/2);
+        q.resize(2*N + vector_length_test);
+        w.resize(N/2 + vector_length_test);
+        ip.resize(2+(1<<(int)(log2(N+0.5)-1)) + vector_length_test);
+
+        if (vector_length_test)
+        {
+            q.back() = magic;
+            w.back() = magic;
+            ip.back() = magic;
+        }
         ip[0] = 0;
     } else {
         TIME_STFT TaskTimer("Reusing data").suppressTiming();
@@ -181,6 +202,13 @@ void Fft::
     {
         TIME_STFT TaskTimer tt("Computing fft");
         cdft(2*N, direction, &q[0], &ip[0], &w[0]);
+
+        if (vector_length_test)
+        {
+            BOOST_ASSERT(q.back() == magic);
+            BOOST_ASSERT(ip.back() == magic);
+            BOOST_ASSERT(w.back() == magic);
+        }
     }
 
     {
@@ -297,10 +325,11 @@ Tfr::pChunk Stft::
     chunk->order = Chunk::Order_column_major;
     chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
-    chunk->max_hz = b.sample_rate / 2;
+    chunk->max_hz = b.sample_rate / 2.f;
     chunk->min_hz = chunk->max_hz / chunk->nScales();
     chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
-    chunk->sample_rate = b.sample_rate / (float)chunk->nScales();
+    chunk->sample_rate = b.sample_rate / chunk->nScales();
+    ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;
 
     return chunk;
 }
@@ -343,7 +372,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     scoped_ptr<TaskTimer> tt;
     Signal::pBuffer B = boost::shared_ptr<Signal::Buffer>( new Signal::Buffer( 0, 44100*size_of_test_signal_in_seconds, 44100 ) );
     {
-        if(writeOutput) tt.reset( new TaskTimer("Filling buffer with random data"));
+        if(writeOutput) tt.reset( new TaskTimer("Filling %.1f kB (%.1f s with fs=44100) test buffer with random data", B->number_of_samples()*sizeof(float)/1024.f, size_of_test_signal_in_seconds));
 
         float* p = B->waveform_data()->getCpuMemory();
         for (unsigned i = 0; i < B->number_of_samples(); i++)
@@ -439,6 +468,41 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     }
 
     return fastest_size;
+}
+
+
+StftChunk::
+        StftChunk()
+            :
+            halfs_n(0)
+{}
+
+
+void StftChunk::
+        setHalfs( unsigned n )
+{
+    halfs_n = n;
+}
+
+
+unsigned StftChunk::
+        halfs( )
+{
+    return halfs_n;
+}
+
+
+unsigned StftChunk::
+        nActualScales() const
+{
+    return Chunk::nScales();
+}
+
+
+unsigned StftChunk::
+        nScales() const
+{
+    return nActualScales() >> halfs_n;
 }
 
 } // namespace Tfr

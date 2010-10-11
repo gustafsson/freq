@@ -155,7 +155,8 @@ void RenderView::
     // Set up camera position
     bool followingRecordMarker = false;
     float length = model->project()->worker.source()->length();
-    {   double limit = std::max(0.f, length - 2*Tfr::Cwt::Singleton().wavelet_std_t());
+    float fs = model->project()->worker.source()->sample_rate();
+    {   double limit = std::max(0.f, length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
 
         if (_qx>=_prevLimit) {
             // Snap just before end so that project->worker.center starts working on

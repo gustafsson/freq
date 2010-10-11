@@ -1,12 +1,15 @@
 #include "cwtfilter.h"
+#include "cwtchunk.h"
 #include "cwt.h"
 
 #include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>
 
-//#define TIME_CwtFilter
-#define TIME_CwtFilter if(0)
+#include <boost/foreach.hpp>
+
+#define TIME_CwtFilter
+//#define TIME_CwtFilter if(0)
 
 using namespace Signal;
 
@@ -31,22 +34,22 @@ Filter::ChunkAndInverse CwtFilter::
 {
     unsigned firstSample = I.first, numberOfSamples = I.count();
 
-    TIME_CwtFilter TaskTimer tt("CwtFilter::readChunk ( %u, %u )", firstSample, numberOfSamples);
+    TIME_CwtFilter TaskTimer tt("CwtFilter::readChunk [%u, %u)", firstSample, numberOfSamples);
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
 
-    unsigned wavelet_std_samples = cwt.wavelet_std_samples( sample_rate() );
+    unsigned time_support = cwt.wavelet_time_support_samples( sample_rate() );
 
     // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
     // into account and create an inverse that is of the desired size.
     unsigned redundant_samples = 0;
-    if (firstSample < wavelet_std_samples) redundant_samples = firstSample;
-    else redundant_samples = wavelet_std_samples;
+    if (firstSample < time_support) redundant_samples = firstSample;
+    else redundant_samples = time_support;
 
     unsigned first_valid_sample = firstSample;
     firstSample -= redundant_samples;
 
-    if (numberOfSamples<10)
-        numberOfSamples=10;
+    if (numberOfSamples<2048)
+        numberOfSamples=2048;
 
     // These computations require a lot of memory allocations
     // If we encounter out of cuda memory, we decrease the required
@@ -61,7 +64,7 @@ Filter::ChunkAndInverse CwtFilter::
             ci = f->readChunk( I );
 
         } else {
-            unsigned L = redundant_samples + numberOfSamples + wavelet_std_samples;
+            unsigned L = redundant_samples + numberOfSamples + time_support;
 
             ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
 
@@ -80,7 +83,17 @@ Filter::ChunkAndInverse CwtFilter::
         if (work || !_try_shortcuts)
         {
             TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter applying filter");
-            (*this)( *ci.chunk );
+            Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( ci.chunk.get() );
+
+            BOOST_FOREACH( pChunk& chunk, chunks->chunks )
+            //unsigned C = chunks->chunks.size();
+            //pChunk chunk = chunks->chunks[C-2];
+            {
+                CudaException_CHECK_ERROR();
+                (*this)( *chunk );
+                CudaException_ThreadSynchronize();
+                CudaException_CHECK_ERROR();
+            }
         }
 
         TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter after filter");

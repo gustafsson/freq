@@ -21,14 +21,13 @@ void setError(const char* staticErrorMessage) {
     printf("%s\n", staticErrorMessage);
 }
 
-#define TOSTR(x) #x
+#define TOSTR2(x) #x
+#define TOSTR(x) TOSTR2(x)
 #define setError(x) setError(TOSTR(__FUNCTION__) ": " x)
 
-void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned fs, float /*minHz*/, float maxHz, cudaExtent numElem, float scales_per_octave, float tf_resolution, cudaStream_t stream )
+void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, float fs, float /*minHz*/, float maxHz, cudaExtent numElem, float scales_per_octave, float sigma_t0, cudaStream_t stream )
 {
-    tf_resolution = scales_per_octave / 2.5f;
-
-//    nyqvist = FS/2
+//    nyquist = FS/2
 //    a = 2 ^ (1/v)
 //    aj = a^j
 //    hz = fs/2/aj
@@ -37,10 +36,11 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned fs, flo
 //    exp(log(a)*j) = fs/2/maxHz
 //    j = log(fs/2/maxHz) / log(a)
 //    const float log2_a = log2f(2.f) / v = 1.f/v; // a = 2^(1/v)
-    float j = log2(fs/2/maxHz) * scales_per_octave;
+    float j = (log2(fs/2) - log2(maxHz)) * scales_per_octave;
     unsigned first_scale = max(0.f, floor(j));
 
     if (j<0) {
+        printf("j = %g, maxHz = %g, fs = %g\n", j, maxHz, fs);
         setError("Invalid argument, maxHz must be less than or equal to fs/2.");
         return;
     }
@@ -61,7 +61,7 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned fs, flo
             numElem,
             first_scale,
             scales_per_octave,
-            tf_resolution );
+            sigma_t0 );
 }
 
 
@@ -86,7 +86,7 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned fs, flo
   numElem.y is number of scales.
 
   @param first_scale
-  The first scale to compute, first_scale=0 corresponds to the nyqvist
+  The first scale to compute, first_scale=0 corresponds to the nyquist
   frequency.
 
   @param v
@@ -110,9 +110,6 @@ __global__ void kernel_compute_wavelet_coefficients(
     if (x>=numElem.width*2)
         return;
 
-    float cufft_normalize = 1.f/(float)numElem.width;
-    const float waveform_ft = cufft_normalize * in_waveform_ft[x];
-
     // Which frequency bin in the discrete fourier transform this thread
     // should work with
     unsigned
@@ -121,10 +118,25 @@ __global__ void kernel_compute_wavelet_coefficients(
     const float
             w = w_bin*2*pi/numElem.width;
 
+    float waveform_ft;
+
+    if (w_bin>numElem.width/2)
+    {
+        waveform_ft = 0; // Negative frequencies are defined as 0
+    }
+    else
+    {
+        float cufft_normalize = 1.f/(float)numElem.width;
+        waveform_ft = cufft_normalize * in_waveform_ft[x];
+    }
+
     // Find period for this thread
     const unsigned nScales = numElem.height;
     const unsigned nFrequencyBins = numElem.width;
     const float log2_a = 1.f / v; // a = 2^(1/v)
+
+    float sigma_t0j = sigma_t0; // TODO vary with 'j'
+    float sigma_constant = sqrt( 4*pi*sigma_t0j );
 
     for( unsigned j=0; j<nScales; j++)
     {
@@ -132,17 +144,22 @@ __global__ void kernel_compute_wavelet_coefficients(
         // a = 2^(1/v)
         // aj = a^j
         // aj = pow(a,j) = exp(log(a)*j)
-        float aj = exp2f(log2_a * (j + first_scale) );
-
+        float output = 0;
+        if (waveform_ft != 0)
         {
-            // Different scales may have different mother wavelets, kind of
-            // That is, different sigma_t0j for different j
-            // ff = j / (float)total_nScales
-            // float f0 = 2.0f + 35*ff*ff*ff
+            float aj = exp2f(log2_a * (j + first_scale) );
+
+            {
+                // Different scales may have different mother wavelets, kind of
+                // That is, different sigma_t0j for different j
+                // ff = j / (float)total_nScales
+                // float f0 = 2.0f + 35*ff*ff*ff
+            }
+            float q = (-w*aj + pi)*sigma_t0j;
+            float phi_star = expf( -q*q ) * sigma_constant;
+
+            output = phi_star * waveform_ft;
         }
-        float sigma_t0j = sigma_t0;
-        float q = (-w*aj + pi)*sigma_t0j;
-        float phi_star = exp( -q*q ) * sqrt( 4*pi*sigma_t0j );
 
         // Find offset for this wavelet coefficient. Writes the scale
         // corresponding to the lowest frequency on the first row of the
@@ -150,7 +167,7 @@ __global__ void kernel_compute_wavelet_coefficients(
         unsigned offset = (nScales-1-j)*2*nFrequencyBins;
 
         // Write wavelet coefficient in output matrix
-        out_wavelet_ft[offset + x] = phi_star * waveform_ft;
+        out_wavelet_ft[offset + x] = output;
     }
 }
 

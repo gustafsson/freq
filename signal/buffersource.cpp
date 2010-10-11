@@ -41,7 +41,7 @@ pBuffer BufferSource::
 }
 
 
-unsigned BufferSource::
+float BufferSource::
         sample_rate()
 {
     return _waveform->sample_rate;

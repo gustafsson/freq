@@ -104,7 +104,7 @@ Signal::pBuffer MicrophoneRecorder::
     return _data.readFixedLength( I );
 }
 
-unsigned MicrophoneRecorder::
+float MicrophoneRecorder::
         sample_rate()
 {
     return _stream_record->sampleRate();

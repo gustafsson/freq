@@ -69,10 +69,8 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 60;
-static float _wavelet_std_t = 0.06f;
+static float _wavelet_time_support = 3;
 static unsigned _samples_per_chunk = 1;
-//static float _wavelet_std_t = 0.03;
-//static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
 static unsigned _scales_per_block = 1<<8;
 static unsigned _get_hdf = (unsigned)-1;
@@ -151,7 +149,7 @@ static int handle_options(char ***argv, int *argc)
         }
         else if (readarg(&cmd, samples_per_chunk));
         else if (readarg(&cmd, scales_per_octave));
-        else if (readarg(&cmd, wavelet_std_t));
+        else if (readarg(&cmd, wavelet_time_support));
         else if (readarg(&cmd, samples_per_block));
         else if (readarg(&cmd, scales_per_block));
         // else if (readarg(&cmd, yscale)); // TODO remove?
@@ -332,7 +330,7 @@ int main(int argc, char *argv[])
 
         Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
         cwt.scales_per_octave( _scales_per_octave );
-        cwt.wavelet_std_t( _wavelet_std_t );
+        cwt.wavelet_time_support( _wavelet_time_support );
 
         unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source()->sample_rate() );
         TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
@@ -398,6 +396,8 @@ int main(int argc, char *argv[])
         // When the OpenGL context is destroyed, the Cuda context becomes
         // invalid. Check that some kind of cleanup took place and that the
         // cuda context doesn't think it is still valid.
+        // TODO 0 != QGLContext::currentContext() when exiting by an exception
+        // that stops the mainloop.
         BOOST_ASSERT( 0 == QGLContext::currentContext() );
         BOOST_ASSERT( CUDA_ERROR_INVALID_CONTEXT == cuCtxGetDevice( 0 ));
 

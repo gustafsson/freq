@@ -73,13 +73,13 @@ void TooltipController::
         if( infoToolButton.worldPos(x, y, current[0], current[1], r.xscale) )
         {
             Tfr::Cwt& c = Tfr::Cwt::Singleton();
-            unsigned FS = _model->project()->worker.source()->sample_rate();
+            float FS = _model->project()->worker.source()->sample_rate();
             float t = ((unsigned)(current[0]*FS+.5f))/(float)FS;
             //current[1] = ((unsigned)(current[1]*c.nScales(FS)+.5f))/(float)c.nScales(FS);
             current[1] = ((current[1]*c.nScales(FS)+.5f))/(float)c.nScales(FS);
-            float f = c.compute_frequency( current[1], FS );
-            float std_t = c.morlet_std_t(current[1], FS);
-            float std_f = c.morlet_std_f(current[1], FS);
+            float f = c.compute_frequency2( FS, current[1] );
+            float std_t = c.morlet_sigma_t( FS, f );
+            float std_f = c.morlet_sigma_f( FS, f );
 
             stringstream ss;
             ss << setiosflags(ios::fixed)

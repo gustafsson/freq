@@ -12,9 +12,10 @@ using namespace std;
 
 namespace Signal {
 
-Buffer::Buffer(unsigned first_sample, unsigned numberOfSamples, unsigned FS, unsigned numberOfChannels)
+
+Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, unsigned numberOfChannels)
 :   sample_offset(first_sample),
-    sample_rate(FS)
+    sample_rate(fs)
 {
     if (numberOfSamples)
         _waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1)));
@@ -28,7 +29,7 @@ GpuCpuData<float>* Buffer::
 }
 
 
-unsigned Buffer::
+long unsigned Buffer::
         number_of_samples() const
 {
     return _waveform_data->getNumberOfElements().width;
@@ -46,14 +47,14 @@ void Buffer::
 float Buffer::
         start() const
 {
-    return sample_offset/(float)sample_rate;
+    return sample_offset/sample_rate;
 }
 
 
 float Buffer::
         length() const
 {
-    return number_of_samples()/(float)sample_rate;
+    return number_of_samples()/sample_rate;
 }
 
 
@@ -67,8 +68,6 @@ Interval Buffer::
 Buffer& Buffer::
         operator|=(const Buffer& b)
 {    
-    float* c = waveform_data()->getCpuMemory();
-
     Intervals sid = getInterval();
     sid &= b.getInterval();
 
@@ -79,10 +78,47 @@ Buffer& Buffer::
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
-    memcpy(c + offs_write, b.waveform_data()->getCpuMemory() + offs_read, i.count()*sizeof(float));
+
+    float* write = waveform_data()->getCpuMemory();
+    float* read = b.waveform_data()->getCpuMemory();
+
+    write+=offs_write;
+    read+=offs_read;
+
+    memcpy(write, read, i.count()*sizeof(float));
 
     return *this;
 }
+
+
+
+Buffer& Buffer::
+        operator+=(const Buffer& b)
+{
+    Intervals sid = getInterval();
+    sid &= b.getInterval();
+
+    if (sid.empty())
+        return *this;
+
+    Interval i = sid.getInterval(b.number_of_samples());
+
+    unsigned offs_write = i.first - sample_offset;
+    unsigned offs_read = i.first - b.sample_offset;
+    unsigned length = i.count();
+
+    float* write = waveform_data()->getCpuMemory();
+    float* read = b.waveform_data()->getCpuMemory();
+
+    write+=offs_write;
+    read+=offs_read;
+
+    for (unsigned n=0; n<length; n++)
+        write[n] += read[n];
+
+    return *this;
+}
+
 
 pBuffer SourceBase::
         readChecked( const Interval& I )

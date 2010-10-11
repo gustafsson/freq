@@ -20,7 +20,7 @@ public:
     unsigned samplesPerBlock() const;
 
     float sample_rate() const;
-    float nFrequencies() const;
+    unsigned frequency_resolution() const;
 
     bool containsSpectrogram() const;
     bool toLarge() const;

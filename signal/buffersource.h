@@ -12,7 +12,7 @@ public:
     BufferSource( pBuffer _waveform = pBuffer() );
 
     virtual pBuffer read( const Interval& I );
-    virtual unsigned sample_rate();
+    virtual float sample_rate();
     virtual long unsigned number_of_samples();
 
 protected:

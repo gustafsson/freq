@@ -36,7 +36,7 @@ public:
     unsigned    output_device() { return _output_device; }
     bool        isStopped();
     bool        isUnderfed();
-    unsigned    sample_rate() { return _data.sample_rate(); }
+    float       sample_rate() { return _data.sample_rate(); }
 
     void        restart_playback();
 private:
@@ -56,7 +56,7 @@ private:
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<Playback> > streamPlayback;
 
-    unsigned _playback_itr;
+    long unsigned _playback_itr;
     int _output_device;
 };
 

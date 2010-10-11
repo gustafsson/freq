@@ -176,7 +176,7 @@ void Reassign::
     for (unsigned reassignLoop=0;reassignLoop<1;reassignLoop++)
     {
         ::reassignFilter( chunk.transform_data->getCudaGlobal(),
-                      chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+                      chunk.min_hz, chunk.max_hz, chunk.sample_rate );
     }
 
     TIME_FILTER CudaException_ThreadSynchronize();
@@ -198,7 +198,7 @@ void Tonalize::
     TIME_FILTER TaskTimer tt("TonalizeFilter");
 
     ::tonalizeFilter( chunk.transform_data->getCudaGlobal(),
-                  chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate );
+                  chunk.min_hz, chunk.max_hz, chunk.sample_rate );
 
     TIME_FILTER CudaException_ThreadSynchronize();
 }

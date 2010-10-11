@@ -23,9 +23,9 @@ void Rectangle::operator()( Chunk& chunk) {
     TIME_FILTER TaskTimer tt("Rectangle");
 
     float4 area = make_float4(
-        _t1 * chunk.sample_rate - chunk.chunk_offset,
+        _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
         _f1 * chunk.nScales(),
-        _t2 * chunk.sample_rate - chunk.chunk_offset,
+        _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
         _f2 * chunk.nScales());
 
     ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
@@ -38,7 +38,7 @@ void Rectangle::operator()( Chunk& chunk) {
 Signal::Intervals Rectangle::
         zeroed_samples()
 {
-    unsigned FS = sample_rate();
+    float FS = sample_rate();
     Signal::Intervals sid;
 
     if (_save_inside)
@@ -58,7 +58,7 @@ Signal::Intervals Rectangle::
 Signal::Intervals Rectangle::
         affected_samples()
 {
-    unsigned FS = sample_rate();
+    float FS = sample_rate();
     Signal::Intervals sid;
 
     if (!_save_inside)

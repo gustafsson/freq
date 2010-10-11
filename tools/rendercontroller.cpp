@@ -111,18 +111,13 @@ void RenderController::
 void RenderController::
         receiveSetTimeFrequencyResolution( int value )
 {
-    unsigned FS = model()->project()->worker.source()->sample_rate();
+    float FS = model()->project()->worker.source()->sample_rate();
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
-    c.tf_resolution( exp( 4*(value / 50.f - 1.f)) );
-
-    float std_t = c.morlet_std_t(0, FS);
-
-    // One standard deviation is not enough, but heavy. Two standard deviations are even more heavy.
-    c.wavelet_std_t( 1.5f * std_t );
+    c.tf_resolution( 2.5f * exp( 4*(value / 50.f - 1.f)) );
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_std_t() * FS );
+    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
 
     model()->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
     view->update();
@@ -377,7 +372,8 @@ void RenderController::
     if (_invalidRange)
     {
         Signal::Intervals blur = _invalidRange;
-        unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_std_samples(model()->project()->worker.source()->sample_rate());
+        float fs = model()->project()->worker.source()->sample_rate();
+        unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
         blur <<= fuzzy;
         _invalidRange |= blur;
 

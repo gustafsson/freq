@@ -384,7 +384,7 @@ std::ostream& operator<<( std::ostream& s, const Intervals& I)
 
 std::ostream& operator<<( std::ostream& s, const Interval& i)
 {
-    return s << "[" << i.first << ", " << i.last << "]";
+    return s << "[" << i.first << ", " << i.last << ")";
 }
 
 } // namespace Signal

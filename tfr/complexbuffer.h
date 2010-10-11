@@ -8,9 +8,9 @@ namespace Tfr
 class ComplexBuffer
 {
 public:
-    ComplexBuffer(unsigned firstSample,
-           unsigned numberOfSamples,
-           unsigned FS,
+    ComplexBuffer(UnsignedF firstSample,
+           unsigned long numberOfSamples,
+           float FS,
            unsigned numberOfChannels=1);
 
     /**
@@ -36,8 +36,8 @@ public:
     virtual unsigned number_of_samples() const { return _complex_waveform_data->getNumberOfElements().width; }
 
 
-    unsigned        sample_offset;
-    unsigned        sample_rate;
+    UnsignedF       sample_offset;
+    float           sample_rate;
 
     /**
         Used to convert back to real data, will discard imaginary part.

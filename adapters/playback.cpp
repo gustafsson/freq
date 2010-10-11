@@ -106,7 +106,7 @@ float Playback::
     time_duration d = microsec_clock::local_time() - _startPlay_timestamp;
     float dt = d.total_milliseconds()*0.001f;
     float t = dt;
-    t += _data.first_buffer()->sample_offset / (float)sample_rate();
+    t += _data.first_buffer()->sample_offset / sample_rate();
     t -= 0.08f;
 #ifdef _WIN32
     t -= outputLatency();
@@ -125,7 +125,7 @@ float Playback::
 void Playback::
         put( Signal::pBuffer buffer )
 {
-    TIME_PLAYBACK TaskTimer tt("Playback::put [%u,%u]", buffer->sample_offset, buffer->sample_offset+buffer->number_of_samples());
+    TIME_PLAYBACK TaskTimer tt("Playback::put [%lu,%lu]", (unsigned long)buffer->sample_offset, (unsigned long)(buffer->sample_offset+buffer->number_of_samples()));
 
     _last_timestamp = microsec_clock::local_time();
     if (_data.empty())
@@ -269,13 +269,13 @@ bool Playback::
     // the first buffer.
     float incoming_samples_per_sec = (nAccumulated_samples - _first_buffer_size) / accumulation_time;
 
-    unsigned marker = _playback_itr;
+    long unsigned marker = _playback_itr;
     if (0==marker)
         marker = _data.first_buffer()->sample_offset;
 
     Signal::Interval cov = _data.fetch_invalid_samples().coveredInterval();
     float time_left =
-            (cov.last - marker) / (float)_data.sample_rate();
+            (cov.last - marker) / _data.sample_rate();
 
     float estimated_time_required = cov.count() / incoming_samples_per_sec;
 
@@ -321,11 +321,11 @@ int Playback::
     memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
     _playback_itr += framesPerBuffer;
 
-    if (_data.first_buffer()->sample_offset + _data.number_of_samples() + 10*2024/*framesPerBuffer*/ < _playback_itr ) {
+    if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + 10ul*2024/*framesPerBuffer*/) < _playback_itr ) {
         TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() ).suppressTiming();
         return paComplete;
     } else {
-        if (_data.first_buffer()->sample_offset + _data.number_of_samples() < _playback_itr + framesPerBuffer) {
+        if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr + framesPerBuffer) {
             TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer ).suppressTiming();
         } else {
             TIME_PLAYBACK TaskTimer("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer ).suppressTiming();

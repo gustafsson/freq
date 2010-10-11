@@ -8,33 +8,33 @@ namespace Signal {
 class OperationRemoveSection: public Operation
 {
 public:
-    OperationRemoveSection( pOperation source, unsigned firstSample, unsigned numberOfRemovedSamples );
+    OperationRemoveSection( pOperation source, IntervalType firstSample, IntervalType numberOfRemovedSamples );
 
     virtual pBuffer read( const Interval& I );
-    virtual long unsigned number_of_samples();
+    virtual IntervalType number_of_samples();
 
     // TODO overload these as well, Intervals need to be translated
     // virtual Intervals affected_samples() { return Intervals(); }
     // virtual Intervals invalid_samples();
     // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 private:
-    unsigned _firstSample, _numberOfRemovedSamples;
+    IntervalType _firstSample, _numberOfRemovedSamples;
 };
 
 class OperationInsertSilence: public Operation
 {
 public:
-    OperationInsertSilence( pOperation source, unsigned firstSample, unsigned numberOfSilentSamples );
+    OperationInsertSilence( pOperation source, IntervalType firstSample, IntervalType numberOfSilentSamples );
 
     virtual pBuffer read( const Interval& I );
-    virtual long unsigned number_of_samples();
+    virtual IntervalType number_of_samples();
 
     // TODO overload these as well, Intervals need to be translated
     // virtual Intervals affected_samples() { return Intervals(); }
     // virtual Intervals invalid_samples();
     // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 private:
-    unsigned _firstSample, _numberOfSilentSamples;
+    IntervalType _firstSample, _numberOfSilentSamples;
 };
 
 class OperationSuperposition: public Operation

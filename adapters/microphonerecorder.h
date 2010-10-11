@@ -21,7 +21,7 @@ public:
     bool isStopped();
 
     virtual Signal::pBuffer read( const Signal::Interval& I );
-    virtual unsigned sample_rate();
+    virtual float sample_rate();
     virtual long unsigned number_of_samples();
 
     unsigned recording_itr() { return number_of_samples(); }

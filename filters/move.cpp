@@ -24,7 +24,7 @@ void Move::
     float df = _df * chunk.nScales();
 
     ::moveFilter( chunk.transform_data->getCudaGlobal(),
-                  df, chunk.min_hz, chunk.max_hz, (float)chunk.sample_rate, chunk.chunk_offset );
+                  df, chunk.min_hz, chunk.max_hz, chunk.sample_rate, (unsigned long)chunk.chunk_offset );
 
     TIME_FILTER CudaException_ThreadSynchronize();
 }

@@ -136,6 +136,7 @@ HEADERS += \
     ui/propertiesselection.h \
     ui/propertiesstroke.h \
     ui/updatewidgetsink.h \
+    filters/supersample.h
 
 FORMS += \
     tools/selectionviewmodel.ui \
@@ -339,4 +340,3 @@ macx {
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_UNIX_COMPILERS += cuda
 # end of cuda section #######################################################################
-

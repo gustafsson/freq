@@ -95,6 +95,16 @@ private:
 
 class StftChunk: public Chunk
 {
+public:
+    StftChunk();
+    void setHalfs( unsigned n );
+    unsigned halfs( );
+    unsigned nActualScales() const;
+
+    virtual unsigned nScales() const;
+
+private:
+    unsigned halfs_n;
 };
 
 } // namespace Tfr

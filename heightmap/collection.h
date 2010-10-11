@@ -244,6 +244,8 @@ audiofile              source
     void        gc();
 
 
+    Tfr::FreqAxis display_scale() { return _display_scale; }
+
     /**
       PostSink fetches data
       */

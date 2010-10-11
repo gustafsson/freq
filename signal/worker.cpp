@@ -70,6 +70,8 @@ bool Worker::
 
     try
     {
+        CudaException_CHECK_ERROR();
+
         {   stringstream ss;
             TIME_WORKER TaskTimer tt("Reading source and calling callbacks %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
 

@@ -61,7 +61,7 @@ void Selection::operator()( Chunk& chunk) {
 Signal::Intervals Selection::
         zeroed_samples()
 {
-    unsigned FS = sample_rate();
+    float FS = sample_rate();
 
     Signal::Intervals sid;
 
@@ -84,7 +84,7 @@ Signal::Intervals Selection::
 Signal::Intervals Selection::
         affected_samples()
 {
-    unsigned FS = sample_rate();
+    float FS = sample_rate();
 
     Signal::Intervals sid;
 

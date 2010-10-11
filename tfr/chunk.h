@@ -6,6 +6,7 @@
 #include "GpuCpuData.h"
 #include "signal/intervals.h"
 #include "freqaxis.h"
+#include "unsignedf.h"
 
 namespace Tfr {
 
@@ -47,17 +48,19 @@ public:
 
     unsigned offset(unsigned sample, unsigned f_index);
 
-
+    /**
+      The highest and lowest frequency described by the chunk. Inclusive range.
+      */
     float min_hz, max_hz;
     AxisScale axis_scale;
 
     /**
       chunk_offset is the start of the chunk, along the timeline, measured in
-      original signal samples.
+      signal samples, as described by 'first_valid_sample'.
 
         @see first_valid_sample
       */
-    unsigned chunk_offset;
+    UnsignedF chunk_offset;
 
 
     /**
@@ -67,6 +70,8 @@ public:
         Interval(
             chunk_offset + first_valid_sample,
             chunk_offset + first_valid_sample + n_valid_samples )
+
+      @see chunk_offset
       */
     unsigned first_valid_sample;
 
@@ -83,16 +88,19 @@ public:
     float sample_rate;
 
 
-// sample_rate is not 'signal samples' per second, but 'chunk columns' per
-// second. Thus, a chunk can't figure out 'timeInterval' for instance (note
-// that nSamples()*sample_rate != n_valid_samples).
-//    float timeInterval() const {       return n_valid_samples/(float)sample_rate; }
-//    float startTime() const {          return (chunk_offset+first_valid_sample)/(float)sample_rate; }
-//    float endTime() const {            return startTime() + timeInterval(); }
+    /**
+      Original sample rate, the inverse will not necessarily produce a signal
+      with this sample rate. It is used by Chunk::getInterval()
+      */
+    float original_sample_rate;
 
-    unsigned nSamples() const {        return order==Order_row_major ? transform_data->getNumberOfElements().width : transform_data->getNumberOfElements().height; }
-    unsigned nScales() const {         return order==Order_row_major ? transform_data->getNumberOfElements().height: transform_data->getNumberOfElements().width;  }
-    unsigned nChannels() const {       return transform_data->getNumberOfElements().depth; }
+    float timeInterval() const {       return n_valid_samples/sample_rate; }
+    float startTime() const {          return (chunk_offset+first_valid_sample)/sample_rate; }
+    float endTime() const {            return startTime() + timeInterval(); }
+
+    virtual unsigned nSamples() const {        return order==Order_row_major ? transform_data->getNumberOfElements().width : transform_data->getNumberOfElements().height; }
+    virtual unsigned nScales() const {         return order==Order_row_major ? transform_data->getNumberOfElements().height: transform_data->getNumberOfElements().width;  }
+    virtual unsigned nChannels() const {       return transform_data->getNumberOfElements().depth; }
 
     bool valid() const {
         return 0 != transform_data->getSizeInBytes1D() &&
@@ -103,7 +111,11 @@ public:
 
     float2 debug_getNearestCoeff( float t, float f );  /// For debugging
 
-    Signal::Interval getInterval() const;
+
+    /**
+
+      */
+    virtual Signal::Interval getInterval() const;
 };
 typedef boost::shared_ptr< Chunk > pChunk;
 

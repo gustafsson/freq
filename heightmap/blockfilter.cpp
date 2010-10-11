@@ -7,8 +7,8 @@
 #include <boost/foreach.hpp>
 #include <TaskTimer.h>
 
-//#define TIME_CWTTOBLOCK
-#define TIME_CWTTOBLOCK if(0)
+#define TIME_CWTTOBLOCK
+// #define TIME_CWTTOBLOCK if(0)
 
 using namespace Tfr;
 
@@ -28,12 +28,16 @@ BlockFilter::
 void BlockFilter::
         operator()( Tfr::Chunk& chunk )
 {
-    Signal::Intervals expected = _collection->invalid_samples();
+    /*Signal::Intervals expected = _collection->invalid_samples();
+
+    std::cout << "expected=" << expected << std::endl;
+    std::cout << "chunk.getInterval()=" << chunk.getInterval() << std::endl;
 
     if ( !(expected & chunk.getInterval()) ) {
+        int dummy = 0;
         // TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk.getInterval().first, chunk.getInterval().last);
         return;
-    }
+    }*/
 
     // TODO replace this with Tfr::Transform::displayedTimeResolution etc...
     _collection->update_sample_size( &chunk );
@@ -44,6 +48,8 @@ void BlockFilter::
         {
             mergeChunk( block, chunk, block->glblock->height()->data );
             _collection->computeSlope( block, 0 );
+
+            CudaException_CHECK_ERROR();
         }
         else
         {
@@ -108,33 +114,73 @@ void CwtToBlock::
     transferDesc &= outInterval;
 
     // Remove already computed intervals
-    transferDesc -= block->valid_samples;
+    // transferDesc -= block->valid_samples;
 
     // If block is already up to date, abort merge
     if (transferDesc.empty())
+    {
+        int dummy = 0;
         return;
+    }
 
     std::stringstream ss;
     Position a,b;
     block->ref.getArea(a,b);
-//    TIME_CWTTOBLOCK TaskTimer tt("%s chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]", __FUNCTION__,
-//                                 chunk.startTime(), chunk.endTime(), a.time, b.time, a.scale, b.scale);
-    TIME_CWTTOBLOCK TaskTimer tt("%s chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]", __FUNCTION__,
-                                 -1, -1, a.time, b.time, a.scale, b.scale);
+    float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
+    float chunk_length = chunk.n_valid_samples / chunk.sample_rate;
+    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
+                                 chunk_startTime, chunk_startTime + chunk_length, a.time, b.time, a.scale, b.scale);
 
     float in_sample_rate = chunk.sample_rate;
     float out_sample_rate = block->ref.sample_rate();
-    float in_frequency_resolution = chunk.nScales();
-    float out_frequency_resolution = block->ref.nFrequencies();
 
-    BOOST_FOREACH( Signal::Interval transfer, transferDesc)
+    float merge_first_scale = a.scale;
+    float merge_last_scale = b.scale;
+    float chunk_first_scale = _collection->display_scale().getFrequencyScalar( chunk.min_hz );
+    float chunk_last_scale = _collection->display_scale().getFrequencyScalar( chunk.max_hz );
+    merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
+    merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
+    if (merge_first_scale >= merge_last_scale)
+        return;
+
+    float in_frequency_resolution = chunk.nScales()/(chunk_last_scale - chunk_first_scale);
+    unsigned out_frequency_resolution = block->ref.frequency_resolution();
+    float in_frequency_offset = (merge_first_scale - chunk_first_scale) * in_frequency_resolution;
+    float out_frequency_offset = (merge_first_scale - a.scale) * out_frequency_resolution;
+    // Either out_frequency_offset or in_frequency_offset is 0
+    if (0<out_frequency_offset)
     {
-        TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u]", transfer.first, transfer.last);
+        // Make out_frequency_offset to an integer (by ceil) and add the
+        // remainder to in_frequency_offset
+        float c = ceil(out_frequency_offset);
+        float d = c - out_frequency_offset;
+        out_frequency_offset = c;
+        in_frequency_offset += d*in_frequency_resolution/out_frequency_resolution;
+    }
+    if (out_frequency_offset == _collection->scales_per_block())
+        out_frequency_offset--;
 
-        if (0)
+    TIME_CWTTOBLOCK TaskTimer("a.scale = %g", a.scale);
+    TIME_CWTTOBLOCK TaskTimer("b.scale = %g", b.scale);
+    TIME_CWTTOBLOCK TaskTimer("chunk_first_scale = %g", chunk_first_scale);
+    TIME_CWTTOBLOCK TaskTimer("chunk_last_scale = %g", chunk_last_scale);
+    TIME_CWTTOBLOCK TaskTimer("merge_first_scale = %g", merge_first_scale);
+    TIME_CWTTOBLOCK TaskTimer("merge_last_scale = %g", merge_last_scale);
+    TIME_CWTTOBLOCK TaskTimer("in_frequency_offset = %g", in_frequency_offset);
+    TIME_CWTTOBLOCK TaskTimer("out_frequency_offset = %g", out_frequency_offset);
+    TIME_CWTTOBLOCK TaskTimer("in_frequency_resolution = %g", in_frequency_resolution);
+    TIME_CWTTOBLOCK TaskTimer("out_frequency_resolution = %u", out_frequency_resolution);
+    TIME_CWTTOBLOCK TaskTimer("chunk.nScales() = %u", chunk.nScales());
+    TIME_CWTTOBLOCK TaskTimer("_collection->scales_per_block() = %u", _collection->scales_per_block());
+
+
+    BOOST_FOREACH( Signal::Interval transfer, transferDesc )
+    {
+        TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u)", transfer.first, transfer.last);
+
         TIME_CWTTOBLOCK {
-            TaskTimer("inInterval [%u,%u]", inInterval.first, inInterval.last).suppressTiming();
-            TaskTimer("outInterval [%u,%u]", outInterval.first, outInterval.last).suppressTiming();
+            TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
+            TaskTimer("outInterval [%u,%u)", outInterval.first, outInterval.last).suppressTiming();
             TaskTimer("chunk.first_valid_sample = %u", chunk.first_valid_sample).suppressTiming();
             TaskTimer("chunk.n_valid_samples = %u", chunk.n_valid_samples).suppressTiming();
         }
@@ -143,16 +189,18 @@ void CwtToBlock::
         float in_sample_offset = transfer.first - inInterval.first;
         float out_sample_offset = transfer.first - outInterval.first;
 
+        // Rescale in_sample_offset to in_sample_rate (samples are originally
+        // described in the original source sample rate)
+        in_sample_offset *= in_sample_rate / chunk.original_sample_rate;
+
+        // Rescale out_sample_offset to out_sample_rate (samples are originally
+        // described in the original source sample rate)
+        out_sample_offset *= out_sample_rate / chunk.original_sample_rate;
+
         // Add offset for redundant samples in chunk
         in_sample_offset += chunk.first_valid_sample;
 
-        // Rescale out_offset to out_sample_rate (samples are originally
-        // described in the chunk sample rate)
-        out_sample_offset *= out_sample_rate / in_sample_rate;
-
-        float in_frequency_offset = a.scale * in_frequency_resolution;
-        float out_frequency_offset = 0;
-
+        CudaException_CHECK_ERROR();
 
         // Invoke CUDA kernel execution to merge blocks
         ::blockMergeChunk( chunk.transform_data->getCudaGlobal(),
@@ -166,12 +214,13 @@ void CwtToBlock::
                            out_sample_offset,
                            in_frequency_offset,
                            out_frequency_offset,
-                           transfer.count(),
+                           transfer.count() * (out_sample_rate / chunk.original_sample_rate),
                            complex_info,
                            cuda_stream);
 
         block->valid_samples |= transfer;
-        TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
+
+        CudaException_CHECK_ERROR();
     }
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
@@ -198,7 +247,7 @@ void StftToBlock::
 
     float block_fs = block->ref.sample_rate();
     float out_stft_size = block_fs / chunk.sample_rate;
-    float out_offset = (a.time - (chunk.chunk_offset / (float)this->sample_rate() ))
+    float out_offset = (a.time - chunk.chunk_offset / this->sample_rate() )
                        * block->ref.sample_rate();
 
     ::expandCompleteStft( chunk.transform_data->getCudaGlobal(),

@@ -34,7 +34,7 @@ void Csv::
 
     Tfr::Chunk* chunk;
     Tfr::pChunk pchunk;
-    Tfr::CwtChunk* cwt = dynamic_cast<Tfr::CwtChunk*>(&c);
+    Tfr::CwtChunkPart* cwt = dynamic_cast<Tfr::CwtChunkPart*>(&c);
 
     if (cwt)
     {

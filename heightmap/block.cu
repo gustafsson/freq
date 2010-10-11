@@ -79,7 +79,7 @@ texture<float2, 1, cudaReadModeElementType> chunkTexture;
 /**
  kernel_merge_chunk has one thread for each output element
 */
-__global__ void kernel_merge_chunk(
+__global__ void kernel_merge_chunk_old(
                 cudaPitchedPtrType<float2> inChunk,
                 cudaPitchedPtrType<float> outBlock,
                 float resample_width,
@@ -217,14 +217,15 @@ __device__ __host__ read_params computeReadParams( unsigned in_sample_offset, un
         p.block_first_read *= BLOCK_SIZE;
         p.block_last_read  *= BLOCK_SIZE;
 
-        writePos.y += out_frequency_offset;
         p.start_y = resample_height *  writePos.y    + in_frequency_offset;
         p.end_y   = resample_height * (writePos.y+1) + in_frequency_offset;
         if (p.end_y == p.start_y) p.end_y++;
     }
 
+
     return p;
 }
+
 
 /**
     kernel_merge_chunk2 has one thread for each output element.
@@ -247,8 +248,9 @@ __global__ void kernel_merge_chunk2(
 {
 /**
     Merging like this for resample_width = 3, resample_height=1, in_offset=1, out_offset=0
+    (take max of each group of 3)
     chunk: 1|1234575652165761|9682657451433|321
-    out:    |  5  7  5  7  9 | 8  7  5  4  | => |57576|8754|
+    out:    |  5  7  5  7  9 | 8  7  5  4  | => |57579|8754|
 
     That is; discard element that begins before outBlock but don't discard fraction of element that end after outBlock.
 
@@ -256,17 +258,20 @@ __global__ void kernel_merge_chunk2(
 */
     __shared__ float val[BLOCK_SIZE];
 
-    elemSize3_t writePos = make_elemSize3_t(
+    elemSize3_t threadPos = make_elemSize3_t(
                             __umul24(blockIdx.x, blockDim.x) + threadIdx.x,
                             __umul24(blockIdx.y, blockDim.y) + threadIdx.y,
                             __umul24(blockIdx.z, blockDim.z) + threadIdx.z);
-    //outBlock.elem(writePos) = 0;
-    //return;
 
-    read_params thread_p = computeReadParams( in_sample_offset, in_count, out_sample_offset,
-                                              in_frequency_offset, out_frequency_offset,
-                                       resample_height, resample_width,
-                                       writePos, 0==threadIdx.x );
+    read_params thread_p = computeReadParams(
+            in_sample_offset, in_count, out_sample_offset,
+            in_frequency_offset, out_frequency_offset,
+            resample_height, resample_width,
+            threadPos, 0==threadIdx.x );
+
+    // TODO could use the out_frequency_offset as a float and adjust blocks
+    elemSize3_t writePos = threadPos;
+    writePos.y += out_frequency_offset;
 
     __shared__ read_params block_read;
     if (0==threadIdx.x)
@@ -276,7 +281,10 @@ __global__ void kernel_merge_chunk2(
 
     __syncthreads();
 
-    if (0 != block_read.num_reads) for (unsigned y = block_read.start_y; y < block_read.end_y; y++)
+    if (0 != block_read.num_reads)
+        for (unsigned y = block_read.start_y;
+             y < block_read.end_y && y < inChunk.getNumberOfElements().y;
+             y++)
     {
         float ff = y/(float)inChunk.getNumberOfElements().y;
         float if0 = 20.f/(2 + 35*ff*ff*ff);
@@ -293,8 +301,9 @@ __global__ void kernel_merge_chunk2(
                          inChunk.valid(readPos);
 
             // Read from global memory
-            float2 c = valid ? inChunk.elem(readPos) : make_float2(0,0);
+            float2 c = valid ? inChunk.e(readPos) : make_float2(0,0);
 
+            // TODO use templates instead of switch argument
             switch (complexInfo)
             {
             case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
@@ -343,12 +352,12 @@ __global__ void kernel_merge_chunk2(
                         val[threadIdx.x] = max(max(val[threadIdx.x], val[48 + threadIdx.x]),
                                                max(val[32 + threadIdx.x], val[16 + threadIdx.x]));
 
-                    if (threadIdx.x<4) {
-                        val[threadIdx.x] = max(max(val[threadIdx.x], val[4 + threadIdx.x]),
-                                               max(val[8 + threadIdx.x], val[12 + threadIdx.x]));
+                        if (threadIdx.x<4) {
+                            val[threadIdx.x] = max(max(val[threadIdx.x], val[4 + threadIdx.x]),
+                                                   max(val[8 + threadIdx.x], val[12 + threadIdx.x]));
 
-                    if (threadIdx.x<1) {
-                        val[0] = max(max(val[0], val[1]), max(val[2], val[3]));
+                            if (threadIdx.x<1) {
+                                val[0] = max(max(val[0], val[1]), max(val[2], val[3]));
                     }}}
                 }
 
@@ -369,6 +378,7 @@ __global__ void kernel_merge_chunk2(
         switch (complexInfo)
         {
         case Heightmap::ComplexInfo_Phase:
+            // myVal contains phase value
             break;
 
         default:
@@ -378,9 +388,12 @@ __global__ void kernel_merge_chunk2(
             break;
         }
 
+        myVal *= .02f;
+        //myVal = .1f;
         outBlock.elem( writePos ) = myVal;
     }
 }
+
 
 extern "C"
 void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
@@ -393,7 +406,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  float out_sample_offset,
                  float in_frequency_offset,
                  float out_frequency_offset,
-                 unsigned in_count,
+                 float out_count,
                  Heightmap::ComplexInfo complexInfo,
                  unsigned cuda_stream)
 {
@@ -408,15 +421,25 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
     // For version 2
     dim3 block(block_size,1,1);
     uint3 nElems = outBlock.getNumberOfElements();
+    fprintf(stdout, "\noutBlock.getNumberOfElements() = (%u, %u, %u)", nElems.x, nElems.y, nElems.z );
+    unsigned in_count = ceil(out_count*in_sample_rate/out_sample_rate);
 
     // Limit kernel size
     {
-        unsigned last_write = ceil(out_sample_offset + in_count*out_sample_rate/in_sample_rate);
+        nElems.y -= out_frequency_offset;
+
+        unsigned last_write = ceil(out_sample_offset + out_count);
         nElems.x = min(nElems.x, last_write);
         unsigned unused = out_sample_offset/block_size;
         unused*=block_size;
-        // printf("unused = %u\n", unused);
+        printf("\nout_count = %g", out_count);
+        printf("\nblock_size = %u", block_size);
+        printf("\nout_sample_offset = %g", out_sample_offset);
+        printf("\nlast_write = %u", last_write);
+        printf("\nunused = %u", unused);
+        printf("\n1 Elems.x = %u", nElems.x);
         nElems.x -= unused;
+        printf("\n2 Elems.x = %u", nElems.x);
         out_sample_offset -= unused;
         cudaPitchedPtr cpp = outBlock.getCudaPitchedPtr();
         cpp.ptr = &((float*)cpp.ptr)[unused];
@@ -431,23 +454,29 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                     int_div_ceil(nElems.x, block.x),
                     int_div_ceil(nElems.y, block.y),
                     int_div_ceil(nElems.z, block.z));
+            printf("\ngrid.x = %u", grid.x);
+            printf("\nnElems.x = %u", nElems.x);
+            printf("\nblock.x = %u", block.x);
+            printf("\nint_div_ceil(nElems.x, block.x) = %lu", int_div_ceil(nElems.x, block.x));
             break;
     }
 
     float resample_width = in_sample_rate/out_sample_rate;
+    // TODO motivate this '2'
     float resample_height = (in_frequency_resolution+2)/out_frequency_resolution;
 
-    if (0) {
+    if (1) {
         elemSize3_t sz_o = outBlock.getNumberOfElements();
         elemSize3_t sz_i = inChunk.getNumberOfElements();
         //fprintf(stdout,"sz_o (%d, %d, %d)\tsz_i (%d, %d, %d)\n", sz_o.x, sz_o.y, sz_o.z, sz_i.x, sz_i.y, sz_i.z );
 
+        fprintf(stdout, "\nint_div_ceil(128,2048) = %lu", int_div_ceil(128,2048));
 
         fprintf(stdout,"\ngrid (%d, %d, %d)\tblock (%d, %d, %d)\n", grid.x, grid.y, grid.z, block.x, block.y, block.z );
-        fprintf(stdout,"(in sr %g, out sr %g, w=%g) (in f %g, out f %g, h=%g)\n\tin o %u, out o %g, in count %u\n",
+        fprintf(stdout,"(in sr %g, out sr %g, w=%g) (in f %g, out f %g, h=%g)\n\tin o %u, out o %g, in count = %u, out count %g\n",
             in_sample_rate, out_sample_rate, resample_width,
             in_frequency_resolution, out_frequency_resolution, resample_height,
-            in_sample_offset, out_sample_offset, in_count);
+            in_sample_offset, out_sample_offset, in_count, out_count);
         fprintf(stdout,"outBlock(%d,%d,%d) pitch %lu\n",
             outBlock.getNumberOfElements().x,
             outBlock.getNumberOfElements().y,
@@ -490,7 +519,7 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float2>();
             cudaBindTexture(0, &chunkTexture, inChunk.ptr(), &channelDesc, inChunk.getCudaPitchedPtr().pitch * inChunk.getCudaPitchedPtr().ysize);
 
-            kernel_merge_chunk<<<grid, block, cuda_stream>>>(
+            kernel_merge_chunk_old<<<grid, block, cuda_stream>>>(
                 inChunk, outBlock,
                 resample_width,
                 resample_height,

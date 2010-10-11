@@ -29,8 +29,8 @@ public:
     {}
 
     /**
-      'last' is rather the first sample not within the interval, such that
-       the length of the interval can be computed as "last-first".
+      Describes the interval [first, last). That is, 'last' is excluded from
+      the interval. The length of the interval is computed by "last-first".
       */
     IntervalType first, last;
     IntervalType count() const { return last - first; }
