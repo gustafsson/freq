@@ -118,10 +118,11 @@ bool Application::
     try {
         v = QApplication::notify(receiver,e);
     } catch (const std::invalid_argument &x) {
+        const char* what = x.what();
         if (1 == QMessageBox::warning( 0,
                                        QString("Couldn't complete the requested action"),
                                        QString("Couldn't complete the requested action.\nDetails on the error follow:\n\n")+
-                                       QString::fromLocal8Bit(x.what()),
+                                       QString::fromLocal8Bit(what),
                                        "Ignore", "Exit program", QString::null, 0, 0 ))
         {
             err = fatal_exception_string(x);

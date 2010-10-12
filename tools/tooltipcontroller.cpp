@@ -79,7 +79,7 @@ void TooltipController::
             current[1] = ((current[1]*c.nScales(FS)+.5f))/(float)c.nScales(FS);
             float f = c.compute_frequency2( FS, current[1] );
             float std_t = c.morlet_sigma_t( FS, f );
-            float std_f = c.morlet_sigma_f( FS, f );
+            float std_f = c.morlet_sigma_f( f );
 
             stringstream ss;
             ss << setiosflags(ios::fixed)

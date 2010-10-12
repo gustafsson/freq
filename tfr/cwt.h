@@ -65,7 +65,7 @@ public:
       Computes the standard deviation in time and frequency using the tf_resolution value. For a given frequency.
       */
     float     morlet_sigma_t( float sample_rate, float hz ) const;
-    float     morlet_sigma_f( float sample_rate, float hz ) const;
+    float     morlet_sigma_f( float hz ) const;
 
     /**
       Provided so that clients can compute 'good' overlapping sizes. This gives the number of samples that
@@ -82,7 +82,11 @@ public:
     unsigned  next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     unsigned  prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
 
+    unsigned        find_bin( unsigned j ) const;
 private:
+    float           j_to_hz( float sample_rate, unsigned j ) const;
+    unsigned        hz_to_j( float sample_rate, float hz ) const;
+
     Signal::pBuffer inverse( Tfr::CwtChunk* );
     Signal::pBuffer inverse( Tfr::CwtChunkPart* );
 

@@ -119,6 +119,11 @@ void CwtToBlock::
     // If block is already up to date, abort merge
     if (transferDesc.empty())
     {
+        TaskTimer tt("CwtToBlock::mergeChunk, transferDesc empty");
+        tt.getStream() << "outInterval = " << outInterval;
+        tt.getStream() << "inInterval = " << inInterval;
+        tt.suppressTiming();
+
         int dummy = 0;
         return;
     }
@@ -141,7 +146,10 @@ void CwtToBlock::
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
     if (merge_first_scale >= merge_last_scale)
+    {
+        TaskTimer("CwtToBlock::mergeChunk, merge_first_scale(%g) >= merge_last_scale(%g)", merge_first_scale, merge_last_scale).suppressTiming();
         return;
+    }
 
     float in_frequency_resolution = chunk.nScales()/(chunk_last_scale - chunk_first_scale);
     unsigned out_frequency_resolution = block->ref.frequency_resolution();

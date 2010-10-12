@@ -62,13 +62,13 @@ static const char _sawe_usage_string[] =
 "    playback_device    Selects a specific device for playback. -1 specifices the\n"
 "                       default output device.\n"
 "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
-"                       filters are being used as the GUI won't be lock during\n"
+"                       filters are being used as the GUI won't be locked during\n"
 "                       computation.\n"
 "\n"
 "Sonic AWE, 2010\n";
 
 static unsigned _channel=0;
-static unsigned _scales_per_octave = 60;
+static unsigned _scales_per_octave = 20;
 static float _wavelet_time_support = 3;
 static unsigned _samples_per_chunk = 1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;

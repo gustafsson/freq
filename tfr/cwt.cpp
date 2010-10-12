@@ -11,7 +11,9 @@
 #include <CudaException.h>
 #include <neat_math.h>
 
+#include <cmath>
 #include <boost/foreach.hpp>
+#include <boost/lambda/lambda.hpp>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -23,6 +25,8 @@
 // #define TIME_ICWT if(0)
 #define TIME_ICWT
 
+using namespace boost::lambda;
+
 namespace Tfr {
 
 Cwt::
@@ -31,7 +35,7 @@ Cwt::
     _stream( stream ),
     _min_hz( 20 ),
     _scales_per_octave( scales_per_octave ),
-    _tf_resolution( 2.5 ),
+    _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
 //    _fft_many(stream),
     _wavelet_time_suppport( wavelet_time_suppport )
 {
@@ -70,17 +74,45 @@ pChunk Cwt::
     if (0==offset)
         first_valid_sample = 0;
 
+    // Align first_valid_sample with max_bin
+    unsigned max_bin = find_bin( nScales( buffer->sample_rate ) - 1 );
+    first_valid_sample = ((offset + first_valid_sample + (1<<max_bin) - 1)>>max_bin<<max_bin)-offset;
+
     BOOST_ASSERT( std_samples + first_valid_sample < buffer->number_of_samples());
 
     unsigned valid_samples = buffer->number_of_samples() - std_samples - first_valid_sample;
+    // Align valid_samples with max_bin
+    valid_samples = valid_samples>>max_bin<<max_bin;
+    BOOST_ASSERT( 0 < valid_samples );
 
+    tt.info("offset = %lu", offset);
+    tt.info("first_valid_sample = %lu", first_valid_sample);
+    tt.info("valid_samples = %u", valid_samples);
 
     // find all sub chunks
     unsigned prev_j = 0;
     unsigned n_j = nScales( buffer->sample_rate );
-    const float log2_a = 1.f / v; // a = 2^(1/v)
 
     pChunk wt( new CwtChunk() );
+
+    std::vector<unsigned> stop_js;
+    std::vector<unsigned> prev_js;
+    std::vector<unsigned> time_supports;
+    std::vector<float> hzs;
+
+    {
+        TaskTimer tt("bins, scales per octave = %g, tf_resolution = %g, sigma = %g", _scales_per_octave, _tf_resolution, sigma());
+        for (unsigned j = prev_j; j<n_j; ++j)
+        {
+            tt.getStream() << "j = " << j << ", "
+                           << "hz = " << j_to_hz( buffer->sample_rate, j ) << ", "
+                           << "bin = " << find_bin( j ) << ", "
+                           << "time_support in samples = "
+                           << wavelet_time_support_samples( buffer->sample_rate, j_to_hz( buffer->sample_rate, j )) << ", "
+                           << "redundant in seconds = " << wavelet_time_support_samples( buffer->sample_rate, j_to_hz( buffer->sample_rate, j ))/buffer->sample_rate;
+            tt.flushStream();
+        }
+    }
 
     for( unsigned c=0; prev_j<n_j; ++c )
     {
@@ -94,12 +126,7 @@ pChunk Cwt::
 
             for (unsigned j = prev_j; j<n_j; ++j)
             {
-                float aj = exp2f( log2_a * j );
-                float sigmaW0 = valid_samples / (2*aj*M_PI*sigma());
-                float center_index = valid_samples / aj;
-                float edge = center_index + 4*sigmaW0;
-
-                if ( edge >= (valid_samples >> (c+1) ))
+                if ( c == find_bin( j ) )
                     next_j = j;
             }
         }
@@ -111,43 +138,67 @@ pChunk Cwt::
         // that is not needed in this chunk part
         next_j = std::min(n_j, next_j+1);
 
-        // Include one more 'j' for interpolation between parts
+        // Actually include next_j in this chunk so that parts can be
+        // interpolated between in filters
         unsigned stop_j = std::min(n_j, next_j+1);
-        float hz = get_max_hz( buffer->sample_rate );
-        hz *= exp2f(stop_j/-v);
+        unsigned n_scales = stop_j - prev_j;
+        float hz = j_to_hz(buffer->sample_rate, stop_j-1);
+        TaskTimer tt("c=%u, hz=%g, 2^c=%u, n_scales=%u", c, hz, 1<<c, n_scales);
+
         unsigned sub_std_samples = wavelet_time_support_samples( buffer->sample_rate, hz );
-        sub_std_samples = (sub_std_samples + (1<<c)-1)>>c;
-        sub_std_samples = (sub_std_samples + 15)/16*16;
-        sub_std_samples<<=c;
         unsigned sub_first_valid = sub_std_samples;
         if (0==offset)
             sub_first_valid = 0;
 
-        BOOST_ASSERT( sub_first_valid <= offset + first_valid_sample );
+        tt.info("sub_std_samples=%u", sub_std_samples);
+        BOOST_ASSERT( sub_first_valid <= first_valid_sample );
+
         unsigned sub_start = offset + first_valid_sample - sub_first_valid;
         unsigned sub_length = sub_first_valid + valid_samples + sub_std_samples;
+        sub_length = spo2g(sub_length-1);
 
         Signal::Interval subinterval(sub_start, sub_start + sub_length );
-        std::cout << "c=" << c << ", hz=" << hz << ", subinterval=" << subinterval << std::endl;
         pChunk ft = _fft( bs.readFixedLength( subinterval ));
-        std::cout << " ft=" << ft->getInterval() << std::endl;
 
         float bfs = bs.sample_rate();
         float fs = ft->sample_rate;
-        unsigned n_scales = stop_j - prev_j;
         ((StftChunk*)ft.get())->setHalfs( c ); // discard most of it if c>0
         ft->chunk_offset >>= c;
         // ft->first_valid_sample = 0 for fft
         ft->n_valid_samples >>= c;
-        std::cout << " ft(c)=" << ft->getInterval() << std::endl;
+        tt.getStream() << " ft(c)=" << ft->getInterval() << ", count=" << ft->getInterval().count(); tt.flushStream();
 
         pChunk chunkpart = computeChunkPart( ft, prev_j, n_scales );
-        std::cout << " chunkpart=" << chunkpart->getInterval() << std::endl;
+        tt.getStream() << " chunkpart=" << chunkpart->getInterval() << ", count=" << chunkpart->getInterval().count(); tt.flushStream();
         // TODO verify output
         ((CwtChunk*)wt.get())->chunks.push_back( chunkpart );
 
+        prev_js.push_back( prev_j );
+        stop_js.push_back( stop_j );
+        time_supports.push_back( sub_std_samples );
+        hzs.push_back( hz );
+
         prev_j = next_j;
     }
+
+
+    {
+        TaskTimer tt("prev_js");
+        for_each(prev_js.begin(), prev_js.end(), tt.getStream() << _1 << " ");
+    }
+    {
+        TaskTimer tt("stop_js");
+        for_each(stop_js.begin(), stop_js.end(), tt.getStream() << _1 << " " );
+    }
+    {
+        TaskTimer tt("time_supports");
+        for_each(time_supports.begin(), time_supports.end(), tt.getStream() << _1 << " " );
+    }
+    {
+        TaskTimer tt("hzs");
+        for_each(hzs.begin(), hzs.end(), tt.getStream() << _1 << " " );
+    }
+
 
     wt->axis_scale = AxisScale_Logarithmic;
     wt->chunk_offset = buffer->sample_offset + first_valid_sample;
@@ -194,15 +245,13 @@ pChunk Cwt::
         // (except for numerical errors)
         intermediate_wt->sample_rate = ldexp(ft->original_sample_rate, -half_sizes);
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
-        TaskTimer("ft->sample_rate = %g", ft->sample_rate);
+        TaskTimer("ft->sample_rate = %g", ft->sample_rate).suppressTiming();
         TaskTimer("ft->original_sample_rate = %g", ft->original_sample_rate).suppressTiming();
-        TaskTimer("ft->n_valid_samples = %u", ft->n_valid_samples);
+        TaskTimer("ft->halfs = %u", half_sizes).suppressTiming();
         TaskTimer("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate).suppressTiming();
-        TaskTimer("intermediate_wt->original_sample_rate = %g", intermediate_wt->original_sample_rate).suppressTiming();
-        TaskTimer("log2(intermediate_wt->sample_rate) = %g", log2(intermediate_wt->sample_rate)).suppressTiming();
         TaskTimer("log2(intermediate_wt->sample_rate) = %g", log2(intermediate_wt->sample_rate)).suppressTiming();
 
-        intermediate_wt->min_hz = get_max_hz(ft->original_sample_rate)*exp2f( (first_scale + n_scales)/-_scales_per_octave );
+        intermediate_wt->min_hz = get_max_hz(ft->original_sample_rate)*exp2f( (first_scale + n_scales-1)/-_scales_per_octave );
         intermediate_wt->max_hz = get_max_hz(ft->original_sample_rate)*exp2f( first_scale/-_scales_per_octave );
 
         TaskTimer("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate).suppressTiming();
@@ -240,6 +289,7 @@ pChunk Cwt::
         if (0==ft->chunk_offset)
             intermediate_wt->first_valid_sample=0;
 
+        TaskTimer("intermediate_wt->first_valid_sample=%u", intermediate_wt->first_valid_sample).suppressTiming();
         TaskTimer("ft->n_valid_samples=%u", ft->n_valid_samples).suppressTiming();
         BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->n_valid_samples);
 
@@ -380,8 +430,7 @@ float Cwt::
         get_min_hz( float fs ) const
 {
     unsigned n_j = nScales( fs );
-    float hz = get_max_hz( fs ) * exp2f(n_j/-_scales_per_octave);
-    return hz;
+    return j_to_hz( fs, n_j - 1 );
 }
 
 
@@ -423,7 +472,6 @@ void Cwt::
 float Cwt::
         sigma() const
 {
-    // 2.5 is Ulfs magic constant
     return _scales_per_octave/_tf_resolution;
 }
 
@@ -442,26 +490,23 @@ float Cwt::
 float Cwt::
         morlet_sigma_t( float fs, float hz ) const
 {
-    float scale = hz/get_max_hz( fs );
-    float j = -_scales_per_octave*log2f(scale);
+    // float scale = hz/get_max_hz( fs );
+    // float j = -_scales_per_octave*log2f(scale);
+    // const float log2_a = 1.f / _scales_per_octave; // a = 2^(1/v), v = _scales_per_octave
+    // float aj = exp2f( log2_a * j );
 
-    const float log2_a = 1.f / _scales_per_octave; // a = 2^(1/v), v = _scales_per_octave
-    float aj = exp2f( log2_a * j );
+    float aj = get_max_hz( fs )/hz;
 
     return aj*sigma();
 }
 
 
 float Cwt::
-        morlet_sigma_f( float fs, float hz ) const
+        morlet_sigma_f( float hz ) const
 {
-    float scale = hz/get_max_hz( fs );
-    float j = -_scales_per_octave*log2f(scale);
-
-    const float log2_a = 1.f / _scales_per_octave; // a = 2^(1/v), v = _scales_per_octave
-    float aj = exp2f( log2_a * j );
-
-    float sigmaW0 = get_max_hz( fs ) / (2*M_PI*aj* sigma() );
+    // float aj = get_max_hz( fs )/hz; // see morlet_sigma_t
+    // float sigmaW0 = get_max_hz( fs ) / (2*M_PI*aj* sigma() );
+    float sigmaW0 = hz / (2*M_PI* sigma() );
     return sigmaW0;
 }
 
@@ -476,10 +521,10 @@ unsigned Cwt::
 unsigned Cwt::
         wavelet_time_support_samples( float fs, float hz ) const
 {
-    unsigned support_samples = morlet_sigma_t( fs, hz ) * _wavelet_time_suppport;
-    unsigned c = 1 + log2(get_max_hz(fs)) - log2(hz);
+    unsigned support_samples = std::ceil(morlet_sigma_t( fs, hz ) * _wavelet_time_suppport);
+    unsigned c = find_bin( hz_to_j( fs, hz ));
+    // Align to 1<<c upwards
     support_samples = (support_samples + (1<<c) - 1) >> c;
-    support_samples = (support_samples+15)/16*16;
     support_samples <<= c;
     return support_samples;
 }
@@ -507,5 +552,49 @@ unsigned Cwt::
         nT = spo2g(2*r);
     return nT - 2*r;
 }
+
+
+unsigned Cwt::
+        find_bin( unsigned j ) const
+{
+    float v = _scales_per_octave;
+    float log2_a = 1.f/v;
+    float width_number_of_sigmas = 4;
+    float bin = log2_a * j - log2( 1.f + width_number_of_sigmas/(2*M_PI*sigma()) );
+
+    if (bin < 0)
+        bin = 0;
+
+    // could take maximum number of bins into account and meld all the last
+    // ones into the same bin, effectively making the second last bin all empty
+    // unsigned n_j = nScales( fs );
+
+    return floor(bin);
+}
+
+
+float Cwt::
+        j_to_hz( float sample_rate, unsigned j ) const
+{
+    float v = _scales_per_octave;
+    float hz = get_max_hz( sample_rate );
+    hz *= exp2f(j/-v);
+    return hz;
+}
+
+
+unsigned Cwt::
+        hz_to_j( float sample_rate, float hz ) const
+{
+    float v = _scales_per_octave;
+    float maxhz = get_max_hz( sample_rate );
+    float j = -log2f(hz/maxhz)*v;
+    j = floor(j+.5f);
+    if (j<0)
+        j=0;
+    return (unsigned)j;
+}
+
+
 
 } // namespace Tfr

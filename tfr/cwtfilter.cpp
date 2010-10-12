@@ -37,6 +37,10 @@ Filter::ChunkAndInverse CwtFilter::
     TIME_CwtFilter TaskTimer tt("CwtFilter::readChunk [%u, %u)", firstSample, numberOfSamples);
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
 
+    unsigned c = cwt.find_bin( cwt.nScales( sample_rate() ) - 1 );
+    firstSample = firstSample>>c<<c;
+    numberOfSamples = (numberOfSamples + (1<<c) - 1)>>c<<c;
+
     unsigned time_support = cwt.wavelet_time_support_samples( sample_rate() );
 
     // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
@@ -48,8 +52,9 @@ Filter::ChunkAndInverse CwtFilter::
     unsigned first_valid_sample = firstSample;
     firstSample -= redundant_samples;
 
-    if (numberOfSamples<2048)
-        numberOfSamples=2048;
+    unsigned smallest_ok_size = cwt.prev_good_size(0, sample_rate() );
+    if (numberOfSamples<smallest_ok_size)
+        numberOfSamples=smallest_ok_size;
 
     // These computations require a lot of memory allocations
     // If we encounter out of cuda memory, we decrease the required

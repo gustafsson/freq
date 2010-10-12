@@ -139,9 +139,9 @@ pBuffer SourceBase::
 {
     std::stringstream ss;
     TIME_READCHECKED ss << I;
-    TIME_READCHECKED TaskTimer tt("%s.%s %s",
+    TIME_READCHECKED TaskTimer tt("%s.%s %s, count=%lu",
                   demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
-                  ss.str().c_str() );
+                  ss.str().c_str(), I.count() );
 
     // Try a simple read
     pBuffer p = readChecked( I );
