@@ -103,6 +103,7 @@ public:
 
     virtual unsigned nScales() const;
 
+    virtual Signal::Interval getInterval() const { return getInversedInterval(); }
 private:
     unsigned halfs_n;
 };

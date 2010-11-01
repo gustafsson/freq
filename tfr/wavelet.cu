@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "tfr/wavelet.cu.h"
 
-__global__ void kernel_compute_wavelet_coefficients( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, unsigned first_j, float v, float sigma_t0 );
+__global__ void kernel_compute_wavelet_coefficients( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, unsigned first_j, float v, unsigned half_sizes, float sigma_t0 );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
 __global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
@@ -25,7 +25,17 @@ void setError(const char* staticErrorMessage) {
 #define TOSTR(x) TOSTR2(x)
 #define setError(x) setError(TOSTR(__FUNCTION__) ": " x)
 
-void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, float fs, float /*minHz*/, float maxHz, cudaExtent numElem, float scales_per_octave, float sigma_t0, cudaStream_t stream )
+void wtCompute(
+        float2* in_waveform_ft,
+        float2* out_wavelet_ft,
+        float fs,
+        float /*minHz*/,
+        float maxHz,
+        cudaExtent numElem,
+        unsigned half_sizes,
+        float scales_per_octave,
+        float sigma_t0,
+        cudaStream_t stream )
 {
 //    nyquist = FS/2
 //    a = 2 ^ (1/v)
@@ -61,6 +71,7 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, float fs, float 
             numElem,
             first_scale,
             scales_per_octave,
+            half_sizes,
             sigma_t0 );
 }
 
@@ -99,7 +110,7 @@ void wtCompute( float2* in_waveform_ft, float2* out_wavelet_ft, float fs, float 
 __global__ void kernel_compute_wavelet_coefficients(
         float* in_waveform_ft,
         float* out_wavelet_ft,
-        cudaExtent numElem, unsigned first_scale, float v, float sigma_t0 )
+        cudaExtent numElem, unsigned first_scale, float v, unsigned half_sizes, float sigma_t0 )
 {
     // x is an index that refers to which value in the discrete fourier
     // transform this thread should work with. Even x refers to real parts and
@@ -126,7 +137,9 @@ __global__ void kernel_compute_wavelet_coefficients(
     }
     else
     {
-        float cufft_normalize = 1.f/(float)numElem.width;
+        float cufft_normalize = 1.f/(float)(numElem.width*half_sizes);
+        float jibberish_normalization = 0.1;
+        cufft_normalize *= jibberish_normalization;
         waveform_ft = cufft_normalize * in_waveform_ft[x];
     }
 
@@ -188,7 +201,6 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples )
 {
     const unsigned
-            //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
     if (x>=n_valid_samples)
@@ -224,7 +236,6 @@ void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExten
 __global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
 {
     const unsigned
-            //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
     if (x>=n_valid_samples)
@@ -268,7 +279,6 @@ void wtInverseBox( float2* in_wavelet, float* out_inverse_waveform, cudaExtent n
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
 {
     const unsigned
-            //x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
     if (x>=n_valid_samples)

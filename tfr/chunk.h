@@ -71,7 +71,10 @@ public:
             chunk_offset + first_valid_sample,
             chunk_offset + first_valid_sample + n_valid_samples )
 
+      This interval is returned by getInversedInterval.
+
       @see chunk_offset
+      @see getInterval
       */
     unsigned first_valid_sample;
 
@@ -94,6 +97,7 @@ public:
       */
     float original_sample_rate;
 
+
     float timeInterval() const {       return n_valid_samples/sample_rate; }
     float startTime() const {          return (chunk_offset+first_valid_sample)/sample_rate; }
     float endTime() const {            return startTime() + timeInterval(); }
@@ -113,9 +117,24 @@ public:
 
 
     /**
+      Returns the interval that would be produced by the inverse transform.
 
+        Interval(
+            chunk_offset + first_valid_sample,
+            chunk_offset + first_valid_sample + n_valid_samples )
+      */
+    virtual Signal::Interval getInversedInterval() const;
+
+
+    /**
+      Returns an equivalent interval in the original sample rate.
+
+        Interval(
+            getInversedInterval().first*original_sample_rate/sample_rate,
+            getInversedInterval().last*original_sample_rate/sample_rate)
       */
     virtual Signal::Interval getInterval() const;
+
 };
 typedef boost::shared_ptr< Chunk > pChunk;
 

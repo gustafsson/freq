@@ -53,7 +53,7 @@ Filter::ChunkAndInverse CwtFilter::
     firstSample -= redundant_samples;
 
     unsigned smallest_ok_size = cwt.prev_good_size(0, sample_rate() );
-    if (numberOfSamples<smallest_ok_size)
+    //if (numberOfSamples<smallest_ok_size)
         numberOfSamples=smallest_ok_size;
 
     // These computations require a lot of memory allocations

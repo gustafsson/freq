@@ -85,12 +85,23 @@ FreqAxis Chunk::
 
 
 Signal::Interval Chunk::
-        getInterval() const
+        getInversedInterval() const
 {
     return Signal::Interval(
         chunk_offset + first_valid_sample,
         chunk_offset + first_valid_sample + n_valid_samples
     );
 }
+
+
+Signal::Interval Chunk::
+        getInterval() const
+{
+    Signal::Interval i = getInversedInterval();
+    float scale = original_sample_rate/sample_rate;
+    return Signal::Interval( i.first * scale, i.last   * scale );
+}
+
+
 
 } // namespace Tfr

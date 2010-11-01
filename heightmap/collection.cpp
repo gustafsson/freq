@@ -42,9 +42,9 @@ Collection::
     _frame_counter(0),
     _postsink( new PostSink )
 {
-    COUTVAL( _postsink->fetch_invalid_samples() ); // todo remove
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
+    OSVAL( tt.getStream(), _postsink->fetch_invalid_samples() ); // todo remove
 
     // Updated as soon as the first chunk is received
     update_sample_size( 0 );

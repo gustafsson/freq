@@ -19,11 +19,14 @@
 #include <msc_stdc.h>
 #endif
 
-// #define TIME_CWT if(0)
+//#define TIME_CWT if(0)
 #define TIME_CWT
 
 // #define TIME_ICWT if(0)
 #define TIME_ICWT
+
+//#define DEBUG_CWT if(0)
+#define DEBUG_CWT
 
 using namespace boost::lambda;
 
@@ -62,21 +65,27 @@ pTransform Cwt::
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
+    TaskTimer mytt("Cwt::operator()");
     std::stringstream ss;
-    TIME_CWT TaskTimer tt("Cwt buffer %s, %u samples. [%g, %g] s", ((std::stringstream&)(ss<<buffer->getInterval())).str().c_str(), buffer->number_of_samples(), buffer->start(), buffer->length()+buffer->start() );
+    boost::scoped_ptr<TaskTimer> tt;
+    TIME_CWT tt.reset( new TaskTimer (
+            "Cwt buffer %s, %u samples. [%g, %g] s",
+            ((std::stringstream&)(ss<<buffer->getInterval())).str().c_str(),
+            buffer->number_of_samples(), buffer->start(),
+            buffer->length()+buffer->start() ));
 
     Signal::BufferSource bs( buffer );
 
-    float v = _scales_per_octave;
     unsigned long offset = buffer->sample_offset;
     unsigned std_samples = wavelet_time_support_samples( buffer->sample_rate );
     unsigned long first_valid_sample = std_samples;
+
     if (0==offset)
         first_valid_sample = 0;
 
-    // Align first_valid_sample with max_bin
+    // Align first_valid_sample with max_bin, max_bin is the bin of the last scale
     unsigned max_bin = find_bin( nScales( buffer->sample_rate ) - 1 );
-    first_valid_sample = ((offset + first_valid_sample + (1<<max_bin) - 1)>>max_bin<<max_bin)-offset;
+    first_valid_sample = ((offset + first_valid_sample + (1<<max_bin) - 1)>>max_bin<<max_bin) - offset;
 
     BOOST_ASSERT( std_samples + first_valid_sample < buffer->number_of_samples());
 
@@ -85,22 +94,19 @@ pChunk Cwt::
     valid_samples = valid_samples>>max_bin<<max_bin;
     BOOST_ASSERT( 0 < valid_samples );
 
-    tt.info("offset = %lu", offset);
-    tt.info("first_valid_sample = %lu", first_valid_sample);
-    tt.info("valid_samples = %u", valid_samples);
+    DEBUG_CWT TaskTimer("offset = %lu", offset).suppressTiming();
+    DEBUG_CWT TaskTimer("std_samples = %lu", std_samples).suppressTiming();
+    DEBUG_CWT TaskTimer("first_valid_sample = %lu", first_valid_sample).suppressTiming();
+    DEBUG_CWT TaskTimer("valid_samples = %u", valid_samples).suppressTiming();
 
     // find all sub chunks
     unsigned prev_j = 0;
     unsigned n_j = nScales( buffer->sample_rate );
 
+    pChunk ft;
     pChunk wt( new CwtChunk() );
 
-    std::vector<unsigned> stop_js;
-    std::vector<unsigned> prev_js;
-    std::vector<unsigned> time_supports;
-    std::vector<float> hzs;
-
-    {
+    DEBUG_CWT {
         TaskTimer tt("bins, scales per octave = %g, tf_resolution = %g, sigma = %g", _scales_per_octave, _tf_resolution, sigma());
         for (unsigned j = prev_j; j<n_j; ++j)
         {
@@ -118,7 +124,7 @@ pChunk Cwt::
     {
         // find the biggest j that is required to be in this chunk
         unsigned next_j;
-        if ((valid_samples>>(c+2)) < 1)
+        if (c == max_bin)
             next_j = n_j;
         else
         {
@@ -129,6 +135,9 @@ pChunk Cwt::
                 if ( c == find_bin( j ) )
                     next_j = j;
             }
+
+            if (next_j==prev_j)
+                continue;
         }
 
         if (2*(n_j - next_j) < n_j - prev_j)
@@ -138,65 +147,73 @@ pChunk Cwt::
         // that is not needed in this chunk part
         next_j = std::min(n_j, next_j+1);
 
-        // Actually include next_j in this chunk so that parts can be
-        // interpolated between in filters
+        // Include next_j in this chunk so that parts can be interpolated
+        // between in filters
         unsigned stop_j = std::min(n_j, next_j+1);
         unsigned n_scales = stop_j - prev_j;
         float hz = j_to_hz(buffer->sample_rate, stop_j-1);
-        TaskTimer tt("c=%u, hz=%g, 2^c=%u, n_scales=%u", c, hz, 1<<c, n_scales);
+        DEBUG_CWT TaskTimer("c=%u, hz=%g, 2^c=%u, n_scales=%u", c, hz, 1<<c, n_scales).suppressTiming();
 
         unsigned sub_std_samples = wavelet_time_support_samples( buffer->sample_rate, hz );
         unsigned sub_first_valid = sub_std_samples;
         if (0==offset)
             sub_first_valid = 0;
 
-        tt.info("sub_std_samples=%u", sub_std_samples);
+        DEBUG_CWT TaskTimer("sub_std_samples=%u", sub_std_samples).suppressTiming();
         BOOST_ASSERT( sub_first_valid <= first_valid_sample );
 
         unsigned sub_start = offset + first_valid_sample - sub_first_valid;
         unsigned sub_length = sub_first_valid + valid_samples + sub_std_samples;
-        sub_length = spo2g(sub_length-1);
+        // Add some extra length to make length a power of 2 for faster fft
+        // calculations
+        unsigned extra = spo2g(sub_length - 1) - sub_length;
+
+        if (sub_start > extra/2)
+            sub_start -= extra/2;
+
+        sub_length += extra;
 
         Signal::Interval subinterval(sub_start, sub_start + sub_length );
-        pChunk ft = _fft( bs.readFixedLength( subinterval ));
 
-        float bfs = bs.sample_rate();
-        float fs = ft->sample_rate;
-        ((StftChunk*)ft.get())->setHalfs( c ); // discard most of it if c>0
-        ft->chunk_offset >>= c;
-        // ft->first_valid_sample = 0 for fft
-        ft->n_valid_samples >>= c;
-        tt.getStream() << " ft(c)=" << ft->getInterval() << ", count=" << ft->getInterval().count(); tt.flushStream();
+        if (!ft ||
+            (Signal::Intervals)ft->getInterval() !=
+            (Signal::Intervals)subinterval)
+        {
+            std::stringstream ss;
+            TIME_CWT TaskTimer tt(
+                    "Computing fft on CPU of interval %s",
+                    ((std::stringstream&)(ss<<subinterval)).str().c_str());
 
+            ft = _fft( bs.readFixedLength( subinterval ));
+        }
+
+        // downsample the signal by shortening the fourier transform
+        ((StftChunk*)ft.get())->setHalfs( c );
         pChunk chunkpart = computeChunkPart( ft, prev_j, n_scales );
-        tt.getStream() << " chunkpart=" << chunkpart->getInterval() << ", count=" << chunkpart->getInterval().count(); tt.flushStream();
-        // TODO verify output
+
+        // The fft is most often bigger than strictly needed because it is
+        // faster to compute lengths that are powers of 2.
+        // However, to do proper merging we want to guarantee that all
+        // chunkparts describe the exact same region. Thus we discard the extra
+        // samples we added when padding to a power of 2
+        chunkpart->first_valid_sample = (offset + first_valid_sample - subinterval.first) >> c;
+        chunkpart->n_valid_samples = valid_samples >> c;
+
+        DEBUG_CWT {
+            TaskTimer tt("Intervals");
+            tt.getStream() << " ft(c)=" << ft->getInterval() << ", count=" << ft->getInterval().count(); tt.flushStream();
+            tt.getStream() << " adjusted chunkpart=" << chunkpart->getInversedInterval() << ", count=" << chunkpart->getInversedInterval().count(); tt.flushStream();
+            tt.getStream() << " units=[" << (chunkpart->getInversedInterval().first >> (max_bin-c)) << ", "
+                           << (chunkpart->getInversedInterval().last >> (max_bin-c)) << "), count="
+                           << (chunkpart->getInversedInterval().count() >> (max_bin-c)); tt.flushStream();
+        }
+
         ((CwtChunk*)wt.get())->chunks.push_back( chunkpart );
 
-        prev_js.push_back( prev_j );
-        stop_js.push_back( stop_j );
-        time_supports.push_back( sub_std_samples );
-        hzs.push_back( hz );
+        // reset halfs if ft can be used for the next bin
+        ((StftChunk*)ft.get())->setHalfs( 0 );
 
         prev_j = next_j;
-    }
-
-
-    {
-        TaskTimer tt("prev_js");
-        for_each(prev_js.begin(), prev_js.end(), tt.getStream() << _1 << " ");
-    }
-    {
-        TaskTimer tt("stop_js");
-        for_each(stop_js.begin(), stop_js.end(), tt.getStream() << _1 << " " );
-    }
-    {
-        TaskTimer tt("time_supports");
-        for_each(time_supports.begin(), time_supports.end(), tt.getStream() << _1 << " " );
-    }
-    {
-        TaskTimer tt("hzs");
-        for_each(hzs.begin(), hzs.end(), tt.getStream() << _1 << " " );
     }
 
 
@@ -209,7 +226,12 @@ pChunk Cwt::
     wt->order = Chunk::Order_row_major;
     wt->sample_rate = buffer->sample_rate;
     wt->original_sample_rate = buffer->sample_rate;
-    std::cout << "wt=" << wt->getInterval() << std::endl;
+
+    DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->max_hz, wt->min_hz).suppressTiming();
+
+    TIME_CWT tt->getStream() << "Resulting interval = " << wt->getInterval();
+    TIME_CWT CudaException_ThreadSynchronize();
+
     return wt;
 }
 
@@ -217,13 +239,15 @@ pChunk Cwt::
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
-    TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u", first_scale, n_scales);
+    TIME_CWT TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u", first_scale, n_scales);
 
     pChunk intermediate_wt( new CwtChunkPart() );
 
     {
         cudaExtent requiredWtSz = make_cudaExtent( ft->nScales(), n_scales, 1 );
-        TIME_CWT TaskTimer tt("prerequisites (%u, %u, %u)", requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth);
+        TIME_CWT TaskTimer tt("prerequisites (%u, %u, %u), %g kB",
+                              requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth,
+                              requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(float2) / 1024.f);
 
         // allocate a new chunk
         intermediate_wt->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal ));
@@ -245,18 +269,19 @@ pChunk Cwt::
         // (except for numerical errors)
         intermediate_wt->sample_rate = ldexp(ft->original_sample_rate, -half_sizes);
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
-        TaskTimer("ft->sample_rate = %g", ft->sample_rate).suppressTiming();
-        TaskTimer("ft->original_sample_rate = %g", ft->original_sample_rate).suppressTiming();
-        TaskTimer("ft->halfs = %u", half_sizes).suppressTiming();
-        TaskTimer("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate).suppressTiming();
-        TaskTimer("log2(intermediate_wt->sample_rate) = %g", log2(intermediate_wt->sample_rate)).suppressTiming();
 
         intermediate_wt->min_hz = get_max_hz(ft->original_sample_rate)*exp2f( (first_scale + n_scales-1)/-_scales_per_octave );
         intermediate_wt->max_hz = get_max_hz(ft->original_sample_rate)*exp2f( first_scale/-_scales_per_octave );
 
-        TaskTimer("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate).suppressTiming();
-        TaskTimer("intermediate_wt->min_hz = %g", intermediate_wt->min_hz).suppressTiming();
-        TaskTimer("intermediate_wt->max_hz = %g", intermediate_wt->max_hz).suppressTiming();
+        DEBUG_CWT
+        {
+            TaskTimer("ft->sample_rate = %g", ft->sample_rate).suppressTiming();
+            TaskTimer("ft->original_sample_rate = %g", ft->original_sample_rate).suppressTiming();
+            TaskTimer("ft->halfs = %u", half_sizes).suppressTiming();
+            TaskTimer("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate).suppressTiming();
+            TaskTimer("intermediate_wt->min_hz = %g", intermediate_wt->min_hz).suppressTiming();
+            TaskTimer("intermediate_wt->max_hz = %g", intermediate_wt->max_hz).suppressTiming();
+        }
 
         BOOST_ASSERT( intermediate_wt->max_hz <= intermediate_wt->sample_rate/2 );
 
@@ -266,6 +291,7 @@ pChunk Cwt::
                      intermediate_wt->min_hz,
                      intermediate_wt->max_hz,
                      intermediate_wt->transform_data->getNumberOfElements(),
+                     1<<half_sizes,
                      _scales_per_octave, sigma() );
 
         TIME_CWT CudaException_ThreadSynchronize();
@@ -283,14 +309,17 @@ pChunk Cwt::
 
         unsigned time_support = wavelet_time_support_samples( ft->original_sample_rate, intermediate_wt->min_hz );
         time_support >>= half_sizes;
-        TaskTimer("time_support = %u", time_support).suppressTiming();
         intermediate_wt->first_valid_sample = time_support;
 
         if (0==ft->chunk_offset)
             intermediate_wt->first_valid_sample=0;
 
-        TaskTimer("intermediate_wt->first_valid_sample=%u", intermediate_wt->first_valid_sample).suppressTiming();
-        TaskTimer("ft->n_valid_samples=%u", ft->n_valid_samples).suppressTiming();
+        DEBUG_CWT {
+            TaskTimer("time_support = %u", time_support).suppressTiming();
+            TaskTimer("intermediate_wt->first_valid_sample=%u", intermediate_wt->first_valid_sample).suppressTiming();
+            TaskTimer("ft->n_valid_samples=%u", ft->n_valid_samples).suppressTiming();
+        }
+
         BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->n_valid_samples);
 
         intermediate_wt->n_valid_samples = ft->n_valid_samples - time_support - intermediate_wt->first_valid_sample;
@@ -320,10 +349,11 @@ pChunk Cwt::
             g->getCudaGlobal( false );
         }
         if (1 /* gpu version */ ) {
-            TIME_CWT TaskTimer tt("inverse cufft, redundant=%u+%u valid=%u",
+            TIME_CWT TaskTimer tt("inverse cufft, redundant=%u+%u valid=%u, size(%u, %u)",
                                   intermediate_wt->first_valid_sample,
                                   intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
-                                  intermediate_wt->n_valid_samples);
+                                  intermediate_wt->n_valid_samples,
+                                  n.width, n.height);
 
             cufftComplex *d = g->getCudaGlobal().ptr();
 
@@ -332,6 +362,10 @@ pChunk Cwt::
 
             {
                 CufftHandleContext _fft_many;
+                {
+                    TIME_CWT TaskTimer tt("Allocating fft");
+                    _fft_many(n.width, n.height);
+                }
                 CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
             }
 
@@ -348,7 +382,6 @@ Signal::pBuffer Cwt::
 {
     CudaException_CHECK_ERROR();
 
-    TIME_ICWT TaskTimer tt("InverseCwt(pChunk)");
     Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>(pchunk.get());
     if (cwtchunk)
         return inverse(cwtchunk);
@@ -364,44 +397,45 @@ Signal::pBuffer Cwt::
 Signal::pBuffer Cwt::
         inverse( Tfr::CwtChunk* pchunk )
 {
+    boost::scoped_ptr<TaskTimer> tt;
+    TIME_ICWT tt.reset( new TaskTimer("InverseCwt(Tfr::CwtChunk*)") );
+
     Signal::pBuffer r( new Signal::Buffer(
             pchunk->chunk_offset + pchunk->first_valid_sample,
             pchunk->n_valid_samples,
             pchunk->sample_rate
             ));
 
-    std::cout << "r->getInterval(): " << r->getInterval() << std::endl;
+    TIME_ICWT { tt->getStream() << "Computing CWT inverse: interval=" << r->getInterval()
+            << ", count=" << r->number_of_samples()
+            << ", fs=" << r->sample_rate; tt->flushStream(); }
+
     BOOST_FOREACH( pChunk& part, pchunk->chunks )
     {
-        CudaException_CHECK_ERROR();
+        boost::scoped_ptr<TaskTimer> tt;
+        TIME_ICWT tt.reset( new TaskTimer("ChunkPart inverse, c=%g", log2f(part->original_sample_rate/part->sample_rate)) );
         Signal::pBuffer inv = inverse(part);
-        CudaException_CHECK_ERROR();
-        std::cout << "  inv->getInterval(): " << inv->getInterval() << std::endl;
-        std::cout << "  inv start = " << inv->sample_offset.asFloat() << std::endl;
         Signal::pBuffer super = Filters::SuperSample::supersample(inv, pchunk->sample_rate);
-        std::cout << "  super start = " << super->sample_offset.asFloat() << std::endl;
-        std::cout << "  super->getInterval(): " << super->getInterval() << std::endl;
 
-        // ft->chunk_offset = ldexpf(ft->chunk_offset, -c);
-        // ft->first_valid_sample = ldexpf(ft->chunk_offset, -c);
-        // ft->n_valid_samples = ldexpf(ft->n_valid_samples, -c);
-        CudaException_CHECK_ERROR();
+        TIME_ICWT { tt->getStream() << "Upsampled inv " << inv->getInterval()
+                    << " by factor " << pchunk->sample_rate/inv->sample_rate
+                    << " to " << super->getInterval(); tt->flushStream(); }
 
         *r += *super;
-
-        CudaException_CHECK_ERROR();
     }
-    std::cout << "inverse end" << std::endl;
+
+    TIME_ICWT tt->getStream() << "Computed CWT inverse: interval=" << r->getInterval()
+            << ", count=" << r->number_of_samples()
+            << ", fs=" << r->sample_rate;
 
     return r;
 }
 
 
 Signal::pBuffer Cwt::
+
         inverse( Tfr::CwtChunkPart* pchunk )
 {
-    TIME_ICWT TaskTimer tt("InverseCwt(Tfr::CwtChunkPart*)");
-
     Chunk &chunk = *pchunk;
 
     Signal::pBuffer r( new Signal::Buffer(
@@ -410,18 +444,13 @@ Signal::pBuffer Cwt::
             chunk.sample_rate
             ));
 
-    {
-        TIME_ICWT TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
-        {
-            ::wtInverse( chunk.transform_data->getCudaGlobal().ptr() + chunk.first_valid_sample,
-                         r->waveform_data()->getCudaGlobal().ptr(),
-                         chunk.transform_data->getNumberOfElements(),
-                         chunk.n_valid_samples,
-                         _stream );
-        }
+    ::wtInverse( chunk.transform_data->getCudaGlobal().ptr() + chunk.first_valid_sample,
+                 r->waveform_data()->getCudaGlobal().ptr(),
+                 chunk.transform_data->getNumberOfElements(),
+                 chunk.n_valid_samples,
+                 _stream );
 
-        TIME_ICWT CudaException_ThreadSynchronize();
-    }
+    TIME_ICWT CudaException_ThreadSynchronize();
 
     return r;
 }
@@ -524,8 +553,7 @@ unsigned Cwt::
     unsigned support_samples = std::ceil(morlet_sigma_t( fs, hz ) * _wavelet_time_suppport);
     unsigned c = find_bin( hz_to_j( fs, hz ));
     // Align to 1<<c upwards
-    support_samples = (support_samples + (1<<c) - 1) >> c;
-    support_samples <<= c;
+    support_samples = (support_samples + (1<<c) - 1) >> c << c;
     return support_samples;
 }
 
@@ -559,7 +587,7 @@ unsigned Cwt::
 {
     float v = _scales_per_octave;
     float log2_a = 1.f/v;
-    float width_number_of_sigmas = 4;
+    float width_number_of_sigmas = 10;
     float bin = log2_a * j - log2( 1.f + width_number_of_sigmas/(2*M_PI*sigma()) );
 
     if (bin < 0)

@@ -116,7 +116,8 @@ pChunk Fft::
 
     GpuCpuData<float2>* input = b.complex_waveform_data();
 
-    // computeWithCufft( input, *chunk->transform_data, -1);
+    // TODO choose method based on data size
+    //computeWithCufft( *input, *chunk->transform_data, -1);
     computeWithOoura( *input, *chunk->transform_data, -1 );
 
     chunk->axis_scale = AxisScale_Linear;
@@ -139,13 +140,15 @@ Signal::pBuffer Fft::
     float fs = chunk->sample_rate;
     ComplexBuffer buffer( 0, scales, fs * scales );
 
-    // chunk = computeWithCufft(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
-    computeWithOoura(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
+    computeWithCufft(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
+    // computeWithOoura(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
 
-    Signal::BufferSource bs( buffer.get_real() );
+    Signal::pBuffer r = buffer.get_real();
+    if ( r->number_of_samples() != chunk->n_valid_samples )
+        r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, chunk->n_valid_samples ));
 
-    Signal::pBuffer r = bs.readFixedLength( Signal::Interval(0, chunk->n_valid_samples ));
     r->sample_offset = chunk->chunk_offset;
+
     return r;
 }
 
@@ -481,7 +484,13 @@ StftChunk::
 void StftChunk::
         setHalfs( unsigned n )
 {
+    chunk_offset <<= halfs_n;
+    n_valid_samples <<= halfs_n;
+
     halfs_n = n;
+
+    chunk_offset >>= halfs_n;
+    n_valid_samples >>= halfs_n;
 }
 
 

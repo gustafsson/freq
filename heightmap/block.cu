@@ -1,6 +1,36 @@
 #include <stdio.h>
 #include "heightmap/block.cu.h"
 
+//#define NORESAMPLE
+#ifndef NORESAMPLE
+#include "resample.cu.h"
+#endif
+
+void blockResampleChunk( cudaPitchedPtrType<float2> input,
+                 cudaPitchedPtrType<float> output,
+                 uint2 validInputs,
+                 float4 inputRegion,
+                 float4 outputRegion )
+{
+#ifndef NORESAMPLE
+    elemSize3_t sz_input = input.getNumberOfElements();
+    elemSize3_t sz_output = output.getNumberOfElements();
+
+    uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
+    uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
+
+    resample2d<float2, float, ConverterAmplitude >(
+            input,
+            output,
+            validInputs4,
+            validOutputs,
+            inputRegion,
+            outputRegion
+    );
+#endif
+}
+
+
 __global__ void kernel_merge(
                 cudaPitchedPtrType<float> inBlock,
                 cudaPitchedPtrType<float> outBlock,
@@ -114,7 +144,7 @@ __global__ void kernel_merge_chunk_old(
                 float t = y + resample_height*writePos.y;
 
                 elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
-                readPos = inChunk.clamp(readPos);
+                inChunk.clamp(readPos);
                 if ( inChunk.valid(readPos) ) {
                     float ff = t/(float)inChunk.getNumberOfElements().y;
                     float if0 = 40.f/(2 + 35*ff*ff*ff);
@@ -259,9 +289,9 @@ __global__ void kernel_merge_chunk2(
     __shared__ float val[BLOCK_SIZE];
 
     elemSize3_t threadPos = make_elemSize3_t(
-                            __umul24(blockIdx.x, blockDim.x) + threadIdx.x,
-                            __umul24(blockIdx.y, blockDim.y) + threadIdx.y,
-                            __umul24(blockIdx.z, blockDim.z) + threadIdx.z);
+                            blockIdx.x* blockDim.x + threadIdx.x,
+                            blockIdx.y* blockDim.y + threadIdx.y,
+                            blockIdx.z* blockDim.z + threadIdx.z);
 
     read_params thread_p = computeReadParams(
             in_sample_offset, in_count, out_sample_offset,
@@ -553,7 +583,7 @@ __global__ void kernel_expand_stft(
 {
     // Element number
     const unsigned
-            y = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            y = blockIdx.x*blockDim.x + threadIdx.x;
 
     unsigned nFrequencies = outBlock.getNumberOfElements().y;
     if( y >= nFrequencies )
@@ -635,8 +665,8 @@ __global__ void kernel_expand_complete_stft(
 {
     // Element number
     const unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
-            y = __umul24(blockIdx.y,blockDim.y) + threadIdx.y;
+            x = blockIdx.x*blockDim.x + threadIdx.x,
+            y = blockIdx.y*blockDim.y + threadIdx.y;
 
     float val;
     /*if (1 || 0==threadIdx.x)*/ {

@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace Tfr {
+
     class CwtChunkPart:public Chunk
     {
     public:
@@ -12,9 +13,8 @@ namespace Tfr {
           If chunks are clamped (cleaned from redundant data) the inverse will produce incorrect results.
           */
         boost::shared_ptr< Chunk > cleanChunk() const;
-
-        virtual Signal::Interval getInterval() const;
     };
+
 
     class CwtChunk:public Chunk
     {
@@ -23,8 +23,7 @@ namespace Tfr {
           Collection of CwtChunkPart.
           */
         std::vector<pChunk> chunks;
-
-        virtual Signal::Interval getInterval() const;
     };
+
 } // namespace Tfr
 #endif // CWTCHUNK_H

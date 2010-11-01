@@ -33,6 +33,13 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  unsigned cuda_stream);
 
 extern "C"
+void blockResampleChunk( cudaPitchedPtrType<float2> input,
+                 cudaPitchedPtrType<float> output,
+                 uint2 validInputs,
+                 float4 inputRegion,
+                 float4 outputRegion );
+
+extern "C"
 void blockMerge( cudaPitchedPtrType<float> inBlock,
                  cudaPitchedPtrType<float> outBlock,
                  float in_sample_rate,

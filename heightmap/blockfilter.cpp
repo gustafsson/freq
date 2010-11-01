@@ -104,7 +104,7 @@ CwtToBlock::
 void CwtToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    unsigned cuda_stream = 0;
+    //unsigned cuda_stream = 0;
 
     // Find out what intervals that match
     Signal::Interval outInterval = block->ref.getInterval();
@@ -150,6 +150,12 @@ void CwtToBlock::
         TaskTimer("CwtToBlock::mergeChunk, merge_first_scale(%g) >= merge_last_scale(%g)", merge_first_scale, merge_last_scale).suppressTiming();
         return;
     }
+
+    Position chunk_a, chunk_b;
+    chunk_a.scale = chunk_first_scale;
+    chunk_b.scale = chunk_last_scale;
+    chunk_a.time = inInterval.first/chunk.original_sample_rate;
+    chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
     float in_frequency_resolution = chunk.nScales()/(chunk_last_scale - chunk_first_scale);
     unsigned out_frequency_resolution = block->ref.frequency_resolution();
@@ -210,9 +216,29 @@ void CwtToBlock::
 
         CudaException_CHECK_ERROR();
 
+        tt.info("[(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
+                a.time, a.scale,
+                b.time, b.scale,
+                chunk_a.time, chunk_a.scale,
+                chunk_b.time, chunk_b.scale,
+                transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
+            );
+
+        BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples < chunk.transform_data->getNumberOfElements().width );
+
+        ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
+                         outData->getCudaGlobal(),
+                         make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
+                         //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
+                         make_float4( chunk_a.time, chunk_a.scale,
+                                      chunk_b.time, chunk_b.scale ),
+                         make_float4( a.time, a.scale,
+                                      b.time, b.scale )
+                         );
+
         // Invoke CUDA kernel execution to merge blocks
-        ::blockMergeChunk( chunk.transform_data->getCudaGlobal(),
-                           outData->getCudaGlobal(),
+/*        ::blockMergeChunk( ,
+                           ,
 
                            in_sample_rate,
                            out_sample_rate,
@@ -225,7 +251,8 @@ void CwtToBlock::
                            transfer.count() * (out_sample_rate / chunk.original_sample_rate),
                            complex_info,
                            cuda_stream);
-
+*/
+        // TODO recompute transfer to the samples that have actual support
         block->valid_samples |= transfer;
 
         CudaException_CHECK_ERROR();
