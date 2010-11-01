@@ -22,11 +22,14 @@
 //#define TIME_CWT if(0)
 #define TIME_CWT
 
-// #define TIME_ICWT if(0)
-#define TIME_ICWT
+#define TIME_CWTPART if(0)
+//#define TIME_CWTPART
 
-//#define DEBUG_CWT if(0)
-#define DEBUG_CWT
+#define TIME_ICWT if(0)
+//#define TIME_ICWT
+
+#define DEBUG_CWT if(0)
+//#define DEBUG_CWT
 
 using namespace boost::lambda;
 
@@ -65,7 +68,7 @@ pTransform Cwt::
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
-    TaskTimer mytt("Cwt::operator()");
+    TIME_CWT TaskTimer mytt("Cwt::operator()");
     std::stringstream ss;
     boost::scoped_ptr<TaskTimer> tt;
     TIME_CWT tt.reset( new TaskTimer (
@@ -181,7 +184,7 @@ pChunk Cwt::
         {
             std::stringstream ss;
             TIME_CWT TaskTimer tt(
-                    "Computing fft on CPU of interval %s",
+                    "Computing forward fft on GPU of interval %s",
                     ((std::stringstream&)(ss<<subinterval)).str().c_str());
 
             ft = _fft( bs.readFixedLength( subinterval ));
@@ -239,20 +242,20 @@ pChunk Cwt::
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
-    TIME_CWT TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u", first_scale, n_scales);
+    TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u", first_scale, n_scales);
 
     pChunk intermediate_wt( new CwtChunkPart() );
 
     {
         cudaExtent requiredWtSz = make_cudaExtent( ft->nScales(), n_scales, 1 );
-        TIME_CWT TaskTimer tt("prerequisites (%u, %u, %u), %g kB",
+        TIME_CWTPART TaskTimer tt("prerequisites (%u, %u, %u), %g kB",
                               requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth,
                               requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(float2) / 1024.f);
 
         // allocate a new chunk
         intermediate_wt->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal ));
 
-        TIME_CWT CudaException_ThreadSynchronize();
+        TIME_CWTPART CudaException_ThreadSynchronize();
     }
 
     unsigned half_sizes;
@@ -262,7 +265,7 @@ pChunk Cwt::
     }
 
     {        
-        TIME_CWT TaskTimer tt("inflating");
+        TIME_CWTPART TaskTimer tt("inflating");
 
         // ft->sample_rate is related to intermediate_wt->sample_rate by
         // intermediate_wt->sample_rate == ft->n_valid_samples * ft->sample_rate
@@ -294,7 +297,7 @@ pChunk Cwt::
                      1<<half_sizes,
                      _scales_per_octave, sigma() );
 
-        TIME_CWT CudaException_ThreadSynchronize();
+        TIME_CWTPART CudaException_ThreadSynchronize();
     }
 
     {
@@ -327,7 +330,7 @@ pChunk Cwt::
         intermediate_wt->order = Chunk::Order_row_major;
 
         if (0 /* cpu version */ ) {
-            TIME_CWT TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
+            TIME_CWTPART TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
                                   intermediate_wt->first_valid_sample,
                                   intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
                                   intermediate_wt->n_valid_samples);
@@ -349,7 +352,7 @@ pChunk Cwt::
             g->getCudaGlobal( false );
         }
         if (1 /* gpu version */ ) {
-            TIME_CWT TaskTimer tt("inverse cufft, redundant=%u+%u valid=%u, size(%u, %u)",
+            TIME_CWTPART TaskTimer tt("inverse cufft, redundant=%u+%u valid=%u, size(%u, %u)",
                                   intermediate_wt->first_valid_sample,
                                   intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
                                   intermediate_wt->n_valid_samples,
@@ -363,13 +366,13 @@ pChunk Cwt::
             {
                 CufftHandleContext _fft_many;
                 {
-                    TIME_CWT TaskTimer tt("Allocating fft");
+                    TIME_CWTPART TaskTimer tt("Allocating inverse fft");
                     _fft_many(n.width, n.height);
                 }
                 CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
             }
 
-            TIME_CWT CudaException_ThreadSynchronize();
+            TIME_CWTPART CudaException_ThreadSynchronize();
         }
     }
 
@@ -587,7 +590,7 @@ unsigned Cwt::
 {
     float v = _scales_per_octave;
     float log2_a = 1.f/v;
-    float width_number_of_sigmas = 10;
+    float width_number_of_sigmas = 3;
     float bin = log2_a * j - log2( 1.f + width_number_of_sigmas/(2*M_PI*sigma()) );
 
     if (bin < 0)

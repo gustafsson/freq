@@ -5,8 +5,8 @@
 #include <demangle.h>
 #include <typeinfo>
 
-#define TIME_READCHECKED
-//#define TIME_READCHECKED if(0)
+//#define TIME_READCHECKED
+#define TIME_READCHECKED if(0)
 
 using namespace std;
 

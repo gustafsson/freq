@@ -8,8 +8,8 @@
 
 #include <boost/foreach.hpp>
 
-#define TIME_CwtFilter
-//#define TIME_CwtFilter if(0)
+//#define TIME_CwtFilter
+#define TIME_CwtFilter if(0)
 
 using namespace Signal;
 
@@ -53,7 +53,7 @@ Filter::ChunkAndInverse CwtFilter::
     firstSample -= redundant_samples;
 
     unsigned smallest_ok_size = cwt.prev_good_size(0, sample_rate() );
-    //if (numberOfSamples<smallest_ok_size)
+    if (numberOfSamples<smallest_ok_size)
         numberOfSamples=smallest_ok_size;
 
     // These computations require a lot of memory allocations
@@ -71,7 +71,10 @@ Filter::ChunkAndInverse CwtFilter::
         } else {
             unsigned L = redundant_samples + numberOfSamples + time_support;
 
+            TaskTimer tt("L=%u, redundant_samples=%u, numberOfSamples=%u, time_support=%u, firstSample=%u",
+                         L, redundant_samples, numberOfSamples, time_support, firstSample);
             ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
+            TIME_CwtFilter Intervals(ci.inverse->getInterval()).print("CwtFilter readFixedLength");
 
             // Compute the continous wavelet transform
             ci.chunk = (*transform())( ci.inverse );

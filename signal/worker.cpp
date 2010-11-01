@@ -9,8 +9,8 @@
 #include <boost/foreach.hpp>
 #include <CudaException.h>
 
-//#define TIME_WORKER
-#define TIME_WORKER if(0)
+#define TIME_WORKER
+//#define TIME_WORKER if(0)
 
 #define TESTING_PERFORMANCE false
 
@@ -25,11 +25,12 @@ Worker::
     work_time(0),
     _source(s),
     _samples_per_chunk( 1<<12 ),
-    _max_samples_per_chunk( 1<<16 ),
+    _max_samples_per_chunk( (unsigned)-1 ),
     _requested_fps( 20 ),
     _caught_exception( "" ),
     _caught_invalid_argument("")
 {
+    source( s );
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
     // but 1<< 12 works well on most GPUs
@@ -55,12 +56,16 @@ bool Worker::
 
     // todo_list().print(__FUNCTION__);
 
-    if (TESTING_PERFORMANCE) _samples_per_chunk = 19520;
+    if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
 
     unsigned center_sample = source()->sample_rate() * center;
+
     stringstream ss;
-    TIME_WORKER TaskTimer tt("Working %s from %u", ((std::stringstream&)(ss<<todo_list())).str().c_str(), center_sample );
+    TIME_WORKER TaskTimer tt("Working %u samples from %s, center=%u",
+         _samples_per_chunk,
+         ((std::stringstream&)(ss<<todo_list())).str().c_str(),
+         center_sample );
 
     ptime startTime = microsec_clock::local_time();
 
@@ -72,11 +77,22 @@ bool Worker::
     {
         CudaException_CHECK_ERROR();
 
-        {   stringstream ss;
-            TIME_WORKER TaskTimer tt("Reading source and calling callbacks %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
+        {
+            stringstream ss;
+            TIME_WORKER TaskTimer tt("Reading source and calling callbacks %s",
+                ((std::stringstream&)(ss<<interval)).str().c_str() );
 
             b = callCallbacks( interval );
+            _samples_per_chunk = b->number_of_samples();
+
             work_time += b->length();
+
+            TIME_WORKER {
+                stringstream ss;
+                TaskTimer("Worker got %s, %u samples",
+                    ((std::stringstream&)(ss<<b->getInterval())).str().c_str(),
+                    b->number_of_samples() ).suppressTiming();
+            }
         }
 
         CudaException_CHECK_ERROR();
@@ -97,18 +113,18 @@ bool Worker::
     if (0==milliseconds) milliseconds=1;
 
     if (b) if (!TESTING_PERFORMANCE) {
-        unsigned minSize = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
         float current_fps = 1000.f/milliseconds;
-        if (current_fps < _requested_fps && _samples_per_chunk >= minSize)
+        if (current_fps < _requested_fps &&
+            _samples_per_chunk >= _min_samples_per_chunk)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
-                    _samples_per_chunk, _source->sample_rate());
+                    b->number_of_samples(), _source->sample_rate());
             TIME_WORKER TaskTimer("Low framerate (%.1f fps). Decreased samples per chunk to %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
         }
-        else if (current_fps > 2.5f*_requested_fps && _samples_per_chunk <= b->number_of_samples() && _samples_per_chunk < _max_samples_per_chunk)
+        else if (current_fps > 2.5f*_requested_fps)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(
-                    _samples_per_chunk, _source->sample_rate());
+                    b->number_of_samples(), _source->sample_rate());
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else
@@ -133,7 +149,7 @@ void Worker::
         _todo_list = v;
     }
 
-    // todo_list().print(__FUNCTION__);
+    //todo_list().print(__FUNCTION__);
 
     if (v)
         _todo_condition.wakeAll();
@@ -160,6 +176,11 @@ void Worker::
         source(Signal::pOperation value)
 {
     _source = value;
+    if (_source)
+        _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
+    else
+        _min_samples_per_chunk = 1;
+    _max_samples_per_chunk = (unsigned)-1;
     _post_sink.invalidate_samples( Intervals::Intervals_ALL );
     // todo_list.clear();
 }
@@ -185,7 +206,7 @@ unsigned Worker::
 void Worker::
 		samples_per_chunk_hint(unsigned value)
 {
-	_samples_per_chunk = value;
+    _samples_per_chunk = max(_min_samples_per_chunk, value);
 }
 
 
