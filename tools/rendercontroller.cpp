@@ -55,7 +55,8 @@ RenderController::
 RenderController::
         ~RenderController()
 {
-    clearCachedHeightmap();
+    if (QGLContext::currentContext())
+        clearCachedHeightmap();
 }
 
 
@@ -341,9 +342,6 @@ void RenderController::
 void RenderController::
         clearCachedHeightmap()
 {
-    if (model()->collection->empty())
-        return;
-
     // Stop worker from producing any more heightmaps by disconnecting
     // the collection callback from worker.
     model()->collectionCallback.reset();
@@ -354,15 +352,13 @@ void RenderController::
     // context
     model()->collection->reset();
 
-
     // Because the cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
     // is corrupt and can't be destroyed nor used properly.
     BOOST_ASSERT( QGLContext::currentContext() );
 
     // Destroy the cuda context for this thread
-    CudaException_SAFE_CALL( cudaThreadExit() );
-}
+    CudaException_SAFE_CALL( cudaThreadExit() );}
 
 
 void RenderController::
