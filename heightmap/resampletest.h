@@ -11,9 +11,13 @@ public:
     ~ResampleTest();
 
     bool test1();
+    bool test2();
 private:
     template<typename T>
     void print( const char* txt, GpuCpuData<T>& data );
+
+    void simpleData();
+    void bigData( unsigned w = 1024, unsigned h = 1024 );
 
     boost::scoped_ptr< GpuCpuData<float2> > inputData;
 };

@@ -9,6 +9,12 @@
 ResampleTest::
         ResampleTest()
 {
+}
+
+
+void ResampleTest::
+        simpleData()
+{
     float2 data[] = { { 0.1f, 0.2f }, { 1.0f, 3.0f }, {0.1f, 5.5f },
                       { 5.1f, 1.2f }, { 9.0f, 2.0f }, {5.1f, 2.5f },
                       { 9.1f, -6.2f }, { 7.0f, 6.0f }, {3.1f, 7.5f }};
@@ -18,6 +24,35 @@ ResampleTest::
             make_uint3( 3,3,1),
             GpuCpuVoidData::CpuMemory ));
 }
+
+
+void ResampleTest::
+        bigData(unsigned w, unsigned h)
+{
+    float2* data = new float2[w*h];
+
+    srand(0);
+    for (unsigned y=0; y<h; ++y)
+    {
+        for (unsigned x=0; x<w; ++x)
+        {
+            /*data[ x + y*w ] = make_float2(
+                    (rand()%10)*(rand()%10),
+                    (rand()%10)*(rand()%10));*/
+            data[ x + y*w ] = make_float2(
+                    x+y,
+                    0);
+        }
+    }
+
+    inputData.reset( new GpuCpuData<float2>(
+            data,
+            make_uint3( w,h,1),
+            GpuCpuVoidData::CpuMemory ));
+
+    delete[] data;
+}
+
 
 ResampleTest::
         ~ResampleTest()
@@ -30,27 +65,121 @@ bool ResampleTest::
     TaskTimer tt("ResampleTest::test1()");
     try
     {
-        GpuCpuData<float2> outputData(
+        bigData();
+
+        unsigned N = 10;
+
+        GpuCpuData<float> outputData(
                 0,
-                make_uint3( 3,3,1) );
+                make_uint3( 128,128,1) );
+
         memset( outputData.getCpuMemory(), 0, outputData.getSizeInBytes1D() );
 
-        simple_resample2d(
-                inputData->getCudaGlobal(),
-                outputData.getCudaGlobal());
+        // warmup
+        if (1<N)
+        {
+            simple_resample2d(
+                    inputData->getCudaGlobal(),
+                    outputData.getCudaGlobal());
+        }
 
+        outputData.getCudaGlobal();
+        inputData->getCudaGlobal();
         CudaException_ThreadSynchronize();
+
+        {
+            TaskTimer tt("Kernel invocation, from (%u,%u = %g kB) to (%u,%u = %g kB)",
+                         inputData->getNumberOfElements().width,
+                         inputData->getNumberOfElements().height,
+                         outputData.getNumberOfElements().width,
+                         outputData.getNumberOfElements().height,
+                         inputData->getSizeInBytes1D()/1024.f,
+                         outputData.getSizeInBytes1D()/1024.f);
+
+            for (unsigned i=0; i<N; ++i)
+            {
+                simple_resample2d(
+                        inputData->getCudaGlobal(),
+                        outputData.getCudaGlobal());
+            }
+
+            CudaException_ThreadSynchronize();
+
+            float T = tt.elapsedTime();
+            tt.info("Resampling %g GB/s (total reads and writes)",
+                    (inputData->getSizeInBytes1D() + outputData.getSizeInBytes1D())/1024.f/1024.f/1024.f*N/T);
+        }
 
         print( "inputData",  *inputData );
         print( "outputData", outputData );
     } catch (std::exception const& x) {
-        tt.info("Caught exception: \n%s: %s", typeid(x).name(), x.what());
+        tt.info("In %s, caught exception %s: %s", __FUNCTION__, typeid(x).name(), x.what());
         return false;
     }
 
     return true;
 }
 
+bool ResampleTest::
+        test2()
+{
+    TaskTimer tt("ResampleTest::test1()");
+    try
+    {
+        bigData(7, 7);
+
+        unsigned N = 10;
+
+        GpuCpuData<float> outputData(
+                0,
+                make_uint3( 6,6,1) );
+
+        memset( outputData.getCpuMemory(), 0, outputData.getSizeInBytes1D() );
+
+        // warmup
+        if (1<N)
+        {
+            simple_resample2d(
+                    inputData->getCudaGlobal(),
+                    outputData.getCudaGlobal());
+        }
+
+        outputData.getCudaGlobal();
+        inputData->getCudaGlobal();
+        CudaException_ThreadSynchronize();
+
+        {
+            TaskTimer tt("Kernel invocation, from (%u,%u = %g kB) to (%u,%u = %g kB)",
+                         inputData->getNumberOfElements().width,
+                         inputData->getNumberOfElements().height,
+                         outputData.getNumberOfElements().width,
+                         outputData.getNumberOfElements().height,
+                         inputData->getSizeInBytes1D()/1024.f,
+                         outputData.getSizeInBytes1D()/1024.f);
+
+            for (unsigned i=0; i<N; ++i)
+            {
+                simple_resample2d(
+                        inputData->getCudaGlobal(),
+                        outputData.getCudaGlobal());
+            }
+
+            CudaException_ThreadSynchronize();
+
+            float T = tt.elapsedTime();
+            tt.info("Resampling %g GB/s (total reads and writes)",
+                    (inputData->getSizeInBytes1D() + outputData.getSizeInBytes1D())/1024.f/1024.f/1024.f*N/T);
+        }
+
+        print( "inputData",  *inputData );
+        print( "outputData", outputData );
+    } catch (std::exception const& x) {
+        tt.info("In %s, caught exception %s: %s", __FUNCTION__, typeid(x).name(), x.what());
+        return false;
+    }
+
+    return true;
+}
 
 std::ostream& operator<<(std::ostream& os, float2 v )
 {
@@ -67,10 +196,25 @@ void ResampleTest::
 
     for (unsigned y = 0; y < sz.height; y++ )
     {
-        std::stringstream ss;
+        if (y==4 && sz.height > 8)
+        {
+            tt.getStream() << "  \t...";
+            y = sz.height-4;
+        }
 
-        for (unsigned x = 0; x < sz.width; x++ )
+        std::stringstream ss;
+        ss << std::setprecision(4);
+
+        unsigned x;
+        for (x = 0; x < sz.width; x++ )
+        {
+            if (x==3 && sz.width > 7)
+            {
+                ss << "  \t...";
+                x = sz.width-3;
+            }
             ss << "  \t" << data.getCpuMemory()[ x + y*sz.width ];
+        }
 
         tt.getStream() << ss.str();
     }

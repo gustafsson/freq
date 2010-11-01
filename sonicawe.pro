@@ -84,6 +84,7 @@ SOURCES += \
     ui/propertiesselection.cpp \
     ui/propertiesstroke.cpp \
     ui/updatewidgetsink.cpp \
+    heightmap/resampletest.cpp \
 
 HEADERS += \
     adapters/audiofile.h \
@@ -102,6 +103,7 @@ HEADERS += \
     heightmap/position.h \
     heightmap/reference.h \
     heightmap/renderer.h \
+    heightmap/resample.cu.h \
     heightmap/slope.cu.h \
     sawe/application.h \
     sawe/layer.h \
@@ -136,7 +138,8 @@ HEADERS += \
     ui/propertiesselection.h \
     ui/propertiesstroke.h \
     ui/updatewidgetsink.h \
-    filters/supersample.h
+    heightmap/resampletest.h \
+    heightmap/resampletest.cu.h \
 
 FORMS += \
     tools/selectionviewmodel.ui \
@@ -147,6 +150,7 @@ FORMS += \
 CUDA_SOURCES += \
     filters/*.cu \
     heightmap/block.cu \
+    heightmap/resampletest.cu \
     heightmap/slope.cu \
     tfr/wavelet.cu \
 

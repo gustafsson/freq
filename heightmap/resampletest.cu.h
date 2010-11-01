@@ -5,7 +5,7 @@
 
 void simple_resample2d(
         cudaPitchedPtrType<float2> input,
-        cudaPitchedPtrType<float2> output
+        cudaPitchedPtrType<float> output
         );
 
 

@@ -199,7 +199,6 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
             else
             {
                 CudaException_SAFE_CALL( cudaSetDevice( 0 ) );
-                CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
             }
 
             CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));
@@ -270,9 +269,20 @@ void validate_arguments()
     return;
 }
 
+#include "heightmap/resampletest.h"
 
 int main(int argc, char *argv[])
 {
+    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
+    {
+        ResampleTest resampletest;
+
+        resampletest.test2();
+
+        //return 0;
+    }
+
 //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
@@ -284,10 +294,6 @@ int main(int argc, char *argv[])
     if (!check_cuda( false ))
         return -1;
 
-    {
-        TaskTimer tt("Building performance statistics for %s", CudaProperties::getCudaDeviceProp().name);
-        tt.info("Fastest size = %u", Tfr::Stft::build_performance_statistics(true, 2));
-    }
 
     // skip application filename
     argv++;
@@ -314,6 +320,11 @@ int main(int argc, char *argv[])
 
     try {
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
+        { // TODO remove?
+            TaskTimer tt("Building performance statistics for %s", CudaProperties::getCudaDeviceProp().name);
+            tt.info("Fastest size = %u", Tfr::Stft::build_performance_statistics(true, 2));
+        }
 
         Sawe::pProject p; // p goes out of scope before a.exec()
 

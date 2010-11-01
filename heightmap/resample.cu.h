@@ -4,6 +4,26 @@
 #include <cudaPitchedPtrType.h>
 #include <float.h>
 
+// 'float4 v' describes a region as
+// v.x = left
+// v.y = top
+// v.z = width
+// v.w = height
+
+__host__ __device__ inline float& getLeft  (float4& v) { return v.x; }
+__host__ __device__ inline float& getTop   (float4& v) { return v.y; }
+__host__ __device__ inline float& getRight (float4& v) { return v.z; }
+__host__ __device__ inline float& getBottom(float4& v) { return v.w; }
+__host__ __device__ inline float  getWidth (float4 const& v) { return v.z-v.x; }
+__host__ __device__ inline float  getHeight(float4 const& v) { return v.w-v.y; }
+__host__ __device__ inline unsigned& getLeft  (uint4& v) { return v.x; }
+__host__ __device__ inline unsigned& getTop   (uint4& v) { return v.y; }
+__host__ __device__ inline unsigned& getRight (uint4& v) { return v.z; }
+__host__ __device__ inline unsigned& getBottom(uint4& v) { return v.w; }
+__host__ __device__ inline unsigned  getWidth (uint4 const& v) { return v.z-v.x; }
+__host__ __device__ inline unsigned  getHeight(uint4 const& v) { return v.w-v.y; }
+
+
 template<typename InputT, typename OutputT>
 class NoConverter
 {
@@ -25,67 +45,156 @@ public:
 };
 
 
-class NoTranslation
+class AffineTransform
 {
 public:
-    __device__ float2 operator()( float2 const& p )
+    AffineTransform(
+            float4 inputRegion,
+            float4 outputRegion,
+            uint4 validInputs,
+            uint2 outputSize
+            )
     {
-        return p;
+//      x = writePos.x;
+//      x = x / (outputSize.x-1);
+//      x = x * width(outputRegion) + left(outputRegion);
+//      x = x - left(inputRegion);
+//      x = x / width(inputRegion);
+//      x = x * (width(validInputs)-1);
+//      x = x + left(validInputs);
+//      readPos.x = x;
+//      Express this as one affine transform by:
+//      readPos.x = x * scale.x + translation.x;
+        // The if clauses takes care of the special case when one of the
+        // dimensions is just one element wide
+        translation.x = getLeft(validInputs);
+        translation.y = getTop(validInputs);
+        scale.x = (getWidth(validInputs)-1) / getWidth(inputRegion);
+        scale.y = (getHeight(validInputs)-1) / getHeight(inputRegion);
+        translation.x += (getLeft(outputRegion) - getLeft(inputRegion))*scale.x;
+        translation.y += (getTop(outputRegion) - getTop(inputRegion))*scale.y;
+        if (outputSize.x==1) ++outputSize.x;
+        if (outputSize.y==1) ++outputSize.y;
+        scale.x *= getWidth(outputRegion)/(outputSize.x-1);
+        scale.y *= getHeight(outputRegion)/(outputSize.y-1);
     }
-};
 
-
-class TranslationFlipXY
-{
-public:
-    __device__ float2 operator()( float2 const& p )
+    template<typename Vec2>
+    __host__ __device__ Vec2 operator()( Vec2 const& p )
     {
-        float2 q = make_float2(p.y, p.x);
+        Vec2 q;
+        q.x = translation.x + p.x*scale.x;
+        q.y = translation.y + p.y*scale.y;
         return q;
     }
+
+private:
+    float2 scale;
+    float2 translation;
 };
 
 
+class AffineTransformFlip
+{
+public:
+    AffineTransformFlip(
+            float4 inputRegion,
+            float4 outputRegion,
+            uint4 validInputs,
+            uint2 outputSize
+            )
+    {
+        //      x = writePos.x;
+        //      x = x / (outputSize.x-1);
+        //      x = x * width(outputRegion) + left(outputRegion);
+        //      y = x;
+        //      y = y - top(inputRegion);
+        //      y = y / height(inputRegion);
+        //      y = y * (height(validInputs)-1);
+        //      y = y + top(validInputs);
+        //      readPos.y = y;
+        //      Express this as one affine transform by:
+        //      readPos.y = x * scale.y + translation.y;
+        translation.x = getLeft(validInputs);
+        translation.y = getTop(validInputs);
+        scale.x = (getWidth(validInputs)-1) / getWidth(inputRegion);
+        scale.y = (getHeight(validInputs)-1) / getHeight(inputRegion);
+        translation.x += (getTop(outputRegion) - getLeft(inputRegion))*scale.x;
+        translation.y += (getLeft(outputRegion) - getTop(inputRegion))*scale.y;
+        if (outputSize.x==1) ++outputSize.x;
+        if (outputSize.y==1) ++outputSize.y;
+        scale.x *= getHeight(outputRegion)/(outputSize.y-1);
+        scale.y *= getWidth(outputRegion)/(outputSize.x-1);
+    }
 
-// 'float4 v' describes a region as
-// v.x = left
-// v.y = top
-// v.z = width
-// v.w = height
 
-__device__ float& getLeft  (float4& v) { return v.x; }
-__device__ float& getTop   (float4& v) { return v.y; }
-__device__ float& getRight (float4& v) { return v.z; }
-__device__ float& getBottom(float4& v) { return v.w; }
-__device__ float  getWidth (float4 const& v) { return v.z-v.x; }
-__device__ float  getHeight(float4 const& v) { return v.w-v.y; }
-__device__ unsigned& getLeft  (uint4& v) { return v.x; }
-__device__ unsigned& getTop   (uint4& v) { return v.y; }
-__device__ unsigned& getRight (uint4& v) { return v.z; }
-__device__ unsigned& getBottom(uint4& v) { return v.w; }
-__device__ unsigned  getWidth (uint4 const& v) { return v.z-v.x; }
-__device__ unsigned  getHeight(uint4 const& v) { return v.w-v.y; }
+    __host__ __device__ float2 operator()( float2 const& p )
+    {
+        return make_float2(
+                translation.x + p.y*scale.x,
+                translation.y + p.x*scale.y );
+    }
 
-template<typename T>
-__device__ T read( unsigned x, unsigned y );
+private:
+    float2 scale;
+    float2 translation;
+};
+
 
 // only supports InputT == float2 for the moment
-texture<float2, 2> input_float2;
+// TODO move these to a separate file.
+// or only one file can include this header
+// or figure out a way to do it anyway
+texture<float2, 1> input1_float2;
+texture<float2, 2> input2_float2;
 
-template<>
-__device__ float2 read<float2>( unsigned x, unsigned y )
+template<typename T>
+class Read2D
 {
-    return tex2D(input_float2, x, y);
+public:
+    __device__ T operator()(unsigned x, unsigned y);
+};
+
+static __device__ float2 read2D(unsigned x, unsigned y)
+{
+    return tex2D(input2_float2, x, y);
+}
+template<> __device__ inline
+float2 Read2D<float2>::operator()(unsigned x, unsigned y)
+{
+    return read2D(x,y);
+}
+
+template<typename T>
+class Read1D
+{
+public:
+    Read1D(unsigned pitch):pitch(pitch) {}
+
+    __device__ T operator()(unsigned x, unsigned y);
+private:
+    unsigned pitch;
+};
+
+static __device__ float2 read1D(unsigned x, unsigned y, unsigned pitch)
+{
+    return tex1Dfetch(input1_float2, x + pitch*y);
+}
+
+template<> __device__ inline
+float2 Read1D<float2>::operator()(unsigned x, unsigned y)
+{
+    return read1D( x,y,pitch);
 }
 
 
-template<typename T>
+template<typename T> inline
 __device__ T interpolate( T const& a, T const& b, float k )
 {
     return (1-k)*a + k*b;
 }
 
-template<>
+template<> inline
 __device__ float2 interpolate( float2 const& a, float2 const& b, float k )
 {
     return make_float2(
@@ -94,64 +203,71 @@ __device__ float2 interpolate( float2 const& a, float2 const& b, float k )
             );
 }
 
-template<typename OutputT, typename InputT, typename Converter>
-__device__ OutputT fetch( unsigned x, unsigned y, Converter& converter )
+template<typename T> inline
+__device__ T zero()    { return 0; }
+
+template<> inline
+__device__ float2 zero() { return make_float2(0,0); }
+
+template<typename OutputT, typename InputT, typename Converter, typename Reader>
+__device__ OutputT fetch( unsigned x, unsigned y, Converter& converter, Reader& reader )
 {
-    return converter( read<InputT>( x, y ), make_uint2(x, y ) );
+    return converter( reader( x, y ), make_uint2(x, y ) );
 }
 
 
-template<typename OutputT, typename InputT, typename Converter>
-__device__ OutputT fetch( unsigned x, float y, Converter& converter )
+template<typename OutputT, typename InputT, typename Converter, typename Reader>
+__device__ OutputT fetch( unsigned x, float y, Converter& converter, Reader& reader )
 {
     float yb = floor(y);
     float yk = y-yb;
     unsigned yu = (unsigned)yb;
-    OutputT a = fetch<OutputT, InputT>( x, yu, converter);
-    OutputT b = fetch<OutputT, InputT>( x, yu+1, converter);
+    OutputT a = (yk==1.f) ? zero<OutputT>() : fetch<OutputT, InputT>( x, yu, converter, reader );
+    OutputT b = (yk==0.f) ? zero<OutputT>() : fetch<OutputT, InputT>( x, yu+1, converter, reader );
 
     return interpolate( a, b, yk );
 }
 
 
-template<typename OutputT, typename InputT, typename Converter, typename YType>
-__device__ OutputT fetch( float x, YType y, Converter& converter )
+template<typename OutputT, typename InputT, typename Converter, typename Reader, typename YType>
+__device__ OutputT fetch( float x, YType y, Converter& converter, Reader& reader )
 {
     float xb = floor(x);
     float xk = x-xb;
     unsigned xu = (unsigned)xb;
-    OutputT a = fetch<OutputT, InputT>( xu, y, converter);
-    OutputT b = fetch<OutputT, InputT>( xu+1, y, converter);
+    OutputT a = (xk==1.f) ? zero<OutputT>() : fetch<OutputT, InputT>( xu, y, converter, reader );
+    OutputT b = (xk==0.f) ? zero<OutputT>() : fetch<OutputT, InputT>( xu+1, y, converter, reader );
 
     return interpolate( a, b, xk );
 }
 
+// #define MULTISAMPLE
 
-template<typename OutputT, typename InputT, typename Converter, typename YType>
-__device__ OutputT getrow( float x1, float x2, YType y, Converter& converter )
+template<typename OutputT, typename InputT, typename Converter, typename Reader, typename YType>
+__device__ OutputT getrow( float x, float x1, float x2, YType y, Converter& converter, Reader& reader )
 {
     OutputT c;
-    bool is_valid = false;
 
-    if (x2-x1 == 1 || x2==x1)
-        // Exactly the same sample rate, take the first sample
-        maxassign( c, fetch<InputT, OutputT>( (unsigned)ceil(x1), y, converter), is_valid );
-    else if (floor(x2)-ceil(x1) <= 3)
+#ifdef MULTISAMPLE
+    if (floor(x2)-ceil(x1) <= 3)
+#endif
         // Very few samples in this interval, interpolate and take middle
-        maxassign( c, fetch<InputT, OutputT>( (x1+x2)/2, y, converter), is_valid );
+        c = fetch<OutputT, InputT>( x, y, converter, reader );
+#ifdef MULTISAMPLE
     else
     {
         // Not very few samples in this interval, fetch max value
 
-        if (floor(x1) < x1)
-            maxassign( c, fetch<OutputT, InputT>( x1, y, converter ), is_valid);
+        // if (floor(x1) < x1)
+        c = fetch<OutputT, InputT>( x1, y, converter, reader );
 
         for (unsigned x=ceil(x1); x<=floor(x2); ++x)
-            maxassign( c, fetch<OutputT, InputT>( x, y, converter ), is_valid);
+            maxassign( c, fetch<OutputT, InputT>( x, y, converter, reader ));
 
         if (floor(x2) < x2)
-            maxassign( c, fetch<OutputT, InputT>( x2, y, converter ), is_valid);
+            maxassign( c, fetch<OutputT, InputT>( x2, y, converter, reader ));
     }
+#endif
     return c;
 }
 
@@ -162,22 +278,21 @@ __device__ bool isless( A const& a, B const& b)
     return a < b;
 }
 
-template<>
+template<> inline
 __device__ bool isless( float2 const& a, float2 const& b)
 {
     return a.x*a.x + a.y * a.y < b.x*b.x + b.y*b.y;
 }
 
 template<typename T>
-__device__ void maxassign(T& a, T const& b, bool& is_valid)
+__device__ void maxassign(T& a, T const& b )
 {
-    if ( isless(a, b) || !is_valid)
-    {
-        is_valid = true;
+    if ( isless(a, b) )
         a = b;
-    }
 }
 
+#define BLOCKDIM_X 16
+#define BLOCKDIM_Y 8
 
 /**
   resample2d_kernel resamples an image to another size, and optionally applies
@@ -193,7 +308,11 @@ __device__ void maxassign(T& a, T const& b, bool& is_valid)
 
   @param inputRegion
     translation( inputRegion ) = 'affine transformation of entire input image
-    region'. inputRegion must be given in the same unit as outputRegion.
+    region'. inputRegion must be given in the same unit as outputRegion. The
+    region is inclusive which means that if the input contains 5 samples and
+    covers the region [0,1] samples are defined at points 0, 0.25, 0.5, 0.75
+    and 1. So a signal with discrete sample rate 'fs' over the region [0,4]
+    seconds should contain exactly '4*fs+1' number of samples.
 
   @param outputRegion
     outputRegion is an affine transformation of the entire ouput image region.
@@ -206,8 +325,6 @@ __device__ void maxassign(T& a, T const& b, bool& is_valid)
     border will also not be written to. It is up to the caller to handle this
     situation.
 
-    Which samples to write to is computed by assuming that outputRegion is an
-    affine transformation of the entire ouput image.
 
   @param validInputs
     Valid inputs may be smaller than the given input image. validInputs are
@@ -230,284 +347,255 @@ template<
         typename InputT,
         typename OutputT,
         typename Converter,
-        typename InputTranslation>
-__global__ void resample2d_kernel(
-        uint3 inputSize,
-        cudaPitchedPtrType<OutputT> output,
-        float4 inputRegion,
-        float4 outputRegion,
-        uint4 validInputs,
-        uint4 validOutputs,
-        Converter converter,
-        InputTranslation translation
+        typename Transform>
+__global__ void resample2d_kernel (
+        float4 validInputs,
+        unsigned inputPitch,
+        OutputT* output,
+        uint2 outputSize,
+        unsigned outputPitch,
+        Transform coordinateTransform,
+        Converter converter
         )
 {
-    float4 intersection = outputRegion;
-    if (getLeft( intersection ) < getLeft( inputRegion ))
-        getLeft( intersection ) = getLeft( inputRegion );
-    if (getTop( intersection ) < getTop( inputRegion ))
-        getTop( intersection ) = getTop( inputRegion );
-    if (getRight( intersection ) > getRight( inputRegion ))
-        getRight( intersection ) = getRight( inputRegion );
-    if (getBottom( intersection ) > getBottom( inputRegion ))
-        getBottom( intersection ) = getBottom( inputRegion );
+    uint2 writePos;
+    writePos.x = blockIdx.x * BLOCKDIM_X + threadIdx.x;
+    writePos.y = blockIdx.y * BLOCKDIM_Y + threadIdx.y;
 
-    // Ok inputRegion. outputRegion och intersection är (0,0,1,1)
-    if(0) if(inputRegion.x < 100)
-    {
-        output.elem( make_uint3( 1,0,0) ) = make_float2( 2+inputRegion.x, 2+inputRegion.y );
-        output.elem( make_uint3( 1,1,0) ) = make_float2( 2+inputRegion.z, 2+inputRegion.w );
-        output.elem( make_uint3( 2,0,0) ) = make_float2( 2+outputRegion.x, 2+outputRegion.y );
-        output.elem( make_uint3( 2,1,0) ) = make_float2( 2+outputRegion.z, 2+outputRegion.w );
-        output.elem( make_uint3( 0,2,0) ) = make_float2( 2+intersection.x, 2+intersection.y );
-        output.elem( make_uint3( 1,2,0) ) = make_float2( 2+intersection.z, 2+intersection.w );
+    if (writePos.x>=outputSize.x)
         return;
-    }
-
-    uint3 writePos;
-    bool valid = output.unwrapCudaGrid( writePos );
-    if (!valid)
+    if (writePos.y>=outputSize.y)
         return;
 
-    // ok validOutputs är (0,0,3,3)
-    if(0) if(inputRegion.x < 100)
-    {
-        output.elem( make_uint3( 0,0,0) ) = make_float2( 2+validOutputs.x, 2+validOutputs.y );
-        output.elem( make_uint3( 1,0,0) ) = make_float2( 2+validOutputs.z, 2+validOutputs.w );
-        output.elem( make_uint3( 0,1,0) ) = make_float2( 2+getLeft( validOutputs ), 2+getTop( validOutputs ) );
-        output.elem( make_uint3( 1,1,0) ) = make_float2( 2+getRight( validOutputs ), 2+getBottom( validOutputs ) );
-        return;
-    }
+#ifndef MULTISAMPLE
+    float2 p = make_float2(writePos.x, writePos.y);
+    p = coordinateTransform(p);
+    if (p.x < getLeft(validInputs)) return;
+    if (p.y < getTop(validInputs)) return;
+    if (p.x > getRight(validInputs)-1) return;
+    if (p.y > getBottom(validInputs)-1) return;
+#else
+    float2 p1 = make_float2(writePos.x, writePos.y);
+    float2 p2 = p1;
+    p2.x += 0.5f;
+    p2.y += 0.5f;
+    p1.x -= 0.5f;
+    p1.y -= 0.5f;
 
-    if (writePos.x < getLeft( validOutputs ))
-        return;
-    if (writePos.y < getTop( validOutputs ))
-        return;
-    if (writePos.x >= getRight( validOutputs ))
-        return;
-    if (writePos.y >= getBottom( validOutputs ))
-        return;
+    p1 = coordinateTransform(p1);
+    p2 = coordinateTransform(p2);
 
-    // ok, All writePos are occupied for 3x3 matrix
-    if(0) if(inputRegion.x < 100)
-    {
-        output.elem( writePos ) = make_float2( 2, 2 );
-        return;
-    }
+    float2 p = make_float2(
+            (p1.x+p2.x)*.5f,
+            (p1.y+p2.y)*.5f );
 
-    // Translate writePos to intersection coordinates to figure out where to
-    // read from
-    // (x1, y1, x2, y2) defines the read region
-    float
-            x1 = (writePos.x+0) / (float)output.getNumberOfElements().x,
-            x2 = (writePos.x+1) / (float)output.getNumberOfElements().x,
-            y1 = (writePos.y+0) / (float)output.getNumberOfElements().y,
-            y2 = (writePos.y+1) / (float)output.getNumberOfElements().y;
+    if (p1.x < getLeft(validInputs)) p1.x = getLeft(validInputs);
+    if (p1.y < getTop(validInputs)) p1.y = getTop(validInputs);
+    if (p2.x <= getLeft(validInputs)) return;
+    if (p2.y <= getTop(validInputs)) return;
+    if (p1.x >= getRight(validInputs)-1) return;
+    if (p1.y >= getBottom(validInputs)-1) return;
+    if (p2.x > getRight(validInputs)-1) p2.x = getRight(validInputs)-1;
+    if (p2.y > getBottom(validInputs)-1) p2.y = getBottom(validInputs)-1;
+#endif
+    OutputT c=0;
 
-    // ok, (x1, y1, x2, y2) defines the write region
-    if(0) if(inputRegion.x < 100)
-    {
-        output.elem( writePos ) = make_float2( x2, y2 );
-        return;
-    }
-    x1 = getLeft( outputRegion ) + getWidth( outputRegion )*x1;
-    x2 = getLeft( outputRegion ) + getWidth( outputRegion )*x2;
-    y1 = getTop( outputRegion ) + getHeight( outputRegion )*y1;
-    y2 = getTop( outputRegion ) + getHeight( outputRegion )*y2;
-
-    // ok, (x1, y1, x2, y2) defines the intersection read region
-    if(0) if(inputRegion.x < 100)
-    {
-        output.elem( writePos ) = make_float2( x1, y1 );
-        return;
-    }
-    // Check if entire read region is within intersection
-    if ( x1 < getLeft( intersection ))
-        return;
-    if ( x2 > getRight( intersection ))
-        return;
-    if ( y1 < getTop( intersection ))
-        return;
-    if ( y2 > getBottom( intersection ))
-        return;
-    // ok within intersection
-
-    float2 p1 = { x1, y1 };
-    float2 p2 = { x2, y2 };
-    p1 = translation(p1);
-    p2 = translation(p2);
-    x1 = p1.x < p2.x ? p1.x : p2.x;
-    x2 = p1.x < p2.x ? p2.x : p1.x;
-    y1 = p1.y < p2.y ? p1.y : p2.y;
-    y2 = p1.y < p2.y ? p2.y : p1.y;
-
-    // ok, (x1, y1, x2, y2) defines the translated region
-    if(0) if(inputRegion.x < 100)
-    {
-        output.elem( writePos ) = make_float2( x2, y2 );
-        return;
-    }
-
-    // Translate read_region from intersection coordinates to image coordinates
-    x1 -= getLeft( inputRegion );
-    x2 -= getLeft( inputRegion );
-    y1 -= getTop( inputRegion );
-    y2 -= getTop( inputRegion );
-    x1 /= getWidth( inputRegion );
-    x2 /= getWidth( inputRegion );
-    y1 /= getHeight( inputRegion );
-    y2 /= getHeight( inputRegion );
-    x1 *= inputSize.x;
-    x2 *= inputSize.x;
-    y1 *= inputSize.y;
-    y2 *= inputSize.y;
-
-    // ok, for output sample (0,0) region is (0, 0, 1, 1)
-    if (0) if(inputRegion.x < 100)
-    {
-        output.elem( writePos ) = make_float2( x2, y2 );
-        return;
-    }
-
-    if (floor(x1) < getLeft(validInputs))
-        return;
-    if (floor(y1) < getTop(validInputs))
-        return;
-    if (ceil(x2) > getRight(validInputs))
-        x2 = getRight(validInputs) - 1;
-    if (ceil(y2) > getBottom(validInputs))
-        y2 = getBottom(validInputs) - 1;
-
-    if (x2 < x1)
-        return;
-    if (y2 < y1)
-        return;
-
-    // read_region describes a square, find the maxima of the input image
-    // within this square.
-    // The maxima can only be on a sample point or on the border. Border values
-    // are defined with linear interpolation.
-
-    OutputT c;
-    bool is_valid = false;
-    if (y2-y1 == 1 || y2==y1)
-        // Exactly the same sample rate, take the first sample
-        maxassign( c, getrow<InputT, OutputT>( x1, x2, (unsigned)ceil(y1), converter), is_valid );
-    else if (floor(y2)-ceil(y1) <= 3)
-        // Very few samples in this interval, interpolate and take middle
-        maxassign( c, getrow<InputT, OutputT>( x1, x2, (y1+y2)/2, converter), is_valid );
+    //Read2D<InputT> reader;
+    Read1D<InputT> reader(inputPitch);
+#ifndef MULTISAMPLE
+    c = getrow<OutputT, InputT>( p.x, 0, 0, p.y, converter, reader);
+#else
+    if (floor(p2.y)-ceil(p1.y) <= 3.f)
+        // Very few samples in this interval, interpolate and take middle position
+        c = getrow<OutputT, InputT>( p.x, p1.x, p2.x, p.y, converter, reader);
     else
     {
         // Not very few samples in this interval, fetch max value
-        if (floor(y1) < y1)
-            maxassign( c, getrow<InputT, OutputT>( x1, x2, y1, converter), is_valid );
+        //if (floor(p1.y) < p1.y)
+        c = getrow<OutputT, InputT>( p.x, p1.x, p2.x, p1.y, converter, reader);
 
-        for (unsigned y=ceil(y1); y<=floor(y2); ++y)
-            maxassign( c, getrow<InputT, OutputT>( x1, x2, y, converter), is_valid );
+        for (unsigned y=ceil(p1.y); y<=floor(p2.y); ++y)
+            maxassign( c, getrow<OutputT, InputT>( p.x, p1.x, p2.x, y, converter, reader) );
 
-        if (floor(y2) < y2)
-            maxassign( c, getrow<InputT, OutputT>( x1, x2, y2, converter), is_valid );
+        if (floor(p2.y) < p2.y)
+            maxassign( c, getrow<OutputT, InputT>( p.x, p1.x, p2.x, p2.y, converter, reader) );
     }
+#endif
 
-    if (is_valid)
-        output.elem( writePos ) = c;
+    unsigned o = outputPitch*writePos.y + writePos.x;
+    //output[o] += 0.005f;
+    output[o] = c;
 }
 
+
+// todo remove
+#include <stdio.h>
 
 template<typename T>
-void bindtex( cudaPitchedPtrType<T> tex );
+static void bindtex( cudaPitchedPtr tex, bool needNeighborhood );
 
 template<>
-void bindtex<float2>( cudaPitchedPtrType<float2> tex )
+static void bindtex<float2>( cudaPitchedPtr tex, bool needNeighborhood )
 {
-    input_float2.addressMode[0] = cudaAddressModeClamp;
-    input_float2.addressMode[1] = cudaAddressModeClamp;
-    input_float2.filterMode = cudaFilterModePoint;
-    input_float2.normalized = false;
+    if (false && needNeighborhood)
+    {
+        input2_float2.addressMode[0] = cudaAddressModeClamp;
+        input2_float2.addressMode[1] = cudaAddressModeClamp;
+        input2_float2.filterMode = cudaFilterModePoint;
+        input2_float2.normalized = false;
 
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float2>();
+        cudaBindTexture2D(0, input2_float2, tex.ptr,
+                        tex.xsize/sizeof(float2), tex.ysize, tex.pitch );
+    } else {
+        input1_float2.addressMode[0] = cudaAddressModeClamp;
+        input1_float2.filterMode = cudaFilterModePoint;
+        input1_float2.normalized = false;
 
-    cudaBindTexture2D(0, input_float2, tex.ptr(), channelDesc,
-                      tex.getNumberOfElements().x, tex.getNumberOfElements().y,
-                      tex.getCudaPitchedPtr().pitch);
+        cudaBindTexture(0, input1_float2, tex.ptr,
+                        tex.pitch * tex.ysize );
+    }
 }
 
-#include <stdio.h>
+
+template<typename Vec4>
+float4 make_float4( Vec4 const& v )
+{
+    return make_float4( v.x, v.y, v.z, v.w );
+}
 
 template<
         typename InputT,
         typename OutputT,
-        typename Converter,
-        typename InputTranslation>
+        typename Converter >
 void resample2d(
         cudaPitchedPtrType<InputT> input,
         cudaPitchedPtrType<OutputT> output,
         uint4 validInputs,
-        uint4 validOutputs,
+        uint2 validOutputs,
         float4 inputRegion = make_float4(0,0,1,1),
         float4 outputRegion = make_float4(0,0,1,1),
+        bool flip = false,
         Converter converter = Converter(),
-        InputTranslation translation = InputTranslation(),
         cudaStream_t cuda_stream = (cudaStream_t)0
         )
 {
-    bindtex( input );
+#ifdef resample2d_DEBUG
+    printf("\ngetLeft(validInputs) = %u", getLeft(validInputs));
+    printf("\ngetTop(validInputs) = %u", getTop(validInputs));
+    printf("\ngetRight(validInputs) = %u", getRight(validInputs));
+    printf("\ngetBottom(validInputs) = %u", getBottom(validInputs));
+    printf("\ninput.getNumberOfElements().x = %u", input.getNumberOfElements().x);
+    printf("\ninput.getNumberOfElements().y = %u", input.getNumberOfElements().y);
+    printf("\noutput.getNumberOfElements().x = %u", output.getNumberOfElements().x);
+    printf("\noutput.getNumberOfElements().y = %u", output.getNumberOfElements().y);
+#endif
 
-    dim3 block( 256, 1, 1 );
-    dim3 grid = output.wrapCudaGrid( block );
+    // make sure validInputs is smaller than input size
+    getRight(validInputs) = min(getRight(validInputs), input.getNumberOfElements().x);
+    getBottom(validInputs) = min(getBottom(validInputs), input.getNumberOfElements().y);
+    getLeft(validInputs) = min(getRight(validInputs), getLeft(validInputs));
+    getTop(validInputs) = min(getBottom(validInputs), getTop(validInputs));
 
-    // ok block och grid funkar för 3x3
-    if (1) {
-        printf("\nblock = (%u, %u, %u)", block.x, block.y, block.z);
-        printf("\ngrid = (%u, %u, %u)", grid.x, grid.y, grid.z);
-        fflush(stdout);
+    // make sure validOutputs is smaller than output size
+    validOutputs.x = min(validOutputs.x, output.getNumberOfElements().x);
+    validOutputs.y = min(validOutputs.y, output.getNumberOfElements().y);
+
+    bindtex<InputT>( input.getCudaPitchedPtr(), flip );
+
+    dim3 block( BLOCKDIM_X, BLOCKDIM_Y, 1 );
+    elemSize3_t sz = output.getNumberOfElements();
+    dim3 grid(
+            int_div_ceil( sz.x, block.x ),
+            int_div_ceil( sz.y, block.y ),
+            1 );
+
+    unsigned inputPitch = input.getCudaPitchedPtr().pitch/sizeof(InputT);
+    unsigned outputPitch = output.getCudaPitchedPtr().pitch/sizeof(OutputT);
+    OutputT* outputPtr = output.ptr();
+    //cudaMemset(output.ptr(), 0, output.getTotalBytes());
+
+#ifdef resample2d_DEBUG
+    printf("\nvalidOutputs.x = %u", validOutputs.x);
+    printf("\nvalidOutputs.y = %u", validOutputs.y);
+    printf("\ngetLeft(validInputs) = %u", getLeft(validInputs));
+    printf("\ngetTop(validInputs) = %u", getTop(validInputs));
+    printf("\ngetRight(validInputs) = %u", getRight(validInputs));
+    printf("\ngetBottom(validInputs) = %u", getBottom(validInputs));
+    printf("\n");
+    fflush(stdout);
+#endif
+    //outputPtr = outputPtr + (getLeft(validOutputs) + getTop(validOutputs)*outputPitch);
+
+    if (!flip)
+    {
+        resample2d_kernel
+                <InputT, OutputT, Converter, AffineTransform>
+                <<< grid, block, 0, cuda_stream >>>
+        (
+                make_float4(validInputs),
+                inputPitch,
+                outputPtr,
+                validOutputs,
+                outputPitch,
+
+                AffineTransform(
+                        inputRegion,
+                        outputRegion,
+                        validInputs,
+                        validOutputs
+                        ),
+                converter
+        );
+    } else {
+        resample2d_kernel
+                <InputT, OutputT, Converter, AffineTransformFlip>
+                <<< grid, block, 0, cuda_stream >>>
+        (
+                make_float4(validInputs),
+                inputPitch,
+                outputPtr,
+                validOutputs,
+                outputPitch,
+
+                AffineTransformFlip(
+                        inputRegion,
+                        outputRegion,
+                        validInputs,
+                        validOutputs
+                        ),
+                converter
+        );
     }
-
-    resample2d_kernel
-            <InputT, OutputT, Converter, InputTranslation>
-            <<< grid, block, 0, cuda_stream >>>
-    (
-            input.getNumberOfElements(),
-            output,
-            inputRegion,
-            outputRegion,
-            validInputs,
-            validOutputs,
-            converter,
-            translation
-    );
 }
-
 
 template<
         typename InputT,
         typename OutputT,
-        typename Converter,
-        typename InputTranslation>
+        typename Converter>
 void resample2d_plain(
         cudaPitchedPtrType<InputT> input,
         cudaPitchedPtrType<OutputT> output,
         float4 inputRegion = make_float4(0,0,1,1),
         float4 outputRegion = make_float4(0,0,1,1),
-        Converter converter = Converter(),
-        InputTranslation translation = InputTranslation()
+        bool flip=false,
+        Converter converter = Converter()
         )
 {
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
 
     uint4 validInputs = make_uint4( 0, 0, sz_input.x, sz_input.y );
-    uint4 validOutputs = make_uint4( 0, 0, sz_output.x, sz_output.y );
+    uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    resample2d<InputT, OutputT, Converter, InputTranslation>(
+    resample2d<InputT, OutputT, Converter>(
             input,
             output,
             validInputs,
             validOutputs,
             inputRegion,
             outputRegion,
-            converter,
-            translation);
+            flip,
+            converter );
 }
 
 template<
@@ -520,7 +608,7 @@ void resample2d_overlap(
         float4 outputRegion = make_float4(0,0,1,1)
         )
 {
-    resample2d<InputT, OutputT, NoConverter<InputT, OutputT>, NoTranslation>(
+    resample2d<InputT, OutputT, NoConverter<InputT, OutputT> >(
             input,
             output,
             inputRegion,
