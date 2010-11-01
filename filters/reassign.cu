@@ -34,7 +34,7 @@ void reassignFilter( cudaPitchedPtrType<float2> chunk, float min_hz, float max_h
 __global__ void kernel_reassign(cudaPitchedPtrType<float2> chunk, float start, float steplogsize, float sample_rate )
 {
     unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            x = blockIdx.x*blockDim.x + threadIdx.x;
 
     unsigned nSamples = chunk.getNumberOfElements().x;
     unsigned nFrequencies = chunk.getNumberOfElements().y;
@@ -88,7 +88,7 @@ void tonalizeFilter( cudaPitchedPtrType<float2> chunk, float min_hz, float max_h
 __global__ void kernel_tonalize(cudaPitchedPtrType<float2> chunk, float start, float steplogsize, float sample_rate )
 {
     unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            x = blockIdx.x*blockDim.x + threadIdx.x;
 
     unsigned nSamples = chunk.getNumberOfElements().x;
     unsigned nFrequencies = chunk.getNumberOfElements().y;

@@ -24,8 +24,8 @@ void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_ins
 __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
 {
     unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
-            fi = __umul24(blockIdx.y,blockDim.y) + threadIdx.y;
+            x = blockIdx.x*blockDim.x + threadIdx.x,
+            fi = blockIdx.y*blockDim.y + threadIdx.y;
 
     bool complex = x%2;
     x/=2;

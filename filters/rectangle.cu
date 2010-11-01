@@ -25,8 +25,8 @@ void removeRect( float2* wavelet, cudaExtent numElem, float4 area )
 __global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 area )
 {
     const unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x,
-            fi = __umul24(blockIdx.y,blockDim.y) + threadIdx.y;
+            x = blockIdx.x*blockDim.x + threadIdx.x,
+            fi = blockIdx.y*blockDim.y + threadIdx.y;
 
     if (x>=numElem.width )
         return;

@@ -35,7 +35,7 @@ void moveFilter( cudaPitchedPtrType<float2> chunk, float df, float min_hz, float
 __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate, unsigned sample_offset )
 {
     const unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
+            x = blockIdx.x*blockDim.x + threadIdx.x;
 
     unsigned nSamples = chunk.getNumberOfElements().x;
     unsigned nFrequencies = chunk.getNumberOfElements().y;
