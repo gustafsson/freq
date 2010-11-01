@@ -3,11 +3,10 @@
 
 #include "heightmap/reference.h"
 #include "heightmap/glblock.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 #include "signal/source.h"
 #include "signal/worker.h"
 #include "tfr/chunk.h"
-#include "tfr/chunksink.h"
 #include <vector>
 #include <boost/unordered_map.hpp>
 #include <QMutex>
@@ -86,18 +85,42 @@ namespace Heightmap {
 // TODO it would probably look awesome if new blocks weren't displayed
 // instantaneously but rather faded in from 0 or from their previous value.
 // This method could be used to slide between the images of two different
-// signals or channels as well.
+// signals or channels as well. This should be implemented by rendering two or
+// more separate collections in Heightmap::Renderer. It would fetch Blocks by
+// their 'Reference' from the different collections and use a shader to
+// transfer results between them.
 class Block {
 public:
-    Block( Reference ref ): ref(ref), frame_number_last_used(-1) {}
+    Block( Reference ref )
+        :
+        frame_number_last_used(-1),
+        ref(ref),
+        new_data_available( false )
+    {}
+
+    // TODO move this value to a complementary class
+    unsigned frame_number_last_used;
 
     // Zoom level for this slot, determines size of elements
     Reference ref;
-    unsigned frame_number_last_used;
     pGlBlock glblock;
 
     typedef boost::shared_ptr<GpuCpuData<float> > pData;
-    pData prepared_data;
+
+    /**
+        TODO test this in a multi gpu environment
+        For multi-GPU or (just multithreaded) environments, each GPU-thread have
+        its own cuda context and data can't be  transfered between cuda contexts
+        without first going to the cpu. Therefore a 'cpu_copy' is kept in CPU
+        memory so that the block data is readily available for merging new
+        blocks. Only one GPU may access 'cpu_copy' at once. The OpenGL textures
+        are updated from cpu_copy whenever new_data_available is set to true.
+
+        For single-GPU environments, 'cpu_copy' is not used.
+    */
+    pData cpu_copy;
+    bool new_data_available;
+    QMutex cpu_copy_mutex;
 
     /**
       valid_samples describes the intervals of valid samples contained in this block.
@@ -105,7 +128,7 @@ public:
       the first block in the heightmap. The samplerate is the sample rate of the full
       resolution signal.
       */
-    Signal::SamplesIntervalDescriptor valid_samples;
+    Signal::Intervals valid_samples;
 };
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -125,9 +148,9 @@ inline std::size_t hash_value(Reference const& ref)
   Signal::Sink::put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection: public Tfr::ChunkSink {
+class Collection {
 public:
-    Collection(Signal::pWorker worker);
+    Collection(Signal::Worker* worker);
     ~Collection();
 
 
@@ -135,16 +158,11 @@ public:
       Releases all GPU resources allocated by Heightmap::Collection.
       */
     virtual void reset();
+    virtual bool empty();
 
 
-    /**
-      Computes the Cwt and updates the cache of blocks.
-      */
-    virtual void put( Signal::pBuffer, Signal::pSource );
-
-
-    virtual Signal::SamplesIntervalDescriptor expected_samples();
-    virtual void add_expected_samples( const Signal::SamplesIntervalDescriptor& );
+    virtual Signal::Intervals invalid_samples();
+    virtual void invalidate_samples( const Signal::Intervals& );
 
 
     /**
@@ -165,14 +183,6 @@ public:
 
 
     /**
-      As the cwt is of finite length and finite sample rate there is a smallest
-      and a largest sample size that is meaningful for the heightmap to render.
-      */
-    Position min_sample_size();
-    Position max_sample_size();
-
-
-    /**
       Returns a Reference for a block containing 'p' in which a block element
       is as big as possible yet smaller than or equal to 'sampleSize'.
       */
@@ -189,59 +199,104 @@ public:
 
 
     /**
-      Tells the "chunk-to-block" what information to extract from the complex
-      time-frequency-representation. Such as phase, amplitude or weighted
-      amplitude. The weighted ampltidue mode is default for the morlet
-      transform to accommodate for low frequencies being smoothed out and
-      appear low in amplitude even though they contain frequencies of high
-      amplitude.
+      Blocks are updated by CwtToBlock and StftToBlock by merging chunks into
+      all existing blocks that intersect with the chunk interval.
       */
-    void        complexInfo(ComplexInfo);
-    ComplexInfo complexInfo();
+    std::vector<pBlock>      getIntersectingBlocks( Signal::Interval I );
+
+
+    /**
+      As the transform is of finite length and finite sample rate there is a
+      smallest and a largest sample size that is meaningful for the heightmap
+      to render.
+      */
+    Position min_sample_size() { return _min_sample_size; }
+    Position max_sample_size() { return _max_sample_size; }
 
 
     /**
       When changing filter you might want to change complexInfo accordingly.
       */
-    virtual void chunk_filter(Tfr::pFilter filter);
+    // TODO remove? virtual void chunk_filter(Tfr::pFilter filter);
+    // TODO how do we change transfom?
 
 
     /**
       When changing transform you might want to change complexInfo accordingly.
       */
-    virtual void chunk_transform(Tfr::pTransform transform);
+    // TODO transforms are 'filters'. virtual void chunk_transform(Tfr::pTransform transform);
 
+/* each row calls the row below
+worker                 X
+suboperation             RenderFilters
+filter                     F
+filter                     F
+CwtToBlock                 R
+suboperation             PlaybackFilters
+filter                     F
+Playback                   P
+filter                 F
+operation              A
+operation              A
+audiofile              source
+*/
 
     void        gc();
 
 
-    Signal::pWorker     worker;
+    Tfr::FreqAxis display_scale() { return _display_scale; }
+
+    /**
+      PostSink fetches data
+      */
+    Signal::pOperation postsink() { return _postsink; }
+
+
+    Signal::Worker*     worker;
 private:
+    // TODO remove friends
+    friend class BlockFilter;
+    friend class CwtToBlock;
+    friend class StftToBlock;
+
     unsigned
         _samples_per_block,
         _scales_per_block,
         _unfinished_count,
         _frame_counter;
 
-    ComplexInfo _complexInfo;
+
+    Position
+            _min_sample_size,
+            _max_sample_size;
+
+
+    Signal::pOperation _postsink;
+
+
+    /**
+      Heightmap blocks are rather agnostic to FreqAxis.
+      */
+    Tfr::FreqAxis _display_scale;
+
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.
       If allocation of a new block fails to be allocated
             1) all unused blocks are freed.
             2) if no unused blocks are found and _cache is non-empty, the entire _cache is cleared.
-            3) if _cache is empty, Sonic AWE is terminated with an OpenGL error.
+            3) if _cache is empty, Sonic AWE is terminated with an OpenGL or Cuda error.
       */
 
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 
+    QMutex _cache_mutex; // Mutex for _cache and _recent
     cache_t _cache;
     recent_t _recent; // Ordered with the most recently accessed blocks first
 
-    std::vector<Tfr::pChunk> _updates; // TODO updates should be transfered as downsampled blocks between cuda contexts. It is way to slow to transfer entire chunks.
-    QMutex _cache_mutex, _updates_mutex;
-    QWaitCondition _updates_condition;
+    // QMutex _updates_mutex;
+    // QWaitCondition _updates_condition;
     ThreadChecker _constructor_thread;
 
     /**
@@ -264,12 +319,26 @@ private:
       Compoute a short-time Fourier transform (stft). Usefull for filling new
       blocks with data really fast.
       */
-    void        prepareFillStft( pBlock block );
+    void        fillBlock( pBlock block );
+
 
     /**
       Work of the _updates queue of chunks to merge.
       */
-    void        applyUpdates();
+    // void        applyUpdates();
+
+
+    /**
+      Given a chunk and this->_worker->source(), compute how small and big
+      samples that are meanginful to display.
+      */
+    void        update_sample_size( Tfr::Chunk* inChunk );
+
+
+    /**
+      TODO comment
+      */
+    void        mergeStftBlock( Tfr::pChunk stft, pBlock block );
 
 
     /**

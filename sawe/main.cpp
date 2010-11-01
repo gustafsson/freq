@@ -1,22 +1,30 @@
+#include "sawe/application.h"
 #include "tfr/cwt.h"
-#include <QtGui/QFileDialog>
-#include <QtGui/QMessageBox>
+#include "heightmap/renderer.h"
+
+#include "ui/mainwindow.h"
+#include "tools/toolfactory.h"
+
+#include "adapters/audiofile.h"
+#include "adapters/microphonerecorder.h"
+#include "adapters/csv.h"
+#include "adapters/hdf5.h"
+
+#include <CudaProperties.h>
+#include <CudaException.h>
+
 #include <iostream>
 #include <stdio.h>
-#include "saweui/mainwindow.h"
-#include "saweui/displaywidget.h"
-#include "signal/audiofile.h"
-#include "signal/microphonerecorder.h"
-#include <CudaProperties.h>
+
 #include <QString>
-#include <CudaException.h>
-#include "heightmap/renderer.h"
-#include "sawe/csv.h"
-#include "sawe/hdf5.h"
-#include "sawe/application.h"
+#include <QtGui/QFileDialog>
+#include <QtGui/QMessageBox>
+#include <QGLContext>
+#include <cuda.h>
 
 using namespace std;
 using namespace boost;
+using namespace Ui;
 
 static const char _sawe_usage_string[] =
         "sonicawe [--parameter=value]* [FILENAME]\n"
@@ -41,12 +49,6 @@ static const char _sawe_usage_string[] =
 "    samples_per_block  The transform chunks are downsampled to blocks for\n"
 "                       rendering, this gives the number of samples per block.\n"
 "    scales_per_block   Number of scales per block, se samples_per_block.\n"
-//"    yscale             Tells how to translate the complex transform to a \n"
-//"                       hightmap. Valid yscale values:\n"
-//"                       0   A=amplitude of CWT coefficients, default\n"
-//"                       1   A * exp(.001*fi)\n"
-//"                       2   log(1 + |A|)\n"
-//"                       3   log(1 + [A * exp(.001*fi)]\n"
 "    get_csv            Saves the given chunk number into sawe.csv which \n"
 "                       then can be read by matlab or octave.\n"
 "    get_hdf            Saves the given chunk number into sawe.h5 which \n"
@@ -60,20 +62,17 @@ static const char _sawe_usage_string[] =
 "    playback_device    Selects a specific device for playback. -1 specifices the\n"
 "                       default output device.\n"
 "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
-"                       filters are being used as the GUI won't be lock during\n"
+"                       filters are being used as the GUI won't be locked during\n"
 "                       computation.\n"
 "\n"
 "Sonic AWE, 2010\n";
 
 static unsigned _channel=0;
-static unsigned _scales_per_octave = 50;
-static float _wavelet_std_t = 0.06f;
+static unsigned _scales_per_octave = 20;
+static float _wavelet_time_support = 3;
 static unsigned _samples_per_chunk = 1;
-//static float _wavelet_std_t = 0.03;
-//static unsigned _samples_per_chunk = (1<<12) - 2*(_wavelet_std_t*44100+31)/32*32-1;
 static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
 static unsigned _scales_per_block = 1<<8;
-static unsigned _yscale = DisplayWidget::Yscale_Linear;
 static unsigned _get_hdf = (unsigned)-1;
 static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
@@ -150,10 +149,10 @@ static int handle_options(char ***argv, int *argc)
         }
         else if (readarg(&cmd, samples_per_chunk));
         else if (readarg(&cmd, scales_per_octave));
-        else if (readarg(&cmd, wavelet_std_t));
+        else if (readarg(&cmd, wavelet_time_support));
         else if (readarg(&cmd, samples_per_block));
         else if (readarg(&cmd, scales_per_block));
-        else if (readarg(&cmd, yscale));
+        // else if (readarg(&cmd, yscale)); // TODO remove?
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record_device));
         else if (readarg(&cmd, record));
@@ -181,48 +180,70 @@ static int handle_options(char ***argv, int *argc)
 }
 
 
-bool check_cuda() {
+static bool check_cuda( bool use_OpenGL_bindings ) {
     stringstream ss;
     void* ptr=(void*)0;
     CudaException namedError(cudaSuccess);
+
+
     try {
-        CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));
-        CudaException_SAFE_CALL( cudaFree( ptr ));
-        GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
-    }
-    catch (const CudaException& x) {
+        if (CudaProperties::haveCuda())
+        {
+            // Might need cudaGLSetGLDevice later on, but it can't be called
+            // until we have created an OpenGL context.
+            CudaException_SAFE_CALL( cudaThreadExit() );
+            if (use_OpenGL_bindings)
+            {
+                CudaException_SAFE_CALL( cudaGLSetGLDevice( 0 ) );
+            }
+            else
+            {
+                CudaException_SAFE_CALL( cudaSetDevice( 0 ) );
+            }
+
+            CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));
+            CudaException_SAFE_CALL( cudaFree( ptr ));
+            GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
+            a.getCudaGlobal();
+
+            return true;
+        }
+    } catch (const CudaException& x) {
         namedError = x;
-#ifdef _DEBUG
+
         ss << x.what() << endl << "Cuda error code " << x.getCudaError() << endl << endl;
-#endif
+
         ptr = 0;
     } catch (...) {
         ss << "catch (...)" << endl;
         ptr = 0;
     }
     
-    if (ptr && CudaProperties::haveCuda())
-        return true;
+    // Show error messages:
 
-    if (cudaErrorInsufficientDriver == namedError.getCudaError())
+    switch (namedError.getCudaError())
     {
+    case cudaErrorInsufficientDriver:
         ss << "Sonic AWE requires you to have installed newer CUDA-compatible graphics drivers from NVIDIA. "
                 << "CUDA drivers are installed on this computer but they are too old. "
                 << "You can download new drivers from NVIDIA;" << endl;
-    }
-    else
-    {
+        break;
+    case cudaErrorDevicesUnavailable:
+        ss << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
+                << "If you're not intentionally using the GPU right now the driver might have been left in an inconsistent state after a previous crash. Rebooting your computer could solve work around this. "
+                << "Also make sure that you have installed the latest CUDA drivers." << endl;
+        break;
+    default:
         ss   << "Sonic AWE requires you to have installed CUDA-compatible graphics drivers from NVIDIA, and no such driver was found." << endl
-             << endl
-             << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
-             << "   www.nvidia.com/object/cuda_gpus.html" << endl
-             << endl
-             << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl;
+                << endl
+                << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
+                << "   www.nvidia.com/object/cuda_gpus.html" << endl
+                << endl
+                << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl;
     }
-
     ss
 #ifdef __APPLE__
-         << "   http://developer.nvidia.com/object/cuda_3_0_downloads.html#MacOS" << endl
+         << "   http://www.nvidia.com/object/cuda_get.html#MacOS" << endl
 #else
          << "   www.nvidia.com" << endl
 #endif
@@ -240,22 +261,27 @@ bool check_cuda() {
     return false;
 }
 
-void validate_arguments() {
-    switch ( _yscale )
-    {
-        case DisplayWidget::Yscale_Linear:
-        case DisplayWidget::Yscale_ExpLinear:
-        case DisplayWidget::Yscale_LogLinear:
-        case DisplayWidget::Yscale_LogExpLinear:
-            break;
-        default:
-            printf("Invalid yscale value, must be one of {1, 2, 3, 4}\n\n%s", _sawe_usage_string);
-            exit(-1);
-    }
+
+void validate_arguments()
+{
+    // TODO
+    return;
 }
+
+#include "heightmap/resampletest.h"
 
 int main(int argc, char *argv[])
 {
+    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
+    {
+        ResampleTest resampletest;
+
+        resampletest.test2();
+
+        //return 0;
+    }
+
 //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
@@ -263,9 +289,11 @@ int main(int argc, char *argv[])
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
     Sawe::Application a(argc, argv);
-    if (!check_cuda())
+
+    if (!check_cuda( false ))
         return -1;
-    
+
+
     // skip application filename
     argv++;
     argc--;
@@ -292,6 +320,11 @@ int main(int argc, char *argv[])
     try {
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 
+        { // TODO remove?
+            TaskTimer tt("Building performance statistics for %s", CudaProperties::getCudaDeviceProp().name);
+            tt.info("Fastest size = %u", Tfr::Stft::build_performance_statistics(true, 2));
+        }
+
         Sawe::pProject p; // p goes out of scope before a.exec()
 
         if (!_soundfile.empty())
@@ -307,35 +340,35 @@ int main(int argc, char *argv[])
 
         Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
         cwt.scales_per_octave( _scales_per_octave );
-        cwt.wavelet_std_t( _wavelet_std_t );
+        cwt.wavelet_time_support( _wavelet_time_support );
 
-        unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source->sample_rate() );
+        unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source()->sample_rate() );
         TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
 
         if (_get_csv != (unsigned)-1) {
-			if (0==p->head_source->number_of_samples()) {
+            if (0==p->head_source()->number_of_samples()) {
                                 Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
 				return -1;
 			}
 
-            Signal::pBuffer b = p->head_source->read( _get_csv*total_samples_per_chunk, total_samples_per_chunk );
-
-            Sawe::Csv().put( b, p->head_source );
+            Adapters::Csv csv;
+            csv.source( p->head_source() );
+            csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
         }
 
         if (_get_hdf != (unsigned)-1) {
-			if (0==p->head_source->number_of_samples()) {
+            if (0==p->head_source()->number_of_samples()) {
                             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
 				return -1;
 			}
 
-			Signal::pBuffer b = p->head_source->read( _get_hdf*total_samples_per_chunk, total_samples_per_chunk );
-
-            Sawe::Hdf5Sink().put( b, p->head_source );
+            Adapters::Hdf5Chunk hdf5;
+            hdf5.source( p->head_source() );
+            hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
         }
 
         if (_get_chunk_count != false) {
-            cout << p->head_source->number_of_samples() / total_samples_per_chunk << endl;
+            cout << p->head_source()->number_of_samples() / total_samples_per_chunk << endl;
         }
 
         if (_get_hdf != (unsigned)-1 ||
@@ -345,23 +378,39 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-		p->displayWidget()->worker()->samples_per_chunk_hint( _samples_per_chunk );
+        p->worker.samples_per_chunk_hint( _samples_per_chunk );
         if (_multithread)
-            p->displayWidget()->worker()->start();
-
-		p->displayWidget()->yscale = (DisplayWidget::Yscale)_yscale;
-        p->displayWidget()->playback_device = _playback_device;
-        p->displayWidget()->selection_filename = _selectionfile;
-        p->displayWidget()->collection()->samples_per_block( _samples_per_block );
-        p->displayWidget()->collection()->scales_per_block( _scales_per_block );
+            p->worker.start();
 
 		a.openadd_project( p );
+
+        p->mainWindow(); // Ensures that an OpenGL context is created
+
+        BOOST_ASSERT( QGLContext::currentContext() );
+
+        // Recreate the cuda context and use OpenGL bindings
+        if (!check_cuda( true ))
+            return -1;
+
+        Tools::ToolFactory &tools = p->tools();
+
+        tools.playback_model.playback_device = _playback_device;
+        tools.playback_model.selection_filename  = _selectionfile;
+        tools.render_model.collection->samples_per_block( _samples_per_block );
+        tools.render_model.collection->scales_per_block( _scales_per_block );
 
 		p.reset(); // a keeps a copy of pProject
 
         int r = a.exec();
 
-        // TODO why doesn't this work? CudaException_CALL_CHECK ( cudaThreadExit() );
+        // When the OpenGL context is destroyed, the Cuda context becomes
+        // invalid. Check that some kind of cleanup took place and that the
+        // cuda context doesn't think it is still valid.
+        // TODO 0 != QGLContext::currentContext() when exiting by an exception
+        // that stops the mainloop.
+        BOOST_ASSERT( 0 == QGLContext::currentContext() );
+        BOOST_ASSERT( CUDA_ERROR_INVALID_CONTEXT == cuCtxGetDevice( 0 ));
+
         return r;
     } catch (const std::exception &x) {
         Sawe::Application::display_fatal_exception(x);
@@ -371,4 +420,3 @@ int main(int argc, char *argv[])
         return -3;
     }
 }
-

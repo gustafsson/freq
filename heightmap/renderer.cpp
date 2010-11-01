@@ -15,9 +15,9 @@
 #include <float.h>
 #include <GlException.h>
 #include <CudaException.h>
-#include "saweui/displaywidget.h"
 #include <glPushContext.h>
 #include <cuda_vector_types_op.h>
+#include "tfr/cwt.h" // TODO remove
 
 #ifdef _MSC_VER
 #include "msc_stdc.h"
@@ -30,7 +30,7 @@ using namespace std;
 
 static bool g_invalidFrustum = true;
 
-Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
+Renderer::Renderer( Collection* collection )
 :   draw_piano(false),
     draw_hz(true),
     camera(0,0,0),
@@ -38,7 +38,6 @@ Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
     color_mode( ColorMode_Rainbow ),
     y_scale( 1 ),
     _collection(collection),
-    _tempToRemove( _tempToRemove ),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -47,6 +46,19 @@ Renderer::Renderer( Collection* collection, DisplayWidget* _tempToRemove )
     _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
     _drawn_blocks(0)
 {
+    // Using glut for drawing fonts, so glutInit must be called.
+#ifdef _WIN32
+    int c=1;
+    char* dummy="dummy\0";
+    glutInit(&c,&dummy); // Once per rendering context on Windows
+#else
+    static int c=0;
+    if (0==c)
+    {
+        glutInit(&c,0); // Once per process on Linux and Mac
+        c = 1;
+    }
+#endif
 }
 
 void Renderer::setSize( unsigned w, unsigned h)
@@ -316,7 +328,7 @@ void Renderer::createColorTexture(unsigned N) {
 }
 
 /**
-  Note: the parameter scaley is used by displaywidget to go seamlessly from 3D to 2D.
+  Note: the parameter scaley is used by RenderView to go seamlessly from 3D to 2D.
   This is different from the 'attribute' Renderer::y_scale which is used to change the
   height of the mountains.
   */
@@ -435,14 +447,26 @@ bool Renderer::renderSpectrogramRef( Reference ref )
         }
 
     } else {
-        // getBlock would try to find something else if the requested block wasn't readily available.
-        // If getBlock fails, we're most likely out of memory. Indicate this silently by not drawing the surface but only a wireframe
+        // getBlock would try to find something else if the requested block
+        // wasn't readily available.
 
-        glBegin(GL_LINE_LOOP );
+        // If getBlock fails, we're most likely out of memory. Indicate this
+        // silently by not drawing the surface but only a wireframe.
+
+        glPushAttribContext attribs;
+
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+        glDisable(GL_COLOR_MATERIAL);
+        glColor4f( 1.0f, 0.0f, 0.0f, 1.0f );
+
+        glBegin(GL_LINES );
             glVertex3f( 0, 0, 0 );
             glVertex3f( 0, 0, 1 );
             glVertex3f( 1, 0, 0 );
             glVertex3f( 1, 0, 1 );
+            glVertex3f( 0.5f, 0, 0.5f );
+            glVertex3f( 0.25f, 0, 0.5f );
         glEnd();
     }
 
@@ -878,8 +902,10 @@ void Renderer::drawAxes( float T )
     glDisable(GL_DEPTH_TEST);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    float min_hz = Tfr::Cwt::Singleton().min_hz();
-    float max_hz = Tfr::Cwt::Singleton().max_hz( _collection->worker->source()->sample_rate() );
+
+    float fs = _collection->worker->source()->sample_rate();
+    float min_hz = Tfr::Cwt::Singleton().get_min_hz( fs );
+    float max_hz = Tfr::Cwt::Singleton().get_max_hz( fs );
     float steplogsize = log(max_hz) - log(min_hz);
     //float steplogsize = log(max_hz-min_hz);
     // loop along all sides

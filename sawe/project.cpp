@@ -1,34 +1,46 @@
 #include "sawe/project.h"
 #include "sawe/application.h"
+#include "adapters/audiofile.h"
+#include "adapters/microphonerecorder.h"
+#include "tools/toolfactory.h"
+#include "ui/mainwindow.h"
+
 #include <QtGui/QMessageBox>
 #include <QtGui/QFileDialog>
-#include "signal/audiofile.h"
-#include "signal/microphonerecorder.h"
-#include "sawe/timelinewidget.h"
 #include <QVBoxLayout>
 #include <sys/stat.h>
+
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <fstream>
 
 using namespace std;
 
 namespace Sawe {
 
 Project::
-        Project( Signal::pSource head_source )
-:   head_source(head_source)
+        Project( Signal::pOperation head_source )
+:   worker( head_source )
 {
 }
+
 
 Project::
         ~Project()
 {
     TaskTimer tt("~Project");
-    if (_mainWindow)
-		displayWidget()->setTimeline( Signal::pSink() );
-    _timelineWidgetCallback.reset();
-    _timelineWidget.reset();
-    _displayWidget.reset();
-    _mainWindow.reset();
 }
+
+
+Tools::ToolFactory& Project::
+        tools()
+{
+    if (!_tools)
+        throw std::logic_error("tools() was called before createMainWindow()");
+
+    return *_tools;
+}
+
 
 pProject Project::
         open(std::string project_file_or_audio_file )
@@ -46,10 +58,10 @@ pProject Project::
     }
 
     if (0 == filename.length()) {
-        string filter = Signal::getFileFormatsQtFilter( false ).c_str();
+        string filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
         filter = "All files (*.sonicawe " + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
-        filter += Signal::getFileFormatsQtFilter( true ).c_str();
+        filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
 
 		QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilemame.length()) {
@@ -80,33 +92,22 @@ pProject Project::
 pProject Project::
         createRecording(int record_device)
 {
-    Signal::pSource s( new Signal::MicrophoneRecorder(record_device) );
+    Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
     return pProject( new Project( s ));
 }
 
 
-void Project::
-        save(std::string /*project_file*/)
-{
-    // TODO implement
-    throw std::runtime_error("TODO implement Project::save");
-}
-
-
-boost::shared_ptr<MainWindow> Project::
+Ui::SaweMainWindow* Project::
         mainWindow()
 {
     createMainWindow();
-    return _mainWindow;
+    return dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
 }
 
 
-DisplayWidget* Project::
-        displayWidget()
-{
-    createMainWindow();
-    return dynamic_cast<DisplayWidget*>(_displayWidget.get());
-}
+Project::
+        Project()
+{}
 
 
 void Project::
@@ -116,58 +117,68 @@ void Project::
         return;
 
     string title = Sawe::Application::version_string();
-    Signal::Audiofile* af;
-    if (0 != (af = dynamic_cast<Signal::Audiofile*>(head_source.get()))) {
+    Adapters::Audiofile* af;
+    if (0 != (af = dynamic_cast<Adapters::Audiofile*>(worker.source().get()))) {
 		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
         title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
     }
 
-    _mainWindow.reset( new MainWindow( title.c_str()));
+    _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));
 
-    Signal::pWorker wk( new Signal::Worker( head_source ) );
-    Heightmap::Collection* sgp( new Heightmap::Collection(wk) );
-    Signal::pSink sg( sgp );
-    _displayWidget.reset( new DisplayWidget( wk, sg ) );
+    _tools.reset( new Tools::ToolFactory(this) );
+}
 
-    _mainWindow->connectLayerWindow( displayWidget() );
-    _mainWindow->setCentralWidget( displayWidget() );
 
-    _mainWindow->setCorner( Qt::BottomLeftCorner, Qt::LeftDockWidgetArea );
-    _mainWindow->setCorner( Qt::BottomRightCorner, Qt::RightDockWidgetArea );
-    _mainWindow->setCorner( Qt::TopLeftCorner, Qt::LeftDockWidgetArea );
-    _mainWindow->setCorner( Qt::TopRightCorner, Qt::RightDockWidgetArea );
-    float L = displayWidget()->worker()->source()->length();
-    L/=2;
-    if (L>5) L = 5;
-    displayWidget()->setPosition( L, 0.5f );
+void Project::
+        save(std::string project_file)
+{
+    if (project_file.empty()) {
+        string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
 
-    {
-        _timelineWidget.reset( new TimelineWidget( _displayWidget ) );
-        _mainWindow->setTimelineWidget( dynamic_cast<QWidget*>(_timelineWidget.get()) );
+        QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
+        if (0 == qfilemame.length()) {
+            // User pressed cancel
+            return;
+        }
+        project_file = qfilemame.toLocal8Bit().data();
     }
 
-    //_displayWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _displayWidget ));
-    _timelineWidgetCallback.reset( new Signal::WorkerCallback( displayWidget()->worker(), _timelineWidget ));
-
-    displayWidget()->setTimeline( _timelineWidget );
-    displayWidget()->show();
-    _mainWindow->hide();
-    _mainWindow->show();
+    try
+    {
+        // todo use
+        std::ofstream ofs(project_file.c_str());
+        boost::archive::xml_oarchive xml(ofs);
+        xml << boost::serialization::make_nvp("Sonicawe", this);
+    }
+    catch (const std::exception& x)
+    {
+        QMessageBox::warning( 0,
+                     QString("Can't save file"),
+                     QString::fromLocal8Bit(x.what()) );
+    }
 }
 
 
 pProject Project::
-        openProject(std::string /*project_file*/)
+        openProject(std::string project_file)
 {
-    // TODO implement
-    throw std::runtime_error("TODO implement Project::openProject");
+    // todo use
+    std::ifstream ifs(project_file.c_str());
+    boost::archive::xml_iarchive xml(ifs);
+
+    Project* new_project;
+    xml >> boost::serialization::make_nvp("SonicaweProject", new_project);
+
+    pProject project( new_project );
+
+    return project;
 }
 
 
 pProject Project::
         openAudio(std::string audio_file)
 {
-    Signal::pSource s( new Signal::Audiofile( audio_file.c_str() ) );
+    Signal::pOperation s( new Adapters::Audiofile( audio_file.c_str() ) );
     return pProject( new Project( s ));
 }
 

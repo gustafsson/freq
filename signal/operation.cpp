@@ -1,69 +1,73 @@
 #include "signal/operation.h"
-#include "signal/filteroperation.h"
+
 
 namespace Signal {
 
-Operation::Operation(pSource source )
+Operation::Operation(pOperation source )
 :   _source( source ),
+    _enabled( true ),
     _invalid_samples()
 {
 }
 
-unsigned Operation::
-sample_rate()
+
+Intervals Operation::
+        zeroed_samples()
 {
-    return _source->sample_rate();
+    pOperation s = source();
+    if (s)
+        return s->zeroed_samples();
+    return Intervals();
 }
 
-long unsigned Operation::
-number_of_samples()
+
+pBuffer Operation::
+        read( const Interval& I )
 {
-    return _source->number_of_samples();
+    if (Intervals(I) - zeroed_samples())
+        return source()->read( I );
+
+    return zeros(I);
 }
 
-SamplesIntervalDescriptor Operation::
-        invalid_samples()
+
+Operation* Operation::
+        affecting_source( const Interval& I )
 {
-    Operation* o = dynamic_cast<Operation*>(_source.get());
+    if ((affected_samples() & I) || !source())
+        return this;
 
-    SamplesIntervalDescriptor r = _invalid_samples;
+    return source()->affecting_source(I);
+}
 
+
+// todo rename fetch_invalid_samples to read_invalid_samples
+Intervals Operation::
+        fetch_invalid_samples()
+{
+    Intervals r = _invalid_samples;
+
+    Operation* o = source().get();
     if (0!=o)
-        r |= o->invalid_samples();
-
-    return r;
-}
-
-pSource Operation::
-        first_source(pSource start)
-{
-    Operation* o = dynamic_cast<Operation*>(start.get());
-    if (o)
-        return first_source(o->source());
-
-    return start;
-}
-
-pSource Operation::
-        fast_source(pSource start)
-{
-    pSource r = start;
-    pSource itr = start;
-
-    while(true)
     {
-        Operation* o = dynamic_cast<Operation*>(itr.get());
-        if (!o)
-            break;
-
-        FilterOperation* f = dynamic_cast<FilterOperation*>(itr.get());
-        if (f)
-            r = f->source();
-
-        itr = o->source();
+        r |= o->fetch_invalid_samples();
     }
 
+    if (_invalid_samples)
+        _invalid_samples = Intervals();
+
     return r;
 }
+
+
+Operation* Operation::
+        root()
+{
+    if (source())
+        return source()->root();
+
+    return this;
+}
+
 
 } // namespace Signal

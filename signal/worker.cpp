@@ -1,8 +1,8 @@
 #include "worker.h"
-#include "samplesintervaldescriptor.h"
-#include "filteroperation.h"
+#include "intervals.h"
+#include "postsink.h"
 
-#include "tfr/cwt.h"
+#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory
 
 #include <QTime>
 #include <QMutexLocker>
@@ -20,7 +20,7 @@ using namespace boost::posix_time;
 namespace Signal {
 
 Worker::
-        Worker(Signal::pSource s)
+        Worker(Signal::pOperation s)
 :   work_chunks(0),
     work_time(0),
     _source(s),
@@ -38,8 +38,10 @@ Worker::
 Worker::
         ~Worker()
 {
+    TaskTimer(__FUNCTION__).suppressTiming();
+
     this->quit();
-    todo_list( SamplesIntervalDescriptor() );
+    todo_list( Intervals() );
 }
 
 ///// OPERATIONS
@@ -48,8 +50,10 @@ Worker::
 bool Worker::
         workOne()
 {
-    if (todo_list().isEmpty())
+    if (todo_list().empty())
         return false;
+
+    // todo_list().print(__FUNCTION__);
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = 19520;
     work_chunks++;
@@ -60,27 +64,19 @@ bool Worker::
 
     ptime startTime = microsec_clock::local_time();
 
-    SamplesIntervalDescriptor::Interval interval;
-    interval = todo_list().getInterval( _samples_per_chunk, center_sample );
+    Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
 
     pBuffer b;
 
     try
     {
-        {
-            stringstream ss;
-            TIME_WORKER TaskTimer tt("Reading source %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
-
-            b = _source->readFixedLength( interval.first, interval.last-interval.first );
-            work_time += b->length();
-            QMutexLocker l(&_todo_lock);
-            _todo_list -= b->getInterval();
-        }
+        CudaException_CHECK_ERROR();
 
         {   stringstream ss;
-            TIME_WORKER TaskTimer tt("Calling callbacks %s", ((std::stringstream&)(ss<<b->getInterval())).str().c_str() );
+            TIME_WORKER TaskTimer tt("Reading source and calling callbacks %s", ((std::stringstream&)(ss<<interval)).str().c_str() );
 
-            callCallbacks( b );
+            b = callCallbacks( interval );
+            work_time += b->length();
         }
 
         CudaException_CHECK_ERROR();
@@ -100,7 +96,7 @@ bool Worker::
     unsigned milliseconds = diff.total_milliseconds();
     if (0==milliseconds) milliseconds=1;
 
-    if (!TESTING_PERFORMANCE) {
+    if (b) if (!TESTING_PERFORMANCE) {
         unsigned minSize = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
         float current_fps = 1000.f/milliseconds;
         if (current_fps < _requested_fps && _samples_per_chunk >= minSize)
@@ -130,36 +126,54 @@ bool Worker::
 ///// PROPERTIES
 
 void Worker::
-        todo_list( Signal::SamplesIntervalDescriptor v )
+        todo_list( const Signal::Intervals& v )
 {
     {
         QMutexLocker l(&_todo_lock);
         _todo_list = v;
     }
-    if (!v.isEmpty())
+
+    // todo_list().print(__FUNCTION__);
+
+    if (v)
         _todo_condition.wakeAll();
 }
 
-Signal::SamplesIntervalDescriptor Worker::
+
+Signal::Intervals Worker::
         todo_list()
 {
     QMutexLocker l(&_todo_lock);
-    Signal::SamplesIntervalDescriptor c = _todo_list;
+    Signal::Intervals c = _todo_list;
     return c;
 }
 
-Signal::pSource Worker::
+
+Signal::pOperation Worker::
         source() const
 {
     return _source;
 }
 
+
 void Worker::
-        source(Signal::pSource value)
+        source(Signal::pOperation value)
 {
     _source = value;
+    _post_sink.invalidate_samples( Intervals::Intervals_ALL );
     // todo_list.clear();
 }
+
+
+void Worker::
+        appendOperation(Signal::pOperation s)
+{
+    s->source( _source );
+    _source = s;
+    _post_sink.invalidate_samples( s->affected_samples() );
+    return;
+}
+
 
 unsigned Worker::
         samples_per_chunk() const
@@ -167,20 +181,19 @@ unsigned Worker::
     return _samples_per_chunk;
 }
 
+
 void Worker::
 		samples_per_chunk_hint(unsigned value)
 {
 	_samples_per_chunk = value;
 }
 
+
 unsigned Worker::
         requested_fps() const
 {
     return _requested_fps;
 }
-
-
-///// PRIVATE
 
 
 void Worker::
@@ -192,6 +205,7 @@ void Worker::
         _requested_fps = value;
     }
 }
+
 
 void Worker::
 		checkForErrors()
@@ -209,13 +223,34 @@ void Worker::
 	}
 }
 
+
+PostSink* Worker::
+        postSink()
+{
+    return &_post_sink;
+}
+
+
+// TODO remove
+/*std::vector<pOperation> Worker::
+        callbacks()
+{
+    QMutexLocker l(&_callbacks_lock);
+    std::vector<pOperation> c = _callbacks;
+    return c;
+}*/
+
+
+///// PRIVATE
+
+
 void Worker::
         run()
 {
 	while (true)
 	{
 		try {
-			while(!todo_list().isEmpty())
+            while (todo_list())
 			{
 				workOne();
 				msleep(1);
@@ -242,39 +277,35 @@ void Worker::
 	}
 }
 
+
 void Worker::
-        addCallback( pSink c )
+        addCallback( pOperation c )
 {
-    QMutexLocker l( &_callbacks_lock );
-    _callbacks.push_back( c );
+    c->source(source());
+
+    std::vector<pOperation> callbacks = postSink()->sinks();
+    callbacks.push_back( c );
+    postSink()->sinks(callbacks);
 }
 
+
 void Worker::
-        removeCallback( pSink c )
+        removeCallback( pOperation c )
 {
+    c->source(pOperation());
+
     QMutexLocker l( &_callbacks_lock );
-    _callbacks.remove( c );
+    std::vector<pOperation> callbacks = postSink()->sinks();
+    callbacks.resize( std::remove( callbacks.begin(), callbacks.end(), c ) - callbacks.begin() );
+    postSink()->sinks(callbacks);
 }
 
-void Worker::
-        callCallbacks( pBuffer b )
+
+pBuffer Worker::
+        callCallbacks( Interval i )
 {
-    list<pSink> worklist;
-    {
-        QMutexLocker l( &_callbacks_lock );
-        worklist = _callbacks;
-    }
-
-    BOOST_FOREACH( pSink c, worklist ) {
-        c->put( b, _source );
-    }
-
-    b->waveform_data->getCpuMemory();
-    b->waveform_data->freeUnused();
-
-    FilterOperation* f = dynamic_cast<FilterOperation*>(_source.get());
-    if (f)
-        f->release_previous_chunk();
+    _post_sink.source( source() );
+    return _post_sink.read( i );
 }
 
 } // namespace Signal

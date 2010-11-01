@@ -1,8 +1,8 @@
 #ifndef SIGNALWORKER_H
 #define SIGNALWORKER_H
 
-#include "signal/sink.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
+#include "signal/postsink.h"
 #include <boost/noncopyable.hpp>
 #include <QMutex>
 #include <QThread>
@@ -21,7 +21,7 @@ multiple threads (and hence one or multiple GPUs). The calling thread
 calls Worker::workOne as a blocking operation performing the following
 steps:
 
-1. Ask pSource Signal::Worker::_source for a pBuffer over some samples.
+1. Ask pOperation Signal::Worker::_source for a pBuffer over some samples.
 2. The pBuffer is sent to the callback(s).
 
 WorkerCallback takes a Worker as constructing argument and can thus add itself
@@ -46,12 +46,12 @@ enough for a responsive UI, yet big enough for efficient computations.
 
 --- Solution ---
 Signal::Source::read is called by an asynchronous worker thread instead.
-Playback is notified via Signal::Sink::put( pBuffer, pSource ) as a callback
+Playback is notified via Signal::Sink::put( pBuffer, pOperation ) as a callback
 function by registering itself as a Signal::Sink in tfr-worker. Tr::Waveform
 is notified by the same callback. Heightmap rendering is also notified by the
 same callback and will have to compute the cwt of the Buffer, unless
-dynamic_cast<FilterOperation*>(source.get())==true in which case Heightmap
-rendering can reuse the cwt previously computed in the FilterOperation.
+dynamic_cast<CwtFilter*>(source.get())==true in which case Heightmap
+rendering can reuse the cwt previously computed in the CwtFilter.
 
 These callbacks are invoked by different threads if there are multiple GPUs
 available, one thread per GPU and CUDA context. The callback may use any CUDA
@@ -75,14 +75,14 @@ created by the GroupOperation.
 1/ GroupOperation: MergeOperation Root
 9 Operation remove section [Rendering]
 8 Operation: Amplitude*0.5
-7 FilterOperation: remove ellips
+7 CwtFilter: remove ellips
 6 GroupOperation: move selection in frequency
   2 Operation: merge extracted selection at new location in time
-  2 FilterOperation: resample at new frequency
-  1 FilterOperation: extract selection
+  2 CwtFilter: resample at new frequency
+  1 CwtFilter: extract selection
 5 GroupOperation: move selection in time
   2 Operation: merge extracted selection at new location in time
-  1 FilterOperation: extract selection
+  1 CwtFilter: extract selection
 4 Operation: remove section
 3 Operation: remove section
 2 GroupOperation: move section
@@ -92,7 +92,7 @@ created by the GroupOperation.
   1 Operation: insert silence
 1 Source: Recording
 
-The pSource for Signal::Worker can be set to any pSource and results are fed to
+The pOperation for Signal::Worker can be set to any pOperation and results are fed to
 the callbacks when they are ready. Note that if the source is changed while
 Playback is active, sound will be heard from the new source at the same
 location in time. Playback will not remember its entire previous tree.
@@ -106,7 +106,7 @@ priority.
 class Worker:public QThread
 {
 public:
-    Worker(pSource source);
+    Worker(pOperation source=pOperation());
     ~Worker();
 
     /**
@@ -133,8 +133,8 @@ public:
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
-    void todo_list( SamplesIntervalDescriptor v );
-    SamplesIntervalDescriptor todo_list();
+    void todo_list( const Intervals& v );
+    Intervals todo_list();
 
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
@@ -146,8 +146,9 @@ public:
     /**
       Get/set the data source for this worker.
       */
-    Signal::pSource     source() const;
-    void                source(Signal::pSource s);
+    Signal::pOperation     source() const;
+    void                source(Signal::pOperation s);
+    void                appendOperation(Signal::pOperation s);
 
     /**
       Get number of samples computed for each iteration.
@@ -170,6 +171,14 @@ public:
 	  */
 	void				checkForErrors();
 
+
+    /**
+      Get all callbacks that data are sent to after each workOne.
+
+      TODO Shouldn't be exposed like this.
+      */
+    PostSink* postSink();
+
 private:
     friend class WorkerCallback;
 
@@ -179,24 +188,27 @@ private:
     virtual void run();
 
     /**
-      A ChunkCompleteCallback adds itself to a cwtqueue.
+      A WorkerCallback adds itself to a Worker.
+    @throws invalid_argument if 'c' is not an instance of Signal::Sink.
       */
-    void addCallback( pSink c );
+    void addCallback( pOperation c );
 
     /**
-      A ChunkCompleteCallback removes itself from a cwtqueue.
+      A WorkerCallback removes itself from a Worker.
+    @throws invalid_argument if 'c' is not an instance of Signal::Sink.
       */
-    void removeCallback( pSink c );
+    void removeCallback( pOperation c );
 
     /**
       Self explanatory.
       */
-    void callCallbacks( pBuffer );
+    pBuffer callCallbacks( Interval i );
 
     /**
       All callbacks in this list are called once for each call of workOne().
       */
-    std::list<pSink> _callbacks;
+    PostSink _post_sink;
+    //std::vector<pOperation> _callbacks;
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
@@ -206,7 +218,7 @@ private:
     /**
       @see source
       */
-    Signal::pSource _source;
+    Signal::pOperation _source;
 
     /**
       Thread safety for _todo_list.
@@ -217,7 +229,7 @@ private:
     /**
       @see todo_list
       */
-    SamplesIntervalDescriptor _todo_list;
+    Intervals _todo_list;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.
@@ -233,20 +245,27 @@ private:
     unsigned _requested_fps;
 
 	/**
-	  If an exception is caught while executing Worker::run, caught_exception.what() is non-zero.
-	  */
-        std::runtime_error _caught_exception;
+      Worker::run is intended to be executed by a separate worker thread. To
+      simplify error handling in the GUI thread exceptions are caught by
+      Worker::run and stored. A client may poll with: caught_exception.what()
+      */
+    std::runtime_error _caught_exception;
 	std::invalid_argument _caught_invalid_argument;
 };
-typedef boost::shared_ptr<Worker> pWorker;
+// typedef boost::shared_ptr<Worker> pWorker;
 
 
 /**
+  TODO this functionality is build upon the purpose of PostSink that is used by Worker. But not in worker itself.
+
+  And also, shouldn't be used like this.
+
+  Hmm, this class is probably not needed at all. But some more refactoring will have to be done.
    @see Worker
   */
 class WorkerCallback: boost::noncopyable {
 public:
-    WorkerCallback( pWorker w, pSink s )
+    WorkerCallback( Worker* w, pOperation s )
         :   _w(w),
             _s(s)
     {
@@ -254,12 +273,12 @@ public:
     }
     ~WorkerCallback( ) { _w->removeCallback( _s ); }
 
-    pWorker worker() { return _w; }
-    pSink sink() { return _s; }
+    Worker* worker() { return _w; }
+    pOperation sink() { return _s; }
 
 private:
-    pWorker _w;
-    pSink _s;
+    Worker* _w;
+    pOperation _s;
 };
 typedef boost::shared_ptr<WorkerCallback> pWorkerCallback;
 

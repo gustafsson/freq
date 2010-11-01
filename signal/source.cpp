@@ -2,166 +2,184 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <demangle.h>
+#include <typeinfo>
+
+#define TIME_READCHECKED
+//#define TIME_READCHECKED if(0)
 
 using namespace std;
 
 namespace Signal {
 
-Buffer::Buffer(Interleaved interleaved)
-:   sample_offset(0),
-    sample_rate(0),
-    _interleaved(interleaved)
-{
-    switch(_interleaved) {
-        case Interleaved_Complex:
-        case Only_Real:
-            break;
-        default:
-            throw invalid_argument( string( __FUNCTION__ ));
-    }
-}
 
-Buffer::Buffer(unsigned first_sample, unsigned numberOfSamples, unsigned FS, Interleaved interleaved)
+Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, unsigned numberOfChannels)
 :   sample_offset(first_sample),
-    sample_rate(FS),
-    _interleaved(interleaved)
+    sample_rate(fs)
 {
-    switch(_interleaved) {
-        case Interleaved_Complex:
-            numberOfSamples*=2;
-            break;
-        case Only_Real:
-            break;
-        default:
-            throw invalid_argument( string( __FUNCTION__ ));
-    }
-
-    waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, 1, 1)));
+    if (numberOfSamples)
+        _waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1)));
 }
 
 
-pBuffer Buffer::getInterleaved(Interleaved value) const
+GpuCpuData<float>* Buffer::
+        waveform_data() const
 {
-    pBuffer chunk( new Buffer( value ));
-    chunk->sample_rate = sample_rate;
-    chunk->sample_offset = sample_offset;
-
-    if (value == _interleaved) {
-        chunk->waveform_data.reset( new GpuCpuData<float>(waveform_data->getCpuMemory(), waveform_data->getNumberOfElements() ) );
-        return chunk;
-    }
-
-    cudaExtent orgSz = waveform_data->getNumberOfElements();
-
-    //makeCudaExtent(m*numberOfSamples, 1, 1)
-    switch(value) {
-        case Only_Real: {
-            cudaExtent realSz = orgSz;
-            realSz.width/=2;
-            chunk->waveform_data.reset( new GpuCpuData<float>(0, realSz ) );
-
-            float *complex = waveform_data->getCpuMemory();
-            float *real = chunk->waveform_data->getCpuMemory();
-
-            for (unsigned z=0; z<realSz.depth; z++)
-                for (unsigned y=0; y<realSz.height; y++)
-                    for (unsigned x=0; x<realSz.width; x++)
-                        real[ x + (y + z*realSz.height)*realSz.width ]
-                                = complex[ 2*x + (y + z*orgSz.height)*orgSz.width ];
-            break;
-        }
-        case Interleaved_Complex: {
-            cudaExtent complexSz = orgSz;
-            complexSz.width*=2;
-            chunk->waveform_data.reset( new GpuCpuData<float>(0, complexSz ) );
-
-            float *complex = chunk->waveform_data->getCpuMemory();
-            float *real = waveform_data->getCpuMemory();
-
-            for (unsigned z=0; z<orgSz.depth; z++)
-                for (unsigned y=0; y<orgSz.height; y++)
-                    for (unsigned x=0; x<orgSz.width; x++)
-                    {
-                        complex[ 2*x + (y + z*complexSz.height)*complexSz.width ]
-                                = real[ x + (y + z*orgSz.height)*orgSz.width ];
-                        complex[ 2*x + 1 + (y + z*complexSz.height)*complexSz.width ] = 0;
-                    }
-            break;
-        }
-        default:
-            throw invalid_argument( string(__FUNCTION__));
-    }
-
-    return chunk;
+    return _waveform_data.get();
 }
+
+
+long unsigned Buffer::
+        number_of_samples() const
+{
+    return _waveform_data->getNumberOfElements().width;
+}
+
+
+void Buffer::
+        release_extra_resources()
+{
+    _waveform_data->getCpuMemory();
+    _waveform_data->freeUnused();
+}
+
+
+float Buffer::
+        start() const
+{
+    return sample_offset/sample_rate;
+}
+
+
+float Buffer::
+        length() const
+{
+    return number_of_samples()/sample_rate;
+}
+
+
+Interval Buffer::
+        getInterval() const
+{
+    return Interval(sample_offset, sample_offset + number_of_samples());
+}
+
 
 Buffer& Buffer::
-        operator|=(const Buffer& rb)
-{
-    pBuffer b2;
-    const Buffer *p = &rb;
-    
-    if (_interleaved != p->interleaved()) {
-        b2 = p->getInterleaved(_interleaved);
-        p = b2.get();
-    }
+        operator|=(const Buffer& b)
+{    
+    Intervals sid = getInterval();
+    sid &= b.getInterval();
 
-    float* c = waveform_data->getCpuMemory();
-
-    SamplesIntervalDescriptor sid = getInterval();
-    sid &= p->getInterval();
-
-    if (sid.isEmpty())
+    if (sid.empty())
         return *this;
 
-    SamplesIntervalDescriptor::Interval i = sid.getInterval(p->number_of_samples());
+    Interval i = sid.getInterval(b.number_of_samples());
 
     unsigned offs_write = i.first - sample_offset;
-    unsigned offs_read = i.first - p->sample_offset;
-    unsigned f = ((_interleaved == Interleaved_Complex) ? 2: 1);
-    memcpy(c+f*offs_write, p->waveform_data->getCpuMemory() + f*offs_read, f*(i.last-i.first)*sizeof(float));
+    unsigned offs_read = i.first - b.sample_offset;
+
+    float* write = waveform_data()->getCpuMemory();
+    float* read = b.waveform_data()->getCpuMemory();
+
+    write+=offs_write;
+    read+=offs_read;
+
+    memcpy(write, read, i.count()*sizeof(float));
 
     return *this;
 }
 
-pBuffer Source::
-        readChecked( unsigned firstSample, unsigned numberOfSamples )
+
+
+Buffer& Buffer::
+        operator+=(const Buffer& b)
 {
-    pBuffer r = read(firstSample, numberOfSamples);
+    Intervals sid = getInterval();
+    sid &= b.getInterval();
+
+    if (sid.empty())
+        return *this;
+
+    Interval i = sid.getInterval(b.number_of_samples());
+
+    unsigned offs_write = i.first - sample_offset;
+    unsigned offs_read = i.first - b.sample_offset;
+    unsigned length = i.count();
+
+    float* write = waveform_data()->getCpuMemory();
+    float* read = b.waveform_data()->getCpuMemory();
+
+    write+=offs_write;
+    read+=offs_read;
+
+    for (unsigned n=0; n<length; n++)
+        write[n] += read[n];
+
+    return *this;
+}
+
+
+pBuffer SourceBase::
+        readChecked( const Interval& I )
+{
+    BOOST_ASSERT( I.valid() );
+
+    pBuffer r = read(I);
 
     // Check if read contains firstSample
-    BOOST_ASSERT(r->sample_offset <= firstSample);
-	BOOST_ASSERT(r->sample_offset + r->number_of_samples() > firstSample);
+    BOOST_ASSERT(r->sample_offset <= I.first);
+    BOOST_ASSERT(r->sample_offset + r->number_of_samples() > I.first);
 
     return r;
 }
 
-pBuffer Source::
-        readFixedLength( unsigned firstSample, unsigned numberOfSamples )
+pBuffer SourceBase::
+        readFixedLength( const Interval& I )
 {
+    std::stringstream ss;
+    TIME_READCHECKED ss << I;
+    TIME_READCHECKED TaskTimer tt("%s.%s %s, count=%lu",
+                  demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
+                  ss.str().c_str(), I.count() );
+
     // Try a simple read
-    pBuffer p = readChecked(firstSample, numberOfSamples );
-    if (p->number_of_samples() == numberOfSamples && p->sample_offset==firstSample)
+    pBuffer p = readChecked( I );
+    if (p->number_of_samples() == I.count() && p->sample_offset==I.first)
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r( new Buffer(firstSample, numberOfSamples, p->sample_rate) );
-    memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
+    pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
 
-    SamplesIntervalDescriptor sid(firstSample, firstSample + numberOfSamples);
+    Intervals sid(I);
 
-    while (!sid.isEmpty())
+    while (sid)
     {
-        (*r) |= *p;
-        sid -= p->getInterval();
+        if (!p)
+            p = readChecked( sid.getInterval() );
 
-        if (!sid.isEmpty()) {
-            SamplesIntervalDescriptor::Interval i = sid.getInterval( SamplesIntervalDescriptor::SampleType_MAX );
-            p = readChecked( i.first, i.last - i.first );
-        }
+        sid -= p->getInterval();
+        (*r) |= *p; // Fill buffer
+        p.reset();
     }
 
     return r;
 }
+
+pBuffer SourceBase::
+        zeros( const Interval& I )
+{
+    BOOST_ASSERT( I.valid() );
+    std::stringstream ss;
+    TIME_READCHECKED ss << I;
+    TIME_READCHECKED TaskTimer tt("%s.%s %s",
+                  demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
+                  ss.str().c_str() );
+
+    pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
+    memset(r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D());
+    return r;
+}
+
 
 } // namespace Signal

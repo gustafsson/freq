@@ -12,8 +12,6 @@
 #include <tmatrix.h>
 #include <GlTexture.h>
 
-class DisplayWidget;
-
 typedef tvector<3,GLdouble> GLvector;
 
 namespace Heightmap {
@@ -26,7 +24,7 @@ public:
         ColorMode_Grayscale = 1
     };
 
-    Renderer( Collection* collection, DisplayWidget* _tempToRemove );
+    Renderer( Collection* collection );
 
     Collection* collection() { return _collection; }
 
@@ -44,7 +42,6 @@ public:
 private:
     std::vector<GLvector> clippedFrustum;
     Collection* _collection;
-    DisplayWidget* _tempToRemove;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;

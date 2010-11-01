@@ -1,129 +1,108 @@
 #ifndef TFRFILTER_H
 #define TFRFILTER_H
 
-#include "sawe/selection.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
+#include "signal/operation.h"
+#include "tfr/transform.h"
 
 #include <list>
 #include <boost/shared_ptr.hpp>
 
-
 namespace Tfr {
-struct Chunk;
 
-class Filter
+
+/**
+  Virtual base class for filters. To create a new filter, use CwtFilter or
+  StftFilter as base class and implement the method 'operator()( Chunk& )'.
+  */
+class Filter: public Signal::Operation
 {
 public:
-    Filter();
-    virtual ~Filter() {}
+    /**
+      TODO verify/implement
+      To simplify logic within Filters they can be put inside an Operation
+      group and get their sources set explicitly.
+      */
+    Filter( Signal::pOperation source = Signal::pOperation() );
 
+
+    /**
+      Checks if the requested Signal::Interval would be affected by this filter
+      (using Signal::Operation::affected_samples()) and if so calls
+      readChunk().
+
+      @remarks If _try_shortcuts is true, readChunk() is always called,
+      regardless of Signal::Operation::affected_samples().
+
+      @overload Operation::read(const Signal::Interval&)
+      */
+    virtual Signal::pBuffer read( const Signal::Interval& I );
+
+
+    /**
+      Filters are applied to chunks that are computed using some transform.
+      transform()/transform(pTransform) gets/sets that transform.
+      */
+    virtual Tfr::pTransform transform() const = 0;
+
+
+    /// @see transform()
+    virtual void transform( Tfr::pTransform m ) = 0;
+
+
+protected:
+    /**
+      Apply the filter to a computed Tfr::Chunk. This is the method that should
+      be implemented to create new filters.
+      */
     virtual void operator()( Chunk& ) = 0;
 
-    /**
-      These samples are definitely set to 0 by the filter.
-      */
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const = 0;
+
+    /// @see ChunkAndInverse::inverse
+    struct ChunkAndInverse
+    {
+        /**
+          The Tfr::Chunk as computed by readChunk(), or source()->readChunk()
+          if transform() == source()->transform().
+          */
+        pChunk chunk;
+
+
+        /**
+          The variable 'inverse' _may_ be set by readChunk if
+          this->source()->readFixed(chunk->getInterval()) is identical to
+          this->_transform->inverse(chunk). In that case the inverse won't be
+          computed again.
+          */
+        Signal::pBuffer inverse;
+    };
+
 
     /**
-      These samples are definitely left as is by the filter.
+      Meant to be used between Filters of the same kind to avoid transforming
+      back and forth multiple times.
       */
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const = 0;
+    virtual ChunkAndInverse readChunk( const Signal::Interval& I ) = 0;
 
-    Signal::SamplesIntervalDescriptor getTouchedSamples( unsigned FS ) const;
 
     /**
-      TODO Define how/when enabled should be used
+      _try_shortcuts is set to false by an implementation if it requires that
+      all chunks be computed, even if the filter won't affect any samples when
+      the inverse is computed. If _try_shortcuts is false,
+      ChunkAndInverse::inverse _may_ contain the original Buffer as it were
+      before the chunk was computed.
+
+      _try_shortcuts defaults to true.
       */
-    bool enabled;
-};
-typedef boost::shared_ptr<Filter> pFilter;
+    bool _try_shortcuts;
 
-class FilterChain: public Filter, public std::list<pFilter>
-{
-public:
-    virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
+
+    /**
+      The Tfr::Transform used for computing chunks and inverse Buffers.
+      */
+    Tfr::pTransform _transform;
 };
 
-class SelectionFilter: public Filter
-{
-public:
-    SelectionFilter( Selection s );
-
-    virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
-
-    Selection s;
-
-private:
-	// Why not copyable?
-    SelectionFilter& operator=(const SelectionFilter& );
-    SelectionFilter(const SelectionFilter& );
-};
-
-class EllipsFilter: public Filter
-{
-public:
-    EllipsFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
-
-    virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
-
-    float _t1, _f1, _t2, _f2;
-	bool _save_inside;
-};
-
-class SquareFilter: public Filter
-{
-public:
-    SquareFilter(float t1, float f1, float t2, float f2, bool save_inside=false);
-
-    virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
-
-    float _t1, _f1, _t2, _f2;
-    bool _save_inside;
-};
-
-class MoveFilter: public Filter
-{
-public:
-    MoveFilter(float df);
-
-    virtual void operator()( Chunk& );
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
-
-    float _df;
-};
-
-class ReassignFilter: public Filter
-{
-public:
-    ReassignFilter();
-
-    virtual void operator()( Chunk& );
-
-    // No zero samples, no untouched samples
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
-};
-
-class TonalizeFilter: public Filter
-{
-public:
-    TonalizeFilter();
-
-    virtual void operator()( Chunk& );
-
-    // No zero samples, no untouched samples
-    virtual Signal::SamplesIntervalDescriptor getZeroSamples( unsigned FS ) const;
-    virtual Signal::SamplesIntervalDescriptor getUntouchedSamples( unsigned FS ) const;
-};
 
 } // namespace Tfr
 

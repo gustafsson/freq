@@ -28,9 +28,16 @@ void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  float out_sample_offset,
                  float in_frequency_offset,
                  float out_frequency_offset,
-                 unsigned in_count,
+                 float out_count,
                  Heightmap::ComplexInfo transformMethod,
                  unsigned cuda_stream);
+
+extern "C"
+void blockResampleChunk( cudaPitchedPtrType<float2> input,
+                 cudaPitchedPtrType<float> output,
+                 uint2 validInputs,
+                 float4 inputRegion,
+                 float4 outputRegion );
 
 extern "C"
 void blockMerge( cudaPitchedPtrType<float> inBlock,

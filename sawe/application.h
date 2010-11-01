@@ -3,7 +3,7 @@
 
 #include <QtGui/QApplication>
 #include "sawe/project.h"
-#include <list>
+#include <set>
 
 namespace Sawe {
 
@@ -24,6 +24,7 @@ public:
 
     void				openadd_project( pProject p );
     int					default_record_device;
+
 public slots:
     pProject slotNew_recording( int record_device = -1 );
     pProject slotOpen_file( std::string project_file_or_audio_file="" );
@@ -33,7 +34,7 @@ private:
     static Application* _app;
     static std::string _fatal_error;
     std::string _version_string;
-    std::list<pProject> _projects;
+    std::set<pProject> _projects;
 };
 
 } // namespace Sawe

@@ -8,36 +8,46 @@ namespace Signal {
 class OperationRemoveSection: public Operation
 {
 public:
-    OperationRemoveSection( pSource source, unsigned firstSample, unsigned numberOfRemovedSamples );
+    OperationRemoveSection( pOperation source, IntervalType firstSample, IntervalType numberOfRemovedSamples );
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
-    virtual long unsigned number_of_samples();
+    virtual pBuffer read( const Interval& I );
+    virtual IntervalType number_of_samples();
+
+    // TODO overload these as well, Intervals need to be translated
+    // virtual Intervals affected_samples() { return Intervals(); }
+    // virtual Intervals invalid_samples();
+    // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 private:
-    unsigned _firstSample, _numberOfRemovedSamples;
+    IntervalType _firstSample, _numberOfRemovedSamples;
 };
 
 class OperationInsertSilence: public Operation
 {
 public:
-    OperationInsertSilence( pSource source, unsigned firstSample, unsigned numberOfSilentSamples );
+    OperationInsertSilence( pOperation source, IntervalType firstSample, IntervalType numberOfSilentSamples );
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
-    virtual long unsigned number_of_samples();
+    virtual pBuffer read( const Interval& I );
+    virtual IntervalType number_of_samples();
+
+    // TODO overload these as well, Intervals need to be translated
+    // virtual Intervals affected_samples() { return Intervals(); }
+    // virtual Intervals invalid_samples();
+    // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 private:
-    unsigned _firstSample, _numberOfSilentSamples;
+    IntervalType _firstSample, _numberOfSilentSamples;
 };
 
 class OperationSuperposition: public Operation
 {
 public:
-    OperationSuperposition( pSource source, pSource source2 );
+    OperationSuperposition( pOperation source, pOperation source2 );
 
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
+    virtual pBuffer read( const Interval& I );
 
-    virtual pSource source2() const { return _source2; }
+    virtual pOperation source2() const { return _source2; }
 
 private:
-    pSource _source2;
+    pOperation _source2;
 };
 
 } // namespace Signal

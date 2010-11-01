@@ -3,6 +3,7 @@
 
 #include "transform.h"
 #include <vector>
+#include "HasSingleton.h"
 
 typedef unsigned int cufftHandle; /* from cufft.h */
 
@@ -14,7 +15,7 @@ namespace Tfr {
   */
 class CufftHandleContext {
 public:
-    CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlan1d( CUFFT_C2C )
+    CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlanMany( CUFFT_C2C )
     ~CufftHandleContext();
 
     cufftHandle operator()( unsigned elems, unsigned batch_size );
@@ -35,13 +36,14 @@ private:
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
 */
-class Fft: public Transform
+class Fft: public Transform, public HasSingleton<Fft, Transform>
 {
 public:
     Fft( /*cudaStream_t stream=0*/ );
     ~Fft();
 
-    pChunk operator()( Signal::pBuffer b ) { return forward(b); }
+    virtual pChunk operator()( Signal::pBuffer b ) { return forward(b); }
+    virtual Signal::pBuffer inverse( pChunk c ) { return backward(c); }
 
     pChunk forward( Signal::pBuffer );
     Signal::pBuffer backward( pChunk );
@@ -61,27 +63,49 @@ private:
 Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 @see Stft::operator()
 */
-class Stft: public Transform
+class Stft: public Transform, public HasSingleton<Stft,Transform>
 {
 public:
     Stft( cudaStream_t stream=0 );
 
-    static Stft& Singleton();
-    static pTransform SingletonP();
-
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
       */
-    pChunk operator()( Signal::pBuffer );
+    virtual pChunk operator()( Signal::pBuffer );
+    virtual Signal::pBuffer inverse( pChunk ) { throw std::logic_error("Not implemented"); }
+
+    unsigned chunk_size() { return _chunk_size; }
+    unsigned set_approximate_chunk_size( unsigned preferred_size );
+
+    /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
+    void set_exact_chunk_size( unsigned chunk_size ) { _chunk_size = chunk_size; }
+
+    static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 60);
+private:
+    cudaStream_t    _stream;
+
+    static std::vector<unsigned> _ok_chunk_sizes;
 
     /**
         Default window size for the windowed fourier transform, or short-time fourier transform, stft
         Default value: chunk_size=1<<11
     */
-    unsigned chunk_size;
+    unsigned _chunk_size;
+};
 
+class StftChunk: public Chunk
+{
+public:
+    StftChunk();
+    void setHalfs( unsigned n );
+    unsigned halfs( );
+    unsigned nActualScales() const;
+
+    virtual unsigned nScales() const;
+
+    virtual Signal::Interval getInterval() const { return getInversedInterval(); }
 private:
-    cudaStream_t    _stream;
+    unsigned halfs_n;
 };
 
 } // namespace Tfr

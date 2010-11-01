@@ -110,7 +110,7 @@ bool Reference::
     if (b.scale-a.scale < _collection->min_sample_size().scale*_collection->scales_per_block() )
         return false;
 
-    Signal::pSource wf = _collection->worker->source();
+    Signal::pOperation wf = _collection->worker->source();
     if (a.time >= wf->length() )
         return false;
 
@@ -125,7 +125,7 @@ bool Reference::
 {
     Position a, b;
     getArea( a, b );
-    Signal::pSource wf = _collection->worker->source();
+    Signal::pOperation wf = _collection->worker->source();
     if (b.time > 2 * wf->length() && b.scale > 2 )
         return true;
     return false;
@@ -137,7 +137,7 @@ unsigned Reference::
     return _collection->samples_per_block();
 }
 
-Signal::SamplesIntervalDescriptor::Interval Reference::
+Signal::Interval Reference::
         getInterval() const
 {
     // Similiar to getArea, but uses 1./sample_rate() instead of
@@ -154,8 +154,8 @@ Signal::SamplesIntervalDescriptor::Interval Reference::
     float startTime = blockSize * block_index[0];
     float endTime = startTime + blockLocalSize;
 
-    unsigned FS = _collection->worker->source()->sample_rate();
-    Signal::SamplesIntervalDescriptor::Interval i = { startTime * FS, endTime * FS };
+    float FS = _collection->worker->source()->sample_rate();
+    Signal::Interval i( startTime * FS, endTime * FS );
 
     //Position a, b;
     //getArea( a, b );
@@ -171,9 +171,9 @@ float Reference::
     return ldexpf(1.f, -log2_samples_size[0]) - 1/(b.time-a.time);
 }
 
-float Reference::
-        nFrequencies() const
+unsigned Reference::
+        frequency_resolution() const
 {
-    return ldexpf(1.0f, -log2_samples_size[1]);
+    return 1 << -log2_samples_size[1];
 }
 } // namespace Heightmap

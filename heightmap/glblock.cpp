@@ -12,6 +12,7 @@
 #include <vbo.h>
 #include <demangle.h>
 #include <GlException.h>
+#include <CudaException.h>
 
 #include "heightmap/collection.h"
 #include "heightmap/renderer.h"
@@ -73,7 +74,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
 
         glAttachShader(prg, shader);
-        glDeleteShader(shader);
+        glDeleteShader(shader); // TODO why delete shader?
     } catch (const std::exception &x) {
 #ifndef __APPLE__
         TIME_COMPILESHADER TaskTimer("Failed, throwing %s", demangle(typeid(x).name()).c_str()).suppressTiming();
@@ -119,7 +120,7 @@ GlBlock( Collection* collection )
 {
     TIME_GLBLOCK TaskTimer tt("GlBlock()");
 
-    //_renderer->setSize(renderer->spectrogram()->samples_per_block(), renderer->spectrogram()->scales_per_block());
+    // TODO read up on OpenGL interop in CUDA 3.0, cudaGLRegisterBufferObject is old, like CUDA 1.0 or something ;)
     cudaGLRegisterBufferObject(*_height);
     cudaGLRegisterBufferObject(*_slope);
 
@@ -165,8 +166,10 @@ GlBlock::
     unmap();
 
     if (_tex_height)
-        glDeleteTextures(1, &_tex_height),
+    {
+        glDeleteTextures(1, &_tex_height);
         _tex_height = 0;
+    }
 
     cudaGLUnregisterBufferObject(*_height);
     cudaGLUnregisterBufferObject(*_slope);
@@ -251,10 +254,10 @@ void GlBlock::
 void GlBlock::
         draw()
 {
+    unmap();
+
     unsigned meshW = _collection->samples_per_block();
     unsigned meshH = _collection->scales_per_block();
-
-    unmap();
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _tex_slope);

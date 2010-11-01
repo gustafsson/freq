@@ -3,6 +3,7 @@
 #include <sstream>
 #include <QtGui/QMessageBox>
 #include <demangle.h>
+#include "ui/mainwindow.h"
 
 using namespace std;
 
@@ -116,15 +117,16 @@ bool Application::
 
     try {
         v = QApplication::notify(receiver,e);
-	} catch (const std::invalid_argument &x) {
-		if (1 == QMessageBox::warning( 0,
-                                         QString("Couldn't complete the requested action"),
-                                         QString("Couldn't complete the requested action.\nDetails on the error follow:\n\n")+
-					 QString::fromLocal8Bit(x.what()),
-                                         "Ignore", "Exit program", QString::null, 0, 0 ))
-		{
-			err = fatal_exception_string(x);
-		}
+    } catch (const std::invalid_argument &x) {
+        const char* what = x.what();
+        if (1 == QMessageBox::warning( 0,
+                                       QString("Couldn't complete the requested action"),
+                                       QString("Couldn't complete the requested action.\nDetails on the error follow:\n\n")+
+                                       QString::fromLocal8Bit(what),
+                                       "Ignore", "Exit program", QString::null, 0, 0 ))
+        {
+            err = fatal_exception_string(x);
+        }
     } catch (const exception &x) {
         err = fatal_exception_string(x);
     } catch (...) {
@@ -144,10 +146,10 @@ bool Application::
 void Application::
 		openadd_project( pProject p )
 {
-    setActiveWindow( 0 );
-    setActiveWindow( p->mainWindow().get() );
     p->mainWindow()->activateWindow();
-    _projects.push_back( p );
+    setActiveWindow( 0 );
+    setActiveWindow( p->mainWindow() );
+    _projects.insert( p );
 }
 
 pProject Application::
@@ -162,6 +164,7 @@ pProject Application::
     pProject p = Project::createRecording( record_device );
     if (p)
 		openadd_project(p);
+
     return p;
 }
 
@@ -177,10 +180,15 @@ pProject Application::
 void Application::
     slotClosed_window( QWidget* w )
 {
-    for (std::list<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
+    // QWidget* w = dynamic_cast<QWidget*>(sender());
+
+    for (std::set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
-        if (w == dynamic_cast<QWidget*>((*i)->mainWindow().get()))
-            i = _projects.erase( i );
+        if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))
+        {
+            _projects.erase( i );
+            i = _projects.begin();
+        }
         else
             i++;
     }

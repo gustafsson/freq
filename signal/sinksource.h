@@ -3,43 +3,90 @@
 
 #include "signal/sink.h"
 #include "signal/source.h"
-#include "signal/samplesintervaldescriptor.h"
+#include "signal/intervals.h"
 #include <vector>
 #include <QMutex>
 
 namespace Signal {
 
-class SinkSource: public Sink, public Source
+/**
+  Both a sink and a source at the same time. Well, yes. Like an iostream.
+
+  You insert data with 'SinkSource::put(pBuffer)', it will be located where the
+  buffer sais the data is. If the SinkSource already contains data for that
+  location it will be overwritten.
+
+  There are two different accept strategies that sais whether put should deny
+  parts of incomming buffers or not. Expected samples are given by
+  'Operation::invalid_samples()'.
+
+  Afterwards, any data put into the SinkSource can be fetched with
+  'SinkSource::read'. If the read Interval starts at a location where no data
+  has been put zeros will be returned for that section. Otherwise 'read' will
+  return a block from its internal cache that includes 'Interal::first' but
+  could otherwise be both much larger and much smaller than the requested
+  length. Use 'Source::readFixedLength' if you need specific samples.
+  */
+class SinkSource: public Sink
 {
 public:
-    enum AcceptStrategy {
-        AcceptStrategy_ACCEPT_ALL,
-        AcceptStrategy_ACCEPT_EXPECTED_ONLY
-    };
+    /// @see SinkSource
+    SinkSource();
 
-    SinkSource( AcceptStrategy a );
-
-    void put( pBuffer );
-    virtual void put( pBuffer b, pSource ) { put (b); }
-    virtual void reset();
-
-    virtual pBuffer read( unsigned firstSample, unsigned numberOfSamples );
     /**
-      sample rate is defined as (unsigned)-1 if _cache is empty.
+      Insert data into SinkSource
       */
-    virtual unsigned sample_rate();
+    void put( pBuffer b );
+
+
+    /**
+      Samples in 'b' will only be accepted if they are present in 'expected'.
+      */
+    void putExpectedSamples( pBuffer b, const Intervals& expected );
+
+
+    /// Clear cache
+    void reset();
+
+    /**
+      Extract an interval from cache, only guaranteed to return a buffer
+      containung I.first.
+      */
+    virtual pBuffer read( const Interval& I );
+
+    /**
+      'sample_rate' is defined as 0 if _cache is empty.
+      If buffers with different are attempted to be 'put' then 'put' will throw
+      an invalid_argument exception. So all buffers in the cache are guaranteed
+      to have the same sample rate as the buffer that was first inserted with
+      'put'.
+      */
+    virtual float sample_rate();
+
+    /**
+      Total number of sampels in cached interval, equal to
+        'samplesDesc().coveredInterval().count'.
+      */
     virtual long unsigned number_of_samples();
 
+    /// The first buffer in the cache, or pBuffer() if cache is empty
     pBuffer first_buffer();
-    bool empty();
-    unsigned size();
 
-    SamplesIntervalDescriptor samplesDesc();
+    /// If cache is empty
+    bool empty();
+
+    /// Get what samples that are described in the containing buffer
+    Intervals samplesDesc();
+
+    /// @see Operation::fetch_invalid_samples()
+    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
 private:
     QMutex _cache_mutex;
-    std::vector<pBuffer> _cache;
-    AcceptStrategy _acceptStrategy;
+    std::vector<pBuffer> _cache; // todo use set instead
+
+    virtual pOperation source() const { return pOperation(); }
+    virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
 
     void selfmerge();
     void merge( pBuffer );

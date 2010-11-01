@@ -2,6 +2,7 @@
 #define TFRFREQAXIS_H
 
 #include <cuda_runtime.h> // defines __device__ and __host__
+#include <math.h>
 
 namespace Tfr {
 
@@ -22,62 +23,77 @@ class FreqAxis
 public:
     __device__ __host__ float getFrequency( unsigned fi ) const
     {
+        return getFrequency( (float)fi );
+    }
+
+
+    __device__ __host__ float getFrequency( float scalar ) const
+    {
         switch (axis_scale)
         {
         case AxisScale_Linear:
-            return f_min + fi*f_step;
+            return f_min + scalar*f_step;
 
         case AxisScale_Logarithmic:
-            return f_min*exp( fi*logf_step );
+            return f_min*exp( scalar*log2f_step );
 
         default:
             return 0.f;
         }
     }
 
+
     __device__ __host__ unsigned getFrequencyIndex( float f ) const
     {
-        unsigned fi = 0;
+        float scalar = getFrequencyScalar( f );
+        return (unsigned)(scalar + .5f);
+    }
+
+
+    __device__ __host__ float getFrequencyScalar( float f ) const
+    {
+        float fi = 0;
 
         switch(axis_scale)
         {
         case AxisScale_Linear:
             if (f > f_min)
             {
-                fi = (unsigned)((f - f_min)/f_step +.5f);
-                if (fi >= nscales) fi = nscales-1;
+                fi = (f - f_min)/f_step;
             }
             break;
 
         case AxisScale_Logarithmic:
             {
-                float log_f = log(f/f_min);
+                float log2_f = log2(f/f_min);
 
-                if (log_f > 1)
+                if (log2_f > 1)
                 {
-                    fi = (unsigned)(log_f/logf_step +.5f);
-                    if (fi >= nscales) fi = nscales-1;
+                    fi = log2_f/log2f_step;
                 }
             }
             break;
         }
 
+        if (fi > max_frequency_scalar) fi = max_frequency_scalar;
         return fi;
     }
 
-private:
-    friend class Chunk;
+//private:
+//    friend class Chunk;
+//    void FreqAxis() {} // Private default constructor. However, public default
+//                       // copy constructor and assignment operator
 
     AxisScale axis_scale;
 
     float f_min;
 
     union {
-        float logf_step;
+        float log2f_step;
         float f_step;
     };
 
-    unsigned nscales;
+    float max_frequency_scalar;
 };
 
 } // namespace Tfr

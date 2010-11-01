@@ -6,34 +6,43 @@ namespace Signal {
     // OperationRemoveSection ///////////////////////////////////////////////////////////
 
 OperationRemoveSection::
-        OperationRemoveSection( pSource source, unsigned firstSample, unsigned numberOfRemovedSamples )
+        OperationRemoveSection( pOperation source, IntervalType firstSample, IntervalType numberOfRemovedSamples )
 :   Operation( source ),
     _firstSample( firstSample ),
     _numberOfRemovedSamples( numberOfRemovedSamples )
 {}
 
 pBuffer OperationRemoveSection::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
+    IntervalType firstSample = I.first;
+    IntervalType numberOfSamples = I.count();
+
     if (firstSample + numberOfSamples <= _firstSample )
     {
-        return _source->read( firstSample, numberOfSamples );
+        return _source->read( I );
     }
 
     if (firstSample < _firstSample)
     {
-        return _source->read( firstSample, _firstSample - firstSample );
+        Interval I2(firstSample,_firstSample);
+
+        return _source->read( I2 );
     }
 
-    pBuffer b = _source->read( firstSample + _numberOfRemovedSamples, numberOfSamples );
+    Interval I2(0,0);
+    I2.first = firstSample + _numberOfRemovedSamples;
+    I2.last = I2.first + numberOfSamples;
+
+    pBuffer b = _source->read( I2 );
     b->sample_offset -= _numberOfRemovedSamples;
     return b;
 }
 
-long unsigned OperationRemoveSection::
+IntervalType OperationRemoveSection::
         number_of_samples()
 {
-    unsigned N = Operation::number_of_samples();
+    IntervalType N = Operation::number_of_samples();
     if (N<_numberOfRemovedSamples)
         return 0;
     return N - _numberOfRemovedSamples;
@@ -42,7 +51,7 @@ long unsigned OperationRemoveSection::
     // OperationInsertSilence ///////////////////////////////////////////////////////////
 
 OperationInsertSilence::
-        OperationInsertSilence( pSource source, unsigned firstSample, unsigned numberOfSilentSamples )
+        OperationInsertSilence( pOperation source, IntervalType firstSample, IntervalType numberOfSilentSamples )
 :   Operation( source ),
     _firstSample( firstSample ),
     _numberOfSilentSamples( numberOfSilentSamples )
@@ -50,34 +59,33 @@ OperationInsertSilence::
 
 
 pBuffer OperationInsertSilence::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
+    IntervalType firstSample = I.first;
+    IntervalType numberOfSamples = I.count();
+
     if (firstSample + numberOfSamples <= _firstSample )
-        return _source->read( firstSample, numberOfSamples );
+        return _source->read( I );
 
     if (firstSample < _firstSample)
-        return _source->read( firstSample, _firstSample - firstSample );
+        return _source->read( Interval(I.first, _firstSample - I.first) );
 
     if (firstSample >= _firstSample +  _numberOfSilentSamples) {
-        pBuffer b = _source->read( firstSample - _numberOfSilentSamples, numberOfSamples );
+        pBuffer b = _source->read(
+                Interval( I.first - _numberOfSilentSamples, I.first - _numberOfSilentSamples + numberOfSamples ));
         b->sample_offset += _numberOfSilentSamples;
         return b;
     }
 
     // Create silence
-    unsigned length = _numberOfSilentSamples - (firstSample - _firstSample);
+    IntervalType length = _numberOfSilentSamples - (firstSample - _firstSample);
     if ( length > numberOfSamples )
         length = numberOfSamples;
 
-    pBuffer r(new Buffer );
-    r->sample_offset = firstSample;
-    r->sample_rate = _source->sample_rate();
-    r->waveform_data.reset( new GpuCpuData<float>( 0, make_cudaExtent(length,1,1) ));
-    memset(r->waveform_data->getCpuMemory(), 0, r->waveform_data->getSizeInBytes1D());
-    return r;
+    return zeros(Signal::Interval(firstSample, firstSample+length));
 }
 
-long unsigned OperationInsertSilence::
+IntervalType OperationInsertSilence::
         number_of_samples()
 {
     return Operation::number_of_samples() + _numberOfSilentSamples;
@@ -86,7 +94,7 @@ long unsigned OperationInsertSilence::
 // OperationSuperposition ///////////////////////////////////////////////////////////
 
 OperationSuperposition::
-        OperationSuperposition( pSource source, pSource source2 )
+        OperationSuperposition( pOperation source, pOperation source2 )
 :   Operation( source ),
     _source2( source2 )
 {
@@ -95,25 +103,26 @@ OperationSuperposition::
 }
 
 pBuffer OperationSuperposition::
-        read( unsigned firstSample, unsigned numberOfSamples )
+        read( const Interval& I )
 {
-    pBuffer a = _source->read(firstSample, numberOfSamples );
-    pBuffer b = _source2->read(firstSample, numberOfSamples );
-    if (a->interleaved()!=Buffer::Only_Real) a = a->getInterleaved(Buffer::Only_Real);
-    if (b->interleaved()!=Buffer::Only_Real) b = b->getInterleaved(Buffer::Only_Real);
+    pBuffer a = _source->read( I );
+    pBuffer b = _source2->read( I );
 
-    pBuffer r(new Buffer);
-    r->sample_rate = sample_rate();
-    r->sample_offset = std::max( a->sample_offset, b->sample_offset );
-    unsigned l = std::min( a->sample_offset + a->number_of_samples(), b->sample_offset + b->number_of_samples() );
-    l -= r->sample_offset;
+    IntervalType offset = std::max( (IntervalType)a->sample_offset, (IntervalType)b->sample_offset );
+    IntervalType length = std::min(
+            (IntervalType)a->sample_offset + a->number_of_samples(),
+            (IntervalType)b->sample_offset + b->number_of_samples() );
+    length -= offset;
 
-    r->waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent(l,1,1)));
-    float *pa = a->waveform_data->getCpuMemory();
-    float *pb = b->waveform_data->getCpuMemory();
-    float *pr = r->waveform_data->getCpuMemory();
-    pa += r->sample_offset-a->sample_offset;
-    pb += r->sample_offset-b->sample_offset;
+    pBuffer r(new Buffer( offset, length, sample_rate() ));
+
+    float *pa = a->waveform_data()->getCpuMemory();
+    float *pb = b->waveform_data()->getCpuMemory();
+    float *pr = r->waveform_data()->getCpuMemory();
+
+    pa += (IntervalType)(r->sample_offset - a->sample_offset);
+    pb += (IntervalType)(r->sample_offset - b->sample_offset);
+
     for (unsigned i=0; i<r->number_of_samples(); i++)
         pr[i] = pa[i] + pb[i];
 

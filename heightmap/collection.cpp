@@ -1,8 +1,12 @@
 #include "collection.h"
 #include "slope.cu.h"
 #include "block.cu.h"
-#include "signal/filteroperation.h"
+#include "blockfilter.h"
+
+#include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
+#include "signal/postsink.h"
+
 #include <boost/foreach.hpp>
 #include <InvokeOnDestruction.hpp>
 #include <CudaException.h>
@@ -10,6 +14,8 @@
 #include <string>
 #include <QThread>
 #include <neat_math.h>
+#include <debugmacros.h>
+#include <Statistics.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -17,8 +23,10 @@
 
 //#define TIME_COLLECTION
 #define TIME_COLLECTION if(0)
-
+// todo remove?
 #define MAX_REDUNDANT_SIZE 32
+
+using namespace Signal;
 
 namespace Heightmap {
 
@@ -26,286 +34,53 @@ namespace Heightmap {
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-        Collection( Signal::pWorker worker )
+        Collection( Worker* worker )
 :   worker( worker ),
     _samples_per_block( 1<<7 ),
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _frame_counter(0),
-    _complexInfo(ComplexInfo_Amplitude_Weighted)
+    _postsink( new PostSink )
 {
-    chunk_transform( Tfr::Cwt::SingletonP() );
+
+    TaskTimer tt("%s = %p", __FUNCTION__, this);
+    OSVAL( tt.getStream(), _postsink->fetch_invalid_samples() ); // todo remove
+
+    // Updated as soon as the first chunk is received
+    update_sample_size( 0 );
+
+    std::vector<pOperation> sinks;
+    sinks.push_back( pOperation(new CwtToBlock(this)));
+    ((PostSink*)_postsink.get())->sinks( sinks );
+
+    _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
+    _display_scale.f_min = 20;
+    _display_scale.max_frequency_scalar = 1;
+    _display_scale.log2f_step = log2(22050)-log2(20);
 }
 
 
 Collection::
         ~Collection()
 {
-    _updates_condition.wakeAll();
-    QMutexLocker l(&_updates_mutex);
-    _updates.clear();
+    TaskTimer tt("%s = %p", __FUNCTION__, this);
 }
 
 
 void Collection::
         reset()
 {
-	{	QMutexLocker l(&_cache_mutex);
-		_cache.clear();
-		_recent.clear();
-	}
-	{	QMutexLocker l(&_updates_mutex);
-		_updates.clear();
-	}
+    QMutexLocker l(&_cache_mutex);
+    _cache.clear();
+    _recent.clear();
 }
 
 
-void Collection::
-        put( Signal::pBuffer b, Signal::pSource s)
+bool Collection::
+        empty()
 {
-    Signal::SamplesIntervalDescriptor expected = expected_samples();
-    if ( (expected_samples() & b->getInterval()).isEmpty() ) {
-        TIME_COLLECTION TaskTimer("Collection::put received non requested block [%u, %u]", b->getInterval().first, b->getInterval().last);
-        return;
-    }
-
-    TIME_COLLECTION TaskTimer tt("Collection::put [%u,%u]", b->sample_offset, b->sample_offset+b->number_of_samples());
-
-    // Get a chunk for this block
-    // The chunk might be smaller (chunk->n_valid_samples < b->number_of_samples)
-    // in which case the next call to expected_samples() will return the missing
-    // samples.
-    Tfr::pChunk chunk = getChunk( b, s );
-
-    if ( (expected_samples() & chunk->getInterval()).isEmpty() ) {
-        TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk->getInterval().first, chunk->getInterval().last);
-        return;
-    }
-
-    // TODO these are filter operations, move them into filters
-    switch(0){
-        case 1:
-        {
-            float2* p     = chunk->transform_data->getCpuMemory();
-
-            std::vector<float2> q[] = {
-                std::vector<float2>(chunk->nSamples()),
-                std::vector<float2>(chunk->nSamples())
-            };
-
-            unsigned bytes_per_row = sizeof(float2)*chunk->nSamples();
-
-            float2
-                    *prev_row = &q[0][0],
-                    *this_row = &q[1][0];
-
-            for (unsigned y=1; y<chunk->nScales()-1; y++)
-            {
-                float2* t = prev_row;
-                prev_row = this_row;
-                this_row = t;
-
-                for (unsigned x=0; x<chunk->nSamples(); x++)
-                {
-                    float2 a = p[(y-1)*chunk->nSamples() + x];
-                    float2 b = p[(y+0)*chunk->nSamples() + x];
-                    float2 c = p[(y+1)*chunk->nSamples() + x];
-                    float A = a.x*a.x + a.y*a.y;
-                    float B = b.x*b.x + b.y*b.y;
-                    float C = c.x*c.x + c.y*c.y;
-                    this_row[x] = (B > A  &&  B > C) ? b : make_float2(0,0);
-                }
-
-                if (1<y)
-                    memcpy( p + (y-1)*chunk->nSamples(), prev_row, bytes_per_row );
-            }
-            memcpy( p + (chunk->nScales()-2)*chunk->nSamples(),
-                    this_row,
-                    bytes_per_row );
-            memset( p + (chunk->nScales()-1)*chunk->nSamples(), 0, bytes_per_row );
-            memset( p                                         , 0, bytes_per_row );
-
-            break;
-        }
-        case 2:
-        if (1) {
-            TaskTimer tt("Limited reassign");
-            float2* p = chunk->transform_data->getCpuMemory();
-
-            unsigned
-                    block_size_x = 32,
-                    block_size_y = 16,
-                    max_dist = block_size_y/2, // Meaning nothing is allowed to move more than 8 rows away from its origin
-                    // Q: What action should be taken if it wants to move further? Discard, don't move or clamp?
-                    W = chunk->nSamples(),
-                    H = chunk->nScales();
-
-            std::vector<float2> q = std::vector<float2>(block_size_x*block_size_y);
-            std::vector<float2> r = std::vector<float2>(block_size_x);
-            std::vector<float2> r2 = std::vector<float2>(H);
-
-            unsigned bytes_per_row = block_size_x*sizeof(float2);
-
-            memset(&q[0], 0, bytes_per_row*block_size_y);
-
-            unsigned c = 0;
-            unsigned long long d = 0;
-            for (unsigned bx=0; bx<W/block_size_x; bx++)
-            {
-                for (unsigned y=0; y<H; y++)
-                {
-                    if (max_dist <= y)
-                    {
-                        unsigned finished_row = (y + max_dist) % block_size_y;
-                        memcpy(p + (y-max_dist)*W + bx*block_size_x, &q[finished_row * block_size_x], bytes_per_row);
-                        memset(&q[finished_row * block_size_x], 0, bytes_per_row);
-                    }
-
-                    r2[y] = r[block_size_x-1];
-                    memcpy(&r[0], p + y*W + bx*block_size_x, bytes_per_row);
-
-                    for (unsigned x=0; x<block_size_x; x++)
-                    {
-                        float2 a;
-                        if (0==x && 0==bx)
-                            continue;
-                        else if (0==x)
-                            a = r2[y];
-                        else
-                            a = r[x - 1];
-
-                        float2 b = r[x];
-                        float pa = atan2(a.y, a.x);
-                        float pb = atan2(b.y, b.x);
-                        float FS = s->sample_rate();
-                        float f = ((pb-pa)*FS)/(2*M_PI);
-                        unsigned i = chunk->freqAxis().getFrequencyIndex( fabsf(f) );
-
-                        if (i >= H)
-                            i = H-1;
-
-                        if ((i > y ? i-y : y-i) >= max_dist )
-                        {
-                            c ++;
-                            d += (i > y ? i-y : y-i);
-
-                            // discard
-                            //continue;
-
-                            // clamp
-                            //if (i>y)
-                            //    i = y + max_dist - 1;
-                            //else
-                            //    i = y - max_dist + 1;
-
-                            // don't move
-                            i = y;
-                        }
-
-
-                        q[ (i % block_size_y) * block_size_x + x].x += a.x;
-                        q[ (i % block_size_y) * block_size_x + x].y += a.y;
-                    }
-                }
-
-                for (unsigned y=H; y<H+max_dist; y++)
-                {
-                    unsigned finished_row = (y + max_dist) % block_size_y;
-                    memcpy(p + (y-max_dist)*W + bx*block_size_x, &q[finished_row * block_size_x], bytes_per_row);
-                    memset(&q[finished_row * block_size_x], 0, bytes_per_row);
-                }
-            }
-
-            tt.info("Failed reassignments: %u, %.3g%% of all elements. Average distance: %.3g", c, c*100.f/(W*H), ((double)d)/c);
-
-            break;
-        }
-        if (0) {
-            TaskTimer tt("Naive reassign");
-            float2* p = chunk->transform_data->getCpuMemory();
-
-            unsigned
-                    W = chunk->nSamples(),
-                    H = chunk->nScales();
-
-            std::vector<float2> q[] = {
-                std::vector<float2>(H),
-                std::vector<float2>(H)};
-
-            unsigned c = 0;
-            unsigned long long d = 0;
-
-            float2
-                    *prev_q = &q[0][0],
-                    *this_q = &q[0][0];
-
-            memset(&this_q[0], 0, H*sizeof(float2));
-
-            for (unsigned x=1; x<W; x++)
-            {
-
-                float2 *T = prev_q;
-                prev_q = this_q;
-                this_q = T;
-
-                memset(&this_q[0], 0, H*sizeof(float2));
-
-                for (unsigned y=0; y<H; y++)
-                {
-                    float2 a = p[y*W + x - 1];
-                    float2 b = p[y*W + x];
-                    float pa = atan2(a.y, a.x);
-                    float pb = atan2(b.y, b.x);
-                    float FS = s->sample_rate();
-                    float f = ((pb-pa)*FS)/(2*M_PI);
-                    unsigned i = chunk->freqAxis().getFrequencyIndex( fabsf(f) );
-
-                    this_q[ i ].x += a.x;
-                    this_q[ i ].y += a.y;
-                }
-
-                for (unsigned y=0; y<H; y++)
-                    p[y*W + x - 1] = prev_q[y];
-            }
-            for (unsigned y=0; y<H; y++)
-                p[y*W + W - 1] = this_q[y];
-
-            tt.info("Failed reassignments: %u, %.3g%% of all elements. Average distance: %.3g", c, c*100.f/(W*H), ((double)d)/c);
-
-            break;
-        }
-    default:
-            break;
-    }
-
-    if (_constructor_thread.isSameThread())
-    {
-        _updates.push_back( chunk );
-        applyUpdates();
-    }
-    else
-    {
-        Tfr::pChunk cpuChunk(new Tfr::Chunk );
-        cpuChunk->min_hz = chunk->min_hz;
-        cpuChunk->max_hz = chunk->max_hz;
-        cpuChunk->chunk_offset = chunk->chunk_offset;
-        cpuChunk->sample_rate = chunk->sample_rate;
-        cpuChunk->first_valid_sample = chunk->first_valid_sample;
-        cpuChunk->n_valid_samples = chunk->n_valid_samples;
-        cpuChunk->transform_data.reset( new GpuCpuData<float2>(0, chunk->transform_data->getNumberOfElements()));
-        cudaMemcpy( cpuChunk->transform_data->getCpuMemory(),
-                    chunk->transform_data->getCudaGlobal().ptr(),
-                    cpuChunk->transform_data->getSizeInBytes1D(),
-                    cudaMemcpyDeviceToHost );
-
-        {
-            QMutexLocker l(&_updates_mutex);
-            _updates.push_back( cpuChunk );
-            cpuChunk.reset(); // release cpuChunk before applyUpdate have move data to GPU
-	
-			_updates_condition.wait(&_updates_mutex);
-		}
-    }
+    QMutexLocker l(&_cache_mutex);
+    return _cache.empty() && _recent.empty();
 }
 
 
@@ -318,6 +93,7 @@ void Collection::
     _scales_per_block=v;
 }
 
+
 void Collection::
         samples_per_block(unsigned v)
 {
@@ -327,45 +103,63 @@ void Collection::
     _samples_per_block=v;
 }
 
+
 unsigned Collection::
         next_frame()
 {
+    QMutexLocker l(&_cache_mutex);
+
+    // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
+
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
 
-	{   QMutexLocker l(&_cache_mutex);
-		BOOST_FOREACH(recent_t::value_type& b, _recent)
-		{
-			if (b->frame_number_last_used != _frame_counter)
-				break;
-			b->glblock->unmap();
-		}
-	}
+    BOOST_FOREACH(recent_t::value_type& b, _recent)
+    {
+        if (b->frame_number_last_used != _frame_counter)
+            break;
+        b->glblock->unmap();
+    }
 
 	_frame_counter++;
 
-    applyUpdates();
     return t;
 }
 
-Position Collection::
-        min_sample_size()
+
+void Collection::
+        update_sample_size( Tfr::Chunk* chunk )
 {
-    unsigned FS = worker->source()->sample_rate();
-    return Position( 1.f/FS,
-                     0.01f/Tfr::Cwt::Singleton().nScales( FS ) );
+    pOperation wf = worker->source();
+
+    if (chunk)
+    {
+        Tfr::FreqAxis fx = chunk->freqAxis();
+
+        _min_sample_size.time = std::min( _min_sample_size.time, 1.f / chunk->sample_rate );
+
+        // Assuming frequency resolution (in Hz, not log Hz) is the highest near 0.
+        unsigned bottom_index = fx.getFrequencyIndex( _display_scale.f_min );
+        float min_delta_hz = fx.getFrequency( bottom_index + 1) - fx.getFrequency( bottom_index );
+        _min_sample_size.scale = std::min(
+                _min_sample_size.scale,
+                _display_scale.getFrequencyScalar( _display_scale.f_min  + min_delta_hz ) );
+        // Old naive one: _min_sample_size.scale = 1.f/Tfr::Cwt::Singleton().nScales( FS ) );
+    }
+    else
+    {
+        _min_sample_size.time = 1.f/_samples_per_block;
+        _min_sample_size.scale = 1.f/_scales_per_block;
+    }
+
+    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);;
+    _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
+
+    // Allow for some bicubic mesh interpolation when zooming in
+    _min_sample_size.scale *= 0.25;
+    _min_sample_size.time *= 0.25;
 }
 
-Position Collection::
-        max_sample_size()
-{
-    Signal::pSource wf = worker->source();
-    float length = wf->length();
-    Position minima = min_sample_size();
-
-    return Position( std::max(minima.time, 2.f*length/_samples_per_block),
-                     std::max(minima.scale, 1.f/_scales_per_block) );
-}
 
 /*
   Canonical implementation of findReference
@@ -391,15 +185,15 @@ Reference Collection::
     Reference r(this);
 
     // make sure the reference becomes valid
-    Signal::pSource wf = worker->source();
+    pOperation wf = worker->source();
     float length = wf->length();
 
     // Validate requested sampleSize
     sampleSize.time = fabs(sampleSize.time);
     sampleSize.scale = fabs(sampleSize.scale);
 
-    Position minSampleSize = min_sample_size();
-    Position maxSampleSize = max_sample_size();
+    Position minSampleSize = _min_sample_size;
+    Position maxSampleSize = _max_sample_size;
     if (sampleSize.time > maxSampleSize.time)
         sampleSize.time = maxSampleSize.time;
     if (sampleSize.scale > maxSampleSize.scale)
@@ -457,13 +251,23 @@ pBlock Collection::
 
     if (0 == block.get()) {
         block = createBlock( ref );
+    } else {
+        if (block->new_data_available) {
+            QMutexLocker l(&block->cpu_copy_mutex);
+            cudaMemcpy(block->glblock->height()->data->getCudaGlobal().ptr(),
+                       block->cpu_copy->getCpuMemory(), block->cpu_copy->getNumberOfElements1D(), cudaMemcpyHostToDevice);
+            block->new_data_available = false;
+            computeSlope(block, 0);
+        }
     }
 
     if (0 != block.get())
     {
-        Signal::SamplesIntervalDescriptor refInt = block->ref.getInterval();
-        if (!(refInt-=block->valid_samples).isEmpty())
+        Intervals refInt = block->ref.getInterval();
+        if (!(refInt-=block->valid_samples).empty())
             _unfinished_count++;
+
+        QMutexLocker l(&_cache_mutex);
 
         for( recent_t::iterator i = _recent.begin(); i!=_recent.end(); ++i )
             if ((*i)->ref == ref ) {
@@ -479,49 +283,25 @@ pBlock Collection::
     return block;
 }
 
-
-void Collection::
-        complexInfo(ComplexInfo info)
+std::vector<pBlock> Collection::
+        getIntersectingBlocks( Interval I )
 {
-    _complexInfo = info;
-}
+    std::vector<pBlock> r;
 
+    QMutexLocker l(&_cache_mutex);
 
-ComplexInfo Collection::
-        complexInfo()
-{
-    return _complexInfo;
-}
-
-
-void Collection::
-        chunk_filter( Tfr::pFilter filter )
-{
-    // even if (filter == _filter) then do all this, some parameter could have been changed
-    // that makes the client want to reset everything
-
-    ChunkSink::chunk_filter( filter );
-
-    add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
-}
-
-
-void Collection::
-        chunk_transform( Tfr::pTransform transform )
-{
-    // even if (transform == _transform) then do all this, some parameter could have been changed
-    // that makes the client want to reset everything
-
-    ChunkSink::chunk_transform( transform );
-
-    // Remove this special case, it should be equally fast without this and more responsive
-    if ( 0 != dynamic_cast<Tfr::Stft*>(transform.get()) )
+    BOOST_FOREACH( cache_t::value_type& c, _cache )
     {
-        QMutexLocker l(&_cache_mutex);
-        _cache.clear();
+        pBlock& pb = c.second;
+        // This check is done in mergeBlock as well, but do it here first
+        // for a hopefully more local and thus faster loop.
+        if (Intervals(I) & pb->ref.getInterval())
+        {
+            r.push_back(pb);
+        }
     }
 
-    add_expected_samples( Signal::SamplesIntervalDescriptor::SamplesIntervalDescriptor_ALL );
+    return r;
 }
 
 
@@ -547,7 +327,7 @@ void Collection::
 
 
 void Collection::
-        add_expected_samples( const Signal::SamplesIntervalDescriptor& sid )
+        invalidate_samples( const Intervals& sid )
 {
     TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
 
@@ -556,10 +336,10 @@ void Collection::
 		c.second->valid_samples -= sid;
 }
 
-Signal::SamplesIntervalDescriptor Collection::
-        expected_samples()
+Intervals Collection::
+        invalid_samples()
 {
-    Signal::SamplesIntervalDescriptor r;
+    Intervals r;
 
 	QMutexLocker l(&_cache_mutex);
 
@@ -567,7 +347,7 @@ Signal::SamplesIntervalDescriptor Collection::
 	{
         if (_frame_counter == b->frame_number_last_used)
         {
-            Signal::SamplesIntervalDescriptor i ( b->ref.getInterval() );
+            Intervals i ( b->ref.getInterval() );
 
             i -= b->valid_samples;
             r |= i;
@@ -611,6 +391,9 @@ pBlock Collection::
           application can still continue and use filters.
           */
         TaskTimer("Collection::attempt swallowed CudaException.\n%s", x.what()).suppressTiming();
+
+        QMutexLocker l(&_cache_mutex);
+        _cache.clear();
     }
     catch (const GlException& x)
     {
@@ -629,6 +412,7 @@ pBlock Collection::
     ref.getArea(a,b);
     TIME_COLLECTION TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
     // Try to allocate a new block
+
     pBlock block = attempt( ref );
 
 	QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
@@ -662,24 +446,15 @@ pBlock Collection::
             {
                 TaskTimer tt(TaskTimer::LogVerbose, "stft");
                 try {
-                    prepareFillStft( block );
+                    fillBlock( block );
                     CudaException_CHECK_ERROR();
                 } catch (const CudaException& x ) {
-                    // prepareFillStft doesn't have a limit on how large
-                    // waveform buffer that it tries to work on. Thus it
-                    // will run out of memory when attempting to work on
-                    // really large buffers.
-                    tt.info("Couldn't fill new block with stft\n%s", x.what());
+                    tt.info("Collection::createBlock, fillBlock swallowed GlException.\n%s", x.what());
                 }
             }
 
-            if ( 0 != dynamic_cast<Tfr::Stft*>(_transform.get()))
             {
-                block->valid_samples = block->ref.getInterval();
-            } else {
-                // TODO compute at what log2_samples_size[1] stft is more accurate
-                // than low resolution blocks.
-                if (1) {
+                if (0) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // start with the blocks that are just slightly more detailed
                     mergeBlock( block, block->ref.left(), 0 );
@@ -702,10 +477,10 @@ pBlock Collection::
                     }
                 }
 
-    //            GlException_CHECK_ERROR();
-    //            CudaException_CHECK_ERROR();
 
-                if (1) {
+                // TODO compute at what log2_samples_size[1] stft is more accurate
+                // than low resolution blocks.
+                if (0) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
                     mergeBlock( block, block->ref.parent(), 0 );
@@ -730,12 +505,14 @@ pBlock Collection::
                 }
             }
 
-        } else if ( 0 /* set dummy values */ ) {
+        }
+
+        if ( 0 /* set dummy values */ ) {
             GlBlock::pHeight h = block->glblock->height();
             float* p = h->data->getCpuMemory();
-            for (unsigned s = 0; s<_samples_per_block; s++) {
+            for (unsigned s = 0; s<_samples_per_block/2; s++) {
                 for (unsigned f = 0; f<_scales_per_block; f++) {
-                    p[ f*_samples_per_block + s] = sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
+                    p[ f*_samples_per_block + s] = 0.05f+0.05f*sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
                 }
             }
         }
@@ -780,11 +557,11 @@ pBlock Collection::
             }
         }
 
-        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 16<_recent.size())
+        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 0<youngest_count)
         {
             Position a,b;
             _recent.back()->ref.getArea(a,b);
-            TaskTimer tt("Removing block [%g, %g]. %u remaining blocks, recent %u blocks.", a.time, b.time, _cache.size(), _recent.size());
+            TaskTimer tt("Removing block [%g:%g, %g:%g]. %u remaining blocks, recent %u blocks.", a.time, a.scale, b.time, b.scale, _cache.size(), _recent.size());
 
             _cache.erase(_recent.back()->ref);
             _recent.pop_back();
@@ -795,6 +572,7 @@ pBlock Collection::
 
     return result;
 }
+
 
 void Collection::
         computeSlope( pBlock block, unsigned cuda_stream )
@@ -807,241 +585,109 @@ void Collection::
     TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
-// TODO prepareFillStft should be the same as putting any other chunk
-void Collection::
-        prepareFillStft( pBlock block )
+
+/**
+  finds last source that does not have a slow operation (i.e. CwtFilter)
+  among its sources.
+*/
+static pOperation
+        fast_source(pOperation start)
 {
+    pOperation r = start;
+    pOperation itr = start;
+
+    while(true)
+    {
+        Operation* o = itr.get();
+        if (!o)
+            break;
+
+        Tfr::CwtFilter* f = dynamic_cast<Tfr::CwtFilter*>(itr.get());
+        if (f)
+            r = f->source();
+
+        itr = o->source();
+    }
+
+    return r;
+}
+
+
+void Collection::
+        fillBlock( pBlock block )
+{
+    Tfr::Stft trans;
+    trans.set_approximate_chunk_size(1 << 12); // 4096
+
     Position a, b;
     block->ref.getArea(a,b);
-    float tmin = Tfr::Cwt::Singleton().min_hz();
-    float tmax = Tfr::Cwt::Singleton().max_hz( worker->source()->sample_rate() );
 
-    Tfr::Stft& trans = Tfr::Stft::Singleton();
+    pOperation fast_source = Heightmap::fast_source( worker->source() );
 
-    Signal::pSource fast_source = Signal::Operation::fast_source( worker->source() );
+    unsigned first_sample = (unsigned)floor(a.time*fast_source->sample_rate()),
+             last_sample = (unsigned)ceil(b.time*fast_source->sample_rate()),
+             chunk_size = trans.chunk_size();
+    // Margin makes sure that the STFT is computed for one block before and one
+    // block after the signal. This makes it possible to do proper
+    // interpolations so that there won't be any edges between blocks
 
-    unsigned first_sample = (unsigned)(a.time*fast_source->sample_rate()),
-             last_sample = (unsigned)(b.time*fast_source->sample_rate()),
-             margin = trans.chunk_size;
-    if (first_sample >= margin)
-        first_sample = ((first_sample - margin)/trans.chunk_size) * trans.chunk_size;
-    else
-        first_sample = 0;
+    unsigned first_chunk = 0,
+             last_chunk = (last_sample + 1.5*chunk_size)/chunk_size;
 
-    last_sample = ((last_sample + margin)/trans.chunk_size) * trans.chunk_size;
+    if (first_sample >= 1.5*chunk_size)
+        first_chunk = (first_sample - 1.5*chunk_size)/chunk_size;
 
-    unsigned n_samples = last_sample - first_sample;
-//    first_sample = 0;
-//    n_samples = (fast_source->number_of_samples()/trans.chunk_size)*trans.chunk_size;
-    Signal::pBuffer buff = fast_source->readFixedLength( first_sample, n_samples );
+
+    pBuffer buff = fast_source->readFixedLength( Interval(
+            first_chunk*chunk_size,
+            last_chunk*chunk_size) );
+
 
     Tfr::pChunk stft = trans( buff );
 
-    float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
-          out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
 
-    float out_stft_size = block->ref.sample_rate() / stft->sample_rate;
-    float out_offset = (a.time - (stft->chunk_offset / (float)fast_source->sample_rate())) * block->ref.sample_rate();
+    StftToBlock stftmerger(this);
+    stftmerger.source( fast_source );
+    stftmerger.mergeChunk(block, *stft, block->glblock->height()->data);
 
-    ::expandCompleteStft( stft->transform_data->getCudaGlobal(),
-                  block->glblock->height()->data->getCudaGlobal(),
-                  out_min_hz,
-                  out_max_hz,
-                  out_stft_size,
-                  out_offset,
-                  stft->min_hz,
-                  stft->max_hz,
-                  trans.chunk_size,
-                  0);
+    // StftToBlock (rather BlockFilter) validates samples, Discard those.
+    block->valid_samples = Intervals();
 }
 
-void Collection::
-        applyUpdates()
-{
-    // Make sure _updates_condition.wakeAll() is called on all exit paths.
-    // This is to release the block of other threads waiting for applyUpdates to process data.
-    // They should be released even if applyUpdates for some reason fails.
-    InvokeOnDestrcution scopedVariable( boost::bind(&QWaitCondition::wakeAll, &_updates_condition ) );
-
-    {   QMutexLocker l(&_updates_mutex);
-        if (_updates.empty())
-            return;
-    }
-
-    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
-    TIME_COLLECTION expected_samples().print("Before apply updates");
-
-    TIME_COLLECTION { TaskTimer t2("cudaThreadSynchronize"); CudaException_ThreadSynchronize();}
-
-    {
-        // Keep the lock while updating as a means to prevent more memory from being allocated
-        QMutexLocker l(&_updates_mutex);
-		QMutexLocker l2(&_cache_mutex);
-
-        BOOST_FOREACH( Tfr::pChunk& chunk, _updates )
-        {
-            Signal::SamplesIntervalDescriptor chunkSid = chunk->getInterval();
-            TIME_COLLECTION chunkSid.print("Applying chunk");
-
-            // Update all blocks with this new chunk
-			BOOST_FOREACH( cache_t::value_type& c, _cache )
-            {
-				pBlock& pb = c.second;
-                // This check is done in mergeBlock as well, but do it here first
-                // for a hopefully more local and thus faster loop.
-                if (!(chunkSid & pb->ref.getInterval()).isEmpty())
-                {
-                    if (mergeBlock( &*pb, &*chunk, 0 ))
-                        computeSlope( pb, 0 );
-                }
-                pb->glblock->unmap();
-            }
-        }
-
-        _updates.clear();
-    }
-    TIME_COLLECTION expected_samples().print("After apply updates");
-
-    TIME_COLLECTION CudaException_ThreadSynchronize();
-}
-
-bool Collection::
-        mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data)
-{
-    // Find out what intervals that match
-    Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
-    Signal::SamplesIntervalDescriptor::Interval inInterval = inChunk->getInterval();
-
-    Signal::SamplesIntervalDescriptor transferDesc = inInterval;
-    transferDesc &= outInterval;
-
-    // Remove already computed intervals
-    transferDesc -= outBlock->valid_samples;
-
-    // If block is already up to date, abort merge
-    if (transferDesc.isEmpty())
-        return false;
-
-    std::stringstream ss;
-    Position a,b;
-    outBlock->ref.getArea(a,b);
-    TIME_COLLECTION TaskTimer tt("%s chunk t=[%g, %g[ into block t=[%g,%g] ff=[%g,%g]%s", __FUNCTION__,
-                                 inChunk->startTime(), inChunk->endTime(), a.time, b.time, a.scale, b.scale,
-                                 save_in_prepared_data?" save_in_prepared_data":"");
-
-    boost::shared_ptr<GpuCpuData<float> > outData;
-
-    // If mergeBlock is called by a separate worker thread it will also have a separate cuda context
-    // and thus cannot write directly to the cuda buffer that is mapped to the rendering thread's
-    // OpenGL buffer. Instead merge inChunk to a prepared_data buffer in outBlock now, move data to CPU
-    // and update the OpenGL block the next time it is rendered.
-    if (!save_in_prepared_data) {
-        outData = outBlock->glblock->height()->data;
-    } else {
-        if (outBlock->prepared_data)
-            outData = outBlock->prepared_data;
-        else
-            outData.reset( new GpuCpuData<float>(0, make_cudaExtent( _samples_per_block, _scales_per_block, 1 ), GpuCpuVoidData::CudaGlobal ) );
-    }
-
-    float in_sample_rate = inChunk->sample_rate;
-    float out_sample_rate = outBlock->ref.sample_rate();
-    float in_frequency_resolution = inChunk->nScales();
-    float out_frequency_resolution = outBlock->ref.nFrequencies();
-
-    BOOST_FOREACH( Signal::SamplesIntervalDescriptor::Interval transfer, transferDesc.intervals())
-    {
-        TIME_COLLECTION TaskTimer tt("Inserting chunk [%u,%u]", transfer.first, transfer.last);
-
-        if (0)
-        TIME_COLLECTION {
-            TaskTimer("inInterval [%u,%u]", inInterval.first, inInterval.last).suppressTiming();
-            TaskTimer("outInterval [%u,%u]", outInterval.first, outInterval.last).suppressTiming();
-            TaskTimer("inChunk->first_valid_sample = %u", inChunk->first_valid_sample).suppressTiming();
-            TaskTimer("inChunk->n_valid_samples = %u", inChunk->n_valid_samples).suppressTiming();
-        }
-
-        // Find resolution and offest for the two blocks to be merged
-        float in_sample_offset = transfer.first - inInterval.first;
-        float out_sample_offset = transfer.first - outInterval.first;
-
-        // Add offset for redundant samples in inChunk
-        in_sample_offset += inChunk->first_valid_sample;
-
-        // Rescale out_offset to out_sample_rate (samples are originally
-        // described in the inChunk sample rate)
-        out_sample_offset *= out_sample_rate / in_sample_rate;
-
-        float in_frequency_offset = a.scale * in_frequency_resolution;
-        float out_frequency_offset = 0;
-
-        TaskTimer("a.scale = %g", a.scale).suppressTiming();
-        TaskTimer("in_frequency_resolution = %g", in_frequency_resolution).suppressTiming();
-        TaskTimer("out_frequency_resolution = %g", out_frequency_resolution).suppressTiming();
-
-        // Invoke CUDA kernel execution to merge blocks
-        ::blockMergeChunk( inChunk->transform_data->getCudaGlobal(),
-                           outData->getCudaGlobal(),
-
-                           in_sample_rate,
-                           out_sample_rate,
-                           in_frequency_resolution,
-                           out_frequency_resolution,
-                           in_sample_offset,
-                           out_sample_offset,
-                           in_frequency_offset,
-                           out_frequency_offset,
-                           transfer.last - transfer.first,
-                           _complexInfo,
-                           cuda_stream);
-
-        outBlock->valid_samples |= transfer;
-        TIME_COLLECTION CudaException_ThreadSynchronize();
-    }
-
-    if (save_in_prepared_data) {
-        outData->getCpuMemory();
-        outData->freeUnused();
-        outBlock->prepared_data = outData;
-    }
-
-    TIME_COLLECTION CudaException_ThreadSynchronize();
-    return true;
-}
 
 bool Collection::
         mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
 {
-    Signal::SamplesIntervalDescriptor::Interval inInterval = inBlock->ref.getInterval();
-    Signal::SamplesIntervalDescriptor::Interval outInterval = outBlock->ref.getInterval();
+    Interval inInterval = inBlock->ref.getInterval();
+    Interval outInterval = outBlock->ref.getInterval();
 
     // Find out what intervals that match
-    Signal::SamplesIntervalDescriptor transferDesc = inBlock->valid_samples;
+    Intervals transferDesc = inBlock->valid_samples;
     transferDesc &= outInterval;
 
     // Remove already computed intervals
     transferDesc -= outBlock->valid_samples;
 
     // If block is already up to date, abort merge
-    if (transferDesc.isEmpty())
+    if (transferDesc.empty())
         return false;
 
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
 
     float in_sample_rate = inBlock->ref.sample_rate();
     float out_sample_rate = outBlock->ref.sample_rate();
-    unsigned signal_sample_rate = worker->source()->sample_rate();
-    float in_frequency_resolution = inBlock->ref.nFrequencies();
-    float out_frequency_resolution = outBlock->ref.nFrequencies();
+    float signal_sample_rate = worker->source()->sample_rate();
+    float in_frequency_resolution = inBlock->ref.frequency_resolution();
+    float out_frequency_resolution = outBlock->ref.frequency_resolution();
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
 
-    BOOST_FOREACH( const Signal::SamplesIntervalDescriptor::Interval& transfer, transferDesc.intervals())
+    BOOST_FOREACH( const Interval& transfer, transferDesc)
     {
         float in_offset = transfer.first - inInterval.first;
         float out_offset = transfer.first - outInterval.first;
-        float in_valid_samples = transfer.last - transfer.first;
+        float in_valid_samples = transfer.count();
 
         // Rescale to proper sample rates (samples are originally
         // described in the signal_sample_rate)
@@ -1085,6 +731,7 @@ bool Collection::
 bool Collection::
 	mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream )
 {
+    // assume _cache_mutex is locked
 	cache_t::iterator i = _cache.find(ref);
 	if (i!=_cache.end())
 		return mergeBlock(outBlock, i->second, cuda_stream );
