@@ -7,8 +7,8 @@
 #include <boost/foreach.hpp>
 #include <TaskTimer.h>
 
-#define TIME_CWTTOBLOCK
-// #define TIME_CWTTOBLOCK if(0)
+//#define TIME_CWTTOBLOCK
+#define TIME_CWTTOBLOCK if(0)
 
 using namespace Tfr;
 
@@ -124,7 +124,6 @@ void CwtToBlock::
         tt.getStream() << "inInterval = " << inInterval;
         tt.suppressTiming();
 
-        int dummy = 0;
         return;
     }
 
@@ -216,13 +215,13 @@ void CwtToBlock::
 
         CudaException_CHECK_ERROR();
 
-        tt.info("[(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
+        TIME_CWTTOBLOCK TaskTimer("[(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
                 a.time, a.scale,
                 b.time, b.scale,
                 chunk_a.time, chunk_a.scale,
                 chunk_b.time, chunk_b.scale,
                 transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
-            );
+            ).suppressTiming();
 
         BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples < chunk.transform_data->getNumberOfElements().width );
 

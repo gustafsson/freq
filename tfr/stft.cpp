@@ -117,8 +117,8 @@ pChunk Fft::
     GpuCpuData<float2>* input = b.complex_waveform_data();
 
     // TODO choose method based on data size
-    //computeWithCufft( *input, *chunk->transform_data, -1);
-    computeWithOoura( *input, *chunk->transform_data, -1 );
+    computeWithCufft( *input, *chunk->transform_data, -1);
+    //computeWithOoura( *input, *chunk->transform_data, -1 );
 
     chunk->axis_scale = AxisScale_Linear;
     chunk->order = Chunk::Order_column_major;
