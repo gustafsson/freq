@@ -9,6 +9,7 @@
 #include "ui/comboboxaction.h"
 #include "signal/operation-basic.h"
 #include "support/operation-composite.h"
+#include "tfr/cwt.h"
 
 // gpumisc
 #include <TaskTimer.h>
@@ -108,7 +109,14 @@ namespace Tools
                 selectionButton.release();
                 selecting = false;
 
-                Signal::pOperation newFilter( new Filters::Ellips(selection[0].x, selection[0].z, selection[1].x, selection[1].z, true ));
+                Tfr::FreqAxis const& fa =
+                        _render_view->model->collection->display_scale();
+
+                Signal::pOperation newFilter( new Filters::Ellips(
+                        selection[0].x, fa.getFrequency( selection[0].z ),
+                        selection[1].x, fa.getFrequency( selection[1].z ),
+                        true ));
+
                 model()->getPostSink()->filter( newFilter );
                 model()->getPostSink()->sinks( std::vector<Signal::pOperation>() );
                 break;

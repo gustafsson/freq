@@ -89,15 +89,16 @@ bool Worker::
 
             TIME_WORKER {
                 stringstream ss;
-                TaskTimer("Worker got %s, %u samples",
+                TaskTimer("Worker got %s, [%g, %g) s",
                     ((std::stringstream&)(ss<<b->getInterval())).str().c_str(),
-                    b->number_of_samples() ).suppressTiming();
+                    b->start(), b->start()+b->length() ).suppressTiming();
             }
         }
 
         CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
+            cudaGetLastError(); // consume error
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate());
             _max_samples_per_chunk = _samples_per_chunk;

@@ -13,10 +13,11 @@ BufferSource::
 pBuffer BufferSource::
         read( const Interval& I )
 {
-    if (Intervals(I.first, I.first+1) & _waveform->getInterval())
+    const Interval& myInterval = _waveform->getInterval();
+    if (Intervals(I.first, I.first+1) & myInterval)
         return _waveform;
 
-    return zeros(I);
+    return zeros((Intervals(I) - myInterval).getInterval());
 }
 
 

@@ -35,7 +35,7 @@ public:
             return f_min + scalar*f_step;
 
         case AxisScale_Logarithmic:
-            return f_min*exp( scalar*log2f_step );
+            return f_min*exp2( scalar*log2f_step );
 
         default:
             return 0.f;
@@ -46,6 +46,8 @@ public:
     __device__ __host__ unsigned getFrequencyIndex( float f ) const
     {
         float scalar = getFrequencyScalar( f );
+        if (scalar < 0)
+            scalar = 0;
         return (unsigned)(scalar + .5f);
     }
 
@@ -57,20 +59,14 @@ public:
         switch(axis_scale)
         {
         case AxisScale_Linear:
-            if (f > f_min)
-            {
-                fi = (f - f_min)/f_step;
-            }
+            fi = (f - f_min)/f_step;
             break;
 
         case AxisScale_Logarithmic:
             {
                 float log2_f = log2(f/f_min);
 
-                if (log2_f > 1)
-                {
-                    fi = log2_f/log2f_step;
-                }
+                fi = log2_f/log2f_step;
             }
             break;
         }

@@ -293,6 +293,11 @@ Interval Intervals::
 Interval Intervals::
         getInterval( IntervalType dt, IntervalType center ) const
 {
+    if (center < dt/2)
+        center = 0;
+    else
+        center -= dt/2;
+
     if (0 == this->size()) {
         return Interval( Interval::IntervalType_MIN, Interval::IntervalType_MIN );
     }
@@ -384,7 +389,7 @@ std::ostream& operator<<( std::ostream& s, const Intervals& I)
 
 std::ostream& operator<<( std::ostream& s, const Interval& i)
 {
-    return s << "[" << i.first << ", " << i.last << ")";
+    return s << "[" << i.first << ", " << i.last << ")" << i.count() << "#";
 }
 
 } // namespace Signal

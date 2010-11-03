@@ -236,6 +236,10 @@ void Fft::
                 input.getSizeInBytes().width,
                 cudaMemcpyDeviceToDevice );
 
+    // TODO require that input and output is of the exact same size. Do padding
+    // before calling computeWithCufft. Then use an out-of-place transform
+    // instead of copying the entire input first.
+
     // Transform signal
     CufftHandleContext _fft_single;
     CufftException_SAFE_CALL(cufftExecC2C(

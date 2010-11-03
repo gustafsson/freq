@@ -46,6 +46,10 @@ private:
             _last_timestamp,
             _startPlay_timestamp;
 	unsigned _first_buffer_size;
+    float _max_found,
+          _min_found;
+
+    void saturate( float* p, unsigned N );
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,

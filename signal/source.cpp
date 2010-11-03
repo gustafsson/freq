@@ -139,13 +139,13 @@ pBuffer SourceBase::
 {
     std::stringstream ss;
     TIME_READCHECKED ss << I;
-    TIME_READCHECKED TaskTimer tt("%s.%s %s, count=%lu",
+    TIME_READCHECKED TaskTimer tt("%s.%s %s",
                   demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
-                  ss.str().c_str(), I.count() );
+                  ss.str().c_str() );
 
     // Try a simple read
     pBuffer p = readChecked( I );
-    if (p->number_of_samples() == I.count() && p->sample_offset==I.first)
+    if (I == p->getInterval())
         return p;
 
     // Didn't get exact result, prepare new Buffer

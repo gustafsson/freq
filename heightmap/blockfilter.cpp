@@ -3,6 +3,7 @@
 #include "collection.h"
 
 #include <CudaException.h>
+#include <GlException.h>
 
 #include <boost/foreach.hpp>
 #include <TaskTimer.h>
@@ -40,7 +41,6 @@ void BlockFilter::
     }*/
 
     // TODO replace this with Tfr::Transform::displayedTimeResolution etc...
-    _collection->update_sample_size( &chunk );
 
     BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( chunk.getInterval() ))
     {
@@ -146,7 +146,15 @@ void CwtToBlock::
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
     if (merge_first_scale >= merge_last_scale)
     {
-        TaskTimer("CwtToBlock::mergeChunk, merge_first_scale(%g) >= merge_last_scale(%g)", merge_first_scale, merge_last_scale).suppressTiming();
+        if(0) TaskTimer("CwtToBlock::mergeChunk\n"
+                  "merge_first_scale(%g) >= merge_last_scale(%g)\n"
+                  "a.scale = %g, b.scale = %g\n"
+                  "chunk_first_scale = %g, chunk_last_scale = %g\n"
+                  "chunk.min_hz = %g, chunk.max_hz = %g",
+                  merge_first_scale, merge_last_scale,
+                  a.scale, b.scale,
+                  chunk_first_scale, chunk_last_scale,
+                  chunk.min_hz, chunk.max_hz).suppressTiming();
         return;
     }
 
@@ -252,9 +260,10 @@ void CwtToBlock::
                            cuda_stream);
 */
         // TODO recompute transfer to the samples that have actual support
-        block->valid_samples |= transfer;
-
         CudaException_CHECK_ERROR();
+        GlException_CHECK_ERROR();
+
+        block->valid_samples |= transfer;
     }
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();

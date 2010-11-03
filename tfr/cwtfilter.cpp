@@ -45,11 +45,15 @@ Filter::ChunkAndInverse CwtFilter::
 
     // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
     // into account and create an inverse that is of the desired size.
-    unsigned redundant_samples = 0;
-    if (firstSample < time_support) redundant_samples = firstSample;
-    else redundant_samples = time_support;
+    unsigned redundant_samples = time_support;
+    if (firstSample < time_support)
+    {
+        numberOfSamples += firstSample;
+        redundant_samples = 0;
+        firstSample = 0;
+    }
 
-    unsigned first_valid_sample = firstSample;
+    //unsigned first_valid_sample = firstSample;
     firstSample -= redundant_samples;
 
     unsigned smallest_ok_size = cwt.prev_good_size(0, sample_rate() );
@@ -71,9 +75,11 @@ Filter::ChunkAndInverse CwtFilter::
         } else {
             unsigned L = redundant_samples + numberOfSamples + time_support;
 
-            TaskTimer tt("L=%u, redundant_samples=%u, numberOfSamples=%u, time_support=%u, firstSample=%u",
+            TIME_CwtFilter TaskTimer tt("L=%u, redundant=%u, num=%u, support=%u, first=%u",
                          L, redundant_samples, numberOfSamples, time_support, firstSample);
+
             ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
+
             TIME_CwtFilter Intervals(ci.inverse->getInterval()).print("CwtFilter readFixedLength");
 
             // Compute the continous wavelet transform
@@ -92,6 +98,9 @@ Filter::ChunkAndInverse CwtFilter::
         {
             TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter applying filter");
             Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( ci.chunk.get() );
+
+            //BlockFilter* bf = dynamic_cast<BlockFilter*>(this);
+            //if(bf) bf->_collection->update_sample_size( chunks );
 
             BOOST_FOREACH( pChunk& chunk, chunks->chunks )
             //unsigned C = chunks->chunks.size();
