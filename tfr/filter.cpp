@@ -60,14 +60,15 @@ Signal::pBuffer Filter::
     ChunkAndInverse ci = readChunk( I );
 
     pBuffer r;
-    if (false && ci.inverse)
+    if (false && ci.inverse) // TODO remove 'false &&'
         r = ci.inverse;
     else
     {
         r = _transform->inverse( ci.chunk );
     }
 
-    TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter after inverse");
+    TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter computed chunk");
+    TIME_Filter Intervals(r->getInterval()).print("Filter computed inverse");
 
     return r;
 }

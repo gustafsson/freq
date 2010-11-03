@@ -5,6 +5,13 @@
 #include <demangle.h>
 #include <typeinfo>
 
+#include <Statistics.h>
+#include <TaskTimer.h>
+#include <demangle.h>
+
+//#define DEBUG_POSTSINK if(0)
+#define DEBUG_POSTSINK
+
 using namespace std;
 
 namespace Signal {
@@ -12,6 +19,10 @@ namespace Signal {
 Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
+    std::stringstream ss;
+    DEBUG_POSTSINK TaskTimer tt("PostSink( %s )",
+        ((std::stringstream&)(ss<<I)).str().c_str());
+
     vector<pOperation> passive_operations;
     vector<pOperation> active_operations;
 
@@ -31,18 +42,29 @@ Signal::pBuffer PostSink::
                 i++;
         }
 
+        DEBUG_POSTSINK TaskTimer tt("Adding %u operations", _sinks.size());
+
         BOOST_FOREACH( pOperation c, _sinks )
         {
             if (c->affected_samples() & I )
+            {
+                DEBUG_POSTSINK TaskTimer("Active %s", demangle(typeid(*c).name()).c_str()).suppressTiming();
                 active_operations.push_back(c);
+            }
             else
+            {
+                DEBUG_POSTSINK TaskTimer("Passive %s", demangle(typeid(*c).name()).c_str()).suppressTiming();
                 passive_operations.push_back(c);
+            }
         }
     }
 
     pOperation prev = source();
+    DEBUG_POSTSINK TaskTimer("Source %s", demangle(typeid(*prev).name()).c_str()).suppressTiming();
+
     if (_filter)
     {
+        DEBUG_POSTSINK TaskTimer("Filter %s", demangle(typeid(*_filter).name()).c_str()).suppressTiming();
         _filter->source(prev);
         prev = _filter;
     }
@@ -52,23 +74,13 @@ Signal::pBuffer PostSink::
         prev = c;
     }
 
-    if (1==active_operations.size())
-    {
-        pOperation c = active_operations.front();
-        c->source(prev);
-        prev = c;
-        active_operations.clear();
-    }
-
     pBuffer b = prev->read( I );
+    Statistics<float>(b->waveform_data());
 
-    if (!active_operations.empty())
-    {
-        prev.reset( new BufferSource( b ));
-        BOOST_FOREACH( pOperation c, active_operations) {
-            c->source(prev);
-            c->read( I );
-        }
+    // prev.reset( new BufferSource( b ));
+    BOOST_FOREACH( pOperation c, active_operations) {
+        c->source( prev );
+        c->read( I );
     }
 
     BOOST_FOREACH( pOperation c, passive_operations )

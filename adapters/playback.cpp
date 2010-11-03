@@ -17,7 +17,6 @@ namespace Adapters {
 Playback::
         Playback( int outputDevice )
 :   _first_buffer_size(0),
-    _playback_itr(0),
     _output_device(0)
 {
     portaudio::AutoSystem autoSys;
@@ -37,6 +36,7 @@ Playback::
 
     if(first) cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for audio output." << endl << endl;
 
+    reset();
     // first = false;
 }
 
@@ -169,6 +169,8 @@ void Playback::
 
     _data.reset();
     _playback_itr = 0;
+    _max_found = 1;
+    _min_found = -1;
 }
 
 
@@ -302,6 +304,19 @@ void Playback::
 }
 
 
+void Playback::
+        saturate( float* p, unsigned N )
+{
+    for (unsigned j=0; j<N; ++j)
+    {
+        if (p[j] > _max_found) _max_found = p[j];
+        if (p[j] < _min_found) _min_found = p[j];
+
+        p[j] = (p[j] - _min_found)/(_max_found - _min_found)*2-1;
+    }
+}
+
+
 int Playback::
         readBuffer(const void * /*inputBuffer*/,
                  void *outputBuffer,
@@ -319,6 +334,7 @@ int Playback::
 
     Signal::pBuffer b = _data.readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
     memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
+    saturate( buffer, framesPerBuffer );
     _playback_itr += framesPerBuffer;
 
     if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + 10ul*2024/*framesPerBuffer*/) < _playback_itr ) {

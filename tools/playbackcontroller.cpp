@@ -93,6 +93,8 @@ void PlaybackController::
         receiveFollowPlayMarker( bool v )
 {
     _view->follow_play_marker = v;
+    // don't need to call update as new frames are continously rendered
+    // during playback anyway
 }
 
 

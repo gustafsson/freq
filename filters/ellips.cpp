@@ -29,9 +29,9 @@ void Ellips::
 
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            _f1 * chunk.nScales(),
+            chunk.freqAxis().getFrequencyScalar( _f1 ), //  * chunk.nScales()
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            _f2 * chunk.nScales());
+            chunk.freqAxis().getFrequencyScalar( _f2 )); //  * chunk.nScales()
 
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),

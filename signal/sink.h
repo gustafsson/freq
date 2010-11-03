@@ -46,6 +46,12 @@ public:
 
 
     /**
+      A sink doesn't affect the buffer through 'read'.
+      */
+    virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
+
+
+    /**
       If this Sink has recieved all expected_samples and is finished with its
       work, the caller may remove this Sink.
       */

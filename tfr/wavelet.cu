@@ -138,7 +138,7 @@ __global__ void kernel_compute_wavelet_coefficients(
     else
     {
         float cufft_normalize = 1.f/(float)(numElem.width*half_sizes);
-        float jibberish_normalization = 0.1;
+        float jibberish_normalization = 0.083602;
         cufft_normalize *= jibberish_normalization;
         waveform_ft = cufft_normalize * in_waveform_ft[x];
     }

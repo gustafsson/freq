@@ -54,9 +54,11 @@ Collection::
     ((PostSink*)_postsink.get())->sinks( sinks );
 
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
-    _display_scale.f_min = 20;
     _display_scale.max_frequency_scalar = 1;
-    _display_scale.log2f_step = log2(22050)-log2(20);
+    float minhz = 5;
+    float maxhz = 22050;
+    _display_scale.f_min = minhz;
+    _display_scale.log2f_step = log2(maxhz) - log2(minhz);
 }
 
 
@@ -134,6 +136,11 @@ void Collection::
 
     if (chunk)
     {
+        _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
+        _display_scale.max_frequency_scalar = 1;
+        _display_scale.f_min = chunk->min_hz;
+        _display_scale.log2f_step = log2(chunk->max_hz) - log2(chunk->min_hz);
+
         Tfr::FreqAxis fx = chunk->freqAxis();
 
         _min_sample_size.time = std::min( _min_sample_size.time, 1.f / chunk->sample_rate );
