@@ -327,6 +327,41 @@ void Renderer::createColorTexture(unsigned N) {
     colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
 }
 
+Reference Renderer::
+        findRefAtCurrentZoomLevel( float t, float s )
+{
+    Position max_ss = _collection->max_sample_size();
+    Reference ref = _collection->findReference(Position(0,0), max_ss);
+
+    while(true)
+    {
+        LevelOfDetal lod = testLod(ref);
+
+        Position a,b;
+        ref.getArea(a,b);
+
+        switch(lod)
+        {
+        case Lod_NeedBetterF:
+            if ((a.scale+b.scale)/2 > s)
+                ref = ref.bottom();
+            else
+                ref = ref.top();
+            break;
+
+        case Lod_NeedBetterT:
+            if ((a.time+b.time)/2 > t)
+                ref = ref.left();
+            else
+                ref = ref.right();
+            break;
+
+        default:
+            return ref;
+        }
+    }
+}
+
 /**
   Note: the parameter scaley is used by RenderView to go seamlessly from 3D to 2D.
   This is different from the 'attribute' Renderer::y_scale which is used to change the
@@ -475,18 +510,12 @@ bool Renderer::renderSpectrogramRef( Reference ref )
     return true;
 }
 
-bool Renderer::renderChildrenSpectrogramRef( Reference ref )
+
+Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 {
-    Position a, b;
-    ref.getArea( a, b );
-    TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
-
-    if (!ref.containsSpectrogram())
-        return false;
-
     float timePixels, scalePixels;
     if (!computePixelsPerUnit( ref, timePixels, scalePixels))
-        return false;
+        return Lod_Invalid;
 
     if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
         fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.block_index[0], ref.block_index[1], timePixels,scalePixels);
@@ -504,16 +533,41 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     else
         needBetterT = timePixels / (_redundancy*_collection->samples_per_block());
 
-    if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() ) {
+    if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() )
+        return Lod_NeedBetterF;
+
+    else if ( needBetterT > 1 && ref.left().containsSpectrogram() )
+        return Lod_NeedBetterT;
+
+    else
+        return Lod_Ok;
+}
+
+bool Renderer::renderChildrenSpectrogramRef( Reference ref )
+{
+    Position a, b;
+    ref.getArea( a, b );
+    TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
+
+    if (!ref.containsSpectrogram())
+        return false;
+
+    LevelOfDetal lod = testLod( ref );
+    switch(lod) {
+    case Lod_NeedBetterF:
         renderChildrenSpectrogramRef( ref.top() );
         renderChildrenSpectrogramRef( ref.bottom() );
-    }
-    else if ( needBetterT > 1 && ref.left().containsSpectrogram() ) {
+        break;
+    case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
         renderChildrenSpectrogramRef( ref.right() );
-    }
-    else {
+        break;
+    case Lod_Ok:
         renderSpectrogramRef( ref );
+        break;
+
+    default:
+        return false;
     }
 
     return true;

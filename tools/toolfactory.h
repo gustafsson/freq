@@ -54,6 +54,9 @@ namespace Tools
         QScopedPointer<class PlaybackView> _playback_view;
         QPointer<class PlaybackController> _playback_controller;
 
+        QScopedPointer<class BrushModel> _brush_model;
+        QScopedPointer<class BrushView> _brush_view;
+        QPointer<class BrushController> _brush_controller; // might be deleted by _render_view
 
         Sawe::Project* _project;
     };

@@ -1,22 +1,24 @@
 #include "brushfilter.cu.h"
-#include <heightmap/resample.cu.h>
+#include <resample.cu.h>
 
 
 class ConvertToFloat2
 {
-    float2 operator()(float const& v)
+public:
+    __device__ float2 operator()(float const& v, uint2 const& )
     {
-        return make_float2(v, v);
+        return make_float2(v, 0);
     }
 };
 
 
 class MultiplyOperator
 {
-    void operator()(float2 e, float2 const& v)
+public:
+    __device__ void operator()(float2& e, float2 const& v)
     {
-        e.x *= v.x;
-        e.y *= v.y;
+        e.x *= exp2f(v.x);
+        e.y *= exp2f(v.x);
     }
 };
 

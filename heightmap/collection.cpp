@@ -55,8 +55,9 @@ Collection::
 
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.max_frequency_scalar = 1;
-    float minhz = 5;
-    float maxhz = 22050;
+    float fs = worker->source()->sample_rate();
+    float minhz = Tfr::Cwt::Singleton().get_min_hz(fs);
+    float maxhz = Tfr::Cwt::Singleton().get_max_hz(fs);
     _display_scale.f_min = minhz;
     _display_scale.log2f_step = log2(maxhz) - log2(minhz);
 }

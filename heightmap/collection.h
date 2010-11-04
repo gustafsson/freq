@@ -251,6 +251,11 @@ audiofile              source
       */
     Signal::pOperation postsink() { return _postsink; }
 
+    /**
+      Update the slope texture used by the vertex shader. Called when height
+      data has been updated. Also called by 'createBlock'.
+      */
+    void        computeSlope( pBlock block, unsigned cuda_stream );
 
     Signal::Worker*     worker;
 private:
@@ -308,12 +313,6 @@ private:
       Creates a new block.
       */
     pBlock      createBlock( Reference ref );
-
-    /**
-      Update the slope texture used by the vertex shader. Called when height
-      data has been updated. Also called by 'createBlock'.
-      */
-    void        computeSlope( pBlock block, unsigned cuda_stream );
 
     /**
       Compoute a short-time Fourier transform (stft). Usefull for filling new

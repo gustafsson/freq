@@ -54,6 +54,7 @@ SOURCES += \
     heightmap/glblock.cpp \
     heightmap/reference.cpp \
     heightmap/renderer.cpp \
+    heightmap/resampletest.cpp \
     sawe/application.cpp \
     sawe/layer.cpp \
     sawe/main.cpp \
@@ -84,8 +85,6 @@ SOURCES += \
     ui/propertiesselection.cpp \
     ui/propertiesstroke.cpp \
     ui/updatewidgetsink.cpp \
-    heightmap/resampletest.cpp \
-    tools/support/brushfilter.cu
 
 HEADERS += \
     adapters/audiofile.h \
@@ -141,10 +140,7 @@ HEADERS += \
     ui/updatewidgetsink.h \
     heightmap/resampletest.h \
     heightmap/resampletest.cu.h \
-    tools/support/brushfilter.h \
-    tools/support/brushfilter.cu.h \
-    tools/brushcontroller.h \
-    tools/brushview.h
+    tools/support/brushpaint.cu.h
 
 FORMS += \
     tools/selectionviewmodel.ui \
@@ -156,8 +152,11 @@ CUDA_SOURCES += \
     filters/*.cu \
     heightmap/block.cu \
     heightmap/resampletest.cu \
+    heightmap/resampletest2.cu \
     heightmap/slope.cu \
     tfr/wavelet.cu \
+    tools/support/brushfilter.cu \
+    tools/support/brushpaint.cu \
 
 SHADER_SOURCS += \
     heightmap/heightmap.frag \
@@ -263,7 +262,7 @@ win32 {
     INCLUDEPATH += $(CUDA_INC_PATH)
     LIBS += -L$(CUDA_LIB_PATH)
 	QMAKE_CXXFLAGS -= -Zc:wchar_t-
-	QMAKE_CXXFLAGS += -Zc:wchar_t
+    QMAKE_CXXFLAGS += -Zc:wchar_t
     cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
     cuda.commands = $(CUDA_BIN_PATH)/nvcc.exe \
         -c \

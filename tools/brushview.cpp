@@ -2,8 +2,27 @@
 
 namespace Tools {
 
-BrushView::BrushView()
+BrushView::
+        BrushView(BrushModel* model)
+            :
+            enabled( false ),
+            model_( model )
 {
 }
+
+
+BrushView::
+        ~BrushView()
+{
+
+}
+
+
+void BrushView::
+        draw()
+{
+
+}
+
 
 } // namespace Tools

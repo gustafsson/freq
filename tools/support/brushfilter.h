@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <vector_types.h>
+#include "heightmap/collection.h"
 
 namespace Tools {
 namespace Support {
@@ -13,15 +14,10 @@ namespace Support {
 class BrushFilter : public Tfr::CwtFilter
 {
 public:
+    BrushFilter();
+
     typedef boost::shared_ptr< GpuCpuData<float> > BrushImageDataP;
-    struct BrushImage {
-        float startTime;
-        float endTime;
-        float min_hz;
-        float max_hz;
-        BrushImageDataP data;
-    };
-    typedef std::vector<BrushImage> BrushImages;
+    typedef boost::unordered_map<Heightmap::Reference, BrushImageDataP> BrushImages;
     typedef boost::shared_ptr<BrushImages> BrushImagesP;
 
     /**

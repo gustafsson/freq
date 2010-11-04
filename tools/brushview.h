@@ -14,13 +14,15 @@ public:
     BrushView(BrushModel* model);
     ~BrushView();
 
+    bool enabled;
+
 public slots:
     /// Connected in SelectionController
     virtual void draw();
 
 private:
     friend class BrushController;
-    BrushModel* model;
+    BrushModel* model_;
 };
 
 } // namespace Tools

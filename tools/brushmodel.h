@@ -8,6 +8,7 @@
 #include "tfr/filter.h"
 #include "sawe/project.h"
 #include "support/brushfilter.h"
+#include "heightmap/reference.h"
 
 namespace Tools
 {
@@ -15,15 +16,21 @@ namespace Tools
 class BrushModel
 {
 public:
-    BrushModel( Sawe::pProject project );
+    BrushModel( Sawe::Project* project );
 
     /**
       Get the BrushFilter.
       */
     Support::BrushFilter* filter();
 
+    float brush_factor;
+
+    Signal::Interval paint( Heightmap::Reference ref, Heightmap::Position pos );
+
 private:
     Signal::pOperation filter_;
+
+    Signal::Interval addGauss( Heightmap::Reference ref, Heightmap::Position pos );
 };
 
 

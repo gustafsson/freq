@@ -20,11 +20,12 @@ namespace Tools {
         ~BrushController();
 
     signals:
-        void enabledChanged(bool active);
+        void enabledChanged(bool v); // Will only be emitted when 'v==false'
 
     private slots:
         // Action slots
         void receiveToggleBrush(bool active);
+        void destroying();
 
     private:
         // Event handlers
@@ -34,16 +35,16 @@ namespace Tools {
         virtual void changeEvent ( QEvent * event );
 
         // View
-        BrushModel* model() { return view_->model; }
+        BrushModel* model() { return view_->model_; }
         BrushView* view_;
         RenderView* render_view_;
-        Signal::Worker* worker_;
 
         // GUI
         void setupGui();
 
         // State
-        bool drawing_;
+        //bool drawing_;
+        Signal::Intervals drawn_interval_;
         Ui::MouseControl draw_button_;
     };
 

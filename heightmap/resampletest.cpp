@@ -123,7 +123,7 @@ bool ResampleTest::
 bool ResampleTest::
         test2()
 {
-    TaskTimer tt("ResampleTest::test1()");
+    TaskTimer tt("ResampleTest::test2()");
     try
     {
         bigData(7, 7);
@@ -175,6 +175,57 @@ bool ResampleTest::
         print( "outputData", outputData );
     } catch (std::exception const& x) {
         tt.info("In %s, caught exception %s: %s", __FUNCTION__, typeid(x).name(), x.what());
+        return false;
+    }
+
+    return true;
+}
+
+
+bool ResampleTest::
+        test3()
+{
+    TaskTimer tt("ResampleTest::test3()");
+    printf("\n");
+    try
+    {
+        bigData(7, 7);
+
+        GpuCpuData<float> outputData( 0, make_uint3( 6,6,1) );
+        GpuCpuData<float> outputData2( 0, make_uint3( 6,6,1) );
+
+        memset( outputData.getCpuMemory(), 0, outputData.getSizeInBytes1D() );
+        memset( outputData2.getCpuMemory(), 0, outputData2.getSizeInBytes1D() );
+
+        simple_resample2d(   inputData->getCudaGlobal(), outputData.getCudaGlobal());
+        simple_resample2d_2( inputData->getCudaGlobal(), outputData2.getCudaGlobal());
+
+        print( "inputData",  *inputData );
+        print( "outputData", outputData );
+        print( "outputData2", outputData2 );
+    } catch (std::exception const& x) {
+        tt.info("In %s, caught exception %s: %s", __FUNCTION__,
+                demangle(typeid(x).name()).c_str(), x.what());
+        return false;
+    }
+
+    return true;
+}
+
+
+bool ResampleTest::
+        test4()
+{
+    TaskTimer tt("ResampleTest::%s", __FUNCTION__);
+    try
+    {
+        bigData(6, 6);
+        print( "inputData",  *inputData );
+        simple_operate( inputData->getCudaGlobal());
+        print( "result",  *inputData );
+    } catch (std::exception const& x) {
+        tt.info("In %s, caught exception %s: %s", __FUNCTION__,
+                demangle(typeid(x).name()).c_str(), x.what());
         return false;
     }
 

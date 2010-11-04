@@ -1,8 +1,16 @@
 #include "brushfilter.h"
 #include "brushfilter.cu.h"
 
+#include <boost/foreach.hpp>
+
 namespace Tools {
 namespace Support {
+
+BrushFilter::
+        BrushFilter()
+{
+    images.reset( new BrushImages );
+}
 
 
 void MultiplyBrush::
@@ -10,17 +18,20 @@ void MultiplyBrush::
 {
     BrushImages const& imgs = *images.get();
 
-    for (unsigned i=0; i<imgs.size(); ++i)
+    BOOST_FOREACH(BrushImages::value_type const& v, imgs)
     {
-        BrushImage const& img = imgs[i];
-        float scaley1 = chunk.freqAxis().getFrequencyScalar( img.min_hz );
-        float scaley2 = chunk.freqAxis().getFrequencyScalar( img.max_hz );
+        Heightmap::Position a, b;
+        v.first.getArea(a, b);
 
-        multiply(
-                make_float4(chunk.startTime(), 0, chunk.endTime(), 1),
+        Tfr::FreqAxis const& heightmapAxis = v.first.collection()->display_scale();
+        float scale1 = heightmapAxis.getFrequencyScalar( chunk.min_hz );
+        float scale2 = heightmapAxis.getFrequencyScalar( chunk.max_hz );
+
+        ::multiply(
+                make_float4(chunk.startTime(), scale1, chunk.endTime(), scale2),
                 chunk.transform_data->getCudaGlobal(),
-                make_float4(img.startTime, scaley1, img.endTime, scaley2),
-                img.data->getCudaGlobal());
+                make_float4(a.time, a.scale, b.time, b.scale),
+                v.second->getCudaGlobal());
     }
 }
 

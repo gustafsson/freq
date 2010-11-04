@@ -18,6 +18,8 @@ public:
     unsigned sampleOffset() const;
     unsigned scaleOffset() const;
     unsigned samplesPerBlock() const;
+    unsigned scalesPerBlock() const;
+    Collection* collection() const;
 
     float sample_rate() const;
     unsigned frequency_resolution() const;
@@ -35,6 +37,12 @@ public:
     Reference sibbling1() const;
     Reference sibbling2() const;
     Reference sibbling3() const;
+
+    /** sibblings */
+    Reference sibblingLeft() const;
+    Reference sibblingRight() const;
+    Reference sibblingTop() const;
+    Reference sibblingBottom() const;
 
     /** parent */
     Reference parent() const;

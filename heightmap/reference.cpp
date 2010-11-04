@@ -81,6 +81,37 @@ Reference Reference::
     return r;
 }
 
+Reference Reference::
+        sibblingLeft() const
+{
+    Reference r = *this;
+    if(0<r.block_index[0])
+        --r.block_index[0];
+    return r;
+}
+Reference Reference::
+        sibblingRight() const
+{
+    Reference r = *this;
+    ++r.block_index[0];
+    return r;
+}
+Reference Reference::
+        sibblingTop() const
+{
+    Reference r = *this;
+    ++r.block_index[1];
+    return r;
+}
+Reference Reference::
+        sibblingBottom() const
+{
+    Reference r = *this;
+    if(0<r.block_index[1])
+        --r.block_index[1];
+    return r;
+}
+
 /* parent */
 Reference Reference::parent() const {
     Reference r = *this;
@@ -135,6 +166,18 @@ unsigned Reference::
         samplesPerBlock() const
 {
     return _collection->samples_per_block();
+}
+
+unsigned Reference::
+        scalesPerBlock() const
+{
+    return _collection->scales_per_block();
+}
+
+Collection* Reference::
+        collection() const
+{
+    return _collection;
 }
 
 Signal::Interval Reference::
