@@ -41,6 +41,7 @@ public:
     virtual Signal::pBuffer inverse( pChunk );
 
     float     get_min_hz(float fs) const;
+    float     wanted_min_hz() const;
     void      set_min_hz(float f);
     /// returns the nyquist frequency
     float     get_max_hz(float sample_rate) const { return sample_rate/2.f; }

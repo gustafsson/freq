@@ -41,7 +41,7 @@ Cwt::
         Cwt( float scales_per_octave, float wavelet_time_suppport, cudaStream_t stream )
 :   _fft( /*stream*/ ),
     _stream( stream ),
-    _min_hz( 5 ),
+    _min_hz( 20 ),
     _scales_per_octave( scales_per_octave ),
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
 //    _fft_many(stream),
@@ -501,6 +501,14 @@ Signal::pBuffer Cwt::
 
     return r;
 }
+
+
+float Cwt::
+        wanted_min_hz() const
+{
+    return _min_hz;
+}
+
 
 float Cwt::
         get_min_hz( float fs ) const

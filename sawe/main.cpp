@@ -230,7 +230,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
         break;
     case cudaErrorDevicesUnavailable:
         ss << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
-                << "If you're not intentionally using the GPU right now the driver might have been left in an inconsistent state after a previous crash. Rebooting your computer could solve work around this. "
+                << "Are you currently using the GPU in any other application? "
+                << "If you're not intentionally using the GPU right now the driver might have been left in an inconsistent state after a previous crash. Rebooting your computer could work around this for now. "
                 << "Also make sure that you have installed the latest CUDA drivers." << endl;
         break;
     default:
@@ -272,16 +273,6 @@ void validate_arguments()
 
 int main(int argc, char *argv[])
 {
-    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-
-    {
-        ResampleTest resampletest;
-
-        resampletest.test2();
-
-        //return 0;
-    }
-
 //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
@@ -290,9 +281,20 @@ int main(int argc, char *argv[])
 
     Sawe::Application a(argc, argv);
 
+    TaskTimer("Starting %s", a.version_string().c_str()).suppressTiming();
+
+    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
     if (!check_cuda( false ))
         return -1;
 
+    {
+        ResampleTest resampletest;
+
+        //resampletest.test4();
+
+        //return 0;
+    }
 
     // skip application filename
     argv++;

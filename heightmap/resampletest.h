@@ -12,6 +12,9 @@ public:
 
     bool test1();
     bool test2();
+    bool test3();
+    bool test4();
+
 private:
     template<typename T>
     void print( const char* txt, GpuCpuData<T>& data );

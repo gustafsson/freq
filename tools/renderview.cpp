@@ -50,6 +50,14 @@ RenderView::
     TaskTimer tt(__FUNCTION__);
 
     emit destroying();
+
+    // Because the cuda context was created with cudaGLSetGLDevice it is bound
+    // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
+    // is corrupt and can't be destroyed nor used properly.
+    BOOST_ASSERT( QGLContext::currentContext() );
+
+    // Destroy the cuda context for this thread
+    CudaException_SAFE_CALL( cudaThreadExit() );
 }
 
 

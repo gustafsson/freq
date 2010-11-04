@@ -42,7 +42,9 @@ namespace Tools
     void SelectionController::
             setupGui()
     {
-        Ui::MainWindow* ui = _render_view->model->project()->mainWindow()->getItems();
+        Ui::SaweMainWindow* main = model()->project->mainWindow();
+        Ui::MainWindow* ui = main->getItems();
+
         connect(ui->actionActivateSelection, SIGNAL(toggled(bool)), SLOT(receiveToggleSelection(bool)));
         connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateSelection, SLOT(setChecked(bool)));
 
@@ -63,7 +65,6 @@ namespace Tools
         ui->actionPeakSelection->setEnabled( true );*/
         // ui->actionPeakSelection->setChecked( false );
 
-        Ui::SaweMainWindow* main = model()->project->mainWindow();
         QToolBar* toolBarTool = new QToolBar(main);
         toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
         toolBarTool->setEnabled(true);
@@ -72,7 +73,6 @@ namespace Tools
         main->addToolBar(Qt::TopToolBarArea, toolBarTool);
 
         {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
-            Ui::MainWindow* ui = main->getItems();
             qb->addActionItem( ui->actionActivateSelection );
             qb->addActionItem( ui->actionSquareSelection );
             qb->addActionItem( ui->actionSplineSelection );
@@ -87,7 +87,7 @@ namespace Tools
     void SelectionController::
             mousePressEvent ( QMouseEvent * e )
     {
-        if(isEnabled())
+        if (isEnabled())
         {
             if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
                 selectionButton.press( e->x(), this->height() - e->y() );

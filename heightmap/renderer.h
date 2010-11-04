@@ -26,6 +26,7 @@ public:
 
     Renderer( Collection* collection );
 
+    Reference findRefAtCurrentZoomLevel( float t, float s );
     Collection* collection() { return _collection; }
 
     void draw( float scaley );
@@ -40,6 +41,13 @@ public:
     ColorMode color_mode;
     float y_scale;
 private:
+    enum LevelOfDetal {
+        Lod_NeedBetterF,
+        Lod_NeedBetterT,
+        Lod_Ok,
+        Lod_Invalid
+    };
+
     std::vector<GLvector> clippedFrustum;
     Collection* _collection;
     GLuint _mesh_index_buffer;
@@ -67,6 +75,7 @@ private:
     void endVboRendering();
 
     bool renderSpectrogramRef( Reference ref );
+    LevelOfDetal testLod( Reference ref );
     bool renderChildrenSpectrogramRef( Reference ref );
     void renderParentSpectrogramRef( Reference ref );
     bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );

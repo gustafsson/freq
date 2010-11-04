@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include "heightmap/block.cu.h"
 
-//#define NORESAMPLE
-#ifndef NORESAMPLE
 #include "resample.cu.h"
-#endif
+
 
 void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
@@ -12,14 +10,13 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  float4 inputRegion,
                  float4 outputRegion )
 {
-#ifndef NORESAMPLE
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
 
     uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    resample2d<float2, float, ConverterAmplitude >(
+    resample2d<float2, float, ConverterAmplitude, AssignOperator<float> >(
             input,
             output,
             validInputs4,
@@ -27,7 +24,6 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
             inputRegion,
             outputRegion
     );
-#endif
 }
 
 
