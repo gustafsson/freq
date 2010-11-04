@@ -107,16 +107,6 @@ void SaweMainWindow::
     ui->toolBarTool->addWidget( qb );*/
 
 
-    // TODO move into brush tool
-    {   ComboBoxAction * qb = new ComboBoxAction();
-        qb->addActionItem( ui->actionAmplitudeBrush );
-        qb->addActionItem( ui->actionAirbrush );
-        qb->addActionItem( ui->actionSmoothBrush );
-        qb->setEnabled( false );
-        ui->toolBarTool->addWidget( qb );
-    }
-
-
     // TODO what does actionToolSelect do?
     /*{   QToolButton * tb = new QToolButton();
 

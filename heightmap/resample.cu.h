@@ -141,6 +141,17 @@ private:
 };
 
 
+template<typename OutputT>
+class AssignOperator
+{
+public:
+    __device__ void operator()( OutputT &e, OutputT const& v )
+    {
+        e = v;
+    }
+};
+
+
 // only supports InputT == float2 for the moment
 // TODO move these to a separate file.
 // or only one file can include this header
@@ -159,6 +170,7 @@ static __device__ float2 read2D(unsigned x, unsigned y)
 {
     return tex2D(input2_float2, x, y);
 }
+
 template<> __device__ inline
 float2 Read2D<float2>::operator()(unsigned x, unsigned y)
 {
@@ -347,7 +359,8 @@ template<
         typename InputT,
         typename OutputT,
         typename Converter,
-        typename Transform>
+        typename Transform,
+        typename Assignment>
 __global__ void resample2d_kernel (
         float4 validInputs,
         unsigned inputPitch,
@@ -355,7 +368,8 @@ __global__ void resample2d_kernel (
         uint2 outputSize,
         unsigned outputPitch,
         Transform coordinateTransform,
-        Converter converter
+        Converter converter,
+        Assignment assignment
         )
 {
     uint2 writePos;
@@ -424,7 +438,7 @@ __global__ void resample2d_kernel (
 
     unsigned o = outputPitch*writePos.y + writePos.x;
     //output[o] += 0.005f;
-    output[o] = c;
+    assignment(output[o], c);
 }
 
 
@@ -466,7 +480,8 @@ float4 make_float4( Vec4 const& v )
 template<
         typename InputT,
         typename OutputT,
-        typename Converter >
+        typename Converter,
+        typename Assignment >
 void resample2d(
         cudaPitchedPtrType<InputT> input,
         cudaPitchedPtrType<OutputT> output,
@@ -476,9 +491,18 @@ void resample2d(
         float4 outputRegion = make_float4(0,0,1,1),
         bool flip = false,
         Converter converter = Converter(),
+        Assignment assignment = Assignment(),
         cudaStream_t cuda_stream = (cudaStream_t)0
         )
 {
+    // If regions are disjoint, don't do anything
+    if (getRight(inputRegion) < getLeft(outputRegion) ||
+        getLeft(inputRegion) > getRight(outputRegion) ||
+        getBottom(inputRegion) < getTop(outputRegion) ||
+        getTop(inputRegion) > getBottom(outputRegion))
+    {
+        return;
+    }
 #ifdef resample2d_DEBUG
     printf("\ngetLeft(validInputs) = %u", getLeft(validInputs));
     printf("\ngetTop(validInputs) = %u", getTop(validInputs));
@@ -526,10 +550,10 @@ void resample2d(
 #endif
     //outputPtr = outputPtr + (getLeft(validOutputs) + getTop(validOutputs)*outputPitch);
 
-    if (!flip)
+    if (!transpose)
     {
         resample2d_kernel
-                <InputT, OutputT, Converter, AffineTransform>
+                <InputT, OutputT, Converter, AffineTransform, Assignment>
                 <<< grid, block, 0, cuda_stream >>>
         (
                 make_float4(validInputs),
@@ -544,11 +568,12 @@ void resample2d(
                         validInputs,
                         validOutputs
                         ),
-                converter
+                converter,
+                assignment
         );
     } else {
         resample2d_kernel
-                <InputT, OutputT, Converter, AffineTransformFlip>
+                <InputT, OutputT, Converter, AffineTransformFlip, Assignment>
                 <<< grid, block, 0, cuda_stream >>>
         (
                 make_float4(validInputs),
@@ -563,7 +588,8 @@ void resample2d(
                         validInputs,
                         validOutputs
                         ),
-                converter
+                converter,
+                assignment
         );
     }
 }
@@ -571,14 +597,16 @@ void resample2d(
 template<
         typename InputT,
         typename OutputT,
-        typename Converter>
+        typename Converter,
+        typename Assignment>
 void resample2d_plain(
         cudaPitchedPtrType<InputT> input,
         cudaPitchedPtrType<OutputT> output,
         float4 inputRegion = make_float4(0,0,1,1),
         float4 outputRegion = make_float4(0,0,1,1),
-        bool flip=false,
-        Converter converter = Converter()
+        bool transpose=false,
+        Converter converter = Converter(),
+        Assignment assignment = Assignment()
         )
 {
     elemSize3_t sz_input = input.getNumberOfElements();
@@ -594,7 +622,7 @@ void resample2d_plain(
             validOutputs,
             inputRegion,
             outputRegion,
-            flip,
+            transpose,
             converter );
 }
 
@@ -608,7 +636,7 @@ void resample2d_overlap(
         float4 outputRegion = make_float4(0,0,1,1)
         )
 {
-    resample2d<InputT, OutputT, NoConverter<InputT, OutputT> >(
+    resample2d<InputT, OutputT, NoConverter<InputT, OutputT>, AssignOperator >(
             input,
             output,
             inputRegion,

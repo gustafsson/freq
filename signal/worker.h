@@ -145,6 +145,8 @@ public:
 
     /**
       Get/set the data source for this worker.
+      // TODO worker should overload operation instead so that source can be
+        set without including "worker.h"
       */
     Signal::pOperation     source() const;
     void                source(Signal::pOperation s);

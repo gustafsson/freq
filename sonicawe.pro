@@ -85,6 +85,7 @@ SOURCES += \
     ui/propertiesstroke.cpp \
     ui/updatewidgetsink.cpp \
     heightmap/resampletest.cpp \
+    tools/support/brushfilter.cu
 
 HEADERS += \
     adapters/audiofile.h \
@@ -140,6 +141,10 @@ HEADERS += \
     ui/updatewidgetsink.h \
     heightmap/resampletest.h \
     heightmap/resampletest.cu.h \
+    tools/support/brushfilter.h \
+    tools/support/brushfilter.cu.h \
+    tools/brushcontroller.h \
+    tools/brushview.h
 
 FORMS += \
     tools/selectionviewmodel.ui \
