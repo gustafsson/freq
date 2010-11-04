@@ -1,7 +1,7 @@
 #!/bin/bash
 bury_copy() { mkdir -p "`dirname $2`" && cp "$1" "$2"; }
 
-if [ "$1" ] && [ -z "$2" ] && [ "$(basename `pwd`)" -eq "dist" ] ; then
+if [ "$1" ] && [ -z "$2" ] && [ "$(basename `pwd`)" == "dist" ] ; then
         version=$1
 else
         echo "Creates a Sonic AWE package for Debian linux"
@@ -24,10 +24,12 @@ share=$package/usr/share/sonicawe/.
 pushd .. && \
 rm -rf $package && \
 cp -r dist/package-debian $package && \
-bury_copy /usr/local/cuda/lib/libcudart.so* $package/usr/bin/. && \
-cp -r $package && \
-bury_copy sonicawe $package/usr/bin/. && \
-bury_copy sonicawe.1 $P/usr/share/man/man1/. && \
+mkdir -p $package/usr/local/lib && \
+mkdir -p $package/usr/local/bin && \
+cp -r /usr/local/cuda/lib/libcudart.so* $package/usr/local/bin/. && \
+cp -r /usr/local/cuda/lib/libcufft.so* $package/usr/local/bin/. && \
+cp sonicawe $package/usr/local/bin/. && \
+bury_copy sonicawe.1 $package/usr/local/share/man/man1/. && \
 mkdir -p $share && \
 cp matlab/sawe_extract_cwt.m $share && \
 cp matlab/sawe_extract_cwt_time.m $share && \
@@ -45,14 +47,14 @@ cp matlab/sawe_savechunk.m $share && \
 cp matlab/sawe_savechunk_oct.m $share && \
 cp -r license $share && \
 pushd $package && \
-gzip -f usr/share/man/man1/sonicawe.1 && \
+gzip -f usr/local/share/man/man1/sonicawe.1 && \
 rm -f DEBIAN/md5sums && \
 for i in `find -name *~`; do rm $i; done && \
 for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done && \
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done && \
 popd && \
-output_deb=sonicawe_$version_`uname -m`.deb && \
-dpkg -b $package $output_deb && \
+output_deb="sonicawe_"$version"_`uname -m`.deb" && \
+dpkg -b $package dist/$output_deb && \
 echo "OUTPUT" && \
-echo "    `pwd`/$output_deb" && \
+echo "    `pwd`/dist/$output_deb" && \
 popd

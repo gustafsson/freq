@@ -1,5 +1,5 @@
 Package: sonicawe-unstable
-Version: 0.8.27
+Version: 0.10.05
 Section: non-free/audio
 Priority: optional
 Architecture: amd64
