@@ -642,7 +642,7 @@ unsigned Cwt::
 {
     float v = _scales_per_octave;
     float log2_a = 1.f/v;
-    float width_number_of_sigmas = 3;
+    float width_number_of_sigmas = 2;
     float bin = log2_a * j - log2( 1.f + width_number_of_sigmas/(2*M_PI*sigma()) );
 
     if (bin < 0)

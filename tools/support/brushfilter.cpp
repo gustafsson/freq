@@ -28,7 +28,8 @@ void MultiplyBrush::
         float scale2 = heightmapAxis.getFrequencyScalar( chunk.max_hz );
 
         ::multiply(
-                make_float4(chunk.startTime(), scale1, chunk.endTime(), scale2),
+                make_float4(chunk.chunk_offset/chunk.sample_rate, scale1,
+                            (chunk.chunk_offset + chunk.nSamples())/chunk.sample_rate, scale2),
                 chunk.transform_data->getCudaGlobal(),
                 make_float4(a.time, a.scale, b.time, b.scale),
                 v.second->getCudaGlobal());

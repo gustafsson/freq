@@ -3,12 +3,29 @@
 
 #include "resample.cu.h"
 
+class ConverterAmplitude
+{
+public:
+    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    {
+        return sqrt(v.x*v.x + v.y*v.y);
+    }
+};
+
+class ConverterPhase
+{
+public:
+    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    {
+        return atan2(v.y, v.x);
+    }
+};
 
 void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
                  uint2 validInputs,
                  float4 inputRegion,
-                 float4 outputRegion )
+                 float4 outputRegion)
 {
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
@@ -16,14 +33,27 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
     uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    resample2d<float2, float, ConverterAmplitude, AssignOperator<float> >(
-            input,
-            output,
-            validInputs4,
-            validOutputs,
-            inputRegion,
-            outputRegion
-    );
+    bool tittafas = false;
+    if (!tittafas)
+    {
+        resample2d<float2, float, ConverterAmplitude, AssignOperator<float> >(
+                input,
+                output,
+                validInputs4,
+                validOutputs,
+                inputRegion,
+                outputRegion
+        );
+    } else {
+        resample2d<float2, float, ConverterPhase, AssignOperator<float> >(
+                    input,
+                    output,
+                    validInputs4,
+                    validOutputs,
+                    inputRegion,
+                    outputRegion
+            );
+    }
 }
 
 
