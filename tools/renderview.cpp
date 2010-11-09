@@ -76,9 +76,7 @@ void RenderView::
     if (_qx>l) _qx=l;
 
     // todo isn't "requested fps" is a renderview property?
-    model->project()->worker.requested_fps(30);
-
-    update();
+    userinput_update();
 }
 
 
@@ -91,6 +89,13 @@ Support::ToolSelector* RenderView::
     return _tool_selector.get();
 }
 
+
+void RenderView::
+        userinput_update()
+{
+    model->project()->worker.requested_fps(30);
+    update();
+}
 
 void RenderView::
         initializeGL()
@@ -237,6 +242,9 @@ void RenderView::
         bool isWorking = !model->project()->worker.todo_list().empty();
 
         if (wasWorking || isWorking) {
+            if (!_work_timer.get())
+                _work_timer.reset( new TaskTimer("Working"));
+
             // project->worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
             if (!model->project()->worker.isRunning()) {
@@ -249,13 +257,10 @@ void RenderView::
 
                 model->project()->worker.checkForErrors();
             }
-
-            if (!_work_timer.get())
-                _work_timer.reset( new TaskTimer("Working"));
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
-                _work_timer->info("Finished %u chunks, %g s. Work session #%u",
+                _work_timer->info("Finished %u chunks covering %g s. Work session #%u",
                                   model->project()->worker.work_chunks,
                                   model->project()->worker.work_time, workcount);
                 model->project()->worker.work_chunks = 0;

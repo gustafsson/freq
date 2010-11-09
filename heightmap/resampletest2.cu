@@ -1,7 +1,7 @@
 #include "resampletest.cu.h"
 #include <stdio.h>
 
-#include "resample.cu.h"
+#include <resample.cu.h>
 
 void simple_resample2d_2(
         cudaPitchedPtrType<float2> input,

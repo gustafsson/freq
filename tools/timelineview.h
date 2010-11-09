@@ -27,6 +27,8 @@ public:
     //virtual void    put( Signal::pBuffer , Signal::pOperation );
     //virtual void    add_expected_samples( const Signal::Intervals& );
 
+    void userinput_update();
+
 protected:
     /// @overload QGLWidget::initializeGL()
     virtual void initializeGL();

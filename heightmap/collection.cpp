@@ -624,39 +624,16 @@ static pOperation
 void Collection::
         fillBlock( pBlock block )
 {
-    Tfr::Stft trans;
-    trans.set_approximate_chunk_size(1 << 12); // 4096
-
-    Position a, b;
-    block->ref.getArea(a,b);
-
     pOperation fast_source = Heightmap::fast_source( worker->source() );
 
-    unsigned first_sample = (unsigned)floor(a.time*fast_source->sample_rate()),
-             last_sample = (unsigned)ceil(b.time*fast_source->sample_rate()),
-             chunk_size = trans.chunk_size();
-    // Margin makes sure that the STFT is computed for one block before and one
-    // block after the signal. This makes it possible to do proper
-    // interpolations so that there won't be any edges between blocks
-
-    unsigned first_chunk = 0,
-             last_chunk = (last_sample + 1.5*chunk_size)/chunk_size;
-
-    if (first_sample >= 1.5*chunk_size)
-        first_chunk = (first_sample - 1.5*chunk_size)/chunk_size;
-
-
-    pBuffer buff = fast_source->readFixedLength( Interval(
-            first_chunk*chunk_size,
-            last_chunk*chunk_size) );
-
-
-    Tfr::pChunk stft = trans( buff );
-
-
     StftToBlock stftmerger(this);
+    Tfr::Stft* transp = new Tfr::Stft();
+    transp->set_approximate_chunk_size(1 << 12); // 4096
+    stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.source( fast_source );
-    stftmerger.mergeChunk(block, *stft, block->glblock->height()->data);
+    //stftmerger.mergeChunk(block, *stft, block->glblock->height()->data);
+    Tfr::ChunkAndInverse ci = stftmerger.computeChunk( block->ref.getInterval() );
+    stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
 
     // StftToBlock (rather BlockFilter) validates samples, Discard those.
     block->valid_samples = Intervals();

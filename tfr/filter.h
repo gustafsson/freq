@@ -10,6 +10,25 @@
 
 namespace Tfr {
 
+/// @see ChunkAndInverse::inverse
+struct ChunkAndInverse
+{
+    /**
+      The Tfr::Chunk as computed by readChunk(), or source()->readChunk()
+      if transform() == source()->transform().
+      */
+    pChunk chunk;
+
+
+    /**
+      The variable 'inverse' _may_ be set by readChunk if
+      this->source()->readFixed(chunk->getInterval()) is identical to
+      this->_transform->inverse(chunk). In that case the inverse won't be
+      computed again.
+      */
+    Signal::pBuffer inverse;
+};
+
 
 /**
   Virtual base class for filters. To create a new filter, use CwtFilter or
@@ -58,31 +77,25 @@ protected:
     virtual void operator()( Chunk& ) = 0;
 
 
-    /// @see ChunkAndInverse::inverse
-    struct ChunkAndInverse
-    {
-        /**
-          The Tfr::Chunk as computed by readChunk(), or source()->readChunk()
-          if transform() == source()->transform().
-          */
-        pChunk chunk;
-
-
-        /**
-          The variable 'inverse' _may_ be set by readChunk if
-          this->source()->readFixed(chunk->getInterval()) is identical to
-          this->_transform->inverse(chunk). In that case the inverse won't be
-          computed again.
-          */
-        Signal::pBuffer inverse;
-    };
-
-
     /**
       Meant to be used between Filters of the same kind to avoid transforming
       back and forth multiple times.
       */
-    virtual ChunkAndInverse readChunk( const Signal::Interval& I ) = 0;
+    virtual ChunkAndInverse readChunk( const Signal::Interval& I );
+
+
+    /**
+      readChunk first calls computeChunk to compute a chunk and then calls
+      applyFilter to apply the filter to the chunk.
+      */
+    virtual ChunkAndInverse computeChunk( const Signal::Interval& I ) = 0;
+
+
+    /**
+      The default implementation of applyFilter is to call operator()( Chunk& )
+      @see computeChunk
+      */
+    virtual void applyFilter( Tfr::pChunk chunk );
 
 
     /**

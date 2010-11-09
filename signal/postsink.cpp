@@ -9,8 +9,8 @@
 #include <TaskTimer.h>
 #include <demangle.h>
 
-//#define DEBUG_POSTSINK if(0)
-#define DEBUG_POSTSINK
+#define DEBUG_POSTSINK if(0)
+//#define DEBUG_POSTSINK
 
 using namespace std;
 
@@ -75,7 +75,6 @@ Signal::pBuffer PostSink::
     }
 
     pBuffer b = prev->read( I );
-    Statistics<float>(b->waveform_data());
 
     // prev.reset( new BufferSource( b ));
     BOOST_FOREACH( pOperation c, active_operations) {

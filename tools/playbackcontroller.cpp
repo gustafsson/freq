@@ -36,8 +36,9 @@ void PlaybackController::
     connect(ui->actionPlaySelection, SIGNAL(triggered()), SLOT(receivePlaySound()));
     connect(ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), SLOT(receiveFollowPlayMarker(bool)));
 
-    // Make RenderView keep on rendering as long as the playback marker moves
-    connect(_view, SIGNAL(update_view()), render_view, SLOT(update()));
+    // Make RenderView keep on rendering (with interactive framerate) as long
+    // as the playback marker moves
+    connect(_view, SIGNAL(update_view()), render_view, SLOT(userinput_update()));
 
     // If playback is active, draw the playback marker in PlaybackView whenever
     // RenderView paints.

@@ -8,6 +8,7 @@
 #include "tfr/filter.h"
 #include "sawe/project.h"
 #include "support/brushfilter.h"
+#include "support/brushpaint.cu.h"
 #include "heightmap/reference.h"
 
 namespace Tools
@@ -30,7 +31,8 @@ public:
 private:
     Signal::pOperation filter_;
 
-    Signal::Interval addGauss( Heightmap::Reference ref, Heightmap::Position pos );
+    Signal::Interval addGauss( Heightmap::Reference ref, Gauss gauss );
+    float xscale_;
 };
 
 

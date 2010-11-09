@@ -44,6 +44,14 @@ TimelineView::
 
 
 void TimelineView::
+        userinput_update()
+{
+    _project->worker.requested_fps(30);
+    update();
+}
+
+
+void TimelineView::
         initializeGL()
 {
     glShadeModel(GL_SMOOTH);
@@ -216,7 +224,6 @@ void TimelineView::
             {
                 float f = _render_view->model->renderer->camera[2];
                 _render_view->setPosition( new_t, f);
-                _render_view->update();
             }
             break;
         }

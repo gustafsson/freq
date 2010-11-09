@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "heightmap/block.cu.h"
 
-#include "resample.cu.h"
+#include <resample.cu.h>
 
 
 class ConverterPhase
@@ -13,12 +13,22 @@ public:
     }
 };
 
-class WeightInterpolation
+#define M_PIf ((float)M_PI)
+class WeightFetcher
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    template<typename Reader>
+    __device__ float operator()( uint2 const& p, Reader& reader )
     {
-        return atan2(v.y, v.x);
+        float v = DefaultFetcher<float, ConverterAmplitude>()( p, reader );
+        float phase1 = DefaultFetcher<float, ConverterPhase>()( p, reader );
+        float phase2 = DefaultFetcher<float, ConverterPhase>()( make_uint2(p.x, p.y+1), reader );
+        float phasediff = phase2 - phase1;
+        if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
+        if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
+        float s = 1000;
+        float k = exp2f(-s*phasediff*phasediff);
+        return v * k;
     }
 };
 
@@ -26,7 +36,9 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
                  uint2 validInputs,
                  float4 inputRegion,
-                 float4 outputRegion)
+                 float4 outputRegion,
+                 Heightmap::ComplexInfo transformMethod
+                 )
 {
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
@@ -34,9 +46,21 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
     uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    bool tittafas = false;
-    if (!tittafas)
+    switch (transformMethod)
     {
+    case Heightmap::ComplexInfo_Amplitude_Weighted:
+    {
+        resample2d_fetcher<float2, float, WeightFetcher, AssignOperator<float> >(
+                input,
+                output,
+                validInputs4,
+                validOutputs,
+                inputRegion,
+                outputRegion
+        );
+        break;
+    }
+    case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
         resample2d<float2, float, ConverterAmplitude, AssignOperator<float> >(
                 input,
                 output,
@@ -45,7 +69,8 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                 inputRegion,
                 outputRegion
         );
-    } else {
+        break;
+    case Heightmap::ComplexInfo_Phase:
         resample2d<float2, float, ConverterPhase, AssignOperator<float> >(
                     input,
                     output,
@@ -771,17 +796,9 @@ __global__ void kernel_expand_complete_stft(
         q = 3*q*q-2*q*q*q; // an 'S' curve from 0 to 1.
         val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
 
-        const float f0 = 2.0f + 35*ff*ff*ff;
-//        const float f0 = 15.f;
-//        val*=sqrt(f0);
-        val*=f0;
-
-        //float if0 = 40.f/(2.0f + 35*ff*ff*ff);
-        //float if0 = 40.f/(2.0f + 35.f*ff*ff*ff);
-        //if0=if0*if0*if0;
-        //val=sqrt(if0*val);
-
-        val*=4;
+        //ff = (hz_write-20)/22050.f;
+        //const float f0 = 2.0f + 35*ff*ff*ff;
+        val*=0.03f*hz_write;
     }
 
     val /= in_stft_size;

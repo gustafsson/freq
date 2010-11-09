@@ -43,6 +43,7 @@ namespace Tools
         void receiveSetTransform_Cwt_phase();
         void receiveSetTransform_Cwt_reassign();
         void receiveSetTransform_Cwt_ridge();
+        void receiveSetTransform_Cwt_weight();
 
     private slots:
         void clearCachedHeightmap();

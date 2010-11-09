@@ -2,7 +2,6 @@
 #include <demangle.h>
 
 #include "tfr/cwt.h"
-#include "support/brushpaint.cu.h"
 
 namespace Tools {
 
@@ -10,7 +9,8 @@ namespace Tools {
 BrushModel::
         BrushModel( Sawe::Project* project )
             :
-            brush_factor(0)
+            brush_factor(0),
+            xscale_(10)
 {
     filter_.reset( new Support::MultiplyBrush );
     filter_->source( project->head_source() );
@@ -31,21 +31,71 @@ Signal::Interval BrushModel::
     Heightmap::Position a, b;
     ref.getArea(a, b);
 
+    xscale_ = b.time-a.time;
+    if (xscale_ < 0.5)
+        xscale_ = 0.5;
+
+    Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
+    float fs = filter()->sample_rate();
+    float hz = cwt.compute_frequency2( fs, pos.scale );
+    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_t( fs, hz );
+    float deltascale = cwt.sigma() / cwt.nScales(fs);
+    float deltat = deltasample/fs;
+    deltat *= xscale_;
+    deltascale *= 0.01;
+
+    Gauss gauss;
+    gauss.pos = make_float2( pos.time, pos.scale );
+    gauss.scale = brush_factor;
+    gauss.sigma = make_float2( 1.f/deltat, 1.f/deltascale );
+
+    Heightmap::Reference
+            right = ref,
+            left = ref,
+            top = ref,
+            bottom = ref;
+
+    float threshold = 0.001f;
+    for (unsigned &x = left.block_index[0]; ; --x)
+    {
+        left.getArea(a, b);
+        if (0 == a.time || threshold > gauss.gauss_value(make_float2( a.time, pos.scale )))
+            break;
+    }
+    for (unsigned &x = right.block_index[0]; ; ++x)
+    {
+        right.getArea(a, b);
+        if (threshold > gauss.gauss_value(make_float2( b.time, pos.scale )))
+            break;
+    }
+    for (unsigned &y = bottom.block_index[1]; y>0; --y)
+    {
+        bottom.getArea(a, b);
+        if (0 == a.scale || threshold > gauss.gauss_value(make_float2( pos.time, a.scale )))
+            break;
+    }
+    for (unsigned &y = top.block_index[1]; ; ++y)
+    {
+        top.getArea(a, b);
+        if (1 >= b.scale || threshold > gauss.gauss_value(make_float2( pos.time, b.scale )))
+            break;
+    }
+
     Signal::Intervals r;
-    r |= addGauss(ref, pos);
-    r |= addGauss(ref.sibblingRight(), pos);
-    if (a.time>0)
-        r |= addGauss(ref.sibblingLeft(), pos);
-    if (a.scale>0)
-        r |= addGauss(ref.sibblingBottom(), pos);
-    if (b.scale<1)
-        r |= addGauss(ref.sibblingTop(), pos);
+
+    unsigned &x = ref.block_index[0],
+             &y = ref.block_index[1];
+
+    for (x = left.block_index[0]; x<=right.block_index[0]; ++x )
+        for (y = bottom.block_index[1]; y<=top.block_index[1]; ++y )
+            r |= addGauss(ref, gauss);
+
     return r.coveredInterval();
 }
 
 
 Signal::Interval BrushModel::
-        addGauss( Heightmap::Reference ref, Heightmap::Position pos )
+        addGauss( Heightmap::Reference ref, Gauss gauss )
 {
     Support::BrushFilter::BrushImageDataP& img = (*filter()->images)[ ref ];
 
@@ -58,34 +108,23 @@ Signal::Interval BrushModel::
         cudaMemset( img->getCudaGlobal().ptr(), 0, img->getSizeInBytes1D() );
     }
 
-    Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
-    float fs = filter()->sample_rate();
-    float hz = cwt.compute_frequency2( fs, pos.scale );
-    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_t( fs, hz );
-    float deltascale = cwt.sigma() / cwt.nScales(fs);
-    float deltat = deltasample/fs;
-    deltat*=10;
-    deltascale*=0.01;
-
     Heightmap::Position a, b;
     ref.getArea( a, b );
 
+    TaskTimer tt("Painting guass [(%g %g), (%g %g)]", a.time, a.scale, b.time, b.scale );
+
     ::addGauss( make_float4(a.time, a.scale, b.time, b.scale),
                    img->getCudaGlobal(),
-                   make_float2( pos.time, pos.scale ),
-                   make_float2( 1.f/deltat, 1.f/deltascale ),
-                   brush_factor );
+                   gauss );
 
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
     ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
                    blockData->getCudaGlobal(),
-                   make_float2( pos.time, pos.scale ),
-                   make_float2( 1.f/deltat, 1.f/deltascale ),
-                   brush_factor );
+                   gauss );
     ref.collection()->computeSlope( block, 0 );
 
-    return Signal::Interval(a.time*fs, b.time*fs);
+    return ref.getInterval();
 }
 
 

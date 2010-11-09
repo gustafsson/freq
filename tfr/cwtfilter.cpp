@@ -5,6 +5,7 @@
 #include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>
+#include <demangle.h>
 
 #include <boost/foreach.hpp>
 
@@ -29,12 +30,11 @@ CwtFilter::
 }
 
 
-Filter::ChunkAndInverse CwtFilter::
-        readChunk( const Signal::Interval& I )
+ChunkAndInverse CwtFilter::
+        computeChunk( const Signal::Interval& I )
 {
     unsigned firstSample = I.first, numberOfSamples = I.count();
 
-    TIME_CwtFilter TaskTimer tt("CwtFilter::readChunk [%u, %u)", firstSample, numberOfSamples);
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
 
     unsigned c = cwt.find_bin( cwt.nScales( sample_rate() ) - 1 );
@@ -60,124 +60,42 @@ Filter::ChunkAndInverse CwtFilter::
     if (numberOfSamples<smallest_ok_size)
         numberOfSamples=smallest_ok_size;
 
-    // These computations require a lot of memory allocations
-    // If we encounter out of cuda memory, we decrease the required
-    // memory in this while loop.
-    while (true) //try
+    unsigned L = redundant_samples + numberOfSamples + time_support;
+
+    TIME_CwtFilter TaskTimer tt("L=%u, redundant=%u, num=%u, support=%u, first=%u",
+                 L, redundant_samples, numberOfSamples, time_support, firstSample);
+
+    ChunkAndInverse ci;
+
+    ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
+
+    TIME_CwtFilter Intervals(ci.inverse->getInterval()).print("CwtFilter readFixedLength");
+
+    // Compute the continous wavelet transform
+    ci.chunk = (*transform())( ci.inverse );
+
+    return ci;
+}
+
+
+void CwtFilter::
+        applyFilter( Tfr::pChunk pchunk )
+{
+    TIME_CwtFilter Intervals(pchunk->getInterval()).print("CwtFilter applying filter");
+    Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( pchunk.get() );
+
+    //BlockFilter* bf = dynamic_cast<BlockFilter*>(this);
+    //if(bf) bf->_collection->update_sample_size( chunks );
+
+    BOOST_FOREACH( pChunk& chunk, chunks->chunks )
+    //unsigned C = chunks->chunks.size();
+    //pChunk chunk = chunks->chunks[C-2];
     {
-        TIME_CwtFilter Intervals(I).print("CwtFilter subread");
-        Filter::ChunkAndInverse ci;
-
-        CwtFilter* f = dynamic_cast<CwtFilter*>(source().get());
-        if ( f && f->transform() == transform()) {
-            ci = f->readChunk( I );
-
-        } else {
-            unsigned L = redundant_samples + numberOfSamples + time_support;
-
-            TIME_CwtFilter TaskTimer tt("L=%u, redundant=%u, num=%u, support=%u, first=%u",
-                         L, redundant_samples, numberOfSamples, time_support, firstSample);
-
-            ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
-
-            TIME_CwtFilter Intervals(ci.inverse->getInterval()).print("CwtFilter readFixedLength");
-
-            // Compute the continous wavelet transform
-            ci.chunk = (*transform())( ci.inverse );
-        }
-
-        // Only apply filter if it would affect these samples
-        Intervals work(ci.chunk->getInterval());
-        work -= affected_samples().inverse();
-
-        if (work)
-            ci.inverse.reset();
-
-        // Apply filter
-        if (work || !_try_shortcuts)
-        {
-            TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter applying filter");
-            Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( ci.chunk.get() );
-
-            //BlockFilter* bf = dynamic_cast<BlockFilter*>(this);
-            //if(bf) bf->_collection->update_sample_size( chunks );
-
-            BOOST_FOREACH( pChunk& chunk, chunks->chunks )
-            //unsigned C = chunks->chunks.size();
-            //pChunk chunk = chunks->chunks[C-2];
-            {
-                CudaException_CHECK_ERROR();
-                (*this)( *chunk );
-                CudaException_ThreadSynchronize();
-                CudaException_CHECK_ERROR();
-            }
-        }
-
-        TIME_CwtFilter Intervals(ci.chunk->getInterval()).print("CwtFilter after filter");
-
-        return ci;
-    }/* catch (const CufftException &x) {
-        switch (x.getCufftError())
-        {
-            case CUFFT_EXEC_FAILED:
-            case CUFFT_ALLOC_FAILED:
-                break;
-            default:
-                throw;
-        }
-
-        unsigned newL = cwt.prev_good_size( numberOfSamples, sample_rate());
-        if (newL < numberOfSamples ) {
-            numberOfSamples = newL;
-
-            TaskTimer("CwtFilter reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
-            continue;
-        }
-
-        // Try to decrease tf_resolution
-        if (cwt.tf_resolution() > 1)
-            cwt.tf_resolution(1/0.8f);
-
-        if (cwt.tf_resolution() > exp(-2.f ))
-        {
-            cwt.tf_resolution( cwt.tf_resolution()*0.8f );
-            float std_t = cwt.morlet_std_t(0, sample_rate());
-            cwt.wavelet_std_t( std_t );
-
-            TaskTimer("CwtFilter reducing tf_resolution to %g\n%s", cwt.tf_resolution(), x.what() ).suppressTiming();
-            continue;
-        }
-        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g, tf_resolution=%g' yields a chunk size of %u MB.\n\n%s)",
-                             cwt.wavelet_std_t(), cwt.tf_resolution(), cwt.wavelet_std_samples(sample_rate())*cwt.nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
-    } catch (const CudaException &x) {
-        if (cudaErrorMemoryAllocation != x.getCudaError() )
-            throw;
-
-        unsigned newL = cwt.prev_good_size( numberOfSamples, sample_rate());
-        if (newL < numberOfSamples ) {
-            numberOfSamples = newL;
-
-            TaskTimer("CwtFilter reducing chunk size to readRaw( %u, %u )\n%s", first_valid_sample, numberOfSamples, x.what() ).suppressTiming();
-            continue;
-        }
-
-        // Try to decrease tf_resolution
-        if (cwt.tf_resolution() > 1)
-            cwt.tf_resolution(1/0.8f);
-
-        if (cwt.tf_resolution() > exp(-2.f ))
-        {
-            cwt.tf_resolution( cwt.tf_resolution()*0.8f );
-            float std_t = cwt.morlet_std_t(0, sample_rate());
-            cwt.wavelet_std_t( std_t );
-
-            TaskTimer("CwtFilter reducing tf_resolution to %g\n%s", cwt.tf_resolution(), x.what() ).suppressTiming();
-            continue;
-        }
-
-        throw std::invalid_argument(printfstring("Not enough memory. Parameter 'wavelet_std_t=%g, tf_resolution=%g' yields a chunk size of %u MB.\n\n%s)",
-                             cwt.wavelet_std_t(), cwt.tf_resolution(), cwt.wavelet_std_samples(sample_rate())*cwt.nScales(sample_rate())*sizeof(float)*2>>20, x.what()));
-    }*/
+        CudaException_CHECK_ERROR();
+        (*this)( *chunk );
+        CudaException_ThreadSynchronize();
+        CudaException_CHECK_ERROR();
+    }
 }
 
 

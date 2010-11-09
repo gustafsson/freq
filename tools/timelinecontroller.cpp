@@ -97,7 +97,7 @@ void TimelineController::
            view->_xscale, view->_xoffs);
 
     // Only update the timeline, leave the main render view unaffected
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -130,7 +130,7 @@ void TimelineController::
 
             // Update both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).
-            view->_render_view->update();
+            view->_render_view->userinput_update();
         }
 
         if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
@@ -138,7 +138,7 @@ void TimelineController::
             view->_xoffs -= current[0] - prev[0];
 
             // Only update the timeline, leave the main render view unaffected
-            view->update();
+            view->userinput_update();
         }
         break;
 
@@ -152,7 +152,7 @@ void TimelineController::
             view->_xoffs = current[0] - 0.5f*length/view->_xscale;
 
             // Only update the timeline, leave the main render view unaffected
-            view->update();
+            view->userinput_update();
         }
         break;
     }

@@ -225,6 +225,7 @@ void Worker::
 
     if (value>_requested_fps) {
         _requested_fps = value;
+        samples_per_chunk_hint(1);
     }
 }
 

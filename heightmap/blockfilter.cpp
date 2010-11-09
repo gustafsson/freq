@@ -8,8 +8,11 @@
 #include <boost/foreach.hpp>
 #include <TaskTimer.h>
 
-//#define TIME_CWTTOBLOCK
-#define TIME_CWTTOBLOCK if(0)
+#define TIME_CWTTOBLOCK
+//#define TIME_CWTTOBLOCK if(0)
+
+// #define DEBUG_CWTTOBLOCK
+#define DEBUG_CWTTOBLOCK if(0)
 
 using namespace Tfr;
 
@@ -97,7 +100,7 @@ CwtToBlock::
         CwtToBlock( Collection* collection )
             :
             BlockFilter(collection),
-            complex_info(ComplexInfo_Amplitude_Weighted)
+            complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {}
 
 
@@ -112,6 +115,17 @@ void CwtToBlock::
 
     Signal::Intervals transferDesc = inInterval;
     transferDesc &= outInterval;
+
+    DEBUG_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk");
+    DEBUG_CWTTOBLOCK TaskTimer("outInterval=[%g, %g)",
+            outInterval.first / chunk.original_sample_rate,
+            outInterval.last / chunk.original_sample_rate ).suppressTiming();
+    DEBUG_CWTTOBLOCK TaskTimer("inInterval=[%g, %g)",
+            inInterval.first / chunk.original_sample_rate,
+            inInterval.last / chunk.original_sample_rate ).suppressTiming();
+    DEBUG_CWTTOBLOCK TaskTimer("transferDesc=[%g, %g)",
+            transferDesc.coveredInterval().first / chunk.original_sample_rate,
+            transferDesc.coveredInterval().last / chunk.original_sample_rate ).suppressTiming();
 
     // Remove already computed intervals
     // transferDesc -= block->valid_samples;
@@ -132,7 +146,7 @@ void CwtToBlock::
     block->ref.getArea(a,b);
     float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
     float chunk_length = chunk.n_valid_samples / chunk.sample_rate;
-    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
+    DEBUG_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
                                  chunk_startTime, chunk_startTime + chunk_length, a.time, b.time, a.scale, b.scale);
 
     float in_sample_rate = chunk.sample_rate;
@@ -146,7 +160,7 @@ void CwtToBlock::
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
     if (merge_first_scale >= merge_last_scale)
     {
-        if(0) TaskTimer("CwtToBlock::mergeChunk\n"
+        DEBUG_CWTTOBLOCK TaskTimer("CwtToBlock::mergeChunk. quiting early\n"
                   "merge_first_scale(%g) >= merge_last_scale(%g)\n"
                   "a.scale = %g, b.scale = %g\n"
                   "chunk_first_scale = %g, chunk_last_scale = %g\n"
@@ -181,25 +195,25 @@ void CwtToBlock::
     if (out_frequency_offset == _collection->scales_per_block())
         out_frequency_offset--;
 
-    TIME_CWTTOBLOCK TaskTimer("a.scale = %g", a.scale);
-    TIME_CWTTOBLOCK TaskTimer("b.scale = %g", b.scale);
-    TIME_CWTTOBLOCK TaskTimer("chunk_first_scale = %g", chunk_first_scale);
-    TIME_CWTTOBLOCK TaskTimer("chunk_last_scale = %g", chunk_last_scale);
-    TIME_CWTTOBLOCK TaskTimer("merge_first_scale = %g", merge_first_scale);
-    TIME_CWTTOBLOCK TaskTimer("merge_last_scale = %g", merge_last_scale);
-    TIME_CWTTOBLOCK TaskTimer("in_frequency_offset = %g", in_frequency_offset);
-    TIME_CWTTOBLOCK TaskTimer("out_frequency_offset = %g", out_frequency_offset);
-    TIME_CWTTOBLOCK TaskTimer("in_frequency_resolution = %g", in_frequency_resolution);
-    TIME_CWTTOBLOCK TaskTimer("out_frequency_resolution = %u", out_frequency_resolution);
-    TIME_CWTTOBLOCK TaskTimer("chunk.nScales() = %u", chunk.nScales());
-    TIME_CWTTOBLOCK TaskTimer("_collection->scales_per_block() = %u", _collection->scales_per_block());
+    DEBUG_CWTTOBLOCK TaskTimer("a.scale = %g", a.scale);
+    DEBUG_CWTTOBLOCK TaskTimer("b.scale = %g", b.scale);
+    DEBUG_CWTTOBLOCK TaskTimer("chunk_first_scale = %g", chunk_first_scale);
+    DEBUG_CWTTOBLOCK TaskTimer("chunk_last_scale = %g", chunk_last_scale);
+    DEBUG_CWTTOBLOCK TaskTimer("merge_first_scale = %g", merge_first_scale);
+    DEBUG_CWTTOBLOCK TaskTimer("merge_last_scale = %g", merge_last_scale);
+    DEBUG_CWTTOBLOCK TaskTimer("in_frequency_offset = %g", in_frequency_offset);
+    DEBUG_CWTTOBLOCK TaskTimer("out_frequency_offset = %g", out_frequency_offset);
+    DEBUG_CWTTOBLOCK TaskTimer("in_frequency_resolution = %g", in_frequency_resolution);
+    DEBUG_CWTTOBLOCK TaskTimer("out_frequency_resolution = %u", out_frequency_resolution);
+    DEBUG_CWTTOBLOCK TaskTimer("chunk.nScales() = %u", chunk.nScales());
+    DEBUG_CWTTOBLOCK TaskTimer("_collection->scales_per_block() = %u", _collection->scales_per_block());
 
 
     BOOST_FOREACH( Signal::Interval transfer, transferDesc )
     {
         TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u)", transfer.first, transfer.last);
 
-        TIME_CWTTOBLOCK {
+        DEBUG_CWTTOBLOCK {
             TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
             TaskTimer("outInterval [%u,%u)", outInterval.first, outInterval.last).suppressTiming();
             TaskTimer("chunk.first_valid_sample = %u", chunk.first_valid_sample).suppressTiming();
@@ -223,7 +237,7 @@ void CwtToBlock::
 
         CudaException_CHECK_ERROR();
 
-        TIME_CWTTOBLOCK TaskTimer("[(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
+        TIME_CWTTOBLOCK TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
                 a.time, a.scale,
                 b.time, b.scale,
                 chunk_a.time, chunk_a.scale,
@@ -233,6 +247,7 @@ void CwtToBlock::
 
         BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples < chunk.transform_data->getNumberOfElements().width );
 
+        // Invoke CUDA kernel execution to merge blocks
         ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
                          outData->getCudaGlobal(),
                          make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
@@ -240,25 +255,11 @@ void CwtToBlock::
                          make_float4( chunk_a.time, chunk_a.scale,
                                       chunk_b.time, chunk_b.scale ),
                          make_float4( a.time, a.scale,
-                                      b.time, b.scale )
+                                      b.time, b.scale ),
+                         complex_info
                          );
 
-        // Invoke CUDA kernel execution to merge blocks
-/*        ::blockMergeChunk( ,
-                           ,
 
-                           in_sample_rate,
-                           out_sample_rate,
-                           in_frequency_resolution,
-                           out_frequency_resolution,
-                           in_sample_offset,
-                           out_sample_offset,
-                           in_frequency_offset,
-                           out_frequency_offset,
-                           transfer.count() * (out_sample_rate / chunk.original_sample_rate),
-                           complex_info,
-                           cuda_stream);
-*/
         // TODO recompute transfer to the samples that have actual support
         CudaException_CHECK_ERROR();
         GlException_CHECK_ERROR();
