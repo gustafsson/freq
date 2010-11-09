@@ -116,6 +116,17 @@ void CwtToBlock::
     Signal::Intervals transferDesc = inInterval;
     transferDesc &= outInterval;
 
+    DEBUG_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk");
+    DEBUG_CWTTOBLOCK TaskTimer("outInterval=[%g, %g)",
+            outInterval.first / chunk.original_sample_rate,
+            outInterval.last / chunk.original_sample_rate ).suppressTiming();
+    DEBUG_CWTTOBLOCK TaskTimer("inInterval=[%g, %g)",
+            inInterval.first / chunk.original_sample_rate,
+            inInterval.last / chunk.original_sample_rate ).suppressTiming();
+    DEBUG_CWTTOBLOCK TaskTimer("transferDesc=[%g, %g)",
+            transferDesc.coveredInterval().first / chunk.original_sample_rate,
+            transferDesc.coveredInterval().last / chunk.original_sample_rate ).suppressTiming();
+
     // Remove already computed intervals
     // transferDesc -= block->valid_samples;
 
@@ -135,7 +146,7 @@ void CwtToBlock::
     block->ref.getArea(a,b);
     float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
     float chunk_length = chunk.n_valid_samples / chunk.sample_rate;
-    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
+    DEBUG_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
                                  chunk_startTime, chunk_startTime + chunk_length, a.time, b.time, a.scale, b.scale);
 
     float in_sample_rate = chunk.sample_rate;
@@ -226,7 +237,7 @@ void CwtToBlock::
 
         CudaException_CHECK_ERROR();
 
-        DEBUG_CWTTOBLOCK TaskTimer("[(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
+        TIME_CWTTOBLOCK TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
                 a.time, a.scale,
                 b.time, b.scale,
                 chunk_a.time, chunk_a.scale,

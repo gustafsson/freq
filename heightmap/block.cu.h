@@ -37,7 +37,9 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
                  uint2 validInputs,
                  float4 inputRegion,
-                 float4 outputRegion );
+                 float4 outputRegion,
+                 Heightmap::ComplexInfo transformMethod
+                 );
 
 extern "C"
 void blockMerge( cudaPitchedPtrType<float> inBlock,

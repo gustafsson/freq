@@ -103,7 +103,6 @@ HEADERS += \
     heightmap/position.h \
     heightmap/reference.h \
     heightmap/renderer.h \
-    heightmap/resample.cu.h \
     heightmap/slope.cu.h \
     sawe/application.h \
     sawe/layer.h \

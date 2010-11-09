@@ -192,13 +192,13 @@ Signal::Interval Reference::
     // this block overlap slightly into the samples that are needed for the
     // next block.
     float blockSize = _collection->samples_per_block() * ldexpf(1.f,log2_samples_size[0]);
-    float blockLocalSize = _collection->samples_per_block() / sample_rate();
+    float blockLocalSize = (_collection->samples_per_block()-1) / sample_rate();
 
     float startTime = blockSize * block_index[0];
     float endTime = startTime + blockLocalSize;
 
     float FS = _collection->worker->source()->sample_rate();
-    Signal::Interval i( startTime * FS, endTime * FS );
+    Signal::Interval i( startTime * FS, endTime * FS+1 );
 
     //Position a, b;
     //getArea( a, b );

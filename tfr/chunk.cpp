@@ -99,7 +99,7 @@ Signal::Interval Chunk::
 {
     Signal::Interval i = getInversedInterval();
     float scale = original_sample_rate/sample_rate;
-    return Signal::Interval( i.first * scale, i.last   * scale );
+    return Signal::Interval( i.first * scale, i.last * scale );
 }
 
 
