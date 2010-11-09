@@ -278,6 +278,7 @@ Tfr::pChunk Stft::
             b.number_of_samples()/_chunk_size,
             1 );
 
+    TaskTimer("b.number_of_samples = %lu", b.number_of_samples()).suppressTiming();
     if (0==n.height || 32768<n.height)
         return Tfr::pChunk();
 

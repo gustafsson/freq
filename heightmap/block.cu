@@ -13,12 +13,22 @@ public:
     }
 };
 
-class WeightInterpolation
+#define M_PIf ((float)M_PI)
+class WeightFetcher
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    template<typename Reader>
+    __device__ float operator()( uint2 const& p, Reader& reader )
     {
-        return atan2(v.y, v.x);
+        float v = DefaultFetcher<float, ConverterAmplitude>()( p, reader );
+        float phase1 = DefaultFetcher<float, ConverterPhase>()( p, reader );
+        float phase2 = DefaultFetcher<float, ConverterPhase>()( make_uint2(p.x, p.y+1), reader );
+        float phasediff = phase2 - phase1;
+        if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
+        if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
+        float s = 1000;
+        float k = exp2f(-s*phasediff*phasediff);
+        return v * k;
     }
 };
 
@@ -38,18 +48,19 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
 
     switch (transformMethod)
     {
-    case ComplexInfo_Amplitude_Weighted:
-        resample2d<float2, float, Fetcher, AssignOperator<float> >(
+    case Heightmap::ComplexInfo_Amplitude_Weighted:
+    {
+        resample2d_fetcher<float2, float, WeightFetcher, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
                 validOutputs,
-
                 inputRegion,
                 outputRegion
         );
         break;
-    case ComplexInfo_Amplitude_Non_Weighted:
+    }
+    case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
         resample2d<float2, float, ConverterAmplitude, AssignOperator<float> >(
                 input,
                 output,
@@ -59,7 +70,7 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                 outputRegion
         );
         break;
-    case ComplexInfo_Phase:
+    case Heightmap::ComplexInfo_Phase:
         resample2d<float2, float, ConverterPhase, AssignOperator<float> >(
                     input,
                     output,

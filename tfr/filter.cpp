@@ -1,6 +1,8 @@
 #include "filter.h"
 #include "signal/buffersource.h"
 
+#include <demangle.h>
+
 //#define TIME_Filter
 #define TIME_Filter if(0)
 
@@ -71,6 +73,50 @@ Signal::pBuffer Filter::
     TIME_Filter Intervals(r->getInterval()).print("Filter computed inverse");
 
     return r;
+}
+
+
+ChunkAndInverse Filter::
+        readChunk( const Signal::Interval& I )
+{
+    TIME_Filter TaskTimer tt("%s::readChunk [%u, %u)%u#",
+                             demangle(typeid(*this).name()).c_str(),
+                             I.first, I.last, I.count());
+
+    ChunkAndInverse ci;
+
+    Filter* f = dynamic_cast<Filter*>(source().get());
+    if ( f && f->transform() == transform()) {
+        ci = f->readChunk( I );
+
+    } else {
+        ci = computeChunk( I );
+    }
+
+    // Apply filter
+    Intervals work(ci.chunk->getInterval());
+    work -= affected_samples().inverse();
+
+    if (work)
+        ci.inverse.reset();
+
+    // Only apply filter if it would affect these samples
+    if (work || !_try_shortcuts)
+    {
+        TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter applying filter operation");
+        applyFilter( ci.chunk );
+    }
+
+    TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter after filter operation");
+
+    return ci;
+}
+
+
+void Filter::
+        applyFilter( Tfr::pChunk chunk )
+{
+    (*this)( *chunk );
 }
 
 } // namespace Tfr

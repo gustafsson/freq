@@ -64,7 +64,7 @@ void RenderController::
         receiveSetRainbowColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -72,7 +72,7 @@ void RenderController::
         receiveSetGrayscaleColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -80,7 +80,7 @@ void RenderController::
         receiveToogleHeightlines(bool value)
 {
     model()->renderer->draw_height_lines = value;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -88,7 +88,7 @@ void RenderController::
         receiveTogglePiano(bool value)
 {
     model()->renderer->draw_piano = value;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -96,7 +96,7 @@ void RenderController::
         receiveToggleHz(bool value)
 {
     model()->renderer->draw_hz = value;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -105,7 +105,7 @@ void RenderController::
 {
     float f = value / 50.f - 1.f;
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -121,7 +121,7 @@ void RenderController::
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
 
     model()->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -138,9 +138,10 @@ void RenderController::
     Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
-    view->update();
+    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    view->userinput_update();
 }
 
 
@@ -158,7 +159,8 @@ void RenderController::
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
 
-    view->update();
+    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    view->userinput_update();
 }
 
 
@@ -177,7 +179,8 @@ void RenderController::
     ps->sinks(v);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
-    view->update();
+    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    view->userinput_update();
 }
 
 
@@ -194,11 +197,12 @@ void RenderController::
     Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     ps->filter( Signal::pOperation(new Filters::Reassign()));
 
-    view->update();
+    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    view->userinput_update();
 }
 
 
@@ -215,11 +219,32 @@ void RenderController::
     Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
     v.push_back( Signal::pOperation( cwtblock ) );
     ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     ps->filter( Signal::pOperation(new Filters::Ridge()));
 
-    view->update();
+    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveSetTransform_Cwt_weight()
+{
+    Signal::pOperation s = model()->collection->postsink();
+    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+
+    if (!ps)
+        return;
+
+    std::vector<Signal::pOperation> v;
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
+    v.push_back( Signal::pOperation( cwtblock ) );
+    ps->sinks(v);
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+
+    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    view->userinput_update();
 }
 
 
@@ -276,6 +301,8 @@ void RenderController::
         transform->addActionItem( ui->actionTransform_Cwt_phase );
         transform->addActionItem( ui->actionTransform_Cwt_reassign );
         transform->addActionItem( ui->actionTransform_Cwt_ridge );
+        transform->addActionItem( ui->actionTransform_Cwt_weight );
+
         transform->decheckable( false );
         toolbar_render->addWidget( transform );
 
@@ -284,6 +311,8 @@ void RenderController::
         connect(ui->actionTransform_Cwt_phase, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_phase()));
         connect(ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_reassign()));
         connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
+        connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
+
     }
 
 

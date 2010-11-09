@@ -82,7 +82,7 @@ void NavigationController::
 //    if(leftButton.isDown() && rightButton.isDown())
 //        selectionButton.press( e->x(), this->height() - e->y() );
 
-    _view->update();
+    _view->userinput_update();
 }
 
 void NavigationController::
@@ -105,7 +105,7 @@ void NavigationController::
         default:
             break;
     }
-    _view->update();
+    _view->userinput_update();
 }
 
 
@@ -133,7 +133,7 @@ void NavigationController::
         if (r._pz>-.1) r._pz = -.1;
     }
 
-    _view->update();
+    _view->userinput_update();
 }
 
 
@@ -188,8 +188,7 @@ void NavigationController::
     rotateButton.update(x, y);
     scaleButton.update(x, y);
 
-    _view->model->project()->worker.requested_fps(30);
-    _view->update();
+    _view->userinput_update();
 }
 
 

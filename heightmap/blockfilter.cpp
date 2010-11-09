@@ -100,7 +100,7 @@ CwtToBlock::
         CwtToBlock( Collection* collection )
             :
             BlockFilter(collection),
-            complex_info(ComplexInfo_Amplitude_Weighted)
+            complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {}
 
 
@@ -255,7 +255,8 @@ void CwtToBlock::
                          make_float4( chunk_a.time, chunk_a.scale,
                                       chunk_b.time, chunk_b.scale ),
                          make_float4( a.time, a.scale,
-                                      b.time, b.scale )
+                                      b.time, b.scale ),
+                         complex_info
                          );
 
 

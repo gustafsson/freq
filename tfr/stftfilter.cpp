@@ -1,6 +1,7 @@
 #include "stftfilter.h"
 #include "stft.h"
 
+#include <neat_math.h>
 #include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>
@@ -25,42 +26,29 @@ StftFilter::
     transform( t );
 }
 
-
-Filter::ChunkAndInverse StftFilter::
-        readChunk( const Signal::Interval& I )
+ChunkAndInverse StftFilter::
+        computeChunk( const Signal::Interval& I )
 {
-    unsigned firstSample = I.first, numberOfSamples = I.count();
+    ((Stft*)transform().get())->set_approximate_chunk_size( 1 << 12 );
+    unsigned chunk_size = ((Stft*)transform().get())->chunk_size();
+    // Add a margin to make sure that the STFT is computed for one block before
+    // and one block after the signal. This makes it possible to do proper
+    // interpolations so that there won't be any edges between blocks
 
-    TIME_StftFilter TaskTimer tt("StftFilter::readChunk ( %u, %u )", firstSample, numberOfSamples);
+    unsigned first_chunk = 0,
+             last_chunk = (I.last + 1.5*chunk_size)/chunk_size;
 
-    Filter::ChunkAndInverse ci;
+    if (I.first >= 1.5*chunk_size)
+        first_chunk = (I.first - 1.5*chunk_size)/chunk_size;
 
-    StftFilter* f = dynamic_cast<StftFilter*>(source().get());
-    if ( f && f->transform() == transform()) {
-        ci = f->readChunk( I );
+    ChunkAndInverse ci;
 
-    } else {
-        ci.inverse = _source->readFixedLength( I );
+    ci.inverse = _source->readFixedLength( Interval(
+            first_chunk*chunk_size,
+            last_chunk*chunk_size) );
 
-        // Compute the continous wavelet transform
-        ci.chunk = (*transform())( ci.inverse );
-    }
-
-    // Apply filter
-    Intervals work(ci.chunk->getInterval());
-    work -= affected_samples().inverse();
-
-    if (work)
-        ci.inverse.reset();
-
-    // Only apply filter if it would affect these samples
-    if (work || !_try_shortcuts)
-    {
-        TIME_StftFilter Intervals(ci.chunk->getInterval()).print("StftFilter applying filter");
-        (*this)( *ci.chunk );
-    }
-
-    TIME_StftFilter Intervals(ci.chunk->getInterval()).print("StftFilter after filter");
+    // Compute the continous wavelet transform
+    ci.chunk = (*transform())( ci.inverse );
 
     return ci;
 }

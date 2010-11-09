@@ -44,6 +44,14 @@ TimelineView::
 
 
 void TimelineView::
+        userinput_update()
+{
+    _project->worker.requested_fps(30);
+    update();
+}
+
+
+void TimelineView::
         initializeGL()
 {
     glShadeModel(GL_SMOOTH);

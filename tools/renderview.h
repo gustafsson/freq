@@ -35,6 +35,7 @@ namespace Tools
 
         Support::ToolSelector* toolSelector();
 
+    public slots:
         void userinput_update();
 
     signals:

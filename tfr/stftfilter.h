@@ -11,7 +11,11 @@ public:
     StftFilter( Signal::pOperation source=Signal::pOperation(),
                 Tfr::pTransform transform=Tfr::pTransform() );
 
-    virtual Filter::ChunkAndInverse readChunk( const Signal::Interval& I );
+
+    /**
+      This computes the Stft chunk covering a given interval.
+      */
+    ChunkAndInverse computeChunk( const Signal::Interval& I );
 
 
     /**
