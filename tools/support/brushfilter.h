@@ -30,6 +30,8 @@ public:
 class MultiplyBrush: public BrushFilter
 {
 protected:
+    virtual Signal::Intervals affected_samples();
+
     virtual void operator()( Tfr::Chunk& );
 };
 

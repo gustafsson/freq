@@ -12,11 +12,31 @@ BrushFilter::
     images.reset( new BrushImages );
 }
 
+Signal::Intervals MultiplyBrush::
+        affected_samples()
+{
+    Signal::Intervals r;
+
+    BrushImages const& imgs = *images.get();
+
+    BOOST_FOREACH(BrushImages::value_type const& v, imgs)
+    {
+        r |= v.first.getInterval();
+    }
+
+    return r;
+}
 
 void MultiplyBrush::
         operator()( Tfr::Chunk& chunk )
 {
     BrushImages const& imgs = *images.get();
+
+    /*float2 *f = chunk.transform_data->getCpuMemory();
+    for (unsigned i=0; i <chunk.transform_data->getNumberOfElements1D(); ++i)
+        f[i] = make_float2(1,0);*/
+    //cudaMemset( chunk.transform_data->getCudaGlobal().ptr(), 0,
+    //            chunk.transform_data->getSizeInBytes1D() );
 
     BOOST_FOREACH(BrushImages::value_type const& v, imgs)
     {

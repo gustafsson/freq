@@ -216,7 +216,6 @@ void TimelineView::
             {
                 float f = _render_view->model->renderer->camera[2];
                 _render_view->setPosition( new_t, f);
-                _render_view->update();
             }
             break;
         }

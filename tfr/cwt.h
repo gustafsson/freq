@@ -96,7 +96,8 @@ private:
     float           _min_hz;
     float           _scales_per_octave;
     float           _tf_resolution;
-//    CufftHandleContext _fft_many;
+
+    std::map<unsigned, CufftHandleContext> _fft_many;
 
     /**
       Default value: _wavelet_time_suppport=3.

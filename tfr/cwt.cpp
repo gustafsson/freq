@@ -24,6 +24,9 @@
 //#define TIME_CWT if(0)
 #define TIME_CWT
 
+#define STAT_CWT if(0)
+//#define STAT_CWT
+
 #define TIME_CWTPART if(0)
 //#define TIME_CWTPART
 
@@ -77,7 +80,7 @@ pChunk Cwt::
             ((std::stringstream&)(ss<<buffer->getInterval())).str().c_str(),
             buffer->start(), buffer->length()+buffer->start() ));
 
-    TIME_CWT Statistics<float>(buffer->waveform_data());
+    TIME_CWT STAT_CWT Statistics<float>(buffer->waveform_data());
 
     Signal::BufferSource bs( buffer );
 
@@ -394,12 +397,12 @@ pChunk Cwt::
             //stft.set_exact_chunk_size(n.width);
 
             {
-                CufftHandleContext _fft_many;
+                CufftHandleContext& fftctx = _fft_many[ n.width ];
                 {
                     TIME_CWTPART TaskTimer tt("Allocating inverse fft");
-                    _fft_many(n.width, n.height);
+                    fftctx(n.width, n.height);
                 }
-                CufftException_SAFE_CALL(cufftExecC2C(_fft_many(n.width, n.height), d, d, CUFFT_INVERSE));
+                CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
             }
 
             TIME_CWTPART CudaException_ThreadSynchronize();
@@ -472,7 +475,7 @@ Signal::pBuffer Cwt::
 
     TIME_ICWT { tt->getStream() << "Computed CWT inverse: interval="
                 << r->getInterval() << ", fs=" << r->sample_rate;
-        Statistics<float>( r->waveform_data() );
+        STAT_CWT Statistics<float>( r->waveform_data() );
     }
 
     return r;

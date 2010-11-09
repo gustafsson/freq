@@ -1,39 +1,21 @@
 #include "brushpaint.cu.h"
 #include <operate.cu.h>
-#include "cuda_vector_types_op.h"
-
-class Gauss
-{
-public:
-    __device__ float gauss_value(float2 const& v)
-    {
-        float2 r = (v - pos);
-        r = r*r*sigma;
-        return scale*exp2f(-r.y-r.x);
-    }
-
-    float2 pos;
-    float2 sigma;
-    float scale;
-};
 
 class AddGaussOperator: public Gauss
 {
 public:
+    Gauss g;
     __device__ void operator()(float& e, float2 const& v)
     {
-        e += gauss_value(v);
+        e += g.gauss_value(v);
     }
 };
 
 
-void addGauss( float4 imageArea, cudaPitchedPtrType<float> image,
-               float2 pos, float2 sigma, float scale )
+void addGauss( float4 imageArea, cudaPitchedPtrType<float> image, Gauss g )
 {
     AddGaussOperator gauss;
-    gauss.pos = pos;
-    gauss.sigma = sigma;
-    gauss.scale = scale;
+    gauss.g = g;
 
     element_operate<float, AddGaussOperator>(image, imageArea, gauss);
 }
@@ -42,20 +24,18 @@ void addGauss( float4 imageArea, cudaPitchedPtrType<float> image,
 class MultiplyGaussOperator: public Gauss
 {
 public:
+    Gauss g;
     __device__ void operator()(float& e, float2 const& v)
     {
-        e *= exp2f(gauss_value(v));
+        e *= exp2f(g.gauss_value(v));
     }
 };
 
 
-void multiplyGauss( float4 imageArea, cudaPitchedPtrType<float> image,
-               float2 pos, float2 sigma, float scale )
+void multiplyGauss( float4 imageArea, cudaPitchedPtrType<float> image, Gauss g )
 {
     MultiplyGaussOperator gauss;
-    gauss.pos = pos;
-    gauss.sigma = sigma;
-    gauss.scale = scale;
+    gauss.g = g;
 
     element_operate<float, MultiplyGaussOperator>(image, imageArea, gauss);
 }

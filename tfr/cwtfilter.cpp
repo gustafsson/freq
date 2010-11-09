@@ -5,6 +5,7 @@
 #include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>
+#include <demangle.h>
 
 #include <boost/foreach.hpp>
 

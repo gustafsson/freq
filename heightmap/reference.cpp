@@ -45,7 +45,7 @@ Reference Reference::
 {
     Reference r = *this;
     r.log2_samples_size[1]--;
-    r.block_index[1]<<=1;
+    (r.block_index[1]<<=1)++;
     return r;
 }
 Reference Reference::
@@ -53,7 +53,7 @@ Reference Reference::
 {
     Reference r = *this;
     r.log2_samples_size[1]--;
-    (r.block_index[1]<<=1)++;
+    r.block_index[1]<<=1;
     return r;
 }
 

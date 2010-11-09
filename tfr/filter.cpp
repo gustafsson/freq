@@ -60,7 +60,7 @@ Signal::pBuffer Filter::
     ChunkAndInverse ci = readChunk( I );
 
     pBuffer r;
-    if (false && ci.inverse) // TODO remove 'false &&'
+    if (ci.inverse) // TODO remove 'false &&'
         r = ci.inverse;
     else
     {

@@ -98,13 +98,12 @@ void BrushController::
 {
     if (isEnabled())
     {
-        if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
-            draw_button_.press( e->x(), this->height() - e->y() );
+        draw_button_.press( e->x(), this->height() - e->y() );
 
         mouseMoveEvent( e );
     }
 
-    render_view_->update();
+    render_view_->userinput_update();
 }
 
 
@@ -115,7 +114,7 @@ void BrushController::
     // ok
     render_view_->model->collection->invalidate_samples( drawn_interval_ );
     drawn_interval_.clear();
-    render_view_->update();
+    render_view_->userinput_update();
 }
 
 
@@ -127,15 +126,21 @@ void BrushController::
         Tools::RenderView &r = *render_view_;
         r.makeCurrent();
 
+        float org_factor = model()->brush_factor;
+        if( e->buttons().testFlag( Qt::RightButton) )
+            model()->brush_factor *= -1;
+
         GLdouble p[2];
         if (draw_button_.worldPos(e->x(), height() - e->y(), p[0], p[1], r.xscale))
         {
             Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
             drawn_interval_ |= model()->paint( ref, Heightmap::Position( p[0], p[1]) );
         }
+
+        model()->brush_factor = org_factor;
     }
 
-    render_view_->update();
+    render_view_->userinput_update();
 }
 
 

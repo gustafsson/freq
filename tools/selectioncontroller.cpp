@@ -98,7 +98,7 @@ namespace Tools
                 selectionButton.press( e->x(), this->height() - e->y() );
         }
 
-        _render_view->update();
+        _render_view->userinput_update();
     }
 
 
@@ -137,7 +137,7 @@ namespace Tools
             default:
                 break;
         }
-        _render_view->update();
+        _render_view->userinput_update();
     }
 
 
@@ -177,8 +177,7 @@ namespace Tools
         //Updating the buttons
         selectionButton.update( x, y );
 
-        _render_view->model->project()->worker.requested_fps(30);
-        _render_view->update();
+        _render_view->userinput_update();
     }
 
 

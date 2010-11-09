@@ -35,6 +35,8 @@ namespace Tools
 
         Support::ToolSelector* toolSelector();
 
+        void userinput_update();
+
     signals:
         /**
           Emitted in the destructor, before the OpenGL context is destroyed.
