@@ -3,16 +3,17 @@
 
 #include "resample.cu.h"
 
-class ConverterAmplitude
+
+class ConverterPhase
 {
 public:
     __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
     {
-        return sqrt(v.x*v.x + v.y*v.y);
+        return atan2(v.y, v.x);
     }
 };
 
-class ConverterPhase
+class WeightInterpolation
 {
 public:
     __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
@@ -770,16 +771,17 @@ __global__ void kernel_expand_complete_stft(
         q = 3*q*q-2*q*q*q; // an 'S' curve from 0 to 1.
         val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
 
-//        const float f0 = 2.0f + 35*ff*ff*ff;
-        const float f0 = 15.f;
-        val*=sqrt(f0);
+        const float f0 = 2.0f + 35*ff*ff*ff;
+//        const float f0 = 15.f;
+//        val*=sqrt(f0);
+        val*=f0;
 
         //float if0 = 40.f/(2.0f + 35*ff*ff*ff);
         //float if0 = 40.f/(2.0f + 35.f*ff*ff*ff);
         //if0=if0*if0*if0;
         //val=sqrt(if0*val);
 
-        val*=19;
+        val*=4;
     }
 
     val /= in_stft_size;
