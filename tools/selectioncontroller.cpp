@@ -92,9 +92,9 @@ namespace Tools
         square_view_.reset( new Selections::SquareView(        square_model_.data(), &render_view()->model->project()->worker ));
         square_controller_ = new Selections::SquareController( square_view_.data(), this );
 
-        peak_model_.reset( new Selections::PeakModel() );
+        /*peak_model_.reset( new Selections::PeakModel() );
         peak_view_.reset( new Selections::PeakView());
-        peak_controller_ = new Selections::PeakController();
+        peak_controller_ = new Selections::PeakController();*/
     }
 
 

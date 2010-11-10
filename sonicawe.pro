@@ -75,6 +75,7 @@ SOURCES += \
     tools/*.cpp \
     tools/support/*.cpp \
     tools/selections/*.cpp \
+    tools/selections/support/*.cpp \
     ui/comboboxaction.cpp \
     ui/mainwindow.cpp \
     ui/mousecontrol.cpp \
@@ -121,6 +122,7 @@ HEADERS += \
     tools/*.h \
     tools/support/*.h \
     tools/selections/*.h \
+    tools/selections/support/*.h \
     ui/comboboxaction.h \
     ui/mainwindow.h \
     ui/mousecontrol.h \
@@ -143,6 +145,7 @@ CUDA_SOURCES += \
     tfr/wavelet.cu \
     tools/support/brushfilter.cu \
     tools/support/brushpaint.cu \
+    tools/selections/support/watershead.cu \
 
 SHADER_SOURCS += \
     heightmap/heightmap.frag \
