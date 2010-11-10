@@ -1,14 +1,14 @@
-#ifndef FILTER_ELLIPS_H
-#define FILTER_ELLIPS_H
+#ifndef FILTER_ELLIPSE_H
+#define FILTER_ELLIPSE_H
 
 #include "tfr/cwtfilter.h"
 
 namespace Filters {
 
-class Ellips: public Tfr::CwtFilter
+class Ellipse: public Tfr::CwtFilter
 {
 public:
-    Ellips(float t1, float f1, float t2, float f2, bool save_inside=false);
+    Ellipse(float t1, float f1, float t2, float f2, bool save_inside=false);
 
     virtual void operator()( Tfr::Chunk& );
     virtual Signal::Intervals zeroed_samples();
@@ -29,4 +29,4 @@ public:
 };
 
 } // namespace Filters
-#endif // FILTER_ELLIPS_H
+#endif // FILTER_ELLIPSE_H

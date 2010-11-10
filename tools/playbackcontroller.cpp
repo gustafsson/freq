@@ -53,33 +53,35 @@ void PlaybackController::
     TaskTimer tt("Initiating playback of selection");
 
 
-    Signal::PostSink* selection_operations = _view->model->selection->getPostSink();
+    Signal::PostSink* postsink_operations = _view->model->getPostSink();
+    Signal::pOperation filter = _view->model->selection->current_filter_;
 
     // TODO define selections by a selection structure. Currently selections
     // are defined from the first sampels that is non-zero affected by a
     // filter, to the last non-zero affected sample.
-    if (!selection_operations->filter()) {
+    if (!filter) {
         tt.info("No filter, no selection");
         return; // No filter, no selection...
     }
 
 
-    if (selection_operations->sinks().empty())
+    if (true || postsink_operations->sinks().empty())
     {
         model()->adapter_playback.reset();
         model()->adapter_playback.reset( new Adapters::Playback( _view->model->playback_device ));
         std::vector<Signal::pOperation> sinks;
         sinks.push_back( model()->adapter_playback );
         sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
-        selection_operations->sinks( sinks );
-        Signal::Intervals a = selection_operations->filter()->affected_samples();
+        postsink_operations->sinks( sinks );
+        postsink_operations->filter( filter );
+        Signal::Intervals a = filter->affected_samples();
 
         a.print(__FUNCTION__);
 
-        a -= selection_operations->filter()->zeroed_samples();
+        a -= filter->zeroed_samples();
 
         a.print(__FUNCTION__);
-        selection_operations->invalidate_samples( a );
+        postsink_operations->invalidate_samples( a );
     }
     else
     {

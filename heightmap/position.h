@@ -7,7 +7,7 @@ namespace Heightmap {
 
 class Position {
 public:
-    // TODO rename to frequency
+    // TODO rename to normalized frequency or something...
     float time, scale;
 
     Position():time(0), scale(0) { }

@@ -1,5 +1,5 @@
-#include "ellips.h"
-#include "ellips.cu.h"
+#include "ellipse.h"
+#include "ellipse.cu.h"
 
 // gpumisc
 #include <TaskTimer.h>
@@ -12,7 +12,7 @@ using namespace Tfr;
 
 namespace Filters {
 
-Ellips::Ellips(float t1, float f1, float t2, float f2, bool save_inside)
+Ellipse::Ellipse(float t1, float f1, float t2, float f2, bool save_inside)
 {
     _t1 = t1;
     _f1 = f1;
@@ -22,16 +22,16 @@ Ellips::Ellips(float t1, float f1, float t2, float f2, bool save_inside)
 }
 
 
-void Ellips::
-        operator()( Chunk& chunk)
+void Ellipse::
+        operator()( Chunk& chunk )
 {
-    TIME_FILTER TaskTimer tt("Ellips");
+    TIME_FILTER TaskTimer tt("Ellipse");
 
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalar( _f1 ), //  * chunk.nScales()
+            chunk.freqAxis().getFrequencyScalar( _f1 ),
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalar( _f2 )); //  * chunk.nScales()
+            chunk.freqAxis().getFrequencyScalar( _f2 ));
 
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
@@ -41,7 +41,7 @@ void Ellips::
 }
 
 
-Signal::Intervals Ellips::
+Signal::Intervals Ellipse::
         zeroed_samples()
 {
     float FS = sample_rate();
@@ -63,7 +63,7 @@ Signal::Intervals Ellips::
 }
 
 
-Signal::Intervals Ellips::
+Signal::Intervals Ellipse::
         affected_samples()
 {
     float FS = sample_rate();

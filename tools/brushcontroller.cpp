@@ -82,7 +82,7 @@ void BrushController::
     if (ui->actionAmplitudeBrush->isChecked())
         model()->brush_factor = A;
 
-    render_view_->toolSelector()->setCurrentTool( model()->brush_factor != 0 ? this : 0 );
+    render_view_->toolSelector()->setCurrentTool( this, model()->brush_factor != 0 );
 }
 
 

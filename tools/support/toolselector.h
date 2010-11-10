@@ -11,18 +11,20 @@ namespace Tools {
     /**
      Manages current tool
 
-      A render view can only have one tool that receives all user actions
+      A tool can only have one tool that receives all user actions
       such as QWidget::mouseMoveEvent, QWidget::wheelEvent, ...
 
       If a tool wants to extend another tool or have another tool as
       fallback for non implemented events it will have to create its own
       instance of the wanted 'default' tool and add itself as child.
+
+      Preferably by adding the child tool using another ToolSelector.
      */
     class ToolSelector
     {
     public:
         /// Sets what RenderView that is controlled by this ToolSelector.
-        ToolSelector(RenderView* render_view);
+        ToolSelector(QWidget* parent_tool);
 
 
         /// @see setCurrentTool
@@ -41,10 +43,10 @@ namespace Tools {
           To draw stuff in the 3d scene atop the heightmap the tool should
           connect to the appropriate signals in RenderView.
           */
-        void setCurrentTool(QWidget* tool);
+        void setCurrentTool(QWidget* tool, bool active );
 
     private:
-        RenderView* _render_view;
+        QWidget* _parent_tool;
         QWidget* _current_tool;
     };
 }

@@ -271,6 +271,7 @@ void validate_arguments()
 
 #include "heightmap/resampletest.h"
 
+
 int main(int argc, char *argv[])
 {
 //#ifndef __GNUC__

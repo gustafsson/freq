@@ -14,7 +14,6 @@
 #include <GlException.h>
 
 // Qt
-#include <QVBoxLayout>
 #include <QTimer>
 
 //#define TIME_PAINTGL
@@ -209,7 +208,7 @@ void RenderView::
 
         //    if (p && p->isUnderfed() && p->invalid_samples_left()) {
         Signal::Intervals missing_in_selection =
-                model->project()->tools().selection_model.postsinkCallback->sink()->fetch_invalid_samples();
+                model->project()->tools().playback_model.postsinkCallback->sink()->fetch_invalid_samples();
         if (missing_in_selection)
         {
             model->project()->worker.center = 0;

@@ -91,6 +91,17 @@ bool MouseControl::
 
 
 bool MouseControl::
+        planePos(GLdouble x, GLdouble y, float &ox, float &oy, float scale)
+{
+    GLdouble dx, dy;
+    bool r = worldPos(x, y, dx, dy, scale);
+    ox = dx;
+    oy = dy;
+    return r;
+}
+
+
+bool MouseControl::
         worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale)
 {
     GLdouble s;

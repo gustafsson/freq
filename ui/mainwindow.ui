@@ -316,7 +316,7 @@
    <addaction name="actionTonalizeFilter"/>
    <addaction name="actionReassignFilter"/>
   </widget>
-  <action name="actionActivateSelection">
+  <action name="actionEllipseSelection">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -329,10 +329,10 @@
      <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-circle-selection.png</iconset>
    </property>
    <property name="text">
-    <string>Activate Selection</string>
+    <string>Ellipse Selection</string>
    </property>
    <property name="toolTip">
-    <string>Activate selection [S]</string>
+    <string>Ellipse selection [S]</string>
    </property>
    <property name="shortcut">
     <string>S</string>
@@ -882,9 +882,6 @@
   <action name="actionSquareSelection">
    <property name="checkable">
     <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">

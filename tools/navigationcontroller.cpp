@@ -22,7 +22,7 @@ NavigationController::
 {
     connectGui();
 
-    setAttribute(Qt::WA_DontShowOnScreen, true);
+    setAttribute( Qt::WA_DontShowOnScreen, true );
     setEnabled( false );
 }
 
@@ -37,7 +37,7 @@ NavigationController::
 void NavigationController::
         receiveToggleNavigation(bool active)
 {
-    _view->toolSelector()->setCurrentTool( active ? this : 0 );
+    _view->toolSelector()->setCurrentTool( this, active );
 }
 
 

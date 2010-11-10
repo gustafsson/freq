@@ -34,10 +34,10 @@ const OperationGraph::vertex_descriptor vertex_descriptor_null = (OperationGraph
 
 //    } else
 
-    if (Filters::EllipsFilter* c = dynamic_cast<Filters::EllipsFilter*>(f.get())) {
+    if (Filters::EllipseFilter* c = dynamic_cast<Filters::EllipseFilter*>(f.get())) {
             float r = fabsf(c->_t1-c->_t2);
-            title << "Ellips [" << c->_t1-r << ", " << c->_t1 + r << "]";
-            tooltip << "Ellips p(" << c->_t1 << ", " << c->_f1 << "), "
+            title << "Ellipse [" << c->_t1-r << ", " << c->_t1 + r << "]";
+            tooltip << "Ellipse p(" << c->_t1 << ", " << c->_f1 << "), "
                             << "r(" << r << ", " << fabsf(c->_f2-c->_f1) << "), "
                             << "area " << r*fabsf((c->_f1-c->_f2)*M_PI);
 
@@ -332,10 +332,10 @@ void SaweMainWindow::updateLayerList( Signal::pOperation s )
             title << "Chain #" << c->size() << "";
             tooltip << "Chain contains " << c->size() << " subfilters";
 
-        } else if (Tfr::EllipsFilter* c = dynamic_cast<Tfr::EllipsFilter*>(f.get())) {
+        } else if (Tfr::EllipseFilter* c = dynamic_cast<Tfr::EllipseFilter*>(f.get())) {
             float r = fabsf(c->_t1-c->_t2);
-            title << "Ellips [" << c->_t1-r << ", " << c->_t1 + r << "]";
-            tooltip << "Ellips p(" << c->_t1 << ", " << c->_f1 << "), "
+            title << "Ellipse [" << c->_t1-r << ", " << c->_t1 + r << "]";
+            tooltip << "Ellipse p(" << c->_t1 << ", " << c->_f1 << "), "
                             << "r(" << r << ", " << fabsf(c->_f2-c->_f1) << "), "
                             << "area " << r*fabsf((c->_f1-c->_f2)*M_PI);
 
@@ -347,9 +347,9 @@ void SaweMainWindow::updateLayerList( Signal::pOperation s )
 
         }
 //        else if (Tfr::SelectionFilter* c = dynamic_cast<Tfr::SelectionFilter>(f.get())) {
-//            if (EllipsSelection* c = dynamic_cast<EllipsSelection>(c->selection)) {
-//                title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
-//                tooltip << "Ellips pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
+//            if (EllipseSelection* c = dynamic_cast<EllipseSelection>(c->selection)) {
+//                title << "Ellipse, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
+//                tooltip << "Ellipse pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
 
 //            } else if (Tfr::SquareSelection* c = dynamic_cast<Tfr::SquareSelection>(c->selection)) {
 //                title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
