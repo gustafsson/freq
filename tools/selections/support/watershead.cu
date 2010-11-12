@@ -1,10 +1,15 @@
-#include "watershead.cu.h"
+/*#include "watershead.cu.h"
 #include <resample.cu.h>
 #include <operate.cu.h>
 
 // Watershed algortihm for one convex region
-// (might work for slightly non-convex regions, but that is not guaranteeed)
-/*
+// (might work for slightly non-convex regions, but that is not guaranteed)
+
+#define INTERMEDIATE_OUTSIDE 0
+#define INTERMEDIATE_BORDER 1
+#define INTERMEDIATE_INSIDE 2
+
+
 class Xforward
 {
 public:
@@ -32,7 +37,7 @@ public:
             v2 = v3;
             v3 = reader(q);
             if (v2 < v1 && v2 <= v3)
-                return 1;
+                return INTERMEDIATE_BORDER;
             q.x++;
         }
         if (q.x >= sz)
