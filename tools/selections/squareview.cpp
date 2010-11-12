@@ -61,7 +61,7 @@ void SquareView::
         glVertex3f( x1, y, z1 );
     glEnd();
 
-    glLineWidth(3.2f);
+    glLineWidth(1.6f);
     glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINE_LOOP);
         glVertex3f( x1, y, z1 );

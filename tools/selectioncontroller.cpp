@@ -13,13 +13,18 @@
 #include "selections/ellipsemodel.h"
 #include "selections/ellipseview.h"
 
+#include "selections/peakcontroller.h"
+#include "selections/peakmodel.h"
+#include "selections/peakview.h"
+
+#include "selections/splinecontroller.h"
+#include "selections/splinemodel.h"
+#include "selections/splineview.h"
+
 #include "selections/squarecontroller.h"
 #include "selections/squaremodel.h"
 #include "selections/squareview.h"
 
-#include "selections/peakcontroller.h"
-#include "selections/peakmodel.h"
-#include "selections/peakview.h"
 
 namespace Tools
 {
@@ -88,13 +93,17 @@ namespace Tools
         ellipse_view_.reset( new Selections::EllipseView(        ellipse_model_.data() ));
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 
+        peak_model_.reset( new Selections::PeakModel() );
+        peak_view_.reset( new Selections::PeakView(         peak_model_.data(), &render_view()->model->project()->worker ));
+        peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
+
+        spline_model_.reset( new Selections::SplineModel(      render_view()->model->collection->display_scale()));
+        spline_view_.reset( new Selections::SplineView(        spline_model_.data(), &render_view()->model->project()->worker ));
+        spline_controller_ = new Selections::SplineController( spline_view_.data(), this );
+
         square_model_.reset( new Selections::SquareModel(      render_view()->model->collection->display_scale()));
         square_view_.reset( new Selections::SquareView(        square_model_.data(), &render_view()->model->project()->worker ));
         square_controller_ = new Selections::SquareController( square_view_.data(), this );
-
-        /*peak_model_.reset( new Selections::PeakModel() );
-        peak_view_.reset( new Selections::PeakView());
-        peak_controller_ = new Selections::PeakController();*/
     }
 
 

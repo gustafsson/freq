@@ -19,7 +19,7 @@ using namespace Tools;
 
 namespace Tools { namespace Selections
 {
-/*    PeakController::
+    PeakController::
             PeakController(
                     PeakView* view,
                     SelectionController* selection_controller
@@ -68,69 +68,40 @@ namespace Tools { namespace Selections
     void PeakController::
             mousePressEvent ( QMouseEvent * e )
     {
-        if( selection_button_ == e->button() )
-        {
-            Tools::RenderView &r = *selection_controller_->render_view();
-            r.makeCurrent(); // required for Ui::MouseControl::planePos
-
-            if (false == Ui::MouseControl::planePos(
-                    e->x(), height() - e->y(),
-                    selectionStart.time, selectionStart.scale, r.xscale))
-            {
-                selectionStart.time = 0.f/0.f;
-            }
-
-            selection_controller_->render_view()->userinput_update();
-        }
+        mouseMoveEvent( e );
     }
 
 
     void PeakController::
             mouseReleaseEvent ( QMouseEvent * e )
     {
-        if( selection_button_ == e->button() )
+        if (e->button()==selection_button_)
         {
-            model()->updateFilter();
-
             selection_controller_->setCurrentSelection( model()->filter );
-
-            selection_controller_->render_view()->userinput_update();
         }
+
+        selection_controller_->render_view()->userinput_update();
     }
 
 
     void PeakController::
             mouseMoveEvent ( QMouseEvent * e )
     {
-        if( e->buttons().testFlag(selection_button_) )
+        Tools::RenderView &r = *selection_controller_->render_view();
+
+        if (e->buttons().testFlag( selection_button_ ))
         {
-            Tools::RenderView &r = *selection_controller_->render_view();
-            r.makeCurrent(); // required for Ui::MouseControl::planePos
+            r.makeCurrent();
 
-        //    TaskTimer tt("moving");
-
-            Heightmap::Position p;
-            if (Ui::MouseControl::planePos(
-                    e->x(), height() - e->y(),
-                    p.time, p.scale, r.xscale))
+            GLdouble p[2];
+            if (Ui::MouseControl::worldPos( e->x(), height() - e->y(), p[0], p[1], r.xscale))
             {
-                if (isnan( selectionStart.time )) // TODO test
-                {
-                    selectionStart = p;
-                }
-
-                float rt = p.time - selectionStart.time;
-                float rf = p.scale - selectionStart.scale;
-                model()->a = Heightmap::Position(
-                        selectionStart.time +  .5f*rt,
-                        selectionStart.scale + .5f*rf );
-                model()->b = Heightmap::Position(
-                        model()->a.time +  .5f*sqrtf(2.f)*rt,
-                        model()->a.scale + .5f*sqrtf(2.f)*rf );
+                Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
+                model()->findAddPeak( ref, Heightmap::Position( p[0], p[1]) );
             }
-
-            selection_controller_->render_view()->userinput_update();
         }
+
+        r.userinput_update();
     }
 
 
@@ -149,6 +120,9 @@ namespace Tools { namespace Selections
             enablePeakSelection(bool active)
     {
         selection_controller_->setCurrentTool( this, active );
+
+        if (active)
+            selection_controller_->setCurrentSelection( model()->filter );
     }
-*/
+
 }} // namespace Tools::Selections

@@ -13,15 +13,15 @@ namespace Tools { namespace Selections
 
 PeakModel::PeakModel()
     :
-    filter( new Filters::PeakFilter )
+    filter( new Support::SplineFilter )
 {
 }
 
 
-Filters::PeakFilter* PeakModel::
+Support::SplineFilter* PeakModel::
         peak_filter()
 {
-    return dynamic_cast<Filters::PeakFilter*>(filter.get());
+    return dynamic_cast<Support::SplineFilter*>(filter.get());
 }
 
 
@@ -32,7 +32,7 @@ PeakModel::PeakAreaP PeakModel::
 
     if (!area)
     {
-        area.reset( new GpuCpuData<float>(
+        area.reset( new GpuCpuData<bool>(
             0,
             make_cudaExtent( ref.samplesPerBlock(), ref.scalesPerBlock(), 1),
             GpuCpuVoidData::CpuMemory ) );
@@ -42,7 +42,7 @@ PeakModel::PeakAreaP PeakModel::
     return area;
 }
 
-
+/*
 PeakModel::PeakAreaP PeakModel::
         getPeakAreaGauss(Heightmap::Reference ref)
 {
@@ -59,9 +59,9 @@ PeakModel::PeakAreaP PeakModel::
 
     return area;
 }
+*/
 
-
-float PeakModel::
+bool PeakModel::
         classifiedVal(unsigned x, unsigned y, unsigned w, unsigned h)
 {
     Heightmap::Reference ref = classifictions.begin()->first;
@@ -72,11 +72,10 @@ float PeakModel::
     if (itr == classifictions.end())
         return 0;
 
-    float* p = itr->second->getCpuMemory();
-    return p[ x + y*w ];
+    return itr->second->getCpuMemory()[ x + y*w ];
 }
 
-
+/*
 float& PeakModel::
         gaussedVal(unsigned x, unsigned y, unsigned w, unsigned h)
 {
@@ -87,7 +86,7 @@ float& PeakModel::
     float* p = getPeakAreaGauss(ref)->getCpuMemory();
     return p[ x + y*w ];
 }
-
+*/
 
 void PeakModel::
         findAddPeak( Heightmap::Reference ref, Heightmap::Position pos )
@@ -107,6 +106,90 @@ void PeakModel::
             x0, y0, PS_Increasing, -FLT_MAX );
 
     findBorder();
+}
+
+
+void PeakModel::
+        findBorder()
+{
+    std::vector<Support::SplineFilter::SplineVertex>& vertices = peak_filter()->v;
+    vertices.clear();
+
+    // Find range of classified pixels
+    BOOST_ASSERT(!classifictions.empty());
+
+    Heightmap::Reference ref = classifictions.begin()->first;
+    unsigned
+            w = ref.samplesPerBlock(),
+            h = ref.scalesPerBlock();
+
+    uint2 start_point;
+    if (!anyBorderPixel(start_point, w, h))
+        return;
+
+    uint2 pos = start_point;
+    uint2 lastnode = start_point;
+    peak_filter()->v
+    do
+    {
+
+        pos = nextBorderPixel(pos, w, h);
+
+        if ()
+
+    } while(pos!=start_point);
+}
+
+
+bool PeakModel::
+        anyBorderPixel( uint2& pos, unsigned w, unsigned h )
+{
+    BOOST_FOREACH(PeakAreas::value_type v, classifictions)
+    {
+        bool *b = v.second->getCpuMemory();
+
+        for (unsigned y=0; y<h; ++y)
+        {
+            for (unsigned x=0; x<h; ++x)
+            {
+                if (b[ x + y*w ])
+                {
+                    pos = make_uint2( x + v.first.block_index[0]*w,
+                                      y + v.first.block_index[1]*h);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+
+uint2 PeakModel::
+        nextBorderPixel( uint2 v, unsigned w, unsigned h )
+{
+    uint2 p[] =
+    { // walk clockwise
+        {v.x+1, v.y+0},
+        {v.x+1, v.y+1},
+        {v.x+0, v.y+1},
+        {v.x-1, v.y+1},
+        {v.x-1, v.y+0},
+        {v.x-1, v.y-1},
+        {v.x+0, v.y-1},
+        {v.x+1, v.y-1}
+    };
+
+    unsigned N = sizeof(p)/sizeof(p[0]);
+    bool prev = classifiedVal(p[N-1].x, p[N-1].y, w, h);
+    for (unsigned i=0; i<N; ++i)
+    {
+        bool v = classifiedVal(p[i].x, p[i].y, w, h);
+        if (v && !prev)
+            return p[i];
+    }
+    return v;
 }
 
 
@@ -142,7 +225,6 @@ void PeakModel::
                 p[x + y*w] = std::max( p[x + y*w], q[x + y*w]);
     }
 }
-*/
 
 void PeakModel::
         smearGauss()
@@ -204,11 +286,6 @@ void PeakModel::
         max_ref.getArea(a,b);
     }
 
-    // Compute convolution with Gauss function
-    Gauss g(make_float2(0,0),
-            make_float2( t_sigma * ldexpf(1.f,ref.log2_samples_size[0]),
-                         f_sigma * ldexpf(1.f,ref.log2_samples_size[1])));
-
     unsigned
             w = ref.samplesPerBlock(),
             h = ref.scalesPerBlock();
@@ -219,6 +296,11 @@ void PeakModel::
             global_max_t = max_ref.block_index[0] * w-1,
             global_min_s = min_ref.block_index[1] * h,
             global_max_s = max_ref.block_index[1] * h-1;
+
+    // Compute convolution with Gauss function
+    Gauss g(make_float2(0,0),
+            make_float2( t_sigma * ldexpf(1.f,ref.log2_samples_size[0]),
+                         f_sigma * ldexpf(1.f,ref.log2_samples_size[1])));
 
     for (unsigned y=global_min_s; y < global_max_s; ++y )
         for (unsigned x=global_min_t; x < global_max_t; ++x )
@@ -233,7 +315,7 @@ void PeakModel::
             gaussedVal(x, y, w, h) = sum;
         }
 }
-
+*/
 
 void PeakModel::
         recursivelyClassify( Heightmap::Reference ref,
@@ -247,7 +329,7 @@ void PeakModel::
     float* data = blockData->getCpuMemory();
 
     PeakAreaP area = getPeakArea(ref);
-    float* classification = area->getCpuMemory();
+    bool* classification = area->getCpuMemory();
 
     recursivelyClassify(ref, data, classification,
                         w, h, x, y, prevState, prevVal );
@@ -256,7 +338,7 @@ void PeakModel::
 
 void PeakModel::
         recursivelyClassify( Heightmap::Reference ref,
-                             float *data, float* classification,
+                             float *data, bool* classification,
                              unsigned w, unsigned h,
                              unsigned x, unsigned y,
                              PropagationState prevState, float prevVal )

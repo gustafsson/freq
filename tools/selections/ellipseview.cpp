@@ -55,7 +55,7 @@ void EllipseView::
     }
     glEnd();
 
-    glLineWidth(3.2f);
+    glLineWidth(1.6f);
     glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINE_LOOP);
     for (unsigned k=0; k<360; k++) {

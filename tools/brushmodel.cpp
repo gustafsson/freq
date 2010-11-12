@@ -44,10 +44,10 @@ Signal::Interval BrushModel::
     deltat *= xscale_;
     deltascale *= 0.01;
 
-    Gauss gauss;
-    gauss.pos = make_float2( pos.time, pos.scale );
-    gauss.scale = brush_factor;
-    gauss.sigma = make_float2( 1.f/deltat, 1.f/deltascale );
+    Gauss gauss(
+            make_float2( pos.time, pos.scale ),
+            make_float2( deltat, deltascale ),
+            brush_factor);
 
     Heightmap::Reference
             right = ref,

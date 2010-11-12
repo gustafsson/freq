@@ -44,45 +44,31 @@ void Ellipse::
 Signal::Intervals Ellipse::
         zeroed_samples()
 {
-    float FS = sample_rate();
-
-    Signal::Intervals sid;
-
-    if (_save_inside)
-    {
-        unsigned
-            start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
-            end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
-
-        sid = Signal::Intervals::Intervals_ALL;
-        if (start_time < end_time)
-                sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid;
+    return _save_inside ? outside_samples() : Signal::Intervals();
 }
 
 
 Signal::Intervals Ellipse::
         affected_samples()
 {
-    float FS = sample_rate();
-
-    Signal::Intervals sid;
-
-    if (!_save_inside)
-    {
-        unsigned
-            start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
-            end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
-
-        sid = Signal::Intervals::Intervals_ALL;
-        if (start_time < end_time)
-                sid -= Signal::Intervals(start_time, end_time);
-    }
-
-    return sid.inverse();
+    return (_save_inside ? Signal::Intervals() : outside_samples()).inverse();
 }
 
+
+Signal::Intervals Ellipse::
+        outside_samples()
+{
+    float FS = sample_rate();
+
+    unsigned
+        start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
+        end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
+
+    Signal::Intervals sid = Signal::Intervals::Intervals_ALL;
+    if (start_time < end_time)
+        sid -= Signal::Intervals(start_time, end_time);
+
+    return sid;
+}
 
 } // namespace Filters

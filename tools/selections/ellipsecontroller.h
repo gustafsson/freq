@@ -24,10 +24,6 @@ signals:
 
 private slots:
     void enableEllipseSelection(bool active);
-/*    void enableSquareSelection(bool active);
-    void enableSplineSelection(bool active);
-    void enablePolygonSelection(bool active);
-    void enablePeakSelection(bool active);*/
 
 private:
     // Event handlers

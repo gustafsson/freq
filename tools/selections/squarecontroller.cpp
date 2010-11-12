@@ -68,7 +68,7 @@ namespace Tools { namespace Selections
     void SquareController::
             mousePressEvent ( QMouseEvent * e )
     {
-        if( selection_button_ == e->button() )
+        if (e->button() == selection_button_)
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             r.makeCurrent(); // required for Ui::MouseControl::planePos
@@ -79,30 +79,30 @@ namespace Tools { namespace Selections
             {
                 selectionStart.time = 0.f/0.f;
             }
-
-            selection_controller_->render_view()->userinput_update();
         }
+
+        selection_controller_->render_view()->userinput_update();
     }
 
 
     void SquareController::
             mouseReleaseEvent ( QMouseEvent * e )
     {
-        if( selection_button_ == e->button() )
+        if (e->button() == selection_button_)
         {
             model()->updateFilter();
 
             selection_controller_->setCurrentSelection( model()->filter );
-
-            selection_controller_->render_view()->userinput_update();
         }
+
+        selection_controller_->render_view()->userinput_update();
     }
 
 
     void SquareController::
             mouseMoveEvent ( QMouseEvent * e )
     {
-        if( e->buttons().testFlag(selection_button_) )
+        if (e->buttons().testFlag( selection_button_ ))
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             r.makeCurrent(); // required for Ui::MouseControl::planePos
@@ -121,8 +121,9 @@ namespace Tools { namespace Selections
                 model()->b = p;
             }
 
-            selection_controller_->render_view()->userinput_update();
         }
+
+        selection_controller_->render_view()->userinput_update();
     }
 
 
@@ -141,6 +142,9 @@ namespace Tools { namespace Selections
             enableSquareSelection(bool active)
     {
         selection_controller_->setCurrentTool( this, active );
+
+        if (active)
+            selection_controller_->setCurrentSelection( model()->filter );
     }
 
 }} // namespace Tools::Selections

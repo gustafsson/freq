@@ -24,6 +24,8 @@ public:
       These images will be used when the brush is drawn.
       */
     BrushImagesP images;
+
+    BrushImageDataP getImage(Heightmap::Reference const& ref);
 };
 
 

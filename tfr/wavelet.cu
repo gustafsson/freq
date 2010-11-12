@@ -151,6 +151,7 @@ __global__ void kernel_compute_wavelet_coefficients(
     float sigma_t0j = sigma_t0; // TODO vary with 'j'
     float sigma_constant = sqrt( 4*pi*sigma_t0j );
 
+    waveform_ft *= sigma_constant;
     for( unsigned j=0; j<nScales; j++)
     {
         // Compute the child wavelet
@@ -169,7 +170,7 @@ __global__ void kernel_compute_wavelet_coefficients(
                 // float f0 = 2.0f + 35*ff*ff*ff
             }
             float q = (-w*aj + pi)*sigma_t0j;
-            float phi_star = expf( -q*q ) * sigma_constant;
+            float phi_star = expf( -q*q ); // TODO let sigma_t0j contain sqrt(LOG2_E) and use exp2f instead, see if it is faster...
 
             output = phi_star * waveform_ft;
         }

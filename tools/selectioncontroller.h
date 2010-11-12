@@ -20,13 +20,17 @@ namespace Tools
         class EllipseView;
         class EllipseController;
 
-        class SquareModel;
-        class SquareView;
-        class SquareController;
-
         class PeakModel;
         class PeakView;
         class PeakController;
+
+        class SplineModel;
+        class SplineView;
+        class SplineController;
+
+        class SquareModel;
+        class SquareView;
+        class SquareController;
     }
 
     class SelectionController: public QWidget
@@ -87,13 +91,17 @@ namespace Tools
         QScopedPointer<Selections::EllipseView> ellipse_view_;
         QPointer<Selections::EllipseController> ellipse_controller_;
 
-        QScopedPointer<Selections::SquareModel> square_model_;
-        QScopedPointer<Selections::SquareView> square_view_;
-        QPointer<Selections::SquareController> square_controller_;
-
         QScopedPointer<Selections::PeakModel> peak_model_;
         QScopedPointer<Selections::PeakView> peak_view_;
         QPointer<Selections::PeakController> peak_controller_;
+
+        QScopedPointer<Selections::SplineModel> spline_model_;
+        QScopedPointer<Selections::SplineView> spline_view_;
+        QPointer<Selections::SplineController> spline_controller_;
+
+        QScopedPointer<Selections::SquareModel> square_model_;
+        QScopedPointer<Selections::SquareView> square_view_;
+        QPointer<Selections::SquareController> square_controller_;
     };
 }
 

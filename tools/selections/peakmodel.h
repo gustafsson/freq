@@ -1,9 +1,10 @@
 #ifndef PEAKMODEL_H
 #define PEAKMODEL_H
 
-#include "support/peakfilter.h"
+#include "support/splinefilter.h"
 #include "signal/operation.h"
 #include "heightmap/reference.h"
+#include <boost/unordered_map.hpp>
 
 namespace Tools { namespace Selections
 {
@@ -20,9 +21,9 @@ public:
     PeakModel();
 
     /**
-      Get the PeakFilter
+      Get the SplineFilter
       */
-    Filters::PeakFilter* peak_filter();
+    Support::SplineFilter* peak_filter();
 
     Signal::pOperation filter;
 
@@ -32,22 +33,28 @@ private:
     typedef boost::shared_ptr< GpuCpuData<bool> > PeakAreaP;
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
     PeakAreas classifictions;
-    //PeakAreas gaussed_classifictions;
+
+
+    void findBorder();
+    bool anyBorderPixel( uint2&, unsigned w, unsigned h );
+    uint2 nextBorderPixel( uint2, unsigned w, unsigned h );
 
     PeakAreaP getPeakArea(Heightmap::Reference);
-    //PeakAreaP getPeakAreaGauss(Heightmap::Reference);
     bool classifiedVal(unsigned x, unsigned y, unsigned w, unsigned h);
+    void recursivelyClassify( Heightmap::Reference ref,
+                              unsigned w, unsigned h,
+                              unsigned x, unsigned y,
+                              PropagationState prevState, float prevVal );
+    void recursivelyClassify( Heightmap::Reference ref,
+                              float *data, bool* classification,
+                              unsigned w, unsigned h,
+                              unsigned x, unsigned y,
+                              PropagationState prevState, float prevVal );
+
+    //PeakAreas gaussed_classifictions;
+    //PeakAreaP getPeakAreaGauss(Heightmap::Reference);
     /*float& gaussedVal(unsigned x, unsigned y, unsigned w, unsigned h);
     void smearGauss();*/
-    void recursivelyClassify( Heightmap::Reference ref,
-                              unsigned w, unsigned h,
-                              unsigned x, unsigned y,
-                              PropagationState prevState, float prevVal );
-    void recursivelyClassify( Heightmap::Reference ref,
-                              float *data, float* classification,
-                              unsigned w, unsigned h,
-                              unsigned x, unsigned y,
-                              PropagationState prevState, float prevVal );
 };
 
 }} // Tools::Selections

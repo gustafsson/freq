@@ -52,34 +52,23 @@ namespace Tools { namespace Selections
         // 'enableEllipseSelection' sets/unsets this as current tool when
         // the action is checked/unchecked.
         connect(ui->actionEllipseSelection, SIGNAL(toggled(bool)), SLOT(enableEllipseSelection(bool)));
-/*        connect(ui->actionSquareSelection, SIGNAL(toggled(bool)), SLOT(enableSquareSelection(bool)));
-        connect(ui->actionSplineSelection, SIGNAL(toggled(bool)), SLOT(enableSplineSelection(bool)));
-        connect(ui->actionPolygonSelection, SIGNAL(toggled(bool)), SLOT(enablePolygonSelection(bool)));
-        connect(ui->actionPeakSelection, SIGNAL(toggled(bool)), SLOT(enablePeakSelection(bool)));*/
         connect(this, SIGNAL(enabledChanged(bool)), ui->actionEllipseSelection, SLOT(setChecked(bool)));
 
         // Paint the ellipse when render view paints
         connect(selection_controller_->render_view(), SIGNAL(painting()), view_, SLOT(draw()));
         // Close this widget before the OpenGL context is destroyed to perform
         // proper cleanup of resources
-        // connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
+         connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
 
         // Add the action as a combo box item in selection controller
         selection_controller_->addComboBoxAction( ui->actionEllipseSelection ) ;
-/*
-        qb->addActionItem( ui->actionEllipseSelection );
-        qb->addActionItem( ui->actionSquareSelection );
-        qb->addActionItem( ui->actionSplineSelection );
-        qb->addActionItem( ui->actionPolygonSelection );
-        qb->addActionItem( ui->actionPeakSelection );
-*/
     }
 
 
     void EllipseController::
             mousePressEvent ( QMouseEvent * e )
     {
-        if( selection_button_ == e->button() )
+        if (e->button() == selection_button_)
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             r.makeCurrent(); // required for Ui::MouseControl::planePos
@@ -90,30 +79,30 @@ namespace Tools { namespace Selections
             {
                 selectionStart.time = 0.f/0.f;
             }
-
-            selection_controller_->render_view()->userinput_update();
         }
+
+        selection_controller_->render_view()->userinput_update();
     }
 
 
     void EllipseController::
             mouseReleaseEvent ( QMouseEvent * e )
     {
-        if( selection_button_ == e->button() )
+        if (e->button() == selection_button_)
         {
             model()->updateFilter();
 
             selection_controller_->setCurrentSelection( model()->filter );
-
-            selection_controller_->render_view()->userinput_update();
         }
+
+        selection_controller_->render_view()->userinput_update();
     }
 
 
     void EllipseController::
             mouseMoveEvent ( QMouseEvent * e )
     {
-        if( e->buttons().testFlag(selection_button_) )
+        if (e->buttons().testFlag( selection_button_ ))
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             r.makeCurrent(); // required for Ui::MouseControl::planePos
@@ -139,9 +128,9 @@ namespace Tools { namespace Selections
                         model()->a.time +  .5f*sqrtf(2.f)*rt,
                         model()->a.scale + .5f*sqrtf(2.f)*rf );
             }
-
-            selection_controller_->render_view()->userinput_update();
         }
+
+        selection_controller_->render_view()->userinput_update();
     }
 
 
@@ -160,12 +149,9 @@ namespace Tools { namespace Selections
             enableEllipseSelection(bool active)
     {
         selection_controller_->setCurrentTool( this, active );
+
+        if (active)
+            selection_controller_->setCurrentSelection( model()->filter );
     }
-/*
-    void enableSquareSelection(bool active);
-    void enableSplineSelection(bool active);
-    void enablePolygonSelection(bool active);
-    void enablePeakSelection(bool active);
-*/
 
 }} // namespace Tools::Selections

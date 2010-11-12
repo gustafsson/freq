@@ -862,9 +862,6 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-peak-selection.png</normaloff>:/icons/icons/icon-peak-selection.png</iconset>
@@ -921,9 +918,6 @@
   <action name="actionSplineSelection">
    <property name="checkable">
     <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">

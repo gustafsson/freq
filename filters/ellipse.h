@@ -26,6 +26,9 @@ public:
            & make_nvp("t2", _t2) & make_nvp("f2", _f2)
            & make_nvp("save_inside", _save_inside);
     }
+
+private:
+    Signal::Intervals outside_samples();
 };
 
 } // namespace Filters

@@ -41,11 +41,12 @@ namespace Tools {
 
         // GUI
         void setupGui();
+        Qt::MouseButton paint_button_;
 
         // State
         //bool drawing_;
         Signal::Intervals drawn_interval_;
-        Ui::MouseControl draw_button_;
+        //Ui::MouseControl draw_button_;
     };
 
 } // namespace Tools

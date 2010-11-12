@@ -16,6 +16,9 @@ public:
 
     float _t1, _f1, _t2, _f2;
     bool _save_inside;
+
+private:
+    Signal::Intervals outside_samples();
 };
 
 } // namespace Filters

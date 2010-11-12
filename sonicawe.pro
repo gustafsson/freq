@@ -129,6 +129,8 @@ HEADERS += \
     ui/propertiesselection.h \
     ui/propertiesstroke.h \
     ui/updatewidgetsink.h \
+    tools/selections/support/splinefilter.h \
+    tools/selections/support/splinefilter.cu.h
 
 FORMS += \
     tools/selectionviewmodel.ui \
@@ -145,6 +147,7 @@ CUDA_SOURCES += \
     tfr/wavelet.cu \
     tools/support/brushfilter.cu \
     tools/support/brushpaint.cu \
+    tools/selections/support/splinefilter.cu \
     tools/selections/support/watershead.cu \
 
 SHADER_SOURCS += \
