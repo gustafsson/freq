@@ -29,7 +29,7 @@ StftFilter::
 ChunkAndInverse StftFilter::
         computeChunk( const Signal::Interval& I )
 {
-    ((Stft*)transform().get())->set_approximate_chunk_size( 1 << 12 );
+    //((Stft*)transform().get())->set_approximate_chunk_size( 1 << 12 );
     unsigned chunk_size = ((Stft*)transform().get())->chunk_size();
     // Add a margin to make sure that the STFT is computed for one block before
     // and one block after the signal. This makes it possible to do proper

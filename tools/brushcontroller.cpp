@@ -77,7 +77,7 @@ void BrushController::
 
     model()->brush_factor = 0;
 
-    float A = 0.1;
+    float A = .1f;
     if (ui->actionAirbrush->isChecked())
         model()->brush_factor = -A;
     if (ui->actionAmplitudeBrush->isChecked())
@@ -117,12 +117,13 @@ void BrushController::
 void BrushController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    if (e->buttons().testFlag( paint_button_ ))
+    if (e->buttons().testFlag( paint_button_ ) || e->buttons().testFlag( Qt::RightButton ))
     {
         Tools::RenderView &r = *render_view_;
         r.makeCurrent();
 
         float org_factor = model()->brush_factor;
+
         if (e->buttons().testFlag( Qt::RightButton ))
             model()->brush_factor *= -1;
 

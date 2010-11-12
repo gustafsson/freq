@@ -41,8 +41,8 @@ Signal::Interval BrushModel::
     float deltasample = Tfr::Cwt::Singleton().morlet_sigma_t( fs, hz );
     float deltascale = cwt.sigma() / cwt.nScales(fs);
     float deltat = deltasample/fs;
-    deltat *= xscale_;
-    deltascale *= 0.01;
+    deltat *= 10*xscale_;
+    deltascale *= 0.1;
 
     Gauss gauss(
             make_float2( pos.time, pos.scale ),

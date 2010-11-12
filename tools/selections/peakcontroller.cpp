@@ -77,7 +77,7 @@ namespace Tools { namespace Selections
     {
         if (e->button()==selection_button_)
         {
-            selection_controller_->setCurrentSelection( model()->filter );
+            selection_controller_->setCurrentSelection( model()->spline_model.filter );
         }
 
         selection_controller_->render_view()->userinput_update();
@@ -122,7 +122,7 @@ namespace Tools { namespace Selections
         selection_controller_->setCurrentTool( this, active );
 
         if (active)
-            selection_controller_->setCurrentSelection( model()->filter );
+            selection_controller_->setCurrentSelection( model()->spline_model.filter );
     }
 
 }} // namespace Tools::Selections

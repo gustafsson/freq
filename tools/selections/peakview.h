@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include "signal/worker.h"
+#include "splineview.h"
 
 namespace Tools { namespace Selections
 {
@@ -25,6 +26,8 @@ public slots:
     virtual void draw();
 
 private:
+    SplineView spline_view;
+
     friend class PeakController;
     PeakModel* model_;
     Signal::Worker* worker_;

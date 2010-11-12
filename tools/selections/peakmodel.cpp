@@ -11,9 +11,8 @@
 namespace Tools { namespace Selections
 {
 
-PeakModel::PeakModel()
-    :
-    filter( new Support::SplineFilter )
+PeakModel::PeakModel( Tfr::FreqAxis const& fa )
+    :   spline_model( fa )
 {
 }
 
@@ -21,7 +20,7 @@ PeakModel::PeakModel()
 Support::SplineFilter* PeakModel::
         peak_filter()
 {
-    return dynamic_cast<Support::SplineFilter*>(filter.get());
+    return dynamic_cast<Support::SplineFilter*>(spline_model.filter.get());
 }
 
 
@@ -72,7 +71,7 @@ bool PeakModel::
     if (itr == classifictions.end())
         return 0;
 
-    return itr->second->getCpuMemory()[ x + y*w ];
+    return itr->second->getCpuMemory()[ (x%w) + (y%h)*w ];
 }
 
 /*
@@ -100,21 +99,38 @@ void PeakModel::
 
     classifictions.clear();
 
+    pixel_count = 0;
     recursivelyClassify(
             ref,
             ref.samplesPerBlock(), ref.scalesPerBlock(),
             x0, y0, PS_Increasing, -FLT_MAX );
 
     findBorder();
+
+    // Translate nodes to scale and time
+
+    Heightmap::Position elementSize( ldexpf(1.f,ref.log2_samples_size[0]),
+                        ldexpf(1.f,ref.log2_samples_size[1]));
+
+    std::vector<Heightmap::Position> &v = spline_model.v;
+    unsigned N=border_nodes.size();
+    v.resize(N);
+
+    for (unsigned i=0; i<N; ++i)
+    {
+        Heightmap::Position p;
+        p.time = border_nodes[i].x * elementSize.time;
+        p.scale = border_nodes[i].y * elementSize.scale;
+        v[i] = p;
+    }
+
+    spline_model.updateFilter();
 }
 
 
 void PeakModel::
         findBorder()
 {
-    std::vector<Support::SplineFilter::SplineVertex>& vertices = peak_filter()->v;
-    vertices.clear();
-
     // Find range of classified pixels
     BOOST_ASSERT(!classifictions.empty());
 
@@ -127,17 +143,52 @@ void PeakModel::
     if (!anyBorderPixel(start_point, w, h))
         return;
 
+    bool val = classifiedVal(start_point.x, start_point.y, w, h);
+
+    border_nodes.clear();
+    std::vector<uint2> border_pts;
+
+    unsigned firstdir = 0;
+    start_point = nextBorderPixel(start_point, w, h, firstdir);
     uint2 pos = start_point;
-    uint2 lastnode = start_point;
-    peak_filter()->v
+    border_nodes.push_back( start_point );
     do
     {
+        pos = nextBorderPixel(pos, w, h, firstdir);
 
-        pos = nextBorderPixel(pos, w, h);
+        if (1<border_pts.size())
+        {
+            // Define a line from 'lastnode' to 'pos' and check if all points in
+            // 'border_pts' is less than or equal to 1 unit away from the line
+            uint2& lastnode = border_nodes.back();
+            float2 d = make_float2(pos.x - lastnode.x,
+                                   pos.y - lastnode.y);
+            float r = 1.f/sqrtf(d.x*d.x + d.y*d.y);
+            d.x *= r;
+            d.y *= r;
 
-        if ()
+            unsigned i;
+            for (i=0; i<border_pts.size(); ++i)
+            {
+                float2 q = make_float2( border_pts[i].x - lastnode.x,
+                                        border_pts[i].y - lastnode.y );
 
-    } while(pos!=start_point);
+                float dot = q.x*d.y + q.y*d.x;
+                if (dot*dot > 1)
+                    break;
+            }
+
+            if (i<border_pts.size()) // nope not ok,
+            {
+                border_nodes.push_back( border_pts.back() );
+                printf("%d, %d;\n", border_pts.back().x, border_pts.back().y);
+                fflush(stdout);
+                border_pts.clear();
+            }
+        }
+
+        border_pts.push_back( pos );
+    } while(pos.x!=start_point.x || pos.y!=start_point.y);
 }
 
 
@@ -150,7 +201,7 @@ bool PeakModel::
 
         for (unsigned y=0; y<h; ++y)
         {
-            for (unsigned x=0; x<h; ++x)
+            for (unsigned x=0; x<w; ++x)
             {
                 if (b[ x + y*w ])
                 {
@@ -167,27 +218,34 @@ bool PeakModel::
 
 
 uint2 PeakModel::
-        nextBorderPixel( uint2 v, unsigned w, unsigned h )
+        nextBorderPixel( uint2 v, unsigned w, unsigned h, unsigned& firstdir )
 {
-    uint2 p[] =
+    int2 p[] =
     { // walk clockwise
-        {v.x+1, v.y+0},
-        {v.x+1, v.y+1},
-        {v.x+0, v.y+1},
-        {v.x-1, v.y+1},
-        {v.x-1, v.y+0},
-        {v.x-1, v.y-1},
-        {v.x+0, v.y-1},
-        {v.x+1, v.y-1}
+        {+1, +0},
+        {+1, +1},
+        {+0, +1},
+        {-1, +1},
+        {-1, +0},
+        {-1, -1},
+        {+0, -1},
+        {+1, -1}
     };
 
     unsigned N = sizeof(p)/sizeof(p[0]);
-    bool prev = classifiedVal(p[N-1].x, p[N-1].y, w, h);
-    for (unsigned i=0; i<N; ++i)
+
+    bool prev = true;
+    for (unsigned i=firstdir; i<firstdir+N+1; ++i)
     {
-        bool v = classifiedVal(p[i].x, p[i].y, w, h);
-        if (v && !prev)
-            return p[i];
+        unsigned j=i%N;
+        uint2 r = make_uint2(v.x + p[j].x, v.y + p[j].y);
+        bool b = classifiedVal(r.x, r.y, w, h);
+        if (b && !prev)
+        {
+            firstdir = (i + 4)%N;
+            return r;
+        }
+        prev = b;
     }
     return v;
 }
@@ -356,6 +414,10 @@ void PeakModel::
     if (prevState==PS_Out)
         return;
 
+    bool wasOut = classification[x+y*w] == 0;
+    if (!wasOut)
+        return;
+
     float val = data[x + y*w];
     PropagationState state;
     if (val>prevVal)
@@ -372,6 +434,7 @@ void PeakModel::
 
     if (state != PS_Out)
     {
+        pixel_count++;
         recursivelyClassify( ref, data, classification,
                              w, h,
                              x+1, y, state, val );
@@ -392,7 +455,7 @@ void PeakModel::
                                      w, h,
                                      x-1, y, state, val );
             }
-            if (0==x) {
+            if (0==y) {
                 if (0<ref.block_index[1])
                     recursivelyClassify( ref.sibblingBottom(),
                                          w, h,

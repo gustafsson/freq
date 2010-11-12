@@ -5,6 +5,7 @@
 #include "signal/operation.h"
 #include "heightmap/reference.h"
 #include <boost/unordered_map.hpp>
+#include "splinemodel.h"
 
 namespace Tools { namespace Selections
 {
@@ -18,14 +19,14 @@ enum PropagationState {
 class PeakModel
 {
 public:
-    PeakModel();
+    PeakModel( Tfr::FreqAxis const& fa );
 
     /**
       Get the SplineFilter
       */
     Support::SplineFilter* peak_filter();
 
-    Signal::pOperation filter;
+    SplineModel spline_model;
 
     void findAddPeak( Heightmap::Reference ref, Heightmap::Position pos );
 
@@ -34,10 +35,12 @@ private:
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
     PeakAreas classifictions;
 
-
     void findBorder();
+    std::vector<uint2> border_nodes;
+    unsigned pixel_count;
+
     bool anyBorderPixel( uint2&, unsigned w, unsigned h );
-    uint2 nextBorderPixel( uint2, unsigned w, unsigned h );
+    uint2 nextBorderPixel( uint2, unsigned w, unsigned h, unsigned& firstdir );
 
     PeakAreaP getPeakArea(Heightmap::Reference);
     bool classifiedVal(unsigned x, unsigned y, unsigned w, unsigned h);
