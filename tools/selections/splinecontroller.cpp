@@ -52,8 +52,9 @@ namespace Tools { namespace Selections
         // Connect enabled/disable actions,
         // 'enableSquareSelection' sets/unsets this as current tool when
         // the action is checked/unchecked.
-        connect(ui->actionSplineSelection, SIGNAL(toggled(bool)), SLOT(enableSplineSelection(bool)));
-        connect(this, SIGNAL(enabledChanged(bool)), ui->actionSplineSelection, SLOT(setChecked(bool)));
+        // using actionPolygonSelection instead of actionSplineSelection since polygons are drawn
+        connect(ui->actionPolygonSelection, SIGNAL(toggled(bool)), SLOT(enableSplineSelection(bool)));
+        connect(this, SIGNAL(enabledChanged(bool)), ui->actionPolygonSelection, SLOT(setChecked(bool)));
 
         // Paint the ellipse when render view paints
         connect(selection_controller_->render_view(), SIGNAL(painting()), view_, SLOT(draw()));
@@ -62,7 +63,7 @@ namespace Tools { namespace Selections
         connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
 
         // Add the action as a combo box item in selection controller
-        selection_controller_->addComboBoxAction( ui->actionSplineSelection ) ;
+        selection_controller_->addComboBoxAction( ui->actionPolygonSelection ) ;
     }
 
 

@@ -105,12 +105,21 @@ void PeakModel::
             ref.samplesPerBlock(), ref.scalesPerBlock(),
             x0, y0, PS_Increasing, -FLT_MAX );
 
+    // Discard image data from CPU
+    BOOST_FOREACH( PeakAreas::value_type const& v, classifictions )
+    {
+        Heightmap::pBlock block = ref.collection()->getBlock( v.first );
+        GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+        blockData->getCudaGlobal( false );
+    }
+
     findBorder();
 
     // Translate nodes to scale and time
 
-    Heightmap::Position elementSize( ldexpf(1.f,ref.log2_samples_size[0]),
-                        ldexpf(1.f,ref.log2_samples_size[1]));
+    Heightmap::Position elementSize(
+            ldexpf(1.f,ref.log2_samples_size[0]),
+            ldexpf(1.f,ref.log2_samples_size[1]));
 
     std::vector<Heightmap::Position> &v = spline_model.v;
     unsigned N=border_nodes.size();
@@ -174,7 +183,7 @@ void PeakModel::
                                         border_pts[i].y - lastnode.y );
 
                 float dot = q.x*d.y + q.y*d.x;
-                if (dot*dot > 1)
+                if (dot*dot > 2)
                     break;
             }
 

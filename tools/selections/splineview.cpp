@@ -51,7 +51,7 @@ void SplineView::
             glVertex3f( model_->v[i].time, y, model_->v[i].scale );
             glVertex3f( model_->v[i].time, 0, model_->v[i].scale );
         }
-        if (model_->drawing)
+        if (!model_->drawing)
         {
             glVertex3f( model_->v[0].time, y, model_->v[0].scale );
             glVertex3f( model_->v[0].time, 0, model_->v[0].scale );
