@@ -75,7 +75,7 @@ created by the GroupOperation.
 1/ GroupOperation: MergeOperation Root
 9 Operation remove section [Rendering]
 8 Operation: Amplitude*0.5
-7 CwtFilter: remove ellips
+7 CwtFilter: remove ellipse
 6 GroupOperation: move selection in frequency
   2 Operation: merge extracted selection at new location in time
   2 CwtFilter: resample at new frequency

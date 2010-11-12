@@ -12,6 +12,25 @@ BrushFilter::
     images.reset( new BrushImages );
 }
 
+
+BrushFilter::BrushImageDataP BrushFilter::
+        getImage(Heightmap::Reference const& ref)
+{
+    BrushImageDataP& img = (*images)[ ref ];
+
+    if (!img)
+    {
+        img.reset( new GpuCpuData<float>(
+            0,
+            make_cudaExtent( ref.samplesPerBlock(), ref.scalesPerBlock(), 1),
+            GpuCpuVoidData::CudaGlobal ) );
+        cudaMemset( img->getCudaGlobal().ptr(), 0, img->getSizeInBytes1D() );
+    }
+
+    return img;
+}
+
+
 Signal::Intervals MultiplyBrush::
         affected_samples()
 {

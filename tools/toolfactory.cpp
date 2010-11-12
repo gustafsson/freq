@@ -38,8 +38,7 @@ ToolFactory::
     _timeline_view = new TimelineView(p, _render_view);
     _timeline_controller = new TimelineController(_timeline_view);
 
-    _selection_view.reset( new SelectionView(&selection_model) );
-    _selection_controller = new SelectionController(_selection_view.data(), _render_view );
+    _selection_controller = new SelectionController(&selection_model, _render_view );
 
     _navigation_controller = new NavigationController(_render_view);
 

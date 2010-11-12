@@ -49,12 +49,7 @@ SOURCES += \
     adapters/playback.cpp \
     adapters/writewav.cpp \
     filters/*.cpp \
-    heightmap/blockfilter.cpp \
-    heightmap/collection.cpp \
-    heightmap/glblock.cpp \
-    heightmap/reference.cpp \
-    heightmap/renderer.cpp \
-    heightmap/resampletest.cpp \
+    heightmap/*.cpp \
     sawe/application.cpp \
     sawe/layer.cpp \
     sawe/main.cpp \
@@ -79,6 +74,8 @@ SOURCES += \
     tfr/stftfilter.cpp \
     tools/*.cpp \
     tools/support/*.cpp \
+    tools/selections/*.cpp \
+    tools/selections/support/*.cpp \
     ui/comboboxaction.cpp \
     ui/mainwindow.cpp \
     ui/mousecontrol.cpp \
@@ -96,14 +93,7 @@ HEADERS += \
     adapters/playback.h \
     adapters/writewav.h \
     filters/*.h \
-    heightmap/block.cu.h \
-    heightmap/blockfilter.h \
-    heightmap/collection.h \
-    heightmap/glblock.h \
-    heightmap/position.h \
-    heightmap/reference.h \
-    heightmap/renderer.h \
-    heightmap/slope.cu.h \
+    heightmap/*.h \
     sawe/application.h \
     sawe/layer.h \
     sawe/mainplayback.h \
@@ -131,15 +121,16 @@ HEADERS += \
     tfr/stftfilter.h \
     tools/*.h \
     tools/support/*.h \
+    tools/selections/*.h \
+    tools/selections/support/*.h \
     ui/comboboxaction.h \
     ui/mainwindow.h \
     ui/mousecontrol.h \
     ui/propertiesselection.h \
     ui/propertiesstroke.h \
     ui/updatewidgetsink.h \
-    heightmap/resampletest.h \
-    heightmap/resampletest.cu.h \
-    tools/support/brushpaint.cu.h
+    tools/selections/support/splinefilter.h \
+    tools/selections/support/splinefilter.cu.h
 
 FORMS += \
     tools/selectionviewmodel.ui \
@@ -156,6 +147,8 @@ CUDA_SOURCES += \
     tfr/wavelet.cu \
     tools/support/brushfilter.cu \
     tools/support/brushpaint.cu \
+    tools/selections/support/splinefilter.cu \
+    tools/selections/support/watershead.cu \
 
 SHADER_SOURCS += \
     heightmap/heightmap.frag \

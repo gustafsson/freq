@@ -48,7 +48,8 @@ Cwt::
     _scales_per_octave( scales_per_octave ),
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
 //    _fft_many(stream),
-    _wavelet_time_suppport( wavelet_time_suppport )
+    _wavelet_time_suppport( wavelet_time_suppport ),
+    _wavelet_scale_suppport( wavelet_time_suppport )
 {
 }
 
@@ -645,8 +646,7 @@ unsigned Cwt::
 {
     float v = _scales_per_octave;
     float log2_a = 1.f/v;
-    float width_number_of_sigmas = 2;
-    float bin = log2_a * j - log2( 1.f + width_number_of_sigmas/(2*M_PI*sigma()) );
+    float bin = log2_a * j - log2( 1.f + _wavelet_scale_suppport/(2*M_PI*sigma()) );
 
     if (bin < 0)
         bin = 0;

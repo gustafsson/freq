@@ -41,13 +41,13 @@ Signal::Interval BrushModel::
     float deltasample = Tfr::Cwt::Singleton().morlet_sigma_t( fs, hz );
     float deltascale = cwt.sigma() / cwt.nScales(fs);
     float deltat = deltasample/fs;
-    deltat *= xscale_;
-    deltascale *= 0.01;
+    deltat *= 10*xscale_;
+    deltascale *= 0.1;
 
-    Gauss gauss;
-    gauss.pos = make_float2( pos.time, pos.scale );
-    gauss.scale = brush_factor;
-    gauss.sigma = make_float2( 1.f/deltat, 1.f/deltascale );
+    Gauss gauss(
+            make_float2( pos.time, pos.scale ),
+            make_float2( deltat, deltascale ),
+            brush_factor);
 
     Heightmap::Reference
             right = ref,

@@ -270,10 +270,24 @@ void validate_arguments()
 }
 
 #include "heightmap/resampletest.h"
+#include "tools/support/brushpaint.cu.h"
 
 int main(int argc, char *argv[])
 {
-//#ifndef __GNUC__
+    if(0) {
+        Gauss g(make_float2(-1.1, 20), make_float2(1.5, 1.5));
+        double s = 0;
+        double dx = .1, dy = .1;
+
+        for (double y=10; y<30; y+=dy)
+            for (double x=-10; x<10; x+=dx)
+                s += g.gauss_value(x, y)*dx*dy;
+
+        printf("1-s=%g\n", (float)(1.f-s));
+        return 0;
+    }
+
+    //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
 

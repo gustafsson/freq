@@ -4,6 +4,9 @@
 #include "renderview.h"
 #include "selectionmodel.h"
 #include "adapters/playback.h"
+#include "filters/ellipse.h"
+
+#include <glPushContext.h>
 
 // Qt
 #include <QTimer>
@@ -69,10 +72,14 @@ void PlaybackView::
 }
 
 
+
 void PlaybackView::
         drawPlaybackMarker()
 {
     if (0>_playbackMarker)
+        return;
+
+    if (drawPlaybackMarkerInEllipse())
         return;
 
     //glEnable(GL_BLEND);
@@ -80,17 +87,11 @@ void PlaybackView::
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f( 0, 0, 0, .5);
 
-    MyVector* selection = model->selection->selection;
-
     float
         t = _playbackMarker,
-        x = selection[0].x,
         y = 1,
-        z = selection[0].z,
-        _rx = selection[1].x-selection[0].x,
-        _rz = selection[1].z-selection[0].z,
-        z1 = z-sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz,
-        z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
+        z1 = 0,
+        z2 = 1;
 
 
     glBegin(GL_QUADS);
@@ -113,5 +114,61 @@ void PlaybackView::
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
+
+
+bool PlaybackView::
+        drawPlaybackMarkerInEllipse()
+{
+    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
+            model->selection->current_filter_.get() );
+    if (!e)
+        return false;
+
+    glPushAttribContext ac;
+    //glEnable(GL_BLEND);
+    glDisable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(false);
+    glColor4f( 0, 0, 0, .5);
+
+    Tfr::FreqAxis const& fa =
+            _render_view->model->collection->display_scale();
+    float
+            s1 = fa.getFrequencyScalar( e->_f1 ),
+            s2 = fa.getFrequencyScalar( e->_f2 );
+
+    float
+        t = _playbackMarker,
+        x = e->_t1,
+        y = 1,
+        z = s1,
+        _rx = e->_t2 - e->_t1,
+        _rz = s2 - s1,
+        z1 = z-sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz,
+        z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
+
+
+    glBegin(GL_QUADS);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z2 );
+        glVertex3f( t, y, z1 );
+    glEnd();
+
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_TRIANGLE_STRIP);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z2 );
+        glVertex3f( t, y, z1 );
+    glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return true;
+}
+
 
 } // namespace Tools

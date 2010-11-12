@@ -46,7 +46,6 @@ namespace Tools
         class TimelineView* _timeline_view; // owned by timelinedock which is owned by mainwindow
         class TimelineController* _timeline_controller; // owned by _timeline_view
 
-        QScopedPointer<class SelectionView> _selection_view;
         QPointer<class SelectionController> _selection_controller; // might be deleted by _render_view
 
         QPointer<class NavigationController> _navigation_controller; // might be deleted by _render_view

@@ -1,4 +1,4 @@
-#include "ellips.cu.h"
+#include "ellipse.cu.h"
 
 // todo remove
 #include "cudaUtil.h"

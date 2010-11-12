@@ -2,7 +2,7 @@
 
 #include "signal/operation-basic.h"
 #include "filters/move.h"
-#include "filters/ellips.h"
+#include "filters/ellipse.h"
 #include <demangle.h>
 
 using namespace Signal;
@@ -163,20 +163,20 @@ void OperationMoveSelection::
     // 'sampleShift' in time and 'freqDelta' in frequency
 
     pOperation  extract, remove;
-    if (Filters::Ellips* f = dynamic_cast<Filters::Ellips*>(selectionFilter.get())) {
+    if (Filters::Ellipse* f = dynamic_cast<Filters::Ellipse*>(selectionFilter.get())) {
 
         // Create filter for extracting selection
-        extract.reset( new Filters::Ellips(*f) );
-        dynamic_cast<Filters::Ellips*>(extract.get())->_save_inside = true;
+        extract.reset( new Filters::Ellipse(*f) );
+        dynamic_cast<Filters::Ellipse*>(extract.get())->_save_inside = true;
         extract->source( source() );
 
         // Create filter for removing selection
-        remove.reset( new Filters::Ellips(*f) );
-        dynamic_cast<Filters::Ellips*>(remove.get())->_save_inside = false;
+        remove.reset( new Filters::Ellipse(*f) );
+        dynamic_cast<Filters::Ellipse*>(remove.get())->_save_inside = false;
         remove->source( source() );
 
 	} else {
-		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipsFilter as selectionFilter");
+		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipseFilter as selectionFilter");
 	}
 
     pOperation extractAndMove = extract;

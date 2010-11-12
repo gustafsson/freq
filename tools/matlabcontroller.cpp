@@ -74,7 +74,7 @@ void MatlabController::
             // TODO Fetch selection
             Signal::PostSink* postsink = project->tools().selection_model.getPostSink();
 
-            Filters::EllipsFilter* e = dynamic_cast<Filters::EllipsFilter*>(postsink->filter().get());
+            Filters::EllipseFilter* e = dynamic_cast<Filters::EllipseFilter*>(postsink->filter().get());
             if (e)
                 e->_save_inside = true;
 

@@ -24,12 +24,14 @@ public:
       These images will be used when the brush is drawn.
       */
     BrushImagesP images;
+
+    BrushImageDataP getImage(Heightmap::Reference const& ref);
 };
 
 
 class MultiplyBrush: public BrushFilter
 {
-protected:
+public:
     virtual Signal::Intervals affected_samples();
 
     virtual void operator()( Tfr::Chunk& );

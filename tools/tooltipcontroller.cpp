@@ -31,8 +31,7 @@ TooltipController::
 void TooltipController::
         receiveToggleInfoTool(bool active)
 {
-    if (active)
-        _view->toolSelector()->setCurrentTool( this );
+    _view->toolSelector()->setCurrentTool( this, active );
 
     setEnabled(active);
 }

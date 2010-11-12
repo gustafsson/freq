@@ -4,7 +4,7 @@
 
 __global__ void kernel_compute_wavelet_coefficients( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, unsigned first_j, float v, unsigned half_sizes, float sigma_t0 );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
-__global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
+__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt );
 
@@ -151,6 +151,7 @@ __global__ void kernel_compute_wavelet_coefficients(
     float sigma_t0j = sigma_t0; // TODO vary with 'j'
     float sigma_constant = sqrt( 4*pi*sigma_t0j );
 
+    waveform_ft *= sigma_constant;
     for( unsigned j=0; j<nScales; j++)
     {
         // Compute the child wavelet
@@ -169,7 +170,7 @@ __global__ void kernel_compute_wavelet_coefficients(
                 // float f0 = 2.0f + 35*ff*ff*ff
             }
             float q = (-w*aj + pi)*sigma_t0j;
-            float phi_star = expf( -q*q ) * sigma_constant;
+            float phi_star = expf( -q*q ); // TODO let sigma_t0j contain sqrt(LOG2_E) and use exp2f instead, see if it is faster...
 
             output = phi_star * waveform_ft;
         }
@@ -219,7 +220,7 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
     out_inverse_waveform[x] = a;
 }
 
-void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
+void wtInverseEllipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -230,10 +231,10 @@ void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExten
         return;
     }
 
-    kernel_inverse_ellips<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
+    kernel_inverse_ellipse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
 }
 
-__global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
+__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
 {
     const unsigned
             x = blockIdx.x*blockDim.x + threadIdx.x;

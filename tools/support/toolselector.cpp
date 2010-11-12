@@ -1,6 +1,5 @@
 #include "toolselector.h"
 
-#include "tools/renderview.h"
 #include "sawe/project.h"
 #include "ui/mainwindow.h"
 
@@ -13,9 +12,9 @@ namespace Tools {
 
 
 ToolSelector::
-        ToolSelector(RenderView* render_view)
+        ToolSelector(QWidget* parent_tool)
             :
-            _render_view(render_view),
+            _parent_tool(parent_tool),
             _current_tool(0)
 {
 
@@ -30,9 +29,9 @@ QWidget* ToolSelector::
 
 
 void ToolSelector::
-        setCurrentTool( QWidget* tool )
+        setCurrentTool( QWidget* tool, bool active )
 {
-    if (tool != _current_tool)
+    if ((tool != _current_tool) == active)
     {
         if (_current_tool)
         {
@@ -42,18 +41,25 @@ void ToolSelector::
             // toolfactory.
             _current_tool->setParent( 0 );
             _current_tool->setEnabled( false );
+            _current_tool = 0;
+            _parent_tool->update();
         }
+    }
 
+    if (active)
+    {
         _current_tool = tool;
 
         if (_current_tool)
         {
             // Put tool as a child of _render_view.
-            _render_view->layout()->addWidget( _current_tool );
+            _parent_tool->layout()->addWidget( _current_tool );
             _current_tool->setEnabled( true );
+            _parent_tool->update();
         }
     }
 }
+
 
     } // namespace Support
 } // namespace Tools

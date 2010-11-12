@@ -169,9 +169,9 @@ public:
       scales_per_block and samples_per_block are constants deciding how many blocks
       are to be created.
       */
-    unsigned    scales_per_block() { return _scales_per_block; }
+    unsigned    scales_per_block() const { return _scales_per_block; }
     void        scales_per_block(unsigned v);
-    unsigned    samples_per_block() { return _samples_per_block; }
+    unsigned    samples_per_block() const { return _samples_per_block; }
     void        samples_per_block(unsigned v);
 
 

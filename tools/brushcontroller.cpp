@@ -15,7 +15,8 @@ BrushController::
         BrushController( BrushView* view, RenderView* render_view )
             :
             view_(view),
-            render_view_(render_view)
+            render_view_(render_view),
+            paint_button_(Qt::LeftButton)
 {
     setupGui();
 
@@ -76,13 +77,13 @@ void BrushController::
 
     model()->brush_factor = 0;
 
-    float A = 0.1;
+    float A = .1f;
     if (ui->actionAirbrush->isChecked())
         model()->brush_factor = -A;
     if (ui->actionAmplitudeBrush->isChecked())
         model()->brush_factor = A;
 
-    render_view_->toolSelector()->setCurrentTool( model()->brush_factor != 0 ? this : 0 );
+    render_view_->toolSelector()->setCurrentTool( this, model()->brush_factor != 0 );
 }
 
 
@@ -96,11 +97,17 @@ void BrushController::
 void BrushController::
         mousePressEvent ( QMouseEvent * e )
 {
-    if (isEnabled())
-    {
-        draw_button_.press( e->x(), this->height() - e->y() );
+    mouseMoveEvent( e );
+}
 
-        mouseMoveEvent( e );
+
+void BrushController::
+        mouseReleaseEvent ( QMouseEvent *e )
+{
+    if (e->button() == paint_button_ )
+    {
+        render_view_->model->collection->invalidate_samples( drawn_interval_ );
+        drawn_interval_.clear();
     }
 
     render_view_->userinput_update();
@@ -108,30 +115,20 @@ void BrushController::
 
 
 void BrushController::
-        mouseReleaseEvent ( QMouseEvent * /*e*/ )
-{
-    draw_button_.release();
-    // ok
-    render_view_->model->collection->invalidate_samples( drawn_interval_ );
-    drawn_interval_.clear();
-    render_view_->userinput_update();
-}
-
-
-void BrushController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    if ( draw_button_.isDown() )
+    if (e->buttons().testFlag( paint_button_ ) || e->buttons().testFlag( Qt::RightButton ))
     {
         Tools::RenderView &r = *render_view_;
         r.makeCurrent();
 
         float org_factor = model()->brush_factor;
-        if( e->buttons().testFlag( Qt::RightButton) )
+
+        if (e->buttons().testFlag( Qt::RightButton ))
             model()->brush_factor *= -1;
 
         GLdouble p[2];
-        if (draw_button_.worldPos(e->x(), height() - e->y(), p[0], p[1], r.xscale))
+        if (Ui::MouseControl::worldPos( e->x(), height() - e->y(), p[0], p[1], r.xscale))
         {
             Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
             drawn_interval_ |= model()->paint( ref, Heightmap::Position( p[0], p[1]) );

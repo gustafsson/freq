@@ -61,6 +61,8 @@ public:
       */
     float     wavelet_time_support() const { return _wavelet_time_suppport; }
     void      wavelet_time_support( float value ) { _wavelet_time_suppport = value; }
+    float     wavelet_scale_support() const { return _wavelet_scale_suppport; }
+    void      wavelet_scale_support( float value ) { _wavelet_scale_suppport = value; }
 
     /**
       Computes the standard deviation in time and frequency using the tf_resolution value. For a given frequency.
@@ -104,6 +106,7 @@ private:
       @see wavelet_time_suppport
       */
     float  _wavelet_time_suppport;
+    float _wavelet_scale_suppport;
 };
 
 } // namespace Tfr
