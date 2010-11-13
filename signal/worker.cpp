@@ -84,15 +84,15 @@ bool Worker::
         CudaException_CHECK_ERROR();
 
         b = callCallbacks( interval );
-        _samples_per_chunk = b->number_of_samples();
 
-        work_time += b->length();
+        float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
+        work_time += b->length() - r;
 
         TIME_WORKER {
             tt->info("Worker got %s, [%g, %g) s. %g x realtime",
                 b->getInterval().toString().c_str(),
                 b->start(), b->start()+b->length(),
-                b->length()/tt->elapsedTime());
+                (b->length()-r)/tt->elapsedTime());
         }
 
         CudaException_CHECK_ERROR();
