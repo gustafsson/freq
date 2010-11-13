@@ -2,7 +2,6 @@
 #define FILTERS_RIDGE_H
 
 #include "tfr/cwtfilter.h"
-#include "tfr/stftfilter.h"
 
 namespace Filters
 {

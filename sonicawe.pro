@@ -40,97 +40,31 @@ RESOURCES += \
     ui/icon-resources.qrc \
 
 SOURCES += \
-    adapters/audiofile.cpp \
-    adapters/csv.cpp \
-    adapters/hdf5.cpp \
-    adapters/matlabfilter.cpp \
-    adapters/matlaboperation.cpp \
-    adapters/microphonerecorder.cpp \
-    adapters/playback.cpp \
-    adapters/writewav.cpp \
+    adapters/*.cpp \
     filters/*.cpp \
     heightmap/*.cpp \
-    sawe/application.cpp \
-    sawe/layer.cpp \
-    sawe/main.cpp \
-    sawe/project.cpp \
-    signal/buffersource.cpp \
-    signal/operation.cpp \
-    signal/operation-basic.cpp \
-    signal/operationcache.cpp \
-    signal/postsink.cpp \
-    signal/intervals.cpp \
-    signal/sinksource.cpp \
-    signal/source.cpp \
-    signal/worker.cpp \
-    tfr/chunk.cpp \
-    tfr/complexbuffer.cpp \
-    tfr/cwt.cpp \
-    tfr/cwtchunk.cpp \
-    tfr/cwtfilter.cpp \
+    sawe/*.cpp \
+    signal/*.cpp \
     tfr/fft4g.c \
-    tfr/filter.cpp \
-    tfr/stft.cpp \
-    tfr/stftfilter.cpp \
+    tfr/*.cpp \
     tools/*.cpp \
     tools/support/*.cpp \
     tools/selections/*.cpp \
     tools/selections/support/*.cpp \
-    ui/comboboxaction.cpp \
-    ui/mainwindow.cpp \
-    ui/mousecontrol.cpp \
-    ui/propertiesselection.cpp \
-    ui/propertiesstroke.cpp \
-    ui/updatewidgetsink.cpp \
+    ui/*.cpp \
 
 HEADERS += \
-    adapters/audiofile.h \
-    adapters/csv.h \
-    adapters/hdf5.h \
-    adapters/matlabfilter.h \
-    adapters/matlaboperation.h \
-    adapters/microphonerecorder.h \
-    adapters/playback.h \
-    adapters/writewav.h \
+    adapters/*.h \
     filters/*.h \
     heightmap/*.h \
-    sawe/application.h \
-    sawe/layer.h \
-    sawe/mainplayback.h \
-    sawe/project.h \
-    signal/buffersource.h \
-    signal/operation.h \
-    signal/operation-basic.h \
-    signal/operationcache.h \
-    signal/postsink.h \
-    signal/intervals.h \
-    signal/sink.h \
-    signal/sinksource.h \
-    signal/source.h \
-    signal/worker.h \
-    tfr/chunk.h \
-    tfr/complexbuffer.h \
-    tfr/cwt.h \
-    tfr/cwtchunk.h \
-    tfr/cwtfilter.h \
-    tfr/filter.h \
-    tfr/freqaxis.h \
-    tfr/stft.h \
-    tfr/transform.h \
-    tfr/wavelet.cu.h \
-    tfr/stftfilter.h \
+    sawe/*.h \
+    signal/*.h \
+    tfr/*.h \
     tools/*.h \
     tools/support/*.h \
     tools/selections/*.h \
     tools/selections/support/*.h \
-    ui/comboboxaction.h \
-    ui/mainwindow.h \
-    ui/mousecontrol.h \
-    ui/propertiesselection.h \
-    ui/propertiesstroke.h \
-    ui/updatewidgetsink.h \
-    tools/selections/support/splinefilter.h \
-    tools/selections/support/splinefilter.cu.h
+    ui/*.h \
 
 FORMS += \
     tools/selectionviewmodel.ui \
@@ -150,21 +84,21 @@ CUDA_SOURCES += \
     tools/selections/support/splinefilter.cu \
     tools/selections/support/watershead.cu \
 
-SHADER_SOURCS += \
+SHADER_SOURCES += \
     heightmap/heightmap.frag \
     heightmap/heightmap.vert \
 
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
-    $$SHADER_SOURCS \ 
+    $$SHADER_SOURCES \
 
 # "Other files" for Visual Studio
 OTHER_SOURCES += \
     $$SHADERS \
     sonicawe.pro \
 
-# Make shaders show up in project file list in Visual Studio
+# Make OTHER_SOURCES show up in project file list in Visual Studio
 win32 { 
     othersources.input = OTHER_SOURCES
     othersources.output = ${QMAKE_FILE_NAME}

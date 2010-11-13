@@ -4,7 +4,7 @@
 #include <GL/gl.h>
 #include <TaskTimer.h>
 #include <glPushContext.h>
-
+#include <QLabel>
 namespace Tools { namespace Selections
 {
 
@@ -27,6 +27,9 @@ EllipseView::
 void EllipseView::
         draw()
 {
+    QLabel l( "Hej" );
+    l.show();
+
     drawSelectionCircle();
 }
 

@@ -17,7 +17,7 @@ public:
     bool enabled;
 
 public slots:
-    /// Connected in SelectionController
+    /// Connected in BrushController
     virtual void draw();
 
 private:
