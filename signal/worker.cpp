@@ -75,7 +75,15 @@ bool Worker::
                 interval.toString().c_str()));
     }
 
-    ptime startTime = microsec_clock::local_time();
+    static ptime startTime;
+    static bool first = true;
+    if (!first)
+    {
+        time_duration diff = microsec_clock::local_time() - startTime;
+        TaskTimer tt("Current framerate = %g fps", 1000000.0/diff.total_microseconds());
+    }
+    first = false;
+    startTime = microsec_clock::local_time();
 
     pBuffer b;
 

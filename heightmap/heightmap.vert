@@ -15,7 +15,7 @@ uniform float yScale;
 
 void main()
 {
-    gl_TexCoord[0].xy= gl_Vertex.xz*vec2(1,1);
+    gl_TexCoord[0].xy= gl_Vertex.xz;
     float height     = texture2D(tex, gl_TexCoord[0].xy).x;
     vec2 slope       = texture2D(tex_slope, gl_TexCoord[0].xy).xw;
 

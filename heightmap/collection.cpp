@@ -582,15 +582,24 @@ pBlock Collection::
     return result;
 }
 
+#include <Statistics.h>
 
 void Collection::
-        computeSlope( pBlock block, unsigned cuda_stream )
+        computeSlope( pBlock block, unsigned /*cuda_stream */)
 {
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
     GlBlock::pHeight h = block->glblock->height();
     Position a,b;
     block->ref.getArea(a,b);
-    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, b.time-a.time, cuda_stream );
+    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal(),
+                                block->glblock->slope()->data->getCudaGlobal(),
+                                b.time-a.time, b.scale-a.scale );
+
+    /*GpuCpuData<float2>& data = *block->glblock->slope()->data;
+    GpuCpuData<float> statdata(
+                (float*)data.getCpuMemory(),
+                make_uint3(2*data.getNumberOfElements1D(),1,1), GpuCpuVoidData::CpuMemory, true );
+    Statistics<float> stats( &statdata );*/
     TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 

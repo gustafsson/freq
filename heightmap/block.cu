@@ -14,6 +14,7 @@ public:
 };
 
 #define M_PIf ((float)M_PI)
+
 class WeightFetcher
 {
 public:
@@ -50,7 +51,7 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
     {
     case Heightmap::ComplexInfo_Amplitude_Weighted:
     {
-        resample2d_fetcher<float2, float, WeightFetcher, AssignOperator<float> >(
+        resample2d_fetcher<float, float2, float, WeightFetcher, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,

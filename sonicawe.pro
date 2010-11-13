@@ -82,7 +82,6 @@ CUDA_SOURCES += \
     tools/support/brushfilter.cu \
     tools/support/brushpaint.cu \
     tools/selections/support/splinefilter.cu \
-    tools/selections/support/watershead.cu \
 
 SHADER_SOURCES += \
     heightmap/heightmap.frag \

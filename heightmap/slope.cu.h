@@ -1,12 +1,11 @@
 #ifndef HEIGHTMAPSLOPE_CU_H
 #define HEIGHTMAPSLOPE_CU_H
 
-#include <vector_types.h>
+#include <cudaPitchedPtrType.h>
 
 extern "C"
-void cudaCalculateSlopeKernel(  float* h, float2 *slopeOut,
-                                unsigned int width, unsigned int height,
-                                float xscale, float yscale,
-                                unsigned cuda_stream);
+void cudaCalculateSlopeKernel(  cudaPitchedPtrType<float> heightmapIn,
+                                cudaPitchedPtrType<float2> slopeOut,
+                                float xscale, float yscale );
 
 #endif // HEIGHTMAPSLOPE_CU_H
