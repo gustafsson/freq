@@ -210,7 +210,11 @@ private:
       All callbacks in this list are called once for each call of workOne().
       */
     PostSink _post_sink;
-    //std::vector<pOperation> _callbacks;
+
+    /**
+      Adjusting chunk size based on fps.
+      */
+    boost::posix_time::ptime _last_work_one;
 
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.

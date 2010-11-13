@@ -28,7 +28,7 @@ Project::
 Project::
         ~Project()
 {
-    TaskTimer tt("~Project");
+    TaskTimer("~Project").suppressTiming();
 }
 
 

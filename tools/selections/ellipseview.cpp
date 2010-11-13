@@ -27,9 +27,6 @@ EllipseView::
 void EllipseView::
         draw()
 {
-    QLabel l( "Hej" );
-    l.show();
-
     drawSelectionCircle();
 }
 

@@ -25,6 +25,7 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
+            QGLWidget(QGLFormat(QGL::SampleBuffers)),
             _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
             _px(0), _py(0), _pz(-10),
             _rx(91), _ry(180), _rz(0),

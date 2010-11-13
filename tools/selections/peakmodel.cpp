@@ -2,7 +2,6 @@
 
 #include "support/peakfilter.h"
 #include "tools/renderview.h"
-#include "support/watershead.cu.h"
 #include "tfr/cwt.h"
 #include "tools/support/brushpaint.cu.h"
 

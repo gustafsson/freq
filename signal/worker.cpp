@@ -24,6 +24,7 @@ Worker::
         Worker(Signal::pOperation s)
 :   work_chunks(0),
     work_time(0),
+    _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
     _samples_per_chunk( 1<<12 ),
     _max_samples_per_chunk( (unsigned)-1 ),
@@ -75,15 +76,6 @@ bool Worker::
                 interval.toString().c_str()));
     }
 
-    static ptime startTime;
-    static bool first = true;
-    if (!first)
-    {
-        time_duration diff = microsec_clock::local_time() - startTime;
-        TaskTimer tt("Current framerate = %g fps", 1000000.0/diff.total_microseconds());
-    }
-    first = false;
-    startTime = microsec_clock::local_time();
 
     pBuffer b;
 
@@ -124,19 +116,21 @@ bool Worker::
         throw;
     }
 
-    time_duration diff = microsec_clock::local_time() - startTime;
+    ptime now = microsec_clock::local_time();
 
-    unsigned milliseconds = diff.total_milliseconds();
-    if (0==milliseconds) milliseconds=1;
+    if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
+        time_duration diff = now - _last_work_one;
+        float current_fps = 1000000.0/diff.total_microseconds();
+        TIME_WORKER TaskTimer tt("Current framerate = %g fps", current_fps);
 
-    if (b) if (!TESTING_PERFORMANCE) {
-        float current_fps = 1000.f/milliseconds;
         if (current_fps < _requested_fps &&
             _samples_per_chunk >= _min_samples_per_chunk)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate());
-            TIME_WORKER TaskTimer("Low framerate (%.1f fps). Decreased samples per chunk to %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
+            TIME_WORKER TaskTimer(
+                    "Low framerate (%.1f fps). Decreased samples per chunk to %u",
+                    current_fps, _samples_per_chunk).suppressTiming();
         }
         else if (current_fps > 2.5f*_requested_fps)
         {
@@ -145,12 +139,16 @@ bool Worker::
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else
-                TIME_WORKER TaskTimer("High framerate (%.1f fps). Increased samples per chunk to %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
+                TIME_WORKER TaskTimer(
+                        "High framerate (%.1f fps). Increased samples per chunk to %u",
+                        current_fps, _samples_per_chunk).suppressTiming();
         }
 
         _requested_fps = 99*_requested_fps/100;
         //if (1>_requested_fps)_requested_fps=1;
     }
+
+    _last_work_one = now;
 
     return true;
 }

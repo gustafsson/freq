@@ -66,7 +66,7 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskTimer tt("%s = %p", __FUNCTION__, this);
+    TaskTimer("%s = %p", __FUNCTION__, this).suppressTiming();
 }
 
 

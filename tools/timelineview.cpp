@@ -39,7 +39,7 @@ TimelineView::
 TimelineView::
         ~TimelineView()
 {
-    TaskTimer tt("~TimelineView");
+    TaskTimer("~TimelineView").suppressTiming();
 }
 
 

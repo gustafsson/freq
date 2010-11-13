@@ -415,7 +415,7 @@ int main(int argc, char *argv[])
         tools.render_model.collection->samples_per_block( _samples_per_block );
         tools.render_model.collection->scales_per_block( _scales_per_block );
 
-		p.reset(); // a keeps a copy of pProject
+        p.reset(); // 'a' keeps a copy of pProject
 
         int r = a.exec();
 
