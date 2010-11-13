@@ -44,6 +44,12 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
 extern "C"
 void blockMerge( cudaPitchedPtrType<float> inBlock,
                  cudaPitchedPtrType<float> outBlock,
+                 float4 in_area,
+                 float4 out_area );
+
+extern "C"
+void blockMergeOld( cudaPitchedPtrType<float> inBlock,
+                 cudaPitchedPtrType<float> outBlock,
                  float in_sample_rate,
                  float out_sample_rate,
                  float in_frequency_resolution,

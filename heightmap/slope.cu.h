@@ -5,6 +5,8 @@
 
 extern "C"
 void cudaCalculateSlopeKernel(  float* h, float2 *slopeOut,
-                                unsigned int width, unsigned int height, float xscale, unsigned cuda_stream);
+                                unsigned int width, unsigned int height,
+                                float xscale, float yscale,
+                                unsigned cuda_stream);
 
 #endif // HEIGHTMAPSLOPE_CU_H

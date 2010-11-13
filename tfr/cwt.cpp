@@ -21,14 +21,14 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_CWT if(0)
-#define TIME_CWT
+#define TIME_CWT if(0)
+//#define TIME_CWT
 
 #define STAT_CWT if(0)
 //#define STAT_CWT
 
-//#define TIME_CWTPART if(0)
-#define TIME_CWTPART
+#define TIME_CWTPART if(0)
+//#define TIME_CWTPART
 
 //#define TIME_ICWT if(0)
 #define TIME_ICWT

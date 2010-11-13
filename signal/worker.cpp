@@ -127,13 +127,13 @@ bool Worker::
             _samples_per_chunk >= _min_samples_per_chunk)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
-                    b->number_of_samples(), _source->sample_rate());
+                    _samples_per_chunk, _source->sample_rate());
             TIME_WORKER TaskTimer("Low framerate (%.1f fps). Decreased samples per chunk to %u", 1000.f/milliseconds, _samples_per_chunk).suppressTiming();
         }
         else if (current_fps > 2.5f*_requested_fps)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(
-                    b->number_of_samples(), _source->sample_rate());
+                    _samples_per_chunk, _source->sample_rate());
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else

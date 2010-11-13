@@ -46,7 +46,7 @@ void BlockFilter::
         if (_collection->_constructor_thread.isSameThread())
         {
             mergeChunk( block, chunk, block->glblock->height()->data );
-            _collection->computeSlope( block, 0 );
+            //_collection->computeSlope( block, 0 );
 
             CudaException_CHECK_ERROR();
         }
