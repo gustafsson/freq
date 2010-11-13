@@ -19,9 +19,7 @@ namespace Signal {
 Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
-    std::stringstream ss;
-    DEBUG_POSTSINK TaskTimer tt("PostSink( %s )",
-        ((std::stringstream&)(ss<<I)).str().c_str());
+    DEBUG_POSTSINK TaskTimer tt("PostSink( %s )", I.toString().c_str());
 
     vector<pOperation> passive_operations;
     vector<pOperation> active_operations;

@@ -66,7 +66,7 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskTimer tt("%s = %p", __FUNCTION__, this);
+    TaskTimer("%s = %p", __FUNCTION__, this).suppressTiming();
 }
 
 
@@ -337,7 +337,8 @@ void Collection::
 void Collection::
         invalidate_samples( const Intervals& sid )
 {
-    TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
+    TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
+                                 sid.toString().c_str());
 
 	QMutexLocker l(&_cache_mutex);
 	BOOST_FOREACH( cache_t::value_type& c, _cache )
@@ -462,7 +463,7 @@ pBlock Collection::
             }
 
             {
-                if (0) {
+                if (1) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // start with the blocks that are just slightly more detailed
                     mergeBlock( block, block->ref.left(), 0 );
@@ -488,7 +489,7 @@ pBlock Collection::
 
                 // TODO compute at what log2_samples_size[1] stft is more accurate
                 // than low resolution blocks.
-                if (0) {
+                if (1) {
                     TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
                     mergeBlock( block, block->ref.parent(), 0 );
@@ -581,15 +582,24 @@ pBlock Collection::
     return result;
 }
 
+#include <Statistics.h>
 
 void Collection::
-        computeSlope( pBlock block, unsigned cuda_stream )
+        computeSlope( pBlock block, unsigned /*cuda_stream */)
 {
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
     GlBlock::pHeight h = block->glblock->height();
     Position a,b;
     block->ref.getArea(a,b);
-    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal().ptr(), block->glblock->slope()->data->getCudaGlobal().ptr(), _samples_per_block, _scales_per_block, b.time-a.time, cuda_stream );
+    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal(),
+                                block->glblock->slope()->data->getCudaGlobal(),
+                                b.time-a.time, b.scale-a.scale );
+
+    /*GpuCpuData<float2>& data = *block->glblock->slope()->data;
+    GpuCpuData<float> statdata(
+                (float*)data.getCpuMemory(),
+                make_uint3(2*data.getNumberOfElements1D(),1,1), GpuCpuVoidData::CpuMemory, true );
+    Statistics<float> stats( &statdata );*/
     TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
@@ -641,9 +651,8 @@ void Collection::
 
 
 bool Collection::
-        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream )
+        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned /*cuda_stream*/ )
 {
-    Interval inInterval = inBlock->ref.getInterval();
     Interval outInterval = outBlock->ref.getInterval();
 
     // Find out what intervals that match
@@ -659,45 +668,27 @@ bool Collection::
 
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
 
-    float in_sample_rate = inBlock->ref.sample_rate();
-    float out_sample_rate = outBlock->ref.sample_rate();
-    float signal_sample_rate = worker->source()->sample_rate();
-    float in_frequency_resolution = inBlock->ref.frequency_resolution();
-    float out_frequency_resolution = outBlock->ref.frequency_resolution();
-
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
 
-    BOOST_FOREACH( const Interval& transfer, transferDesc)
+    Position ia, ib, oa, ob;
+    inBlock->ref.getArea(ia, ib);
+    outBlock->ref.getArea(oa, ob);
+
+    ::blockMerge( in_h->data->getCudaGlobal(),
+                  out_h->data->getCudaGlobal(),
+
+                  make_float4( ia.time, ia.scale, ib.time, ib.scale ),
+                  make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
+
+    // Validate region of block if inBlock was source of higher resolution than outBlock
+    if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
+        inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
     {
-        float in_offset = transfer.first - inInterval.first;
-        float out_offset = transfer.first - outInterval.first;
-        float in_valid_samples = transfer.count();
-
-        // Rescale to proper sample rates (samples are originally
-        // described in the signal_sample_rate)
-        in_offset *= in_sample_rate / signal_sample_rate;
-        out_offset *= out_sample_rate / signal_sample_rate;
-        in_valid_samples *= in_sample_rate / signal_sample_rate;
-
-        ::blockMerge( in_h->data->getCudaGlobal(),
-                      out_h->data->getCudaGlobal(),
-
-                      in_sample_rate,
-                      out_sample_rate,
-                      in_frequency_resolution,
-                      out_frequency_resolution,
-                      in_offset,
-                      out_offset,
-                      in_valid_samples,
-                      cuda_stream);
-
-        // Validate region of block if inBlock was source of higher resolution than outBlock
-        if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
-            inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
+        if (ib.scale>=ob.scale && ia.scale <=oa.scale)
         {
-            outBlock->valid_samples |= transfer;
-            TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Using block [%u,%u]", transfer.first, transfer.last);
+            outBlock->valid_samples |= inBlock->valid_samples;
+            TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Using block %s", (inBlock->valid_samples & outInterval).toString().c_str() );
         }
     }
 

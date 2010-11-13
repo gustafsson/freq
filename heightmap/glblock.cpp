@@ -144,7 +144,7 @@ GlBlock( Collection* collection )
 
     p = new float[w*h*2];
     memset(p, 0, sizeof(float)*w*h*2);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_ALPHA32F_ARB,w, h,0, GL_RG, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_ALPHA32F_ARB,w, h,0, GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
     delete[]p;
 
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -241,7 +241,10 @@ void GlBlock::
         glPixelTransferf(GL_GREEN_SCALE, 50.f);
 
         GlException_CHECK_ERROR();
-        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RG, GL_FLOAT, 0);
+
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
+        //glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RG, GL_FLOAT, 0);
+
         GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
 
         glPixelTransferf(GL_GREEN_SCALE, 1.0f);

@@ -8,8 +8,8 @@ namespace Tools { namespace Selections
 
 SplineModel::
         SplineModel( Tfr::FreqAxis const& fa )
-            : fa_( fa ),
-              drawing ( false )
+            : drawing ( false ),
+            fa_( fa )
 {
     filter.reset( new Support::SplineFilter( true ) );
     updateFilter();

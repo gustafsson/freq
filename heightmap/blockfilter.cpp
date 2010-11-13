@@ -8,8 +8,11 @@
 #include <boost/foreach.hpp>
 #include <TaskTimer.h>
 
-#define TIME_CWTTOBLOCK
-//#define TIME_CWTTOBLOCK if(0)
+//#define TIME_BLOCKFILTER
+#define TIME_BLOCKFILTER if(0)
+
+//#define TIME_CWTTOBLOCK
+#define TIME_CWTTOBLOCK if(0)
 
 // #define DEBUG_CWTTOBLOCK
 #define DEBUG_CWTTOBLOCK if(0)
@@ -32,20 +35,13 @@ BlockFilter::
 void BlockFilter::
         operator()( Tfr::Chunk& chunk )
 {
-    /*Signal::Intervals expected = _collection->invalid_samples();
+    Signal::Interval chunk_interval = chunk.getInterval();
+    TIME_BLOCKFILTER TaskTimer("BlockFilter [%u, %u)",
+                               chunk_interval.first, chunk_interval.last);
 
-    std::cout << "expected=" << expected << std::endl;
-    std::cout << "chunk.getInterval()=" << chunk.getInterval() << std::endl;
+    // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
-    if ( !(expected & chunk.getInterval()) ) {
-        int dummy = 0;
-        // TaskTimer("Collection::put received non requested chunk [%u, %u]", chunk.getInterval().first, chunk.getInterval().last);
-        return;
-    }*/
-
-    // TODO replace this with Tfr::Transform::displayedTimeResolution etc...
-
-    BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( chunk.getInterval() ))
+    BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
     {
         if (_collection->_constructor_thread.isSameThread())
         {
@@ -70,6 +66,8 @@ void BlockFilter::
             block->new_data_available = true;
         }
     }
+
+    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
 }
 
 
@@ -134,8 +132,8 @@ void CwtToBlock::
     if (transferDesc.empty())
     {
         TaskTimer tt("CwtToBlock::mergeChunk, transferDesc empty");
-        tt.getStream() << "outInterval = " << outInterval;
-        tt.getStream() << "inInterval = " << inInterval;
+        tt.getStream() << "outInterval = " << outInterval.toString();
+        tt.getStream() << "inInterval = " << inInterval.toString();
         tt.suppressTiming();
 
         return;
@@ -209,63 +207,63 @@ void CwtToBlock::
     DEBUG_CWTTOBLOCK TaskTimer("_collection->scales_per_block() = %u", _collection->scales_per_block());
 
 
-    BOOST_FOREACH( Signal::Interval transfer, transferDesc )
-    {
-        TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u)", transfer.first, transfer.last);
+    Signal::Interval transfer = transferDesc.coveredInterval();
+    TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u)",
+                                 transfer.first,
+                                 transfer.last);
 
-        DEBUG_CWTTOBLOCK {
-            TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
-            TaskTimer("outInterval [%u,%u)", outInterval.first, outInterval.last).suppressTiming();
-            TaskTimer("chunk.first_valid_sample = %u", chunk.first_valid_sample).suppressTiming();
-            TaskTimer("chunk.n_valid_samples = %u", chunk.n_valid_samples).suppressTiming();
-        }
-
-        // Find resolution and offest for the two blocks to be merged
-        float in_sample_offset = transfer.first - inInterval.first;
-        float out_sample_offset = transfer.first - outInterval.first;
-
-        // Rescale in_sample_offset to in_sample_rate (samples are originally
-        // described in the original source sample rate)
-        in_sample_offset *= in_sample_rate / chunk.original_sample_rate;
-
-        // Rescale out_sample_offset to out_sample_rate (samples are originally
-        // described in the original source sample rate)
-        out_sample_offset *= out_sample_rate / chunk.original_sample_rate;
-
-        // Add offset for redundant samples in chunk
-        in_sample_offset += chunk.first_valid_sample;
-
-        CudaException_CHECK_ERROR();
-
-        TIME_CWTTOBLOCK TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
-                a.time, a.scale,
-                b.time, b.scale,
-                chunk_a.time, chunk_a.scale,
-                chunk_b.time, chunk_b.scale,
-                transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
-            ).suppressTiming();
-
-        BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples < chunk.transform_data->getNumberOfElements().width );
-
-        // Invoke CUDA kernel execution to merge blocks
-        ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
-                         outData->getCudaGlobal(),
-                         make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
-                         //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
-                         make_float4( chunk_a.time, chunk_a.scale,
-                                      chunk_b.time, chunk_b.scale ),
-                         make_float4( a.time, a.scale,
-                                      b.time, b.scale ),
-                         complex_info
-                         );
-
-
-        // TODO recompute transfer to the samples that have actual support
-        CudaException_CHECK_ERROR();
-        GlException_CHECK_ERROR();
-
-        block->valid_samples |= transfer;
+    DEBUG_CWTTOBLOCK {
+        TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
+        TaskTimer("outInterval [%u,%u)", outInterval.first, outInterval.last).suppressTiming();
+        TaskTimer("chunk.first_valid_sample = %u", chunk.first_valid_sample).suppressTiming();
+        TaskTimer("chunk.n_valid_samples = %u", chunk.n_valid_samples).suppressTiming();
     }
+
+    // Find resolution and offest for the two blocks to be merged
+    float in_sample_offset = transfer.first - inInterval.first;
+    float out_sample_offset = transfer.first - outInterval.first;
+
+    // Rescale in_sample_offset to in_sample_rate (samples are originally
+    // described in the original source sample rate)
+    in_sample_offset *= in_sample_rate / chunk.original_sample_rate;
+
+    // Rescale out_sample_offset to out_sample_rate (samples are originally
+    // described in the original source sample rate)
+    out_sample_offset *= out_sample_rate / chunk.original_sample_rate;
+
+    // Add offset for redundant samples in chunk
+    in_sample_offset += chunk.first_valid_sample;
+
+    CudaException_CHECK_ERROR();
+
+    TIME_CWTTOBLOCK TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
+            a.time, a.scale,
+            b.time, b.scale,
+            chunk_a.time, chunk_a.scale,
+            chunk_b.time, chunk_b.scale,
+            transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
+        ).suppressTiming();
+
+    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples < chunk.transform_data->getNumberOfElements().width );
+
+    // Invoke CUDA kernel execution to merge blocks
+    ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
+                     outData->getCudaGlobal(),
+                     make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
+                     //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
+                     make_float4( chunk_a.time, chunk_a.scale,
+                                  chunk_b.time, chunk_b.scale ),
+                     make_float4( a.time, a.scale,
+                                  b.time, b.scale ),
+                     complex_info
+                     );
+
+
+    // TODO recompute transfer to the samples that have actual support
+    CudaException_CHECK_ERROR();
+    GlException_CHECK_ERROR();
+
+    block->valid_samples |= transfer;
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
     return;

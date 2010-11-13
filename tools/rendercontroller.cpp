@@ -23,7 +23,8 @@
 // Qt
 #include <QToolBar>
 #include <QSlider>
-
+#include <QGraphicsView>
+#include <QResizeEvent>
 
 // todo remove
 #include "navigationcontroller.h"
@@ -32,6 +33,25 @@ using namespace Ui;
 
 namespace Tools
 {
+
+class GraphicsView : public QGraphicsView
+{
+public:
+    GraphicsView()
+    {
+        setWindowTitle(tr("Boxes"));
+        setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+        //setRenderHints(QPainter::SmoothPixmapTransform);
+    }
+
+protected:
+    void resizeEvent(QResizeEvent *event) {
+        if (scene())
+            scene()->setSceneRect(QRect(QPoint(0, 0), event->size()));
+        QGraphicsView::resizeEvent(event);
+    }
+};
+
 
 RenderController::
         RenderController( RenderView *view )
@@ -360,8 +380,17 @@ void RenderController::
     // context is required to be created by lazy initialization when painting
     // the widget
     view->makeCurrent();
+    // Make all child widgets occupy the entire area
     view->setLayout(new QHBoxLayout());
     view->layout()->setMargin(0);
+
+    /*GraphicsView* g = new GraphicsView();
+    g->setLayout(new QHBoxLayout());
+    g->layout()->setMargin(0);
+    g->setViewport(view);
+    g->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);*/
+    //view.setScene(&scene); // ingen scene? =P
+//    g->show();
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view);

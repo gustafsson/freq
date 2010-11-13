@@ -36,6 +36,7 @@ void PeakView::
 void PeakView::
         drawSelectionPeak()
 {
+    spline_view.enabled = enabled;
     spline_view.drawSelectionSpline();
 }
 

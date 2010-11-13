@@ -76,11 +76,11 @@ void PlaybackController::
         postsink_operations->filter( filter );
         Signal::Intervals a = filter->affected_samples();
 
-        a.print(__FUNCTION__);
+        TaskTimer("receivePlaySound a = %s", a.toString().c_str()).suppressTiming();
 
         a -= filter->zeroed_samples();
 
-        a.print(__FUNCTION__);
+        TaskTimer("receivePlaySound a = %s", a.toString().c_str()).suppressTiming();
         postsink_operations->invalidate_samples( a );
     }
     else

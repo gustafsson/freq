@@ -2,7 +2,6 @@
 
 #include "support/peakfilter.h"
 #include "tools/renderview.h"
-#include "support/watershead.cu.h"
 #include "tfr/cwt.h"
 #include "tools/support/brushpaint.cu.h"
 
@@ -151,8 +150,6 @@ void PeakModel::
     uint2 start_point;
     if (!anyBorderPixel(start_point, w, h))
         return;
-
-    bool val = classifiedVal(start_point.x, start_point.y, w, h);
 
     border_nodes.clear();
     std::vector<uint2> border_pts;

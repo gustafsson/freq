@@ -137,11 +137,9 @@ pBuffer SourceBase::
 pBuffer SourceBase::
         readFixedLength( const Interval& I )
 {
-    std::stringstream ss;
-    TIME_READCHECKED ss << I;
     TIME_READCHECKED TaskTimer tt("%s.%s %s",
                   demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
-                  ss.str().c_str() );
+                  I.toString().c_str() );
 
     // Try a simple read
     pBuffer p = readChecked( I );
@@ -170,11 +168,11 @@ pBuffer SourceBase::
         zeros( const Interval& I )
 {
     BOOST_ASSERT( I.valid() );
-    std::stringstream ss;
-    TIME_READCHECKED ss << I;
+
+
     TIME_READCHECKED TaskTimer tt("%s.%s %s",
                   demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
-                  ss.str().c_str() );
+                  I.toString().c_str() );
 
     pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
     memset(r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D());

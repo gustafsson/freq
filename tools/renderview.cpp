@@ -25,6 +25,7 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
+            QGLWidget(QGLFormat(QGL::SampleBuffers)),
             _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
             _px(0), _py(0), _pz(-10),
             _rx(91), _ry(180), _rz(0),
@@ -92,7 +93,7 @@ Support::ToolSelector* RenderView::
 void RenderView::
         userinput_update()
 {
-    model->project()->worker.requested_fps(30);
+    model->project()->worker.requested_fps(60);
     update();
 }
 
@@ -259,9 +260,11 @@ void RenderView::
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
-                _work_timer->info("Finished %u chunks covering %g s. Work session #%u",
+                _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
                                   model->project()->worker.work_chunks,
-                                  model->project()->worker.work_time, workcount);
+                                  model->project()->worker.work_time,
+                                  model->project()->worker.work_time/_work_timer->elapsedTime(),
+                                  workcount);
                 model->project()->worker.work_chunks = 0;
                 model->project()->worker.work_time = 0;
                 workcount++;
