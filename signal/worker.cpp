@@ -8,6 +8,7 @@
 #include <QMutexLocker>
 #include <boost/foreach.hpp>
 #include <CudaException.h>
+#include <demangle.h>
 
 #define TIME_WORKER
 //#define TIME_WORKER if(0)
@@ -61,15 +62,20 @@ bool Worker::
 
     unsigned center_sample = source()->sample_rate() * center;
 
-    stringstream ss;
-    TIME_WORKER TaskTimer tt("Working %u samples from %s, center=%u",
-         _samples_per_chunk,
-         ((std::stringstream&)(ss<<todo_list())).str().c_str(),
-         center_sample );
+    Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
+
+    boost::scoped_ptr<TaskTimer> tt;
+
+    TIME_WORKER {
+        tt.reset( new TaskTimer(
+                "Working %u samples from %s, center=%u. Reading %s",
+                _samples_per_chunk,
+                todo_list().toString().c_str(),
+                center_sample,
+                interval.toString().c_str()));
+    }
 
     ptime startTime = microsec_clock::local_time();
-
-    Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
 
     pBuffer b;
 
@@ -77,22 +83,16 @@ bool Worker::
     {
         CudaException_CHECK_ERROR();
 
-        {
-            stringstream ss;
-            TIME_WORKER TaskTimer tt("Reading source and calling callbacks %s",
-                ((std::stringstream&)(ss<<interval)).str().c_str() );
+        b = callCallbacks( interval );
+        _samples_per_chunk = b->number_of_samples();
 
-            b = callCallbacks( interval );
-            _samples_per_chunk = b->number_of_samples();
+        work_time += b->length();
 
-            work_time += b->length();
-
-            TIME_WORKER {
-                stringstream ss;
-                TaskTimer("Worker got %s, [%g, %g) s",
-                    ((std::stringstream&)(ss<<b->getInterval())).str().c_str(),
-                    b->start(), b->start()+b->length() ).suppressTiming();
-            }
+        TIME_WORKER {
+            tt->info("Worker got %s, [%g, %g) s. %g x realtime",
+                b->getInterval().toString().c_str(),
+                b->start(), b->start()+b->length(),
+                b->length()/tt->elapsedTime());
         }
 
         CudaException_CHECK_ERROR();
@@ -104,8 +104,16 @@ bool Worker::
             _max_samples_per_chunk = _samples_per_chunk;
             TaskTimer("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what()).suppressTiming();
         } else {
+            TaskTimer("Worker caught CudaException:\n%s", e.what()).suppressTiming();
             throw;
         }
+    } catch (const exception& e) {
+        TaskTimer("Worker caught exception type %s:\n%s",
+                  demangle(typeid(e).name()).c_str(), e.what()).suppressTiming();
+        throw;
+    } catch (...) {
+        TaskTimer("Worker caught unknown exception.").suppressTiming();
+        throw;
     }
 
     time_duration diff = microsec_clock::local_time() - startTime;

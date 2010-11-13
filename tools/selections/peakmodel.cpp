@@ -152,8 +152,6 @@ void PeakModel::
     if (!anyBorderPixel(start_point, w, h))
         return;
 
-    bool val = classifiedVal(start_point.x, start_point.y, w, h);
-
     border_nodes.clear();
     std::vector<uint2> border_pts;
 

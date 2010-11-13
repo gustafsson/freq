@@ -31,7 +31,7 @@ Signal::pBuffer Filter::
         if (!(work - zeroed_samples()))
         {
             // Doesn't have to read from source, just create a buffer with all samples set to 0
-            TIME_Filter Intervals(I).print("Filter silent");
+            TIME_Filter TaskTimer("Filter silent, %s", I.toString().c_str());
             return zeros(I);
         }
 
@@ -46,12 +46,12 @@ Signal::pBuffer Filter::
             // is unaffected
             const Signal::Intervals b_interval = b->getInterval();
             if (!(affected & b_interval)) {
-                TIME_Filter Intervals(b_interval).print("Filter unaffected");
+                TIME_Filter TaskTimer("Filter unaffected, %s", b_interval.toString().c_str());
                 return b;
             }
 
             // Explicitly return only the unaffected samples
-            TIME_Filter Intervals(b_interval).print("FilterOp fixed unaffected");
+            TIME_Filter TaskTimer tt("FilterOp fixed unaffected, %s", b_interval.toString().c_str());
             BufferSource bs(b);
             return bs.readFixedLength( (~affected & b_interval).getInterval() );
         }
@@ -59,18 +59,25 @@ Signal::pBuffer Filter::
 
 
     // If we've reached this far, the transform will have to be computed
-    ChunkAndInverse ci = readChunk( I );
-
-    pBuffer r;
-    if (ci.inverse) // TODO remove 'false &&'
-        r = ci.inverse;
-    else
+    ChunkAndInverse ci;
     {
-        r = _transform->inverse( ci.chunk );
+        TIME_Filter TaskTimer tt("Filter computing chunk");
+        ci = readChunk( I );
+        TIME_Filter TaskTimer("Computed chunk %s", ci.chunk->getInterval().toString().c_str()).suppressTiming();
     }
 
-    TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter computed chunk");
-    TIME_Filter Intervals(r->getInterval()).print("Filter computed inverse");
+    pBuffer r;
+    if (ci.inverse)
+    {
+        TIME_Filter TaskTimer("Chunk is unmodified, doesn't need to compute inverse").suppressTiming();
+        r = ci.inverse;
+    }
+    else
+    {
+        TIME_Filter TaskTimer tt("Filter computing inverse");
+        r = _transform->inverse( ci.chunk );
+        TIME_Filter TaskTimer("Computed inverse %s", r->getInterval().toString().c_str()).suppressTiming();
+    }
 
     return r;
 }
@@ -103,11 +110,11 @@ ChunkAndInverse Filter::
     // Only apply filter if it would affect these samples
     if (work || !_try_shortcuts)
     {
-        TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter applying filter operation");
+        TIME_Filter TaskTimer("Filter applying filter operation, %s", ci.chunk->getInterval().toString().c_str());
         applyFilter( ci.chunk );
     }
 
-    TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter after filter operation");
+    TIME_Filter TaskTimer("Filter after filter operation, %s", ci.chunk->getInterval().toString().c_str());
 
     return ci;
 }

@@ -40,6 +40,8 @@ public:
     bool operator<(const Interval& r) const;
     Interval& operator|=(const Interval& r);
     bool operator==(const Interval& r) const;
+
+    std::string toString() const;
 };
 
 
@@ -75,17 +77,12 @@ public:
     operator   bool        () const { return !empty(); }
 
     Intervals                       inverse() const;
-
     Interval                        getInterval() const;
     Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                        coveredInterval() const;
 
-    void                            print( std::string title="" ) const;
-
+    std::string                     toString() const;
 };
-
-std::ostream& operator<<( std::ostream& s, const Intervals& i);
-std::ostream& operator<<( std::ostream& s, const Interval& i);
 
 } // namespace Signal
 

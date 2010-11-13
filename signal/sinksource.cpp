@@ -153,13 +153,13 @@ void SinkSource::
 
         if (toRemove)
         {
-            if(D) ss << " -" << s.getInterval();
+            if(D) ss << " -" << s.getInterval().toString();
 
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
             BOOST_FOREACH( Interval i, toKeep )
             {
-                if(D) ss << " +" << i;
+                if(D) ss << " +" << i.toString();
 
                 pBuffer n( new Buffer( i.first, i.count(), FS));
                 GpuCpuData<float>* dest = n->waveform_data();
@@ -184,7 +184,7 @@ void SinkSource::
 
     if(D) if (!ss.str().empty())
     {
-        ss << " +" << n->getInterval();
+        ss << " +" << n->getInterval().toString();
         TaskTimer("M:%s", ss.str().c_str()).suppressTiming();
     }
 

@@ -61,7 +61,7 @@ void WriteWav::
 
     BOOST_ASSERT(i.valid());
 
-    TIME_WRITEWAV sid.print("data to write");
+    TIME_WRITEWAV TaskTimer tt("Writing data %s", sid.toString().c_str());
     Signal::pBuffer b = _data.readFixedLength( i );
     writeToDisk( _filename, b );
 }
@@ -70,10 +70,8 @@ void WriteWav::
 void WriteWav::
         writeToDisk(std::string filename, Signal::pBuffer b)
 {
-    std::stringstream ss;
-    ss << b->getInterval();
-
-    TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(), ss.str().c_str());
+    TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(),
+                               b->getInterval().toString().c_str());
 
     // TODO: figure out a way for Sonic AWE to work with stereo sound as this
     // method could easily write stereo sound if pBuffer had multiple channels.

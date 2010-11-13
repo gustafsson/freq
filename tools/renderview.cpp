@@ -259,9 +259,11 @@ void RenderView::
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
-                _work_timer->info("Finished %u chunks covering %g s. Work session #%u",
+                _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
                                   model->project()->worker.work_chunks,
-                                  model->project()->worker.work_time, workcount);
+                                  model->project()->worker.work_time,
+                                  model->project()->worker.work_time/_work_timer->elapsedTime(),
+                                  workcount);
                 model->project()->worker.work_chunks = 0;
                 model->project()->worker.work_time = 0;
                 workcount++;

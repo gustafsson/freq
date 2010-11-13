@@ -337,7 +337,8 @@ void Collection::
 void Collection::
         invalidate_samples( const Intervals& sid )
 {
-    TIME_COLLECTION sid.print("Invalidating Heightmap::Collection");
+    TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
+                                 sid.toString().c_str());
 
 	QMutexLocker l(&_cache_mutex);
 	BOOST_FOREACH( cache_t::value_type& c, _cache )

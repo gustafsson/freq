@@ -9,8 +9,8 @@
 
 #include <boost/foreach.hpp>
 
-//#define TIME_CwtFilter
-#define TIME_CwtFilter if(0)
+#define TIME_CwtFilter
+//#define TIME_CwtFilter if(0)
 
 using namespace Signal;
 
@@ -69,7 +69,8 @@ ChunkAndInverse CwtFilter::
 
     ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
 
-    TIME_CwtFilter Intervals(ci.inverse->getInterval()).print("CwtFilter readFixedLength");
+    TIME_CwtFilter TaskTimer tt2("CwtFilter transforming %s",
+                                ci.inverse->getInterval().toString().c_str());
 
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
@@ -81,7 +82,8 @@ ChunkAndInverse CwtFilter::
 void CwtFilter::
         applyFilter( Tfr::pChunk pchunk )
 {
-    TIME_CwtFilter Intervals(pchunk->getInterval()).print("CwtFilter applying filter");
+    TIME_CwtFilter TaskTimer("CwtFilter applying filter on chunk %s",
+                             pchunk->getInterval().toString().c_str());
     Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( pchunk.get() );
 
     //BlockFilter* bf = dynamic_cast<BlockFilter*>(this);

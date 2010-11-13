@@ -364,32 +364,24 @@ Interval Intervals::
 }
 
 
-void Intervals::
-        print( std::string title ) const
+std::string Intervals::toString() const
 {
     std::stringstream ss;
-    ss << *this;
+    ss << "{" << size() << " interval" << ((size()==1)?"":"s");
 
-    TaskTimer("%s, %s",
-              title.empty()?"SamplesIntervalDescriptor":title.c_str(),
-              ss.str().c_str()).suppressTiming();
+    BOOST_FOREACH (const Interval& r, *this)
+        ss << " " << r.toString();
+
+    ss << "}";
+    return ss.str();
 }
 
 
-std::ostream& operator<<( std::ostream& s, const Intervals& I)
+std::string Interval::toString() const
 {
-    s << "{" << I.size() << " interval" << ((I.size()==1)?"":"s");
-
-    BOOST_FOREACH (const Interval& r, I)
-        s << " " << r;
-
-    return s << "}";
-}
-
-
-std::ostream& operator<<( std::ostream& s, const Interval& i)
-{
-    return s << "[" << i.first << ", " << i.last << ")" << i.count() << "#";
+    std::stringstream ss;
+    ss << "[" << first << ", " << last << ")" << count() << "#";
+    return ss.str();
 }
 
 } // namespace Signal
