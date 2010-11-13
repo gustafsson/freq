@@ -93,7 +93,7 @@ Support::ToolSelector* RenderView::
 void RenderView::
         userinput_update()
 {
-    model->project()->worker.requested_fps(30);
+    model->project()->worker.requested_fps(60);
     update();
 }
 
