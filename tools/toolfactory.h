@@ -57,6 +57,10 @@ namespace Tools
         QScopedPointer<class BrushView> _brush_view;
         QPointer<class BrushController> _brush_controller; // might be deleted by _render_view
 
+        QScopedPointer<class RecordModel> _record_model;
+        QScopedPointer<class RecordView> _record_view;
+        QPointer<class RecordController> _record_controller; // might be deleted by _render_view
+
         Sawe::Project* _project;
     };
 } // namespace Tools
