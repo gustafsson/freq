@@ -427,7 +427,19 @@ pChunk Cwt::
                     //TIME_CWTPART TaskTimer tt("Allocating inverse fft");
                     fftctx(n.width, n.height);
                 }
-                CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
+                try
+                {
+                    CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
+                }
+                catch (CufftException const& x)
+                {
+                    if (CUFFT_INVALID_PLAN == x.getCufftError())
+                    {
+                        _fft_many.clear();
+                        return computeChunkPart( ft, first_scale, n_scales );
+                    }
+                    throw;
+                }
             }
 
             TIME_CWTPART CudaException_ThreadSynchronize();
@@ -451,7 +463,7 @@ Signal::pBuffer Cwt::
     if (cwtchunkpart)
         return inverse(cwtchunkpart);
 
-    throw std::invalid_argument("Doesn't recognize chunk of type " + demangle( typeid(*pchunk.get()).name()));
+    throw std::invalid_argument("Doesn't recognize chunk of type " + demangle( typeid(*pchunk.get())));
 }
 
 

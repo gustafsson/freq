@@ -42,6 +42,6 @@ private:
     Tools::SelectionController* selection_controller_;
 };
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections
 
 #endif // PEAKCONTROLLER_H

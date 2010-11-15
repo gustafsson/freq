@@ -12,6 +12,7 @@
 #include "playbackview.h"
 #include "brushcontroller.h"
 #include "brushview.h"
+#include "recordmodel.h"
 #include "recordcontroller.h"
 #include "recordview.h"
 
@@ -51,9 +52,12 @@ ToolFactory::
     _brush_view.reset( new BrushView(_brush_model.data() ));
     _brush_controller = new BrushController( _brush_view.data(), _render_view );
 
-    _record_model.reset( new RecordModel(p) );
-    _record_view.reset( new RecordView(_record_model.data() ));
-    _record_controller = new RecordController( _record_view.data(), _render_view );
+    if (RecordModel::canCreateRecordModel(p))
+    {
+        _record_model.reset( new RecordModel(p) );
+        _record_view.reset( new RecordView(_record_model.data() ));
+        _record_controller = new RecordController( _record_view.data(), _render_view );
+    }
 }
 
 

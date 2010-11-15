@@ -33,6 +33,6 @@ private:
     Signal::Worker* worker_;
 };
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections
 
 #endif // PEAKVIEW_H

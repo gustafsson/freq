@@ -87,7 +87,7 @@ ChunkAndInverse Filter::
         readChunk( const Signal::Interval& I )
 {
     TIME_Filter TaskTimer tt("%s::readChunk [%u, %u)%u#",
-                             demangle(typeid(*this).name()).c_str(),
+                             demangle(typeid(*this)).c_str(),
                              I.first, I.last, I.count());
 
     ChunkAndInverse ci;

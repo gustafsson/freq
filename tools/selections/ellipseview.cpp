@@ -69,4 +69,4 @@ void EllipseView::
 }
 
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections

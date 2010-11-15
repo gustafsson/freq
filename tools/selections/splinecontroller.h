@@ -45,6 +45,6 @@ private:
     // State
 };
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections
 
 #endif // SPLINECONTROLLER_H

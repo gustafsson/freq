@@ -28,6 +28,6 @@ private:
     EllipseModel* model_;
 };
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections
 
 #endif // ELLIPSEVIEW_H
