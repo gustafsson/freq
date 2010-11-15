@@ -187,7 +187,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
 
     try {
-        if (CudaProperties::haveCuda())
+        CudaProperties::getCudaDeviceProp();
+
         {
             // Might need cudaGLSetGLDevice later on, but it can't be called
             // until we have created an OpenGL context.
@@ -220,44 +221,58 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     }
     
     // Show error messages:
+    std::string nvidia_url;
+#ifdef __APPLE__
+    nvidia_url = "http://www.nvidia.com/object/cuda_get.html#MacOS";
+#else
+    nvidia_url = "www.nvidia.com";
+#endif
+
+    stringstream msg;
 
     switch (namedError.getCudaError())
     {
     case cudaErrorInsufficientDriver:
-        ss << "Sonic AWE requires you to have installed newer CUDA-compatible graphics drivers from NVIDIA. "
-                << "CUDA drivers are installed on this computer but they are too old. "
-                << "You can download new drivers from NVIDIA;" << endl;
+        msg << "Cuda error: " << cudaGetErrorString(cudaErrorInsufficientDriver) << endl
+                << endl
+                << "Sonic AWE requires you to have installed more recent display drivers from NVIDIA. "
+                << "Display drivers from NVIDIA are installed on this computer but they are too old. "
+                << "Please download new drivers from NVIDIA:" << endl
+                << endl
+                << nvidia_url << endl
+                << endl
+                << "Sonic AWE cannot start. Please try again with updated drivers.";
         break;
     case cudaErrorDevicesUnavailable:
-        ss << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
+        msg << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
                 << "Are you currently using the GPU in any other application? "
                 << "If you're not intentionally using the GPU right now the driver might have been left in an inconsistent state after a previous crash. Rebooting your computer could work around this for now. "
-                << "Also make sure that you have installed the latest CUDA drivers." << endl;
+                << "Also make sure that you have installed the latest graphics drivers." << endl
+                << endl
+                << endl
+                << "Sonic AWE cannot start. Please try again after closing some other graphics applications.";
         break;
     default:
-        ss   << "Sonic AWE requires you to have installed CUDA-compatible graphics drivers from NVIDIA, and no such driver was found." << endl
+    {
+        cerr << ss.str();
+        cerr.flush();
+
+        msg   << "Sonic AWE requires you to have installed recent display drivers from NVIDIA, and no such driver was found." << endl
                 << endl
-                << "Hardware requirements: You need to have one of these graphics cards from NVIDIA;" << endl
+                << "Hardware requirements: You need to have one of these graphics cards from NVIDIA:" << endl
                 << "   www.nvidia.com/object/cuda_gpus.html" << endl
                 << endl
-                << "Software requirements: You also need to have installed recent display drivers from NVIDIA;" << endl;
+                << "Software requirements: You also need to have installed recent display drivers from NVIDIA:" << endl
+                << endl
+                << nvidia_url << endl
+                << endl
+                << "Sonic AWE cannot start. Please try again with updated drivers.";
     }
-    ss
-#ifdef __APPLE__
-         << "   http://www.nvidia.com/object/cuda_get.html#MacOS" << endl
-#else
-         << "   www.nvidia.com" << endl
-#endif
-         << endl
-         << endl
-         << "Sonic AWE cannot start." << endl;
-
-    cerr << ss.str();
-    cerr.flush();
+    }
 
     QMessageBox::critical( 0,
                  "Couldn't find CUDA, cannot start Sonic AWE",
-				 QString::fromLocal8Bit(ss.str().c_str()) );
+                 QString::fromLocal8Bit(msg.str().c_str()) );
 
     return false;
 }
@@ -297,10 +312,10 @@ int main(int argc, char *argv[])
 
     TaskTimer("Starting %s", a.version_string().c_str()).suppressTiming();
 
-    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-
     if (!check_cuda( false ))
         return -1;
+
+    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
 
     {
         ResampleTest resampletest;

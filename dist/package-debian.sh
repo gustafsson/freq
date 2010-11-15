@@ -4,18 +4,26 @@ bury_copy() { mkdir -p "`dirname $2`" && cp "$1" "$2"; }
 if [ "$1" ] && [ -z "$2" ] && [ "$(basename `pwd`)" == "dist" ] ; then
         version=$1
 else
-        echo "Creates a Sonic AWE package for Debian linux"
+	echo "Creates a Sonic AWE package for Debian linux"
 	echo
-        echo "SYNOPSIS"
+	echo "SYNOPSIS"
 	echo "    package-debian.sh version_string"
 	echo
 	echo "DESCRIPTIION"
 	echo "     'version_string' is on the form"
 	echo "         0.8.26"
-	echo "         0.8.26-unstable"
+	echo "         0.8.26-unstable-snapshot"
+	echo
+	echo "     User 'def' as version_string to produce default format."
 	echo
 	echo "Run this script from the sonic/sonicawe/dist directory"
-        exit
+    exit
+fi
+
+echo $version
+
+if [ $version == "def" ] ; then
+	version="$(date +0.%m.%d-unstable-snapshot)"
 fi
 
 package=dist/package-debian~
@@ -24,11 +32,11 @@ share=$package/usr/share/sonicawe/.
 pushd .. && \
 rm -rf $package && \
 cp -r dist/package-debian $package && \
-mkdir -p $package/usr/local/lib && \
-mkdir -p $package/usr/local/bin && \
-cp -r /usr/local/cuda/lib/libcudart.so* $package/usr/local/bin/. && \
-cp -r /usr/local/cuda/lib/libcufft.so* $package/usr/local/bin/. && \
-cp sonicawe $package/usr/local/bin/. && \
+mkdir -p $package/usr/lib && \
+mkdir -p $package/usr/bin && \
+cp -r /usr/local/cuda/lib64/libcudart.so* $package/usr/lib/. && \
+cp -r /usr/local/cuda/lib64/libcufft.so* $package/usr/lib/. && \
+cp sonicawe $package/usr/bin/. && \
 bury_copy sonicawe.1 $package/usr/local/share/man/man1/. && \
 mkdir -p $share && \
 cp matlab/sawe_extract_cwt.m $share && \

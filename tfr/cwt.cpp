@@ -49,7 +49,7 @@ Cwt::
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
 //    _fft_many(stream),
     _wavelet_time_suppport( wavelet_time_suppport ),
-    _wavelet_scale_suppport( wavelet_time_suppport )
+    _wavelet_scale_suppport( wavelet_time_suppport + 2 )
 {
 }
 

@@ -1,11 +1,11 @@
 Package: sonicawe-unstable
-Version: 0.10.05
+Version: 0.11.15
 Section: non-free/audio
 Priority: optional
 Architecture: amd64
 Essential: no
 Installed-Size: 9195718
-Conflicts: sonicawe
+Replaces: sonicawe
 Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.40.0
 Maintainer: Johan Gustafsson [johan.gustafsson@sonicawe.com]
 Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
