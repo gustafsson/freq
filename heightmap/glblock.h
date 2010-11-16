@@ -36,8 +36,8 @@ public:
         updates the OpenGL textures that are used for rendering.
 
         It is an error for a client to call unmap while keeping an instance
-        of pHeight. Because if there is an instance of pHeight left. The Vbo
-        is not unmapped from cuda, glBindBuffer doesn't do anything and
+        of pHeight or pSlope. Because if there is an instance of pHeight left.
+        The Vbo is not unmapped from cuda, glBindBuffer doesn't do anything and
         glTexSubImage2D fails.
       */
     void unmap();

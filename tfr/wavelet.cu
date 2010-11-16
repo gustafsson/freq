@@ -120,6 +120,7 @@ __global__ void kernel_compute_wavelet_coefficients(
 
     const float pi = 3.141592654f;
     const float
+            //w = 2.6515*log2f(w_bin*2*pi/nFrequencyBins); // quasi loglets
             w = w_bin*2*pi/nFrequencyBins;
 
     float2 waveform_ft;

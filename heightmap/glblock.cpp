@@ -237,8 +237,8 @@ void GlBlock::
         glActiveTexture(GL_TEXTURE0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
         glBindTexture(GL_TEXTURE_2D, _tex_slope);
-        glPixelTransferf(GL_RED_SCALE, 50.f);
-        glPixelTransferf(GL_GREEN_SCALE, 50.f);
+        //glPixelTransferf(GL_RED_SCALE, 1.0f);
+        //glPixelTransferf(GL_ALPHA_SCALE, 1.0f);
 
         GlException_CHECK_ERROR();
 
@@ -247,8 +247,8 @@ void GlBlock::
 
         GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
 
-        glPixelTransferf(GL_GREEN_SCALE, 1.0f);
-        glPixelTransferf(GL_RED_SCALE, 1.0f);
+        //glPixelTransferf(GL_RED_SCALE, 1.0f);
+        //glPixelTransferf(GL_ALPHA_SCALE, 1.0f);
 
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     }

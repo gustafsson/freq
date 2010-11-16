@@ -27,8 +27,9 @@ public:
         float phasediff = phase2 - phase1;
         if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
         if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
-        float s = 1000;
-        float k = exp2f(-s*phasediff*phasediff);
+
+        float k = exp2f(-fabsf(phasediff));
+
         return v * k;
     }
 };
