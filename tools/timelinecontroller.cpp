@@ -55,6 +55,7 @@ void TimelineController::
     // the timeline updated as well. Some user input events only need to
     // repaint the timeline view.
     connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+    connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
 }
 
 
