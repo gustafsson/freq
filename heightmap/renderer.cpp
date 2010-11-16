@@ -565,8 +565,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     case Lod_Ok:
         renderSpectrogramRef( ref );
         break;
-
-    default:
+    case Lod_Invalid: // ref is not within the current view frustum
         return false;
     }
 

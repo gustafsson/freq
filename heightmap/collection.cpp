@@ -161,7 +161,7 @@ void Collection::
         _min_sample_size.scale = 1.f/_scales_per_block;
     }
 
-    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);;
+    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);
     _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
 
     // Allow for some bicubic mesh interpolation when zooming in
@@ -347,7 +347,8 @@ void Collection::
     TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*sid.coveredInterval().last);
+    pOperation wf = worker->source();
+    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*wf->length()/_samples_per_block);
 
 	QMutexLocker l(&_cache_mutex);
 	BOOST_FOREACH( cache_t::value_type& c, _cache )
