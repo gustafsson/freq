@@ -311,8 +311,11 @@ void RenderView::
         else throw;
     } catch (const GlException &x) {
         TaskTimer tt("RenderView::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
-        if (0==tryGc) {
-            model->collection->gc();
+        if (2>tryGc) {
+            Heightmap::Collection* c = model->collection.get();
+            c->reset(); // note, not c.reset()
+            model->renderer.reset();
+            model->renderer.reset(new Heightmap::Renderer( c ));
             tryGc++;
             //cudaThreadExit();
             cudaGetLastError();

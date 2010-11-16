@@ -24,6 +24,7 @@ TimelineView::
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
+    _length( 0 ),
     _project( p ),
     _render_view( render_view )
 {
@@ -48,6 +49,13 @@ void TimelineView::
 {
     _project->worker.requested_fps(30);
     update();
+}
+
+
+void TimelineView::
+        getLengthNow()
+{
+    _length = std::max( 1.f, _project->worker.source()->length());
 }
 
 
@@ -118,11 +126,11 @@ void TimelineView::
 
         { // Render
             // Set up camera position
-            float length = std::max( 1.f, _project->worker.source()->length());
-            float h = 1 - 0.5f*length/_xscale;
+            float look_ahead = 0; // 1
+            float h = look_ahead - 0.5f*_length/_xscale;
             if (_xscale<1) _xscale = 1;
             if (_xoffs<h) _xoffs = h;
-            if (_xoffs>length+h) _xoffs = length+h;
+            if (_xoffs>_length+h) _xoffs = _length+h;
 
             setupCamera( false );
 
@@ -155,16 +163,15 @@ void TimelineView::
             glTranslatef(0,0,-1);
             _render_view->model->renderer->draw( 0.f );
 
-            float length = std::max( 1.f, _project->worker.source()->length());
             glColor4f( 0.75, 0.75,0.75, .5);
             glLineWidth(2);
             glBegin(GL_LINES);
                 glVertex3f(0,1,1);
-                glVertex3f(length,1,1);
+                glVertex3f(_length,1,1);
             glEnd();
 
             float x1 = _xoffs;
-            float x4 = _xoffs+length/_xscale;
+            float x4 = _xoffs+_length/_xscale;
             float x2 = x1*.9 + x4*.1;
             float x3 = x1*.1 + x4*.9;
             glBegin( GL_TRIANGLE_STRIP );
@@ -201,8 +208,6 @@ void TimelineView::
 void TimelineView::
         setupCamera( bool staticTimeLine )
 {
-    float length = std::max( 1.f, _project->worker.source()->length());
-
     // Make sure that the camera focus point is within the timeline
     {
         float t = _render_view->model->renderer->camera[0];
@@ -213,13 +218,13 @@ void TimelineView::
         case 1: // Clamp the timeline, prevent moving to much.
                 // This might be both annoying and confusing
             if (t < _xoffs) _xoffs = t;
-            if (t > _xoffs + length/_xscale ) _xoffs = t - length/_xscale;
+            if (t > _xoffs + _length/_xscale ) _xoffs = t - _length/_xscale;
             break;
 
         case 2: // Clamp the render view
                 // This might be just annoying
             if (t < _xoffs) new_t = _xoffs;
-            if (t > _xoffs + length/_xscale ) new_t = _xoffs + length/_xscale;
+            if (t > _xoffs + _length/_xscale ) new_t = _xoffs + _length/_xscale;
 
             if (0<=new_t)
             {
@@ -235,7 +240,7 @@ void TimelineView::
     glRotatef( 90, 1, 0, 0 );
     glRotatef( 180, 0, 1, 0 );
 
-    glScalef(-1/length, 1, 1);
+    glScalef(-1/_length, 1, 1);
 
     if (!staticTimeLine) {
         glScalef(_xscale, 1, 1);

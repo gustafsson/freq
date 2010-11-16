@@ -42,10 +42,11 @@ void TimelineController::
     dock->setWidget(view);
     dock->setWindowTitle("Timeline");
     dock->show();
-    MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
 
-    view->setLayout(new QHBoxLayout);
-    view->layout()->setMargin(0);
+    MainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
+
+    view->setLayout( new QHBoxLayout );
+    view->layout()->setMargin( 0 );
     view->layout()->addWidget( this );
 
     // Always redraw the timeline whenever the main render view is painted.
@@ -56,6 +57,7 @@ void TimelineController::
     // repaint the timeline view.
     connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
+    connect(view->_render_view, SIGNAL(painting()), view, SLOT(getLengthNow()) );
 }
 
 

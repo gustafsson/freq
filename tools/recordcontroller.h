@@ -23,7 +23,7 @@ namespace Tools
     protected slots:
         void stopRecording();
         void receiveRecord(bool);
-        void recievedInvalidSamples( const Signal::Intervals& I );
+        void recievedInvalidSamples( Signal::Intervals I );
 
     private:
         // Model

@@ -598,18 +598,16 @@ void Collection::
         computeSlope( pBlock block, unsigned /*cuda_stream */)
 {
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+
     GlBlock::pHeight h = block->glblock->height();
+
     Position a,b;
     block->ref.getArea(a,b);
+
     ::cudaCalculateSlopeKernel( h->data->getCudaGlobal(),
                                 block->glblock->slope()->data->getCudaGlobal(),
                                 b.time-a.time, b.scale-a.scale );
 
-    /*GpuCpuData<float2>& data = *block->glblock->slope()->data;
-    GpuCpuData<float> statdata(
-                (float*)data.getCpuMemory(),
-                make_uint3(2*data.getNumberOfElements1D(),1,1), GpuCpuVoidData::CpuMemory, true );
-    Statistics<float> stats( &statdata );*/
     TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
@@ -702,12 +700,11 @@ bool Collection::
         }
     }
 
-    in_h.reset();
-    out_h.reset();
+    //in_h.reset();
 
     // These inblocks won't be rendered and thus unmapped very soon. outBlock will however be unmapped
     // very soon as it was requested for rendering.
-    inBlock->glblock->unmap();
+    //inBlock->glblock->unmap();
 
     TIME_COLLECTION CudaException_ThreadSynchronize();
 

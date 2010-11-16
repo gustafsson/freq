@@ -53,8 +53,8 @@ void RecordController::
         r->getPostSink()->sinks( record_sinks );
 
         connect(proxy,
-                SIGNAL(recievedInvalidSamples( const Signal::Intervals& )),
-                SLOT(recievedInvalidSamples( const Signal::Intervals& )), Qt::DirectConnection );
+                SIGNAL(recievedInvalidSamples( Signal::Intervals )),
+                SLOT(recievedInvalidSamples( Signal::Intervals )) );
 
         r->startRecording();
     }
@@ -67,15 +67,14 @@ void RecordController::
 
 
 void RecordController::
-        recievedInvalidSamples( const Signal::Intervals& I )
+        recievedInvalidSamples( Signal::Intervals I )
 {
     TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
 
     float fs = model()->project->head_source()->sample_rate();
     Signal::IntervalType s = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
-    // v |= (v >> s) | (v << s);
-    Signal::Intervals v = I | (I >> s);
 
+    Signal::Intervals v = ((I << s) | (I >> s)).coveredInterval();
 
     model()->project->worker.postSink()->invalidate_samples( v );
 

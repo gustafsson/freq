@@ -29,6 +29,9 @@ public:
 
     void userinput_update();
 
+protected slots:
+    void getLengthNow();
+
 protected:
     /// @overload QGLWidget::initializeGL()
     virtual void initializeGL();
@@ -46,7 +49,8 @@ private:
 
     float   _xscale,
             _xoffs,
-            _barHeight;
+            _barHeight,
+            _length;
     Sawe::Project* _project;
     RenderView* _render_view;
 };

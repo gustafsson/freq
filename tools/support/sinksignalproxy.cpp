@@ -1,7 +1,16 @@
 #include "sinksignalproxy.h"
 
+#include <QMetaType>
+
 namespace Tools {
     namespace Support {
+
+SinkSignalProxy::
+        SinkSignalProxy()
+{
+    qRegisterMetaType<Signal::Intervals>("Signal::Intervals");
+}
+
 
 void SinkSignalProxy::
         put(Signal::pBuffer b)
