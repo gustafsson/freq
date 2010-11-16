@@ -146,7 +146,7 @@ int MicrophoneRecorder::
 
     _data.put( b );
 
-    _postsink.readFixedLength( b->getInterval() );
+    _postsink.invalidate_samples( b->getInterval() );
 
     return paContinue;
 }

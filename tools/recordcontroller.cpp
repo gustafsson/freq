@@ -8,6 +8,7 @@
 #include "ui/mainwindow.h"
 #include "adapters/microphonerecorder.h"
 #include "support/sinksignalproxy.h"
+#include "tfr/cwt.h"
 
 #include <TaskTimer.h>
 #include <demangle.h>
@@ -28,8 +29,15 @@ RecordController::
 RecordController::
         ~RecordController()
 {
+    stopRecording();
 }
 
+
+void RecordController::
+        stopRecording()
+{
+    receiveRecord(false);
+}
 
 void RecordController::
         receiveRecord(bool active)
@@ -45,8 +53,8 @@ void RecordController::
         r->getPostSink()->sinks( record_sinks );
 
         connect(proxy,
-                SIGNAL(recievedBuffer(Signal::Buffer*)),
-                SLOT(recievedBuffer(Signal::Buffer*)), Qt::DirectConnection );
+                SIGNAL(recievedInvalidSamples( const Signal::Intervals& )),
+                SLOT(recievedInvalidSamples( const Signal::Intervals& )), Qt::DirectConnection );
 
         r->startRecording();
     }
@@ -59,16 +67,22 @@ void RecordController::
 
 
 void RecordController::
-        recievedBuffer(Signal::Buffer* b)
+        recievedInvalidSamples( const Signal::Intervals& I )
 {
-    TaskTimer tt("RecordController::recievedBuffer( %s )", b->getInterval().toString().c_str());
-    model()->project->worker.postSink()->invalidate_samples( b->getInterval() );
+    TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
 
-    // TODO invalidate collection sampels elsewhere
-    render_view_->model->collection->invalidate_samples( b->getInterval() );
+    float fs = model()->project->head_source()->sample_rate();
+    Signal::IntervalType s = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
+    // v |= (v >> s) | (v << s);
+    Signal::Intervals v = I | (I >> s);
+
+
+    model()->project->worker.postSink()->invalidate_samples( v );
+
+    // TODO invalidate collection samples through worker
+    render_view_->model->collection->invalidate_samples( v );
 
     render_view_->userinput_update();
-    Statistics<float>(b->waveform_data());
 }
 
 
@@ -78,6 +92,9 @@ void RecordController::
     Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
 
     connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
+
+    connect(render_view_, SIGNAL(destroying()), SLOT(close()));
+    connect(render_view_, SIGNAL(destroying()), SLOT(stopRecording()));
 
     if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))
     {

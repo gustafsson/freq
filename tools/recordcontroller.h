@@ -21,8 +21,9 @@ namespace Tools
         ~RecordController();
 
     protected slots:
+        void stopRecording();
         void receiveRecord(bool);
-        void recievedBuffer(Signal::Buffer* b);
+        void recievedInvalidSamples( const Signal::Intervals& I );
 
     private:
         // Model

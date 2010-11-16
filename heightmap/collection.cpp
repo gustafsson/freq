@@ -21,8 +21,8 @@
 #include <msc_stdc.h>
 #endif
 
-#define TIME_COLLECTION
-//#define TIME_COLLECTION if(0)
+//#define TIME_COLLECTION
+#define TIME_COLLECTION if(0)
 
 // todo remove?
 #define MAX_REDUNDANT_SIZE 32

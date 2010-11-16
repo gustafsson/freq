@@ -70,7 +70,9 @@ public:
     Intervals  operator &  (const Intervals& b) const { Intervals a = *this; return a&=b; }
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
+    Intervals operator >> (const IntervalType& b) const { Intervals a = *this; return a>>=b; }
     Intervals& operator >>= (const IntervalType&);
+    Intervals operator << (const IntervalType& b) const { Intervals a = *this; return a<<=b; }
     Intervals& operator <<= (const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
