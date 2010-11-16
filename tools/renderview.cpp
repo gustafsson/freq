@@ -16,8 +16,8 @@
 // Qt
 #include <QTimer>
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
+#define TIME_PAINTGL
+//#define TIME_PAINTGL if(0)
 
 namespace Tools
 {
@@ -154,8 +154,11 @@ void RenderView::
 void RenderView::
         paintGL()
 {
+    float fps = 0;
+    TIME_PAINTGL if (_render_timer)
+        fps = 1/_render_timer->elapsedTime();
     TIME_PAINTGL _render_timer.reset();
-    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL"));
+    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g fps)", fps));
 
     static int tryGc = 0;
     try {

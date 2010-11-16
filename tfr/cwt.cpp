@@ -436,6 +436,7 @@ pChunk Cwt::
                     if (CUFFT_INVALID_PLAN == x.getCufftError())
                     {
                         _fft_many.clear();
+
                         return computeChunkPart( ft, first_scale, n_scales );
                     }
                     throw;

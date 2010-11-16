@@ -152,7 +152,7 @@ bool Reference::
 }
 
 bool Reference::
-        toLarge() const
+        tooLarge() const
 {
     Position a, b;
     getArea( a, b );
@@ -160,6 +160,16 @@ bool Reference::
     if (b.time > 2 * wf->length() && b.scale > 2 )
         return true;
     return false;
+}
+
+std::string Reference::
+        toString() const
+{
+    Position a, b;
+    getArea( a, b );
+    std::stringstream ss;
+    ss << "(" << a.time << " " << a.scale << ";" << b.time << " " << b.scale << ")";
+    return ss.str();
 }
 
 unsigned Reference::

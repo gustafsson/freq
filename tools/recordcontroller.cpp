@@ -11,6 +11,7 @@
 
 #include <TaskTimer.h>
 #include <demangle.h>
+#include <Statistics.h>
 
 namespace Tools
 {
@@ -60,8 +61,14 @@ void RecordController::
 void RecordController::
         recievedBuffer(Signal::Buffer* b)
 {
-    render_view_->userinput_update();
+    TaskTimer tt("RecordController::recievedBuffer( %s )", b->getInterval().toString().c_str());
     model()->project->worker.postSink()->invalidate_samples( b->getInterval() );
+
+    // TODO invalidate collection sampels elsewhere
+    render_view_->model->collection->invalidate_samples( b->getInterval() );
+
+    render_view_->userinput_update();
+    Statistics<float>(b->waveform_data());
 }
 
 

@@ -147,7 +147,8 @@ pBuffer SourceBase::
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
+    //pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
+    pBuffer r( new Buffer(I.first, I.count(), sample_rate() ) );
 
     Intervals sid(I);
 

@@ -46,9 +46,8 @@ void BlockFilter::
         if (_collection->_constructor_thread.isSameThread())
         {
             mergeChunk( block, chunk, block->glblock->height()->data );
-            _collection->computeSlope( block, 0 );
 
-            CudaException_CHECK_ERROR();
+            TIME_BLOCKFILTER CudaException_CHECK_ERROR();
         }
         else
         {
@@ -91,6 +90,14 @@ Signal::Intervals BlockFilter::
     _invalid_samples = _collection->invalid_samples();
 
     return Tfr::Filter::fetch_invalid_samples();
+}
+
+
+void BlockFilter::
+        computeSlope( Tfr::pChunk pchunk )
+{
+    BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( pchunk->getInterval() ))
+        _collection->computeSlope( block, 0 );
 }
 
 
@@ -270,6 +277,15 @@ void CwtToBlock::
 }
 
 
+void CwtToBlock::
+        applyFilter( Tfr::pChunk pchunk )
+{
+    CwtFilter::applyFilter( pchunk );
+
+    computeSlope( pchunk );
+}
+
+
 void StftToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
@@ -305,5 +321,15 @@ void StftToBlock::
 
     block->valid_samples |= chunk.getInterval();
 }
+
+
+void StftToBlock::
+        applyFilter( Tfr::pChunk pchunk )
+{
+    StftFilter::applyFilter( pchunk );
+
+    computeSlope( pchunk );
+}
+
 
 } // namespace Heightmap
