@@ -25,7 +25,8 @@ public:
     unsigned frequency_resolution() const;
 
     bool containsSpectrogram() const;
-    bool toLarge() const;
+    bool tooLarge() const;
+    std::string toString() const;
 
     /** child references */
     Reference left() const;

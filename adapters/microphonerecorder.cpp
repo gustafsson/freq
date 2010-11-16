@@ -4,10 +4,16 @@
 #include <memory.h>
 #include <boost/foreach.hpp>
 
+//#define TIME_MICROPHONERECORDER
+#define TIME_MICROPHONERECORDER if(0)
+
 using namespace std;
 
 namespace Adapters {
 
+/**
+  TODO document why this class is needed.
+  */
 class OperationProxy: public Signal::Operation
 {
 public:
@@ -18,6 +24,7 @@ public:
     {}
 
     virtual Signal::pBuffer read( const Signal::Interval& I ) { return p->read( I ); }
+    virtual float sample_rate() { return p->sample_rate(); }
 
 private:
     Signal::Operation*p;
@@ -124,6 +131,7 @@ int MicrophoneRecorder::
                  const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
+    TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples)", framesPerBuffer);
     BOOST_ASSERT( inputBuffer );
     const float **in = (const float **)inputBuffer;
     const float *buffer = in[0];
@@ -134,9 +142,11 @@ int MicrophoneRecorder::
     b->sample_offset = number_of_samples();
     b->sample_rate = sample_rate();
 
+    TIME_MICROPHONERECORDER TaskTimer("Interval: %s", b->getInterval().toString().c_str()).suppressTiming();
+
     _data.put( b );
 
-    _postsink.read( b->getInterval() );
+    _postsink.readFixedLength( b->getInterval() );
 
     return paContinue;
 }

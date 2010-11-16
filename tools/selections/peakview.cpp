@@ -41,4 +41,4 @@ void PeakView::
 }
 
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections

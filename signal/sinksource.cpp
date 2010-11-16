@@ -3,6 +3,7 @@
 #include <boost/foreach.hpp>
 #include <QMutexLocker>
 #include <sstream>
+#include <neat_math.h>
 
 static const bool D = false;
 
@@ -60,27 +61,6 @@ void SinkSource::
 static bool bufferLessThan(const pBuffer& a, const pBuffer& b)
 {
     return (IntervalType)a->sample_offset < (IntervalType)b->sample_offset;
-}
-
-
-// Smallest power of two greater than x
-static unsigned int
-spo2g(register unsigned int x)
-{
-    x |= (x >> 1);
-    x |= (x >> 2);
-    x |= (x >> 4);
-    x |= (x >> 8);
-    x |= (x >> 16);
-    return(x+1);
-}
-
-
-// Largest power of two smaller than x
-static unsigned int
-lpo2s(register unsigned int x)
-{
-    return spo2g(x-1)>>1;
 }
 
 
@@ -142,8 +122,7 @@ void SinkSource::
     // REMOVE caches that become outdated by this new buffer 'b'
     for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        const pBuffer ps = *itr;
-        const Buffer& s = *ps;
+        const Buffer& s = **itr;
 
         Intervals toKeep = s.getInterval();
         toKeep -= b.getInterval();
@@ -155,6 +134,8 @@ void SinkSource::
         {
             if(D) ss << " -" << s.getInterval().toString();
 
+            // '_cache' is a vector but itr is most often the last element of the vector
+            // thus making this operation inexpensive.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
             BOOST_FOREACH( Interval i, toKeep )
@@ -162,10 +143,7 @@ void SinkSource::
                 if(D) ss << " +" << i.toString();
 
                 pBuffer n( new Buffer( i.first, i.count(), FS));
-                GpuCpuData<float>* dest = n->waveform_data();
-                memcpy( dest->getCpuMemory(),
-                        s.waveform_data()->getCpuMemory() + (i.first - (IntervalType)s.sample_offset),
-                        dest->getSizeInBytes1D() );
+                *n |= s;
                 itr = _cache.insert(itr, n );
                 itr++; // Move past inserted element
             }
@@ -175,12 +153,9 @@ void SinkSource::
     }
 
     pBuffer n( new Buffer( b.sample_offset, b.number_of_samples(), b.sample_rate));
-    GpuCpuData<float>* src = b.waveform_data();
-    memcpy( n->waveform_data()->getCpuMemory(),
-            src->getCpuMemory(),
-            src->getSizeInBytes1D());
+    *n |= b;
     _cache.push_back( n );
-    cache_locker.unlock(); // done with _cache, samplesDesc() below needs the lock
+    cache_locker.unlock(); // finished working with _cache, samplesDesc() below needs the lock
 
     if(D) if (!ss.str().empty())
     {

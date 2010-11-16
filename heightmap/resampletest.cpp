@@ -205,7 +205,7 @@ bool ResampleTest::
         print( "outputData2", outputData2 );
     } catch (std::exception const& x) {
         tt.info("In %s, caught exception %s: %s", __FUNCTION__,
-                demangle(typeid(x).name()).c_str(), x.what());
+                demangle(typeid(x)).c_str(), x.what());
         return false;
     }
 
@@ -225,7 +225,7 @@ bool ResampleTest::
         print( "result",  *inputData );
     } catch (std::exception const& x) {
         tt.info("In %s, caught exception %s: %s", __FUNCTION__,
-                demangle(typeid(x).name()).c_str(), x.what());
+                demangle(typeid(x)).c_str(), x.what());
         return false;
     }
 

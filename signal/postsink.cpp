@@ -33,7 +33,7 @@ Signal::pBuffer PostSink::
 
             if (s && s->isFinished())
             {
-                TaskTimer tt("Removing %s from postsink", demangle( typeid(*s).name() ).c_str());
+                TaskTimer tt("Removing %s from postsink", demangle( typeid(*s) ).c_str());
                 i = _sinks.erase( i );
             }
             else
@@ -46,23 +46,23 @@ Signal::pBuffer PostSink::
         {
             if (c->affected_samples() & I )
             {
-                DEBUG_POSTSINK TaskTimer("Active %s", demangle(typeid(*c).name()).c_str()).suppressTiming();
+                DEBUG_POSTSINK TaskTimer("Active %s", demangle(typeid(*c)).c_str()).suppressTiming();
                 active_operations.push_back(c);
             }
             else
             {
-                DEBUG_POSTSINK TaskTimer("Passive %s", demangle(typeid(*c).name()).c_str()).suppressTiming();
+                DEBUG_POSTSINK TaskTimer("Passive %s", demangle(typeid(*c)).c_str()).suppressTiming();
                 passive_operations.push_back(c);
             }
         }
     }
 
     pOperation prev = source();
-    DEBUG_POSTSINK TaskTimer("Source %s", demangle(typeid(*prev).name()).c_str()).suppressTiming();
+    DEBUG_POSTSINK TaskTimer("Source %s", demangle(typeid(*prev)).c_str()).suppressTiming();
 
     if (_filter)
     {
-        DEBUG_POSTSINK TaskTimer("Filter %s", demangle(typeid(*_filter).name()).c_str()).suppressTiming();
+        DEBUG_POSTSINK TaskTimer("Filter %s", demangle(typeid(*_filter)).c_str()).suppressTiming();
         _filter->source(prev);
         prev = _filter;
     }

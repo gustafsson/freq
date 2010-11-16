@@ -11,8 +11,8 @@
 
 #undef max
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
+#define TIME_PAINTGL
+//#define TIME_PAINTGL if(0)
 
 using namespace Signal;
 
@@ -146,6 +146,7 @@ void TimelineView::
         }
 
         {
+            // Draw little bar over entire signal at the bottom of the timeline
             glPushMatrixContext mc;
 
             setupCamera( true );

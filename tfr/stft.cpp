@@ -73,7 +73,7 @@ void CufftHandleContext::
     if (_handle!=0 && _handle!=(cufftHandle)-1) {
         _creator_thread.throwIfNotSame(__FUNCTION__);
 
-		CufftException_SAFE_CALL(cufftDestroy(_handle));
+        cufftDestroy(_handle);
 
         _handle = 0;
     }
@@ -278,7 +278,6 @@ Tfr::pChunk Stft::
             b.number_of_samples()/_chunk_size,
             1 );
 
-    TaskTimer("b.number_of_samples = %lu", b.number_of_samples()).suppressTiming();
     if (0==n.height || 32768<n.height)
         return Tfr::pChunk();
 

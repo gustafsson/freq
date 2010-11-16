@@ -6,7 +6,7 @@ namespace Tools {
 void SinkSignalProxy::
         put(Signal::pBuffer b)
 {
-    emit recievedBuffer( b );
+    emit recievedBuffer( b.get() );
 }
 
 

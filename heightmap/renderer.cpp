@@ -43,7 +43,7 @@ Renderer::Renderer( Collection* collection )
     _mesh_height(0),
     _initialized(false),
     _draw_flat(false),
-    _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
+    _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
     _drawn_blocks(0)
 {
     // Using glut for drawing fonts, so glutInit must be called.
@@ -555,8 +555,8 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     LevelOfDetal lod = testLod( ref );
     switch(lod) {
     case Lod_NeedBetterF:
-        renderChildrenSpectrogramRef( ref.top() );
         renderChildrenSpectrogramRef( ref.bottom() );
+        renderChildrenSpectrogramRef( ref.top() );
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
@@ -565,8 +565,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     case Lod_Ok:
         renderSpectrogramRef( ref );
         break;
-
-    default:
+    case Lod_Invalid: // ref is not within the current view frustum
         return false;
     }
 
@@ -580,7 +579,7 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
     renderChildrenSpectrogramRef( ref.sibbling2() );
     renderChildrenSpectrogramRef( ref.sibbling3() );
 
-    if (!ref.parent().toLarge() )
+    if (!ref.parent().tooLarge() )
         renderParentSpectrogramRef( ref.parent() );
 }
 

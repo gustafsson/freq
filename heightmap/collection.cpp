@@ -21,8 +21,9 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_COLLECTION
-#define TIME_COLLECTION if(0)
+#define TIME_COLLECTION
+//#define TIME_COLLECTION if(0)
+
 // todo remove?
 #define MAX_REDUNDANT_SIZE 32
 
@@ -160,7 +161,7 @@ void Collection::
         _min_sample_size.scale = 1.f/_scales_per_block;
     }
 
-    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);;
+    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);
     _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
 
     // Allow for some bicubic mesh interpolation when zooming in
@@ -250,6 +251,12 @@ pBlock Collection::
         getBlock( Reference ref )
 {
     // Look among cached blocks for this reference
+    boost::scoped_ptr<TaskTimer> tt;
+    TIME_COLLECTION
+    {
+        tt.reset(new TaskTimer("getBlock %s", ref.toString().c_str()));
+    }
+
     pBlock block; // smart pointer defaults to 0
 	{   QMutexLocker l(&_cache_mutex);
 		cache_t::iterator itr = _cache.find( ref );
@@ -340,6 +347,9 @@ void Collection::
     TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
+    pOperation wf = worker->source();
+    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*wf->length()/_samples_per_block);
+
 	QMutexLocker l(&_cache_mutex);
 	BOOST_FOREACH( cache_t::value_type& c, _cache )
 		c.second->valid_samples -= sid;
@@ -373,8 +383,9 @@ Intervals Collection::
 pBlock Collection::
         attempt( Reference ref )
 {
-    TIME_COLLECTION TaskTimer tt("Attempt");
     try {
+        TIME_COLLECTION TaskTimer tt("Attempt");
+
         pBlock attempt( new Block(ref));
         attempt->glblock.reset( new GlBlock( this ));
         {
@@ -386,7 +397,6 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        TIME_COLLECTION TaskTimer("Returning attempt").suppressTiming();
         return attempt;
     }
     catch (const CudaException& x)

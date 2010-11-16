@@ -45,6 +45,6 @@ private:
     Heightmap::Position selectionStart;
 };
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections
 
 #endif // SQUARECONTROLLER_H

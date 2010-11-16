@@ -228,4 +228,4 @@ void SquareView::
 }
 
 
-}} // namespace Selections::Tools
+}} // namespace Tools::Selections

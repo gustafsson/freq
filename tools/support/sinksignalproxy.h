@@ -11,7 +11,7 @@ namespace Tools {
         {
             Q_OBJECT
         signals:
-            void recievedBuffer( Signal::pBuffer );
+            void recievedBuffer( Signal::Buffer* );
             void recievedInvalidSamples( const Signal::Intervals& I );
 
         private:
