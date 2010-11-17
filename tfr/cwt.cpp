@@ -21,14 +21,14 @@
 #include <msc_stdc.h>
 #endif
 
-#define TIME_CWT if(0)
-//#define TIME_CWT
+//#define TIME_CWT if(0)
+#define TIME_CWT
 
 #define STAT_CWT if(0)
 //#define STAT_CWT
 
-#define TIME_CWTPART if(0)
-//#define TIME_CWTPART
+//#define TIME_CWTPART if(0)
+#define TIME_CWTPART
 
 //#define TIME_ICWT if(0)
 #define TIME_ICWT
@@ -74,6 +74,7 @@ pTransform Cwt::
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
+    try {
     boost::scoped_ptr<TaskTimer> tt;
     TIME_CWT tt.reset( new TaskTimer (
             "Forward CWT( buffer interval=%s, [%g, %g) s)",
@@ -228,7 +229,7 @@ pChunk Cwt::
             (Signal::Intervals)ft->getInterval() !=
             (Signal::Intervals)subinterval)
         {
-            TIME_CWTPART TaskTimer tt(
+            /*TIME_CWTPART*/ TaskTimer tt(
                     "Computing forward fft on GPU of interval %s",
                     subinterval.toString().c_str());
 
@@ -236,6 +237,7 @@ pChunk Cwt::
 
             if (0==offset)
             {
+                tt.info("Adding silence %u", sub_silence );
                 Signal::Interval actualData = subinterval;
                 actualData.last -= sub_silence;
 
@@ -294,13 +296,23 @@ pChunk Cwt::
     TIME_CWT CudaException_ThreadSynchronize();
 
     return wt;
+
+    } catch (CufftException const& x) {
+        _fft_many.clear();
+        throw;
+    } catch (CudaException const& x) {
+        _fft_many.clear();
+        throw;
+    }
 }
 
 
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
-    TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u", first_scale, n_scales);
+    TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u, (%g to %g Hz)",
+                              first_scale, n_scales, j_to_hz(ft->original_sample_rate, first_scale+n_scales-1),
+                              j_to_hz(ft->original_sample_rate, first_scale));
 
     pChunk intermediate_wt( new CwtChunkPart() );
 
@@ -312,6 +324,11 @@ pChunk Cwt::
 
         // allocate a new chunk
         intermediate_wt->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal ));
+
+        TIME_CWTPART {
+            ft->transform_data->getCudaGlobal();
+            intermediate_wt->transform_data->getCudaGlobal();
+        }
 
         TIME_CWTPART CudaException_ThreadSynchronize();
     }
@@ -427,20 +444,8 @@ pChunk Cwt::
                     //TIME_CWTPART TaskTimer tt("Allocating inverse fft");
                     fftctx(n.width, n.height);
                 }
-                try
-                {
-                    CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
-                }
-                catch (CufftException const& x)
-                {
-                    if (CUFFT_INVALID_PLAN == x.getCufftError())
-                    {
-                        _fft_many.clear();
 
-                        return computeChunkPart( ft, first_scale, n_scales );
-                    }
-                    throw;
-                }
+                CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
             }
 
             TIME_CWTPART CudaException_ThreadSynchronize();
@@ -478,8 +483,11 @@ Signal::pBuffer Cwt::
         pchunk->endTime()
         ) );
 
-    Signal::pBuffer r;
+    Signal::Interval v = pchunk->getInterval();
+    Signal::pBuffer r( new Signal::Buffer( v.first, v.count(), pchunk->original_sample_rate ));
+    memset( r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D() );
     bool first=true;
+    TaskTimer("r->getInterval() = %s", r->getInterval().toString().c_str()).suppressTiming();
 
     BOOST_FOREACH( pChunk& part, pchunk->chunks )
     {
@@ -487,6 +495,7 @@ Signal::pBuffer Cwt::
         DEBUG_CWT tt.reset( new TaskTimer("ChunkPart inverse, c=%g, [%g, %g] Hz",
             log2f(part->original_sample_rate/part->sample_rate),
             part->min_hz, part->max_hz) );
+
         Signal::pBuffer inv = inverse(part);
         Signal::pBuffer super = Filters::SuperSample::supersample(inv, pchunk->sample_rate);
 
@@ -498,43 +507,83 @@ Signal::pBuffer Cwt::
                                  GpuCpuVoidData::CpuMemory, true );
         }
 
-        if (first)
+        /*if (first)
         {
             r = super;
             first = false;
         }
         else
         {
-            BOOST_ASSERT(  r->getInterval() == super->getInterval() );
+            TaskTimer("r->getInterval() = %s", r->getInterval().toString().c_str()).suppressTiming();
+            TaskTimer("super->getInterval() = %s", super->getInterval().toString().c_str()).suppressTiming();
+            BOOST_ASSERT( false );
+            BOOST_ASSERT( r->getInterval() == super->getInterval() );
             *r += *super;
-        }
+        }*/
+
+        TaskTimer("super->getInterval() = %s", super->getInterval().toString().c_str()).suppressTiming();
+        *r += *super;
     }
 
     TIME_ICWT { tt->getStream() << "Computed CWT inverse: interval="
                 << r->getInterval().toString() << ", fs=" << r->sample_rate;
-        STAT_CWT Statistics<float>( r->waveform_data() );
-    }
+        /*STAT_CWT*/ Statistics<float>( r->waveform_data() );
 
+        float m = 0;
+        float *b = r->waveform_data()->getCpuMemory();
+        unsigned mi = 0;
+        unsigned N = r->number_of_samples();
+        for (unsigned i=0; i < N-1; ++i)
+        {
+            float d= std::abs( b[i] - b[i+1] );
+            if (d>m)
+            {
+                m = d;
+                mi = i;
+            }
+        }
+
+        tt->info("Max diff %g at %u", m, mi);
+        unsigned L = 5;
+        for (unsigned i=1; i<=L; ++i)
+        {
+            tt->info("b[N-%d] = %g", i, b[N-i]);
+        }
+        for (unsigned i=0; i<L; ++i)
+        {
+            tt->info("b[%d] = %g", i, b[i]);
+        }
+    }
     return r;
 }
 
 
 Signal::pBuffer Cwt::
-
         inverse( Tfr::CwtChunkPart* pchunk )
 {
     Chunk &chunk = *pchunk;
 
+    cudaExtent x = chunk.transform_data->getNumberOfElements();
+
     Signal::pBuffer r( new Signal::Buffer(
-            chunk.chunk_offset + chunk.first_valid_sample,
-            chunk.n_valid_samples,
+            chunk.chunk_offset,
+            x.width,
             chunk.sample_rate
             ));
 
-    ::wtInverse( chunk.transform_data->getCudaGlobal().ptr() + chunk.first_valid_sample,
+    float2* p = chunk.transform_data->getCudaGlobal().ptr();
+
+    if (pchunk->original_sample_rate != pchunk->sample_rate)
+    {
+        // Skip first row
+        p += chunk.nSamples();
+        x.height--;
+    }
+
+    ::wtInverse( p,
                  r->waveform_data()->getCudaGlobal().ptr(),
-                 chunk.transform_data->getNumberOfElements(),
-                 chunk.n_valid_samples,
+                 x,
+                 x.width,
                  _stream );
 
     TIME_ICWT CudaException_ThreadSynchronize();

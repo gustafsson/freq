@@ -286,9 +286,65 @@ void validate_arguments()
 
 #include "heightmap/resampletest.h"
 #include "tools/support/brushpaint.cu.h"
+#include "filters/supersample.h"
+#include <Statistics.h>
+#include "adapters/audiofile.h"
+#include "adapters/writewav.h"
+
+using namespace Signal;
 
 int main(int argc, char *argv[])
 {
+    if(0) {
+        TaskTimer tt("Cwt inverse");
+        Adapters::Audiofile file("chirp.wav");
+
+        Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
+        cwt.scales_per_octave( _scales_per_octave );
+        cwt.wavelet_time_support( _wavelet_time_support );
+
+        unsigned firstSample = 44100*2;
+        unsigned c = cwt.find_bin( cwt.nScales( file.sample_rate() ) - 1 );
+        firstSample = (firstSample+(1<<c)-1)>>c<<c;
+        unsigned time_support = cwt.wavelet_time_support_samples( file.sample_rate() );
+
+        pBuffer data = file.readFixedLength(Interval(firstSample,firstSample+65536));
+
+        Tfr::pChunk chunk = Tfr::Cwt::Singleton()( data );
+        pBuffer inv = cwt.inverse( chunk );
+
+        TaskTimer("%s", inv->getInterval().toString().c_str()).suppressTiming();
+        TaskTimer("%s", Interval(
+                firstSample+time_support,
+                firstSample+time_support+inv->number_of_samples()).toString().c_str()).suppressTiming();
+        //pBuffer data2 = file.readFixedLength( inv->getInterval() );
+        pBuffer data2 = file.readFixedLength(
+        Interval(
+                firstSample+time_support,
+                firstSample+time_support+inv->number_of_samples()));
+
+        Statistics<float> s1(data2->waveform_data());
+        Statistics<float> si(inv->waveform_data());
+
+        tt.info("firstSample = %u", firstSample);
+        tt.info("time_support = %u", time_support);
+        Adapters::WriteWav::writeToDisk("invtest.wav", inv, false);
+        return 0;
+    }
+
+    if(0) {
+        TaskTimer tt("Testing supersample");
+        Adapters::Audiofile file("testfil.wav");
+        pBuffer data = file.read(Interval(0,1));
+        Statistics<float> s1(data->waveform_data());
+
+        pBuffer super = Filters::SuperSample::supersample(data, 8*file.sample_rate());
+        tt.info("super %u", super->number_of_samples());
+        Statistics<float> s2(super->waveform_data());
+        Adapters::WriteWav::writeToDisk("testut.wav", super, false);
+        return 0;
+    }
+
     if(0) {
         Gauss g(make_float2(-1.1, 20), make_float2(1.5, 1.5));
         double s = 0;

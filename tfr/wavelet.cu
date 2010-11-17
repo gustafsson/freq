@@ -132,8 +132,11 @@ __global__ void kernel_compute_wavelet_coefficients(
     else
     {
         float cufft_normalize = 1.f/(float)(nFrequencyBins*half_sizes);
-        float jibberish_normalization = 0.083602;
+        float jibberish_normalization = 0.0979512048480986;
         cufft_normalize *= jibberish_normalization;
+
+        if (0==w_bin)
+            cufft_normalize *= 0.5f;
 
         waveform_ft = in_waveform_ft[w_bin];
         waveform_ft.x *= cufft_normalize;
