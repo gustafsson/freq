@@ -7,7 +7,7 @@
 #include <QDockWidget>
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
-#include "renderview.h"
+#include "rendercontroller.h"
 
 #undef max
 
@@ -19,8 +19,8 @@ using namespace Signal;
 namespace Tools {
 
 TimelineView::
-        TimelineView( Sawe::Project* p, RenderView* render_view )
-:   QGLWidget( 0, render_view, Qt::WindowFlags(0) ),
+        TimelineView( Sawe::Project* p, RenderView* render_view)
+:   QGLWidget( 0, render_view->glwidget, Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
@@ -28,7 +28,7 @@ TimelineView::
     _project( p ),
     _render_view( render_view )
 {
-    BOOST_ASSERT( render_view );
+    BOOST_ASSERT( _render_view );
 
     if (!context() || !context()->isSharing())
     {

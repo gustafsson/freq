@@ -44,6 +44,12 @@ public:
         //setRenderHints(QPainter::SmoothPixmapTransform);
     }
 
+    ~GraphicsView()
+    {
+        if (scene())
+            delete scene();
+    }
+
 protected:
     void resizeEvent(QResizeEvent *event) {
         if (scene())
@@ -380,21 +386,24 @@ void RenderController::
     // context is required to be created by lazy initialization when painting
     // the widget
     //view->makeCurrent();
-    // Make all child widgets occupy the entire area
-    view->setLayout(new QHBoxLayout());
-    view->layout()->setMargin(0);
 
-    QGLWidget *glwidget = new QGLWidget(QGLFormat(QGL::SampleBuffers));
-    glwidget->makeCurrent();
+    // Make all child widgets occupy the entire area
+    //view->setLayout(new QHBoxLayout());
+    //view->layout()->setMargin(0);
+
+    view->glwidget = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+    view->glwidget->makeCurrent();
+    view->glwidget->setLayout(new QHBoxLayout());
+    view->glwidget->layout()->setMargin(0);
 
     GraphicsView* g = new GraphicsView();
     g->setLayout(new QHBoxLayout());
     g->layout()->setMargin(0);
-    g->setViewport(glwidget);
+    g->setViewport(view->glwidget);
     g->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     g->setScene( view );
-    //view.setScene(&scene); // ingen scene? =P
-//    g->show();
+
+    view->tool_selector.reset( new Support::ToolSelector(view->glwidget));
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(g);

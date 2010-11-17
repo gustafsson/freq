@@ -8,7 +8,7 @@
 #include <TAni.h>
 
 // Qt
-//#include <QGLWidget>
+#include <QGLWidget>
 #include <QGraphicsScene>
 
 namespace Tools
@@ -21,9 +21,9 @@ namespace Tools
         virtual ~RenderView();
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
-        void init();
 
         void setPosition( float time, float f );
+        void makeCurrent();
 
         // TODO remove position and use renderer->camera instead
         double _qx, _qy, _qz; // position
@@ -36,8 +36,11 @@ namespace Tools
         // is this data/function model or view?
 
         RenderModel* model;
+        QGLWidget *glwidget;
 
         Support::ToolSelector* toolSelector();
+
+        boost::scoped_ptr<Support::ToolSelector> tool_selector;
 
     public slots:
         void userinput_update();
@@ -84,8 +87,8 @@ namespace Tools
 
         bool _inited;
         float _prevLimit;
-
-        boost::scoped_ptr<Support::ToolSelector> _tool_selector;
+        unsigned _last_width;
+        unsigned _last_height;
     };
 } // namespace Tools
 

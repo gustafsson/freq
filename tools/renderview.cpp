@@ -25,7 +25,7 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
-            QGLWidget(QGLFormat(QGL::SampleBuffers)),
+            //QGLWidget(QGLFormat(QGL::SampleBuffers)),
             _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
             _px(0), _py(0), _pz(-10),
             _rx(91), _ry(180), _rz(0),
@@ -68,15 +68,18 @@ void RenderView::
         drawBackground(QPainter *painter, const QRectF &)
 {
     painter->beginNativePainting();
+
+    if (!_inited)
+        initializeGL();
+
+    _last_width = painter->device()->width();
+    _last_height = painter->device()->height();
+
+    resizeGL(_last_width, _last_height);
+
     paintGL();
+
     painter->endNativePainting();
-}
-
-
-void RenderView::
-        init()
-{
-    initializeGL();
 }
 
 
@@ -94,24 +97,35 @@ void RenderView::
     if (_qz>1) _qz=1;
     if (_qx>l) _qx=l;
 
-    // todo isn't "requested fps" is a renderview property?
     userinput_update();
+}
+
+
+void RenderView::
+        makeCurrent()
+{
+    glwidget->makeCurrent();
+
+    resizeGL(_last_width, _last_height);
+
+    setupCamera();
 }
 
 
 Support::ToolSelector* RenderView::
         toolSelector()
 {
-    if (!_tool_selector)
-        _tool_selector.reset( new Support::ToolSelector(this));
+//    if (!tool_selector_)
+//        tool_selector_.reset( new Support::ToolSelector(glwidget));
 
-    return _tool_selector.get();
+    return tool_selector.get();
 }
 
 
 void RenderView::
         userinput_update()
 {
+    // todo isn't "requested fps" is a renderview property?
     model->project()->worker.requested_fps(60);
     update();
 }
@@ -151,8 +165,8 @@ void RenderView::
     glLightfv(GL_LIGHT1, GL_POSITION,LightPosition);
     glEnable(GL_LIGHT1);
     glEnable(GL_LIGHTING);
-    //glEnable(GL_COLOR_MATERIAL); // TODO disable?
-    glDisable(GL_COLOR_MATERIAL);
+    glEnable(GL_COLOR_MATERIAL); // TODO disable?
+    //glDisable(GL_COLOR_MATERIAL); // Must disable texturing as well when drawing primitives
 
     _inited = false;
 }
@@ -163,7 +177,7 @@ void RenderView::
 {
     height = height?height:1;
 
-    glViewport( 0, 0, (GLint)width, (GLint)height );
+    //glViewport( 0, 0, (GLint)width, (GLint)height );
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -177,8 +191,6 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    if (!_inited)
-        initializeGL();
     float fps = 0;
     TIME_PAINTGL if (_render_timer)
         fps = 1/_render_timer->elapsedTime();
