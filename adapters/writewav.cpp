@@ -68,7 +68,7 @@ void WriteWav::
 
 
 void WriteWav::
-        writeToDisk(std::string filename, Signal::pBuffer b)
+        writeToDisk(std::string filename, Signal::pBuffer b, bool normalize)
 {
     TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(),
                                b->getInterval().toString().c_str());
@@ -87,7 +87,8 @@ void WriteWav::
     float *data=b->waveform_data()->getCpuMemory();
     unsigned N = b->number_of_samples();
 
-    { // Normalize
+    if (normalize) // Normalize
+    {
 
         float high=0, low=0;
         for (unsigned k=0; k<N; k++) {

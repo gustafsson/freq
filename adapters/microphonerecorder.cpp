@@ -32,22 +32,23 @@ private:
 
 MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
 {
+    TaskTimer tt("Creating MicrophoneRecorder");
     portaudio::System &sys = portaudio::System::instance();
 
     if (0>inputDevice || inputDevice>sys.deviceCount()) {
         inputDevice = sys.defaultInputDevice().index();
     } else if ( sys.deviceByIndex(inputDevice).isOutputOnlyDevice() ) {
-        cout << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output." << endl;
+        tt.getStream() << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output." << endl;
         inputDevice = sys.defaultInputDevice().index();
     } else {
         inputDevice = inputDevice;
     }
 
-    cout << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input." << endl << endl;
+    tt.getStream() << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input." << endl << endl;
 
     portaudio::Device& device = sys.deviceByIndex(inputDevice);
 
-    cout << "Opening recording input stream on " << device.name() << endl;
+    tt.getStream() << "Opening recording input stream on " << device.name() << endl;
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             device,
             1, // channels
