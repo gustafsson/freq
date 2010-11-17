@@ -32,7 +32,8 @@ RenderView::
             xscale(1),
             orthoview(1),
             model(model),
-            _work_timer( new TaskTimer("Benchmarking first work"))
+            _work_timer( new TaskTimer("Benchmarking first work")),
+            _inited(false)
 {
     float l = model->project()->worker.source()->length();
     _prevLimit = l;
@@ -60,6 +61,22 @@ RenderView::
 
     // Destroy the cuda context for this thread
     CudaException_SAFE_CALL( cudaThreadExit() );
+}
+
+
+void RenderView::
+        drawBackground(QPainter *painter, const QRectF &)
+{
+    painter->beginNativePainting();
+    paintGL();
+    painter->endNativePainting();
+}
+
+
+void RenderView::
+        init()
+{
+    initializeGL();
 }
 
 
@@ -99,6 +116,7 @@ void RenderView::
     update();
 }
 
+
 void RenderView::
         initializeGL()
 {
@@ -133,7 +151,10 @@ void RenderView::
     glLightfv(GL_LIGHT1, GL_POSITION,LightPosition);
     glEnable(GL_LIGHT1);
     glEnable(GL_LIGHTING);
-    glEnable(GL_COLOR_MATERIAL); // TODO disable?
+    //glEnable(GL_COLOR_MATERIAL); // TODO disable?
+    glDisable(GL_COLOR_MATERIAL);
+
+    _inited = false;
 }
 
 
@@ -156,6 +177,8 @@ void RenderView::
 void RenderView::
         paintGL()
 {
+    if (!_inited)
+        initializeGL();
     float fps = 0;
     TIME_PAINTGL if (_render_timer)
         fps = 1/_render_timer->elapsedTime();

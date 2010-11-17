@@ -379,21 +379,25 @@ void RenderController::
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
     // context is required to be created by lazy initialization when painting
     // the widget
-    view->makeCurrent();
+    //view->makeCurrent();
     // Make all child widgets occupy the entire area
     view->setLayout(new QHBoxLayout());
     view->layout()->setMargin(0);
 
-    /*GraphicsView* g = new GraphicsView();
+    QGLWidget *glwidget = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+    glwidget->makeCurrent();
+
+    GraphicsView* g = new GraphicsView();
     g->setLayout(new QHBoxLayout());
     g->layout()->setMargin(0);
-    g->setViewport(view);
-    g->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);*/
+    g->setViewport(glwidget);
+    g->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+    g->setScene( view );
     //view.setScene(&scene); // ingen scene? =P
 //    g->show();
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(view);
+    main->centralWidget()->layout()->addWidget(g);
 }
 
 

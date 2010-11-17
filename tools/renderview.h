@@ -8,16 +8,20 @@
 #include <TAni.h>
 
 // Qt
-#include <QGLWidget>
+//#include <QGLWidget>
+#include <QGraphicsScene>
 
 namespace Tools
 {
-    class RenderView: public QGLWidget
+    class RenderView: public QGraphicsScene
     {
         Q_OBJECT
     public:
         RenderView(RenderModel* model);
         virtual ~RenderView();
+
+        virtual void drawBackground(QPainter *painter, const QRectF &);
+        void init();
 
         void setPosition( float time, float f );
 
@@ -78,6 +82,7 @@ namespace Tools
         boost::scoped_ptr<TaskTimer> _work_timer;
         boost::scoped_ptr<TaskTimer> _render_timer;
 
+        bool _inited;
         float _prevLimit;
 
         boost::scoped_ptr<Support::ToolSelector> _tool_selector;
