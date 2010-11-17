@@ -229,7 +229,7 @@ pChunk Cwt::
             (Signal::Intervals)ft->getInterval() !=
             (Signal::Intervals)subinterval)
         {
-            /*TIME_CWTPART*/ TaskTimer tt(
+            TIME_CWTPART TaskTimer tt(
                     "Computing forward fft on GPU of interval %s",
                     subinterval.toString().c_str());
 
@@ -237,7 +237,7 @@ pChunk Cwt::
 
             if (0==offset)
             {
-                tt.info("Adding silence %u", sub_silence );
+                TIME_CWTPART TaskTimer("Adding silence %u", sub_silence ).suppressTiming();
                 Signal::Interval actualData = subinterval;
                 actualData.last -= sub_silence;
 
@@ -486,8 +486,6 @@ Signal::pBuffer Cwt::
     Signal::Interval v = pchunk->getInterval();
     Signal::pBuffer r( new Signal::Buffer( v.first, v.count(), pchunk->original_sample_rate ));
     memset( r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D() );
-    bool first=true;
-    TaskTimer("r->getInterval() = %s", r->getInterval().toString().c_str()).suppressTiming();
 
     BOOST_FOREACH( pChunk& part, pchunk->chunks )
     {
@@ -499,60 +497,26 @@ Signal::pBuffer Cwt::
         Signal::pBuffer inv = inverse(part);
         Signal::pBuffer super = Filters::SuperSample::supersample(inv, pchunk->sample_rate);
 
-        DEBUG_CWT { tt->getStream() << "Upsampled inv " << inv->getInterval().toString()
+        DEBUG_CWT {
+            tt->getStream()
+                    << "Upsampled inv " << inv->getInterval().toString()
                     << " by factor " << pchunk->sample_rate/inv->sample_rate
                     << " to " << super->getInterval().toString(); tt->flushStream();
+
             GpuCpuData<float> mdata( part->transform_data->getCpuMemory(),
                                  make_cudaExtent( part->transform_data->getNumberOfElements1D(), 1, 1),
                                  GpuCpuVoidData::CpuMemory, true );
         }
 
-        /*if (first)
-        {
-            r = super;
-            first = false;
-        }
-        else
-        {
-            TaskTimer("r->getInterval() = %s", r->getInterval().toString().c_str()).suppressTiming();
-            TaskTimer("super->getInterval() = %s", super->getInterval().toString().c_str()).suppressTiming();
-            BOOST_ASSERT( false );
-            BOOST_ASSERT( r->getInterval() == super->getInterval() );
-            *r += *super;
-        }*/
-
         TaskTimer("super->getInterval() = %s", super->getInterval().toString().c_str()).suppressTiming();
         *r += *super;
     }
 
-    TIME_ICWT { tt->getStream() << "Computed CWT inverse: interval="
+    TIME_ICWT {
+        tt->getStream()
+                << "Computed CWT inverse: interval="
                 << r->getInterval().toString() << ", fs=" << r->sample_rate;
-        /*STAT_CWT*/ Statistics<float>( r->waveform_data() );
-
-        float m = 0;
-        float *b = r->waveform_data()->getCpuMemory();
-        unsigned mi = 0;
-        unsigned N = r->number_of_samples();
-        for (unsigned i=0; i < N-1; ++i)
-        {
-            float d= std::abs( b[i] - b[i+1] );
-            if (d>m)
-            {
-                m = d;
-                mi = i;
-            }
-        }
-
-        tt->info("Max diff %g at %u", m, mi);
-        unsigned L = 5;
-        for (unsigned i=1; i<=L; ++i)
-        {
-            tt->info("b[N-%d] = %g", i, b[N-i]);
-        }
-        for (unsigned i=0; i<L; ++i)
-        {
-            tt->info("b[%d] = %g", i, b[i]);
-        }
+        STAT_CWT Statistics<float>( r->waveform_data() );
     }
     return r;
 }
