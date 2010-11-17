@@ -16,8 +16,8 @@
 // Qt
 #include <QTimer>
 
-#define TIME_PAINTGL
-//#define TIME_PAINTGL if(0)
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
 
 namespace Tools
 {

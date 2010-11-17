@@ -3,8 +3,8 @@
 
 #include <demangle.h>
 
-//#define TIME_Filter
-#define TIME_Filter if(0)
+#define TIME_Filter
+//#define TIME_Filter if(0)
 
 using namespace Signal;
 
@@ -22,6 +22,9 @@ Filter::
 Signal::pBuffer Filter::
         read(  const Signal::Interval& I )
 {
+    TIME_Filter TaskTimer tt("%s Filter::read( %s )", vartype(*this).c_str(),
+                             I.toString().c_str());
+
     const Signal::Intervals work(I);
 
 
@@ -61,22 +64,25 @@ Signal::pBuffer Filter::
     // If we've reached this far, the transform will have to be computed
     ChunkAndInverse ci;
     {
-        TIME_Filter TaskTimer tt("Filter computing chunk");
+        TIME_Filter TaskTimer tt("%s filter computing chunk", vartype(*this).c_str());
         ci = readChunk( I );
-        TIME_Filter TaskTimer("Computed chunk %s", ci.chunk->getInterval().toString().c_str()).suppressTiming();
+        TIME_Filter TaskTimer("%s computed chunk %s", vartype(*this).c_str(),
+                              ci.chunk->getInterval().toString().c_str()).suppressTiming();
     }
 
     pBuffer r;
     if (ci.inverse)
     {
-        TIME_Filter TaskTimer("Chunk is unmodified, doesn't need to compute inverse").suppressTiming();
+        TIME_Filter TaskTimer("%s chunk is unmodified, doesn't need to compute inverse. Data = %s",
+                              vartype(*this).c_str(),
+                              ci.inverse->getInterval().toString().c_str()).suppressTiming();
         r = ci.inverse;
     }
     else
     {
-        TIME_Filter TaskTimer tt("Filter computing inverse");
+        TIME_Filter TaskTimer tt("%s filter computing inverse", vartype(*this).c_str());
         r = _transform->inverse( ci.chunk );
-        TIME_Filter TaskTimer("Computed inverse %s", r->getInterval().toString().c_str()).suppressTiming();
+        TIME_Filter TaskTimer("%s computed inverse %s", vartype(*this).c_str(), r->getInterval().toString().c_str()).suppressTiming();
     }
 
     return r;
@@ -87,7 +93,7 @@ ChunkAndInverse Filter::
         readChunk( const Signal::Interval& I )
 {
     TIME_Filter TaskTimer tt("%s::readChunk [%u, %u)%u#",
-                             demangle(typeid(*this)).c_str(),
+                             vartype(*this).c_str(),
                              I.first, I.last, I.count());
 
     ChunkAndInverse ci;
@@ -110,11 +116,13 @@ ChunkAndInverse Filter::
     // Only apply filter if it would affect these samples
     if (work || !_try_shortcuts)
     {
-        TIME_Filter TaskTimer("Filter applying filter operation, %s", ci.chunk->getInterval().toString().c_str());
+        TIME_Filter TaskTimer("%s applying filter operation, %s",
+                              vartype(*this).c_str(), ci.chunk->getInterval().toString().c_str());
         applyFilter( ci.chunk );
     }
 
-    TIME_Filter TaskTimer("Filter after filter operation, %s", ci.chunk->getInterval().toString().c_str());
+    TIME_Filter TaskTimer("%s after filter operation, %s",
+                          vartype(*this).c_str(), ci.chunk->getInterval().toString().c_str());
 
     return ci;
 }

@@ -41,7 +41,7 @@ static void show_fatal_exception( const std::string& str )
 static string fatal_exception_string( const std::exception &x )
 {
     std::stringstream ss;
-    ss   << "Error: " << demangle(typeid(x)) << endl
+    ss   << "Error: " << vartype(x) << endl
          << "Message: " << x.what();
     return ss.str();
 }

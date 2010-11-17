@@ -46,23 +46,23 @@ Signal::pBuffer PostSink::
         {
             if (c->affected_samples() & I )
             {
-                DEBUG_POSTSINK TaskTimer("Active %s", demangle(typeid(*c)).c_str()).suppressTiming();
+                DEBUG_POSTSINK TaskTimer("Active %s", vartype(*c).c_str()).suppressTiming();
                 active_operations.push_back(c);
             }
             else
             {
-                DEBUG_POSTSINK TaskTimer("Passive %s", demangle(typeid(*c)).c_str()).suppressTiming();
+                DEBUG_POSTSINK TaskTimer("Passive %s", vartype(*c).c_str()).suppressTiming();
                 passive_operations.push_back(c);
             }
         }
     }
 
     pOperation prev = source();
-    DEBUG_POSTSINK TaskTimer("Source %s", demangle(typeid(*prev)).c_str()).suppressTiming();
+    DEBUG_POSTSINK TaskTimer("Source %s", vartype(*prev).c_str()).suppressTiming();
 
     if (_filter)
     {
-        DEBUG_POSTSINK TaskTimer("Filter %s", demangle(typeid(*_filter)).c_str()).suppressTiming();
+        DEBUG_POSTSINK TaskTimer("Filter %s", vartype(*_filter).c_str()).suppressTiming();
         _filter->source(prev);
         prev = _filter;
     }

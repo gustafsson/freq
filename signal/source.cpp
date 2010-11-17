@@ -138,7 +138,7 @@ pBuffer SourceBase::
         readFixedLength( const Interval& I )
 {
     TIME_READCHECKED TaskTimer tt("%s.%s %s",
-                  demangle(typeid(*this)).c_str(), __FUNCTION__ ,
+                  vartype(*this).c_str(), __FUNCTION__ ,
                   I.toString().c_str() );
 
     // Try a simple read
@@ -170,9 +170,8 @@ pBuffer SourceBase::
 {
     BOOST_ASSERT( I.valid() );
 
-
     TIME_READCHECKED TaskTimer tt("%s.%s %s",
-                  demangle(typeid(*this)).c_str(), __FUNCTION__ ,
+                  vartype(*this).c_str(), __FUNCTION__ ,
                   I.toString().c_str() );
 
     pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );

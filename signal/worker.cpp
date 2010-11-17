@@ -109,7 +109,7 @@ bool Worker::
         }
     } catch (const exception& e) {
         TaskTimer("Worker caught exception type %s:\n%s",
-                  demangle(typeid(e)).c_str(), e.what()).suppressTiming();
+                  vartype(e).c_str(), e.what()).suppressTiming();
         throw;
     } catch (...) {
         TaskTimer("Worker caught unknown exception.").suppressTiming();

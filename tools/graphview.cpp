@@ -47,7 +47,7 @@ const OperationGraph::vertex_descriptor vertex_descriptor_null = (OperationGraph
                         << "f[" << c->_f1 << ", " << c->_f2 << "], "
                         << "area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2));
     } else if (f) {
-        title << demangle(typeid(*f).name()) << ", unknown filter";
+        title << vartype(*f) << ", unknown filter";
     } else {
         title << "No filter";
     }
@@ -104,15 +104,15 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, Operation
     else if ( Tfr::CwtFilter* filter_operation = dynamic_cast<Tfr::CwtFilter*>(s.get()))
     {
         filter_operation;
-        title << "Filter " << demangle(typeid(*s).name());
-        tooltip << "Filter Operation " << demangle(typeid(*s).name());;
+        title << "Filter " << vartype(*s);
+        tooltip << "Filter Operation " << vartype(*s);
 
         // childFilter = filter_operation->filter();
     }
     else if (Signal::OperationSubOperations* sub_operations = dynamic_cast<Signal::OperationSubOperations*>(s.get()))
     {
         title << demangle( typeid(*s).name() );
-        tooltip << "Composite operation " << demangle(typeid(*s).name());
+        tooltip << "Composite operation " << vartype(*s);
 
         childSource = sub_operations->subSource();
     }
@@ -126,7 +126,7 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, Operation
     else
     {
         title << demangle( typeid(*s).name() );
-        tooltip << "Source not further described: " << demangle(typeid(*s).name());
+        tooltip << "Source not further described: " << vartype(*s);
     }
 
     TitleAndTooltip tat;
@@ -356,7 +356,7 @@ void SaweMainWindow::updateLayerList( Signal::pOperation s )
 //                tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
 //        }
         else {
-            title << demangle(typeid(*f).name()) << ", unknown attributes";
+            title << vartype(*f) << ", unknown attributes";
         }
 
         QListWidgetItem* itm = new QListWidgetItem( title.str().c_str(), ui->layerWidget, 0 );

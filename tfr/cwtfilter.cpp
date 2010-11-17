@@ -59,6 +59,9 @@ ChunkAndInverse CwtFilter::
 
     unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
 
+    // hack to make it work without subsampling
+    //unsigned numberOfSamples = cwt.next_good_size( 0, sample_rate() );
+
     unsigned L = redundant_samples + numberOfSamples + time_support;
 
     DEBUG_CwtFilter TaskTimer tt("L=%u, redundant=%u, num=%u, support=%u, first=%u",
@@ -68,7 +71,8 @@ ChunkAndInverse CwtFilter::
 
     ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
 
-    TIME_CwtFilter TaskTimer tt2("CwtFilter transforming %s",
+    TIME_CwtFilter TaskTimer tt2("CwtFilter (%s) transforming %s",
+                                 vartype(*this).c_str(),
                                 ci.inverse->getInterval().toString().c_str());
 
     // Compute the continous wavelet transform
@@ -81,7 +85,8 @@ ChunkAndInverse CwtFilter::
 void CwtFilter::
         applyFilter( Tfr::pChunk pchunk )
 {
-    TIME_CwtFilter TaskTimer tt("CwtFilter applying filter on chunk %s",
+    TIME_CwtFilter TaskTimer tt("CwtFilter (%s) applying filter on chunk %s",
+                                vartype(*this).c_str(),
                              pchunk->getInterval().toString().c_str());
     Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( pchunk.get() );
 
