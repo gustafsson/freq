@@ -50,7 +50,17 @@ public:
             delete scene();
     }
 
+
 protected:
+    void drawBackground(QPainter *painter, const QRectF &rect)
+    {
+//        RenderView *view = dynamic_cast<RenderView*>( scene() );
+//        view->makeCurrent();
+//        setTransform( QTransform().translate() );
+        QGraphicsView::drawBackground( painter, rect );
+    }
+
+
     void resizeEvent(QResizeEvent *event) {
         if (scene())
             scene()->setSceneRect(QRect(QPoint(0, 0), event->size()));

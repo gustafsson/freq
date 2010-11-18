@@ -42,6 +42,9 @@ namespace Tools
 
         boost::scoped_ptr<Support::ToolSelector> tool_selector;
 
+        unsigned last_width() { return _last_width; }
+        unsigned last_height() { return _last_height; }
+
     public slots:
         void userinput_update();
 

@@ -1,28 +1,27 @@
 #ifndef COMMENTVIEW_H
 #define COMMENTVIEW_H
 
-#include <QObject>
+#include <QWidget>
 
 namespace Tools {
 
-class CommentModel;
+class RenderView;
 
-class CommentView: public QObject
+class CommentView: public QWidget
 {
     Q_OBJECT
 public:
-    CommentView(CommentModel* model);
+    CommentView(RenderView* render_view);
     ~CommentView();
 
-    bool enabled;
+    double qx, qy, qz; // position
 
 public slots:
     /// Connected in CommentController
-    virtual void draw();
+    virtual void updatePosition();
 
 private:
-    friend class CommentController;
-    CommentModel* model_;
+    RenderView* render_view_;
 };
 
 } // namespace Tools

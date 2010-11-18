@@ -1410,6 +1410,27 @@
     <bool>true</bool>
    </property>
   </action>
+  <action name="actionAddComment">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add comment</string>
+   </property>
+   <property name="toolTip">
+    <string>Add comment</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>
