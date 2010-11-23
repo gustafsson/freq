@@ -15,6 +15,7 @@
 #include "recordmodel.h"
 #include "recordcontroller.h"
 #include "recordview.h"
+#include "commentcontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -58,6 +59,8 @@ ToolFactory::
         _record_view.reset( new RecordView(_record_model.data() ));
         _record_controller = new RecordController( _record_view.data(), _render_view );
     }
+
+    _comment_controller = new CommentController( _render_view );
 }
 
 

@@ -1,27 +1,52 @@
 #ifndef COMMENTVIEW_H
 #define COMMENTVIEW_H
 
+#include "commentmodel.h"
+
 #include <QWidget>
+
+namespace Ui {
+    class CommentView;
+}
 
 namespace Tools {
 
 class RenderView;
 
-class CommentView: public QWidget
+class CommentView : public QWidget
 {
     Q_OBJECT
+
 public:
-    CommentView(RenderView* render_view);
+    explicit CommentView(QWidget *parent = 0);
     ~CommentView();
 
-    double qx, qy, qz; // position
+    //QString text();
+    Heightmap::Position pos;
+
+    RenderView* view;
+    QGraphicsProxyWidget* proxy;
+
+    virtual void wheelEvent(QWheelEvent *);
+    virtual void resizeEvent(QResizeEvent *);
+    virtual void paintEvent(QPaintEvent *);
+    virtual void mousePressEvent(QMouseEvent *event);
+    virtual void mouseMoveEvent(QMouseEvent *event);
+    virtual QSize sizeHint() const;
 
 public slots:
-    /// Connected in CommentController
-    virtual void updatePosition();
+    void updatePosition();
 
 private:
-    RenderView* render_view_;
+    Ui::CommentView *ui;
+
+    QPoint ref_point;
+    QPolygonF poly;
+    bool keep_pos;
+    float scroll_scale;
+    bool z_hidden;
+    QPoint dragPosition;
+    QPoint resizePosition;
 };
 
 } // namespace Tools

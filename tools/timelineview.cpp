@@ -122,7 +122,7 @@ void TimelineView::
         CudaException_CHECK_ERROR();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glPushMatrixContext mc;
+        glPushMatrixContext mc(GL_MODELVIEW);
 
         { // Render
             // Set up camera position
@@ -143,7 +143,7 @@ void TimelineView::
             glEnd();*/
 
             {
-                glPushMatrixContext a;
+                glPushMatrixContext mc(GL_MODELVIEW);
 
                 _render_view->model->renderer->draw( 0.f );
                 // TODO what should be rendered in the timelineview?
@@ -155,7 +155,7 @@ void TimelineView::
 
         {
             // Draw little bar over entire signal at the bottom of the timeline
-            glPushMatrixContext mc;
+            glPushMatrixContext mc(GL_MODELVIEW);
 
             setupCamera( true );
 

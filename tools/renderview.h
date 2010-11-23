@@ -10,6 +10,7 @@
 // Qt
 #include <QGLWidget>
 #include <QGraphicsScene>
+#include <QTransform>
 
 namespace Tools
 {
@@ -21,6 +22,16 @@ namespace Tools
         virtual ~RenderView();
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
+        QPointF getScreenPos( Heightmap::Position pos, double* dist );
+        Heightmap::Position getHeightmapPos( QPointF viewport_coordinates );
+        Heightmap::Position getPlanePos( QPointF pos, bool* success );
+        float getHeightmapValue( Heightmap::Position pos );
+
+        virtual bool event( QEvent * e );
+        virtual bool eventFilter(QObject* o, QEvent* e);
+        virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
+        virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
+        virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
         void setPosition( float time, float f );
         void makeCurrent();
@@ -30,7 +41,11 @@ namespace Tools
         float _px, _py, _pz, // TODO beautify
             _rx, _ry, _rz;
         float xscale;
+        float last_ysize;
         floatAni orthoview;
+        //QTransform projectionTransform;
+        QTransform modelviewTransform;
+        QTransform viewTransform;
 
         // TODO need to be able to update a QWidget, signal?
         // is this data/function model or view?
@@ -83,6 +98,9 @@ namespace Tools
         virtual void paintGL();
 
 
+        void setStates();
+        void setLights();
+        void defaultStates();
         void setupCamera();
 
         boost::scoped_ptr<TaskTimer> _work_timer;
