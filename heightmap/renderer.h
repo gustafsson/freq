@@ -16,6 +16,18 @@ typedef tvector<3,GLdouble> GLvector;
 
 namespace Heightmap {
 
+    template<typename f>
+    GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+
+    template<typename f>
+    GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+
+    template<typename f>
+    GLvector gluProject(tvector<3,f> obj, bool *r=0);
+
+    template<typename f>
+    GLvector gluUnProject(tvector<3,f> win, bool *r=0);
+
 class Renderer
 {
 public:
@@ -40,6 +52,7 @@ public:
     bool draw_height_lines;
     ColorMode color_mode;
     float y_scale;
+    float last_ysize;
 private:
     enum LevelOfDetal {
         Lod_NeedBetterF,
