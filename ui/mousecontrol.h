@@ -21,6 +21,7 @@ public:
     bool worldPos(double &ox, double &oy, float scale);
     static bool worldPos(double x, double y, double &ox, double &oy, float scale);
     static bool planePos(double x, double y, float &ox, float &oy, float scale);
+
     /**
       worldPos projects screen coordinates onto the xz-plane in world space.
       spacePos simply returns the space pos of screen coordinates.

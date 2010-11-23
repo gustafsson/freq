@@ -71,6 +71,7 @@ FORMS += \
     ui/mainwindow.ui \
     ui/propertiesselection.ui \
     ui/propertiesstroke.ui \
+    tools/commentview.ui
 
 CUDA_SOURCES += \
     filters/*.cu \
@@ -182,6 +183,7 @@ else:OBJECTS_DIR = tmp/release/
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
+
 
 win32 { 
     INCLUDEPATH += $(CUDA_INC_PATH)

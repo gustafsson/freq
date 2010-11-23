@@ -19,11 +19,11 @@ class WeightFetcher
 {
 public:
     template<typename Reader>
-    __device__ float operator()( uint2 const& p, Reader& reader )
+    __device__ float operator()( float2 const& p, Reader& reader )
     {
-        float v = DefaultFetcher<float, ConverterAmplitude>()( p, reader );
-        float phase1 = DefaultFetcher<float, ConverterPhase>()( p, reader );
-        float phase2 = DefaultFetcher<float, ConverterPhase>()( make_uint2(p.x, p.y+1), reader );
+        float v = InterpolateFetcher<float, ConverterAmplitude>()( p, reader );
+        float phase1 = InterpolateFetcher<float, ConverterPhase>()( p, reader );
+        float phase2 = InterpolateFetcher<float, ConverterPhase>()( make_float2(p.x, p.y+1), reader );
         float phasediff = phase2 - phase1;
         if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
         if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
@@ -83,6 +83,67 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
             );
     }
 }
+
+
+class StftFetcher
+{
+public:
+    template<typename Reader>
+    __device__ float operator()( float2 const& p, Reader& reader )
+    {
+        float2 q;
+        // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
+        // so these are fairly cheap operations. One reciprocal called in
+        // 'getFrequencyScalar' is just as fast.
+        float hz = outputAxis.getFrequency( p.x );
+        q.x = inputAxis.getFrequencyScalar( hz );
+        q.y = p.y;
+        float r = InterpolateFetcher<float, ConverterAmplitude>()( q, reader );
+        return r*factor;
+    }
+
+    Tfr::FreqAxis inputAxis;
+    Tfr::FreqAxis outputAxis;
+    float factor;
+};
+
+
+void resampleStft( cudaPitchedPtrType<float2> input,
+                   cudaPitchedPtrType<float> output,
+                   float4 inputRegion,
+                   float4 outputRegion,
+                   Tfr::FreqAxis inputAxis,
+                   Tfr::FreqAxis outputAxis )
+{
+    elemSize3_t sz_input = input.getNumberOfElements();
+    elemSize3_t sz_output = output.getNumberOfElements();
+
+    // We wan't to do our own translation from coordinate position to matrix
+    // position in the input matrix. By giving bottom=0 and top=2 we tell
+    // 'resample2d_fetcher' to only translate to a normalized reading position
+    // [0, height-1) along the input x-axis. 'resample2d_fetcher' does to
+    // transpose for us.
+    uint4 validInputs = make_uint4( 0, 0, 2, sz_input.y );
+    uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
+
+    StftFetcher fetcher;
+    fetcher.inputAxis = inputAxis;
+    fetcher.outputAxis = outputAxis;
+    fetcher.factor = 1.f/input.getNumberOfElements().x; // normalizes fft
+
+    resample2d_fetcher<float>(
+                input,
+                output,
+                validInputs,
+                validOutputs,
+                inputRegion,
+                outputRegion,
+                true,
+                fetcher,
+                AssignOperator<float>()
+        );
+}
+
 
 extern "C"
 void blockMerge( cudaPitchedPtrType<float> inBlock,

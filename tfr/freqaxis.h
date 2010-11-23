@@ -35,7 +35,7 @@ public:
             return f_min + scalar*f_step;
 
         case AxisScale_Logarithmic:
-            return f_min*exp2( scalar*log2f_step );
+            return f_min*exp2f( scalar*log2f_step );
 
         default:
             return 0.f;
@@ -64,7 +64,7 @@ public:
 
         case AxisScale_Logarithmic:
             {
-                float log2_f = log2(f/f_min);
+                float log2_f = log2f(f/f_min);
 
                 fi = log2_f/log2f_step;
             }

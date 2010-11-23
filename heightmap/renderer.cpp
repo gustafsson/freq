@@ -375,17 +375,19 @@ void Renderer::draw( float scaley )
 
     g_invalidFrustum = true;
 
-    if (.01 > scaley)
+    if (.001 > scaley)
 //        setSize(2,2),
-        scaley = 0.01,
+        scaley = 0.001,
         _draw_flat = true;
     else
         _draw_flat = false;
+
+    last_ysize = scaley;
 //        setSize( _collection->samples_per_block(), _collection->scales_per_block() );
 
-    glScalef(1, scaley, 1);
+    glScalef(1, scaley, 1); // global effect on all tools
 
-    glPushMatrixContext mc;
+    glPushMatrixContext mc(GL_MODELVIEW);
 
     Position mss = _collection->max_sample_size();
     Reference ref = _collection->findReference(Position(0,0), mss);
@@ -446,6 +448,7 @@ void Renderer::beginVboRendering()
 }
 
 void Renderer::endVboRendering() {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glActiveTexture(GL_TEXTURE2);
     colorTexture->unbindTexture2D();
@@ -464,7 +467,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
 
     Position a, b;
     ref.getArea( a, b );
-    glPushMatrixContext mc;
+    glPushMatrixContext mc (GL_MODELVIEW );
 
     glTranslatef(a.time, 0, a.scale);
     glScalef(b.time-a.time, 1, b.scale-a.scale);
@@ -843,10 +846,8 @@ void Renderer::drawAxes( float T )
 
     float w = 0.1f, h=0.05f;
     { // 1 gray draw overlay
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
+        glPushMatrixContext push_model(GL_MODELVIEW);
+        glPushMatrixContext push_proj(GL_PROJECTION);
 
         glLoadIdentity();
         gluOrtho2D( 0, 1, 0, 1 );
@@ -882,11 +883,6 @@ void Renderer::drawAxes( float T )
         glEnable(GL_DEPTH_TEST);
 
         //glDisable(GL_BLEND);
-
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
     }
 
     // 2 clip entire sound to frustum
@@ -1017,31 +1013,31 @@ void Renderer::drawAxes( float T )
 
                 if (size>1) {
                     glLineWidth(1);
-                    glPushMatrix();
-                        glTranslatef(p[0], 0, p[2]);
+                    glPushMatrixContext push_model( GL_MODELVIEW );
+
+                    glTranslatef(p[0], 0, p[2]);
 //                        glRotatef(90,0,1,0);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00012f*ST,0.00012f*SF,1.f);
-                        char a[100];
-                        char b[100];
-                        sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
-                        int minutes = (int)(t*DT/60);
-                        sprintf(a, b, minutes,t*DT-60*minutes);
-                        float w=0;
-                        float letter_spacing=15;
+                    glRotatef(90,1,0,0);
+                    glScalef(0.00012f*ST,0.00012f*SF,1.f);
+                    char a[100];
+                    char b[100];
+                    sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
+                    int minutes = (int)(t*DT/60);
+                    sprintf(a, b, minutes,t*DT-60*minutes);
+                    float w=0;
+                    float letter_spacing=15;
 
-                        for (char*c=a;*c!=0; c++) {
-                            if (c!=a)
-                                w+=letter_spacing;
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
+                    for (char*c=a;*c!=0; c++) {
+                        if (c!=a)
+                            w+=letter_spacing;
+                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                    }
 
-                        glTranslatef(-.5f*w,sign*120-50.f,0);
-                        for (char*c=a;*c!=0; c++) {
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                            glTranslatef(letter_spacing,0,0);
-                        }
-                    glPopMatrix();
+                    glTranslatef(-.5f*w,sign*120-50.f,0);
+                    for (char*c=a;*c!=0; c++) {
+                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                        glTranslatef(letter_spacing,0,0);
+                    }
                 }
 
                 if (v[0] > 0) t++;
@@ -1060,21 +1056,21 @@ void Renderer::drawAxes( float T )
                 if (size>1 || SF<.8f)
                 {
                     glLineWidth(1);
-                    glPushMatrix();
-                        glTranslatef(p[0],0,p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                        char a[100];
-                        sprintf(a,"%d", f);
-                        unsigned w=20;
-                        if (sign<0) {
-                            for (char*c=a;*c!=0; c++)
-                                w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
-                        glTranslatef(sign*w,-50.f,0);
+                    glPushMatrixContext push_model( GL_MODELVIEW );
+
+                    glTranslatef(p[0],0,p[2]);
+                    glRotatef(90,1,0,0);
+                    glScalef(0.00014f*ST,0.00014f*SF,1.f);
+                    char a[100];
+                    sprintf(a,"%d", f);
+                    unsigned w=20;
+                    if (sign<0) {
                         for (char*c=a;*c!=0; c++)
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    glPopMatrix();
+                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                    }
+                    glTranslatef(sign*w,-50.f,0);
+                    for (char*c=a;*c!=0; c++)
+                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                 }
 
                 if (v[2] > 0) {
@@ -1139,27 +1135,31 @@ void Renderer::drawAxes( float T )
                 GLvector pt = clippedFrustum[i]+v*u;
                 GLvector pn = clippedFrustum[i]+v*un;
                 GLvector pp = clippedFrustum[i]+v*up;
-                    glPushMatrix();
-                    if (sign>0)
-                        glTranslatef( sign*ST*0.14f, 0.f, 0.f );
-                    else
-                        glTranslatef( -sign*ST*0.08f, 0.f, 0.f );
-    glColor4f(0,0,0,.4);
-            glBegin(GL_LINES );
-                glVertex3f(pn[0] - ST*0.14f, 0, pn[2]);
-                glVertex3f(pp[0] - ST*0.14f, 0, pp[2]);
-            glEnd();
-            glBegin(blackKey ? GL_QUADS:GL_LINE_STRIP );
-                glVertex3f(pp[0] - ST*(.14f - .036f*blackKeyP), 0, pp[2]);
-                glVertex3f(pp[0] - ST*(.08f + .024f*blackKey), 0, pp[2]);
-                glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
-                glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
-            glEnd();
-    glColor4f(0,0,0,1);
-                    glPopMatrix();
-                if (tone%12 == 0) {
+
+                glPushMatrixContext push_model( GL_MODELVIEW );
+
+                if (sign>0)
+                    glTranslatef( sign*ST*0.14f, 0.f, 0.f );
+                else
+                    glTranslatef( -sign*ST*0.08f, 0.f, 0.f );
+
+                glColor4f(0,0,0,.4);
+                    glBegin(GL_LINES );
+                        glVertex3f(pn[0] - ST*0.14f, 0, pn[2]);
+                        glVertex3f(pp[0] - ST*0.14f, 0, pp[2]);
+                    glEnd();
+                    glBegin(blackKey ? GL_QUADS:GL_LINE_STRIP );
+                        glVertex3f(pp[0] - ST*(.14f - .036f*blackKeyP), 0, pp[2]);
+                        glVertex3f(pp[0] - ST*(.08f + .024f*blackKey), 0, pp[2]);
+                        glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
+                        glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
+                    glEnd();
+                glColor4f(0,0,0,1);
+
+                if (tone%12 == 0)
+                {
                     glLineWidth(1.f);
-                    glPushMatrix();
+                    glPushMatrixContext push_model( GL_MODELVIEW );
                     glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
                     glRotatef(90,1,0,0);
 
@@ -1175,7 +1175,6 @@ void Renderer::drawAxes( float T )
                     glTranslatef(sign*w,-50.f,0);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    glPopMatrix();
                 }
             }
         }
@@ -1206,7 +1205,7 @@ void Renderer::
 
     glDisable(GL_DEPTH_TEST);
 
-    glPushMatrixContext mc;
+    glPushMatrixContext mc(GL_MODELVIEW);
 
     glColor4f(0,0,0,alpha);
     glBegin( GL_TRIANGLE_FAN );

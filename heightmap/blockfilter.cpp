@@ -292,32 +292,24 @@ void StftToBlock::
     Position a, b;
     block->ref.getArea(a,b);
 
+    Position chunk_a, chunk_b;
+    Signal::Interval inInterval = chunk.getInterval();
+    chunk_a.time = inInterval.first/chunk.original_sample_rate;
+    chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
-    // float tmin = chunk.min_hz;
-    // float tmax = chunk.max_hz;
-    // These doesn't depent on the transform of choice but depend on what
-    // parameters are set for the heightmap plot
-    float tmin = 20;
-    float tmax = 22050;
+    // ::resampleStft computes frequency rows properly with its two instances
+    // of FreqAxis.
+    chunk_a.scale = 0;
+    chunk_b.scale = 1;
 
-    float out_min_hz = exp(log(tmin) + (a.scale*(log(tmax)-log(tmin)))),
-          out_max_hz = exp(log(tmin) + (b.scale*(log(tmax)-log(tmin))));
-
-    float block_fs = block->ref.sample_rate();
-    float out_stft_size = block_fs / chunk.sample_rate;
-    float out_offset = (a.time - chunk.chunk_offset / this->sample_rate() )
-                       * block->ref.sample_rate();
-
-    ::expandCompleteStft( chunk.transform_data->getCudaGlobal(),
+    ::resampleStft( chunk.transform_data->getCudaGlobal(),
                   outData->getCudaGlobal(),
-                  out_min_hz,
-                  out_max_hz,
-                  out_stft_size,
-                  out_offset,
-                  chunk.min_hz,
-                  chunk.max_hz,
-                  chunk.nScales(),
-                  0);
+                  make_float4( chunk_a.time, chunk_a.scale,
+                               chunk_b.time, chunk_b.scale ),
+                  make_float4( a.time, a.scale,
+                               b.time, b.scale ),
+                  chunk.freqAxis(),
+                  _collection->display_scale());
 
     block->valid_samples |= chunk.getInterval();
 }

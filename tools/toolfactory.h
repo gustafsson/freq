@@ -61,6 +61,8 @@ namespace Tools
         QScopedPointer<class RecordView> _record_view;
         QPointer<class RecordController> _record_controller; // might be deleted by _render_view
 
+        QPointer<class CommentController> _comment_controller;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

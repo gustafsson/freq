@@ -7,6 +7,8 @@
 #include <GLUT/glut.h>
 #endif
 
+#include <glPushContext.h>
+
 // cos, sin, M_PI
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -54,12 +56,14 @@ static void
     float width = orad - irad;
     float step = 360.0 / rects;
 
+    glPushMatrixContext push_model( GL_MODELVIEW );
+
     for(int i = 0; i < rects; i++)
     {
-        glPushMatrix();
-        glRotatef(step * i, 0, 0, 1);
+        glRotatef(step, 0, 0, 1);
+        //glPushMatrixContext push_model( GL_MODELVIEW );
+        //glRotatef(step * i, 0, 0, 1);
         drawRect(irad, -height/2, width, height);
-        glPopMatrix();
     }
 }
 
@@ -88,19 +92,19 @@ void DrawWorking::
 {
     static float computing_rotation = 0.0;
 
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_DEPTH_TEST);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+    glPushAttribContext push_attribs;
 
-    glMatrixMode(GL_PROJECTION);
+    glPushMatrixContext push_proj( GL_PROJECTION );
     glLoadIdentity();
     glOrtho( viewport_width, 0, viewport_height, 0, -1, 1);
 
-    glTranslatef( 30, 30, 0 );
-    glMatrixMode(GL_MODELVIEW);
+    glTranslatef( 30, 30, 0 );  // ? translate GL_PROJECTION
+
+    glDepthFunc(GL_LEQUAL);
+    glDisable(GL_DEPTH_TEST);
+
+    glPushMatrixContext push_model( GL_MODELVIEW );
+
     glLoadIdentity();
     glScalef(60, 60, 1);
 
@@ -108,13 +112,15 @@ void DrawWorking::
     glDepthFunc(GL_LESS);
 
     glColor4f(1, 1, 1, 0.5);
-    glPushMatrix();
-    glRotatef(computing_rotation, 0, 0, 1);
-    drawRectRing(15, 0.10, 0.145);
-    glRotatef(-2*computing_rotation, 0, 0, 1);
-    drawRectRing(20, 0.15, 0.2);
-    computing_rotation += 5;
-    glPopMatrix();
+    {
+        glPushMatrixContext mc(GL_MODELVIEW);
+
+        glRotatef(computing_rotation, 0, 0, 1);
+        drawRectRing(15, 0.10, 0.145);
+        glRotatef(-2*computing_rotation, 0, 0, 1);
+        drawRectRing(20, 0.15, 0.2);
+        computing_rotation += 5;
+    }
 
     glColor4f(0, 0, 1, 0.5);
     drawRoundRect(0.5, 0.5, 0.5);
@@ -124,10 +130,6 @@ void DrawWorking::
     //glDisable(GL_BLEND);
     //glDisable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
     glDepthFunc(GL_LEQUAL);
 }
 

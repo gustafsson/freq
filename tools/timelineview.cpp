@@ -7,7 +7,7 @@
 #include <QDockWidget>
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
-#include "renderview.h"
+#include "rendercontroller.h"
 
 #undef max
 
@@ -19,8 +19,8 @@ using namespace Signal;
 namespace Tools {
 
 TimelineView::
-        TimelineView( Sawe::Project* p, RenderView* render_view )
-:   QGLWidget( 0, render_view, Qt::WindowFlags(0) ),
+        TimelineView( Sawe::Project* p, RenderView* render_view)
+:   QGLWidget( 0, render_view->glwidget, Qt::WindowFlags(0) ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
@@ -28,7 +28,7 @@ TimelineView::
     _project( p ),
     _render_view( render_view )
 {
-    BOOST_ASSERT( render_view );
+    BOOST_ASSERT( _render_view );
 
     if (!context() || !context()->isSharing())
     {
@@ -122,7 +122,7 @@ void TimelineView::
         CudaException_CHECK_ERROR();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glPushMatrixContext mc;
+        glPushMatrixContext mc(GL_MODELVIEW);
 
         { // Render
             // Set up camera position
@@ -143,7 +143,7 @@ void TimelineView::
             glEnd();*/
 
             {
-                glPushMatrixContext a;
+                glPushMatrixContext mc(GL_MODELVIEW);
 
                 _render_view->model->renderer->draw( 0.f );
                 // TODO what should be rendered in the timelineview?
@@ -155,7 +155,7 @@ void TimelineView::
 
         {
             // Draw little bar over entire signal at the bottom of the timeline
-            glPushMatrixContext mc;
+            glPushMatrixContext mc(GL_MODELVIEW);
 
             setupCamera( true );
 

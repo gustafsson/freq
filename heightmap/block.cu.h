@@ -81,4 +81,12 @@ void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
                  unsigned in_stft_size,
                  unsigned cuda_stream);
 
+extern "C"
+void resampleStft( cudaPitchedPtrType<float2> input,
+                   cudaPitchedPtrType<float> output,
+                   float4 inputRegion,
+                   float4 outputRegion,
+                   Tfr::FreqAxis inputAxis,
+                   Tfr::FreqAxis outputAxis );
+
 #endif // HEIGHTMAPBLOCK_CU_H

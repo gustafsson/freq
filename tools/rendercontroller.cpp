@@ -15,42 +15,27 @@
 #include "heightmap/blockfilter.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
+#include "graphicsview.h"
 
 // gpumisc
 #include <CudaException.h>
 #include <cuda.h>
+#include <demangle.h>
 
 // Qt
 #include <QToolBar>
 #include <QSlider>
 #include <QGraphicsView>
 #include <QResizeEvent>
-
+#include <QMetaClassInfo>
 // todo remove
 #include "navigationcontroller.h"
+#include <QTimer>
 
 using namespace Ui;
 
 namespace Tools
 {
-
-class GraphicsView : public QGraphicsView
-{
-public:
-    GraphicsView()
-    {
-        setWindowTitle(tr("Boxes"));
-        setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-        //setRenderHints(QPainter::SmoothPixmapTransform);
-    }
-
-protected:
-    void resizeEvent(QResizeEvent *event) {
-        if (scene())
-            scene()->setSceneRect(QRect(QPoint(0, 0), event->size()));
-        QGraphicsView::resizeEvent(event);
-    }
-};
 
 
 RenderController::
@@ -379,21 +364,33 @@ void RenderController::
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
     // context is required to be created by lazy initialization when painting
     // the widget
-    view->makeCurrent();
-    // Make all child widgets occupy the entire area
-    view->setLayout(new QHBoxLayout());
-    view->layout()->setMargin(0);
+    //view->makeCurrent();
 
-    /*GraphicsView* g = new GraphicsView();
+    // Make all child widgets occupy the entire area
+    //view->setLayout(new QHBoxLayout());
+    //view->layout()->setMargin(0);
+
+    view->glwidget = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+    view->glwidget->makeCurrent();
+    view->glwidget->setLayout(new QHBoxLayout());
+    view->glwidget->layout()->setMargin(0);
+
+    GraphicsView* g = new GraphicsView(view);
+    //g->scale(0.5, 0.5);
+    g->setRenderHints(g->renderHints() | QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+    //view.show();
+    //view.setWindowTitle("Embedded Dialogs Demo");
+
     g->setLayout(new QHBoxLayout());
     g->layout()->setMargin(0);
-    g->setViewport(view);
-    g->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);*/
-    //view.setScene(&scene); // ingen scene? =P
-//    g->show();
+    g->setViewport(view->glwidget);
+    g->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+
+    view->tool_selector.reset( new Support::ToolSelector(view->glwidget));
+    //view->tool_selector.reset( new Support::ToolSelector(g));
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(view);
+    main->centralWidget()->layout()->addWidget(g);
 }
 
 

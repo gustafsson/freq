@@ -26,6 +26,7 @@ StftFilter::
     transform( t );
 }
 
+
 ChunkAndInverse StftFilter::
         computeChunk( const Signal::Interval& I )
 {

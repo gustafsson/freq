@@ -6,6 +6,7 @@
 #include "tools/support/brushpaint.cu.h"
 
 #include <boost/foreach.hpp>
+#include <queue>
 
 namespace Tools { namespace Selections
 {
@@ -73,6 +74,17 @@ bool PeakModel::
     return itr->second->getCpuMemory()[ (x%w) + (y%h)*w ];
 }
 
+
+float PeakModel::
+        heightVal(Heightmap::Reference ref, unsigned x, unsigned y)
+{
+    Heightmap::pBlock block = ref.collection()->getBlock( ref );
+    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+    float* data = blockData->getCpuMemory();
+
+    return data[x+y*ref.samplesPerBlock()];
+}
+
 /*
 float& PeakModel::
         gaussedVal(unsigned x, unsigned y, unsigned w, unsigned h)
@@ -99,10 +111,20 @@ void PeakModel::
     classifictions.clear();
 
     pixel_count = 0;
-    recursivelyClassify(
-            ref,
-            ref.samplesPerBlock(), ref.scalesPerBlock(),
-            x0, y0, PS_Increasing, -FLT_MAX );
+    use_min_limit = false;
+    min_limit = 0;
+    found_max = 0;
+    found_min = FLT_MAX;
+    pixel_limit = 30000; // 10*pixel_count;
+
+    loopClassify(ref, x0, y0);
+
+    use_min_limit = true;
+    classifictions.clear();
+    min_limit = found_min + (found_max - found_min)*0.1f;
+    middle_limit = heightVal(ref, x0, y0);
+
+    loopClassify(ref, x0, y0);
 
     // Discard image data from CPU
     BOOST_FOREACH( PeakAreas::value_type const& v, classifictions )
@@ -127,8 +149,8 @@ void PeakModel::
     for (unsigned i=0; i<N; ++i)
     {
         Heightmap::Position p;
-        p.time = border_nodes[i].x * elementSize.time;
-        p.scale = border_nodes[i].y * elementSize.scale;
+        p.time = (border_nodes[i].x + .5f) * elementSize.time;
+        p.scale = (border_nodes[i].y + .5f) * elementSize.scale;
         v[i] = p;
     }
 
@@ -140,7 +162,8 @@ void PeakModel::
         findBorder()
 {
     // Find range of classified pixels
-    BOOST_ASSERT(!classifictions.empty());
+    if (classifictions.empty())
+        return;
 
     Heightmap::Reference ref = classifictions.begin()->first;
     unsigned
@@ -425,20 +448,30 @@ void PeakModel::
         return;
 
     float val = data[x + y*w];
+
     PropagationState state;
-    if (val>prevVal)
+
+    if (val > found_max) found_max = val;
+    if (val < found_min) found_min = val;
+
+    if (val > prevVal)
         state = PS_Increasing;
-    else if (val==prevVal)
+    else if (val == prevVal)
         state = prevState;
     else
         state = PS_Decreasing;
 
-    if (prevState>state)
+    if (prevState > state)
         state = PS_Out;
 
-    classification[x+y*w] = state != PS_Out;
+    if (use_min_limit && state == PS_Out)
+        if (val >= min_limit)
+            state = PS_Increasing;
 
-    if (state != PS_Out)
+    bool is_in = state != PS_Out;
+    classification[x+y*w] = is_in;
+
+    if (is_in)
     {
         pixel_count++;
         recursivelyClassify( ref, data, classification,
@@ -470,6 +503,154 @@ void PeakModel::
                 recursivelyClassify( ref, data, classification,
                                      w, h,
                                      x, y-1, state, val );
+            }
+        }
+    }
+}
+
+struct Pt
+{
+    Pt(Heightmap::Reference ref,
+       unsigned x, unsigned y,
+       PropagationState prevState,
+       float prevVal)
+           :
+           ref(ref),
+           x(x), y(y),
+           prevState(prevState),
+           prevVal(prevVal)
+    {}
+
+    Heightmap::Reference ref;
+    unsigned x, y;
+
+    PropagationState prevState;
+    float prevVal;
+};
+
+void PeakModel::
+        loopClassify( Heightmap::Reference ref0,
+                             unsigned x0, unsigned y0
+                             )
+{
+    std::vector<Pt> pts;
+
+    pts.push_back( Pt(ref0, x0, y0, PS_Increasing, -FLT_MAX) );
+
+    unsigned w = ref0.samplesPerBlock(),
+             h = ref0.scalesPerBlock();
+
+    pixel_count = 0;
+
+    float* data;
+    bool* classification;
+    Heightmap::Reference prevRef = ref0.parent();
+    prevRef.block_index[0] = -1;
+    prevRef.block_index[1] = -1;
+
+    while (!pts.empty())
+    {
+        if (use_min_limit && pixel_count > pixel_limit )
+        {
+            this->classifictions.clear();
+            return;
+        }
+
+        Pt inf = pts.back();
+        Heightmap::Reference& ref = inf.ref;
+        unsigned& x = inf.x;
+        unsigned& y = inf.y;
+        PropagationState& prevState = inf.prevState;
+        float& prevVal = inf.prevVal;
+
+        pts.pop_back();
+
+        if (x>=w)
+        {
+            ref = ref.sibblingRight();
+            x -= w;
+        }
+        if (y>=h)
+        {
+            ref = ref.sibblingTop();
+            y -= h;
+        }
+
+        if (!(ref == prevRef))
+        {
+            Heightmap::pBlock block = ref.collection()->getBlock( ref );
+            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+            data = blockData->getCpuMemory();
+
+            PeakAreaP area = getPeakArea(ref);
+            classification = area->getCpuMemory();
+
+            prevRef = ref;
+        }
+
+        bool wasOut = classification[x + y*w] == 0;
+        if (!wasOut)
+            continue;
+
+
+        float val = data[x + y*w];
+
+        PropagationState state;
+
+        if (val > found_max) found_max = val;
+        if (val < found_min) found_min = val;
+
+
+        if (val > prevVal)
+            state = PS_Increasing;
+        else if (val == prevVal)
+            state = prevState;
+        else
+            state = PS_Decreasing;
+
+        if (prevState > state)
+            state = PS_Out;
+
+        bool is_in, go_further;
+
+        if (!use_min_limit)
+        {
+            is_in = state != PS_Out;
+            go_further = is_in;
+        }
+        else
+        {
+            is_in = (val >= min_limit);
+            if (val >= middle_limit)
+                go_further = true;
+            else
+                go_further = is_in && state == PS_Decreasing;
+        }
+
+        classification[x + y*w] = is_in;
+
+        if (go_further)
+        {
+            pixel_count++;
+
+            pts.push_back( Pt(ref,x+1,y,state,val));
+            pts.push_back( Pt(ref,x,y+1,state,val));
+
+            if (val != prevVal)
+            {
+                if (0==x) {
+                    if (0<ref.block_index[0])
+                        pts.push_back( Pt(ref.sibblingLeft(),w-1,y,state,val));
+
+                } else {
+                    pts.push_back( Pt(ref,x-1,y,state,val));
+                }
+                if (0==y) {
+                    if (0<ref.block_index[1])
+                        pts.push_back( Pt(ref.sibblingBottom(),x,h-1,state,val));
+                } else {
+                    pts.push_back( Pt(ref,x,y-1,state,val));
+                }
             }
         }
     }

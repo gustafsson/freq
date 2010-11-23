@@ -14,8 +14,10 @@ public:
 
 
     template<typename Reader>
-    __device__ float2 operator()( uint2 const& p, Reader& reader )
+    __device__ float2 operator()( float2 const& q, Reader& reader )
     {
+        uint2 p = make_uint2(floor(q.x+.5f), floor(q.y+.5f));
+
         // Rely on reader to do clamping
         int top=-1, left=-1;
 
@@ -26,8 +28,8 @@ public:
             top = 0;
 
         float2 slope = make_float2(
-            (reader(make_uint2(p.x + 1, p.y)) - reader(make_uint2(p.x + left, p.y)))*xscale,
-            (reader(make_uint2(p.x, p.y+1)) - reader(make_uint2(p.x, p.y+top)))*yscale);
+            (reader(make_uint2(p.x + 1, p.y)) - reader(make_uint2(p.x + left, p.y)))*xscale/(1-left),
+            (reader(make_uint2(p.x, p.y+1)) - reader(make_uint2(p.x, p.y+top)))*yscale/(1-top));
 
         return slope;
     }

@@ -39,11 +39,19 @@ private:
     std::vector<uint2> border_nodes;
     unsigned pixel_count;
 
+    float found_max;
+    float found_min;
+    float middle_limit;
+    float min_limit;
+    unsigned pixel_limit;
+    bool use_min_limit;
+
     bool anyBorderPixel( uint2&, unsigned w, unsigned h );
     uint2 nextBorderPixel( uint2, unsigned w, unsigned h, unsigned& firstdir );
 
     PeakAreaP getPeakArea(Heightmap::Reference);
     bool classifiedVal(unsigned x, unsigned y, unsigned w, unsigned h);
+    float heightVal(Heightmap::Reference ref, unsigned x, unsigned y);
     void recursivelyClassify( Heightmap::Reference ref,
                               unsigned w, unsigned h,
                               unsigned x, unsigned y,
@@ -53,6 +61,8 @@ private:
                               unsigned w, unsigned h,
                               unsigned x, unsigned y,
                               PropagationState prevState, float prevVal );
+    void loopClassify( Heightmap::Reference ref,
+                       unsigned x, unsigned y );
 
     //PeakAreas gaussed_classifictions;
     //PeakAreaP getPeakAreaGauss(Heightmap::Reference);
