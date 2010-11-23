@@ -315,6 +315,7 @@
    <addaction name="actionMoveSelectionTime"/>
    <addaction name="actionTonalizeFilter"/>
    <addaction name="actionReassignFilter"/>
+   <addaction name="actionAddComment"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
