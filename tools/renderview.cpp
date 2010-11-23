@@ -200,12 +200,6 @@ float RenderView::
 QPointF RenderView::
         getScreenPos( Heightmap::Position pos, double* dist )
 {
-    GLdouble m[16], proj[16];
-    GLint vp[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, m);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, vp);
-
     GLdouble objY = getHeightmapValue(pos);
     GLdouble winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
@@ -236,12 +230,6 @@ Heightmap::Position RenderView::
         getHeightmapPos( QPointF pos )
 {
     TaskTimer tt("RenderView::getPlanePos Newton raphson");
-
-    GLdouble m[16], proj[16];
-    GLint vp[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, m);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, vp);
 
     GLdouble objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), 0.1,
@@ -539,6 +527,9 @@ void RenderView::
         model->renderer->draw( 1 - orthoview ); // 0.6 ms
 
         last_ysize = model->renderer->last_ysize;
+        glGetDoublev(GL_MODELVIEW_MATRIX, m);
+        glGetDoublev(GL_PROJECTION_MATRIX, proj);
+        glGetIntegerv(GL_VIEWPORT, vp);
 
         emit painting();
 

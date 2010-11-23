@@ -110,6 +110,9 @@ namespace Tools
         float _prevLimit;
         unsigned _last_width;
         unsigned _last_height;
+
+        GLdouble m[16], proj[16];
+        GLint vp[4];
     };
 } // namespace Tools
 

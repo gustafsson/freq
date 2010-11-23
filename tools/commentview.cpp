@@ -26,7 +26,7 @@ CommentView::CommentView(QWidget *parent) :
     closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
     addAction(closeAction);
-    setContextMenuPolicy(Qt::ActionsContextMenu);
+    setMouseTracking( true );
 }
 
 
@@ -48,9 +48,16 @@ CommentView::~CommentView()
 void CommentView::
         mousePressEvent(QMouseEvent *event)
 {
-    QPoint gp = proxy->sceneTransform().map(event->globalPos());
+    if (!mask().contains( event->pos() ))
+    {
+        event->setAccepted( false );
+        return;
+    }
+
     if (event->buttons() & Qt::LeftButton)
     {
+        QPoint gp = proxy->sceneTransform().map(event->globalPos());
+
         if (event->modifiers() == 0)
         {
             dragPosition = gp;
@@ -62,6 +69,7 @@ void CommentView::
             event->accept();
         }
     }
+
     update();
 }
 
@@ -69,9 +77,13 @@ void CommentView::
 void CommentView::
         mouseMoveEvent(QMouseEvent *event)
 {
-    QPoint gp = proxy->sceneTransform().map(event->globalPos());
+    bool visible = mask().contains( event->pos() );
+    setContextMenuPolicy( visible ? Qt::ActionsContextMenu : Qt::NoContextMenu);
+
     if (event->buttons() & Qt::LeftButton)
     {
+        QPoint gp = proxy->sceneTransform().map(event->globalPos());
+
         if (event->modifiers() == 0)
         {
             move(gp - dragPosition);
@@ -85,7 +97,16 @@ void CommentView::
             event->accept();
         }
     }
+
     update();
+}
+
+
+void CommentView::
+        mouseReleaseEvent(QMouseEvent *event)
+{
+    emit setCommentControllerEnabled( false );
+    QWidget::mouseReleaseEvent(event);
 }
 
 

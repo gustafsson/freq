@@ -30,10 +30,13 @@ public:
     void drawBackground(QPainter *painter, const QRectF &rect);
 
     void resizeEvent(QResizeEvent *event);
+
+    QWidget* toolParent;
 signals:
 
 public slots:
-    void updateCamera();
+
+private:
 };
 
 } // namespace Tools

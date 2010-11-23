@@ -7,6 +7,8 @@
 #include <QEvent>
 #include <QTimerEvent>
 #include <QMouseEvent>
+#include <QHBoxLayout>
+#include <QGraphicsProxyWidget>
 
 namespace Tools
 {
@@ -23,11 +25,26 @@ GraphicsView::
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    t.setInterval(100);
-    connect(&t, SIGNAL(timeout()),SLOT(updateCamera()));
-    t.start();
 
-    scene->setSceneRect(-5000,-5000,10000,10000);
+    setRenderHints(renderHints() | QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+    //view.show();
+    //view.setWindowTitle("Embedded Dialogs Demo");
+
+    setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+
+    //view->tool_selector.reset( new Support::ToolSelector(view->glwidget));
+    QGraphicsProxyWidget* toolProxy = new QGraphicsProxyWidget();
+    toolParent = new QWidget();
+
+    // Make all child widgets occupy the entire area
+    toolParent->setLayout(new QHBoxLayout());
+    toolParent->layout()->setMargin(0);
+
+    toolProxy->setWidget( toolParent );
+    toolProxy->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+    toolProxy->setZValue(-1e30);
+    toolParent->setWindowOpacity(0);
+    scene->addItem( toolProxy );
 }
 
 
@@ -127,52 +144,12 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 
 
 void GraphicsView::resizeEvent(QResizeEvent *event) {
-    float h = event->size().height();
+    //float h = event->size().height();
     if (scene())
         scene()->setSceneRect(QRectF(0, 0, event->size().width(), event->size().height()));
-//        scene()->setSceneRect(QRectF(0, event->size().height(), event->size().width(), -event->size().height()));
 
-/*    RenderView *view = dynamic_cast<RenderView*>( scene() );
-
-    view->makeCurrent();
-    glViewport(0, 0, (GLint)event->size().width(), (GLint)event->size().height());
-    // Get Viewport parameters
-    GLint vp[4];
-    glGetIntegerv(GL_VIEWPORT,vp);
-    // Final viewport transformation.
-    QTransform vtrans(vp[2]*0.5, 0,
-                      0, -vp[3]*0.5,
-                      vp[0]+vp[2]*0.5,vp[1]+vp[3]*0.5);
-    setTransform(vtrans);
-    scene()->setSceneRect(QRect(-1,-1,2,2));
-
-    */
-
-    //QGraphicsView::resizeEvent(event);
+    toolParent->resize( event->size() );
 }
 
-void GraphicsView::
-        updateCamera()
-{
-//    RenderView *view = dynamic_cast<RenderView*>( scene() );
-//    //translate(1,0);
-//    ViewportAnchor a = transformationAnchor();
-//    setTransformationAnchor( NoAnchor );
-//    setTransform(
-//            QTransform()
-//                .scale(0.5, 0.5)
-//                .translate(-100*view->_qx, 100*view->_qz)
-//                .rotate(-view->_ry, Qt::ZAxis)
-//                .rotate(90-view->_rx, Qt::XAxis)
-//                /*.rotate(view->_rz, Qt::YAxis)
-//                .rotate(view->_ry, Qt::ZAxis)*/
-//                );
-
-//    setTransform( view->viewTransform );
-//    scene()->setSceneRect(QRect(-1,-1,2,2));
-//    setTransform( view->modelviewTransform, true );
-
-//    update();*/
-}
 
 } // namespace Tools

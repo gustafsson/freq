@@ -542,8 +542,8 @@ void PeakModel::
 
     pixel_count = 0;
 
-    float* data;
-    bool* classification;
+    float* data=0;
+    bool* classification=0;
     Heightmap::Reference prevRef = ref0.parent();
     prevRef.block_index[0] = -1;
     prevRef.block_index[1] = -1;

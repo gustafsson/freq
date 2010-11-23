@@ -366,28 +366,13 @@ void RenderController::
     // the widget
     //view->makeCurrent();
 
-    // Make all child widgets occupy the entire area
-    //view->setLayout(new QHBoxLayout());
-    //view->layout()->setMargin(0);
-
     view->glwidget = new QGLWidget(QGLFormat(QGL::SampleBuffers));
     view->glwidget->makeCurrent();
-    view->glwidget->setLayout(new QHBoxLayout());
-    view->glwidget->layout()->setMargin(0);
+    //view->glwidget->setMouseTracking(true);
 
     GraphicsView* g = new GraphicsView(view);
-    //g->scale(0.5, 0.5);
-    g->setRenderHints(g->renderHints() | QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-    //view.show();
-    //view.setWindowTitle("Embedded Dialogs Demo");
-
-    g->setLayout(new QHBoxLayout());
-    g->layout()->setMargin(0);
     g->setViewport(view->glwidget);
-    g->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
-
-    view->tool_selector.reset( new Support::ToolSelector(view->glwidget));
-    //view->tool_selector.reset( new Support::ToolSelector(g));
+    view->tool_selector.reset( new Support::ToolSelector(g->toolParent));
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(g);

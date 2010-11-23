@@ -32,7 +32,11 @@ public:
     virtual void paintEvent(QPaintEvent *);
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseMoveEvent(QMouseEvent *event);
+    virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual QSize sizeHint() const;
+
+signals:
+    void setCommentControllerEnabled( bool );
 
 public slots:
     void updatePosition();

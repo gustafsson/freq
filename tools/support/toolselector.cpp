@@ -61,10 +61,13 @@ void ToolSelector::
             // is supposed to be taken care of by someone else. QPointer is a
             // good way of handling memory managment of QObject, as is done in
             // toolfactory.
-            _current_tool->setParent( 0 );
             _current_tool->setEnabled( false );
-            _current_tool = 0;
-            _parent_tool->update();
+            if (_current_tool)
+            {
+                _current_tool->setParent( 0 );
+                _current_tool = 0;
+                _parent_tool->update();
+            }
         }
     }
 
