@@ -25,8 +25,7 @@ namespace Heightmap {
     template<typename f>
     GLvector gluProject(tvector<3,f> obj, bool *r=0);
 
-    template<typename f>
-    GLvector gluUnProject(tvector<3,f> win, bool *r=0);
+    GLvector gluUnProject(GLvector win, bool *r=0);
 
 class Renderer
 {

@@ -188,8 +188,8 @@ GLvector gluProject2(tvector<3,f> obj, bool *r=0) {
     return screen;
 }
 
-template<typename f>
-GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
+
+GLvector gluUnProject(GLvector win, bool *r) {
     GLdouble model[16], proj[16];
     GLint view[4];
     glGetDoublev(GL_MODELVIEW_MATRIX, model);
