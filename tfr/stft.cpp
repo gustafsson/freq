@@ -333,7 +333,7 @@ Tfr::pChunk Stft::
     chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
     chunk->max_hz = b.sample_rate / 2.f;
-    chunk->min_hz = chunk->max_hz / chunk->nScales();
+    chunk->min_hz = 0; //chunk->max_hz / chunk->nScales();
     chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
     chunk->sample_rate = b.sample_rate / chunk->nScales();
     ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;
@@ -395,7 +395,8 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     unsigned prevN = -1;
     time_duration latest_time[4];
     unsigned max_base = 3;
-    double base[] = {2,3,5,7};
+    //double base[] = {2,3,5,7};
+    double base[] = {2};
     for (unsigned n = 128; n < B->number_of_samples(); n++ )
     {
         unsigned N = -1;
