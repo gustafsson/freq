@@ -1,5 +1,4 @@
 #include "signal/operationcache.h"
-#include "tfr/cwtfilter.h"
 
 static const bool D = false;
 

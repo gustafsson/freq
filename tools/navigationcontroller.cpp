@@ -46,7 +46,7 @@ void NavigationController::
 void NavigationController::
         mousePressEvent ( QMouseEvent * e )
 {
-    TaskTimer("NavigationController mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
+    //TaskTimer("NavigationController mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 
     /*switch ( e->button() )
     {
@@ -92,7 +92,7 @@ void NavigationController::
 void NavigationController::
         mouseReleaseEvent ( QMouseEvent * e )
 {
-    TaskTimer("NavigationController mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
+    //TaskTimer("NavigationController mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     switch ( e->button() )
     {
         case Qt::LeftButton:
@@ -117,7 +117,7 @@ void NavigationController::
 void NavigationController::
         wheelEvent ( QWheelEvent *e )
 {
-    TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
+    //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
     float ps = 0.0005;
     float rs = 0.08;
@@ -146,7 +146,7 @@ void NavigationController::
 void NavigationController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
+    //TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
     r.makeCurrent();
 

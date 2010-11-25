@@ -44,11 +44,11 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
         inputDevice = inputDevice;
     }
 
-    tt.getStream() << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input." << endl << endl;
+    tt.getStream() << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input." << endl;
 
     portaudio::Device& device = sys.deviceByIndex(inputDevice);
 
-    tt.getStream() << "Opening recording input stream on " << device.name() << endl;
+    tt.getStream() << "Opening recording input stream on " << device.name();
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             device,
             1, // channels

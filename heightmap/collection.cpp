@@ -459,22 +459,22 @@ pBlock Collection::
 
         if ( 1 /* create from others */ )
         {
-            TaskTimer tt(TaskTimer::LogVerbose, "Stubbing new block");
+            TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Stubbing new block");
 
             // fill block by STFT
             {
-                TaskTimer tt(TaskTimer::LogVerbose, "stft");
+                TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "stft");
                 try {
                     fillBlock( block );
                     CudaException_CHECK_ERROR();
                 } catch (const CudaException& x ) {
-                    tt.info("Collection::createBlock, fillBlock swallowed GlException.\n%s", x.what());
+					TIME_COLLECTION TaskTimer("Collection::createBlock, fillBlock swallowed GlException.\n%s", x.what()).suppressTiming();
                 }
             }
 
             {
                 if (1) {
-                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // start with the blocks that are just slightly more detailed
                     mergeBlock( block, block->ref.left(), 0 );
                     mergeBlock( block, block->ref.right(), 0 );
@@ -483,7 +483,7 @@ pBlock Collection::
                 }
 
                 if (0) {
-                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
+                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
                     // then try using the blocks that are even more detailed
                     BOOST_FOREACH( cache_t::value_type& c, _cache )
                     {
@@ -500,7 +500,7 @@ pBlock Collection::
                 // TODO compute at what log2_samples_size[1] stft is more accurate
                 // than low resolution blocks.
                 if (1) {
-                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
                     mergeBlock( block, block->ref.parent(), 0 );
                     mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
@@ -510,7 +510,7 @@ pBlock Collection::
                 }
 
                 if (0) {
-                    TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
+                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                     // then try to upscale other blocks
                     BOOST_FOREACH( cache_t::value_type& c, _cache )
                     {

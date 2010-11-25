@@ -1,8 +1,5 @@
 #include "chunk.h"
 
-#include "cwt.h"
-#include "stft.h"
-
 #include <math.h>
 
 namespace Tfr {
@@ -45,7 +42,7 @@ float2 Chunk::
         debug_getNearestCoeff( float t, float f )
 {
     if (!valid())
-        return make_float2(0.f/0.f, 0.f/0.f);
+        return make_float2(-FLT_MAX, -FLT_MAX);
 
     if ( t < 0 ) t = 0;
 

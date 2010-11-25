@@ -92,7 +92,7 @@ void RecordController::
 
     connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
 
-    connect(render_view_, SIGNAL(destroying()), SLOT(close()));
+    //connect(render_view_, SIGNAL(destroying()), SLOT(close()));
     connect(render_view_, SIGNAL(destroying()), SLOT(stopRecording()));
 
     if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))

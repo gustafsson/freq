@@ -23,6 +23,9 @@
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
 
+//#define DEBUG_EVENTS
+#define DEBUG_EVENTS if(0)
+
 namespace Tools
 {
 
@@ -71,43 +74,43 @@ RenderView::
 bool RenderView::
         event ( QEvent * e )
 {
-    TaskTimer tt("RenderView event %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("RenderView event %s %d", vartype(*e).c_str(), e->isAccepted());
     bool r = QGraphicsScene::event(e);
-    tt.info("RenderView event %s info %d %d", vartype(*e).c_str(), r, e->isAccepted());
+    DEBUG_EVENTS TaskTimer("RenderView event %s info %d %d", vartype(*e).c_str(), r, e->isAccepted()).suppressTiming();
     return r;
 }
 
 bool RenderView::
         eventFilter(QObject* o, QEvent* e)
 {
-    TaskTimer tt("RenderView eventFilter %s %s %d", vartype(*o).c_str(), vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("RenderView eventFilter %s %s %d", vartype(*o).c_str(), vartype(*e).c_str(), e->isAccepted());
     bool r = QGraphicsScene::eventFilter(o, e);
-    tt.info("RenderView eventFilter %s %s info %d %d", vartype(*o).c_str(), vartype(*e).c_str(), r, e->isAccepted());
+    DEBUG_EVENTS TaskTimer("RenderView eventFilter %s %s info %d %d", vartype(*o).c_str(), vartype(*e).c_str(), r, e->isAccepted()).suppressTiming();
     return r;
 }
 
 void RenderView::
         mousePressEvent(QGraphicsSceneMouseEvent *e)
 {
-    TaskTimer tt("RenderView mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("RenderView mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mousePressEvent(e);
-    tt.info("RenderView mousePressEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("RenderView mousePressEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
-    TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
-    tt.info("RenderView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("RenderView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void RenderView::
         mouseReleaseEvent(QGraphicsSceneMouseEvent *e)
 {
-    TaskTimer tt("RenderView mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("RenderView mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseReleaseEvent(e);
-    tt.info("RenderView mouseReleaseEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("RenderView mouseReleaseEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 

@@ -1,6 +1,5 @@
 #include "postsink.h"
 #include "buffersource.h"
-#include "tfr/filter.h"
 #include <boost/foreach.hpp>
 #include <demangle.h>
 #include <typeinfo>

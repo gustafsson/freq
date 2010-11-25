@@ -10,6 +10,9 @@
 #include <QHBoxLayout>
 #include <QGraphicsProxyWidget>
 
+//#define DEBUG_EVENTS
+#define DEBUG_EVENTS if(0)
+
 namespace Tools
 {
 
@@ -59,9 +62,9 @@ GraphicsView::
 bool GraphicsView::
         event ( QEvent * e )
 {
-    TaskTimer tt("GraphicsView event %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView event %s %d", vartype(*e).c_str(), e->isAccepted());
     bool r = QGraphicsView::event(e);
-    tt.info("GraphicsView event %s info %d %d", vartype(*e).c_str(), r, e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView event %s info %d %d", vartype(*e).c_str(), r, e->isAccepted()).suppressTiming();
     return r;
 }
 
@@ -69,50 +72,50 @@ bool GraphicsView::
 bool GraphicsView::
         eventFilter(QObject* o, QEvent* e)
 {
-    TaskTimer tt("GraphicsView eventFilter %s %s %d", vartype(*o).c_str(), vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView eventFilter %s %s %d", vartype(*o).c_str(), vartype(*e).c_str(), e->isAccepted());
     bool r = QGraphicsView::eventFilter(o, e);
-    tt.info("GraphicsView eventFilter %s %s info %d %d", vartype(*o).c_str(), vartype(*e).c_str(), r, e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView eventFilter %s %s info %d %d", vartype(*o).c_str(), vartype(*e).c_str(), r, e->isAccepted()).suppressTiming();
     return r;
 }
 
 
 void GraphicsView::timerEvent(QTimerEvent *e){
-    TaskTimer tt("GraphicsView timerEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView timerEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::timerEvent(e);
-    tt.info("GraphicsView timerEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView timerEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void GraphicsView::childEvent(QChildEvent *e){
-    TaskTimer tt("GraphicsView childEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView childEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::childEvent(e);
-    tt.info("GraphicsView childEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView childEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void GraphicsView::customEvent(QEvent *e){
-    TaskTimer tt("GraphicsView customEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView customEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::customEvent(e);
-    tt.info("GraphicsView customEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView customEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void GraphicsView::mousePressEvent( QMouseEvent* e )
 {
-    TaskTimer tt("GraphicsView mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::mousePressEvent(e);
-    tt.info("GraphicsView mousePressEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView mousePressEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void GraphicsView::mouseMoveEvent(QMouseEvent *e)
 {
-    TaskTimer tt("GraphicsView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::mouseMoveEvent(e);
-    tt.info("GraphicsView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *e)
 {
-    TaskTimer tt("GraphicsView mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer tt("GraphicsView mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::mouseReleaseEvent(e);
-    tt.info("GraphicsView mouseReleaseEvent %s info %d", vartype(*e).c_str(), e->isAccepted());
+    DEBUG_EVENTS TaskTimer("GraphicsView mouseReleaseEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
