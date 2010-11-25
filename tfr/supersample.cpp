@@ -1,9 +1,9 @@
 #include "supersample.h"
-#include "tfr/stft.h"
+#include "stft.h"
 
 #include <cuda_vector_types_op.h>
 
-namespace Filters {
+namespace Tfr {
 
 Signal::pBuffer SuperSample::
         supersample( Signal::pBuffer b, float requested_sample_rate )
@@ -67,4 +67,4 @@ Signal::pBuffer SuperSample::
     return r;
 }
 
-} // namespace Filters
+} // namespace Tfr

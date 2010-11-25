@@ -41,7 +41,7 @@ CommentView* CommentController::
 */
     connect(view_, SIGNAL(painting()), comment, SLOT(updatePosition()));
 
-    comment->pos.time = 0/0.f;//view_->_qx;
+    comment->pos.time = -FLT_MAX;//view_->_qx;
     comment->pos.scale = view_->_qz;
     comment->view = view_;
     comment->move(0, 0);

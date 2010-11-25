@@ -5,6 +5,9 @@
 #include "timelineview.h"
 #include "renderview.h"
 
+// Gpumisc
+#include <cuda_vector_types_op.h>
+
 // Qt
 #include <QDockWidget>
 #include <QWheelEvent>
@@ -151,7 +154,7 @@ void TimelineController::
             view->setupCamera( true );
             moveButton.spacePos(x, y, current[0], current[1]);
 
-            float length = std::max( 1.f, model->project()->worker.source()->length());
+            float length = max1( 1.f, model->project()->worker.source()->length());
             view->_xoffs = current[0] - 0.5f*length/view->_xscale;
 
             // Only update the timeline, leave the main render view unaffected

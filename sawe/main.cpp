@@ -286,7 +286,7 @@ void validate_arguments()
 
 #include "heightmap/resampletest.h"
 #include "tools/support/brushpaint.cu.h"
-#include "filters/supersample.h"
+#include "tfr/supersample.h"
 #include <Statistics.h>
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
         pBuffer data = file.read(Interval(0,1));
         Statistics<float> s1(data->waveform_data());
 
-        pBuffer super = Filters::SuperSample::supersample(data, 8*file.sample_rate());
+        pBuffer super = Tfr::SuperSample::supersample(data, 8*file.sample_rate());
         tt.info("super %u", super->number_of_samples());
         Statistics<float> s2(super->waveform_data());
         Adapters::WriteWav::writeToDisk("testut.wav", super, false);

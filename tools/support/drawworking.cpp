@@ -1,5 +1,7 @@
 #include "drawworking.h"
 
+#include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
+
 // OpenGL
 #ifndef __APPLE__
 #include <GL/glut.h>

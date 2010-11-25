@@ -4,7 +4,7 @@
 #include "wavelet.cu.h"
 
 #include "signal/buffersource.h"
-#include "filters/supersample.h"
+#include "supersample.h"
 
 #include <cufft.h>
 #include <throwInvalidArgument.h>
@@ -21,17 +21,22 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_CWT if(0)
-#define TIME_CWT
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#include <math.h>
+#endif
+
+#define TIME_CWT if(0)
+//#define TIME_CWT
 
 #define STAT_CWT if(0)
 //#define STAT_CWT
 
-//#define TIME_CWTPART if(0)
-#define TIME_CWTPART
+#define TIME_CWTPART if(0)
+//#define TIME_CWTPART
 
-//#define TIME_ICWT if(0)
-#define TIME_ICWT
+#define TIME_ICWT if(0)
+//#define TIME_ICWT
 
 #define DEBUG_CWT if(0)
 //#define DEBUG_CWT
@@ -495,7 +500,7 @@ Signal::pBuffer Cwt::
             part->min_hz, part->max_hz) );
 
         Signal::pBuffer inv = inverse(part);
-        Signal::pBuffer super = Filters::SuperSample::supersample(inv, pchunk->sample_rate);
+        Signal::pBuffer super = SuperSample::supersample(inv, pchunk->sample_rate);
 
         DEBUG_CWT {
             tt->getStream()

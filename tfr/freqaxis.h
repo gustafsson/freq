@@ -4,6 +4,8 @@
 #include <cuda_runtime.h> // defines __device__ and __host__
 #include <math.h>
 
+#include "msc_stdc.h"
+
 namespace Tfr {
 
 enum AxisScale {

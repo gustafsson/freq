@@ -3,6 +3,11 @@
 #include <cudaPitchedPtrType.h>
 #include <cuda_vector_types_op.h>
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#include <math.h>
+#endif
+
 class Gauss
 {
 public:

@@ -23,6 +23,9 @@
 #include "msc_stdc.h"
 #endif
 
+//#define TIME_RENDERER
+#define TIME_RENDERER if(0)
+
 namespace Heightmap {
 
 
@@ -148,7 +151,7 @@ static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);
 // static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
 template<typename f>
-GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
+GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
     GLvector win;
     bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
     if(r) *r=s;
@@ -156,7 +159,7 @@ GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* pro
 }
 
 template<typename f>
-GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
+GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
     GLvector obj;
     bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
     if(r) *r=s;
@@ -164,7 +167,7 @@ GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* p
 }
 
 template<typename f>
-GLvector gluProject(tvector<3,f> obj, bool *r=0) {
+GLvector gluProject(tvector<3,f> obj, bool *r) {
     GLdouble model[16], proj[16];
     GLint view[4];
     glGetDoublev(GL_MODELVIEW_MATRIX, model);
@@ -175,7 +178,7 @@ GLvector gluProject(tvector<3,f> obj, bool *r=0) {
 }
 
 template<typename f>
-GLvector gluProject2(tvector<3,f> obj, bool *r=0) {
+GLvector gluProject2(tvector<3,f> obj, bool *r) {
     GLint view[4];
     glGetIntegerv(GL_VIEWPORT, view);
     GLvector4 eye = applyProjectionMatrix(applyModelMatrix(to4(obj)));
@@ -370,7 +373,7 @@ Reference Renderer::
 void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
-    TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
+    TIME_RENDERER TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
     if (!_initialized) init();
 
     g_invalidFrustum = true;
@@ -398,7 +401,7 @@ void Renderer::draw( float scaley )
 
     endVboRendering();
 
-    tt.info("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
+	TIME_RENDERER TaskTimer("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s").suppressTiming();
     _drawn_blocks=0;
 
     GlException_CHECK_ERROR();
@@ -463,7 +466,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
     if (!ref.containsSpectrogram())
         return false;
 
-    TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
+    TIME_RENDERER TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
 
     Position a, b;
     ref.getArea( a, b );
@@ -550,7 +553,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     Position a, b;
     ref.getArea( a, b );
-    TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
+    TIME_RENDERER TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
 
     if (!ref.containsSpectrogram())
         return false;

@@ -403,7 +403,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
         unsigned selectedBase = 0;
         for (unsigned b=0; b<sizeof(base)/sizeof(base[0]) && b<=max_base; b++)
         {
-            unsigned N2 = pow(base[b], (unsigned)(log(n)/log(base[b])));
+            unsigned N2 = pow(base[b], (double)(unsigned)(log((float)n)/log(base[b])));
 
             unsigned d1 = N>n ? N - n : n - N;
             unsigned d2 = N2>n ? N2 - n : n - N2;
@@ -413,7 +413,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
                 N = N2;
             }
 
-            N2 = pow(base[b], (unsigned)(log(n)/log(base[b])) + 1);
+            N2 = pow(base[b], (double)(unsigned)(log((float)n)/log(base[b])) + 1);
 
             d1 = N>n ? N - n : n - N;
             d2 = N2>n ? N2 - n : n - N2;
@@ -435,7 +435,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
             if(writeOutput) tt.reset( new TaskTimer( "n=%u, _chunk_size = %u = %g ^ %g ",
                                                      n, S._chunk_size,
                                                      base[selectedBase],
-                                                     log(S._chunk_size)/log(base[selectedBase])));
+                                                     log((float)S._chunk_size)/log(base[selectedBase])));
 
             ptime startTime = microsec_clock::local_time();
 

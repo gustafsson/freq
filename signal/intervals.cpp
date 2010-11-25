@@ -9,8 +9,8 @@
 
 namespace Signal {
 
-const IntervalType Interval::Interval::IntervalType_MIN = (IntervalType)0;
-const IntervalType Interval::Interval::IntervalType_MAX = (IntervalType)-1;
+const IntervalType Interval::IntervalType_MIN = (IntervalType)0;
+const IntervalType Interval::IntervalType_MAX = (IntervalType)-1;
 const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Interval::IntervalType_MAX);
 const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
 
@@ -170,7 +170,7 @@ Intervals& Intervals::
     for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 	
-        if (Interval::IntervalType_MIN + b > i.first ) i.first = Interval::Interval::IntervalType_MIN;
+        if (Interval::IntervalType_MIN + b > i.first ) i.first = Interval::IntervalType_MIN;
 		else i.first -= b;
         if (Interval::IntervalType_MIN + b > i.last ) i.last = Interval::IntervalType_MIN;
 		else i.last -= b;

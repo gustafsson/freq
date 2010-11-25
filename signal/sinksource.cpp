@@ -200,7 +200,7 @@ pBuffer SinkSource::
         }
     }
 
-    TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
+    //TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
     return zeros(I);
 }
 

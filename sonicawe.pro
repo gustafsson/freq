@@ -19,7 +19,11 @@ QT += opengl
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
-win32:QMAKE_LFLAGS += /FORCE:MULTIPLE
+win32:QMAKE_LFLAGS += \
+	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by in boost_serialization, this row is required to link successfully
+	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
+	/NODEFAULTLIB:MSVCRT \ 
+	
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 !macx&!win32: QMAKE_CXX = colorgcc
@@ -95,14 +99,15 @@ OTHER_FILES += \
 
 # "Other files" for Visual Studio
 OTHER_SOURCES += \
-    $$SHADERS \
-    sonicawe.pro \
+    $$SHADER_SOURCES \
+    *.pro \
 
 # Make OTHER_SOURCES show up in project file list in Visual Studio
 win32 { 
     othersources.input = OTHER_SOURCES
     othersources.output = ${QMAKE_FILE_NAME}
-    QMAKE_EXTRA_UNIX_COMPILERS += othersources
+    QMAKE_EXTRA_COMPILERS += othersources
+#    QMAKE_EXTRA_UNIX_COMPILERS += othersources
 }
 
 
@@ -146,22 +151,22 @@ LIBS = -lsndfile \
 
 win32 {
 INCLUDEPATH += \
-	..\..\winlib\glut \
-	..\..\winlib\glew\include \
-	..\..\winlib\portaudio\include \
-	..\..\winlib\libsndfile\include \
-	..\..\winlib\hdf5lib\include \
-	..\..\winlib\zlib\include \
-	..\..\winlib
+	../../winlib/glut \
+	../../winlib/glew/include \
+	../../winlib/portaudio/include \
+	../../winlib/libsndfile/include \
+	../../winlib/hdf5lib/include \
+	../../winlib/zlib/include \
+	../../winlib
 LIBS += \
-	-l..\..\winlib\glut\glut32 \
-	-l..\..\winlib\glew\lib\glew32 \
-	-l..\..\winlib\libsndfile\libsndfile-1 \
-	-l..\..\winlib\portaudio\portaudio \
-	-l..\..\winlib\portaudio\portaudiocpp \
-	-l..\..\winlib\hdf5lib\dll\hdf5dll \
-	-l..\..\winlib\hdf5lib\dll\hdf5_hldll \
-	-L..\..\winlib\boostlib
+	-l../../winlib/glut/glut32 \
+	-l../../winlib/glew/lib/glew32 \
+	-l../../winlib/libsndfile/libsndfile-1 \
+	-l../../winlib/portaudio/portaudio \
+	-l../../winlib/portaudio/portaudiocpp \
+	-l../../winlib/hdf5lib/dll/hdf5dll \
+	-l../../winlib/hdf5lib/dll/hdf5_hldll \
+	-L../../winlib/boostlib
 }
 
 
@@ -186,20 +191,20 @@ CUDA_FLAGS += --use_fast_math
 
 
 win32 { 
-    INCLUDEPATH += $(CUDA_INC_PATH)
-    LIBS += -L$(CUDA_LIB_PATH)
+    INCLUDEPATH += "$(CUDA_INC_PATH)"
+    LIBS += -L"$(CUDA_LIB_PATH)"
 	QMAKE_CXXFLAGS -= -Zc:wchar_t-
     QMAKE_CXXFLAGS += -Zc:wchar_t
     cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
-    cuda.commands = $(CUDA_BIN_PATH)/nvcc.exe \
+    cuda.commands = \"$(CUDA_BIN_PATH)/nvcc.exe\" \
         -c \
         -Xcompiler \
         \"$$join(QMAKE_CXXFLAGS," ")\" \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
-        ${QMAKE_FILE_BASE}.cu \
-        -o \
-        ${QMAKE_FILE_OUT}
+        "${QMAKE_FILE_NAME}" \
+		-o \
+        "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
     # auto-detect CUDA path
@@ -275,5 +280,6 @@ macx {
 }
 
 cuda.input = CUDA_SOURCES
-QMAKE_EXTRA_UNIX_COMPILERS += cuda
+#QMAKE_EXTRA_UNIX_COMPILERS += cuda
+QMAKE_EXTRA_COMPILERS += cuda
 # end of cuda section #######################################################################

@@ -77,7 +77,7 @@ namespace Tools { namespace Selections
                     e->x(), height() - e->y(),
                     selectionStart.time, selectionStart.scale, r.xscale))
             {
-                selectionStart.time = 0.f/0.f;
+                selectionStart.time = -FLT_MAX;
             }
         }
 
@@ -112,7 +112,7 @@ namespace Tools { namespace Selections
                     e->x(), height() - e->y(),
                     p.time, p.scale, r.xscale))
             {
-                if (isnan( selectionStart.time )) // TODO test
+                if (-FLT_MAX == selectionStart.time) // TODO test
                 {
                     selectionStart = p;
                 }
