@@ -161,6 +161,37 @@ void Audiofile::
     //_waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
     //Statistics<float> waveform( _waveform->waveform_data.get() );
 
+    float L = length();
+    tt << "Signal length: ";
+    unsigned seconds_per_minute = 60;
+    unsigned seconds_per_hour = seconds_per_minute*60;
+    unsigned seconds_per_day = seconds_per_hour*24;
+    if (L > seconds_per_day )
+    {
+        unsigned days = floor(L/seconds_per_day);
+        tt << days << "d ";
+        L -= days * seconds_per_day;
+    }
+    if (L > seconds_per_minute )
+    {
+        unsigned hours = floor(L/seconds_per_hour);
+        tt << std::setfill('0') << std::setw(2) << hours << ":";
+        L -= hours * seconds_per_hour;
+
+        unsigned minutes = floor(L/seconds_per_minute);
+        tt << std::setfill('0') << std::setw(2) << minutes << ":";
+        L -= minutes * seconds_per_minute;
+
+        tt << L;
+    }
+    else
+    {
+        tt << L << " seconds";
+    }
+    tt.flushStream();
+
+    tt.info("Data size: %lu samples, %lu channels", (size_t)source.frames(), (size_t)source.channels() );
+    tt.info("Sample rate: %lu", source.samplerate() );
 #if LEKA_FFT
 /* do stupid things: */
     num_frames = 1<<13;
