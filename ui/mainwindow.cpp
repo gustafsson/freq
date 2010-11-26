@@ -58,8 +58,10 @@ void SaweMainWindow::
     setCorner( Qt::TopRightCorner, Qt::RightDockWidgetArea );
 
     // Connect actions in the File menu
-    connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
-    connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+    connect(ui->actionNew_recording, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
+    connect(ui->actionOpen, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+    connect(ui->actionSave_project, SIGNAL(triggered()), SLOT(saveProject()));
+    connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
 
 
     // TODO remove layerWidget and deleteFilterButton
@@ -153,6 +155,7 @@ SaweMainWindow::~SaweMainWindow()
     delete ui;
 }
 
+
 /* todo remove
 void SaweMainWindow::slotDbclkFilterItem(QListWidgetItem * item)
 {
@@ -192,5 +195,18 @@ void SaweMainWindow::
     Sawe::Application::global_ptr()->slotClosed_window( this );
 }
 
+
+void SaweMainWindow::
+        saveProject()
+{
+    project->save();
+}
+
+
+void SaweMainWindow::
+        saveProjectAs()
+{
+    project->saveAs();
+}
 
 } // namespace Ui

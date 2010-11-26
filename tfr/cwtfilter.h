@@ -1,6 +1,8 @@
 #ifndef TFRCWTFILTER_H
 #define TFRCWTFILTER_H
 
+#pragma once
+
 #include "filter.h"
 
 namespace Tfr {

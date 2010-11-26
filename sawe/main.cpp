@@ -290,11 +290,25 @@ void validate_arguments()
 #include <Statistics.h>
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <fstream>
+#include <boost/algorithm/string.hpp>
 
 using namespace Signal;
 
 int main(int argc, char *argv[])
 {
+	if (0)
+	{
+        std::ofstream ofs("tstfil.xml");
+        boost::archive::xml_oarchive xml(ofs);
+		int n = 1;
+		xml & boost::serialization::make_nvp("hej", n );
+		std::cout << "n = " << n << std::endl;
+		return 0;
+	}
+
     if(0) {
         TaskTimer tt("Cwt inverse");
         Adapters::Audiofile file("chirp.wav");
@@ -371,16 +385,6 @@ int main(int argc, char *argv[])
     if (!check_cuda( false ))
         return -1;
 
-    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-
-    {
-        ResampleTest resampletest;
-
-        //resampletest.test4();
-
-        //return 0;
-    }
-
     // skip application filename
     argv++;
     argc--;
@@ -406,6 +410,14 @@ int main(int argc, char *argv[])
 
     try {
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
+        {
+            ResampleTest resampletest;
+
+            //resampletest.test4();
+
+            //return 0;
+        }
 
         { // TODO remove?
             TaskTimer tt("Building performance statistics for %s", CudaProperties::getCudaDeviceProp().name);

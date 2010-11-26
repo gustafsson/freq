@@ -19,10 +19,14 @@ QT += opengl
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
-win32:QMAKE_LFLAGS += \
-	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by in boost_serialization, this row is required to link successfully
+win32:QMAKE_LFLAGS_DEBUG += \
+	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
 	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
-	/NODEFAULTLIB:MSVCRT \ 
+	/NODEFAULTLIB:MSVCRT \
+	
+win32:QMAKE_LFLAGS_RELEASE += \
+	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
+	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
 	
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
@@ -69,6 +73,8 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
+
+PRECOMPILED_HEADER += sawe/project_header.h
 
 FORMS += \
     tools/selectionviewmodel.ui \
@@ -162,11 +168,15 @@ LIBS += \
 	-l../../winlib/glut/glut32 \
 	-l../../winlib/glew/lib/glew32 \
 	-l../../winlib/libsndfile/libsndfile-1 \
-	-l../../winlib/portaudio/portaudio \
-	-l../../winlib/portaudio/portaudiocpp \
 	-l../../winlib/hdf5lib/dll/hdf5dll \
 	-l../../winlib/hdf5lib/dll/hdf5_hldll \
 	-L../../winlib/boostlib
+win32:QMAKE_LFLAGS_RELEASE += \
+	../../winlib/portaudio/portaudio_x86_mt.lib \
+	../../winlib/portaudio/portaudiocpp_mt.lib
+win32:QMAKE_LFLAGS_DEBUG += \
+	../../winlib/portaudio/portaudio_x86_mt_gd.lib \
+	../../winlib/portaudio/portaudiocpp_mt_gd.lib
 }
 
 

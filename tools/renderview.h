@@ -1,6 +1,8 @@
 #ifndef RENDERVIEW_H
 #define RENDERVIEW_H
 
+#pragma once
+
 #include "rendermodel.h"
 #include "support/toolselector.h"
 

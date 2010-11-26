@@ -13,6 +13,7 @@
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 
@@ -130,25 +131,21 @@ void Project::
 
 
 void Project::
-        save(std::string project_file)
+        save()
 {
-    if (project_file.empty()) {
-        string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
-
-        QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
-        if (0 == qfilemame.length()) {
-            // User pressed cancel
-            return;
-        }
-        project_file = qfilemame.toLocal8Bit().data();
+    if (project_file_name.empty()) {
+        saveAs();
+        return;
     }
 
     try
     {
-        // todo use
-        std::ofstream ofs(project_file.c_str());
+		TaskTimer tt("Saving project to '%s'", project_file_name.c_str());
+        std::ofstream ofs(project_file_name.c_str());
         boost::archive::xml_oarchive xml(ofs);
-        xml << boost::serialization::make_nvp("Sonicawe", this);
+		int n = 545;
+        xml << boost::serialization::make_nvp("Sonicawe", n);
+//        xml << boost::serialization::make_nvp("Sonicawe", this);
     }
     catch (const std::exception& x)
     {
@@ -159,15 +156,43 @@ void Project::
 }
 
 
+void Project::
+        saveAs()
+{
+    string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
+
+    QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
+    if (0 == qfilemame.length()) {
+        // User pressed cancel
+        return;
+    }
+
+    project_file_name = qfilemame.toLocal8Bit().data();
+
+    save();
+}
+
+
 pProject Project::
         openProject(std::string project_file)
 {
-    // todo use
     std::ifstream ifs(project_file.c_str());
+    string xmltest;
+	xmltest.resize(5);
+
+    ifs.read( &xmltest[0], 5 );
+    if( !boost::iequals( xmltest, "<?xml") )
+        throw std::invalid_argument("Project file '" + project_file + "' is not an xml file");
+
+    for (int i=xmltest.size()-1; i>=0; i--)
+        ifs.putback( xmltest[i] );
+
     boost::archive::xml_iarchive xml(ifs);
 
     Project* new_project;
     xml >> boost::serialization::make_nvp("SonicaweProject", new_project);
+
+    new_project->project_file_name = project_file;
 
     pProject project( new_project );
 

@@ -88,9 +88,15 @@ public:
 
 
     /**
-      If 'project_file' is empty, a Qt Save File dialog will be opened.
+      If 'project_file_name' is empty, calls saveAs.
      */
-    void save(std::string project_file="");
+    void save();
+
+
+    /**
+      Opens a Qt Save File dialog and renames 'project_file_name'.
+     */
+    void saveAs();
 
 
     /**
@@ -103,6 +109,7 @@ private:
     Project(); // used by deserialization
     void createMainWindow();
 
+    std::string project_file_name;
     boost::scoped_ptr<Tools::ToolFactory> _tools;
     // MainWindow owns all other widgets together with their ToolFactory
     QScopedPointer<QMainWindow> _mainWindow;
@@ -112,12 +119,20 @@ private:
 
 
     friend class boost::serialization::access;
-    template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
+    template<class archive> void serialize(archive& ar, const unsigned int version) {
         Signal::pOperation head = head_source();
+        QByteArray mainwindowState;
 
+        mainwindowState = mainWindow()->saveState( version );
+        std::string statev( mainwindowState.data(), mainwindowState.size() );
         using boost::serialization::make_nvp;
-        ar & make_nvp("Headsource", head);
 
+        ar & make_nvp("Headsource", head);
+        ar & make_nvp("Windowstate", statev);
+
+        mainwindowState = QByteArray( &statev[0], statev.size() );
+
+        mainWindow()->restoreState( mainwindowState, version );
         head_source(head);
     }
 };
