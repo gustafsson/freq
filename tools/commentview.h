@@ -18,14 +18,15 @@ class CommentView : public QWidget
     Q_OBJECT
 
 public:
-    explicit CommentView(QWidget *parent = 0);
+    explicit CommentView(CommentModel* model, QWidget *parent = 0);
     ~CommentView();
 
-    //QString text();
-    Heightmap::Position pos;
+    std::string html();
+    void setHtml(std::string);
 
     RenderView* view;
     QGraphicsProxyWidget* proxy;
+    CommentModel* model;
 
     virtual void wheelEvent(QWheelEvent *);
     virtual void resizeEvent(QResizeEvent *);
@@ -40,6 +41,7 @@ signals:
 
 public slots:
     void updatePosition();
+    void updateText();
 
 private:
     Ui::CommentView *ui;
@@ -47,7 +49,6 @@ private:
     QPoint ref_point;
     QPolygonF poly;
     bool keep_pos;
-    float scroll_scale;
     bool z_hidden;
     QPoint dragPosition;
     QPoint resizePosition;

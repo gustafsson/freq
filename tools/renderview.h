@@ -5,6 +5,7 @@
 
 #include "rendermodel.h"
 #include "support/toolselector.h"
+#include "commentview.h"
 
 // gpumisc
 #include <TAni.h>
@@ -38,11 +39,6 @@ namespace Tools
         void setPosition( float time, float f );
         void makeCurrent();
 
-        // TODO remove position and use renderer->camera instead
-        double _qx, _qy, _qz; // position
-        float _px, _py, _pz, // TODO beautify
-            _rx, _ry, _rz;
-        float xscale;
         float last_ysize;
         floatAni orthoview;
         //QTransform projectionTransform;
@@ -61,6 +57,14 @@ namespace Tools
 
         unsigned last_width() { return _last_width; }
         unsigned last_height() { return _last_height; }
+
+		template<class Archive> void serialize_items(Archive& ar, const unsigned int version) {
+			QList<QGraphicsItem *> itms = items();
+			/*foreach( QGraphicsItem * itm, itms ) {
+				if (dynamic_cast<
+			}
+			this->*/
+		}
 
     public slots:
         void userinput_update();

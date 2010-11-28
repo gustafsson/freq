@@ -299,13 +299,26 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
-	if (0)
+	if (0) try {
+		{
+			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));
+
+			std::ofstream ofs("tstfil.xml");
+			boost::archive::xml_oarchive xml(ofs);
+			xml & boost::serialization::make_nvp("hej2", ljud );
+		}
+		{
+			std::ifstream ifs("tstfil.xml");
+			boost::archive::xml_iarchive xml(ifs);
+
+			Signal::pOperation ljud;
+			xml & boost::serialization::make_nvp("hej2", ljud );
+			cout << "filnamn: " << ((Adapters::Audiofile*)ljud.get())->filename() << endl;
+		}
+		return 0;
+	} catch (std::exception const& x)
 	{
-        std::ofstream ofs("tstfil.xml");
-        boost::archive::xml_oarchive xml(ofs);
-		int n = 1;
-		xml & boost::serialization::make_nvp("hej", n );
-		std::cout << "n = " << n << std::endl;
+		cout << vartype(x) << ": " << x.what() << endl;
 		return 0;
 	}
 
@@ -507,8 +520,11 @@ int main(int argc, char *argv[])
         // cuda context doesn't think it is still valid.
         // TODO 0 != QGLContext::currentContext() when exiting by an exception
         // that stops the mainloop.
-        BOOST_ASSERT( 0 == QGLContext::currentContext() );
-        BOOST_ASSERT( CUDA_ERROR_INVALID_CONTEXT == cuCtxGetDevice( 0 ));
+        if( 0 != QGLContext::currentContext() )
+			TaskTimer("Error: OpenGL context was not detroyed prior to application exit").suppressTiming();
+
+		if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( 0 ))
+			TaskTimer("Error: CUDA context was not detroyed prior to application exit").suppressTiming();
 
         return r;
     } catch (const std::exception &x) {

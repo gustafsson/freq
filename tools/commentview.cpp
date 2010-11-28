@@ -12,12 +12,12 @@
 
 namespace Tools {
 
-CommentView::CommentView(QWidget *parent) :
+CommentView::CommentView(CommentModel* model, QWidget *parent) :
         QWidget(parent),
     ui(new Ui::CommentView),
     keep_pos(false),
-    scroll_scale(1),
-    z_hidden(false)
+    z_hidden(false),
+	model(model)
 {
     //
     ui->setupUi(this);
@@ -25,14 +25,31 @@ CommentView::CommentView(QWidget *parent) :
     QAction *closeAction = new QAction(tr("C&lose"), this);
     closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
+	connect(ui->textEdit, SIGNAL(textChanged()), SLOT(updateText()));
     addAction(closeAction);
     setMouseTracking( true );
+	setHtml(model->html);
 }
 
 
 CommentView::~CommentView()
 {
     delete ui;
+}
+
+
+std::string CommentView::
+        html()
+{
+    return ui->textEdit->toHtml().toLocal8Bit();
+}
+
+
+void CommentView::
+        setHtml(std::string text)
+{
+    ui->textEdit->setHtml( QString::fromLocal8Bit( text.c_str() ) );
+	model->html = text;
 }
 
 
@@ -114,9 +131,9 @@ void CommentView::
         wheelEvent(QWheelEvent *e)
 {
     if (e->delta()>0)
-        scroll_scale *= 1.1;
+        model->scroll_scale *= 1.1;
     else
-        scroll_scale /= 1.1;
+        model->scroll_scale /= 1.1;
     update();
 }
 
@@ -178,6 +195,13 @@ void CommentView::
 
 
 void CommentView::
+        updateText()
+{
+	model->html = html();
+}
+
+
+void CommentView::
         paintEvent(QPaintEvent *e)
 {
     QPainter painter(this);
@@ -211,7 +235,7 @@ void CommentView::
             float h = proxy->scene()->height();
             c.setY( h - 1 - c.y() );
 
-            pos = view->getHeightmapPos( c );
+            model->pos = view->getHeightmapPos( c );
 
             /*            float x, y;
         Ui::MouseControl::planePos( c.x(), c.y(), x, y, view->xscale );
@@ -227,7 +251,7 @@ void CommentView::
     }
 
     double z;
-    QPointF pt = view->getScreenPos( Heightmap::Position( pos.time, pos.scale), &z );
+    QPointF pt = view->getScreenPos( Heightmap::Position( model->pos.time, model->pos.scale), &z );
 
     proxy->setZValue(-z);
 
@@ -235,8 +259,8 @@ void CommentView::
     {
         z *= 0.5;
 
-        if (-1 > view->_pz)
-            z += -log(-view->_pz);
+        if (-1 > view->model->_pz)
+            z += -log(-view->model->_pz);
 
         if (z < 1)
             z = 1;
@@ -259,7 +283,7 @@ void CommentView::
 
     float rescale = 1.f/sqrt(z);
 
-    rescale*= scroll_scale;
+    rescale*= model->scroll_scale;
 
     proxy->setTransform(QTransform()
         .translate(pt.x(), pt.y())

@@ -1,5 +1,6 @@
 #include "commentcontroller.h"
 #include "commentview.h"
+#include "toolfactory.h"
 
 // Sonic AWE
 #include "renderview.h"
@@ -30,22 +31,20 @@ CommentController::
 }
 
 
-CommentView* CommentController::
-        createNewComment()
+void CommentController::
+        createView( ToolModel* model, Sawe::Project* p, RenderView* render_view )
 {
-    // Create a new comment in the middle of the viewable area
-    CommentView* comment = new CommentView(); // view_
-    /*comment->qx = view_->_qx;
-    comment->qy = view_->_qy;
-    comment->qz = view_->_qz;    
-*/
-    connect(view_, SIGNAL(painting()), comment, SLOT(updatePosition()));
+	CommentModel* cmodel = dynamic_cast<CommentModel*>(model);
+    if (0 == cmodel)
+        return;
 
-    comment->pos.time = -FLT_MAX;//view_->_qx;
-    comment->pos.scale = view_->_qz;
-    comment->view = view_;
+    // Create a new comment in the middle of the viewable area
+    CommentView* comment = new CommentView(cmodel);
+
+    connect(render_view, SIGNAL(painting()), comment, SLOT(updatePosition()));
+
+    comment->view = render_view;
     comment->move(0, 0);
-    //comment->resize( comment->sizeHint() );
 
     QGraphicsProxyWidget* proxy = new QGraphicsProxyWidget(0, Qt::Window);
     comment->proxy = proxy;
@@ -56,11 +55,24 @@ CommentView* CommentController::
     // ZValue is set in commentview
     proxy->setVisible(true);
 
-    view_->addItem( proxy );
+    render_view->addItem( proxy );
 
     comments_.append( comment );
+}
 
-    return comment;
+
+CommentView* CommentController::
+        createNewComment()
+{
+    CommentModel* model = new CommentModel();
+    ToolModelP modelp(model);
+    view_->model->project()->tools().toolModels.insert( modelp );
+
+	model->pos.time = -FLT_MAX;//view_->model->_qx;
+    model->pos.scale = view_->model->_qz;
+
+    createView(modelp.get(), view_->model->project(), view_ );
+    return comments_.back();
 }
 
 
@@ -125,7 +137,7 @@ void CommentController::
     float h = height();
     c.setY( h - 1 - c.y() );
 
-    comment_->pos = view_->getHeightmapPos( c );
+    comment_->model->pos = view_->getHeightmapPos( c );
 
     view_->userinput_update();
 

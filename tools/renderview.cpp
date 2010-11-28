@@ -33,10 +33,6 @@ RenderView::
         RenderView(RenderModel* model)
             :
             //QGLWidget(QGLFormat(QGL::SampleBuffers)),
-            _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
-            _px(0), _py(0), _pz(-10),
-            _rx(91), _ry(180), _rz(0),
-            xscale(1),
             orthoview(1),
             model(model),
             _work_timer( new TaskTimer("Benchmarking first work")),
@@ -45,10 +41,10 @@ RenderView::
     float l = model->project()->worker.source()->length();
     _prevLimit = l;
 
-    // TODO remove or explain purpose
-    if (_rx<0) _rx=0;
-    if (_rx>90) { _rx=90; orthoview=1; }
-    if (0<orthoview && _rx<90) { _rx=90; orthoview=0; }
+	// Validate rotation and set orthoview accordingly
+    if (model->_rx<0) model->_rx=0;
+    if (model->_rx>90) { model->_rx=90; orthoview=1; }
+    if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
 }
 
 
@@ -256,7 +252,7 @@ Heightmap::Position RenderView::
         q.time = objX1 + s * (objX2-objX1);
         q.scale = objZ1 + s * (objZ2-objZ1);
 
-        float e = (q.time-p.time)*(q.time-p.time)*xscale*xscale + (q.scale-p.scale)*(q.scale-p.scale);
+        float e = (q.time-p.time)*(q.time-p.time)*model->xscale*model->xscale + (q.scale-p.scale)*(q.scale-p.scale);
         p = q;
         if (e < 1e-5 )
             break;
@@ -306,7 +302,7 @@ Heightmap::Position RenderView::
         float L = sqrt((objX1-objX2)*(objX1-objX2)
                        +(objY1-objY2)*(objY1-objY2)
                        +(objZ1-objZ2)*(objZ1-objZ2));
-        if (objY1-objY2 < xscale*sin(minAngle *(M_PI/180)) * L )
+        if (objY1-objY2 < model->xscale*sin(minAngle *(M_PI/180)) * L )
             *success=false;
     }
 
@@ -410,16 +406,16 @@ void RenderView::
 void RenderView::
         setPosition( float time, float f )
 {
-    _qx = time;
-    _qz = f;
+    model->_qx = time;
+    model->_qz = f;
 
     // todo find length by other means
     float l = model->project()->worker.source()->length();
 
-    if (_qx<0) _qx=0;
-    if (_qz<0) _qz=0;
-    if (_qz>1) _qz=1;
-    if (_qx>l) _qx=l;
+    if (model->_qx<0) model->_qx=0;
+    if (model->_qz<0) model->_qz=0;
+    if (model->_qz>1) model->_qz=1;
+    if (model->_qx>l) model->_qx=l;
 
     userinput_update();
 }
@@ -503,14 +499,14 @@ void RenderView::
     float fs = model->project()->worker.source()->sample_rate();
     {   double limit = std::max(0.f, length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
 
-        if (_qx>=_prevLimit) {
+        if (model->_qx>=_prevLimit) {
             // Snap just before end so that project->worker.center starts working on
             // data that has been fetched. If center=length worker will start
             // at the very end and have to assume that the signal is abruptly
             // set to zero after the end. This abrupt change creates a false
             // dirac peek in the transform (false because it will soon be
             // invalid by newly recorded data).
-            _qx = std::max(_qx, limit);
+            model->_qx = std::max(model->_qx, limit);
             followingRecordMarker = true;
         }
         _prevLimit = limit;
@@ -526,7 +522,7 @@ void RenderView::
     { // Render
         model->collection->next_frame(); // Discard needed blocks before this row
 
-        model->renderer->camera = GLvector(_qx, _qy, _qz);
+        model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
         model->renderer->draw( 1 - orthoview ); // 0.6 ms
 
         last_ysize = model->renderer->last_ysize;
@@ -559,7 +555,7 @@ void RenderView::
 
             //project->worker.todo_list().print("Displaywidget - PostSink");
         } else {
-            model->project()->worker.center = _qx;
+            model->project()->worker.center = model->_qx;
             model->project()->worker.todo_list(
                     model->collectionCallback->sink()->fetch_invalid_samples());
             //project->worker.todo_list().print("Displaywidget - Collection");
@@ -663,15 +659,15 @@ void RenderView::
         setupCamera()
 {
     glLoadIdentity();
-    glTranslatef( _px, _py, _pz );
+    glTranslatef( model->_px, model->_py, model->_pz );
 
-    glRotatef( _rx, 1, 0, 0 );
-    glRotatef( fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
-    glRotatef( _rz, 0, 0, 1 );
+    glRotatef( model->_rx, 1, 0, 0 );
+    glRotatef( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
+    glRotatef( model->_rz, 0, 0, 1 );
 
-    glScalef(-xscale, 1, 5);
+    glScalef(-model->xscale, 1, 5);
 
-    glTranslatef( -_qx, -_qy, -_qz );
+    glTranslatef( -model->_qx, -model->_qy, -model->_qz );
 
     orthoview.TimeStep(.08);
 }

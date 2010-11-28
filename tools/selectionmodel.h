@@ -14,6 +14,7 @@ namespace Sawe {
 
 namespace Tools
 {
+    // TODO SelectionModel skall bara beskriva en selection
     class SelectionModel
     {
     public:

@@ -172,10 +172,12 @@ LIBS += \
 	-l../../winlib/hdf5lib/dll/hdf5_hldll \
 	-L../../winlib/boostlib
 win32:QMAKE_LFLAGS_RELEASE += \
-	../../winlib/portaudio/portaudio_x86_mt.lib \
+	../../winlib/portaudio/portaudio.lib \
+#	../../winlib/portaudio/portaudio_x86_mt.lib \
 	../../winlib/portaudio/portaudiocpp_mt.lib
 win32:QMAKE_LFLAGS_DEBUG += \
-	../../winlib/portaudio/portaudio_x86_mt_gd.lib \
+	../../winlib/portaudio/portaudio.lib \
+#	../../winlib/portaudio/portaudio_x86_mt_gd.lib \
 	../../winlib/portaudio/portaudiocpp_mt_gd.lib
 }
 

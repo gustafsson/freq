@@ -2,6 +2,7 @@
 #define COMMENTCONTROLLER_H
 
 #include <QWidget>
+#include "toolmodel.h"
 
 namespace Tools
 {
@@ -9,12 +10,14 @@ namespace Tools
     class CommentView;
 
 
-class CommentController: public QWidget
+class CommentController: public ToolController
 {
     Q_OBJECT
 public:
     CommentController(RenderView* view);
     ~CommentController();
+
+    virtual void createView( ToolModel* model, Sawe::Project* p, RenderView* r );
 
 signals:
     void enabledChanged(bool active);

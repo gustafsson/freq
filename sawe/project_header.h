@@ -26,3 +26,8 @@
 #include <QDockWidget>
 #include <QWheelEvent>
 #include <QHBoxLayout>
+
+#include <boost/archive/binary_iarchive.hpp> 
+#include <boost/archive/binary_oarchive.hpp> 
+#include <boost/serialization/base_object.hpp> 
+

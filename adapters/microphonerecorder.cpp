@@ -9,6 +9,9 @@
 
 using namespace std;
 
+#include <boost/serialization/export.hpp>
+BOOST_CLASS_EXPORT(Adapters::MicrophoneRecorder);
+
 namespace Adapters {
 
 /**
@@ -79,6 +82,7 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
 
 MicrophoneRecorder::~MicrophoneRecorder()
 {
+	TaskTimer tt("%s", __FUNCTION__);
     if (_stream_record) {
         _stream_record->isStopped()? void(): _stream_record->stop();
         _stream_record->isStopped()? void(): _stream_record->abort();
@@ -86,7 +90,7 @@ MicrophoneRecorder::~MicrophoneRecorder()
     }
 
     if (0<_data.length()) {
-        TaskTimer tt(TaskTimer::LogVerbose, "Releasing recorded data");
+        TaskTimer tt("Releasing recorded data");
         _data.reset();
     }
 }

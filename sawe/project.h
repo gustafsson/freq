@@ -2,6 +2,7 @@
 #define SAWEPROJECT_H
 
 #include "signal/worker.h"
+#include "tools/toolfactory.h"
 
 #include <boost/shared_ptr.hpp>
 #include <QGLWidget>
@@ -11,13 +12,15 @@
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/vector.hpp> 
+#include <boost/serialization/binary_object.hpp> 
 
 namespace Sawe {
     class Project;
 }
-namespace Tools {
+/*namespace Tools {
     class ToolFactory;
-}
+}*/
 
 namespace Ui {
     class SaweMainWindow;
@@ -117,24 +120,49 @@ private:
     static boost::shared_ptr<Project> openProject(std::string project_file);
     static boost::shared_ptr<Project> openAudio(std::string audio_file);
 
-
     friend class boost::serialization::access;
-    template<class archive> void serialize(archive& ar, const unsigned int version) {
+    template<class Archive> void save(Archive& ar, const unsigned int version) const {
         Signal::pOperation head = head_source();
-        QByteArray mainwindowState;
+        TaskTimer("*head is: %s", vartype(*head).c_str()).suppressTiming();
+        ar & BOOST_SERIALIZATION_NVP(head);
 
-        mainwindowState = mainWindow()->saveState( version );
-        std::string statev( mainwindowState.data(), mainwindowState.size() );
-        using boost::serialization::make_nvp;
+        QByteArray mainwindowState = _mainWindow->saveState(/* version */);
+		save_bytearray( ar, mainwindowState );
 
-        ar & make_nvp("Headsource", head);
-        ar & make_nvp("Windowstate", statev);
-
-        mainwindowState = QByteArray( &statev[0], statev.size() );
-
-        mainWindow()->restoreState( mainwindowState, version );
-        head_source(head);
+		_tools->save_tools( ar, version );
     }
+    template<class Archive> void load(Archive& ar, const unsigned int version) {
+		Signal::pOperation head;
+        ar & BOOST_SERIALIZATION_NVP(head);
+        head_source(head);
+
+		createMainWindow();
+
+        QByteArray mainwindowState;
+        load_bytearray( ar, mainwindowState );
+        mainWindow()->restoreState( mainwindowState/*, version */);
+
+		_tools->load_tools( ar, version );
+    }
+
+    template<class Archive> static void save_bytearray(Archive& ar, QByteArray& c)
+    {
+		int DataSize = c.size();
+		ar & BOOST_SERIALIZATION_NVP(DataSize);
+
+		boost::serialization::binary_object Data( c.data(), DataSize );
+        ar & BOOST_SERIALIZATION_NVP(Data);
+    }
+    template<class Archive> static void load_bytearray(Archive& ar, QByteArray& c)
+    {
+		int DataSize = 0;
+		ar & BOOST_SERIALIZATION_NVP(DataSize);
+		c.resize(DataSize);
+
+		boost::serialization::binary_object Data( c.data(), DataSize );
+        ar & BOOST_SERIALIZATION_NVP(Data);
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 typedef boost::shared_ptr<Project> pProject;
 

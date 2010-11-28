@@ -1,5 +1,7 @@
 #include "signal/operation.h"
 
+//#include <boost/serialization/export.hpp>
+//BOOST_CLASS_EXPORT(Signal::Operation);
 
 namespace Signal {
 

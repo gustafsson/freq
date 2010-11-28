@@ -8,6 +8,10 @@
 #include <vector_types.h>
 #include "heightmap/collection.h"
 
+#include <boost/serialization/version.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+
 namespace Tools {
 namespace Support {
 
@@ -35,9 +39,23 @@ public:
     virtual Signal::Intervals affected_samples();
 
     virtual void operator()( Tfr::Chunk& );
+
+private:
+    friend class boost::serialization::access;
+    template<class archive> void save(archive& ar, const unsigned int /*version*/) const {
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+    }
+    template<class archive> void load(archive& ar, const unsigned int /*version*/) {
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
+
 
 } // namespace Support
 } // namespace Tools
+
+//#include <boost/serialization/export.hpp>
+//BOOST_CLASS_EXPORT(Tools::Support::MultiplyBrush)
 
 #endif // BRUSHFILTER_H

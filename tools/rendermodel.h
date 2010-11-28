@@ -21,6 +21,12 @@ namespace Tools
 
         Sawe::Project* project() { return _project; }
 
+        // TODO remove position and use renderer->camera instead
+        double _qx, _qy, _qz; // position
+        float _px, _py, _pz, // TODO beautify
+            _rx, _ry, _rz;
+        float xscale;
+
     private:
         friend class RenderView; // todo remove
         friend class RenderController; // todo remove

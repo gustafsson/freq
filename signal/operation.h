@@ -6,6 +6,9 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 
+// For debug info while serializing
+#include <demangle.h>
+
 namespace Signal {
 
 typedef boost::shared_ptr<class Operation> pOperation;
@@ -155,8 +158,10 @@ private:
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {
-        using boost::serialization::make_nvp;
-        ar & make_nvp("Source", _source);
+        if (_source)
+            TaskTimer("*source is: %s", vartype(*_source).c_str()).suppressTiming();
+
+        ar & BOOST_SERIALIZATION_NVP(_source);
     }
 };
 
