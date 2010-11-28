@@ -258,9 +258,12 @@ audiofile              source
     void        computeSlope( pBlock block, unsigned cuda_stream );
 
     Signal::Worker*     worker;
+
+	const ThreadChecker& constructor_thread() const { return _constructor_thread; }
+
 private:
     // TODO remove friends
-    friend class BlockFilter;
+    //friend class BlockFilter;
     friend class CwtToBlock;
     friend class StftToBlock;
 

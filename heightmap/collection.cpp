@@ -43,6 +43,7 @@ Collection::
     _frame_counter(0),
     _postsink( new PostSink )
 {
+	BOOST_ASSERT( worker->source() );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
     OSVAL( tt.getStream(), _postsink->fetch_invalid_samples() ); // todo remove

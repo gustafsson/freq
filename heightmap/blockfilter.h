@@ -9,7 +9,7 @@
 namespace Heightmap
 {
 
-class BlockFilter: public virtual Tfr::Filter
+class BlockFilter
 {
 public:
     BlockFilter( Collection* collection );
@@ -20,12 +20,6 @@ public:
     /// @overload Signal::Operation::affected_samples()
     virtual Signal::Intervals affected_samples();
 
-    /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
-    virtual Signal::Operation* affecting_source( const Signal::Interval& );
-
-    /// @overload Signal::Operation::fetch_invalid_samples()
-    virtual Signal::Intervals fetch_invalid_samples();
-
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
@@ -34,8 +28,27 @@ protected:
     Collection* _collection;
 };
 
+template<typename FilterKind>
+class BlockFilterImpl: public FilterKind, public BlockFilter
+{
+public:
+	BlockFilterImpl( Collection* collection ):BlockFilter(collection) {}
 
-class CwtToBlock: public Tfr::CwtFilter, public BlockFilter
+    /// @overload Signal::Operation::fetch_invalid_samples()
+	Signal::Intervals fetch_invalid_samples()
+	{
+		_invalid_samples = _collection->invalid_samples();
+
+		return Tfr::Filter::fetch_invalid_samples();
+	}
+
+	virtual void operator()( Tfr::Chunk& chunk ) { BlockFilter::operator()(chunk); }
+
+	/// @overload Signal::Operation::affecting_source(const Signal::Interval&)
+	Signal::Operation* affecting_source( const Signal::Interval& ) { return this; }
+};
+
+class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:
     CwtToBlock( Collection* collection );
@@ -55,10 +68,10 @@ public:
 };
 
 
-class StftToBlock: public Tfr::StftFilter, public BlockFilter
+class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
-    StftToBlock( Collection* collection ) :  BlockFilter(collection) {}
+    StftToBlock( Collection* collection ) :  BlockFilterImpl(collection) { _try_shortcuts = false; }
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
     virtual void applyFilter( Tfr::pChunk pchunk );

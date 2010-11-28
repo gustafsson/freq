@@ -4,6 +4,8 @@
 #include "heightmap/position.h"
 #include "signal/intervals.h"
 
+#include <tvector.h>
+
 namespace Heightmap {
 
 class Collection;
