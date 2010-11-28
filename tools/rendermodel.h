@@ -15,7 +15,10 @@ namespace Tools
     public:
         RenderModel(Sawe::Project* p);
 
-        boost::scoped_ptr<Heightmap::Collection> collection;
+        std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
+        // TODO remove
+        boost::shared_ptr<Heightmap::Collection> collection;
+
         Signal::pWorkerCallback collectionCallback;
         Heightmap::pRenderer renderer;
 

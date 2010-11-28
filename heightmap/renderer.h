@@ -32,13 +32,14 @@ class Renderer
 public:
     enum ColorMode {
         ColorMode_Rainbow = 0,
-        ColorMode_Grayscale = 1
+        ColorMode_Grayscale = 1,
+        ColorMode_FixedColor = 2
     };
 
     Renderer( Collection* collection );
 
     Reference findRefAtCurrentZoomLevel( float t, float s );
-    Collection* collection() { return _collection; }
+    Collection* collection;
 
     void draw( float scaley );
     void drawAxes( float T );
@@ -50,6 +51,7 @@ public:
 
     bool draw_height_lines;
     ColorMode color_mode;
+    float4 fixed_color;
     float y_scale;
     float last_ysize;
 private:
@@ -61,7 +63,6 @@ private:
     };
 
     std::vector<GLvector> clippedFrustum;
-    Collection* _collection;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;

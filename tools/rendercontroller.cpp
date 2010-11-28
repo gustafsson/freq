@@ -17,6 +17,8 @@
 #include "tfr/cwt.h"
 #include "graphicsview.h"
 
+#include "signal/buffersource.h"
+
 // gpumisc
 #include <CudaException.h>
 #include <cuda.h>
@@ -37,6 +39,33 @@ using namespace Ui;
 namespace Tools
 {
 
+class ForAllChannelsOperation: public Signal::Operation
+{
+public:
+    ForAllChannelsOperation( Signal::pOperation o )
+    :   Signal::Operation(o)
+    {}
+
+
+    virtual Signal::pBuffer read( const Signal::Interval& I )
+    {
+        Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(root());
+        if (0==bs)
+            return Signal::Operation::read( I );
+
+        unsigned N = bs->num_channels();
+        Signal::pBuffer r;
+        for (unsigned i=0; i<N; ++i)
+        {
+            bs->channel = i;
+            r = Signal::Operation::read( I );
+        }
+        return r;
+    }
+
+    virtual void source(Signal::pOperation v) { _source->source(v); }
+};
+
 
 RenderController::
         RenderController( RenderView *view )
@@ -54,6 +83,8 @@ RenderController::
     view->setPosition( std::min(l, 10.f)*0.5f, 0.5f );
 
     receiveSetTimeFrequencyResolution( 50 );
+    receiveSetTransform_Cwt();
+    receiveSetColorscaleColors();
 }
 
 
@@ -77,6 +108,14 @@ void RenderController::
         receiveSetGrayscaleColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveSetColorscaleColors()
+{
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_FixedColor;
     view->userinput_update();
 }
 
@@ -130,126 +169,96 @@ void RenderController::
 }
 
 
-void RenderController::
-        receiveSetTransform_Cwt()
+Signal::PostSink* RenderController::
+        setBlockFilter(Signal::Operation* blockfilter)
 {
     Signal::pOperation s = model()->collection->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
-    if (!ps)
-        return;
+    BOOST_ASSERT( ps );
 
     std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
+    Signal::pOperation blockop( blockfilter );
+    Signal::pOperation channelop( new ForAllChannelsOperation(blockop));
+    v.push_back( channelop );
     ps->sinks(v);
+
+    foreach( const boost::shared_ptr<Heightmap::Collection>& c, model()->collections )
+    {
+        c->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    }
+
+    Signal::Intervals ivs = model()->collectionCallback->sink()->fetch_invalid_samples();
+    Signal::Intervals ivs2 = ps->fetch_invalid_samples();
+	TaskTimer("ivs: %s", ivs.toString().c_str()).suppressTiming();
+	TaskTimer("ivs2: %s", ivs.toString().c_str()).suppressTiming();
+
+    view->userinput_update();
+
+    return ps;
+}
+
+
+void RenderController::
+        receiveSetTransform_Cwt()
+{
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
-    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
-    view->userinput_update();
+    setBlockFilter( cwtblock );
 }
 
 
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(model()->collections);
 
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-
-    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
-    view->userinput_update();
+    setBlockFilter( stftblock );
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
-    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
-    view->userinput_update();
+    setBlockFilter( cwtblock );
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
-    ps->filter( Signal::pOperation(new Filters::Reassign()));
+    Signal::PostSink* ps = setBlockFilter( cwtblock );
 
-    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
-    view->userinput_update();
+    ps->filter( Signal::pOperation(new Filters::Reassign()));
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
-    ps->filter( Signal::pOperation(new Filters::Ridge()));
+    Signal::PostSink* ps = setBlockFilter( cwtblock );
 
-    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
-    view->userinput_update();
+    ps->filter( Signal::pOperation(new Filters::Ridge()));
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
-    model()->collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
-    view->userinput_update();
+    setBlockFilter( cwtblock );
 }
 
 
@@ -292,10 +301,12 @@ void RenderController::
         color->decheckable( false );
         color->addActionItem( ui->actionSet_rainbow_colors );
         color->addActionItem( ui->actionSet_grayscale );
+        color->addActionItem( ui->actionSet_colorscale );
         toolbar_render->addWidget( color );
 
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
+        connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
     }
 
 

@@ -25,6 +25,7 @@ namespace Tools
         // ComboBoxAction color
         void receiveSetRainbowColors();
         void receiveSetGrayscaleColors();
+        void receiveSetColorscaleColors();
 
         // Toggle Buttons
         void receiveToogleHeightlines(bool);
@@ -50,6 +51,8 @@ namespace Tools
         void frameTick();
 
     private:
+        Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
+
         RenderModel *model();
         RenderView *view;
 

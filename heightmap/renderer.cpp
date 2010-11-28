@@ -39,8 +39,9 @@ Renderer::Renderer( Collection* collection )
     camera(0,0,0),
     draw_height_lines(false),
     color_mode( ColorMode_Rainbow ),
+    fixed_color( make_float4(1,0,0,1) ),
     y_scale( 1 ),
-    _collection(collection),
+    collection(collection),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -278,8 +279,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    //setSize( _collection->samples_per_block(), _collection->scales_per_block() );
-    setSize( _collection->samples_per_block()/1, _collection->scales_per_block() );
+    //setSize( collection->samples_per_block(), collection->scales_per_block() );
+    setSize( collection->samples_per_block()/1, collection->scales_per_block() );
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
@@ -334,8 +335,8 @@ void Renderer::createColorTexture(unsigned N) {
 Reference Renderer::
         findRefAtCurrentZoomLevel( float t, float s )
 {
-    Position max_ss = _collection->max_sample_size();
-    Reference ref = _collection->findReference(Position(0,0), max_ss);
+    Position max_ss = collection->max_sample_size();
+    Reference ref = collection->findReference(Position(0,0), max_ss);
 
     while(true)
     {
@@ -387,14 +388,14 @@ void Renderer::draw( float scaley )
         _draw_flat = false;
 
     last_ysize = scaley;
-//        setSize( _collection->samples_per_block(), _collection->scales_per_block() );
+//        setSize( collection->samples_per_block(), collection->scales_per_block() );
 
     glScalef(1, scaley, 1); // global effect on all tools
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
-    Position mss = _collection->max_sample_size();
-    Reference ref = _collection->findReference(Position(0,0), mss);
+    Position mss = collection->max_sample_size();
+    Reference ref = collection->findReference(Position(0,0), mss);
 
     beginVboRendering();
 
@@ -411,13 +412,13 @@ void Renderer::draw( float scaley )
 void Renderer::beginVboRendering()
 {
     GlException_CHECK_ERROR();
-    //unsigned meshW = _collection->samples_per_block();
-    //unsigned meshH = _collection->scales_per_block();
+    //unsigned meshW = collection->samples_per_block();
+    //unsigned meshH = collection->scales_per_block();
 
     glUseProgram(_shader_prog);
 
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniHeightLines, uniYScale;
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniHeightLines, uniYScale;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -430,6 +431,9 @@ void Renderer::beginVboRendering()
 
         uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
         glUniform1i(uniColorMode, (int)color_mode);
+
+        uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
+        glUniform4f(uniFixedColor, fixed_color.x, fixed_color.y, fixed_color.z, fixed_color.w);
 
         uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
         glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
@@ -476,7 +480,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
     glTranslatef(a.time, 0, a.scale);
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
-    pBlock block = _collection->getBlock( ref );
+    pBlock block = collection->getBlock( ref );
     if (0!=block.get()) {
         if (0 /* direct rendering */ )
             block->glblock->draw_directMode();
@@ -534,11 +538,11 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*_collection->scales_per_block());
+        needBetterF = scalePixels / (_redundancy*collection->scales_per_block());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*_collection->samples_per_block());
+        needBetterT = timePixels / (_redundancy*collection->samples_per_block());
 
     if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() )
         return Lod_NeedBetterF;
@@ -892,7 +896,7 @@ void Renderer::drawAxes( float T )
     // 2 clip entire sound to frustum
     clippedFrustum.clear();
 
-    {   //float T = _collection->worker->source()->length();
+    {   //float T = collection->worker->source()->length();
         GLvector closest_i;
         GLvector corner[4]=
         {
@@ -956,7 +960,7 @@ void Renderer::drawAxes( float T )
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 
-    float fs = _collection->worker->source()->sample_rate();
+    float fs = collection->worker->source()->sample_rate();
     float min_hz = Tfr::Cwt::Singleton().get_min_hz( fs );
     float max_hz = Tfr::Cwt::Singleton().get_max_hz( fs );
     float steplogsize = log(max_hz) - log(min_hz);

@@ -32,26 +32,48 @@ template<typename FilterKind>
 class BlockFilterImpl: public FilterKind, public BlockFilter
 {
 public:
-	BlockFilterImpl( Collection* collection ):BlockFilter(collection) {}
+    BlockFilterImpl( Collection* collection ) : BlockFilter(collection)  { }
+    BlockFilterImpl( std::vector<boost::shared_ptr<Collection> > collections )
+        :
+        BlockFilter(collections[0].get()),
+        _collections(collections)
+    {
+    }
 
     /// @overload Signal::Operation::fetch_invalid_samples()
-	Signal::Intervals fetch_invalid_samples()
-	{
-		_invalid_samples = _collection->invalid_samples();
+    Signal::Intervals fetch_invalid_samples()
+    {
+        _invalid_samples = _collection->invalid_samples();
 
-		return Tfr::Filter::fetch_invalid_samples();
-	}
+        return Tfr::Filter::fetch_invalid_samples();
+    }
 
-	virtual void operator()( Tfr::Chunk& chunk ) { BlockFilter::operator()(chunk); }
 
-	/// @overload Signal::Operation::affecting_source(const Signal::Interval&)
-	Signal::Operation* affecting_source( const Signal::Interval& ) { return this; }
+    virtual void operator()( Tfr::Chunk& chunk )
+    {
+        if (_collections.size())
+        {
+            Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(root());
+            BOOST_ASSERT( bs );
+
+            _collection = _collections[bs->channel].get();
+        }
+
+        BlockFilter::operator()(chunk);
+    }
+
+    /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
+    Signal::Operation* affecting_source( const Signal::Interval& ) { return this; }
+
+protected:
+    std::vector<boost::shared_ptr<Collection> > _collections;
 };
 
 class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:
     CwtToBlock( Collection* collection );
+    CwtToBlock( std::vector<boost::shared_ptr<Collection> > collections );
 
     /**
       Tells the "chunk-to-block" what information to extract from the complex
@@ -72,6 +94,7 @@ class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
     StftToBlock( Collection* collection ) :  BlockFilterImpl(collection) { _try_shortcuts = false; }
+    StftToBlock( std::vector<boost::shared_ptr<Collection> > collections ) :  BlockFilterImpl(collections) { _try_shortcuts = false; }
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
     virtual void applyFilter( Tfr::pChunk pchunk );

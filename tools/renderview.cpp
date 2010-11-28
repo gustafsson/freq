@@ -41,10 +41,10 @@ RenderView::
     float l = model->project()->worker.source()->length();
     _prevLimit = l;
 
-	// Validate rotation and set orthoview accordingly
+    // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
-    if (model->_rx>90) { model->_rx=90; orthoview=1; }
-    if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
+    if (model->_rx>=90) { model->_rx=90; orthoview.reset(1); } else orthoview.reset(0);
+    //if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
 }
 
 
@@ -172,6 +172,11 @@ void RenderView::
 float RenderView::
         getHeightmapValue( Heightmap::Position pos )
 {
+#ifdef WIN32
+    // getHeightmapValue is tremendously slow on windos for some reason
+    return 0;
+#endif
+
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1)
         return 0;
 
@@ -514,21 +519,48 @@ void RenderView::
         emit prePaint();
 
         setupCamera();
-    }
+
+        glGetDoublev(GL_MODELVIEW_MATRIX, m);
+        glGetDoublev(GL_PROJECTION_MATRIX, proj);
+        glGetIntegerv(GL_VIEWPORT, vp);
+	}
 
     // TODO move to rendercontroller
     bool wasWorking = !model->project()->worker.todo_list().empty();
 
     { // Render
-        model->collection->next_frame(); // Discard needed blocks before this row
+        unsigned N = model->collections.size();
+        std::vector<float4> channel_colors(N);
+        float R = 0, G = 0, B = 0;
+        for (unsigned i=0; i<N; ++i)
+        {
+            QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
+            channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+            R += channel_colors[i].x;
+            G += channel_colors[i].y;
+            B += channel_colors[i].z;
+        }
+        for (unsigned i=0; i<N; ++i)
+        {
+            channel_colors[i] = channel_colors[i] * (1/R);
+        }
 
-        model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
-        model->renderer->draw( 1 - orthoview ); // 0.6 ms
+        unsigned i=0;
+        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+        {
+            collection->next_frame(); // Discard needed blocks before this row
+
+            model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
+            model->renderer->collection = collection.get();
+            model->renderer->fixed_color = channel_colors[i];
+            glPushAttribContext ac; // glBlendFunc
+            glClear( GL_DEPTH_BUFFER_BIT );
+			glBlendFunc( GL_DST_COLOR, GL_ZERO );
+            model->renderer->draw( 1 - orthoview ); // 0.6 ms
+            ++i;
+        }
 
         last_ysize = model->renderer->last_ysize;
-        glGetDoublev(GL_MODELVIEW_MATRIX, m);
-        glGetDoublev(GL_PROJECTION_MATRIX, proj);
-        glGetIntegerv(GL_VIEWPORT, vp);
 
         emit painting();
 

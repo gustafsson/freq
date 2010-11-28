@@ -148,8 +148,8 @@ void Audiofile::
     source.read(completeFile.getCpuMemory(), source.channels()*source.frames()); // yes float
     float* data = completeFile.getCpuMemory();
 
-    _waveform.reset( new Signal::Buffer(0, source.frames(), source.samplerate(), source.channels()));
-    float* target = _waveform->waveform_data()->getCpuMemory();
+	Signal::pBuffer waveform( new Signal::Buffer(0, source.frames(), source.samplerate(), source.channels()));
+    float* target = waveform->waveform_data()->getCpuMemory();
 
     // Compute transpose of signal
     for (unsigned i=0; i<source.frames(); i++) {
@@ -157,6 +157,8 @@ void Audiofile::
             target[i + c*source.frames()] = data[i*source.channels() + c];
         }
     }
+
+	setBuffer( waveform );
 
     //_waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
     //Statistics<float> waveform( _waveform->waveform_data.get() );

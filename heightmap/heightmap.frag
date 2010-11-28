@@ -14,6 +14,7 @@ uniform sampler2D tex_color;
 uniform int colorMode;
 uniform int heightLines;
 uniform float yScale;
+uniform vec4 fixedColor;
 
 vec4 getWavelengthColor( float wavelengthScalar ) {
     return texture2D(tex_color, wavelengthScalar);
@@ -106,6 +107,10 @@ void main()
         break;
         case 1: f = 1.0-f;
                 curveColor = vec4( f, f, f, 0 );
+                x = 1.0-f;
+        break;
+        case 2: curveColor = vec4( 1.0 - fixedColor.x*f, 1.0 - fixedColor.y*f, 1.0 - fixedColor.z*f, 0 );
+                f = 1.0-f;
                 x = 1.0-f;
         break;
     }

@@ -89,6 +89,16 @@ CwtToBlock::
             BlockFilterImpl(collection),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {
+         _try_shortcuts = false;
+}
+
+
+CwtToBlock::
+        CwtToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+            :
+            BlockFilterImpl(collections),
+            complex_info(ComplexInfo_Amplitude_Non_Weighted)
+{
 	 _try_shortcuts = false;
 }
 
