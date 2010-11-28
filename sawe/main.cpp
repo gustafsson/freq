@@ -290,11 +290,38 @@ void validate_arguments()
 #include <Statistics.h>
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <fstream>
+#include <boost/algorithm/string.hpp>
 
 using namespace Signal;
 
 int main(int argc, char *argv[])
 {
+	if (0) try {
+		{
+			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));
+
+			std::ofstream ofs("tstfil.xml");
+			boost::archive::xml_oarchive xml(ofs);
+			xml & boost::serialization::make_nvp("hej2", ljud );
+		}
+		{
+			std::ifstream ifs("tstfil.xml");
+			boost::archive::xml_iarchive xml(ifs);
+
+			Signal::pOperation ljud;
+			xml & boost::serialization::make_nvp("hej2", ljud );
+			cout << "filnamn: " << ((Adapters::Audiofile*)ljud.get())->filename() << endl;
+		}
+		return 0;
+	} catch (std::exception const& x)
+	{
+		cout << vartype(x) << ": " << x.what() << endl;
+		return 0;
+	}
+
     if(0) {
         TaskTimer tt("Cwt inverse");
         Adapters::Audiofile file("chirp.wav");
@@ -371,16 +398,6 @@ int main(int argc, char *argv[])
     if (!check_cuda( false ))
         return -1;
 
-    CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-
-    {
-        ResampleTest resampletest;
-
-        //resampletest.test4();
-
-        //return 0;
-    }
-
     // skip application filename
     argv++;
     argc--;
@@ -406,6 +423,14 @@ int main(int argc, char *argv[])
 
     try {
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+
+        {
+            ResampleTest resampletest;
+
+            //resampletest.test4();
+
+            //return 0;
+        }
 
         { // TODO remove?
             TaskTimer tt("Building performance statistics for %s", CudaProperties::getCudaDeviceProp().name);
@@ -495,8 +520,11 @@ int main(int argc, char *argv[])
         // cuda context doesn't think it is still valid.
         // TODO 0 != QGLContext::currentContext() when exiting by an exception
         // that stops the mainloop.
-        BOOST_ASSERT( 0 == QGLContext::currentContext() );
-        BOOST_ASSERT( CUDA_ERROR_INVALID_CONTEXT == cuCtxGetDevice( 0 ));
+        if( 0 != QGLContext::currentContext() )
+			TaskTimer("Error: OpenGL context was not detroyed prior to application exit").suppressTiming();
+
+		if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( 0 ))
+			TaskTimer("Error: CUDA context was not detroyed prior to application exit").suppressTiming();
 
         return r;
     } catch (const std::exception &x) {

@@ -8,8 +8,8 @@
 
 using namespace Tfr;
 
-#define TIME_FILTER
-//#define TIME_FILTER if(0)
+//#define TIME_FILTER
+#define TIME_FILTER if(0)
 
 namespace Tools { namespace Selections { namespace Support {
 
@@ -24,18 +24,32 @@ void SplineFilter::operator()( Chunk& chunk)
         chunk.startTime(), chunk.min_hz, chunk.endTime(), chunk.max_hz);
 
     unsigned N = v.size();
-    GpuCpuData<float2> pts(0, make_uint3( N, 1, 1 ) );
-    float2 *p = pts.getCpuMemory();
+
+	std::vector<float2> p(N);
+
+	unsigned j=0;
+	float t1 = chunk.startTime(), t2 = chunk.endTime();
 
     for (unsigned i=0; i<N; ++i)
     {
-        p[i] = make_float2(
-                v[i].t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-                chunk.freqAxis().getFrequencyScalar( v[i].f ));
+		unsigned ni = (i+1)%N;
+		if ((v[i].t < t1 && v[ni].t < t1) ||
+			(v[i].t > t2 && v[ni].t > t2))
+		{
+			continue;
+		}
+
+        p[j] = make_float2(
+				v[i].t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
+				chunk.freqAxis().getFrequencyScalar( v[i].f ));
 
         TIME_FILTER TaskTimer("(%g %g) -> p[%u] = (%g %g)",
                   v[i].t, v[i].f, i, p[i].x, p[i].y).suppressTiming();
+
+		j++;
     }
+
+	GpuCpuData<float2> pts(&p[0], make_uint3( j, 1, 1 ), GpuCpuVoidData::CpuMemory, true );
 
     ::applyspline(
             chunk.transform_data->getCudaGlobal(),

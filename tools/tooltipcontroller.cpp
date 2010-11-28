@@ -69,7 +69,7 @@ void TooltipController::
     if (infoToolButton.isDown())
     {
         GLvector current;
-        if( infoToolButton.worldPos(x, y, current[0], current[1], r.xscale) )
+		if( infoToolButton.worldPos(x, y, current[0], current[1], r.model->xscale) )
         {
             Tfr::Cwt& c = Tfr::Cwt::Singleton();
             float FS = _model->project()->worker.source()->sample_rate();

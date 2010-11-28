@@ -29,6 +29,8 @@ public:
     Signal::PostSink* getPostSink() { return &_postsink; }
 
 private:
+    MicrophoneRecorder() {} // for deserialization
+
     Signal::SinkSource _data;
     Signal::PostSink _postsink;
 
@@ -43,7 +45,7 @@ private:
                      PaStreamCallbackFlags statusFlags);
 
     friend class boost::serialization::access;
-    template<class archive> void save(archive& ar, const unsigned int version) {
+    template<class archive> void save(archive& ar, const unsigned int version) const {
         throw std::logic_error("don't know how to save a microphonerecording");
     }
     template<class archive> void load(archive& ar, const unsigned int version) {

@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAPPOSITION_H
 #define HEIGHTMAPPOSITION_H
 
-#include <tvector.h>
+//#include <tvector.h>
 
 namespace Heightmap {
 
@@ -13,7 +13,7 @@ public:
     Position():time(0), scale(0) { }
     Position(float time, float scale):time(time), scale(scale) {}
 
-    tvector<2, float> operator()() { return tvector<2, float>(time, scale); }
+    //operator tvector<2, float>() { return tvector<2, float>(time, scale); }
 };
 
 } // Heightmap

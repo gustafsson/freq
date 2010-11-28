@@ -5,14 +5,13 @@
 #include "tools/toolfactory.h"
 #include "ui/mainwindow.h"
 
-#include <QtGui/QMessageBox>
+// Qt
 #include <QtGui/QFileDialog>
 #include <QVBoxLayout>
-#include <sys/stat.h>
+#include <QtGui/QMessageBox>
 
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
-#include <fstream>
+// Std
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -130,48 +129,19 @@ void Project::
 
 
 void Project::
-        save(std::string project_file)
+        saveAs()
 {
-    if (project_file.empty()) {
-        string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
+    string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
 
-        QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
-        if (0 == qfilemame.length()) {
-            // User pressed cancel
-            return;
-        }
-        project_file = qfilemame.toLocal8Bit().data();
+    QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
+    if (0 == qfilemame.length()) {
+        // User pressed cancel
+        return;
     }
 
-    try
-    {
-        // todo use
-        std::ofstream ofs(project_file.c_str());
-        boost::archive::xml_oarchive xml(ofs);
-        xml << boost::serialization::make_nvp("Sonicawe", this);
-    }
-    catch (const std::exception& x)
-    {
-        QMessageBox::warning( 0,
-                     QString("Can't save file"),
-                     QString::fromLocal8Bit(x.what()) );
-    }
-}
+    project_file_name = qfilemame.toLocal8Bit().data();
 
-
-pProject Project::
-        openProject(std::string project_file)
-{
-    // todo use
-    std::ifstream ifs(project_file.c_str());
-    boost::archive::xml_iarchive xml(ifs);
-
-    Project* new_project;
-    xml >> boost::serialization::make_nvp("SonicaweProject", new_project);
-
-    pProject project( new_project );
-
-    return project;
+    save();
 }
 
 

@@ -58,6 +58,9 @@ protected:
 //signals:
 //    void sendCurrentSelection(int, bool);
 //    void sendRemoveItem(int);
+private slots:
+    void saveProject();
+    void saveProjectAs();
 
 private:
     Sawe::Project* project;

@@ -10,8 +10,8 @@
 #include <CudaException.h>
 #include <demangle.h>
 
-//#define TIME_WORKER
-#define TIME_WORKER if(0)
+#define TIME_WORKER
+//#define TIME_WORKER if(0)
 
 #define TESTING_PERFORMANCE false
 
@@ -86,13 +86,15 @@ bool Worker::
         b = callCallbacks( interval );
 
         float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
-        work_time += b->length() - r;
+        work_time += b->length();
+        //work_time -= r;
 
         TIME_WORKER {
             tt->info("Worker got %s, [%g, %g) s. %g x realtime",
                 b->getInterval().toString().c_str(),
                 b->start(), b->start()+b->length(),
-                (b->length()-r)/tt->elapsedTime());
+                //(b->length()-r)/tt->elapsedTime());
+                b->length()/tt->elapsedTime());
         }
 
         CudaException_CHECK_ERROR();

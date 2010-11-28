@@ -1,11 +1,13 @@
 #ifndef TFRCWTFILTER_H
 #define TFRCWTFILTER_H
 
+#pragma once
+
 #include "filter.h"
 
 namespace Tfr {
 
-class CwtFilter : public virtual Filter
+class CwtFilter : public Filter
 {
 public:
     CwtFilter( Signal::pOperation source=Signal::pOperation(),

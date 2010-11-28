@@ -5,6 +5,7 @@
 #include <TaskTimer.h>
 #include <CudaException.h>
 
+
 //#define TIME_FILTER
 #define TIME_FILTER if(0)
 

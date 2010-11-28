@@ -25,10 +25,8 @@ namespace Heightmap
 BlockFilter::
         BlockFilter( Collection* collection )
             :
-            Filter(),
             _collection (collection)
 {
-    _try_shortcuts = false;
 }
 
 
@@ -43,7 +41,7 @@ void BlockFilter::
 
     BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
     {
-        if (_collection->_constructor_thread.isSameThread())
+        if (_collection->constructor_thread().isSameThread())
         {
             mergeChunk( block, chunk, block->glblock->height()->data );
 
@@ -77,22 +75,6 @@ Signal::Intervals BlockFilter::
 }
 
 
-Signal::Operation* BlockFilter::
-        affecting_source( const Signal::Interval& )
-{
-    return this;
-}
-
-
-Signal::Intervals BlockFilter::
-        fetch_invalid_samples()
-{
-    _invalid_samples = _collection->invalid_samples();
-
-    return Tfr::Filter::fetch_invalid_samples();
-}
-
-
 void BlockFilter::
         computeSlope( Tfr::pChunk pchunk )
 {
@@ -104,9 +86,11 @@ void BlockFilter::
 CwtToBlock::
         CwtToBlock( Collection* collection )
             :
-            BlockFilter(collection),
+            BlockFilterImpl(collection),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
-{}
+{
+	 _try_shortcuts = false;
+}
 
 
 void CwtToBlock::

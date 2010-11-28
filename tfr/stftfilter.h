@@ -5,7 +5,7 @@
 
 namespace Tfr {
 
-class StftFilter : public virtual Filter
+class StftFilter : public Filter
 {
 public:
     StftFilter( Signal::pOperation source=Signal::pOperation(),

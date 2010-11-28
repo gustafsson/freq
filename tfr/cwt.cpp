@@ -513,7 +513,7 @@ Signal::pBuffer Cwt::
                                  GpuCpuVoidData::CpuMemory, true );
         }
 
-        TaskTimer("super->getInterval() = %s", super->getInterval().toString().c_str()).suppressTiming();
+        //TaskTimer("super->getInterval() = %s", super->getInterval().toString().c_str()).suppressTiming();
         *r += *super;
     }
 

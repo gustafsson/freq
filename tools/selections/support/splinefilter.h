@@ -15,9 +15,9 @@ public:
     virtual Signal::Intervals zeroed_samples();
     virtual Signal::Intervals affected_samples();
 
-    struct SplineVertex
+	struct SplineVertex
     {
-        float t, f;
+        float t, f; // t in seconds, f in hertz (as opposed to scale in Heightmap::Position)
     };
 
     std::vector<SplineVertex> v;

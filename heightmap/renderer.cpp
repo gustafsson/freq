@@ -50,18 +50,19 @@ Renderer::Renderer( Collection* collection )
     _drawn_blocks(0)
 {
     // Using glut for drawing fonts, so glutInit must be called.
-#ifdef _WIN32
-    int c=1;
-    char* dummy="dummy\0";
-    glutInit(&c,&dummy); // Once per rendering context on Windows
-#else
     static int c=0;
     if (0==c)
     {
-        glutInit(&c,0); // Once per process on Linux and Mac
+		// run glutinit once per process
+#ifdef _WIN32
+		c = 1;
+		char* dummy="dummy\0";
+		glutInit(&c,&dummy);
+#else
+        glutInit(&c,0);
         c = 1;
-    }
 #endif
+    }
 }
 
 void Renderer::setSize( unsigned w, unsigned h)

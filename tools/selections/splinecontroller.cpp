@@ -87,7 +87,7 @@ namespace Tools { namespace Selections
             Heightmap::Position click;
             if (Ui::MouseControl::planePos(
                     e->x(), height() - e->y(),
-                    click.time, click.scale, r.xscale))
+					click.time, click.scale, r.model->xscale))
             {
                 if (!model()->drawing)
                 {
@@ -123,7 +123,7 @@ namespace Tools { namespace Selections
             Heightmap::Position click;
             if (Ui::MouseControl::planePos(
                     e->x(), height() - e->y(),
-                    click.time, click.scale, r.xscale))
+					click.time, click.scale, r.model->xscale))
             {
                 if (!model()->drawing)
                     model()->v.clear();

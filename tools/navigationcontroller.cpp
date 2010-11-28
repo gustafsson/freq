@@ -124,19 +124,19 @@ void NavigationController::
     if( e->orientation() == Qt::Horizontal )
     {
         if(e->modifiers().testFlag(Qt::ShiftModifier))
-            r.xscale *= (1-ps * e->delta());
+            r.model->xscale *= (1-ps * e->delta());
         else
-            r._ry -= rs * e->delta();
+            r.model->_ry -= rs * e->delta();
     }
     else
     {
         if(e->modifiers().testFlag(Qt::ShiftModifier))
-            r.xscale *= (1-ps * e->delta());
+            r.model->xscale *= (1-ps * e->delta());
         else
-            r._pz *= (1+ps * e->delta());
+            r.model->_pz *= (1+ps * e->delta());
 
-        if (r._pz<-40) r._pz = -40;
-        if (r._pz>-.1) r._pz = -.1;
+        if (r.model->_pz<-40) r.model->_pz = -40;
+        if (r.model->_pz>-.1) r.model->_pz = -.1;
     }
 
     _view->userinput_update();
@@ -160,11 +160,11 @@ void NavigationController::
     }
     if( rotateButton.isDown() ){
         //Controlling the rotation with the left button.
-        r._ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
-        r._rx -= rs * rotateButton.deltaY( y );
-        if (r._rx<10) r._rx=10;
-        if (r._rx>90) { r._rx=90; _view->orthoview=1; }
-        if (0<_view->orthoview && r._rx<90) { r._rx=90; _view->orthoview=0; }
+        r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
+        r.model->_rx -= rs * rotateButton.deltaY( y );
+        if (r.model->_rx<10) r.model->_rx=10;
+        if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
+        if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
 
     }
 
@@ -172,19 +172,19 @@ void NavigationController::
     {
         //Controlling the position with the right button.
         GLvector last, current;
-        if( moveButton.worldPos(last[0], last[1], r.xscale) &&
-            moveButton.worldPos(x, y, current[0], current[1], r.xscale) )
+        if( moveButton.worldPos(last[0], last[1], r.model->xscale) &&
+            moveButton.worldPos(x, y, current[0], current[1], r.model->xscale) )
         {
             float l = _view->model->project()->worker.source()->length();
 
             Tools::RenderView& r = *_view;
-            r._qx -= current[0] - last[0];
-            r._qz -= current[1] - last[1];
+            r.model->_qx -= current[0] - last[0];
+            r.model->_qz -= current[1] - last[1];
 
-            if (r._qx<0) r._qx=0;
-            if (r._qz<0) r._qz=0;
-            if (r._qz>1) r._qz=1;
-            if (r._qx>l) r._qx=l;
+            if (r.model->_qx<0) r.model->_qx=0;
+            if (r.model->_qz<0) r.model->_qz=0;
+            if (r.model->_qz>1) r.model->_qz=1;
+            if (r.model->_qx>l) r.model->_qx=l;
         }
     }
 

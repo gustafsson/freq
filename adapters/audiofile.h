@@ -232,11 +232,13 @@
 
 #include "signal/buffersource.h"
 
+
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/split_member.hpp>
 
 namespace Adapters
 {
+
 class Audiofile: public Signal::BufferSource
 {
 public:
@@ -247,21 +249,24 @@ public:
     std::string filename() const { return _original_filename; }
 
 private:
+	Audiofile() {} // for deserialization
     void load(std::string filename );
 
     std::string _original_filename;
 
 
     friend class boost::serialization::access;
-    template<class archive> void save(archive& ar, const unsigned int version) {
+    template<class archive> void save(archive& ar, const unsigned int version) const {
         using boost::serialization::make_nvp;
 
-        //ar & make_nvp("Operation", boost::serialization::base_object<Operation>(*this));
-        boost::serialization::base_object<Signal::Operation>(*this); // don't write any Operation data
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & make_nvp("Filename", _original_filename);
     }
     template<class archive> void load(archive& ar, const unsigned int version) {
-        save(ar, version); // serialization structure is the same, post processing (loading) is not
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & make_nvp("Filename", _original_filename);
 
         load( _original_filename );
     }
@@ -269,5 +274,8 @@ private:
 };
 
 } // namespace Adapters
+
+#include <boost/serialization/export.hpp>
+BOOST_CLASS_EXPORT(Adapters::Audiofile)
 
 #endif // ADAPTERS_AUDIOFILE_H

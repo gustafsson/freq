@@ -9,6 +9,9 @@
 
 using namespace std;
 
+#include <boost/serialization/export.hpp>
+BOOST_CLASS_EXPORT(Adapters::MicrophoneRecorder);
+
 namespace Adapters {
 
 /**
@@ -38,17 +41,17 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
     if (0>inputDevice || inputDevice>sys.deviceCount()) {
         inputDevice = sys.defaultInputDevice().index();
     } else if ( sys.deviceByIndex(inputDevice).isOutputOnlyDevice() ) {
-        tt.getStream() << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output." << endl;
+        tt.getStream() << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output";
         inputDevice = sys.defaultInputDevice().index();
     } else {
         inputDevice = inputDevice;
     }
 
-    tt.getStream() << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input." << endl;
+    tt.getStream() << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input";
 
     portaudio::Device& device = sys.deviceByIndex(inputDevice);
 
-    tt.getStream() << "Opening recording input stream on " << device.name();
+    tt.getStream() << "Opening recording input stream on '" << device.name() << "'";
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             device,
             1, // channels
@@ -79,6 +82,7 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
 
 MicrophoneRecorder::~MicrophoneRecorder()
 {
+	TaskTimer tt("%s", __FUNCTION__);
     if (_stream_record) {
         _stream_record->isStopped()? void(): _stream_record->stop();
         _stream_record->isStopped()? void(): _stream_record->abort();
@@ -86,7 +90,7 @@ MicrophoneRecorder::~MicrophoneRecorder()
     }
 
     if (0<_data.length()) {
-        TaskTimer tt(TaskTimer::LogVerbose, "Releasing recorded data");
+        TaskTimer tt("Releasing recorded data");
         _data.reset();
     }
 }
