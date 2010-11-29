@@ -1,5 +1,0 @@
-application/sonicawe-project:
-	description=Sonic AWE project
-	default_action_type=application
-	short_list_application_ids_for_novice_user_level=sonicawe
-	category=Documents/Data

@@ -456,7 +456,7 @@ void RenderView::
 {
     // todo isn't "requested fps" is a renderview property?
     model->project()->worker.requested_fps(60);
-    update();
+    QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
 }
 
 

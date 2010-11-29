@@ -29,12 +29,12 @@ namespace Sawe {
 template<class Archive> 
 void runSerialization(Archive& ar, Project*& project)
 {
-	ar.template register_type<Adapters::Audiofile>();
-	ar.template register_type<Tools::Support::MultiplyBrush>();
-	ar.template register_type<Filters::Ellipse>();
-        ar.template register_type<Tools::CommentModel>();
+    ar.template register_type<Adapters::Audiofile>();
+    ar.template register_type<Tools::Support::MultiplyBrush>();
+    ar.template register_type<Filters::Ellipse>();
+    ar.template register_type<Tools::CommentModel>();
 
-	ar & boost::serialization::make_nvp("Sonic_AWE", project);
+    ar & boost::serialization::make_nvp("Sonic_AWE", project);
 }
 
 

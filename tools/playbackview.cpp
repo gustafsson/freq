@@ -37,6 +37,7 @@ void PlaybackView::
 void PlaybackView::
         draw()
 {
+    locatePlaybackMarker();
     drawPlaybackMarker();
 }
 
