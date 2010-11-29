@@ -123,8 +123,11 @@ void RenderView::
         if (!_inited)
             initializeGL();
 
-        _last_width = painter->device()->width();
-        _last_height = painter->device()->height();
+		if (painter->device())
+		{
+			_last_width = painter->device()->width();
+			_last_height = painter->device()->height();
+		}
 
         setStates();
         resizeGL(_last_width, _last_height);
@@ -690,6 +693,10 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
+    if (model->_rx<90) orthoview = 0;
+    if (orthoview != 1 && orthoview != 0)
+		update();
+
     glLoadIdentity();
     glTranslatef( model->_px, model->_py, model->_pz );
 

@@ -23,6 +23,9 @@ public:
     virtual Signal::pBuffer read( const Signal::Interval& I );
     virtual float sample_rate();
     virtual long unsigned number_of_samples();
+    virtual unsigned num_channels();
+    virtual void set_channel(unsigned c);
+    virtual unsigned get_channel();
 
     unsigned recording_itr() { return number_of_samples(); }
 
@@ -31,7 +34,8 @@ public:
 private:
     MicrophoneRecorder() {} // for deserialization
 
-    Signal::SinkSource _data;
+    unsigned channel;
+    std::vector<Signal::SinkSource> _data;
     Signal::PostSink _postsink;
 
     // todo remove Sink* _callback;

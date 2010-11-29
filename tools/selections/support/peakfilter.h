@@ -1,6 +1,6 @@
 #ifndef PEAKFILTER_H
 #define PEAKFILTER_H
-
+#if 0
 #include "tfr/cwtfilter.h"
 #include "tools/support/brushfilter.h"
 
@@ -29,5 +29,5 @@ public:
 };
 
 } // namespace Filters
-
+#endif // 0
 #endif // PEAKFILTER_H

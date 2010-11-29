@@ -180,6 +180,10 @@ public:
     virtual float sample_rate() = 0;
     virtual long unsigned number_of_samples() = 0;
 
+    virtual unsigned num_channels() = 0;
+	virtual void set_channel(unsigned c) = 0;
+    virtual unsigned get_channel() = 0;
+
 private:
     virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }

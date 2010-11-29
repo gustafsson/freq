@@ -34,6 +34,8 @@ private:
 };
 
 MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
+    :
+    channel(0)
 {
     TaskTimer tt("Creating MicrophoneRecorder");
     portaudio::System &sys = portaudio::System::instance();
@@ -52,9 +54,11 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
     portaudio::Device& device = sys.deviceByIndex(inputDevice);
 
     tt.getStream() << "Opening recording input stream on '" << device.name() << "'";
+    unsigned channel_count = device.maxInputChannels();
+    _data.resize(channel_count);
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             device,
-            1, // channels
+            channel_count, // channels
             portaudio::FLOAT32,
             false, // interleaved
 #ifdef __APPLE__
@@ -76,7 +80,7 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
             *this,
             &MicrophoneRecorder::writeBuffer));
 
-    Signal::pOperation proxy(new OperationProxy(&_data));
+    Signal::pOperation proxy(new OperationProxy(&_data[0]));
     _postsink.source( proxy );
 }
 
@@ -89,10 +93,13 @@ MicrophoneRecorder::~MicrophoneRecorder()
         _stream_record->close();
     }
 
-    if (0<_data.length()) {
-        TaskTimer tt("Releasing recorded data");
-        _data.reset();
-    }
+	for (unsigned i=0; i<_data.size(); ++i)
+	{
+		if (0<_data[i].length()) {
+			TaskTimer tt("Releasing recorded data channel %u", i);
+			_data[i].reset();
+		}
+	}
 }
 
 void MicrophoneRecorder::startRecording()
@@ -113,7 +120,7 @@ bool MicrophoneRecorder::isStopped()
 Signal::pBuffer MicrophoneRecorder::
         read( const Signal::Interval& I )
 {
-    return _data.readFixedLength( I );
+    return _data[channel].readFixedLength( I );
 }
 
 float MicrophoneRecorder::
@@ -125,7 +132,26 @@ float MicrophoneRecorder::
 long unsigned MicrophoneRecorder::
         number_of_samples()
 {
-    return _data.number_of_samples();
+    return _data[channel].number_of_samples();
+}
+
+unsigned MicrophoneRecorder::
+        num_channels()
+{
+    return _data.size();
+}
+
+void MicrophoneRecorder::
+        set_channel(unsigned c)
+{
+    channel = c;
+}
+
+
+unsigned MicrophoneRecorder::
+        get_channel()
+{
+    return channel;
 }
 
 
@@ -141,17 +167,23 @@ int MicrophoneRecorder::
     const float **in = (const float **)inputBuffer;
     const float *buffer = in[0];
 
-    Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
-    memcpy ( b->waveform_data()->getCpuMemory(), buffer, framesPerBuffer*sizeof(float) );
+	long unsigned offset = number_of_samples();
+    for (unsigned i=0; i<_data.size(); ++i)
+    {
+        Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
+        memcpy ( b->waveform_data()->getCpuMemory(),
+                 buffer + i*framesPerBuffer,
+                 framesPerBuffer*sizeof(float) );
 
-    b->sample_offset = number_of_samples();
-    b->sample_rate = sample_rate();
+        b->sample_offset = offset;
+        b->sample_rate = sample_rate();
 
-    TIME_MICROPHONERECORDER TaskTimer("Interval: %s", b->getInterval().toString().c_str()).suppressTiming();
+        TIME_MICROPHONERECORDER TaskTimer("Interval: %s", b->getInterval().toString().c_str()).suppressTiming();
 
-    _data.put( b );
+        _data[i].put( b );
+    }
 
-    _postsink.invalidate_samples( b->getInterval() );
+	_postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
 
     return paContinue;
 }

@@ -58,11 +58,11 @@ pProject Project::
 
     if (0 == filename.length()) {
         string filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
-        filter = "All files (*.sonicawe " + filter + ");;";
+        filter = "All files (*.sonicawe *.sonicawe " + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
         filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
 
-		QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
+        QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilemame.length()) {
             // User pressed cancel
             return pProject();

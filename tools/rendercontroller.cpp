@@ -49,15 +49,15 @@ public:
 
     virtual Signal::pBuffer read( const Signal::Interval& I )
     {
-        Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(root());
-        if (0==bs)
+		Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(root());
+        if (0==fs)
             return Signal::Operation::read( I );
 
-        unsigned N = bs->num_channels();
+        unsigned N = fs->num_channels();
         Signal::pBuffer r;
         for (unsigned i=0; i<N; ++i)
         {
-            bs->channel = i;
+			fs->set_channel( i );
             r = Signal::Operation::read( I );
         }
         return r;

@@ -7,14 +7,20 @@ namespace Tools {
 
 
 BrushModel::
-        BrushModel( Sawe::Project* project )
+        BrushModel( Sawe::Project* project, RenderModel* render_model )
             :
             brush_factor(0),
             xscale_(10)
 {
-    filter_.reset( new Support::MultiplyBrush );
-    filter_->source( project->head_source() );
-    project->head_source( filter_ );
+    filter_ = project->head_source();
+	if (0 == dynamic_cast<Support::MultiplyBrush*>(filter_.get()))
+	{
+		filter_.reset( new Support::MultiplyBrush );
+		filter_->source( project->head_source() );
+		project->head_source( filter_ );
+	} 
+
+	filter()->validateRefs( render_model->collection.get() );
 }
 
 

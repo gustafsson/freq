@@ -13,9 +13,32 @@ BrushFilter::
 }
 
 
+void BrushFilter::
+        validateRefs(Heightmap::Collection* collection)
+{
+    if (images->size())
+    {
+        if (images->begin()->first.collection() != collection)
+        {
+            // This happens for the first getImage after deserialization
+            BrushImagesP newImages(new BrushImages);
+            foreach(BrushImages::value_type bv, *images)
+            {
+                Heightmap::Reference rcopy( collection );
+                rcopy.log2_samples_size = bv.first.log2_samples_size;
+                rcopy.block_index = bv.first.block_index;
+                (*newImages)[ rcopy ] = bv.second;
+            }
+            images = newImages;
+        }
+    }
+}
+
+
 BrushFilter::BrushImageDataP BrushFilter::
         getImage(Heightmap::Reference const& ref)
 {
+	validateRefs(ref.collection());
     BrushImageDataP& img = (*images)[ ref ];
 
     if (!img)
@@ -37,6 +60,8 @@ Signal::Intervals MultiplyBrush::
     Signal::Intervals r;
 
     BrushImages const& imgs = *images.get();
+
+
 
     BOOST_FOREACH(BrushImages::value_type const& v, imgs)
     {

@@ -12,14 +12,18 @@ RenderModel::
         _rx(91), _ry(180), _rz(0),
         xscale(1)
 {
-    Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(p->head_source()->root());
-    BOOST_ASSERT(bs);
-    collections.resize(bs->num_channels());
-    for (unsigned c=0; c<bs->num_channels(); ++c)
-    {
-        collections[c].reset( new Heightmap::Collection(&_project->worker));
-    }
-    collection = collections[0];
+	Signal::Operation* o = p->head_source()->root();
+	Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(o);
+	BOOST_ASSERT(fs);
+	if (fs)
+	{
+		collections.resize(fs->num_channels());
+		for (unsigned c=0; c<fs->num_channels(); ++c)
+		{
+			collections[c].reset( new Heightmap::Collection(&_project->worker));
+		}
+		collection = collections[0];
+	}
     collectionCallback.reset( new Signal::WorkerCallback( &_project->worker, collection->postsink() ));
 
     renderer.reset( new Heightmap::Renderer( collection.get() ));

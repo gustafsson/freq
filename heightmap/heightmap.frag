@@ -117,7 +117,7 @@ void main()
 
     if (0!=heightLines)
     {
-        float heightLine = getHeightLineColor( log(vertex_height+ 0.000001) );
+        float heightLine = getHeightLineColor( log(vertex_height+ 0.1) );
         curveColor = vec4(heightLine, heightLine, heightLine, 1) * curveColor;
     }
 

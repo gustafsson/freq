@@ -147,19 +147,19 @@ private:
 
     template<class Archive> static void save_bytearray(Archive& ar, QByteArray& c)
     {
-		int DataSize = c.size();
-		ar & BOOST_SERIALIZATION_NVP(DataSize);
+        int DataSize = c.size();
+        ar & BOOST_SERIALIZATION_NVP(DataSize);
 
-		boost::serialization::binary_object Data( c.data(), DataSize );
+        boost::serialization::binary_object Data( c.data(), DataSize );
         ar & BOOST_SERIALIZATION_NVP(Data);
     }
     template<class Archive> static void load_bytearray(Archive& ar, QByteArray& c)
     {
-		int DataSize = 0;
-		ar & BOOST_SERIALIZATION_NVP(DataSize);
-		c.resize(DataSize);
+        int DataSize = 0;
+        ar & BOOST_SERIALIZATION_NVP(DataSize);
+        c.resize(DataSize);
 
-		boost::serialization::binary_object Data( c.data(), DataSize );
+        boost::serialization::binary_object Data( c.data(), DataSize );
         ar & BOOST_SERIALIZATION_NVP(Data);
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER()

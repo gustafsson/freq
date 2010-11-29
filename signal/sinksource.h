@@ -32,6 +32,8 @@ class SinkSource: public Sink
 public:
     /// @see SinkSource
     SinkSource();
+	SinkSource( const SinkSource& b);
+	SinkSource& operator=( const SinkSource& b);
 
     /**
       Insert data into SinkSource
@@ -50,7 +52,7 @@ public:
 
     /**
       Extract an interval from cache, only guaranteed to return a buffer
-      containung I.first.
+      containing I.first.
       */
     virtual pBuffer read( const Interval& I );
 
@@ -82,7 +84,7 @@ public:
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
 private:
-    QMutex _cache_mutex;
+	QMutex _cache_mutex;
     std::vector<pBuffer> _cache; // todo use set instead
 
     virtual pOperation source() const { return pOperation(); }

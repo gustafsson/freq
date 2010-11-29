@@ -68,13 +68,6 @@ void BlockFilter::
 }
 
 
-Signal::Intervals BlockFilter::
-        affected_samples()
-{
-    return Signal::Intervals::Intervals();
-}
-
-
 void BlockFilter::
         computeSlope( Tfr::pChunk pchunk )
 {
@@ -271,15 +264,6 @@ void CwtToBlock::
 }
 
 
-void CwtToBlock::
-        applyFilter( Tfr::pChunk pchunk )
-{
-    CwtFilter::applyFilter( pchunk );
-
-    computeSlope( pchunk );
-}
-
-
 void StftToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
@@ -306,15 +290,6 @@ void StftToBlock::
                   _collection->display_scale());
 
     block->valid_samples |= chunk.getInterval();
-}
-
-
-void StftToBlock::
-        applyFilter( Tfr::pChunk pchunk )
-{
-    StftFilter::applyFilter( pchunk );
-
-    computeSlope( pchunk );
 }
 
 

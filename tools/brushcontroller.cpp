@@ -77,7 +77,7 @@ void BrushController::
 
     model()->brush_factor = 0;
 
-    float A = .1f;
+    float A = .5f;
     if (ui->actionAirbrush->isChecked())
         model()->brush_factor = -A;
     if (ui->actionAmplitudeBrush->isChecked())

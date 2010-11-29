@@ -17,10 +17,6 @@ public:
     /// @overload Tfr::Filter::operator ()(Tfr::Chunk&)
     virtual void operator()( Tfr::Chunk& chunk );
 
-    /// @overload Signal::Operation::affected_samples()
-    virtual Signal::Intervals affected_samples();
-
-
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
     virtual void computeSlope( Tfr::pChunk chunk );
@@ -53,10 +49,10 @@ public:
     {
         if (_collections.size())
         {
-            Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(root());
-            BOOST_ASSERT( bs );
+			Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(root());
+            BOOST_ASSERT( fs );
 
-            _collection = _collections[bs->channel].get();
+            _collection = _collections[fs->get_channel()].get();
         }
 
         BlockFilter::operator()(chunk);
@@ -64,6 +60,19 @@ public:
 
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     Signal::Operation* affecting_source( const Signal::Interval& ) { return this; }
+
+    void applyFilter( Tfr::pChunk pchunk )
+    {
+        FilterKind::applyFilter( pchunk );
+
+        computeSlope( pchunk );
+    }
+
+    /// @overload Signal::Operation::affected_samples()
+    virtual Signal::Intervals affected_samples()
+    {
+        return Signal::Intervals::Intervals();
+    }
 
 protected:
     std::vector<boost::shared_ptr<Collection> > _collections;
@@ -86,7 +95,6 @@ public:
     ComplexInfo complex_info;
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
-    virtual void applyFilter( Tfr::pChunk pchunk );
 };
 
 
@@ -97,7 +105,6 @@ public:
     StftToBlock( std::vector<boost::shared_ptr<Collection> > collections ) :  BlockFilterImpl(collections) { _try_shortcuts = false; }
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
-    virtual void applyFilter( Tfr::pChunk pchunk );
 };
 
 } // namespace Heightmap

@@ -49,7 +49,7 @@ ToolFactory::
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
 
-    _brush_model.reset( new BrushModel(p) );
+    _brush_model.reset( new BrushModel(p, &render_model) );
     _brush_view.reset( new BrushView(_brush_model.data() ));
     _brush_controller = new BrushController( _brush_view.data(), _render_view );
 

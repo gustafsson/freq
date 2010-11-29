@@ -8,6 +8,8 @@
 #include "signal/operation-basic.h"
 #include "support/operation-composite.h"
 #include "filters/ellipse.h"
+#include "filters/rectangle.h"
+#include "tools/selections/support/splinefilter.h"
 
 #include "selections/ellipsecontroller.h"
 #include "selections/ellipsemodel.h"
@@ -170,12 +172,23 @@ namespace Tools
                 dynamic_cast<Filters::Ellipse*>(
                         _model->current_filter_.get() );
 
-        if (!ellipse)
-            return;
-
+        if (ellipse)
         { // If selection is an ellipse, remove tfr data inside the ellipse
             ellipse->_save_inside = false;
         }
+
+        Filters::Rectangle* rectangle=
+                dynamic_cast<Filters::Rectangle*>(
+                        _model->current_filter_.get() );
+        if (rectangle)
+            rectangle->_save_inside = false;
+
+
+        Selections::Support::SplineFilter* spline=
+                dynamic_cast<Selections::Support::SplineFilter*>(
+                        _model->current_filter_.get() );
+        if (spline)
+            spline->_save_inside = false;
 
         _worker->appendOperation( _model->current_filter_ );
         _model->all_filters.push_back( _model->current_filter_ );

@@ -17,10 +17,12 @@ public:
     virtual float sample_rate();
     virtual long unsigned number_of_samples();
 
-    unsigned num_channels() { return _waveforms.size(); }
-    unsigned channel;
+    virtual unsigned num_channels() { return _waveforms.size(); }
+    virtual void set_channel(unsigned c) { channel = c; }
+    virtual unsigned get_channel() { return channel; }
 
 protected:
+	unsigned channel;
     std::vector<pBuffer> _waveforms;
 };
 

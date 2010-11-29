@@ -14,12 +14,12 @@ BufferSource::
 void BufferSource::
         setBuffer( pBuffer waveform )
 {
-	if (0==waveform || 0==waveform->number_of_samples())
-	{
-		_waveforms.resize(1);
-		_waveforms[0] = waveform;
-		return;
-	}
+    if (0==waveform || 0==waveform->number_of_samples())
+    {
+        _waveforms.resize(1);
+        _waveforms[0] = waveform;
+        return;
+    }
 
     cudaExtent sz = waveform->waveform_data()->getNumberOfElements();
     unsigned number_of_samples = sz.width;
@@ -43,7 +43,7 @@ void BufferSource::
 pBuffer BufferSource::
         read( const Interval& I )
 {
-    const Interval& myInterval = _waveforms[0]->getInterval();
+    const Interval& myInterval = _waveforms[channel]->getInterval();
     if (Intervals(I.first, I.first+1) & myInterval)
     {
         BOOST_ASSERT( channel < num_channels() );

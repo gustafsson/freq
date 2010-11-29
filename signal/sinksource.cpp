@@ -17,6 +17,22 @@ SinkSource::
 }
 
 
+SinkSource::
+        SinkSource( const SinkSource& b)
+		:
+	_cache( b._cache )
+{
+}
+
+
+SinkSource& SinkSource::
+        operator=( const SinkSource& b)
+{
+	_cache = b._cache;
+	return *this;
+}
+
+
 void SinkSource::
         put( pBuffer b )
 {
@@ -195,6 +211,8 @@ pBuffer SinkSource::
                              I.last,
                              s->getInterval().first,
                              s->getInterval().last).suppressTiming();
+                cudaExtent sz = s->waveform_data()->getNumberOfElements();
+
                 return s;
             }
         }

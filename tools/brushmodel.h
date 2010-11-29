@@ -17,7 +17,7 @@ namespace Tools
 class BrushModel
 {
 public:
-    BrushModel( Sawe::Project* project );
+    BrushModel( Sawe::Project* project, RenderModel* render_model );
 
     /**
       Get the BrushFilter.

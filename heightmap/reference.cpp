@@ -190,6 +190,12 @@ Collection* Reference::
     return _collection;
 }
 
+void Reference::
+        setCollection(Collection* c)
+{
+    _collection = c;
+}
+
 Signal::Interval Reference::
         getInterval() const
 {
