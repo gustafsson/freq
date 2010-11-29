@@ -20,7 +20,8 @@ BrushModel::
 		project->head_source( filter_ );
 	} 
 
-	filter()->validateRefs( render_model->collection.get() );
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model->collections )
+        filter()->validateRefs( collection.get() );
 }
 
 

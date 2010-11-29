@@ -133,7 +133,7 @@ bool PlaybackView::
     glColor4f( 0, 0, 0, .5);
 
     Tfr::FreqAxis const& fa =
-            _render_view->model->collection->display_scale();
+            _render_view->model->display_scale();
     float
             s1 = fa.getFrequencyScalar( e->_f1 ),
             s2 = fa.getFrequencyScalar( e->_f2 );

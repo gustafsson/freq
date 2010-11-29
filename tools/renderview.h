@@ -25,6 +25,8 @@ namespace Tools
         virtual ~RenderView();
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
+        void drawCollections();
+        void clearCaches();
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
         Heightmap::Position getHeightmapPos( QPointF viewport_coordinates );
         Heightmap::Position getPlanePos( QPointF pos, bool* success );

@@ -141,6 +141,7 @@ void CommentView::
 void CommentView::
         resizeEvent(QResizeEvent *)
 {
+    model->window_size = make_uint2( width(), height() );
     keep_pos = true;
 
     QRect r = ui->textEdit->geometry();

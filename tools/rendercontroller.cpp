@@ -164,7 +164,8 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
 
-    model()->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
+        collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
     view->userinput_update();
 }
 
@@ -172,7 +173,7 @@ void RenderController::
 Signal::PostSink* RenderController::
         setBlockFilter(Signal::Operation* blockfilter)
 {
-    Signal::pOperation s = model()->collection->postsink();
+    Signal::pOperation s = model()->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
 
     BOOST_ASSERT( ps );
@@ -183,9 +184,9 @@ Signal::PostSink* RenderController::
     v.push_back( channelop );
     ps->sinks(v);
 
-    foreach( const boost::shared_ptr<Heightmap::Collection>& c, model()->collections )
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
     {
-        c->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
     }
 
     view->userinput_update();
@@ -396,7 +397,8 @@ void RenderController::
 
     // Clear all cached blocks and release cuda memory befure destroying cuda
     // context
-    model()->collection->reset();
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
+        collection->reset();
 }
 
 void RenderController::
@@ -415,7 +417,8 @@ void RenderController::
         blur >>= fuzzy;
         _invalidRange |= blur;
 
-        model()->collection->invalidate_samples( _invalidRange );
+        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
+            collection->invalidate_samples( _invalidRange );
         _invalidRange = Signal::Intervals();
     }
 }

@@ -71,8 +71,8 @@ static unsigned _channel=0;
 static unsigned _scales_per_octave = 20;
 static float _wavelet_time_support = 3;
 static unsigned _samples_per_chunk = 1;
-static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
-static unsigned _scales_per_block = 1<<8;
+//static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
+//static unsigned _scales_per_block = 1<<8;
 static unsigned _get_hdf = (unsigned)-1;
 static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
@@ -150,8 +150,8 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, samples_per_chunk));
         else if (readarg(&cmd, scales_per_octave));
         else if (readarg(&cmd, wavelet_time_support));
-        else if (readarg(&cmd, samples_per_block));
-        else if (readarg(&cmd, scales_per_block));
+        //else if (readarg(&cmd, samples_per_block));
+        //else if (readarg(&cmd, scales_per_block));
         // else if (readarg(&cmd, yscale)); // TODO remove?
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record_device));
@@ -508,8 +508,8 @@ int main(int argc, char *argv[])
 
         tools.playback_model.playback_device = _playback_device;
         tools.playback_model.selection_filename  = _selectionfile;
-        tools.render_model.collection->samples_per_block( _samples_per_block );
-        tools.render_model.collection->scales_per_block( _scales_per_block );
+        //tools.render_model.collection->samples_per_block( _samples_per_block );
+        //tools.render_model.collection->scales_per_block( _scales_per_block );
 
         p.reset(); // 'a' keeps a copy of pProject
 

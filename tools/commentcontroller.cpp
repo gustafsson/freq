@@ -45,6 +45,7 @@ void CommentController::
 
     comment->view = render_view;
     comment->move(0, 0);
+    comment->resize( cmodel->window_size.x, cmodel->window_size.y );
 
     QGraphicsProxyWidget* proxy = new QGraphicsProxyWidget(0, Qt::Window);
     comment->proxy = proxy;

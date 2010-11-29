@@ -79,7 +79,9 @@ void RecordController::
     model()->project->worker.postSink()->invalidate_samples( v );
 
     // TODO invalidate collection samples through worker
-    render_view_->model->collection->invalidate_samples( v );
+
+    foreach (const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections)
+        collection->invalidate_samples( v );
 
     render_view_->userinput_update();
 }

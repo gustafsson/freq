@@ -22,6 +22,8 @@
 // Qt
 #include <QtGui/QMessageBox>
 
+BOOST_CLASS_VERSION(Tools::CommentModel, 1)
+
 using namespace std;
 
 namespace Sawe {

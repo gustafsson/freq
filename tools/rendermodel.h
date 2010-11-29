@@ -16,8 +16,9 @@ namespace Tools
         RenderModel(Sawe::Project* p);
 
         std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
-        // TODO remove
-        boost::shared_ptr<Heightmap::Collection> collection;
+
+        Signal::pOperation postsink() { return collections[0]->postsink(); }
+        Tfr::FreqAxis display_scale() { return collections[0]->display_scale(); }
 
         Signal::pWorkerCallback collectionCallback;
         Heightmap::pRenderer renderer;

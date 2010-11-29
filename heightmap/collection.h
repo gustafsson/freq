@@ -250,6 +250,7 @@ audiofile              source
       PostSink fetches data
       */
     Signal::pOperation postsink() { return _postsink; }
+    void setPostsink(Signal::pOperation s) { _postsink = s; }
 
     /**
       Update the slope texture used by the vertex shader. Called when height

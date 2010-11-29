@@ -146,38 +146,8 @@ void TimelineView::
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
-				{
-					unsigned N = _render_view->model->collections.size();
-					std::vector<float4> channel_colors(N);
-					float R = 0, G = 0, B = 0;
-					for (unsigned i=0; i<N; ++i)
-					{
-						QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
-						channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-						R += channel_colors[i].x;
-						G += channel_colors[i].y;
-						B += channel_colors[i].z;
-					}
-					for (unsigned i=0; i<N; ++i)
-					{
-						channel_colors[i] = channel_colors[i] * (1/R);
-					}
+                _render_view->drawCollections();
 
-					unsigned i=0;
-					foreach( const boost::shared_ptr<Heightmap::Collection>& collection, _render_view->model->collections )
-					{
-						collection->next_frame(); // Discard needed blocks before this row
-
-						_render_view->model->renderer->camera = GLvector(_render_view->model->_qx, _render_view->model->_qy, _render_view->model->_qz);
-						_render_view->model->renderer->collection = collection.get();
-						_render_view->model->renderer->fixed_color = channel_colors[i];
-						glPushAttribContext ac; // glBlendFunc
-						glClear( GL_DEPTH_BUFFER_BIT );
-						glBlendFunc( GL_DST_COLOR, GL_ZERO );
-		                _render_view->model->renderer->draw( 0.f );
-						++i;
-					}
-				}
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
@@ -193,38 +163,7 @@ void TimelineView::
 
             glScalef(1,1,_barHeight);
             glTranslatef(0,0,-1);
-				{
-					unsigned N = _render_view->model->collections.size();
-					std::vector<float4> channel_colors(N);
-					float R = 0, G = 0, B = 0;
-					for (unsigned i=0; i<N; ++i)
-					{
-						QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
-						channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-						R += channel_colors[i].x;
-						G += channel_colors[i].y;
-						B += channel_colors[i].z;
-					}
-					for (unsigned i=0; i<N; ++i)
-					{
-						channel_colors[i] = channel_colors[i] * (1/R);
-					}
-
-					unsigned i=0;
-					foreach( const boost::shared_ptr<Heightmap::Collection>& collection, _render_view->model->collections )
-					{
-						collection->next_frame(); // Discard needed blocks before this row
-
-						_render_view->model->renderer->camera = GLvector(_render_view->model->_qx, _render_view->model->_qy, _render_view->model->_qz);
-						_render_view->model->renderer->collection = collection.get();
-						_render_view->model->renderer->fixed_color = channel_colors[i];
-						glPushAttribContext ac; // glBlendFunc
-						glClear( GL_DEPTH_BUFFER_BIT );
-						glBlendFunc( GL_DST_COLOR, GL_ZERO );
-		                _render_view->model->renderer->draw( 0.f );
-						++i;
-					}
-				}
+            _render_view->drawCollections();
 
             glColor4f( 0.75, 0.75,0.75, .5);
             glLineWidth(2);
@@ -260,10 +199,14 @@ void TimelineView::
         exceptCount = 0;
     } catch (const CudaException &x) {
         if (1<++exceptCount) throw;
-        else TaskTimer("TimelineView::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
+
+        TaskTimer("TimelineView::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
+        _render_view->clearCaches();
     } catch (const GlException &x) {
         if (1<++exceptCount) throw;
-        else TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
+
+        TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
+        _render_view->clearCaches();
     }
 }
 

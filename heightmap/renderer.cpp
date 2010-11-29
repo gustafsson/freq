@@ -390,9 +390,8 @@ void Renderer::draw( float scaley )
     last_ysize = scaley;
 //        setSize( collection->samples_per_block(), collection->scales_per_block() );
 
-    glScalef(1, scaley, 1); // global effect on all tools
-
     glPushMatrixContext mc(GL_MODELVIEW);
+    glScalef(1, scaley, 1); // global effect on all tools
 
     Position mss = collection->max_sample_size();
     Reference ref = collection->findReference(Position(0,0), mss);

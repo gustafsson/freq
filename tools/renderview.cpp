@@ -185,7 +185,9 @@ float RenderView::
         return 0;
 
     Heightmap::Reference ref = model->renderer->findRefAtCurrentZoomLevel( pos.time, pos.scale );
-    Heightmap::pBlock block = model->collection->getBlock( ref );
+    Heightmap::pBlock block = model->collections[0]->getBlock( ref );
+    if (!block)
+        return 0;
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
 
     float* data = blockData->getCpuMemory();
@@ -316,6 +318,42 @@ Heightmap::Position RenderView::
     }
 
     return p;
+}
+
+
+void RenderView::
+        drawCollections()
+{
+    unsigned N = model->collections.size();
+    std::vector<float4> channel_colors(N);
+    float R = 0, G = 0, B = 0;
+    for (unsigned i=0; i<N; ++i)
+    {
+        QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
+        channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+        R += channel_colors[i].x;
+        G += channel_colors[i].y;
+        B += channel_colors[i].z;
+    }
+    for (unsigned i=0; i<N; ++i)
+    {
+        channel_colors[i] = channel_colors[i] * (1/R);
+    }
+
+    unsigned i=0;
+    glBlendFunc( GL_DST_COLOR, GL_ZERO );
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+    {
+        collection->next_frame(); // Discard needed blocks before this row
+
+        model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
+        model->renderer->collection = collection.get();
+        model->renderer->fixed_color = channel_colors[i];
+        glClear( GL_DEPTH_BUFFER_BIT );
+        model->renderer->draw( 1 - orthoview ); // 0.6 ms
+        ++i;
+    }
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 
@@ -533,38 +571,15 @@ void RenderView::
     bool wasWorking = !model->project()->worker.todo_list().empty();
 
     { // Render
-        unsigned N = model->collections.size();
-        std::vector<float4> channel_colors(N);
-        float R = 0, G = 0, B = 0;
-        for (unsigned i=0; i<N; ++i)
-        {
-            QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
-            channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-            R += channel_colors[i].x;
-            G += channel_colors[i].y;
-            B += channel_colors[i].z;
-        }
-        for (unsigned i=0; i<N; ++i)
-        {
-            channel_colors[i] = channel_colors[i] * (1/R);
-        }
-
-        unsigned i=0;
         foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
         {
             collection->next_frame(); // Discard needed blocks before this row
-
-            model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
-            model->renderer->collection = collection.get();
-            model->renderer->fixed_color = channel_colors[i];
-            glPushAttribContext ac; // glBlendFunc
-            glClear( GL_DEPTH_BUFFER_BIT );
-			glBlendFunc( GL_DST_COLOR, GL_ZERO );
-            model->renderer->draw( 1 - orthoview ); // 0.6 ms
-            ++i;
         }
 
+        drawCollections();
+
         last_ysize = model->renderer->last_ysize;
+        glScalef(1, last_ysize, 1); // global effect on all tools
 
         emit painting();
 
@@ -648,41 +663,17 @@ void RenderView::
     tryGc = 0;
     } catch (const CudaException &x) {
         TaskTimer tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
+
         if (2>tryGc) {
-            Heightmap::Collection* c = model->collection.get();
-            c->reset(); // note, not c.reset()
-            model->renderer.reset();
-            model->renderer.reset(new Heightmap::Renderer( c ));
+            clearCaches();
             tryGc++;
-            //cudaThreadExit();
-            int count;
-            cudaError_t e = cudaGetDeviceCount(&count);
-            TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
-            // e = cudaThreadExit();
-            // tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
-            //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-            //e = cudaSetDevice( 1 );
-            //tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
-            //e = cudaSetDevice( 0 );
-            //tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
-            void *p=0;
-            e = cudaMalloc( &p, 10 );
-            tt.info("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
-            e = cudaFree( p );
-            tt.info("cudaFree, error=%s", cudaGetErrorString(e));
-            cudaGetLastError();
         }
         else throw;
     } catch (const GlException &x) {
         TaskTimer tt("RenderView::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
         if (2>tryGc) {
-            Heightmap::Collection* c = model->collection.get();
-            c->reset(); // note, not c.reset()
-            model->renderer.reset();
-            model->renderer.reset(new Heightmap::Renderer( c ));
+            clearCaches();
             tryGc++;
-            //cudaThreadExit();
-            cudaGetLastError();
         }
         else throw;
     }
@@ -692,11 +683,42 @@ void RenderView::
 
 
 void RenderView::
+        clearCaches()
+{
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+    {
+        Heightmap::Collection* c = collection.get();
+        c->reset(); // note, not c.reset()
+    }
+
+    model->renderer.reset();
+    model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
+    //cudaThreadExit();
+    int count;
+    cudaError_t e = cudaGetDeviceCount(&count);
+    TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
+    // e = cudaThreadExit();
+    // tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
+    //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+    //e = cudaSetDevice( 1 );
+    //tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
+    //e = cudaSetDevice( 0 );
+    //tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
+    void *p=0;
+    e = cudaMalloc( &p, 10 );
+    tt.info("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
+    e = cudaFree( p );
+    tt.info("cudaFree, error=%s", cudaGetErrorString(e));
+    cudaGetLastError();
+}
+
+
+void RenderView::
         setupCamera()
 {
     if (model->_rx<90) orthoview = 0;
     if (orthoview != 1 && orthoview != 0)
-		update();
+        userinput_update();
 
     glLoadIdentity();
     glTranslatef( model->_px, model->_py, model->_pz );
