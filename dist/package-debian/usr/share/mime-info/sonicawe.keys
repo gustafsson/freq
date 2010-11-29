@@ -1,0 +1,6 @@
+application/x-sonicawe-project:
+	description=Sonic AWE project
+	default_action_type=application
+    icon-filename=/usr/share/pixmaps/sonicawe.xpm
+	short_list_application_ids_for_novice_user_level=sonicawe
+	category=Documents/Data

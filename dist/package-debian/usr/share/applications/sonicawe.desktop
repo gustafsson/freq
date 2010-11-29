@@ -1,0 +1,15 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Sonic AWE
+GenericName=Sound Visualizer
+Comment=Record and visualize audio files
+
+Icon=sonicawe
+
+Type=Application
+Categories=AudioVideo;Audio;AudioVideoEditing;
+
+Exec=sonicawe
+StartupNotify=true
+Terminal=false
+MimeType=application/ogg;audio/basic;audio/mpeg;audio/x-aiff;audio/x-wav;application/sonicawe-project
