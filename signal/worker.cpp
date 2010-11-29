@@ -26,7 +26,7 @@ Worker::
     work_time(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
-    _samples_per_chunk( 1<<12 ),
+    _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
     _requested_fps( 20 ),
     _caught_exception( "" ),

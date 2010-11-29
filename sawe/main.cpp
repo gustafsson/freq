@@ -490,7 +490,7 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        p->worker.samples_per_chunk_hint( _samples_per_chunk );
+        //p->worker.samples_per_chunk_hint( _samples_per_chunk );
         if (_multithread)
             p->worker.start();
 

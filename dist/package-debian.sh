@@ -12,7 +12,7 @@ else
 	echo "DESCRIPTIION"
 	echo "     'version_string' is on the form"
 	echo "         0.8.26"
-	echo "         0.8.26-unstable-snapshot"
+	echo "         0.8.26_unstable-snapshot"
 	echo
 	echo "     User 'def' as version_string to produce default format."
 	echo

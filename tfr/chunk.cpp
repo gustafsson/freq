@@ -1,6 +1,7 @@
 #include "chunk.h"
 
 #include <math.h>
+#include <float.h>
 
 namespace Tfr {
 

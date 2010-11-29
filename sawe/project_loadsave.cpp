@@ -50,7 +50,7 @@ void Project::
     QByteArray mainwindowState2 = _mainWindow->saveState();
 	BOOST_ASSERT( mainwindowState.size() == mainwindowState2.size());
 	BOOST_ASSERT( 0 == memcmp(mainwindowState.data(), mainwindowState2.data(), mainwindowState2.size()));
-    mainWindow()->restoreState( mainwindowState );
+    _mainWindow->restoreState( mainwindowState );
 
     try
     {

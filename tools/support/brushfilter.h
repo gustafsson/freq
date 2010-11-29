@@ -11,6 +11,7 @@
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/binary_object.hpp>
 
 namespace Tools {
 namespace Support {
@@ -85,7 +86,6 @@ private:
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 
-    friend class boost::serialization::access;
 	template<class archive> void serialize_ref(archive& ar, Heightmap::Reference& ref) const {
         int lss1 = ref.log2_samples_size[0];
         int lss2 = ref.log2_samples_size[1];

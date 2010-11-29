@@ -41,7 +41,7 @@ CommentView::~CommentView()
 std::string CommentView::
         html()
 {
-    return ui->textEdit->toHtml().toLocal8Bit();
+    return ui->textEdit->toHtml().toLocal8Bit().data();
 }
 
 

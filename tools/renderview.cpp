@@ -14,6 +14,7 @@
 #include <GlException.h>
 #include <glPushContext.h>
 #include <demangle.h>
+#include <cuda_vector_types_op.h>
 
 // Qt
 #include <QTimer>

@@ -256,13 +256,13 @@ private:
 
 
     friend class boost::serialization::access;
-    template<class archive> void save(archive& ar, const unsigned int version) const {
+    template<class archive> void save(archive& ar, const unsigned int /*version*/) const {
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & make_nvp("Filename", _original_filename);
     }
-    template<class archive> void load(archive& ar, const unsigned int version) {
+    template<class archive> void load(archive& ar, const unsigned int /*version*/) {
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);

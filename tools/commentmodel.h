@@ -6,6 +6,8 @@
 #include "heightmap/position.h"
 #include "toolmodel.h"
 
+#include <boost/serialization/serialization.hpp>
+
 namespace Tools
 {
 

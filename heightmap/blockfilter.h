@@ -39,7 +39,7 @@ public:
     /// @overload Signal::Operation::fetch_invalid_samples()
     Signal::Intervals fetch_invalid_samples()
     {
-        _invalid_samples = _collection->invalid_samples();
+        FilterKind::_invalid_samples = _collection->invalid_samples();
 
         return Tfr::Filter::fetch_invalid_samples();
     }
@@ -49,7 +49,7 @@ public:
     {
         if (_collections.size())
         {
-			Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(root());
+            Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
             BOOST_ASSERT( fs );
 
             _collection = _collections[fs->get_channel()].get();
@@ -101,8 +101,8 @@ public:
 class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
-    StftToBlock( Collection* collection ) :  BlockFilterImpl(collection) { _try_shortcuts = false; }
-    StftToBlock( std::vector<boost::shared_ptr<Collection> > collections ) :  BlockFilterImpl(collections) { _try_shortcuts = false; }
+    StftToBlock( Collection* collection ) :  BlockFilterImpl<Tfr::StftFilter>(collection) { _try_shortcuts = false; }
+    StftToBlock( std::vector<boost::shared_ptr<Collection> > collections ) :  BlockFilterImpl<Tfr::StftFilter>(collections) { _try_shortcuts = false; }
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };

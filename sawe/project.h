@@ -140,7 +140,7 @@ private:
 
         QByteArray mainwindowState;
         load_bytearray( ar, mainwindowState );
-        mainWindow()->restoreState( mainwindowState/*, version */);
+        _mainWindow->restoreState( mainwindowState/*, version */);
 
 		_tools->load_tools( ar, version );
     }

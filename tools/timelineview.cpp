@@ -8,6 +8,7 @@
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
 #include "rendercontroller.h"
+#include <cuda_vector_types_op.h>
 
 #undef max
 

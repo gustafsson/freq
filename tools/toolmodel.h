@@ -4,6 +4,8 @@
 #include <boost/shared_ptr.hpp>
 #include <QWidget>
 
+#include <boost/serialization/serialization.hpp>
+
 namespace Sawe {
     class Project;
 }
@@ -19,7 +21,7 @@ namespace Tools
         virtual ~ToolModel() {}
 
 		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
+        template<class Archive> void serialize(Archive& /*ar*/, const unsigned int /*version*/)
 		{
 			/* nothing to see here, move on */
 		}

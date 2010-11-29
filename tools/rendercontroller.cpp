@@ -188,11 +188,6 @@ Signal::PostSink* RenderController::
         c->invalidate_samples(Signal::Intervals::Intervals_ALL);
     }
 
-    Signal::Intervals ivs = model()->collectionCallback->sink()->fetch_invalid_samples();
-    Signal::Intervals ivs2 = ps->fetch_invalid_samples();
-	TaskTimer("ivs: %s", ivs.toString().c_str()).suppressTiming();
-	TaskTimer("ivs2: %s", ivs.toString().c_str()).suppressTiming();
-
     view->userinput_update();
 
     return ps;
