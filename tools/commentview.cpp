@@ -13,11 +13,11 @@
 namespace Tools {
 
 CommentView::CommentView(CommentModel* model, QWidget *parent) :
-        QWidget(parent),
+    QWidget(parent),
+    model(model),
     ui(new Ui::CommentView),
     keep_pos(false),
-    z_hidden(false),
-	model(model)
+    z_hidden(false)
 {
     //
     ui->setupUi(this);

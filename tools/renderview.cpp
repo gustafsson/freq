@@ -340,16 +340,22 @@ void RenderView::
         channel_colors[i] = channel_colors[i] * (1/R);
     }
 
+    if (1==N)
+        channel_colors[0] = make_float4(1,1,1,1);
+
+    Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
+            model->project()->worker.source()->root());
+
     unsigned i=0;
     glBlendFunc( GL_DST_COLOR, GL_ZERO );
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
     {
-        collection->next_frame(); // Discard needed blocks before this row
-
         model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
         model->renderer->collection = collection.get();
         model->renderer->fixed_color = channel_colors[i];
         glClear( GL_DEPTH_BUFFER_BIT );
+        if (0!=fs)
+            fs->set_channel( i );
         model->renderer->draw( 1 - orthoview ); // 0.6 ms
         ++i;
     }
@@ -570,7 +576,9 @@ void RenderView::
     // TODO move to rendercontroller
     bool wasWorking = !model->project()->worker.todo_list().empty();
 
+    bool onlyUpdateMainRenderView = false;
     { // Render
+        if (onlyUpdateMainRenderView)
         foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
         {
             collection->next_frame(); // Discard needed blocks before this row
@@ -655,6 +663,12 @@ void RenderView::
                 _work_timer.reset();
             }
         }
+    }
+
+    if (!onlyUpdateMainRenderView)
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+    {
+        collection->next_frame(); // Discard needed blocks before this row
     }
 
     GlException_CHECK_ERROR();

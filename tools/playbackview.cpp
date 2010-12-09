@@ -5,6 +5,7 @@
 #include "selectionmodel.h"
 #include "adapters/playback.h"
 #include "filters/ellipse.h"
+#include "tfr/cwt.h"
 
 #include <glPushContext.h>
 
@@ -31,6 +32,7 @@ void PlaybackView::
         update()
 {
     emit update_view();
+    Tfr::Cwt::Singleton().wavelet_time_support( 2.8 );
 }
 
 

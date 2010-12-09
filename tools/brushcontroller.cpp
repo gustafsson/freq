@@ -76,8 +76,11 @@ void BrushController::
     Ui::MainWindow* ui = main->getItems();
 
     model()->brush_factor = 0;
-
+#ifdef _MSC_VER
     float A = .5f;
+#else
+    float A = .1f;
+#endif
     if (ui->actionAirbrush->isChecked())
         model()->brush_factor = -A;
     if (ui->actionAmplitudeBrush->isChecked())

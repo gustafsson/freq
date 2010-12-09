@@ -117,7 +117,8 @@ bool Application::
 
     try {
         v = QApplication::notify(receiver,e);
-    } catch (const std::invalid_argument &x) {
+    } catch (const exception &x) {
+//    } catch (const std::invalid_argument &x) {
         const char* what = x.what();
         if (1 == QMessageBox::warning( 0,
                                        QString("Couldn't complete the requested action"),
@@ -127,8 +128,8 @@ bool Application::
         {
             err = fatal_exception_string(x);
         }
-    } catch (const exception &x) {
-        err = fatal_exception_string(x);
+//    } catch (const exception &x) {
+//        err = fatal_exception_string(x);
     } catch (...) {
         err = fatal_unknown_exception_string();
     }

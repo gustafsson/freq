@@ -138,17 +138,17 @@ void SinkSource::
     // REMOVE caches that become outdated by this new buffer 'b'
     for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        const Buffer& s = **itr;
+        pBuffer s = *itr;
 
-        Intervals toKeep = s.getInterval();
+        Intervals toKeep = s->getInterval();
         toKeep -= b.getInterval();
 
-        Intervals toRemove = s.getInterval();
+        Intervals toRemove = s->getInterval();
         toRemove &= b.getInterval();
 
         if (toRemove)
         {
-            if(D) ss << " -" << s.getInterval().toString();
+            if(D) ss << " -" << s->getInterval().toString();
 
             // '_cache' is a vector but itr is most often the last element of the vector
             // thus making this operation inexpensive.
@@ -159,7 +159,7 @@ void SinkSource::
                 if(D) ss << " +" << i.toString();
 
                 pBuffer n( new Buffer( i.first, i.count(), FS));
-                *n |= s;
+                *n |= *s;
                 itr = _cache.insert(itr, n );
                 itr++; // Move past inserted element
             }
@@ -199,6 +199,7 @@ void SinkSource::
 pBuffer SinkSource::
         read( const Interval& I )
 {
+    Interval not_found = I;
     {
         QMutexLocker l(&_cache_mutex);
 
@@ -215,11 +216,13 @@ pBuffer SinkSource::
 
                 return s;
             }
+            if (s->sample_offset > I.first && s->sample_offset<not_found.last)
+                not_found.last = s->sample_offset;
         }
     }
 
     //TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
-    return zeros(I);
+    return zeros(not_found);
 }
 
 

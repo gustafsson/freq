@@ -75,6 +75,33 @@ ChunkAndInverse CwtFilter::
                                  vartype(*this).c_str(),
                                 ci.inverse->getInterval().toString().c_str());
 
+    unsigned N_data=ci.inverse->number_of_samples();
+    unsigned N_source=number_of_samples();
+    if (firstSample<N_source)
+    {
+        unsigned N=N_data;
+        if (N_data>N_source-firstSample)
+            N = N_source-firstSample;
+        unsigned L=time_support/4;
+        if (L>=N)
+        {
+            L=0;
+            N=0;
+        }
+
+        float *p=ci.inverse->waveform_data()->getCpuMemory();
+        for (unsigned i=0; i<L; ++i)
+        {
+            float k = i/(float)L;
+            k = 1 - (1-k)*(1-k);
+
+            p[i] *= k;
+            p[N-1-i] *= k;
+        }
+        for (unsigned i=N;i<N_data;++i)
+            p[i] = 0;
+    }
+
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
 

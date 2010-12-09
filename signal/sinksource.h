@@ -52,7 +52,8 @@ public:
 
     /**
       Extract an interval from cache, only guaranteed to return a buffer
-      containing I.first.
+      containing I.first. On a cache miss this method returns a buffer with
+      zeros, of the requested interval 'I' or smaller.
       */
     virtual pBuffer read( const Interval& I );
 

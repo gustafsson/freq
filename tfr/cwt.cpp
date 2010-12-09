@@ -26,8 +26,8 @@
 #include <math.h>
 #endif
 
-#define TIME_CWT if(0)
-//#define TIME_CWT
+//#define TIME_CWT if(0)
+#define TIME_CWT
 
 #define STAT_CWT if(0)
 //#define STAT_CWT
@@ -35,8 +35,8 @@
 #define TIME_CWTPART if(0)
 //#define TIME_CWTPART
 
-#define TIME_ICWT if(0)
-//#define TIME_ICWT
+//#define TIME_ICWT if(0)
+#define TIME_ICWT
 
 #define DEBUG_CWT if(0)
 //#define DEBUG_CWT
@@ -675,6 +675,9 @@ unsigned Cwt::
         next_good_size( unsigned current_valid_samples_per_chunk, float fs )
 {
     unsigned r = wavelet_time_support_samples( fs );
+    unsigned max_bin = find_bin( nScales( fs ) - 1 );
+    if ( 0 == r>>max_bin )
+        r = 1 << (max_bin-1);
     unsigned T = r + current_valid_samples_per_chunk + r;
     unsigned nT = spo2g(T);
     if(nT <= 2*r)
@@ -687,6 +690,9 @@ unsigned Cwt::
         prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate )
 {
     unsigned r = wavelet_time_support_samples( sample_rate );
+    unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
+    if ( 0 == r>>max_bin )
+        r = 1 << (max_bin-1);
     unsigned T = r + current_valid_samples_per_chunk + r;
     unsigned nT = lpo2s(T);
     if (nT <= 2*r)

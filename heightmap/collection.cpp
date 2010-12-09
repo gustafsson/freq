@@ -21,8 +21,8 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_COLLECTION
-#define TIME_COLLECTION if(0)
+#define TIME_COLLECTION
+//#define TIME_COLLECTION if(0)
 
 // todo remove?
 #define MAX_REDUNDANT_SIZE 32
@@ -432,25 +432,25 @@ pBlock Collection::
     ref.getArea(a,b);
     TIME_COLLECTION TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
     // Try to allocate a new block
-
-    pBlock block = attempt( ref );
-
-	QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
-    if ( 0 == block.get() && !_cache.empty()) {
-        TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Overwriting some older block", a.time, b.time);
-        l.unlock();
-        gc();
-        l.relock();
-        block = attempt( ref );
-    }
-
-    if ( 0 == block.get()) {
-        TaskTimer tt("Failed creating new block [%g, %g]", a.time, b.time);
-        return pBlock(); // return null-pointer
-    }
-
     pBlock result;
     try {
+
+        pBlock block = attempt( ref );
+
+        QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
+        if ( 0 == block.get() && !_cache.empty()) {
+            TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Overwriting some older block", a.time, b.time);
+            l.unlock();
+            gc();
+            l.relock();
+            block = attempt( ref );
+        }
+
+        if ( 0 == block.get()) {
+            TaskTimer tt("Failed creating new block [%g, %g]", a.time, b.time);
+            return pBlock(); // return null-pointer
+        }
+
         // set to zero
         GlBlock::pHeight h = block->glblock->height();
         cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
@@ -588,7 +588,8 @@ pBlock Collection::
         }
     }
 
-	_cache[ result->ref ] = result;
+    // result is non-zero
+    _cache[ result->ref ] = result;
 
     return result;
 }

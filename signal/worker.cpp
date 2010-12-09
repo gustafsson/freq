@@ -64,6 +64,7 @@ bool Worker::
     unsigned center_sample = source()->sample_rate() * center;
 
     Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
+    _cheat_work |= interval;
 
     boost::scoped_ptr<TaskTimer> tt;
 
@@ -146,9 +147,12 @@ bool Worker::
                         current_fps, _samples_per_chunk).suppressTiming();
         }
 
-        _requested_fps = 99*_requested_fps/100;
+        _requested_fps *= 0.9;
         //if (1>_requested_fps)_requested_fps=1;
     }
+
+    // Reset before next workOne
+    Tfr::Cwt::Singleton().wavelet_time_support( 2.8 );
 
     _last_work_one = now;
 
@@ -178,6 +182,10 @@ Signal::Intervals Worker::
 {
     QMutexLocker l(&_todo_lock);
     Signal::Intervals c = _todo_list;
+    if ( 1 >= Tfr::Cwt::Singleton().wavelet_time_support() )
+        c -= _cheat_work;
+    else
+        _cheat_work.clear();
     return c;
 }
 
@@ -227,7 +235,7 @@ void Worker::
 }
 
 
-unsigned Worker::
+float Worker::
         requested_fps() const
 {
     return _requested_fps;
@@ -235,13 +243,16 @@ unsigned Worker::
 
 
 void Worker::
-        requested_fps(unsigned value)
+        requested_fps(float value)
 {
+    TaskTimer("Worker::requested_fps(%g)", value).suppressTiming();
+
     if (0==value) value=1;
 
     if (value>_requested_fps) {
         _requested_fps = value;
         samples_per_chunk_hint(1);
+        Tfr::Cwt::Singleton().wavelet_time_support( 0.5 );
     }
 }
 

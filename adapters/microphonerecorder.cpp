@@ -4,13 +4,13 @@
 #include <memory.h>
 #include <boost/foreach.hpp>
 
-//#define TIME_MICROPHONERECORDER
-#define TIME_MICROPHONERECORDER if(0)
+#define TIME_MICROPHONERECORDER
+//#define TIME_MICROPHONERECORDER if(0)
 
 using namespace std;
 
-#include <boost/serialization/export.hpp>
-BOOST_CLASS_EXPORT(Adapters::MicrophoneRecorder);
+//#include <boost/serialization/export.hpp>
+//BOOST_CLASS_EXPORT(Adapters::MicrophoneRecorder);
 
 namespace Adapters {
 
@@ -53,8 +53,11 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
 
     portaudio::Device& device = sys.deviceByIndex(inputDevice);
 
-    tt.getStream() << "Opening recording input stream on '" << device.name() << "'";
     unsigned channel_count = device.maxInputChannels();
+    if (channel_count>2)
+        channel_count = 2;
+    tt.getStream() << "Opening recording input stream on '" << device.name() << "' with " << channel_count << " channels";
+
     _data.resize(channel_count);
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             device,
@@ -142,9 +145,11 @@ unsigned MicrophoneRecorder::
 }
 
 void MicrophoneRecorder::
-        set_channel(unsigned c)
+        set_channel(unsigned channel)
 {
-    channel = c;
+    TIME_MICROPHONERECORDER TaskTimer("MicrophoneRecorder::set_channel(%u)", channel).suppressTiming();
+    BOOST_ASSERT( channel < num_channels() );
+    this->channel = channel;
 }
 
 
@@ -165,14 +170,14 @@ int MicrophoneRecorder::
     TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples)", framesPerBuffer);
     BOOST_ASSERT( inputBuffer );
     const float **in = (const float **)inputBuffer;
-    const float *buffer = in[0];
 
 	long unsigned offset = number_of_samples();
     for (unsigned i=0; i<_data.size(); ++i)
     {
+        const float *buffer = in[i];
         Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
         memcpy ( b->waveform_data()->getCpuMemory(),
-                 buffer + i*framesPerBuffer,
+                 buffer,
                  framesPerBuffer*sizeof(float) );
 
         b->sample_offset = offset;

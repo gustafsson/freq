@@ -121,22 +121,35 @@ void NavigationController::
     Tools::RenderView &r = *_view;
     float ps = 0.0005;
     float rs = 0.08;
-    if( e->orientation() == Qt::Horizontal )
+    if(e->modifiers().testFlag(Qt::ShiftModifier))
     {
-        if(e->modifiers().testFlag(Qt::ShiftModifier))
-            r.model->xscale *= (1-ps * e->delta());
-        else
-            r.model->_ry -= rs * e->delta();
+        float d = ps * e->delta();
+        if (d>0.8)
+            d=0.8;
+        if (d<-0.8)
+            d=-0.8;
+        r.model->xscale *= (1-d);
+
+        float max_scale = 0.01*r.model->project()->head_source()->sample_rate();
+        float min_scale = 1.f/r.model->project()->head_source()->length();
+        if (r.model->xscale>max_scale)
+            r.model->xscale=max_scale;
+        if (r.model->xscale<min_scale)
+            r.model->xscale=min_scale;
     }
     else
     {
-        if(e->modifiers().testFlag(Qt::ShiftModifier))
-            r.model->xscale *= (1-ps * e->delta());
+        if( e->orientation() == Qt::Horizontal )
+        {
+            r.model->_ry -= rs * e->delta();
+        }
         else
+        {
             r.model->_pz *= (1+ps * e->delta());
 
-        if (r.model->_pz<-40) r.model->_pz = -40;
-        if (r.model->_pz>-.1) r.model->_pz = -.1;
+            if (r.model->_pz<-40) r.model->_pz = -40;
+            if (r.model->_pz>-.1) r.model->_pz = -.1;
+        }
     }
 
     _view->userinput_update();

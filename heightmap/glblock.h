@@ -56,6 +56,9 @@ private:
 
     unsigned _tex_height;
     unsigned _tex_slope;
+
+    bool _successfully_registered_height;
+    bool _successfully_registered_slope;
 };
 
 typedef boost::shared_ptr<GlBlock> pGlBlock;

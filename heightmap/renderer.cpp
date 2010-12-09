@@ -34,14 +34,14 @@ using namespace std;
 static bool g_invalidFrustum = true;
 
 Renderer::Renderer( Collection* collection )
-:   draw_piano(false),
+:   collection(collection),
+    draw_piano(false),
     draw_hz(true),
     camera(0,0,0),
     draw_height_lines(false),
     color_mode( ColorMode_Rainbow ),
     fixed_color( make_float4(1,0,0,1) ),
     y_scale( 1 ),
-    collection(collection),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),

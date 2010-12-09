@@ -21,7 +21,7 @@ namespace Tools
         ~RecordController();
 
     protected slots:
-        void stopRecording();
+        void destroying();
         void receiveRecord(bool);
         void recievedInvalidSamples( Signal::Intervals I );
 
@@ -29,6 +29,7 @@ namespace Tools
         // Model
         RecordView* view_;
         RecordModel* model() { return view_->model_; }
+        bool destroyed_;
 
         RenderView* render_view_;
 

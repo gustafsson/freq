@@ -165,8 +165,8 @@ public:
     /**
       Get/set requested number of frames per second.
       */
-    unsigned            requested_fps() const;
-    void                requested_fps(unsigned);
+    float               requested_fps() const;
+    void                requested_fps(float);
 
 	/**
 	  Throws an std::exception if one has been caught by run()
@@ -235,7 +235,7 @@ private:
     /**
       @see todo_list
       */
-    Intervals _todo_list;
+    Intervals _todo_list, _cheat_work;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.
@@ -249,7 +249,7 @@ private:
     /**
       _samples_per_chunk is adjusted up and down to reach this given framerate. Default value: requested_fps=30.
       */
-    unsigned _requested_fps;
+    float _requested_fps;
 
 	/**
       Worker::run is intended to be executed by a separate worker thread. To

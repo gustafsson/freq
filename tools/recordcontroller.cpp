@@ -20,6 +20,7 @@ namespace Tools
 RecordController::
         RecordController( RecordView* view, RenderView* render_view )
             :   view_ ( view ),
+                destroyed_ ( false ),
                 render_view_ ( render_view )
 {
     setupGui();
@@ -29,14 +30,20 @@ RecordController::
 RecordController::
         ~RecordController()
 {
-    stopRecording();
+    TaskTimer("~RecordController").suppressTiming();
+    destroying();
 }
 
 
 void RecordController::
-        stopRecording()
+        destroying()
 {
+    TaskTimer("RecordController::destroying()").suppressTiming();
+    if (destroyed_)
+        return;
+
     receiveRecord(false);
+    destroyed_ = true;
 }
 
 void RecordController::
@@ -69,6 +76,9 @@ void RecordController::
 void RecordController::
         recievedInvalidSamples( Signal::Intervals I )
 {
+    if ( destroyed_ )
+        return;
+
     TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
 
     float fs = model()->project->head_source()->sample_rate();
@@ -95,7 +105,7 @@ void RecordController::
     connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
 
     //connect(render_view_, SIGNAL(destroying()), SLOT(close()));
-    connect(render_view_, SIGNAL(destroying()), SLOT(stopRecording()));
+    connect(render_view_, SIGNAL(destroying()), SLOT(destroying()));
 
     if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))
     {

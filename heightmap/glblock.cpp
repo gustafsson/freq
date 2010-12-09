@@ -25,8 +25,8 @@
 //#define TIME_COMPILESHADER
 #define TIME_COMPILESHADER if(0)
 
-//#define TIME_GLBLOCK
-#define TIME_GLBLOCK if(0)
+#define TIME_GLBLOCK
+//#define TIME_GLBLOCK if(0)
 
 namespace Heightmap {
 
@@ -118,13 +118,15 @@ GlBlock( Collection* collection )
 :   _collection( collection ),
     _height( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float), GL_PIXEL_UNPACK_BUFFER) ),
     _slope( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float2), GL_PIXEL_UNPACK_BUFFER) ),
-    _tex_height(0)
+    _tex_height(0),
+    _successfully_registered_height(false),
+    _successfully_registered_slope(false)
 {
     TIME_GLBLOCK TaskTimer tt("GlBlock()");
 
     // TODO read up on OpenGL interop in CUDA 3.0, cudaGLRegisterBufferObject is old, like CUDA 1.0 or something ;)
-    cudaGLRegisterBufferObject(*_height);
-    cudaGLRegisterBufferObject(*_slope);
+    _successfully_registered_height = (cudaSuccess == cudaGLRegisterBufferObject(*_height));
+    _successfully_registered_slope = (cudaSuccess == cudaGLRegisterBufferObject(*_slope));
 
     glGenTextures(1, &_tex_height);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
@@ -163,18 +165,43 @@ GlBlock( Collection* collection )
 GlBlock::
 ~GlBlock()
 {
-    TIME_GLBLOCK TaskTimer tt("~GlBlock() _tex_height=%u",_tex_height);
+    TIME_GLBLOCK TaskTimer tt("~GlBlock() _tex_height=%u, _tex_slope=%u", _tex_height, _tex_slope);
 
-    unmap();
+    // no point in doing a proper unmapping when it might fail and the textures
+    // that would recieve the updates are deleted right after anyways
+    // unmap();
+    if (_mapped_height)
+    {
+        BOOST_ASSERT( _mapped_height.unique() );
+        _mapped_height.reset();
+        TIME_GLBLOCK TaskTimer("_mapped_height.reset()").suppressTiming();
+    }
+    if (_mapped_slope)
+    {
+        BOOST_ASSERT( _mapped_slope.unique() );
+        _mapped_slope.reset();
+        TIME_GLBLOCK TaskTimer("_mapped_slope.reset()").suppressTiming();
+    }
 
     if (_tex_height)
     {
         glDeleteTextures(1, &_tex_height);
         _tex_height = 0;
     }
+    if (_tex_slope)
+    {
+        glDeleteTextures(1, &_tex_slope);
+        _tex_slope = 0;
+    }
 
-    cudaGLUnregisterBufferObject(*_height);
-    cudaGLUnregisterBufferObject(*_slope);
+    TIME_GLBLOCK TaskTimer("cudaGLUnregisterBufferObject %d", _successfully_registered_height).suppressTiming();
+    if (_successfully_registered_height)
+        cudaGLUnregisterBufferObject(*_height);
+    TIME_GLBLOCK TaskTimer("cudaGLUnregisterBufferObject %d", _successfully_registered_slope).suppressTiming();
+    if (_successfully_registered_slope)
+        cudaGLUnregisterBufferObject(*_slope);
+
+    TIME_GLBLOCK TaskTimer("~GlBlock() done").suppressTiming();
 }
 
 GlBlock::pHeight GlBlock::

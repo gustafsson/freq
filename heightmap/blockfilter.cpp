@@ -1,6 +1,7 @@
 #include "block.cu.h"
 #include "blockfilter.h"
 #include "collection.h"
+#include "tfr/cwt.h"
 
 #include <CudaException.h>
 #include <GlException.h>
@@ -238,7 +239,7 @@ void CwtToBlock::
             transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
         ).suppressTiming();
 
-    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples < chunk.transform_data->getNumberOfElements().width );
+    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
@@ -257,7 +258,9 @@ void CwtToBlock::
     CudaException_CHECK_ERROR();
     GlException_CHECK_ERROR();
 
-    block->valid_samples |= transfer;
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    if( !cwt || 1<cwt->wavelet_time_support() )
+        block->valid_samples |= transfer;
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
     return;

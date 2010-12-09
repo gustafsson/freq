@@ -69,7 +69,7 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 20;
-static float _wavelet_time_support = 3;
+static float _wavelet_time_support = 1.5;
 static unsigned _samples_per_chunk = 1;
 //static unsigned _samples_per_block = 1<<7;//                                                                                                    9;
 //static unsigned _scales_per_block = 1<<8;
@@ -521,10 +521,10 @@ int main(int argc, char *argv[])
         // TODO 0 != QGLContext::currentContext() when exiting by an exception
         // that stops the mainloop.
         if( 0 != QGLContext::currentContext() )
-			TaskTimer("Error: OpenGL context was not detroyed prior to application exit").suppressTiming();
+            TaskTimer("Error: OpenGL context was not destroyed prior to application exit").suppressTiming();
 
 		if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( 0 ))
-			TaskTimer("Error: CUDA context was not detroyed prior to application exit").suppressTiming();
+            TaskTimer("Error: CUDA context was not destroyed prior to application exit").suppressTiming();
 
         return r;
     } catch (const std::exception &x) {
