@@ -516,14 +516,27 @@ pBlock Collection::
 
                 // TODO compute at what log2_samples_size[1] stft is more accurate
                 // than low resolution blocks. So that Cwt is not needed.
-                if (0) {
+                if (1) {
                     VERBOSE_COLLECTION TaskTimer tt("Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
-                    mergeBlock( block, block->ref.parent(), 0 );
-                    mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
-                    mergeBlock( block, block->ref.parent().right(), 0 );
-                    mergeBlock( block, block->ref.parent().top(), 0 );
-                    mergeBlock( block, block->ref.parent().bottom(), 0 );
+                    foreach( const cache_t::value_type& c, _cache )
+                    {
+                        const pBlock& b = c.second;
+                        if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0] &&
+                            block->ref.log2_samples_size[1]+1 == b->ref.log2_samples_size[1])
+                        {
+                            mergeBlock( block, b, 0 );
+                        }
+                    }
+                    foreach( const cache_t::value_type& c, _cache )
+                    {
+                        const pBlock& b = c.second;
+                        if (block->ref.log2_samples_size[0]+1 == b->ref.log2_samples_size[0] &&
+                            block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1])
+                        {
+                            mergeBlock( block, b, 0 );
+                        }
+                    }
                 }
 
                 if (0) {
@@ -543,10 +556,6 @@ pBlock Collection::
                 if (1) {
                     VERBOSE_COLLECTION TaskTimer tt("Fetching details");
                     // start with the blocks that are just slightly more detailed
-                    /*mergeBlock( block, block->ref.left(), 0 );
-                    mergeBlock( block, block->ref.right(), 0 );
-                    mergeBlock( block, block->ref.top(), 0 );
-                    mergeBlock( block, block->ref.bottom(), 0 );*/
                     foreach( const cache_t::value_type& c, _cache )
                     {
                         const pBlock& b = c.second;
