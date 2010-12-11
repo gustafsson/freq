@@ -28,6 +28,7 @@ Worker::
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
     _requested_fps( 20 ),
+    _min_fps( 0.5 ),
     _caught_exception( "" ),
     _caught_invalid_argument("")
 {
@@ -138,6 +139,7 @@ bool Worker::
         time_duration diff = now - _last_work_one;
         float current_fps = 1000000.0/diff.total_microseconds();
         TIME_WORKER TaskTimer tt("Current framerate = %g fps", current_fps);
+        tt.suppressTiming();
 
         if (current_fps < _requested_fps &&
             _samples_per_chunk >= _min_samples_per_chunk)
@@ -161,7 +163,7 @@ bool Worker::
         }
 
         _requested_fps *= 0.9;
-        //if (1>_requested_fps)_requested_fps=1;
+        if (_min_fps>_requested_fps) _requested_fps = _min_fps;
     }
 
     // Reset before next workOne
@@ -261,7 +263,7 @@ void Worker::
 {
     TaskTimer("Worker::requested_fps(%g)", value).suppressTiming();
 
-    if (0==value) value=1;
+    if (_min_fps>value) value=_min_fps;
 
     if (value>_requested_fps) {
         _requested_fps = value;

@@ -26,8 +26,8 @@
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
+#define TIME_PAINTGL
+//#define TIME_PAINTGL if(0)
 
 //#define DEBUG_EVENTS
 #define DEBUG_EVENTS if(0)
@@ -332,24 +332,27 @@ void RenderView::
     GlException_CHECK_ERROR();
 
     unsigned N = model->collections.size();
-    N = 2;
-    std::vector<float4> channel_colors(N);
-    float R = 0, G = 0, B = 0;
-    for (unsigned i=0; i<N; ++i)
-    {
-        QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
-        channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-        R += channel_colors[i].x;
-        G += channel_colors[i].y;
-        B += channel_colors[i].z;
-    }
-    for (unsigned i=0; i<N; ++i)
-    {
-        channel_colors[i] = channel_colors[i] * (1/R);
-    }
+    TIME_PAINTGL TaskTimer tt("Drawing %u collections", N);
 
-    if (1==N)
-        channel_colors[0] = make_float4(0,0,0,1);
+    std::vector<float4> channel_colors(N);
+    { // Set colors
+        float R = 0, G = 0, B = 0;
+        for (unsigned i=0; i<N; ++i)
+        {
+            QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
+            channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+            R += channel_colors[i].x;
+            G += channel_colors[i].y;
+            B += channel_colors[i].z;
+        }
+        for (unsigned i=0; i<N; ++i)
+        {
+            channel_colors[i] = channel_colors[i] * (1/R);
+        }
+
+        if (1==N)
+            channel_colors[0] = make_float4(0,0,0,1);
+    }
 
     Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
             model->project()->worker.source()->root());
@@ -357,6 +360,7 @@ void RenderView::
     TIME_PAINTGL CudaException_CHECK_ERROR();
 
     model->renderer->init();
+
     // drawCollections is called for 3 different viewports each frame, don't
     // botter messing around with keeping 3 different frame buffer objects
     // for the different sizes. Recreate the fbo each time instead.
@@ -614,12 +618,12 @@ void RenderView::
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Set up camera position
-    bool followingRecordMarker = false;
     float length = model->project()->worker.source()->length();
     float fs = model->project()->worker.source()->sample_rate();
     {   double limit = std::max(0.f, length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
 
         if (model->_qx>=_prevLimit) {
+            // -- Following Record Marker --
             // Snap just before end so that project->worker.center starts working on
             // data that has been fetched. If center=length worker will start
             // at the very end and have to assume that the signal is abruptly
@@ -627,7 +631,6 @@ void RenderView::
             // dirac peek in the transform (false because it will soon be
             // invalid by newly recorded data).
             model->_qx = std::max(model->_qx, limit);
-            followingRecordMarker = true;
         }
         _prevLimit = limit;
 
@@ -685,9 +688,6 @@ void RenderView::
             model->project()->worker.todo_list(
                     model->collectionCallback->sink()->fetch_invalid_samples());
             //project->worker.todo_list().print("Displaywidget - Collection");
-
-            if (followingRecordMarker)
-                model->project()->worker.requested_fps(1);
         }
         Signal::Operation* first_source = model->project()->worker.source()->root();
         Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );

@@ -220,7 +220,7 @@ pBuffer SinkSource::
         }
     }
 
-    //TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
+    // Return silence
     return zeros(not_found);
 }
 

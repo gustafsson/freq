@@ -72,9 +72,9 @@ ChunkAndInverse CwtFilter::
 
     ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
 
-    TIME_CwtFilter TaskTimer tt2("CwtFilter (%s) transforming %s",
-                                 vartype(*this).c_str(),
-                                ci.inverse->getInterval().toString().c_str());
+    TIME_CwtFilter TaskTimer tt2("CwtFilter transforming %s for '%s'",
+                                 ci.inverse->getInterval().toString().c_str(),
+                                 vartype(*this).c_str());
 
     unsigned N_data=ci.inverse->number_of_samples();
     unsigned N_source=number_of_samples();
@@ -113,7 +113,7 @@ ChunkAndInverse CwtFilter::
 void CwtFilter::
         applyFilter( Tfr::pChunk pchunk )
 {
-    TIME_CwtFilter TaskTimer tt("CwtFilter (%s) applying filter on chunk %s",
+    TIME_CwtFilter TaskTimer tt("CwtFilter applying '%s' on chunk %s",
                                 vartype(*this).c_str(),
                              pchunk->getInterval().toString().c_str());
     Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( pchunk.get() );

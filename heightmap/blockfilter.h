@@ -86,6 +86,7 @@ protected:
     std::vector<boost::shared_ptr<Collection> > _collections;
 };
 
+
 class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:

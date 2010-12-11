@@ -24,6 +24,9 @@
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
+// #define TIME_GETBLOCK
+#define TIME_GETBLOCK if(0)
+
 // Don't keep more than this times the number of blocks currently needed
 #define MAX_REDUNDANT_SIZE 8
 
@@ -252,11 +255,7 @@ pBlock Collection::
         getBlock( Reference ref )
 {
     // Look among cached blocks for this reference
-    boost::scoped_ptr<TaskTimer> tt;
-    TIME_COLLECTION
-    {
-        tt.reset(new TaskTimer("getBlock %s", ref.toString().c_str()));
-    }
+    TIME_GETBLOCK TaskTimer tt("getBlock %s", ref.toString().c_str());
 
     pBlock block; // smart pointer defaults to 0
 	{   QMutexLocker l(&_cache_mutex);
@@ -312,6 +311,32 @@ std::vector<pBlock> Collection::
         }
     }
 
+/*    // consistency check
+    foreach( const cache_t::value_type& c, _cache )
+    {
+        bool found = false;
+        foreach( const recent_t::value_type& r, _recent )
+        {
+            if (r == c.second)
+                found = true;
+        }
+
+        BOOST_ASSERT(found);
+    }
+
+    // consistency check
+    foreach( const recent_t::value_type& r, _recent )
+    {
+        bool found = false;
+        foreach( const cache_t::value_type& c, _cache )
+        {
+            if (r == c.second)
+                found = true;
+        }
+
+        BOOST_ASSERT(found);
+    }*/
+
     return r;
 }
 
@@ -319,7 +344,7 @@ std::vector<pBlock> Collection::
 void Collection::
         gc()
 {
-	QMutexLocker l(&_cache_mutex);
+    QMutexLocker l(&_cache_mutex);
 
     TIME_COLLECTION TaskTimer tt("Collection doing garbage collection", _cache.size());
     TIME_COLLECTION TaskTimer("Currently has %u cached blocks (ca %g MB)", _cache.size(),
@@ -332,7 +357,7 @@ void Collection::
             Position a,b;
             itr->second->ref.getArea(a,b);
             TaskTimer tt("Release block [%g, %g]", a.time, b.time);
-			
+
             _recent.remove(itr->second);
             itr = _cache.erase(itr);
         } else {
@@ -458,12 +483,12 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        if ( 0 /* create from others */ )
+        if ( 1 /* create from others */ )
         {
-            TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Stubbing new block");
+            VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
 
             // fill block by STFT
-            {
+            if (0) {
                 TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "stft");
 
                 fillBlock( block );
@@ -472,7 +497,7 @@ pBlock Collection::
 
             {
                 if (0) {
-                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
+                    VERBOSE_COLLECTION TaskTimer tt("Fetching low resolution");
                     // then try to upscale other blocks
                     foreach( const cache_t::value_type& c, _cache )
                     {
@@ -489,7 +514,7 @@ pBlock Collection::
                 // TODO compute at what log2_samples_size[1] stft is more accurate
                 // than low resolution blocks. So that Cwt is not needed.
                 if (0) {
-                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                    VERBOSE_COLLECTION TaskTimer tt("Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
                     mergeBlock( block, block->ref.parent(), 0 );
                     mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
@@ -499,7 +524,7 @@ pBlock Collection::
                 }
 
                 if (0) {
-                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
+                    VERBOSE_COLLECTION TaskTimer tt("Fetching more details");
                     // then try using the blocks that are even more detailed
                     foreach( const cache_t::value_type& c, _cache )
                     {
@@ -512,13 +537,22 @@ pBlock Collection::
                     }
                 }
 
-                if (0) {
-                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                if (1) {
+                    VERBOSE_COLLECTION TaskTimer tt("Fetching details");
                     // start with the blocks that are just slightly more detailed
-                    mergeBlock( block, block->ref.left(), 0 );
+                    /*mergeBlock( block, block->ref.left(), 0 );
                     mergeBlock( block, block->ref.right(), 0 );
                     mergeBlock( block, block->ref.top(), 0 );
-                    mergeBlock( block, block->ref.bottom(), 0 );
+                    mergeBlock( block, block->ref.bottom(), 0 );*/
+                    foreach( const cache_t::value_type& c, _cache )
+                    {
+                        const pBlock& b = c.second;
+                        if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0] +1 ||
+                            block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1] +1)
+                        {
+                            mergeBlock( block, b, 0 );
+                        }
+                    }
                 }
             }
 
@@ -665,7 +699,7 @@ bool Collection::
     Interval outInterval = outBlock->ref.getInterval();
 
     // Find out what intervals that match
-    Intervals transferDesc = inBlock->valid_samples;
+    Intervals transferDesc = inBlock->ref.getInterval();
     transferDesc &= outInterval;
 
     // Remove already computed intervals
@@ -696,8 +730,9 @@ bool Collection::
     {
         if (ib.scale>=ob.scale && ia.scale <=oa.scale)
         {
+            outBlock->valid_samples -= inBlock->ref.getInterval();
             outBlock->valid_samples |= inBlock->valid_samples;
-            TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Using block %s", (inBlock->valid_samples & outInterval).toString().c_str() );
+            VERBOSE_COLLECTION TaskTimer tt("Using block %s", (inBlock->valid_samples & outInterval).toString().c_str() );
         }
     }
 

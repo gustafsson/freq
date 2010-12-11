@@ -82,13 +82,15 @@ void PlaybackView::
     if (0>_playbackMarker)
         return;
 
+    glPushAttribContext ac;
+
+    glColor4f( 0, 0, 0, .5);
+
     if (drawPlaybackMarkerInEllipse())
         return;
 
-    //glEnable(GL_BLEND);
+
     glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f( 0, 0, 0, .5);
 
     float
         t = _playbackMarker,
@@ -127,12 +129,7 @@ bool PlaybackView::
     if (!e)
         return false;
 
-    glPushAttribContext ac;
-    //glEnable(GL_BLEND);
-    glDisable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
-    glColor4f( 0, 0, 0, .5);
 
     Tfr::FreqAxis const& fa =
             _render_view->model->display_scale();
@@ -151,18 +148,18 @@ bool PlaybackView::
         z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
 
 
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLE_STRIP);
         glVertex3f( t, 0, z1 );
         glVertex3f( t, 0, z2 );
-        glVertex3f( t, y, z2 );
         glVertex3f( t, y, z1 );
+        glVertex3f( t, y, z2 );
     glEnd();
 
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glPolygonOffset(1.f, 1.f);
-    glBegin(GL_TRIANGLE_STRIP);
+    glBegin(GL_QUADS);
         glVertex3f( t, 0, z1 );
         glVertex3f( t, 0, z2 );
         glVertex3f( t, y, z2 );

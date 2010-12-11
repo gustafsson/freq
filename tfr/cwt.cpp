@@ -83,9 +83,9 @@ pChunk Cwt::
     try {
     boost::scoped_ptr<TaskTimer> tt;
     TIME_CWT tt.reset( new TaskTimer (
-            "Forward CWT( buffer interval=%s, [%g, %g) s)",
+            "Forward CWT( buffer interval=%s, [%g, %g)%g# s)",
             buffer->getInterval().toString().c_str(),
-            buffer->start(), buffer->length()+buffer->start() ));
+            buffer->start(), buffer->length()+buffer->start(), buffer->length() ));
 
     TIME_CWT STAT_CWT Statistics<float>(buffer->waveform_data());
 

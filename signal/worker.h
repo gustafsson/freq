@@ -251,6 +251,11 @@ private:
       */
     float _requested_fps;
 
+    /**
+      lowest fps allowed, defaults to 0.5
+      */
+    float _min_fps;
+
 	/**
       Worker::run is intended to be executed by a separate worker thread. To
       simplify error handling in the GUI thread exceptions are caught by

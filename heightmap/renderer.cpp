@@ -388,7 +388,7 @@ Reference Renderer::
 void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
-    TIME_RENDERER TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
+    TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
     if (!_initialized) init();
 
     g_invalidFrustum = true;
@@ -483,7 +483,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
     if (!ref.containsSpectrogram())
         return false;
 
-    TIME_RENDERER TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
+    TIME_RENDERER TaskTimer("drawing").suppressTiming();
     TIME_RENDERER CudaException_CHECK_ERROR();
 
     Position a, b;
@@ -573,7 +573,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     Position a, b;
     ref.getArea( a, b );
-    TIME_RENDERER TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
+    TIME_RENDERER TaskTimer tt("[%g, %g]", a.time, b.time);
 
     if (!ref.containsSpectrogram())
         return false;
