@@ -54,6 +54,9 @@ public:
     float4 fixed_color;
     float y_scale;
     float last_ysize;
+
+    void init();
+
 private:
     enum LevelOfDetal {
         Lod_NeedBetterF,
@@ -78,7 +81,6 @@ private:
 
     friend class Heightmap::GlBlock;
 
-    void init();
     void setSize( unsigned w, unsigned h);
     void createMeshIndexBuffer(unsigned w, unsigned h);
     void createMeshPositionVBO(unsigned w, unsigned h);

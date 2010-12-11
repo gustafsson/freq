@@ -184,7 +184,7 @@ void NavigationController::
     if( moveButton.isDown() )
     {
         //Controlling the position with the right button.
-        GLvector last, current;
+        double last[2], current[2];
         if( moveButton.worldPos(last[0], last[1], r.model->xscale) &&
             moveButton.worldPos(x, y, current[0], current[1], r.model->xscale) )
         {

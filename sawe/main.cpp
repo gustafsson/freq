@@ -299,6 +299,7 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
+
 	if (0) try {
 		{
 			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));

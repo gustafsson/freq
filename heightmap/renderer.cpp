@@ -23,8 +23,8 @@
 #include "msc_stdc.h"
 #endif
 
-//#define TIME_RENDERER
-#define TIME_RENDERER if(0)
+#define TIME_RENDERER
+//#define TIME_RENDERER if(0)
 
 namespace Heightmap {
 
@@ -47,7 +47,7 @@ Renderer::Renderer( Collection* collection )
     _mesh_height(0),
     _initialized(false),
     _draw_flat(false),
-    _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
+    _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
     _drawn_blocks(0)
 {
     // Using glut for drawing fonts, so glutInit must be called.
@@ -85,7 +85,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     _mesh_width = w;
     _mesh_height = h;
 
-    int size = ((w*2)+3)*(h-1)*sizeof(GLuint);
+    int size = ((w*2)+4)*(h-1)*sizeof(GLuint);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
     glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, size, 0, GL_STATIC_DRAW);
@@ -97,6 +97,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     }
 
     for(unsigned y=0; y<h-1; y++) {
+        *indices++ = y*w;
         for(unsigned x=0; x<w; x++) {
             *indices++ = y*w+x;
             *indices++ = (y+1)*w+x;
@@ -114,7 +115,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( w*(h+1)*4*sizeof(float)));
+    _mesh_position.reset( new Vbo( w*h*4*sizeof(float)));
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     float *pos = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -122,7 +123,7 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
         return;
     }
 
-    for(unsigned y=0; y<h; y++) {
+    for(unsigned y=0; y<h-1; y++) {
         for(unsigned x=0; x<w; x++) {
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
@@ -238,6 +239,9 @@ static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvecto
 
 void Renderer::init()
 {
+    if (_initialized)
+        return;
+
     TaskTimer tt("Initializing OpenGL");
 
     // initialize necessary OpenGL extensions
@@ -265,22 +269,31 @@ void Renderer::init()
     }
 
     if (!glewIsSupported( "GL_VERSION_1_5 GL_ARB_vertex_buffer_object GL_ARB_pixel_buffer_object GL_ARB_texture_float" )) {
-            fprintf(stderr, "Error: failed to get minimal extensions\n");
-            fprintf(stderr, "Sonic AWE requires:\n");
-            fprintf(stderr, "  OpenGL version 1.5\n");
-            fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
-            fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
-            fprintf(stderr, "  GL_ARB_texture_float\n");
-            fflush(stderr);
-            exit(-1);
+        fprintf(stderr, "Error: failed to get minimal extensions\n");
+        fprintf(stderr, "Sonic AWE requires:\n");
+        fprintf(stderr, "  OpenGL version 1.5\n");
+        fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
+        fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
+        fprintf(stderr, "  GL_ARB_texture_float\n");
+        fflush(stderr);
+        exit(EXIT_FAILURE);
     }
+
+    if (!glewIsSupported( "GL_ARB_framebuffer_object" )) {
+        fprintf(stderr, "Error: failed to get minimal extensions\n");
+        fprintf(stderr, "Sonic AWE requires:\n");
+        fprintf(stderr, "  GL_ARB_framebuffer_object\n");
+        fflush(stderr);
+        exit(EXIT_FAILURE);
+    }
+
 #endif
 
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
     //setSize( collection->samples_per_block(), collection->scales_per_block() );
-    setSize( collection->samples_per_block()/1, collection->scales_per_block() );
+    setSize( collection->samples_per_block()/16, collection->scales_per_block() );
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
@@ -471,6 +484,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
         return false;
 
     TIME_RENDERER TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
+    TIME_RENDERER CudaException_CHECK_ERROR();
 
     Position a, b;
     ref.getArea( a, b );
@@ -516,6 +530,8 @@ bool Renderer::renderSpectrogramRef( Reference ref )
     }
 
     _drawn_blocks++;
+
+    TIME_RENDERER CudaException_CHECK_ERROR();
 
     return true;
 }
@@ -864,6 +880,7 @@ void Renderer::drawAxes( float T )
 
         glDisable(GL_DEPTH_TEST);
 
+
         glColor4f( 1.0f, 1.0f, 1.0f, .4f );
         glBegin( GL_QUADS );
             glVertex2f( 0, 0 );
@@ -872,14 +889,14 @@ void Renderer::drawAxes( float T )
             glVertex2f( 0, 1 );
 
             glVertex2f( w, 0 );
-            glVertex2f( w, h );
-            glVertex2f( 1-w, h );
             glVertex2f( 1-w, 0 );
+            glVertex2f( 1-w, h );
+            glVertex2f( w, h );
 
             glVertex2f( 1, 0 );
-            glVertex2f( 1-w, 0 );
-            glVertex2f( 1-w, 1 );
             glVertex2f( 1, 1 );
+            glVertex2f( 1-w, 1 );
+            glVertex2f( 1-w, 0 );
 
             glVertex2f( w, 1 );
             glVertex2f( w, 1-h );

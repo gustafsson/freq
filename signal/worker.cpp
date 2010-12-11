@@ -102,9 +102,23 @@ bool Worker::
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
             cudaGetLastError(); // consume error
+            TaskTimer("_samples_per_chunk was %u", _samples_per_chunk);
+            TaskTimer("_max_samples_per_chunk was %u", _max_samples_per_chunk);
+            TaskTimer("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave() );
+
+            while (_samples_per_chunk <= Tfr::Cwt::Singleton().prev_good_size(
+                    _samples_per_chunk, _source->sample_rate()))
+            {
+                Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave()*0.99f );
+            }
+
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate());
             _max_samples_per_chunk = _samples_per_chunk;
+
+            TaskTimer("scales_per_octave is now %g", Tfr::Cwt::Singleton().scales_per_octave() );
+            TaskTimer("_samples_per_chunk now is %u", _samples_per_chunk);
+            TaskTimer("_max_samples_per_chunk now is %u", _max_samples_per_chunk);
             TaskTimer("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what()).suppressTiming();
         } else {
             TaskTimer("Worker caught CudaException:\n%s", e.what()).suppressTiming();
@@ -252,6 +266,7 @@ void Worker::
     if (value>_requested_fps) {
         _requested_fps = value;
         samples_per_chunk_hint(1);
+        _max_samples_per_chunk = (unsigned)-1;
         Tfr::Cwt::Singleton().wavelet_time_support( 0.5 );
     }
 }

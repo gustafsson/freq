@@ -1,14 +1,26 @@
-#include <CudaException.h>
 #include "timelineview.h"
-#include <boost/assert.hpp>
-#include <GlException.h>
-#include <glPushContext.h>
-#include <QMouseEvent>
-#include <QDockWidget>
+
+// Sonic AWE tools
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
 #include "rendercontroller.h"
+
+// Sonic AWE lib
+#include "heightmap/renderer.h"
+
+// gpumisc
+#include <CudaException.h>
+#include <GlException.h>
+#include <glPushContext.h>
+
+// boost
+#include <boost/assert.hpp>
+
+// qt
+#include <QMouseEvent>
+#include <QDockWidget>
 #include <cuda_vector_types_op.h>
+
 
 #undef max
 
@@ -26,6 +38,8 @@ TimelineView::
     _xoffs( 0 ),
     _barHeight( 0.1f ),
     _length( 0 ),
+    _width( 0 ),
+    _height( 0 ),
     _project( p ),
     _render_view( render_view )
 {
@@ -63,8 +77,6 @@ void TimelineView::
 void TimelineView::
         initializeGL()
 {
-    glShadeModel(GL_SMOOTH);
-
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
 
@@ -75,23 +87,16 @@ void TimelineView::
     {   // Antialiasing
         glEnable(GL_LINE_SMOOTH);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        glEnable(GL_POLYGON_SMOOTH);
+        glDisable(GL_POLYGON_SMOOTH);
         glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         glEnable(GL_BLEND);
     }
 
-    GLfloat LightAmbient[]= { 0.5f, 0.5f, 0.5f, 1.0f };
-    GLfloat LightDiffuse[]= { 1.0f, 1.0f, 1.0f, 1.0f };
-    GLfloat LightPosition[]= { 0.0f, 0.0f, 2.0f, 1.0f };
     glShadeModel(GL_SMOOTH);
-    glLightfv(GL_LIGHT1, GL_AMBIENT, LightAmbient);
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, LightDiffuse);
-    glLightfv(GL_LIGHT1, GL_POSITION,LightPosition);
-    glEnable(GL_LIGHT1);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_COLOR_MATERIAL);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_COLOR_MATERIAL);
 }
 
 
@@ -100,12 +105,13 @@ void TimelineView::
 {
     height = height?height:1;
 
-    glViewport( 0, 0, (GLint)width, (GLint)height );
+    glViewport( 0, 0, _width = width, _height = height );
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     _barHeight = 20.f/height;
-    glOrtho(0,1,-_barHeight,1, -10,10);
+    //glOrtho(0,1,-_barHeight,1, -10,10);
+    glOrtho(0,1,0,1, -10,10);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -134,14 +140,7 @@ void TimelineView::
             if (_xoffs>_length+h) _xoffs = _length+h;
 
             setupCamera( false );
-
-            // Draw debug triangle
-            /*glColor4f( 0, 1,0, 1);
-            glBegin(GL_LINE_LOOP);
-            glVertex3f(0,0,0);
-            glVertex3f(length,0,0);
-            glVertex3f(length,0,1);
-            glEnd();*/
+            glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
 
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
@@ -156,14 +155,18 @@ void TimelineView::
         }
 
         {
-            // Draw little bar over entire signal at the bottom of the timeline
-            glPushMatrixContext mc(GL_MODELVIEW);
+            // Draw little bar for entire signal at the bottom of the timeline
+            //glPushMatrixContext mc(GL_MODELVIEW);
 
             setupCamera( true );
+            glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
 
-            glScalef(1,1,_barHeight);
-            glTranslatef(0,0,-1);
             _render_view->drawCollections();
+
+            glViewport( 0, 0, (GLint)_width, (GLint)_height );
+            setupCamera( true );
+            glScalef(1,1,_barHeight);
+            //glTranslatef(0,0,-1);
 
             glColor4f( 0.75, 0.75,0.75, .5);
             glLineWidth(2);

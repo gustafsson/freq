@@ -125,11 +125,14 @@ Signal::Interval BrushModel::
                    gauss );
 
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
-    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
-    ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
-                   blockData->getCudaGlobal(),
-                   gauss );
-    ref.collection()->computeSlope( block, 0 );
+    if (block)
+    {
+        GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+        ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
+                       blockData->getCudaGlobal(),
+                       gauss );
+        ref.collection()->computeSlope( block, 0 );
+    }
 
     return ref.getInterval();
 }

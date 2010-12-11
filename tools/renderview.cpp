@@ -1,3 +1,6 @@
+// gl
+#include "GL/glew.h"
+
 #include "renderview.h"
 
 // TODO cleanup
@@ -8,6 +11,7 @@
 #include "toolfactory.h"
 #include "support/drawworking.h"
 #include "adapters/microphonerecorder.h"
+#include "heightmap/renderer.h"
 
 // gpumisc
 #include <CudaException.h>
@@ -15,6 +19,7 @@
 #include <glPushContext.h>
 #include <demangle.h>
 #include <cuda_vector_types_op.h>
+#include <glframebuffer.h>
 
 // Qt
 #include <QTimer>
@@ -120,6 +125,8 @@ void RenderView::
 
     {
         glPushAttribContext attribs;
+        glPushMatrixContext pmcp(GL_PROJECTION);
+        glPushMatrixContext pmcm(GL_MODELVIEW);
 
         if (!_inited)
             initializeGL();
@@ -136,8 +143,6 @@ void RenderView::
         paintGL();
 
         {
-            glPushMatrixContext pmc(GL_MODELVIEW);
-
             glScalef(1,1,0.1f);
             glRotatef(90,1,0,0);
             GLdouble m[16];//, proj[16];
@@ -324,7 +329,10 @@ Heightmap::Position RenderView::
 void RenderView::
         drawCollections()
 {
+    GlException_CHECK_ERROR();
+
     unsigned N = model->collections.size();
+    N = 2;
     std::vector<float4> channel_colors(N);
     float R = 0, G = 0, B = 0;
     for (unsigned i=0; i<N; ++i)
@@ -341,25 +349,90 @@ void RenderView::
     }
 
     if (1==N)
-        channel_colors[0] = make_float4(1,1,1,1);
+        channel_colors[0] = make_float4(0,0,0,1);
 
     Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
             model->project()->worker.source()->root());
 
-    unsigned i=0;
-    glBlendFunc( GL_DST_COLOR, GL_ZERO );
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+    TIME_PAINTGL CudaException_CHECK_ERROR();
+
+    model->renderer->init();
+    // drawCollections is called for 3 different viewports each frame, don't
+    // botter messing around with keeping 3 different frame buffer objects
+    // for the different sizes. Recreate the fbo each time instead.
+    glEnable( GL_CULL_FACE );
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    // Draw the first channel without a frame buffer
+    model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
+    for (unsigned i=0; i < 1; ++i)
     {
-        model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
-        model->renderer->collection = collection.get();
+        model->renderer->collection = model->collections[i].get();
         model->renderer->fixed_color = channel_colors[i];
-        glClear( GL_DEPTH_BUFFER_BIT );
         if (0!=fs)
             fs->set_channel( i );
+        glDisable(GL_BLEND);
+        glEnable(GL_LIGHTING);
         model->renderer->draw( 1 - orthoview ); // 0.6 ms
-        ++i;
+        glDisable(GL_LIGHTING);
+        glEnable(GL_BLEND);
     }
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+    if (1<N)
+    {
+        GlFrameBuffer fbo;
+        for (unsigned i=1; i < N; ++i)
+        {
+            GlException_CHECK_ERROR();
+            {
+                GlFrameBuffer::ScopeBinding fboBinding = fbo.getScopeBinding();
+                glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+                glViewport(0,0,fbo.getGlTexture().getWidth(),fbo.getGlTexture().getHeight());
+
+                model->renderer->collection = model->collections[i].get();
+                model->renderer->fixed_color = channel_colors[i];
+                if (0!=fs)
+                    fs->set_channel( i );
+                glDisable(GL_BLEND);
+                glEnable(GL_LIGHTING);
+                model->renderer->draw( 1 - orthoview ); // 0.6 ms
+                glDisable(GL_LIGHTING);
+                glEnable(GL_BLEND);
+            }
+            glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+            glPushMatrixContext mpc( GL_PROJECTION );
+            glLoadIdentity();
+            glOrtho(0,1,0,1,-10,10);
+            glPushMatrixContext mc( GL_MODELVIEW );
+            glLoadIdentity();
+
+            glBlendFunc( GL_DST_COLOR, GL_ZERO );
+
+            glDisable(GL_DEPTH_TEST);
+
+            glColor4f(1,1,1,1);
+            GlTexture::ScopeBinding texObjBinding = fbo.getGlTexture().getScopeBinding();
+            glBegin(GL_TRIANGLE_STRIP);
+                glTexCoord2f(0,0); glVertex2f(0,0);
+                glTexCoord2f(1,0); glVertex2f(1,0);
+                glTexCoord2f(0,1); glVertex2f(0,1);
+                glTexCoord2f(1,1); glVertex2f(1,1);
+            glEnd();
+
+            glEnable(GL_DEPTH_TEST);
+
+            GlException_CHECK_ERROR();
+        }
+    }
+
+    TIME_PAINTGL CudaException_CHECK_ERROR();
+    TIME_PAINTGL GlException_CHECK_ERROR();
+
+    glDisable( GL_CULL_FACE );
+    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 }
 
 
@@ -367,11 +440,9 @@ void RenderView::
         setStates()
 {
     glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
     glLoadIdentity();
 
     glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
     glLoadIdentity();
 
     glShadeModel(GL_SMOOTH);
@@ -381,24 +452,26 @@ void RenderView::
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    //glEnable(GL_CULL_FACE);
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    glDisable( GL_CULL_FACE ); // enabled only while drawing collections
+    glFrontFace( GL_CCW );
+    glCullFace( GL_BACK );
+    //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 
     {   // Antialiasing
         glEnable(GL_LINE_SMOOTH);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
         glEnable(GL_POLYGON_SMOOTH);
         glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+        glDisable(GL_POLYGON_SMOOTH);
 
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         glEnable(GL_BLEND);
     }
 
 
-    glEnable(GL_LIGHTING);
-    glEnable(GL_COLOR_MATERIAL); // TODO disable?
-
-    //glDisable(GL_COLOR_MATERIAL); // Must disable texturing as well when drawing primitives
+    // Must disable texturing and lighting as well when drawing primitives
+    glDisable(GL_COLOR_MATERIAL);
     //glEnable(GL_TEXTURE_2D);
     //glEnable(GL_NORMALIZE);
 
@@ -407,6 +480,8 @@ void RenderView::
     //float materialSpecular[] = {0.5f, 0.5f, 0.5f, 1.0f};
     //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materialSpecular);
     //glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32.0f);
+
+    GlException_CHECK_ERROR();
 }
 
 
@@ -440,14 +515,6 @@ void RenderView::
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHT0);
     glDisable(GL_NORMALIZE);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glMatrixMode(GL_MODELVIEW);
 
     glLightModelf(GL_LIGHT_MODEL_LOCAL_VIEWER, 0.0f);
     float defaultMaterialSpecular[] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -707,7 +774,7 @@ void RenderView::
 
     model->renderer.reset();
     model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
-    //cudaThreadExit();
+    cudaThreadExit();
     int count;
     cudaError_t e = cudaGetDeviceCount(&count);
     TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
@@ -723,7 +790,13 @@ void RenderView::
     tt.info("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
     e = cudaFree( p );
     tt.info("cudaFree, error=%s", cudaGetErrorString(e));
+    BOOST_ASSERT( cudaSuccess == e );
+
+    Tfr::Cwt::Singleton().gc();
+
     cudaGetLastError();
+    glGetError();
+
 }
 
 

@@ -13,6 +13,9 @@
 #include <QWheelEvent>
 #include <QHBoxLayout>
 
+// std
+#include <stdio.h>
+
 namespace Tools
 {
 
@@ -73,7 +76,7 @@ void TimelineController::
     int x = e->x(), y = height() - e->y();
     float ps = 0.0005f;
 
-    GLvector current;
+    double current[2];
     moveButton.spacePos(x, y, current[0], current[1]);
 
     float f = 1.f - ps * e->delta();
@@ -81,7 +84,7 @@ void TimelineController::
 
     view->setupCamera();
 
-    GLvector newPos;
+    double newPos[2];
     moveButton.spacePos(x, y, newPos[0], newPos[1]);
 
     //_xoffs -= current[0]/prevscale*_xscale-newPos[0];
@@ -90,7 +93,7 @@ void TimelineController::
 
     view->setupCamera();
 
-    GLvector newPos2;
+    double newPos2[2];
     moveButton.spacePos(x, y, newPos2[0], newPos2[1]);
 
     // float tg = _oldoffs + x * prevscale;
@@ -115,10 +118,10 @@ void TimelineController::
 
     int x = e->x(), y = height() - e->y();
 
-    GLvector prev;
+    double prev[2];
     moveButton.spacePos(prev[0], prev[1]);
 
-    GLvector current;
+    double current[2];
     moveButton.spacePos(x, y, current[0], current[1]);
 
     if (0 == _movingTimeline)

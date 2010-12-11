@@ -119,7 +119,7 @@ void Project::
     Adapters::Audiofile* af;
     if (0 != (af = dynamic_cast<Adapters::Audiofile*>(worker.source().get()))) {
 		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
-        title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
+        title = string(info.baseName().toLocal8Bit()) + " - " + title;
     }
 
     _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));

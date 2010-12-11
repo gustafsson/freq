@@ -1,11 +1,21 @@
 #include "peakmodel.h"
 
+// tools
 #include "support/peakfilter.h"
 #include "tools/renderview.h"
-#include "tfr/cwt.h"
 #include "tools/support/brushpaint.cu.h"
 
+// Sonic AWE
+#include "tfr/cwt.h"
+#include "heightmap/collection.h"
+
+// gpumisc
+#include <CudaException.h>
+
+// boost
 #include <boost/foreach.hpp>
+
+// std
 #include <queue>
 
 namespace Tools { namespace Selections
@@ -579,6 +589,9 @@ void PeakModel::
         if (!(ref == prevRef))
         {
             Heightmap::pBlock block = ref.collection()->getBlock( ref );
+            if (!block)
+                throw CudaException( cudaErrorMemoryAllocation );
+
             GpuCpuData<float>* blockData = block->glblock->height()->data.get();
             data = blockData->getCpuMemory();
 

@@ -581,6 +581,8 @@ void Cwt::
 {
     if (value == _min_hz) return;
 
+    _fft_many.clear();
+
     _min_hz = value;
 }
 
@@ -598,6 +600,8 @@ void Cwt::
 {
     if (value==_scales_per_octave) return;
 
+    _fft_many.clear();
+
     _scales_per_octave=value;
 }
 
@@ -606,6 +610,8 @@ void Cwt::
         tf_resolution( float value )
 {
     if (value == _tf_resolution) return;
+
+    _fft_many.clear();
 
     _tf_resolution = value;
 }

@@ -228,10 +228,12 @@ void GlBlock::
     if (_mapped_height)
     {
         TIME_GLBLOCK TaskTimer tt("Heightmap Cuda->OpenGL");
+        TIME_GLBLOCK CudaException_CHECK_ERROR();
 
         BOOST_ASSERT( _mapped_height.unique() );
 
         _mapped_height.reset();
+        TIME_GLBLOCK CudaException_CHECK_ERROR();
 
         unsigned meshW = _collection->samples_per_block();
         unsigned meshH = _collection->scales_per_block();
@@ -249,15 +251,19 @@ void GlBlock::
         glPixelTransferf(GL_RED_SCALE, 1.0f);
 
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+
+        TIME_GLBLOCK CudaException_CHECK_ERROR();
     }
 
     if (_mapped_slope)
     {
         TIME_GLBLOCK TaskTimer tt("Gradient Cuda->OpenGL");
+        TIME_GLBLOCK CudaException_CHECK_ERROR();
 
         BOOST_ASSERT( _mapped_slope.unique() );
 
         _mapped_slope.reset();
+        TIME_GLBLOCK CudaException_CHECK_ERROR();
 
         unsigned meshW = _collection->samples_per_block();
         unsigned meshH = _collection->scales_per_block();
@@ -280,12 +286,14 @@ void GlBlock::
         //glPixelTransferf(GL_ALPHA_SCALE, 1.0f);
 
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+        TIME_GLBLOCK CudaException_CHECK_ERROR();
     }
 }
 
 void GlBlock::
         draw()
-{
+{    
+    TIME_GLBLOCK CudaException_CHECK_ERROR();
     unmap();
 
     unsigned meshW = _collection->samples_per_block();
@@ -304,12 +312,13 @@ void GlBlock::
         glDrawArrays(GL_POINTS, 0, meshW * meshH);
     } else if (wireFrame) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+3)*(meshH-1), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+4)*(meshH-1), GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+3)*(meshH-1), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+4)*(meshH-1), GL_UNSIGNED_INT, 0);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
+    TIME_GLBLOCK CudaException_CHECK_ERROR();
 }
 
 void GlBlock::
@@ -324,8 +333,8 @@ void GlBlock::
 
     glBegin( GL_TRIANGLE_STRIP );
         glTexCoord2f(0.0,0.0);    glVertex3f(0,0,0);
-        glTexCoord2f(0.0,1.0);    glVertex3f(0,0,1);
-        glTexCoord2f(1.0,0.0);    glVertex3f(1,0,0);
+        glTexCoord2f(0.0,1.0);    glVertex3f(1,0,0);
+        glTexCoord2f(1.0,0.0);    glVertex3f(0,0,1);
         glTexCoord2f(1.0,1.0);    glVertex3f(1,0,1);
     glEnd();
 

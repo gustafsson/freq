@@ -24,8 +24,8 @@
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
-// todo remove?
-#define MAX_REDUNDANT_SIZE 32
+// Don't keep more than this times the number of blocks currently needed
+#define MAX_REDUNDANT_SIZE 8
 
 using namespace Signal;
 
@@ -285,12 +285,7 @@ pBlock Collection::
 
         QMutexLocker l(&_cache_mutex);
 
-        for( recent_t::iterator i = _recent.begin(); i!=_recent.end(); ++i )
-            if ((*i)->ref == ref ) {
-                _recent.erase( i );
-                break;
-            }
-
+        _recent.remove( block );
         _recent.push_front( block );
 
         block->frame_number_last_used = _frame_counter;
@@ -326,19 +321,27 @@ void Collection::
 {
 	QMutexLocker l(&_cache_mutex);
 
-	for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
+    TIME_COLLECTION TaskTimer tt("Collection doing garbage collection", _cache.size());
+    TIME_COLLECTION TaskTimer("Currently has %u cached blocks (ca %g MB)", _cache.size(),
+                              _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*1e-6 ).suppressTiming();
+    TIME_COLLECTION TaskTimer("Of which %u are recently used", _recent.size()).suppressTiming();
+
+    for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        if (itr->second->frame_number_last_used < _frame_counter) {
+        if (_frame_counter != itr->second->frame_number_last_used ) {
             Position a,b;
             itr->second->ref.getArea(a,b);
             TaskTimer tt("Release block [%g, %g]", a.time, b.time);
 			
-			_recent.remove(itr->second);
+            _recent.remove(itr->second);
             itr = _cache.erase(itr);
         } else {
             itr++;
         }
     }
+
+    TIME_COLLECTION TaskTimer("Now has %u cached blocks (ca %g MB)", _cache.size(),
+                              _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*1e-6 ).suppressTiming();
 }
 
 
@@ -411,9 +414,6 @@ pBlock Collection::
           application can still continue and use filters.
           */
         TaskTimer("Collection::attempt swallowed CudaException.\n%s", x.what()).suppressTiming();
-
-        QMutexLocker l(&_cache_mutex);
-        _cache.clear();
     }
     catch (const GlException& x)
     {
@@ -433,13 +433,13 @@ pBlock Collection::
     TIME_COLLECTION TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
     // Try to allocate a new block
     pBlock result;
-    try {
-
+    try
+    {
         pBlock block = attempt( ref );
 
         QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
         if ( 0 == block.get() && !_cache.empty()) {
-            TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Overwriting some older block", a.time, b.time);
+            TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Doing garbage collection", a.time, b.time);
             l.unlock();
             gc();
             l.relock();
@@ -465,25 +465,40 @@ pBlock Collection::
             // fill block by STFT
             {
                 TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "stft");
-                try {
-                    fillBlock( block );
-                    CudaException_CHECK_ERROR();
-                } catch (const CudaException& x ) {
-					TIME_COLLECTION TaskTimer("Collection::createBlock, fillBlock swallowed GlException.\n%s", x.what()).suppressTiming();
-                }
+
+                fillBlock( block );
+                CudaException_CHECK_ERROR();
             }
 
             {
                 if (1) {
-                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
-                    // start with the blocks that are just slightly more detailed
-                    mergeBlock( block, block->ref.left(), 0 );
-                    mergeBlock( block, block->ref.right(), 0 );
-                    mergeBlock( block, block->ref.top(), 0 );
-                    mergeBlock( block, block->ref.bottom(), 0 );
+                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
+                    // then try to upscale other blocks
+                    BOOST_FOREACH( cache_t::value_type& c, _cache )
+                    {
+                        pBlock& b = c.second;
+                        if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
+                            block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
+                        {
+                            mergeBlock( block, b, 0 );
+                        }
+                    }
                 }
 
-                if (0) {
+
+                // TODO compute at what log2_samples_size[1] stft is more accurate
+                // than low resolution blocks. So that Cwt is not needed.
+                if (1) {
+                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
+                    // then try to upscale blocks that are just slightly less detailed
+                    mergeBlock( block, block->ref.parent(), 0 );
+                    mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
+                    mergeBlock( block, block->ref.parent().right(), 0 );
+                    mergeBlock( block, block->ref.parent().top(), 0 );
+                    mergeBlock( block, block->ref.parent().bottom(), 0 );
+                }
+
+                if (1) {
                     TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
                     // then try using the blocks that are even more detailed
                     BOOST_FOREACH( cache_t::value_type& c, _cache )
@@ -497,31 +512,13 @@ pBlock Collection::
                     }
                 }
 
-
-                // TODO compute at what log2_samples_size[1] stft is more accurate
-                // than low resolution blocks.
                 if (1) {
                     TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
-                    // then try to upscale blocks that are just slightly less detailed
-                    mergeBlock( block, block->ref.parent(), 0 );
-                    mergeBlock( block, block->ref.parent().left(), 0 ); // None of these is == ref.sibbling()
-                    mergeBlock( block, block->ref.parent().right(), 0 );
-                    mergeBlock( block, block->ref.parent().top(), 0 );
-                    mergeBlock( block, block->ref.parent().bottom(), 0 );
-                }
-
-                if (0) {
-                    TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
-                    // then try to upscale other blocks
-                    BOOST_FOREACH( cache_t::value_type& c, _cache )
-                    {
-                        pBlock& b = c.second;
-                        if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
-                            block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
-                        {
-                            mergeBlock( block, b, 0 );
-                        }
-                    }
+                    // start with the blocks that are just slightly more detailed
+                    mergeBlock( block, block->ref.left(), 0 );
+                    mergeBlock( block, block->ref.right(), 0 );
+                    mergeBlock( block, block->ref.top(), 0 );
+                    mergeBlock( block, block->ref.bottom(), 0 );
                 }
             }
 
@@ -551,15 +548,16 @@ pBlock Collection::
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
         TaskTimer("Collection::createBlock swallowed CudaException.\n%s", x.what()).suppressTiming();
+        return pBlock();
     }
     catch (const GlException& x )
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
         TaskTimer("Collection::createBlock swallowed GlException.\n%s", x.what()).suppressTiming();
+        return pBlock();
     }
 
-    if ( 0 == result.get())
-        return pBlock(); // return null-pointer
+    BOOST_ASSERT( 0 != result.get() );
 
     if (0!= "Remove old redundant blocks")
     {
@@ -577,7 +575,7 @@ pBlock Collection::
             }
         }
 
-        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size()+1 && 0<youngest_count)
+        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size() && 0<youngest_count)
         {
             Position a,b;
             _recent.back()->ref.getArea(a,b);
@@ -600,6 +598,7 @@ void Collection::
         computeSlope( pBlock block, unsigned /*cuda_stream */)
 {
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+    TIME_COLLECTION CudaException_ThreadSynchronize();
 
     GlBlock::pHeight h = block->glblock->height();
 

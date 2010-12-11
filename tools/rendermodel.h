@@ -5,8 +5,14 @@ namespace Sawe {
     class Project;
 }
 
-#include "heightmap/collection.h"
-#include "heightmap/renderer.h"
+#include "tfr/freqaxis.h"
+#include "signal/worker.h"
+
+namespace Heightmap
+{
+    class Collection;
+    class Renderer;
+}
 
 namespace Tools
 {
@@ -14,14 +20,15 @@ namespace Tools
     {
     public:
         RenderModel(Sawe::Project* p);
+        ~RenderModel();
 
         std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
 
-        Signal::pOperation postsink() { return collections[0]->postsink(); }
-        Tfr::FreqAxis display_scale() { return collections[0]->display_scale(); }
+        Signal::pOperation postsink();
+        Tfr::FreqAxis display_scale();
 
         Signal::pWorkerCallback collectionCallback;
-        Heightmap::pRenderer renderer;
+        boost::shared_ptr<Heightmap::Renderer> renderer;
 
         Sawe::Project* project() { return _project; }
 

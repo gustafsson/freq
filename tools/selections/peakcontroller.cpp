@@ -1,13 +1,16 @@
 #include "peakcontroller.h"
 #include "peakmodel.h"
 
-// Sonic AWE
+// Sonic AWE tools
 #include "tools/selectioncontroller.h"
 #include "support/peakfilter.h"
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "tools/renderview.h"
+
+// Sonic AWE
+#include "heightmap/renderer.h"
 
 // gpumisc
 #include <TaskTimer.h>

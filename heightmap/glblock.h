@@ -12,7 +12,7 @@
 #include <cuda_gl_interop.h>
 #include <GpuCpuData.h>
 #include <stdio.h>
-#include <mappedvbo.h>
+#include "mappedvbo.h"
 
 
 namespace Heightmap {

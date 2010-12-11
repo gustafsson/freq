@@ -13,6 +13,7 @@
 #include "filters/reassign.h"
 #include "filters/ridge.h"
 #include "heightmap/blockfilter.h"
+#include "heightmap/renderer.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
 #include "graphicsview.h"

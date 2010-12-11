@@ -9,6 +9,7 @@
 #include "adapters/microphonerecorder.h"
 #include "support/sinksignalproxy.h"
 #include "tfr/cwt.h"
+#include "heightmap/collection.h"
 
 #include <TaskTimer.h>
 #include <demangle.h>
