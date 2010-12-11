@@ -1,8 +1,7 @@
 #include "splinemodel.h"
 #include "support/splinefilter.h"
 
-#include <boost/foreach.hpp>
-
+ 
 namespace Tools { namespace Selections
 {
 

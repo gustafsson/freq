@@ -39,7 +39,18 @@ public:
     /// @overload Signal::Operation::fetch_invalid_samples()
     Signal::Intervals fetch_invalid_samples()
     {
-        FilterKind::_invalid_samples = _collection->invalid_samples();
+        if (FilterKind::_invalid_samples)
+        {
+            foreach ( boost::shared_ptr<Collection> c, _collections)
+                _collection->invalidate_samples( FilterKind::_invalid_samples );
+
+            FilterKind::_invalid_samples.clear();
+        }
+
+        foreach ( boost::shared_ptr<Collection> c, _collections)
+        {
+            FilterKind::_invalid_samples |= _collection->invalid_samples();
+        }
 
         return Tfr::Filter::fetch_invalid_samples();
     }
@@ -47,13 +58,10 @@ public:
 
     virtual void operator()( Tfr::Chunk& chunk )
     {
-        if (_collections.size())
-        {
-            Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
-            BOOST_ASSERT( fs );
+        Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
+        BOOST_ASSERT( fs );
 
-            _collection = _collections[fs->get_channel()].get();
-        }
+        _collection = _collections[fs->get_channel()].get();
 
         BlockFilter::operator()(chunk);
     }

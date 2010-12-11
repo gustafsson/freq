@@ -25,8 +25,8 @@
 //#define TIME_COMPILESHADER
 #define TIME_COMPILESHADER if(0)
 
-#define TIME_GLBLOCK
-//#define TIME_GLBLOCK if(0)
+//#define TIME_GLBLOCK
+#define TIME_GLBLOCK if(0)
 
 namespace Heightmap {
 
@@ -194,10 +194,8 @@ GlBlock::
         _tex_slope = 0;
     }
 
-    TIME_GLBLOCK TaskTimer("cudaGLUnregisterBufferObject %d", _successfully_registered_height).suppressTiming();
     if (_successfully_registered_height)
         cudaGLUnregisterBufferObject(*_height);
-    TIME_GLBLOCK TaskTimer("cudaGLUnregisterBufferObject %d", _successfully_registered_slope).suppressTiming();
     if (_successfully_registered_slope)
         cudaGLUnregisterBufferObject(*_slope);
 

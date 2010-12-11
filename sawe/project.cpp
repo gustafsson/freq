@@ -139,6 +139,12 @@ void Project::
         return;
     }
 
+    QString extension = ".sonicawe";
+    if (qfilemame.length() < extension.length())
+        qfilemame += extension;
+    if (0 != QString::compare(qfilemame.mid(qfilemame.length() - extension.length()), extension, Qt::CaseInsensitive))
+        qfilemame += extension;
+
     project_file_name = qfilemame.toLocal8Bit().data();
 
     save();

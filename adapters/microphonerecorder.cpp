@@ -2,8 +2,7 @@
 
 #include <iostream>
 #include <memory.h>
-#include <boost/foreach.hpp>
-
+ 
 #define TIME_MICROPHONERECORDER
 //#define TIME_MICROPHONERECORDER if(0)
 

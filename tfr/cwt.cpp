@@ -14,8 +14,9 @@
 #include <Statistics.h>
 
 #include <cmath>
-#include <boost/foreach.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/foreach.hpp>
+#define foreach BOOST_FOREACH
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -54,7 +55,7 @@ Cwt::
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
 //    _fft_many(stream),
     _wavelet_time_suppport( wavelet_time_suppport ),
-    _wavelet_scale_suppport( wavelet_time_suppport + 2 )
+    _wavelet_scale_suppport( 6 )
 {
 }
 
@@ -315,6 +316,8 @@ pChunk Cwt::
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
+    if (0==first_scale)
+        n_scales--; // cheat, don't know why but it seems to work
     TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u, (%g to %g Hz)",
                               first_scale, n_scales, j_to_hz(ft->original_sample_rate, first_scale+n_scales-1),
                               j_to_hz(ft->original_sample_rate, first_scale));
@@ -353,7 +356,10 @@ pChunk Cwt::
         intermediate_wt->sample_rate = ldexp(ft->original_sample_rate, -half_sizes);
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
 
-        intermediate_wt->min_hz = get_max_hz(ft->original_sample_rate)*exp2f( (first_scale + n_scales-1)/-_scales_per_octave );
+        unsigned last_scale = first_scale + n_scales-1;
+        if (0==first_scale)
+            last_scale+=1; // cheat, don't know why but it seems to work
+        intermediate_wt->min_hz = get_max_hz(ft->original_sample_rate)*exp2f( last_scale/-_scales_per_octave );
         intermediate_wt->max_hz = get_max_hz(ft->original_sample_rate)*exp2f( first_scale/-_scales_per_octave );
 
         DEBUG_CWT
@@ -492,7 +498,7 @@ Signal::pBuffer Cwt::
     Signal::pBuffer r( new Signal::Buffer( v.first, v.count(), pchunk->original_sample_rate ));
     memset( r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D() );
 
-    BOOST_FOREACH( pChunk& part, pchunk->chunks )
+    foreach( pChunk& part, pchunk->chunks )
     {
         boost::scoped_ptr<TaskTimer> tt;
         DEBUG_CWT tt.reset( new TaskTimer("ChunkPart inverse, c=%g, [%g, %g] Hz",

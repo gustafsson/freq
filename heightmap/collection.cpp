@@ -7,7 +7,6 @@
 #include "tfr/cwt.h"
 #include "signal/postsink.h"
 
-#include <boost/foreach.hpp>
 #include <InvokeOnDestruction.hpp>
 #include <CudaException.h>
 #include <GlException.h>
@@ -16,6 +15,7 @@
 #include <neat_math.h>
 #include <debugmacros.h>
 #include <Statistics.h>
+//#include <boost/foreach.hpp>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -119,7 +119,7 @@ unsigned Collection::
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
 
-    BOOST_FOREACH(recent_t::value_type& b, _recent)
+    foreach(const recent_t::value_type& b, _recent)
     {
         if (b->frame_number_last_used != _frame_counter)
             break;
@@ -301,9 +301,9 @@ std::vector<pBlock> Collection::
 
     QMutexLocker l(&_cache_mutex);
 
-    BOOST_FOREACH( cache_t::value_type& c, _cache )
+    foreach( const cache_t::value_type& c, _cache )
     {
-        pBlock& pb = c.second;
+        const pBlock& pb = c.second;
         // This check is done in mergeBlock as well, but do it here first
         // for a hopefully more local and thus faster loop.
         if (Intervals(I) & pb->ref.getInterval())
@@ -355,7 +355,7 @@ void Collection::
     _max_sample_size.time = std::max(_max_sample_size.time, 2.f*wf->length()/_samples_per_block);
 
 	QMutexLocker l(&_cache_mutex);
-	BOOST_FOREACH( cache_t::value_type& c, _cache )
+    foreach( const cache_t::value_type& c, _cache )
 		c.second->valid_samples -= sid;
 }
 
@@ -366,7 +366,7 @@ Intervals Collection::
 
 	QMutexLocker l(&_cache_mutex);
 
-	BOOST_FOREACH( recent_t::value_type& b, _recent )
+    foreach( const recent_t::value_type& b, _recent )
 	{
         if (_frame_counter == b->frame_number_last_used)
         {
@@ -458,7 +458,7 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        if ( 1 /* create from others */ )
+        if ( 0 /* create from others */ )
         {
             TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Stubbing new block");
 
@@ -471,12 +471,12 @@ pBlock Collection::
             }
 
             {
-                if (1) {
+                if (0) {
                     TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching low resolution");
                     // then try to upscale other blocks
-                    BOOST_FOREACH( cache_t::value_type& c, _cache )
+                    foreach( const cache_t::value_type& c, _cache )
                     {
-                        pBlock& b = c.second;
+                        const pBlock& b = c.second;
                         if (block->ref.log2_samples_size[0] < b->ref.log2_samples_size[0]-1 ||
                             block->ref.log2_samples_size[1] < b->ref.log2_samples_size[1]-1 )
                         {
@@ -488,7 +488,7 @@ pBlock Collection::
 
                 // TODO compute at what log2_samples_size[1] stft is more accurate
                 // than low resolution blocks. So that Cwt is not needed.
-                if (1) {
+                if (0) {
                     TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
                     mergeBlock( block, block->ref.parent(), 0 );
@@ -498,12 +498,12 @@ pBlock Collection::
                     mergeBlock( block, block->ref.parent().bottom(), 0 );
                 }
 
-                if (1) {
+                if (0) {
                     TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching more details");
                     // then try using the blocks that are even more detailed
-                    BOOST_FOREACH( cache_t::value_type& c, _cache )
+                    foreach( const cache_t::value_type& c, _cache )
                     {
-                        pBlock& b = c.second;
+                        const pBlock& b = c.second;
                         if (block->ref.log2_samples_size[0] > b->ref.log2_samples_size[0] +1 ||
                             block->ref.log2_samples_size[1] > b->ref.log2_samples_size[1] +1)
                         {
@@ -512,7 +512,7 @@ pBlock Collection::
                     }
                 }
 
-                if (1) {
+                if (0) {
                     TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "Fetching details");
                     // start with the blocks that are just slightly more detailed
                     mergeBlock( block, block->ref.left(), 0 );
@@ -562,7 +562,7 @@ pBlock Collection::
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
-        BOOST_FOREACH( recent_t::value_type& b, _recent )
+        foreach( const recent_t::value_type& b, _recent )
         {
             unsigned age = _frame_counter - b->frame_number_last_used;
             if (youngest_age > age) {

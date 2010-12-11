@@ -2,7 +2,6 @@
 #include "ui_mainwindow.h"
 #include <QKeyEvent>
 #include <QSlider>
-#include <boost/foreach.hpp>
 #include <sstream>
 #include <iomanip>
 #include <demangle.h>

@@ -13,8 +13,7 @@
 #include <CudaException.h>
 
 // boost
-#include <boost/foreach.hpp>
-
+ 
 // std
 #include <queue>
 
@@ -137,7 +136,7 @@ void PeakModel::
     loopClassify(ref, x0, y0);
 
     // Discard image data from CPU
-    BOOST_FOREACH( PeakAreas::value_type const& v, classifictions )
+    foreach( PeakAreas::value_type const& v, classifictions )
     {
         Heightmap::pBlock block = ref.collection()->getBlock( v.first );
         GpuCpuData<float>* blockData = block->glblock->height()->data.get();
@@ -234,7 +233,7 @@ void PeakModel::
 bool PeakModel::
         anyBorderPixel( uint2& pos, unsigned w, unsigned h )
 {
-    BOOST_FOREACH(PeakAreas::value_type v, classifictions)
+    foreach(PeakAreas::value_type v, classifictions)
     {
         bool *b = v.second->getCpuMemory();
 
@@ -309,7 +308,7 @@ uint2 PeakModel::
 
     smearGauss();
 
-    BOOST_FOREACH(PeakAreas::value_type v, gaussed_classifictions)
+    foreach(PeakAreas::value_type v, gaussed_classifictions)
     {
         Support::BrushFilter::BrushImageDataP img = peak_filter()->brush.getImage( v.first );
         PeakAreaP gauss = v.second;
@@ -337,7 +336,7 @@ void PeakModel::
             max_ref = ref;
 
 
-    BOOST_FOREACH(PeakAreas::value_type v, classifictions)
+    foreach(PeakAreas::value_type v, classifictions)
     {
         for (int i=0; i<2; ++i)
         {

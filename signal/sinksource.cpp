@@ -1,6 +1,5 @@
 #include "sinksource.h"
 
-#include <boost/foreach.hpp>
 #include <QMutexLocker>
 #include <sstream>
 #include <neat_math.h>
@@ -40,7 +39,7 @@ void SinkSource::
         QMutexLocker l(&_mutex);
 
         // Simply remove previous overlapping buffer, don't bother merging.
-        BOOST_FOREACH( pBuffer& s, _cache) {
+        foreach( pBuffer& s, _cache) {
         {
             if (!s)
                 s = b;
@@ -65,7 +64,7 @@ void SinkSource::
     BufferSource bs( buffer );
 
     Intervals I = expected & buffer->getInterval();
-    BOOST_FOREACH( const Interval& i, I )
+    foreach( const Interval& i, I )
     {
         pBuffer s = bs.readFixedLength( i );
         put( s );
@@ -97,7 +96,7 @@ void SinkSource::
     Intervals sid = samplesDesc();
 	std::vector<pBuffer> new_cache;
 
-    BOOST_FOREACH( Interval i, sid )
+    foreach( Interval i, sid )
 	{
         for (unsigned L=0; i.first < i.last; i.first+=L)
 		{
@@ -154,7 +153,7 @@ void SinkSource::
             // thus making this operation inexpensive.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            BOOST_FOREACH( Interval i, toKeep )
+            foreach( Interval i, toKeep )
             {
                 if(D) ss << " +" << i.toString();
 
@@ -203,7 +202,7 @@ pBuffer SinkSource::
     {
         QMutexLocker l(&_cache_mutex);
 
-        BOOST_FOREACH( const pBuffer& s, _cache) {
+        foreach( const pBuffer& s, _cache) {
             if (s->sample_offset <= I.first && s->sample_offset + s->number_of_samples() > I.first )
             {
                 if(D) TaskTimer("%s: sinksource [%u, %u] got [%u, %u]",
@@ -232,7 +231,7 @@ float SinkSource::
     QMutexLocker l(&_cache_mutex);
 
     if (_cache.empty())
-        return 0;
+        return 44100;
 
     return _cache.front()->sample_rate;
 }
@@ -269,7 +268,7 @@ Intervals SinkSource::
 
     Intervals sid;
 
-    BOOST_FOREACH( const pBuffer& s, _cache) {
+    foreach( const pBuffer& s, _cache) {
         sid |= s->getInterval();
     }
 

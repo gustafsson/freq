@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <boost/foreach.hpp>
 #include <QMutexLocker>
 #include <QMessageBox>
 

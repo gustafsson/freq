@@ -63,7 +63,7 @@ const OperationGraph::vertex_descriptor vertex_descriptor_null = (OperationGraph
 
 //  TODO remove
 //  if (filter_chain) {
-//        BOOST_FOREACH( Tfr::pFilter f, *filter_chain ) {
+//        foreach( Tfr::pFilter f, *filter_chain ) {
 //            OperationGraph::vertex_descriptor c;
 //            c = populateGraph( f, graph );
 
@@ -264,7 +264,7 @@ static void updateOperationsTree( OperationGraph::vertex_descriptor v, Operation
         }
     }
 
-    BOOST_FOREACH( const OperationGraph::vertex_descriptor& common, commons ) {
+    foreach( const OperationGraph::vertex_descriptor& common, commons ) {
         tt.info("Children converge at: %d %s", common, graph[common].title.c_str());
     }
 
@@ -322,7 +322,7 @@ void SaweMainWindow::updateLayerList( Signal::pOperation s )
         return;
     }
 
-    BOOST_FOREACH( Tfr::pFilter f, *filter_chain ) {
+    foreach( Tfr::pFilter f, *filter_chain ) {
         stringstream title;
         stringstream tooltip;
         title << fixed << setprecision(1);

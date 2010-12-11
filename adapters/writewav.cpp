@@ -7,8 +7,7 @@ typedef __int64 __int64_t;
 #endif
 
 #include <sndfile.hh> // for writing various formats
-#include <boost/foreach.hpp>
-
+ 
 #include <Statistics.h>
 
 #define TIME_WRITEWAV

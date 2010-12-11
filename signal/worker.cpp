@@ -6,7 +6,6 @@
 
 #include <QTime>
 #include <QMutexLocker>
-#include <boost/foreach.hpp>
 #include <CudaException.h>
 #include <demangle.h>
 
@@ -196,6 +195,7 @@ Signal::Intervals Worker::
 {
     QMutexLocker l(&_todo_lock);
     Signal::Intervals c = _todo_list;
+    _cheat_work.clear();
     if ( 1 >= Tfr::Cwt::Singleton().wavelet_time_support() )
         c -= _cheat_work;
     else

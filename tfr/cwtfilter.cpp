@@ -8,9 +8,10 @@
 #include <demangle.h>
 
 #include <boost/foreach.hpp>
+#define foreach BOOST_FOREACH
 
-//#define TIME_CwtFilter
-#define TIME_CwtFilter if(0)
+#define TIME_CwtFilter
+//#define TIME_CwtFilter if(0)
 
 // #define DEBUG_CwtFilter
 #define DEBUG_CwtFilter if(0)
@@ -117,7 +118,7 @@ void CwtFilter::
                              pchunk->getInterval().toString().c_str());
     Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( pchunk.get() );
 
-    BOOST_FOREACH( pChunk& chunk, chunks->chunks )
+    foreach( pChunk& chunk, chunks->chunks )
     {
         (*this)( *chunk );
     }
@@ -136,7 +137,7 @@ Tfr::pTransform CwtFilter::
 void CwtFilter::
         transform( Tfr::pTransform t )
 {
-    if (0 == dynamic_cast<Tfr::Cwt*>(t.get ()))
+    if (0 == dynamic_cast<Tfr::Cwt*>( t.get()) )
         throw std::invalid_argument("'transform' must be an instance of Tfr::Cwt");
 
     // even if '0 == t || transform() == t' the client

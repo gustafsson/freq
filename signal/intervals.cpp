@@ -1,11 +1,12 @@
 #include "intervals.h"
 
 #include <stdexcept>
-#include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <cfloat>
 #include <TaskTimer.h>
 #include <sstream>
+
+#include <QtGlobal> // foreach
 
 namespace Signal {
 
@@ -76,8 +77,8 @@ Intervals::
 Intervals& Intervals::
         operator |= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b)
-        operator|=( r );
+    foreach (const Interval& r,  b)
+        operator |= ( r );
     return *this;
 }
 
@@ -114,7 +115,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b)
+    foreach (const Interval& r,  b)
         operator-=( r );
     return *this;
 }
@@ -210,7 +211,7 @@ Intervals& Intervals::
         operator &= (const Intervals& b)
 {
 	Intervals rebuild;
-    BOOST_FOREACH (const Interval& r,  b) {
+    foreach (const Interval& r,  b) {
 		Intervals copy = *this;
         copy&=( r );
 		rebuild |= copy;
@@ -369,7 +370,7 @@ std::string Intervals::toString() const
     std::stringstream ss;
     ss << "{" << size() << " interval" << ((size()==1)?"":"s");
 
-    BOOST_FOREACH (const Interval& r, *this)
+    foreach (const Interval& r, *this)
         ss << " " << r.toString();
 
     ss << "}";

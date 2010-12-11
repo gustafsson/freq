@@ -6,7 +6,6 @@
 #include <CudaException.h>
 #include <GlException.h>
 
-#include <boost/foreach.hpp>
 #include <TaskTimer.h>
 
 //#define TIME_BLOCKFILTER
@@ -40,7 +39,7 @@ void BlockFilter::
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
-    BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
+    foreach( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
     {
         if (_collection->constructor_thread().isSameThread())
         {
@@ -72,7 +71,7 @@ void BlockFilter::
 void BlockFilter::
         computeSlope( Tfr::pChunk pchunk )
 {
-    BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( pchunk->getInterval() ))
+    foreach( pBlock block, _collection->getIntersectingBlocks( pchunk->getInterval() ))
         _collection->computeSlope( block, 0 );
 }
 
