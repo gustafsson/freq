@@ -24,6 +24,9 @@
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
+// #define VERBOSE_COLLECTION
+#define VERBOSE_COLLECTION if(0)
+
 // #define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
 

@@ -27,8 +27,8 @@
 #include <math.h>
 #endif
 
-//#define TIME_CWT if(0)
-#define TIME_CWT
+#define TIME_CWT if(0)
+//#define TIME_CWT
 
 #define STAT_CWT if(0)
 //#define STAT_CWT
