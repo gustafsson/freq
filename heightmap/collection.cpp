@@ -344,6 +344,13 @@ std::vector<pBlock> Collection::
 }
 
 
+unsigned long Collection::
+        cacheByteSize()
+{
+    return _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float);
+}
+
+
 void Collection::
         gc()
 {
@@ -351,7 +358,7 @@ void Collection::
 
     TIME_COLLECTION TaskTimer tt("Collection doing garbage collection", _cache.size());
     TIME_COLLECTION TaskTimer("Currently has %u cached blocks (ca %g MB)", _cache.size(),
-                              _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*1e-6 ).suppressTiming();
+                              cacheByteSize()*1e-6 ).suppressTiming();
     TIME_COLLECTION TaskTimer("Of which %u are recently used", _recent.size()).suppressTiming();
 
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
@@ -491,7 +498,7 @@ pBlock Collection::
             VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
 
             // fill block by STFT
-            if (0) {
+            if (1) {
                 TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "stft");
 
                 fillBlock( block );
@@ -559,8 +566,17 @@ pBlock Collection::
                     foreach( const cache_t::value_type& c, _cache )
                     {
                         const pBlock& b = c.second;
-                        if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0] +1 ||
+                        if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0]  &&
                             block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1] +1)
+                        {
+                            mergeBlock( block, b, 0 );
+                        }
+                    }
+                    foreach( const cache_t::value_type& c, _cache )
+                    {
+                        const pBlock& b = c.second;
+                        if (block->ref.log2_samples_size[0] == b->ref.log2_samples_size[0] +1 &&
+                            block->ref.log2_samples_size[1] == b->ref.log2_samples_size[1] )
                         {
                             mergeBlock( block, b, 0 );
                         }

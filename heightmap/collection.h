@@ -241,6 +241,7 @@ operation              A
 audiofile              source
 */
 
+    unsigned long cacheByteSize();
     void        gc();
 
 

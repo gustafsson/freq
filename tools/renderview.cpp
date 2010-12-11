@@ -332,7 +332,10 @@ void RenderView::
     GlException_CHECK_ERROR();
 
     unsigned N = model->collections.size();
-    TIME_PAINTGL TaskTimer tt("Drawing %u collections", N);
+    unsigned long sumsize = 0;
+    for (unsigned i=0; i<N; ++i)
+        sumsize += model->collections[i]->cacheByteSize();
+    TIME_PAINTGL TaskTimer tt("Drawing %u collections (total cache size: %g MB)", N, sumsize/1024.f/1024.f);
 
     std::vector<float4> channel_colors(N);
     { // Set colors

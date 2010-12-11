@@ -23,8 +23,8 @@
 #include "msc_stdc.h"
 #endif
 
-#define TIME_RENDERER
-//#define TIME_RENDERER if(0)
+//#define TIME_RENDERER
+#define TIME_RENDERER if(0)
 
 namespace Heightmap {
 
@@ -292,8 +292,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    //setSize( collection->samples_per_block(), collection->scales_per_block() );
-    setSize( collection->samples_per_block()/16, collection->scales_per_block() );
+    setSize( collection->samples_per_block(), collection->scales_per_block() );
+    //setSize( collection->samples_per_block()/16, collection->scales_per_block() );
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
