@@ -1,5 +1,6 @@
 #include "squaremodel.h"
 #include "filters/rectangle.h"
+#include "tools/support/operation-composite.h"
 
 namespace Tools { namespace Selections
 {
@@ -8,18 +9,13 @@ SquareModel::
         SquareModel( Tfr::FreqAxis const& fa )
             : fa_(fa)
 {
-    float l = 8;
-    a.time = l*.5f;
-    a.scale = .85f;
-    b.time = l*sqrt(2.0f);
-    b.scale = 2;
-
     // no selection
-    a.time = b.time;
-    a.scale = b.scale;
+    a.time = b.time = 0;
+    a.scale = b.scale = 0;
 
-    filter.reset( new Filters::Rectangle( 0,0,0,0, true ) );
-    updateFilter();
+    Tools::Support::OperationContainer* container =
+            new Tools::Support::OperationContainer(Signal::pOperation(), "Rectangle selection");
+    filter.reset( container );
 }
 
 
@@ -33,16 +29,66 @@ SquareModel::
 void SquareModel::
         updateFilter()
 {
-    Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(filter.get());
+    validate();
 
     float
             f1 = fa_.getFrequency( a.scale ),
             f2 = fa_.getFrequency( b.scale );
 
-    e->_t1 = std::min( a.time, b.time );
-    e->_t2 = std::max( a.time, b.time );
-    e->_f1 = std::min( f1, f2 );
-    e->_f2 = std::max( f1, f2 );
+    Tools::Support::OperationContainer* container =
+            dynamic_cast<Tools::Support::OperationContainer*>(filter.get());
+
+    BOOST_ASSERT(container);
+
+    Signal::Operation* op = 0;
+    if (a.scale>=1 || b.scale<=0)
+        ;
+    else if (a.scale>0 || b.scale<1)
+    {
+        op = new Filters::Rectangle(
+                a.time, f1, b.time, f2, true );
+    }
+    else
+    {
+        float FS = container->sample_rate();
+        op = new Tools::Support::OperationOtherSilent(
+                Signal::pOperation(), a.time*FS, (b.time-a.time)*FS );
+    }
+
+    container->setContent(Signal::pOperation(op));
 }
+
+
+void SquareModel::
+        validate()
+{
+    switch (type)
+    {
+    case SquareType_SquareSelection:
+        break;
+
+    case SquareType_FrequencySelection:
+        a.time = 0;
+        b.time = filter ? filter->length() : 0;
+        break;
+
+    case SquareType_TimeSelection:
+        a.scale = 0;
+        b.scale = 1;
+        break;
+    }
+
+    float
+            t1=a.time,
+            t2=b.time,
+            f1=a.scale,
+            f2=b.scale;
+
+    a.time = std::min( t1, t2 );
+    b.time = std::max( t1, t2 );
+    a.scale = std::min( f1, f2 );
+    b.scale = std::max( f1, f2 );
+}
+
 
 } } // namespace Tools::Selections

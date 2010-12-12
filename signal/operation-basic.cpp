@@ -20,21 +20,21 @@ pBuffer OperationRemoveSection::
 
     if (firstSample + numberOfSamples <= _firstSample )
     {
-        return _source->read( I );
+        return source()->read( I );
     }
 
     if (firstSample < _firstSample)
     {
         Interval I2(firstSample,_firstSample);
 
-        return _source->read( I2 );
+        return source()->read( I2 );
     }
 
     Interval I2(0,0);
     I2.first = firstSample + _numberOfRemovedSamples;
     I2.last = I2.first + numberOfSamples;
 
-    pBuffer b = _source->read( I2 );
+    pBuffer b = source()->read( I2 );
     b->sample_offset -= _numberOfRemovedSamples;
     return b;
 }
@@ -65,10 +65,10 @@ pBuffer OperationInsertSilence::
     IntervalType numberOfSamples = I.count();
 
     if (firstSample + numberOfSamples <= _firstSample )
-        return _source->read( I );
+        return source()->read( I );
 
     if (firstSample < _firstSample)
-        return _source->read( Interval(I.first, _firstSample - I.first) );
+        return source()->read( Interval(I.first, _firstSample - I.first) );
 
     if (firstSample >= _firstSample +  _numberOfSilentSamples) {
         pBuffer b = _source->read(

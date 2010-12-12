@@ -98,7 +98,7 @@ ChunkAndInverse Filter::
 
     ChunkAndInverse ci;
 
-    Filter* f = dynamic_cast<Filter*>(source().get());
+    Filter* f = dynamic_cast<Filter*>(source()->affecting_source(I));
     if ( f && f->transform() == transform()) {
         ci = f->readChunk( I );
 

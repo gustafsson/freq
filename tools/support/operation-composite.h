@@ -24,31 +24,79 @@ namespace Tools {
   */
 class OperationSubOperations : public Signal::Operation {
 public:
-    Signal::pOperation subSource() { return _readSubOperation; }
+    Signal::pOperation subSource() { return _source; }
 
-	std::string name() { return _name; }
+    std::string name() { return name_; }
 
 protected:
     OperationSubOperations(Signal::pOperation source, std::string name = "");
 
-    virtual Signal::pBuffer read( const Signal::Interval&  I);
-    virtual Signal::pOperation source() { return Signal::Operation::source(); }
-    virtual void source(Signal::pOperation v);
+    /// this do skip all contained suboperations
+    virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
+    virtual void source(Signal::pOperation v) { source_sub_operation_->source(v); }
 
-    Signal::pOperation _sourceSubOperation;
-    Signal::pOperation _readSubOperation;
-	std::string _name;
+    Signal::pOperation source_sub_operation_;
+    std::string name_;
+};
+
+
+/**
+  OperationContainer contains exactly 1 other Operation (as opposed to
+  OperationSubOperations which contains an arbitrary number of operations in
+  sequence). This is useful when you want to pass around an Operation but the
+  Operation implementation might change afterwards.
+
+  This happens for instance with selection tools. The selection filter has a
+  specific location in the Operation tree but when the user changes the
+  selection the implementatino might change from a Rectangle to a
+  OperationOtherSilent and back again.
+ */
+class OperationContainer: public OperationSubOperations
+{
+public:
+    OperationContainer(Signal::pOperation source, std::string name = "");
+
+    void setContent(Signal::pOperation content)
+    {
+        if (!content)
+            _source = source_sub_operation_;
+        else
+        {
+            _source = content;
+            _source ->source( source_sub_operation_ );
+        }
+    }
+    Signal::pOperation content() { return subSource(); }
+};
+
+
+/**
+  Example 1:
+  start:  1234567
+  OperationSetSilent( start, 1, 2 );
+  result: 1004567
+*/
+class OperationSetSilent: public OperationSubOperations {
+public:
+    OperationSetSilent( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
+
+    void reset( unsigned firstSample, unsigned numberOfSamples );
+
+    virtual Signal::Intervals zeroed_samples() { return source()->zeroed_samples() | affected_samples(); }
+    virtual Signal::Intervals affected_samples();
+private:
+    unsigned firstSample_, numberOfSamples_;
 };
 
 /**
   Example 1:
   start:  1234567
-  OperationCrop( start, 1, 2 );
-  result: 23
+  OperationOtherSilent( start, 1, 2 );
+  result: 0230000
 */
-class OperationSetSilent: public OperationSubOperations {
+class OperationOtherSilent: public OperationSubOperations {
 public:
-    OperationSetSilent( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
+    OperationOtherSilent( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
 
     void reset( unsigned firstSample, unsigned numberOfSamples );
 };

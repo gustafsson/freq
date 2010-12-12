@@ -11,6 +11,13 @@ namespace Tools { namespace Selections
     class SquareModel
     {
     public:
+        enum SquareType
+        {
+            SquareType_SquareSelection,
+            SquareType_FrequencySelection,
+            SquareType_TimeSelection
+        };
+
         SquareModel( Tfr::FreqAxis const& fa );
         ~SquareModel();
 
@@ -18,7 +25,9 @@ namespace Tools { namespace Selections
         Signal::pOperation filter;
 
         Heightmap::Position a, b;
+        SquareType type;
 
+        void validate();
     private:
         void createFilter();
         Tfr::FreqAxis fa_;

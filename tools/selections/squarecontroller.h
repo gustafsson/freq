@@ -24,6 +24,8 @@ signals:
 
 private slots:
     void enableSquareSelection(bool active);
+    void enableTimeSelection(bool active);
+    void enableFrequencySelection(bool active);
 
 private:
     // Event handlers

@@ -13,11 +13,11 @@ public:
     virtual pBuffer read( const Interval& I );
     virtual IntervalType number_of_samples();
 
-    // TODO overload these as well, Intervals need to be translated
-    // virtual Intervals affected_samples() { return Intervals(); }
-    // virtual Intervals invalid_samples();
-    // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    virtual Intervals affected_samples() { return Signal::Interval::Interval_ALL; }
+    virtual Intervals zeroed_samples() { return Operation::zeroed_samples() >> _firstSample; }
+    virtual Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples( ) >> _firstSample; }
 private:
+
     IntervalType _firstSample, _numberOfRemovedSamples;
 };
 
@@ -29,10 +29,9 @@ public:
     virtual pBuffer read( const Interval& I );
     virtual IntervalType number_of_samples();
 
-    // TODO overload these as well, Intervals need to be translated
-    // virtual Intervals affected_samples() { return Intervals(); }
-    // virtual Intervals invalid_samples();
-    // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    virtual Intervals affected_samples() { return Signal::Interval(_firstSample, Signal::Interval::IntervalType_MAX); }
+    virtual Intervals zeroed_samples() { return Signal::Interval(_firstSample, _firstSample+_numberOfSilentSamples ); }
+    virtual Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples( ) << _firstSample; }
 private:
     IntervalType _firstSample, _numberOfSilentSamples;
 };

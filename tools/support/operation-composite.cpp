@@ -16,25 +16,21 @@ namespace Tools {
 OperationSubOperations::
         OperationSubOperations(pOperation source, std::string name)
 :   Operation(source),
-    _sourceSubOperation( new Operation(source)),
-	_name(name)
-{}
-
-
-pBuffer OperationSubOperations ::
-        read( const Interval &I )
+    source_sub_operation_( new Operation(source)),
+    name_(name)
 {
-    return _readSubOperation->read( I );
+    enabled(false);
+    source_sub_operation_->enabled(false);
 }
 
-void OperationSubOperations ::
-        source(pOperation v)
-{
-    Operation *o = dynamic_cast<Operation*>(_sourceSubOperation.get());
-    if (0 == o) throw std::runtime_error("0==o");
-    o->source(v);
 
-    Operation::source(v);
+    // OperationContainer  /////////////////////////////////////////////////////////////////
+
+OperationContainer::
+        OperationContainer(Signal::pOperation source, std::string name )
+            :
+            OperationSubOperations(source, name)
+{
 }
 
 
@@ -50,12 +46,11 @@ OperationCrop::
 void OperationCrop::
         reset( unsigned firstSample, unsigned numberOfSamples )
 {
-    pOperation cropBefore( new OperationRemoveSection( _source, 0, firstSample ));
+    pOperation cropBefore( new OperationRemoveSection( source_sub_operation_, 0, firstSample ));
     pOperation cropAfter( new OperationRemoveSection( cropBefore, numberOfSamples,
                                                    cropBefore->number_of_samples() - numberOfSamples ));
 
-    _sourceSubOperation = cropBefore;
-    _readSubOperation = cropAfter;
+    _source = cropAfter;
 }
 
 
@@ -70,12 +65,38 @@ OperationSetSilent::
 void OperationSetSilent::
         reset( unsigned firstSample, unsigned numberOfSamples )
 {
-    pOperation remove( new OperationRemoveSection( _sourceSubOperation, firstSample, numberOfSamples ));
+    firstSample_ = firstSample;
+    numberOfSamples_ = numberOfSamples;
+
+    pOperation remove( new OperationRemoveSection( source_sub_operation_, firstSample, numberOfSamples ));
     pOperation addSilence( new OperationInsertSilence (remove, firstSample, numberOfSamples ));
 
-    _readSubOperation = addSilence;
+    _source = addSilence;
 }
 
+Signal::Intervals OperationSetSilent::
+        affected_samples()
+{
+    return Signal::Interval(firstSample_,firstSample_+ numberOfSamples_);
+}
+
+
+    // OperationOtherSilent  /////////////////////////////////////////////////////////////////
+OperationOtherSilent::
+        OperationOtherSilent( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples )
+:   OperationSubOperations( source )
+{
+    reset(firstSample, numberOfSamples);
+}
+
+void OperationOtherSilent::
+        reset( unsigned firstSample, unsigned numberOfSamples )
+{
+    pOperation silentBefore( new OperationSetSilent( source_sub_operation_, 0, firstSample ));
+    pOperation silentAfter( new OperationSetSilent( silentBefore, firstSample+numberOfSamples, Interval::IntervalType_MAX ));
+
+    _source = silentAfter;
+}
 
     // OperationMove  /////////////////////////////////////////////////////////////////
 
@@ -90,13 +111,15 @@ void OperationMove::
         reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
 {
     // Note: difference to OperationMoveMerge is that OperationMove has the silenceTarget step
-    pOperation silenceTarget( new OperationSetSilent(_sourceSubOperation, newFirstSample, numberOfSamples ));
+    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newFirstSample, numberOfSamples ));
     pOperation silence( new OperationSetSilent(silenceTarget, firstSample, numberOfSamples ));
-    pOperation crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
+
+    pOperation crop( new OperationCrop( source_sub_operation_, firstSample, numberOfSamples ));
     pOperation moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
+
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    _readSubOperation = addition;
+    _source = addition;
 }
 
 
@@ -112,12 +135,14 @@ OperationMoveMerge::
 void OperationMoveMerge::
         reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
 {
-    pOperation silence( new OperationSetSilent (_sourceSubOperation, firstSample, numberOfSamples ));
-    pOperation crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
+    pOperation silence( new OperationSetSilent (source_sub_operation_, firstSample, numberOfSamples ));
+
+    pOperation crop( new OperationCrop( source_sub_operation_, firstSample, numberOfSamples ));
     pOperation moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
+
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    _readSubOperation = addition;
+    _source = addition;
 }
 
 
@@ -135,13 +160,13 @@ void OperationShift::
 {
     if ( 0 < sampleShift )
     {
-        pOperation addSilence( new OperationInsertSilence( Operation::source(), 0u, (unsigned)sampleShift ));
-        _sourceSubOperation = _readSubOperation = addSilence;
+        pOperation addSilence( new OperationInsertSilence( source_sub_operation_, 0u, (unsigned)sampleShift ));
+        _source = addSilence;
     } else if (0 > sampleShift ){
-        pOperation removeStart( new OperationRemoveSection( Operation::source(), 0u, (unsigned)-sampleShift ));
-        _sourceSubOperation = _readSubOperation = removeStart;
+        pOperation removeStart( new OperationRemoveSection( source_sub_operation_, 0u, (unsigned)-sampleShift ));
+        _source = removeStart;
 	} else {
-        _sourceSubOperation = _readSubOperation = _source;
+        _source = source_sub_operation_;
 	}
 }
 
@@ -197,7 +222,7 @@ void OperationMoveSelection::
 
     pOperation mergeSelection( new OperationSuperposition( remove, extractAndMove ));
 
-	_readSubOperation = mergeSelection;
+    _source = mergeSelection;
 }
 
     } // namespace Support

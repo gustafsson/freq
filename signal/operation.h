@@ -42,8 +42,8 @@ public:
     /**
       What makes an operation is that it processes a signal that actually comes
       from somewhere else. This 'somewhere else' is defined by another
-      Operation. In the end there is some kind of operation that doesn't rely
-      on some source but provides all data by itself.
+      Operation. In the end there is a special kind of operation (FinalSource)
+      that doesn't rely on its source() but provides all data by itself.
       */
     virtual pOperation source() const { return _source; }
     virtual void source(pOperation v) { _source=v; } /// @see source()
@@ -52,7 +52,7 @@ public:
     /**
       'affected_samples' describes where it is possible that
         'source()->readFixedLength( I ) != readFixedLength( I )'
-      '!affected_samples' describes where it is guaranteed that
+      '~affected_samples' describes where it is guaranteed that
         'source()->readFixedLength( I ) == readFixedLength( I )'
 
       A filter is allowed to be passive in some parts and nonpassive in others.
@@ -63,11 +63,11 @@ public:
 
       As default all samples are possibly affected by an Operation.
       */
-    virtual Signal::Intervals affected_samples() { return Signal::Intervals::Intervals_ALL; }
+    virtual Signal::Intervals affected_samples() { return _enabled?Signal::Intervals::Intervals_ALL:Signal::Intervals(); }
 
 
     /**
-      These samples are definitely set to 0 by the filter. As default returns
+      These samples are definitely set to 0 after the filter. As default returns
       source()->zeroed_samples if source() is not null, or no samples if
       source() is null.
 
@@ -96,7 +96,11 @@ public:
       read() is used instead.
 
       affecting_source will return source()->affecting_source() if enabled()
-      is false.
+      is false since affected_samples() is empty if enabled() is false.
+
+      This also skips wrapper containers that doesn't do anything themselves.
+
+      Returns 'this' if this Operation does something.
       */
     virtual Operation* affecting_source( const Interval& I );
 
@@ -154,7 +158,9 @@ protected:
 
 private:
     Operation() {} // used by serialization
+
     friend class boost::serialization::access;
+
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {

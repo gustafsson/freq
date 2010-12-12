@@ -182,7 +182,7 @@ pBuffer MatlabOperation::
 {
     TaskTimer tt("MatlabOperation::read(%u,%u), count = %u", I.first, I.last, (Signal::IntervalType)I.count() );
 
-    pBuffer b = _source->read( I );
+    pBuffer b = source()->read( I );
 
     string file = _matlab->getTempName();
 

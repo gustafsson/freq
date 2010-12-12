@@ -52,7 +52,11 @@ namespace Tools { namespace Selections
         // 'enableSquareSelection' sets/unsets this as current tool when
         // the action is checked/unchecked.
         connect(ui->actionSquareSelection, SIGNAL(toggled(bool)), SLOT(enableSquareSelection(bool)));
+        connect(ui->actionFrequencySelection, SIGNAL(toggled(bool)), SLOT(enableFrequencySelection(bool)));
+        connect(ui->actionTimeSelection, SIGNAL(toggled(bool)), SLOT(enableTimeSelection(bool)));
         connect(this, SIGNAL(enabledChanged(bool)), ui->actionSquareSelection, SLOT(setChecked(bool)));
+        connect(this, SIGNAL(enabledChanged(bool)), ui->actionFrequencySelection, SLOT(setChecked(bool)));
+        connect(this, SIGNAL(enabledChanged(bool)), ui->actionTimeSelection, SLOT(setChecked(bool)));
 
         // Paint the ellipse when render view paints
         connect(selection_controller_->render_view(), SIGNAL(painting()), view_, SLOT(draw()));
@@ -79,6 +83,8 @@ namespace Tools { namespace Selections
             {
                 selectionStart.time = -FLT_MAX;
             }
+
+            model()->validate();
         }
 
         selection_controller_->render_view()->userinput_update();
@@ -121,6 +127,7 @@ namespace Tools { namespace Selections
                 model()->b = p;
             }
 
+            model()->validate();
         }
 
         selection_controller_->render_view()->userinput_update();
@@ -133,7 +140,8 @@ namespace Tools { namespace Selections
         if (event->type() & QEvent::EnabledChange)
         {
             view_->enabled = isEnabled();
-            emit enabledChanged(isEnabled());
+            if (!view_->enabled)
+                emit enabledChanged(isEnabled());
         }
     }
 
@@ -144,7 +152,36 @@ namespace Tools { namespace Selections
         selection_controller_->setCurrentTool( this, active );
 
         if (active)
+        {
             selection_controller_->setCurrentSelection( model()->filter );
+            model()->type = SquareModel::SquareType_SquareSelection;
+        }
+    }
+
+
+    void SquareController::
+            enableTimeSelection(bool active)
+    {
+        selection_controller_->setCurrentTool( this, active );
+
+        if (active)
+        {
+            selection_controller_->setCurrentSelection( model()->filter );
+            model()->type = SquareModel::SquareType_TimeSelection;
+        }
+    }
+
+
+    void SquareController::
+            enableFrequencySelection(bool active)
+    {
+        selection_controller_->setCurrentTool( this, active );
+
+        if (active)
+        {
+            selection_controller_->setCurrentSelection( model()->filter );
+            model()->type = SquareModel::SquareType_FrequencySelection;
+        }
     }
 
 }} // namespace Tools::Selections
