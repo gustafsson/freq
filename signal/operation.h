@@ -42,8 +42,8 @@ public:
     /**
       What makes an operation is that it processes a signal that actually comes
       from somewhere else. This 'somewhere else' is defined by another
-      Operation. In the end there is some kind of operation that doesn't rely
-      on some source but provides all data by itself.
+      Operation. In the end there is a special kind of operation (FinalSource)
+      that doesn't rely on its source() but provides all data by itself.
       */
     virtual pOperation source() const { return _source; }
     virtual void source(pOperation v) { _source=v; } /// @see source()
@@ -52,7 +52,7 @@ public:
     /**
       'affected_samples' describes where it is possible that
         'source()->readFixedLength( I ) != readFixedLength( I )'
-      '!affected_samples' describes where it is guaranteed that
+      '~affected_samples' describes where it is guaranteed that
         'source()->readFixedLength( I ) == readFixedLength( I )'
 
       A filter is allowed to be passive in some parts and nonpassive in others.
@@ -63,13 +63,13 @@ public:
 
       As default all samples are possibly affected by an Operation.
       */
-    virtual Signal::Intervals affected_samples() { return Signal::Intervals::Intervals_ALL; }
+    virtual Signal::Intervals affected_samples() { return _enabled?Signal::Intervals::Intervals_ALL:Signal::Intervals(); }
 
 
     /**
-      These samples are definitely set to 0 by the filter. As default returns
-      source()->zeroed_samples if source() is not null, or no samples if
-      source() is null.
+      These samples are definitely set to 0 after the filter. As default returns
+      _source->zeroed_samples if source() is not null, or no samples if
+      _source is null.
 
       @remarks zeroed_samples is _assumed_ (but never checked) to be a subset
       of Signal::Operation::affected_samples().
@@ -96,9 +96,19 @@ public:
       read() is used instead.
 
       affecting_source will return source()->affecting_source() if enabled()
-      is false.
+      is false since affected_samples() is empty if enabled() is false.
+
+      This also skips wrapper containers that doesn't do anything themselves.
+
+      Returns 'this' if this Operation does something.
       */
     virtual Operation* affecting_source( const Interval& I );
+
+
+    /**
+      @see OperationSubOperations
+      */
+    virtual Signal::Intervals affected_samples_until(pOperation stop);
 
 
     /**
@@ -129,6 +139,25 @@ public:
 
 
     /**
+      An implementation of Operation needs to overload this if the samples are
+      moved in some way.
+
+      Example: OperationRemoveSection removes some samples from the signal.
+      Let's say the section to remove is [10,20) then we have:
+        'translate_interval([0,10))' -> '[0,10)'
+        'translate_interval([10,20))' -> '[)'
+        'translate_interval([20,30))' -> '[10,20)'
+      (If the method chooses to alter the sample rate is not relevant to this
+      method as it counts signal samples only).
+
+      The default implementation returns the same interval.
+
+      @see OperationRemoveSection, OperationInsertSilence, zeroed_samples
+      */
+    virtual Signal::Intervals translate_interval(Signal::Intervals I) { return I; }
+
+
+    /**
       An operation can be disabled. If it is not enabled any call to read must
       return source()->read();
       */
@@ -138,6 +167,7 @@ public:
 
     Operation* root();
 
+    virtual std::string toString();
 protected:
     pOperation _source; /// @see Operation::source()
     bool _enabled; /// @see Operation::enabled()
@@ -154,7 +184,9 @@ protected:
 
 private:
     Operation() {} // used by serialization
+
     friend class boost::serialization::access;
+
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {

@@ -138,7 +138,9 @@ bool Worker::
     if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
         time_duration diff = now - _last_work_one;
         float current_fps = 1000000.0/diff.total_microseconds();
-        TIME_WORKER TaskTimer tt("Current framerate = %g fps", current_fps);
+        TIME_WORKER TaskTimer tt(
+                "Current framerate = %g fps (requested fps %g)",
+                current_fps, _requested_fps);
         tt.suppressTiming();
 
         if (current_fps < _requested_fps &&
@@ -261,8 +263,6 @@ float Worker::
 void Worker::
         requested_fps(float value)
 {
-    TaskTimer("Worker::requested_fps(%g)", value).suppressTiming();
-
     if (_min_fps>value) value=_min_fps;
 
     if (value>_requested_fps) {

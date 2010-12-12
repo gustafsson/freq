@@ -6,36 +6,29 @@ namespace Signal {
     // OperationRemoveSection ///////////////////////////////////////////////////////////
 
 OperationRemoveSection::
-        OperationRemoveSection( pOperation source, IntervalType firstSample, IntervalType numberOfRemovedSamples )
+        OperationRemoveSection( pOperation source, Interval section )
 :   Operation( source ),
-    _firstSample( firstSample ),
-    _numberOfRemovedSamples( numberOfRemovedSamples )
-{}
+    section_(section)
+{
+    BOOST_ASSERT(section_.valid());
+}
 
 pBuffer OperationRemoveSection::
         read( const Interval& I )
 {
-    IntervalType firstSample = I.first;
-    IntervalType numberOfSamples = I.count();
-
-    if (firstSample + numberOfSamples <= _firstSample )
+    if (I.last <= section_.first )
     {
-        return _source->read( I );
+        return source()->readFixedLength( I );
     }
 
-    if (firstSample < _firstSample)
+    if (I.first < section_.first)
     {
-        Interval I2(firstSample,_firstSample);
-
-        return _source->read( I2 );
+        return source()->readFixedLength( Interval(I.first, section_.first) );
     }
 
-    Interval I2(0,0);
-    I2.first = firstSample + _numberOfRemovedSamples;
-    I2.last = I2.first + numberOfSamples;
+    pBuffer b = source()->readFixedLength( Intervals(I) << section_.count() );
+    b->sample_offset -= section_.count();
 
-    pBuffer b = _source->read( I2 );
-    b->sample_offset -= _numberOfRemovedSamples;
     return b;
 }
 
@@ -43,53 +36,121 @@ IntervalType OperationRemoveSection::
         number_of_samples()
 {
     IntervalType N = Operation::number_of_samples();
-    if (N<_numberOfRemovedSamples)
-        return 0;
-    return N - _numberOfRemovedSamples;
+    if (N<section_.last)
+        return std::min(N, section_.first);
+    return N - section_.count();
+}
+
+Intervals OperationRemoveSection::
+        affected_samples()
+{
+    return Signal::Interval(section_.first, Signal::Interval::IntervalType_MAX);
+}
+
+Signal::Intervals OperationRemoveSection::
+        translate_interval(Signal::Intervals I)
+{
+    Signal::Intervals beginning, ending;
+
+    if (section_.first)
+        beginning = Signal::Interval( 0, section_.first );
+
+    if (section_.last < Signal::Interval::IntervalType_MAX)
+        ending = Signal::Interval( section_.last, Signal::Interval::IntervalType_MAX );
+
+    return (I&beginning) | ((I&ending) >> section_.count());
+}
+
+Signal::Intervals OperationRemoveSection::
+        translate_interval_inverse(Signal::Intervals I)
+{
+    Signal::Intervals beginning, ending;
+
+    if (section_.first)
+        beginning = Signal::Interval( 0, section_.first );
+
+    ending = Signal::Interval( section_.first, Signal::Interval::IntervalType_MAX );
+
+    return (I&beginning) | ((I&ending) << section_.count());
 }
 
     // OperationInsertSilence ///////////////////////////////////////////////////////////
 
 OperationInsertSilence::
-        OperationInsertSilence( pOperation source, IntervalType firstSample, IntervalType numberOfSilentSamples )
+        OperationInsertSilence( pOperation source, Interval section )
 :   Operation( source ),
-    _firstSample( firstSample ),
-    _numberOfSilentSamples( numberOfSilentSamples )
-{}
+    section_( section )
+{
+}
 
 
 pBuffer OperationInsertSilence::
         read( const Interval& I )
 {
-    IntervalType firstSample = I.first;
-    IntervalType numberOfSamples = I.count();
+    if (I.last <= section_.first )
+        return source()->readFixedLength( I );
 
-    if (firstSample + numberOfSamples <= _firstSample )
-        return _source->read( I );
+    if (I.first < section_.first)
+        return source()->readFixedLength( Interval(I.first, section_.first) );
 
-    if (firstSample < _firstSample)
-        return _source->read( Interval(I.first, _firstSample - I.first) );
-
-    if (firstSample >= _firstSample +  _numberOfSilentSamples) {
-        pBuffer b = _source->read(
-                Interval( I.first - _numberOfSilentSamples, I.first - _numberOfSilentSamples + numberOfSamples ));
-        b->sample_offset += _numberOfSilentSamples;
+    if (I.first >= section_.last) {
+        pBuffer b = _source->readFixedLength(
+                Intervals( I ) >> section_.count());
+        b->sample_offset += section_.count();
         return b;
     }
 
     // Create silence
-    IntervalType length = _numberOfSilentSamples - (firstSample - _firstSample);
-    if ( length > numberOfSamples )
-        length = numberOfSamples;
+    Interval silence = I;
+    if ( silence.last > section_.last)
+        silence.last = section_.last;
 
-    return zeros(Signal::Interval(firstSample, firstSample+length));
+    return zeros(silence);
 }
 
 IntervalType OperationInsertSilence::
         number_of_samples()
 {
-    return Operation::number_of_samples() + _numberOfSilentSamples;
+    IntervalType N = Operation::number_of_samples();
+    if (N <= section_.first)
+        return N;
+    if (N + section_.count() < N)
+        return Interval::IntervalType_MAX;
+    return N + section_.count();
 }
+
+Intervals OperationInsertSilence::
+        affected_samples()
+{
+    return Signal::Interval(section_.first, Signal::Interval::IntervalType_MAX);
+}
+
+Signal::Intervals OperationInsertSilence::
+        translate_interval(Signal::Intervals I)
+{
+    Signal::Intervals beginning, ending;
+
+    if (section_.first)
+        beginning = Signal::Interval( 0, section_.first );
+
+    ending = Signal::Interval( section_.first, Signal::Interval::IntervalType_MAX );
+
+    return (I&beginning) | ((I&ending) << section_.count());
+}
+
+Signal::Intervals OperationInsertSilence::
+        translate_interval_inverse(Signal::Intervals I)
+{
+    Signal::Intervals beginning, ending;
+
+    if (section_.first)
+        beginning = Signal::Interval( 0, section_.first );
+
+    ending = Signal::Interval(section_.last, Signal::Interval::IntervalType_MAX);
+
+    return (I&beginning) | ((I&ending) >> section_.count());
+}
+
 
 // OperationSuperposition ///////////////////////////////////////////////////////////
 

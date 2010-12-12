@@ -63,6 +63,11 @@ void PlaybackView::
         return;
     }
 
+    // Playback has reached end but continues with zeros to avoid clicks
+    if (model->playback()->hasReachedEnd()) {
+        return;
+    }
+
     _playbackMarker = model->playback()->time();
 
     if (follow_play_marker)

@@ -17,6 +17,7 @@ namespace Tools { namespace Selections
 
 SplineView::SplineView(SplineModel* model, Signal::Worker* worker)
     :
+    visible(true),
     enabled(false),
     model_(model),
     worker_(worker)
@@ -34,7 +35,8 @@ SplineView::
 void SplineView::
         draw()
 {
-    drawSelectionSpline();
+    if (visible)
+        drawSelectionSpline();
 }
 
 

@@ -103,7 +103,7 @@ namespace Tools
         spline_view_.reset( new Selections::SplineView(        spline_model_.data(), &render_view()->model->project()->worker ));
         spline_controller_ = new Selections::SplineController( spline_view_.data(), this );
 
-        square_model_.reset( new Selections::SquareModel(      render_view()->model->display_scale()));
+        square_model_.reset( new Selections::SquareModel(      render_view()->model->display_scale(), render_view()->model->project() ));
         square_view_.reset( new Selections::SquareView(        square_model_.data(), &render_view()->model->project()->worker ));
         square_controller_ = new Selections::SquareController( square_view_.data(), this );
     }
@@ -112,8 +112,14 @@ namespace Tools
     void SelectionController::
             setCurrentTool( QWidget* tool, bool active )
     {
-        tool_selector_->setCurrentTool( tool, active );
+//        render_view()->toolSelector()->setCurrentTool(
+//                this, (active && tool) || (tool && tool==tool_selector_->currentTool()));
 
+//        if (tool_selector_->currentTool() && tool_selector_->currentTool()!=tool)
+//            tool_selector_->currentTool()->setVisible( false );
+        tool_selector_->setCurrentTool( tool, active );
+//        if (tool_selector_->currentTool())
+//            tool_selector_->currentTool()->setVisible( true );
         render_view()->toolSelector()->setCurrentTool(
                 this, 0!=tool_selector_->currentTool() );
     }
@@ -201,14 +207,15 @@ namespace Tools
         // affected_samples need a sample rate
         Signal::pOperation f = _model->current_filter_;
         f->source( _worker->source() );
-        Signal::Interval i = f->affected_samples().coveredInterval();
+        Signal::Intervals I = f->affected_samples().coveredInterval();
+        I -= f->zeroed_samples();
 
-        if (0<i.count())
+        if (0<I.coveredInterval().count())
             return;
 
         // Create OperationRemoveSection to remove that section from the stream
         Signal::pOperation remove(new Signal::OperationRemoveSection(
-                Signal::pOperation(), i.first, i.count() ));
+                Signal::pOperation(), I.coveredInterval() ));
         _worker->appendOperation( remove );
     }
 

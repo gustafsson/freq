@@ -3,8 +3,8 @@
 
 #include <demangle.h>
 
-//#define TIME_Filter
-#define TIME_Filter if(0)
+#define TIME_Filter
+//#define TIME_Filter if(0)
 
 using namespace Signal;
 
@@ -40,7 +40,7 @@ Signal::pBuffer Filter::
 
         const Signal::Intervals affected = affected_samples();
         // If no samples would be affected, return from source
-        if (!(work & affected))
+        if (this!=affecting_source(I) && !(work & affected))
         {
             // Attempt a regular simple read
             pBuffer b = Signal::Operation::read( I );
@@ -98,7 +98,7 @@ ChunkAndInverse Filter::
 
     ChunkAndInverse ci;
 
-    Filter* f = dynamic_cast<Filter*>(source().get());
+    Filter* f = dynamic_cast<Filter*>(source()->affecting_source(I));
     if ( f && f->transform() == transform()) {
         ci = f->readChunk( I );
 
@@ -114,7 +114,7 @@ ChunkAndInverse Filter::
         ci.inverse.reset();
 
     // Only apply filter if it would affect these samples
-    if (work || !_try_shortcuts)
+    if (this==affecting_source(I) || work || !_try_shortcuts)
     {
         TIME_Filter TaskTimer("%s applying filter operation, %s",
                               vartype(*this).c_str(), ci.chunk->getInterval().toString().c_str());

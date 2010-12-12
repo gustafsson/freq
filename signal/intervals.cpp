@@ -69,6 +69,8 @@ Intervals::
 Intervals::
         Intervals(IntervalType first, IntervalType last)
 {
+//    if (first<last)
+//        last = Interval::IntervalType_MAX;
     BOOST_ASSERT( first < last );
     this->push_back( Interval( first, last ) );
 }

@@ -24,6 +24,8 @@ signals:
 
 private slots:
     void enableSquareSelection(bool active);
+    void enableTimeSelection(bool active);
+    void enableFrequencySelection(bool active);
 
 private:
     // Event handlers
@@ -31,6 +33,8 @@ private:
     virtual void mouseReleaseEvent ( QMouseEvent * e );
     virtual void mouseMoveEvent ( QMouseEvent * e );
     virtual void changeEvent ( QEvent * event );
+
+    void enableSelectionType(const SquareModel::SquareType type, const bool active);
 
     // View
     SquareView* view_;

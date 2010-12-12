@@ -22,6 +22,7 @@ namespace Tools { namespace Selections
 
 EllipseView::EllipseView(EllipseModel* model)
     :
+    visible(true),
     enabled(false),
     model_(model)
 {
@@ -38,7 +39,8 @@ EllipseView::
 void EllipseView::
         draw()
 {
-    drawSelectionCircle();
+    if (visible)
+        drawSelectionCircle();
 }
 
 void EllipseView::

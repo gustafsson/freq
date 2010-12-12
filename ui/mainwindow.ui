@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -1455,6 +1455,42 @@
    </property>
    <property name="toolTip">
     <string>Colorscale</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFrequencySelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-square-selection.png</normaloff>:/icons/icons/icon-square-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Frequency selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Frequency selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTimeSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-square-selection.png</normaloff>:/icons/icons/icon-square-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Time selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Time selection</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

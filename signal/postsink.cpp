@@ -228,7 +228,8 @@ void PostSink::
 {
     Intervals I;
 
-    f->source(source());
+    if (f)          f->source(source());
+    if (_filter)    _filter->source(source());
 
     if (f)          I |= f->affected_samples();
     if (_filter)    I |= _filter->affected_samples();

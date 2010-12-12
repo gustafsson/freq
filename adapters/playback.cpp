@@ -249,6 +249,13 @@ bool Playback::
 
 
 bool Playback::
+        hasReachedEnd()
+{
+    return _data.first_buffer()->sample_offset + _data.number_of_samples() <= _playback_itr;
+}
+
+
+bool Playback::
         isUnderfed()
 {
     unsigned nAccumulated_samples = _data.number_of_samples();
