@@ -66,6 +66,8 @@ namespace Tools { namespace Selections
 
         // Add the action as a combo box item in selection controller
         selection_controller_->addComboBoxAction( ui->actionSquareSelection ) ;
+        selection_controller_->addComboBoxAction( ui->actionTimeSelection ) ;
+        selection_controller_->addComboBoxAction( ui->actionFrequencySelection ) ;
     }
 
 
@@ -137,11 +139,34 @@ namespace Tools { namespace Selections
     void SquareController::
             changeEvent ( QEvent * event )
     {
+        if (event->type() & QEvent::ParentChange)
+        {
+            view_->visible = 0!=parent();
+        }
+
         if (event->type() & QEvent::EnabledChange)
         {
             view_->enabled = isEnabled();
-            if (!view_->enabled)
+
+            if (!isEnabled())
                 emit enabledChanged(isEnabled());
+        }
+    }
+
+
+    void SquareController::
+            enableSelectionType(const SquareModel::SquareType type, const bool active)
+    {
+        if (active)
+        {
+            selection_controller_->setCurrentTool( this, active );
+            selection_controller_->setCurrentSelection( model()->filter );
+            model()->type = type;
+            model()->updateFilter();
+        }
+        else if (model()->type == type)
+        {
+            //selection_controller_->setCurrentTool( this, active );
         }
     }
 
@@ -149,39 +174,21 @@ namespace Tools { namespace Selections
     void SquareController::
             enableSquareSelection(bool active)
     {
-        selection_controller_->setCurrentTool( this, active );
-
-        if (active)
-        {
-            selection_controller_->setCurrentSelection( model()->filter );
-            model()->type = SquareModel::SquareType_SquareSelection;
-        }
+        enableSelectionType(SquareModel::SquareType_SquareSelection, active);
     }
 
 
     void SquareController::
             enableTimeSelection(bool active)
     {
-        selection_controller_->setCurrentTool( this, active );
-
-        if (active)
-        {
-            selection_controller_->setCurrentSelection( model()->filter );
-            model()->type = SquareModel::SquareType_TimeSelection;
-        }
+        enableSelectionType(SquareModel::SquareType_TimeSelection, active);
     }
 
 
     void SquareController::
             enableFrequencySelection(bool active)
     {
-        selection_controller_->setCurrentTool( this, active );
-
-        if (active)
-        {
-            selection_controller_->setCurrentSelection( model()->filter );
-            model()->type = SquareModel::SquareType_FrequencySelection;
-        }
+        enableSelectionType(SquareModel::SquareType_FrequencySelection, active);
     }
 
 }} // namespace Tools::Selections

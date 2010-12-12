@@ -76,6 +76,7 @@ public:
     Intervals& operator <<= (const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
+    operator   Interval    () const { return coveredInterval(); }
     operator   bool        () const { return !empty(); }
 
     Intervals                       inverse() const;

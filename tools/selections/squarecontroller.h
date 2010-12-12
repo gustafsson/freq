@@ -34,6 +34,8 @@ private:
     virtual void mouseMoveEvent ( QMouseEvent * e );
     virtual void changeEvent ( QEvent * event );
 
+    void enableSelectionType(const SquareModel::SquareType type, const bool active);
+
     // View
     SquareView* view_;
     SquareModel* model() { return view_->model_; }

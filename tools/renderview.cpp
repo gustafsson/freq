@@ -26,8 +26,8 @@
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
 
-#define TIME_PAINTGL
-//#define TIME_PAINTGL if(0)
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
 
 //#define DEBUG_EVENTS
 #define DEBUG_EVENTS if(0)

@@ -35,6 +35,7 @@ public:
     float       outputLatency();
     unsigned    output_device() { return _output_device; }
     bool        isStopped();
+    bool        hasReachedEnd();
     bool        isUnderfed();
     float       sample_rate() { return _data.sample_rate(); }
 

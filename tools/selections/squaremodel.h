@@ -5,6 +5,9 @@
 #include "signal/operation.h"
 #include "heightmap/position.h"
 
+namespace Sawe {
+    class Project;
+}
 
 namespace Tools { namespace Selections
 {
@@ -18,7 +21,7 @@ namespace Tools { namespace Selections
             SquareType_TimeSelection
         };
 
-        SquareModel( Tfr::FreqAxis const& fa );
+        SquareModel( Tfr::FreqAxis const& fa, Sawe::Project* p );
         ~SquareModel();
 
         void updateFilter();
@@ -31,6 +34,7 @@ namespace Tools { namespace Selections
     private:
         void createFilter();
         Tfr::FreqAxis fa_;
+        Sawe::Project* project_;
     };
 } } // namespace Tools::Selections
 #endif // SQUAREMODEL_H

@@ -26,14 +26,20 @@ class OperationSubOperations : public Signal::Operation {
 public:
     Signal::pOperation subSource() { return _source; }
 
+    /// this do skip all contained suboperations
+    virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
+    virtual void source(Signal::pOperation v) { source_sub_operation_->source(v); }
+    /**
+        affected_samples needs to take subSource into account.
+        If samples are moved by a sub operation affected_samples might have to
+        be overloaded.
+    */
+    virtual Signal::Intervals affected_samples();
+
     std::string name() { return name_; }
 
 protected:
     OperationSubOperations(Signal::pOperation source, std::string name = "");
-
-    /// this do skip all contained suboperations
-    virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
-    virtual void source(Signal::pOperation v) { source_sub_operation_->source(v); }
 
     Signal::pOperation source_sub_operation_;
     std::string name_;
@@ -78,14 +84,14 @@ public:
 */
 class OperationSetSilent: public OperationSubOperations {
 public:
-    OperationSetSilent( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
+    OperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
 
-    void reset( unsigned firstSample, unsigned numberOfSamples );
+    void reset( const Signal::Interval& section );
 
     virtual Signal::Intervals zeroed_samples() { return source()->zeroed_samples() | affected_samples(); }
-    virtual Signal::Intervals affected_samples();
+    virtual Signal::Intervals affected_samples() { return section_; }
 private:
-    unsigned firstSample_, numberOfSamples_;
+    Signal::Interval section_;
 };
 
 /**
@@ -96,9 +102,9 @@ private:
 */
 class OperationOtherSilent: public OperationSubOperations {
 public:
-    OperationOtherSilent( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
+    OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
 
-    void reset( unsigned firstSample, unsigned numberOfSamples );
+    void reset( const Signal::Interval& section );
 };
 
 /**
@@ -109,9 +115,9 @@ public:
 */
 class OperationCrop: public OperationSubOperations {
 public:
-    OperationCrop( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples );
+    OperationCrop( Signal::pOperation source, const Signal::Interval& section );
 
-    void reset( unsigned firstSample, unsigned numberOfSamples );
+    void reset( const Signal::Interval& section );
 };
 
 /**
@@ -137,9 +143,9 @@ public:
   */
 class OperationMove: public OperationSubOperations {
 public:
-    OperationMove( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    OperationMove( Signal::pOperation source, const Signal::Interval& section, unsigned newFirstSample );
 
-    void reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    void reset( const Signal::Interval& section, unsigned newFirstSample );
 };
 
 /**
@@ -165,9 +171,9 @@ public:
   */
 class OperationMoveMerge: public OperationSubOperations {
 public:
-    OperationMoveMerge( Signal::pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    OperationMoveMerge( Signal::pOperation source, const Signal::Interval& section, unsigned newFirstSample );
 
-    void reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample );
+    void reset( const Signal::Interval& section, unsigned newFirstSample );
 };
 
 /**
@@ -188,16 +194,16 @@ public:
   */
 class OperationShift: public OperationSubOperations {
 public:
-    OperationShift( Signal::pOperation source, int sampleShift );
+    OperationShift( Signal::pOperation source, long sampleShift );
 
-    void reset( int sampleShift );
+    void reset( long sampleShift );
 };
 
 class OperationMoveSelection: public OperationSubOperations {
 public:
-    OperationMoveSelection( Signal::pOperation source, Signal::pOperation selectionFilter, int sampleShift, float freqDelta );
+    OperationMoveSelection( Signal::pOperation source, Signal::pOperation selectionFilter, long sampleShift, float freqDelta );
 
-    void reset( Signal::pOperation selectionFilter, int sampleShift, float freqDelta );
+    void reset( Signal::pOperation selectionFilter, long sampleShift, float freqDelta );
 };
 
 } // namespace Support

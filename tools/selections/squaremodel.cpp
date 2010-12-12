@@ -1,13 +1,16 @@
 #include "squaremodel.h"
 #include "filters/rectangle.h"
 #include "tools/support/operation-composite.h"
+#include "sawe/project.h"
 
 namespace Tools { namespace Selections
 {
 
 SquareModel::
-        SquareModel( Tfr::FreqAxis const& fa )
-            : fa_(fa)
+        SquareModel( Tfr::FreqAxis const& fa, Sawe::Project* project )
+            :
+            fa_(fa),
+            project_(project)
 {
     // no selection
     a.time = b.time = 0;
@@ -41,7 +44,7 @@ void SquareModel::
     BOOST_ASSERT(container);
 
     Signal::Operation* op = 0;
-    if (a.scale>=1 || b.scale<=0)
+    if (a.scale>=1 || b.scale<=0 || a.time==b.time || a.scale==b.scale)
         ;
     else if (a.scale>0 || b.scale<1)
     {
@@ -50,9 +53,14 @@ void SquareModel::
     }
     else
     {
-        float FS = container->sample_rate();
+        float FS;
+        if (container->source())
+            FS = container->sample_rate();
+        else
+            FS = project_->head_source()->sample_rate();
+
         op = new Tools::Support::OperationOtherSilent(
-                Signal::pOperation(), a.time*FS, (b.time-a.time)*FS );
+                Signal::pOperation(), Signal::Interval( a.time*FS, b.time*FS) );
     }
 
     container->setContent(Signal::pOperation(op));
@@ -69,7 +77,10 @@ void SquareModel::
 
     case SquareType_FrequencySelection:
         a.time = 0;
-        b.time = filter ? filter->length() : 0;
+        if (filter->source())
+            b.time = filter->length();
+        else
+            b.time = project_->head_source()->sample_rate();
         break;
 
     case SquareType_TimeSelection:

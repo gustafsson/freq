@@ -137,6 +137,11 @@ namespace Tools { namespace Selections
     void EllipseController::
             changeEvent ( QEvent * event )
     {
+        if (event->type() & QEvent::ParentChange)
+        {
+            view_->visible = 0!=parent();
+        }
+
         if (event->type() & QEvent::EnabledChange)
         {
             view_->enabled = isEnabled();
@@ -148,10 +153,11 @@ namespace Tools { namespace Selections
     void EllipseController::
             enableEllipseSelection(bool active)
     {
-        selection_controller_->setCurrentTool( this, active );
-
         if (active)
+        {
+            selection_controller_->setCurrentTool( this, active );
             selection_controller_->setCurrentSelection( model()->filter );
+        }
     }
 
 }} // namespace Tools::Selections

@@ -37,7 +37,7 @@ CwtFilter::
 ChunkAndInverse CwtFilter::
         computeChunk( const Signal::Interval& I )
 {
-    unsigned firstSample = I.first;
+    Signal::IntervalType firstSample = I.first;
 
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
 
@@ -70,7 +70,8 @@ ChunkAndInverse CwtFilter::
 
     ChunkAndInverse ci;
 
-    ci.inverse = _source->readFixedLength( Interval(firstSample,firstSample+ L) );
+    ci.inverse = _source->readFixedLength( Interval(firstSample,
+                                                    firstSample+L) );
 
     TIME_CwtFilter TaskTimer tt2("CwtFilter transforming %s for '%s'",
                                  ci.inverse->getInterval().toString().c_str(),

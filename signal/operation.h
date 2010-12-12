@@ -68,8 +68,8 @@ public:
 
     /**
       These samples are definitely set to 0 after the filter. As default returns
-      source()->zeroed_samples if source() is not null, or no samples if
-      source() is null.
+      _source->zeroed_samples if source() is not null, or no samples if
+      _source is null.
 
       @remarks zeroed_samples is _assumed_ (but never checked) to be a subset
       of Signal::Operation::affected_samples().
@@ -106,6 +106,12 @@ public:
 
 
     /**
+      @see OperationSubOperations
+      */
+    virtual Signal::Intervals affected_samples_until(pOperation stop);
+
+
+    /**
       Fetches and clears invalid samples recursively.
       Returns _invalid_samples merged with source()->invalid_samples().
 
@@ -133,6 +139,25 @@ public:
 
 
     /**
+      An implementation of Operation needs to overload this if the samples are
+      moved in some way.
+
+      Example: OperationRemoveSection removes some samples from the signal.
+      Let's say the section to remove is [10,20) then we have:
+        'translate_interval([0,10))' -> '[0,10)'
+        'translate_interval([10,20))' -> '[)'
+        'translate_interval([20,30))' -> '[10,20)'
+      (If the method chooses to alter the sample rate is not relevant to this
+      method as it counts signal samples only).
+
+      The default implementation returns the same interval.
+
+      @see OperationRemoveSection, OperationInsertSilence, zeroed_samples
+      */
+    virtual Signal::Intervals translate_interval(Signal::Intervals I) { return I; }
+
+
+    /**
       An operation can be disabled. If it is not enabled any call to read must
       return source()->read();
       */
@@ -142,6 +167,7 @@ public:
 
     Operation* root();
 
+    virtual std::string toString();
 protected:
     pOperation _source; /// @see Operation::source()
     bool _enabled; /// @see Operation::enabled()
