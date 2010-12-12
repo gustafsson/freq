@@ -5,12 +5,15 @@
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 
+#include "heightmap/collection.h"
+
 namespace Tools {
 
 MatlabController::
-        MatlabController( Sawe::Project* project )
+        MatlabController( Sawe::Project* project, RenderView* render_view )
             :
-            _model(&project->worker)
+            _model(&project->worker),
+            render_view_(render_view)
 {
     setupGui(project);
 }
@@ -34,14 +37,21 @@ void MatlabController::
     {
         // Already created, make it re-read the script
         ((Adapters::MatlabOperation*)_matlaboperation.get())->restart();
-        return;
+    }
+    else
+    {
+        _matlaboperation.reset( new Adapters::MatlabOperation( _model->source(), "matlaboperation") );
+        _model->source( _matlaboperation );
     }
 
-    _matlaboperation.reset( new Adapters::MatlabOperation( _model->source(), "matlaboperation") );
-    _model->source( _matlaboperation );
-
     // Render view will be updated by invalidating some parts in sinks of worker
-    _model->postSink()->invalidate_samples(_matlaboperation->affected_samples());
+    Signal::Intervals affected = _matlaboperation->affected_samples();
+    _model->postSink()->invalidate_samples(affected);
+
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections )
+        collection->invalidate_samples( affected );
+
+    render_view_->userinput_update();
 }
 
 

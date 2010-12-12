@@ -9,8 +9,11 @@
 #include <CudaException.h>
 #include <demangle.h>
 
-#define TIME_WORKER
-//#define TIME_WORKER if(0)
+//#define TIME_WORKER
+#define TIME_WORKER if(0)
+
+//#define WORKER_INFO
+#define WORKER_INFO if(0)
 
 #define TESTING_PERFORMANCE false
 
@@ -41,7 +44,7 @@ Worker::
 Worker::
         ~Worker()
 {
-    TaskTimer(__FUNCTION__).suppressTiming();
+    TaskInfo tt(__FUNCTION__);
 
     this->quit();
     todo_list( Intervals() );
@@ -90,7 +93,7 @@ bool Worker::
         work_time += b->length();
         //work_time -= r;
 
-        TIME_WORKER {
+        WORKER_INFO {
             tt->info("Worker got %s, [%g, %g) s. %g x realtime",
                 b->getInterval().toString().c_str(),
                 b->start(), b->start()+b->length(),
@@ -102,9 +105,9 @@ bool Worker::
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
             cudaGetLastError(); // consume error
-            TaskTimer("_samples_per_chunk was %u", _samples_per_chunk);
-            TaskTimer("_max_samples_per_chunk was %u", _max_samples_per_chunk);
-            TaskTimer("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave() );
+            TaskInfo("_samples_per_chunk was %u", _samples_per_chunk);
+            TaskInfo("_max_samples_per_chunk was %u", _max_samples_per_chunk);
+            TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave() );
 
             while (_samples_per_chunk <= Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate()))
@@ -116,20 +119,26 @@ bool Worker::
                     _samples_per_chunk, _source->sample_rate());
             _max_samples_per_chunk = _samples_per_chunk;
 
-            TaskTimer("scales_per_octave is now %g", Tfr::Cwt::Singleton().scales_per_octave() );
-            TaskTimer("_samples_per_chunk now is %u", _samples_per_chunk);
-            TaskTimer("_max_samples_per_chunk now is %u", _max_samples_per_chunk);
-            TaskTimer("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what()).suppressTiming();
+            TaskInfo("scales_per_octave is now %g", Tfr::Cwt::Singleton().scales_per_octave() );
+            TaskInfo("_samples_per_chunk now is %u", _samples_per_chunk);
+            TaskInfo("_max_samples_per_chunk now is %u", _max_samples_per_chunk);
+            TaskInfo("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what());
+
+            size_t free=0, total=0;
+            cudaMemGetInfo(&free, &total);
+            TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
+                     total/1024.f/1024, free/1024.f/1024);
+
         } else {
-            TaskTimer("Worker caught CudaException:\n%s", e.what()).suppressTiming();
+            TaskInfo("Worker caught CudaException:\n%s", e.what());
             throw;
         }
     } catch (const exception& e) {
-        TaskTimer("Worker caught exception type %s:\n%s",
-                  vartype(e).c_str(), e.what()).suppressTiming();
+        TaskInfo("Worker caught exception type %s:\n%s",
+                  vartype(e).c_str(), e.what());
         throw;
     } catch (...) {
-        TaskTimer("Worker caught unknown exception.").suppressTiming();
+        TaskInfo("Worker caught unknown exception.");
         throw;
     }
 
@@ -138,19 +147,18 @@ bool Worker::
     if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
         time_duration diff = now - _last_work_one;
         float current_fps = 1000000.0/diff.total_microseconds();
-        TIME_WORKER TaskTimer tt(
+        WORKER_INFO TaskInfo tt(
                 "Current framerate = %g fps (requested fps %g)",
                 current_fps, _requested_fps);
-        tt.suppressTiming();
 
         if (current_fps < _requested_fps &&
             _samples_per_chunk >= _min_samples_per_chunk)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate());
-            TIME_WORKER TaskTimer(
+            WORKER_INFO TaskInfo(
                     "Low framerate (%.1f fps). Decreased samples per chunk to %u",
-                    current_fps, _samples_per_chunk).suppressTiming();
+                    current_fps, _samples_per_chunk);
         }
         else if (current_fps > 2.5f*_requested_fps)
         {
@@ -159,9 +167,9 @@ bool Worker::
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else
-                TIME_WORKER TaskTimer(
+                WORKER_INFO TaskInfo(
                         "High framerate (%.1f fps). Increased samples per chunk to %u",
-                        current_fps, _samples_per_chunk).suppressTiming();
+                        current_fps, _samples_per_chunk);
         }
 
         _requested_fps *= 0.9;

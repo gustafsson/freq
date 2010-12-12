@@ -129,6 +129,14 @@ pBuffer SourceBase::
 
     // Check if read contains firstSample
     BOOST_ASSERT(r->sample_offset <= I.first);
+    if (r->sample_offset + r->number_of_samples() <= I.first)
+    {
+        TaskInfo("r->sample_offset %g", (double)r->sample_offset);
+        TaskInfo("r->number_of_samples %lu", r->number_of_samples());
+        TaskInfo("I = %s", I.toString().c_str());
+
+        pBuffer r = read(I);
+    }
     BOOST_ASSERT(r->sample_offset + r->number_of_samples() > I.first);
 
     return r;

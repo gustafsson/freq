@@ -1,6 +1,6 @@
 % extract chunks from a sound file
 
-function s_cwt = extract_cwt(soundfile,first,last)
+function s_cwt = sawe_extract_cwt(soundfile,first,last)
 
 	s_cwt = [];
 

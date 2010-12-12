@@ -107,6 +107,8 @@ namespace Tools
 
         QPointer<class ToolController> _comment_controller;
 
+        QPointer<class MatlabController> _matlab_controller;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

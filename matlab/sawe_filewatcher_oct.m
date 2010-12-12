@@ -8,7 +8,7 @@
 % filewatcher does not return. Whatever value returned from func is discarded.
 %
 % Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 20 times per second (dt=0.05).
-function C=filewatcher_oct(datafile, func, arguments, dt)
+function C=sawe_filewatcher_oct(datafile, func, arguments, dt)
 
 if nargin<2
   error "syntax: filewatcher(datafile, function, arguments, dt). 'arguments' defaults to [], 'dt' defaults to 0.05"
@@ -31,8 +31,11 @@ while 1
 	
     %octave
     data=load(datafile); 
+    disp (['Loaded data, calling func size(data)=' num2str(size(data))]);
     
     [data, arguments]=func(data, arguments);
+
+    disp (['Called func, saving in temp ' tempfile]);
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
@@ -40,6 +43,8 @@ while 1
     elseif isfield(data,'chunk')
       sawe_savechunk_oct(tempfile, data.chunk, data.offset, data.samplerate );
     end
+
+    disp (['Saved result in ' resultfile]);
     
     rename(tempfile,resultfile);   % octave
     

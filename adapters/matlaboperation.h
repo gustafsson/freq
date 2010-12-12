@@ -2,6 +2,9 @@
 #define ADAPTERS_MATLABOPERATION_H
 
 #include "signal/operationcache.h"
+#include <boost/noncopyable.hpp>
+
+class QProcess;
 
 namespace Adapters {
 
@@ -24,7 +27,7 @@ namespace Adapters {
   One instance of octave or matlab will be created for each instance of
   MatlabFunction. Each instance is then killed in each destructor.
   */
-class MatlabFunction
+class MatlabFunction: boost::noncopyable
 {
 public:
     /**
@@ -54,7 +57,7 @@ private:
 	void kill();
 	void abort();
 
-    void* _pid;
+    QProcess* _pid;
     std::string _dataFile;
     std::string _resultFile;
     std::string _matlab_function;

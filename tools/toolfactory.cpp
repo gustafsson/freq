@@ -16,6 +16,7 @@
 #include "recordcontroller.h"
 #include "recordview.h"
 #include "commentcontroller.h"
+#include "matlabcontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -61,6 +62,8 @@ ToolFactory::
     }
 
     _comment_controller = new CommentController( _render_view );
+
+    _matlab_controller = new MatlabController( p, _render_view );
 }
 
 

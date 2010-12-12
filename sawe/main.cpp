@@ -207,6 +207,11 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
             GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
             a.getCudaGlobal();
 
+            size_t free=0, total=0;
+            cudaMemGetInfo(&free, &total);
+            TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
+                     total/1024.f/1024, free/1024.f/1024);
+
             return true;
         }
     } catch (const CudaException& x) {
@@ -299,7 +304,6 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
-
 	if (0) try {
 		{
 			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));

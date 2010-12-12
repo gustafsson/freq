@@ -777,7 +777,10 @@ void RenderView::
 
     model->renderer.reset();
     model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
+    Tfr::Cwt::Singleton().gc();
+
     cudaThreadExit();
+
     int count;
     cudaError_t e = cudaGetDeviceCount(&count);
     TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
@@ -795,7 +798,10 @@ void RenderView::
     tt.info("cudaFree, error=%s", cudaGetErrorString(e));
     BOOST_ASSERT( cudaSuccess == e );
 
-    Tfr::Cwt::Singleton().gc();
+    size_t free=0, total=0;
+
+    cudaMemGetInfo(&free, &total);
+    TaskInfo("free = %lu, total = %lu", free, total);
 
     cudaGetLastError();
     glGetError();

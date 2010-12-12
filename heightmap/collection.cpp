@@ -21,10 +21,10 @@
 #include <msc_stdc.h>
 #endif
 
-#define TIME_COLLECTION
-//#define TIME_COLLECTION if(0)
+//#define TIME_COLLECTION
+#define TIME_COLLECTION if(0)
 
-// #define VERBOSE_COLLECTION
+//#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
 
 // #define TIME_GETBLOCK
@@ -499,7 +499,7 @@ pBlock Collection::
 
             // fill block by STFT
             if (1) {
-                TIME_COLLECTION TaskTimer tt(TaskTimer::LogVerbose, "stft");
+                TIME_COLLECTION TaskTimer tt("stft");
 
                 fillBlock( block );
                 CudaException_CHECK_ERROR();
@@ -609,7 +609,10 @@ pBlock Collection::
     catch (const CudaException& x )
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
-        TaskTimer("Collection::createBlock swallowed CudaException.\n%s", x.what()).suppressTiming();
+        TaskInfo("Collection::createBlock swallowed CudaException.\n%s", x.what());
+        size_t free=0, total=0;
+        cudaMemGetInfo(&free, &total);
+        TaskInfo("free = %lu, total = %lu", free, total);
         return pBlock();
     }
     catch (const GlException& x )
@@ -659,7 +662,7 @@ pBlock Collection::
 void Collection::
         computeSlope( pBlock block, unsigned /*cuda_stream */)
 {
-    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+    VERBOSE_COLLECTION TaskTimer tt("%s", __FUNCTION__);
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
     GlBlock::pHeight h = block->glblock->height();
