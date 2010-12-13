@@ -381,10 +381,10 @@ void Worker::
 
 
 pBuffer Worker::
-        callCallbacks( Interval i )
+        callCallbacks( Interval I )
 {
     _post_sink.source( source() );
-    return _post_sink.read( i );
+    return _post_sink.read( I );
 }
 
 } // namespace Signal

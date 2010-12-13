@@ -76,6 +76,12 @@ public:
         return FilterKind::_source->affecting_source( I );
     }
 
+    /**
+        To prevent anyone from optimizing away a read because it's known to
+        result in zeros. BlockFilter wants to be run anyway, even with zeros.
+        */
+    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
+
     void applyFilter( Tfr::pChunk pchunk )
     {
         FilterKind::applyFilter( pchunk );

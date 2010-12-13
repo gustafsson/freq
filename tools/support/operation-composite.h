@@ -69,7 +69,7 @@ public:
         else
         {
             _source = content;
-            _source ->source( source_sub_operation_ );
+            _source->source( source_sub_operation_ );
         }
     }
     Signal::pOperation content() { return subSource(); }
@@ -105,6 +105,10 @@ public:
     OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
 
     void reset( const Signal::Interval& section );
+
+    Signal::Interval section() { return section_; }
+private:
+    Signal::Interval section_;
 };
 
 /**

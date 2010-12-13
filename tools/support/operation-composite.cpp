@@ -83,7 +83,8 @@ void OperationSetSilent::
     // OperationOtherSilent  /////////////////////////////////////////////////////////////////
 OperationOtherSilent::
         OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source )
+:   OperationSubOperations( source ),
+    section_(section)
 {
     reset(section);
 }
@@ -91,6 +92,7 @@ OperationOtherSilent::
 void OperationOtherSilent::
         reset( const Signal::Interval& section )
 {
+    section_ = section;
     pOperation p = source_sub_operation_;
     if (section.first)
         // silent before section

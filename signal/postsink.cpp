@@ -177,6 +177,9 @@ Intervals PostSink::
 {
     Intervals I;
 
+    if (sinks().empty())
+        return I;
+
     if (_filter)
         I |= _filter->affected_samples();
 

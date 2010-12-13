@@ -183,11 +183,31 @@ namespace Tools
             ellipse->_save_inside = false;
         }
 
-        Filters::Rectangle* rectangle=
-                dynamic_cast<Filters::Rectangle*>(
+        Tools::Support::OperationContainer* container=
+                dynamic_cast<Tools::Support::OperationContainer*>(
                         _model->current_filter_.get() );
-        if (rectangle)
-            rectangle->_save_inside = false;
+
+        if (container)
+        {
+            Filters::Rectangle* rectangle=
+                    dynamic_cast<Filters::Rectangle*>(
+                            container->content().get() );
+            if (rectangle)
+                rectangle->_save_inside = false;
+
+            Tools::Support::OperationOtherSilent* other_silent =
+                    dynamic_cast<Tools::Support::OperationOtherSilent*>(
+                            container->content().get() );
+
+            if (other_silent)
+            {
+                container->setContent( Signal::pOperation(
+                        new Tools::Support::OperationSetSilent(
+                                Signal::pOperation(),
+                                other_silent->section() )
+                        ));
+            }
+        }
 
 
         Selections::Support::SplineFilter* spline=
