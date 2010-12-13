@@ -84,6 +84,8 @@ public:
 
     void applyFilter( Tfr::pChunk pchunk )
     {
+        _collection->update_sample_size(pchunk.get());
+
         FilterKind::applyFilter( pchunk );
 
         computeSlope( pchunk );

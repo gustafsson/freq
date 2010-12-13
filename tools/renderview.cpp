@@ -805,6 +805,8 @@ void RenderView::
     cudaMemGetInfo(&free, &total);
     TaskInfo("free = %lu, total = %lu", free, total);
 
+    userinput_update();
+
     cudaGetLastError();
     glGetError();
 

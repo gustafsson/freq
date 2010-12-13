@@ -130,7 +130,7 @@ void NavigationController::
             d=-0.8;
         r.model->xscale *= (1-d);
 
-        float max_scale = 0.01*r.model->project()->head_source()->sample_rate();
+        float max_scale = 0.05*r.model->project()->head_source()->sample_rate();
         float min_scale = 1.f/r.model->project()->head_source()->length();
         if (r.model->xscale>max_scale)
             r.model->xscale=max_scale;

@@ -16,7 +16,8 @@ namespace Tfr {
 
 StftFilter::
         StftFilter(pOperation source, pTransform t)
-:   Filter(source)
+:   Filter(source),
+    exclude_end_block(false)
 {
     if (!t)
         t = Stft::SingletonP();
@@ -47,11 +48,14 @@ ChunkAndInverse StftFilter::
     Interval chunk_interval (
                 first_chunk*chunk_size,
                 last_chunk*chunk_size);
-    if (chunk_interval.last>number_of_samples())
+    if (exclude_end_block)
     {
-        last_chunk = number_of_samples()/chunk_size;
-        if (first_chunk<last_chunk)
-            chunk_interval.last = last_chunk*chunk_size;
+        if (chunk_interval.last>number_of_samples())
+        {
+            last_chunk = number_of_samples()/chunk_size;
+            if (first_chunk<last_chunk)
+                chunk_interval.last = last_chunk*chunk_size;
+        }
     }
     ci.inverse = _source->readFixedLength( chunk_interval );
 

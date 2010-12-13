@@ -143,37 +143,38 @@ void Collection::
 {
     pOperation wf = worker->source();
 
-    if (chunk)
+    if (chunk && chunk->transform_data)
     {
-        _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
-        _display_scale.max_frequency_scalar = 1;
-        _display_scale.f_min = chunk->min_hz;
-        _display_scale.log2f_step = log2(chunk->max_hz) - log2(chunk->min_hz);
+        //_display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
+        //_display_scale.max_frequency_scalar = 1;
+        //_display_scale.f_min = chunk->min_hz;
+        //_display_scale.log2f_step = log2(chunk->max_hz) - log2(chunk->min_hz);
 
         Tfr::FreqAxis fx = chunk->freqAxis();
 
-        _min_sample_size.time = std::min( _min_sample_size.time, 1.f / chunk->sample_rate );
+        _min_sample_size.time = std::min( _min_sample_size.time, 0.25f / chunk->sample_rate );
 
-        // Assuming frequency resolution (in Hz, not log Hz) is the highest near 0.
-        unsigned bottom_index = fx.getFrequencyIndex( _display_scale.f_min );
-        float min_delta_hz = fx.getFrequency( bottom_index + 1) - fx.getFrequency( bottom_index );
+        unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
         _min_sample_size.scale = std::min(
                 _min_sample_size.scale,
-                _display_scale.getFrequencyScalar( _display_scale.f_min  + min_delta_hz ) );
-        // Old naive one: _min_sample_size.scale = 1.f/Tfr::Cwt::Singleton().nScales( FS ) );
+                (1 - _display_scale.getFrequencyScalar( fx.getFrequency( top_index )))*0.25f);
+
+        // Old naive one:
+        //_min_sample_size.scale = std::min(
+        //        _min_sample_size.scale,
+        //        1.f/Tfr::Cwt::Singleton().nScales( chunk->sample_rate ) );
     }
     else
     {
         _min_sample_size.time = 1.f/_samples_per_block;
         _min_sample_size.scale = 1.f/_scales_per_block;
+        // Allow for some bicubic mesh interpolation when zooming in
+        _min_sample_size.scale *= 0.25f;
+        _min_sample_size.time *= 0.25f;
     }
 
     _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);
     _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
-
-    // Allow for some bicubic mesh interpolation when zooming in
-    _min_sample_size.scale *= 0.25;
-    _min_sample_size.time *= 0.25;
 }
 
 
@@ -715,6 +716,8 @@ void Collection::
     transp->set_approximate_chunk_size(1 << 12); // 4096
     stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.source( fast_source );
+    stftmerger.exclude_end_block = true;
+
     //stftmerger.mergeChunk(block, *stft, block->glblock->height()->data);
     Tfr::ChunkAndInverse ci = stftmerger.computeChunk( block->ref.getInterval() );
     stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
