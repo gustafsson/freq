@@ -36,8 +36,8 @@
 #define TIME_CWTPART if(0)
 //#define TIME_CWTPART
 
-//#define TIME_ICWT if(0)
-#define TIME_ICWT
+#define TIME_ICWT if(0)
+//#define TIME_ICWT
 
 #define DEBUG_CWT if(0)
 //#define DEBUG_CWT

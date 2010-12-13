@@ -116,8 +116,6 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 GlBlock::
 GlBlock( Collection* collection )
 :   _collection( collection ),
-    _height( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float), GL_PIXEL_UNPACK_BUFFER) ),
-    _slope( new Vbo(collection->samples_per_block()*collection->scales_per_block()*sizeof(float2), GL_PIXEL_UNPACK_BUFFER) ),
     _tex_height(0),
     _successfully_registered_height(false),
     _successfully_registered_slope(false)
@@ -125,8 +123,8 @@ GlBlock( Collection* collection )
     TIME_GLBLOCK TaskTimer tt("GlBlock()");
 
     // TODO read up on OpenGL interop in CUDA 3.0, cudaGLRegisterBufferObject is old, like CUDA 1.0 or something ;)
-    _successfully_registered_height = (cudaSuccess == cudaGLRegisterBufferObject(*_height));
-    _successfully_registered_slope = (cudaSuccess == cudaGLRegisterBufferObject(*_slope));
+    //_successfully_registered_height = (cudaSuccess == cudaGLRegisterBufferObject(*_height));
+    //_successfully_registered_slope = (cudaSuccess == cudaGLRegisterBufferObject(*_slope));
 
     glGenTextures(1, &_tex_height);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
@@ -174,14 +172,17 @@ GlBlock::
     {
         BOOST_ASSERT( _mapped_height.unique() );
         _mapped_height.reset();
-        TIME_GLBLOCK TaskTimer("_mapped_height.reset()").suppressTiming();
+        TIME_GLBLOCK TaskInfo("_mapped_height.reset()");
     }
     if (_mapped_slope)
     {
         BOOST_ASSERT( _mapped_slope.unique() );
         _mapped_slope.reset();
-        TIME_GLBLOCK TaskTimer("_mapped_slope.reset()").suppressTiming();
+        TIME_GLBLOCK TaskInfo("_mapped_slope.reset()");
     }
+
+    _height.reset();
+    _slope.reset();
 
     if (_tex_height)
     {
@@ -194,18 +195,24 @@ GlBlock::
         _tex_slope = 0;
     }
 
-    if (_successfully_registered_height)
-        cudaGLUnregisterBufferObject(*_height);
-    if (_successfully_registered_slope)
-        cudaGLUnregisterBufferObject(*_slope);
+//    if (_successfully_registered_height)
+//        cudaGLUnregisterBufferObject(*_height);
+//    if (_successfully_registered_slope)
+//        cudaGLUnregisterBufferObject(*_slope);
 
-    TIME_GLBLOCK TaskTimer("~GlBlock() done").suppressTiming();
+    TIME_GLBLOCK TaskInfo("~GlBlock() done");
 }
 
 GlBlock::pHeight GlBlock::
 height()
 {
     if (_mapped_height) return _mapped_height;
+    unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
+    if (!_height)
+    {
+        _height.reset( new Vbo(elems*sizeof(float), GL_PIXEL_UNPACK_BUFFER) );
+        _height->registerWithCuda();
+    }
     return _mapped_height = pHeight(new MappedVbo<float>(_height, make_cudaExtent(
             _collection->samples_per_block(),
             _collection->scales_per_block(), 1)));
@@ -215,6 +222,12 @@ GlBlock::pSlope GlBlock::
 slope()
 {
     if (_mapped_slope) return _mapped_slope;
+    unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
+    if (!_slope)
+    {
+        _slope.reset( new Vbo(elems*sizeof(float2), GL_PIXEL_UNPACK_BUFFER) );
+        _slope->registerWithCuda();
+    }
     return _mapped_slope = pSlope(new MappedVbo<float2>(_slope, make_cudaExtent(
             _collection->samples_per_block(),
             _collection->scales_per_block(), 1)));
@@ -248,6 +261,7 @@ void GlBlock::
 
         glPixelTransferf(GL_RED_SCALE, 1.0f);
 
+        glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
 
         TIME_GLBLOCK CudaException_CHECK_ERROR();
@@ -283,7 +297,9 @@ void GlBlock::
         //glPixelTransferf(GL_RED_SCALE, 1.0f);
         //glPixelTransferf(GL_ALPHA_SCALE, 1.0f);
 
+        glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+
         TIME_GLBLOCK CudaException_CHECK_ERROR();
     }
 }

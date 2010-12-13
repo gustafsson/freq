@@ -1,6 +1,7 @@
 #include "worker.h"
 #include "intervals.h"
 #include "postsink.h"
+#include "operationcache.h"
 
 #include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory
 
@@ -28,6 +29,7 @@ Worker::
     work_time(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
+    _cache( new OperationCacheLayer(pOperation()) ),
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
     _requested_fps( 20 ),
@@ -232,8 +234,9 @@ void Worker::
     else
         _min_samples_per_chunk = 1;
     _max_samples_per_chunk = (unsigned)-1;
-    _post_sink.invalidate_samples( Intervals::Intervals_ALL );
-    // todo_list.clear();
+    invalidate_post_sink( Intervals::Intervals_ALL );
+
+    emit source_changed();
 }
 
 
@@ -246,8 +249,9 @@ void Worker::
         still_zeros = _source->zeroed_samples();
     still_zeros &= s->zeroed_samples();
     _source = s;
-    _post_sink.invalidate_samples( s->affected_samples() - still_zeros );
-    return;
+    invalidate_post_sink( s->affected_samples() - still_zeros );
+
+    emit source_changed();
 }
 
 
@@ -303,11 +307,22 @@ void Worker::
 }
 
 
-PostSink* Worker::
+void Worker::
+        invalidate_post_sink(Intervals I)
+{
+    dynamic_cast<OperationCacheLayer*>(_cache.get())->invalidate_samples( I );
+    _post_sink.invalidate_samples( I );
+    TaskInfo("Worker invalidate %s. Worker tree:\n%s",
+             I.toString().c_str(),
+             source()->toString().c_str());
+}
+
+
+/*PostSink* Worker::
         postSink()
 {
     return &_post_sink;
-}
+}*/
 
 
 // TODO remove
@@ -362,9 +377,9 @@ void Worker::
 {
     c->source(source());
 
-    std::vector<pOperation> callbacks = postSink()->sinks();
+    std::vector<pOperation> callbacks = _post_sink.sinks();
     callbacks.push_back( c );
-    postSink()->sinks(callbacks);
+    _post_sink.sinks(callbacks);
 }
 
 
@@ -374,16 +389,23 @@ void Worker::
     c->source(pOperation());
 
     QMutexLocker l( &_callbacks_lock );
-    std::vector<pOperation> callbacks = postSink()->sinks();
+    std::vector<pOperation> callbacks = _post_sink.sinks();
     callbacks.resize( std::remove( callbacks.begin(), callbacks.end(), c ) - callbacks.begin() );
-    postSink()->sinks(callbacks);
+    _post_sink.sinks(callbacks);
 }
 
 
 pBuffer Worker::
         callCallbacks( Interval I )
 {
-    _post_sink.source( source() );
+    _cache->source(source());
+    {
+        //Signal::Intervals fetched_invalid = source()->fetch_invalid_samples();
+        //dynamic_cast<OperationCacheLayer*>(_cache.get())->invalidate_samples( fetched_invalid );
+        //_post_sink.invalidate_samples( fetched_invalid );
+    }
+    _post_sink.source( _cache );
+    //_post_sink.source( source() );
     return _post_sink.read( I );
 }
 

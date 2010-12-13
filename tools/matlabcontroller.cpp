@@ -45,7 +45,7 @@ void MatlabController::
     {
         // Already created, make it re-read the script
         dynamic_cast<Adapters::MatlabOperation*>(_matlaboperation.get())->restart();
-        worker_->postSink()->invalidate_samples(_matlaboperation->affected_samples());
+        worker_->invalidate_post_sink(_matlaboperation->affected_samples());
     }
     else
     {
@@ -64,7 +64,7 @@ void MatlabController::
     {
         // Already created, make it re-read the script
         dynamic_cast<Adapters::MatlabFilter*>(_matlabfilter.get())->restart();
-        worker_->postSink()->invalidate_samples(_matlabfilter->affected_samples());
+        worker_->invalidate_post_sink(_matlabfilter->affected_samples());
     }
     else
     {

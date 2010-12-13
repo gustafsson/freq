@@ -48,7 +48,7 @@ void WriteWav::
     if (!_data.empty())
         writeToDisk();
 
-    _data.reset();
+    _data.clear();
 }
 
 

@@ -76,16 +76,16 @@ void SquareModel::
         break;
 
     case SquareType_FrequencySelection:
-        a.time = 0;
+        a.time = -.2;
         if (filter->source())
-            b.time = filter->length();
+            b.time = filter->length()+.2;
         else
-            b.time = project_->head_source()->sample_rate();
+            b.time = project_->head_source()->sample_rate()+.2;
         break;
 
     case SquareType_TimeSelection:
-        a.scale = 0;
-        b.scale = 1;
+        a.scale = -.2;
+        b.scale = 1.2;
         break;
     }
 

@@ -87,7 +87,7 @@ void RecordController::
 
     Signal::Intervals v = ((I << s) | (I >> s)).coveredInterval();
 
-    model()->project->worker.postSink()->invalidate_samples( v );
+    model()->project->worker.invalidate_post_sink( v );
 
     render_view_->userinput_update();
 }

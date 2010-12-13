@@ -52,8 +52,10 @@ MatlabFunction::
 
     { // Start matlab/octave
         stringstream matlab_command, octave_command;
-        matlab_command << "sawe_filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
-        octave_command << "sawe_filewatcher_oct('" << _dataFile << "',@" << matlabFunction << ");";
+        matlab_command << "addpath('/usr/local/share/sonicawe'');"
+                << "sawe_filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
+        octave_command << "addpath('/usr/local/share/sonicawe'');"
+                << "sawe_filewatcher_oct('" << _dataFile << "',@" << matlabFunction << ");";
 
         QStringList matlab_args;
         matlab_args.push_back("-r");
@@ -261,6 +263,7 @@ void MatlabOperation::
     std::string fn = _matlab->matlabFunction();
     float t = _matlab->timeout();
 
+    _cache.clear();
     _matlab.reset();
     _matlab.reset( new MatlabFunction( fn, t ));
 }

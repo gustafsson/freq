@@ -99,7 +99,7 @@ MicrophoneRecorder::~MicrophoneRecorder()
 	{
 		if (0<_data[i].length()) {
 			TaskTimer tt("Releasing recorded data channel %u", i);
-			_data[i].reset();
+            _data[i].clear();
 		}
 	}
 }

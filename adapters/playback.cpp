@@ -170,7 +170,7 @@ void Playback::
             streamPlayback->stop();
     }
 
-    _data.reset();
+    _data.clear();
     _playback_itr = 0;
     _max_found = 1;
     _min_found = -1;
@@ -237,7 +237,7 @@ void Playback::
         QMessageBox::warning( 0,
                      "Can't play sound",
                      x.what() );
-        _data.reset();
+        _data.clear();
     }
 }
 

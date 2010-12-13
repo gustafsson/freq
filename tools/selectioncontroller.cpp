@@ -65,7 +65,7 @@ namespace Tools
         //connect(ui->actionMoveSelection, SIGNAL(triggered(bool)), SLOT(receiveMoveSelection(bool)));
         //connect(ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), SLOT(receiveMoveSelectionInTime(bool)));
 
-        ui->actionActionAdd_selection->setEnabled( true );
+        ui->actionActionAdd_selection->setEnabled( false );
         ui->actionActionRemove_selection->setEnabled( true );
         ui->actionCropSelection->setEnabled( true );
         ui->actionMoveSelection->setEnabled( false );

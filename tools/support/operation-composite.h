@@ -40,7 +40,7 @@ public:
     std::string name() { return name_; }
 
 protected:
-    OperationSubOperations(Signal::pOperation source, std::string name = "");
+    OperationSubOperations(Signal::pOperation source, std::string name);
 
     Signal::pOperation source_sub_operation_;
     std::string name_;
@@ -61,7 +61,7 @@ protected:
 class OperationContainer: public OperationSubOperations
 {
 public:
-    OperationContainer(Signal::pOperation source, std::string name = "");
+    OperationContainer(Signal::pOperation source, std::string name );
 
     void setContent(Signal::pOperation content)
     {

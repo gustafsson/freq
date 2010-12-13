@@ -109,7 +109,7 @@ void BrushController::
 {
     if (e->button() == paint_button_ )
     {
-        render_view_->model->project()->worker.postSink()->invalidate_samples( drawn_interval_ );
+        render_view_->model->project()->worker.invalidate_post_sink( drawn_interval_ );
         drawn_interval_.clear();
     }
 

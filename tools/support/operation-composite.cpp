@@ -14,13 +14,14 @@ namespace Tools {
     // OperationSubOperations  /////////////////////////////////////////////////////////////////
 
 OperationSubOperations::
-        OperationSubOperations(pOperation source, std::string name)
-:   Operation(source),
+        OperationSubOperations(Signal::pOperation source, std::string name)
+:   Operation(pOperation()),
     source_sub_operation_( new Operation(source)),
     name_(name)
 {
     enabled(false);
     source_sub_operation_->enabled(false);
+    _source = source_sub_operation_;
 }
 
 
@@ -44,7 +45,7 @@ OperationContainer::
 
 OperationCrop::
         OperationCrop( pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source )
+:   OperationSubOperations( source, "Crop" )
 {
     reset(section);
 }
@@ -52,17 +53,21 @@ OperationCrop::
 void OperationCrop::
         reset( const Signal::Interval& section )
 {
-    pOperation cropBefore( new OperationRemoveSection( source_sub_operation_, Signal::Interval(0, section.first) ));
-    pOperation cropAfter( new OperationRemoveSection( cropBefore, Signal::Interval( section.count(), Signal::Interval::IntervalType_MAX)));
+    _source = source_sub_operation_;
+    // remove before section
+    if (section.first)
+        _source = pOperation( new OperationRemoveSection( _source, Signal::Interval(0, section.first) ));
 
-    _source = cropAfter;
+    // remove after section
+    if (section.count()<Signal::Interval::IntervalType_MAX)
+        _source = pOperation( new OperationRemoveSection( _source, Signal::Interval( section.count(), Signal::Interval::IntervalType_MAX)));
 }
 
 
     // OperationSetSilent  /////////////////////////////////////////////////////////////////
 OperationSetSilent::
         OperationSetSilent( pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source ),
+:   OperationSubOperations( source, "Clear section" ),
     section_( section )
 {
     reset(section);
@@ -83,7 +88,7 @@ void OperationSetSilent::
     // OperationOtherSilent  /////////////////////////////////////////////////////////////////
 OperationOtherSilent::
         OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source ),
+:   OperationSubOperations( source, "Clear all but section" ),
     section_(section)
 {
     reset(section);
@@ -108,7 +113,7 @@ void OperationOtherSilent::
 
 OperationMove::
         OperationMove( pOperation source, const Signal::Interval& section, unsigned newFirstSample )
-:   OperationSubOperations( source )
+:   OperationSubOperations( source, "Move" )
 {
     reset(section, newFirstSample);
 }
@@ -140,7 +145,7 @@ void OperationMove::
 
 OperationMoveMerge::
         OperationMoveMerge( pOperation source, const Signal::Interval& section, unsigned newFirstSample )
-:   OperationSubOperations( source )
+:   OperationSubOperations( source, "Move and merge" )
 {
     reset(section, newFirstSample);
 }
@@ -163,7 +168,7 @@ void OperationMoveMerge::
 
 OperationShift::
         OperationShift( pOperation source, long sampleShift )
-:   OperationSubOperations( source )
+:   OperationSubOperations( source, "Shift" )
 {
     reset(sampleShift);
 }

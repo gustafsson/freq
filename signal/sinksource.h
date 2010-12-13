@@ -48,7 +48,7 @@ public:
 
 
     /// Clear cache
-    void reset();
+    void clear();
 
     /**
       Extract an interval from cache, only guaranteed to return a buffer
@@ -82,7 +82,7 @@ public:
     Intervals samplesDesc();
 
     /// @see Operation::fetch_invalid_samples()
-    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= samplesDesc()&I; }
 
 private:
 	QMutex _cache_mutex;

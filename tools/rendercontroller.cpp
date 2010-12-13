@@ -185,7 +185,7 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
 
-    model()->project()->worker.postSink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    model()->project()->worker.invalidate_post_sink( Signal::Intervals::Intervals_ALL );
 
     view->userinput_update();
 }

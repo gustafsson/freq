@@ -189,7 +189,7 @@ void SinkSource::
 
 
 void SinkSource::
-        reset()
+        clear()
 {
     QMutexLocker l(&_cache_mutex);
     _cache.clear();
@@ -201,6 +201,7 @@ pBuffer SinkSource::
         read( const Interval& I )
 {
     Interval not_found = I;
+
     {
         QMutexLocker l(&_cache_mutex);
 

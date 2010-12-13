@@ -103,8 +103,9 @@ underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
-class Worker:public QThread
+class Worker : public QThread
 {
+    Q_OBJECT
 public:
     Worker(pOperation source=pOperation());
     ~Worker();
@@ -174,12 +175,15 @@ public:
 	void				checkForErrors();
 
 
+    void                invalidate_post_sink(Intervals I);
     /**
       Get all callbacks that data are sent to after each workOne.
 
       TODO Shouldn't be exposed like this.
       */
-    PostSink* postSink();
+    //PostSink* postSink();
+signals:
+    void source_changed();
 
 private:
     friend class WorkerCallback;
@@ -225,6 +229,7 @@ private:
       @see source
       */
     Signal::pOperation _source;
+    Signal::pOperation _cache;
 
     /**
       Thread safety for _todo_list.
