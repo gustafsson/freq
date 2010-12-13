@@ -18,6 +18,7 @@
 #include "commentcontroller.h"
 #include "matlabcontroller.h"
 #include "graphcontroller.h"
+#include "tooltipcontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -67,6 +68,10 @@ ToolFactory::
     _matlab_controller = new MatlabController( p, _render_view );
 
     _graph_controller = new GraphController( _render_view );
+
+    _tooltip_controller = new TooltipController(
+            _render_view, _render_view->model,
+            dynamic_cast<CommentController*>(_comment_controller.data()) );
 }
 
 

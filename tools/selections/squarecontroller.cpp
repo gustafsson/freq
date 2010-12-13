@@ -68,6 +68,12 @@ namespace Tools { namespace Selections
         selection_controller_->addComboBoxAction( ui->actionSquareSelection ) ;
         selection_controller_->addComboBoxAction( ui->actionTimeSelection ) ;
         selection_controller_->addComboBoxAction( ui->actionFrequencySelection ) ;
+
+        one_action_at_a_time_ = new Ui::ComboBoxAction();
+        one_action_at_a_time_->decheckable( false );
+        one_action_at_a_time_->addActionItem( ui->actionSquareSelection );
+        one_action_at_a_time_->addActionItem( ui->actionTimeSelection );
+        one_action_at_a_time_->addActionItem( ui->actionFrequencySelection );
     }
 
 

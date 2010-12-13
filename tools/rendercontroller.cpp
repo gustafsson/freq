@@ -324,6 +324,9 @@ void RenderController::
         color->setCheckedAction(ui->actionSet_colorscale);
     }
 
+    // QAction *actionSet_heightlines
+    toolbar_render->addAction(ui->actionSet_heightlines);
+    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
     // ComboBoxAction* transform
     {   transform = new ComboBoxAction();
@@ -367,11 +370,6 @@ void RenderController::
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
     }
-
-
-    // QAction *actionSet_heightlines
-    toolbar_render->addAction(ui->actionSet_heightlines);
-    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
 
     // Update view whenever worker is invalidated

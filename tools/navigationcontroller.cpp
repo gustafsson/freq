@@ -20,7 +20,8 @@ namespace Tools
 NavigationController::
         NavigationController(RenderView* view)
             :
-            _view(view)
+            _view(view),
+            zoom_only_(false)
 {
     connectGui();
 
@@ -39,9 +40,21 @@ NavigationController::
 void NavigationController::
         receiveToggleNavigation(bool active)
 {
-    _view->toolSelector()->setCurrentTool( this, active );
+    if (active || zoom_only_ == false)
+        _view->toolSelector()->setCurrentTool( this, active );
+    if (active)
+        zoom_only_ = false;
 }
 
+
+void NavigationController::
+        receiveToggleZoom(bool active)
+{
+    if (active || zoom_only_ == true)
+        _view->toolSelector()->setCurrentTool( this, active );
+    if (active)
+        zoom_only_ = true;
+}
 
 void NavigationController::
         mousePressEvent ( QMouseEvent * e )
@@ -117,13 +130,25 @@ void NavigationController::
 void NavigationController::
         wheelEvent ( QWheelEvent *e )
 {
+    float rs = 0.08;
+    if( e->orientation() == Qt::Horizontal )
+        _view->model->_ry -= rs * e->delta();
+    else
+        zoom( e->delta(), e->modifiers().testFlag(Qt::ShiftModifier) );
+
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        zoom(int delta, bool xscale)
+{
     //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
     float ps = 0.0005;
-    float rs = 0.08;
-    if(e->modifiers().testFlag(Qt::ShiftModifier))
+    if(xscale)
     {
-        float d = ps * e->delta();
+        float d = ps * delta;
         if (d>0.8)
             d=0.8;
         if (d<-0.8)
@@ -139,17 +164,10 @@ void NavigationController::
     }
     else
     {
-        if( e->orientation() == Qt::Horizontal )
-        {
-            r.model->_ry -= rs * e->delta();
-        }
-        else
-        {
-            r.model->_pz *= (1+ps * e->delta());
+        r.model->_pz *= (1+ps * delta);
 
-            if (r.model->_pz<-40) r.model->_pz = -40;
-            if (r.model->_pz>-.1) r.model->_pz = -.1;
-        }
+        if (r.model->_pz<-40) r.model->_pz = -40;
+        if (r.model->_pz>-.1) r.model->_pz = -.1;
     }
 
     _view->userinput_update();
@@ -171,19 +189,27 @@ void NavigationController::
     if (scaleButton.isDown()) {
         // TODO scale selection
     }
-    if( rotateButton.isDown() ){
-        //Controlling the rotation with the left button.
-        r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
-        r.model->_rx -= rs * rotateButton.deltaY( y );
-        if (r.model->_rx<10) r.model->_rx=10;
-        if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
-        if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
+    if( rotateButton.isDown() ) {
+        if (zoom_only_)
+        {
+            zoom( -10*rotateButton.deltaX( x ), true );
+            zoom( -10*rotateButton.deltaY( y ), false );
+        }
+        else
+        {
+            //Controlling the rotation with the right button.
+            r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
+            r.model->_rx -= rs * rotateButton.deltaY( y );
+            if (r.model->_rx<10) r.model->_rx=10;
+            if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
+            if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
+        }
 
     }
 
     if( moveButton.isDown() )
     {
-        //Controlling the position with the right button.
+        //Controlling the position with the left button.
         double last[2], current[2];
         if( moveButton.worldPos(last[0], last[1], r.model->xscale) &&
             moveButton.worldPos(x, y, current[0], current[1], r.model->xscale) )
@@ -216,7 +242,8 @@ void NavigationController::
         changeEvent(QEvent * event)
 {
     if (event->type() & QEvent::EnabledChange)
-        emit enabledChanged(isEnabled());
+        if (!isEnabled())
+            emit enabledChanged(isEnabled());
 }
 
 
@@ -225,7 +252,14 @@ void NavigationController::
 {
     Ui::MainWindow* ui = _view->model->project()->mainWindow()->getItems();
     connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), this, SLOT(receiveToggleNavigation(bool)));
+    connect(ui->actionZoom, SIGNAL(toggled(bool)), this, SLOT(receiveToggleZoom(bool)));
     connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateNavigation, SLOT(setChecked(bool)));
+    connect(this, SIGNAL(enabledChanged(bool)), ui->actionZoom, SLOT(setChecked(bool)));
+
+    one_action_at_a_time_ = new Ui::ComboBoxAction();
+    one_action_at_a_time_->decheckable( false );
+    one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
+    one_action_at_a_time_->addActionItem( ui->actionZoom );
 }
 
 

@@ -148,7 +148,7 @@ void resampleStft( cudaPitchedPtrType<float2> input,
     StftFetcher fetcher;
     fetcher.inputAxis = inputAxis;
     fetcher.outputAxis = outputAxis;
-    fetcher.factor = 0.16; // makes it roughly equal height to Cwt
+    fetcher.factor = 0.22; // makes it roughly equal height to Cwt
 
     resample2d_fetcher<float>(
                 input,

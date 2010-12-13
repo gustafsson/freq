@@ -101,7 +101,7 @@ void CommentView::
     {
         QPoint gp = proxy->sceneTransform().map(event->globalPos());
 
-        if (event->modifiers() == 0)
+        if (event->modifiers() == 0 && !model->freezed_position)
         {
             move(gp - dragPosition);
             dragPosition = gp;

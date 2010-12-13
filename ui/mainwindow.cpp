@@ -61,6 +61,7 @@ void SaweMainWindow::
     connect(ui->actionOpen, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
     connect(ui->actionSave_project, SIGNAL(triggered()), SLOT(saveProject()));
     connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
+    connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
 
 
     // TODO remove layerWidget and deleteFilterButton

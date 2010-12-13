@@ -314,7 +314,7 @@ void Worker::
     _post_sink.invalidate_samples( I );
     TaskInfo("Worker invalidate %s. Worker tree:\n%s",
              I.toString().c_str(),
-             source()->toString().c_str());
+             source()?source()->toString().c_str():0);
 }
 
 

@@ -135,6 +135,7 @@ namespace Tools
     void SelectionController::
             addComboBoxAction( QAction* action )
     {
+        //selectionComboBox_->parentWidget()->addAction(action);
         selectionComboBox_->addActionItem( action );
     }
 

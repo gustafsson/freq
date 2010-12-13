@@ -2,8 +2,10 @@
 #define NAVIGATIONCONTROLLER_H
 
 #include "ui/mousecontrol.h"
+#include "ui/comboboxaction.h"
 
 #include <QWidget>
+#include <QPointer>
 
 namespace Tools
 {
@@ -21,6 +23,8 @@ namespace Tools
 
     private slots:
         void receiveToggleNavigation(bool active);
+        void receiveToggleZoom(bool active);
+
 
     private:
         // Event handlers
@@ -39,9 +43,13 @@ namespace Tools
         void connectGui();
 
         // State
+        bool zoom_only_;
         Ui::MouseControl moveButton;
         Ui::MouseControl rotateButton;
         Ui::MouseControl scaleButton;
+        QPointer<Ui::ComboBoxAction> one_action_at_a_time_;
+
+        void zoom(int delta, bool xscale);
     };
 } // namespace Tools
 

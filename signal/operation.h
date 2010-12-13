@@ -191,7 +191,7 @@ private:
     void serialize(archive& ar, const unsigned int /*version*/)
     {
         if (_source)
-            TaskTimer("*source is: %s", vartype(*_source).c_str()).suppressTiming();
+            TaskInfo("serialize source: %s", vartype(*_source).c_str());
 
         ar & BOOST_SERIALIZATION_NVP(_source);
     }

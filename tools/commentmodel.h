@@ -21,6 +21,7 @@ public:
     std::string html;
     float scroll_scale;
     uint2 window_size;
+    bool freezed_position;
 
 private:
     friend class boost::serialization::access;

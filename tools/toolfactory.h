@@ -111,6 +111,8 @@ namespace Tools
 
         QPointer<class GraphController> _graph_controller;
 
+        QPointer<class TooltipController> _tooltip_controller;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "toolmodel.h"
+#include "heightmap/position.h"
 
 namespace Tools
 {
@@ -19,6 +20,8 @@ public:
 
     virtual void createView( ToolModel* model, Sawe::Project* p, RenderView* r );
 
+    void setComment( Heightmap::Position p, std::string text, CommentView** view = 0 );
+
 signals:
     void enabledChanged(bool active);
 
@@ -30,7 +33,7 @@ private:
     void changeEvent ( QEvent * event );
     void mouseMoveEvent ( QMouseEvent * e );
 
-    class CommentView* createNewComment();
+    CommentView* createNewComment();
 
     void setupGui();
 
