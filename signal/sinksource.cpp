@@ -13,13 +13,15 @@ namespace Signal {
 SinkSource::
         SinkSource()
 {
+    _invalid_samples = Intervals::Intervals_ALL;
 }
 
 
 SinkSource::
         SinkSource( const SinkSource& b)
-		:
-	_cache( b._cache )
+            :
+        Sink(b),
+        _cache( b._cache )
 {
 }
 
@@ -27,8 +29,9 @@ SinkSource::
 SinkSource& SinkSource::
         operator=( const SinkSource& b)
 {
-	_cache = b._cache;
-	return *this;
+    _cache = b._cache;
+    _invalid_samples = b._invalid_samples;
+    return *this;
 }
 
 

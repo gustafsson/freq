@@ -65,10 +65,10 @@ namespace Tools
         //connect(ui->actionMoveSelection, SIGNAL(triggered(bool)), SLOT(receiveMoveSelection(bool)));
         //connect(ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), SLOT(receiveMoveSelectionInTime(bool)));
 
-        ui->actionActionAdd_selection->setEnabled( false );
-        ui->actionActionRemove_selection->setEnabled( false );
+        ui->actionActionAdd_selection->setEnabled( true );
+        ui->actionActionRemove_selection->setEnabled( true );
+        ui->actionCropSelection->setEnabled( true );
         ui->actionMoveSelection->setEnabled( false );
-        ui->actionCropSelection->setEnabled( false );
         ui->actionMoveSelectionTime->setEnabled( false );
 
         QToolBar* toolBarTool = new QToolBar(main);

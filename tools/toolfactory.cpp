@@ -81,6 +81,8 @@ ToolFactory::
     if (!_playback_controller.isNull())
         delete _playback_controller;
 
+    if (!_matlab_controller.isNull())
+        delete _matlab_controller;
     // The _render_view and _timeline_view widget are released by MainWindow
     // that owns the widget. This might happen both before and after this
     // destructor.

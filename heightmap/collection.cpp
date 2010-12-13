@@ -356,10 +356,10 @@ void Collection::
 {
     QMutexLocker l(&_cache_mutex);
 
-    TIME_COLLECTION TaskTimer tt("Collection doing garbage collection", _cache.size());
-    TIME_COLLECTION TaskTimer("Currently has %u cached blocks (ca %g MB)", _cache.size(),
-                              cacheByteSize()*1e-6 ).suppressTiming();
-    TIME_COLLECTION TaskTimer("Of which %u are recently used", _recent.size()).suppressTiming();
+    TaskTimer tt("Collection doing garbage collection", _cache.size());
+    TaskInfo("Currently has %u cached blocks (ca %g MB)", _cache.size(),
+                              cacheByteSize()*1e-6 );
+    TaskInfo("Of which %u are recently used", _recent.size());
 
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
@@ -375,8 +375,8 @@ void Collection::
         }
     }
 
-    TIME_COLLECTION TaskTimer("Now has %u cached blocks (ca %g MB)", _cache.size(),
-                              _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*1e-6 ).suppressTiming();
+    TaskInfo("Now has %u cached blocks (ca %g MB)", _cache.size(),
+             _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*1e-6 );
 }
 
 

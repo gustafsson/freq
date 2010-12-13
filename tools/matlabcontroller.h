@@ -16,6 +16,7 @@ namespace Tools
         Q_OBJECT
     public:
         MatlabController( Sawe::Project* project, RenderView* render_view );
+        ~MatlabController();
 
     private slots:
         virtual void receiveMatlabOperation(bool);
@@ -25,7 +26,7 @@ namespace Tools
         // Model
         // Model that is controlled, this controller doesn't have a view
         // and shares control of the worker with many others
-        Signal::Worker* _model;
+        Signal::Worker* worker_;
 
         RenderView* render_view_;
 

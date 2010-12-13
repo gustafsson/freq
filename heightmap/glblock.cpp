@@ -292,6 +292,8 @@ void GlBlock::
         draw()
 {    
     TIME_GLBLOCK CudaException_CHECK_ERROR();
+    TIME_GLBLOCK GlException_CHECK_ERROR();
+
     unmap();
 
     unsigned meshW = _collection->samples_per_block();
@@ -305,7 +307,7 @@ void GlBlock::
     const bool wireFrame = false;
     const bool drawPoints = false;
 
-    glColor3f(1.0, 1.0, 1.0);
+    glColor4f(1.0, 1.0, 1.0, 1.0);
     if (drawPoints) {
         glDrawArrays(GL_POINTS, 0, meshW * meshH);
     } else if (wireFrame) {
@@ -317,6 +319,7 @@ void GlBlock::
     }
     glBindTexture(GL_TEXTURE_2D, 0);
     TIME_GLBLOCK CudaException_CHECK_ERROR();
+    TIME_GLBLOCK GlException_CHECK_ERROR();
 }
 
 void GlBlock::

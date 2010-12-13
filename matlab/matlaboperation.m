@@ -1,23 +1,16 @@
 function [data,dummy]=matlaboperation(data,dummy)
 
-disp (['doing matlaboperation']);
-
 FS = data.samplerate(1); % data.samplerate is a matrix, not a scalar; hence we need "data.samplerate(1)" instead of "data.samplerate"
 offset = data.offset(1);
 
-disp (['FS = ' num2str(FS)]);
-disp (['offset = ' num2str(offset)]);
 format long
-disp (['data size = ' num2str(size(data.buffer))]);
-disp (['signal length = ' num2str(numel(data.buffer)/FS)]);
+disp (['matlaboperation -  FS = ' num2str(FS) ', offset = ' num2str(offset)
+       ', data size = ' num2str(numel(data.buffer)) ', signal length = ' num2str(numel(data.buffer)/FS)]);
 
-lowpass=0.05;
+lowpass=0.05; % Keep 5% of the lowest frequencies
 
 F=fft(data.buffer);
-disp (['fft complete']);
-nsave=round(lowpass*numel(F));
+nsave=round(lowpass*numel(F)/2);
 F(2+nsave:end-nsave)=0;
-disp (['applied filter']);
 data.buffer=real(ifft(F));
-disp (['ifft complete']);
 %endfunction % octave

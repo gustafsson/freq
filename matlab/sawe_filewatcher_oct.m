@@ -27,15 +27,12 @@ disp (['Monitoring ' datafile]);
 while 1
   if ~isempty(stat(datafile)) % fast octave version
 
-    disp (['Processing ' datafile]);
+    %disp (['Processing ' datafile]);
 	
     %octave
     data=load(datafile); 
-    disp (['Loaded data, calling func size(data)=' num2str(size(data))]);
     
     [data, arguments]=func(data, arguments);
-
-    disp (['Called func, saving in temp ' tempfile]);
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
@@ -43,12 +40,10 @@ while 1
     elseif isfield(data,'chunk')
       sawe_savechunk_oct(tempfile, data.chunk, data.offset, data.samplerate );
     end
-
-    disp (['Saved result in ' resultfile]);
     
     rename(tempfile,resultfile);   % octave
     
-    disp (['Monitoring ' datafile]);
+    %disp (['Monitoring ' datafile]);
   else
     sleep(dt); % octave
   end

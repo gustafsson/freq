@@ -15,6 +15,9 @@
 //#define TIME_HDF5
 #define TIME_HDF5 if(0)
 
+//#define VERBOSE_HDF5
+#define VERBOSE_HDF5 if(0)
+
 using namespace std;
 
 namespace Adapters
@@ -24,7 +27,7 @@ namespace Adapters
 Hdf5Input::
         Hdf5Input(std::string filename)
 {
-    _timer.reset(new TaskTimer("Reading HDF5-file '%s'", filename.c_str()));
+    TIME_HDF5 _timer.reset(new TaskTimer("Reading HDF5-file '%s'", filename.c_str()));
 
     _file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     if (0>_file_id) throw runtime_error("Could not open HDF5 file named '" + filename + "'");
@@ -34,7 +37,7 @@ Hdf5Input::
 Hdf5Output::
         Hdf5Output(std::string filename)
 {
-    _timer.reset(new TaskTimer("Writing HDF5-file '%s'", filename.c_str()));
+    TIME_HDF5 _timer.reset(new TaskTimer("Writing HDF5-file '%s'", filename.c_str()));
 
     _file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     if (0>_file_id) throw runtime_error("Could not create HDF5 file named '" + filename + "'");
@@ -96,7 +99,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const Signal::Buffer& cb)
 {
-    TIME_HDF5 TaskTimer tt("Adding buffer '%s'", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Adding buffer '%s'", name.c_str());
 
     GpuCpuData<float>& b = *cb.waveform_data();
 
@@ -115,7 +118,7 @@ template<>
 Signal::pBuffer Hdf5Input::
         read_exact<Signal::pBuffer>( std::string name )
 {
-    TIME_HDF5 TaskTimer tt("Reading buffer '%s'", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Reading buffer '%s'", name.c_str());
 
     herr_t      status;
     stringstream ss;
@@ -141,7 +144,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const Tfr::Chunk& chunk)
 {
-    TIME_HDF5 TaskTimer tt("Adding chunk '%s'", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Adding chunk '%s'", name.c_str());
 
     float2* p = chunk.transform_data->getCpuMemory();
     cudaExtent s = chunk.transform_data->getNumberOfElements();
@@ -181,7 +184,7 @@ template<>
 Tfr::pChunk Hdf5Input::
         read_exact<Tfr::pChunk>( std::string name)
 {
-    TIME_HDF5 TaskTimer tt("Reading chunk '%s'", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Reading chunk '%s'", name.c_str());
 
     herr_t      status;
     stringstream ss;
@@ -248,7 +251,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const double& v)
 {
-    TIME_HDF5 TaskTimer tt("Adding double '%s'", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Adding double '%s'", name.c_str());
 
     hsize_t one[]={1};
     herr_t status = H5LTmake_dataset(_file_id,name.c_str(),1,one,H5T_NATIVE_DOUBLE,&v);
@@ -260,7 +263,7 @@ template<>
 double Hdf5Input::
         read_exact<double>( std::string name )
 {
-    TIME_HDF5 TaskTimer tt("Reading double '%s'", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Reading double '%s'", name.c_str());
 
     H5T_class_t class_id=H5T_NO_CLASS;
     vector<hsize_t> dims = getInfo(name, &class_id);
@@ -280,7 +283,7 @@ template<>
 void Hdf5Output::
         add( std::string name, const std::string& s)
 {
-    TIME_HDF5 TaskTimer tt("Adding string '%s'", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Adding string '%s'", name.c_str());
 
     const char* p = s.c_str();
 
@@ -296,7 +299,7 @@ template<>
 std::string Hdf5Input::
         read_exact<std::string>( std::string name)
 {
-    TIME_HDF5 TaskTimer tt("Reading string: %s", name.c_str());
+    VERBOSE_HDF5 TaskTimer tt("Reading string: %s", name.c_str());
 
     findDataset(name);
 

@@ -30,6 +30,9 @@ using namespace Signal;
 using namespace boost;
 using namespace boost::posix_time;
 
+//#define TIME_MatlabFunction
+#define TIME_MatlabFunction if(0)
+
 namespace Adapters {
 
 MatlabFunction::
@@ -61,13 +64,13 @@ MatlabFunction::
         octave_args.push_back(octave_command.str().c_str());
 
         _pid = new QProcess();
+        _pid->setProcessChannelMode( QProcess::ForwardedChannels );
         _pid->start("matlab", matlab_args);
         _pid->waitForStarted();
         if (_pid->state() == QProcess::Running)
             return;
 
         TaskInfo("Couldn't start MATLAB, trying Octave instead");
-        _pid = new QProcess();
         _pid->start("octave", octave_args);
         _pid->waitForStarted();
         if (_pid->state() == QProcess::Running)
@@ -75,7 +78,8 @@ MatlabFunction::
 
         TaskInfo("Couldn't start Octave");
         delete _pid;
-/*
+        _pid = 0;
+        /*
 #ifdef __GNUC__
         _pid = (void*)fork();
 
@@ -116,14 +120,15 @@ std::string MatlabFunction::
 {
 	if (0==_pid)
 	{
-	    TaskTimer tt("Matlab/octave failed, ignoring.");
+        TIME_MatlabFunction TaskTimer tt("Matlab/octave failed, ignoring.");
 		return "";
 	}
 
-    TaskTimer tt("Waiting for matlab/octave.");
+    boost::scoped_ptr<TaskTimer> tt;
+    TIME_MatlabFunction tt.reset( new TaskTimer("Waiting for matlab/octave."));
 
-	remove(_resultFile.c_str());
-    rename(source.c_str(), _dataFile.c_str());
+    ::remove(_resultFile.c_str());
+    ::rename(source.c_str(), _dataFile.c_str());
 
     // Wait for result to be written
     struct stat dummy;
@@ -146,7 +151,7 @@ std::string MatlabFunction::
             abort(); // throws
 		}
         if (d.total_seconds() > 3)
-            tt.partlyDone();
+            TIME_MatlabFunction tt->partlyDone();
     }
 #ifdef WIN32 // wait for slow file system to finish move
     Sleep(100);
@@ -178,8 +183,20 @@ float MatlabFunction::
 void MatlabFunction::
 		kill()
 {
-    TaskTimer tt("MatlabFunction killing MATLAB/Octave process");
-    delete _pid;
+    if (_pid)
+    {
+        TaskTimer tt("MatlabFunction killing MATLAB/Octave process");
+        tt.partlyDone();
+        _pid->terminate();
+        tt.partlyDone();
+        _pid->waitForFinished();
+        tt.partlyDone();
+        delete _pid;
+
+        ::remove(_dataFile.c_str());
+        ::remove(_resultFile.c_str());
+        ::remove("octave-core");
+    }
 /*	if (_pid)
 	{
 		#ifdef __GNUC__
@@ -205,6 +222,12 @@ MatlabOperation::
 :   OperationCache(source),
     _matlab(new MatlabFunction(matlabFunction, 4))
 {
+}
+
+MatlabOperation::
+        ~MatlabOperation()
+{
+    TaskInfo("~MatlabOperation");
 }
 
 pBuffer MatlabOperation::

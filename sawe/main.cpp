@@ -212,6 +212,32 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
             TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
                      total/1024.f/1024, free/1024.f/1024);
 
+            if (!use_OpenGL_bindings) if (free < total/2)
+            {
+                std::stringstream ss;
+                ss <<
+                        "There seem to be one or more other applications "
+                        "currently using a lot of GPU memory. This might have "
+                        "a negative performance impact on Sonic AWE." << endl
+                   << endl
+                   << "Total memory free to use by Sonic AWE is "
+                   << (free>>20) << " MB out of total of " << (total>>20)
+                   << " MB on the GPU "
+                   << CudaProperties::getCudaDeviceProp().name << "."
+                   << endl
+                   << endl
+                   << "If you've been using the matlab/octave integration "
+                   << "and have experienced any crash, make sure you've "
+                   << "cleaned up all background octave processes that may "
+                   << "still be running."
+                   << endl << endl
+                   << "Sonic AWE will now try to start without using up too "
+                   "much memory.";
+                QMessageBox::information(
+                        0,
+                        "A lot of GPU memory is being used",
+                        ss.str().c_str());
+            }
             return true;
         }
     } catch (const CudaException& x) {

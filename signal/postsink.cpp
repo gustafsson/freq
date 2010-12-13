@@ -70,11 +70,25 @@ Signal::pBuffer PostSink::
         prev = c;
     }
 
-    pBuffer b = prev->read( I );
+    pBuffer b;
+    // Since 'this' PostSink is a sink, it doesn't need to return anything.
+    // But since the buffer 'b' will be computed anyway when calling 'read'
+    // it might just as well return it for debugging purposes.
+
+    if (1==active_operations.size())
+    {
+        pOperation c = active_operations[0];
+        c->source( prev );
+        b = c->read( I );
+        prev = c;
+        c->source( source() );
+        active_operations.clear();
+    } else
+        b = prev->read( I );
 
     // prev.reset( new BufferSource( b ));
     foreach( pOperation c, active_operations) {
-        c->source( prev );
+        c->source( source() );
         c->read( I );
     }
 

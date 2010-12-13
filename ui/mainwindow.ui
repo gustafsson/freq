@@ -573,9 +573,6 @@
    <property name="checked">
     <bool>false</bool>
    </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>

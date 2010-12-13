@@ -6,16 +6,24 @@
 #include "ui/mainwindow.h"
 
 #include "heightmap/collection.h"
+#include "tfr/cwt.h"
 
 namespace Tools {
 
 MatlabController::
         MatlabController( Sawe::Project* project, RenderView* render_view )
             :
-            _model(&project->worker),
+            worker_(&project->worker),
             render_view_(render_view)
 {
     setupGui(project);
+}
+
+
+MatlabController::
+        ~MatlabController()
+{
+    TaskInfo("~MatlabController");
 }
 
 
@@ -36,17 +44,16 @@ void MatlabController::
     if (_matlaboperation)
     {
         // Already created, make it re-read the script
-        ((Adapters::MatlabOperation*)_matlaboperation.get())->restart();
+        dynamic_cast<Adapters::MatlabOperation*>(_matlaboperation.get())->restart();
     }
     else
     {
-        _matlaboperation.reset( new Adapters::MatlabOperation( _model->source(), "matlaboperation") );
-        _model->source( _matlaboperation );
+        _matlaboperation.reset( new Adapters::MatlabOperation( Signal::pOperation(), "matlaboperation") );
+        worker_->appendOperation( _matlaboperation );
     }
 
-    // Render view will be updated by invalidating some parts in sinks of worker
     Signal::Intervals affected = _matlaboperation->affected_samples();
-    _model->postSink()->invalidate_samples(affected);
+    worker_->postSink()->invalidate_samples(affected);
 
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections )
         collection->invalidate_samples( affected );
@@ -62,45 +69,24 @@ void MatlabController::
     {
         // Already created, make it re-read the script
         dynamic_cast<Adapters::MatlabFilter*>(_matlabfilter.get())->restart();
-        return;
+    }
+    else
+    {
+        _matlabfilter.reset( new Adapters::MatlabFilter( "matlabfilter" ) );
+        worker_->appendOperation( _matlabfilter );
+
+        // Make sure the worker runs in a separate thread
+        Tfr::Cwt::Singleton().gc();
+        worker_->start();
     }
 
-    switch(1) {
-    case 1: // Everywhere
-        {
-            _matlabfilter.reset( new Adapters::MatlabFilter( "matlabfilter" ) );
-            _matlabfilter->source( _model->source() );
-            _model->source( _matlabfilter );
+    Signal::Intervals affected = _matlabfilter->affected_samples();
+    worker_->postSink()->invalidate_samples(affected);
 
-            // Make sure the worker runs in a separate thread
-            _model->start();
-        break;
-        }
-/*    case 2: // Only inside selection
-        {
-            Signal::pOperation s( new Adapters::MatlabFilter( "matlabfilter" ));
-            _matlabfilter->source( _model->source() );
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections )
+        collection->invalidate_samples( affected );
 
-            // TODO Fetch selection
-            Signal::PostSink* postsink = project->tools().selection_model.getPostSink();
-
-            Filters::EllipseFilter* e = dynamic_cast<Filters::EllipseFilter*>(postsink->filter().get());
-            if (e)
-                e->_save_inside = true;
-
-            _matlabfilter = postsink->filter();
-            postsink->filter(Signal::pOperation());
-            _matlabfilter->source( s );
-
-            b->source( _matlabfilter );
-            _model->source( _matlabfilter );
-            break;
-        }*/
-    }
-
-    // Render view will be updated by invalidating some parts in sinks of worker
-    _model->postSink()->invalidate_samples(_matlabfilter->affected_samples());
-}
+    render_view_->userinput_update();}
 
 
 } // namespace Tools

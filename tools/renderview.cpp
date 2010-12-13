@@ -775,8 +775,10 @@ void RenderView::
         c->reset(); // note, not c.reset()
     }
 
+    Heightmap::Renderer::ColorMode old_color_mode = model->renderer->color_mode;
     model->renderer.reset();
     model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
+    model->renderer->color_mode = old_color_mode;
     Tfr::Cwt::Singleton().gc();
 
     cudaThreadExit();

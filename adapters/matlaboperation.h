@@ -68,6 +68,7 @@ class MatlabOperation: public Signal::OperationCache
 {
 public:
     MatlabOperation( Signal::pOperation source, std::string matlabFunction );
+    ~MatlabOperation();
 
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
 

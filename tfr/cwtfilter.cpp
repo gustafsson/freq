@@ -13,6 +13,9 @@
 //#define TIME_CwtFilter
 #define TIME_CwtFilter if(0)
 
+//#define TIME_CwtFilterRead
+#define TIME_CwtFilterRead if(0)
+
 // #define DEBUG_CwtFilter
 #define DEBUG_CwtFilter if(0)
 
@@ -70,8 +73,14 @@ ChunkAndInverse CwtFilter::
 
     ChunkAndInverse ci;
 
-    ci.inverse = _source->readFixedLength( Interval(firstSample,
-                                                    firstSample+L) );
+    {
+        TIME_CwtFilterRead TaskTimer tt2("CwtFilter reading %s for '%s'",
+                                         Interval(firstSample, firstSample+L).toString().c_str(),
+                                     vartype(*this).c_str());
+
+        ci.inverse = _source->readFixedLength( Interval(firstSample,
+                                                        firstSample+L) );
+    }
 
     TIME_CwtFilter TaskTimer tt2("CwtFilter transforming %s for '%s'",
                                  ci.inverse->getInterval().toString().c_str(),

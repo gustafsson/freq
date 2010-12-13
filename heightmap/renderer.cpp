@@ -485,6 +485,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
 
     TIME_RENDERER TaskTimer("drawing").suppressTiming();
     TIME_RENDERER CudaException_CHECK_ERROR();
+    TIME_RENDERER GlException_CHECK_ERROR();
 
     Position a, b;
     ref.getArea( a, b );
@@ -506,6 +507,7 @@ bool Renderer::renderSpectrogramRef( Reference ref )
         }
 
     } else {
+        endVboRendering();
         // getBlock would try to find something else if the requested block
         // wasn't readily available.
 
@@ -517,21 +519,28 @@ bool Renderer::renderSpectrogramRef( Reference ref )
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
         glDisable(GL_COLOR_MATERIAL);
-        glColor4f( 1.0f, 0.0f, 0.0f, 1.0f );
+        glDisable(GL_LIGHTING);
+        glColor4f( 0.8f, 0.2f, 0.2f, 0.5f );
+        glLineWidth(2);
 
-        glBegin(GL_LINES );
+        glBegin(GL_LINE_STRIP);
             glVertex3f( 0, 0, 0 );
+            glVertex3f( 1, 0, 1 );
+            glVertex3f( 1, 0, 0 );
             glVertex3f( 0, 0, 1 );
+            glVertex3f( 0, 0, 0 );
             glVertex3f( 1, 0, 0 );
             glVertex3f( 1, 0, 1 );
-            glVertex3f( 0.5f, 0, 0.5f );
-            glVertex3f( 0.25f, 0, 0.5f );
+            glVertex3f( 0, 0, 1 );
         glEnd();
+
+        beginVboRendering();
     }
 
     _drawn_blocks++;
 
     TIME_RENDERER CudaException_CHECK_ERROR();
+    TIME_RENDERER GlException_CHECK_ERROR();
 
     return true;
 }
