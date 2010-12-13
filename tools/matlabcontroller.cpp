@@ -45,18 +45,13 @@ void MatlabController::
     {
         // Already created, make it re-read the script
         dynamic_cast<Adapters::MatlabOperation*>(_matlaboperation.get())->restart();
+        worker_->postSink()->invalidate_samples(_matlaboperation->affected_samples());
     }
     else
     {
         _matlaboperation.reset( new Adapters::MatlabOperation( Signal::pOperation(), "matlaboperation") );
         worker_->appendOperation( _matlaboperation );
     }
-
-    Signal::Intervals affected = _matlaboperation->affected_samples();
-    worker_->postSink()->invalidate_samples(affected);
-
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections )
-        collection->invalidate_samples( affected );
 
     render_view_->userinput_update();
 }
@@ -69,6 +64,7 @@ void MatlabController::
     {
         // Already created, make it re-read the script
         dynamic_cast<Adapters::MatlabFilter*>(_matlabfilter.get())->restart();
+        worker_->postSink()->invalidate_samples(_matlabfilter->affected_samples());
     }
     else
     {
@@ -79,12 +75,6 @@ void MatlabController::
         Tfr::Cwt::Singleton().gc();
         worker_->start();
     }
-
-    Signal::Intervals affected = _matlabfilter->affected_samples();
-    worker_->postSink()->invalidate_samples(affected);
-
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections )
-        collection->invalidate_samples( affected );
 
     render_view_->userinput_update();}
 

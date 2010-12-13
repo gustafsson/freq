@@ -109,8 +109,7 @@ void BrushController::
 {
     if (e->button() == paint_button_ )
     {
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections )
-            collection->invalidate_samples( drawn_interval_ );
+        render_view_->model->project()->worker.postSink()->invalidate_samples( drawn_interval_ );
         drawn_interval_.clear();
     }
 

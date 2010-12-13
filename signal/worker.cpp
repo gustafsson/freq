@@ -241,8 +241,12 @@ void Worker::
         appendOperation(Signal::pOperation s)
 {
     s->source( _source );
+    Signal::Intervals still_zeros;
+    if (_source)
+        still_zeros = _source->zeroed_samples();
+    still_zeros &= s->zeroed_samples();
     _source = s;
-    _post_sink.invalidate_samples( s->affected_samples() );
+    _post_sink.invalidate_samples( s->affected_samples() - still_zeros );
     return;
 }
 

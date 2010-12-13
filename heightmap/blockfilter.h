@@ -57,7 +57,6 @@ public:
         return r;
     }
 
-
     virtual void operator()( Tfr::Chunk& chunk )
     {
         Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());

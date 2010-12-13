@@ -248,7 +248,7 @@ audiofile              source
     Tfr::FreqAxis display_scale() { return _display_scale; }
 
     /**
-      PostSink fetches data
+      PostSink fetches data. TODO Remove postsink from collection
       */
     Signal::pOperation postsink() { return _postsink; }
     void setPostsink(Signal::pOperation s) { _postsink = s; }
