@@ -37,7 +37,7 @@ ChunkAndInverse StftFilter::
     // interpolations so that there won't be any edges between blocks
 
     unsigned first_chunk = 0,
-             last_chunk = (I.last + 1.5*chunk_size)/chunk_size;
+             last_chunk = (I.last + 2.5*chunk_size)/chunk_size;
 
     if (I.first >= 1.5*chunk_size)
         first_chunk = (I.first - 1.5*chunk_size)/chunk_size;

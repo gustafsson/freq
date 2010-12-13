@@ -88,7 +88,7 @@ Signal::pBuffer PostSink::
 
     // prev.reset( new BufferSource( b ));
     foreach( pOperation c, active_operations) {
-        c->source( source() );
+        c->source( _filter ? _filter : source() );
         c->read( I );
     }
 

@@ -13,7 +13,6 @@ namespace Signal {
 SinkSource::
         SinkSource()
 {
-    _invalid_samples = Intervals::Intervals_ALL;
 }
 
 

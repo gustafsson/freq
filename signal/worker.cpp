@@ -89,7 +89,7 @@ bool Worker::
 
         b = callCallbacks( interval );
 
-        float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
+        //float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
         work_time += b->length();
         //work_time -= r;
 

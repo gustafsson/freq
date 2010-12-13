@@ -50,7 +50,7 @@ private:
     float _max_found,
           _min_found;
 
-    void saturate( float* p, unsigned N );
+    void normalize( float* p, unsigned N );
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,
