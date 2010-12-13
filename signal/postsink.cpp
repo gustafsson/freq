@@ -19,6 +19,9 @@ Signal::pBuffer PostSink::
 {
     DEBUG_POSTSINK TaskTimer tt("PostSink( %s )", I.toString().c_str());
 
+    if (_sinks.empty())
+        return source()->read(I);
+
     vector<pOperation> passive_operations;
     vector<pOperation> active_operations;
 
@@ -71,9 +74,9 @@ Signal::pBuffer PostSink::
     }
 
     pBuffer b;
-    // Since 'this' PostSink is a sink, it doesn't need to return anything.
+    // Since PostSink is a sink, it doesn't need to return anything.
     // But since the buffer 'b' will be computed anyway when calling 'read'
-    // it might just as well return it for debugging purposes.
+    // PostSink may just as well return it, at least for debugging purposes.
 
     if (1==active_operations.size())
     {

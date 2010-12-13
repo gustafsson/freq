@@ -180,8 +180,7 @@ void Playback::
 bool Playback::
         isFinished()
 {
-    return false;
-//    return _data.isFinished() && isStopped();
+    return _data.isFinished() && isStopped();
 }
 
 

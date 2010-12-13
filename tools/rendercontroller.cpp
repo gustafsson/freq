@@ -75,6 +75,7 @@ public:
 
     virtual void source(Signal::pOperation v) { _source->source(v); }
     virtual Signal::Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples(); }
+    virtual bool isFinished() { return false; }
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
