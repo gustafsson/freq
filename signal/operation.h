@@ -35,8 +35,8 @@ public:
       Note that read doesn't have to be called. See affected_samples().
       */
     virtual pBuffer read( const Interval& I );
-    virtual float sample_rate() { return source()->sample_rate(); }  /// @see read(const Interval&)
-    virtual long unsigned number_of_samples() { return source()->number_of_samples(); } /// @see read(const Interval&)
+    virtual float sample_rate() { return _source->sample_rate(); }  /// @see read(const Interval&)
+    virtual IntervalType number_of_samples() { return _source->number_of_samples(); } /// @see read(const Interval&)
 
 
     /**

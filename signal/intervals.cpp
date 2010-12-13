@@ -194,9 +194,9 @@ Intervals& Intervals::
     for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 	
-        if (Interval::IntervalType_MAX - b < i.first ) i.first = Interval::IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b <= i.first ) i.first = Interval::IntervalType_MAX;
 		else i.first += b;
-        if (Interval::IntervalType_MAX - b < i.last ) i.last = Interval::IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b <= i.last ) i.last = Interval::IntervalType_MAX;
 		else i.last += b;
 
         if ( Interval::IntervalType_MAX == i.first && Interval::IntervalType_MAX == i.last )

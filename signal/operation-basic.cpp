@@ -26,6 +26,11 @@ pBuffer OperationRemoveSection::
         return source()->readFixedLength( Interval(I.first, section_.first) );
     }
 
+    if (I.first + section_.count() + 1 < I.first)
+    {
+        return zeros(I);
+    }
+
     pBuffer b = source()->readFixedLength( Intervals(I) << section_.count() );
     b->sample_offset -= section_.count();
 

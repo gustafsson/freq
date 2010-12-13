@@ -174,13 +174,50 @@ namespace Tools
     void SelectionController::
             receiveAddClearSelection(bool /*active*/)
     {
+        setCurrentFilterSaveInside(false);
+
+        _worker->appendOperation( _model->current_filter_ );
+        _model->all_filters.push_back( _model->current_filter_ );
+
+        TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
+    }
+
+
+    void SelectionController::
+            receiveCropSelection()
+    {
+        // affected_samples need a sample rate
+        setCurrentFilterSaveInside(true);
+
+        Signal::Intervals I = _model->current_filter_->affected_samples().coveredInterval();
+        I -= _model->current_filter_->zeroed_samples();
+
+        if (0==I.coveredInterval().count())
+            return;
+
+        // Create OperationRemoveSection to remove that section from the stream
+        Signal::pOperation remove(new Tools::Support::OperationCrop(
+                Signal::pOperation(), I.coveredInterval() ));
+        _worker->appendOperation( _model->current_filter_ );
+        _worker->appendOperation( remove );
+        _model->all_filters.push_back( _model->current_filter_ );
+
+        TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
+    }
+
+
+    void SelectionController::
+            setCurrentFilterSaveInside(bool save_inside)
+    {
+        _model->current_filter_->source( _worker->source() );
+
         Filters::Ellipse* ellipse =
                 dynamic_cast<Filters::Ellipse*>(
                         _model->current_filter_.get() );
 
         if (ellipse)
         { // If selection is an ellipse, remove tfr data inside the ellipse
-            ellipse->_save_inside = false;
+            ellipse->_save_inside = save_inside;
         }
 
         Tools::Support::OperationContainer* container=
@@ -193,18 +230,31 @@ namespace Tools
                     dynamic_cast<Filters::Rectangle*>(
                             container->content().get() );
             if (rectangle)
-                rectangle->_save_inside = false;
+                rectangle->_save_inside = save_inside;
 
             Tools::Support::OperationOtherSilent* other_silent =
                     dynamic_cast<Tools::Support::OperationOtherSilent*>(
                             container->content().get() );
 
-            if (other_silent)
+            if (other_silent && !save_inside)
             {
                 container->setContent( Signal::pOperation(
                         new Tools::Support::OperationSetSilent(
                                 Signal::pOperation(),
                                 other_silent->section() )
+                        ));
+            }
+
+            Tools::Support::OperationSetSilent* set_silent =
+                    dynamic_cast<Tools::Support::OperationSetSilent*>(
+                            container->content().get() );
+
+            if (set_silent && save_inside)
+            {
+                container->setContent( Signal::pOperation(
+                        new Tools::Support::OperationOtherSilent(
+                                Signal::pOperation(),
+                                set_silent->affected_samples().coveredInterval() )
                         ));
             }
         }
@@ -214,29 +264,7 @@ namespace Tools
                 dynamic_cast<Selections::Support::SplineFilter*>(
                         _model->current_filter_.get() );
         if (spline)
-            spline->_save_inside = false;
-
-        _worker->appendOperation( _model->current_filter_ );
-        _model->all_filters.push_back( _model->current_filter_ );
-    }
-
-
-    void SelectionController::
-            receiveCropSelection()
-    {
-        // affected_samples need a sample rate
-        Signal::pOperation f = _model->current_filter_;
-        f->source( _worker->source() );
-        Signal::Intervals I = f->affected_samples().coveredInterval();
-        I -= f->zeroed_samples();
-
-        if (0<I.coveredInterval().count())
-            return;
-
-        // Create OperationRemoveSection to remove that section from the stream
-        Signal::pOperation remove(new Signal::OperationRemoveSection(
-                Signal::pOperation(), I.coveredInterval() ));
-        _worker->appendOperation( remove );
+            spline->_save_inside = save_inside;
     }
 
 

@@ -29,6 +29,7 @@ public:
     /// this do skip all contained suboperations
     virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
     virtual void source(Signal::pOperation v) { source_sub_operation_->source(v); }
+
     /**
         affected_samples needs to take subSource into account.
         If samples are moved by a sub operation affected_samples might have to

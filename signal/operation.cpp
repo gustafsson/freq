@@ -34,7 +34,7 @@ pBuffer Operation::
 Operation* Operation::
         affecting_source( const Interval& I )
 {
-    if ((affected_samples() & I) || !source())
+    if ((affected_samples() & I) || !_source)
         return this;
 
     return _source->affecting_source( I );

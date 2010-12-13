@@ -85,6 +85,7 @@ namespace Tools
 
         //void setSelection(int i, bool enabled);
         //void removeFilter(int i);
+        void setCurrentFilterSaveInside(bool save_inside);
 
         // Tools
         QScopedPointer<Selections::EllipseModel> ellipse_model_;

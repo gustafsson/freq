@@ -69,7 +69,7 @@ public:
     */
     virtual pBuffer read( const Interval& I ) = 0;
     virtual float sample_rate() = 0;
-    virtual long unsigned number_of_samples() = 0;
+    virtual IntervalType number_of_samples() = 0;
 
 
     /**
