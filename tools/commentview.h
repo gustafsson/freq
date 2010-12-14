@@ -32,8 +32,11 @@ public:
     virtual void resizeEvent(QResizeEvent *);
     virtual void paintEvent(QPaintEvent *);
     virtual void mousePressEvent(QMouseEvent *event);
+    virtual void mouseDoubleClickEvent ( QMouseEvent * event );
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
+    virtual void focusInEvent(QFocusEvent *event);
+    virtual void focusOutEvent(QFocusEvent *event);
     virtual QSize sizeHint() const;
 
 signals:
@@ -42,6 +45,8 @@ signals:
 public slots:
     void updatePosition();
     void updateText();
+    void recreatePolygon();
+    void thumbnail(bool);
 
 private:
     Ui::CommentView *ui;
@@ -52,6 +57,8 @@ private:
     bool z_hidden;
     QPoint dragPosition;
     QPoint resizePosition;
+
+    bool testFocus();
 };
 
 } // namespace Tools

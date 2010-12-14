@@ -46,24 +46,32 @@ RenderView::
 {
     float l = model->project()->worker.source()->length();
     _prevLimit = l;
+    _last_length = l;
 
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
     if (model->_rx>=90) { model->_rx=90; orthoview.reset(1); } else orthoview.reset(0);
     //if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
+
+    computeChannelColors();
 }
 
 
 RenderView::
         ~RenderView()
 {
-    TaskTimer tt(__FUNCTION__);
+    TaskTimer tt("%s, calling cudaThreadExit()", __FUNCTION__);
 
     emit destroying();
 
-    // Because the cuda context was created with cudaGLSetGLDevice it is bound
+    // Because the Cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
     // is corrupt and can't be destroyed nor used properly.
+    //
+    // Note though that other OpenGL contexts might still be active in other
+    // Sonic AWE windows. The Cuda context would probably only need to be
+    // destroyed prior to the destruction of the last OpenGL context. This
+    // would require further investigation.
     makeCurrent();
 
     BOOST_ASSERT( QGLContext::currentContext() );
@@ -179,32 +187,50 @@ void RenderView::
 
 
 float RenderView::
-        getHeightmapValue( Heightmap::Position pos )
+        getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref )
 {
 #ifdef WIN32
     // getHeightmapValue is tremendously slow on windos for some reason
     return 0;
 #endif
 
-    if (pos.time < 0 || pos.scale < 0 || pos.scale > 1)
+    if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
         return 0;
 
-    Heightmap::Reference ref = model->renderer->findRefAtCurrentZoomLevel( pos.time, pos.scale );
-    Heightmap::pBlock block = model->collections[0]->getBlock( ref );
+    memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
+    memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
+    memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+
+    Heightmap::Reference myref(model->collections[0].get());
+    if (!ref)
+    {
+        ref = &myref;
+        ref->block_index[0] = (unsigned)-1;
+    }
+    if (ref->block_index[0] == (unsigned)-1)
+        *ref = model->renderer->findRefAtCurrentZoomLevel( pos.time, pos.scale );
+
+    Heightmap::Position a,b;
+    ref->getArea( a, b );
+
+    ref->block_index[0] = pos.time / (b.time - a.time);
+    ref->block_index[1] = pos.scale / (b.scale - a.scale);
+    ref->getArea( a, b );
+
+    Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
     if (!block)
         return 0;
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
 
     float* data = blockData->getCpuMemory();
-    Heightmap::Position a,b;
-    ref.getArea( a, b );
-    unsigned w = ref.samplesPerBlock();
-    unsigned h = ref.scalesPerBlock();
+    unsigned w = ref->samplesPerBlock();
+    unsigned h = ref->scalesPerBlock();
     unsigned x0 = (pos.time-a.time)/(b.time-a.time)*(w-1) + .5f;
     unsigned y0 = (pos.scale-a.scale)/(b.scale-a.scale)*(h-1) + .5f;
 
+    BOOST_ASSERT( x0 < w );
+    BOOST_ASSERT( y0 < h );
     float v = data[ x0 + y0*w ];
-    blockData->getCudaGlobal(false);
 
     v *= model->renderer->y_scale;
     v *= 4;
@@ -215,17 +241,21 @@ float RenderView::
 QPointF RenderView::
         getScreenPos( Heightmap::Position pos, double* dist )
 {
-    GLdouble objY = getHeightmapValue(pos);
+    GLdouble objY;
+    if (1 != orthoview)
+        objY = getHeightmapValue(pos) * last_ysize;
+
     GLdouble winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
-                m, proj, vp,
+                modelview_matrix, projection_matrix, viewport_matrix,
                 &winX, &winY, &winZ);
 
     if (dist)
     {
+        GLint const* const& vp = viewport_matrix;
         float z0 = .1, z1=.2;
-        GLvector projectionPlane = Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
-        GLvector projectionNormal = (Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane).Normalize();
+        GLvector projectionPlane = Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0), modelview_matrix, projection_matrix, vp );
+        GLvector projectionNormal = (Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane).Normalize();
 
         GLvector p;
         p[0] = pos.time;
@@ -236,15 +266,32 @@ QPointF RenderView::
         *dist *= last_ysize;
     }
 
-    return QPointF( winX, vp[3]-1-winY );
+    return QPointF( winX, viewport_matrix[3]-1-winY );
     //return QPointF( winX, winY );
 }
 
 
 Heightmap::Position RenderView::
-        getHeightmapPos( QPointF pos )
+        getHeightmapPos( QPointF pos, bool useRenderViewContext )
 {
+    if (1 == orthoview)
+        return getPlanePos(pos, 0, useRenderViewContext);
+
     TaskTimer tt("RenderView::getPlanePos Newton raphson");
+
+    GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
+    GLint* vp = this->viewport_matrix;
+    GLdouble other_m[16], other_proj[16];
+    GLint other_vp[4];
+    if (!useRenderViewContext)
+    {
+        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
+        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
+        glGetIntegerv(GL_VIEWPORT, other_vp);
+        m = other_m;
+        proj = other_proj;
+        vp = other_vp;
+    }
 
     GLdouble objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), 0.1,
@@ -273,20 +320,28 @@ Heightmap::Position RenderView::
         if (e < 1e-5 )
             break;
 
-        y = getHeightmapValue(p);
+        y = getHeightmapValue(p) * last_ysize;
         tt.info("(%g, %g) %g", p.time, p.scale, y);
     }
     return p;
 }
 
 Heightmap::Position RenderView::
-        getPlanePos( QPointF pos, bool* success )
+        getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
-    GLdouble m[16], proj[16];
-    GLint vp[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, m);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, vp);
+    GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
+    GLint* vp = this->viewport_matrix;
+    GLdouble other_m[16], other_proj[16];
+    GLint other_vp[4];
+    if (!useRenderViewContext)
+    {
+        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
+        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
+        glGetIntegerv(GL_VIEWPORT, other_vp);
+        m = other_m;
+        proj = other_proj;
+        vp = other_vp;
+    }
 
     GLdouble objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), 0.1,
@@ -308,18 +363,19 @@ Heightmap::Position RenderView::
     p.time = objX1 + s * (objX2-objX1);
     p.scale = objZ1 + s * (objZ2-objZ1);
 
-    *success=true;
+    if (success) *success=true;
+
     float minAngle = 3;
     if (0) if(success)
     {
-        if( s < 0 )
-            *success=false;
+        if( s < 0)
+            if (success) *success=false;
 
         float L = sqrt((objX1-objX2)*(objX1-objX2)
                        +(objY1-objY2)*(objY1-objY2)
                        +(objZ1-objZ2)*(objZ1-objZ2));
         if (objY1-objY2 < model->xscale*sin(minAngle *(M_PI/180)) * L )
-            *success=false;
+            if (success) *success=false;
     }
 
     return p;
@@ -333,29 +389,9 @@ void RenderView::
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
-    for (unsigned i=0; i<N; ++i)
+    TIME_PAINTGL for (unsigned i=0; i<N; ++i)
         sumsize += model->collections[i]->cacheByteSize();
     TIME_PAINTGL TaskTimer tt("Drawing %u collections (total cache size: %g MB)", N, sumsize/1024.f/1024.f);
-
-    std::vector<float4> channel_colors(N);
-    { // Set colors
-        float R = 0, G = 0, B = 0;
-        for (unsigned i=0; i<N; ++i)
-        {
-            QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
-            channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-            R += channel_colors[i].x;
-            G += channel_colors[i].y;
-            B += channel_colors[i].z;
-        }
-        for (unsigned i=0; i<N; ++i)
-        {
-            channel_colors[i] = channel_colors[i] * (1/R);
-        }
-
-        if (1==N)
-            channel_colors[0] = make_float4(0,0,0,1);
-    }
 
     Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
             model->project()->worker.source()->root());
@@ -537,12 +573,11 @@ void RenderView::
     model->_qz = f;
 
     // todo find length by other means
-    float l = model->project()->worker.source()->length();
 
     if (model->_qx<0) model->_qx=0;
     if (model->_qz<0) model->_qz=0;
-    if (model->_qz>1) model->_qz=1;
-    if (model->_qx>l) model->_qx=l;
+    if (model->_qz>_last_length) model->_qz=_last_length;
+    if (model->_qx>_last_length) model->_qx=_last_length;
 
     userinput_update();
 }
@@ -621,9 +656,9 @@ void RenderView::
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Set up camera position
-    float length = model->project()->worker.source()->length();
+    _last_length = model->project()->worker.source()->length();
     float fs = model->project()->worker.source()->sample_rate();
-    {   double limit = std::max(0.f, length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
+    {   double limit = std::max(0.f, _last_length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
 
         if (model->_qx>=_prevLimit) {
             // -- Following Record Marker --
@@ -641,9 +676,9 @@ void RenderView::
 
         setupCamera();
 
-        glGetDoublev(GL_MODELVIEW_MATRIX, m);
-        glGetDoublev(GL_PROJECTION_MATRIX, proj);
-        glGetIntegerv(GL_VIEWPORT, vp);
+        glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
+        glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+        glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 	}
 
     // TODO move to rendercontroller
@@ -664,7 +699,7 @@ void RenderView::
 
         emit painting();
 
-        model->renderer->drawAxes( length ); // 4.7 ms
+        model->renderer->drawAxes( _last_length ); // 4.7 ms
 
         if (wasWorking)
             Support::DrawWorking::drawWorking( _last_width, _last_height );
@@ -738,7 +773,8 @@ void RenderView::
     if (!onlyUpdateMainRenderView)
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
     {
-        collection->next_frame(); // Discard needed blocks before this row
+        // Start looking for which blocks that are requested for the next frame.
+        collection->next_frame();
     }
 
     GlException_CHECK_ERROR();
@@ -832,6 +868,34 @@ void RenderView::
     glTranslatef( -model->_qx, -model->_qy, -model->_qz );
 
     orthoview.TimeStep(.08);
+}
+
+
+void RenderView::
+        computeChannelColors()
+{
+    unsigned N = model->collections.size();
+    channel_colors.resize( N );
+
+    // Set colors
+    float R = 0, G = 0, B = 0;
+    for (unsigned i=0; i<N; ++i)
+    {
+        QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
+        channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+        R += channel_colors[i].x;
+        G += channel_colors[i].y;
+        B += channel_colors[i].z;
+    }
+
+    // R, G and B sum up to the same constant = N/2 if N > 1
+    for (unsigned i=0; i<N; ++i)
+    {
+        channel_colors[i] = channel_colors[i] * (N/2);
+    }
+
+    if (1==N)
+        channel_colors[0] = make_float4(0,0,0,1);
 }
 
 

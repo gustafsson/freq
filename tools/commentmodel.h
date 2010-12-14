@@ -20,6 +20,7 @@ public:
     Heightmap::Position pos;
     std::string html;
     float scroll_scale;
+    bool thumbnail;
     uint2 window_size;
     bool freezed_position;
 

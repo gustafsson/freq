@@ -67,7 +67,7 @@ public:
     /**
       Computes the standard deviation in time and frequency using the tf_resolution value. For a given frequency.
       */
-    float     morlet_sigma_t( float sample_rate, float hz ) const;
+    float     morlet_sigma_samples( float sample_rate, float hz ) const;
     float     morlet_sigma_f( float hz ) const;
 
     /**

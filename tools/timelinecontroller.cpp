@@ -73,7 +73,7 @@ void TimelineController::
     view->makeCurrent();
     view->setupCamera();
 
-    int x = e->x(), y = height() - e->y();
+    int x = e->x(), y = height() - 1 - e->y();
     float ps = 0.0005f;
 
     double current[2];
@@ -116,7 +116,7 @@ void TimelineController::
     view->makeCurrent();
     view->setupCamera();
 
-    int x = e->x(), y = height() - e->y();
+    int x = e->x(), y = height() - 1 - e->y();
 
     double prev[2];
     moveButton.spacePos(prev[0], prev[1]);

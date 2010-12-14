@@ -74,7 +74,6 @@ void CommentController::
     {
         view = createNewComment();
 
-        view->resize(360, 120);
         view->model->freezed_position = true;
     }
 

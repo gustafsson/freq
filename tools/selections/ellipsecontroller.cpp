@@ -74,7 +74,7 @@ namespace Tools { namespace Selections
             r.makeCurrent(); // required for Ui::MouseControl::planePos
 
             if (false == Ui::MouseControl::planePos(
-                    e->x(), height() - e->y(),
+                    e->x(), height() - 1 - e->y(),
                     selectionStart.time, selectionStart.scale, r.model->xscale))
             {
                 selectionStart.time = -FLT_MAX;
@@ -111,7 +111,7 @@ namespace Tools { namespace Selections
 
             Heightmap::Position p;
             if (Ui::MouseControl::planePos(
-                    e->x(), height() - e->y(),
+                    e->x(), height() - 1 - e->y(),
                     p.time, p.scale, r.model->xscale))
             {
                 if (selectionStart.time == -FLT_MAX) // TODO test

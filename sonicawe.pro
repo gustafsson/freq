@@ -73,6 +73,7 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
+    tools/tooltipmodel.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 

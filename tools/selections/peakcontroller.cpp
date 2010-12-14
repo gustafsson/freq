@@ -97,7 +97,7 @@ namespace Tools { namespace Selections
             r.makeCurrent();
 
             GLdouble p[2];
-            if (Ui::MouseControl::worldPos( e->x(), height() - e->y(), p[0], p[1], r.model->xscale))
+            if (Ui::MouseControl::worldPos( e->x(), height() - 1 - e->y(), p[0], p[1], r.model->xscale))
             {
                 Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
                 model()->findAddPeak( ref, Heightmap::Position( p[0], p[1]) );

@@ -42,6 +42,7 @@ Renderer::Renderer( Collection* collection )
     color_mode( ColorMode_Rainbow ),
     fixed_color( make_float4(1,0,0,1) ),
     y_scale( 1 ),
+    last_ysize( 1 ),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -50,6 +51,9 @@ Renderer::Renderer( Collection* collection )
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
     _drawn_blocks(0)
 {
+    memset(modelview_matrix, 0, sizeof(modelview_matrix));
+    memset(projection_matrix, 0, sizeof(projection_matrix));
+    memset(viewport_matrix, 0, sizeof(viewport_matrix));
     // Using glut for drawing fonts, so glutInit must be called.
     static int c=0;
     if (0==c)
@@ -150,36 +154,24 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 typedef tvector<4,GLdouble> GLvector4;
 typedef tmatrix<4,GLdouble> GLmatrix;
 
-static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
+// static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
 // static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
-template<typename f>
-GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
+GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
     GLvector win;
     bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
     if(r) *r=s;
     return win;
 }
 
-template<typename f>
-GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
+GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
     GLvector obj;
     bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
     if(r) *r=s;
     return obj;
 }
 
-template<typename f>
-GLvector gluProject(tvector<3,f> obj, bool *r) {
-    GLdouble model[16], proj[16];
-    GLint view[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, model);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, view);
-
-    return gluProject(obj, model, proj, view, r);
-}
-
+/*
 template<typename f>
 GLvector gluProject2(tvector<3,f> obj, bool *r) {
     GLint view[4];
@@ -192,18 +184,8 @@ GLvector gluProject2(tvector<3,f> obj, bool *r) {
     GLvector screen(view[0] + (eye[0]+1)*view[2]/2, view[1] + (eye[1]+1)*view[3]/2, eye[2]);
     float dummy=43*23;
     return screen;
-}
+}*/
 
-
-GLvector gluUnProject(GLvector win, bool *r) {
-    GLdouble model[16], proj[16];
-    GLint view[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, model);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, view);
-
-    return gluUnProject(win, model, proj, view, r);
-}
 
 /* static bool validWindowPos(GLvector win) {
     GLint view[4];
@@ -303,10 +285,22 @@ void Renderer::init()
     GlException_CHECK_ERROR();
 }
 
-typedef float4 vec4;
 
-vec4 getWavelengthColorCompute( float wavelengthScalar ) {
-    vec4 spectrum[7];
+GLvector Renderer::
+        gluProject(GLvectorF obj, bool *r)
+{
+    return Heightmap::gluProject(obj, modelview_matrix, projection_matrix, viewport_matrix, r);
+}
+
+
+GLvector Renderer::
+        gluUnProject(GLvectorF win, bool *r)
+{
+    return Heightmap::gluUnProject(win, modelview_matrix, projection_matrix, viewport_matrix, r);
+}
+
+float4 getWavelengthColorCompute( float wavelengthScalar ) {
+    float4 spectrum[7];
         /* white background */
     spectrum[0] = make_float4( 1, 0, 0, 0 ),
     spectrum[1] = make_float4( 0, 0, 1, 0 ),
@@ -333,7 +327,7 @@ vec4 getWavelengthColorCompute( float wavelengthScalar ) {
     float t = (f-float(i2))*0.5;
     float s = 0.5 + t;
 
-    vec4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
+    float4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
     return rgb*0.5;
 }
 
@@ -349,7 +343,15 @@ Reference Renderer::
         findRefAtCurrentZoomLevel( float t, float s )
 {
     Position max_ss = collection->max_sample_size();
-    Reference ref = collection->findReference(Position(0,0), max_ss);
+    Reference ref = collection->findReference(Position(0, 0), max_ss);
+
+    // The first 'ref' will be a super-ref containing all other refs, thus
+    // containing t and s too. This while-loop zooms in on a ref containing
+    // t and s with enough details.
+
+    // 't' and 's' are assumed to be valid to start with. Ff they're not valid
+    // this algorithm will choose some ref along the border closest to the
+    // point (t, s).
 
     while(true)
     {
@@ -408,6 +410,10 @@ void Renderer::draw( float scaley )
 
     Position mss = collection->max_sample_size();
     Reference ref = collection->findReference(Position(0,0), mss);
+
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
+    glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+    glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 
     beginVboRendering();
 
@@ -701,8 +707,9 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
     return r;
 }
 
-static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w=0, float h=0 ) {
-
+std::vector<GLvector> Renderer::
+        clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w, float h )
+{
     static GLvector projectionPlane, projectionNormal,
         rightPlane, rightNormal,
         leftPlane, leftNormal,
@@ -713,8 +720,8 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
         g_invalidFrustum = true;
 
     if (g_invalidFrustum) {
-        GLint view[4];
-        glGetIntegerv(GL_VIEWPORT, view);
+        GLint const* const& view = viewport_matrix;
+
         float z0 = .1, z1=.2;
         if (0==w && 0==h)
             g_invalidFrustum = false;
@@ -763,7 +770,10 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
     return l;
 }
 
-static std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i, float w=0, float h=0 ) {
+
+std::vector<GLvector> Renderer::
+        clipFrustum( GLvector corner[4], GLvector &closest_i, float w, float h )
+{
     std::vector<GLvector> l;
     for (unsigned i=0; i<4; i++)
         l.push_back( corner[i] );
@@ -797,17 +807,18 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     if (0==clippedCorners.size())
         return false;
 
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-
     // Find units per pixel at point closest_i with glUnProject
     GLvector screen = gluProject( closest_i );
     GLvector screenX=screen, screenY=screen;
-    if (screen[0]>view[0] + view[2]/2)       screenX[0]--;
-    else                                     screenX[0]++;
+    if (screen[0] > viewport_matrix[0] + viewport_matrix[2]/2)
+        screenX[0]--;
+    else
+        screenX[0]++;
 
-    if (screen[1]>view[1] + view[3]/2)       screenY[1]--;
-    else                                     screenY[1]++;
+    if (screen[1] > viewport_matrix[1] + viewport_matrix[3]/2)
+        screenY[1]--;
+    else
+        screenY[1]++;
 
     GLvector
             wBase = gluUnProject( screen ),

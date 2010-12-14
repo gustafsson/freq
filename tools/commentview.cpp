@@ -22,13 +22,23 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
     //
     ui->setupUi(this);
 
-    QAction *closeAction = new QAction(tr("C&lose"), this);
-    closeAction->setShortcut(tr("Ctrl+D"));
+    QAction *closeAction = new QAction(tr("D&elete"), this);
+    //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
+
+    QAction *hideAction = new QAction(tr("T&oggle thumbnail"), this);
+    //hideAction->setShortcut(tr("Ctrl+T"));
+    hideAction->setCheckable(true);
+    connect(hideAction, SIGNAL(toggled(bool)), SLOT(thumbnail(bool)));
+
 	connect(ui->textEdit, SIGNAL(textChanged()), SLOT(updateText()));
     addAction(closeAction);
+    addAction(hideAction);
     setMouseTracking( true );
 	setHtml(model->html);
+    //setFocusPolicy(Qt::WheelFocus);
+    //ui->textEdit->setFocusProxy(this);
+    connect(ui->textEdit, SIGNAL(selectionChanged()), SLOT(recreatePolygon()));
 }
 
 
@@ -71,6 +81,15 @@ void CommentView::
         return;
     }
 
+    //TaskInfo("CommentView::mousePressEvent");
+    if (!testFocus())
+    {
+        setFocus(Qt::MouseFocusReason);
+        recreatePolygon();
+        ui->textEdit->setFocus(Qt::MouseFocusReason);
+    }
+
+
     if (event->buttons() & Qt::LeftButton)
     {
         QPoint gp = proxy->sceneTransform().map(event->globalPos());
@@ -88,12 +107,26 @@ void CommentView::
     }
 
     update();
+    view->userinput_update();
+}
+
+
+void CommentView::
+        mouseDoubleClickEvent ( QMouseEvent * event )
+{
+    if (!mask().contains( event->pos() ))
+    {
+        event->setAccepted( false );
+        return;
+    }
+
+    thumbnail( !model->thumbnail );
 }
 
 
 void CommentView::
         mouseMoveEvent(QMouseEvent *event)
-{
+{    
     bool visible = mask().contains( event->pos() );
     setContextMenuPolicy( visible ? Qt::ActionsContextMenu : Qt::NoContextMenu);
 
@@ -113,9 +146,11 @@ void CommentView::
             resize(sz.x(), sz.y());
             event->accept();
         }
+        resizePosition = -QPoint(width(), height()) + QPoint(gp.x(), -gp.y());
     }
 
     update();
+    view->userinput_update();
 }
 
 
@@ -128,12 +163,37 @@ void CommentView::
 
 
 void CommentView::
+        focusInEvent(QFocusEvent */*e*/)
+{
+    //TaskInfo("CommentView::focusInEvent, gotFocus = %d, reason = %d", e->gotFocus(), e->reason());
+
+    recreatePolygon();
+}
+
+
+void CommentView::
+        focusOutEvent(QFocusEvent */*e*/)
+{
+    //TaskInfo("CommentView::focusOutEvent, lostFocus = %d, reason = %d", e->lostFocus(), e->reason());
+
+    recreatePolygon();
+}
+
+
+void CommentView::
         wheelEvent(QWheelEvent *e)
 {
+    if (!mask().contains( e->pos() ))
+    {
+        e->setAccepted( false );
+        return;
+    }
+
     if (e->delta()>0)
         model->scroll_scale *= 1.1;
     else
         model->scroll_scale /= 1.1;
+
     update();
 }
 
@@ -143,6 +203,25 @@ void CommentView::
 {
     model->window_size = make_uint2( width(), height() );
     keep_pos = true;
+
+    recreatePolygon();
+}
+
+
+bool CommentView::
+        testFocus()
+{
+    return true;
+    //return hasFocus() || ui->textEdit->hasFocus();
+}
+
+
+void CommentView::
+        recreatePolygon()
+{
+    bool create_thumbnail = !testFocus() || model->thumbnail;
+
+    ui->textEdit->setVisible( !create_thumbnail );
 
     QRect r = ui->textEdit->geometry();
     r.setTop(r.top()-1);
@@ -157,26 +236,42 @@ void CommentView::
     QPoint h = r.topLeft() - r.bottomLeft();
     QPointF h0(0, 1);
     QPointF x0(1, 0);
-    poly.clear();
-    poly.push_back(b - 2*h0);
-    poly.push_back(b + 2*x0);
-    poly.push_back(b + 0.1f*y + 0.2f*x);
     ref_point = b + y + 0.1f*x;
-    poly.push_back(ref_point);
-    poly.push_back(b + 0.1f*y + 0.4f*x);
-    poly.push_back(b + x - x0);
-    poly.push_back(b + x - h0);
-    poly.push_back(b + x + h + 0.5f*h0);
-    poly.push_back(b + x + h - 0.5f*x0);
-    poly.push_back(b + h + 2*x0);
-    poly.push_back(b + h + h0);
 
-    /*r.setTop(r.top()-1);
-    r.setLeft(r.left()-1);
-    r.setRight(r.right()+1);
-    r.setBottom(r.bottom());*/
-    r.setLeft(r.left()+1);
-    r.setRight(r.right()-2);
+    if (!create_thumbnail)
+    {
+        ui->textEdit->setVisible( true );
+        poly.clear();
+        poly.push_back(b - 2*h0);
+        poly.push_back(b + 2*x0);
+        poly.push_back(b + 0.1f*y + 0.2f*x);
+        poly.push_back(ref_point);
+        poly.push_back(b + 0.1f*y + 0.4f*x);
+        poly.push_back(b + x - x0);
+        poly.push_back(b + x - h0);
+        poly.push_back(b + x + h + 0.5f*h0);
+        poly.push_back(b + x + h - 0.5f*x0);
+        poly.push_back(b + h + 2*x0);
+        poly.push_back(b + h + h0);
+
+        /*r.setTop(r.top()-1);
+        r.setLeft(r.left()-1);
+        r.setRight(r.right()+1);
+        r.setBottom(r.bottom());*/
+        r.setLeft(r.left()+1);
+        r.setRight(r.right()-2);
+    }
+    else
+    {
+        ui->textEdit->setVisible( false );
+        poly.clear();
+        r = QRect();
+        float s = (ref_point.x()-1)/2;
+        poly.push_back(ref_point);
+        poly.push_back(ref_point - s*h0 - s*x0);
+        poly.push_back(ref_point - s*h0 + s*x0);
+    }
+
 
     QRegion maskedRegion = r;
     maskedRegion |= QRegion( poly.toPolygon() );
@@ -189,9 +284,24 @@ void CommentView::
     maskedRegion |= maskedRegion.translated(0, 1);
     maskedRegion |= maskedRegion.translated(1, 1);
     maskedRegion |= maskedRegion.translated(1, 1);
+
+    if (create_thumbnail)
+        maskedRegion |= QRegion(0,0,1,1);
+
     setMask(maskedRegion);
 
     update();
+    proxy->update();
+    view->userinput_update();
+}
+
+
+void CommentView::
+        thumbnail(bool v)
+{
+    model->thumbnail = v;
+
+    recreatePolygon();
 }
 
 
@@ -205,12 +315,17 @@ void CommentView::
 void CommentView::
         paintEvent(QPaintEvent *e)
 {
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setBrush(QApplication::palette().color(
-            hasFocus() ? QPalette::Active : QPalette::Inactive,
-            QPalette::Base ));
-    painter.drawPolygon(poly);
+    {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setBrush(QApplication::palette().color(
+                testFocus() ? QPalette::Active : QPalette::Inactive,
+                QPalette::Base ));
+        painter.drawPoint(0,0);
+        painter.drawPolygon(poly);
+
+        //TaskInfo("CommentView::paintEvent, %d", testFocus());
+    }
 
     QWidget::paintEvent(e);
 }
@@ -249,10 +364,14 @@ void CommentView::
         move(0,0);
         proxy->scene()->update();
         update();
+        view->userinput_update();
     }
 
     double z;
     QPointF pt = view->getScreenPos( Heightmap::Position( model->pos.time, model->pos.scale), &z );
+    //TaskInfo("model->pos( %g, %g ) -> ( %g, %g, %g )",
+    //         model->pos.time, model->pos.scale,
+    //         pt.x(), pt.y(), z);
 
     proxy->setZValue(-z);
 
@@ -285,6 +404,8 @@ void CommentView::
     float rescale = 1.f/sqrt(z);
 
     rescale*= model->scroll_scale;
+    //TaskInfo("rescale = %g\tz = %g\tmodel->scroll_scale = %g\tlast_ysize = %g",
+    //         rescale, z, model->scroll_scale, view->last_ysize );
 
     proxy->setTransform(QTransform()
         .translate(pt.x(), pt.y())

@@ -45,7 +45,7 @@ Signal::Interval BrushModel::
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     float fs = filter()->sample_rate();
     float hz = cwt.compute_frequency2( fs, pos.scale );
-    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_t( fs, hz );
+    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_samples( fs, hz );
     float deltascale = cwt.sigma() / cwt.nScales(fs);
     float deltat = deltasample/fs;
     deltat *= 10*xscale_;

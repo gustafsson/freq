@@ -65,20 +65,20 @@ void NavigationController::
     {
         case Qt::LeftButton:
             if(' '==lastKey)
-                selectionButton.press( e->x(), this->height() - e->y() );
+                selectionButton.press( e->x(), this->height() - 1 - e->y() );
             else
-                leftButton.press( e->x(), this->height() - e->y() );
+                leftButton.press( e->x(), this->height() - 1 - e->y() );
             //printf("LeftButton: Press\n");
             break;
 
         case Qt::MidButton:
-            middleButton.press( e->x(), this->height() - e->y() );
+            middleButton.press( e->x(), this->height() - 1 - e->y() );
             //printf("MidButton: Press\n");
             break;
 
         case Qt::RightButton:
         {
-            rightButton.press( e->x(), this->height() - e->y() );
+            rightButton.press( e->x(), this->height() - 1 - e->y() );
             //printf("RightButton: Press\n");
         }
             break;
@@ -89,15 +89,15 @@ void NavigationController::
 
     if(isEnabled()) {
         if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
-            moveButton.press( e->x(), this->height() - e->y() );
+            moveButton.press( e->x(), this->height() - 1 - e->y() );
 
         if( (e->button() & Qt::RightButton) == Qt::RightButton)
-            rotateButton.press( e->x(), this->height() - e->y() );
+            rotateButton.press( e->x(), this->height() - 1 - e->y() );
 
     }
 
 //    if(leftButton.isDown() && rightButton.isDown())
-//        selectionButton.press( e->x(), this->height() - e->y() );
+//        selectionButton.press( e->x(), this->height() - 1 - e->y() );
 
     _view->userinput_update();
 }
@@ -183,7 +183,7 @@ void NavigationController::
 
     float rs = 0.2;
 
-    int x = e->x(), y = this->height() - e->y();
+    int x = e->x(), y = this->height() - 1 - e->y();
 //    TaskTimer tt("moving");
 
     if (scaleButton.isDown()) {

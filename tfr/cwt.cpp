@@ -642,7 +642,7 @@ float Cwt::
 
 
 float Cwt::
-        morlet_sigma_t( float fs, float hz ) const
+        morlet_sigma_samples( float fs, float hz ) const
 {
     // float scale = hz/get_max_hz( fs );
     // float j = -_scales_per_octave*log2f(scale);
@@ -675,7 +675,7 @@ unsigned Cwt::
 unsigned Cwt::
         wavelet_time_support_samples( float fs, float hz ) const
 {
-    unsigned support_samples = std::ceil(morlet_sigma_t( fs, hz ) * _wavelet_time_suppport);
+    unsigned support_samples = std::ceil(morlet_sigma_samples( fs, hz ) * _wavelet_time_suppport);
     unsigned c = find_bin( hz_to_j( fs, hz ));
     // Align to 1<<c upwards
     support_samples = (support_samples + (1<<c) - 1) >> c << c;

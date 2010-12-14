@@ -5,6 +5,8 @@
 #include "heightmap/position.h"
 #include "commentcontroller.h"
 
+#include "tooltipview.h"
+
 #include <QWidget>
 
 namespace Tools
@@ -16,7 +18,9 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        TooltipController(RenderView *view, RenderModel *model, CommentController* comments);
+        TooltipController(TooltipView* view,
+                          RenderView *render_view,
+                          CommentController* comments);
         ~TooltipController();
 
     signals:
@@ -30,12 +34,16 @@ namespace Tools
         virtual void mousePressEvent ( QMouseEvent * e );
         virtual void mouseReleaseEvent ( QMouseEvent * e );
         virtual void mouseMoveEvent ( QMouseEvent * e );
+        virtual void wheelEvent(QWheelEvent *);
         virtual void changeEvent(QEvent *);
-        void showToolTip(Heightmap::Position p);
+        void showToolTip( Heightmap::Position p );
+        unsigned guessHarmonicNumber( const Heightmap::Position& pos );
+
 
         // Model and View
-        RenderView* _view;
-        RenderModel* _model;
+        TooltipView* view_;
+        TooltipModel* model() { return view_->model_; }
+        RenderView* render_view_;
         CommentController* _comments;
 
         // GUI
@@ -43,10 +51,6 @@ namespace Tools
 
         // State
         Ui::MouseControl infoToolButton;
-        float _prev_f;
-        float _current_f;
-        float _max_so_far;
-        CommentView* comment;
     };
 }
 
