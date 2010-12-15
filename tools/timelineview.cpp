@@ -12,6 +12,7 @@
 #include <CudaException.h>
 #include <GlException.h>
 #include <glPushContext.h>
+#include <cuda_vector_types_op.h>
 
 // boost
 #include <boost/assert.hpp>
@@ -19,8 +20,7 @@
 // qt
 #include <QMouseEvent>
 #include <QDockWidget>
-#include <cuda_vector_types_op.h>
-
+#include <QTimer>
 
 #undef max
 
@@ -63,7 +63,8 @@ void TimelineView::
         userinput_update()
 {
     _project->worker.requested_fps(30);
-    update();
+    // this will leave room for others to paint as well, calling 'update' wouldn't
+    QTimer::singleShot(0, this, SLOT(update()));
 }
 
 

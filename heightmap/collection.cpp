@@ -121,8 +121,16 @@ unsigned Collection::
 
     // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
+    boost::scoped_ptr<TaskTimer> tt;
+    if (_unfinished_count)
+    {
+        tt.reset( new TaskTimer("Collection::next_frame(), %u", _unfinished_count));
+    }
+        // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
+
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
+
 
     /*foreach(const recent_t::value_type& b, _recent)
     {
@@ -165,7 +173,7 @@ void Collection::
         unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
         _min_sample_size.scale = std::min(
                 _min_sample_size.scale,
-                (1 - _display_scale.getFrequencyScalar( fx.getFrequency( top_index )))*0.25f);
+                (1 - _display_scale.getFrequencyScalar( fx.getFrequency( top_index )))*0.01f);
 
         // Old naive one:
         //_min_sample_size.scale = std::min(
@@ -356,12 +364,14 @@ std::vector<pBlock> Collection::
 unsigned long Collection::
         cacheByteSize()
 {
-    // For each block there is both a slope map and heightmap. Also there is
-    // both a texture and a vbo, and possibly a mapped cuda copy.
-    // It would save a lot of memory to create the slope map only for blocks
-    // being rendered. Also it would save a lot of memory to unregister the
-    // vbo and delete the texture as often as possible.
-    return _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*2;
+    // For each block there may be both a slope map and heightmap. Also there
+    // may be both a texture and a vbo, and possibly a mapped cuda copy.
+    //
+    // But most of the blocks will only have a heightmap vbo, and none of the
+    // others. It would be possible to look through the list and into each
+    // cache block to see what data is allocated at the momement. For a future
+    // release perhaps...
+    return _cache.size() * scales_per_block()*samples_per_block()*1*sizeof(float)*2;
 }
 
 
@@ -492,7 +502,7 @@ pBlock Collection::
 {
     Position a,b;
     ref.getArea(a,b);
-    TIME_COLLECTION TaskTimer tt("Creating a new block [%g, %g]",a.time,b.time);
+    TIME_COLLECTION TaskTimer tt("Creating a new block [(%g %g), (%g %g)]",a.time, a.scale, b.time, b.scale);
     // Try to allocate a new block
     pBlock result;
     try
@@ -524,8 +534,8 @@ pBlock Collection::
         {
             VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
 
-            // fill block by STFT
-            if (1) {
+            // fill block by STFT during the very first frames
+            if (10 > _frame_counter) {
                 //size_t stub_size
                 //if ((b.time - a.time)*fast_source( worker->source())->sample_rate()*sizeof(float) )
                 try
@@ -545,6 +555,49 @@ pBlock Collection::
 
             {
                 if (0) {
+                    VERBOSE_COLLECTION TaskTimer tt("Fetching data from others");
+                    // then try to upscale other blocks
+                    Signal::Intervals things_to_update = ref.getInterval();
+                    /*Signal::Intervals all_things;
+                    foreach( const cache_t::value_type& c, _cache )
+                    {
+                        all_things |= c.second->ref.getInterval();
+                    }
+                    things_to_update &= all_things;*/
+
+                    for (int dist = 10; dist<-10; --dist)
+                    {
+                        foreach( const cache_t::value_type& c, _cache )
+                        {
+                            const pBlock& bl = c.second;
+                            Signal::Interval v = bl->ref.getInterval();
+                            if ( !(things_to_update & v ))
+                                continue;
+
+                            int d = bl->ref.log2_samples_size[0];
+                            d -= ref.log2_samples_size[0];
+                            d += bl->ref.log2_samples_size[1];
+                            d -= ref.log2_samples_size[1];
+
+                            if (d==dist)
+                            {
+                                Position a2,b2;
+                                bl->ref.getArea(a2,b2);
+                                if (a2.scale <= a.scale && b2.scale >= b.scale )
+                                {
+                                    things_to_update -= v;
+                                    mergeBlock( block, bl, 0 );
+                                }
+                                else if (bl->ref.log2_samples_size[1] + 1 == ref.log2_samples_size[1])
+                                {
+                                    mergeBlock( block, bl, 0 );
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (0) {
                     VERBOSE_COLLECTION TaskTimer tt("Fetching low resolution");
                     // then try to upscale other blocks
                     foreach( const cache_t::value_type& c, _cache )
@@ -561,7 +614,7 @@ pBlock Collection::
 
                 // TODO compute at what log2_samples_size[1] stft is more accurate
                 // than low resolution blocks. So that Cwt is not needed.
-                if (1) {
+                if (0) {
                     VERBOSE_COLLECTION TaskTimer tt("Fetching details");
                     // then try to upscale blocks that are just slightly less detailed
                     foreach( const cache_t::value_type& c, _cache )
@@ -598,7 +651,7 @@ pBlock Collection::
                     }
                 }
 
-                if (1) {
+                if (0) {
                     VERBOSE_COLLECTION TaskTimer tt("Fetching details");
                     // start with the blocks that are just slightly more detailed
                     foreach( const cache_t::value_type& c, _cache )
@@ -692,6 +745,8 @@ pBlock Collection::
 
     TIME_COLLECTION printCacheSize();
 
+    TIME_COLLECTION CudaException_ThreadSynchronize();
+
     return result;
 }
 
@@ -742,7 +797,7 @@ void Collection::
 
     boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
     boost::posix_time::ptime start_time = now;
-    unsigned time_to_work_ms = 50;
+    unsigned time_to_work_ms = 500;
     while(sections)
     {
         Signal::Interval section = sections.getInterval(section_size);
@@ -768,7 +823,7 @@ void Collection::
 bool Collection::
         mergeBlock( pBlock outBlock, pBlock inBlock, unsigned /*cuda_stream*/ )
 {
-    Interval outInterval = outBlock->ref.getInterval();
+    const Interval outInterval = outBlock->ref.getInterval();
 
     // Find out what intervals that match
     Intervals transferDesc = inBlock->ref.getInterval();
@@ -781,14 +836,17 @@ bool Collection::
     if (transferDesc.empty())
         return false;
 
+    Position ia, ib, oa, ob;
+    inBlock->ref.getArea(ia, ib);
+    outBlock->ref.getArea(oa, ob);
+
+    if (ia.scale >= ob.scale || ib.scale<=oa.scale)
+        return false;
+
     TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
-
-    Position ia, ib, oa, ob;
-    inBlock->ref.getArea(ia, ib);
-    outBlock->ref.getArea(oa, ob);
 
     ::blockMerge( in_h->data->getCudaGlobal(),
                   out_h->data->getCudaGlobal(),
@@ -797,6 +855,7 @@ bool Collection::
                   make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
+    if (0)
     if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
         inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
     {
@@ -804,15 +863,10 @@ bool Collection::
         {
             outBlock->valid_samples -= inBlock->ref.getInterval();
             outBlock->valid_samples |= inBlock->valid_samples;
+            outBlock->valid_samples &= outInterval;
             VERBOSE_COLLECTION TaskTimer tt("Using block %s", (inBlock->valid_samples & outInterval).toString().c_str() );
         }
     }
-
-    //in_h.reset();
-
-    // These inblocks won't be rendered and thus unmapped very soon. outBlock will however be unmapped
-    // very soon as it was requested for rendering.
-    //inBlock->glblock->unmap();
 
     TIME_COLLECTION CudaException_ThreadSynchronize();
 

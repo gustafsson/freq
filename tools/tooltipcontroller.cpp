@@ -257,7 +257,7 @@ float TooltipController::
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
     double F = display_scale.getFrequency( pos.scale );
     double F_top = display_scale.getFrequency(1.f);
-    double k = pow((double)i, -0.99);
+    double k = pow((double)i, -0.97);
     Heightmap::Position p = pos;
 
     double s = 0;

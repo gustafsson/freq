@@ -309,6 +309,8 @@ void RenderController::
         connect(ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleHz(bool)));
     }
 
+    connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
+
 
     // ComboBoxAction* color
     {   color = new ComboBoxAction();

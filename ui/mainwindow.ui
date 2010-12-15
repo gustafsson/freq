@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>27</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -309,6 +309,7 @@
    <addaction name="actionCropSelection"/>
    <addaction name="actionMoveSelection"/>
    <addaction name="actionMoveSelectionTime"/>
+   <addaction name="actionResetGraphics"/>
    <addaction name="actionTonalizeFilter"/>
    <addaction name="actionReassignFilter"/>
    <addaction name="actionAddComment"/>
@@ -1480,6 +1481,21 @@
    </property>
    <property name="toolTip">
     <string>Time selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionResetGraphics">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reset graphics</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset graphics</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

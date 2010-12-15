@@ -32,7 +32,6 @@ namespace Tools
         virtual void drawBackground(QPainter *painter, const QRectF &);
         void drawCollections();
         void drawCollection(int, Signal::FinalSource*);
-        void clearCaches();
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
         Heightmap::Position getHeightmapPos( QPointF viewport_coordinates, bool useRenderViewContext = true );
         Heightmap::Position getPlanePos( QPointF pos, bool* success, bool useRenderViewContext = true );
@@ -77,6 +76,7 @@ namespace Tools
 
     public slots:
         void userinput_update();
+        void clearCaches();
 
     signals:
         /**
