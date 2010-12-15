@@ -56,6 +56,7 @@ public:
     GLvector gluProject(GLvectorF obj, bool *r=0);
     GLvector gluUnProject(GLvectorF win, bool *r=0);
 
+    void frustumMinMaxT( float& min_t, float& max_t);
 private:
     enum LevelOfDetal {
         Lod_NeedBetterF,

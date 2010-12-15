@@ -131,7 +131,7 @@ Signal::Interval BrushModel::
         ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
                        blockData->getCudaGlobal(),
                        gauss );
-        ref.collection()->computeSlope( block, 0 );
+        //ref.collection()->computeSlope( block, 0 );
     }
 
     return ref.getInterval();

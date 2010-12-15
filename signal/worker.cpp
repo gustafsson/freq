@@ -111,7 +111,8 @@ bool Worker::
             TaskInfo("_max_samples_per_chunk was %u", _max_samples_per_chunk);
             TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave() );
 
-            while (_samples_per_chunk <= Tfr::Cwt::Singleton().prev_good_size(
+            while (128 < _samples_per_chunk &&
+                   _samples_per_chunk <= Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate()))
             {
                 Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave()*0.99f );

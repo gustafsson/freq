@@ -71,8 +71,8 @@ void BlockFilter::
 void BlockFilter::
         computeSlope( Tfr::pChunk pchunk )
 {
-    foreach( pBlock block, _collection->getIntersectingBlocks( pchunk->getInterval() ))
-        _collection->computeSlope( block, 0 );
+//    foreach( pBlock block, _collection->getIntersectingBlocks( pchunk->getInterval() ))
+//        _collection->computeSlope( block, 0 );
 }
 
 

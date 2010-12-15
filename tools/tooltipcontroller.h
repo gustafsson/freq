@@ -38,6 +38,7 @@ namespace Tools
         virtual void changeEvent(QEvent *);
         void showToolTip( Heightmap::Position p );
         unsigned guessHarmonicNumber( const Heightmap::Position& pos );
+        float computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, Heightmap::Reference* ref=0);
 
 
         // Model and View
@@ -51,6 +52,7 @@ namespace Tools
 
         // State
         Ui::MouseControl infoToolButton;
+        unsigned fetched_heightmap_values;
     };
 }
 

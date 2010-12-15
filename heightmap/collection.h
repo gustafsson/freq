@@ -242,6 +242,7 @@ audiofile              source
 */
 
     unsigned long cacheByteSize();
+    void        printCacheSize();
     void        gc();
 
 
@@ -253,13 +254,6 @@ audiofile              source
       */
     Signal::pOperation postsink() { return _postsink; }
     void setPostsink(Signal::pOperation s) { _postsink = s; }
-
-
-    /**
-      Update the slope texture used by the vertex shader. Called when height
-      data has been updated. Also called by 'createBlock'.
-      */
-    void        computeSlope( pBlock block, unsigned cuda_stream );
 
 
     /**

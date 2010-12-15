@@ -53,6 +53,10 @@ void CufftHandleContext::
         create()
 {
     destroy();
+
+    if (_elems == 0)
+        return;
+
     int n = _elems;
     CufftException_SAFE_CALL(cufftPlanMany(
             &_handle,
@@ -294,34 +298,42 @@ Tfr::pChunk Stft::
     cufftComplex* output = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
 
     // Transform signal
-    cufftHandle fft_many;
     unsigned count = n.height;
 
     unsigned
             slices = n.height,
             i = 0;
 
+    // check for available memory
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    free /= 2; // Don't even try to get close to use all memory
+    // never use more than 64 MB
+    if (free > 64<<20)
+        free = 64<<20;
+    if (slices * _chunk_size*2*sizeof(cufftComplex) > free)
+    {
+        slices = free/(_chunk_size*2*sizeof(cufftComplex));
+        slices = std::min(512u, std::min((unsigned)n.height, slices));
+    }
+
+    CufftHandleContext handle_ctx(stream);
     while(i < count)
     {
+        slices = std::min(slices, count-i);
+
         try
         {
-            int nx = _chunk_size;
-            CufftException_SAFE_CALL(cufftPlanMany(
-                    &fft_many,
-                    1,
-                    &nx,
-                    NULL, 1, 0,
-                    NULL, 1, 0,
-                    CUFFT_C2C,
-                    slices));
-
-            CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
-            CufftException_SAFE_CALL(cufftExecC2C(fft_many, input + i*n.width, output + i*n.width, CUFFT_FORWARD));
-            cufftDestroy(fft_many);
+            CufftException_SAFE_CALL(cufftExecC2C(
+                    handle_ctx(_chunk_size, slices),
+                    input + i*n.width,
+                    output + i*n.width,
+                    CUFFT_FORWARD));
 
             i += slices;
         } catch (const CufftException& x) {
-            if (slices>0)
+            handle_ctx(0,0);
+            if (slices>1)
                 slices/=2;
             else
                 throw;

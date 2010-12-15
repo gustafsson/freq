@@ -1,5 +1,4 @@
 #include "collection.h"
-#include "slope.cu.h"
 #include "block.cu.h"
 #include "blockfilter.h"
 
@@ -21,8 +20,8 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_COLLECTION
-#define TIME_COLLECTION if(0)
+#define TIME_COLLECTION
+//#define TIME_COLLECTION if(0)
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
@@ -31,7 +30,7 @@
 #define TIME_GETBLOCK if(0)
 
 // Don't keep more than this times the number of blocks currently needed
-#define MAX_REDUNDANT_SIZE 8
+#define MAX_REDUNDANT_SIZE 80
 
 using namespace Signal;
 
@@ -125,11 +124,20 @@ unsigned Collection::
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
 
-    foreach(const recent_t::value_type& b, _recent)
+    /*foreach(const recent_t::value_type& b, _recent)
     {
         if (b->frame_number_last_used != _frame_counter)
             break;
         b->glblock->unmap();
+    }*/
+    foreach(const cache_t::value_type& b, _cache)
+    {
+        b.second->glblock->unmap();
+
+        if (b.second->frame_number_last_used != _frame_counter)
+        {
+            b.second->glblock->delete_texture();
+        }
     }
 
 	_frame_counter++;
@@ -276,7 +284,7 @@ pBlock Collection::
             cudaMemcpy(block->glblock->height()->data->getCudaGlobal().ptr(),
                        block->cpu_copy->getCpuMemory(), block->cpu_copy->getNumberOfElements1D(), cudaMemcpyHostToDevice);
             block->new_data_available = false;
-            computeSlope(block, 0);
+            //computeSlope(block, 0);
         }
     }
 
@@ -348,7 +356,23 @@ std::vector<pBlock> Collection::
 unsigned long Collection::
         cacheByteSize()
 {
-    return _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float);
+    // For each block there is both a slope map and heightmap. Also there is
+    // both a texture and a vbo, and possibly a mapped cuda copy.
+    // It would save a lot of memory to create the slope map only for blocks
+    // being rendered. Also it would save a lot of memory to unregister the
+    // vbo and delete the texture as often as possible.
+    return _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*2;
+}
+
+
+void Collection::
+        printCacheSize()
+{
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    float MB = 1./1024/1024;
+    TaskInfo("Currently has %u cached blocks (ca %g MB). There is %g MB free cuda mem of a total of %g MB",
+             _cache.size(), cacheByteSize() * MB, free * MB, total * MB );
 }
 
 
@@ -358,8 +382,7 @@ void Collection::
     QMutexLocker l(&_cache_mutex);
 
     TaskTimer tt("Collection doing garbage collection", _cache.size());
-    TaskInfo("Currently has %u cached blocks (ca %g MB)", _cache.size(),
-                              cacheByteSize()*1e-6 );
+    printCacheSize();
     TaskInfo("Of which %u are recently used", _recent.size());
 
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
@@ -427,10 +450,12 @@ pBlock Collection::
         TIME_COLLECTION TaskTimer tt("Attempt");
 
         pBlock attempt( new Block(ref));
-        attempt->glblock.reset( new GlBlock( this ));
+        Position a,b;
+        ref.getArea(a,b);
+        attempt->glblock.reset( new GlBlock( this, b.time-a.time, b.scale-a.scale ));
         {
             GlBlock::pHeight h = attempt->glblock->height();
-            GlBlock::pSlope sl = attempt->glblock->slope();
+            //GlBlock::pSlope sl = attempt->glblock->slope();
         }
         attempt->glblock->unmap();
 
@@ -449,12 +474,13 @@ pBlock Collection::
           demonstrate that something went wrong. This is not a fatal error. The
           application can still continue and use filters.
           */
-        TaskTimer("Collection::attempt swallowed CudaException.\n%s", x.what()).suppressTiming();
+        TaskInfo tt("Collection::attempt swallowed CudaException.\n%s", x.what());
+        printCacheSize();
     }
     catch (const GlException& x)
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
-        TaskTimer("Collection::attempt swallowed GlException.\n%s", x.what()).suppressTiming();
+        TaskInfo("Collection::attempt swallowed GlException.\n%s", x.what());
     }
     TIME_COLLECTION TaskTimer("Returning pBlock()").suppressTiming();
     return pBlock();
@@ -500,10 +526,21 @@ pBlock Collection::
 
             // fill block by STFT
             if (1) {
-                TIME_COLLECTION TaskTimer tt("stft");
+                //size_t stub_size
+                //if ((b.time - a.time)*fast_source( worker->source())->sample_rate()*sizeof(float) )
+                try
+                {
+                    TIME_COLLECTION TaskTimer tt("stft");
 
-                fillBlock( block );
-                CudaException_CHECK_ERROR();
+                    fillBlock( block );
+                    CudaException_CHECK_ERROR();
+                }
+                catch (const CudaException& x )
+                {
+                    // Swallow silently, it is not fatal if this stubbed fft can't be computed right away
+                    TaskInfo tt("Collection::fillBlock swallowed CudaException.\n%s", x.what());
+                    printCacheSize();
+                }
             }
 
             {
@@ -597,7 +634,7 @@ pBlock Collection::
             }
         }
 
-        computeSlope( block, 0 );
+        //computeSlope( block, 0 );
 
 //        GlException_CHECK_ERROR();
 //        CudaException_CHECK_ERROR();
@@ -611,9 +648,7 @@ pBlock Collection::
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
         TaskInfo("Collection::createBlock swallowed CudaException.\n%s", x.what());
-        size_t free=0, total=0;
-        cudaMemGetInfo(&free, &total);
-        TaskInfo("free = %lu, total = %lu", free, total);
+        printCacheSize();
         return pBlock();
     }
     catch (const GlException& x )
@@ -655,27 +690,9 @@ pBlock Collection::
     // result is non-zero
     _cache[ result->ref ] = result;
 
+    TIME_COLLECTION printCacheSize();
+
     return result;
-}
-
-#include <Statistics.h>
-
-void Collection::
-        computeSlope( pBlock block, unsigned /*cuda_stream */)
-{
-    VERBOSE_COLLECTION TaskTimer tt("%s", __FUNCTION__);
-    TIME_COLLECTION CudaException_ThreadSynchronize();
-
-    GlBlock::pHeight h = block->glblock->height();
-
-    Position a,b;
-    block->ref.getArea(a,b);
-
-    ::cudaCalculateSlopeKernel( h->data->getCudaGlobal(),
-                                block->glblock->slope()->data->getCudaGlobal(),
-                                b.time-a.time, b.scale-a.scale );
-
-    TIME_COLLECTION CudaException_ThreadSynchronize();
 }
 
 
@@ -718,9 +735,30 @@ void Collection::
     stftmerger.source( fast_source );
     stftmerger.exclude_end_block = true;
 
-    //stftmerger.mergeChunk(block, *stft, block->glblock->height()->data);
-    Tfr::ChunkAndInverse ci = stftmerger.computeChunk( block->ref.getInterval() );
-    stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
+    // Only take 4 MB of signal data at a time
+    unsigned section_size = (4<<20) / sizeof(float);
+    Signal::Intervals sections = block->ref.getInterval();
+    sections &= Signal::Interval(0, fast_source->number_of_samples());
+
+    boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+    boost::posix_time::ptime start_time = now;
+    unsigned time_to_work_ms = 50;
+    while(sections)
+    {
+        Signal::Interval section = sections.getInterval(section_size);
+        Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
+        stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
+        Signal::Interval chunk_interval = ci.chunk->getInterval();
+        if (!(sections & chunk_interval))
+            break;
+        sections -= chunk_interval;
+
+        now = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration diff = now - start_time;
+        // Don't bother creating stubbed blocks for more than a fraction of a second
+        if (diff.total_milliseconds() > time_to_work_ms)
+            break;
+    }
 
     // StftToBlock (rather BlockFilter) validates samples, Discard those.
     block->valid_samples = Intervals();

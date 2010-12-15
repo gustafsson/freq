@@ -187,7 +187,7 @@ void RenderView::
 
 
 float RenderView::
-        getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref )
+        getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation )
 {
 #ifdef WIN32
     // getHeightmapValue is tremendously slow on windos for some reason
@@ -226,11 +226,57 @@ float RenderView::
     unsigned w = ref->samplesPerBlock();
     unsigned h = ref->scalesPerBlock();
     unsigned x0 = (pos.time-a.time)/(b.time-a.time)*(w-1) + .5f;
-    unsigned y0 = (pos.scale-a.scale)/(b.scale-a.scale)*(h-1) + .5f;
+    float    yf = (pos.scale-a.scale)/(b.scale-a.scale)*(h-1);
+    unsigned y0 = yf + .5f;
 
     BOOST_ASSERT( x0 < w );
     BOOST_ASSERT( y0 < h );
-    float v = data[ x0 + y0*w ];
+    float v;
+
+    if (!pick_local_max && !fetch_interpolation)
+    {
+        v = data[ x0 + y0*w ];
+    }
+    else
+    {
+        unsigned yb = y0;
+        if (0==yb) yb++;
+        if (h==yb+1) yb--;
+        float v1 = data[ x0 + (yb-1)*w ];
+        float v2 = data[ x0 + yb*w ];
+        float v3 = data[ x0 + (yb+1)*w ];
+
+        // v1 = a*(-1)^2 + b*(-1) + c
+        // v2 = a*(0)^2 + b*(0) + c
+        // v3 = a*(1)^2 + b*(1) + c
+        float k = 0.5f*v1 - v2 + 0.5f*v3;
+        float p = -0.5f*v1 + 0.5f*v3;
+        float q = v2;
+
+        float m0;
+        if (fetch_interpolation)
+        {
+            m0 = yf - yb;
+        }
+        else
+        {
+            // fetch max
+            m0 = -p/(2*k);
+        }
+
+        if (m0 > -2 && m0 < 2)
+        {
+            v = k*m0*m0 + p*m0 + q;
+            if (pick_local_max)
+                *pick_local_max = a.scale + (b.scale-a.scale)*(y0 + m0)/(h-1);
+        }
+        else
+        {
+            v = v2;
+            if (pick_local_max)
+                *pick_local_max = a.scale + (b.scale-a.scale)*(y0)/(h-1);
+        }
+    }
 
     v *= model->renderer->y_scale;
     v *= 4;
@@ -241,7 +287,7 @@ float RenderView::
 QPointF RenderView::
         getScreenPos( Heightmap::Position pos, double* dist )
 {
-    GLdouble objY;
+    GLdouble objY = 0;
     if (1 != orthoview)
         objY = getHeightmapValue(pos) * last_ysize;
 

@@ -299,6 +299,23 @@ GLvector Renderer::
     return Heightmap::gluUnProject(win, modelview_matrix, projection_matrix, viewport_matrix, r);
 }
 
+
+void Renderer::
+        frustumMinMaxT( float& min_t, float& max_t )
+{
+    max_t = 0;
+    min_t = FLT_MAX;
+
+    foreach( GLvector v, clippedFrustum)
+    {
+        if (max_t < v[0])
+            max_t = v[0];
+        if (min_t > v[0])
+            min_t = v[0];
+    }
+}
+
+
 float4 getWavelengthColorCompute( float wavelengthScalar ) {
     float4 spectrum[7];
         /* white background */

@@ -36,7 +36,7 @@ namespace Tools
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
         Heightmap::Position getHeightmapPos( QPointF viewport_coordinates, bool useRenderViewContext = true );
         Heightmap::Position getPlanePos( QPointF pos, bool* success, bool useRenderViewContext = true );
-        float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0 );
+        float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false );
 
         virtual bool event( QEvent * e );
         virtual bool eventFilter(QObject* o, QEvent* e);
@@ -65,6 +65,7 @@ namespace Tools
 
         unsigned last_width() { return _last_width; }
         unsigned last_height() { return _last_height; }
+        float last_length() { return _last_length; }
 
 		template<class Archive> void serialize_items(Archive& ar, const unsigned int version) {
 			QList<QGraphicsItem *> itms = items();

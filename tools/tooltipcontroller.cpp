@@ -29,7 +29,8 @@ TooltipController::
             :
             view_(view),
             render_view_(render_view),
-            _comments(comments)
+            _comments(comments),
+            fetched_heightmap_values(0)
 {
     setupGui();
 }
@@ -133,7 +134,11 @@ void TooltipController::
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
 
-    float val = render_view_->getHeightmapValue( p ) / render_view_->model->renderer->y_scale;
+    // Fetch local max based on quadratic interpolation (if any max exists
+    // within '1 pixel') to create a more accurate position. Move 'p' to this
+    // local max if any is found.
+    float val = render_view_->getHeightmapValue( p, 0, &p.scale )
+                / render_view_->model->renderer->y_scale;
     bool found_better = val > model()->max_so_far;
     if (found_better)
         model()->pos = p;
@@ -166,10 +171,28 @@ void TooltipController::
     if ( 0 < model()->markers )
     {
         ss << endl << "<br/><br/>Harmonic number: " << model()->markers;
+        ss << endl << "<br/>Compliance value: " << setprecision(3) << computeMarkerMeasure(p, model()->markers) << ", fetched " << fetched_heightmap_values << " values";
         ss << endl << "<br/>Fundamental frequency: " << setprecision(2) << (f/model()->markers) << " Hz";
+        //2^(n/12)*440
+        float tva12 = powf(2.f, 1.f/12);
+        float tonef = log(f/model()->markers/440.f)/log(tva12) + 45; // 440 is tone number 45, given C1 as tone 0
+        int tone0 = floor(tonef + 0.5);
+        int tone1 = (tone0 == (int)floor(tonef)) ? tone0 + 1 : tone0 - 1;
+        float a = fabs(tonef-tone0);
+        int octave0 = 0;
+        int octave1 = 0;
+        while(tone0<0) { tone0 += 12; octave0--;}
+        while(tone1<0) { tone1 += 12; octave1--;}
+        octave0 += tone0/12 + 1;
+        octave1 += tone1/12 + 1;
+        const char name[][3] = {
+            "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
+        };
+        ss << endl << "<br/>Note: " << name[tone0%12] << octave0
+                << " (" << setprecision(0) << a*100 << "% " << name[tone1%12] << octave1 << ")";
     }
 
-    //model()->frequency = f;
+    model()->frequency = f;
 
     bool first = 0 == model()->comment;
     _comments->setComment( model()->pos, ss.str(), &model()->comment );
@@ -177,7 +200,7 @@ void TooltipController::
         model()->comment->thumbnail( true );
 
     model()->comment->model->pos = Heightmap::Position(
-            p.time + 0.05/render_view_->model->xscale,
+            p.time - 0.01/render_view_->model->xscale*render_view_->model->_pz,
             p.scale);
 
     //QToolTip::showText( screen_pos.toPoint(), QString(), this ); // Force tooltip to change position even if the text is the same as in the previous tooltip
@@ -185,7 +208,7 @@ void TooltipController::
 
     if ( first )
     {
-        model()->comment->resize( 380, 190 );
+        model()->comment->resize( 400, 210 );
     }
 }
 
@@ -195,35 +218,18 @@ unsigned TooltipController::
 {
     double max_s = 0;
     unsigned max_i = 0;
-    const Tfr::FreqAxis&  display_scale = render_view_->model->display_scale();
+    const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
 
-    double F = display_scale.getFrequency( pos.scale );
-    double F_top = display_scale.getFrequency(1.f);
     double F_min = 8;
-    Heightmap::Position p = pos;
+    double F = display_scale.getFrequency( pos.scale );
     Heightmap::Reference ref(render_view_->model->collections[0].get());
     ref.block_index[0] = (unsigned)-1;
 
-    unsigned fetched_heightmap_values = 0;
+    fetched_heightmap_values = 0;
     unsigned n_tests = F/F_min;
     for (unsigned i=1; i<n_tests; ++i)
     {
-        double k = pow((double)i, -0.99);
-
-        double s = 0;
-        double fundamental_f = F/i;
-        unsigned count = std::min(F_top, 3*F)/fundamental_f;
-        for (unsigned j=1; j<=count; ++j)
-        {
-            double f = fundamental_f * j;
-            p.scale = display_scale.getFrequencyScalar( f );
-            float value = render_view_->getHeightmapValue( p, &ref );
-            ++fetched_heightmap_values;
-            value*=value;
-
-            s += value * k;
-        }
-
+        double s = computeMarkerMeasure(pos, i, &ref);
         if (max_s < s)
         {
             max_s = s;
@@ -235,6 +241,41 @@ unsigned TooltipController::
         //return 0;
 
     return max_i;
+}
+
+
+float TooltipController::
+        computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, Heightmap::Reference* ref)
+{
+    Heightmap::Reference myref( render_view_->model->collections[0].get());
+    if (0==ref)
+    {
+        ref = &myref;
+        myref.block_index[0] = (unsigned)-1;
+    }
+
+    const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
+    double F = display_scale.getFrequency( pos.scale );
+    double F_top = display_scale.getFrequency(1.f);
+    double k = pow((double)i, -0.99);
+    Heightmap::Position p = pos;
+
+    double s = 0;
+    double fundamental_f = F/i;
+    unsigned count = std::min(F_top, 3*F)/fundamental_f;
+    for (unsigned j=1; j<=count; ++j)
+    {
+        double f = fundamental_f * j;
+        p.scale = display_scale.getFrequencyScalar( f );
+        // Use quadratic interpolation to fetch estimates at given scale
+        float value = render_view_->getHeightmapValue( p, ref, 0, true );
+        ++fetched_heightmap_values;
+        value*=value;
+
+        s += value * k;
+    }
+
+    return s;
 }
 
 

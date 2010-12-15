@@ -4,6 +4,7 @@
 #include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
+#include "heightmap/renderer.h"
 
 // Qt
 #include <QMouseEvent>
@@ -148,17 +149,33 @@ void NavigationController::
     float ps = 0.0005;
     if(xscale)
     {
+        float L = _view->last_length();
         float d = ps * delta;
         if (d>0.8)
             d=0.8;
         if (d<-0.8)
             d=-0.8;
-        r.model->xscale *= (1-d);
+        if (d > 0 )
+        {
+            float min_t, max_t;
+            _view->model->renderer->frustumMinMaxT(min_t, max_t);
+            if ((max_t - min_t)/(1-d) > L)
+            {
+                d = 1 - (max_t - min_t)/L;
+            }
 
-        float max_scale = 0.05*r.model->project()->head_source()->sample_rate();
-        float min_scale = 1.f/r.model->project()->head_source()->length();
-        if (r.model->xscale>max_scale)
-            r.model->xscale=max_scale;
+            r.model->xscale *= (1-d);
+        }
+        else
+        {
+            r.model->xscale *= (1-d);
+
+            float max_scale = 0.05*r.model->project()->head_source()->sample_rate();
+            if (r.model->xscale>max_scale)
+                r.model->xscale=max_scale;
+        }
+
+        float min_scale = 0.01f/L;
         if (r.model->xscale<min_scale)
             r.model->xscale=min_scale;
     }
@@ -190,7 +207,7 @@ void NavigationController::
         // TODO scale selection
     }
     if( rotateButton.isDown() ) {
-        if (zoom_only_)
+        if (zoom_only_ || e->modifiers().testFlag(Qt::ShiftModifier))
         {
             zoom( -10*rotateButton.deltaX( x ), true );
             zoom( -10*rotateButton.deltaY( y ), false );
