@@ -403,7 +403,7 @@ void CommentView::
 
     float rescale = 1.f/sqrt(z);
 
-    rescale*= model->scroll_scale;
+    rescale *= model->scroll_scale;
     //TaskInfo("rescale = %g\tz = %g\tmodel->scroll_scale = %g\tlast_ysize = %g",
     //         rescale, z, model->scroll_scale, view->last_ysize );
 

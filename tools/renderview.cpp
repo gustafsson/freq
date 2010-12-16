@@ -302,15 +302,21 @@ QPointF RenderView::
         GLint const* const& vp = viewport_matrix;
         float z0 = .1, z1=.2;
         GLvector projectionPlane = Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0), modelview_matrix, projection_matrix, vp );
-        GLvector projectionNormal = (Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane).Normalize();
+        GLvector projectionNormal = (Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane);
 
         GLvector p;
         p[0] = pos.time;
         p[1] = 0;//objY;
         p[2] = pos.scale;
 
-        *dist = (p-projectionPlane)%projectionNormal;
-        *dist *= last_ysize;
+        GLvector d = p-projectionPlane;
+        projectionNormal[0] *= model->xscale;
+        projectionNormal[2] *= last_ysize;
+        d[0] *= model->xscale;
+        d[2] *= last_ysize;
+
+        projectionNormal.Normalize();
+        *dist = d%projectionNormal;
     }
 
     return QPointF( winX, viewport_matrix[3]-1-winY );

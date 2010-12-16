@@ -20,8 +20,8 @@
 #include <msc_stdc.h>
 #endif
 
-#define TIME_COLLECTION
-//#define TIME_COLLECTION if(0)
+//#define TIME_COLLECTION
+#define TIME_COLLECTION if(0)
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
@@ -124,7 +124,7 @@ unsigned Collection::
     boost::scoped_ptr<TaskTimer> tt;
     if (_unfinished_count)
     {
-        tt.reset( new TaskTimer("Collection::next_frame(), %u", _unfinished_count));
+        TIME_COLLECTION tt.reset( new TaskTimer("Collection::next_frame(), %u", _unfinished_count));
     }
         // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
@@ -294,7 +294,6 @@ pBlock Collection::
             cudaMemcpy(block->glblock->height()->data->getCudaGlobal().ptr(),
                        block->cpu_copy->getCpuMemory(), block->cpu_copy->getNumberOfElements1D(), cudaMemcpyHostToDevice);
             block->new_data_available = false;
-            //computeSlope(block, 0);
         }
     }
 
@@ -688,11 +687,6 @@ pBlock Collection::
                 }
             }
         }
-
-        //computeSlope( block, 0 );
-
-//        GlException_CHECK_ERROR();
-//        CudaException_CHECK_ERROR();
 
         result = block;
 

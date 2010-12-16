@@ -87,6 +87,7 @@ public:
 
     unsigned        find_bin( unsigned j ) const;
     void            gc() { _fft_many.clear(); }
+    void            resetSingleton();
 private:
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
@@ -99,6 +100,7 @@ private:
     float           _min_hz;
     float           _scales_per_octave;
     float           _tf_resolution;
+    static pTransform static_singleton;
 
     std::map<unsigned, CufftHandleContext> _fft_many;
 

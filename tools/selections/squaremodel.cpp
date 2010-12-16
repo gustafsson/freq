@@ -43,8 +43,18 @@ void SquareModel::
 
     BOOST_ASSERT(container);
 
+    float FS;
+    if (container->source())
+        FS = container->sample_rate();
+    else
+        FS = project_->head_source()->sample_rate();
+    Signal::IntervalType
+            a_index = std::max(0.f, a.time)*FS,
+            b_index = std::max(0.f, b.time)*FS;
+
     Signal::Operation* op = 0;
-    if (a.scale>=1 || b.scale<=0 || a.time==b.time || a.scale==b.scale)
+
+    if (a.scale>=1 || b.scale<=0 || a_index==b_index || a.scale==b.scale)
         ;
     else if (a.scale>0 || b.scale<1)
     {
@@ -53,14 +63,8 @@ void SquareModel::
     }
     else
     {
-        float FS;
-        if (container->source())
-            FS = container->sample_rate();
-        else
-            FS = project_->head_source()->sample_rate();
-
         op = new Tools::Support::OperationOtherSilent(
-                Signal::pOperation(), Signal::Interval( a.time*FS, b.time*FS) );
+                Signal::pOperation(), Signal::Interval( a_index, b_index) );
     }
 
     container->setContent(Signal::pOperation(op));
@@ -76,16 +80,13 @@ void SquareModel::
         break;
 
     case SquareType_FrequencySelection:
-        a.time = -.2;
-        if (filter->source())
-            b.time = filter->length()+.2;
-        else
-            b.time = project_->head_source()->sample_rate()+.2;
+        a.time = 0;
+        b.time = project_->head_source()->length();
         break;
 
     case SquareType_TimeSelection:
-        a.scale = -.2;
-        b.scale = 1.2;
+        a.scale = 0;
+        b.scale = 1;
         break;
     }
 

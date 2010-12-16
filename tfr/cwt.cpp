@@ -46,7 +46,7 @@ using namespace boost::lambda;
 
 namespace Tfr {
 
-Cwt::pTransform static_singleton;
+pTransform Cwt::static_singleton;
 
 Cwt::
         Cwt( float scales_per_octave, float wavelet_time_suppport, cudaStream_t stream )

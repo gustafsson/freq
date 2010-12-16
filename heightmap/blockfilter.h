@@ -19,7 +19,6 @@ public:
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
-    virtual void computeSlope( Tfr::pChunk chunk );
 
     Collection* _collection;
 };
@@ -87,8 +86,6 @@ public:
         _collection->update_sample_size(pchunk.get());
 
         FilterKind::applyFilter( pchunk );
-
-        computeSlope( pchunk );
     }
 
     /// @overload Signal::Operation::affected_samples()

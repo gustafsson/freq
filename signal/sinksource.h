@@ -82,7 +82,8 @@ public:
     Intervals samplesDesc();
 
     /// @see Operation::fetch_invalid_samples()
-    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= samplesDesc()&I; }
+    //virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= samplesDesc()&I; }
+    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
 private:
 	QMutex _cache_mutex;
