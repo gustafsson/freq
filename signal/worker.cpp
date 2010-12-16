@@ -123,7 +123,6 @@ bool Worker::
     if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
         time_duration diff = now - _last_work_one;
         float current_fps = 1000000.0/diff.total_microseconds();
-        TIME_WORKER TaskTimer tt("Current framerate = %g fps", current_fps);
 
         if (current_fps < _requested_fps &&
             _samples_per_chunk >= _min_samples_per_chunk)
@@ -144,7 +143,9 @@ bool Worker::
                 TIME_WORKER TaskTimer(
                         "High framerate (%.1f fps). Increased samples per chunk to %u",
                         current_fps, _samples_per_chunk).suppressTiming();
-        }
+		} else {
+			TIME_WORKER TaskTimer("Current framerate = %.1f fps", current_fps).suppressTiming();
+		}
 
         _requested_fps = 99*_requested_fps/100;
         //if (1>_requested_fps)_requested_fps=1;
