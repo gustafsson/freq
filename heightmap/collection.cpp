@@ -278,11 +278,13 @@ pBlock Collection::
     TIME_GETBLOCK TaskTimer tt("getBlock %s", ref.toString().c_str());
 
     pBlock block; // smart pointer defaults to 0
-	{   QMutexLocker l(&_cache_mutex);
-		cache_t::iterator itr = _cache.find( ref );
-		if (itr != _cache.end())
-			block = itr->second;
-	}
+    {   QMutexLocker l(&_cache_mutex);
+        cache_t::iterator itr = _cache.find( ref );
+        if (itr != _cache.end())
+        {
+            block = itr->second;
+        }
+    }
 
     if (0 == block.get()) {
         block = createBlock( ref );

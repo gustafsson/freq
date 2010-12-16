@@ -46,6 +46,8 @@ using namespace boost::lambda;
 
 namespace Tfr {
 
+Cwt::pTransform static_singleton;
+
 Cwt::
         Cwt( float scales_per_octave, float wavelet_time_suppport, cudaStream_t stream )
 :   _fft( /*stream*/ ),
@@ -72,8 +74,9 @@ Cwt& Cwt::
 pTransform Cwt::
         SingletonP()
 {
-    static pTransform P(new Cwt());
-    return P;
+    if (!static_singleton)
+        static_singleton.reset( new Cwt() );
+    return static_singleton;
 }
 
 
@@ -728,6 +731,13 @@ unsigned Cwt::
     // unsigned n_j = nScales( fs );
 
     return floor(bin);
+}
+
+
+void Cwt::
+        resetSingleton()
+{
+    static_singleton.reset();
 }
 
 

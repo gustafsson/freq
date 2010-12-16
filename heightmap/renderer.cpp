@@ -423,7 +423,6 @@ void Renderer::draw( float scaley )
 //        setSize( collection->samples_per_block(), collection->scales_per_block() );
 
     glPushMatrixContext mc(GL_MODELVIEW);
-    glScalef(1, scaley, 1); // global effect on all tools
 
     Position mss = collection->max_sample_size();
     Reference ref = collection->findReference(Position(0,0), mss);
@@ -431,6 +430,8 @@ void Renderer::draw( float scaley )
     glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
     glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
     glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+
+    glScalef(1, scaley, 1); // global effect on all tools
 
     beginVboRendering();
 

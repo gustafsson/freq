@@ -68,7 +68,7 @@ void TooltipController::
             infoToolButton.press( e->x(), this->height() - 1 - e->y() );
 
             model()->max_so_far = -1;
-            if (model()->comment && model()->comment->isHidden())
+            if (model()->comment && !model()->comment->model->thumbnail)
                 model()->comment = 0;
             model()->automarkers = true;
 
@@ -137,8 +137,7 @@ void TooltipController::
     // Fetch local max based on quadratic interpolation (if any max exists
     // within '1 pixel') to create a more accurate position. Move 'p' to this
     // local max if any is found.
-    float val = render_view_->getHeightmapValue( p, 0, &p.scale )
-                / render_view_->model->renderer->y_scale;
+    float val = render_view_->getHeightmapValue( p, 0, &p.scale );
     bool found_better = val > model()->max_so_far;
     if (found_better)
         model()->pos = p;

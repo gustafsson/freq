@@ -208,7 +208,10 @@ float RenderView::
         ref->block_index[0] = (unsigned)-1;
     }
     if (ref->block_index[0] == (unsigned)-1)
+    {
+        model->renderer->collection = model->collections[0].get();
         *ref = model->renderer->findRefAtCurrentZoomLevel( pos.time, pos.scale );
+    }
 
     Heightmap::Position a,b;
     ref->getArea( a, b );
@@ -278,8 +281,6 @@ float RenderView::
         }
     }
 
-    v *= model->renderer->y_scale;
-    v *= 4;
     return v;
 }
 
@@ -289,7 +290,7 @@ QPointF RenderView::
 {
     GLdouble objY = 0;
     if (1 != orthoview)
-        objY = getHeightmapValue(pos) * last_ysize;
+        objY = getHeightmapValue(pos) * model->renderer->y_scale * 4 * last_ysize;
 
     GLdouble winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
@@ -366,7 +367,7 @@ Heightmap::Position RenderView::
         if (e < 1e-5 )
             break;
 
-        y = getHeightmapValue(p) * last_ysize;
+        y = getHeightmapValue(p) * model->renderer->y_scale * 4 * last_ysize;
         tt.info("(%g, %g) %g", p.time, p.scale, y);
     }
     return p;
@@ -446,13 +447,12 @@ void RenderView::
 
     model->renderer->init();
 
-    // drawCollections is called for 3 different viewports each frame, don't
-    // botter messing around with keeping 3 different frame buffer objects
-    // for the different sizes. Recreate the fbo each time instead.
     glEnable( GL_CULL_FACE );
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    // When rendering to fbo, draw to the entire fbo, then update the current
+    // viewport.
+    GLint current_viewport[4];
+    glGetIntegerv(GL_VIEWPORT, current_viewport);
 
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
@@ -471,6 +471,11 @@ void RenderView::
 
     if (1<N)
     {
+        // drawCollections is called for 3 different viewports each frame, don't
+        // botter messing around with keeping 3 different frame buffer objects
+        // for the different sizes. Recreate the fbo each time instead.
+        // GlFrameBuffer will query the current viewport to determine the size
+        // of the fbo.
         GlFrameBuffer fbo;
         for (unsigned i=1; i < N; ++i)
         {
@@ -490,7 +495,7 @@ void RenderView::
                 glDisable(GL_LIGHTING);
                 glEnable(GL_BLEND);
             }
-            glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+            glViewport(current_viewport[0], current_viewport[1], current_viewport[2], current_viewport[3]);
 
             glPushMatrixContext mpc( GL_PROJECTION );
             glLoadIdentity();
@@ -861,7 +866,7 @@ void RenderView::
     model->renderer.reset();
     model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
     model->renderer->color_mode = old_color_mode;
-    Tfr::Cwt::Singleton().gc();
+    Tfr::Cwt::Singleton().resetSingleton();
 
     cudaThreadExit();
 

@@ -34,7 +34,7 @@ void TooltipView::
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
     double frequency = display_scale.getFrequency( p.scale );
     double fundamental_frequency = frequency / model_->markers;
-    for (unsigned i=1; i<3*model_->markers; ++i)
+    for (unsigned i=1; i<=2*model_->markers || i <= 10; ++i)
     {
         float harmonic = fundamental_frequency * i;
         p.scale = display_scale.getFrequencyScalar( harmonic );
