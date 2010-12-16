@@ -17,7 +17,8 @@ ToolSelector::
         ToolSelector(QWidget* parent_tool)
             :
             _parent_tool(parent_tool),
-            _current_tool(0)
+            _current_tool(0),
+            _must_have_one_tool(true)
 {
 
 }
@@ -55,7 +56,7 @@ void ToolSelector::
 {
     if ((tool != _current_tool) == active)
     {
-        if (_current_tool)
+        if (active || !_must_have_one_tool) if (_current_tool)
         {
             // Remove the current tool from the render view. Memory management
             // is supposed to be taken care of by someone else. QPointer is a

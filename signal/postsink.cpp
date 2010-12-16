@@ -1,6 +1,5 @@
 #include "postsink.h"
 #include "buffersource.h"
-#include <boost/foreach.hpp>
 #include <demangle.h>
 #include <typeinfo>
 
@@ -19,6 +18,9 @@ Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
     DEBUG_POSTSINK TaskTimer tt("PostSink( %s )", I.toString().c_str());
+
+    if (_sinks.empty())
+        return source()->read(I);
 
     vector<pOperation> passive_operations;
     vector<pOperation> active_operations;
@@ -41,7 +43,7 @@ Signal::pBuffer PostSink::
 
         DEBUG_POSTSINK TaskTimer tt("Adding %u operations", _sinks.size());
 
-        BOOST_FOREACH( pOperation c, _sinks )
+        foreach( pOperation c, _sinks )
         {
             if (c->affected_samples() & I )
             {
@@ -66,23 +68,37 @@ Signal::pBuffer PostSink::
         prev = _filter;
     }
 
-    BOOST_FOREACH( pOperation c, passive_operations) {
+    foreach( pOperation c, passive_operations) {
         c->source(prev);
         prev = c;
     }
 
-    pBuffer b = prev->read( I );
+    pBuffer b;
+    // Since PostSink is a sink, it doesn't need to return anything.
+    // But since the buffer 'b' will be computed anyway when calling 'read'
+    // PostSink may just as well return it, at least for debugging purposes.
+
+    if (1==active_operations.size())
+    {
+        pOperation c = active_operations[0];
+        c->source( prev );
+        b = c->read( I );
+        prev = c;
+        c->source( source() );
+        active_operations.clear();
+    } else
+        b = prev->read( I );
 
     // prev.reset( new BufferSource( b ));
-    BOOST_FOREACH( pOperation c, active_operations) {
-        c->source( prev );
+    foreach( pOperation c, active_operations) {
+        c->source( _filter ? _filter : source() );
         c->read( I );
     }
 
-    BOOST_FOREACH( pOperation c, passive_operations )
+    foreach( pOperation c, passive_operations )
         c->source(source());
 
-    BOOST_FOREACH( pOperation c, active_operations )
+    foreach( pOperation c, active_operations )
         c->source(source());
 
 
@@ -111,7 +127,7 @@ void PostSink::
         b = _inverse_cwt( *chunk );
     }
 
-    BOOST_FOREACH( pSink sink, sinks() )
+    foreach( pSink sink, sinks() )
         sink->put(b, s);
 }*/
 
@@ -120,7 +136,7 @@ void PostSink::
 void PostSink::
         reset()
 {
-    BOOST_FOREACH( pSink s, sinks() )
+    foreach( pSink s, sinks() )
         s->reset( );
 
     Tfr::ChunkSink::reset();
@@ -133,7 +149,7 @@ bool PostSink::
 {
     bool r = true;
 
-    BOOST_FOREACH( pSink s, sinks() )
+    foreach( pSink s, sinks() )
         r &= s->isFinished( );
 
     return r;
@@ -149,7 +165,7 @@ void PostSink::
     if (_filter)
         _filter->source( v );
 
-    BOOST_FOREACH( pOperation s, sinks() )
+    foreach( pOperation s, sinks() )
     {
         s->source( v );
     }
@@ -161,10 +177,13 @@ Intervals PostSink::
 {
     Intervals I;
 
+    if (sinks().empty())
+        return I;
+
     if (_filter)
         I |= _filter->affected_samples();
 
-    BOOST_FOREACH( pOperation s, sinks() )
+    foreach( pOperation s, sinks() )
     {
         I |= s->affected_samples();
     }
@@ -178,7 +197,7 @@ Intervals PostSink::
 {
     Intervals I;
 
-    BOOST_FOREACH( pOperation s, sinks() )
+    foreach( pOperation s, sinks() )
     {
         // Sinks doesn't fetch invalid sampels recursively
         I |= s->fetch_invalid_samples();
@@ -191,7 +210,7 @@ Intervals PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
-    BOOST_FOREACH( pOperation o, sinks() )
+    foreach( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
 
@@ -229,7 +248,8 @@ void PostSink::
 {
     Intervals I;
 
-    f->source(source());
+    if (f)          f->source(source());
+    if (_filter)    _filter->source(source());
 
     if (f)          I |= f->affected_samples();
     if (_filter)    I |= _filter->affected_samples();

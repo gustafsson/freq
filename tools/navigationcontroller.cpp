@@ -4,6 +4,7 @@
 #include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
+#include "heightmap/renderer.h"
 
 // Qt
 #include <QMouseEvent>
@@ -20,7 +21,8 @@ namespace Tools
 NavigationController::
         NavigationController(RenderView* view)
             :
-            _view(view)
+            _view(view),
+            zoom_only_(false)
 {
     connectGui();
 
@@ -39,9 +41,21 @@ NavigationController::
 void NavigationController::
         receiveToggleNavigation(bool active)
 {
-    _view->toolSelector()->setCurrentTool( this, active );
+    if (active || zoom_only_ == false)
+        _view->toolSelector()->setCurrentTool( this, active );
+    if (active)
+        zoom_only_ = false;
 }
 
+
+void NavigationController::
+        receiveToggleZoom(bool active)
+{
+    if (active || zoom_only_ == true)
+        _view->toolSelector()->setCurrentTool( this, active );
+    if (active)
+        zoom_only_ = true;
+}
 
 void NavigationController::
         mousePressEvent ( QMouseEvent * e )
@@ -52,20 +66,20 @@ void NavigationController::
     {
         case Qt::LeftButton:
             if(' '==lastKey)
-                selectionButton.press( e->x(), this->height() - e->y() );
+                selectionButton.press( e->x(), this->height() - 1 - e->y() );
             else
-                leftButton.press( e->x(), this->height() - e->y() );
+                leftButton.press( e->x(), this->height() - 1 - e->y() );
             //printf("LeftButton: Press\n");
             break;
 
         case Qt::MidButton:
-            middleButton.press( e->x(), this->height() - e->y() );
+            middleButton.press( e->x(), this->height() - 1 - e->y() );
             //printf("MidButton: Press\n");
             break;
 
         case Qt::RightButton:
         {
-            rightButton.press( e->x(), this->height() - e->y() );
+            rightButton.press( e->x(), this->height() - 1 - e->y() );
             //printf("RightButton: Press\n");
         }
             break;
@@ -76,15 +90,15 @@ void NavigationController::
 
     if(isEnabled()) {
         if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
-            moveButton.press( e->x(), this->height() - e->y() );
+            moveButton.press( e->x(), this->height() - 1 - e->y() );
 
         if( (e->button() & Qt::RightButton) == Qt::RightButton)
-            rotateButton.press( e->x(), this->height() - e->y() );
+            rotateButton.press( e->x(), this->height() - 1 - e->y() );
 
     }
 
 //    if(leftButton.isDown() && rightButton.isDown())
-//        selectionButton.press( e->x(), this->height() - e->y() );
+//        selectionButton.press( e->x(), this->height() - 1 - e->y() );
 
     _view->userinput_update();
 }
@@ -117,23 +131,57 @@ void NavigationController::
 void NavigationController::
         wheelEvent ( QWheelEvent *e )
 {
+    float rs = 0.08;
+    if( e->orientation() == Qt::Horizontal )
+        _view->model->_ry -= rs * e->delta();
+    else
+        zoom( e->delta(), e->modifiers().testFlag(Qt::ShiftModifier) );
+
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        zoom(int delta, bool xscale)
+{
     //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
     float ps = 0.0005;
-    float rs = 0.08;
-    if( e->orientation() == Qt::Horizontal )
+    if(xscale)
     {
-        if(e->modifiers().testFlag(Qt::ShiftModifier))
-            r.model->xscale *= (1-ps * e->delta());
+        float L = _view->last_length();
+        float d = ps * delta;
+        if (d>0.8)
+            d=0.8;
+        if (d<-0.8)
+            d=-0.8;
+        if (d > 0 )
+        {
+            float min_t, max_t;
+            _view->model->renderer->frustumMinMaxT(min_t, max_t);
+            if ((max_t - min_t)/(1-d) > L)
+            {
+                d = 1 - (max_t - min_t)/L;
+            }
+
+            r.model->xscale *= (1-d);
+        }
         else
-            r.model->_ry -= rs * e->delta();
+        {
+            r.model->xscale *= (1-d);
+
+            float max_scale = 0.05*r.model->project()->head_source()->sample_rate();
+            if (r.model->xscale>max_scale)
+                r.model->xscale=max_scale;
+        }
+
+        float min_scale = 0.01f/L;
+        if (r.model->xscale<min_scale)
+            r.model->xscale=min_scale;
     }
     else
     {
-        if(e->modifiers().testFlag(Qt::ShiftModifier))
-            r.model->xscale *= (1-ps * e->delta());
-        else
-            r.model->_pz *= (1+ps * e->delta());
+        r.model->_pz *= (1+ps * delta);
 
         if (r.model->_pz<-40) r.model->_pz = -40;
         if (r.model->_pz>-.1) r.model->_pz = -.1;
@@ -152,26 +200,34 @@ void NavigationController::
 
     float rs = 0.2;
 
-    int x = e->x(), y = this->height() - e->y();
+    int x = e->x(), y = this->height() - 1 - e->y();
 //    TaskTimer tt("moving");
 
     if (scaleButton.isDown()) {
         // TODO scale selection
     }
-    if( rotateButton.isDown() ){
-        //Controlling the rotation with the left button.
-        r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
-        r.model->_rx -= rs * rotateButton.deltaY( y );
-        if (r.model->_rx<10) r.model->_rx=10;
-        if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
-        if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
+    if( rotateButton.isDown() ) {
+        if (zoom_only_ || e->modifiers().testFlag(Qt::ShiftModifier))
+        {
+            zoom( -10*rotateButton.deltaX( x ), true );
+            zoom( -10*rotateButton.deltaY( y ), false );
+        }
+        else
+        {
+            //Controlling the rotation with the right button.
+            r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
+            r.model->_rx -= rs * rotateButton.deltaY( y );
+            if (r.model->_rx<10) r.model->_rx=10;
+            if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
+            if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
+        }
 
     }
 
     if( moveButton.isDown() )
     {
-        //Controlling the position with the right button.
-        GLvector last, current;
+        //Controlling the position with the left button.
+        double last[2], current[2];
         if( moveButton.worldPos(last[0], last[1], r.model->xscale) &&
             moveButton.worldPos(x, y, current[0], current[1], r.model->xscale) )
         {
@@ -203,7 +259,8 @@ void NavigationController::
         changeEvent(QEvent * event)
 {
     if (event->type() & QEvent::EnabledChange)
-        emit enabledChanged(isEnabled());
+        if (!isEnabled())
+            emit enabledChanged(isEnabled());
 }
 
 
@@ -212,7 +269,14 @@ void NavigationController::
 {
     Ui::MainWindow* ui = _view->model->project()->mainWindow()->getItems();
     connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), this, SLOT(receiveToggleNavigation(bool)));
+    connect(ui->actionZoom, SIGNAL(toggled(bool)), this, SLOT(receiveToggleZoom(bool)));
     connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateNavigation, SLOT(setChecked(bool)));
+    connect(this, SIGNAL(enabledChanged(bool)), ui->actionZoom, SLOT(setChecked(bool)));
+
+    one_action_at_a_time_ = new Ui::ComboBoxAction();
+    one_action_at_a_time_->decheckable( false );
+    one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
+    one_action_at_a_time_->addActionItem( ui->actionZoom );
 }
 
 

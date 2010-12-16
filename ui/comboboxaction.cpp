@@ -21,6 +21,21 @@ void ComboBoxAction::
 }
 
 void ComboBoxAction::
+        setCheckedAction( QAction* a )
+{
+    if (actions().contains(a))
+        addActionItem(a);
+    if (a != defaultAction())
+    {
+        defaultAction()->setChecked(false);
+    }
+
+    setDefaultAction(a);
+    a->setChecked(true);
+    setChecked(true);
+}
+
+void ComboBoxAction::
         decheckable( bool a )
 {
     _decheckable = a;

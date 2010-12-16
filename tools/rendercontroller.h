@@ -48,7 +48,6 @@ namespace Tools
 
     private slots:
         void clearCachedHeightmap();
-        void frameTick();
 
     private:
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
@@ -72,8 +71,6 @@ namespace Tools
         void setupGui();
 
         // Controlling
-        QMutex _invalidRangeMutex;
-        Signal::Intervals _invalidRange;
         Signal::pOperation _updateViewSink;
         Signal::pWorkerCallback _updateViewCallback;
     };

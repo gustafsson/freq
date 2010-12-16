@@ -18,6 +18,7 @@ namespace Tools { namespace Selections
 SquareView::SquareView(SquareModel* model, Signal::Worker* worker)
     :
     enabled(false),
+    visible(true),
     model_(model),
     worker_(worker)
 {
@@ -34,7 +35,8 @@ SquareView::
 void SquareView::
         draw()
 {
-    drawSelectionRectangle();
+    if (visible)
+        drawSelectionRectangle();
 }
 
 
@@ -46,6 +48,9 @@ void SquareView::
         z1 = model_->a.scale,
         x2 = model_->b.time,
         z2 = model_->b.scale;
+    if (x1==x2 || z1==z2)
+        return;
+
     float y = 1;
 
     glPushAttribContext ac;

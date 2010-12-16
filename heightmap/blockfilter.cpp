@@ -1,11 +1,11 @@
 #include "block.cu.h"
 #include "blockfilter.h"
 #include "collection.h"
+#include "tfr/cwt.h"
 
 #include <CudaException.h>
 #include <GlException.h>
 
-#include <boost/foreach.hpp>
 #include <TaskTimer.h>
 
 //#define TIME_BLOCKFILTER
@@ -39,7 +39,7 @@ void BlockFilter::
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
-    BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
+    foreach( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
     {
         if (_collection->constructor_thread().isSameThread())
         {
@@ -68,23 +68,14 @@ void BlockFilter::
 }
 
 
-void BlockFilter::
-        computeSlope( Tfr::pChunk pchunk )
-{
-    BOOST_FOREACH( pBlock block, _collection->getIntersectingBlocks( pchunk->getInterval() ))
-        _collection->computeSlope( block, 0 );
-}
-
-
 CwtToBlock::
         CwtToBlock( Collection* collection )
             :
             BlockFilterImpl<Tfr::CwtFilter>(collection),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {
-         _try_shortcuts = false;
+    //_try_shortcuts = false;
 }
-
 
 CwtToBlock::
         CwtToBlock( std::vector<boost::shared_ptr<Collection> > collections )
@@ -92,7 +83,7 @@ CwtToBlock::
             BlockFilterImpl<Tfr::CwtFilter>(collections),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {
-	 _try_shortcuts = false;
+     //_try_shortcuts = false;
 }
 
 
@@ -238,7 +229,7 @@ void CwtToBlock::
             transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
         ).suppressTiming();
 
-    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples < chunk.transform_data->getNumberOfElements().width );
+    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
@@ -257,10 +248,29 @@ void CwtToBlock::
     CudaException_CHECK_ERROR();
     GlException_CHECK_ERROR();
 
-    block->valid_samples |= transfer;
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    if( !cwt || 1<cwt->wavelet_time_support() )
+        block->valid_samples |= transfer;
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
     return;
+}
+
+
+StftToBlock::
+        StftToBlock( Collection* collection )
+            :
+            BlockFilterImpl<Tfr::StftFilter>(collection)
+{
+    //_try_shortcuts = false;
+}
+
+StftToBlock::
+        StftToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+            :
+            BlockFilterImpl<Tfr::StftFilter>(collections)
+{
+    //_try_shortcuts = false;
 }
 
 
@@ -273,7 +283,7 @@ void StftToBlock::
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = inInterval.last/chunk.original_sample_rate;
+    chunk_b.time = (inInterval.last-chunk.nScales())/chunk.original_sample_rate;
 
     // ::resampleStft computes frequency rows properly with its two instances
     // of FreqAxis.

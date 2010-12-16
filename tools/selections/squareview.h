@@ -3,11 +3,10 @@
 
 #include <QObject>
 #include "signal/worker.h"
+#include "squaremodel.h"
 
 namespace Tools { namespace Selections
 {
-
-class SquareModel;
 
 class SquareView: public QObject
 {
@@ -20,6 +19,7 @@ public:
     void drawSelectionRectangle2();
 
     bool enabled;
+    bool visible;
 
 public slots:
     /// Connected in SquareController

@@ -51,6 +51,7 @@ private:
             _xoffs,
             _barHeight,
             _length;
+    int _width, _height;
     Sawe::Project* _project;
     RenderView* _render_view;
 };

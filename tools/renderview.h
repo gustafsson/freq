@@ -15,6 +15,11 @@
 #include <QGraphicsScene>
 #include <QTransform>
 
+namespace Heightmap
+{
+    class Reference;
+}
+
 namespace Tools
 {
     class RenderView: public QGraphicsScene
@@ -26,11 +31,11 @@ namespace Tools
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
         void drawCollections();
-        void clearCaches();
+        void drawCollection(int, Signal::FinalSource*);
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
-        Heightmap::Position getHeightmapPos( QPointF viewport_coordinates );
-        Heightmap::Position getPlanePos( QPointF pos, bool* success );
-        float getHeightmapValue( Heightmap::Position pos );
+        Heightmap::Position getHeightmapPos( QPointF viewport_coordinates, bool useRenderViewContext = true );
+        Heightmap::Position getPlanePos( QPointF pos, bool* success, bool useRenderViewContext = true );
+        float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false );
 
         virtual bool event( QEvent * e );
         virtual bool eventFilter(QObject* o, QEvent* e);
@@ -59,6 +64,7 @@ namespace Tools
 
         unsigned last_width() { return _last_width; }
         unsigned last_height() { return _last_height; }
+        float last_length() { return _last_length; }
 
 		template<class Archive> void serialize_items(Archive& ar, const unsigned int version) {
 			QList<QGraphicsItem *> itms = items();
@@ -70,6 +76,7 @@ namespace Tools
 
     public slots:
         void userinput_update();
+        void clearCaches();
 
     signals:
         /**
@@ -110,6 +117,7 @@ namespace Tools
         void setLights();
         void defaultStates();
         void setupCamera();
+        void computeChannelColors();
 
         boost::scoped_ptr<TaskTimer> _work_timer;
         boost::scoped_ptr<TaskTimer> _render_timer;
@@ -119,8 +127,11 @@ namespace Tools
         unsigned _last_width;
         unsigned _last_height;
 
-        GLdouble m[16], proj[16];
-        GLint vp[4];
+        float _last_length;
+        GLdouble modelview_matrix[16], projection_matrix[16];
+        GLint viewport_matrix[4];
+
+        std::vector<float4> channel_colors;
     };
 } // namespace Tools
 

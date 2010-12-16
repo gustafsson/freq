@@ -11,6 +11,7 @@ class ComboBoxAction: public QToolButton {
 public:
     ComboBoxAction();
     void addActionItem( QAction* a );
+    void setCheckedAction( QAction* a );
     void decheckable(bool);
 
 private slots:

@@ -66,9 +66,9 @@ namespace Tools
         //connect(ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), SLOT(receiveMoveSelectionInTime(bool)));
 
         ui->actionActionAdd_selection->setEnabled( false );
-        ui->actionActionRemove_selection->setEnabled( false );
+        ui->actionActionRemove_selection->setEnabled( true );
+        ui->actionCropSelection->setEnabled( true );
         ui->actionMoveSelection->setEnabled( false );
-        ui->actionCropSelection->setEnabled( false );
         ui->actionMoveSelectionTime->setEnabled( false );
 
         QToolBar* toolBarTool = new QToolBar(main);
@@ -103,7 +103,7 @@ namespace Tools
         spline_view_.reset( new Selections::SplineView(        spline_model_.data(), &render_view()->model->project()->worker ));
         spline_controller_ = new Selections::SplineController( spline_view_.data(), this );
 
-        square_model_.reset( new Selections::SquareModel(      render_view()->model->display_scale()));
+        square_model_.reset( new Selections::SquareModel(      render_view()->model->display_scale(), render_view()->model->project() ));
         square_view_.reset( new Selections::SquareView(        square_model_.data(), &render_view()->model->project()->worker ));
         square_controller_ = new Selections::SquareController( square_view_.data(), this );
     }
@@ -112,8 +112,14 @@ namespace Tools
     void SelectionController::
             setCurrentTool( QWidget* tool, bool active )
     {
-        tool_selector_->setCurrentTool( tool, active );
+//        render_view()->toolSelector()->setCurrentTool(
+//                this, (active && tool) || (tool && tool==tool_selector_->currentTool()));
 
+//        if (tool_selector_->currentTool() && tool_selector_->currentTool()!=tool)
+//            tool_selector_->currentTool()->setVisible( false );
+        tool_selector_->setCurrentTool( tool, active );
+//        if (tool_selector_->currentTool())
+//            tool_selector_->currentTool()->setVisible( true );
         render_view()->toolSelector()->setCurrentTool(
                 this, 0!=tool_selector_->currentTool() );
     }
@@ -129,6 +135,7 @@ namespace Tools
     void SelectionController::
             addComboBoxAction( QAction* action )
     {
+        //selectionComboBox_->parentWidget()->addAction(action);
         selectionComboBox_->addActionItem( action );
     }
 
@@ -168,30 +175,12 @@ namespace Tools
     void SelectionController::
             receiveAddClearSelection(bool /*active*/)
     {
-        Filters::Ellipse* ellipse =
-                dynamic_cast<Filters::Ellipse*>(
-                        _model->current_filter_.get() );
-
-        if (ellipse)
-        { // If selection is an ellipse, remove tfr data inside the ellipse
-            ellipse->_save_inside = false;
-        }
-
-        Filters::Rectangle* rectangle=
-                dynamic_cast<Filters::Rectangle*>(
-                        _model->current_filter_.get() );
-        if (rectangle)
-            rectangle->_save_inside = false;
-
-
-        Selections::Support::SplineFilter* spline=
-                dynamic_cast<Selections::Support::SplineFilter*>(
-                        _model->current_filter_.get() );
-        if (spline)
-            spline->_save_inside = false;
+        setCurrentFilterSaveInside(false);
 
         _worker->appendOperation( _model->current_filter_ );
         _model->all_filters.push_back( _model->current_filter_ );
+
+        TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
     }
 
 
@@ -199,17 +188,84 @@ namespace Tools
             receiveCropSelection()
     {
         // affected_samples need a sample rate
-        Signal::pOperation f = _model->current_filter_;
-        f->source( _worker->source() );
-        Signal::Interval i = f->affected_samples().coveredInterval();
+        setCurrentFilterSaveInside(true);
 
-        if (0<i.count())
+        Signal::Intervals I = _model->current_filter_->affected_samples().coveredInterval();
+        I -= _model->current_filter_->zeroed_samples();
+
+        if (0==I.coveredInterval().count())
             return;
 
         // Create OperationRemoveSection to remove that section from the stream
-        Signal::pOperation remove(new Signal::OperationRemoveSection(
-                Signal::pOperation(), i.first, i.count() ));
+        Signal::pOperation remove(new Tools::Support::OperationCrop(
+                Signal::pOperation(), I.coveredInterval() ));
+        _worker->appendOperation( _model->current_filter_ );
         _worker->appendOperation( remove );
+        _model->all_filters.push_back( _model->current_filter_ );
+
+        TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
+    }
+
+
+    void SelectionController::
+            setCurrentFilterSaveInside(bool save_inside)
+    {
+        _model->current_filter_->source( _worker->source() );
+
+        Filters::Ellipse* ellipse =
+                dynamic_cast<Filters::Ellipse*>(
+                        _model->current_filter_.get() );
+
+        if (ellipse)
+        { // If selection is an ellipse, remove tfr data inside the ellipse
+            ellipse->_save_inside = save_inside;
+        }
+
+        Tools::Support::OperationContainer* container=
+                dynamic_cast<Tools::Support::OperationContainer*>(
+                        _model->current_filter_.get() );
+
+        if (container)
+        {
+            Filters::Rectangle* rectangle=
+                    dynamic_cast<Filters::Rectangle*>(
+                            container->content().get() );
+            if (rectangle)
+                rectangle->_save_inside = save_inside;
+
+            Tools::Support::OperationOtherSilent* other_silent =
+                    dynamic_cast<Tools::Support::OperationOtherSilent*>(
+                            container->content().get() );
+
+            if (other_silent && !save_inside)
+            {
+                container->setContent( Signal::pOperation(
+                        new Tools::Support::OperationSetSilent(
+                                Signal::pOperation(),
+                                other_silent->section() )
+                        ));
+            }
+
+            Tools::Support::OperationSetSilent* set_silent =
+                    dynamic_cast<Tools::Support::OperationSetSilent*>(
+                            container->content().get() );
+
+            if (set_silent && save_inside)
+            {
+                container->setContent( Signal::pOperation(
+                        new Tools::Support::OperationOtherSilent(
+                                Signal::pOperation(),
+                                set_silent->affected_samples().coveredInterval() )
+                        ));
+            }
+        }
+
+
+        Selections::Support::SplineFilter* spline=
+                dynamic_cast<Selections::Support::SplineFilter*>(
+                        _model->current_filter_.get() );
+        if (spline)
+            spline->_save_inside = save_inside;
     }
 
 

@@ -16,6 +16,9 @@
 #include "recordcontroller.h"
 #include "recordview.h"
 #include "commentcontroller.h"
+#include "matlabcontroller.h"
+#include "graphcontroller.h"
+#include "tooltipcontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -61,6 +64,16 @@ ToolFactory::
     }
 
     _comment_controller = new CommentController( _render_view );
+
+    _matlab_controller = new MatlabController( p, _render_view );
+
+    _graph_controller = new GraphController( _render_view );
+
+    _tooltip_model.reset( new TooltipModel() );
+    _tooltip_view.reset( new TooltipView(_tooltip_model.data(), _render_view ));
+    _tooltip_controller = new TooltipController(
+            _tooltip_view.data(), _render_view,
+            dynamic_cast<CommentController*>(_comment_controller.data()) );
 }
 
 
@@ -77,6 +90,9 @@ ToolFactory::
 
     if (!_playback_controller.isNull())
         delete _playback_controller;
+
+    if (!_matlab_controller.isNull())
+        delete _matlab_controller;
 
     // The _render_view and _timeline_view widget are released by MainWindow
     // that owns the widget. This might happen both before and after this

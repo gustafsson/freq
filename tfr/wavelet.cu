@@ -214,7 +214,9 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
     // no selection
     for (unsigned fi=0; fi<numElem.height; fi++)
     {
-        a += in_wavelet[ x + fi*numElem.width ].x;
+        float2 v = in_wavelet[ x + fi*numElem.width ];
+        a += v.x;
+        //a += sqrt(v.x*v.x + v.y*v.y);
     }
 
     out_inverse_waveform[x] = a;
@@ -294,8 +296,9 @@ __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_wavef
       {
         for (unsigned fi=max(0.f,area.y); fi<numElem.height && fi<area.w; fi++)
         {
+            float2 v = in_wavelet[ x + fi*numElem.width ];
             // select only the real component of the complex transform
-            a += in_wavelet[ x + fi*numElem.width ].x;
+            a += v.x;
         }
     }
 

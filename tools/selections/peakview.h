@@ -19,7 +19,7 @@ public:
 
     void drawSelectionPeak();
 
-    bool enabled;
+    bool visible, enabled;
 
 public slots:
     /// Connected in SquareController

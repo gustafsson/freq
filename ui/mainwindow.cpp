@@ -2,7 +2,6 @@
 #include "ui_mainwindow.h"
 #include <QKeyEvent>
 #include <QSlider>
-#include <boost/foreach.hpp>
 #include <sstream>
 #include <iomanip>
 #include <demangle.h>
@@ -62,6 +61,7 @@ void SaweMainWindow::
     connect(ui->actionOpen, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
     connect(ui->actionSave_project, SIGNAL(triggered()), SLOT(saveProject()));
     connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
+    connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
 
 
     // TODO remove layerWidget and deleteFilterButton
@@ -80,14 +80,15 @@ void SaweMainWindow::
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
 
     // TODO move into each tool
-    this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
+    //this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
     this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
-    this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
-    this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
-    /*this->removeDockWidget( ui->toolPropertiesWindow );
-    this->removeDockWidget( ui->operationsWindow );
+    //this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
+    //this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
+
+    this->removeDockWidget( ui->toolPropertiesWindow );
+    //this->removeDockWidget( ui->operationsWindow );
     this->removeDockWidget( ui->topFilterWindow );
-    this->removeDockWidget( ui->historyWindow );*/
+    this->removeDockWidget( ui->historyWindow );
 
     // todo move into toolfactory
     this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);

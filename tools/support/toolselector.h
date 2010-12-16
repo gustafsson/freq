@@ -48,6 +48,7 @@ namespace Tools {
     private:
         QWidget* _parent_tool;
         QWidget* _current_tool;
+        bool _must_have_one_tool;
     };
 }
 } // namespace Tools

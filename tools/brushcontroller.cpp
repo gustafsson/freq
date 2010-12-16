@@ -76,8 +76,11 @@ void BrushController::
     Ui::MainWindow* ui = main->getItems();
 
     model()->brush_factor = 0;
-
+#ifdef _MSC_VER
     float A = .5f;
+#else
+    float A = .1f;
+#endif
     if (ui->actionAirbrush->isChecked())
         model()->brush_factor = -A;
     if (ui->actionAmplitudeBrush->isChecked())
@@ -106,8 +109,7 @@ void BrushController::
 {
     if (e->button() == paint_button_ )
     {
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections )
-            collection->invalidate_samples( drawn_interval_ );
+        render_view_->model->project()->worker.invalidate_post_sink( drawn_interval_ );
         drawn_interval_.clear();
     }
 
@@ -129,7 +131,7 @@ void BrushController::
             model()->brush_factor *= -1;
 
         GLdouble p[2];
-        if (Ui::MouseControl::worldPos( e->x(), height() - e->y(), p[0], p[1], r.model->xscale))
+        if (Ui::MouseControl::worldPos( e->x(), height() - 1 - e->y(), p[0], p[1], r.model->xscale))
         {
             Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
             drawn_interval_ |= model()->paint( ref, Heightmap::Position( p[0], p[1]) );

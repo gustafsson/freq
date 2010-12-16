@@ -1,11 +1,12 @@
 #include "intervals.h"
 
 #include <stdexcept>
-#include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <cfloat>
 #include <TaskTimer.h>
 #include <sstream>
+
+#include <QtGlobal> // foreach
 
 namespace Signal {
 
@@ -68,6 +69,8 @@ Intervals::
 Intervals::
         Intervals(IntervalType first, IntervalType last)
 {
+//    if (first<last)
+//        last = Interval::IntervalType_MAX;
     BOOST_ASSERT( first < last );
     this->push_back( Interval( first, last ) );
 }
@@ -76,8 +79,8 @@ Intervals::
 Intervals& Intervals::
         operator |= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b)
-        operator|=( r );
+    foreach (const Interval& r,  b)
+        operator |= ( r );
     return *this;
 }
 
@@ -114,7 +117,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b)
+    foreach (const Interval& r,  b)
         operator-=( r );
     return *this;
 }
@@ -191,9 +194,9 @@ Intervals& Intervals::
     for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 	
-        if (Interval::IntervalType_MAX - b < i.first ) i.first = Interval::IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b <= i.first ) i.first = Interval::IntervalType_MAX;
 		else i.first += b;
-        if (Interval::IntervalType_MAX - b < i.last ) i.last = Interval::IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b <= i.last ) i.last = Interval::IntervalType_MAX;
 		else i.last += b;
 
         if ( Interval::IntervalType_MAX == i.first && Interval::IntervalType_MAX == i.last )
@@ -210,7 +213,7 @@ Intervals& Intervals::
         operator &= (const Intervals& b)
 {
 	Intervals rebuild;
-    BOOST_FOREACH (const Interval& r,  b) {
+    foreach (const Interval& r,  b) {
 		Intervals copy = *this;
         copy&=( r );
 		rebuild |= copy;
@@ -369,7 +372,7 @@ std::string Intervals::toString() const
     std::stringstream ss;
     ss << "{" << size() << " interval" << ((size()==1)?"":"s");
 
-    BOOST_FOREACH (const Interval& r, *this)
+    foreach (const Interval& r, *this)
         ss << " " << r.toString();
 
     ss << "}";

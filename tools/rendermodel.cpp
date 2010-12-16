@@ -1,6 +1,8 @@
 #include "rendermodel.h"
 #include "sawe/project.h"
 
+#include "heightmap/renderer.h"
+
 namespace Tools
 {
 
@@ -28,6 +30,26 @@ RenderModel::
     collectionCallback.reset( new Signal::WorkerCallback( &_project->worker, postsink() ));
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
+}
+
+
+RenderModel::
+        ~RenderModel()
+{
+}
+
+
+Signal::pOperation RenderModel::
+        postsink()
+{
+    return collections[0]->postsink();
+}
+
+
+Tfr::FreqAxis RenderModel::
+        display_scale()
+{
+    return collections[0]->display_scale();
 }
 
 } // namespace Tools

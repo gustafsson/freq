@@ -6,10 +6,10 @@
 // stdc
 #include <stdio.h>
 
-__global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area );
+__global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside );
 
 
-void removeRect( float2* wavelet, cudaExtent numElem, float4 area )
+void removeRect( float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
 {
     dim3 block(256,1,1);
     dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height, 1);
@@ -19,10 +19,10 @@ void removeRect( float2* wavelet, cudaExtent numElem, float4 area )
         return;
     }
 
-    kernel_remove_rect<<<grid, block>>>( wavelet, numElem, area );
+    kernel_remove_rect<<<grid, block>>>( wavelet, numElem, area, save_inside );
 }
 
-__global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 area )
+__global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
 {
     const unsigned
             x = blockIdx.x*blockDim.x + threadIdx.x,
@@ -39,11 +39,11 @@ __global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 a
     //if(x > dx - dh && x < dx + dh && fi > dy - dw && fi < dy + dw)
     if(x > area.x && x < area.z && fi > area.y && fi < area.w)
     {
-        f = 1;
+        f = save_inside;
     }
     else
     {
-        f = 0;
+        f = !save_inside;
     }
 
     wavelet[ x + fi*numElem.width ].x *= f;

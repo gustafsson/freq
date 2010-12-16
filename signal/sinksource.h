@@ -48,11 +48,12 @@ public:
 
 
     /// Clear cache
-    void reset();
+    void clear();
 
     /**
       Extract an interval from cache, only guaranteed to return a buffer
-      containing I.first.
+      containing I.first. On a cache miss this method returns a buffer with
+      zeros, of the requested interval 'I' or smaller.
       */
     virtual pBuffer read( const Interval& I );
 
@@ -81,6 +82,7 @@ public:
     Intervals samplesDesc();
 
     /// @see Operation::fetch_invalid_samples()
+    //virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= samplesDesc()&I; }
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
 private:

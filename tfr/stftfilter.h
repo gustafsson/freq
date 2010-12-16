@@ -30,6 +30,9 @@ public:
       Stft.
       */
     void transform( Tfr::pTransform m );
+
+
+    bool exclude_end_block;
 };
 
 } // namespace Tfr

@@ -12,31 +12,29 @@ OperationCache::
 
 }
 
+
 bool OperationCache::
         cacheMiss( const Interval& I )
 {
-    unsigned firstSample = I.first;
-
+    // cached samples doesn't count in samplesDesc if they are marked as invalid
     Intervals cached = _cache.samplesDesc();
-    cached -= _invalid_samples; // cached samples doesn't count if they are marked as invalid
 
-    // read is only required to return firstSample, not the entire interval.
-    // If the entire interval is needed for some other reason, cacheMiss can
-    // be overloaded, such as in CwtFilter.
-    Intervals need(firstSample, firstSample+1);
-    need -= cached;
+    cached -= _cache.fetch_invalid_samples();
 
     // If we need something more, this is a cache miss
-    return (bool)need;
+    return (bool)(Intervals(I) - cached);
 }
+
 
 pBuffer OperationCache::
         read( const Interval& I )
 {
-    if (!cacheMiss( I ))
+    static bool enable_cache = true;
+
+    if (!cacheMiss( I ) && enable_cache)
     {
         // Don't need anything new, return cache
-        pBuffer b = _cache.read( I );
+        pBuffer b = _cache.readFixedLength( I );
         if (D) TaskTimer("%s: cache [%u, %u] got [%u, %u]",
                      __FUNCTION__,
                      I.first,

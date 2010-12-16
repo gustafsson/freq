@@ -19,7 +19,6 @@ public:
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
-    virtual void computeSlope( Tfr::pChunk chunk );
 
     Collection* _collection;
 };
@@ -28,7 +27,12 @@ template<typename FilterKind>
 class BlockFilterImpl: public FilterKind, public BlockFilter
 {
 public:
-    BlockFilterImpl( Collection* collection ) : BlockFilter(collection)  { }
+    BlockFilterImpl( Collection* collection )
+        :
+        BlockFilter(collection)
+    {
+    }
+
     BlockFilterImpl( std::vector<boost::shared_ptr<Collection> > collections )
         :
         BlockFilter(collections[0].get()),
@@ -39,33 +43,49 @@ public:
     /// @overload Signal::Operation::fetch_invalid_samples()
     Signal::Intervals fetch_invalid_samples()
     {
-        FilterKind::_invalid_samples = _collection->invalid_samples();
+        FilterKind::_invalid_samples.clear();
 
-        return Tfr::Filter::fetch_invalid_samples();
+        foreach ( boost::shared_ptr<Collection> c, _collections)
+        {
+            FilterKind::_invalid_samples |= _collection->invalid_samples();
+        }
+
+        Signal::Intervals inv_samples = FilterKind::_invalid_samples;
+        Signal::Intervals r = Tfr::Filter::fetch_invalid_samples();
+        FilterKind::_invalid_samples = inv_samples;
+        return r;
     }
-
 
     virtual void operator()( Tfr::Chunk& chunk )
     {
-        if (_collections.size())
-        {
-            Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
-            BOOST_ASSERT( fs );
+        Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
+        BOOST_ASSERT( fs );
 
-            _collection = _collections[fs->get_channel()].get();
-        }
+        _collection = _collections[fs->get_channel()].get();
 
         BlockFilter::operator()(chunk);
     }
 
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
-    Signal::Operation* affecting_source( const Signal::Interval& ) { return this; }
+    Signal::Operation* affecting_source( const Signal::Interval& I)
+    {
+        if (FilterKind::_invalid_samples & I)
+            return this;
+
+        return FilterKind::_source->affecting_source( I );
+    }
+
+    /**
+        To prevent anyone from optimizing away a read because it's known to
+        result in zeros. BlockFilter wants to be run anyway, even with zeros.
+        */
+    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
 
     void applyFilter( Tfr::pChunk pchunk )
     {
-        FilterKind::applyFilter( pchunk );
+        _collection->update_sample_size(pchunk.get());
 
-        computeSlope( pchunk );
+        FilterKind::applyFilter( pchunk );
     }
 
     /// @overload Signal::Operation::affected_samples()
@@ -77,6 +97,7 @@ public:
 protected:
     std::vector<boost::shared_ptr<Collection> > _collections;
 };
+
 
 class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
@@ -101,8 +122,8 @@ public:
 class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
-    StftToBlock( Collection* collection ) :  BlockFilterImpl<Tfr::StftFilter>(collection) { _try_shortcuts = false; }
-    StftToBlock( std::vector<boost::shared_ptr<Collection> > collections ) :  BlockFilterImpl<Tfr::StftFilter>(collections) { _try_shortcuts = false; }
+    StftToBlock( Collection* collection );
+    StftToBlock( std::vector<boost::shared_ptr<Collection> > collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };

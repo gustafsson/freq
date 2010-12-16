@@ -7,8 +7,8 @@ bool Reference::
         operator==(const Reference &b) const
 {
     return log2_samples_size == b.log2_samples_size
-            && block_index == b.block_index
-            && _collection == b._collection;
+            && block_index == b.block_index;
+            //&& _collection == b._collection;
 }
 
 void Reference::
@@ -168,7 +168,10 @@ std::string Reference::
     Position a, b;
     getArea( a, b );
     std::stringstream ss;
-    ss << "(" << a.time << " " << a.scale << ";" << b.time << " " << b.scale << ")";
+    ss << "(" << a.time << " " << a.scale << ";" << b.time << " " << b.scale << " ! "
+            << log2_samples_size[0] << " " << log2_samples_size[1] << ";"
+            << block_index[0] << " " << block_index[1]
+            << ")";
     return ss.str();
 }
 

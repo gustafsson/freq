@@ -241,22 +241,27 @@ operation              A
 audiofile              source
 */
 
+    unsigned long cacheByteSize();
+    void        printCacheSize();
     void        gc();
 
 
     Tfr::FreqAxis display_scale() { return _display_scale; }
 
+
     /**
-      PostSink fetches data
+      PostSink fetches data. TODO Remove postsink from collection
       */
     Signal::pOperation postsink() { return _postsink; }
     void setPostsink(Signal::pOperation s) { _postsink = s; }
 
+
     /**
-      Update the slope texture used by the vertex shader. Called when height
-      data has been updated. Also called by 'createBlock'.
+      Given a chunk and this->_worker->source(), compute how small and big
+      samples that are meanginful to display.
       */
-    void        computeSlope( pBlock block, unsigned cuda_stream );
+    void        update_sample_size( Tfr::Chunk* inChunk );
+
 
     Signal::Worker*     worker;
 
@@ -329,13 +334,6 @@ private:
       Work of the _updates queue of chunks to merge.
       */
     // void        applyUpdates();
-
-
-    /**
-      Given a chunk and this->_worker->source(), compute how small and big
-      samples that are meanginful to display.
-      */
-    void        update_sample_size( Tfr::Chunk* inChunk );
 
 
     /**

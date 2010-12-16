@@ -104,6 +104,8 @@ void DrawWorking::
 
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,0);
 
     glPushMatrixContext push_model( GL_MODELVIEW );
 
@@ -113,7 +115,10 @@ void DrawWorking::
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    glColor4f(1, 1, 1, 0.5);
+    glEnable(GL_BLEND);
+    glEnable(GL_COLOR_MATERIAL); // need this to use lighting with primitives without texture
+    glEnable(GL_LIGHTING);
+    glColor4f(1, 1, 1, 0.3);
     {
         glPushMatrixContext mc(GL_MODELVIEW);
 
@@ -124,10 +129,12 @@ void DrawWorking::
         computing_rotation += 5;
     }
 
-    glColor4f(0, 0, 1, 0.5);
+    glColor4f(0.3, 0.3, 0.3, 0.3);
     drawRoundRect(0.5, 0.5, 0.5);
-    glColor4f(1, 1, 1, 0.5);
+    glColor4f(1, 1, 1, 0.3);
     drawRoundRect(0.55, 0.55, 0.55);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_COLOR_MATERIAL);
 
     //glDisable(GL_BLEND);
     //glDisable(GL_DEPTH_TEST);

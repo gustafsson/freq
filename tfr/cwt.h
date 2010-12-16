@@ -67,7 +67,7 @@ public:
     /**
       Computes the standard deviation in time and frequency using the tf_resolution value. For a given frequency.
       */
-    float     morlet_sigma_t( float sample_rate, float hz ) const;
+    float     morlet_sigma_samples( float sample_rate, float hz ) const;
     float     morlet_sigma_f( float hz ) const;
 
     /**
@@ -86,6 +86,8 @@ public:
     unsigned  prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
 
     unsigned        find_bin( unsigned j ) const;
+    void            gc() { _fft_many.clear(); }
+    void            resetSingleton();
 private:
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
@@ -98,6 +100,7 @@ private:
     float           _min_hz;
     float           _scales_per_octave;
     float           _tf_resolution;
+    static pTransform static_singleton;
 
     std::map<unsigned, CufftHandleContext> _fft_many;
 

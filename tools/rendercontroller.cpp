@@ -13,6 +13,7 @@
 #include "filters/reassign.h"
 #include "filters/ridge.h"
 #include "heightmap/blockfilter.h"
+#include "heightmap/renderer.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
 #include "graphicsview.h"
@@ -39,17 +40,25 @@ using namespace Ui;
 namespace Tools
 {
 
-class ForAllChannelsOperation: public Signal::Operation
+class ForAllChannelsOperation: public Signal::Sink
 {
 public:
-    ForAllChannelsOperation( Signal::pOperation o )
-    :   Signal::Operation(o)
-    {}
+    ForAllChannelsOperation
+        (
+            Signal::pOperation o,
+            std::vector<boost::shared_ptr<Heightmap::Collection> > collections
+        )
+        :
+            Signal::Sink(),
+            collections_(collections)
+    {
+        _source = o;
+    }
 
 
     virtual Signal::pBuffer read( const Signal::Interval& I )
     {
-		Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(root());
+        Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(root());
         if (0==fs)
             return Signal::Operation::read( I );
 
@@ -57,13 +66,25 @@ public:
         Signal::pBuffer r;
         for (unsigned i=0; i<N; ++i)
         {
-			fs->set_channel( i );
+            fs->set_channel( i );
             r = Signal::Operation::read( I );
         }
+
         return r;
     }
 
     virtual void source(Signal::pOperation v) { _source->source(v); }
+    virtual Signal::Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples(); }
+    virtual bool isFinished() { return false; }
+
+    virtual void invalidate_samples(const Signal::Intervals& I)
+    {
+        foreach(boost::shared_ptr<Heightmap::Collection> c, collections_)
+            c->invalidate_samples(I);
+    }
+
+private:
+    std::vector<boost::shared_ptr<Heightmap::Collection> > collections_;
 };
 
 
@@ -164,8 +185,8 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
 
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
-        collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
+
     view->userinput_update();
 }
 
@@ -180,14 +201,11 @@ Signal::PostSink* RenderController::
 
     std::vector<Signal::pOperation> v;
     Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( new ForAllChannelsOperation(blockop));
+    Signal::pOperation channelop( new ForAllChannelsOperation(blockop, model()->collections));
     v.push_back( channelop );
     ps->sinks(v);
 
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
-    {
-        collection->invalidate_samples(Signal::Intervals::Intervals_ALL);
-    }
+    ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
 
     view->userinput_update();
 
@@ -291,6 +309,8 @@ void RenderController::
         connect(ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleHz(bool)));
     }
 
+    connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
+
 
     // ComboBoxAction* color
     {   color = new ComboBoxAction();
@@ -303,8 +323,12 @@ void RenderController::
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
         connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
+        color->setCheckedAction(ui->actionSet_colorscale);
     }
 
+    // QAction *actionSet_heightlines
+    toolbar_render->addAction(ui->actionSet_heightlines);
+    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
     // ComboBoxAction* transform
     {   transform = new ComboBoxAction();
@@ -350,11 +374,6 @@ void RenderController::
     }
 
 
-    // QAction *actionSet_heightlines
-    toolbar_render->addAction(ui->actionSet_heightlines);
-    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
-
-
     // Update view whenever worker is invalidated
     Support::SinkSignalProxy* proxy;
     _updateViewSink.reset( proxy = new Support::SinkSignalProxy() );
@@ -365,7 +384,6 @@ void RenderController::
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
-    connect(view, SIGNAL(postPaint()), SLOT(frameTick()));
 
     // Create the OpenGL rendering context early. Because we want to create the
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
@@ -399,28 +417,6 @@ void RenderController::
     // context
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
         collection->reset();
-}
-
-void RenderController::
-        frameTick()
-{
-    QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
-    if (_invalidRange)
-    {
-        Signal::Intervals blur = _invalidRange;
-        float fs = model()->project()->worker.source()->sample_rate();
-        unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
-        blur <<= fuzzy;
-        _invalidRange |= blur;
-
-        blur = _invalidRange;
-        blur >>= fuzzy;
-        _invalidRange |= blur;
-
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
-            collection->invalidate_samples( _invalidRange );
-        _invalidRange = Signal::Intervals();
-    }
 }
 
 } // namespace Tools

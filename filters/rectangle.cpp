@@ -31,7 +31,8 @@ void Rectangle::operator()( Chunk& chunk) {
 
     ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
-                  area );
+                  area,
+                  _save_inside);
 
     TIME_FILTER CudaException_ThreadSynchronize();
 }
@@ -54,11 +55,11 @@ Signal::Intervals Rectangle::
 Signal::Intervals Rectangle::
         outside_samples()
 {
-    float FS = sample_rate();
+    double FS = sample_rate();
 
-    unsigned
-        start_time = (unsigned)(std::max(0.f, _t1)*FS),
-        end_time = (unsigned)(std::max(0.f, _t2)*FS);
+    unsigned long
+        start_time = (unsigned long)(std::max(0.f, _t1)*FS),
+        end_time = (unsigned long)(std::max(0.f, _t2)*FS);
 
     Signal::Intervals sid = Signal::Intervals::Intervals_ALL;
     if (start_time < end_time)

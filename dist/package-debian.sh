@@ -14,7 +14,7 @@ else
 	echo "         0.8.26"
 	echo "         0.8.26_unstable-snapshot"
 	echo
-	echo "     User 'def' as version_string to produce default format."
+	echo "     Or use 'def' as version_string to produce default format."
 	echo
 	echo "Run this script from the sonic/sonicawe/dist directory"
     exit
@@ -23,7 +23,7 @@ fi
 echo $version
 
 if [ $version == "def" ] ; then
-	version="$(date +0.%m.%d-unstable-snapshot)"
+	version="$(date +0.%m.%d_unstable-snapshot)"
 fi
 
 package=dist/package-debian~

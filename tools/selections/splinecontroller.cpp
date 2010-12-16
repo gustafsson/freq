@@ -86,7 +86,7 @@ namespace Tools { namespace Selections
 
             Heightmap::Position click;
             if (Ui::MouseControl::planePos(
-                    e->x(), height() - e->y(),
+                    e->x(), height() - 1 - e->y(),
 					click.time, click.scale, r.model->xscale))
             {
                 if (!model()->drawing)
@@ -122,7 +122,7 @@ namespace Tools { namespace Selections
 
             Heightmap::Position click;
             if (Ui::MouseControl::planePos(
-                    e->x(), height() - e->y(),
+                    e->x(), height() - 1 - e->y(),
 					click.time, click.scale, r.model->xscale))
             {
                 if (!model()->drawing)
@@ -146,6 +146,11 @@ namespace Tools { namespace Selections
     void SplineController::
             changeEvent ( QEvent * event )
     {
+        if (event->type() & QEvent::ParentChange)
+        {
+            view_->visible = 0!=parent();
+        }
+
         if (event->type() & QEvent::EnabledChange)
         {
             view_->enabled = isEnabled();
@@ -157,10 +162,11 @@ namespace Tools { namespace Selections
     void SplineController::
             enableSplineSelection(bool active)
     {
-        selection_controller_->setCurrentTool( this, active );
-
         if (active)
+        {
+            selection_controller_->setCurrentTool( this, active );
             selection_controller_->setCurrentSelection( model()->filter );
+        }
     }
 
 }} // namespace Tools::Selections

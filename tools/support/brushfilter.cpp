@@ -1,8 +1,7 @@
 #include "brushfilter.h"
 #include "brushfilter.cu.h"
 
-#include <boost/foreach.hpp>
-
+ 
 namespace Tools {
 namespace Support {
 
@@ -63,7 +62,7 @@ Signal::Intervals MultiplyBrush::
 
 
 
-    BOOST_FOREACH(BrushImages::value_type const& v, imgs)
+    foreach(BrushImages::value_type const& v, imgs)
     {
         r |= v.first.getInterval();
     }
@@ -82,7 +81,7 @@ void MultiplyBrush::
     //cudaMemset( chunk.transform_data->getCudaGlobal().ptr(), 0,
     //            chunk.transform_data->getSizeInBytes1D() );
 
-    BOOST_FOREACH(BrushImages::value_type const& v, imgs)
+    foreach(BrushImages::value_type const& v, imgs)
     {
         Heightmap::Position a, b;
         v.first.getArea(a, b);

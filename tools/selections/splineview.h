@@ -18,7 +18,7 @@ public:
 
     void drawSelectionSpline();
 
-    bool enabled;
+    bool visible, enabled;
 
 public slots:
     /// Connected in SquareController

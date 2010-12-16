@@ -7,8 +7,7 @@ typedef __int64 __int64_t;
 #endif
 
 #include <sndfile.hh> // for writing various formats
-#include <boost/foreach.hpp>
-
+ 
 #include <Statistics.h>
 
 #define TIME_WRITEWAV
@@ -35,7 +34,7 @@ void WriteWav::
 {
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", (long unsigned)buffer->sample_offset, (long unsigned)(buffer->sample_offset + buffer->number_of_samples()));
 
-    Statistics<float>(buffer->waveform_data());
+    //Statistics<float>(buffer->waveform_data());
     _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
 
     if (_data.isFinished())
@@ -49,7 +48,7 @@ void WriteWav::
     if (!_data.empty())
         writeToDisk();
 
-    _data.reset();
+    _data.clear();
 }
 
 

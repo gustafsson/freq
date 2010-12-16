@@ -32,9 +32,9 @@ CommentController::
 
 
 void CommentController::
-        createView( ToolModel* model, Sawe::Project* p, RenderView* render_view )
+        createView( ToolModel* model, Sawe::Project* /*p*/, RenderView* render_view )
 {
-	CommentModel* cmodel = dynamic_cast<CommentModel*>(model);
+    CommentModel* cmodel = dynamic_cast<CommentModel*>(model);
     if (0 == cmodel)
         return;
 
@@ -62,6 +62,26 @@ void CommentController::
 }
 
 
+void CommentController::
+        setComment( Heightmap::Position p, std::string text, CommentView** viewp )
+{
+    CommentView* myview = 0;
+    if (!viewp)
+        viewp = &myview;
+    CommentView*& view = *viewp;
+
+    if (!view)
+    {
+        view = createNewComment();
+
+        view->model->freezed_position = true;
+    }
+
+    view->model->pos = p;
+    view->setHtml( text );
+}
+
+
 CommentView* CommentController::
         createNewComment()
 {
@@ -69,7 +89,7 @@ CommentView* CommentController::
     ToolModelP modelp(model);
     view_->model->project()->tools().toolModels.insert( modelp );
 
-	model->pos.time = -FLT_MAX;//view_->model->_qx;
+    model->pos.time = -FLT_MAX;//view_->model->_qx;
     model->pos.scale = view_->model->_qz;
 
     createView(modelp.get(), view_->model->project(), view_ );

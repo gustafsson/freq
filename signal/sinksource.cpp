@@ -1,6 +1,5 @@
 #include "sinksource.h"
 
-#include <boost/foreach.hpp>
 #include <QMutexLocker>
 #include <sstream>
 #include <neat_math.h>
@@ -19,8 +18,9 @@ SinkSource::
 
 SinkSource::
         SinkSource( const SinkSource& b)
-		:
-	_cache( b._cache )
+            :
+        Sink(b),
+        _cache( b._cache )
 {
 }
 
@@ -28,8 +28,9 @@ SinkSource::
 SinkSource& SinkSource::
         operator=( const SinkSource& b)
 {
-	_cache = b._cache;
-	return *this;
+    _cache = b._cache;
+    _invalid_samples = b._invalid_samples;
+    return *this;
 }
 
 
@@ -40,7 +41,7 @@ void SinkSource::
         QMutexLocker l(&_mutex);
 
         // Simply remove previous overlapping buffer, don't bother merging.
-        BOOST_FOREACH( pBuffer& s, _cache) {
+        foreach( pBuffer& s, _cache) {
         {
             if (!s)
                 s = b;
@@ -65,7 +66,7 @@ void SinkSource::
     BufferSource bs( buffer );
 
     Intervals I = expected & buffer->getInterval();
-    BOOST_FOREACH( const Interval& i, I )
+    foreach( const Interval& i, I )
     {
         pBuffer s = bs.readFixedLength( i );
         put( s );
@@ -97,7 +98,7 @@ void SinkSource::
     Intervals sid = samplesDesc();
 	std::vector<pBuffer> new_cache;
 
-    BOOST_FOREACH( Interval i, sid )
+    foreach( Interval i, sid )
 	{
         for (unsigned L=0; i.first < i.last; i.first+=L)
 		{
@@ -138,28 +139,28 @@ void SinkSource::
     // REMOVE caches that become outdated by this new buffer 'b'
     for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        const Buffer& s = **itr;
+        pBuffer s = *itr;
 
-        Intervals toKeep = s.getInterval();
+        Intervals toKeep = s->getInterval();
         toKeep -= b.getInterval();
 
-        Intervals toRemove = s.getInterval();
+        Intervals toRemove = s->getInterval();
         toRemove &= b.getInterval();
 
         if (toRemove)
         {
-            if(D) ss << " -" << s.getInterval().toString();
+            if(D) ss << " -" << s->getInterval().toString();
 
             // '_cache' is a vector but itr is most often the last element of the vector
             // thus making this operation inexpensive.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            BOOST_FOREACH( Interval i, toKeep )
+            foreach( Interval i, toKeep )
             {
                 if(D) ss << " +" << i.toString();
 
                 pBuffer n( new Buffer( i.first, i.count(), FS));
-                *n |= s;
+                *n |= *s;
                 itr = _cache.insert(itr, n );
                 itr++; // Move past inserted element
             }
@@ -188,7 +189,7 @@ void SinkSource::
 
 
 void SinkSource::
-        reset()
+        clear()
 {
     QMutexLocker l(&_cache_mutex);
     _cache.clear();
@@ -199,10 +200,12 @@ void SinkSource::
 pBuffer SinkSource::
         read( const Interval& I )
 {
+    Interval not_found = I;
+
     {
         QMutexLocker l(&_cache_mutex);
 
-        BOOST_FOREACH( const pBuffer& s, _cache) {
+        foreach( const pBuffer& s, _cache) {
             if (s->sample_offset <= I.first && s->sample_offset + s->number_of_samples() > I.first )
             {
                 if(D) TaskTimer("%s: sinksource [%u, %u] got [%u, %u]",
@@ -215,11 +218,13 @@ pBuffer SinkSource::
 
                 return s;
             }
+            if (s->sample_offset > I.first && s->sample_offset<not_found.last)
+                not_found.last = s->sample_offset;
         }
     }
 
-    //TaskTimer(TaskTimer::LogVerbose, "SILENT!").suppressTiming();
-    return zeros(I);
+    // Return silence
+    return zeros(not_found);
 }
 
 
@@ -229,7 +234,7 @@ float SinkSource::
     QMutexLocker l(&_cache_mutex);
 
     if (_cache.empty())
-        return 0;
+        return 44100;
 
     return _cache.front()->sample_rate;
 }
@@ -266,7 +271,7 @@ Intervals SinkSource::
 
     Intervals sid;
 
-    BOOST_FOREACH( const pBuffer& s, _cache) {
+    foreach( const pBuffer& s, _cache) {
         sid |= s->getInterval();
     }
 

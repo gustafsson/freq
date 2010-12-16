@@ -1,10 +1,12 @@
 #include "splinefilter.h"
 #include "splinefilter.cu.h"
 
-#include <boost/foreach.hpp>
-
 // gpumisc
 #include <CudaException.h>
+
+// boost
+#include <boost/foreach.hpp>
+#define foreach BOOST_FOREACH
 
 using namespace Tfr;
 
@@ -85,7 +87,7 @@ Signal::Intervals SplineFilter::
         start_time = (unsigned)(std::max(0.f, v.front().t)*FS),
         end_time = (unsigned)(std::max(0.f, v.front().t)*FS);
 
-    BOOST_FOREACH( SplineVertex const& p, v )
+    foreach( SplineVertex const& p, v )
     {
         start_time = std::min(start_time, std::max((unsigned)0, (unsigned)(p.t*FS)));
         end_time = std::max(end_time, (unsigned)(p.t*FS));

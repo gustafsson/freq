@@ -51,6 +51,8 @@ public:
     ~Project();
 
     /**
+      TODO this entire comment is out of date
+
       All sources can be reached from one head Source: worker->source().
 
       For a source to be writable, there must exists a template specialization to Hdf5Output::add.
@@ -61,8 +63,22 @@ public:
       */
     Signal::Worker worker;
 
+
+    /**
+      Current work point, compare HEAD in a git repo which points to the point
+      in history that current edits are based upon.
+      */
     Signal::pOperation head_source() const { return worker.source(); }
     void head_source(Signal::pOperation s) { worker.source(s); }
+
+
+    /**
+      The root of the operation tree. The source audio files are leaves in the
+      tree. New things are appended by creating a root of the root, thus making
+      the tree "higher".
+      */
+    Signal::pOperation root_source() const { return root_source_; }
+    void root_source(Signal::pOperation s) { root_source_ = s; head_source(s); }
 
 
     /**
@@ -112,6 +128,8 @@ private:
     Project(); // used by deserialization
     void createMainWindow();
 
+    Signal::pOperation root_source_;
+
     std::string project_file_name;
     boost::scoped_ptr<Tools::ToolFactory> _tools;
     // MainWindow owns all other widgets together with their ToolFactory
@@ -123,7 +141,9 @@ private:
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {
         Signal::pOperation head = head_source();
-        TaskTimer("*head is: %s", vartype(*head).c_str()).suppressTiming();
+        TaskInfo("head tree:\n%s", head->toString().c_str());
+
+        ar & BOOST_SERIALIZATION_NVP(root_source_);
         ar & BOOST_SERIALIZATION_NVP(head);
 
         QByteArray mainwindowState = _mainWindow->saveState(/* version */);
@@ -133,6 +153,7 @@ private:
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
 		Signal::pOperation head;
+        ar & BOOST_SERIALIZATION_NVP(root_source_);
         ar & BOOST_SERIALIZATION_NVP(head);
         head_source(head);
 

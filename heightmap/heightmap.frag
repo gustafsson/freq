@@ -56,14 +56,17 @@ vec4 getWavelengthColorCompute( float wavelengthScalar ) {
 float getHeightLineColor(float height)
 {
    float value = height - floor(height);
-   value = 1.0 - value * value * value * value + 0.1;
+   return value > 0.1 ? 1 : 0.75;
+//   value = 1.0 - value * value * value * value + 0.1;
    
    //float value2 = height*10.0 - floor(height*10.0);
    //value2 = 1.0 - value2 * value2 * value2 * value2 + 0.1;
    
    //value2 = clamp(value2 + max(0.0 , eyeSpacePos.z - 1.0)/3.0, 0.0, 1.0);
    //value = value * (0.5 + value2 * 0.5);
-   return clamp(sqrt(value), 0.0, 1.0);
+
+//   return clamp(sqrt(value), 0.0, 1.0);
+//   return value;
 }
 
 void main()
@@ -95,30 +98,30 @@ void main()
 //    gl_FragColor = waterColor*diffuse + skyColor*fresnel;
 //    gl_FragColor = vec4(pow(1.0-v,5.0));
 //    gl_FragColor = setWavelengthColor( v );
-    float f = 1.0-pow(1.0-clamp(v, 0.0, 1.0),5.0);
     vec4 curveColor;
-    float x;
+    //float f = 1.0-pow(1.0-clamp(v, 0.0, 1.0),5.0);
+    float f = v;
 
-    switch (colorMode) {
+   switch (colorMode) {
         case 0: curveColor = getWavelengthColor( f );
-                x = 1.0-(1.0-f)*(1.0-f)*(1.0-f);
-                curveColor = curveColor*((diffuse+facing+2.0)*.25); // + vec4(fresnel);
-                curveColor = mix(vec4( 1,1,1,0), min(vec4(0.7),curveColor), x);
+                f = 1.0 - (1.0-f)*(1.0-f)*(1.0-f);
         break;
-        case 1: f = 1.0-f;
-                curveColor = vec4( f, f, f, 0 );
-                x = 1.0-f;
+        case 1: curveColor = 0;
+                f = 0.7*f;
         break;
-        case 2: curveColor = vec4( 1.0 - fixedColor.x*f, 1.0 - fixedColor.y*f, 1.0 - fixedColor.z*f, 0 );
-                f = 1.0-f;
-                x = 1.0-f;
+        case 2: curveColor = fixedColor;
         break;
     }
 
+    float shadow = min(0.7, ((diffuse+facing+2.0)*.25)); // + vec4(fresnel);
+    curveColor = curveColor*shadow;
+    curveColor = mix(1, curveColor, f);
+
     if (0!=heightLines)
     {
-        float heightLine = getHeightLineColor( log(vertex_height+ 0.1) );
-        curveColor = vec4(heightLine, heightLine, heightLine, 1) * curveColor;
+        float heightLine1 = getHeightLineColor( vertex_height * 20);
+        float heightLine2 = getHeightLineColor( vertex_height * 5);
+        curveColor = heightLine1 *heightLine2*heightLine2* curveColor;
     }
 
     curveColor.w = 1.0; //-saturate(fresnel);

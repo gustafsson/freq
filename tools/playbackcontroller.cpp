@@ -69,19 +69,16 @@ void PlaybackController::
     {
         model()->adapter_playback.reset();
         model()->adapter_playback.reset( new Adapters::Playback( _view->model->playback_device ));
+
         std::vector<Signal::pOperation> sinks;
+        postsink_operations->sinks( sinks );
         sinks.push_back( model()->adapter_playback );
         sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
+
+        postsink_operations->filter( Signal::pOperation() );
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
-        Signal::Intervals a = filter->affected_samples();
-
-        TaskTimer("receivePlaySound a = %s", a.toString().c_str()).suppressTiming();
-
-        a -= filter->zeroed_samples();
-
-        TaskTimer("receivePlaySound a = %s", a.toString().c_str()).suppressTiming();
-        postsink_operations->invalidate_samples( a );
+        postsink_operations->invalidate_samples(Signal::Intervals::Intervals_ALL - filter->zeroed_samples());
     }
     else
     {

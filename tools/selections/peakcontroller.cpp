@@ -1,13 +1,16 @@
 #include "peakcontroller.h"
 #include "peakmodel.h"
 
-// Sonic AWE
+// Sonic AWE tools
 #include "tools/selectioncontroller.h"
 #include "support/peakfilter.h"
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "tools/renderview.h"
+
+// Sonic AWE
+#include "heightmap/renderer.h"
 
 // gpumisc
 #include <TaskTimer.h>
@@ -94,7 +97,7 @@ namespace Tools { namespace Selections
             r.makeCurrent();
 
             GLdouble p[2];
-            if (Ui::MouseControl::worldPos( e->x(), height() - e->y(), p[0], p[1], r.model->xscale))
+            if (Ui::MouseControl::worldPos( e->x(), height() - 1 - e->y(), p[0], p[1], r.model->xscale))
             {
                 Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
                 model()->findAddPeak( ref, Heightmap::Position( p[0], p[1]) );
@@ -108,6 +111,11 @@ namespace Tools { namespace Selections
     void PeakController::
             changeEvent ( QEvent * event )
     {
+        if (event->type() & QEvent::ParentChange)
+        {
+            view_->visible = 0!=parent();
+        }
+
         if (event->type() & QEvent::EnabledChange)
         {
             view_->enabled = isEnabled();
@@ -119,10 +127,11 @@ namespace Tools { namespace Selections
     void PeakController::
             enablePeakSelection(bool active)
     {
-        selection_controller_->setCurrentTool( this, active );
-
         if (active)
+        {
             selection_controller_->setCurrentSelection( model()->spline_model.filter );
+            selection_controller_->setCurrentTool( this, active );
+        }
     }
 
 }} // namespace Tools::Selections

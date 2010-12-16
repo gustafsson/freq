@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <boost/foreach.hpp>
 #include <QMutexLocker>
 #include <QMessageBox>
 
@@ -151,7 +150,9 @@ void Playback::
             // start over
             streamPlayback->start();
         }
-        TIME_PLAYBACK TaskTimer("Is playing").suppressTiming();
+        if (streamPlayback->isActive()) {
+            TIME_PLAYBACK TaskInfo("Is playing");
+        }
         return;
     }
 
@@ -169,7 +170,7 @@ void Playback::
             streamPlayback->stop();
     }
 
-    _data.reset();
+    _data.clear();
     _playback_itr = 0;
     _max_found = 1;
     _min_found = -1;
@@ -179,8 +180,7 @@ void Playback::
 bool Playback::
         isFinished()
 {
-    return false;
-//    return _data.isFinished() && isStopped();
+    return _data.isFinished() && isStopped();
 }
 
 
@@ -237,7 +237,7 @@ void Playback::
         QMessageBox::warning( 0,
                      "Can't play sound",
                      x.what() );
-        _data.reset();
+        _data.clear();
     }
 }
 
@@ -246,6 +246,13 @@ bool Playback::
         isStopped()
 {
     return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
+}
+
+
+bool Playback::
+        hasReachedEnd()
+{
+    return (_data.first_buffer()->sample_offset + _data.number_of_samples())/sample_rate() < time();
 }
 
 
@@ -307,7 +314,7 @@ void Playback::
 
 
 void Playback::
-        saturate( float* p, unsigned N )
+        normalize( float* p, unsigned N )
 {
     for (unsigned j=0; j<N; ++j)
     {
@@ -335,18 +342,18 @@ int Playback::
     }
 
     Signal::pBuffer b = _data.readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
-    memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
-    saturate( buffer, framesPerBuffer );
+    ::memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
+    normalize( buffer, framesPerBuffer );
     _playback_itr += framesPerBuffer;
 
     if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + 10ul*2024/*framesPerBuffer*/) < _playback_itr ) {
-        TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() ).suppressTiming();
+        TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
         return paComplete;
     } else {
         if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr + framesPerBuffer) {
-            TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer ).suppressTiming();
+            TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer );
         } else {
-            TIME_PLAYBACK TaskTimer("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer ).suppressTiming();
+            TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer );
         }
     }
 

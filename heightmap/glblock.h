@@ -12,7 +12,7 @@
 #include <cuda_gl_interop.h>
 #include <GpuCpuData.h>
 #include <stdio.h>
-#include <mappedvbo.h>
+#include "mappedvbo.h"
 
 
 namespace Heightmap {
@@ -22,14 +22,13 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
 class GlBlock
 {
 public:
-    GlBlock( Collection* collection );
+    GlBlock( Collection* collection, float width, float height );
     ~GlBlock();
 
     typedef boost::shared_ptr< MappedVbo<float> > pHeight;
     typedef boost::shared_ptr< MappedVbo<float2> > pSlope;
 
     pHeight height();
-    pSlope slope();
 
     /**
         'unmap' releases copies of pHeight and pSlope held by GlBlock and
@@ -42,10 +41,22 @@ public:
       */
     void unmap();
 
+    void delete_texture();
+
     void draw( );
     void draw_flat( );
     void draw_directMode( );
+
 private:
+    pSlope slope();
+    void create_texture( bool create_slope );
+    void update_texture( bool create_slope );
+    /**
+      Update the slope texture used by the vertex shader. Called when height
+      data has been updated.
+      */
+    void computeSlope( unsigned /*cuda_stream */);
+
     Collection* _collection;
 
     pVbo _height;
@@ -56,6 +67,9 @@ private:
 
     unsigned _tex_height;
     unsigned _tex_slope;
+
+    float _world_width, _world_height;
+    bool _got_new_height_data;
 };
 
 typedef boost::shared_ptr<GlBlock> pGlBlock;

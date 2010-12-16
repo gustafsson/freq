@@ -16,7 +16,8 @@ namespace Tfr {
 
 StftFilter::
         StftFilter(pOperation source, pTransform t)
-:   Filter(source)
+:   Filter(source),
+    exclude_end_block(false)
 {
     if (!t)
         t = Stft::SingletonP();
@@ -37,16 +38,26 @@ ChunkAndInverse StftFilter::
     // interpolations so that there won't be any edges between blocks
 
     unsigned first_chunk = 0,
-             last_chunk = (I.last + 1.5*chunk_size)/chunk_size;
+             last_chunk = (I.last + 2.5*chunk_size)/chunk_size;
 
     if (I.first >= 1.5*chunk_size)
         first_chunk = (I.first - 1.5*chunk_size)/chunk_size;
 
     ChunkAndInverse ci;
 
-    ci.inverse = _source->readFixedLength( Interval(
-            first_chunk*chunk_size,
-            last_chunk*chunk_size) );
+    Interval chunk_interval (
+                first_chunk*chunk_size,
+                last_chunk*chunk_size);
+    if (exclude_end_block)
+    {
+        if (chunk_interval.last>number_of_samples())
+        {
+            last_chunk = number_of_samples()/chunk_size;
+            if (first_chunk<last_chunk)
+                chunk_interval.last = last_chunk*chunk_size;
+        }
+    }
+    ci.inverse = _source->readFixedLength( chunk_interval );
 
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );

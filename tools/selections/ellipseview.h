@@ -17,7 +17,7 @@ public:
 
     void drawSelectionCircle();
 
-    bool enabled;
+    bool visible, enabled;
 
 public slots:
     /// Connected in EllipseController

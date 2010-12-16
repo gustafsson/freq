@@ -103,8 +103,9 @@ underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
-class Worker:public QThread
+class Worker : public QThread
 {
+    Q_OBJECT
 public:
     Worker(pOperation source=pOperation());
     ~Worker();
@@ -165,8 +166,8 @@ public:
     /**
       Get/set requested number of frames per second.
       */
-    unsigned            requested_fps() const;
-    void                requested_fps(unsigned);
+    float               requested_fps() const;
+    void                requested_fps(float);
 
 	/**
 	  Throws an std::exception if one has been caught by run()
@@ -174,12 +175,15 @@ public:
 	void				checkForErrors();
 
 
+    void                invalidate_post_sink(Intervals I);
     /**
       Get all callbacks that data are sent to after each workOne.
 
       TODO Shouldn't be exposed like this.
       */
-    PostSink* postSink();
+    //PostSink* postSink();
+signals:
+    void source_changed();
 
 private:
     friend class WorkerCallback;
@@ -225,6 +229,7 @@ private:
       @see source
       */
     Signal::pOperation _source;
+    Signal::pOperation _cache;
 
     /**
       Thread safety for _todo_list.
@@ -235,7 +240,7 @@ private:
     /**
       @see todo_list
       */
-    Intervals _todo_list;
+    Intervals _todo_list, _cheat_work;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.
@@ -249,7 +254,12 @@ private:
     /**
       _samples_per_chunk is adjusted up and down to reach this given framerate. Default value: requested_fps=30.
       */
-    unsigned _requested_fps;
+    float _requested_fps;
+
+    /**
+      lowest fps allowed, defaults to 0.5
+      */
+    float _min_fps;
 
 	/**
       Worker::run is intended to be executed by a separate worker thread. To

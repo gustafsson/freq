@@ -17,6 +17,7 @@ namespace Tools { namespace Selections
 
 PeakView::PeakView(PeakModel* model, Signal::Worker* worker)
     :
+    visible(true),
     enabled(false),
     spline_view( &model->spline_model, worker ),
     model_(model),
@@ -35,7 +36,8 @@ PeakView::
 void PeakView::
         draw()
 {
-    drawSelectionPeak();
+    if (visible)
+        drawSelectionPeak();
 }
 
 

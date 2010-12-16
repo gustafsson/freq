@@ -117,6 +117,7 @@ bool Application::
 
     try {
         v = QApplication::notify(receiver,e);
+    //} catch (const exception &x) {
     } catch (const std::invalid_argument &x) {
         const char* what = x.what();
         if (1 == QMessageBox::warning( 0,

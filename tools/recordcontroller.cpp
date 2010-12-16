@@ -9,6 +9,7 @@
 #include "adapters/microphonerecorder.h"
 #include "support/sinksignalproxy.h"
 #include "tfr/cwt.h"
+#include "heightmap/collection.h"
 
 #include <TaskTimer.h>
 #include <demangle.h>
@@ -20,6 +21,7 @@ namespace Tools
 RecordController::
         RecordController( RecordView* view, RenderView* render_view )
             :   view_ ( view ),
+                destroyed_ ( false ),
                 render_view_ ( render_view )
 {
     setupGui();
@@ -29,14 +31,20 @@ RecordController::
 RecordController::
         ~RecordController()
 {
-    stopRecording();
+    TaskTimer("~RecordController").suppressTiming();
+    destroying();
 }
 
 
 void RecordController::
-        stopRecording()
+        destroying()
 {
+    TaskTimer("RecordController::destroying()").suppressTiming();
+    if (destroyed_)
+        return;
+
     receiveRecord(false);
+    destroyed_ = true;
 }
 
 void RecordController::
@@ -69,6 +77,9 @@ void RecordController::
 void RecordController::
         recievedInvalidSamples( Signal::Intervals I )
 {
+    if ( destroyed_ )
+        return;
+
     TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
 
     float fs = model()->project->head_source()->sample_rate();
@@ -76,12 +87,7 @@ void RecordController::
 
     Signal::Intervals v = ((I << s) | (I >> s)).coveredInterval();
 
-    model()->project->worker.postSink()->invalidate_samples( v );
-
-    // TODO invalidate collection samples through worker
-
-    foreach (const boost::shared_ptr<Heightmap::Collection>& collection, render_view_->model->collections)
-        collection->invalidate_samples( v );
+    model()->project->worker.invalidate_post_sink( v );
 
     render_view_->userinput_update();
 }
@@ -95,7 +101,7 @@ void RecordController::
     connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
 
     //connect(render_view_, SIGNAL(destroying()), SLOT(close()));
-    connect(render_view_, SIGNAL(destroying()), SLOT(stopRecording()));
+    connect(render_view_, SIGNAL(destroying()), SLOT(destroying()));
 
     if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))
     {

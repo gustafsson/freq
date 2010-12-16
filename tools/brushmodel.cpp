@@ -45,7 +45,7 @@ Signal::Interval BrushModel::
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     float fs = filter()->sample_rate();
     float hz = cwt.compute_frequency2( fs, pos.scale );
-    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_t( fs, hz );
+    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_samples( fs, hz );
     float deltascale = cwt.sigma() / cwt.nScales(fs);
     float deltat = deltasample/fs;
     deltat *= 10*xscale_;
@@ -125,11 +125,13 @@ Signal::Interval BrushModel::
                    gauss );
 
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
-    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
-    ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
-                   blockData->getCudaGlobal(),
-                   gauss );
-    ref.collection()->computeSlope( block, 0 );
+    if (block)
+    {
+        GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+        ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
+                       blockData->getCudaGlobal(),
+                       gauss );
+    }
 
     return ref.getInterval();
 }

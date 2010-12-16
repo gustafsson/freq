@@ -18,6 +18,20 @@ public:
     }
 };
 
+class ConverterLogAmplitude
+{
+public:
+    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    {
+        // slightly faster than sqrtf(f) unless '--use_fast_math' is specified
+        // to nvcc
+        // return f*rsqrtf(f);
+        //return log2f(0.01f+sqrtf(v.x*v.x + v.y*v.y)) - log2f(0.01f);
+        return 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+        //return (sqrtf(v.x*v.x + v.y*v.y));
+    }
+};
+
 #define M_PIf ((float)M_PI)
 
 class WeightFetcher
@@ -26,7 +40,7 @@ public:
     template<typename Reader>
     __device__ float operator()( float2 const& p, Reader& reader )
     {
-        float v = InterpolateFetcher<float, ConverterAmplitude>()( p, reader );
+        float v = InterpolateFetcher<float, ConverterLogAmplitude>()( p, reader );
         float phase1 = InterpolateFetcher<float, ConverterPhase>()( p, reader );
         float phase2 = InterpolateFetcher<float, ConverterPhase>()( make_float2(p.x, p.y+1), reader );
         float phasediff = phase2 - phase1;
@@ -68,7 +82,7 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
         break;
     }
     case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
-        resample2d<float2, float, ConverterAmplitude, AssignOperator<float> >(
+        resample2d<float2, float, ConverterLogAmplitude, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
@@ -103,7 +117,7 @@ public:
         float hz = outputAxis.getFrequency( p.x );
         q.x = inputAxis.getFrequencyScalar( hz );
         q.y = p.y;
-        float r = InterpolateFetcher<float, ConverterAmplitude>()( q, reader );
+        float r = InterpolateFetcher<float, ConverterLogAmplitude>()( q, reader );
         return r*factor;
     }
 
@@ -134,7 +148,7 @@ void resampleStft( cudaPitchedPtrType<float2> input,
     StftFetcher fetcher;
     fetcher.inputAxis = inputAxis;
     fetcher.outputAxis = outputAxis;
-    fetcher.factor = 1.f/input.getNumberOfElements().x; // normalizes fft
+    fetcher.factor = 0.22; // makes it roughly equal height to Cwt
 
     resample2d_fetcher<float>(
                 input,
