@@ -14,5 +14,9 @@ void simple_resample2d_2(
 void simple_operate(
         cudaPitchedPtrType<float2> data
         );
+void coordinatetest_resample2d(
+        cudaPitchedPtrType<float2> input,
+        cudaPitchedPtrType<float> output
+        );
 
 #endif // RESAMPLETEST_CU_H
