@@ -453,8 +453,9 @@ void Renderer::beginVboRendering()
 
     glUseProgram(_shader_prog);
 
+    // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniHeightLines, uniYScale;
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniHeightLines, uniYScale, uniScaleTex, uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -476,6 +477,16 @@ void Renderer::beginVboRendering()
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
+
+        float
+                w = collection->samples_per_block(),
+                h = collection->scales_per_block();
+
+        uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
+        glUniform2f(uniScaleTex, (w-1.f)/w, (h-1.f)/h);
+
+        uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
+        glUniform2f(uniOffsTex, .5f/w, .5f/h);
     }
 
     glActiveTexture(GL_TEXTURE2);

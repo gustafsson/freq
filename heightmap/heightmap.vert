@@ -12,10 +12,14 @@ const vec2  size = vec2(128.0, 256.0);
 uniform sampler2D tex;
 uniform sampler2D tex_slope;
 uniform float yScale;
+uniform vec2 scale_tex;
+uniform vec2 offset_tex;
 
 void main()
 {
     gl_TexCoord[0].xy= gl_Vertex.xz;
+    // We want linear interpolation all the way out to the edge
+    gl_TexCoord[0].xy = gl_TexCoord[0].xy*scale_tex+offset_tex;
     float height     = texture2D(tex, gl_TexCoord[0].xy).x;
     vec2 slope       = texture2D(tex_slope, gl_TexCoord[0].xy).xw;
 
