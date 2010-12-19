@@ -74,6 +74,12 @@ private:
     bool _initialized;
     bool _draw_flat;
     float _redundancy;
+    bool _invalid_frustum;
+    GLvector projectionPlane, projectionNormal, // for clipFrustum
+        rightPlane, rightNormal,
+        leftPlane, leftNormal,
+        topPlane, topNormal,
+        bottomPlane, bottomNormal;
 
     boost::scoped_ptr<GlTexture> colorTexture;
 

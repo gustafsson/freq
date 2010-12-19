@@ -83,6 +83,7 @@ public:
 
     void applyFilter( Tfr::pChunk pchunk )
     {
+        // A bit overkill to do every chunk, but it doesn't cost much
         _collection->update_sample_size(pchunk.get());
 
         FilterKind::applyFilter( pchunk );

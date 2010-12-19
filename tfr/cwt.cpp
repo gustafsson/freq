@@ -309,10 +309,10 @@ pChunk Cwt::
 
     return wt;
 
-    } catch (CufftException const& x) {
+    } catch (CufftException const& /*x*/) {
         _fft_many.clear();
         throw;
-    } catch (CudaException const& x) {
+    } catch (CudaException const& /*x*/) {
         _fft_many.clear();
         throw;
     }

@@ -54,6 +54,7 @@ private:
     int _width, _height;
     Sawe::Project* _project;
     RenderView* _render_view;
+    int _except_count;
 };
 
 } // namespace Tools

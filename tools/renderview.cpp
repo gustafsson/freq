@@ -12,6 +12,7 @@
 #include "support/drawworking.h"
 #include "adapters/microphonerecorder.h"
 #include "heightmap/renderer.h"
+#include "sawe/application.h"
 
 // gpumisc
 #include <CudaException.h>
@@ -38,11 +39,11 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
-            //QGLWidget(QGLFormat(QGL::SampleBuffers)),
             orthoview(1),
             model(model),
             _work_timer( new TaskTimer("Benchmarking first work")),
-            _inited(false)
+            _inited(false),
+            _try_gc(0)
 {
     float l = model->project()->worker.source()->length();
     _prevLimit = l;
@@ -54,6 +55,7 @@ RenderView::
     //if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
 
     computeChannelColors();
+    clearCaches();
 }
 
 
@@ -704,7 +706,7 @@ void RenderView::
     TIME_PAINTGL _render_timer.reset();
     TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g fps)", fps));
 
-    static int tryGc = 0;
+    _try_gc = 0;
     try {
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
@@ -837,20 +839,20 @@ void RenderView::
     GlException_CHECK_ERROR();
     CudaException_CHECK_ERROR();
 
-    tryGc = 0;
+    _try_gc = 0;
     } catch (const CudaException &x) {
         TaskTimer tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
 
-        if (2>tryGc) {
+        if (2>_try_gc) {
             clearCaches();
-            tryGc++;
+            _try_gc++;
         }
         else throw;
     } catch (const GlException &x) {
         TaskTimer tt("RenderView::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
-        if (2>tryGc) {
+        if (2>_try_gc) {
             clearCaches();
-            tryGc++;
+            _try_gc++;
         }
         else throw;
     }
@@ -948,10 +950,10 @@ void RenderView::
     // R, G and B sum up to the same constant = N/2 if N > 1
     for (unsigned i=0; i<N; ++i)
     {
-        channel_colors[i] = channel_colors[i] * (N/2);
+        channel_colors[i] = channel_colors[i] * (N/2.f);
     }
 
-    if (1==N)
+    if(0) if (1==N) // There is a grayscale mode to use for this
         channel_colors[0] = make_float4(0,0,0,1);
 }
 

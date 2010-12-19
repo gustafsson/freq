@@ -330,6 +330,11 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
+    if (0) {
+        ResampleTest rt;
+        rt.test5();
+        return 0;
+    }
 	if (0) try {
 		{
 			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));

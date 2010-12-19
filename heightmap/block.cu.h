@@ -38,7 +38,8 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  uint2 validInputs,
                  float4 inputRegion,
                  float4 outputRegion,
-                 Heightmap::ComplexInfo transformMethod
+                 Heightmap::ComplexInfo transformMethod,
+                 Tfr::FreqAxis freqAxis
                  );
 
 extern "C"

@@ -159,26 +159,31 @@ void Collection::
 {
     pOperation wf = worker->source();
 
-    if (chunk && chunk->transform_data)
+    if (chunk)
     {
         //_display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
         //_display_scale.max_frequency_scalar = 1;
         //_display_scale.f_min = chunk->min_hz;
         //_display_scale.log2f_step = log2(chunk->max_hz) - log2(chunk->min_hz);
 
-        Tfr::FreqAxis fx = chunk->freqAxis();
 
         _min_sample_size.time = std::min( _min_sample_size.time, 0.25f / chunk->sample_rate );
+        _min_sample_size.time = std::min( _min_sample_size.time, 0.25f / chunk->original_sample_rate );
+        //TaskInfo("_min_sample_size.time = %g", _min_sample_size.time);
 
-        unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
-        _min_sample_size.scale = std::min(
-                _min_sample_size.scale,
-                (1 - _display_scale.getFrequencyScalar( fx.getFrequency( top_index )))*0.01f);
+        if (chunk->transform_data)
+        {
+            Tfr::FreqAxis fx = chunk->freqAxis();
+            unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
+            _min_sample_size.scale = std::min(
+                    _min_sample_size.scale,
+                    (1 - _display_scale.getFrequencyScalar( fx.getFrequency( top_index )))*0.01f);
 
-        // Old naive one:
-        //_min_sample_size.scale = std::min(
-        //        _min_sample_size.scale,
-        //        1.f/Tfr::Cwt::Singleton().nScales( chunk->sample_rate ) );
+            // Old naive one:
+            //_min_sample_size.scale = std::min(
+            //        _min_sample_size.scale,
+            //        1.f/Tfr::Cwt::Singleton().nScales( chunk->sample_rate ) );
+        }
     }
     else
     {
@@ -555,7 +560,7 @@ pBlock Collection::
             }
 
             {
-                if (0) {
+                if (1) {
                     VERBOSE_COLLECTION TaskTimer tt("Fetching data from others");
                     // then try to upscale other blocks
                     Signal::Intervals things_to_update = ref.getInterval();
@@ -566,7 +571,7 @@ pBlock Collection::
                     }
                     things_to_update &= all_things;*/
 
-                    for (int dist = 10; dist<-10; --dist)
+                    //for (int dist = 10; dist<-10; --dist)
                     {
                         foreach( const cache_t::value_type& c, _cache )
                         {
@@ -580,7 +585,8 @@ pBlock Collection::
                             d += bl->ref.log2_samples_size[1];
                             d -= ref.log2_samples_size[1];
 
-                            if (d==dist)
+                            //if (d==dist)
+                            if (d==-1 || d==1)
                             {
                                 Position a2,b2;
                                 bl->ref.getArea(a2,b2);

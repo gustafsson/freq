@@ -195,7 +195,7 @@ void Worker::
 {
     {
         QMutexLocker l(&_todo_lock);
-        _todo_list = v & Interval(0, _source->number_of_samples());
+        _todo_list = v & Interval(0, std::max(1lu, _source->number_of_samples()));
     }
 
     //todo_list().print(__FUNCTION__);
@@ -235,7 +235,7 @@ void Worker::
     else
         _min_samples_per_chunk = 1;
     _max_samples_per_chunk = (unsigned)-1;
-    invalidate_post_sink( Signal::Interval(0, value->number_of_samples() ));
+    invalidate_post_sink( Signal::Interval(0, std::max( 1lu, value->number_of_samples()) ));
 
     emit source_changed();
 }

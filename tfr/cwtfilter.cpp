@@ -19,6 +19,8 @@
 // #define DEBUG_CwtFilter
 #define DEBUG_CwtFilter if(0)
 
+#define CWT_NOBINS
+
 using namespace Signal;
 
 namespace Tfr {
@@ -64,7 +66,9 @@ ChunkAndInverse CwtFilter::
     unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
 
     // hack to make it work without subsampling
-    //unsigned numberOfSamples = cwt.next_good_size( 0, sample_rate() );
+#ifdef CWT_NOBINS
+    numberOfSamples = cwt.next_good_size( 0, sample_rate() );
+#endif
 
     unsigned L = redundant_samples + numberOfSamples + time_support;
 

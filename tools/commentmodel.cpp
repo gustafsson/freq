@@ -6,7 +6,7 @@ namespace Tools
 
 CommentModel::CommentModel()
     :
-        scroll_scale(0.5),
+        scroll_scale(1),
         thumbnail(false),
         window_size(make_uint2(200,100)),
         freezed_position(false)

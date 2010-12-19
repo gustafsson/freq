@@ -1401,18 +1401,15 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
-    <string>Show/hide comments</string>
+    <string>Hide/show comments</string>
    </property>
    <property name="toolTip">
-    <string>Show/hide comments</string>
+    <string>Hide/show comments</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+H</string>
