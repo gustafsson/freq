@@ -17,6 +17,7 @@
 
 // Std
 #include <sstream>
+#include <fstream>
 using namespace std;
 
 namespace Tools
@@ -208,6 +209,15 @@ void TooltipController::
     if ( first )
     {
         model()->comment->resize( 400, 210 );
+    }
+
+    if (found_better)
+    {
+        ofstream selected_tone("selected_tone.m");
+        selected_tone
+                << "fundamental_frequency = " << setprecision(30) << model()->frequency/model()->markers << ";" << endl
+                << "selected_tone_number = " << model()->markers << ";" << endl
+                << "frequencies = fundamental_frequency * (1:3*selected_tone_number);" << endl;
     }
 }
 

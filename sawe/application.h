@@ -2,6 +2,7 @@
 #define SAWEAPPLICATION_H
 
 #include <QtGui/QApplication>
+#include <QGLWidget>
 #include "sawe/project.h"
 #include <set>
 
@@ -15,6 +16,7 @@ public:
     Application( int& argc, char **argv);
     ~Application();
 
+    static QGLWidget*   shared_glwidget();
     static std::string  version_string() { return global_ptr()->_version_string; }
     static void         display_fatal_exception();
     static void         display_fatal_exception(const std::exception& );
@@ -31,6 +33,7 @@ public slots:
     void slotClosed_window( QWidget* );
 
 private:
+    QGLWidget* shared_glwidget_;
     static Application* _app;
     static std::string _fatal_error;
     std::string _version_string;

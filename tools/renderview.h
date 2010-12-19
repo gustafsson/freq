@@ -126,6 +126,7 @@ namespace Tools
         float _prevLimit;
         unsigned _last_width;
         unsigned _last_height;
+        int _try_gc;
 
         float _last_length;
         GLdouble modelview_matrix[16], projection_matrix[16];

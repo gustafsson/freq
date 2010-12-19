@@ -90,7 +90,7 @@ CommentView* CommentController::
     view_->model->project()->tools().toolModels.insert( modelp );
 
     model->pos.time = -FLT_MAX;//view_->model->_qx;
-    model->pos.scale = view_->model->_qz;
+    //model->pos.scale = view_->model->_qz;
 
     createView(modelp.get(), view_->model->project(), view_ );
     return comments_.back();
@@ -147,7 +147,7 @@ void CommentController::
         showComments(bool active)
 {
     foreach (CommentView* c, comments_)
-        c->setVisible( active );
+        c->setVisible( !active );
 }
 
 

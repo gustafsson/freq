@@ -17,7 +17,7 @@ uniform float yScale;
 uniform vec4 fixedColor;
 
 vec4 getWavelengthColor( float wavelengthScalar ) {
-    return texture2D(tex_color, wavelengthScalar);
+    return texture2D(tex_color, vec2(wavelengthScalar,0));
 }
 
 /* Tremendously slow... way faster to interpolate from a small texture 'tex_color' instead */
@@ -56,7 +56,7 @@ vec4 getWavelengthColorCompute( float wavelengthScalar ) {
 float getHeightLineColor(float height)
 {
    float value = height - floor(height);
-   return value > 0.1 ? 1 : 0.75;
+   return value > 0.1 ? 1.0 : 0.75;
 //   value = 1.0 - value * value * value * value + 0.1;
    
    //float value2 = height*10.0 - floor(height*10.0);
@@ -100,27 +100,27 @@ void main()
 //    gl_FragColor = setWavelengthColor( v );
     vec4 curveColor;
     //float f = 1.0-pow(1.0-clamp(v, 0.0, 1.0),5.0);
-    float f = v;
+    float f = abs(v);
 
    switch (colorMode) {
         case 0: curveColor = getWavelengthColor( f );
                 f = 1.0 - (1.0-f)*(1.0-f)*(1.0-f);
         break;
-        case 1: curveColor = 0;
-                f = 0.7*f;
+        case 1: curveColor = vec4(0.0);
         break;
         case 2: curveColor = fixedColor;
+                if (v<0.0) {curveColor = 1.0-curveColor;}
         break;
     }
 
     float shadow = min(0.7, ((diffuse+facing+2.0)*.25)); // + vec4(fresnel);
     curveColor = curveColor*shadow;
-    curveColor = mix(1, curveColor, f);
+    curveColor = mix(1.0, curveColor, f);
 
     if (0!=heightLines)
     {
-        float heightLine1 = getHeightLineColor( vertex_height * 20);
-        float heightLine2 = getHeightLineColor( vertex_height * 5);
+        float heightLine1 = getHeightLineColor( abs(vertex_height) * 20.0);
+        float heightLine2 = getHeightLineColor( abs(vertex_height) * 5.0);
         curveColor = heightLine1 *heightLine2*heightLine2* curveColor;
     }
 

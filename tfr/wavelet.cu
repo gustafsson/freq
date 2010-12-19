@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "tfr/wavelet.cu.h"
 
-__global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, unsigned first_j, float v, unsigned half_sizes, float sigma_t0 );
+__global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, unsigned half_sizes, float sigma_t0 );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
 __global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
@@ -47,7 +47,7 @@ void wtCompute(
 //    j = log(fs/2/maxHz) / log(a)
 //    const float log2_a = log2f(2.f) / v = 1.f/v; // a = 2^(1/v)
     float j = (log2(fs/2) - log2(maxHz)) * scales_per_octave;
-    unsigned first_scale = max(0.f, floor(j));
+    float first_scale = j;
 
     if (j<0) {
         printf("j = %g, maxHz = %g, fs = %g\n", j, maxHz, fs);
@@ -108,7 +108,7 @@ void wtCompute(
 __global__ void kernel_compute_wavelet_coefficients(
         float2* in_waveform_ft,
         float2* out_wavelet_ft,
-        unsigned nFrequencyBins, unsigned nScales, unsigned first_scale, float v, unsigned half_sizes, float sigma_t0 )
+        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, unsigned half_sizes, float sigma_t0 )
 {
     // Which frequency bin in the discrete fourier transform this thread
     // should work with

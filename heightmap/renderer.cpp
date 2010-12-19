@@ -31,8 +31,6 @@ namespace Heightmap {
 
 using namespace std;
 
-static bool g_invalidFrustum = true;
-
 Renderer::Renderer( Collection* collection )
 :   collection(collection),
     draw_piano(false),
@@ -49,6 +47,7 @@ Renderer::Renderer( Collection* collection )
     _initialized(false),
     _draw_flat(false),
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
+    _invalid_frustum(true),
     _drawn_blocks(0)
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
@@ -274,8 +273,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    setSize( collection->samples_per_block(), collection->scales_per_block() );
-    //setSize( collection->samples_per_block()/16, collection->scales_per_block() );
+    //setSize( collection->samples_per_block(), collection->scales_per_block() );
+    setSize( collection->samples_per_block()/8, collection->scales_per_block()/4 );
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
@@ -410,7 +409,7 @@ void Renderer::draw( float scaley )
     TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
     if (!_initialized) init();
 
-    g_invalidFrustum = true;
+    _invalid_frustum = true;
 
     if (.001 > scaley)
 //        setSize(2,2),
@@ -453,8 +452,9 @@ void Renderer::beginVboRendering()
 
     glUseProgram(_shader_prog);
 
+    // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniHeightLines, uniYScale;
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniHeightLines, uniYScale, uniScaleTex, uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -476,6 +476,16 @@ void Renderer::beginVboRendering()
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
+
+        float
+                w = collection->samples_per_block(),
+                h = collection->scales_per_block();
+
+        uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
+        glUniform2f(uniScaleTex, (w-1.f)/w, (h-1.f)/h);
+
+        uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
+        glUniform2f(uniOffsTex, .5f/w, .5f/h);
     }
 
     glActiveTexture(GL_TEXTURE2);
@@ -728,21 +738,21 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
 std::vector<GLvector> Renderer::
         clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w, float h )
 {
-    static GLvector projectionPlane, projectionNormal,
+    /*GLvector projectionPlane, projectionNormal,
         rightPlane, rightNormal,
         leftPlane, leftNormal,
         topPlane, topNormal,
-        bottomPlane, bottomNormal;
+        bottomPlane, bottomNormal;*/
 
     if (!(0==w && 0==h))
-        g_invalidFrustum = true;
+        _invalid_frustum = true;
 
-    if (g_invalidFrustum) {
+    if (_invalid_frustum) {
         GLint const* const& view = viewport_matrix;
 
         float z0 = .1, z1=.2;
         if (0==w && 0==h)
-            g_invalidFrustum = false;
+            _invalid_frustum = false;
 
         projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
         projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalize();

@@ -232,6 +232,36 @@ bool ResampleTest::
     return true;
 }
 
+
+bool ResampleTest::
+        test5()
+{
+    TaskTimer tt("ResampleTest::test5()");
+    try
+    {
+        bigData();
+
+        GpuCpuData<float> outputData(
+                0,
+                make_uint3( 128,128,1) );
+
+        memset( outputData.getCpuMemory(), 0, outputData.getSizeInBytes1D() );
+
+        coordinatetest_resample2d(
+                inputData->getCudaGlobal(),
+                outputData.getCudaGlobal());
+
+        print( "inputData",  *inputData );
+        print( "outputData", outputData );
+    } catch (std::exception const& x) {
+        tt.info("In %s, caught exception %s: %s", __FUNCTION__, typeid(x).name(), x.what());
+        return false;
+    }
+
+    return true;
+}
+
+
 std::ostream& operator<<(std::ostream& os, float2 v )
 {
     return os << v.x << " + " << v.y << "i";
@@ -254,7 +284,7 @@ void ResampleTest::
         }
 
         std::stringstream ss;
-        ss << std::setprecision(4);
+        ss << std::setprecision(40);
 
         unsigned x;
         for (x = 0; x < sz.width; x++ )

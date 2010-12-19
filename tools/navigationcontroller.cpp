@@ -27,7 +27,6 @@ NavigationController::
     connectGui();
 
     setAttribute( Qt::WA_DontShowOnScreen, true );
-    setEnabled( false );
 }
 
 
@@ -151,18 +150,18 @@ void NavigationController::
     {
         float L = _view->last_length();
         float d = ps * delta;
-        if (d>0.8)
-            d=0.8;
-        if (d<-0.8)
-            d=-0.8;
+        if (d>0.1)
+            d=0.1;
+        if (d<-0.1)
+            d=-0.1;
         if (d > 0 )
         {
-            float min_t, max_t;
+            /*float min_t, max_t;
             _view->model->renderer->frustumMinMaxT(min_t, max_t);
             if ((max_t - min_t)/(1-d) > L)
             {
                 d = 1 - (max_t - min_t)/L;
-            }
+            }*/
 
             r.model->xscale *= (1-d);
         }
@@ -277,6 +276,8 @@ void NavigationController::
     one_action_at_a_time_->decheckable( false );
     one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
     one_action_at_a_time_->addActionItem( ui->actionZoom );
+
+    ui->actionActivateNavigation->setChecked(true);
 }
 
 

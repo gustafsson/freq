@@ -116,6 +116,9 @@ void TimelineController::
     view->makeCurrent();
     view->setupCamera();
 
+    glScalef(1, 1, 1-view->_barHeight);
+    glTranslatef(0, 0, view->_barHeight);
+
     int x = e->x(), y = height() - 1 - e->y();
 
     double prev[2];

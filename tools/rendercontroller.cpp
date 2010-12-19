@@ -17,7 +17,7 @@
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
 #include "graphicsview.h"
-
+#include "sawe/application.h"
 #include "signal/buffersource.h"
 
 // gpumisc
@@ -339,6 +339,12 @@ void RenderController::
         transform->addActionItem( ui->actionTransform_Cwt_ridge );
         transform->addActionItem( ui->actionTransform_Cwt_weight );
 
+        unsigned k=0;
+        foreach( QAction* a, transform->actions())
+        {
+            a->setShortcut('1' + k++);
+        }
+
         transform->decheckable( false );
         toolbar_render->addWidget( transform );
 
@@ -391,7 +397,7 @@ void RenderController::
     // the widget
     //view->makeCurrent();
 
-    view->glwidget = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+    view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->makeCurrent();
     //view->glwidget->setMouseTracking(true);
 

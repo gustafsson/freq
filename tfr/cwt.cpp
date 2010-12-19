@@ -42,6 +42,9 @@
 #define DEBUG_CWT if(0)
 //#define DEBUG_CWT
 
+// Also change CwtFilter
+//#define CWT_NOBINS
+
 using namespace boost::lambda;
 
 namespace Tfr {
@@ -306,10 +309,10 @@ pChunk Cwt::
 
     return wt;
 
-    } catch (CufftException const& x) {
+    } catch (CufftException const& /*x*/) {
         _fft_many.clear();
         throw;
-    } catch (CudaException const& x) {
+    } catch (CudaException const& /*x*/) {
         _fft_many.clear();
         throw;
     }
@@ -319,8 +322,6 @@ pChunk Cwt::
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
-    if (0==first_scale)
-        n_scales--; // cheat, don't know why but it seems to work
     TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u, (%g to %g Hz)",
                               first_scale, n_scales, j_to_hz(ft->original_sample_rate, first_scale+n_scales-1),
                               j_to_hz(ft->original_sample_rate, first_scale));
@@ -360,10 +361,12 @@ pChunk Cwt::
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
 
         unsigned last_scale = first_scale + n_scales-1;
-        if (0==first_scale)
-            last_scale+=1; // cheat, don't know why but it seems to work
         intermediate_wt->min_hz = get_max_hz(ft->original_sample_rate)*exp2f( last_scale/-_scales_per_octave );
         intermediate_wt->max_hz = get_max_hz(ft->original_sample_rate)*exp2f( first_scale/-_scales_per_octave );
+
+        DEBUG_CWT TaskInfo tinfo("scales [%u,%u]%u#, hz [%g, %g]",
+                 first_scale, last_scale, n_scales,
+                 intermediate_wt->max_hz, intermediate_wt->min_hz);
 
         DEBUG_CWT
         {
@@ -719,6 +722,10 @@ unsigned Cwt::
 unsigned Cwt::
         find_bin( unsigned j ) const
 {
+#ifdef CWT_NOBINS
+    return 0;
+#endif
+
     float v = _scales_per_octave;
     float log2_a = 1.f/v;
     float bin = log2_a * j - log2( 1.f + _wavelet_scale_suppport/(2*M_PI*sigma()) );

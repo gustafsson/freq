@@ -3,8 +3,8 @@
 #include <iostream>
 #include <memory.h>
  
-#define TIME_MICROPHONERECORDER
-//#define TIME_MICROPHONERECORDER if(0)
+//#define TIME_MICROPHONERECORDER
+#define TIME_MICROPHONERECORDER if(0)
 
 using namespace std;
 

@@ -41,7 +41,8 @@ TimelineView::
     _width( 0 ),
     _height( 0 ),
     _project( p ),
-    _render_view( render_view )
+    _render_view( render_view ),
+    _except_count( 0 )
 {
     BOOST_ASSERT( _render_view );
 
@@ -124,7 +125,7 @@ void TimelineView::
 {
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
-    static int exceptCount = 0;
+    _except_count = 0;
     try {
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
@@ -200,14 +201,14 @@ void TimelineView::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        exceptCount = 0;
+        _except_count = 0;
     } catch (const CudaException &x) {
-        if (1<++exceptCount) throw;
+        if (1<++_except_count) throw;
 
         TaskTimer("TimelineView::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
         _render_view->clearCaches();
     } catch (const GlException &x) {
-        if (1<++exceptCount) throw;
+        if (1<++_except_count) throw;
 
         TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
         _render_view->clearCaches();

@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "heightmap/block.cu.h"
-
+#include "block.cu.h"
+#include "tfr/freqaxis.h"
 #include <resample.cu.h>
 
 #ifdef _MSC_VER
@@ -8,6 +8,7 @@
 #include <math.h>
 #endif
 
+#define M_PIf ((float)M_PI)
 
 class ConverterPhase
 {
@@ -17,6 +18,7 @@ public:
         return atan2(v.y, v.x);
     }
 };
+
 
 class ConverterLogAmplitude
 {
@@ -32,7 +34,6 @@ public:
     }
 };
 
-#define M_PIf ((float)M_PI)
 
 class WeightFetcher
 {
@@ -53,12 +54,64 @@ public:
     }
 };
 
+
+class SpecialPhaseFetcher
+{
+public:
+    template<typename Reader>
+    __device__ float operator()( float2 const& p, Reader& reader )
+    {
+        // Plot "how wrong" the phase is
+        float2 q1 = p;
+        float2 p2 = p;
+        p2.x++;
+        float2 q2 = p2;
+        q1.x /= getWidth(validInputs4)-1;
+        q1.y /= getHeight(validInputs4)-1;
+        q1.x *= getWidth(inputRegion);
+        q1.y *= getHeight(inputRegion);
+        q1.x += getLeft(inputRegion);
+        q1.y += getTop(inputRegion);
+        q2.x /= getWidth(validInputs4)-1;
+        q2.y /= getHeight(validInputs4)-1;
+        q2.x *= getWidth(inputRegion);
+        q2.y *= getHeight(inputRegion);
+        q2.x += getLeft(inputRegion);
+        q2.y += getTop(inputRegion);
+
+        float phase = InterpolateFetcher<float, ConverterPhase>()( p, reader );
+        float phase2 = InterpolateFetcher<float, ConverterPhase>()( p2, reader );
+        float v = InterpolateFetcher<float, ConverterLogAmplitude>()( p, reader );
+        float phasediff = phase2 - phase;
+        if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
+        if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
+
+        phasediff = (phasediff);
+        float f = freqAxis.getFrequency( q1.y );
+        f *= (q2.x - q1.x)*2*M_PIf;
+        return f*v;
+
+        /*float expected_phase = f * q.x * 2*M_PIf;
+        float phasediff = fmodf( expected_phase+2*M_PIf-phase, 2*M_PIf );
+
+        return expected_phase;*/
+        //return freqAxis.getFrequency( q.y )/22050.0f;
+        //return /*v **/ phasediff / (2*M_PIf);
+    }
+
+    Tfr::FreqAxis freqAxis;
+    float4 inputRegion;
+    uint4 validInputs4;
+};
+
+
 void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
                  uint2 validInputs,
                  float4 inputRegion,
                  float4 outputRegion,
-                 Heightmap::ComplexInfo transformMethod
+                 Heightmap::ComplexInfo transformMethod,
+                 Tfr::FreqAxis freqAxis
                  )
 {
     elemSize3_t sz_input = input.getNumberOfElements();
@@ -100,6 +153,21 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                     inputRegion,
                     outputRegion
             );
+    /*case Heightmap::ComplexInfo_Phase:
+            SpecialPhaseFetcher specialPhase;
+            specialPhase.freqAxis = freqAxis;
+            specialPhase.inputRegion = inputRegion;
+            specialPhase.validInputs4 = validInputs4;
+            resample2d_fetcher<float, float2, float, SpecialPhaseFetcher, AssignOperator<float> >(
+                    input,
+                    output,
+                    validInputs4,
+                    validOutputs,
+                    inputRegion,
+                    outputRegion,
+                    false,
+                    specialPhase
+            );*/
     }
 }
 

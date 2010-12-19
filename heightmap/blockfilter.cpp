@@ -14,6 +14,9 @@
 //#define TIME_CWTTOBLOCK
 #define TIME_CWTTOBLOCK if(0)
 
+//#define CWTTOBLOCK_INFO
+#define CWTTOBLOCK_INFO if(0)
+
 // #define DEBUG_CWTTOBLOCK
 #define DEBUG_CWTTOBLOCK if(0)
 
@@ -221,7 +224,8 @@ void CwtToBlock::
 
     CudaException_CHECK_ERROR();
 
-    TIME_CWTTOBLOCK TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
+    //CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
+    CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
             a.time, a.scale,
             b.time, b.scale,
             chunk_a.time, chunk_a.scale,
@@ -240,7 +244,8 @@ void CwtToBlock::
                                   chunk_b.time, chunk_b.scale ),
                      make_float4( a.time, a.scale,
                                   b.time, b.scale ),
-                     complex_info
+                     complex_info,
+                     _collection->display_scale()
                      );
 
 

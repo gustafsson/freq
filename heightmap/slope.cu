@@ -5,9 +5,10 @@
 class SlopeFetcher
 {
 public:
-    SlopeFetcher( float xscale, float yscale )
+    SlopeFetcher( float xscale, float yscale, uint2 size )
         :   xscale( xscale ),
-            yscale( yscale )
+            yscale( yscale ),
+            size( size )
     {
 
     }
@@ -18,23 +19,27 @@ public:
     {
         uint2 p = make_uint2(floor(q.x+.5f), floor(q.y+.5f));
 
-        // Rely on reader to do clamping
-        int top=-1, left=-1;
+        int up=1, left=-1, down=-1, right=1;
 
         // clamp
         if (p.x == 0)
             left = 0;
         if (p.y == 0)
-            top = 0;
+            down = 0;
+        if (p.x + 1 == size.x)
+            right = 0;
+        if (p.y + 1 == size.y)
+            up = 0;
 
         float2 slope = make_float2(
-            (reader(make_uint2(p.x + 1, p.y)) - reader(make_uint2(p.x + left, p.y)))*xscale/(1-left),
-            (reader(make_uint2(p.x, p.y+1)) - reader(make_uint2(p.x, p.y+top)))*yscale/(1-top));
+            (reader(make_uint2(p.x + right, p.y)) - reader(make_uint2(p.x + left, p.y)))*xscale/(right-left),
+            (reader(make_uint2(p.x, p.y+up)) - reader(make_uint2(p.x, p.y+down)))*yscale/(up-down));
 
         return slope;
     }
 
 private:
+    const uint2 size;
     const float xscale;
     const float yscale;
 };
@@ -56,6 +61,6 @@ void cudaCalculateSlopeKernel(  cudaPitchedPtrType<float> heightmapIn,
                                make_float4(0,0,1,1),
                                make_float4(0,0,1,1),
                                false,
-                               SlopeFetcher( 10/xscale, 1/yscale ),
+                               SlopeFetcher( 10/xscale, 1/yscale, make_uint2( sz_input.x, sz_input.y) ),
                                AssignOperator<float2>() );
 }

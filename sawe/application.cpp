@@ -53,7 +53,8 @@ static string fatal_unknown_exception_string() {
 Application::
         Application(int& argc, char **argv)
 :   QApplication(argc, argv),
-	default_record_device(-1)
+    default_record_device(-1),
+    shared_glwidget_(new QGLWidget(QGLFormat(QGL::SampleBuffers)))
 {
     BOOST_ASSERT( !_app );
 
@@ -92,6 +93,13 @@ Application* Application::
         global_ptr() {
     BOOST_ASSERT( _app );
     return _app;
+}
+
+
+QGLWidget* Application::
+        shared_glwidget()
+{
+    return global_ptr()->shared_glwidget_;
 }
 
 
@@ -174,7 +182,7 @@ pProject Application::
 {
     pProject p = Project::open( project_file_or_audio_file );
     if (p)
-		openadd_project(p);
+        openadd_project(p);
     return p;
 }
 
