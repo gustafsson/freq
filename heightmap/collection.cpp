@@ -42,7 +42,7 @@ namespace Heightmap {
 Collection::
         Collection( Worker* worker )
 :   worker( worker ),
-    _samples_per_block( 1<<7 ),
+    _samples_per_block( 1<<7 ), // Created for each
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _frame_counter(0),

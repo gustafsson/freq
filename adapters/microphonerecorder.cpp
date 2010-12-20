@@ -1,4 +1,5 @@
 #include "microphonerecorder.h"
+#include "playback.h"
 
 #include <iostream>
 #include <memory.h>
@@ -36,7 +37,10 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
     :
     channel(0)
 {
-    TaskTimer tt("Creating MicrophoneRecorder");
+    static bool first = true;
+    if (first) Playback::list_devices();
+
+    TaskTimer tt("Creating MicrophoneRecorder for device %d", inputDevice);
     portaudio::System &sys = portaudio::System::instance();
 
     if (0>inputDevice || inputDevice>sys.deviceCount()) {
