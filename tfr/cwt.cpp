@@ -16,7 +16,6 @@
 #include <cmath>
 #include <boost/lambda/lambda.hpp>
 #include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -394,7 +393,7 @@ pChunk Cwt::
         // ft->sample_rate is related to intermediate_wt->sample_rate by
         // intermediate_wt->sample_rate == ft->n_valid_samples * ft->sample_rate
         // (except for numerical errors)
-        intermediate_wt->sample_rate = ldexp(ft->original_sample_rate, -half_sizes);
+        intermediate_wt->sample_rate = ldexp(ft->original_sample_rate, -(int)half_sizes);
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
 
         unsigned last_scale = first_scale + n_scales-1;
@@ -542,7 +541,7 @@ Signal::pBuffer Cwt::
     Signal::pBuffer r( new Signal::Buffer( v.first, v.count(), pchunk->original_sample_rate ));
     memset( r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D() );
 
-    foreach( pChunk& part, pchunk->chunks )
+    BOOST_FOREACH( pChunk& part, pchunk->chunks )
     {
         boost::scoped_ptr<TaskTimer> tt;
         DEBUG_CWT tt.reset( new TaskTimer("ChunkPart inverse, c=%g, [%g, %g] Hz",

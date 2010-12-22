@@ -263,9 +263,11 @@ void GlBlock::
 {
     unmap();
 
-    if (!_got_new_height_data && _tex_height)
+	if (!_tex_height)
+		_got_new_height_data = true;
+
+	if (!_got_new_height_data && (create_slope?_tex_slope:true))
         return;
-    _got_new_height_data = false;
 
     create_texture( create_slope );
 
@@ -273,24 +275,35 @@ void GlBlock::
     unsigned meshH = _collection->scales_per_block();
 
     TIME_GLBLOCK TaskTimer("meshW=%u, meshH=%u, _tex_height=%u, *_height=%u", meshW, meshH, _tex_height, (unsigned)*_height).suppressTiming();
-    glActiveTexture(GL_TEXTURE0);
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
-    glPixelTransferf(GL_RED_SCALE, 4.f);
 
-    GlException_CHECK_ERROR();
-    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
-    GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+	if (_got_new_height_data)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
+		glBindTexture(GL_TEXTURE_2D, _tex_height);
+		glPixelTransferf(GL_RED_SCALE, 4.f);
 
-    glPixelTransferf(GL_RED_SCALE, 1.0f);
+		GlException_CHECK_ERROR();
+		glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
+		GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+		glPixelTransferf(GL_RED_SCALE, 1.0f);
 
-    TIME_GLBLOCK CudaException_CHECK_ERROR();
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+
+		TIME_GLBLOCK CudaException_CHECK_ERROR();
+	}
+
+    _got_new_height_data = false;
 
     if (!create_slope && 0 == _tex_slope)
         return;
+
+#ifdef _MSC_VER
+	return; // TODO just calling 'slope()->data->getCudaGlobal()' here crashes the graphics driver in windows
+	// slope()->data->getCudaGlobal()
+#endif
 
     computeSlope(0);
 

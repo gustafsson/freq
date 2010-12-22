@@ -4,9 +4,13 @@
 #include "signal/intervals.h"
 #include "signal/postsink.h"
 #include <boost/noncopyable.hpp>
+#ifndef SAWE_NO_MUTEX
 #include <QMutex>
 #include <QThread>
 #include <QWaitCondition>
+#endif
+#include <QObject>
+
 
 namespace Signal {
 
@@ -227,11 +231,12 @@ private:
       */
     boost::posix_time::ptime _last_work_one;
 
+#ifndef SAWE_NO_MUTEX
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
       */
     QMutex _callbacks_lock;
-
+#endif
     /**
       @see source
       */
@@ -241,8 +246,10 @@ private:
     /**
       Thread safety for _todo_list.
       */
+#ifndef SAWE_NO_MUTEX
     QMutex _todo_lock;
     QWaitCondition _todo_condition;
+#endif
 
     /**
       @see todo_list

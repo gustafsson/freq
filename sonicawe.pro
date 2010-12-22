@@ -14,8 +14,11 @@ macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 CONFIG += console # console output
-QT += opengl
+CONFIG -= thread
+DEFINES -= QT_THREAD_SUPPORT
 DEFINES += QT_NO_THREAD
+DEFINES += SAWE_NO_MUTEX
+QT += opengl
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -74,7 +77,6 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
-    tools/tooltipmodel.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 

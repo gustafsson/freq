@@ -3,7 +3,9 @@
 
 #include "sink.h"
 #include <vector>
+#ifndef SAWE_NO_MUTEX
 #include <QMutex>
+#endif
 
 namespace Signal {
 
@@ -79,7 +81,9 @@ public:
 private:
 
     pOperation              _filter;
+#ifndef SAWE_NO_MUTEX
     QMutex                  _sinks_lock;
+#endif
     std::vector<pOperation> _sinks;
 };
 

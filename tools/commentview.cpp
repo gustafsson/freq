@@ -163,7 +163,7 @@ void CommentView::
 
 
 void CommentView::
-        focusInEvent(QFocusEvent */*e*/)
+        focusInEvent(QFocusEvent * /*e*/)
 {
     //TaskInfo("CommentView::focusInEvent, gotFocus = %d, reason = %d", e->gotFocus(), e->reason());
 
@@ -172,7 +172,7 @@ void CommentView::
 
 
 void CommentView::
-        focusOutEvent(QFocusEvent */*e*/)
+        focusOutEvent(QFocusEvent * /*e*/)
 {
     //TaskInfo("CommentView::focusOutEvent, lostFocus = %d, reason = %d", e->lostFocus(), e->reason());
 

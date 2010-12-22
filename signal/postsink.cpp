@@ -26,7 +26,9 @@ Signal::pBuffer PostSink::
     vector<pOperation> active_operations;
 
     {
+#ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_sinks_lock);
+#endif
 
         for(std::vector<pOperation>::iterator i = _sinks.begin(); i!=_sinks.end(); )
         {
@@ -223,7 +225,9 @@ void PostSink::
 std::vector<pOperation> PostSink::
         sinks()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
+#endif
     return _sinks;
 }
 
@@ -231,7 +235,9 @@ std::vector<pOperation> PostSink::
 void PostSink::
         sinks(std::vector<pOperation> v)
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
+#endif
     _sinks = v;
 }
 

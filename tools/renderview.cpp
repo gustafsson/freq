@@ -33,6 +33,10 @@
 //#define DEBUG_EVENTS
 #define DEBUG_EVENTS if(0)
 
+#ifdef max
+#undef max
+#endif
+
 namespace Tools
 {
 
@@ -707,6 +711,9 @@ void RenderView::
 void RenderView::
         paintGL()
 {
+	if (!model->collectionCallback)
+		return;
+
     float fps = 0;
     TIME_PAINTGL if (_render_timer)
         fps = 1/_render_timer->elapsedTime();

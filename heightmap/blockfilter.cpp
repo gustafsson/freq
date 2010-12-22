@@ -52,6 +52,7 @@ void BlockFilter::
         }
         else
         {
+#ifndef SAWE_NO_MUTEX
             QMutexLocker l(&block->cpu_copy_mutex);
             if (!block->cpu_copy)
                 throw std::logic_error(
@@ -64,6 +65,7 @@ void BlockFilter::
             block->cpu_copy->freeUnused();
 
             block->new_data_available = true;
+#endif
         }
     }
 
@@ -278,7 +280,7 @@ void CwtToBlock::
     }
     else
     {
-        TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
+        TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();

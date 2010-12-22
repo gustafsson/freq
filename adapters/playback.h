@@ -5,7 +5,6 @@
 
 #include <vector>
 #include <time.h>
-#include <QMutex>
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/scoped_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>

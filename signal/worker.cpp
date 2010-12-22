@@ -7,7 +7,9 @@
 #include "sawe/application.h"
 
 #include <QTime>
+#ifndef SAWE_NO_MUTEX
 #include <QMutexLocker>
+#endif
 #include <CudaException.h>
 #include <demangle.h>
 
@@ -18,6 +20,10 @@
 #define WORKER_INFO if(0)
 
 #define TESTING_PERFORMANCE false
+
+#ifdef max
+#undef max
+#endif
 
 using namespace std;
 using namespace boost::posix_time;
@@ -186,7 +192,7 @@ bool Worker::
     }
 
     // Reset before next workOne
-    TaskInfo("wavelet_default_time_support = %g", Tfr::Cwt::Singleton().wavelet_default_time_support());
+    //TaskInfo("wavelet_default_time_support = %g", Tfr::Cwt::Singleton().wavelet_default_time_support());
     Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
 
     _last_work_one = now;
@@ -201,22 +207,28 @@ void Worker::
         todo_list( const Signal::Intervals& v )
 {
     {
+#ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_todo_lock);
+#endif
         _todo_list = v & Interval(0, std::max(1lu, _source->number_of_samples()));
         //_todo_list &= Signal::Intervals(0, 44100*7);
 
         WORKER_INFO TaskInfo("Worker::todo_list( %s )", _todo_list.toString().c_str());
     }
 
+#ifndef SAWE_NO_MUTEX
     if (v)
         _todo_condition.wakeAll();
+#endif
 }
 
 
 Signal::Intervals Worker::
         todo_list()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
+#endif
     Signal::Intervals c = _todo_list;
 
     if ( Tfr::Cwt::Singleton().wavelet_time_support() != Tfr::Cwt::Singleton().wavelet_default_time_support() )
@@ -350,23 +362,6 @@ void Worker::
 }
 
 
-/*PostSink* Worker::
-        postSink()
-{
-    return &_post_sink;
-}*/
-
-
-// TODO remove
-/*std::vector<pOperation> Worker::
-        callbacks()
-{
-    QMutexLocker l(&_callbacks_lock);
-    std::vector<pOperation> c = _callbacks;
-    return c;
-}*/
-
-
 ///// PRIVATE
 
 
@@ -395,7 +390,9 @@ void Worker::
 
 		try {
 			{ TIME_WORKER TaskTimer tt("Worker is waiting for more work to do");
+#ifndef SAWE_NO_MUTEX
             QMutexLocker l(&_todo_lock);
+#endif
 			_todo_condition.wait( &_todo_lock );}
 		} catch ( const std::exception& x ) {
                         _caught_exception = runtime_error(x.what());
@@ -422,7 +419,9 @@ void Worker::
 {
     c->source(pOperation());
 
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l( &_callbacks_lock );
+#endif
     std::vector<pOperation> callbacks = _post_sink.sinks();
     callbacks.resize( std::remove( callbacks.begin(), callbacks.end(), c ) - callbacks.begin() );
     _post_sink.sinks(callbacks);
