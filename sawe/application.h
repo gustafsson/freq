@@ -29,6 +29,11 @@ public:
 
     void parse_command_line_options( int& argc, char **argv );
 
+    void clearCaches();
+
+signals:
+    void clearCachesSignal();
+
 public slots:
     pProject slotNew_recording( int record_device = -1 );
     pProject slotOpen_file( std::string project_file_or_audio_file="" );

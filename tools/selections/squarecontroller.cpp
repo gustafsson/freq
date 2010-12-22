@@ -104,9 +104,7 @@ namespace Tools { namespace Selections
     {
         if (e->button() == selection_button_)
         {
-            model()->updateFilter();
-
-            selection_controller_->setCurrentSelection( model()->filter );
+            selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
 
         selection_controller_->render_view()->userinput_update();
@@ -166,9 +164,8 @@ namespace Tools { namespace Selections
         if (active)
         {
             selection_controller_->setCurrentTool( this, active );
-            selection_controller_->setCurrentSelection( model()->filter );
+            selection_controller_->setCurrentSelection( model()->updateFilter() );
             model()->type = type;
-            model()->updateFilter();
         }
         else if (model()->type == type)
         {

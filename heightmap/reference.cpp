@@ -8,7 +8,7 @@ bool Reference::
 {
     return log2_samples_size == b.log2_samples_size
             && block_index == b.block_index;
-            //&& _collection == b._collection;
+            // Don't compare _collection == b._collection;
 }
 
 void Reference::
@@ -126,6 +126,16 @@ Reference::
         Reference(Collection *collection)
 :   _collection(collection)
 {}
+
+bool Reference::
+        containsPoint(Position p) const
+{
+    Position a, b;
+    getArea( a, b );
+
+    return a.time <= p.time && p.time <= b.time &&
+            a.scale <= p.scale && p.scale <= b.scale;
+}
 
 bool Reference::
         containsSpectrogram() const

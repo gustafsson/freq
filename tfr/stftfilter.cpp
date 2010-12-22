@@ -24,7 +24,7 @@ StftFilter::
 
     BOOST_ASSERT( dynamic_cast<Stft*>(t.get()));
 
-    transform( t );
+    _transform = t;
 }
 
 

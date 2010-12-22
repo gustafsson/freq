@@ -25,9 +25,9 @@ void Rectangle::operator()( Chunk& chunk) {
 
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalar( _f1 ),
+            chunk.freqAxis().getFrequencyScalarNotClamped( _f1 ),
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalar( _f2 ));
+            chunk.freqAxis().getFrequencyScalarNotClamped( _f2 ));
 
     ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
@@ -61,11 +61,11 @@ Signal::Intervals Rectangle::
         start_time = (unsigned long)(std::max(0.f, _t1)*FS),
         end_time = (unsigned long)(std::max(0.f, _t2)*FS);
 
-    Signal::Intervals sid = Signal::Intervals::Intervals_ALL;
+    Signal::Intervals sid;
     if (start_time < end_time)
-        sid -= Signal::Intervals(start_time, end_time);
+        sid = Signal::Intervals(start_time, end_time);
 
-    return sid;
+    return ~include_time_support(sid);
 }
 
 } // namespace Filters

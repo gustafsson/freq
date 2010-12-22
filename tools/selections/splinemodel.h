@@ -14,8 +14,7 @@ namespace Tools { namespace Selections
         SplineModel( Tfr::FreqAxis const& fa );
         ~SplineModel();
 
-        void updateFilter();
-        Signal::pOperation filter;
+        Signal::pOperation updateFilter();
 
         std::vector<Heightmap::Position> v;
         bool drawing;

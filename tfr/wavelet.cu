@@ -3,9 +3,9 @@
 #include "tfr/wavelet.cu.h"
 
 __global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, unsigned half_sizes, float sigma_t0 );
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
-__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
-__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem );
+//__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
+//__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt );
 
 static const char* gLastError = 0;
@@ -185,7 +185,7 @@ __global__ void kernel_compute_wavelet_coefficients(
     }
 }
 
-void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples, cudaStream_t stream )
+void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -196,16 +196,15 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
         return;
     }
 
-    kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, n_valid_samples );
+    // kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem );
+    kernel_inverse<<<grid, block>>>( in_wavelet, out_inverse_waveform, numElem );
 }
 
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples )
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem )
 {
     const unsigned
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
-    if (x>=n_valid_samples)
-        return;
     if (x>=numElem.width )
         return;
 
@@ -221,7 +220,7 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
 
     out_inverse_waveform[x] = a;
 }
-
+/*
 void wtInverseEllipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
@@ -304,7 +303,7 @@ __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_wavef
 
     out_inverse_waveform[x] = a;
 }
-
+*/
 void wtClamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt, cudaStream_t stream  )
 {
     // Multiply the coefficients together and normalize the result

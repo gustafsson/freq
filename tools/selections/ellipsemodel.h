@@ -14,8 +14,7 @@ namespace Tools { namespace Selections
         EllipseModel( Tfr::FreqAxis const& fa );
         ~EllipseModel();
 
-        void updateFilter();
-        Signal::pOperation filter;
+        Signal::pOperation updateFilter();
 
         Heightmap::Position a, b;
 

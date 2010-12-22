@@ -168,6 +168,12 @@ void Application::
     apply_command_line_options( p );
 }
 
+void Application::
+        clearCaches()
+{
+    emit clearCachesSignal();
+}
+
 pProject Application::
         slotNew_recording( int record_device )
 {

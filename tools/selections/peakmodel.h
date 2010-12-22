@@ -21,10 +21,7 @@ class PeakModel
 public:
     PeakModel( Tfr::FreqAxis const& fa );
 
-    /**
-      Get the SplineFilter
-      */
-    Support::SplineFilter* peak_filter();
+    Signal::pOperation updateFilter() { return spline_model.updateFilter(); }
 
     SplineModel spline_model;
 

@@ -6,7 +6,7 @@
 // stdc
 #include <stdio.h>
 
-__global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside );
+__global__ void kernel_remove_rect(float2* in_wavelet, cudaExtent in_numElem, float4 area, float save_inside );
 
 
 void removeRect( float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
@@ -22,7 +22,7 @@ void removeRect( float2* wavelet, cudaExtent numElem, float4 area, bool save_ins
     kernel_remove_rect<<<grid, block>>>( wavelet, numElem, area, save_inside );
 }
 
-__global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
+__global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 area, float save_inside )
 {
     const unsigned
             x = blockIdx.x*blockDim.x + threadIdx.x,
@@ -37,7 +37,7 @@ __global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 a
     float f;
 
     //if(x > dx - dh && x < dx + dh && fi > dy - dw && fi < dy + dw)
-    if(x > area.x && x < area.z && fi > area.y && fi < area.w)
+    if(x >= area.x && x <= area.z && fi >= area.y && fi <= area.w)
     {
         f = save_inside;
     }

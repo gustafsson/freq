@@ -6,6 +6,7 @@
 #include "rendercontroller.h"
 
 // Sonic AWE lib
+#include "sawe/application.h"
 #include "heightmap/renderer.h"
 
 // gpumisc
@@ -206,12 +207,12 @@ void TimelineView::
         if (1<++_except_count) throw;
 
         TaskTimer("TimelineView::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
-        _render_view->clearCaches();
+        Sawe::Application::global_ptr()->clearCaches();
     } catch (const GlException &x) {
         if (1<++_except_count) throw;
 
         TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
-        _render_view->clearCaches();
+        Sawe::Application::global_ptr()->clearCaches();
     }
 }
 

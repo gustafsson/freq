@@ -383,7 +383,9 @@ std::string Intervals::toString() const
 std::string Interval::toString() const
 {
     std::stringstream ss;
-    ss << "[" << first << ", " << last << ")" << count() << "#";
+    ss << "[" << first << ", " << last << ")";
+    if (0<first)
+        ss << count() << "#";
     return ss.str();
 }
 

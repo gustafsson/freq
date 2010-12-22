@@ -79,7 +79,7 @@ void BrushController::
 #ifdef _MSC_VER
     float A = .5f;
 #else
-    float A = .1f;
+    float A = .5f;
 #endif
     if (ui->actionAirbrush->isChecked())
         model()->brush_factor = -A;
@@ -105,13 +105,10 @@ void BrushController::
 
 
 void BrushController::
-        mouseReleaseEvent ( QMouseEvent *e )
+        mouseReleaseEvent ( QMouseEvent * )
 {
-    if (e->button() == paint_button_ )
-    {
-        render_view_->model->project()->worker.invalidate_post_sink( drawn_interval_ );
-        drawn_interval_.clear();
-    }
+    render_view_->model->project()->worker.invalidate_post_sink( drawn_interval_ );
+    drawn_interval_.clear();
 
     render_view_->userinput_update();
 }
@@ -130,12 +127,10 @@ void BrushController::
         if (e->buttons().testFlag( Qt::RightButton ))
             model()->brush_factor *= -1;
 
-        GLdouble p[2];
-        if (Ui::MouseControl::worldPos( e->x(), height() - 1 - e->y(), p[0], p[1], r.model->xscale))
-        {
-            Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
-            drawn_interval_ |= model()->paint( ref, Heightmap::Position( p[0], p[1]) );
-        }
+        Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
+        Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
+        if (ref.containsPoint(p))
+            drawn_interval_ |= model()->paint( ref, p );
 
         model()->brush_factor = org_factor;
     }

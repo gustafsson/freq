@@ -3,6 +3,9 @@
 
 #include "tfr/cwt.h"
 
+#define TIME_BRUSH
+//#define TIME_BRUSH if(0)
+
 namespace Tools {
 
 
@@ -10,7 +13,7 @@ BrushModel::
         BrushModel( Sawe::Project* project, RenderModel* render_model )
             :
             brush_factor(0),
-            xscale_(10)
+            render_model_(render_model)
 {
     filter_ = project->head_source();
 	if (0 == dynamic_cast<Support::MultiplyBrush*>(filter_.get()))
@@ -35,12 +38,9 @@ Support::BrushFilter* BrushModel::
 Signal::Interval BrushModel::
         paint( Heightmap::Reference ref, Heightmap::Position pos )
 {
+    TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
     Heightmap::Position a, b;
     ref.getArea(a, b);
-
-    xscale_ = b.time-a.time;
-    if (xscale_ < 0.5)
-        xscale_ = 0.5;
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     float fs = filter()->sample_rate();
@@ -48,13 +48,22 @@ Signal::Interval BrushModel::
     float deltasample = Tfr::Cwt::Singleton().morlet_sigma_samples( fs, hz );
     float deltascale = cwt.sigma() / cwt.nScales(fs);
     float deltat = deltasample/fs;
-    deltat *= 10*xscale_;
+    deltat *= 1;
     deltascale *= 0.1;
+    float xscale = b.time-a.time;
+    float yscale = b.scale-a.scale;
+    if (deltat < xscale*0.05)
+        deltat = xscale*0.05;
+    if (deltascale < yscale*0.05)
+        deltascale = yscale*0.05;
 
     Gauss gauss(
             make_float2( pos.time, pos.scale ),
             make_float2( deltat, deltascale ),
             brush_factor);
+
+    TIME_BRUSH TaskInfo("Created gauss mu=(%g, %g), sigma=(%g, %g), height=%g, xscale=%g",
+                        pos.time, pos.scale, gauss.sigma().x, gauss.sigma().y, brush_factor, xscale);
 
     Heightmap::Reference
             right = ref,
@@ -104,6 +113,14 @@ Signal::Interval BrushModel::
 Signal::Interval BrushModel::
         addGauss( Heightmap::Reference ref, Gauss gauss )
 {
+    Heightmap::Position a, b;
+    ref.getArea( a, b );
+
+    TIME_BRUSH TaskInfo("Painting gauss to ref=%s",
+                        ref.toString().c_str());
+
+    // TODO filter()->images should be way smaller compared to the high
+    // resolution of collection refs.
     Support::BrushFilter::BrushImageDataP& img = (*filter()->images)[ ref ];
 
     if (!img)
@@ -115,22 +132,21 @@ Signal::Interval BrushModel::
         cudaMemset( img->getCudaGlobal().ptr(), 0, img->getSizeInBytes1D() );
     }
 
-    Heightmap::Position a, b;
-    ref.getArea( a, b );
-
-    TaskTimer tt("Painting guass [(%g %g), (%g %g)]", a.time, a.scale, b.time, b.scale );
-
     ::addGauss( make_float4(a.time, a.scale, b.time, b.scale),
                    img->getCudaGlobal(),
                    gauss );
 
-    Heightmap::pBlock block = ref.collection()->getBlock( ref );
-    if (block)
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections )
     {
-        GpuCpuData<float>* blockData = block->glblock->height()->data.get();
-        ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
-                       blockData->getCudaGlobal(),
-                       gauss );
+        Heightmap::pBlock block = collection->getBlock( ref );
+        if (block)
+        {
+            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+            ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
+                           blockData->getCudaGlobal(),
+                           gauss );
+            // collection->invalidate_samples is called by brushcontroller on mouse release
+        }
     }
 
     return ref.getInterval();

@@ -80,7 +80,7 @@ namespace Tools { namespace Selections
     {
         if (e->button()==selection_button_)
         {
-            selection_controller_->setCurrentSelection( model()->spline_model.filter );
+            selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
 
         selection_controller_->render_view()->userinput_update();
@@ -96,12 +96,10 @@ namespace Tools { namespace Selections
         {
             r.makeCurrent();
 
-            GLdouble p[2];
-            if (Ui::MouseControl::worldPos( e->x(), height() - 1 - e->y(), p[0], p[1], r.model->xscale))
-            {
-                Heightmap::Reference ref = r.model->renderer->findRefAtCurrentZoomLevel( p[0], p[1] );
-                model()->findAddPeak( ref, Heightmap::Position( p[0], p[1]) );
-            }
+            Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
+            Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
+            if (ref.containsPoint(p))
+                model()->findAddPeak( ref, p );
         }
 
         r.userinput_update();
@@ -129,7 +127,7 @@ namespace Tools { namespace Selections
     {
         if (active)
         {
-            selection_controller_->setCurrentSelection( model()->spline_model.filter );
+            selection_controller_->setCurrentSelection( model()->updateFilter() );
             selection_controller_->setCurrentTool( this, active );
         }
     }

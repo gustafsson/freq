@@ -55,7 +55,7 @@ public:
     AxisScale axis_scale;
 
     /**
-      chunk_offset is the start of the chunk, along the timeline, measured in
+      chunk_offset is the start of the chunk, along the timeline. Measured in
       signal samples, as described by 'first_valid_sample'.
 
         @see first_valid_sample

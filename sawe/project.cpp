@@ -115,6 +115,7 @@ void Project::
     if (_mainWindow)
         return;
 
+    TaskTimer tt("Project::createMainWindow");
     string title = Sawe::Application::version_string();
     Adapters::Audiofile* af;
     if (0 != (af = dynamic_cast<Adapters::Audiofile*>(worker.source().get()))) {
@@ -124,7 +125,11 @@ void Project::
 
     _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));
 
-    _tools.reset( new Tools::ToolFactory(this) );
+    {
+        TaskTimer tt("new Tools::ToolFactory");
+        _tools.reset( new Tools::ToolFactory(this) );
+        tt.info("Created tools");
+    }
 }
 
 

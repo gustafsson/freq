@@ -9,6 +9,7 @@
 // adapters
 #include "adapters/csv.h"
 #include "adapters/hdf5.h"
+#include "adapters/playback.h"
 
 // boost
 #include <boost/foreach.hpp>
@@ -55,6 +56,7 @@ static const char _sawe_usage_string[] =
     "                       the default input device/microphone.\n"
     "    playback_device    Selects a specific device for playback. -1 specifices the\n"
     "                       default output device.\n"
+    "    list_audio_devices Lists all available audio devices that Sonic AWE can use.\n"
 /*    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
     "                       filters are being used as the GUI won't be locked during\n"
     "                       computation.\n"
@@ -63,8 +65,8 @@ static const char _sawe_usage_string[] =
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 20;
-static float _wavelet_time_support = 3;
-static float _wavelet_scale_support = 6;
+static float _wavelet_time_support = 5;
+static float _wavelet_scale_support = 4;
 static unsigned _samples_per_chunk = 1;
 static unsigned _samples_per_block = 1<<7;
 static unsigned _scales_per_block = 1<<8;
@@ -73,10 +75,13 @@ static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
 static std::string _selectionfile = "selection.wav";
 static bool _record = false;
+static bool _list_audio_devices = false;
 static int _record_device = -1;
 static int _playback_device = -1;
 static std::string _soundfile = "";
+#ifndef QT_NO_THREAD
 static bool _multithread = false;
+#endif
 static bool _sawe_exit = false;
 
 static int prefixcmp(const char *a, const char *prefix) {
@@ -151,11 +156,14 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record_device));
         else if (readarg(&cmd, record));
+        else if (readarg(&cmd, list_audio_devices));
         else if (readarg(&cmd, playback_device));
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
         else if (readarg(&cmd, get_csv));
+#ifndef QT_NO_THREAD
         else if (readarg(&cmd, multithread));
+#endif
         // TODO use _selectionfile
         else {
             fprintf(stderr, "Unknown option: %s\n", cmd);
@@ -192,7 +200,7 @@ void Application::
                 fprintf(stderr, "Unknown option: %s\n", argv[0]);
                 fprintf(stderr, "Sonic AWE takes only one file (%s) as input argument.\n", _soundfile.c_str());
                 printf("%s", _sawe_usage_string);
-                exit(1);
+                ::exit(1);
             }
             argv++;
             argc--;
@@ -208,7 +216,7 @@ void Application::
         p = Sawe::Project::createRecording( _record_device );
 
     if (!p)
-        exit(-1);
+        ::exit(-1);
 
     this->openadd_project( p );
 
@@ -224,35 +232,42 @@ void Application::
 
     if (_get_csv != (unsigned)-1) {
         if (0==p->head_source()->number_of_samples()) {
-                            Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
-            exit(-1);
+            Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
+            ::exit(-1);
         }
 
         Adapters::Csv csv;
         csv.source( p->head_source() );
         csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
+        _sawe_exit = true;
     }
 
     if (_get_hdf != (unsigned)-1) {
         if (0==p->head_source()->number_of_samples()) {
-                        Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
-            exit(-1);
+            Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
+            ::exit(-1);
         }
 
         Adapters::Hdf5Chunk hdf5;
         hdf5.source( p->head_source() );
         hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
+        _sawe_exit = true;
     }
 
     if (_get_chunk_count != false) {
         cout << p->head_source()->number_of_samples() / total_samples_per_chunk << endl;
+        _sawe_exit = true;
     }
 
-    if (_get_hdf != (unsigned)-1 ||
-        _get_csv != (unsigned)-1 ||
-        _get_chunk_count != false)
+    if (_list_audio_devices)
     {
-        exit(0);
+        Adapters::Playback::list_devices();
+        _sawe_exit = true;
+    }
+
+    if (_sawe_exit)
+    {
+        ::exit(0);
     }
 }
 
@@ -266,8 +281,10 @@ void Application::
     cwt.wavelet_scale_support( _wavelet_scale_support );
 
     //p->worker.samples_per_chunk_hint( _samples_per_chunk );
+#ifndef QT_NO_THREAD
     if (_multithread)
         p->worker.start();
+#endif
 
     Tools::ToolFactory &tools = p->tools();
 

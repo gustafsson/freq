@@ -1,3 +1,4 @@
+#if 0
 #include "selection.h"
 
 #include <tfr/chunk.h>
@@ -105,3 +106,4 @@ Signal::Intervals Selection::
 }
 
 } // namespace Filters
+#endif

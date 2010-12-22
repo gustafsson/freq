@@ -1,6 +1,6 @@
 #include "splinemodel.h"
 #include "support/splinefilter.h"
-
+#include "tools/support/operation-composite.h"
  
 namespace Tools { namespace Selections
 {
@@ -10,8 +10,6 @@ SplineModel::
             : drawing ( false ),
             fa_( fa )
 {
-    filter.reset( new Support::SplineFilter( true ) );
-    updateFilter();
 }
 
 
@@ -22,9 +20,11 @@ SplineModel::
 }
 
 
-void SplineModel::
+Signal::pOperation SplineModel::
         updateFilter()
 {
+    Signal::pOperation filter( new Support::SplineFilter( true ) );
+
     Support::SplineFilter* e = dynamic_cast<Support::SplineFilter*>(filter.get());
 
     if (e->v.size() != v.size())
@@ -37,6 +37,8 @@ void SplineModel::
         s.f = fa_.getFrequency( v[i].scale );
         e->v[i] = s;
     }
+
+    return filter;
 }
 
 } } // namespace Tools::Selections

@@ -37,6 +37,13 @@ namespace Tools
         Heightmap::Position getPlanePos( QPointF pos, bool* success, bool useRenderViewContext = true );
         float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false );
 
+        /**
+          You might want to use Heightmap::Reference::containsPoint(p) to se
+          if the returned reference actually is a valid reference for the point
+          given. It will not be valid if 'p' lies outside the spectrogram.
+          */
+        Heightmap::Reference findRefAtCurrentZoomLevel(Heightmap::Position p);
+
         virtual bool event( QEvent * e );
         virtual bool eventFilter(QObject* o, QEvent* e);
         virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
@@ -76,6 +83,8 @@ namespace Tools
 
     public slots:
         void userinput_update();
+
+    private slots:
         void clearCaches();
 
     signals:

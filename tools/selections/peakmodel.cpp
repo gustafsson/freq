@@ -4,6 +4,7 @@
 #include "support/peakfilter.h"
 #include "tools/renderview.h"
 #include "tools/support/brushpaint.cu.h"
+#include "tools/support/operation-composite.h"
 
 // Sonic AWE
 #include "tfr/cwt.h"
@@ -23,13 +24,6 @@ namespace Tools { namespace Selections
 PeakModel::PeakModel( Tfr::FreqAxis const& fa )
     :   spline_model( fa )
 {
-}
-
-
-Support::SplineFilter* PeakModel::
-        peak_filter()
-{
-    return dynamic_cast<Support::SplineFilter*>(spline_model.filter.get());
 }
 
 
@@ -162,8 +156,6 @@ void PeakModel::
         p.scale = (border_nodes[i].y + .5f) * elementSize.scale;
         v[i] = p;
     }
-
-    spline_model.updateFilter();
 }
 
 

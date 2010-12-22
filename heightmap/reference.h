@@ -27,6 +27,7 @@ public:
     float sample_rate() const;
     unsigned frequency_resolution() const;
 
+    bool containsPoint(Position p) const;
     bool containsSpectrogram() const;
     bool tooLarge() const;
     std::string toString() const;

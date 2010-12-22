@@ -81,6 +81,8 @@ namespace Tools
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );
 
+        setCurrentSelection(Signal::pOperation());
+
         toolfactory();
     }
 
@@ -129,6 +131,15 @@ namespace Tools
             setCurrentSelection( Signal::pOperation filter )
     {
         _model->current_filter_ = filter;
+
+        bool enabled_actions = 0 != filter.get();
+
+        Ui::SaweMainWindow* main = _model->project->mainWindow();
+        Ui::MainWindow* ui = main->getItems();
+
+        ui->actionActionAdd_selection->setEnabled( enabled_actions );
+        ui->actionActionRemove_selection->setEnabled( enabled_actions );
+        ui->actionCropSelection->setEnabled( enabled_actions );
     }
 
 
@@ -179,6 +190,7 @@ namespace Tools
 
         _worker->appendOperation( _model->current_filter_ );
         _model->all_filters.push_back( _model->current_filter_ );
+        setCurrentSelection( Signal::pOperation() );
 
         TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
     }
@@ -202,6 +214,7 @@ namespace Tools
         _worker->appendOperation( _model->current_filter_ );
         _worker->appendOperation( remove );
         _model->all_filters.push_back( _model->current_filter_ );
+        setCurrentSelection( Signal::pOperation() );
 
         TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
     }
@@ -221,43 +234,39 @@ namespace Tools
             ellipse->_save_inside = save_inside;
         }
 
-        Tools::Support::OperationContainer* container=
-                dynamic_cast<Tools::Support::OperationContainer*>(
+
+        Filters::Rectangle* rectangle=
+                dynamic_cast<Filters::Rectangle*>(
+                        _model->current_filter_.get() );
+        if (rectangle)
+            rectangle->_save_inside = save_inside;
+
+
+        Tools::Support::OperationOtherSilent* other_silent =
+                dynamic_cast<Tools::Support::OperationOtherSilent*>(
                         _model->current_filter_.get() );
 
-        if (container)
+        if (other_silent && !save_inside)
         {
-            Filters::Rectangle* rectangle=
-                    dynamic_cast<Filters::Rectangle*>(
-                            container->content().get() );
-            if (rectangle)
-                rectangle->_save_inside = save_inside;
+            _model->current_filter_.reset(
+                    new Tools::Support::OperationSetSilent(
+                            Signal::pOperation(),
+                            other_silent->section() )
+                    );
+        }
 
-            Tools::Support::OperationOtherSilent* other_silent =
-                    dynamic_cast<Tools::Support::OperationOtherSilent*>(
-                            container->content().get() );
 
-            if (other_silent && !save_inside)
-            {
-                container->setContent( Signal::pOperation(
-                        new Tools::Support::OperationSetSilent(
-                                Signal::pOperation(),
-                                other_silent->section() )
-                        ));
-            }
+        Tools::Support::OperationSetSilent* set_silent =
+                dynamic_cast<Tools::Support::OperationSetSilent*>(
+                        _model->current_filter_.get() );
 
-            Tools::Support::OperationSetSilent* set_silent =
-                    dynamic_cast<Tools::Support::OperationSetSilent*>(
-                            container->content().get() );
-
-            if (set_silent && save_inside)
-            {
-                container->setContent( Signal::pOperation(
-                        new Tools::Support::OperationOtherSilent(
-                                Signal::pOperation(),
-                                set_silent->affected_samples().coveredInterval() )
-                        ));
-            }
+        if (set_silent && save_inside)
+        {
+            _model->current_filter_.reset(
+                    new Tools::Support::OperationOtherSilent(
+                            Signal::pOperation(),
+                            set_silent->affected_samples().coveredInterval() )
+                    );
         }
 
 

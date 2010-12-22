@@ -157,8 +157,26 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
 using namespace Signal;
 
+class A
+{
+public:
+    A() { std::cout << __FUNCTION__ << this << std::endl; }
+    ~A() { std::cout << __FUNCTION__ << this << std::endl; }
+};
+
+A hej()
+{
+    return A();
+}
+
 int main(int argc, char *argv[])
 {
+    if (0)
+    {
+        const A& a = hej();
+        std::cout << "tjo" << std::endl;
+        return 0;
+    }
     if (0) {
         ResampleTest rt;
         rt.test5();
@@ -266,11 +284,6 @@ int main(int argc, char *argv[])
             tt.info("time_support = %u", time_support);
             Adapters::WriteWav::writeToDisk("invtest.wav", inv, false);
             return 0;
-        }
-
-        { // TODO remove?
-            TaskTimer tt("Building performance statistics for %s", CudaProperties::getCudaDeviceProp().name);
-            tt.info("Fastest size = %u", Tfr::Stft::build_performance_statistics(true, 2));
         }
 
         // Recreate the cuda context and use OpenGL bindings

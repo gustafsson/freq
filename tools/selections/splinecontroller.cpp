@@ -75,9 +75,8 @@ namespace Tools { namespace Selections
             setMouseTracking(false);
             model()->drawing = false;
             model()->v.pop_back();
-            model()->updateFilter();
 
-            selection_controller_->setCurrentSelection( model()->filter );
+            selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
         else if (e->button() == selection_button_)
         {
@@ -165,7 +164,7 @@ namespace Tools { namespace Selections
         if (active)
         {
             selection_controller_->setCurrentTool( this, active );
-            selection_controller_->setCurrentSelection( model()->filter );
+            selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
     }
 

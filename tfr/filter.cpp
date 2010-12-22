@@ -6,6 +6,9 @@
 //#define TIME_Filter
 #define TIME_Filter if(0)
 
+//#define TIME_FilterReturn
+#define TIME_FilterReturn if(0)
+
 using namespace Signal;
 
 namespace Tfr {
@@ -66,23 +69,23 @@ Signal::pBuffer Filter::
     {
         TIME_Filter TaskTimer tt("%s filter computing chunk", vartype(*this).c_str());
         ci = readChunk( I );
-        TIME_Filter TaskTimer("%s computed chunk %s", vartype(*this).c_str(),
-                              ci.chunk->getInterval().toString().c_str()).suppressTiming();
+        TIME_FilterReturn TaskInfo("%s filter computed chunk %s", vartype(*this).c_str(),
+                              ci.chunk->getInterval().toString().c_str());
     }
 
     pBuffer r;
     if (ci.inverse)
     {
-        TIME_Filter TaskTimer("%s chunk is unmodified, doesn't need to compute inverse. Data = %s",
+        TIME_Filter TaskInfo("%s filter chunk is unmodified, doesn't need to compute inverse. Data = %s",
                               vartype(*this).c_str(),
-                              ci.inverse->getInterval().toString().c_str()).suppressTiming();
+                              ci.inverse->getInterval().toString().c_str());
         r = ci.inverse;
     }
     else
     {
         TIME_Filter TaskTimer tt("%s filter computing inverse", vartype(*this).c_str());
         r = _transform->inverse( ci.chunk );
-        TIME_Filter TaskTimer("%s computed inverse %s", vartype(*this).c_str(), r->getInterval().toString().c_str()).suppressTiming();
+        TIME_FilterReturn TaskInfo("%s filter computed inverse %s", vartype(*this).c_str(), r->getInterval().toString().c_str());
     }
 
     return r;
@@ -92,9 +95,9 @@ Signal::pBuffer Filter::
 ChunkAndInverse Filter::
         readChunk( const Signal::Interval& I )
 {
-    TIME_Filter TaskTimer tt("%s::readChunk [%u, %u)%u#",
+    TIME_Filter TaskTimer tt("%s Filter::readChunk %s",
                              vartype(*this).c_str(),
-                             I.first, I.last, I.count());
+                             I.toString().c_str());
 
     ChunkAndInverse ci;
 
@@ -103,6 +106,23 @@ ChunkAndInverse Filter::
         ci = f->readChunk( I );
 
     } else {
+        TIME_Filter
+        {
+            if (f)
+            {
+                TaskInfo("Filter affecting source is %s, but transform() differs", vartype(*f).c_str());
+            }
+            else
+            {
+                Operation* o = source()->affecting_source(I);
+                TaskInfo("source()->affecting_source(I) is %s", vartype(*o).c_str());
+            }
+            TaskInfo("source() is %s", vartype(*source().get()).c_str());
+        }
+
+        TIME_Filter TaskTimer tt("Calling %s::computeChunk",
+                                 vartype(*this).c_str());
+
         ci = computeChunk( I );
     }
 
@@ -116,13 +136,12 @@ ChunkAndInverse Filter::
     // Only apply filter if it would affect these samples
     if (this==affecting_source(I) || work || !_try_shortcuts)
     {
-        TIME_Filter TaskTimer("%s applying filter operation, %s",
+        TIME_Filter TaskTimer tt("%s filter applying operation, %s",
                               vartype(*this).c_str(), ci.chunk->getInterval().toString().c_str());
         applyFilter( ci.chunk );
+        TIME_FilterReturn TaskInfo("%s filter after operation",
+                              vartype(*this).c_str());
     }
-
-    TIME_Filter TaskTimer("%s after filter operation, %s",
-                          vartype(*this).c_str(), ci.chunk->getInterval().toString().c_str());
 
     return ci;
 }

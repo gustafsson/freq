@@ -4,6 +4,7 @@
 #include "operationcache.h"
 
 #include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory
+#include "sawe/application.h"
 
 #include <QTime>
 #include <QMutexLocker>
@@ -26,7 +27,6 @@ namespace Signal {
 Worker::
         Worker(Signal::pOperation s)
 :   work_chunks(0),
-    work_time(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
     _cache( new OperationCacheLayer(pOperation()) ),
@@ -37,7 +37,7 @@ Worker::
     _caught_exception( "" ),
     _caught_invalid_argument("")
 {
-    source( s );
+    if(s) source( s );
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
     // but 1<< 12 works well on most GPUs
@@ -48,7 +48,9 @@ Worker::
 {
     TaskInfo tt(__FUNCTION__);
 
+#ifndef QT_NO_THREAD
     this->quit();
+#endif
     todo_list( Intervals() );
 }
 
@@ -65,6 +67,8 @@ bool Worker::
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
+
+    _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(1, source()->sample_rate());
 
     unsigned center_sample = source()->sample_rate() * center;
 
@@ -92,7 +96,8 @@ bool Worker::
         b = callCallbacks( interval );
 
         //float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
-        work_time += b->length();
+        worked_samples |= b->getInterval();
+        //work_time += b->length();
         //work_time -= r;
 
         WORKER_INFO {
@@ -106,18 +111,19 @@ bool Worker::
         CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
+            Sawe::Application::global_ptr()->clearCaches();
             cudaGetLastError(); // consume error
             TaskInfo("_samples_per_chunk was %u", _samples_per_chunk);
             TaskInfo("_max_samples_per_chunk was %u", _max_samples_per_chunk);
             TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave() );
 
-            while (128 < _samples_per_chunk &&
+/*            while (128 < _samples_per_chunk &&
                    _samples_per_chunk <= Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate()))
             {
                 Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave()*0.99f );
             }
-
+*/
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _source->sample_rate());
             _max_samples_per_chunk = _samples_per_chunk;
@@ -180,7 +186,8 @@ bool Worker::
     }
 
     // Reset before next workOne
-    Tfr::Cwt::Singleton().wavelet_time_support( 2.8 );
+    TaskInfo("wavelet_default_time_support = %g", Tfr::Cwt::Singleton().wavelet_default_time_support());
+    Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
 
     _last_work_one = now;
 
@@ -196,9 +203,10 @@ void Worker::
     {
         QMutexLocker l(&_todo_lock);
         _todo_list = v & Interval(0, std::max(1lu, _source->number_of_samples()));
-    }
+        //_todo_list &= Signal::Intervals(0, 44100*7);
 
-    //todo_list().print(__FUNCTION__);
+        WORKER_INFO TaskInfo("Worker::todo_list( %s )", _todo_list.toString().c_str());
+    }
 
     if (v)
         _todo_condition.wakeAll();
@@ -210,8 +218,8 @@ Signal::Intervals Worker::
 {
     QMutexLocker l(&_todo_lock);
     Signal::Intervals c = _todo_list;
-    _cheat_work.clear();
-    if ( 1 >= Tfr::Cwt::Singleton().wavelet_time_support() )
+
+    if ( Tfr::Cwt::Singleton().wavelet_time_support() != Tfr::Cwt::Singleton().wavelet_default_time_support() )
         c -= _cheat_work;
     else
         _cheat_work.clear();
@@ -229,6 +237,8 @@ Signal::pOperation Worker::
 void Worker::
         source(Signal::pOperation value)
 {
+    BOOST_ASSERT( value );
+
     _source = value;
     if (_source)
         _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
@@ -244,6 +254,25 @@ void Worker::
 void Worker::
         appendOperation(Signal::pOperation s)
 {
+    TaskInfo tt("Worker::appendOperation");
+
+    // Check that this operation is not already in the list. Can't move into
+    // composite operations yet as there is no operation iterator implemented.
+    unsigned i = 0;
+    Signal::pOperation itr = _source;
+    while(itr)
+    {
+        if ( itr == s )
+        {
+            std::stringstream ss;
+            ss << "Worker::appendOperation( " << vartype(s) << ", " << std::hex << s.get() << ") "
+                    << "is already in operation chain at postion " << i;
+            throw std::invalid_argument( ss.str() );
+        }
+        itr = itr->source();
+        ++i;
+    }
+
     s->source( _source );
     Signal::Intervals still_zeros;
     if (_source)
@@ -251,6 +280,8 @@ void Worker::
     still_zeros &= s->zeroed_samples();
     _source = s;
     invalidate_post_sink( s->affected_samples() - still_zeros );
+
+    tt.tt().info("Worker::appendOperation, worker tree:\n%s", _source->toString().c_str());
 
     emit source_changed();
 }
@@ -286,7 +317,7 @@ void Worker::
         _requested_fps = value;
         samples_per_chunk_hint(1);
         _max_samples_per_chunk = (unsigned)-1;
-        Tfr::Cwt::Singleton().wavelet_time_support( 0.5 );
+        Tfr::Cwt::Singleton().wavelet_fast_time_support( 0.5 );
     }
 }
 
@@ -339,6 +370,7 @@ void Worker::
 ///// PRIVATE
 
 
+#ifndef QT_NO_THREAD
 void Worker::
         run()
 {
@@ -371,6 +403,7 @@ void Worker::
 		}
 	}
 }
+#endif
 
 
 void Worker::

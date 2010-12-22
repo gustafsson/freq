@@ -88,18 +88,31 @@ void WriteWav::
 
     if (normalize) // Normalize
     {
-
         float high=0, low=0;
         for (unsigned k=0; k<N; k++) {
             if (data[k]>high) high = data[k];
             if (data[k]<low) low = data[k];
         }
 
-        for (unsigned k=0; k<N; k++) {
-            float v = (data[k]-low)/(high-low)*2-1;
-            if (v>1) v = 1;
-            if (v<-1) v = -1;
-            data[k] = v;
+        if (0 == "Move DC")
+        {
+            for (unsigned k=0; k<N; k++) {
+                float v = (data[k]-low)/(high-low)*2-1;
+                if (v>1) v = 1;
+                if (v<-1) v = -1;
+                data[k] = v;
+            }
+        }
+        else
+        {
+            high = std::max( high, -low );
+
+            for (unsigned k=0; k<N; k++) {
+                float v = data[k]/high;
+                if (v>1) v = 1;
+                if (v<-1) v = -1;
+                data[k] = v;
+            }
         }
     }
 
