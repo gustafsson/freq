@@ -24,8 +24,7 @@ namespace Tools { namespace Selections
         SquareModel( Tfr::FreqAxis const& fa, Sawe::Project* p );
         ~SquareModel();
 
-        void updateFilter();
-        Signal::pOperation filter;
+        Signal::pOperation updateFilter();
 
         Heightmap::Position a, b;
         SquareType type;

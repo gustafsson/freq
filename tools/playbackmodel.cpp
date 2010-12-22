@@ -10,7 +10,7 @@ namespace Tools
     PlaybackModel::
             PlaybackModel( SelectionModel* selection )
                 :
-                playback_device(0),
+                playback_device(-1),
                 selection(selection)
     {
         postsinkCallback.reset( new Signal::WorkerCallback(

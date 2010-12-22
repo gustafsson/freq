@@ -29,10 +29,10 @@ public:
     Signal::Interval paint( Heightmap::Reference ref, Heightmap::Position pos );
 
 private:
+    RenderModel* render_model_;
     Signal::pOperation filter_;
 
     Signal::Interval addGauss( Heightmap::Reference ref, Gauss gauss );
-    float xscale_;
 };
 
 

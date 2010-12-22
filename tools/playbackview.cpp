@@ -32,7 +32,7 @@ void PlaybackView::
         update()
 {
     emit update_view();
-    Tfr::Cwt::Singleton().wavelet_time_support( 2.8 );
+    Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
 }
 
 

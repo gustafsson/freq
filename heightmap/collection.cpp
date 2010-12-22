@@ -42,7 +42,7 @@ namespace Heightmap {
 Collection::
         Collection( Worker* worker )
 :   worker( worker ),
-    _samples_per_block( 1<<7 ),
+    _samples_per_block( 1<<7 ), // Created for each
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _frame_counter(0),
@@ -51,7 +51,6 @@ Collection::
 	BOOST_ASSERT( worker->source() );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
-    OSVAL( tt.getStream(), _postsink->fetch_invalid_samples() ); // todo remove
 
     // Updated as soon as the first chunk is received
     update_sample_size( 0 );

@@ -13,7 +13,7 @@ class Application: public QApplication
     Q_OBJECT
 
 public:
-    Application( int& argc, char **argv);
+    Application( int& argc, char **argv, bool dont_parse_sawe_argument = false);
     ~Application();
 
     static QGLWidget*   shared_glwidget();
@@ -27,12 +27,21 @@ public:
     void				openadd_project( pProject p );
     int					default_record_device;
 
+    void parse_command_line_options( int& argc, char **argv );
+
+    void clearCaches();
+
+signals:
+    void clearCachesSignal();
+
 public slots:
     pProject slotNew_recording( int record_device = -1 );
     pProject slotOpen_file( std::string project_file_or_audio_file="" );
     void slotClosed_window( QWidget* );
 
 private:
+    void apply_command_line_options( pProject p );
+
     QGLWidget* shared_glwidget_;
     static Application* _app;
     static std::string _fatal_error;

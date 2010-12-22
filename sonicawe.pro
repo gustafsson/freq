@@ -15,6 +15,7 @@ macx:CONFIG -= app_bundle
 CONFIG += warn_on
 CONFIG += console # console output
 QT += opengl
+DEFINES += QT_NO_THREAD
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2

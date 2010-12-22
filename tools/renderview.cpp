@@ -58,7 +58,8 @@ RenderView::
     //if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
 
     computeChannelColors();
-    clearCaches();
+
+    connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
 }
 
 
@@ -194,17 +195,13 @@ void RenderView::
 float RenderView::
         getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation )
 {
-#ifdef WIN32
-    // getHeightmapValue is tremendously slow on windos for some reason
+#ifdef _MSC_VER
+    // getHeightmapValue is tremendously slow in windows for some reason
     return 0;
 #endif
 
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
         return 0;
-
-    memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
-    memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
-    memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
 
     Heightmap::Reference myref(model->collections[0].get());
     if (!ref)
@@ -214,8 +211,7 @@ float RenderView::
     }
     if (ref->block_index[0] == (unsigned)-1)
     {
-        model->renderer->collection = model->collections[0].get();
-        *ref = model->renderer->findRefAtCurrentZoomLevel( pos.time, pos.scale );
+        *ref = findRefAtCurrentZoomLevel( pos );
     }
 
     Heightmap::Position a,b;
@@ -287,6 +283,19 @@ float RenderView::
     }
 
     return v;
+}
+
+
+Heightmap::Reference RenderView::
+        findRefAtCurrentZoomLevel(Heightmap::Position p)
+{
+    memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
+    memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
+    memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+
+    model->renderer->collection = model->collections[0].get();
+
+    return model->renderer->findRefAtCurrentZoomLevel( p );
 }
 
 
@@ -632,14 +641,12 @@ void RenderView::
         setPosition( float time, float f )
 {
     model->_qx = time;
-    model->_qz = f;
-
-    // todo find length by other means
-
     if (model->_qx<0) model->_qx=0;
-    if (model->_qz<0) model->_qz=0;
-    if (model->_qz>_last_length) model->_qz=_last_length;
     if (model->_qx>_last_length) model->_qx=_last_length;
+
+    model->_qz = f;
+    if (model->_qz<0) model->_qz=0;
+    if (model->_qz>1) model->_qz=1;
 
     userinput_update();
 }
@@ -806,9 +813,8 @@ void RenderView::
             //project->worker.todo_list().print("Displaywidget - PostSink");
         } else {
             model->project()->worker.center = model->_qx;
-            model->project()->worker.todo_list(
-                    model->collectionCallback->sink()->fetch_invalid_samples());
-            //project->worker.todo_list().print("Displaywidget - Collection");
+            Signal::Intervals I = model->collectionCallback->sink()->fetch_invalid_samples();
+            model->project()->worker.todo_list( I );
         }
         Signal::Operation* first_source = model->project()->worker.source()->root();
         Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
@@ -828,6 +834,7 @@ void RenderView::
 
             // project->worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
+#ifndef QT_NO_THREAD
             if (!model->project()->worker.isRunning()) {
                 model->project()->worker.workOne();
                 QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
@@ -838,16 +845,21 @@ void RenderView::
 
                 model->project()->worker.checkForErrors();
             }
+#else
+            model->project()->worker.workOne();
+            QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
+#endif
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
+                float worked_time = model->project()->worker.worked_samples.getInterval().count()/model->project()->worker.source()->sample_rate();
                 _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
                                   model->project()->worker.work_chunks,
-                                  model->project()->worker.work_time,
-                                  model->project()->worker.work_time/_work_timer->elapsedTime(),
+                                  worked_time,
+                                  worked_time/_work_timer->elapsedTime(),
                                   workcount);
                 model->project()->worker.work_chunks = 0;
-                model->project()->worker.work_time = 0;
+                model->project()->worker.worked_samples.clear();
                 workcount++;
                 _work_timer.reset();
             }
@@ -878,14 +890,14 @@ void RenderView::
         TaskTimer tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
 
         if (2>_try_gc) {
-            clearCaches();
+            Sawe::Application::global_ptr()->clearCaches();
             _try_gc++;
         }
         else throw;
     } catch (const GlException &x) {
         TaskTimer tt("RenderView::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
         if (2>_try_gc) {
-            clearCaches();
+            Sawe::Application::global_ptr()->clearCaches();
             _try_gc++;
         }
         else throw;

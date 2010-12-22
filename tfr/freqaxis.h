@@ -54,7 +54,7 @@ public:
     }
 
 
-    __device__ __host__ float getFrequencyScalar( float f ) const
+    __device__ __host__ float getFrequencyScalarNotClamped( float f ) const
     {
         float fi = 0;
 
@@ -73,10 +73,15 @@ public:
             break;
         }
 
-        if (fi > max_frequency_scalar) fi = max_frequency_scalar;
         return fi;
     }
 
+    __device__ __host__ float getFrequencyScalar( float f ) const
+    {
+        float fi = getFrequencyScalarNotClamped( f );
+        if (fi > max_frequency_scalar) fi = max_frequency_scalar;
+        return fi;
+    }
 //private:
 //    friend class Chunk;
 //    void FreqAxis() {} // Private default constructor. However, public default

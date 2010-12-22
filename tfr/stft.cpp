@@ -6,6 +6,7 @@
 #include <throwInvalidArgument.h>
 #include <CudaException.h>
 #include <neat_math.h>
+#include <CudaProperties.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -363,7 +364,7 @@ static unsigned absdiff(unsigned a, unsigned b)
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
     if (_ok_chunk_sizes.empty())
-        build_performance_statistics();
+        build_performance_statistics(true);
 
     std::vector<unsigned>::iterator itr =
             std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
@@ -389,22 +390,21 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     _ok_chunk_sizes.clear();
     Tfr::Stft S;
     scoped_ptr<TaskTimer> tt;
+    if(writeOutput) tt.reset( new TaskTimer("Building STFT performance statistics for %s", CudaProperties::getCudaDeviceProp().name));
     Signal::pBuffer B = boost::shared_ptr<Signal::Buffer>( new Signal::Buffer( 0, 44100*size_of_test_signal_in_seconds, 44100 ) );
     {
-        if(writeOutput) tt.reset( new TaskTimer("Filling %.1f kB (%.1f s with fs=44100) test buffer with random data", B->number_of_samples()*sizeof(float)/1024.f, size_of_test_signal_in_seconds));
+        scoped_ptr<TaskTimer> tt;
+        if(writeOutput) tt.reset( new TaskTimer("Filling test buffer with random data (%.1f kB or %.1f s with fs=44100)", B->number_of_samples()*sizeof(float)/1024.f, size_of_test_signal_in_seconds));
 
         float* p = B->waveform_data()->getCpuMemory();
         for (unsigned i = 0; i < B->number_of_samples(); i++)
             p[i] = rand() / (float)RAND_MAX;
-
-        tt.reset();
     }
 
     time_duration fastest_time;
     unsigned fastest_size = 0;
     unsigned ok_size = 0;
     Tfr::pChunk C;
-    unsigned prevN = -1;
     time_duration latest_time[4];
     unsigned max_base = 3;
     //double base[] = {2,3,5,7};
@@ -413,41 +413,29 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     {
         unsigned N = -1;
         unsigned selectedBase = 0;
+
         for (unsigned b=0; b<sizeof(base)/sizeof(base[0]) && b<=max_base; b++)
         {
-            unsigned N2 = pow(base[b], (double)(unsigned)(log((float)n)/log(base[b])));
+            double x = ceil(log((double)n)/log(base[b]));
+            unsigned N2 = pow(base[b], x);
 
-            unsigned d1 = N>n ? N - n : n - N;
-            unsigned d2 = N2>n ? N2 - n : n - N2;
-            if (d2<d1)
-            {
-                selectedBase = b;
-                N = N2;
-            }
-
-            N2 = pow(base[b], (double)(unsigned)(log((float)n)/log(base[b])) + 1);
-
-            d1 = N>n ? N - n : n - N;
-            d2 = N2>n ? N2 - n : n - N2;
-            if (d2<d1)
+            if (N2<N)
             {
                 selectedBase = b;
                 N = N2;
             }
         }
 
-        if (N == prevN)
-            continue;
-
-        prevN = N;
+        n = N;
 
         S._chunk_size = N;
 
         {
-            if(writeOutput) tt.reset( new TaskTimer( "n=%u, _chunk_size = %u = %g ^ %g ",
+            scoped_ptr<TaskTimer> tt;
+            if(writeOutput) tt.reset( new TaskTimer( "n=%u, _chunk_size = %u = %g ^ %g",
                                                      n, S._chunk_size,
                                                      base[selectedBase],
-                                                     log((float)S._chunk_size)/log(base[selectedBase])));
+                                                     log2f((float)S._chunk_size)/log2f(base[selectedBase])));
 
             ptime startTime = microsec_clock::local_time();
 
@@ -478,8 +466,6 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
             }
 
             _ok_chunk_sizes.push_back( S._chunk_size );
-
-            tt.reset();
         }
         C.reset();
 
@@ -487,6 +473,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
             break;
     }
 
+    if(writeOutput) TaskInfo("Fastest size = %u", fastest_size);
     return fastest_size;
 }
 

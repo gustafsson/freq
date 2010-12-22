@@ -35,6 +35,8 @@ public:
 
 protected:
     void applyFilter( Tfr::pChunk chunk );
+
+    Signal::Intervals include_time_support(Signal::Intervals);
 };
 
 // TODO remove

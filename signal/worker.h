@@ -103,7 +103,12 @@ underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
-class Worker : public QThread
+class Worker
+#ifndef QT_NO_THREAD
+    : public QThread
+#else
+    : public QObject
+#endif
 {
     Q_OBJECT
 public:
@@ -125,9 +130,9 @@ public:
     unsigned work_chunks;
 
     /**
-      work_time is incremented each time workOne is invoked.
+      worked_samples is incremented each time workOne is invoked.
       */
-    float work_time;
+    Intervals worked_samples;
 
     /**
       The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
@@ -188,10 +193,12 @@ signals:
 private:
     friend class WorkerCallback;
 
+#ifndef QT_NO_THREAD
     /**
       Runs the worker thread.
       */
     virtual void run();
+#endif
 
     /**
       A WorkerCallback adds itself to a Worker.

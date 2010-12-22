@@ -5,9 +5,9 @@
 
 #include <stdio.h>
 
-__global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside );
+__global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside, float fs );
 
-void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
+void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_inside, float fs )
 {
     dim3 block(256,1,1);
     dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height, 1);
@@ -18,10 +18,10 @@ void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_ins
     }
 
     grid.x *= 2; // To coalesce better, one thread for each float (instead of each float2)
-    kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area, save_inside );
+    kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area, save_inside, fs );
 }
 
-__global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside )
+__global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside, float fs )
 {
     unsigned
             x = blockIdx.x*blockDim.x + threadIdx.x,
@@ -35,12 +35,16 @@ __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 a
 
     float rx = fabs(area.z - area.x);
     float ry = fabs(area.w - area.y);
-    float dx = fabs(x+.5f - area.x);
-    float dy = fabs(fi-.5f - area.y);
+    //float dx = fabs(x+.5f - area.x);
+    //float dy = fabs(fi-.5f - area.y);
+    float dx = fabs(x - area.x);
+    float dy = fabs(fi - area.y);
 
     float g = dx*dx/rx/rx + dy*dy/ry/ry;
-    rx = max(0.f, rx-1000);
-    ry = max(0.f, ry-2);
+
+    // round corners
+    rx = max(1.f, rx-0.3f*fs);
+    ry = max(1.f, ry-4);
     float f = dx*dx/rx/rx + dy*dy/ry/ry;
     if (f < 1) {
         f = 0;
@@ -54,6 +58,7 @@ __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 a
         f = 1-f;
 
     if (f < 1) {
+        f = 3*f*f - 2*f*f*f;
         //f*=(1-f);
         //f*=(1-f);
 

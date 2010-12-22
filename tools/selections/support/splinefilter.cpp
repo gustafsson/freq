@@ -10,8 +10,8 @@
 
 using namespace Tfr;
 
-//#define TIME_FILTER
-#define TIME_FILTER if(0)
+//#define TIME_SPLINEFILTER
+#define TIME_SPLINEFILTER if(0)
 
 namespace Tools { namespace Selections { namespace Support {
 
@@ -22,7 +22,7 @@ SplineFilter::SplineFilter(bool save_inside) {
 
 void SplineFilter::operator()( Chunk& chunk)
 {
-    TIME_FILTER TaskTimer tt("SplineFilter chunk area (%g %g : %g %g)",
+    TIME_SPLINEFILTER TaskTimer tt("SplineFilter chunk area (%g %g : %g %g)",
         chunk.startTime(), chunk.min_hz, chunk.endTime(), chunk.max_hz);
 
     unsigned N = v.size();
@@ -43,9 +43,9 @@ void SplineFilter::operator()( Chunk& chunk)
 
         p[j] = make_float2(
 				v[i].t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-				chunk.freqAxis().getFrequencyScalar( v[i].f ));
+                chunk.freqAxis().getFrequencyScalarNotClamped( v[i].f ));
 
-        TIME_FILTER TaskTimer("(%g %g) -> p[%u] = (%g %g)",
+        TIME_SPLINEFILTER TaskTimer("(%g %g) -> p[%u] = (%g %g)",
                   v[i].t, v[i].f, i, p[i].x, p[i].y).suppressTiming();
 
 		j++;
@@ -57,7 +57,7 @@ void SplineFilter::operator()( Chunk& chunk)
             chunk.transform_data->getCudaGlobal(),
             pts.getCudaGlobal(), _save_inside );
 
-    TIME_FILTER CudaException_ThreadSynchronize();
+    TIME_SPLINEFILTER CudaException_ThreadSynchronize();
 }
 
 
@@ -93,11 +93,11 @@ Signal::Intervals SplineFilter::
         end_time = std::max(end_time, (unsigned)(p.t*FS));
     }
 
-    Signal::Intervals sid = Signal::Intervals::Intervals_ALL;
+    Signal::Intervals sid;
     if (start_time < end_time)
-        sid -= Signal::Intervals(start_time, end_time);
+        sid = Signal::Intervals(start_time, end_time);
 
-    return sid;
+    return ~sid;
 }
 
 }}} // namespace Tools::Selections::Support

@@ -43,10 +43,11 @@ void BufferSource::
 pBuffer BufferSource::
         read( const Interval& I )
 {
+    BOOST_ASSERT( channel < num_channels() );
+
     const Interval& myInterval = _waveforms[channel]->getInterval();
     if (Intervals(I.first, I.first+1) & myInterval)
     {
-        BOOST_ASSERT( channel < num_channels() );
         return _waveforms[channel];
     }
 

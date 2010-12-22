@@ -30,13 +30,13 @@ void Ellipse::
 
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalar( _f1 ),
+            chunk.freqAxis().getFrequencyScalarNotClamped( _f1 ),
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalar( _f2 ));
+            chunk.freqAxis().getFrequencyScalarNotClamped( _f2 ));
 
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),
-                  area, _save_inside );
+                  area, _save_inside, chunk.sample_rate );
 
     TIME_FILTER CudaException_ThreadSynchronize();
 }
@@ -65,11 +65,11 @@ Signal::Intervals Ellipse::
         start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
         end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
 
-    Signal::Intervals sid = Signal::Intervals::Intervals_ALL;
+    Signal::Intervals sid;
     if (start_time < end_time)
-        sid -= Signal::Intervals(start_time, end_time);
+        sid = Signal::Intervals(start_time, end_time);
 
-    return sid;
+    return ~include_time_support(sid);
 }
 
 } // namespace Filters

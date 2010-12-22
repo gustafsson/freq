@@ -74,16 +74,16 @@ Buffer& Buffer::
     if (sid.empty())
         return *this;
 
-    Interval i = sid.getInterval(b.number_of_samples());
+    Interval i = sid.getInterval();
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
 
     float* write = waveform_data()->getCpuMemory();
-    float* read = b.waveform_data()->getCpuMemory();
+    float const* read = b.waveform_data()->getCpuMemory();
 
-    write+=offs_write;
-    read+=offs_read;
+    write += offs_write;
+    read += offs_read;
 
     memcpy(write, read, i.count()*sizeof(float));
 
@@ -101,17 +101,17 @@ Buffer& Buffer::
     if (sid.empty())
         return *this;
 
-    Interval i = sid.getInterval(b.number_of_samples());
+    Interval i = sid.getInterval();
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
     unsigned length = i.count();
 
     float* write = waveform_data()->getCpuMemory();
-    float* read = b.waveform_data()->getCpuMemory();
+    float const* read = b.waveform_data()->getCpuMemory();
 
-    write+=offs_write;
-    read+=offs_read;
+    write += offs_write;
+    read += offs_read;
 
     for (unsigned n=0; n<length; n++)
         write[n] += read[n];

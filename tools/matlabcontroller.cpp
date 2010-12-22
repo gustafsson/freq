@@ -71,9 +71,10 @@ void MatlabController::
         _matlabfilter.reset( new Adapters::MatlabFilter( "matlabfilter" ) );
         worker_->appendOperation( _matlabfilter );
 
+#ifndef QT_NO_THREAD
         // Make sure the worker runs in a separate thread
-        Tfr::Cwt::Singleton().gc();
         worker_->start();
+#endif
     }
 
     render_view_->userinput_update();}

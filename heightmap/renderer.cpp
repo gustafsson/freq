@@ -356,18 +356,18 @@ void Renderer::createColorTexture(unsigned N) {
 }
 
 Reference Renderer::
-        findRefAtCurrentZoomLevel( float t, float s )
+        findRefAtCurrentZoomLevel( Heightmap::Position p )
 {
     Position max_ss = collection->max_sample_size();
     Reference ref = collection->findReference(Position(0, 0), max_ss);
 
     // The first 'ref' will be a super-ref containing all other refs, thus
-    // containing t and s too. This while-loop zooms in on a ref containing
-    // t and s with enough details.
+    // containing 'p' too. This while-loop zooms in on a ref containing
+    // 'p' with enough details.
 
-    // 't' and 's' are assumed to be valid to start with. Ff they're not valid
+    // 'p' is assumed to be valid to start with. Ff they're not valid
     // this algorithm will choose some ref along the border closest to the
-    // point (t, s).
+    // point 'p'.
 
     while(true)
     {
@@ -379,14 +379,14 @@ Reference Renderer::
         switch(lod)
         {
         case Lod_NeedBetterF:
-            if ((a.scale+b.scale)/2 > s)
+            if ((a.scale+b.scale)/2 > p.scale)
                 ref = ref.bottom();
             else
                 ref = ref.top();
             break;
 
         case Lod_NeedBetterT:
-            if ((a.time+b.time)/2 > t)
+            if ((a.time+b.time)/2 > p.time)
                 ref = ref.left();
             else
                 ref = ref.right();

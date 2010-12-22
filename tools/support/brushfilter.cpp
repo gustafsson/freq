@@ -1,6 +1,6 @@
 #include "brushfilter.h"
 #include "brushfilter.cu.h"
-
+#include "tfr/cwt.h"
  
 namespace Tools {
 namespace Support {
@@ -56,39 +56,36 @@ BrushFilter::BrushImageDataP BrushFilter::
 Signal::Intervals MultiplyBrush::
         affected_samples()
 {
+//    return Signal::Interval(0, number_of_samples());
     Signal::Intervals r;
 
     BrushImages const& imgs = *images.get();
-
-
 
     foreach(BrushImages::value_type const& v, imgs)
     {
         r |= v.first.getInterval();
     }
 
-    return r;
+    return include_time_support(r);
 }
+
 
 void MultiplyBrush::
         operator()( Tfr::Chunk& chunk )
 {
     BrushImages const& imgs = *images.get();
 
-    /*float2 *f = chunk.transform_data->getCpuMemory();
-    for (unsigned i=0; i <chunk.transform_data->getNumberOfElements1D(); ++i)
-        f[i] = make_float2(1,0);*/
-    //cudaMemset( chunk.transform_data->getCudaGlobal().ptr(), 0,
-    //            chunk.transform_data->getSizeInBytes1D() );
+    if (imgs.empty())
+        return;
+
+    Tfr::FreqAxis const& heightmapAxis = imgs.begin()->first.collection()->display_scale();
+    float scale1 = heightmapAxis.getFrequencyScalar( chunk.min_hz );
+    float scale2 = heightmapAxis.getFrequencyScalar( chunk.max_hz );
 
     foreach(BrushImages::value_type const& v, imgs)
     {
         Heightmap::Position a, b;
         v.first.getArea(a, b);
-
-        Tfr::FreqAxis const& heightmapAxis = v.first.collection()->display_scale();
-        float scale1 = heightmapAxis.getFrequencyScalar( chunk.min_hz );
-        float scale2 = heightmapAxis.getFrequencyScalar( chunk.max_hz );
 
         ::multiply(
                 make_float4(chunk.chunk_offset/chunk.sample_rate, scale1,

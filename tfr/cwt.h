@@ -59,8 +59,10 @@ public:
       corresponds to can be computed by calling wavelet_time_support_samples.
       @def 3
       */
+    float     wavelet_default_time_support() const { return _wavelet_def_time_suppport; }
     float     wavelet_time_support() const { return _wavelet_time_suppport; }
-    void      wavelet_time_support( float value ) { _wavelet_time_suppport = value; }
+    void      wavelet_time_support( float value ) { _wavelet_time_suppport = value; _wavelet_def_time_suppport = value; }
+    void      wavelet_fast_time_support( float value ) { _wavelet_time_suppport = value; }
     float     wavelet_scale_support() const { return _wavelet_scale_suppport; }
     void      wavelet_scale_support( float value ) { _wavelet_scale_suppport = value; }
 
@@ -109,6 +111,7 @@ private:
       @see wavelet_time_suppport
       */
     float  _wavelet_time_suppport;
+    float  _wavelet_def_time_suppport;
     float _wavelet_scale_suppport;
 };
 

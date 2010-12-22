@@ -18,7 +18,7 @@
 // #define DEBUG_CwtFilter
 #define DEBUG_CwtFilter if(0)
 
-#define CWT_NOBINS
+//#define CWT_NOBINS // Also change cwt.cpp
 
 using namespace Signal;
 
@@ -34,19 +34,27 @@ CwtFilter::
 
     BOOST_ASSERT( dynamic_cast<Tfr::Cwt*>(t.get()));
 
-    transform( t );
+    _transform = t;
 }
 
 
 ChunkAndInverse CwtFilter::
         computeChunk( const Signal::Interval& I )
 {
-    Signal::IntervalType firstSample = I.first;
-
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
 
+    unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
+
+    // hack to make it work without subsampling
+#ifdef CWT_NOBINS
+    numberOfSamples = cwt.next_good_size( 1, sample_rate() );
+#endif
+
     unsigned c = cwt.find_bin( cwt.nScales( sample_rate() ) - 1 );
-    firstSample = firstSample>>c<<c;
+    Signal::IntervalType firstSample = I.first;
+    firstSample = firstSample/numberOfSamples*numberOfSamples;
+    //firstSample = firstSample>>c<<c;
+    BOOST_ASSERT( firstSample == firstSample>>c<<c );
 
     unsigned time_support = cwt.wavelet_time_support_samples( sample_rate() );
 
@@ -60,14 +68,6 @@ ChunkAndInverse CwtFilter::
 
     //unsigned first_valid_sample = firstSample;
     firstSample -= redundant_samples;
-
-
-    unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
-
-    // hack to make it work without subsampling
-#ifdef CWT_NOBINS
-    numberOfSamples = cwt.next_good_size( 0, sample_rate() );
-#endif
 
     unsigned L = redundant_samples + numberOfSamples + time_support;
 
@@ -91,7 +91,7 @@ ChunkAndInverse CwtFilter::
 
     unsigned N_data=ci.inverse->number_of_samples();
     unsigned N_source=number_of_samples();
-    if (firstSample<N_source)
+    if(0) if (firstSample<N_source)
     {
         unsigned N=N_data;
         if (N_data>N_source-firstSample)
@@ -137,6 +137,23 @@ void CwtFilter::
     }
 
     TIME_CwtFilter CudaException_ThreadSynchronize();
+}
+
+
+Signal::Intervals CwtFilter::
+        include_time_support(Signal::Intervals I)
+{
+    Signal::Intervals r;
+    Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
+    Signal::IntervalType n = cwt.wavelet_time_support_samples( sample_rate() );
+
+    BOOST_FOREACH( Signal::Interval& i, I )
+    {
+        Signal::Intervals s(i);
+        r |= ((s << n) | (s >> n)).coveredInterval();
+    }
+
+    return r;
 }
 
 

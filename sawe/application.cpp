@@ -51,7 +51,7 @@ static string fatal_unknown_exception_string() {
 }
 
 Application::
-        Application(int& argc, char **argv)
+        Application(int& argc, char **argv, bool dont_parse_sawe_argument )
 :   QApplication(argc, argv),
     default_record_device(-1),
     shared_glwidget_(new QGLWidget(QGLFormat(QGL::SampleBuffers)))
@@ -80,6 +80,9 @@ Application::
 #endif
 
     _version_string = ss.str();
+
+    if (!dont_parse_sawe_argument)
+        parse_command_line_options(argc, argv); // will call 'exit(0)' on invalid arguments
 }
 
 Application::
@@ -87,6 +90,8 @@ Application::
 {
     BOOST_ASSERT( _app );
     _app = 0;
+
+    delete shared_glwidget_;
 }
 
 Application* Application::
@@ -159,6 +164,14 @@ void Application::
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
     _projects.insert( p );
+
+    apply_command_line_options( p );
+}
+
+void Application::
+        clearCaches()
+{
+    emit clearCachesSignal();
 }
 
 pProject Application::
@@ -202,5 +215,6 @@ void Application::
             i++;
     }
 }
+
 
 } // namespace Sawe

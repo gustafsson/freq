@@ -31,7 +31,7 @@ public:
 
     Renderer( Collection* collection );
 
-    Reference findRefAtCurrentZoomLevel( float t, float s );
+    Reference findRefAtCurrentZoomLevel( Heightmap::Position p );
     Collection* collection;
 
     void draw( float scaley );

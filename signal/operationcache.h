@@ -30,13 +30,6 @@ public:
       */
     virtual pBuffer readRaw( const Interval& I ) = 0;
 
-    /**
-      Defines what a cache miss is, default implementation checks if the entire
-      sample range exists in _data. If any sample is non-existent in _data it is
-      a cache miss.
-      */
-    virtual bool cacheMiss( const Interval& I );
-
 protected:
     SinkSource _cache;
 };

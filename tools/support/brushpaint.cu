@@ -30,7 +30,8 @@ public:
 
     __device__ void operator()(float& e, float2 const& v)
     {
-        e *= exp2f(g.gauss_value(v));
+        //e *= exp2f(g.gauss_value(v));
+        e *= exp2f(g.gauss_value(v)*0.2f); // "*0.2f" because of ConverterLogAmplitude
     }
 private:
     Gauss g;

@@ -41,14 +41,23 @@ public:
     }
 
 
+    float2 sigma()
+    {
+        // k = log2f(e)*0.5f/sigma/sigma
+        return make_float2(
+                sqrtf( M_LOG2E*0.5f/k.x ),
+                sqrtf( M_LOG2E*0.5f/k.y )
+            );
+    }
+
     float2 pos; // mu
-    float2 k;
+    float2 k; // k = log2f(e)*0.5f/sigma/sigma
     float scale;
 
 private:
     void normalized_scale(float2 sigma)
     {
-        // TODO this should normalize the gaussian, check
+        // this normalizes the bivariate gaussian
         scale = 1.0/(2.0*M_PI*sigma.x*sigma.y);
     }
 };

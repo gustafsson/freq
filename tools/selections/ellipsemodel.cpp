@@ -1,5 +1,6 @@
 #include "ellipsemodel.h"
 #include "filters/ellipse.h"
+#include "tools/support/operation-composite.h"
 
 namespace Tools { namespace Selections
 {
@@ -17,9 +18,6 @@ EllipseModel::
     // no selection
     a.time = b.time;
     a.scale = b.scale;
-
-    filter.reset( new Filters::Ellipse( 0,0,0,0, true ) );
-    updateFilter();
 }
 
 
@@ -30,15 +28,19 @@ EllipseModel::
 }
 
 
-void EllipseModel::
+Signal::pOperation EllipseModel::
         updateFilter()
 {
+    Signal::pOperation filter( new Filters::Ellipse( 0,0,0,0, true ) );
+
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(filter.get());
 
     e->_t1 = a.time;
     e->_t2 = b.time;
     e->_f1 = fa_.getFrequency( a.scale );
     e->_f2 = fa_.getFrequency( b.scale );
+
+    return filter;
 }
 
 } } // namespace Tools::Selections

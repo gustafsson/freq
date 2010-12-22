@@ -235,13 +235,31 @@ void CwtToBlock::
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
+    if(0) {
+        float2* p = chunk.transform_data->getCpuMemory();
+        cudaExtent sz = chunk.transform_data->getNumberOfElements();
+        for (unsigned y=0; y<sz.height; ++y)
+        {
+            for (unsigned x=0; x<=chunk.first_valid_sample+1; ++x)
+            {
+                p[y*sz.width + x ] = make_float2(100,100);
+            }
+
+            for (unsigned x=chunk.first_valid_sample + chunk.n_valid_samples + 1;
+                 x<sz.width; ++x)
+            {
+                p[y*sz.width + x ] = make_float2(100,100);
+            }
+        }
+    }
+
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
                      outData->getCudaGlobal(),
                      make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
                      make_float4( chunk_a.time, chunk_a.scale,
-                                  chunk_b.time, chunk_b.scale ),
+                                  chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // bug workaround, only affects visual
                      make_float4( a.time, a.scale,
                                   b.time, b.scale ),
                      complex_info,
@@ -254,13 +272,14 @@ void CwtToBlock::
     GlException_CHECK_ERROR();
 
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
-    if( !cwt || 1<cwt->wavelet_time_support() )
+    if( !cwt || cwt->wavelet_time_support() == cwt->wavelet_default_time_support() )
     {
         block->valid_samples |= transfer;
     }
-
-    TIME_CWTTOBLOCK TaskInfo("cwt = %p, cwt->wavelet_time_support() = %g, transfer = %s",
-             cwt, cwt->wavelet_time_support(), transfer.toString().c_str());
+    else
+    {
+        TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
+    }
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
     return;

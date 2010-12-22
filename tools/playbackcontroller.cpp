@@ -65,7 +65,7 @@ void PlaybackController::
     }
 
 
-    if (true || postsink_operations->sinks().empty())
+    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
         model()->adapter_playback.reset();
         model()->adapter_playback.reset( new Adapters::Playback( _view->model->playback_device ));
@@ -78,7 +78,7 @@ void PlaybackController::
         postsink_operations->filter( Signal::pOperation() );
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
-        postsink_operations->invalidate_samples(Signal::Intervals::Intervals_ALL - filter->zeroed_samples());
+        postsink_operations->invalidate_samples(~filter->zeroed_samples());
     }
     else
     {

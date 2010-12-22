@@ -34,8 +34,13 @@ Playback::
         _output_device = outputDevice;
     }
 
-    if(first) TaskTimer("Creating audio Playback. Using device '%s' for audio output.",
-                 sys.deviceByIndex(_output_device).name()).suppressTiming();
+    if(first)
+    {
+        TaskInfo tt("Creating audio Playback. Using device '%s' (%d) for audio output.",
+                 sys.deviceByIndex(_output_device).name(), _output_device);
+        if (_output_device != outputDevice)
+            tt.tt().getStream() << " Requested device was number " << outputDevice;
+    }
 
     reset();
     // first = false;
