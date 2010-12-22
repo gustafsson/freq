@@ -10,8 +10,8 @@
 #include <CudaException.h>
 #include <demangle.h>
 
-//#define TIME_WORKER
-#define TIME_WORKER if(0)
+#define TIME_WORKER
+//#define TIME_WORKER if(0)
 
 //#define WORKER_INFO
 #define WORKER_INFO if(0)

@@ -8,7 +8,6 @@
 #include <demangle.h>
 
 #include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
 
 //#define TIME_CwtFilter
 #define TIME_CwtFilter if(0)
@@ -132,7 +131,7 @@ void CwtFilter::
                              pchunk->getInterval().toString().c_str());
     Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( pchunk.get() );
 
-    foreach( pChunk& chunk, chunks->chunks )
+    BOOST_FOREACH( const pChunk& chunk, chunks->chunks )
     {
         (*this)( *chunk );
     }

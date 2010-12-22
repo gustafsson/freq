@@ -255,7 +255,12 @@ void CwtToBlock::
 
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
     if( !cwt || 1<cwt->wavelet_time_support() )
+    {
         block->valid_samples |= transfer;
+    }
+
+    TIME_CWTTOBLOCK TaskInfo("cwt = %p, cwt->wavelet_time_support() = %g, transfer = %s",
+             cwt, cwt->wavelet_time_support(), transfer.toString().c_str());
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
     return;

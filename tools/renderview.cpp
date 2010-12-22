@@ -30,6 +30,9 @@
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
 
+//#define TIME_PAINTGL_DETAILS
+#define TIME_PAINTGL_DETAILS if(0)
+
 //#define DEBUG_EVENTS
 #define DEBUG_EVENTS if(0)
 
@@ -700,24 +703,36 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    float fps = 0;
+	float elapsed_ms = 0;;
     TIME_PAINTGL if (_render_timer)
-        fps = 1/_render_timer->elapsedTime();
+	    elapsed_ms = _render_timer->elapsedTime()*1000.f;
     TIME_PAINTGL _render_timer.reset();
-    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g fps)", fps));
+    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
+
+	TIME_PAINTGL TaskTimer tt("RenderView::paintGL");
 
     _try_gc = 0;
     try {
-        GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
+		{
+			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre check errors");
+			GlException_CHECK_ERROR();
+		}
+		{
+			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre sync");
+			CudaException_CHECK_ERROR();
+		}
 
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		{
+			TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		}
 
     // Set up camera position
     _last_length = model->project()->worker.source()->length();
     float fs = model->project()->worker.source()->sample_rate();
-    {   double limit = std::max(0.f, _last_length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
+    {   
+		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
+		double limit = std::max(0.f, _last_length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
 
         if (model->_qx>=_prevLimit) {
             // -- Following Record Marker --
@@ -731,7 +746,10 @@ void RenderView::
         }
         _prevLimit = limit;
 
-        emit prePaint();
+		{
+			TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
+			emit prePaint();
+		}
 
         setupCamera();
 
@@ -745,7 +763,9 @@ void RenderView::
 
     bool onlyUpdateMainRenderView = false;
     { // Render
-        if (onlyUpdateMainRenderView)
+		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
+
+		if (onlyUpdateMainRenderView)
         foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
         {
             collection->next_frame(); // Discard needed blocks before this row
@@ -756,7 +776,10 @@ void RenderView::
         last_ysize = model->renderer->last_ysize;
         glScalef(1, last_ysize, 1); // global effect on all tools
 
-        emit painting();
+		{
+			TIME_PAINTGL_DETAILS TaskTimer tt("emit painting");
+			emit painting();
+		}
 
         model->renderer->drawAxes( _last_length ); // 4.7 ms
 
@@ -765,6 +788,7 @@ void RenderView::
     }
 
     {   // Find things to work on (ie playback and file output)
+		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
         //    if (p && p->isUnderfed() && p->invalid_samples_left()) {
         Signal::Intervals missing_in_selection =
@@ -795,6 +819,7 @@ void RenderView::
     }
 
     {   // Work
+		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
         bool isWorking = !model->project()->worker.todo_list().empty();
 
         if (wasWorking || isWorking) {
@@ -830,14 +855,23 @@ void RenderView::
     }
 
     if (!onlyUpdateMainRenderView)
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
-    {
-        // Start looking for which blocks that are requested for the next frame.
-        collection->next_frame();
-    }
+	{
+		TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
+		foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+		{
+	        // Start looking for which blocks that are requested for the next frame.
+			collection->next_frame();
+		}
+	}
 
+		{
+			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post check errors");
     GlException_CHECK_ERROR();
-    CudaException_CHECK_ERROR();
+		}
+		{
+			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post sync");
+			CudaException_CHECK_ERROR();
+		}
 
     _try_gc = 0;
     } catch (const CudaException &x) {
@@ -857,7 +891,10 @@ void RenderView::
         else throw;
     }
 
-    emit postPaint();
+	{
+		TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
+		emit postPaint();
+	}
 }
 
 
