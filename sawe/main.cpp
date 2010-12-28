@@ -173,9 +173,9 @@ int main(int argc, char *argv[])
 {
     if (0)
     {
-        const A& a = hej();
+        /*const A& a = hej();
         std::cout << "tjo" << std::endl;
-        return 0;
+        return 0;*/
     }
     if (0) {
         ResampleTest rt;
@@ -237,11 +237,14 @@ int main(int argc, char *argv[])
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
 
+    TaskInfo("Starting Sonic AWE");
+
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
     Sawe::Application a(argc, argv, true);
 
-    TaskTimer("Starting %s", a.version_string().c_str()).suppressTiming();
+    TaskInfo("Version: %s", a.version_string().c_str());
+    TaskInfo("Date: %s", __DATE__);
 
     if (!check_cuda( false ))
         return -1;

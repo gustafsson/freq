@@ -4,6 +4,7 @@
 #include "adapters/audiofile.h"
 #include "tools/support/brushfilter.h"
 #include "filters/ellipse.h"
+#include "filters/rectangle.h"
 
 // Serializable Sonic AWE Tools
 #include "tools/commentmodel.h"

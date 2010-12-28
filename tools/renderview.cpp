@@ -917,7 +917,8 @@ void RenderView::
     size_t free=0, total=0;
 
     cudaMemGetInfo(&free, &total);
-    TaskInfo("free = %lu, total = %lu", free, total);
+    TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
+             total/1024.f/1024, free/1024.f/1024);
 
     userinput_update();
 

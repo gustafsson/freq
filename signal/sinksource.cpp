@@ -6,6 +6,8 @@
 #include <sstream>
 #include <neat_math.h>
 
+#include <boost/foreach.hpp>
+
 static const bool D = false;
 
 using namespace std;
@@ -68,7 +70,7 @@ void SinkSource::
     BufferSource bs( buffer );
 
     Intervals I = expected & buffer->getInterval();
-    foreach( const Interval& i, I )
+    BOOST_FOREACH( const Interval& i, I )
     {
         pBuffer s = bs.readFixedLength( i );
         put( s );
@@ -102,7 +104,7 @@ void SinkSource::
     Intervals sid = samplesDesc();
 	std::vector<pBuffer> new_cache;
 
-    foreach( Interval i, sid )
+    BOOST_FOREACH( Interval i, sid )
 	{
         for (unsigned L=0; i.first < i.last; i.first+=L)
 		{
@@ -165,7 +167,7 @@ void SinkSource::
             // thus making this operation inexpensive.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            foreach( Interval i, toKeep )
+            BOOST_FOREACH( Interval i, toKeep )
             {
                 if(D) ss << " +" << i.toString();
 
@@ -219,7 +221,7 @@ pBuffer SinkSource::
         QMutexLocker l(&_cache_mutex);
 #endif
 
-        foreach( const pBuffer& s, _cache) {
+        BOOST_FOREACH( const pBuffer& s, _cache) {
             if (s->sample_offset <= I.first && s->sample_offset + s->number_of_samples() > I.first )
             {
                 if(D) TaskTimer("%s: sinksource [%u, %u] got [%u, %u]",
@@ -293,7 +295,7 @@ Intervals SinkSource::
 
     Intervals sid;
 
-    foreach( const pBuffer& s, _cache) {
+    BOOST_FOREACH( const pBuffer& s, _cache) {
         sid |= s->getInterval();
     }
 

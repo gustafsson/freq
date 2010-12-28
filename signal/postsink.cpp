@@ -7,6 +7,8 @@
 #include <TaskTimer.h>
 #include <demangle.h>
 
+#include <boost/foreach.hpp>
+
 #define DEBUG_POSTSINK if(0)
 //#define DEBUG_POSTSINK
 
@@ -45,7 +47,7 @@ Signal::pBuffer PostSink::
 
         DEBUG_POSTSINK TaskTimer tt("Adding %u operations", _sinks.size());
 
-        foreach( pOperation c, _sinks )
+        BOOST_FOREACH( pOperation c, _sinks )
         {
             if (c->affected_samples() & I )
             {
@@ -70,7 +72,7 @@ Signal::pBuffer PostSink::
         prev = _filter;
     }
 
-    foreach( pOperation c, passive_operations) {
+    BOOST_FOREACH( pOperation c, passive_operations) {
         c->source(prev);
         prev = c;
     }
@@ -92,15 +94,15 @@ Signal::pBuffer PostSink::
         b = prev->read( I );
 
     // prev.reset( new BufferSource( b ));
-    foreach( pOperation c, active_operations) {
+    BOOST_FOREACH( pOperation c, active_operations) {
         c->source( _filter ? _filter : source() );
         c->read( I );
     }
 
-    foreach( pOperation c, passive_operations )
+    BOOST_FOREACH( pOperation c, passive_operations )
         c->source(source());
 
-    foreach( pOperation c, active_operations )
+    BOOST_FOREACH( pOperation c, active_operations )
         c->source(source());
 
 
@@ -167,7 +169,7 @@ void PostSink::
     if (_filter)
         _filter->source( v );
 
-    foreach( pOperation s, sinks() )
+    BOOST_FOREACH( pOperation s, sinks() )
     {
         s->source( v );
     }
@@ -185,7 +187,7 @@ Intervals PostSink::
     if (_filter)
         I |= _filter->affected_samples();
 
-    foreach( pOperation s, sinks() )
+    BOOST_FOREACH( pOperation s, sinks() )
     {
         I |= s->affected_samples();
     }
@@ -199,7 +201,7 @@ Intervals PostSink::
 {
     Intervals I;
 
-    foreach( pOperation s, sinks() )
+    BOOST_FOREACH( pOperation s, sinks() )
     {
         // Sinks doesn't fetch invalid sampels recursively
         I |= s->fetch_invalid_samples();
@@ -212,7 +214,7 @@ Intervals PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
-    foreach( pOperation o, sinks() )
+    BOOST_FOREACH( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
 
