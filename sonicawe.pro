@@ -14,9 +14,6 @@ macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 CONFIG += console # console output
-CONFIG -= thread
-DEFINES -= QT_THREAD_SUPPORT
-DEFINES += QT_NO_THREAD
 DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
