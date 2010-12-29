@@ -281,7 +281,7 @@ void Application::
     cwt.wavelet_scale_support( _wavelet_scale_support );
 
     //p->worker.samples_per_chunk_hint( _samples_per_chunk );
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
     if (_multithread)
         p->worker.start();
 #endif

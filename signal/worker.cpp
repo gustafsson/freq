@@ -54,7 +54,7 @@ Worker::
 {
     TaskInfo tt(__FUNCTION__);
 
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
     this->quit();
 #endif
     todo_list( Intervals() );
@@ -365,7 +365,7 @@ void Worker::
 ///// PRIVATE
 
 
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
 void Worker::
         run()
 {

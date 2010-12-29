@@ -71,7 +71,7 @@ void MatlabController::
         _matlabfilter.reset( new Adapters::MatlabFilter( "matlabfilter" ) );
         worker_->appendOperation( _matlabfilter );
 
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
         // Make sure the worker runs in a separate thread
         worker_->start();
 #endif

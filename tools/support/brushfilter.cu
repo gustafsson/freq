@@ -22,8 +22,9 @@ class MultiplyOperator
 public:
     __device__ void operator()(float2& e, float2 const& v)
     {
-        e.x *= exp2f(v.x);
-        e.y *= exp2f(v.x); // yes, v.x in both places, see ConvertToFloat2
+        float a = exp2f(v.x); // yes, don't use v.y, see ConvertToFloat2
+        e.x *= a;
+        e.y *= a;
     }
 };
 

@@ -816,7 +816,7 @@ void RenderView::
 
             // project->worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
             if (!model->project()->worker.isRunning()) {
                 model->project()->worker.workOne();
                 QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
@@ -883,6 +883,7 @@ void RenderView::
 void RenderView::
         clearCaches()
 {
+    TaskTimer tt("RenderView::clearCaches(), %p", this);
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
     {
         Heightmap::Collection* c = collection.get();
@@ -893,38 +894,8 @@ void RenderView::
     model->renderer.reset();
     model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
     model->renderer->color_mode = old_color_mode;
-    Tfr::Cwt::Singleton().resetSingleton();
-
-    cudaThreadExit();
-
-    int count;
-    cudaError_t e = cudaGetDeviceCount(&count);
-    TaskTimer tt("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
-    // e = cudaThreadExit();
-    // tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
-    //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-    //e = cudaSetDevice( 1 );
-    //tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
-    //e = cudaSetDevice( 0 );
-    //tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
-    void *p=0;
-    e = cudaMalloc( &p, 10 );
-    tt.info("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
-    e = cudaFree( p );
-    tt.info("cudaFree, error=%s", cudaGetErrorString(e));
-    BOOST_ASSERT( cudaSuccess == e );
-
-    size_t free=0, total=0;
-
-    cudaMemGetInfo(&free, &total);
-    TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
-             total/1024.f/1024, free/1024.f/1024);
 
     userinput_update();
-
-    cudaGetLastError();
-    glGetError();
-
 }
 
 

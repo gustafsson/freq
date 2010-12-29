@@ -108,7 +108,7 @@ instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
 class Worker
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
     : public QThread
 #else
     : public QObject
@@ -197,7 +197,7 @@ signals:
 private:
     friend class WorkerCallback;
 
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
     /**
       Runs the worker thread.
       */
@@ -243,10 +243,10 @@ private:
     Signal::pOperation _source;
     Signal::pOperation _cache;
 
+#ifndef SAWE_NO_MUTEX
     /**
       Thread safety for _todo_list.
       */
-#ifndef SAWE_NO_MUTEX
     QMutex _todo_lock;
     QWaitCondition _todo_condition;
 #endif

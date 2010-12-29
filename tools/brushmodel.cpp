@@ -45,17 +45,17 @@ Signal::Interval BrushModel::
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     float fs = filter()->sample_rate();
     float hz = cwt.compute_frequency2( fs, pos.scale );
-    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_samples( fs, hz );
-    float deltascale = cwt.sigma() / cwt.nScales(fs);
-    float deltat = deltasample/fs;
+    float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;
+    float deltascale = cwt.sigma() * cwt.wavelet_scale_support()*0.9f / cwt.nScales(fs);
+    float deltat = deltasample / fs;
     deltat *= 1;
     deltascale *= 0.1;
     float xscale = b.time-a.time;
     float yscale = b.scale-a.scale;
     if (deltat < xscale*0.05)
         deltat = xscale*0.05;
-    if (deltascale < yscale*0.05)
-        deltascale = yscale*0.05;
+    if (deltascale < yscale*0.01)
+        deltascale = yscale*0.01;
 
     Gauss gauss(
             make_float2( pos.time, pos.scale ),
@@ -75,25 +75,25 @@ Signal::Interval BrushModel::
     for (unsigned &x = left.block_index[0]; ; --x)
     {
         left.getArea(a, b);
-        if (0 == a.time || threshold > gauss.gauss_value(make_float2( a.time, pos.scale )))
+        if (0 == a.time || threshold > fabsf(gauss.gauss_value(make_float2( a.time, pos.scale ))))
             break;
     }
     for (unsigned &x = right.block_index[0]; ; ++x)
     {
         right.getArea(a, b);
-        if (threshold > gauss.gauss_value(make_float2( b.time, pos.scale )))
+        if (threshold > fabsf(gauss.gauss_value(make_float2( b.time, pos.scale ))))
             break;
     }
     for (unsigned &y = bottom.block_index[1]; y>0; --y)
     {
         bottom.getArea(a, b);
-        if (0 == a.scale || threshold > gauss.gauss_value(make_float2( pos.time, a.scale )))
+        if (0 == a.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, a.scale ))))
             break;
     }
     for (unsigned &y = top.block_index[1]; ; ++y)
     {
         top.getArea(a, b);
-        if (1 >= b.scale || threshold > gauss.gauss_value(make_float2( pos.time, b.scale )))
+        if (1 >= b.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, b.scale ))))
             break;
     }
 

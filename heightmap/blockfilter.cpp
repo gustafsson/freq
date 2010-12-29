@@ -164,7 +164,7 @@ void CwtToBlock::
     chunk_a.scale = chunk_first_scale;
     chunk_b.scale = chunk_last_scale;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = inInterval.last/chunk.original_sample_rate;
+    chunk_b.time = (inInterval.last-1)/chunk.original_sample_rate;
 
     float in_frequency_resolution = chunk.nScales()/(chunk_last_scale - chunk_first_scale);
     unsigned out_frequency_resolution = block->ref.frequency_resolution();

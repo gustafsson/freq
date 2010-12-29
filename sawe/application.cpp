@@ -4,6 +4,7 @@
 #include <QtGui/QMessageBox>
 #include <demangle.h>
 #include "ui/mainwindow.h"
+#include "tfr/cwt.h"
 
 using namespace std;
 
@@ -171,7 +172,40 @@ void Application::
 void Application::
         clearCaches()
 {
+    TaskTimer tt("Application::clearCaches");
     emit clearCachesSignal();
+
+    TaskInfo("Reset CWT");
+    Tfr::Cwt::Singleton().resetSingleton();
+
+    TaskInfo("cudaThreadExit()");
+    cudaThreadExit();
+
+    int count;
+    cudaError_t e = cudaGetDeviceCount(&count);
+    TaskInfo("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
+    // e = cudaThreadExit();
+    // tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
+    //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+    //e = cudaSetDevice( 1 );
+    //tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
+    //e = cudaSetDevice( 0 );
+    //tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
+    void *p=0;
+    e = cudaMalloc( &p, 10 );
+    TaskInfo("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
+    e = cudaFree( p );
+    TaskInfo("cudaFree, error=%s", cudaGetErrorString(e));
+    BOOST_ASSERT( cudaSuccess == e );
+
+    size_t free=0, total=0;
+
+    cudaMemGetInfo(&free, &total);
+    TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
+             total/1024.f/1024, free/1024.f/1024);
+
+    cudaGetLastError();
+    glGetError();
 }
 
 pProject Application::

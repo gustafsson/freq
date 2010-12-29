@@ -130,7 +130,28 @@ void BrushController::
         Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
         Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
         if (ref.containsPoint(p))
+        {
+            // TODO Paint with a lower resolution
+            if (0)
+            {
+                ref = ref.parent().parent().parent();
+
+                Heightmap::Position a,b;
+                ref.getArea(a,b);
+                while(b.scale>1)
+                {
+                    ref = ref.bottom();
+                    ref.getArea(a,b);
+                }
+                while(b.time > 2*r.last_length())
+                {
+                    ref = ref.left();
+                    ref.getArea(a,b);
+                }
+            }
+
             drawn_interval_ |= model()->paint( ref, p );
+        }
 
         model()->brush_factor = org_factor;
     }
