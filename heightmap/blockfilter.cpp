@@ -280,6 +280,7 @@ void CwtToBlock::
     }
     else
     {
+        block->valid_samples -= transfer;
         TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
 
