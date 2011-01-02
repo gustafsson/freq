@@ -681,7 +681,8 @@ static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvec
             float s = ((p0-*a)%n)/(dir % n);
 
             // TODO why [-.1, 1.1]?
-            if (!isnan(s) && -.1 <= s && s <= 1.1)
+            //if (!isnan(s) && -.1 <= s && s <= 1.1)
+            if (!isnan(s) && 0 <= s && s <= 1)
             {
                 break;
             }
@@ -712,7 +713,8 @@ static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvec
             float s;
             GLvector xy = planeIntersection( *a, *b, s, p0, n );
 
-            if (!isnan(s) && -.1 <= s && s <= 1.1)
+            //if (!isnan(s) && -.1 <= s && s <= 1.1)
+            if (!isnan(s) && 0 <= s && s <= 1)
             {
                 r.push_back( xy );
             }
