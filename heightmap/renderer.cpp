@@ -671,7 +671,7 @@ static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvec
         b = &p[i];
 
         a_side = b_side;
-        b_side = (p0-*b)%n <0;
+        b_side = (p0-*b)%n < 0;
 
         if (a_side != b_side )
         {
@@ -680,6 +680,7 @@ static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvec
             // planeIntersection
             float s = ((p0-*a)%n)/(dir % n);
 
+            // TODO why [-.1, 1.1]?
             if (!isnan(s) && -.1 <= s && s <= 1.1)
             {
                 break;
@@ -729,7 +730,7 @@ static void printl(const char* str, const std::vector<GLvector>& l) {
     fflush(stdout);
 }
 
-/* returns the first point on the border of the polygon 'l' that lies closest to 'target' */
+/* returns the point on the border of the polygon 'l' that lies closest to 'target' */
 static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &target)
 {
     GLvector r;
@@ -752,7 +753,7 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         if (d%v>0) allPos=false;
         float k = d%v / (d.dot());
         if (0<k && k<1) {
-            f = (l[i]+d*k-target).dot();
+            f = (l[i] + d*k-target).dot();
             if (f<min) {
                 min = f;
                 r = l[i]+d*k;
@@ -764,6 +765,7 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         // point lies within convex polygon, create normal and project to surface
         if (l.size()>2) {
             GLvector n = (l[0]-l[1])^(l[0]-l[2]);
+            n = n.Normalize();
             r = target + n*distanceToPlane( target, l[0], n );
         }
     }
