@@ -395,7 +395,24 @@ unsigned long Collection::
     // others. It would be possible to look through the list and into each
     // cache block to see what data is allocated at the momement. For a future
     // release perhaps...
-    return _cache.size() * scales_per_block()*samples_per_block()*1*sizeof(float)*2;
+    //unsigned long estimation = _cache.size() * scales_per_block()*samples_per_block()*1*sizeof(float)*2;
+    //return estimation;
+
+    unsigned long sumsize = 0;
+    foreach(const cache_t::value_type& b, _cache)
+    {
+        sumsize += b.second->glblock->allocated_bytes_per_element();
+    }
+
+    unsigned elements_per_block = scales_per_block()*samples_per_block();
+    return sumsize*elements_per_block;
+}
+
+
+unsigned Collection::
+        cacheCount()
+{
+    return _cache.size();
 }
 
 
@@ -405,7 +422,7 @@ void Collection::
     size_t free=0, total=0;
     cudaMemGetInfo(&free, &total);
     float MB = 1./1024/1024;
-    TaskInfo("Currently has %u cached blocks (ca %g MB). There is %g MB free cuda mem of a total of %g MB",
+    TaskInfo("Currently has %u cached blocks (ca %g MB). There are %g MB graphics memory free of a total of %g MB",
              _cache.size(), cacheByteSize() * MB, free * MB, total * MB );
 }
 

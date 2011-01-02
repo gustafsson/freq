@@ -47,6 +47,7 @@ public:
     void draw_flat( );
     void draw_directMode( );
 
+    unsigned allocated_bytes_per_element();
 private:
     pSlope slope();
     void create_texture( bool create_slope );

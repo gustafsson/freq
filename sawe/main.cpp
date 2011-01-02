@@ -173,6 +173,15 @@ int main(int argc, char *argv[])
 {
     if (0)
     {
+        std::vector<float> r;
+        r.reserve(10);
+        TaskInfo("r.size() = %u", r.size() );
+        r.push_back(4);
+        TaskInfo("r.size() = %u", r.size() );
+        return 0;
+    }
+    if (0)
+    {
         {
             TaskTimer tt("Timing tasktimer");
         }

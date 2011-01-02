@@ -248,6 +248,7 @@ audiofile              source
 */
 
     unsigned long cacheByteSize();
+    unsigned    cacheCount();
     void        printCacheSize();
     void        gc();
 

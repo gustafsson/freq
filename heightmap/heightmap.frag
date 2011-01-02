@@ -20,39 +20,6 @@ vec4 getWavelengthColor( float wavelengthScalar ) {
     return texture2D(tex_color, vec2(wavelengthScalar,0));
 }
 
-/* Tremendously slow... way faster to interpolate from a small texture 'tex_color' instead */
-vec4 getWavelengthColorCompute( float wavelengthScalar ) {
-    vec4 spectrum[7];
-        /* white background */
-    spectrum[0] = vec4( 1, 0, 0, 0 ),
-    spectrum[1] = vec4( 0, 0, 1, 0 ),
-    spectrum[2] = vec4( 0, 1, 1, 0 ),
-    spectrum[3] = vec4( 0, 1, 0, 0 ),
-    spectrum[4] = vec4( 1, 1, 0, 0 ),
-    spectrum[5] = vec4( 1, 0, 1, 0 ),
-    spectrum[6] = vec4( 1, 0, 0, 0 );
-        /* black background
-        { 0, 0, 0 },
-        { 1, 0, 1 },
-        { 0, 0, 1 },
-        { 0, 1, 1 },
-        { 0, 1, 0 },
-        { 1, 1, 0 },
-        { 1, 0, 0 }}; */
-
-    int count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
-    float f = float(count)*wavelengthScalar;
-    int i1 = int(floor(max(0.0, min(f-1.0, float(count)))));
-    int i2 = int(floor(min(f, float(count))));
-    int i3 = int(floor(min(f+1.0, float(count))));
-    int i4 = int(floor(min(f+2.0, float(count))));
-    float t = (f-float(i2))*0.5;
-    float s = 0.5 + t;
-
-    vec4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
-    return rgb*0.5;
-}
-
 float getHeightLineColor(float height)
 {
    float value = height - floor(height);
@@ -85,21 +52,10 @@ void main()
 
     v *= yScale;
 
-//    float v=texPos.y;
-    //float v = intensity;
-
 //    vec4 waterColor = mix(shallowColor, deepColor, facing);
 
-//    gl_FragColor = gl_Color;
-//    gl_FragColor = vec4(fresnel);
-//    gl_FragColor = vec4(diffuse);
-//    gl_FragColor = waterColor;
-//    gl_FragColor = waterColor*diffuse;
-//    gl_FragColor = waterColor*diffuse + skyColor*fresnel;
-//    gl_FragColor = vec4(pow(1.0-v,5.0));
-//    gl_FragColor = setWavelengthColor( v );
     vec4 curveColor;
-    //float f = 1.0-pow(1.0-clamp(v, 0.0, 1.0),5.0);
+
     float f = abs(v);
 
    switch (colorMode) {
