@@ -12,7 +12,8 @@
 #include <tmatrix.h>
 #include <GlTexture.h>
 
-typedef tvector<3,GLdouble> GLvector;
+//typedef tvector<3,GLdouble> GLvector;
+typedef tvector<3,GLfloat> GLvector;
 typedef tvector<3,GLfloat> GLvectorF;
 
 namespace Heightmap {
@@ -95,7 +96,7 @@ private:
     void beginVboRendering();
     void endVboRendering();
 
-    bool renderSpectrogramRef( Reference ref );
+    void renderSpectrogramRef( Reference ref );
     LevelOfDetal testLod( Reference ref );
     bool renderChildrenSpectrogramRef( Reference ref );
     void renderParentSpectrogramRef( Reference ref );
