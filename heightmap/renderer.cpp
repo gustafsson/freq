@@ -26,6 +26,9 @@
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
 
+//#define TIME_RENDERER_BLOCKS
+#define TIME_RENDERER_BLOCKS if(0)
+
 namespace Heightmap {
 
 
@@ -438,7 +441,7 @@ void Renderer::draw( float scaley )
 
     endVboRendering();
 
-	TIME_RENDERER TaskTimer("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s").suppressTiming();
+    TIME_RENDERER TaskInfo("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
     _drawn_blocks=0;
 
     GlException_CHECK_ERROR();
@@ -514,8 +517,8 @@ void Renderer::endVboRendering() {
 
 void Renderer::renderSpectrogramRef( Reference ref )
 {
-    TIME_RENDERER CudaException_CHECK_ERROR();
-    TIME_RENDERER GlException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     Position a, b;
     ref.getArea( a, b );
@@ -569,8 +572,8 @@ void Renderer::renderSpectrogramRef( Reference ref )
 
     _drawn_blocks++;
 
-    TIME_RENDERER CudaException_CHECK_ERROR();
-    TIME_RENDERER GlException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 
 
@@ -608,9 +611,7 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 
 bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
-    Position a, b;
-    TIME_RENDERER ref.getArea( a, b );
-    TIME_RENDERER TaskTimer tt("[%g, %g]", a.time, b.time);
+    TIME_RENDERER_BLOCKS TaskTimer tt("%s", ref.toString().c_str());
 
     if (!ref.containsSpectrogram())
         return false;
@@ -690,7 +691,12 @@ static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvec
     }
 
     if (i==p.size())
+    {
+        if (!b_side)
+            p.clear();
+
         return;
+    }
 
     std::vector<GLvector> r;
     r.reserve(2*p.size());
