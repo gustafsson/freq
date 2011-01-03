@@ -451,72 +451,72 @@ Heightmap::Position RenderView::
 
 
 void RenderView::
-        drawCollections()
+        drawCollections(GlFrameBuffer* fbo)
 {
     GlException_CHECK_ERROR();
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
+    unsigned cacheCount = 0;
     TIME_PAINTGL for (unsigned i=0; i<N; ++i)
+    {
         sumsize += model->collections[i]->cacheByteSize();
-    TIME_PAINTGL TaskTimer tt("Drawing %u collections (total cache size: %g MB)", N, sumsize/1024.f/1024.f);
+        cacheCount += model->collections[i]->cacheCount();
+    }
+    TIME_PAINTGL TaskTimer tt("Drawing %u collections (total cache size: %g MB, for %u blocks)", N, sumsize/1024.f/1024.f, cacheCount);
+    if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
+    {
+        model->collections[i]->printCacheSize();
+    }
 
     Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
-            model->project()->worker.source()->root());
+                model->project()->worker.source()->root());
 
     TIME_PAINTGL CudaException_CHECK_ERROR();
 
-    model->renderer->init();
-
     glEnable( GL_CULL_FACE );
+
+    // Draw the first channel without a frame buffer
+    model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
 
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
     GLint current_viewport[4];
     glGetIntegerv(GL_VIEWPORT, current_viewport);
 
-    // Draw the first channel without a frame buffer
-    model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
     for (unsigned i=0; i < 1; ++i)
-    {
-        model->renderer->collection = model->collections[i].get();
-        model->renderer->fixed_color = channel_colors[i];
-        if (0!=fs)
-            fs->set_channel( i );
-        glDisable(GL_BLEND);
-        glEnable(GL_LIGHTING);
-        model->renderer->draw( 1 - orthoview ); // 0.6 ms
-        glDisable(GL_LIGHTING);
-        glEnable(GL_BLEND);
-    }
+        drawCollection(i, fs);
 
     if (1<N)
     {
-        // drawCollections is called for 3 different viewports each frame, don't
-        // botter messing around with keeping 3 different frame buffer objects
-        // for the different sizes. Recreate the fbo each time instead.
+        // drawCollections is called for 3 different viewports each frame.
         // GlFrameBuffer will query the current viewport to determine the size
-        // of the fbo.
-        GlFrameBuffer fbo;
+        // of the fbo for this iteration.
+        fbo->recreate();
+
+        // Could also recreate the fbo each frame
+        // boost::scoped_ptr<GlFrameBuffer> my_fbo;
+        // if (!fbo)
+        // {
+        //     my_fbo.reset( new GlFrameBuffer );
+        //     fbo = my_fbo.get();
+        // }
+
         for (unsigned i=1; i < N; ++i)
         {
             GlException_CHECK_ERROR();
-            {
-                GlFrameBuffer::ScopeBinding fboBinding = fbo.getScopeBinding();
-                glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                glViewport(0,0,fbo.getGlTexture().getWidth(),fbo.getGlTexture().getHeight());
 
-                model->renderer->collection = model->collections[i].get();
-                model->renderer->fixed_color = channel_colors[i];
-                if (0!=fs)
-                    fs->set_channel( i );
-                glDisable(GL_BLEND);
-                glEnable(GL_LIGHTING);
-                model->renderer->draw( 1 - orthoview ); // 0.6 ms
-                glDisable(GL_LIGHTING);
-                glEnable(GL_BLEND);
+            {
+                GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
+                glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+                glViewport(0, 0,
+                           fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
+
+                drawCollection(i, fs);
             }
-            glViewport(current_viewport[0], current_viewport[1], current_viewport[2], current_viewport[3]);
+
+            glViewport(current_viewport[0], current_viewport[1],
+                       current_viewport[2], current_viewport[3]);
 
             glPushMatrixContext mpc( GL_PROJECTION );
             glLoadIdentity();
@@ -529,7 +529,7 @@ void RenderView::
             glDisable(GL_DEPTH_TEST);
 
             glColor4f(1,1,1,1);
-            GlTexture::ScopeBinding texObjBinding = fbo.getGlTexture().getScopeBinding();
+            GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
             glBegin(GL_TRIANGLE_STRIP);
                 glTexCoord2f(0,0); glVertex2f(0,0);
                 glTexCoord2f(1,0); glVertex2f(1,0);
@@ -548,6 +548,21 @@ void RenderView::
 
     glDisable( GL_CULL_FACE );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+}
+
+
+void RenderView::
+        drawCollection(int i, Signal::FinalSource* fs)
+{
+    model->renderer->collection = model->collections[i].get();
+    model->renderer->fixed_color = channel_colors[i];
+    if (0!=fs)
+        fs->set_channel( i );
+    glDisable(GL_BLEND);
+    glEnable(GL_LIGHTING);
+    model->renderer->draw( 1 - orthoview ); // 0.6 ms
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
 }
 
 
@@ -689,6 +704,9 @@ void RenderView::
     //printQGLWidget(*this, "this");
     //TaskTimer("autoBufferSwap=%d", autoBufferSwap()).suppressTiming();
     _inited = true;
+
+    TaskInfo("_renderview_fbo");
+    if (!_renderview_fbo) _renderview_fbo.reset( new GlFrameBuffer );
 }
 
 
@@ -719,6 +737,8 @@ void RenderView::
         fps = 1/_render_timer->elapsedTime();
     TIME_PAINTGL _render_timer.reset();
     TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g fps)", fps));
+
+    TIME_PAINTGL TaskTimer tt("RenderView::paintGL()");
 
     _try_gc = 0;
     try {
@@ -765,7 +785,7 @@ void RenderView::
             collection->next_frame(); // Discard needed blocks before this row
         }
 
-        drawCollections();
+        drawCollections( _renderview_fbo.get() );
 
         last_ysize = model->renderer->last_ysize;
         glScalef(1, last_ysize, 1); // global effect on all tools

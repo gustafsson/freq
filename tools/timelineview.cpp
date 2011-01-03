@@ -14,6 +14,7 @@
 #include <GlException.h>
 #include <glPushContext.h>
 #include <cuda_vector_types_op.h>
+#include <glframebuffer.h>
 
 // boost
 #include <boost/assert.hpp>
@@ -25,8 +26,8 @@
 
 #undef max
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
+#define TIME_PAINTGL
+//#define TIME_PAINTGL if(0)
 
 using namespace Signal;
 
@@ -100,6 +101,9 @@ void TimelineView::
     glShadeModel(GL_SMOOTH);
     glDisable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);
+
+    if (!_timeline_bar_fbo) _timeline_bar_fbo.reset( new GlFrameBuffer );
+    if (!_timeline_fbo) _timeline_fbo.reset( new GlFrameBuffer );
 }
 
 
@@ -148,7 +152,7 @@ void TimelineView::
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
-                _render_view->drawCollections();
+                _render_view->drawCollections( _timeline_fbo.get() );
 
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
@@ -164,7 +168,7 @@ void TimelineView::
             setupCamera( true );
             glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
 
-            _render_view->drawCollections();
+            _render_view->drawCollections( _timeline_bar_fbo.get() );
 
             glViewport( 0, 0, (GLint)_width, (GLint)_height );
             setupCamera( true );
