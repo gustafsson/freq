@@ -9,9 +9,11 @@
 #include "tfr/chunk.h"
 #include <vector>
 #include <boost/unordered_map.hpp>
+#ifndef SAWE_NO_MUTEX
 #include <QMutex>
 #include <QWaitCondition>
 #include <QThread>
+#endif
 
 #include <boost/functional/hash.hpp>
 
@@ -94,8 +96,10 @@ public:
     Block( Reference ref )
         :
         frame_number_last_used(-1),
-        ref(ref),
-        new_data_available( false )
+        ref(ref)
+#ifndef SAWE_NO_MUTEX
+        ,new_data_available( false )
+#endif
     {}
 
     // TODO move this value to a complementary class
@@ -118,9 +122,11 @@ public:
 
         For single-GPU environments, 'cpu_copy' is not used.
     */
+#ifndef SAWE_NO_MUTEX
     pData cpu_copy;
     bool new_data_available;
     QMutex cpu_copy_mutex;
+#endif
 
     /**
       valid_samples describes the intervals of valid samples contained in this block.
@@ -242,6 +248,7 @@ audiofile              source
 */
 
     unsigned long cacheByteSize();
+    unsigned    cacheCount();
     void        printCacheSize();
     void        gc();
 
@@ -305,7 +312,9 @@ private:
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 
+#ifndef SAWE_NO_MUTEX
     QMutex _cache_mutex; // Mutex for _cache and _recent
+#endif
     cache_t _cache;
     recent_t _recent; // Ordered with the most recently accessed blocks first
 

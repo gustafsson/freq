@@ -1,8 +1,12 @@
 #include "sinksource.h"
 
+#ifndef SAWE_NO_MUTEX
 #include <QMutexLocker>
+#endif
 #include <sstream>
 #include <neat_math.h>
+
+#include <boost/foreach.hpp>
 
 static const bool D = false;
 
@@ -66,7 +70,7 @@ void SinkSource::
     BufferSource bs( buffer );
 
     Intervals I = expected & buffer->getInterval();
-    foreach( const Interval& i, I )
+    BOOST_FOREACH( const Interval& i, I )
     {
         pBuffer s = bs.readFixedLength( i );
         put( s );
@@ -85,7 +89,9 @@ void SinkSource::
         selfmerge()
 {
 	{
+#ifndef SAWE_NO_MUTEX
 		QMutexLocker l(&_cache_mutex);
+#endif
 
 		if (_cache.empty())
 			return;
@@ -98,7 +104,7 @@ void SinkSource::
     Intervals sid = samplesDesc();
 	std::vector<pBuffer> new_cache;
 
-    foreach( Interval i, sid )
+    BOOST_FOREACH( Interval i, sid )
 	{
         for (unsigned L=0; i.first < i.last; i.first+=L)
 		{
@@ -112,7 +118,9 @@ void SinkSource::
 	}
 
 	{
+#ifndef SAWE_NO_MUTEX
 		QMutexLocker l(&_cache_mutex);
+#endif
 	    _cache = new_cache;
 	}
 
@@ -129,12 +137,16 @@ void SinkSource::
     const Buffer& b = *bp;
     float FS = sample_rate();
 
+    std::stringstream ss;
+    pBuffer n;
+
+	{
+#ifndef SAWE_NO_MUTEX
     QMutexLocker cache_locker(&_cache_mutex);
+#endif
 
     if (!_cache.empty())
         BOOST_ASSERT(_cache.front()->sample_rate == b.sample_rate);
-
-    std::stringstream ss;
 
     // REMOVE caches that become outdated by this new buffer 'b'
     for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); )
@@ -155,7 +167,7 @@ void SinkSource::
             // thus making this operation inexpensive.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            foreach( Interval i, toKeep )
+            BOOST_FOREACH( Interval i, toKeep )
             {
                 if(D) ss << " +" << i.toString();
 
@@ -169,10 +181,10 @@ void SinkSource::
         }
     }
 
-    pBuffer n( new Buffer( b.sample_offset, b.number_of_samples(), b.sample_rate));
+    n = pBuffer( new Buffer( b.sample_offset, b.number_of_samples(), b.sample_rate));
     *n |= b;
     _cache.push_back( n );
-    cache_locker.unlock(); // finished working with _cache, samplesDesc() below needs the lock
+    } //cache_locker.unlock(); // finished working with _cache, samplesDesc() below needs the lock
 
     if(D) if (!ss.str().empty())
     {
@@ -191,7 +203,9 @@ void SinkSource::
 void SinkSource::
         clear()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
     _cache.clear();
     _invalid_samples = Intervals();
 }
@@ -203,9 +217,11 @@ pBuffer SinkSource::
     Interval not_found = I;
 
     {
+#ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_cache_mutex);
+#endif
 
-        foreach( const pBuffer& s, _cache) {
+        BOOST_FOREACH( const pBuffer& s, _cache) {
             if (s->sample_offset <= I.first && s->sample_offset + s->number_of_samples() > I.first )
             {
                 if(D) TaskTimer("%s: sinksource [%u, %u] got [%u, %u]",
@@ -231,7 +247,9 @@ pBuffer SinkSource::
 float SinkSource::
         sample_rate()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
 
     if (_cache.empty())
         return 44100;
@@ -250,7 +268,9 @@ long unsigned SinkSource::
 pBuffer SinkSource::
         first_buffer()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
     if (_cache.empty())
         return pBuffer();
     return _cache.front();
@@ -259,7 +279,9 @@ pBuffer SinkSource::
 
 bool SinkSource::empty()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
     return _cache.empty();
 }
 
@@ -267,11 +289,13 @@ bool SinkSource::empty()
 Intervals SinkSource::
         samplesDesc()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
 
     Intervals sid;
 
-    foreach( const pBuffer& s, _cache) {
+    BOOST_FOREACH( const pBuffer& s, _cache) {
         sid |= s->getInterval();
     }
 

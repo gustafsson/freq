@@ -14,8 +14,8 @@ macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 CONFIG += console # console output
+DEFINES += SAWE_NO_MUTEX
 QT += opengl
-DEFINES += QT_NO_THREAD
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -33,6 +33,12 @@ QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 !macx&!win32: QMAKE_CXX = colorgcc
 #macx:QMAKE_CXX = g++ # Should not need this macx: with !macx&!win32 above
+
+profiling {
+    # Profiling with gcc, gprof doesn't work with Os X 10.5 Leopard.
+    !win32:QMAKE_CXXFLAGS_RELEASE += -pg
+    !win32:QMAKE_LFLAGS_RELEASE += -pg
+}
 
 ### Settings for using llvm instead of gcc on linux
 llvm {
@@ -74,7 +80,6 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
-    tools/tooltipmodel.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 

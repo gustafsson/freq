@@ -68,4 +68,26 @@ long unsigned BufferSource::
     return _waveforms[0]->number_of_samples();
 }
 
+
+unsigned BufferSource::
+        num_channels()
+{
+#ifdef SAWE_MONO
+    return _waveforms.size() ? 1 : 0;
+#else
+    return _waveforms.size();
+#endif
+}
+
+
+void BufferSource::
+        set_channel(unsigned c)
+{
+    BOOST_ASSERT( c < num_channels() );
+
+    channel = c;
+}
+
+
+
 } // namespace Signal

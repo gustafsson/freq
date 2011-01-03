@@ -10,7 +10,7 @@
 #include <CudaException.h>
 #include <GlException.h>
 #include <string>
-#include <QThread>
+//#include <QThread>
 #include <neat_math.h>
 #include <debugmacros.h>
 #include <Statistics.h>
@@ -79,7 +79,9 @@ Collection::
 void Collection::
         reset()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
     _cache.clear();
     _recent.clear();
 }
@@ -88,7 +90,9 @@ void Collection::
 bool Collection::
         empty()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
     return _cache.empty() && _recent.empty();
 }
 
@@ -96,7 +100,9 @@ bool Collection::
 void Collection::
         scales_per_block(unsigned v)
 {
+#ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
+#endif
     _cache.clear();
 	_recent.clear();
     _scales_per_block=v;
@@ -106,7 +112,9 @@ void Collection::
 void Collection::
         samples_per_block(unsigned v)
 {
+#ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
+#endif
     _cache.clear();
 	_recent.clear();
     _samples_per_block=v;
@@ -116,7 +124,9 @@ void Collection::
 unsigned Collection::
         next_frame()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
 
     // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
@@ -282,7 +292,10 @@ pBlock Collection::
     TIME_GETBLOCK TaskTimer tt("getBlock %s", ref.toString().c_str());
 
     pBlock block; // smart pointer defaults to 0
-    {   QMutexLocker l(&_cache_mutex);
+    {   
+		#ifndef SAWE_NO_MUTEX
+		QMutexLocker l(&_cache_mutex);
+		#endif
         cache_t::iterator itr = _cache.find( ref );
         if (itr != _cache.end())
         {
@@ -293,12 +306,14 @@ pBlock Collection::
     if (0 == block.get()) {
         block = createBlock( ref );
     } else {
+			#ifndef SAWE_NO_MUTEX
         if (block->new_data_available) {
             QMutexLocker l(&block->cpu_copy_mutex);
             cudaMemcpy(block->glblock->height()->data->getCudaGlobal().ptr(),
                        block->cpu_copy->getCpuMemory(), block->cpu_copy->getNumberOfElements1D(), cudaMemcpyHostToDevice);
             block->new_data_available = false;
         }
+			#endif
     }
 
     if (0 != block.get())
@@ -307,7 +322,9 @@ pBlock Collection::
         if (!(refInt-=block->valid_samples).empty())
             _unfinished_count++;
 
+		#ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_cache_mutex);
+		#endif
 
         _recent.remove( block );
         _recent.push_front( block );
@@ -322,8 +339,11 @@ std::vector<pBlock> Collection::
         getIntersectingBlocks( Interval I )
 {
     std::vector<pBlock> r;
+    r.reserve(8);
 
+	#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+	#endif
 
     foreach( const cache_t::value_type& c, _cache )
     {
@@ -376,7 +396,24 @@ unsigned long Collection::
     // others. It would be possible to look through the list and into each
     // cache block to see what data is allocated at the momement. For a future
     // release perhaps...
-    return _cache.size() * scales_per_block()*samples_per_block()*1*sizeof(float)*2;
+    //unsigned long estimation = _cache.size() * scales_per_block()*samples_per_block()*1*sizeof(float)*2;
+    //return estimation;
+
+    unsigned long sumsize = 0;
+    foreach(const cache_t::value_type& b, _cache)
+    {
+        sumsize += b.second->glblock->allocated_bytes_per_element();
+    }
+
+    unsigned elements_per_block = scales_per_block()*samples_per_block();
+    return sumsize*elements_per_block;
+}
+
+
+unsigned Collection::
+        cacheCount()
+{
+    return _cache.size();
 }
 
 
@@ -386,7 +423,7 @@ void Collection::
     size_t free=0, total=0;
     cudaMemGetInfo(&free, &total);
     float MB = 1./1024/1024;
-    TaskInfo("Currently has %u cached blocks (ca %g MB). There is %g MB free cuda mem of a total of %g MB",
+    TaskInfo("Currently has %u cached blocks (ca %g MB). There are %g MB graphics memory free of a total of %g MB",
              _cache.size(), cacheByteSize() * MB, free * MB, total * MB );
 }
 
@@ -394,7 +431,9 @@ void Collection::
 void Collection::
         gc()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
+#endif
 
     TaskTimer tt("Collection doing garbage collection", _cache.size());
     printCacheSize();
@@ -428,7 +467,9 @@ void Collection::
     pOperation wf = worker->source();
     _max_sample_size.time = std::max(_max_sample_size.time, 2.f*wf->length()/_samples_per_block);
 
+#ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
+#endif
     foreach( const cache_t::value_type& c, _cache )
 		c.second->valid_samples -= sid;
 }
@@ -438,7 +479,9 @@ Intervals Collection::
 {
     Intervals r;
 
+#ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
+#endif
 
     foreach( const recent_t::value_type& b, _recent )
 	{
@@ -514,14 +557,22 @@ pBlock Collection::
     {
         pBlock block = attempt( ref );
 
-        QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
-        if ( 0 == block.get() && !_cache.empty()) {
+		bool empty_cache;
+		{
+#ifndef SAWE_NO_MUTEX
+            QMutexLocker l(&_cache_mutex);
+#endif
+			empty_cache = _cache.empty();
+		}
+
+        if ( 0 == block.get() && !empty_cache) {
             TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Doing garbage collection", a.time, b.time);
-            l.unlock();
             gc();
-            l.relock();
             block = attempt( ref );
         }
+#ifndef SAWE_NO_MUTEX
+        QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
+#endif
 
         if ( 0 == block.get()) {
             TaskTimer tt("Failed creating new block [%g, %g]", a.time, b.time);

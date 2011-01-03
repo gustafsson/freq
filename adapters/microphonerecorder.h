@@ -5,7 +5,6 @@
 #include "signal/postsink.h"
 
 #include <vector>
-#include <QMutex>
 #include <portaudiocpp/PortAudioCpp.hxx>
 
 namespace Adapters {

@@ -16,10 +16,12 @@
 namespace Tools {
 namespace Support {
 
+
 class BrushFilter : public Tfr::CwtFilter
 {
 public:
     BrushFilter();
+    ~BrushFilter();
 
     typedef boost::shared_ptr< GpuCpuData<float> > BrushImageDataP;
     typedef boost::unordered_map<Heightmap::Reference, BrushImageDataP> BrushImages;
@@ -30,8 +32,12 @@ public:
       */
     BrushImagesP images;
 
+    void release_extra_resources();
 	void validateRefs(Heightmap::Collection* collection);
     BrushImageDataP getImage(Heightmap::Reference const& ref);
+
+private:
+    class BrushFilterSupport* resource_releaser_;
 };
 
 

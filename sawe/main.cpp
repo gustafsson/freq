@@ -173,9 +173,43 @@ int main(int argc, char *argv[])
 {
     if (0)
     {
-        const A& a = hej();
-        std::cout << "tjo" << std::endl;
+        std::vector<float> r;
+        r.reserve(10);
+        TaskInfo("r.size() = %u", r.size() );
+        r.push_back(4);
+        TaskInfo("r.size() = %u", r.size() );
         return 0;
+    }
+    if (0)
+    {
+        {
+            TaskTimer tt("Timing tasktimer");
+        }
+        {
+            TaskTimer tt("Timing loop");
+            for (unsigned N = 1000; N; --N)
+            {
+            }
+        }
+        {
+            TaskTimer tt("Timing threadchecker");
+            for (unsigned N = 1000; N; --N)
+            {
+                ThreadChecker tc;
+            }
+        }
+        // Ubuntu, debug build of both gpumisc and sonicawe
+        //00:12:20.787 Timing tasktimer... done in 4.0 us.
+        //00:12:20.788 Timing loop... done in 6.0 us.
+        //00:12:20.788 Timing threadchecker... done in 37.0 us.
+        return 0;
+    }
+
+    if (0)
+    {
+        /*const A& a = hej();
+        std::cout << "tjo" << std::endl;
+        return 0;*/
     }
     if (0) {
         ResampleTest rt;
@@ -237,11 +271,14 @@ int main(int argc, char *argv[])
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 //#endif
 
+    TaskInfo("Starting Sonic AWE");
+
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
     Sawe::Application a(argc, argv, true);
 
-    TaskTimer("Starting %s", a.version_string().c_str()).suppressTiming();
+    TaskInfo("Version: %s", a.version_string().c_str());
+    TaskInfo("Date: %s", __DATE__);
 
     if (!check_cuda( false ))
         return -1;

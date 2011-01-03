@@ -3,6 +3,11 @@
 #include "tools/support/operation-composite.h"
 #include "sawe/project.h"
 
+#ifdef max
+#undef max
+#undef min
+#endif
+
 namespace Tools { namespace Selections
 {
 

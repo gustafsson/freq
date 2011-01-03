@@ -15,6 +15,8 @@
 #include <QGraphicsScene>
 #include <QTransform>
 
+class GlFrameBuffer;
+
 namespace Heightmap
 {
     class Reference;
@@ -30,8 +32,7 @@ namespace Tools
         virtual ~RenderView();
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
-        void drawCollections();
-        void drawCollection(int, Signal::FinalSource*);
+        void drawCollections(GlFrameBuffer* fbo);
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
         Heightmap::Position getHeightmapPos( QPointF viewport_coordinates, bool useRenderViewContext = true );
         Heightmap::Position getPlanePos( QPointF pos, bool* success, bool useRenderViewContext = true );
@@ -122,6 +123,8 @@ namespace Tools
         virtual void paintGL();
 
 
+        void drawCollection(int, Signal::FinalSource*);
+
         void setStates();
         void setLights();
         void defaultStates();
@@ -130,6 +133,7 @@ namespace Tools
 
         boost::scoped_ptr<TaskTimer> _work_timer;
         boost::scoped_ptr<TaskTimer> _render_timer;
+        boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
 
         bool _inited;
         float _prevLimit;

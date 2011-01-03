@@ -13,6 +13,7 @@ BrushModel::
         BrushModel( Sawe::Project* project, RenderModel* render_model )
             :
             brush_factor(0),
+            std_t(1),
             render_model_(render_model)
 {
     filter_ = project->head_source();
@@ -35,8 +36,8 @@ Support::BrushFilter* BrushModel::
 }
 
 
-Signal::Interval BrushModel::
-        paint( Heightmap::Reference ref, Heightmap::Position pos )
+Gauss BrushModel::
+       getGauss( Heightmap::Reference ref, Heightmap::Position pos )
 {
     TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
     Heightmap::Position a, b;
@@ -45,17 +46,17 @@ Signal::Interval BrushModel::
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     float fs = filter()->sample_rate();
     float hz = cwt.compute_frequency2( fs, pos.scale );
-    float deltasample = Tfr::Cwt::Singleton().morlet_sigma_samples( fs, hz );
-    float deltascale = cwt.sigma() / cwt.nScales(fs);
-    float deltat = deltasample/fs;
-    deltat *= 1;
-    deltascale *= 0.1;
+    float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;
+    float deltascale = cwt.sigma() * cwt.wavelet_scale_support()*0.9f / cwt.nScales(fs);
+    float deltat = deltasample / fs;
+    deltat *= std_t;
+    deltascale *= 0.05;
     float xscale = b.time-a.time;
     float yscale = b.scale-a.scale;
-    if (deltat < xscale*0.05)
-        deltat = xscale*0.05;
-    if (deltascale < yscale*0.05)
-        deltascale = yscale*0.05;
+    if (deltat < xscale*0.02)
+        deltat = xscale*0.02;
+    if (deltascale < yscale*0.01)
+        deltascale = yscale*0.01;
 
     Gauss gauss(
             make_float2( pos.time, pos.scale ),
@@ -64,6 +65,17 @@ Signal::Interval BrushModel::
 
     TIME_BRUSH TaskInfo("Created gauss mu=(%g, %g), sigma=(%g, %g), height=%g, xscale=%g",
                         pos.time, pos.scale, gauss.sigma().x, gauss.sigma().y, brush_factor, xscale);
+
+    return gauss;
+}
+
+
+Signal::Interval BrushModel::
+        paint( Heightmap::Reference ref, Heightmap::Position pos )
+{
+    Gauss gauss = getGauss( ref, pos );
+
+    Heightmap::Position a, b;
 
     Heightmap::Reference
             right = ref,
@@ -75,25 +87,25 @@ Signal::Interval BrushModel::
     for (unsigned &x = left.block_index[0]; ; --x)
     {
         left.getArea(a, b);
-        if (0 == a.time || threshold > gauss.gauss_value(make_float2( a.time, pos.scale )))
+        if (0 == a.time || threshold > fabsf(gauss.gauss_value(make_float2( a.time, pos.scale ))))
             break;
     }
     for (unsigned &x = right.block_index[0]; ; ++x)
     {
         right.getArea(a, b);
-        if (threshold > gauss.gauss_value(make_float2( b.time, pos.scale )))
+        if (threshold > fabsf(gauss.gauss_value(make_float2( b.time, pos.scale ))))
             break;
     }
-    for (unsigned &y = bottom.block_index[1]; y>0; --y)
+    for (unsigned &y = bottom.block_index[1]; ; --y)
     {
         bottom.getArea(a, b);
-        if (0 == a.scale || threshold > gauss.gauss_value(make_float2( pos.time, a.scale )))
+        if (0 == a.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, a.scale ))))
             break;
     }
     for (unsigned &y = top.block_index[1]; ; ++y)
     {
         top.getArea(a, b);
-        if (1 >= b.scale || threshold > gauss.gauss_value(make_float2( pos.time, b.scale )))
+        if (1 <= b.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, b.scale ))))
             break;
     }
 

@@ -5,6 +5,7 @@
 #include "signal/sink.h"
 #include "ui/mousecontrol.h"
 
+class GlFrameBuffer;
 
 namespace Sawe {
     class Project;
@@ -55,6 +56,9 @@ private:
     Sawe::Project* _project;
     RenderView* _render_view;
     int _except_count;
+
+    boost::scoped_ptr<GlFrameBuffer> _timeline_fbo;
+    boost::scoped_ptr<GlFrameBuffer> _timeline_bar_fbo;
 };
 
 } // namespace Tools

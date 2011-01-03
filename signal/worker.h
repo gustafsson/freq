@@ -4,9 +4,13 @@
 #include "signal/intervals.h"
 #include "signal/postsink.h"
 #include <boost/noncopyable.hpp>
+#ifndef SAWE_NO_MUTEX
 #include <QMutex>
 #include <QThread>
 #include <QWaitCondition>
+#endif
+#include <QObject>
+
 
 namespace Signal {
 
@@ -104,7 +108,7 @@ instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
 class Worker
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
     : public QThread
 #else
     : public QObject
@@ -193,7 +197,7 @@ signals:
 private:
     friend class WorkerCallback;
 
-#ifndef QT_NO_THREAD
+#ifndef SAWE_NO_MUTEX
     /**
       Runs the worker thread.
       */
@@ -227,22 +231,25 @@ private:
       */
     boost::posix_time::ptime _last_work_one;
 
+#ifndef SAWE_NO_MUTEX
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
       */
     QMutex _callbacks_lock;
-
+#endif
     /**
       @see source
       */
     Signal::pOperation _source;
     Signal::pOperation _cache;
 
+#ifndef SAWE_NO_MUTEX
     /**
       Thread safety for _todo_list.
       */
     QMutex _todo_lock;
     QWaitCondition _todo_condition;
+#endif
 
     /**
       @see todo_list

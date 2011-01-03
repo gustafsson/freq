@@ -20,6 +20,10 @@
 #include <fstream>
 using namespace std;
 
+#ifdef min
+#undef min
+#endif
+
 namespace Tools
 {
 

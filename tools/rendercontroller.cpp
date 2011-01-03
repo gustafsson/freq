@@ -37,6 +37,10 @@
 
 using namespace Ui;
 
+#ifdef min
+#undef min
+#endif
+
 namespace Tools
 {
 

@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <QResource>
 
-//#define TIME_COMPILESHADER
-#define TIME_COMPILESHADER if(0)
+#define TIME_COMPILESHADER
+//#define TIME_COMPILESHADER if(0)
 
 //#define TIME_GLBLOCK
 #define TIME_GLBLOCK if(0)
@@ -73,15 +73,14 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         }
 
         if (0<len) {
-                        TIME_COMPILESHADER TaskTimer("Shader log:\n%s", log).suppressTiming();
+            TIME_COMPILESHADER TaskInfo("Shader log:\n%s", log);
         }
-
 
         glAttachShader(prg, shader);
         glDeleteShader(shader); // TODO why delete shader?
     } catch (const std::exception &x) {
 #ifndef __APPLE__
-        TIME_COMPILESHADER TaskTimer("Failed, throwing %s", vartype(x).c_str()).suppressTiming();
+        TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
 #endif
         throw;
     }
@@ -132,7 +131,8 @@ GlBlock( Collection* collection, float width, float height )
 GlBlock::
 ~GlBlock()
 {
-    TIME_GLBLOCK TaskTimer tt("~GlBlock() _tex_height=%u, _tex_slope=%u", _tex_height, _tex_slope);
+    boost::scoped_ptr<TaskTimer> tt;
+    TIME_GLBLOCK tt.reset( new TaskTimer ("~GlBlock() tex_height=%u, tex_slope=%u", _tex_height, _tex_slope));
 
     // no point in doing a proper unmapping when it might fail and the textures
     // that would recieve the updates are deleted right after anyways
@@ -150,42 +150,65 @@ GlBlock::
         TIME_GLBLOCK TaskInfo("_mapped_slope.reset()");
     }
 
+    if (tt) tt->partlyDone();
+
     _height.reset();
+    if (tt) tt->partlyDone();
+
     _slope.reset();
+    if (tt) tt->partlyDone();
 
     delete_texture();
-
-    TIME_GLBLOCK TaskInfo("~GlBlock() done");
+    if (tt) tt->partlyDone();
 }
 
 GlBlock::pHeight GlBlock::
 height()
 {
     if (_mapped_height) return _mapped_height;
+
     if (!_height)
     {
+        TIME_GLBLOCK TaskTimer tt("Heightmap, creating vbo");
         unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
         _height.reset( new Vbo(elems*sizeof(float), GL_PIXEL_UNPACK_BUFFER) );
         _height->registerWithCuda();
     }
-    return _mapped_height = pHeight(new MappedVbo<float>(_height, make_cudaExtent(
+
+    TIME_GLBLOCK TaskTimer tt("Heightmap OpenGL->Cuda, vbo=%u", (unsigned)*_height);
+
+    _mapped_height.reset( new MappedVbo<float>(_height, make_cudaExtent(
             _collection->samples_per_block(),
             _collection->scales_per_block(), 1)));
+
+    TIME_GLBLOCK CudaException_ThreadSynchronize();
+
+    return _mapped_height;
 }
 
 GlBlock::pSlope GlBlock::
 slope()
 {
     if (_mapped_slope) return _mapped_slope;
+
     if (!_slope)
     {
+        TIME_GLBLOCK TaskTimer tt("Slope, creating vbo");
+
         unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
         _slope.reset( new Vbo(elems*sizeof(float2), GL_PIXEL_UNPACK_BUFFER) );
         _slope->registerWithCuda();
     }
-    return _mapped_slope = pSlope(new MappedVbo<float2>(_slope, make_cudaExtent(
+
+    TIME_GLBLOCK TaskTimer tt("Slope OpenGL->Cuda, vbo=%u", (unsigned)*_slope);
+
+    _mapped_slope.reset( new MappedVbo<float2>(_slope, make_cudaExtent(
             _collection->samples_per_block(),
             _collection->scales_per_block(), 1)));
+
+    TIME_GLBLOCK CudaException_ThreadSynchronize();
+
+    return _mapped_slope;
 }
 
 
@@ -227,7 +250,9 @@ void GlBlock::
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 
-        TIME_GLBLOCK TaskInfo("_tex_height=%u", _tex_height);
+        _got_new_height_data = true;
+
+        TIME_GLBLOCK TaskInfo("Created tex_height=%u", _tex_height);
     }
 
     if (create_slope && 0==_tex_slope)
@@ -252,7 +277,9 @@ void GlBlock::
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        TIME_GLBLOCK TaskInfo("_tex_slope=%d", _tex_slope);
+        _got_new_height_data = true;
+
+        TIME_GLBLOCK TaskInfo("Created tex_slope=%d", _tex_slope);
     }
 
 }
@@ -261,66 +288,88 @@ void GlBlock::
 void GlBlock::
         update_texture( bool create_slope )
 {
-    unmap();
-
-    if (!_got_new_height_data && _tex_height)
-        return;
-    _got_new_height_data = false;
-
     create_texture( create_slope );
 
-    unsigned meshW = _collection->samples_per_block();
-    unsigned meshH = _collection->scales_per_block();
+    _got_new_height_data |= (bool)_mapped_height;
 
-    TIME_GLBLOCK TaskTimer("meshW=%u, meshH=%u, _tex_height=%u, *_height=%u", meshW, meshH, _tex_height, (unsigned)*_height).suppressTiming();
-    glActiveTexture(GL_TEXTURE0);
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
-    glPixelTransferf(GL_RED_SCALE, 4.f);
-
-    GlException_CHECK_ERROR();
-    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
-    GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
-
-    glPixelTransferf(GL_RED_SCALE, 1.0f);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
-
-    TIME_GLBLOCK CudaException_CHECK_ERROR();
-
-    if (!create_slope && 0 == _tex_slope)
-        return;
-
-    computeSlope(0);
-
+    if (create_slope)
     {
-        TIME_GLBLOCK TaskTimer tt("Gradient Cuda->OpenGL");
-        TIME_GLBLOCK CudaException_CHECK_ERROR();
+        // Need a slope
 
-        BOOST_ASSERT( _mapped_slope.unique() );
+#ifdef _MSC_VER
+        if (false)
+        {
+            // TODO just calling 'slope()->data->getCudaGlobal()' here crashes the graphics driver in windows
+            // slope()->data->getCudaGlobal()
+#else
+        if (_got_new_height_data)
+        {
+            // Slope needs to be updated (before unmap())
+#endif
 
-        _mapped_slope.reset();
-        TIME_GLBLOCK CudaException_CHECK_ERROR();
+            computeSlope(0);
+
+            {
+                TIME_GLBLOCK TaskTimer tt("Slope Cuda->OpenGL, vbo=%u", (unsigned)*_slope);
+                TIME_GLBLOCK CudaException_CHECK_ERROR();
+
+                BOOST_ASSERT( _mapped_slope.unique() );
+
+                _mapped_slope.reset();
+                TIME_GLBLOCK CudaException_ThreadSynchronize();
+            }
+
+            TIME_GLBLOCK TaskTimer tt("Updating slope texture=%u, vbo=%u", _tex_slope, (unsigned)*_slope);
+
+            unsigned meshW = _collection->samples_per_block();
+            unsigned meshH = _collection->scales_per_block();
+
+            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
+            glBindTexture(GL_TEXTURE_2D, _tex_slope);
+
+            GlException_CHECK_ERROR();
+
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
+
+            GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+
+            TIME_GLBLOCK CudaException_CHECK_ERROR();
+
+            _slope.reset();
+
+            TIME_GLBLOCK CudaException_ThreadSynchronize();
+        }
     }
 
-    TIME_GLBLOCK TaskTimer("meshW=%u, meshH=%u, _tex_slope=%u, *_slope=%u", meshW, meshH, _tex_slope, (unsigned)*_slope).suppressTiming();
-    glActiveTexture(GL_TEXTURE0);
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
-    glBindTexture(GL_TEXTURE_2D, _tex_slope);
+    if (_got_new_height_data)
+    {
+        unmap();
 
-    GlException_CHECK_ERROR();
+        TIME_GLBLOCK TaskTimer tt("Updating heightmap texture=%u, vbo=%u", _tex_height, (unsigned)*_height);
 
-    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
+        unsigned meshW = _collection->samples_per_block();
+        unsigned meshH = _collection->scales_per_block();
 
-    GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
+        glBindTexture(GL_TEXTURE_2D, _tex_height);
+        glPixelTransferf(GL_RED_SCALE, 4.f);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+        GlException_CHECK_ERROR();
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
+        GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
 
-    TIME_GLBLOCK CudaException_CHECK_ERROR();
+        glPixelTransferf(GL_RED_SCALE, 1.0f);
 
-    _slope.reset();
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+
+        TIME_GLBLOCK CudaException_ThreadSynchronize();
+
+        _got_new_height_data = false;
+    }
 }
 
 
@@ -329,13 +378,14 @@ void GlBlock::
 {
     if (_mapped_height)
     {
-        TIME_GLBLOCK TaskTimer tt("Heightmap Cuda->OpenGL");
+        TIME_GLBLOCK TaskTimer tt("Heightmap Cuda->OpenGL, height=%u", (unsigned)*_height);
         TIME_GLBLOCK CudaException_CHECK_ERROR();
 
         BOOST_ASSERT( _mapped_height.unique() );
 
         _mapped_height.reset();
-        TIME_GLBLOCK CudaException_CHECK_ERROR();
+
+        TIME_GLBLOCK CudaException_ThreadSynchronize();
 
         _got_new_height_data = true;
     }
@@ -371,6 +421,7 @@ void GlBlock::
         glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+4)*(meshH-1), GL_UNSIGNED_INT, 0);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
+
     TIME_GLBLOCK CudaException_CHECK_ERROR();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 }
@@ -381,7 +432,7 @@ void GlBlock::
     update_texture( false );
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0); // no slope texture for drawing a flat rectangle
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
 
@@ -477,22 +528,31 @@ draw_directMode( )
 }
 
 
+unsigned GlBlock::
+        allocated_bytes_per_element()
+{
+    unsigned s = 0;
+    if (_height) s += sizeof(float); // OpenGL VBO
+    if (_mapped_height) s += sizeof(float); // Cuda device memory
+    if (_tex_height) s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
+    if (_tex_slope) s += 2*sizeof(float2); // OpenGL texture, 2 times the size for mipmaps
+
+    // _mapped_slope and _slope are temporary and only lives in the scope of update_texture
+
+    return s;
+}
+
+
 void GlBlock::
         computeSlope( unsigned /*cuda_stream */)
 {
-    //VERBOSE_COLLECTION TaskTimer tt("%s", __FUNCTION__);
-    //TIME_COLLECTION CudaException_ThreadSynchronize();
+    TIME_GLBLOCK TaskTimer tt("Slope computeSlope");
 
-    //GlBlock::pHeight h = height();
-    //Position a,b;
-    //block->ref.getArea(a,b);
-    //b.time-a.time
-    //b.scale-a.scale
     ::cudaCalculateSlopeKernel( height()->data->getCudaGlobal(),
                                 slope()->data->getCudaGlobal(),
                                 _world_width, _world_height );
 
-    //TIME_COLLECTION CudaException_ThreadSynchronize();
+    TIME_GLBLOCK CudaException_ThreadSynchronize();
 }
 
 } // namespace Heightmap

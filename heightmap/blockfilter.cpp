@@ -44,11 +44,14 @@ void BlockFilter::
 
     foreach( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
     {
+#ifndef SAWE_NO_MUTEX
         if (_collection->constructor_thread().isSameThread())
         {
+#endif
             mergeChunk( block, chunk, block->glblock->height()->data );
 
             TIME_BLOCKFILTER CudaException_CHECK_ERROR();
+#ifndef SAWE_NO_MUTEX
         }
         else
         {
@@ -65,6 +68,7 @@ void BlockFilter::
 
             block->new_data_available = true;
         }
+#endif
     }
 
     TIME_BLOCKFILTER CudaException_ThreadSynchronize();
@@ -162,7 +166,7 @@ void CwtToBlock::
     chunk_a.scale = chunk_first_scale;
     chunk_b.scale = chunk_last_scale;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = inInterval.last/chunk.original_sample_rate;
+    chunk_b.time = (inInterval.last-1)/chunk.original_sample_rate;
 
     float in_frequency_resolution = chunk.nScales()/(chunk_last_scale - chunk_first_scale);
     unsigned out_frequency_resolution = block->ref.frequency_resolution();
@@ -272,12 +276,13 @@ void CwtToBlock::
     GlException_CHECK_ERROR();
 
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
-    if( !cwt || cwt->wavelet_time_support() == cwt->wavelet_default_time_support() )
+    if( cwt->wavelet_time_support() == cwt->wavelet_default_time_support() )
     {
         block->valid_samples |= transfer;
     }
     else
     {
+        block->valid_samples -= transfer;
         TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
 

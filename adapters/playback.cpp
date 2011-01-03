@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <QMutexLocker>
 #include <QMessageBox>
 
 #define TIME_PLAYBACK

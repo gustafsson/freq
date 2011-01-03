@@ -9,6 +9,11 @@ using namespace Tfr;
 //#define TIME_FILTER
 #define TIME_FILTER if(0)
 
+#ifdef min
+#undef min
+#undef max
+#endif
+
 namespace Filters {
 
 Rectangle::Rectangle(float t1, float f1, float t2, float f2, bool save_inside) {

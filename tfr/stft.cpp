@@ -332,7 +332,7 @@ Tfr::pChunk Stft::
                     CUFFT_FORWARD));
 
             i += slices;
-        } catch (const CufftException& x) {
+        } catch (const CufftException& /*x*/) {
             handle_ctx(0,0);
             if (slices>1)
                 slices/=2;

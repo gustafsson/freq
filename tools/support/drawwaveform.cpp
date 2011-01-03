@@ -9,7 +9,6 @@
 
 // Boost
 #include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
 
 namespace Tools {
     namespace Support {
@@ -164,7 +163,7 @@ void DrawWaveform::
 
     /* at next gc, remove those that haven't been used since this gc */
     typedef std::pair<void* const,ListCounter> lcp;
-    foreach( lcp& cnt, _chunkGlList)
+    BOOST_FOREACH( lcp& cnt, _chunkGlList)
     {
         /*    for (std::map<Spectrogram_chunk*, ListCounter>::iterator itr = _chunkGlList.begin();
          _chunkGlList.end() != itr;

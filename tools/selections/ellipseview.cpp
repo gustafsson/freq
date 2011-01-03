@@ -15,14 +15,14 @@
 #include <GL/gl.h>
 #include <TaskTimer.h>
 #include <glPushContext.h>
-#include <QLabel>
+
 namespace Tools { namespace Selections
 {
 
 
 EllipseView::EllipseView(EllipseModel* model)
     :
-    visible(true),
+    visible(false),
     enabled(false),
     model_(model)
 {

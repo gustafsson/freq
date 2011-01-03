@@ -1,14 +1,29 @@
 #include "brushfilter.h"
+#include "brushfiltersupport.h"
+
 #include "brushfilter.cu.h"
 #include "tfr/cwt.h"
- 
+
+#include <CudaException.h>
+
+
 namespace Tools {
 namespace Support {
+
 
 BrushFilter::
         BrushFilter()
 {
     images.reset( new BrushImages );
+    transform( Tfr::pTransform(new Tfr::Cwt( Tfr::Cwt::Singleton())));
+    resource_releaser_ = new BrushFilterSupport(this);
+}
+
+
+BrushFilter::
+        ~BrushFilter()
+{
+    delete resource_releaser_;
 }
 
 
@@ -53,6 +68,19 @@ BrushFilter::BrushImageDataP BrushFilter::
 }
 
 
+void BrushFilter::
+        release_extra_resources()
+{
+    BrushImages const& imgs = *images.get();
+
+    foreach(BrushImages::value_type const& v, imgs)
+    {
+        v.second->getCpuMemory();
+        v.second->freeUnused();
+    }
+}
+
+
 Signal::Intervals MultiplyBrush::
         affected_samples()
 {
@@ -73,6 +101,8 @@ Signal::Intervals MultiplyBrush::
 void MultiplyBrush::
         operator()( Tfr::Chunk& chunk )
 {
+    CudaException_ThreadSynchronize();
+
     BrushImages const& imgs = *images.get();
 
     if (imgs.empty())
@@ -81,19 +111,24 @@ void MultiplyBrush::
     Tfr::FreqAxis const& heightmapAxis = imgs.begin()->first.collection()->display_scale();
     float scale1 = heightmapAxis.getFrequencyScalar( chunk.min_hz );
     float scale2 = heightmapAxis.getFrequencyScalar( chunk.max_hz );
+    float time1 = chunk.chunk_offset/chunk.sample_rate;
+    float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 
-    foreach(BrushImages::value_type const& v, imgs)
+    foreach (BrushImages::value_type const& v, imgs)
     {
         Heightmap::Position a, b;
         v.first.getArea(a, b);
 
         ::multiply(
-                make_float4(chunk.chunk_offset/chunk.sample_rate, scale1,
-                            (chunk.chunk_offset + chunk.nSamples())/chunk.sample_rate, scale2),
+                make_float4(time1, scale1,
+                            time2, scale2),
                 chunk.transform_data->getCudaGlobal(),
                 make_float4(a.time, a.scale, b.time, b.scale),
                 v.second->getCudaGlobal());
+        v.second->freeUnused();
     }
+
+    CudaException_ThreadSynchronize();
 }
 
 

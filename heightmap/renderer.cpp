@@ -26,6 +26,9 @@
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
 
+//#define TIME_RENDERER_BLOCKS
+#define TIME_RENDERER_BLOCKS if(0)
+
 namespace Heightmap {
 
 
@@ -157,17 +160,17 @@ typedef tmatrix<4,GLdouble> GLmatrix;
 // static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
 GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
-    GLvector win;
-    bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
+    GLdouble win0, win1, win2;
+    bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win0, &win1, &win2));
     if(r) *r=s;
-    return win;
+    return GLvector(win0, win1, win2);
 }
 
 GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
-    GLvector obj;
-    bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
+    GLdouble obj0, obj1, obj2;
+    bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj0, &obj1, &obj2));
     if(r) *r=s;
-    return obj;
+    return GLvector(obj0, obj1, obj2);
 }
 
 /*
@@ -256,14 +259,6 @@ void Renderer::init()
         fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
         fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
         fprintf(stderr, "  GL_ARB_texture_float\n");
-        fflush(stderr);
-        exit(EXIT_FAILURE);
-    }
-
-    if (!glewIsSupported( "GL_ARB_framebuffer_object" )) {
-        fprintf(stderr, "Error: failed to get minimal extensions\n");
-        fprintf(stderr, "Sonic AWE requires:\n");
-        fprintf(stderr, "  GL_ARB_framebuffer_object\n");
         fflush(stderr);
         exit(EXIT_FAILURE);
     }
@@ -438,7 +433,7 @@ void Renderer::draw( float scaley )
 
     endVboRendering();
 
-	TIME_RENDERER TaskTimer("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s").suppressTiming();
+    TIME_RENDERER TaskInfo("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
     _drawn_blocks=0;
 
     GlException_CHECK_ERROR();
@@ -512,18 +507,14 @@ void Renderer::endVboRendering() {
     glUseProgram(0);
 }
 
-bool Renderer::renderSpectrogramRef( Reference ref )
+void Renderer::renderSpectrogramRef( Reference ref )
 {
-    if (!ref.containsSpectrogram())
-        return false;
-
-    TIME_RENDERER TaskTimer("drawing").suppressTiming();
-    TIME_RENDERER CudaException_CHECK_ERROR();
-    TIME_RENDERER GlException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     Position a, b;
     ref.getArea( a, b );
-    glPushMatrixContext mc (GL_MODELVIEW );
+    glPushMatrixContext mc( GL_MODELVIEW );
 
     glTranslatef(a.time, 0, a.scale);
     glScalef(b.time-a.time, 1, b.scale-a.scale);
@@ -573,17 +564,15 @@ bool Renderer::renderSpectrogramRef( Reference ref )
 
     _drawn_blocks++;
 
-    TIME_RENDERER CudaException_CHECK_ERROR();
-    TIME_RENDERER GlException_CHECK_ERROR();
-
-    return true;
+    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 
 
 Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 {
     float timePixels, scalePixels;
-    if (!computePixelsPerUnit( ref, timePixels, scalePixels))
+    if (!computePixelsPerUnit( ref, timePixels, scalePixels ))
         return Lod_Invalid;
 
     if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
@@ -614,9 +603,7 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 
 bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
-    Position a, b;
-    ref.getArea( a, b );
-    TIME_RENDERER TaskTimer tt("[%g, %g]", a.time, b.time);
+    TIME_RENDERER_BLOCKS TaskTimer tt("%s", ref.toString().c_str());
 
     if (!ref.containsSpectrogram())
         return false;
@@ -653,7 +640,7 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
 }
 
 // the normal does not need to be normalized
-static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const GLvector& plane, const GLvector& normal ) {
+static GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, GLvector const& plane, GLvector const& normal ) {
     GLvector dir = pt2-pt1;
 
     s = ((plane-pt1)%normal)/(dir % normal);
@@ -666,24 +653,73 @@ static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const G
 }
 
 
-static std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, GLvector p0, GLvector n ) {
-    std::vector<GLvector> r;
+static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvector& n )
+{
+    unsigned i;
 
-    for (unsigned i=0; i<p.size(); i++) {
-        int nexti=(i+1)%p.size();
-        if ((p0-p[i])%n < 0)
-            r.push_back( p[i] );
+    GLvector const* a, * b = &p[p.size()-1];
+    bool a_side, b_side = (p0-*b)%n < 0;
+    for (i=0; i<p.size(); i++) {
+        a = b;
+        b = &p[i];
 
-        if (((p0-p[i])%n < 0) != ((p0-p[nexti])%n <0) ) {
-            float s;
-            GLvector xy = planeIntersection( p[i], p[nexti], s, p0, n );
+        a_side = b_side;
+        b_side = (p0-*b)%n < 0;
 
-            if (!isnan(s) && -.1 <= s && s <= 1.1)
-                r.push_back( xy );
+        if (a_side != b_side )
+        {
+            GLvector dir = *b-*a;
+
+            // planeIntersection
+            float s = ((p0-*a)%n)/(dir % n);
+
+            // TODO why [-.1, 1.1]?
+            //if (!isnan(s) && -.1 <= s && s <= 1.1)
+            if (!isnan(s) && 0 <= s && s <= 1)
+            {
+                break;
+            }
         }
     }
 
-    return r;
+    if (i==p.size())
+    {
+        if (!b_side)
+            p.clear();
+
+        return;
+    }
+
+    std::vector<GLvector> r;
+    r.reserve(2*p.size());
+
+    b = &p[p.size()-1];
+    b_side = (p0-*b)%n < 0;
+
+    for (unsigned i=0; i<p.size(); i++) {
+        a = b;
+        b = &p[i];
+
+        a_side = b_side;
+        b_side = (p0-*b)%n <0;
+
+        if (a_side)
+            r.push_back( *a );
+
+        if (a_side != b_side )
+        {
+            float s;
+            GLvector xy = planeIntersection( *a, *b, s, p0, n );
+
+            //if (!isnan(s) && -.1 <= s && s <= 1.1)
+            if (!isnan(s) && 0 <= s && s <= 1)
+            {
+                r.push_back( xy );
+            }
+        }
+    }
+
+    p = r;
 }
 
 static void printl(const char* str, const std::vector<GLvector>& l) {
@@ -694,7 +730,7 @@ static void printl(const char* str, const std::vector<GLvector>& l) {
     fflush(stdout);
 }
 
-/* returns the first point on the border of the polygon 'l' that lies closest to 'target' */
+/* returns the point on the border of the polygon 'l' that lies closest to 'target' */
 static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &target)
 {
     GLvector r;
@@ -717,7 +753,7 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         if (d%v>0) allPos=false;
         float k = d%v / (d.dot());
         if (0<k && k<1) {
-            f = (l[i]+d*k-target).dot();
+            f = (l[i] + d*k-target).dot();
             if (f<min) {
                 min = f;
                 r = l[i]+d*k;
@@ -729,6 +765,7 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         // point lies within convex polygon, create normal and project to surface
         if (l.size()>2) {
             GLvector n = (l[0]-l[1])^(l[0]-l[2]);
+            n = n.Normalize();
             r = target + n*distanceToPlane( target, l[0], n );
         }
     }
@@ -738,19 +775,14 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
 std::vector<GLvector> Renderer::
         clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w, float h )
 {
-    /*GLvector projectionPlane, projectionNormal,
-        rightPlane, rightNormal,
-        leftPlane, leftNormal,
-        topPlane, topNormal,
-        bottomPlane, bottomNormal;*/
-
     if (!(0==w && 0==h))
         _invalid_frustum = true;
 
     if (_invalid_frustum) {
+        // this takes about 5 us
         GLint const* const& view = viewport_matrix;
 
-        float z0 = .1, z1=.2;
+        float z0=.1, z1=.2;
         if (0==w && 0==h)
             _invalid_frustum = false;
 
@@ -760,8 +792,8 @@ std::vector<GLvector> Renderer::
         rightPlane = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z0) );
         GLvector rightZ = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z1) );
         GLvector rightY = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2+1, z0) );
-        rightZ=rightZ-rightPlane;
-        rightY=rightY-rightPlane;
+        rightZ = rightZ - rightPlane;
+        rightY = rightY - rightPlane;
         rightNormal = ((rightY)^(rightZ)).Normalize();
 
         leftPlane = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2, z0) );
@@ -780,17 +812,17 @@ std::vector<GLvector> Renderer::
         bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
     }
 
-    // must make all normals negative because one of axes are flipped (glScale with a minus sign on the x-axis)
+    // must make all normals negative because one of the axes is flipped (glScale with a minus sign on the x-axis)
     //printl("Start",l);
-    l = clipPlane(l, projectionPlane, projectionNormal);
+    clipPlane(l, projectionPlane, projectionNormal);
     //printl("Projectionclipped",l);
-    l = clipPlane(l, rightPlane, -rightNormal);
+    clipPlane(l, rightPlane, -rightNormal);
     //printl("Right", l);
-    l = clipPlane(l, leftPlane, -leftNormal);
+    clipPlane(l, leftPlane, -leftNormal);
     //printl("Left", l);
-    l = clipPlane(l, topPlane, -topNormal);
+    clipPlane(l, topPlane, -topNormal);
     //printl("Top",l);
-    l = clipPlane(l, bottomPlane, -bottomNormal);
+    clipPlane(l, bottomPlane, -bottomNormal);
     //printl("Bottom",l);
     //printl("Clipped polygon",l);
 
@@ -803,6 +835,7 @@ std::vector<GLvector> Renderer::
         clipFrustum( GLvector corner[4], GLvector &closest_i, float w, float h )
 {
     std::vector<GLvector> l;
+    l.reserve(4);
     for (unsigned i=0; i<4; i++)
         l.push_back( corner[i] );
     return clipFrustum(l, closest_i, w, h);
@@ -827,7 +860,7 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
 
     GLvector closest_i;
     std::vector<GLvector> clippedCorners = clipFrustum(corner, closest_i);
-    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
+    if (0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
     {
         printl("Clipped corners",clippedCorners);
         printf("closest_i %g\t%g\t%g\n", closest_i[0], closest_i[1], closest_i[2]);
@@ -878,7 +911,7 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     }
 
     // compute {units in xz-plane} per {screen pixel}, that determines the required resolution
-    GLdouble
+    GLvector::T
             timePerPixel = 0,
             freqPerPixel = 0;
 
@@ -1257,6 +1290,11 @@ void Renderer::drawAxes( float T )
     //glDisable(GL_BLEND);
 }
 
+template<typename T> void glVertex3v( const T* );
+
+template<> void glVertex3v( const GLdouble* t ) {    glVertex3dv(t); }
+template<>  void glVertex3v( const GLfloat* t )  {    glVertex3fv(t); }
+
 void Renderer::
         drawFrustum(float alpha)
 {
@@ -1287,7 +1325,7 @@ void Renderer::
         {
             float s = (closest-camera).dot()/(*i-camera).dot();
             glColor4f(0,0,0,s*.25f);
-            glVertex3dv( i->v );
+            glVertex3v( i->v );
         }
     glEnd();
 
@@ -1297,7 +1335,7 @@ void Renderer::
                 i!=clippedFrustum.end();
                 i++)
         {
-            glVertex3dv( i->v );
+            glVertex3v( i->v );
         }
     glEnd();
 }

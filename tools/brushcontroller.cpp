@@ -22,6 +22,7 @@ BrushController::
 
     setAttribute(Qt::WA_DontShowOnScreen, true);
     setEnabled( false );
+    setMouseTracking( true );
 }
 
 
@@ -117,20 +118,41 @@ void BrushController::
 void BrushController::
         mouseMoveEvent ( QMouseEvent * e )
 {
+    Tools::RenderView &r = *render_view_;
+    Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
+    Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
+    view_->gauss = model()->getGauss( ref, p );
+
     if (e->buttons().testFlag( paint_button_ ) || e->buttons().testFlag( Qt::RightButton ))
     {
-        Tools::RenderView &r = *render_view_;
-        r.makeCurrent();
-
         float org_factor = model()->brush_factor;
 
         if (e->buttons().testFlag( Qt::RightButton ))
             model()->brush_factor *= -1;
 
-        Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
-        Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
         if (ref.containsPoint(p))
+        {
+            // TODO Paint with a lower resolution
+            if (0)
+            {
+                ref = ref.parent().parent().parent();
+
+                Heightmap::Position a,b;
+                ref.getArea(a,b);
+                while(b.scale>1)
+                {
+                    ref = ref.bottom();
+                    ref.getArea(a,b);
+                }
+                while(b.time > 2*r.last_length())
+                {
+                    ref = ref.left();
+                    ref.getArea(a,b);
+                }
+            }
+
             drawn_interval_ |= model()->paint( ref, p );
+        }
 
         model()->brush_factor = org_factor;
     }
@@ -151,5 +173,21 @@ void BrushController::
     }
 }
 
+
+void BrushController::
+        wheelEvent ( QWheelEvent *event )
+{
+    float ps = 0.005;
+    float d = ps * event->delta();
+
+    if (d>0.1)
+        d=0.1;
+    if (d<-0.1)
+        d=-0.1;
+
+    model()->std_t *= (1-d);
+    QMouseEvent mouseevent(event->type(), event->pos(), event->globalPos(), Qt::NoButton, event->buttons(), event->modifiers());
+    mouseMoveEvent(&mouseevent);
+}
 
 } // namespace Tools
