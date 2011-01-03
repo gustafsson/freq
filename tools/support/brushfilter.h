@@ -114,7 +114,4 @@ private:
 } // namespace Support
 } // namespace Tools
 
-//#include <boost/serialization/export.hpp>
-//BOOST_CLASS_EXPORT(Tools::Support::MultiplyBrush)
-
 #endif // BRUSHFILTER_H

@@ -35,7 +35,4 @@ private:
 
 } // namespace Filters
 
-//#include <boost/serialization/export.hpp>
-//BOOST_CLASS_EXPORT(Filters::Ellipse)
-
 #endif // FILTER_ELLIPSE_H
