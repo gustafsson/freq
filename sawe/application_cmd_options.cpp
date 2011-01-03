@@ -207,6 +207,17 @@ void Application::
         }
     }
 
+    if (_list_audio_devices)
+    {
+        Adapters::Playback::list_devices();
+        _sawe_exit = true;
+    }
+
+    if (_sawe_exit)
+    {
+        ::exit(0);
+    }
+
     Sawe::pProject p; // p will be owned by Application and released before a.exec()
 
     if (!_soundfile.empty())
@@ -256,12 +267,6 @@ void Application::
 
     if (_get_chunk_count != false) {
         cout << p->head_source()->number_of_samples() / total_samples_per_chunk << endl;
-        _sawe_exit = true;
-    }
-
-    if (_list_audio_devices)
-    {
-        Adapters::Playback::list_devices();
         _sawe_exit = true;
     }
 
