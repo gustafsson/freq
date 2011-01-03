@@ -9,6 +9,8 @@ public:
     __device__ void operator()(float& e, float2 const& v)
     {
         e += g.gauss_value(v);
+        if (e>10) e = 10;
+        if (e<-10) e = -10;
     }
 private:
     Gauss g;
