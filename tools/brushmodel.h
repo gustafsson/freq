@@ -26,8 +26,14 @@ public:
 
     float brush_factor;
 
+    /**
+      Defaults to 1
+      */
+    float std_t;
+
     Signal::Interval paint( Heightmap::Reference ref, Heightmap::Position pos );
 
+    Gauss getGauss( Heightmap::Reference ref, Heightmap::Position pos );
 private:
     RenderModel* render_model_;
     Signal::pOperation filter_;

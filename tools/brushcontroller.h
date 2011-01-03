@@ -33,6 +33,7 @@ namespace Tools {
         virtual void mouseReleaseEvent ( QMouseEvent * e );
         virtual void mouseMoveEvent ( QMouseEvent * e );
         virtual void changeEvent ( QEvent * event );
+        virtual void wheelEvent ( QWheelEvent *event );
 
         // View
         BrushModel* model() { return view_->model_; }

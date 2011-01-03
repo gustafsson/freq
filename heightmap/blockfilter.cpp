@@ -44,15 +44,17 @@ void BlockFilter::
 
     foreach( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
     {
+#ifndef SAWE_NO_MUTEX
         if (_collection->constructor_thread().isSameThread())
         {
+#endif
             mergeChunk( block, chunk, block->glblock->height()->data );
 
             TIME_BLOCKFILTER CudaException_CHECK_ERROR();
+#ifndef SAWE_NO_MUTEX
         }
         else
         {
-#ifndef SAWE_NO_MUTEX
             QMutexLocker l(&block->cpu_copy_mutex);
             if (!block->cpu_copy)
                 throw std::logic_error(
@@ -65,8 +67,8 @@ void BlockFilter::
             block->cpu_copy->freeUnused();
 
             block->new_data_available = true;
-#endif
         }
+#endif
     }
 
     TIME_BLOCKFILTER CudaException_ThreadSynchronize();
@@ -274,7 +276,7 @@ void CwtToBlock::
     GlException_CHECK_ERROR();
 
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
-    if( !cwt || cwt->wavelet_time_support() == cwt->wavelet_default_time_support() )
+    if( cwt->wavelet_time_support() == cwt->wavelet_default_time_support() )
     {
         block->valid_samples |= transfer;
     }

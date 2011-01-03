@@ -2,10 +2,11 @@
 #define BRUSHVIEW_H
 
 #include <QObject>
+#include "heightmap/position.h"
+#include "heightmap/reference.h"
+#include "brushmodel.h"
 
 namespace Tools {
-
-class BrushModel;
 
 class BrushView: public QObject
 {
@@ -15,6 +16,7 @@ public:
     ~BrushView();
 
     bool enabled;
+    Gauss gauss;
 
 public slots:
     /// Connected in BrushController
@@ -23,6 +25,8 @@ public slots:
 private:
     friend class BrushController;
     BrushModel* model_;
+
+    void drawCircle();
 };
 
 } // namespace Tools

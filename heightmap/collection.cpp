@@ -339,6 +339,7 @@ std::vector<pBlock> Collection::
         getIntersectingBlocks( Interval I )
 {
     std::vector<pBlock> r;
+    r.reserve(8);
 
 	#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);

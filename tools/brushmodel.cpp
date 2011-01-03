@@ -13,6 +13,7 @@ BrushModel::
         BrushModel( Sawe::Project* project, RenderModel* render_model )
             :
             brush_factor(0),
+            std_t(1),
             render_model_(render_model)
 {
     filter_ = project->head_source();
@@ -35,8 +36,8 @@ Support::BrushFilter* BrushModel::
 }
 
 
-Signal::Interval BrushModel::
-        paint( Heightmap::Reference ref, Heightmap::Position pos )
+Gauss BrushModel::
+       getGauss( Heightmap::Reference ref, Heightmap::Position pos )
 {
     TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
     Heightmap::Position a, b;
@@ -48,12 +49,12 @@ Signal::Interval BrushModel::
     float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;
     float deltascale = cwt.sigma() * cwt.wavelet_scale_support()*0.9f / cwt.nScales(fs);
     float deltat = deltasample / fs;
-    deltat *= 1;
-    deltascale *= 0.1;
+    deltat *= std_t;
+    deltascale *= 0.05;
     float xscale = b.time-a.time;
     float yscale = b.scale-a.scale;
-    if (deltat < xscale*0.05)
-        deltat = xscale*0.05;
+    if (deltat < xscale*0.02)
+        deltat = xscale*0.02;
     if (deltascale < yscale*0.01)
         deltascale = yscale*0.01;
 
@@ -64,6 +65,17 @@ Signal::Interval BrushModel::
 
     TIME_BRUSH TaskInfo("Created gauss mu=(%g, %g), sigma=(%g, %g), height=%g, xscale=%g",
                         pos.time, pos.scale, gauss.sigma().x, gauss.sigma().y, brush_factor, xscale);
+
+    return gauss;
+}
+
+
+Signal::Interval BrushModel::
+        paint( Heightmap::Reference ref, Heightmap::Position pos )
+{
+    Gauss gauss = getGauss( ref, pos );
+
+    Heightmap::Position a, b;
 
     Heightmap::Reference
             right = ref,
@@ -84,7 +96,7 @@ Signal::Interval BrushModel::
         if (threshold > fabsf(gauss.gauss_value(make_float2( b.time, pos.scale ))))
             break;
     }
-    for (unsigned &y = bottom.block_index[1]; y>0; --y)
+    for (unsigned &y = bottom.block_index[1]; ; --y)
     {
         bottom.getArea(a, b);
         if (0 == a.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, a.scale ))))
@@ -93,7 +105,7 @@ Signal::Interval BrushModel::
     for (unsigned &y = top.block_index[1]; ; ++y)
     {
         top.getArea(a, b);
-        if (1 >= b.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, b.scale ))))
+        if (1 <= b.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, b.scale ))))
             break;
     }
 
