@@ -31,7 +31,7 @@ win32:QMAKE_LFLAGS_RELEASE += \
 	
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-!macx&!win32: QMAKE_CXX = colorgcc
+unix: !macx: QMAKE_CXX = colorgcc
 #macx:QMAKE_CXX = g++ # Should not need this macx: with !macx&!win32 above
 
 profiling {
@@ -151,7 +151,8 @@ macx {
 INCLUDEPATH += \
     ../../libs/include \
     ../../libs/hdf5/include \
-    ../../libs/zlib/include 
+    ../../libs/zlib/include \
+    ../../libs/include/sndfile
 LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -framework GLUT \
