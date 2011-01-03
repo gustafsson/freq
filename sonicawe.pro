@@ -150,6 +150,7 @@ LIBS = \
 macx {
 INCLUDEPATH += \
     ../../libs/include \
+    ../../libs/boost_1_45_0 \
     ../../libs/hdf5/include \
     ../../libs/zlib/include \
     ../../libs/include/sndfile
@@ -159,8 +160,10 @@ LIBS = -lsndfile \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio \
     -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/zlib/bin -lz \
-    -L../gpumisc -lgpumisc
+    -L../../libs/zlib/lib -lz \
+    -L../gpumisc -lgpumisc \
+    -L../../libs/boost_1_45_0/stage/lib \
+    -lboost_serialization
 }
 
 win32 {

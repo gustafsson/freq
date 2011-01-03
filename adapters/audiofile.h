@@ -275,7 +275,5 @@ private:
 
 } // namespace Adapters
 
-#include <boost/serialization/export.hpp>
-BOOST_CLASS_EXPORT(Adapters::Audiofile)
 
 #endif // ADAPTERS_AUDIOFILE_H

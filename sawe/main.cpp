@@ -150,8 +150,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 #include <Statistics.h>
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
+//#include <boost/archive/xml_oarchive.hpp>
+//#include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 	if (0) try {
-		{
+                /*{
 			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));
 
 			std::ofstream ofs("tstfil.xml");
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 			Signal::pOperation ljud;
 			xml & boost::serialization::make_nvp("hej2", ljud );
 			cout << "filnamn: " << ((Adapters::Audiofile*)ljud.get())->filename() << endl;
-		}
+                }*/
 		return 0;
 	} catch (std::exception const& x)
 	{
