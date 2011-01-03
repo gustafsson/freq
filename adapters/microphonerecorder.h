@@ -7,6 +7,8 @@
 #include <vector>
 #include <portaudiocpp/PortAudioCpp.hxx>
 
+#include <QMutex>
+
 namespace Adapters {
 
 class MicrophoneRecorder: public Signal::FinalSource
@@ -34,6 +36,7 @@ private:
     MicrophoneRecorder() {} // for deserialization
 
     unsigned channel;
+    QMutex _data_lock;
     std::vector<Signal::SinkSource> _data;
     Signal::PostSink _postsink;
 

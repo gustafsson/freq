@@ -23,11 +23,12 @@ using namespace std;
 namespace Sawe {
 
 static const char _sawe_usage_string[] =
-            "sonicawe [--parameter=value]* [FILENAME]\n"
-            "sonicawe [--parameter] \n"
-            "sonicawe [--help] \n"
-            "sonicawe [--version] \n"
-            "\n"
+    "\n"
+    "sonicawe [--parameter=value]* [FILENAME]\n"
+    "sonicawe [--parameter] \n"
+    "sonicawe [--help] \n"
+    "sonicawe [--version] \n"
+    "\n"
     "    Each parameter takes a value, if no value is given the default value is\n"
     "    written to standard output and the program exits immediately after.\n"
     "    Valid parameters are:\n"
@@ -61,7 +62,7 @@ static const char _sawe_usage_string[] =
     "                       filters are being used as the GUI won't be locked during\n"
     "                       computation.\n"
 */    "\n"
-    "Sonic AWE, 2010\n";
+    "Sonic AWE, 2011\n";
 
 static unsigned _channel=0;
 static unsigned _scales_per_octave = 20;
@@ -207,6 +208,17 @@ void Application::
         }
     }
 
+    if (_list_audio_devices)
+    {
+        Adapters::Playback::list_devices();
+        _sawe_exit = true;
+    }
+
+    if (_sawe_exit)
+    {
+        ::exit(0);
+    }
+
     Sawe::pProject p; // p will be owned by Application and released before a.exec()
 
     if (!_soundfile.empty())
@@ -256,12 +268,6 @@ void Application::
 
     if (_get_chunk_count != false) {
         cout << p->head_source()->number_of_samples() / total_samples_per_chunk << endl;
-        _sawe_exit = true;
-    }
-
-    if (_list_audio_devices)
-    {
-        Adapters::Playback::list_devices();
         _sawe_exit = true;
     }
 
