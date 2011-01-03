@@ -151,7 +151,11 @@ unsigned MicrophoneRecorder::
         num_channels()
 {
     QMutexLocker lock(&_data_lock);
+#ifdef SAWE_MONO
     return _data.size()?1:0;
+#else
+    return _data.size();
+#endif
 }
 
 void MicrophoneRecorder::
