@@ -263,14 +263,6 @@ void Renderer::init()
         exit(EXIT_FAILURE);
     }
 
-    if (!glewIsSupported( "GL_ARB_framebuffer_object" )) {
-        fprintf(stderr, "Error: failed to get minimal extensions\n");
-        fprintf(stderr, "Sonic AWE requires:\n");
-        fprintf(stderr, "  GL_ARB_framebuffer_object\n");
-        fflush(stderr);
-        exit(EXIT_FAILURE);
-    }
-
 #endif
 
     // load shader

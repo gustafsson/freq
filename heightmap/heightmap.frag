@@ -71,7 +71,7 @@ void main()
 
     float shadow = min(0.7, ((diffuse+facing+2.0)*.25)); // + vec4(fresnel);
     curveColor = curveColor*shadow;
-    curveColor = mix(1.0, curveColor, f);
+    curveColor = mix(vec4(1.0), curveColor, f);
 
     if (0!=heightLines)
     {

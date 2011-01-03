@@ -201,7 +201,7 @@ void Application::
     size_t free=0, total=0;
 
     cudaMemGetInfo(&free, &total);
-    TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
+    TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
              total/1024.f/1024, free/1024.f/1024);
 
     cudaGetLastError();

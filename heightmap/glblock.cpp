@@ -27,8 +27,8 @@
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)
 
-#define TIME_GLBLOCK
-//#define TIME_GLBLOCK if(0)
+//#define TIME_GLBLOCK
+#define TIME_GLBLOCK if(0)
 
 namespace Heightmap {
 
@@ -73,15 +73,14 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         }
 
         if (0<len) {
-                        TIME_COMPILESHADER TaskTimer("Shader log:\n%s", log).suppressTiming();
+            TIME_COMPILESHADER TaskInfo("Shader log:\n%s", log);
         }
-
 
         glAttachShader(prg, shader);
         glDeleteShader(shader); // TODO why delete shader?
     } catch (const std::exception &x) {
 #ifndef __APPLE__
-        TIME_COMPILESHADER TaskTimer("Failed, throwing %s", vartype(x).c_str()).suppressTiming();
+        TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
 #endif
         throw;
     }
@@ -170,13 +169,13 @@ height()
 
     if (!_height)
     {
-        TaskTimer tt("Heightmap, creating vbo");
+        TIME_GLBLOCK TaskTimer tt("Heightmap, creating vbo");
         unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
         _height.reset( new Vbo(elems*sizeof(float), GL_PIXEL_UNPACK_BUFFER) );
         _height->registerWithCuda();
     }
 
-    TaskTimer tt("Heightmap OpenGL->Cuda, vbo=%u", (unsigned)*_height);
+    TIME_GLBLOCK TaskTimer tt("Heightmap OpenGL->Cuda, vbo=%u", (unsigned)*_height);
 
     _mapped_height.reset( new MappedVbo<float>(_height, make_cudaExtent(
             _collection->samples_per_block(),
@@ -194,14 +193,14 @@ slope()
 
     if (!_slope)
     {
-        TaskTimer tt("Slope, creating vbo");
+        TIME_GLBLOCK TaskTimer tt("Slope, creating vbo");
 
         unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
         _slope.reset( new Vbo(elems*sizeof(float2), GL_PIXEL_UNPACK_BUFFER) );
         _slope->registerWithCuda();
     }
 
-    TaskTimer tt("Slope OpenGL->Cuda, vbo=%u", (unsigned)*_slope);
+    TIME_GLBLOCK TaskTimer tt("Slope OpenGL->Cuda, vbo=%u", (unsigned)*_slope);
 
     _mapped_slope.reset( new MappedVbo<float2>(_slope, make_cudaExtent(
             _collection->samples_per_block(),
@@ -280,7 +279,7 @@ void GlBlock::
 
         _got_new_height_data = true;
 
-        TIME_GLBLOCK TaskInfo("Created  tex_slope=%d", _tex_slope);
+        TIME_GLBLOCK TaskInfo("Created tex_slope=%d", _tex_slope);
     }
 
 }
@@ -547,19 +546,13 @@ unsigned GlBlock::
 void GlBlock::
         computeSlope( unsigned /*cuda_stream */)
 {
-    //VERBOSE_COLLECTION TaskTimer tt("%s", __FUNCTION__);
-    //TIME_COLLECTION CudaException_ThreadSynchronize();
+    TIME_GLBLOCK TaskTimer tt("Slope computeSlope");
 
-    //GlBlock::pHeight h = height();
-    //Position a,b;
-    //block->ref.getArea(a,b);
-    //b.time-a.time
-    //b.scale-a.scale
     ::cudaCalculateSlopeKernel( height()->data->getCudaGlobal(),
                                 slope()->data->getCudaGlobal(),
                                 _world_width, _world_height );
 
-    //TIME_COLLECTION CudaException_ThreadSynchronize();
+    TIME_GLBLOCK CudaException_ThreadSynchronize();
 }
 
 } // namespace Heightmap
