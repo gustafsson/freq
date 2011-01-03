@@ -278,8 +278,7 @@ int main(int argc, char *argv[])
     Sawe::Application a(argc, argv, true);
 
     TaskInfo("Version: %s", a.version_string().c_str());
-    TaskInfo("Date: %s", __DATE__);
-
+    TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
     if (!check_cuda( false ))
         return -1;
 
