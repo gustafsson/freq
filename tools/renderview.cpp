@@ -1,5 +1,5 @@
 // gl
-#include "GL/glew.h"
+#include <gl.h>
 
 #include "renderview.h"
 

@@ -1,17 +1,11 @@
 #include "brushview.h"
 
-#ifdef _MSC_VER // gl.h expects windows.h to be included on windows
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
 #include <math.h>
 #endif
 
-#include <GL/gl.h>
+#include <gl.h>
 #include <glPushContext.h>
 
 namespace Tools {

@@ -1,15 +1,4 @@
-// Must include windows.h before gl.h
-#ifdef _MSC_VER
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#define VC_EXTRALEAN
-#include <windows.h>
-#endif
-
-// Must include glew.h before gl.h
-#ifndef __APPLE__
-  #include <GL/glew.h>
-#endif
+#include <gl.h>
 
 #include <vbo.h>
 #include <demangle.h>
