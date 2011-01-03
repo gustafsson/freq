@@ -31,8 +31,7 @@ win32:QMAKE_LFLAGS_RELEASE += \
 	
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-!macx&!win32: QMAKE_CXX = colorgcc
-#macx:QMAKE_CXX = g++ # Should not need this macx: with !macx&!win32 above
+unix:!macx: QMAKE_CXX = colorgcc
 
 profiling {
     # Profiling with gcc, gprof doesn't work with Os X 10.5 Leopard.
