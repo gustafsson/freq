@@ -94,7 +94,7 @@ void BrushController::
 void BrushController::
         destroying()
 {
-    model()->filter()->images.reset();
+    model()->filter()->images->clear();
 }
 
 

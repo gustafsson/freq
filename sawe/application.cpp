@@ -1,10 +1,22 @@
 #include "sawe/application.h"
-#include <QTime>
-#include <sstream>
-#include <QtGui/QMessageBox>
-#include <demangle.h>
+
+// Sonic AWE
 #include "ui/mainwindow.h"
 #include "tfr/cwt.h"
+
+// gpumisc
+#include <demangle.h>
+
+// std
+#include <sstream>
+
+// qt
+#include <QTime>
+#include <QtGui/QMessageBox>
+#include <QGLWidget>
+
+// cuda
+#include "cuda.h"
 
 using namespace std;
 
@@ -177,6 +189,11 @@ void Application::
 
     TaskInfo("Reset CWT");
     Tfr::Cwt::Singleton().resetSingleton();
+
+
+    if ( !QGLContext::currentContext() ) // See RenderView::~RenderView()
+        return;
+
 
     TaskInfo("cudaThreadExit()");
     cudaThreadExit();

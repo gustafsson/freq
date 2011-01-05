@@ -27,7 +27,11 @@ Project::
 Project::
         ~Project()
 {
-    TaskTimer("~Project").suppressTiming();
+    TaskTimer tt("~Project");
+
+    _mainWindow.reset();
+    _tools.reset();
+    root_source_.reset();
 }
 
 

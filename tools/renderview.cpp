@@ -4,6 +4,7 @@
 #include "renderview.h"
 
 // TODO cleanup
+#include "ui/mainwindow.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -26,6 +27,7 @@
 #include <QTimer>
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QGLContext>
 
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
@@ -70,9 +72,19 @@ RenderView::
 RenderView::
         ~RenderView()
 {
-    TaskTimer tt("%s, calling cudaThreadExit()", __FUNCTION__);
+    TaskTimer tt("%s", __FUNCTION__);
 
     emit destroying();
+
+    _render_timer.reset();
+    _work_timer.reset();
+    _renderview_fbo.reset();
+
+    QGraphicsScene::clear();
+
+    Sawe::Application::global_ptr()->clearCaches();
+
+    TaskInfo("cudaThreadExit()");
 
     // Because the Cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
@@ -82,6 +94,9 @@ RenderView::
     // Sonic AWE windows. The Cuda context would probably only need to be
     // destroyed prior to the destruction of the last OpenGL context. This
     // would require further investigation.
+    //
+    // also, see Application::clearCaches() which doesn't call cudaThreadExit
+    // unless there is a current context.
     makeCurrent();
 
     BOOST_ASSERT( QGLContext::currentContext() );
@@ -888,6 +903,8 @@ void RenderView::
                 model->project()->worker.worked_samples.clear();
                 workcount++;
                 _work_timer.reset();
+
+                QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
             }
         }
     }

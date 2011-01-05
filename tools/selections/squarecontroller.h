@@ -47,7 +47,7 @@ private:
 
     // State
     Heightmap::Position selectionStart;
-    QPointer<Ui::ComboBoxAction> one_action_at_a_time_;
+    QScopedPointer<Ui::ComboBoxAction> one_action_at_a_time_;
 };
 
 }} // namespace Tools::Selections

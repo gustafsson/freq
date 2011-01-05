@@ -80,19 +80,34 @@ ToolFactory::
 ToolFactory::
         ~ToolFactory()
 {
-    TaskTimer(__FUNCTION__).suppressTiming();
-
-    if (!_navigation_controller .isNull())
-        delete _navigation_controller;
+    TaskInfo ti(__FUNCTION__);
 
     if (!_selection_controller.isNull())
         delete _selection_controller;
 
+    if (!_navigation_controller .isNull())
+        delete _navigation_controller;
+
     if (!_playback_controller.isNull())
         delete _playback_controller;
 
+    if (!_brush_controller.isNull())
+        delete _brush_controller;
+
+    if (!_record_controller.isNull())
+        delete _record_controller;
+
+    if (!_comment_controller.isNull())
+        delete _comment_controller;
+
     if (!_matlab_controller.isNull())
         delete _matlab_controller;
+
+    if (!_graph_controller.isNull())
+        delete _graph_controller;
+
+    if (!_tooltip_controller.isNull())
+        delete _tooltip_controller;
 
     // The _render_view and _timeline_view widget are released by MainWindow
     // that owns the widget. This might happen both before and after this
