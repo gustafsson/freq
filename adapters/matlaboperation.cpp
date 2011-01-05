@@ -239,7 +239,10 @@ pBuffer MatlabOperation::
 
     // just 'read()' might return the entire signal, which would be way to
     // slow to export in an interactive manner
-    pBuffer b = source()->readFixedLength( I );
+    IntervalType support = sample_rate()*0.5;
+    Interval J = ((Intervals(I) >> support) | Intervals(I) << support).coveredInterval();
+
+    pBuffer b = source()->readFixedLength( J );
 
     string file = _matlab->getTempName();
 
@@ -254,7 +257,7 @@ pBuffer MatlabOperation::
 
 	::remove( file.c_str());
 
-    return b2;
+    return BufferSource( b2 ).readFixedLength( I );
 }
 
 void MatlabOperation::
