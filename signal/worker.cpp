@@ -49,6 +49,7 @@ Worker::
     // but 1<< 12 works well on most GPUs
 }
 
+
 Worker::
         ~Worker()
 {
@@ -92,16 +93,16 @@ bool Worker::
     TIME_WORKER {
         if (interval.count() == _samples_per_chunk)
             tt.reset( new TaskTimer(
-                    "Work %s, from=%u. Reading %s",
+                    "Processing %s. From %s at %u",
+                    interval.toString().c_str(),
                     todo_list().toString().c_str(),
-                    center_sample,
-                    interval.toString().c_str()));
+                    center_sample));
         else
             tt.reset( new TaskTimer(
-                    "Work %s, from=%u. Reading %s, of %u samples",
+                    "Processing %s. From %s at %u, with %u steps",
+                    interval.toString().c_str(),
                     todo_list().toString().c_str(),
                     center_sample,
-                    interval.toString().c_str(),
                     _samples_per_chunk));
     }
 
@@ -241,12 +242,12 @@ Signal::Intervals Worker::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
 #endif
-    Signal::Intervals c = _todo_list;
-
-    if ( Tfr::Cwt::Singleton().wavelet_time_support() != Tfr::Cwt::Singleton().wavelet_default_time_support() )
-        c -= _cheat_work;
-    else
+    if ( Tfr::Cwt::Singleton().wavelet_time_support() == Tfr::Cwt::Singleton().wavelet_default_time_support() )
         _cheat_work.clear();
+
+    Signal::Intervals c = _todo_list;
+    c -= _cheat_work;
+
     return c;
 }
 
