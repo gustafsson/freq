@@ -65,7 +65,7 @@ Renderer::Renderer( Collection* collection )
 		c = 1;
 		char* dummy="dummy\0";
 		glutInit(&c,&dummy);
-#else
+#elif !defined(__APPLE__)
         glutInit(&c,0);
         c = 1;
 #endif
@@ -268,8 +268,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    //setSize( collection->samples_per_block(), collection->scales_per_block() );
-    setSize( collection->samples_per_block()/8, collection->scales_per_block()/4 );
+    setSize( collection->samples_per_block(), collection->scales_per_block() );
+    //setSize( collection->samples_per_block()/8, collection->scales_per_block()/4 );
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
