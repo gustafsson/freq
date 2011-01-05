@@ -17,30 +17,32 @@ Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, u
 :   sample_offset(first_sample),
     sample_rate(fs)
 {
-    if (numberOfSamples)
-        _waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1)));
+    BOOST_ASSERT( 0 < numberOfSamples );
+    BOOST_ASSERT( 0 < numberOfChannels );
+    BOOST_ASSERT( 0 < fs );
+    waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1));
+}
+
+
+Buffer::
+        ~Buffer()
+{
+    delete waveform_data_;
 }
 
 
 GpuCpuData<float>* Buffer::
         waveform_data() const
 {
-    return _waveform_data.get();
-}
-
-
-long unsigned Buffer::
-        number_of_samples() const
-{
-    return _waveform_data->getNumberOfElements().width;
+    return waveform_data_;
 }
 
 
 void Buffer::
         release_extra_resources()
 {
-    _waveform_data->getCpuMemory();
-    _waveform_data->freeUnused();
+    waveform_data_->getCpuMemory();
+    waveform_data_->freeUnused();
 }
 
 
@@ -79,8 +81,8 @@ Buffer& Buffer::
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
 
-    float* write = waveform_data()->getCpuMemory();
-    float const* read = b.waveform_data()->getCpuMemory();
+    float* write = waveform_data_->getCpuMemory();
+    float const* read = b.waveform_data_->getCpuMemory();
 
     write += offs_write;
     read += offs_read;
@@ -107,8 +109,8 @@ Buffer& Buffer::
     unsigned offs_read = i.first - b.sample_offset;
     unsigned length = i.count();
 
-    float* write = waveform_data()->getCpuMemory();
-    float const* read = b.waveform_data()->getCpuMemory();
+    float* write = waveform_data_->getCpuMemory();
+    float const* read = b.waveform_data_->getCpuMemory();
 
     write += offs_write;
     read += offs_read;
@@ -129,14 +131,6 @@ pBuffer SourceBase::
 
     // Check if read contains firstSample
     BOOST_ASSERT(r->sample_offset <= I.first);
-    if (r->sample_offset + r->number_of_samples() <= I.first)
-    {
-        TaskInfo("r->sample_offset %g", (double)r->sample_offset);
-        TaskInfo("r->number_of_samples %lu", r->number_of_samples());
-        TaskInfo("I = %s", I.toString().c_str());
-
-        pBuffer r = read(I);
-    }
     BOOST_ASSERT(r->sample_offset + r->number_of_samples() > I.first);
 
     return r;

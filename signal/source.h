@@ -1,11 +1,15 @@
 #ifndef SIGNALSOURCE_H
 #define SIGNALSOURCE_H
 
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
+#include "intervals.h"
+
+// gpumisc
 #include <GpuCpuData.h>
-#include "signal/intervals.h"
-#include "unsignedf.h"
+#include <unsignedf.h>
+
+// boost
+#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace Signal {
 
@@ -16,15 +20,19 @@ namespace. A Buffer can contain an entire song as when created by
 Signal::Audiofile, or a Buffer can contain sound as fractions of a second
 as when created by Signal::MicrophoneRecorder.
 */
-class Buffer {
+class Buffer : public boost::noncopyable {
 public:
     Buffer(UnsignedF firstSample,
            IntervalType numberOfSamples,
            float sample_rate,
            unsigned numberOfChannels = 1);
+    ~Buffer();
 
     GpuCpuData<float>*  waveform_data() const;
-    IntervalType        number_of_samples() const;
+    IntervalType        number_of_samples() const
+    {
+        return waveform_data_->getNumberOfElements().width;
+    }
     void                release_extra_resources();
 
     UnsignedF       sample_offset;
@@ -40,8 +48,7 @@ public:
     Buffer&         operator+=(const Buffer& b);
 
 protected:
-    boost::scoped_ptr<GpuCpuData<float> >
-                    _waveform_data;
+    GpuCpuData<float> *waveform_data_;
 };
 typedef boost::shared_ptr<Buffer> pBuffer;
 
