@@ -8,31 +8,13 @@
 
 #include <Statistics.h>
 
-#define TIME_MICROPHONERECORDER
-//#define TIME_MICROPHONERECORDER if(0)
+//#define TIME_MICROPHONERECORDER
+#define TIME_MICROPHONERECORDER if(0)
 
 using namespace std;
 
 namespace Adapters {
 
-/**
-  TODO document why this class is needed.
-  */
-class OperationProxy: public Signal::Operation
-{
-public:
-    OperationProxy(Signal::Operation* p)
-        :
-        Operation(Signal::pOperation()),
-        p(p)
-    {}
-
-    virtual Signal::pBuffer read( const Signal::Interval& I ) { return p->read( I ); }
-    virtual float sample_rate() { return p->sample_rate(); }
-
-private:
-    Signal::Operation*p;
-};
 
 MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
     :
@@ -88,9 +70,6 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
             paramsRecord,
             *this,
             &MicrophoneRecorder::writeBuffer));
-
-    Signal::pOperation proxy(new OperationProxy(&_data[0]));
-    _postsink.source( proxy );
 }
 
 MicrophoneRecorder::~MicrophoneRecorder()
@@ -131,7 +110,8 @@ Signal::pBuffer MicrophoneRecorder::
         read( const Signal::Interval& I )
 {
     QMutexLocker lock(&_data_lock);
-    return _data[channel].readFixedLength( I );
+    // TODO why? return _data[channel].readFixedLength( I );
+    return _data[channel].read( I );
 }
 
 float MicrophoneRecorder::
@@ -200,14 +180,13 @@ int MicrophoneRecorder::
         b->sample_rate = sample_rate();
 
         TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s", b->getInterval().toString().c_str());
-        //Statistics<float>(b->waveform_data());
 
         _data[i].put( b );
     }
 
     lock.unlock();
 
-	_postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
+    _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
 
     return paContinue;
 }
