@@ -10,6 +10,9 @@
 // gpumisc
 #include <TAni.h>
 
+// boost
+#include <boost/scoped_ptr.hpp>
+
 // Qt
 #include <QGraphicsScene>
 #include <QTransform>

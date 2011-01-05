@@ -7,6 +7,8 @@
 #include <vector>
 #include <portaudiocpp/PortAudioCpp.hxx>
 
+#include <boost/scoped_ptr.hpp>
+
 #include <QMutex>
 
 namespace Adapters {

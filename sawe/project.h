@@ -4,21 +4,21 @@
 #include "signal/worker.h"
 #include "tools/toolfactory.h"
 
-#include <QMainWindow>
-#include <QScopedPointer>
-
+// boost
+#include <boost/scoped_ptr.hpp>
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/vector.hpp> 
 #include <boost/serialization/binary_object.hpp> 
 
+// Qt
+#include <QMainWindow>
+#include <QScopedPointer>
+
 namespace Sawe {
     class Project;
 }
-/*namespace Tools {
-    class ToolFactory;
-}*/
 
 namespace Ui {
     class SaweMainWindow;

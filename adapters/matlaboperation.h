@@ -2,7 +2,10 @@
 #define ADAPTERS_MATLABOPERATION_H
 
 #include "signal/operationcache.h"
+
+// boost
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 class QProcess;
 

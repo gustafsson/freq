@@ -10,6 +10,8 @@
 #include <QWidget>
 #include <QPointer>
 
+#include <boost/scoped_ptr.hpp>
+
 namespace Signal { class Worker; }
 
 namespace Tools

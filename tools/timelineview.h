@@ -11,6 +11,8 @@
 // Qt
 #include <QGLWidget>
 
+// boost
+#include <boost/scoped_ptr.hpp>
 
 class GlFrameBuffer;
 
