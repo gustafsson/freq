@@ -272,7 +272,7 @@ void NavigationController::
     connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateNavigation, SLOT(setChecked(bool)));
     connect(this, SIGNAL(enabledChanged(bool)), ui->actionZoom, SLOT(setChecked(bool)));
 
-    one_action_at_a_time_ = new Ui::ComboBoxAction();
+    one_action_at_a_time_.reset( new Ui::ComboBoxAction() );
     one_action_at_a_time_->decheckable( false );
     one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
     one_action_at_a_time_->addActionItem( ui->actionZoom );

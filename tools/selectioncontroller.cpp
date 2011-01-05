@@ -49,7 +49,19 @@ namespace Tools
     SelectionController::
             ~SelectionController()
     {
-        TaskTimer(__FUNCTION__).suppressTiming();
+        TaskInfo ti("%s", __FUNCTION__);
+
+        if (!ellipse_controller_.isNull())
+            delete ellipse_controller_;
+
+        if (!peak_controller_.isNull())
+            delete peak_controller_;
+
+        if (!spline_controller_.isNull())
+            delete spline_controller_;
+
+        if (!square_controller_.isNull())
+            delete square_controller_;
     }
 
 

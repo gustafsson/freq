@@ -58,7 +58,9 @@ TimelineView::
 TimelineView::
         ~TimelineView()
 {
-    TaskTimer("~TimelineView").suppressTiming();
+    TaskInfo ti("~TimelineView");
+    _timeline_fbo.reset();
+    _timeline_bar_fbo.reset();
 }
 
 

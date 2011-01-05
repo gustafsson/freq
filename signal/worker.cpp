@@ -58,6 +58,12 @@ Worker::
     this->quit();
 #endif
     todo_list( Intervals() );
+
+    std::vector<pOperation> v;
+    _post_sink.sinks( v );
+    _post_sink.filter( pOperation() );
+    _cache.reset();
+    _source.reset();
 }
 
 ///// OPERATIONS
@@ -84,12 +90,19 @@ bool Worker::
     boost::scoped_ptr<TaskTimer> tt;
 
     TIME_WORKER {
-        tt.reset( new TaskTimer(
-                "Working %u samples from %s, center=%u. Reading %s",
-                _samples_per_chunk,
-                todo_list().toString().c_str(),
-                center_sample,
-                interval.toString().c_str()));
+        if (interval.count() == _samples_per_chunk)
+            tt.reset( new TaskTimer(
+                    "Work %s, from=%u. Reading %s",
+                    todo_list().toString().c_str(),
+                    center_sample,
+                    interval.toString().c_str()));
+        else
+            tt.reset( new TaskTimer(
+                    "Work %s, from=%u. Reading %s, of %u samples",
+                    todo_list().toString().c_str(),
+                    center_sample,
+                    interval.toString().c_str(),
+                    _samples_per_chunk));
     }
 
 
