@@ -90,13 +90,15 @@ RenderView::
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
     // is corrupt and can't be destroyed nor used properly.
     //
-    // Note though that other OpenGL contexts might still be active in other
-    // Sonic AWE windows. The Cuda context would probably only need to be
-    // destroyed prior to the destruction of the last OpenGL context. This
-    // would require further investigation.
+    // Note though that all renderview uses the same shared OpenGL context
+    // from (Application::shared_glwidget) thar are still active in other
+    // Sonic AWE windows. The Cuda context will be recreated as soon as one
+    // is needed. Calling 'clearCaches' above ensures that all resources are
+    // released though prior to invalidating the cuda context.
     //
-    // also, see Application::clearCaches() which doesn't call cudaThreadExit
-    // unless there is a current context.
+    // Also, see Application::clearCaches() which doesn't call cudaThreadExit
+    // unless there is a current context (which is the case when clearCaches is
+    // called above in this method).
     makeCurrent();
 
     BOOST_ASSERT( QGLContext::currentContext() );
@@ -904,7 +906,8 @@ void RenderView::
                 workcount++;
                 _work_timer.reset();
 
-                QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
+                // Useful when debugging to close application after finishing first work chunk
+                //QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
             }
         }
     }

@@ -1,15 +1,13 @@
 #ifndef SELECTIONMODEL_H
 #define SELECTIONMODEL_H
 
+#include "signal/operation.h"
+#include <vector>
+
+
 namespace Sawe {
     class Project;
 }
-
-/*#include "signal/postsink.h"
-#include "signal/worker.h"
-*/
-#include "signal/operation.h"
-#include <vector>
 
 
 namespace Tools

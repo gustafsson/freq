@@ -1,21 +1,16 @@
 #ifndef HEIGHTMAPVBO_H
 #define HEIGHTMAPVBO_H
 
-#include "heightmap/collection.h"
-
-#include <cuda_runtime.h>
-#ifdef _MSC_VER // cuda_gl_interop.h includes gl.h which expects windows.h to be included on windows
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-#include <cuda_gl_interop.h>
+// gpumisc
 #include <GpuCpuData.h>
+#include <mappedvbo.h>
+
+// std
 #include <stdio.h>
-#include "mappedvbo.h"
 
 
 namespace Heightmap {
+    class Collection;
 
 GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
 

@@ -1,11 +1,11 @@
-#include "block.cu.h"
 #include "blockfilter.h"
+
+#include "block.cu.h"
 #include "collection.h"
 #include "tfr/cwt.h"
 
 #include <CudaException.h>
 #include <GlException.h>
-
 #include <TaskTimer.h>
 
 //#define TIME_BLOCKFILTER

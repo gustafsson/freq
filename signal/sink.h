@@ -1,9 +1,9 @@
 #ifndef SIGNALSINK_H
 #define SIGNALSINK_H
 
-#include "signal/buffersource.h"
-#include "signal/operation.h"
-#include "signal/intervals.h"
+#include "buffersource.h"
+#include "operation.h"
+#include "intervals.h"
 
 namespace Signal {
 

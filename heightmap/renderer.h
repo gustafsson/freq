@@ -1,16 +1,16 @@
 #ifndef HEIGHTMAPRENDERER_H
 #define HEIGHTMAPRENDERER_H
 
-#include <sstream>
-#include "heightmap/collection.h"
-#ifndef __APPLE__
-  #include <GL/gl.h>
-#else
-  #include <OpenGL/gl.h>
-#endif
-#include "heightmap/glblock.h"
+// Heightmap namespace
+#include "collection.h"
+#include "glblock.h"
+
+// gpumisc
 #include <tmatrix.h>
 #include <GlTexture.h>
+
+// std
+#include <sstream>
 
 //typedef tvector<3,GLdouble> GLvector;
 typedef tvector<3,GLfloat> GLvector;

@@ -1,12 +1,10 @@
 #ifndef TFRFILTER_H
 #define TFRFILTER_H
 
+#include "transform.h"
+
 #include "signal/intervals.h"
 #include "signal/operation.h"
-#include "tfr/transform.h"
-
-#include <list>
-#include <boost/shared_ptr.hpp>
 
 namespace Tfr {
 

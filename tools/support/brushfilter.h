@@ -2,22 +2,26 @@
 #define BRUSHFILTER_H
 
 #include "tfr/cwtfilter.h"
-#include <GpuCpuData.h>
-#include <boost/shared_ptr.hpp>
-#include <vector>
-#include <vector_types.h>
 #include "heightmap/collection.h"
 
+// gpumisc
+#include <GpuCpuData.h>
+#include <vector_types.h>
+
+// boost
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/binary_object.hpp>
 
+// std
+#include <vector>
+
 namespace Tools {
 namespace Support {
 
 
-class BrushFilter : public Tfr::CwtFilter
+class BrushFilter : public Tfr::CwtFilter, public boost::noncopyable
 {
 public:
     BrushFilter();

@@ -1,12 +1,12 @@
 #ifndef PLAYBACKMODEL_H
 #define PLAYBACKMODEL_H
 
-#include <string>
 #include "signal/operation.h"
 #include "signal/postsink.h"
 #include "signal/worker.h"
 
-namespace Signal { class Worker; }
+#include <string>
+
 namespace Adapters { class Playback; }
 
 namespace Tools

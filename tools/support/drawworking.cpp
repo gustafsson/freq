@@ -1,24 +1,16 @@
 #include "drawworking.h"
 
-#include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
-
-// OpenGL
-#ifndef __APPLE__
-#include <GL/glut.h>
-#else
-#include <GLUT/glut.h>
-#endif
-
+// gpumisc
+#include <gl.h>
 #include <glPushContext.h>
 
-// cos, sin, M_PI
+// std
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
 #endif
-#include <math.h>
-
-// min, max
-#include <algorithm>
+#include <math.h> // cos, sin, M_PI
+#include <algorithm> // std::min, std::max
+#include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
 
 namespace Tools {
     namespace Support {

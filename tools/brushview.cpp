@@ -1,3 +1,25 @@
+// Need to include OpenGL headers in a specific order. So do it here first to
+// make sure that the order is correct.
+
+// TODO Tidy
+#include "heightmap/reference.h"
+
+#include "rendermodel.h"
+
+// tool support
+#include "tfr/cwtfilter.h"
+#include "heightmap/collection.h"
+
+// gpumisc
+#include <GpuCpuData.h>
+#include <vector_types.h>
+
+#include "support/brushfilter.h"
+#include "support/brushpaint.cu.h"
+
+// Sonic AWE
+#include "tfr/filter.h"
+
 #include "brushview.h"
 
 #ifdef _MSC_VER

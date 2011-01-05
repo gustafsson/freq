@@ -1,17 +1,25 @@
-#include <gl.h>
+#include "glblock.h"
 
+// Heightmap namespace
+#include "collection.h"
+#include "renderer.h"
+#include "slope.cu.h"
+
+// gpumisc
 #include <vbo.h>
 #include <demangle.h>
 #include <GlException.h>
 #include <CudaException.h>
 
-// Heightmap
-#include "collection.h"
-#include "renderer.h"
-#include "slope.cu.h"
+// cuda
+#include <cuda_runtime.h>
 
+// std
 #include <stdio.h>
+
+// Qt
 #include <QResource>
+
 
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)

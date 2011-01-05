@@ -41,7 +41,7 @@ namespace Tools { namespace Selections
     PeakController::
             ~PeakController()
     {
-        TaskTimer(__FUNCTION__).suppressTiming();
+        TaskInfo(__FUNCTION__);
     }
 
 

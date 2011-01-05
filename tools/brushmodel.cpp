@@ -1,7 +1,10 @@
 #include "brushmodel.h"
+
+#include "sawe/project.h"
+#include "tfr/cwt.h"
+
 #include <demangle.h>
 
-#include "tfr/cwt.h"
 
 #define TIME_BRUSH
 //#define TIME_BRUSH if(0)

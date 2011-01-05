@@ -72,7 +72,7 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskTimer("%s = %p", __FUNCTION__, this).suppressTiming();
+    TaskInfo("%s = %p", __FUNCTION__, this);
 }
 
 

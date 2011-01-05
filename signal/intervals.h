@@ -2,7 +2,7 @@
 #define SAMPLESINTERVALDESCRIPTOR_H
 
 #include <list>
-#include <ostream>
+#include <string>
 
 namespace Signal {
 

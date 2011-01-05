@@ -1,16 +1,22 @@
 #include "postsink.h"
-#include "buffersource.h"
-#include <demangle.h>
-#include <typeinfo>
 
+#include "buffersource.h"
+
+// gpumisc
 #include <Statistics.h>
 #include <TaskTimer.h>
 #include <demangle.h>
 
+// boost
 #include <boost/foreach.hpp>
+
+// std
+#include <typeinfo>
+
 
 #define DEBUG_POSTSINK if(0)
 //#define DEBUG_POSTSINK
+
 
 using namespace std;
 

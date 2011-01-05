@@ -4,8 +4,6 @@
 #include "signal/worker.h"
 #include "tools/toolfactory.h"
 
-#include <boost/shared_ptr.hpp>
-#include <QGLWidget>
 #include <QMainWindow>
 #include <QScopedPointer>
 

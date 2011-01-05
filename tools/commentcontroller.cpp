@@ -27,7 +27,7 @@ CommentController::
 CommentController::
         ~CommentController()
 {
-    TaskTimer(__FUNCTION__).suppressTiming();
+    TaskInfo(__FUNCTION__);
 }
 
 

@@ -14,6 +14,9 @@
 // boost
 #include <boost/foreach.hpp>
 
+// Qt
+#include <QGLContext>
+
 // std
 #include <string>
 #include <stdio.h>

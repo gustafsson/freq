@@ -31,6 +31,8 @@
 #include <QGraphicsView>
 #include <QResizeEvent>
 #include <QMetaClassInfo>
+#include <QGLContext>
+
 // todo remove
 #include "navigationcontroller.h"
 #include <QTimer>

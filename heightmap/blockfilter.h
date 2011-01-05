@@ -9,6 +9,7 @@
 namespace Heightmap
 {
 
+
 class BlockFilter
 {
 public:
@@ -23,6 +24,7 @@ protected:
     Collection* _collection;
 };
 
+
 template<typename FilterKind>
 class BlockFilterImpl: public FilterKind, public BlockFilter
 {
@@ -33,12 +35,14 @@ public:
     {
     }
 
+
     BlockFilterImpl( std::vector<boost::shared_ptr<Collection> > collections )
         :
         BlockFilter(collections[0].get()),
         _collections(collections)
     {
     }
+
 
     /// @overload Signal::Operation::fetch_invalid_samples()
     Signal::Intervals fetch_invalid_samples()
@@ -61,6 +65,7 @@ public:
         return r;
     }
 
+
     virtual void operator()( Tfr::Chunk& chunk )
     {
         Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
@@ -71,6 +76,7 @@ public:
         BlockFilter::operator()(chunk);
     }
 
+
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     Signal::Operation* affecting_source( const Signal::Interval& I)
     {
@@ -79,6 +85,7 @@ public:
 
         return FilterKind::_source->affecting_source( I );
     }
+
 
     /**
         To prevent anyone from optimizing away a read because it's known to
@@ -93,6 +100,7 @@ public:
 
         FilterKind::applyFilter( pchunk );
     }
+
 
     /// @overload Signal::Operation::affected_samples()
     virtual Signal::Intervals affected_samples()

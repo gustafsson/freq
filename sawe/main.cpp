@@ -1,12 +1,17 @@
+// Sonic AWE
 #include "sawe/application.h"
-
 #include "tfr/cwt.h"
 
+// gpumisc
 #include <CudaProperties.h>
 #include <CudaException.h>
-#include <cuda_gl_interop.h>
 
+// Qt
 #include <QtGui/QMessageBox>
+#include <qgl.h>
+
+// cuda
+#include <cuda_gl_interop.h>
 #include <cuda.h>
 
 using namespace std;
@@ -336,7 +341,8 @@ int main(int argc, char *argv[])
         if( 0 != QGLContext::currentContext() )
             TaskTimer("Error: OpenGL context was not destroyed prior to application exit").suppressTiming();
 
-		if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( 0 ))
+        CUdevice current_device;
+        if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( &current_device ))
             TaskTimer("Error: CUDA context was not destroyed prior to application exit").suppressTiming();
 
         return r;

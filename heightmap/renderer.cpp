@@ -160,14 +160,14 @@ typedef tmatrix<4,GLdouble> GLmatrix;
 // static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
 GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
-    GLdouble win0, win1, win2;
+    GLdouble win0=0, win1=0, win2=0;
     bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win0, &win1, &win2));
     if(r) *r=s;
     return GLvector(win0, win1, win2);
 }
 
 GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
-    GLdouble obj0, obj1, obj2;
+    GLdouble obj0=0, obj1=0, obj2=0;
     bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj0, &obj1, &obj2));
     if(r) *r=s;
     return GLvector(obj0, obj1, obj2);
@@ -655,6 +655,9 @@ static GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, flo
 
 static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvector& n )
 {
+    if (p.empty())
+        return;
+
     unsigned i;
 
     GLvector const* a, * b = &p[p.size()-1];

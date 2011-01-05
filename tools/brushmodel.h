@@ -1,19 +1,24 @@
 #pragma once
 
-/*
- A continous brush stroke results in an image. This image is then applied upon
- the data through a filter which interprets what to do with the image data.
- */
+// other tools
+#include "rendermodel.h"
 
-#include "tfr/filter.h"
-#include "sawe/project.h"
+// tool support
 #include "support/brushfilter.h"
 #include "support/brushpaint.cu.h"
+
+// Sonic AWE
 #include "heightmap/reference.h"
+#include "tfr/filter.h"
+
 
 namespace Tools
 {
 
+/*
+ A continous brush stroke results in an image. This image is then applied upon
+ the data through a filter which interprets what to do with the image data.
+ */
 class BrushModel
 {
 public:

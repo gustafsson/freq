@@ -1,9 +1,13 @@
 #ifndef SAWEAPPLICATION_H
 #define SAWEAPPLICATION_H
 
+// Sawe namespace
+#include "project.h"
+
+// Qt
 #include <QtGui/QApplication>
-#include <QGLWidget>
-#include "sawe/project.h"
+
+// std
 #include <set>
 
 namespace Sawe {

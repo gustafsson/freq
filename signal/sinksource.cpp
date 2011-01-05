@@ -78,13 +78,6 @@ void SinkSource::
 }
 
 
-// todo remove
-static bool bufferLessThan(const pBuffer& a, const pBuffer& b)
-{
-    return (IntervalType)a->sample_offset < (IntervalType)b->sample_offset;
-}
-
-
 void SinkSource::
         selfmerge()
 {

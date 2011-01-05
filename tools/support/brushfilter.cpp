@@ -23,6 +23,7 @@ BrushFilter::
 BrushFilter::
         ~BrushFilter()
 {
+    TaskInfo ti("%s", __FUNCTION__);
     delete resource_releaser_;
 }
 
