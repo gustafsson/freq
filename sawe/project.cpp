@@ -29,7 +29,7 @@ Project::
 {
     TaskTimer tt("~Project");
 
-    _mainWindow.reset();
+    //_mainWindow.reset();
     _tools.reset();
     root_source_.reset();
 }
@@ -127,7 +127,7 @@ void Project::
         title = string(info.baseName().toLocal8Bit()) + " - " + title;
     }
 
-    _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));
+    _mainWindow = new Ui::SaweMainWindow( title.c_str(), this );
 
     {
         TaskTimer tt("new Tools::ToolFactory");

@@ -131,7 +131,7 @@ private:
     std::string project_file_name;
     boost::scoped_ptr<Tools::ToolFactory> _tools;
     // MainWindow owns all other widgets together with their ToolFactory
-    QScopedPointer<QMainWindow> _mainWindow;
+    QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
     static boost::shared_ptr<Project> openAudio(std::string audio_file);

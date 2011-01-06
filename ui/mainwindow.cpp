@@ -192,7 +192,7 @@ void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
     // TODO add dialog asking user to save the project
-    e->ignore();
+    //e->ignore();
     Sawe::Application::global_ptr()->slotClosed_window( this );
 }
 
