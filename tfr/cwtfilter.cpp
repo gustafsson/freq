@@ -172,7 +172,7 @@ void CwtFilter::
 
     // even if '0 == t || transform() == t' the client
     // probably wants to reset everything when transform( t ) is called
-    _invalid_samples = Intervals::Intervals_ALL;
+    //_invalid_samples = Intervals::Intervals_ALL;
 
     _transform = t;
 }
