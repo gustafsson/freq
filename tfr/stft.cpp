@@ -360,33 +360,36 @@ Tfr::pChunk Stft::
 }
 
 
-static unsigned absdiff(unsigned a, unsigned b)
-{
-    return a < b ? b - a : a - b;
-}
+//static unsigned absdiff(unsigned a, unsigned b)
+//{
+//    return a < b ? b - a : a - b;
+//}
 
 
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
-    if (_ok_chunk_sizes.empty())
-        build_performance_statistics(true);
-
-    std::vector<unsigned>::iterator itr =
-            std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
-
-    unsigned N1 = *itr, N2;
-    if (itr == _ok_chunk_sizes.end())
-    {
-        N2 = spo2g( preferred_size - 1 );
-        N1 = lpo2s( preferred_size + 1 );
-    }
-    else if (itr == _ok_chunk_sizes.begin())
-        N2 = N1;
-    else
-        N2 = *--itr;
-
-    _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
+    _chunk_size = 1 << (unsigned)floor(log2(preferred_size)+0.5);
     return _chunk_size;
+
+//    if (_ok_chunk_sizes.empty())
+//        build_performance_statistics(true);
+
+//    std::vector<unsigned>::iterator itr =
+//            std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
+
+//    unsigned N1 = *itr, N2;
+//    if (itr == _ok_chunk_sizes.end())
+//    {
+//        N2 = spo2g( preferred_size - 1 );
+//        N1 = lpo2s( preferred_size + 1 );
+//    }
+//    else if (itr == _ok_chunk_sizes.begin())
+//        N2 = N1;
+//    else
+//        N2 = *--itr;
+
+//    _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
+//    return _chunk_size;
 }
 
 
