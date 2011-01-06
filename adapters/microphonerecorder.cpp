@@ -93,11 +93,13 @@ MicrophoneRecorder::~MicrophoneRecorder()
 
 void MicrophoneRecorder::startRecording()
 {
+    TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
     _stream_record->start();
 }
 
 void MicrophoneRecorder::stopRecording()
 {
+    TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
     _stream_record->stop();
 }
 

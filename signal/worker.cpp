@@ -16,8 +16,8 @@
 #define TIME_WORKER
 //#define TIME_WORKER if(0)
 
-//#define WORKER_INFO
-#define WORKER_INFO if(0)
+#define WORKER_INFO
+//#define WORKER_INFO if(0)
 
 #define TESTING_PERFORMANCE false
 
@@ -38,6 +38,7 @@ Worker::
     _cache( new OperationCacheLayer(pOperation()) ),
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
+    _min_samples_per_chunk( 1 ),
     _requested_fps( 20 ),
     _min_fps( 0.5 ),
     _caught_exception( "" ),
@@ -75,8 +76,6 @@ bool Worker::
 {
     if (todo_list().empty())
         return false;
-
-    // todo_list().print(__FUNCTION__);
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
@@ -131,6 +130,7 @@ bool Worker::
         CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
         if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
+            TaskInfo ti("Worker caught cudaErrorMemoryAllocation\n/s",  e.what());
             Sawe::Application::global_ptr()->clearCaches();
             cudaGetLastError(); // consume error
             TaskInfo("_samples_per_chunk was %u", _samples_per_chunk);
@@ -151,7 +151,7 @@ bool Worker::
             TaskInfo("scales_per_octave is now %g", Tfr::Cwt::Singleton().scales_per_octave() );
             TaskInfo("_samples_per_chunk now is %u", _samples_per_chunk);
             TaskInfo("_max_samples_per_chunk now is %u", _max_samples_per_chunk);
-            TaskInfo("Worker caught cudaErrorMemoryAllocation. Setting max samples per chunk to %u\n%s", _samples_per_chunk, e.what());
+            TaskInfo("Setting max samples per chunk to %u", _samples_per_chunk);
 
             size_t free=0, total=0;
             cudaMemGetInfo(&free, &total);
@@ -226,7 +226,8 @@ void Worker::
         _todo_list = v & Interval(0, std::max(1lu, _source->number_of_samples()));
         //_todo_list &= Signal::Intervals(0, 44100*7);
 
-        WORKER_INFO TaskInfo("Worker::todo_list( %s )", _todo_list.toString().c_str());
+        WORKER_INFO TaskInfo("Worker::todo_list = %s (requested %s)",
+                             _todo_list.toString().c_str(), v.toString().c_str());
     }
 
 #ifndef SAWE_NO_MUTEX
@@ -367,6 +368,7 @@ void Worker::
 void Worker::
         invalidate_post_sink(Intervals I)
 {
+    I &= Interval(0, source()->number_of_samples() );
     dynamic_cast<OperationCacheLayer*>(_cache.get())->invalidate_samples( I );
     _post_sink.invalidate_samples( I );
     TaskInfo("Worker invalidate %s. Worker tree:\n%s",

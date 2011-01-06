@@ -372,10 +372,16 @@ Interval Intervals::
 std::string Intervals::toString() const
 {
     std::stringstream ss;
-    ss << "{" << size() << " interval" << ((size()==1)?"":"s");
+    ss << "{";
+    if (1<size())
+        ss << size() << "#";
 
     foreach (const Interval& r, *this)
-        ss << " " << r.toString();
+    {
+        if (1<size())
+            ss << " ";
+        ss << r.toString();
+    }
 
     ss << "}";
     return ss.str();

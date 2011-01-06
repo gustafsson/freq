@@ -243,7 +243,7 @@ void Application::
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source()->sample_rate() );
-    TaskTimer("Samples per chunk = %d", total_samples_per_chunk).suppressTiming();
+    TaskInfo("Samples per chunk = %d", total_samples_per_chunk);
 
     if (_get_csv != (unsigned)-1) {
         if (0==p->head_source()->number_of_samples()) {

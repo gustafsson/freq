@@ -14,7 +14,7 @@ macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 CONFIG += console # console output
-DEFINES += SAWE_NO_MUTEX
+#DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
@@ -119,9 +119,7 @@ win32 {
     othersources.input = OTHER_SOURCES
     othersources.output = ${QMAKE_FILE_NAME}
     QMAKE_EXTRA_COMPILERS += othersources
-#    QMAKE_EXTRA_UNIX_COMPILERS += othersources
 }
-
 
 ####################
 # Build settings
@@ -302,6 +300,5 @@ macx {
 }
 
 cuda.input = CUDA_SOURCES
-#QMAKE_EXTRA_UNIX_COMPILERS += cuda
 QMAKE_EXTRA_COMPILERS += cuda
 # end of cuda section #######################################################################

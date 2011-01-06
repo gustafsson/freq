@@ -40,7 +40,7 @@ public:
 
     void draw( );
     void draw_flat( );
-    void draw_directMode( );
+    //void draw_directMode( );
 
     unsigned allocated_bytes_per_element();
 private:

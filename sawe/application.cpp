@@ -102,6 +102,8 @@ Application::
         ~Application()
 {
     TaskInfo ti("Closing Sonic AWE, %s", _version_string.c_str());
+    ti.tt().partlyDone();
+
     BOOST_ASSERT( _app );
     _app = 0;
 
@@ -256,8 +258,6 @@ pProject Application::
 void Application::
     slotClosed_window( QWidget* w )
 {
-    // QWidget* w = dynamic_cast<QWidget*>(sender());
-
     for (std::set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
         if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))
