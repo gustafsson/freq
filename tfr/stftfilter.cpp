@@ -53,7 +53,7 @@ ChunkAndInverse StftFilter::
         if (chunk_interval.last>number_of_samples())
         {
             last_chunk = number_of_samples()/chunk_size;
-            if (first_chunk<last_chunk)
+            if (1+first_chunk<last_chunk)
                 chunk_interval.last = last_chunk*chunk_size;
         }
     }
