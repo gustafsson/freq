@@ -105,15 +105,32 @@ public:
 
 
     /**
+      Returns true if the project has been saved since it was opened.
+      */
+    bool isModified();
+
+
+    /**
+      Sets the modified flag to true. Temporary, will be removed by list of
+      actions instead.
+      */
+    void setModified();
+
+
+    /**
       If 'project_file_name' is empty, calls saveAs.
+
+      @returns true if the project was saved.
      */
-    void save();
+    bool save();
 
 
     /**
       Opens a Qt Save File dialog and renames 'project_file_name'.
+
+      @returns true if the project was saved.
      */
-    void saveAs();
+    bool saveAs();
 
 
     /**
@@ -122,16 +139,22 @@ public:
     Ui::SaweMainWindow* mainWindow();
 
 
+    /**
+      Project file name.
+      */
+    std::string project_name();
+
 private:
     Project(); // used by deserialization
     void createMainWindow();
 
     Signal::pOperation root_source_;
+    bool is_modified_;
 
     std::string project_file_name;
     boost::scoped_ptr<Tools::ToolFactory> _tools;
     // MainWindow owns all other widgets together with their ToolFactory
-    QScopedPointer<QMainWindow> _mainWindow;
+    QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
     static boost::shared_ptr<Project> openAudio(std::string audio_file);

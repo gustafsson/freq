@@ -19,7 +19,8 @@ namespace Sawe {
 
 Project::
         Project( Signal::pOperation head_source )
-:   worker( head_source )
+:   worker( head_source ),
+    is_modified_(true)
 {
 }
 
@@ -29,7 +30,9 @@ Project::
 {
     TaskTimer tt("~Project");
 
-    _mainWindow.reset();
+    if (_mainWindow)
+        delete _mainWindow;
+
     _tools.reset();
     root_source_.reset();
 }
@@ -100,11 +103,32 @@ pProject Project::
 }
 
 
+bool Project::
+        isModified()
+{
+    return is_modified_;
+}
+
+
+void Project::
+        setModified()
+{
+    is_modified_ = true;
+}
+
+
 Ui::SaweMainWindow* Project::
         mainWindow()
 {
     createMainWindow();
     return dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
+}
+
+
+std::string Project::
+        project_name()
+{
+    return QFileInfo(QString::fromLocal8Bit( project_file_name.c_str() )).fileName().toStdString();
 }
 
 
@@ -127,7 +151,7 @@ void Project::
         title = string(info.baseName().toLocal8Bit()) + " - " + title;
     }
 
-    _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));
+    _mainWindow = new Ui::SaweMainWindow( title.c_str(), this );
 
     {
         TaskTimer tt("new Tools::ToolFactory");
@@ -137,7 +161,7 @@ void Project::
 }
 
 
-void Project::
+bool Project::
         saveAs()
 {
     string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
@@ -145,7 +169,7 @@ void Project::
     QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
     if (0 == qfilemame.length()) {
         // User pressed cancel
-        return;
+        return false;
     }
 
     QString extension = ".sonicawe";
@@ -156,7 +180,7 @@ void Project::
 
     project_file_name = qfilemame.toLocal8Bit().data();
 
-    save();
+    return save();
 }
 
 
