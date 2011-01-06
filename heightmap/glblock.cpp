@@ -317,15 +317,15 @@ void GlBlock::
 
             TIME_GLBLOCK TaskTimer tt("Updating slope texture=%u, vbo=%u", _tex_slope, (unsigned)*_slope);
 
-            unsigned meshW = _collection->samples_per_block();
-            unsigned meshH = _collection->scales_per_block();
+            unsigned texture_width = _collection->samples_per_block();
+            unsigned texture_height = _collection->scales_per_block();
 
             glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
             glBindTexture(GL_TEXTURE_2D, _tex_slope);
 
             GlException_CHECK_ERROR();
 
-            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
 
             GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
 
@@ -346,15 +346,15 @@ void GlBlock::
 
         TIME_GLBLOCK TaskTimer tt("Updating heightmap texture=%u, vbo=%u", _tex_height, (unsigned)*_height);
 
-        unsigned meshW = _collection->samples_per_block();
-        unsigned meshH = _collection->scales_per_block();
+        unsigned texture_width = _collection->samples_per_block();
+        unsigned texture_height = _collection->scales_per_block();
 
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height);
         glPixelTransferf(GL_RED_SCALE, 4.f);
 
         GlException_CHECK_ERROR();
-        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,meshW, meshH,GL_RED, GL_FLOAT, 0);
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_RED, GL_FLOAT, 0);
         GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
 
         glPixelTransferf(GL_RED_SCALE, 1.0f);
@@ -388,15 +388,12 @@ void GlBlock::
 }
 
 void GlBlock::
-        draw()
+        draw( unsigned vbo_size )
 {    
     TIME_GLBLOCK CudaException_CHECK_ERROR();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
     update_texture( true );
-
-    unsigned meshW = _collection->samples_per_block();
-    unsigned meshH = _collection->scales_per_block();
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _tex_slope);
@@ -408,13 +405,13 @@ void GlBlock::
 
     glColor4f(1.0, 1.0, 1.0, 1.0);
     if (drawPoints) {
-        glDrawArrays(GL_POINTS, 0, meshW * meshH);
+        glDrawArrays(GL_POINTS, 0, vbo_size);
     } else if (wireFrame) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+4)*(meshH-1), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, ((meshW*2)+4)*(meshH-1), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_INT, 0);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 

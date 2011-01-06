@@ -91,10 +91,10 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     _mesh_width = w;
     _mesh_height = h;
 
-    int size = ((w*2)+4)*(h-1)*sizeof(GLuint);
+    _vbo_size = ((w*2)+4)*(h-1);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, size, 0, GL_STATIC_DRAW);
+    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(GLuint), 0, GL_STATIC_DRAW);
 
     // fill with indices for rendering mesh as triangle strips
     GLuint *indices = (GLuint *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -268,8 +268,9 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    setSize( collection->samples_per_block(), collection->scales_per_block() );
-    //setSize( collection->samples_per_block()/8, collection->scales_per_block()/4 );
+    //setSize( collection->samples_per_block(), collection->scales_per_block() );
+    setSize( collection->samples_per_block()/8, collection->scales_per_block()/2 );
+
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
@@ -487,11 +488,14 @@ void Renderer::beginVboRendering()
     colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    glVertexPointer(4, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    if (!_draw_flat)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
+        glVertexPointer(4, GL_FLOAT, 0, 0);
+        glEnableClientState(GL_VERTEX_ARRAY);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+    }
 
     GlException_CHECK_ERROR();
 }
@@ -522,13 +526,13 @@ void Renderer::renderSpectrogramRef( Reference ref )
     pBlock block = collection->getBlock( ref );
     if (0!=block.get()) {
         if (0 /* direct rendering */ )
-            block->glblock->draw_directMode();
+            ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ )
         {
             if (_draw_flat)
                 block->glblock->draw_flat();
             else
-                block->glblock->draw();
+                block->glblock->draw( _vbo_size );
         }
 
     } else {

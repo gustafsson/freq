@@ -70,6 +70,7 @@ private:
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
+    unsigned _vbo_size;
     pVbo _mesh_position;
     GLuint _shader_prog;
     bool _initialized;

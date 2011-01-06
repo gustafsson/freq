@@ -38,7 +38,7 @@ public:
 
     void delete_texture();
 
-    void draw( );
+    void draw( unsigned vbo_size );
     void draw_flat( );
     //void draw_directMode( );
 
