@@ -41,12 +41,11 @@ void runSerialization(Archive& ar, Project*& project)
 }
 
 
-void Project::
+bool Project::
         save()
 {
     if (project_file_name.empty()) {
-        saveAs();
-        return;
+        return saveAs();
     }
 
     QByteArray mainwindowState = _mainWindow->saveState();
@@ -70,6 +69,8 @@ void Project::
 					 "Error: " + QString::fromStdString(vartype(x)) + 
 					 "\nDetails: " + QString::fromLocal8Bit(x.what()) );
     }
+
+    return true;
 }
 
 
