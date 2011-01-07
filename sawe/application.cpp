@@ -104,12 +104,12 @@ Application::
     TaskInfo ti("Closing Sonic AWE, %s", _version_string.c_str());
     ti.tt().partlyDone();
 
-    BOOST_ASSERT( _app );
-    _app = 0;
-
     _projects.clear();
 
     delete shared_glwidget_;
+
+    BOOST_ASSERT( _app );
+    _app = 0;
 }
 
 Application* Application::
