@@ -33,10 +33,11 @@ public:
       */
     void transform( Tfr::pTransform m );
 
+    Signal::Intervals include_time_support(Signal::Intervals);
+    Signal::Intervals discard_time_support(Signal::Intervals);
+
 protected:
     void applyFilter( Tfr::pChunk chunk );
-
-    Signal::Intervals include_time_support(Signal::Intervals);
 };
 
 // TODO remove

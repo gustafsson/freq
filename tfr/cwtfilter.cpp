@@ -162,6 +162,23 @@ Signal::Intervals CwtFilter::
 }
 
 
+Signal::Intervals CwtFilter::
+        discard_time_support(Signal::Intervals I)
+{
+    Signal::Intervals r;
+    Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
+    Signal::IntervalType n = cwt.wavelet_time_support_samples( sample_rate() );
+
+    BOOST_FOREACH( Signal::Interval& i, I )
+    {
+        Signal::Intervals s(i);
+        r |= (s << n) & (s >> n);
+    }
+
+    return r;
+}
+
+
 Tfr::pTransform CwtFilter::
         transform() const
 {
