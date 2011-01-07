@@ -2,6 +2,7 @@
 
 // Serializable Sonic AWE classes 
 #include "adapters/audiofile.h"
+#include "adapters/microphonerecorder.h"
 #include "tools/support/brushfilter.h"
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
@@ -32,7 +33,10 @@ namespace Sawe {
 template<class Archive> 
 void runSerialization(Archive& ar, Project*& project)
 {
+    TaskInfo ti("Running serialization");
+
     ar.template register_type<Adapters::Audiofile>();
+    ar.template register_type<Adapters::MicrophoneRecorder>();
     ar.template register_type<Tools::Support::MultiplyBrush>();
     ar.template register_type<Filters::Ellipse>();
     ar.template register_type<Tools::CommentModel>();

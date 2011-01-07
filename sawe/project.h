@@ -162,7 +162,7 @@ private:
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {
         Signal::pOperation head = head_source();
-        TaskInfo("head tree:\n%s", head->toString().c_str());
+        TaskInfo("Head tree:\n%s", head->toString().c_str());
 
         ar & BOOST_SERIALIZATION_NVP(root_source_);
         ar & BOOST_SERIALIZATION_NVP(head);

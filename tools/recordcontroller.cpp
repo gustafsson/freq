@@ -62,7 +62,8 @@ void RecordController::
 
         connect(proxy,
                 SIGNAL(recievedInvalidSamples( Signal::Intervals )),
-                SLOT(recievedInvalidSamples( Signal::Intervals )) );
+                SLOT(recievedInvalidSamples( Signal::Intervals )),
+                Qt::QueuedConnection );
 
         r->startRecording();
     }
@@ -80,7 +81,7 @@ void RecordController::
     if ( destroyed_ )
         return;
 
-    TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
+    //TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
 
     float fs = model()->project->head_source()->sample_rate();
     Signal::IntervalType s = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
@@ -100,7 +101,6 @@ void RecordController::
 
     connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
 
-    //connect(render_view_, SIGNAL(destroying()), SLOT(close()));
     connect(render_view_, SIGNAL(destroying()), SLOT(destroying()));
 
     if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))

@@ -16,10 +16,17 @@ using namespace std;
 namespace Adapters {
 
 
-MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
-    :
-    channel(0)
+MicrophoneRecorder::
+        MicrophoneRecorder(int inputDevice)
 {
+    init(inputDevice);
+}
+
+
+void MicrophoneRecorder::
+        init(int inputDevice)
+{
+    channel = 0;
     static bool first = true;
     if (first) Playback::list_devices();
 
@@ -79,6 +86,7 @@ MicrophoneRecorder::~MicrophoneRecorder()
         _stream_record->isStopped()? void(): _stream_record->stop();
         _stream_record->isStopped()? void(): _stream_record->abort();
         _stream_record->close();
+        _stream_record.reset();
     }
 
     QMutexLocker lock(&_data_lock);
@@ -119,14 +127,16 @@ Signal::pBuffer MicrophoneRecorder::
 float MicrophoneRecorder::
         sample_rate()
 {
-    return _stream_record->sampleRate();
+    float fs = _stream_record->sampleRate();
+    return fs;
 }
 
 long unsigned MicrophoneRecorder::
         number_of_samples()
 {
     QMutexLocker lock(&_data_lock);
-    return _data[channel].number_of_samples();
+    long unsigned N = _data[channel].number_of_samples();
+    return N;
 }
 
 unsigned MicrophoneRecorder::

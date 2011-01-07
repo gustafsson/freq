@@ -16,8 +16,8 @@
 #define TIME_WORKER
 //#define TIME_WORKER if(0)
 
-#define WORKER_INFO
-//#define WORKER_INFO if(0)
+//#define WORKER_INFO
+#define WORKER_INFO if(0)
 
 #define TESTING_PERFORMANCE false
 
@@ -371,7 +371,7 @@ void Worker::
     I &= Interval(0, source()->number_of_samples() );
     dynamic_cast<OperationCacheLayer*>(_cache.get())->invalidate_samples( I );
     _post_sink.invalidate_samples( I );
-    TaskInfo("Worker invalidate %s. Worker tree:\n%s",
+    WORKER_INFO TaskInfo("Worker invalidate %s. Worker tree:\n%s",
              I.toString().c_str(),
              source()?source()->toString().c_str():0);
 }
