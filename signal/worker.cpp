@@ -85,7 +85,6 @@ bool Worker::
     unsigned center_sample = source()->sample_rate() * center;
 
     Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
-    _cheat_work |= interval;
 
     boost::scoped_ptr<TaskTimer> tt;
 
@@ -105,6 +104,7 @@ bool Worker::
                     _samples_per_chunk));
     }
 
+    _cheat_work |= interval;
 
     pBuffer b;
 
