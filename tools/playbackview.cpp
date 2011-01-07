@@ -130,7 +130,7 @@ bool PlaybackView::
         drawPlaybackMarkerInEllipse()
 {
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
-            model->selection->current_filter_.get() );
+            model->selection->current_selection().get() );
     if (!e)
         return false;
 

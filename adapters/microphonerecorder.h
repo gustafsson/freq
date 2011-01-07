@@ -42,7 +42,7 @@ public:
     Signal::PostSink* getPostSink() { return &_postsink; }
 
 private:
-    MicrophoneRecorder() {}; // for deserialization
+    MicrophoneRecorder() {} // for deserialization
     void init(int inputDevice);
 
     unsigned channel;

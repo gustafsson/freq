@@ -48,7 +48,7 @@ namespace Tools { namespace Selections
     void PeakController::
             setupGui()
     {
-        Ui::SaweMainWindow* main = selection_controller_->model()->project->mainWindow();
+        Ui::SaweMainWindow* main = selection_controller_->model()->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
         // Connect enabled/disable actions,

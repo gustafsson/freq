@@ -5,11 +5,7 @@
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
-#include "signal/operation-basic.h"
 #include "support/operation-composite.h"
-#include "filters/ellipse.h"
-#include "filters/rectangle.h"
-#include "tools/selections/support/splinefilter.h"
 
 #include "selections/ellipsecontroller.h"
 #include "selections/ellipsemodel.h"
@@ -68,7 +64,7 @@ namespace Tools
     void SelectionController::
             setupGui()
     {
-        Ui::SaweMainWindow* main = _model->project->mainWindow();
+        Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
         connect(ui->actionActionAdd_selection, SIGNAL(triggered(bool)), SLOT(receiveAddSelection(bool)));
@@ -140,13 +136,13 @@ namespace Tools
 
 
     void SelectionController::
-            setCurrentSelection( Signal::pOperation filter )
+            setCurrentSelection( Signal::pOperation selection )
     {
-        _model->current_filter_ = filter;
+        _model->set_current_selection( selection );
 
-        bool enabled_actions = 0 != filter.get();
+        bool enabled_actions = 0 != selection.get();
 
-        Ui::SaweMainWindow* main = _model->project->mainWindow();
+        Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
         ui->actionActionAdd_selection->setEnabled( enabled_actions );
@@ -184,25 +180,25 @@ namespace Tools
     void SelectionController::
             receiveAddSelection(bool active)
     {
-        Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(
-                _model->current_filter_.get());
-
-        if (!f) // No selection, nothing to do
+        if (!_model->current_selection())
             return;
 
         receiveAddClearSelection(active);
-        f->enabled(false);
+
+        _worker->source()->enabled(false);
     }
 
 
     void SelectionController::
             receiveAddClearSelection(bool /*active*/)
     {
-        setCurrentFilterSaveInside(false);
+        if (!_model->current_selection())
+            return;
 
-        _worker->appendOperation( _model->current_filter_ );
-        _model->all_filters.push_back( _model->current_filter_ );
-        setCurrentSelection( Signal::pOperation() );
+        Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
+
+        _worker->appendOperation( o );
+        _model->all_selections.push_back( o );
 
         TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
     }
@@ -212,81 +208,23 @@ namespace Tools
             receiveCropSelection()
     {
         // affected_samples need a sample rate
-        setCurrentFilterSaveInside(true);
+        Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
+        o->source( _worker->source() );
 
-        Signal::Intervals I = _model->current_filter_->affected_samples().coveredInterval();
-        I -= _model->current_filter_->zeroed_samples();
+        Signal::Intervals I = o->affected_samples().coveredInterval();
+        I -= o->zeroed_samples();
 
         if (0==I.coveredInterval().count())
             return;
 
-        // Create OperationRemoveSection to remove that section from the stream
+        // Create OperationRemoveSection to remove everything else from the stream
         Signal::pOperation remove(new Tools::Support::OperationCrop(
                 Signal::pOperation(), I.coveredInterval() ));
-        _worker->appendOperation( _model->current_filter_ );
+        _worker->appendOperation( o );
         _worker->appendOperation( remove );
-        _model->all_filters.push_back( _model->current_filter_ );
-        setCurrentSelection( Signal::pOperation() );
+        _model->all_selections.push_back( o );
 
         TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
-    }
-
-
-    void SelectionController::
-            setCurrentFilterSaveInside(bool save_inside)
-    {
-        _model->current_filter_->source( _worker->source() );
-
-        Filters::Ellipse* ellipse =
-                dynamic_cast<Filters::Ellipse*>(
-                        _model->current_filter_.get() );
-
-        if (ellipse)
-        { // If selection is an ellipse, remove tfr data inside the ellipse
-            ellipse->_save_inside = save_inside;
-        }
-
-
-        Filters::Rectangle* rectangle=
-                dynamic_cast<Filters::Rectangle*>(
-                        _model->current_filter_.get() );
-        if (rectangle)
-            rectangle->_save_inside = save_inside;
-
-
-        Tools::Support::OperationOtherSilent* other_silent =
-                dynamic_cast<Tools::Support::OperationOtherSilent*>(
-                        _model->current_filter_.get() );
-
-        if (other_silent && !save_inside)
-        {
-            _model->current_filter_.reset(
-                    new Tools::Support::OperationSetSilent(
-                            Signal::pOperation(),
-                            other_silent->section() )
-                    );
-        }
-
-
-        Tools::Support::OperationSetSilent* set_silent =
-                dynamic_cast<Tools::Support::OperationSetSilent*>(
-                        _model->current_filter_.get() );
-
-        if (set_silent && save_inside)
-        {
-            _model->current_filter_.reset(
-                    new Tools::Support::OperationOtherSilent(
-                            Signal::pOperation(),
-                            set_silent->affected_samples().coveredInterval() )
-                    );
-        }
-
-
-        Selections::Support::SplineFilter* spline=
-                dynamic_cast<Selections::Support::SplineFilter*>(
-                        _model->current_filter_.get() );
-        if (spline)
-            spline->_save_inside = save_inside;
     }
 
 
