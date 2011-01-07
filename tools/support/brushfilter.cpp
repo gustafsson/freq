@@ -15,7 +15,7 @@ BrushFilter::
         BrushFilter()
 {
     images.reset( new BrushImages );
-    transform( Tfr::pTransform(new Tfr::Cwt( Tfr::Cwt::Singleton())));
+    //transform( Tfr::pTransform(new Tfr::Cwt( Tfr::Cwt::Singleton())));
     resource_releaser_ = new BrushFilterSupport(this);
 }
 

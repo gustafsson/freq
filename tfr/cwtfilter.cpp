@@ -29,12 +29,17 @@ CwtFilter::
         CwtFilter(pOperation source, Tfr::pTransform t)
 :   Filter(source)
 {
-    if (!t)
-        t = Tfr::Cwt::SingletonP();
+//    if (!t)
+//        t = Tfr::Cwt::SingletonP();
 
-    BOOST_ASSERT( dynamic_cast<Tfr::Cwt*>(t.get()));
+    if (t)
+    {
+        BOOST_ASSERT( false );
 
-    _transform = t;
+        BOOST_ASSERT( dynamic_cast<Tfr::Cwt*>(t.get()));
+
+        _transform = t;
+    }
 }
 
 

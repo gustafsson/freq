@@ -21,7 +21,7 @@ struct ChunkAndInverse
     /**
       The variable 'inverse' _may_ be set by readChunk if
       this->source()->readFixed(chunk->getInterval()) is identical to
-      this->_transform->inverse(chunk). In that case the inverse won't be
+      this->transform()->inverse(chunk). In that case the inverse won't be
       computed again.
       */
     Signal::pBuffer inverse;

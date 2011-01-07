@@ -84,7 +84,7 @@ Signal::pBuffer Filter::
     else
     {
         TIME_Filter TaskTimer tt("%s filter computing inverse", vartype(*this).c_str());
-        r = _transform->inverse( ci.chunk );
+        r = transform()->inverse( ci.chunk );
         TIME_FilterReturn TaskInfo("%s filter computed inverse %s", vartype(*this).c_str(), r->getInterval().toString().c_str());
     }
 
