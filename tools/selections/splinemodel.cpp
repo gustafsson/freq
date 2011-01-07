@@ -23,12 +23,16 @@ SplineModel::
 Signal::pOperation SplineModel::
         updateFilter()
 {
-    Signal::pOperation filter( new Support::SplineFilter( true ) );
+    if (v.size() < 3)
+    {
+        v.clear();
+        return Signal::pOperation();
+    }
 
-    Support::SplineFilter* e = dynamic_cast<Support::SplineFilter*>(filter.get());
+    Support::SplineFilter* e;
+    Signal::pOperation filter( e = new Support::SplineFilter( true ) );
 
-    if (e->v.size() != v.size())
-        e->v.resize( v.size() );
+    e->v.resize( v.size() );
 
     for (unsigned i=0; i<v.size(); ++i)
     {
