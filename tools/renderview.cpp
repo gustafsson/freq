@@ -218,7 +218,7 @@ float RenderView::
 {
 #ifdef _MSC_VER
     // getHeightmapValue is tremendously slow in windows for some reason
-    return 0;
+    //return 0;
 #endif
 
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
