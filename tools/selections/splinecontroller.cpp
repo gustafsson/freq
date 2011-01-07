@@ -50,7 +50,7 @@ namespace Tools { namespace Selections
         Ui::MainWindow* ui = main->getItems();
 
         // Connect enabled/disable actions,
-        // 'enableSquareSelection' sets/unsets this as current tool when
+        // 'enableSplineSelection' sets/unsets this as current tool when
         // the action is checked/unchecked.
         // using actionPolygonSelection instead of actionSplineSelection since polygons are drawn
         connect(ui->actionPolygonSelection, SIGNAL(toggled(bool)), SLOT(enableSplineSelection(bool)));

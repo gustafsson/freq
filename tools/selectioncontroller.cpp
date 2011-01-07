@@ -19,9 +19,9 @@
 #include "selections/splinemodel.h"
 #include "selections/splineview.h"
 
-#include "selections/squarecontroller.h"
-#include "selections/squaremodel.h"
-#include "selections/squareview.h"
+#include "selections/rectanglecontroller.h"
+#include "selections/rectanglemodel.h"
+#include "selections/rectangleview.h"
 
 
 namespace Tools
@@ -56,8 +56,8 @@ namespace Tools
         if (!spline_controller_.isNull())
             delete spline_controller_;
 
-        if (!square_controller_.isNull())
-            delete square_controller_;
+        if (!rectangle_controller_.isNull())
+            delete rectangle_controller_;
     }
 
 
@@ -113,9 +113,9 @@ namespace Tools
         spline_view_.reset( new Selections::SplineView(        spline_model_.data(), &render_view()->model->project()->worker ));
         spline_controller_ = new Selections::SplineController( spline_view_.data(), this );
 
-        square_model_.reset( new Selections::SquareModel(      render_view()->model->display_scale(), render_view()->model->project() ));
-        square_view_.reset( new Selections::SquareView(        square_model_.data(), &render_view()->model->project()->worker ));
-        square_controller_ = new Selections::SquareController( square_view_.data(), this );
+        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model->display_scale(), render_view()->model->project() ));
+        rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data(), &render_view()->model->project()->worker ));
+        rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
     }
 
 

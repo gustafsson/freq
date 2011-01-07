@@ -22,7 +22,7 @@ public:
     bool visible;
 
 public slots:
-    /// Connected in SquareController
+    /// Connected in RectangleController
     virtual void draw();
 
 private:

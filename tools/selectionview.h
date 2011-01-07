@@ -19,7 +19,6 @@ namespace Tools
         ~SelectionView();
 
         void drawSelection();
-        void drawSelectionSquare();
         bool insideCircle( float x1, float z1 );
         void drawSelectionCircle2();
 

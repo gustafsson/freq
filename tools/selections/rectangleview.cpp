@@ -1,5 +1,5 @@
-#include "squareview.h"
-#include "squaremodel.h"
+#include "rectangleview.h"
+#include "rectanglemodel.h"
 
 #include <gl.h>
 #include <TaskTimer.h>
@@ -9,7 +9,7 @@ namespace Tools { namespace Selections
 {
 
 
-SquareView::SquareView(SquareModel* model, Signal::Worker* worker)
+RectangleView::RectangleView(RectangleModel* model, Signal::Worker* worker)
     :
     enabled(false),
     visible(true),
@@ -19,14 +19,14 @@ SquareView::SquareView(SquareModel* model, Signal::Worker* worker)
 }
 
 
-SquareView::
-        ~SquareView()
+RectangleView::
+        ~RectangleView()
 {
     TaskTimer(__FUNCTION__).suppressTiming();
 }
 
 
-void SquareView::
+void RectangleView::
         draw()
 {
     if (visible)
@@ -34,7 +34,7 @@ void SquareView::
 }
 
 
-void SquareView::
+void RectangleView::
         drawSelectionRectangle()
 {
     float
@@ -79,7 +79,7 @@ void SquareView::
 }
 
 
-void SquareView::
+void RectangleView::
         drawSelectionRectangle2()
 {
     float l = worker_->source()->length();

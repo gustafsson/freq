@@ -1,5 +1,5 @@
-#ifndef SQUAREMODEL_H
-#define SQUAREMODEL_H
+#ifndef RECTANGLEMODEL_H
+#define RECTANGLEMODEL_H
 
 #include "tfr/freqaxis.h"
 #include "signal/operation.h"
@@ -11,23 +11,23 @@ namespace Sawe {
 
 namespace Tools { namespace Selections
 {
-    class SquareModel
+    class RectangleModel
     {
     public:
-        enum SquareType
+        enum RectangleType
         {
-            SquareType_SquareSelection,
-            SquareType_FrequencySelection,
-            SquareType_TimeSelection
+            RectangleType_RectangleSelection,
+            RectangleType_FrequencySelection,
+            RectangleType_TimeSelection
         };
 
-        SquareModel( Tfr::FreqAxis const& fa, Sawe::Project* p );
-        ~SquareModel();
+        RectangleModel( Tfr::FreqAxis const& fa, Sawe::Project* p );
+        ~RectangleModel();
 
         Signal::pOperation updateFilter();
 
         Heightmap::Position a, b;
-        SquareType type;
+        RectangleType type;
 
         void validate();
     private:
@@ -36,5 +36,5 @@ namespace Tools { namespace Selections
         Sawe::Project* project_;
     };
 } } // namespace Tools::Selections
-#endif // SQUAREMODEL_H
+#endif // RECTANGLEMODEL_H
 

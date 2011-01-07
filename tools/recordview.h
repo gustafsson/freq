@@ -19,7 +19,7 @@ public:
     bool enabled;
 
 public slots:
-    /// Connected in SquareController
+    /// Connected in RecordController
     virtual void draw();
 
 private:
