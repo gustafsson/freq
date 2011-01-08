@@ -1,17 +1,13 @@
-#ifdef _MSC_VER
-#define NOMINMAX
-#include <windows.h>
-#endif
-
-#ifndef __APPLE__
-#include "GL/glew.h"
-#include <GL/glut.h>
-#else
-  #include "OpenGL/glu.h"
-  #include <GLUT/glut.h>
-#endif
+#include <gl.h>
 
 #include "heightmap/renderer.h"
+
+#ifndef __APPLE__
+#   include <GL/glut.h>
+#else
+#   include <GLUT/glut.h>
+#endif
+
 #include <float.h>
 #include <GlException.h>
 #include <CudaException.h>

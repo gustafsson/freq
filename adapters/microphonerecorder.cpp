@@ -59,7 +59,7 @@ void MicrophoneRecorder::
             channel_count, // channels
             portaudio::FLOAT32,
             false, // interleaved
-#ifdef __APPLE__
+#ifdef __APPLE__ // TODO document why
             device.defaultHighInputLatency(),
 #else
             device.defaultLowInputLatency(),

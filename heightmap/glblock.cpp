@@ -76,9 +76,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         glAttachShader(prg, shader);
         glDeleteShader(shader); // TODO why delete shader?
     } catch (const std::exception &x) {
-#ifndef __APPLE__
         TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
-#endif
         throw;
     }
 }
