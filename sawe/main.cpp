@@ -1,12 +1,17 @@
+// Sonic AWE
 #include "sawe/application.h"
-
 #include "tfr/cwt.h"
 
+// gpumisc
 #include <CudaProperties.h>
 #include <CudaException.h>
-#include <cuda_gl_interop.h>
 
+// Qt
 #include <QtGui/QMessageBox>
+#include <qgl.h>
+
+// cuda
+#include <cuda_gl_interop.h>
 #include <cuda.h>
 
 using namespace std;
@@ -88,7 +93,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     // Show error messages:
     std::string nvidia_url;
 #ifdef __APPLE__
-    nvidia_url = "http://www.nvidia.com/object/cuda_get.html#MacOS";
+    nvidia_url = "\"Developer Drivers for MacOS\" at " + endl +
+                 "http://www.nvidia.com/object/cuda_get.html#MacOS";
 #else
     nvidia_url = "www.nvidia.com";
 #endif
@@ -150,8 +156,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 #include <Statistics.h>
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
+//#include <boost/archive/xml_oarchive.hpp>
+//#include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 
@@ -217,7 +223,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 	if (0) try {
-		{
+                /*{
 			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));
 
 			std::ofstream ofs("tstfil.xml");
@@ -231,7 +237,7 @@ int main(int argc, char *argv[])
 			Signal::pOperation ljud;
 			xml & boost::serialization::make_nvp("hej2", ljud );
 			cout << "filnamn: " << ((Adapters::Audiofile*)ljud.get())->filename() << endl;
-		}
+                }*/
 		return 0;
 	} catch (std::exception const& x)
 	{
@@ -278,8 +284,7 @@ int main(int argc, char *argv[])
     Sawe::Application a(argc, argv, true);
 
     TaskInfo("Version: %s", a.version_string().c_str());
-    TaskInfo("Date: %s", __DATE__);
-
+    TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
     if (!check_cuda( false ))
         return -1;
 
@@ -337,7 +342,8 @@ int main(int argc, char *argv[])
         if( 0 != QGLContext::currentContext() )
             TaskTimer("Error: OpenGL context was not destroyed prior to application exit").suppressTiming();
 
-		if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( 0 ))
+        CUdevice current_device;
+        if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( &current_device ))
             TaskTimer("Error: CUDA context was not destroyed prior to application exit").suppressTiming();
 
         return r;

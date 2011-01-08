@@ -21,7 +21,7 @@ FS = data.samplerate(1); % data.samplerate is a matrix, not a scalar
 % Apply thresholding, set everything to zero that has an amplitude less than 2 (the transform consists of complex values).
 T(abs(T)<0.01)=0;
 
-% Define square in which we will set all transform values to zero
+% Define rectangle in which we will set all transform values to zero
 startTime = 1.5;
 endTime = 2.5;
 startRowf = 2/5; % Fraction of entire height

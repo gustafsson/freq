@@ -26,8 +26,8 @@
 #include <math.h>
 #endif
 
-//#define TIME_CWT if(0)
-#define TIME_CWT
+#define TIME_CWT if(0)
+//#define TIME_CWT
 
 #define STAT_CWT if(0)
 //#define STAT_CWT
@@ -50,6 +50,7 @@ using namespace boost::lambda;
 
 namespace Tfr {
 
+std::map<unsigned, CufftHandleContext> Cwt::_fft_many;
 pTransform Cwt::static_singleton;
 
 Cwt::
@@ -59,7 +60,6 @@ Cwt::
     _min_hz( 20 ),
     _scales_per_octave( scales_per_octave ),
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
-//    _fft_many(stream),
     _wavelet_time_suppport( wavelet_time_suppport ),
     _wavelet_def_time_suppport( wavelet_time_suppport ),
     _wavelet_scale_suppport( 6 )
@@ -346,11 +346,11 @@ pChunk Cwt::
     return wt;
 
     } catch (CufftException const& /*x*/) {
-        TaskInfo("Cwt::operater() caught CufftException, calling _fft_many.clear()");
+        TaskInfo("Cwt::operator() caught CufftException, calling _fft_many.clear()");
         _fft_many.clear();
         throw;
     } catch (CudaException const& /*x*/) {
-        TaskInfo("Cwt::operater() caught CudaException, calling _fft_many.clear()");
+        TaskInfo("Cwt::operator() caught CudaException, calling _fft_many.clear()");
         _fft_many.clear();
         throw;
     }
@@ -494,7 +494,7 @@ pChunk Cwt::
             //stft.set_exact_chunk_size(n.width);
 
             {
-                CufftHandleContext& fftctx = _fft_many[ n.width ];
+                CufftHandleContext& fftctx = _fft_many[ n.width*n.height ];
                 {
                     //TIME_CWTPART TaskTimer tt("Allocating inverse fft");
                     fftctx(n.width, n.height);
@@ -786,6 +786,7 @@ void Cwt::
         resetSingleton()
 {
     static_singleton.reset();
+    gc();
 }
 
 

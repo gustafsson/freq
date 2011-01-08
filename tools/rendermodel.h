@@ -1,12 +1,12 @@
 #ifndef RENDERMODEL_H
 #define RENDERMODEL_H
 
+#include "tfr/freqaxis.h"
+#include "signal/worker.h"
+
 namespace Sawe {
     class Project;
 }
-
-#include "tfr/freqaxis.h"
-#include "signal/worker.h"
 
 namespace Heightmap
 {

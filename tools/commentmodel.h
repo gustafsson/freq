@@ -7,6 +7,7 @@
 #include "toolmodel.h"
 #include <vector_types.h>
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/version.hpp>
 
 namespace Tools

@@ -21,7 +21,7 @@ public:
     bool visible, enabled;
 
 public slots:
-    /// Connected in SquareController
+    /// Connected in SplineController
     virtual void draw();
 
 private:

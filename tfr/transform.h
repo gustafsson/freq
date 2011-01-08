@@ -1,10 +1,10 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "signal/source.h"
 #include "chunk.h"
 #include "freqaxis.h"
-#include <boost/shared_ptr.hpp>
+
+#include "signal/source.h"
 
 namespace Tfr
 {

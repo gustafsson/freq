@@ -339,11 +339,13 @@ Interval Intervals::
             return f;
         }
 
-        if (f.last <= center ) {
+        unsigned int_div_ceil = ( center-f.first + dt - 1 ) / dt;
+        IntervalType start = f.first + dt*int_div_ceil;
+
+        if (f.last <= start ) {
             return Interval( f.last-dt, f.last );
         }
 
-        IntervalType start = f.first + dt*(unsigned)((center-f.first) / dt);
         return Interval( start, std::min(start+dt, f.last) );
     }
 }
@@ -370,10 +372,16 @@ Interval Intervals::
 std::string Intervals::toString() const
 {
     std::stringstream ss;
-    ss << "{" << size() << " interval" << ((size()==1)?"":"s");
+    ss << "{";
+    if (1<size())
+        ss << size() << "#";
 
     foreach (const Interval& r, *this)
-        ss << " " << r.toString();
+    {
+        if (1<size())
+            ss << " ";
+        ss << r.toString();
+    }
 
     ss << "}";
     return ss.str();

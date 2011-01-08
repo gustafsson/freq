@@ -14,7 +14,7 @@ namespace Tools
                 selection(selection)
     {
         postsinkCallback.reset( new Signal::WorkerCallback(
-                &selection->project->worker,
+                &selection->project()->worker,
                 Signal::pOperation(new Signal::PostSink)) );
     }
 

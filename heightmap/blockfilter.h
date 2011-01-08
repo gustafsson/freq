@@ -9,6 +9,7 @@
 namespace Heightmap
 {
 
+
 class BlockFilter
 {
 public:
@@ -23,6 +24,7 @@ protected:
     Collection* _collection;
 };
 
+
 template<typename FilterKind>
 class BlockFilterImpl: public FilterKind, public BlockFilter
 {
@@ -33,6 +35,7 @@ public:
     {
     }
 
+
     BlockFilterImpl( std::vector<boost::shared_ptr<Collection> > collections )
         :
         BlockFilter(collections[0].get()),
@@ -40,26 +43,30 @@ public:
     {
     }
 
+
     /// @overload Signal::Operation::fetch_invalid_samples()
     Signal::Intervals fetch_invalid_samples()
     {
         FilterKind::_invalid_samples.clear();
 
-        if (FilterKind::_invalid_samples)
-            TaskInfo("%s %s had %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
+        //if (FilterKind::_invalid_samples)
+        //    TaskInfo("%s %s had %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
 
         foreach ( boost::shared_ptr<Collection> c, _collections)
         {
-            FilterKind::_invalid_samples |= c->invalid_samples();
+            Signal::Intervals inv_coll = c->invalid_samples();
+            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            FilterKind::_invalid_samples |= inv_coll;
         }
 
-        //TaskInfo("%s %s %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
+        //TaskInfo ti("%s %s %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
 
         Signal::Intervals inv_samples = FilterKind::_invalid_samples;
         Signal::Intervals r = Tfr::Filter::fetch_invalid_samples();
         FilterKind::_invalid_samples = inv_samples;
         return r;
     }
+
 
     virtual void operator()( Tfr::Chunk& chunk )
     {
@@ -71,6 +78,7 @@ public:
         BlockFilter::operator()(chunk);
     }
 
+
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     Signal::Operation* affecting_source( const Signal::Interval& I)
     {
@@ -79,6 +87,7 @@ public:
 
         return FilterKind::_source->affecting_source( I );
     }
+
 
     /**
         To prevent anyone from optimizing away a read because it's known to
@@ -93,6 +102,7 @@ public:
 
         FilterKind::applyFilter( pchunk );
     }
+
 
     /// @overload Signal::Operation::affected_samples()
     virtual Signal::Intervals affected_samples()

@@ -1,9 +1,10 @@
 // gl
-#include "GL/glew.h"
+#include <gl.h>
 
 #include "renderview.h"
 
 // TODO cleanup
+#include "ui/mainwindow.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -26,6 +27,7 @@
 #include <QTimer>
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QGLContext>
 
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
@@ -70,18 +72,33 @@ RenderView::
 RenderView::
         ~RenderView()
 {
-    TaskTimer tt("%s, calling cudaThreadExit()", __FUNCTION__);
+    TaskTimer tt("%s", __FUNCTION__);
 
     emit destroying();
+
+    _render_timer.reset();
+    _work_timer.reset();
+    _renderview_fbo.reset();
+
+    QGraphicsScene::clear();
+
+    Sawe::Application::global_ptr()->clearCaches();
+
+    TaskInfo("cudaThreadExit()");
 
     // Because the Cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
     // is corrupt and can't be destroyed nor used properly.
     //
-    // Note though that other OpenGL contexts might still be active in other
-    // Sonic AWE windows. The Cuda context would probably only need to be
-    // destroyed prior to the destruction of the last OpenGL context. This
-    // would require further investigation.
+    // Note though that all renderview uses the same shared OpenGL context
+    // from (Application::shared_glwidget) thar are still active in other
+    // Sonic AWE windows. The Cuda context will be recreated as soon as one
+    // is needed. Calling 'clearCaches' above ensures that all resources are
+    // released though prior to invalidating the cuda context.
+    //
+    // Also, see Application::clearCaches() which doesn't call cudaThreadExit
+    // unless there is a current context (which is the case when clearCaches is
+    // called above in this method).
     makeCurrent();
 
     BOOST_ASSERT( QGLContext::currentContext() );
@@ -201,7 +218,7 @@ float RenderView::
 {
 #ifdef _MSC_VER
     // getHeightmapValue is tremendously slow in windows for some reason
-    return 0;
+    //return 0;
 #endif
 
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
@@ -888,6 +905,9 @@ void RenderView::
                 model->project()->worker.worked_samples.clear();
                 workcount++;
                 _work_timer.reset();
+
+                // Useful when debugging to close application after finishing first work chunk
+                //QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
             }
         }
     }

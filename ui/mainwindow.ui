@@ -569,6 +569,9 @@
    <property name="checked">
     <bool>false</bool>
    </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>
@@ -872,19 +875,19 @@
     <bool>true</bool>
    </property>
   </action>
-  <action name="actionSquareSelection">
+  <action name="actionRectangleSelection">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-square-selection.png</normaloff>:/icons/icons/icon-square-selection.png</iconset>
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
    </property>
    <property name="text">
-    <string>Square selection</string>
+    <string>Rectangle selection</string>
    </property>
    <property name="toolTip">
-    <string>Square selection</string>
+    <string>Rectangle selection</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1453,7 +1456,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-square-selection.png</normaloff>:/icons/icons/icon-square-selection.png</iconset>
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
    </property>
    <property name="text">
     <string>Frequency selection</string>
@@ -1471,7 +1474,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-square-selection.png</normaloff>:/icons/icons/icon-square-selection.png</iconset>
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
    </property>
    <property name="text">
     <string>Time selection</string>

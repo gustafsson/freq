@@ -17,6 +17,7 @@ namespace Tools
         Q_OBJECT
     public:
         TimelineController( TimelineView* timeline_view );
+        ~TimelineController();
 
     private:
         RenderModel *model;

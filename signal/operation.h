@@ -63,7 +63,7 @@ public:
 
       As default all samples are possibly affected by an Operation.
       */
-    virtual Signal::Intervals affected_samples() { return _enabled?Intervals(0, number_of_samples() ):Intervals(); }
+    virtual Signal::Intervals affected_samples() { IntervalType it = number_of_samples(); return (_enabled && it)?Intervals(0, it ):Intervals(); }
 
 
     /**
@@ -190,8 +190,9 @@ private:
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {
-        if (_source)
-            TaskInfo("serialize source: %s", vartype(*_source).c_str());
+        TaskInfo ti("Serializing %s, source: %s",
+                    vartype(*this).c_str(), _source.get()?vartype(*_source).c_str():0);
+        ti.tt().partlyDone();
 
         ar & BOOST_SERIALIZATION_NVP(_source);
     }

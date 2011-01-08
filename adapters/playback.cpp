@@ -131,12 +131,36 @@ void Playback::
         put( Signal::pBuffer buffer )
 {
     TIME_PLAYBACK TaskTimer tt("Playback::put [%lu,%lu]", (unsigned long)buffer->sample_offset, (unsigned long)(buffer->sample_offset+buffer->number_of_samples()));
-
     _last_timestamp = microsec_clock::local_time();
+
     if (_data.empty())
-	{
+    {
+        const Signal::Interval I = buffer->getInterval();
         _first_timestamp = _last_timestamp;
-		_first_buffer_size = buffer->number_of_samples();
+        _first_buffer_size = I.count();
+
+        // Discard zeros in the beginning of the signal
+/*        float* p = buffer->waveform_data()->getCpuMemory();
+        Signal::IntervalType i;
+        for (i=0; i<I.count(); ++i)
+        {
+            if (fabsf(p[i]) > 0.001)
+                break;
+        }
+
+        if (i>0)
+        {
+            Signal::Intervals is = _data.fetch_invalid_samples();
+            _data.clear();
+            _data.invalidate_samples( is - Signal::Interval(I.first, I.first + i) );
+
+            Signal::Interval rI( I.first + i, I.last );
+
+            if (0==rI.count())
+                return;
+
+            buffer = Signal::BufferSource( buffer ).readFixedLength( rI );
+        }*/
 	}
 
     // Make sure the buffer is moved over to CPU memory.
@@ -145,7 +169,6 @@ void Playback::
     GpuCpuData<float>* bdata = buffer->waveform_data();
     bdata->getCpuMemory();
     bdata->freeUnused(); // relase GPU memory as well...
-
     _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
 
     if (streamPlayback)

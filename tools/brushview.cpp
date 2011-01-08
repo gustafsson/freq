@@ -1,17 +1,33 @@
-#include "brushview.h"
+// Need to include OpenGL headers in a specific order. So do it here first to
+// make sure that the order is correct.
 
-#ifdef _MSC_VER // gl.h expects windows.h to be included on windows
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
+// TODO Tidy
+#include "heightmap/reference.h"
+
+#include "rendermodel.h"
+
+// tool support
+#include "tfr/cwtfilter.h"
+#include "heightmap/collection.h"
+
+// gpumisc
+#include <GpuCpuData.h>
+#include <vector_types.h>
+
+#include "support/brushfilter.h"
+#include "support/brushpaint.cu.h"
+
+// Sonic AWE
+#include "tfr/filter.h"
+
+#include "brushview.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
 #include <math.h>
 #endif
 
-#include <GL/gl.h>
+#include <gl.h>
 #include <glPushContext.h>
 
 namespace Tools {

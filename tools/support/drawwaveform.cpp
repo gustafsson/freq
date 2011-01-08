@@ -1,11 +1,7 @@
 #include "drawwaveform.h"
 
-// OpenGL
-#ifndef __APPLE__
-#include <GL/glut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+// gpumisc
+#include <gl.h>
 
 // Boost
 #include <boost/foreach.hpp>

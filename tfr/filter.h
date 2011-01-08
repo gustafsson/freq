@@ -1,12 +1,10 @@
 #ifndef TFRFILTER_H
 #define TFRFILTER_H
 
+#include "transform.h"
+
 #include "signal/intervals.h"
 #include "signal/operation.h"
-#include "tfr/transform.h"
-
-#include <list>
-#include <boost/shared_ptr.hpp>
 
 namespace Tfr {
 
@@ -23,7 +21,7 @@ struct ChunkAndInverse
     /**
       The variable 'inverse' _may_ be set by readChunk if
       this->source()->readFixed(chunk->getInterval()) is identical to
-      this->_transform->inverse(chunk). In that case the inverse won't be
+      this->transform()->inverse(chunk). In that case the inverse won't be
       computed again.
       */
     Signal::pBuffer inverse;

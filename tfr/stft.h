@@ -83,6 +83,7 @@ public:
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 private:
     cudaStream_t    _stream;
+    CufftHandleContext _handle_ctx;
 
     static std::vector<unsigned> _ok_chunk_sizes;
 

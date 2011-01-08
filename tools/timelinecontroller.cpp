@@ -33,6 +33,13 @@ TimelineController::
 }
 
 
+TimelineController::
+        ~TimelineController()
+{
+    TaskInfo("%s", __FUNCTION__);
+}
+
+
 void TimelineController::
         setupGui()
 {

@@ -3,40 +3,30 @@
 
 #include <iostream>
 #include <memory.h>
- 
+
+#include <QMutexLocker>
+
+#include <Statistics.h>
+
 //#define TIME_MICROPHONERECORDER
 #define TIME_MICROPHONERECORDER if(0)
 
 using namespace std;
 
-//#include <boost/serialization/export.hpp>
-//BOOST_CLASS_EXPORT(Adapters::MicrophoneRecorder);
-
 namespace Adapters {
 
-/**
-  TODO document why this class is needed.
-  */
-class OperationProxy: public Signal::Operation
+
+MicrophoneRecorder::
+        MicrophoneRecorder(int inputDevice)
 {
-public:
-    OperationProxy(Signal::Operation* p)
-        :
-        Operation(Signal::pOperation()),
-        p(p)
-    {}
+    init(inputDevice);
+}
 
-    virtual Signal::pBuffer read( const Signal::Interval& I ) { return p->read( I ); }
-    virtual float sample_rate() { return p->sample_rate(); }
 
-private:
-    Signal::Operation*p;
-};
-
-MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
-    :
-    channel(0)
+void MicrophoneRecorder::
+        init(int inputDevice)
 {
+    channel = 0;
     static bool first = true;
     if (first) Playback::list_devices();
 
@@ -61,13 +51,15 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
         channel_count = 2;
     tt.getStream() << "Opening recording input stream on '" << device.name() << "' with " << channel_count << " channels";
 
+    QMutexLocker lock(&_data_lock);
     _data.resize(channel_count);
+
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             device,
             channel_count, // channels
             portaudio::FLOAT32,
             false, // interleaved
-#ifdef __APPLE__
+#ifdef __APPLE__ // TODO document why
             device.defaultHighInputLatency(),
 #else
             device.defaultLowInputLatency(),
@@ -85,9 +77,6 @@ MicrophoneRecorder::MicrophoneRecorder(int inputDevice)
             paramsRecord,
             *this,
             &MicrophoneRecorder::writeBuffer));
-
-    Signal::pOperation proxy(new OperationProxy(&_data[0]));
-    _postsink.source( proxy );
 }
 
 MicrophoneRecorder::~MicrophoneRecorder()
@@ -97,9 +86,11 @@ MicrophoneRecorder::~MicrophoneRecorder()
         _stream_record->isStopped()? void(): _stream_record->stop();
         _stream_record->isStopped()? void(): _stream_record->abort();
         _stream_record->close();
+        _stream_record.reset();
     }
 
-	for (unsigned i=0; i<_data.size(); ++i)
+    QMutexLocker lock(&_data_lock);
+    for (unsigned i=0; i<_data.size(); ++i)
 	{
 		if (0<_data[i].length()) {
 			TaskTimer tt("Releasing recorded data channel %u", i);
@@ -110,11 +101,13 @@ MicrophoneRecorder::~MicrophoneRecorder()
 
 void MicrophoneRecorder::startRecording()
 {
+    TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
     _stream_record->start();
 }
 
 void MicrophoneRecorder::stopRecording()
 {
+    TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
     _stream_record->stop();
 }
 
@@ -126,31 +119,41 @@ bool MicrophoneRecorder::isStopped()
 Signal::pBuffer MicrophoneRecorder::
         read( const Signal::Interval& I )
 {
-    return _data[channel].readFixedLength( I );
+    QMutexLocker lock(&_data_lock);
+    // TODO why? return _data[channel].readFixedLength( I );
+    return _data[channel].read( I );
 }
 
 float MicrophoneRecorder::
         sample_rate()
 {
-    return _stream_record->sampleRate();
+    float fs = _stream_record->sampleRate();
+    return fs;
 }
 
 long unsigned MicrophoneRecorder::
         number_of_samples()
 {
-    return _data[channel].number_of_samples();
+    QMutexLocker lock(&_data_lock);
+    long unsigned N = _data[channel].number_of_samples();
+    return N;
 }
 
 unsigned MicrophoneRecorder::
         num_channels()
 {
+    QMutexLocker lock(&_data_lock);
+#ifdef SAWE_MONO
+    return _data.size()?1:0;
+#else
     return _data.size();
+#endif
 }
 
 void MicrophoneRecorder::
         set_channel(unsigned channel)
 {
-    TIME_MICROPHONERECORDER TaskTimer("MicrophoneRecorder::set_channel(%u)", channel).suppressTiming();
+    //TIME_MICROPHONERECORDER TaskTimer("MicrophoneRecorder::set_channel(%u)", channel).suppressTiming();
     BOOST_ASSERT( channel < num_channels() );
     this->channel = channel;
 }
@@ -175,6 +178,8 @@ int MicrophoneRecorder::
     const float **in = (const float **)inputBuffer;
 
 	long unsigned offset = number_of_samples();
+    QMutexLocker lock(&_data_lock);
+
     for (unsigned i=0; i<_data.size(); ++i)
     {
         const float *buffer = in[i];
@@ -186,12 +191,14 @@ int MicrophoneRecorder::
         b->sample_offset = offset;
         b->sample_rate = sample_rate();
 
-        TIME_MICROPHONERECORDER TaskTimer("Interval: %s", b->getInterval().toString().c_str()).suppressTiming();
+        TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s", b->getInterval().toString().c_str());
 
         _data[i].put( b );
     }
 
-	_postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
+    lock.unlock();
+
+    _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
 
     return paContinue;
 }

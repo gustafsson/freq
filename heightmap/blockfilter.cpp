@@ -1,11 +1,11 @@
-#include "block.cu.h"
 #include "blockfilter.h"
+
+#include "block.cu.h"
 #include "collection.h"
 #include "tfr/cwt.h"
 
 #include <CudaException.h>
 #include <GlException.h>
-
 #include <TaskTimer.h>
 
 //#define TIME_BLOCKFILTER
@@ -37,8 +37,7 @@ void BlockFilter::
         operator()( Tfr::Chunk& chunk )
 {
     Signal::Interval chunk_interval = chunk.getInterval();
-    TIME_BLOCKFILTER TaskTimer("BlockFilter [%u, %u)",
-                               chunk_interval.first, chunk_interval.last);
+    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s", chunk_interval.toString().c_str());
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
@@ -136,7 +135,7 @@ void CwtToBlock::
     block->ref.getArea(a,b);
     float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
     float chunk_length = chunk.n_valid_samples / chunk.sample_rate;
-    DEBUG_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
+    DEBUG_CWTTOBLOCK TaskTimer tt2("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
                                  chunk_startTime, chunk_startTime + chunk_length, a.time, b.time, a.scale, b.scale);
 
     float in_sample_rate = chunk.sample_rate;
@@ -200,9 +199,10 @@ void CwtToBlock::
 
 
     Signal::Interval transfer = transferDesc.coveredInterval();
-    TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u)",
+    TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u) to ref %s",
                                  transfer.first,
-                                 transfer.last);
+                                 transfer.last,
+                                 block->ref.toString().c_str());
 
     DEBUG_CWTTOBLOCK {
         TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();

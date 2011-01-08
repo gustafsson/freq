@@ -41,14 +41,14 @@ namespace Tools { namespace Selections
     PeakController::
             ~PeakController()
     {
-        TaskTimer(__FUNCTION__).suppressTiming();
+        TaskInfo(__FUNCTION__);
     }
 
 
     void PeakController::
             setupGui()
     {
-        Ui::SaweMainWindow* main = selection_controller_->model()->project->mainWindow();
+        Ui::SaweMainWindow* main = selection_controller_->model()->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
         // Connect enabled/disable actions,

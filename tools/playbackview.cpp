@@ -63,6 +63,8 @@ void PlaybackView::
         return;
     }
 
+    update();
+
     // Playback has reached end but continues with zeros to avoid clicks
     if (model->playback()->hasReachedEnd()) {
         return;
@@ -75,8 +77,6 @@ void PlaybackView::
         Tools::RenderView& r = *_render_view;
         r.model->_qx = _playbackMarker;
     }
-
-    update();
 }
 
 
@@ -130,7 +130,7 @@ bool PlaybackView::
         drawPlaybackMarkerInEllipse()
 {
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
-            model->selection->current_filter_.get() );
+            model->selection->current_selection().get() );
     if (!e)
         return false;
 

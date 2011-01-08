@@ -1,19 +1,19 @@
-#ifndef SQUAREVIEW_H
-#define SQUAREVIEW_H
+#ifndef RECTANGLEVIEW_H
+#define RECTANGLEVIEW_H
 
 #include <QObject>
 #include "signal/worker.h"
-#include "squaremodel.h"
+#include "rectanglemodel.h"
 
 namespace Tools { namespace Selections
 {
 
-class SquareView: public QObject
+class RectangleView: public QObject
 {
     Q_OBJECT
 public:
-    SquareView(SquareModel* model, Signal::Worker* worker);
-    ~SquareView();
+    RectangleView(RectangleModel* model, Signal::Worker* worker);
+    ~RectangleView();
 
     void drawSelectionRectangle();
     void drawSelectionRectangle2();
@@ -22,15 +22,15 @@ public:
     bool visible;
 
 public slots:
-    /// Connected in SquareController
+    /// Connected in RectangleController
     virtual void draw();
 
 private:
-    friend class SquareController;
-    SquareModel* model_;
+    friend class RectangleController;
+    RectangleModel* model_;
     Signal::Worker* worker_;
 };
 
 }} // namespace Tools::Selections
 
-#endif // SQUAREVIEW_H
+#endif // RECTANGLEVIEW_H

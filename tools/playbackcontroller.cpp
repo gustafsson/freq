@@ -54,7 +54,7 @@ void PlaybackController::
 
 
     Signal::PostSink* postsink_operations = _view->model->getPostSink();
-    Signal::pOperation filter = _view->model->selection->current_filter_;
+    Signal::pOperation filter = _view->model->selection->current_selection();
 
     // TODO define selections by a selection structure. Currently selections
     // are defined from the first sampels that is non-zero affected by a
@@ -78,7 +78,7 @@ void PlaybackController::
         postsink_operations->filter( Signal::pOperation() );
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
-        postsink_operations->invalidate_samples(~filter->zeroed_samples());
+        postsink_operations->invalidate_samples( ~filter->zeroed_samples() );
     }
     else
     {

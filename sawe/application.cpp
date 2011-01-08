@@ -1,10 +1,22 @@
 #include "sawe/application.h"
-#include <QTime>
-#include <sstream>
-#include <QtGui/QMessageBox>
-#include <demangle.h>
+
+// Sonic AWE
 #include "ui/mainwindow.h"
 #include "tfr/cwt.h"
+
+// gpumisc
+#include <demangle.h>
+
+// std
+#include <sstream>
+
+// qt
+#include <QTime>
+#include <QtGui/QMessageBox>
+#include <QGLWidget>
+
+// cuda
+#include "cuda.h"
 
 using namespace std;
 
@@ -68,11 +80,14 @@ Application::
     ss << "Sonic AWE";
 #ifndef SONICAWE_RELEASE
     ss << " - ";
-#ifdef SONICAWE_VERSION
-    ss << TOSTR(SONICAWE_VERSION);
-#else
-    ss << __DATE__;// << " - " << __TIME__;
-#endif
+    #ifdef SONICAWE_VERSION
+        ss << TOSTR(SONICAWE_VERSION);
+    #else
+        ss << __DATE__;
+        #ifdef _DEBUG
+            ss << " - " << __TIME__;
+        #endif
+    #endif
 #endif
 
 #ifdef SONICAWE_BRANCH
@@ -89,10 +104,15 @@ Application::
 Application::
         ~Application()
 {
-    BOOST_ASSERT( _app );
-    _app = 0;
+    TaskInfo ti("Closing Sonic AWE, %s", _version_string.c_str());
+    ti.tt().partlyDone();
+
+    _projects.clear();
 
     delete shared_glwidget_;
+
+    BOOST_ASSERT( _app );
+    _app = 0;
 }
 
 Application* Application::
@@ -178,6 +198,11 @@ void Application::
     TaskInfo("Reset CWT");
     Tfr::Cwt::Singleton().resetSingleton();
 
+
+    if ( !QGLContext::currentContext() ) // See RenderView::~RenderView()
+        return;
+
+
     TaskInfo("cudaThreadExit()");
     cudaThreadExit();
 
@@ -236,8 +261,6 @@ pProject Application::
 void Application::
     slotClosed_window( QWidget* w )
 {
-    // QWidget* w = dynamic_cast<QWidget*>(sender());
-
     for (std::set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
         if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))

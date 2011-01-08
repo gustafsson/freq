@@ -1,7 +1,7 @@
-#ifndef SQUARECONTROLLER_H
-#define SQUARECONTROLLER_H
+#ifndef RECTANGLECONTROLLER_H
+#define RECTANGLECONTROLLER_H
 
-#include "squareview.h"
+#include "rectangleview.h"
 #include "tools/selectioncontroller.h"
 #include "heightmap/position.h"
 
@@ -10,20 +10,20 @@
 namespace Tools { namespace Selections
 {
 
-class SquareController: public QWidget
+class RectangleController: public QWidget
 {
     Q_OBJECT
 public:
-    SquareController(
-            SquareView* view,
+    RectangleController(
+            RectangleView* view,
             SelectionController* selection_controller);
-    ~SquareController();
+    ~RectangleController();
 
 signals:
     void enabledChanged(bool active);
 
 private slots:
-    void enableSquareSelection(bool active);
+    void enableRectangleSelection(bool active);
     void enableTimeSelection(bool active);
     void enableFrequencySelection(bool active);
 
@@ -34,11 +34,11 @@ private:
     virtual void mouseMoveEvent ( QMouseEvent * e );
     virtual void changeEvent ( QEvent * event );
 
-    void enableSelectionType(const SquareModel::SquareType type, const bool active);
+    void enableSelectionType(const RectangleModel::RectangleType type, const bool active);
 
     // View
-    SquareView* view_;
-    SquareModel* model() { return view_->model_; }
+    RectangleView* view_;
+    RectangleModel* model() { return view_->model_; }
 
     // GUI
     void setupGui();
@@ -47,9 +47,9 @@ private:
 
     // State
     Heightmap::Position selectionStart;
-    QPointer<Ui::ComboBoxAction> one_action_at_a_time_;
+    QScopedPointer<Ui::ComboBoxAction> one_action_at_a_time_;
 };
 
 }} // namespace Tools::Selections
 
-#endif // SQUARECONTROLLER_H
+#endif // RECTANGLECONTROLLER_H

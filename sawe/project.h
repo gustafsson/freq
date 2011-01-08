@@ -4,23 +4,21 @@
 #include "signal/worker.h"
 #include "tools/toolfactory.h"
 
-#include <boost/shared_ptr.hpp>
-#include <QGLWidget>
-#include <QMainWindow>
-#include <QScopedPointer>
-
+// boost
+#include <boost/scoped_ptr.hpp>
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/vector.hpp> 
 #include <boost/serialization/binary_object.hpp> 
 
+// Qt
+#include <QMainWindow>
+#include <QScopedPointer>
+
 namespace Sawe {
     class Project;
 }
-/*namespace Tools {
-    class ToolFactory;
-}*/
 
 namespace Ui {
     class SaweMainWindow;
@@ -107,15 +105,32 @@ public:
 
 
     /**
+      Returns true if the project has been saved since it was opened.
+      */
+    bool isModified();
+
+
+    /**
+      Sets the modified flag to true. Temporary, will be removed by list of
+      actions instead.
+      */
+    void setModified();
+
+
+    /**
       If 'project_file_name' is empty, calls saveAs.
+
+      @returns true if the project was saved.
      */
-    void save();
+    bool save();
 
 
     /**
       Opens a Qt Save File dialog and renames 'project_file_name'.
+
+      @returns true if the project was saved.
      */
-    void saveAs();
+    bool saveAs();
 
 
     /**
@@ -124,16 +139,22 @@ public:
     Ui::SaweMainWindow* mainWindow();
 
 
+    /**
+      Project file name.
+      */
+    std::string project_name();
+
 private:
     Project(); // used by deserialization
     void createMainWindow();
 
     Signal::pOperation root_source_;
+    bool is_modified_;
 
     std::string project_file_name;
     boost::scoped_ptr<Tools::ToolFactory> _tools;
     // MainWindow owns all other widgets together with their ToolFactory
-    QScopedPointer<QMainWindow> _mainWindow;
+    QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
     static boost::shared_ptr<Project> openAudio(std::string audio_file);
@@ -141,7 +162,7 @@ private:
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {
         Signal::pOperation head = head_source();
-        TaskInfo("head tree:\n%s", head->toString().c_str());
+        TaskInfo("Head tree:\n%s", head->toString().c_str());
 
         ar & BOOST_SERIALIZATION_NVP(root_source_);
         ar & BOOST_SERIALIZATION_NVP(head);

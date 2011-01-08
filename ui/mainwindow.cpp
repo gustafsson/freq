@@ -1,21 +1,32 @@
 #include "mainwindow.h"
+
+// Ui
 #include "ui_mainwindow.h"
-#include <QKeyEvent>
-#include <QSlider>
-#include <sstream>
-#include <iomanip>
-#include <demangle.h>
-#include "tfr/filter.h"
-#include "signal/operation-basic.h"
+#include "comboboxaction.h"
+#include "propertiesselection.h"
+
+// Sonic AWE
 #include "adapters/microphonerecorder.h"
 #include "adapters/audiofile.h"
+#include "tfr/filter.h"
+#include "tools/timelineview.h"
+#include "sawe/application.h"
+#include "signal/operation-basic.h"
+
+// Qt
+#include <QMessageBox>
+#include <QKeyEvent>
+#include <QSlider>
+
+// boost
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
-#include "sawe/application.h"
-#include "tools/timelineview.h"
-#include "ui/propertiesselection.h"
-#include "comboboxaction.h"
+
+// std
+#include <sstream>
+#include <iomanip>
+#include <demangle.h>
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -118,6 +129,10 @@ void SaweMainWindow::
         ui->toolBarTool->addWidget( tb );
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
+
+    connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
+        Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
+        Qt::QueuedConnection);
 }
 
 /*
@@ -191,9 +206,40 @@ void SaweMainWindow::slotDeleteSelection(void)
 void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
-    // TODO add dialog asking user to save the project
-    e->ignore();
-    Sawe::Application::global_ptr()->slotClosed_window( this );
+    if (project->isModified())
+    {
+        switch( QMessageBox::question(this, "Save Changes",
+                              "Save current state of the project?",
+                              QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save) )
+        {
+        case QMessageBox::Discard:
+            break;
+
+        case QMessageBox::Cancel:
+            e->ignore();
+            return;
+
+        case QMessageBox::Save:
+            if (!project->save())
+            {
+                e->ignore();
+                return;
+            }
+
+            break;
+
+        default:
+            e->ignore();
+            return;
+        }
+    }
+
+    e->accept();
+
+    // TODO hack
+#ifndef __APPLE__
+    emit onMainWindowCloseEvent( this );
+#endif
 }
 
 

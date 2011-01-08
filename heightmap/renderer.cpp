@@ -1,17 +1,13 @@
-#ifdef _MSC_VER
-#define NOMINMAX
-#include <windows.h>
-#endif
-
-#ifndef __APPLE__
-#include "GL/glew.h"
-#include <GL/glut.h>
-#else
-  #include "OpenGL/glu.h"
-  #include <GLUT/glut.h>
-#endif
+#include <gl.h>
 
 #include "heightmap/renderer.h"
+
+#ifndef __APPLE__
+#   include <GL/glut.h>
+#else
+#   include <GLUT/glut.h>
+#endif
+
 #include <float.h>
 #include <GlException.h>
 #include <CudaException.h>
@@ -65,7 +61,7 @@ Renderer::Renderer( Collection* collection )
 		c = 1;
 		char* dummy="dummy\0";
 		glutInit(&c,&dummy);
-#else
+#elif !defined(__APPLE__)
         glutInit(&c,0);
         c = 1;
 #endif
@@ -91,10 +87,10 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     _mesh_width = w;
     _mesh_height = h;
 
-    int size = ((w*2)+4)*(h-1)*sizeof(GLuint);
+    _vbo_size = ((w*2)+4)*(h-1);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, size, 0, GL_STATIC_DRAW);
+    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(GLuint), 0, GL_STATIC_DRAW);
 
     // fill with indices for rendering mesh as triangle strips
     GLuint *indices = (GLuint *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -160,14 +156,14 @@ typedef tmatrix<4,GLdouble> GLmatrix;
 // static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
 GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
-    GLdouble win0, win1, win2;
+    GLdouble win0=0, win1=0, win2=0;
     bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win0, &win1, &win2));
     if(r) *r=s;
     return GLvector(win0, win1, win2);
 }
 
 GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
-    GLdouble obj0, obj1, obj2;
+    GLdouble obj0=0, obj1=0, obj2=0;
     bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj0, &obj1, &obj2));
     if(r) *r=s;
     return GLvector(obj0, obj1, obj2);
@@ -269,7 +265,8 @@ void Renderer::init()
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
     //setSize( collection->samples_per_block(), collection->scales_per_block() );
-    setSize( collection->samples_per_block()/8, collection->scales_per_block()/4 );
+    setSize( collection->samples_per_block()/8, collection->scales_per_block()/2 );
+
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
@@ -487,11 +484,14 @@ void Renderer::beginVboRendering()
     colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    glVertexPointer(4, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    if (!_draw_flat)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
+        glVertexPointer(4, GL_FLOAT, 0, 0);
+        glEnableClientState(GL_VERTEX_ARRAY);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+    }
 
     GlException_CHECK_ERROR();
 }
@@ -522,13 +522,13 @@ void Renderer::renderSpectrogramRef( Reference ref )
     pBlock block = collection->getBlock( ref );
     if (0!=block.get()) {
         if (0 /* direct rendering */ )
-            block->glblock->draw_directMode();
+            ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ )
         {
             if (_draw_flat)
                 block->glblock->draw_flat();
             else
-                block->glblock->draw();
+                block->glblock->draw( _vbo_size );
         }
 
     } else {
@@ -655,6 +655,9 @@ static GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, flo
 
 static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvector& n )
 {
+    if (p.empty())
+        return;
+
     unsigned i;
 
     GLvector const* a, * b = &p[p.size()-1];

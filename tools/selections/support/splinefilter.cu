@@ -34,7 +34,7 @@ public:
             }
         }
 
-        // TODO soft edges?
+        // TODO soft edges
 
         if (inside != save_inside)
             e = make_float2(0, 0);
@@ -55,7 +55,7 @@ void applyspline(
     bindtex<float2>( spline.getCudaPitchedPtr(), false );
 
     Spliner< Read1D<float2> > spliner(
-            Read1D<float2>( 0 ),
+            Read1D<float2>( spline.getNumberOfElements().x ),
             spline.getNumberOfElements().x,
             save_inside );
 

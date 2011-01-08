@@ -30,7 +30,6 @@ public:
     could be allocated beforehand and reserved for the Signal::pBuffer. Previous
     copies with the page-locked chunk is synchronized at beforehand.
     */
-    Cwt( float scales_per_octave=40, float wavelet_time_suppport=3, cudaStream_t stream=0 );
 
     static Cwt& Singleton();
     static pTransform SingletonP();
@@ -88,9 +87,11 @@ public:
     unsigned  prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
 
     unsigned        find_bin( unsigned j ) const;
-    void            gc() { _fft_many.clear(); }
-    void            resetSingleton();
+    static void     gc() { _fft_many.clear(); }
+    static void     resetSingleton();
 private:
+    Cwt( float scales_per_octave=40, float wavelet_time_suppport=3, cudaStream_t stream=0 );
+
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
 
@@ -104,7 +105,7 @@ private:
     float           _tf_resolution;
     static pTransform static_singleton;
 
-    std::map<unsigned, CufftHandleContext> _fft_many;
+    static std::map<unsigned, CufftHandleContext> _fft_many;
 
     /**
       Default value: _wavelet_time_suppport=3.

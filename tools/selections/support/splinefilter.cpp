@@ -29,13 +29,15 @@ void SplineFilter::operator()( Chunk& chunk)
 	std::vector<float2> p(N);
 
 	unsigned j=0;
-	float t1 = chunk.startTime(), t2 = chunk.endTime();
+    float t1 = chunk.chunk_offset/chunk.sample_rate,
+          t2 = (chunk.chunk_offset + chunk.nSamples())/chunk.sample_rate;
 
     for (unsigned i=0; i<N; ++i)
     {
-		unsigned ni = (i+1)%N;
-		if ((v[i].t < t1 && v[ni].t < t1) ||
-			(v[i].t > t2 && v[ni].t > t2))
+        unsigned pi = (i+N-1)%N;
+        unsigned ni = (i+1)%N;
+        if ((v[i].t < t1 && v[ni].t < t1 && v[pi].t < t1) ||
+            (v[i].t > t2 && v[ni].t > t2 && v[pi].t > t2))
 		{
 			continue;
 		}
@@ -80,21 +82,20 @@ Signal::Intervals SplineFilter::
     if (v.size() < 2)
         return Signal::Intervals::Intervals_ALL;
 
-    float FS = sample_rate();
-
-    unsigned
-        start_time = (unsigned)(std::max(0.f, v.front().t)*FS),
-        end_time = (unsigned)(std::max(0.f, v.front().t)*FS);
+    float
+        start_time = std::max(0.f, std::max(0.f, v.front().t)),
+        end_time = std::max(0.f, v.front().t);
 
     BOOST_FOREACH( SplineVertex const& p, v )
     {
-        start_time = std::min(start_time, std::max((unsigned)0, (unsigned)(p.t*FS)));
-        end_time = std::max(end_time, (unsigned)(p.t*FS));
+        start_time = std::min(start_time, std::max(0.f, p.t));
+        end_time = std::max(end_time, p.t);
     }
 
+    double FS = sample_rate();
     Signal::Intervals sid;
     if (start_time < end_time)
-        sid = Signal::Intervals(start_time, end_time);
+        sid = Signal::Intervals(start_time*FS, end_time*FS);
 
     return ~sid;
 }

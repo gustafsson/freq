@@ -2,6 +2,7 @@
 
 // Serializable Sonic AWE classes 
 #include "adapters/audiofile.h"
+#include "adapters/microphonerecorder.h"
 #include "tools/support/brushfilter.h"
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
@@ -32,7 +33,10 @@ namespace Sawe {
 template<class Archive> 
 void runSerialization(Archive& ar, Project*& project)
 {
+    TaskInfo ti("Running serialization");
+
     ar.template register_type<Adapters::Audiofile>();
+    ar.template register_type<Adapters::MicrophoneRecorder>();
     ar.template register_type<Tools::Support::MultiplyBrush>();
     ar.template register_type<Filters::Ellipse>();
     ar.template register_type<Tools::CommentModel>();
@@ -41,12 +45,11 @@ void runSerialization(Archive& ar, Project*& project)
 }
 
 
-void Project::
+bool Project::
         save()
 {
     if (project_file_name.empty()) {
-        saveAs();
-        return;
+        return saveAs();
     }
 
     QByteArray mainwindowState = _mainWindow->saveState();
@@ -70,6 +73,8 @@ void Project::
 					 "Error: " + QString::fromStdString(vartype(x)) + 
 					 "\nDetails: " + QString::fromLocal8Bit(x.what()) );
     }
+
+    return true;
 }
 
 

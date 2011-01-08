@@ -10,12 +10,15 @@
 // gpumisc
 #include <TAni.h>
 
+// boost
+#include <boost/scoped_ptr.hpp>
+
 // Qt
-#include <QGLWidget>
 #include <QGraphicsScene>
 #include <QTransform>
 
 class GlFrameBuffer;
+class QGLWidget;
 
 namespace Heightmap
 {
@@ -113,14 +116,14 @@ namespace Tools
         void postPaint();
 
     private:
-        /// @overload QGLWidget::initializeGL()
-        virtual void initializeGL();
+        /// Similiar to QGLWidget::initializeGL()
+        void initializeGL();
 
-        /// @overload QGLWidget::resizeGL()
-        virtual void resizeGL( int width, int height );
+        /// Similiar to QGLWidget::resizeGL()
+        void resizeGL( int width, int height );
 
-        /// @overload QGLWidget::paintGL()
-        virtual void paintGL();
+        /// Similiar to QGLWidget::paintGL()
+        void paintGL();
 
 
         void drawCollection(int, Signal::FinalSource*);
@@ -142,8 +145,8 @@ namespace Tools
         int _try_gc;
 
         float _last_length;
-        GLdouble modelview_matrix[16], projection_matrix[16];
-        GLint viewport_matrix[4];
+        double modelview_matrix[16], projection_matrix[16];
+        int viewport_matrix[4];
 
         std::vector<float4> channel_colors;
     };

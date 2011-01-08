@@ -47,7 +47,7 @@ namespace Tools
         Ui::MouseControl moveButton;
         Ui::MouseControl rotateButton;
         Ui::MouseControl scaleButton;
-        QPointer<Ui::ComboBoxAction> one_action_at_a_time_;
+        QScopedPointer<Ui::ComboBoxAction> one_action_at_a_time_;
 
         void zoom(int delta, bool xscale);
     };

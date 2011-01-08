@@ -1,13 +1,7 @@
-#include "squareview.h"
-#include "squaremodel.h"
+#include "rectangleview.h"
+#include "rectanglemodel.h"
 
-#ifdef _MSC_VER // gl.h expects windows.h to be included on windows
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-
-#include <GL/gl.h>
+#include <gl.h>
 #include <TaskTimer.h>
 #include <glPushContext.h>
 
@@ -15,7 +9,7 @@ namespace Tools { namespace Selections
 {
 
 
-SquareView::SquareView(SquareModel* model, Signal::Worker* worker)
+RectangleView::RectangleView(RectangleModel* model, Signal::Worker* worker)
     :
     enabled(false),
     visible(true),
@@ -25,14 +19,14 @@ SquareView::SquareView(SquareModel* model, Signal::Worker* worker)
 }
 
 
-SquareView::
-        ~SquareView()
+RectangleView::
+        ~RectangleView()
 {
     TaskTimer(__FUNCTION__).suppressTiming();
 }
 
 
-void SquareView::
+void RectangleView::
         draw()
 {
     if (visible)
@@ -40,7 +34,7 @@ void SquareView::
 }
 
 
-void SquareView::
+void RectangleView::
         drawSelectionRectangle()
 {
     float
@@ -85,7 +79,7 @@ void SquareView::
 }
 
 
-void SquareView::
+void RectangleView::
         drawSelectionRectangle2()
 {
     float l = worker_->source()->length();

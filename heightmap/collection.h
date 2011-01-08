@@ -1,21 +1,30 @@
 #ifndef HEIGHTMAPCOLLECTION_H
 #define HEIGHTMAPCOLLECTION_H
 
-#include "heightmap/reference.h"
-#include "heightmap/glblock.h"
+// Heightmap namespace
+#include "reference.h"
+#include "glblock.h"
+#include "block.cu.h"
+
+// Sonic AWE
 #include "signal/intervals.h"
 #include "signal/source.h"
 #include "signal/worker.h"
 #include "tfr/chunk.h"
-#include <vector>
+
+// boost
 #include <boost/unordered_map.hpp>
+#include <boost/functional/hash.hpp>
+
+// Qt
 #ifndef SAWE_NO_MUTEX
 #include <QMutex>
 #include <QWaitCondition>
 #include <QThread>
 #endif
 
-#include <boost/functional/hash.hpp>
+// std
+#include <vector>
 
 /*
 TODO: rewrite this section
@@ -78,8 +87,6 @@ Spectogram. For altering the output refer to transform-inverse.h.
 
 The term scaleogram is not used in the source code, in favor of spectrogram.
 */
-
-#include "heightmap/block.cu.h"
 
 namespace Heightmap {
 

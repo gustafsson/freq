@@ -45,9 +45,9 @@ Operation* Operation::
 Intervals Operation::
         fetch_invalid_samples()
 {
-    //TaskInfo tt("%s::fetch_invalid_samples", vartype(*this).c_str());
+//    TaskInfo tt("%s::fetch_invalid_samples, _invalid_samples=%s",
+//                vartype(*this).c_str(), _invalid_samples.toString().c_str());
     Intervals r = _invalid_samples;
-    //TaskInfo("r=%s", r.toString().c_str());
 
     Operation* o = _source.get();
     if (0!=o)

@@ -1,15 +1,25 @@
 #ifndef TOOLS_TIMELINEVIEW_H
 #define TOOLS_TIMELINEVIEW_H
 
-#include <QGLWidget>
+// Sonic AWE
 #include "signal/sink.h"
 #include "ui/mousecontrol.h"
+
+// gpumisc
+#include <gl.h>
+
+// Qt
+#include <QGLWidget>
+
+// boost
+#include <boost/scoped_ptr.hpp>
 
 class GlFrameBuffer;
 
 namespace Sawe {
     class Project;
 };
+
 
 namespace Tools {
 
@@ -22,11 +32,6 @@ class TimelineView:
 public:
     TimelineView(Sawe::Project* p, RenderView* render_view);
     virtual ~TimelineView();
-
-    // overloaded from Signal::Sink
-    // TODO move into TimelineController or TimelineModel?
-    //virtual void    put( Signal::pBuffer , Signal::pOperation );
-    //virtual void    add_expected_samples( const Signal::Intervals& );
 
     void userinput_update();
 

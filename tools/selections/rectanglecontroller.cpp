@@ -1,5 +1,5 @@
-#include "squarecontroller.h"
-#include "squaremodel.h"
+#include "rectanglecontroller.h"
+#include "rectanglemodel.h"
 
 // Sonic AWE
 #include "tools/selectioncontroller.h"
@@ -19,9 +19,9 @@ using namespace Tools;
 
 namespace Tools { namespace Selections
 {
-    SquareController::
-            SquareController(
-                    SquareView* view,
+    RectangleController::
+            RectangleController(
+                    RectangleView* view,
                     SelectionController* selection_controller
             )
         :   view_( view ),
@@ -35,26 +35,26 @@ namespace Tools { namespace Selections
     }
 
 
-    SquareController::
-            ~SquareController()
+    RectangleController::
+            ~RectangleController()
     {
         TaskTimer(__FUNCTION__).suppressTiming();
     }
 
 
-    void SquareController::
+    void RectangleController::
             setupGui()
     {
-        Ui::SaweMainWindow* main = selection_controller_->model()->project->mainWindow();
+        Ui::SaweMainWindow* main = selection_controller_->model()->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
         // Connect enabled/disable actions,
-        // 'enableSquareSelection' sets/unsets this as current tool when
+        // 'enableRectangleSelection' sets/unsets this as current tool when
         // the action is checked/unchecked.
-        connect(ui->actionSquareSelection, SIGNAL(toggled(bool)), SLOT(enableSquareSelection(bool)));
+        connect(ui->actionRectangleSelection, SIGNAL(toggled(bool)), SLOT(enableRectangleSelection(bool)));
         connect(ui->actionFrequencySelection, SIGNAL(toggled(bool)), SLOT(enableFrequencySelection(bool)));
         connect(ui->actionTimeSelection, SIGNAL(toggled(bool)), SLOT(enableTimeSelection(bool)));
-        connect(this, SIGNAL(enabledChanged(bool)), ui->actionSquareSelection, SLOT(setChecked(bool)));
+        connect(this, SIGNAL(enabledChanged(bool)), ui->actionRectangleSelection, SLOT(setChecked(bool)));
         connect(this, SIGNAL(enabledChanged(bool)), ui->actionFrequencySelection, SLOT(setChecked(bool)));
         connect(this, SIGNAL(enabledChanged(bool)), ui->actionTimeSelection, SLOT(setChecked(bool)));
 
@@ -65,19 +65,19 @@ namespace Tools { namespace Selections
         connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
 
         // Add the action as a combo box item in selection controller
-        selection_controller_->addComboBoxAction( ui->actionSquareSelection ) ;
+        selection_controller_->addComboBoxAction( ui->actionRectangleSelection ) ;
         selection_controller_->addComboBoxAction( ui->actionTimeSelection ) ;
         selection_controller_->addComboBoxAction( ui->actionFrequencySelection ) ;
 
-        one_action_at_a_time_ = new Ui::ComboBoxAction();
+        one_action_at_a_time_.reset( new Ui::ComboBoxAction() );
         one_action_at_a_time_->decheckable( false );
-        one_action_at_a_time_->addActionItem( ui->actionSquareSelection );
+        one_action_at_a_time_->addActionItem( ui->actionRectangleSelection );
         one_action_at_a_time_->addActionItem( ui->actionTimeSelection );
         one_action_at_a_time_->addActionItem( ui->actionFrequencySelection );
     }
 
 
-    void SquareController::
+    void RectangleController::
             mousePressEvent ( QMouseEvent * e )
     {
         if (e->button() == selection_button_)
@@ -99,7 +99,7 @@ namespace Tools { namespace Selections
     }
 
 
-    void SquareController::
+    void RectangleController::
             mouseReleaseEvent ( QMouseEvent * e )
     {
         if (e->button() == selection_button_)
@@ -111,7 +111,7 @@ namespace Tools { namespace Selections
     }
 
 
-    void SquareController::
+    void RectangleController::
             mouseMoveEvent ( QMouseEvent * e )
     {
         if (e->buttons().testFlag( selection_button_ ))
@@ -140,7 +140,7 @@ namespace Tools { namespace Selections
     }
 
 
-    void SquareController::
+    void RectangleController::
             changeEvent ( QEvent * event )
     {
         if (event->type() & QEvent::ParentChange)
@@ -158,8 +158,8 @@ namespace Tools { namespace Selections
     }
 
 
-    void SquareController::
-            enableSelectionType(const SquareModel::SquareType type, const bool active)
+    void RectangleController::
+            enableSelectionType(const RectangleModel::RectangleType type, const bool active)
     {
         if (active)
         {
@@ -174,24 +174,24 @@ namespace Tools { namespace Selections
     }
 
 
-    void SquareController::
-            enableSquareSelection(bool active)
+    void RectangleController::
+            enableRectangleSelection(bool active)
     {
-        enableSelectionType(SquareModel::SquareType_SquareSelection, active);
+        enableSelectionType(RectangleModel::RectangleType_RectangleSelection, active);
     }
 
 
-    void SquareController::
+    void RectangleController::
             enableTimeSelection(bool active)
     {
-        enableSelectionType(SquareModel::SquareType_TimeSelection, active);
+        enableSelectionType(RectangleModel::RectangleType_TimeSelection, active);
     }
 
 
-    void SquareController::
+    void RectangleController::
             enableFrequencySelection(bool active)
     {
-        enableSelectionType(SquareModel::SquareType_FrequencySelection, active);
+        enableSelectionType(RectangleModel::RectangleType_FrequencySelection, active);
     }
 
 }} // namespace Tools::Selections

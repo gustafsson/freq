@@ -58,15 +58,19 @@ void main()
 
     float f = abs(v);
 
-   switch (colorMode) {
-        case 0: curveColor = getWavelengthColor( f );
-                f = 1.0 - (1.0-f)*(1.0-f)*(1.0-f);
-        break;
-        case 1: curveColor = vec4(0.0);
-        break;
-        case 2: curveColor = fixedColor;
-                if (v<0.0) {curveColor = 1.0-curveColor;}
-        break;
+    if (colorMode == 0)
+    {
+        curveColor = getWavelengthColor( f );
+        f = 1.0 - (1.0-f)*(1.0-f)*(1.0-f);
+    }
+    else if (colorMode == 1)
+    {
+        curveColor = vec4(0.0);
+    }
+    else if (colorMode == 2)
+    {
+        curveColor = fixedColor;
+        if (v<0.0) {curveColor = 1.0-curveColor;}
     }
 
     float shadow = min(0.7, ((diffuse+facing+2.0)*.25)); // + vec4(fresnel);

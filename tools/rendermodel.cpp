@@ -36,6 +36,12 @@ RenderModel::
 RenderModel::
         ~RenderModel()
 {
+    TaskInfo ti(__FUNCTION__);
+    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(postsink().get());
+    std::vector<Signal::pOperation> empty;
+    ps->sinks(empty);
+
+    collections.clear();
 }
 
 

@@ -55,7 +55,7 @@ void CufftHandleContext::
 {
     destroy();
 
-    if (_elems == 0)
+    if (_elems == 0 || _batch_size==0)
         return;
 
     int n = _elems;
@@ -75,10 +75,17 @@ void CufftHandleContext::
 void CufftHandleContext::
         destroy()
 {
-    if (_handle!=0 && _handle!=(cufftHandle)-1) {
+    if (_handle!=0) {
         _creator_thread.throwIfNotSame(__FUNCTION__);
 
-        cufftDestroy(_handle);
+        if (_handle==(cufftHandle)-1)
+            TaskInfo("CufftHandleContext::destroy, _handle==(cufftHandle)-1");
+        else
+        {
+            cufftResult errorCode = cufftDestroy(_handle);
+            if (errorCode != CUFFT_SUCCESS)
+                TaskInfo("CufftHandleContext::destroy, %s", CufftException::getErrorString(errorCode) );
+        }
 
         _handle = 0;
     }
@@ -263,6 +270,7 @@ std::vector<unsigned> Stft::_ok_chunk_sizes;
 Stft::
         Stft( cudaStream_t stream )
 :   _stream( stream ),
+    _handle_ctx(stream),
     _chunk_size( 1<<11 )
 //    _fft_many( -1 )
 {
@@ -272,8 +280,6 @@ Stft::
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer breal)
 {
-    const unsigned stream = 0;
-
     ComplexBuffer b(*breal);
 
     BOOST_ASSERT( 0!=_chunk_size );
@@ -318,7 +324,6 @@ Tfr::pChunk Stft::
         slices = std::min(512u, std::min((unsigned)n.height, slices));
     }
 
-    CufftHandleContext handle_ctx(stream);
     while(i < count)
     {
         slices = std::min(slices, count-i);
@@ -326,14 +331,14 @@ Tfr::pChunk Stft::
         try
         {
             CufftException_SAFE_CALL(cufftExecC2C(
-                    handle_ctx(_chunk_size, slices),
+                    _handle_ctx(_chunk_size, slices),
                     input + i*n.width,
                     output + i*n.width,
                     CUFFT_FORWARD));
 
             i += slices;
         } catch (const CufftException& /*x*/) {
-            handle_ctx(0,0);
+            _handle_ctx(0,0);
             if (slices>1)
                 slices/=2;
             else
@@ -355,33 +360,36 @@ Tfr::pChunk Stft::
 }
 
 
-static unsigned absdiff(unsigned a, unsigned b)
-{
-    return a < b ? b - a : a - b;
-}
+//static unsigned absdiff(unsigned a, unsigned b)
+//{
+//    return a < b ? b - a : a - b;
+//}
 
 
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
-    if (_ok_chunk_sizes.empty())
-        build_performance_statistics(true);
-
-    std::vector<unsigned>::iterator itr =
-            std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
-
-    unsigned N1 = *itr, N2;
-    if (itr == _ok_chunk_sizes.end())
-    {
-        N2 = spo2g( preferred_size - 1 );
-        N1 = lpo2s( preferred_size + 1 );
-    }
-    else if (itr == _ok_chunk_sizes.begin())
-        N2 = N1;
-    else
-        N2 = *--itr;
-
-    _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
+    _chunk_size = 1 << (unsigned)floor(log2(preferred_size)+0.5);
     return _chunk_size;
+
+//    if (_ok_chunk_sizes.empty())
+//        build_performance_statistics(true);
+
+//    std::vector<unsigned>::iterator itr =
+//            std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
+
+//    unsigned N1 = *itr, N2;
+//    if (itr == _ok_chunk_sizes.end())
+//    {
+//        N2 = spo2g( preferred_size - 1 );
+//        N1 = lpo2s( preferred_size + 1 );
+//    }
+//    else if (itr == _ok_chunk_sizes.begin())
+//        N2 = N1;
+//    else
+//        N2 = *--itr;
+
+//    _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
+//    return _chunk_size;
 }
 
 

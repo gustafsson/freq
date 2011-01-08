@@ -1,8 +1,10 @@
 #ifndef HEIGHTMAPBLOCK_CU_H
 #define HEIGHTMAPBLOCK_CU_H
 
-#include <cudaPitchedPtrType.h>
 #include "tfr/freqaxis.h"
+
+// gpusmisc
+#include <cudaPitchedPtrType.h>
 
 /**
   The namespace Tfr does not know about the namespace Heightmap

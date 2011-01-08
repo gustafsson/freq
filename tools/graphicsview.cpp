@@ -44,9 +44,9 @@ GraphicsView::
     toolParent->layout()->setMargin(0);
 
     toolProxy->setWidget( toolParent );
-    toolProxy->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
-    toolProxy->setZValue(-1e30);
-    toolParent->setWindowOpacity(0);
+    toolProxy->setWindowFlags( Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+    toolProxy->setZValue( -1e30 );
+    toolParent->setWindowOpacity( 0 );
     scene->addItem( toolProxy );
 }
 

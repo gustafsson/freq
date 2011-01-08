@@ -10,6 +10,8 @@
 #include <QWidget>
 #include <QPointer>
 
+#include <boost/scoped_ptr.hpp>
+
 namespace Signal { class Worker; }
 
 namespace Tools
@@ -28,9 +30,9 @@ namespace Tools
         class SplineView;
         class SplineController;
 
-        class SquareModel;
-        class SquareView;
-        class SquareController;
+        class RectangleModel;
+        class RectangleView;
+        class RectangleController;
     }
 
     class SelectionController: public QWidget
@@ -85,7 +87,6 @@ namespace Tools
 
         //void setSelection(int i, bool enabled);
         //void removeFilter(int i);
-        void setCurrentFilterSaveInside(bool save_inside);
 
         // Tools
         QScopedPointer<Selections::EllipseModel> ellipse_model_;
@@ -100,9 +101,9 @@ namespace Tools
         QScopedPointer<Selections::SplineView> spline_view_;
         QPointer<Selections::SplineController> spline_controller_;
 
-        QScopedPointer<Selections::SquareModel> square_model_;
-        QScopedPointer<Selections::SquareView> square_view_;
-        QPointer<Selections::SquareController> square_controller_;
+        QScopedPointer<Selections::RectangleModel> rectangle_model_;
+        QScopedPointer<Selections::RectangleView> rectangle_view_;
+        QPointer<Selections::RectangleController> rectangle_controller_;
     };
 }
 

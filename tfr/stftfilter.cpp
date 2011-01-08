@@ -19,12 +19,15 @@ StftFilter::
 :   Filter(source),
     exclude_end_block(false)
 {
-    if (!t)
-        t = Stft::SingletonP();
+//    if (!t)
+//        t = Stft::SingletonP();
 
-    BOOST_ASSERT( dynamic_cast<Stft*>(t.get()));
+    if (t)
+    {
+        BOOST_ASSERT( dynamic_cast<Stft*>(t.get()));
 
-    _transform = t;
+        _transform = t;
+    }
 }
 
 
@@ -53,7 +56,7 @@ ChunkAndInverse StftFilter::
         if (chunk_interval.last>number_of_samples())
         {
             last_chunk = number_of_samples()/chunk_size;
-            if (first_chunk<last_chunk)
+            if (1+first_chunk<last_chunk)
                 chunk_interval.last = last_chunk*chunk_size;
         }
     }

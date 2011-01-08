@@ -1,4 +1,4 @@
-#include "squaremodel.h"
+#include "rectanglemodel.h"
 #include "filters/rectangle.h"
 #include "tools/support/operation-composite.h"
 #include "sawe/project.h"
@@ -11,8 +11,8 @@
 namespace Tools { namespace Selections
 {
 
-SquareModel::
-        SquareModel( Tfr::FreqAxis const& fa, Sawe::Project* project )
+RectangleModel::
+        RectangleModel( Tfr::FreqAxis const& fa, Sawe::Project* project )
             :
             fa_(fa),
             project_(project)
@@ -23,14 +23,14 @@ SquareModel::
 }
 
 
-SquareModel::
-        ~SquareModel()
+RectangleModel::
+        ~RectangleModel()
 {
     TaskTimer(__FUNCTION__).suppressTiming();
 }
 
 
-Signal::pOperation SquareModel::
+Signal::pOperation RectangleModel::
         updateFilter()
 {
     validate();
@@ -63,20 +63,20 @@ Signal::pOperation SquareModel::
 }
 
 
-void SquareModel::
+void RectangleModel::
         validate()
 {
     switch (type)
     {
-    case SquareType_SquareSelection:
+    case RectangleType_RectangleSelection:
         break;
 
-    case SquareType_FrequencySelection:
+    case RectangleType_FrequencySelection:
         a.time = 0;
         b.time = project_->head_source()->length();
         break;
 
-    case SquareType_TimeSelection:
+    case RectangleType_TimeSelection:
         a.scale = 0;
         b.scale = 1;
         break;

@@ -4,11 +4,15 @@
 #include "renderview.h"
 #include "ui/mousecontrol.h"
 
+// gpumisc
+#include <demangle.h>
+
+// qt
 #include <QGraphicsProxyWidget>
 #include <QMoveEvent>
-#include <demangle.h>
 #include <QWheelEvent>
 #include <QPaintEvent>
+#include <QPainter>
 
 namespace Tools {
 

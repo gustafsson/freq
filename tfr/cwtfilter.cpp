@@ -29,12 +29,17 @@ CwtFilter::
         CwtFilter(pOperation source, Tfr::pTransform t)
 :   Filter(source)
 {
-    if (!t)
-        t = Tfr::Cwt::SingletonP();
+//    if (!t)
+//        t = Tfr::Cwt::SingletonP();
 
-    BOOST_ASSERT( dynamic_cast<Tfr::Cwt*>(t.get()));
+    if (t)
+    {
+        BOOST_ASSERT( false );
 
-    _transform = t;
+        BOOST_ASSERT( dynamic_cast<Tfr::Cwt*>(t.get()));
+
+        _transform = t;
+    }
 }
 
 
@@ -157,6 +162,23 @@ Signal::Intervals CwtFilter::
 }
 
 
+Signal::Intervals CwtFilter::
+        discard_time_support(Signal::Intervals I)
+{
+    Signal::Intervals r;
+    Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
+    Signal::IntervalType n = cwt.wavelet_time_support_samples( sample_rate() );
+
+    BOOST_FOREACH( Signal::Interval& i, I )
+    {
+        Signal::Intervals s(i);
+        r |= (s << n) & (s >> n);
+    }
+
+    return r;
+}
+
+
 Tfr::pTransform CwtFilter::
         transform() const
 {
@@ -172,7 +194,7 @@ void CwtFilter::
 
     // even if '0 == t || transform() == t' the client
     // probably wants to reset everything when transform( t ) is called
-    _invalid_samples = Intervals::Intervals_ALL;
+    //_invalid_samples = Intervals::Intervals_ALL;
 
     _transform = t;
 }

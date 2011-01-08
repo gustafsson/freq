@@ -26,8 +26,8 @@
 
 #undef max
 
-#define TIME_PAINTGL
-//#define TIME_PAINTGL if(0)
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
 
 using namespace Signal;
 
@@ -58,7 +58,9 @@ TimelineView::
 TimelineView::
         ~TimelineView()
 {
-    TaskTimer("~TimelineView").suppressTiming();
+    TaskInfo ti("~TimelineView");
+    _timeline_fbo.reset();
+    _timeline_bar_fbo.reset();
 }
 
 

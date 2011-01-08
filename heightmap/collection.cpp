@@ -72,7 +72,7 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskTimer("%s = %p", __FUNCTION__, this).suppressTiming();
+    TaskInfo("%s = %p", __FUNCTION__, this);
 }
 
 
@@ -345,7 +345,7 @@ std::vector<pBlock> Collection::
     QMutexLocker l(&_cache_mutex);
 	#endif
 
-    foreach( const cache_t::value_type& c, _cache )
+    foreach ( const cache_t::value_type& c, _cache )
     {
         const pBlock& pb = c.second;
         // This check is done in mergeBlock as well, but do it here first
@@ -400,7 +400,7 @@ unsigned long Collection::
     //return estimation;
 
     unsigned long sumsize = 0;
-    foreach(const cache_t::value_type& b, _cache)
+    foreach (const cache_t::value_type& b, _cache)
     {
         sumsize += b.second->glblock->allocated_bytes_per_element();
     }
@@ -470,7 +470,7 @@ void Collection::
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
-    foreach( const cache_t::value_type& c, _cache )
+    foreach ( const cache_t::value_type& c, _cache )
 		c.second->valid_samples -= sid;
 }
 
@@ -483,14 +483,19 @@ Intervals Collection::
 	QMutexLocker l(&_cache_mutex);
 #endif
 
-    foreach( const recent_t::value_type& b, _recent )
+    foreach ( const recent_t::value_type& b, _recent )
 	{
         if (_frame_counter == b->frame_number_last_used)
         {
             Intervals i ( b->ref.getInterval() );
 
             i -= b->valid_samples;
+
             r |= i;
+
+            VERBOSE_COLLECTION
+                    if (i)
+                        TaskInfo("block %s is invalid on %s", b->ref.toString().c_str(), i.toString().c_str());
         } else
 			break;
     }
@@ -768,13 +773,13 @@ pBlock Collection::
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
-        foreach( const recent_t::value_type& b, _recent )
+        foreach ( const recent_t::value_type& b, _recent )
         {
             unsigned age = _frame_counter - b->frame_number_last_used;
             if (youngest_age > age) {
                 youngest_age = age;
                 youngest_count = 1;
-            } else if(youngest_age == age) {
+            } else if (youngest_age == age) {
                 ++youngest_count;
             } else {
                 break; // _recent is ordered with the most recently accessed blocks first
@@ -813,7 +818,7 @@ static pOperation
     pOperation r = start;
     pOperation itr = start;
 
-    while(true)
+    while (true)
     {
         Operation* o = itr.get();
         if (!o)
@@ -850,7 +855,7 @@ void Collection::
     boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
     boost::posix_time::ptime start_time = now;
     unsigned time_to_work_ms = 500;
-    while(sections)
+    while (sections)
     {
         Signal::Interval section = sections.getInterval(section_size);
         Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );

@@ -14,7 +14,7 @@ macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 CONFIG += console # console output
-DEFINES += SAWE_NO_MUTEX
+#DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
@@ -31,8 +31,7 @@ win32:QMAKE_LFLAGS_RELEASE += \
 	
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-!macx&!win32: QMAKE_CXX = colorgcc
-#macx:QMAKE_CXX = g++ # Should not need this macx: with !macx&!win32 above
+unix:!macx: QMAKE_CXX = colorgcc
 
 profiling {
     # Profiling with gcc, gprof doesn't work with Os X 10.5 Leopard.
@@ -120,9 +119,7 @@ win32 {
     othersources.input = OTHER_SOURCES
     othersources.output = ${QMAKE_FILE_NAME}
     QMAKE_EXTRA_COMPILERS += othersources
-#    QMAKE_EXTRA_UNIX_COMPILERS += othersources
 }
-
 
 ####################
 # Build settings
@@ -150,16 +147,20 @@ LIBS = \
 macx {
 INCLUDEPATH += \
     ../../libs/include \
+    ../../libs/boost_1_45_0 \
     ../../libs/hdf5/include \
-    ../../libs/zlib/include 
+    ../../libs/zlib/include \
+    ../../libs/include/sndfile
 LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -framework GLUT \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio \
     -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/zlib/bin -lz \
-    -L../gpumisc -lgpumisc
+    -L../../libs/zlib/lib -lz \
+    -L../gpumisc -lgpumisc \
+    -L../../libs/boost_1_45_0/stage/lib \
+    -lboost_serialization
 }
 
 win32 {
@@ -299,6 +300,5 @@ macx {
 }
 
 cuda.input = CUDA_SOURCES
-#QMAKE_EXTRA_UNIX_COMPILERS += cuda
 QMAKE_EXTRA_COMPILERS += cuda
 # end of cuda section #######################################################################

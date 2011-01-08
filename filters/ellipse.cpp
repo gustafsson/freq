@@ -69,7 +69,8 @@ Signal::Intervals Ellipse::
     if (start_time < end_time)
         sid = Signal::Intervals(start_time, end_time);
 
-    return ~include_time_support(sid);
+    return ~(sid);
+    //return ~include_time_support(sid);
 }
 
 } // namespace Filters

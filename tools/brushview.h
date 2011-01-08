@@ -1,10 +1,10 @@
 #ifndef BRUSHVIEW_H
 #define BRUSHVIEW_H
 
-#include <QObject>
-#include "heightmap/position.h"
-#include "heightmap/reference.h"
 #include "brushmodel.h"
+#include "heightmap/reference.h"
+
+#include <QObject>
 
 namespace Tools {
 

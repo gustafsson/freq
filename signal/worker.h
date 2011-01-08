@@ -1,9 +1,14 @@
 #ifndef SIGNALWORKER_H
 #define SIGNALWORKER_H
 
-#include "signal/intervals.h"
-#include "signal/postsink.h"
+// Signal namespace
+#include "intervals.h"
+#include "postsink.h"
+
+// Boost
 #include <boost/noncopyable.hpp>
+
+// Qt
 #ifndef SAWE_NO_MUTEX
 #include <QMutex>
 #include <QThread>
