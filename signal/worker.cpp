@@ -80,8 +80,6 @@ bool Worker::
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
 
-    _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(1, source()->sample_rate());
-
     unsigned center_sample = source()->sample_rate() * center;
 
     Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
@@ -129,9 +127,9 @@ bool Worker::
 
         CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
-        if (cudaErrorMemoryAllocation == e.getCudaError() && 1<_samples_per_chunk) {
+        unsigned min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(1, source()->sample_rate());
+        if (cudaErrorMemoryAllocation == e.getCudaError() && min_samples_per_chunk<_samples_per_chunk) {
             TaskInfo ti("Worker caught cudaErrorMemoryAllocation\n/s",  e.what());
-            Sawe::Application::global_ptr()->clearCaches();
             cudaGetLastError(); // consume error
             TaskInfo("_samples_per_chunk was %u", _samples_per_chunk);
             TaskInfo("_max_samples_per_chunk was %u", _max_samples_per_chunk);
