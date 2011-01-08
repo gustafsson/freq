@@ -80,11 +80,14 @@ Application::
     ss << "Sonic AWE";
 #ifndef SONICAWE_RELEASE
     ss << " - ";
-#ifdef SONICAWE_VERSION
-    ss << TOSTR(SONICAWE_VERSION);
-#else
-    ss << __DATE__;// << " - " << __TIME__;
-#endif
+    #ifdef SONICAWE_VERSION
+        ss << TOSTR(SONICAWE_VERSION);
+    #else
+        ss << __DATE__;
+        #ifdef _DEBUG
+            ss << " - " << __TIME__;
+        #endif
+    #endif
 #endif
 
 #ifdef SONICAWE_BRANCH

@@ -379,7 +379,7 @@ void RenderController::
     {   tf_resolution = new QSlider();
         tf_resolution->setOrientation( Qt::Horizontal );
         tf_resolution->setValue( 50 );
-        tf_resolution->setToolTip( "Time/frequency resolution. If set higher than the middle, the audio reconstruction will be incorrect." );
+        tf_resolution->setToolTip( "Time/frequency resolution." );
         toolbar_render->addWidget( tf_resolution );
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));

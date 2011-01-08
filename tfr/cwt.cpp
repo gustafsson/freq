@@ -346,11 +346,11 @@ pChunk Cwt::
     return wt;
 
     } catch (CufftException const& /*x*/) {
-        TaskInfo("Cwt::operater() caught CufftException, calling _fft_many.clear()");
+        TaskInfo("Cwt::operator() caught CufftException, calling _fft_many.clear()");
         _fft_many.clear();
         throw;
     } catch (CudaException const& /*x*/) {
-        TaskInfo("Cwt::operater() caught CudaException, calling _fft_many.clear()");
+        TaskInfo("Cwt::operator() caught CudaException, calling _fft_many.clear()");
         _fft_many.clear();
         throw;
     }

@@ -105,17 +105,17 @@ namespace Tools
         ellipse_view_.reset( new Selections::EllipseView(        ellipse_model_.data() ));
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 
-        peak_model_.reset( new Selections::PeakModel(       render_view()->model->display_scale()) );
-        peak_view_.reset( new Selections::PeakView(         peak_model_.data(), &render_view()->model->project()->worker ));
-        peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
+        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model->display_scale(), render_view()->model->project() ));
+        rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data(), &render_view()->model->project()->worker ));
+        rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
 
         spline_model_.reset( new Selections::SplineModel(      render_view()->model->display_scale()));
         spline_view_.reset( new Selections::SplineView(        spline_model_.data(), &render_view()->model->project()->worker ));
         spline_controller_ = new Selections::SplineController( spline_view_.data(), this );
 
-        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model->display_scale(), render_view()->model->project() ));
-        rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data(), &render_view()->model->project()->worker ));
-        rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
+        peak_model_.reset( new Selections::PeakModel(       render_view()->model->display_scale()) );
+        peak_view_.reset( new Selections::PeakView(         peak_model_.data(), &render_view()->model->project()->worker ));
+        peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
     }
 
 
