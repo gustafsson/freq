@@ -1,9 +1,9 @@
 #ifndef SIGNALSINK_H
 #define SIGNALSINK_H
 
-#include "signal/buffersource.h"
-#include "signal/operation.h"
-#include "signal/intervals.h"
+#include "buffersource.h"
+#include "operation.h"
+#include "intervals.h"
 
 namespace Signal {
 
@@ -43,6 +43,12 @@ public:
       @overload Operation::fetch_invalid_samples()
       */
     virtual Intervals fetch_invalid_samples() { return _invalid_samples; }
+
+
+    /**
+      A sink doesn't affect the buffer through 'read'.
+      */
+    virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
 
 
     /**

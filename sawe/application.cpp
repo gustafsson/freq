@@ -1,9 +1,22 @@
 #include "sawe/application.h"
-#include <QTime>
-#include <sstream>
-#include <QtGui/QMessageBox>
-#include <demangle.h>
+
+// Sonic AWE
 #include "ui/mainwindow.h"
+#include "tfr/cwt.h"
+
+// gpumisc
+#include <demangle.h>
+
+// std
+#include <sstream>
+
+// qt
+#include <QTime>
+#include <QtGui/QMessageBox>
+#include <QGLWidget>
+
+// cuda
+#include "cuda.h"
 
 using namespace std;
 
@@ -41,7 +54,7 @@ static void show_fatal_exception( const std::string& str )
 static string fatal_exception_string( const std::exception &x )
 {
     std::stringstream ss;
-    ss   << "Error: " << demangle(typeid(x).name()) << endl
+    ss   << "Error: " << vartype(x) << endl
          << "Message: " << x.what();
     return ss.str();
 }
@@ -51,9 +64,10 @@ static string fatal_unknown_exception_string() {
 }
 
 Application::
-        Application(int& argc, char **argv)
+        Application(int& argc, char **argv, bool dont_parse_sawe_argument )
 :   QApplication(argc, argv),
-	default_record_device(-1)
+    default_record_device(-1),
+    shared_glwidget_(new QGLWidget(QGLFormat(QGL::SampleBuffers)))
 {
     BOOST_ASSERT( !_app );
 
@@ -66,11 +80,14 @@ Application::
     ss << "Sonic AWE";
 #ifndef SONICAWE_RELEASE
     ss << " - ";
-#ifdef SONICAWE_VERSION
-    ss << TOSTR(SONICAWE_VERSION);
-#else
-    ss << __DATE__;// << " - " << __TIME__;
-#endif
+    #ifdef SONICAWE_VERSION
+        ss << TOSTR(SONICAWE_VERSION);
+    #else
+        ss << __DATE__;
+        #ifdef _DEBUG
+            ss << " - " << __TIME__;
+        #endif
+    #endif
 #endif
 
 #ifdef SONICAWE_BRANCH
@@ -79,11 +96,21 @@ Application::
 #endif
 
     _version_string = ss.str();
+
+    if (!dont_parse_sawe_argument)
+        parse_command_line_options(argc, argv); // will call 'exit(0)' on invalid arguments
 }
 
 Application::
         ~Application()
 {
+    TaskInfo ti("Closing Sonic AWE, %s", _version_string.c_str());
+    ti.tt().partlyDone();
+
+    _projects.clear();
+
+    delete shared_glwidget_;
+
     BOOST_ASSERT( _app );
     _app = 0;
 }
@@ -92,6 +119,13 @@ Application* Application::
         global_ptr() {
     BOOST_ASSERT( _app );
     return _app;
+}
+
+
+QGLWidget* Application::
+        shared_glwidget()
+{
+    return global_ptr()->shared_glwidget_;
 }
 
 
@@ -117,6 +151,7 @@ bool Application::
 
     try {
         v = QApplication::notify(receiver,e);
+    //} catch (const exception &x) {
     } catch (const std::invalid_argument &x) {
         const char* what = x.what();
         if (1 == QMessageBox::warning( 0,
@@ -150,6 +185,52 @@ void Application::
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
     _projects.insert( p );
+
+    apply_command_line_options( p );
+}
+
+void Application::
+        clearCaches()
+{
+    TaskTimer tt("Application::clearCaches");
+    emit clearCachesSignal();
+
+    TaskInfo("Reset CWT");
+    Tfr::Cwt::Singleton().resetSingleton();
+
+
+    if ( !QGLContext::currentContext() ) // See RenderView::~RenderView()
+        return;
+
+
+    TaskInfo("cudaThreadExit()");
+    cudaThreadExit();
+
+    int count;
+    cudaError_t e = cudaGetDeviceCount(&count);
+    TaskInfo("Number of CUDA devices=%u, error=%s", count, cudaGetErrorString(e));
+    // e = cudaThreadExit();
+    // tt.info("cudaThreadExit, error=%s", cudaGetErrorString(e));
+    //CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
+    //e = cudaSetDevice( 1 );
+    //tt.info("cudaSetDevice( 1 ), error=%s", cudaGetErrorString(e));
+    //e = cudaSetDevice( 0 );
+    //tt.info("cudaSetDevice( 0 ), error=%s", cudaGetErrorString(e));
+    void *p=0;
+    e = cudaMalloc( &p, 10 );
+    TaskInfo("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
+    e = cudaFree( p );
+    TaskInfo("cudaFree, error=%s", cudaGetErrorString(e));
+    BOOST_ASSERT( cudaSuccess == e );
+
+    size_t free=0, total=0;
+
+    cudaMemGetInfo(&free, &total);
+    TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
+             total/1024.f/1024, free/1024.f/1024);
+
+    cudaGetLastError();
+    glGetError();
 }
 
 pProject Application::
@@ -173,15 +254,13 @@ pProject Application::
 {
     pProject p = Project::open( project_file_or_audio_file );
     if (p)
-		openadd_project(p);
+        openadd_project(p);
     return p;
 }
 
 void Application::
     slotClosed_window( QWidget* w )
 {
-    // QWidget* w = dynamic_cast<QWidget*>(sender());
-
     for (std::set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
         if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))
@@ -193,5 +272,6 @@ void Application::
             i++;
     }
 }
+
 
 } // namespace Sawe

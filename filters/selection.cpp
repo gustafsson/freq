@@ -1,3 +1,4 @@
+#if 0
 #include "selection.h"
 
 #include <tfr/chunk.h>
@@ -18,7 +19,7 @@ Selection::Selection( SelectionParams s ) {
 }
 
 void Selection::operator()( Chunk& chunk) {
-    TIME_FILTER TaskTimer tt(TaskTimer::LogVerbose, __FUNCTION__);
+    TIME_FILTER TaskTimer tt(__FUNCTION__);
 
     throw std::logic_error("Not implemented");
     /*
@@ -105,3 +106,4 @@ Signal::Intervals Selection::
 }
 
 } // namespace Filters
+#endif

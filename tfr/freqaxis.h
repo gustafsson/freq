@@ -4,6 +4,8 @@
 #include <cuda_runtime.h> // defines __device__ and __host__
 #include <math.h>
 
+#include "msc_stdc.h"
+
 namespace Tfr {
 
 enum AxisScale {
@@ -35,7 +37,7 @@ public:
             return f_min + scalar*f_step;
 
         case AxisScale_Logarithmic:
-            return f_min*exp( scalar*log2f_step );
+            return f_min*exp2f( scalar*log2f_step );
 
         default:
             return 0.f;
@@ -46,39 +48,40 @@ public:
     __device__ __host__ unsigned getFrequencyIndex( float f ) const
     {
         float scalar = getFrequencyScalar( f );
+        if (scalar < 0)
+            scalar = 0;
         return (unsigned)(scalar + .5f);
     }
 
 
-    __device__ __host__ float getFrequencyScalar( float f ) const
+    __device__ __host__ float getFrequencyScalarNotClamped( float f ) const
     {
         float fi = 0;
 
         switch(axis_scale)
         {
         case AxisScale_Linear:
-            if (f > f_min)
-            {
-                fi = (f - f_min)/f_step;
-            }
+            fi = (f - f_min)/f_step;
             break;
 
         case AxisScale_Logarithmic:
             {
-                float log2_f = log2(f/f_min);
+                float log2_f = log2f(f/f_min);
 
-                if (log2_f > 1)
-                {
-                    fi = log2_f/log2f_step;
-                }
+                fi = log2_f/log2f_step;
             }
             break;
         }
 
-        if (fi > max_frequency_scalar) fi = max_frequency_scalar;
         return fi;
     }
 
+    __device__ __host__ float getFrequencyScalar( float f ) const
+    {
+        float fi = getFrequencyScalarNotClamped( f );
+        if (fi > max_frequency_scalar) fi = max_frequency_scalar;
+        return fi;
+    }
 //private:
 //    friend class Chunk;
 //    void FreqAxis() {} // Private default constructor. However, public default

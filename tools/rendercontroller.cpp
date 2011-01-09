@@ -13,25 +13,86 @@
 #include "filters/reassign.h"
 #include "filters/ridge.h"
 #include "heightmap/blockfilter.h"
+#include "heightmap/renderer.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
+#include "graphicsview.h"
+#include "sawe/application.h"
+#include "signal/buffersource.h"
 
 // gpumisc
 #include <CudaException.h>
 #include <cuda.h>
+#include <demangle.h>
 
 // Qt
 #include <QToolBar>
 #include <QSlider>
-
+#include <QGraphicsView>
+#include <QResizeEvent>
+#include <QMetaClassInfo>
+#include <QGLContext>
 
 // todo remove
 #include "navigationcontroller.h"
+#include <QTimer>
 
 using namespace Ui;
 
+#ifdef min
+#undef min
+#endif
+
 namespace Tools
 {
+
+class ForAllChannelsOperation: public Signal::Sink
+{
+public:
+    ForAllChannelsOperation
+        (
+            Signal::pOperation o,
+            std::vector<boost::shared_ptr<Heightmap::Collection> > collections
+        )
+        :
+            Signal::Sink(),
+            collections_(collections)
+    {
+        _source = o;
+    }
+
+
+    virtual Signal::pBuffer read( const Signal::Interval& I )
+    {
+        Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(root());
+        if (0==fs)
+            return Signal::Operation::read( I );
+
+        unsigned N = fs->num_channels();
+        Signal::pBuffer r;
+        for (unsigned i=0; i<N; ++i)
+        {
+            fs->set_channel( i );
+            r = Signal::Operation::read( I );
+        }
+
+        return r;
+    }
+
+    virtual void source(Signal::pOperation v) { _source->source(v); }
+    virtual Signal::Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples(); }
+    virtual bool isFinished() { return false; }
+
+    virtual void invalidate_samples(const Signal::Intervals& I)
+    {
+        foreach(boost::shared_ptr<Heightmap::Collection> c, collections_)
+            c->invalidate_samples(I);
+    }
+
+private:
+    std::vector<boost::shared_ptr<Heightmap::Collection> > collections_;
+};
+
 
 RenderController::
         RenderController( RenderView *view )
@@ -49,6 +110,8 @@ RenderController::
     view->setPosition( std::min(l, 10.f)*0.5f, 0.5f );
 
     receiveSetTimeFrequencyResolution( 50 );
+    receiveSetTransform_Cwt();
+    receiveSetColorscaleColors();
 }
 
 
@@ -64,7 +127,7 @@ void RenderController::
         receiveSetRainbowColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -72,7 +135,15 @@ void RenderController::
         receiveSetGrayscaleColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
-    view->update();
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveSetColorscaleColors()
+{
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_FixedColor;
+    view->userinput_update();
 }
 
 
@@ -80,7 +151,7 @@ void RenderController::
         receiveToogleHeightlines(bool value)
 {
     model()->renderer->draw_height_lines = value;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -88,7 +159,7 @@ void RenderController::
         receiveTogglePiano(bool value)
 {
     model()->renderer->draw_piano = value;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -96,7 +167,7 @@ void RenderController::
         receiveToggleHz(bool value)
 {
     model()->renderer->draw_hz = value;
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -105,7 +176,7 @@ void RenderController::
 {
     float f = value / 50.f - 1.f;
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -120,106 +191,94 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
 
-    model()->collection->invalidate_samples( Signal::Intervals::Intervals_ALL );
-    view->update();
+    model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
+
+    view->userinput_update();
+}
+
+
+Signal::PostSink* RenderController::
+        setBlockFilter(Signal::Operation* blockfilter)
+{
+    Signal::pOperation s = model()->postsink();
+    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+
+    BOOST_ASSERT( ps );
+
+    std::vector<Signal::pOperation> v;
+    Signal::pOperation blockop( blockfilter );
+    Signal::pOperation channelop( new ForAllChannelsOperation(blockop, model()->collections));
+    v.push_back( channelop );
+    ps->sinks(v);
+
+    ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
+
+    view->userinput_update();
+
+    return ps;
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
-
-    view->update();
+    setBlockFilter( cwtblock );
 }
 
 
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(model()->collections);
 
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::StftToBlock* cwtblock = new Heightmap::StftToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-
-    view->update();
+    setBlockFilter( stftblock );
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
-    view->update();
+    setBlockFilter( cwtblock );
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
+    Signal::PostSink* ps = setBlockFilter( cwtblock );
 
     ps->filter( Signal::pOperation(new Filters::Reassign()));
-
-    view->update();
 }
 
 
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Signal::pOperation s = model()->collection->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
-    if (!ps)
-        return;
-
-    std::vector<Signal::pOperation> v;
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collection.get());
-    v.push_back( Signal::pOperation( cwtblock ) );
-    ps->sinks(v);
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+    Signal::PostSink* ps = setBlockFilter( cwtblock );
 
     ps->filter( Signal::pOperation(new Filters::Ridge()));
+}
 
-    view->update();
+
+void RenderController::
+        receiveSetTransform_Cwt_weight()
+{
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+
+    setBlockFilter( cwtblock );
 }
 
 
@@ -256,18 +315,26 @@ void RenderController::
         connect(ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleHz(bool)));
     }
 
+    connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
+
 
     // ComboBoxAction* color
     {   color = new ComboBoxAction();
         color->decheckable( false );
         color->addActionItem( ui->actionSet_rainbow_colors );
         color->addActionItem( ui->actionSet_grayscale );
+        color->addActionItem( ui->actionSet_colorscale );
         toolbar_render->addWidget( color );
 
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
+        connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
+        color->setCheckedAction(ui->actionSet_colorscale);
     }
 
+    // QAction *actionSet_heightlines
+    toolbar_render->addAction(ui->actionSet_heightlines);
+    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
     // ComboBoxAction* transform
     {   transform = new ComboBoxAction();
@@ -276,6 +343,14 @@ void RenderController::
         transform->addActionItem( ui->actionTransform_Cwt_phase );
         transform->addActionItem( ui->actionTransform_Cwt_reassign );
         transform->addActionItem( ui->actionTransform_Cwt_ridge );
+        transform->addActionItem( ui->actionTransform_Cwt_weight );
+
+        unsigned k=0;
+        foreach( QAction* a, transform->actions())
+        {
+            a->setShortcut('1' + k++);
+        }
+
         transform->decheckable( false );
         toolbar_render->addWidget( transform );
 
@@ -284,6 +359,8 @@ void RenderController::
         connect(ui->actionTransform_Cwt_phase, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_phase()));
         connect(ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_reassign()));
         connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
+        connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
+
     }
 
 
@@ -302,16 +379,11 @@ void RenderController::
     {   tf_resolution = new QSlider();
         tf_resolution->setOrientation( Qt::Horizontal );
         tf_resolution->setValue( 50 );
-        tf_resolution->setToolTip( "Time/frequency resolution. If set higher than the middle, the audio reconstruction will be incorrect." );
+        tf_resolution->setToolTip( "Time/frequency resolution." );
         toolbar_render->addWidget( tf_resolution );
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
     }
-
-
-    // QAction *actionSet_heightlines
-    toolbar_render->addAction(ui->actionSet_heightlines);
-    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
 
     // Update view whenever worker is invalidated
@@ -324,18 +396,23 @@ void RenderController::
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
-    connect(view, SIGNAL(postPaint()), SLOT(frameTick()));
 
     // Create the OpenGL rendering context early. Because we want to create the
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
     // context is required to be created by lazy initialization when painting
     // the widget
-    view->makeCurrent();
-    view->setLayout(new QHBoxLayout());
-    view->layout()->setMargin(0);
+    //view->makeCurrent();
+
+    view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
+    view->glwidget->makeCurrent();
+    //view->glwidget->setMouseTracking(true);
+
+    GraphicsView* g = new GraphicsView(view);
+    g->setViewport(view->glwidget);
+    view->tool_selector.reset( new Support::ToolSelector(g->toolParent));
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(view);
+    main->centralWidget()->layout()->addWidget(g);
 }
 
 
@@ -350,36 +427,8 @@ void RenderController::
 
     // Clear all cached blocks and release cuda memory befure destroying cuda
     // context
-    model()->collection->reset();
-
-    // Because the cuda context was created with cudaGLSetGLDevice it is bound
-    // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
-    // is corrupt and can't be destroyed nor used properly.
-    BOOST_ASSERT( QGLContext::currentContext() );
-
-    // Destroy the cuda context for this thread
-    CudaException_SAFE_CALL( cudaThreadExit() );}
-
-
-void RenderController::
-        frameTick()
-{
-    QMutexLocker l(&_invalidRangeMutex); // 0.00 ms
-    if (_invalidRange)
-    {
-        Signal::Intervals blur = _invalidRange;
-        float fs = model()->project()->worker.source()->sample_rate();
-        unsigned fuzzy = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
-        blur <<= fuzzy;
-        _invalidRange |= blur;
-
-        blur = _invalidRange;
-        blur >>= fuzzy;
-        _invalidRange |= blur;
-
-        model()->collection->invalidate_samples( _invalidRange );
-        _invalidRange = Signal::Intervals();
-    }
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
+        collection->reset();
 }
 
 } // namespace Tools

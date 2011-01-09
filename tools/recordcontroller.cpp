@@ -1,78 +1,112 @@
 #include "recordcontroller.h"
 
-#include "adapters/microphonerecorder.h"
-#include "signal/worker.h"
+#include "recordmodel.h"
+#include "renderview.h"
 #include "ui_mainwindow.h"
+
+#include "sawe/project.h"
+#include "ui/mainwindow.h"
+#include "adapters/microphonerecorder.h"
 #include "support/sinksignalproxy.h"
+#include "tfr/cwt.h"
+#include "heightmap/collection.h"
+
+#include <TaskTimer.h>
+#include <demangle.h>
+#include <Statistics.h>
 
 namespace Tools
 {
 
 RecordController::
-        RecordController( Signal::Worker* worker, Ui::MainWindow* actions )
-            :
-            _worker(worker)
+        RecordController( RecordView* view, RenderView* render_view )
+            :   view_ ( view ),
+                destroyed_ ( false ),
+                render_view_ ( render_view )
 {
-    setupGui( actions );
+    setupGui();
 }
 
 
 RecordController::
         ~RecordController()
 {
-    Adapters::MicrophoneRecorder* r =
-            dynamic_cast<Adapters::MicrophoneRecorder*>(_record_model.get() );
+    TaskTimer("~RecordController").suppressTiming();
+    destroying();
+}
 
-    if (r && !r->isStopped())
-        r->stopRecording();
+
+void RecordController::
+        destroying()
+{
+    TaskTimer("RecordController::destroying()").suppressTiming();
+    if (destroyed_)
+        return;
+
+    receiveRecord(false);
+    destroyed_ = true;
 }
 
 void RecordController::
         receiveRecord(bool active)
 {
-    if (!active)
+    Adapters::MicrophoneRecorder* r = model()->recording;
+    if (active)
     {
-        Adapters::MicrophoneRecorder* r =
-                dynamic_cast<Adapters::MicrophoneRecorder*>(_record_model.get() );
-
-        if (r)
-        {
-            if (!r->isStopped())
-                r->stopRecording();
-            _record_model.reset();
-        }
-    }
-    else
-    {
-        Adapters::MicrophoneRecorder* r;
-        _record_model.reset( r = new Adapters::MicrophoneRecorder( 0 ) );
-        r->startRecording();
-        _record_model->source( _worker->source() );
-        _worker->source( _record_model );
-
         Support::SinkSignalProxy* proxy;
-        Signal::pOperation proxy_operation( proxy = new Support::SinkSignalProxy());
+        Signal::pOperation proxy_operation( proxy = new Support::SinkSignalProxy() );
 
         std::vector<Signal::pOperation> record_sinks;
         record_sinks.push_back( proxy_operation );
         r->getPostSink()->sinks( record_sinks );
 
-        connect(proxy, SIGNAL(recievedBuffer(Signal::pBuffer)), SLOT(recievedBuffer(Signal::pBuffer)) );
+        connect(proxy,
+                SIGNAL(recievedInvalidSamples( Signal::Intervals )),
+                SLOT(recievedInvalidSamples( Signal::Intervals )),
+                Qt::QueuedConnection );
+
+        r->startRecording();
+    }
+    else
+    {
+        if (!r->isStopped())
+            r->stopRecording();
     }
 }
 
 
 void RecordController::
-        recievedBuffer(Signal::pBuffer b)
+        recievedInvalidSamples( Signal::Intervals I )
 {
-    _worker->postSink()->invalidate_samples( b->getInterval() );
+    if ( destroyed_ )
+        return;
+
+    //TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
+
+    float fs = model()->project->head_source()->sample_rate();
+    Signal::IntervalType s = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
+
+    Signal::Intervals v = ((I << s) | (I >> s)).coveredInterval();
+
+    model()->project->worker.invalidate_post_sink( v );
+
+    render_view_->userinput_update();
 }
 
 
 void RecordController::
-        setupGui( Ui::MainWindow* ui )
+        setupGui()
 {
+    Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
+
     connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
+
+    connect(render_view_, SIGNAL(destroying()), SLOT(destroying()));
+
+    if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))
+    {
+        ui->actionRecord->setEnabled( true );
+    }
 }
 
 

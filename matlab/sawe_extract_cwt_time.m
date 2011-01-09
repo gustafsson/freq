@@ -1,6 +1,6 @@
 % extract chunks from a sound file, given start time and end time
 
-function s_cwt = extract_cwt_time(soundfile, starttime, endtime)
+function s_cwt = sawe_extract_cwt_time(soundfile, starttime, endtime)
     system(['./sonicawe --samples_per_chunk=13 --get_hdf=0 "' soundfile '"' ]);
 
     data = sawe_loadchunk('save_chunk.h5');
@@ -11,7 +11,7 @@ function s_cwt = extract_cwt_time(soundfile, starttime, endtime)
 
     disp(['Estimated memory needed: ' num2str((last-first+1)*numel(data.chunk)*2*8)/1024/1024 ' MB']);
     
-    s_cwt = extract_cwt(soundfile, first, last);
+    s_cwt = sawe_extract_cwt(soundfile, first, last);
 
     first_sample = floor(starttime*data.samplerate);
     last_sample = ceil(endtime*data.samplerate);    

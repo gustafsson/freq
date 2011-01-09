@@ -148,8 +148,8 @@ void Audiofile::
     source.read(completeFile.getCpuMemory(), source.channels()*source.frames()); // yes float
     float* data = completeFile.getCpuMemory();
 
-    _waveform.reset( new Signal::Buffer(0, source.frames(), source.samplerate(), source.channels()));
-    float* target = _waveform->waveform_data()->getCpuMemory();
+	Signal::pBuffer waveform( new Signal::Buffer(0, source.frames(), source.samplerate(), source.channels()));
+    float* target = waveform->waveform_data()->getCpuMemory();
 
     // Compute transpose of signal
     for (unsigned i=0; i<source.frames(); i++) {
@@ -158,9 +158,43 @@ void Audiofile::
         }
     }
 
+	setBuffer( waveform );
+
     //_waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
     //Statistics<float> waveform( _waveform->waveform_data.get() );
 
+    float L = length();
+    tt << "Signal length: ";
+    unsigned seconds_per_minute = 60;
+    unsigned seconds_per_hour = seconds_per_minute*60;
+    unsigned seconds_per_day = seconds_per_hour*24;
+
+    if (L < seconds_per_minute )
+        tt << L << " seconds";
+    else 
+	{
+		if (L <= seconds_per_day )
+		{
+			unsigned days = floor(L/seconds_per_day);
+			tt << days << "d ";
+			L -= days * seconds_per_day;
+		}
+
+		unsigned hours = floor(L/seconds_per_hour);
+        tt << hours << ":";
+        L -= hours * seconds_per_hour;
+
+        unsigned minutes = floor(L/seconds_per_minute);
+        tt << std::setfill('0') << std::setw(2) << minutes << ":";
+        L -= minutes * seconds_per_minute;
+
+		tt << std::setiosflags(std::ios::fixed)
+		   << std::setprecision(3) << std::setw(6) << L;
+    }
+    tt.flushStream();
+
+    tt.info("Data size: %lu samples, %lu channels", (size_t)source.frames(), (size_t)source.channels() );
+    tt.info("Sample rate: %lu samples/second", source.samplerate() );
 #if LEKA_FFT
 /* do stupid things: */
     num_frames = 1<<13;

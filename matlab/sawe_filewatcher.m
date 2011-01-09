@@ -8,7 +8,7 @@
 % filewatcher does not return. Whatever value returned from func is discarded.
 %
 % Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 20 times per second (dt=0.05).
-function C=filewatcher(datafile, func, arguments, dt)
+function C=sawe_filewatcher(datafile, func, arguments, dt)
 
 if nargin<2
   error 'syntax: filewatcher(datafile, function, arguments, dt). \'arguments\' defaults to [], \'dt\' defaults to 0.05'

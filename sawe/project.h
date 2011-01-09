@@ -2,21 +2,22 @@
 #define SAWEPROJECT_H
 
 #include "signal/worker.h"
+#include "tools/toolfactory.h"
 
-#include <boost/shared_ptr.hpp>
-#include <QGLWidget>
-#include <QMainWindow>
-#include <QScopedPointer>
-
+// boost
+#include <boost/scoped_ptr.hpp>
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/vector.hpp> 
+#include <boost/serialization/binary_object.hpp> 
+
+// Qt
+#include <QMainWindow>
+#include <QScopedPointer>
 
 namespace Sawe {
     class Project;
-}
-namespace Tools {
-    class ToolFactory;
 }
 
 namespace Ui {
@@ -48,6 +49,8 @@ public:
     ~Project();
 
     /**
+      TODO this entire comment is out of date
+
       All sources can be reached from one head Source: worker->source().
 
       For a source to be writable, there must exists a template specialization to Hdf5Output::add.
@@ -58,8 +61,22 @@ public:
       */
     Signal::Worker worker;
 
+
+    /**
+      Current work point, compare HEAD in a git repo which points to the point
+      in history that current edits are based upon.
+      */
     Signal::pOperation head_source() const { return worker.source(); }
     void head_source(Signal::pOperation s) { worker.source(s); }
+
+
+    /**
+      The root of the operation tree. The source audio files are leaves in the
+      tree. New things are appended by creating a root of the root, thus making
+      the tree "higher".
+      */
+    Signal::pOperation root_source() const { return root_source_; }
+    void root_source(Signal::pOperation s) { root_source_ = s; head_source(s); }
 
 
     /**
@@ -88,9 +105,32 @@ public:
 
 
     /**
-      If 'project_file' is empty, a Qt Save File dialog will be opened.
+      Returns true if the project has been saved since it was opened.
+      */
+    bool isModified();
+
+
+    /**
+      Sets the modified flag to true. Temporary, will be removed by list of
+      actions instead.
+      */
+    void setModified();
+
+
+    /**
+      If 'project_file_name' is empty, calls saveAs.
+
+      @returns true if the project was saved.
      */
-    void save(std::string project_file="");
+    bool save();
+
+
+    /**
+      Opens a Qt Save File dialog and renames 'project_file_name'.
+
+      @returns true if the project was saved.
+     */
+    bool saveAs();
 
 
     /**
@@ -99,27 +139,72 @@ public:
     Ui::SaweMainWindow* mainWindow();
 
 
+    /**
+      Project file name.
+      */
+    std::string project_name();
+
 private:
     Project(); // used by deserialization
     void createMainWindow();
 
+    Signal::pOperation root_source_;
+    bool is_modified_;
+
+    std::string project_file_name;
     boost::scoped_ptr<Tools::ToolFactory> _tools;
     // MainWindow owns all other widgets together with their ToolFactory
-    QScopedPointer<QMainWindow> _mainWindow;
+    QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
     static boost::shared_ptr<Project> openAudio(std::string audio_file);
 
-
     friend class boost::serialization::access;
-    template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
+    template<class Archive> void save(Archive& ar, const unsigned int version) const {
         Signal::pOperation head = head_source();
+        TaskInfo("Head tree:\n%s", head->toString().c_str());
 
-        using boost::serialization::make_nvp;
-        ar & make_nvp("Headsource", head);
+        ar & BOOST_SERIALIZATION_NVP(root_source_);
+        ar & BOOST_SERIALIZATION_NVP(head);
 
-        head_source(head);
+        QByteArray mainwindowState = _mainWindow->saveState(/* version */);
+		save_bytearray( ar, mainwindowState );
+
+		_tools->save_tools( ar, version );
     }
+    template<class Archive> void load(Archive& ar, const unsigned int version) {
+		Signal::pOperation head;
+        ar & BOOST_SERIALIZATION_NVP(root_source_);
+        ar & BOOST_SERIALIZATION_NVP(head);
+        head_source(head);
+
+		createMainWindow();
+
+        QByteArray mainwindowState;
+        load_bytearray( ar, mainwindowState );
+        _mainWindow->restoreState( mainwindowState/*, version */);
+
+		_tools->load_tools( ar, version );
+    }
+
+    template<class Archive> static void save_bytearray(Archive& ar, QByteArray& c)
+    {
+        int DataSize = c.size();
+        ar & BOOST_SERIALIZATION_NVP(DataSize);
+
+        boost::serialization::binary_object Data( c.data(), DataSize );
+        ar & BOOST_SERIALIZATION_NVP(Data);
+    }
+    template<class Archive> static void load_bytearray(Archive& ar, QByteArray& c)
+    {
+        int DataSize = 0;
+        ar & BOOST_SERIALIZATION_NVP(DataSize);
+        c.resize(DataSize);
+
+        boost::serialization::binary_object Data( c.data(), DataSize );
+        ar & BOOST_SERIALIZATION_NVP(Data);
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 typedef boost::shared_ptr<Project> pProject;
 

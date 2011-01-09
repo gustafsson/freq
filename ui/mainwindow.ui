@@ -67,6 +67,7 @@
     <addaction name="actionNew_recording"/>
     <addaction name="actionOpen"/>
     <addaction name="actionSave_project"/>
+    <addaction name="actionSave_project_as"/>
     <addaction name="separator"/>
     <addaction name="actionImport_audio"/>
     <addaction name="actionExport_audio"/>
@@ -186,9 +187,6 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="operationsWindow">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -289,8 +287,6 @@
    <addaction name="separator"/>
    <addaction name="actionFollowPlayMarker"/>
    <addaction name="actionSetPlayMarker"/>
-   <addaction name="separator"/>
-   <addaction name="actionSet_heightlines"/>
   </widget>
   <widget class="QToolBar" name="toolBarOperation">
    <property name="enabled">
@@ -313,10 +309,13 @@
    <addaction name="actionCropSelection"/>
    <addaction name="actionMoveSelection"/>
    <addaction name="actionMoveSelectionTime"/>
+   <addaction name="actionResetGraphics"/>
    <addaction name="actionTonalizeFilter"/>
    <addaction name="actionReassignFilter"/>
+   <addaction name="actionAddComment"/>
+   <addaction name="actionShowComments"/>
   </widget>
-  <action name="actionActivateSelection">
+  <action name="actionEllipseSelection">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -329,10 +328,10 @@
      <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-circle-selection.png</iconset>
    </property>
    <property name="text">
-    <string>Activate Selection</string>
+    <string>Ellipse Selection</string>
    </property>
    <property name="toolTip">
-    <string>Activate selection [S]</string>
+    <string>Ellipse selection [S]</string>
    </property>
    <property name="shortcut">
     <string>S</string>
@@ -357,7 +356,7 @@
     <string>Activate Navigation</string>
    </property>
    <property name="toolTip">
-    <string>Activate navigation [N]</string>
+    <string>Rotate with right mouse button [N]</string>
    </property>
    <property name="shortcut">
     <string>N</string>
@@ -570,6 +569,9 @@
    <property name="checked">
     <bool>false</bool>
    </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>
@@ -775,17 +777,14 @@
    </property>
   </action>
   <action name="actionSave_project">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
-    <string>Save project</string>
+    <string>&amp;Save project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="actionExit">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Exit</string>
    </property>
@@ -862,9 +861,6 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-peak-selection.png</normaloff>:/icons/icons/icon-peak-selection.png</iconset>
@@ -879,22 +875,19 @@
     <bool>true</bool>
    </property>
   </action>
-  <action name="actionSquareSelection">
+  <action name="actionRectangleSelection">
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-square-selection.png</normaloff>:/icons/icons/icon-square-selection.png</iconset>
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
    </property>
    <property name="text">
-    <string>Square selection</string>
+    <string>Rectangle selection</string>
    </property>
    <property name="toolTip">
-    <string>Square selection</string>
+    <string>Rectangle selection</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -903,9 +896,6 @@
   <action name="actionPolygonSelection">
    <property name="checkable">
     <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
@@ -924,9 +914,6 @@
   <action name="actionSplineSelection">
    <property name="checkable">
     <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
@@ -1012,9 +999,6 @@
    <property name="checked">
     <bool>false</bool>
    </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-zoom.png</normaloff>
@@ -1024,7 +1008,7 @@
     <string>Zoom</string>
    </property>
    <property name="toolTip">
-    <string>Zoom [z]</string>
+    <string>Zoom with the right mouse button [z]</string>
    </property>
    <property name="shortcut">
     <string>Z</string>
@@ -1172,16 +1156,11 @@
    <property name="checked">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
-   </property>
    <property name="text">
-    <string>Show morlet transform</string>
+    <string>Morlet transform</string>
    </property>
    <property name="toolTip">
-    <string>Show morlet transform</string>
+    <string>Morlet transform</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1194,16 +1173,11 @@
    <property name="enabled">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
-   </property>
    <property name="text">
-    <string>Show windowed fourier transform</string>
+    <string>Windowed fourier transform (STFT)</string>
    </property>
    <property name="toolTip">
-    <string>Show windowed fourier transform</string>
+    <string>Windowed fourier transform (STFT)</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1216,16 +1190,11 @@
    <property name="enabled">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
-   </property>
    <property name="text">
-    <string>Show phase plot</string>
+    <string>Morlet phase plot</string>
    </property>
    <property name="toolTip">
-    <string>Show phase plot</string>
+    <string>Morlet phase plot</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1238,16 +1207,11 @@
    <property name="enabled">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
-   </property>
    <property name="text">
-    <string>Show reassigned Morlet</string>
+    <string>Reassigned Morlet</string>
    </property>
    <property name="toolTip">
-    <string>Show reassigned Morlet</string>
+    <string>Reassigned Morlet</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1369,7 +1333,7 @@
     <string>Get info</string>
    </property>
    <property name="toolTip">
-    <string>Get info</string>
+    <string>Drag over a ridge to see information of the peak [I]</string>
    </property>
    <property name="shortcut">
     <string>I</string>
@@ -1385,16 +1349,153 @@
    <property name="enabled">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
-   </property>
    <property name="text">
-    <string>Show Morlet ridge</string>
+    <string>Morlet ridge</string>
    </property>
    <property name="toolTip">
-    <string>Show Morlet ridge</string>
+    <string>Morlet ridge</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt_weight">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Weighted Morlet</string>
+   </property>
+   <property name="toolTip">
+    <string>Weighted Morlet</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAddComment">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add comment</string>
+   </property>
+   <property name="toolTip">
+    <string>Add comment</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionShowComments">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Hide/show comments</string>
+   </property>
+   <property name="toolTip">
+    <string>Hide/show comments</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSave_project_as">
+   <property name="text">
+    <string>Save project &amp;as...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionSet_colorscale">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Colorscale</string>
+   </property>
+   <property name="toolTip">
+    <string>Colorscale</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFrequencySelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Frequency selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Frequency selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTimeSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Time selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Time selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionResetGraphics">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reset graphics</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset graphics</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

@@ -3,6 +3,12 @@
 
 #include "signal/operationcache.h"
 
+// boost
+#include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
+
+class QProcess;
+
 namespace Adapters {
 
 /**
@@ -24,7 +30,7 @@ namespace Adapters {
   One instance of octave or matlab will be created for each instance of
   MatlabFunction. Each instance is then killed in each destructor.
   */
-class MatlabFunction
+class MatlabFunction: boost::noncopyable
 {
 public:
     /**
@@ -54,7 +60,7 @@ private:
 	void kill();
 	void abort();
 
-    void* _pid;
+    QProcess* _pid;
     std::string _dataFile;
     std::string _resultFile;
     std::string _matlab_function;
@@ -65,6 +71,7 @@ class MatlabOperation: public Signal::OperationCache
 {
 public:
     MatlabOperation( Signal::pOperation source, std::string matlabFunction );
+    ~MatlabOperation();
 
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
 

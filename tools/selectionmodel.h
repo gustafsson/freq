@@ -1,18 +1,14 @@
 #ifndef SELECTIONMODEL_H
 #define SELECTIONMODEL_H
 
+#include "signal/operation.h"
+#include <vector>
+
+
 namespace Sawe {
     class Project;
 }
 
-#include "signal/postsink.h"
-#include "signal/worker.h"
-
-#include <vector>
-
-struct MyVector { // TODO use gpumisc/tvector
-    float x, y, z;
-};
 
 namespace Tools
 {
@@ -22,20 +18,31 @@ namespace Tools
         SelectionModel(Sawe::Project* p);
         ~SelectionModel();
 
-        Signal::PostSink* getPostSink();
-        Signal::pWorkerCallback postsinkCallback;
+        enum SaveInside
+        {
+            SaveInside_FALSE,
+            SaveInside_TRUE,
+            SaveInside_UNCHANGED
+        };
 
-        Signal::pOperation filter;
+        Signal::pOperation current_selection_copy(SaveInside si = SaveInside_UNCHANGED);
+        void               set_current_selection(Signal::pOperation o);
+        const Signal::pOperation& current_selection() { return current_selection_; }
 
-        MyVector selection[2];
+        Sawe::Project* project() { return project_; }
 
-        // Tool move selection is not a method of the selection tool
-        // TODO move to its own tool
-        MyVector sourceSelection[2];
+        // TODO How should 'all_selections' be used?
+        // Should SelectionModel only describe one selection?
+        std::vector<Signal::pOperation> all_selections;
 
-        Sawe::Project* project;
+    private:
+        Sawe::Project* project_;
+        Signal::pOperation current_selection_;
 
-        std::vector<Signal::pOperation> all_filters;
+        static Signal::pOperation copy_selection(Signal::pOperation, SaveInside si = SaveInside_UNCHANGED);
+
+        template<typename T>
+        static Signal::pOperation copy_selection_type(T*p, SaveInside si);
     };
 } // namespace Tools
 

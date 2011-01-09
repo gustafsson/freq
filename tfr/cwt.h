@@ -30,7 +30,6 @@ public:
     could be allocated beforehand and reserved for the Signal::pBuffer. Previous
     copies with the page-locked chunk is synchronized at beforehand.
     */
-    Cwt( float scales_per_octave=40, float wavelet_time_suppport=3, cudaStream_t stream=0 );
 
     static Cwt& Singleton();
     static pTransform SingletonP();
@@ -41,6 +40,7 @@ public:
     virtual Signal::pBuffer inverse( pChunk );
 
     float     get_min_hz(float fs) const;
+    float     wanted_min_hz() const;
     void      set_min_hz(float f);
     /// returns the nyquist frequency
     float     get_max_hz(float sample_rate) const { return sample_rate/2.f; }
@@ -58,13 +58,17 @@ public:
       corresponds to can be computed by calling wavelet_time_support_samples.
       @def 3
       */
+    float     wavelet_default_time_support() const { return _wavelet_def_time_suppport; }
     float     wavelet_time_support() const { return _wavelet_time_suppport; }
-    void      wavelet_time_support( float value ) { _wavelet_time_suppport = value; }
+    void      wavelet_time_support( float value ) { _wavelet_time_suppport = value; _wavelet_def_time_suppport = value; }
+    void      wavelet_fast_time_support( float value ) { _wavelet_time_suppport = value; }
+    float     wavelet_scale_support() const { return _wavelet_scale_suppport; }
+    void      wavelet_scale_support( float value ) { _wavelet_scale_suppport = value; }
 
     /**
       Computes the standard deviation in time and frequency using the tf_resolution value. For a given frequency.
       */
-    float     morlet_sigma_t( float sample_rate, float hz ) const;
+    float     morlet_sigma_samples( float sample_rate, float hz ) const;
     float     morlet_sigma_f( float hz ) const;
 
     /**
@@ -83,7 +87,11 @@ public:
     unsigned  prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
 
     unsigned        find_bin( unsigned j ) const;
+    static void     gc() { _fft_many.clear(); }
+    static void     resetSingleton();
 private:
+    Cwt( float scales_per_octave=40, float wavelet_time_suppport=3, cudaStream_t stream=0 );
+
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
 
@@ -95,13 +103,17 @@ private:
     float           _min_hz;
     float           _scales_per_octave;
     float           _tf_resolution;
-//    CufftHandleContext _fft_many;
+    static pTransform static_singleton;
+
+    static std::map<unsigned, CufftHandleContext> _fft_many;
 
     /**
       Default value: _wavelet_time_suppport=3.
       @see wavelet_time_suppport
       */
     float  _wavelet_time_suppport;
+    float  _wavelet_def_time_suppport;
+    float _wavelet_scale_suppport;
 };
 
 } // namespace Tfr

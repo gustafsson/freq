@@ -3,7 +3,7 @@
 
 #include "signal/source.h"
 
-namespace Filters {
+namespace Tfr {
 
 class SuperSample
 {
@@ -11,5 +11,5 @@ public:
     static Signal::pBuffer supersample( Signal::pBuffer b, float requested_sample_rate );
 };
 
-} // namespace Filters
+} // namespace Tfr
 #endif // SUPERSAMPLE_H

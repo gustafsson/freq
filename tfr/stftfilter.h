@@ -5,13 +5,17 @@
 
 namespace Tfr {
 
-class StftFilter : public virtual Filter
+class StftFilter : public Filter
 {
 public:
     StftFilter( Signal::pOperation source=Signal::pOperation(),
                 Tfr::pTransform transform=Tfr::pTransform() );
 
-    virtual Filter::ChunkAndInverse readChunk( const Signal::Interval& I );
+
+    /**
+      This computes the Stft chunk covering a given interval.
+      */
+    ChunkAndInverse computeChunk( const Signal::Interval& I );
 
 
     /**
@@ -26,6 +30,9 @@ public:
       Stft.
       */
     void transform( Tfr::pTransform m );
+
+
+    bool exclude_end_block;
 };
 
 } // namespace Tfr

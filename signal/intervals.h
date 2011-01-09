@@ -2,7 +2,7 @@
 #define SAMPLESINTERVALDESCRIPTOR_H
 
 #include <list>
-#include <ostream>
+#include <string>
 
 namespace Signal {
 
@@ -40,6 +40,8 @@ public:
     bool operator<(const Interval& r) const;
     Interval& operator|=(const Interval& r);
     bool operator==(const Interval& r) const;
+
+    std::string toString() const;
 };
 
 
@@ -68,24 +70,22 @@ public:
     Intervals  operator &  (const Intervals& b) const { Intervals a = *this; return a&=b; }
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
+    Intervals operator >> (const IntervalType& b) const { Intervals a = *this; return a>>=b; }
     Intervals& operator >>= (const IntervalType&);
+    Intervals operator << (const IntervalType& b) const { Intervals a = *this; return a<<=b; }
     Intervals& operator <<= (const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
+    operator   Interval    () const { return coveredInterval(); }
     operator   bool        () const { return !empty(); }
 
     Intervals                       inverse() const;
-
     Interval                        getInterval() const;
     Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                        coveredInterval() const;
 
-    void                            print( std::string title="" ) const;
-
+    std::string                     toString() const;
 };
-
-std::ostream& operator<<( std::ostream& s, const Intervals& i);
-std::ostream& operator<<( std::ostream& s, const Interval& i);
 
 } // namespace Signal
 

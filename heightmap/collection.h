@@ -1,19 +1,30 @@
 #ifndef HEIGHTMAPCOLLECTION_H
 #define HEIGHTMAPCOLLECTION_H
 
-#include "heightmap/reference.h"
-#include "heightmap/glblock.h"
+// Heightmap namespace
+#include "reference.h"
+#include "glblock.h"
+#include "block.cu.h"
+
+// Sonic AWE
 #include "signal/intervals.h"
 #include "signal/source.h"
 #include "signal/worker.h"
 #include "tfr/chunk.h"
-#include <vector>
+
+// boost
 #include <boost/unordered_map.hpp>
+#include <boost/functional/hash.hpp>
+
+// Qt
+#ifndef SAWE_NO_MUTEX
 #include <QMutex>
 #include <QWaitCondition>
 #include <QThread>
+#endif
 
-#include <boost/functional/hash.hpp>
+// std
+#include <vector>
 
 /*
 TODO: rewrite this section
@@ -77,8 +88,6 @@ Spectogram. For altering the output refer to transform-inverse.h.
 The term scaleogram is not used in the source code, in favor of spectrogram.
 */
 
-#include "heightmap/block.cu.h"
-
 namespace Heightmap {
 
 
@@ -94,8 +103,10 @@ public:
     Block( Reference ref )
         :
         frame_number_last_used(-1),
-        ref(ref),
-        new_data_available( false )
+        ref(ref)
+#ifndef SAWE_NO_MUTEX
+        ,new_data_available( false )
+#endif
     {}
 
     // TODO move this value to a complementary class
@@ -118,9 +129,11 @@ public:
 
         For single-GPU environments, 'cpu_copy' is not used.
     */
+#ifndef SAWE_NO_MUTEX
     pData cpu_copy;
     bool new_data_available;
     QMutex cpu_copy_mutex;
+#endif
 
     /**
       valid_samples describes the intervals of valid samples contained in this block.
@@ -169,9 +182,9 @@ public:
       scales_per_block and samples_per_block are constants deciding how many blocks
       are to be created.
       */
-    unsigned    scales_per_block() { return _scales_per_block; }
+    unsigned    scales_per_block() const { return _scales_per_block; }
     void        scales_per_block(unsigned v);
-    unsigned    samples_per_block() { return _samples_per_block; }
+    unsigned    samples_per_block() const { return _samples_per_block; }
     void        samples_per_block(unsigned v);
 
 
@@ -241,21 +254,36 @@ operation              A
 audiofile              source
 */
 
+    unsigned long cacheByteSize();
+    unsigned    cacheCount();
+    void        printCacheSize();
     void        gc();
 
 
     Tfr::FreqAxis display_scale() { return _display_scale; }
 
+
     /**
-      PostSink fetches data
+      PostSink fetches data. TODO Remove postsink from collection
       */
     Signal::pOperation postsink() { return _postsink; }
+    void setPostsink(Signal::pOperation s) { _postsink = s; }
+
+
+    /**
+      Given a chunk and this->_worker->source(), compute how small and big
+      samples that are meanginful to display.
+      */
+    void        update_sample_size( Tfr::Chunk* inChunk );
 
 
     Signal::Worker*     worker;
+
+	const ThreadChecker& constructor_thread() const { return _constructor_thread; }
+
 private:
     // TODO remove friends
-    friend class BlockFilter;
+    //friend class BlockFilter;
     friend class CwtToBlock;
     friend class StftToBlock;
 
@@ -291,7 +319,9 @@ private:
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 
+#ifndef SAWE_NO_MUTEX
     QMutex _cache_mutex; // Mutex for _cache and _recent
+#endif
     cache_t _cache;
     recent_t _recent; // Ordered with the most recently accessed blocks first
 
@@ -310,12 +340,6 @@ private:
     pBlock      createBlock( Reference ref );
 
     /**
-      Update the slope texture used by the vertex shader. Called when height
-      data has been updated. Also called by 'createBlock'.
-      */
-    void        computeSlope( pBlock block, unsigned cuda_stream );
-
-    /**
       Compoute a short-time Fourier transform (stft). Usefull for filling new
       blocks with data really fast.
       */
@@ -326,13 +350,6 @@ private:
       Work of the _updates queue of chunks to merge.
       */
     // void        applyUpdates();
-
-
-    /**
-      Given a chunk and this->_worker->source(), compute how small and big
-      samples that are meanginful to display.
-      */
-    void        update_sample_size( Tfr::Chunk* inChunk );
 
 
     /**

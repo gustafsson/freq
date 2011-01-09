@@ -7,10 +7,11 @@ typedef __int64 __int64_t;
 #endif
 
 #include <sndfile.hh> // for writing various formats
-#include <boost/foreach.hpp>
+ 
+#include <Statistics.h>
 
-//#define TIME_WRITEWAV
-#define TIME_WRITEWAV if(0)
+#define TIME_WRITEWAV
+//#define TIME_WRITEWAV if(0)
 
 namespace Adapters {
 
@@ -33,6 +34,7 @@ void WriteWav::
 {
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", (long unsigned)buffer->sample_offset, (long unsigned)(buffer->sample_offset + buffer->number_of_samples()));
 
+    //Statistics<float>(buffer->waveform_data());
     _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
 
     if (_data.isFinished())
@@ -46,7 +48,7 @@ void WriteWav::
     if (!_data.empty())
         writeToDisk();
 
-    _data.reset();
+    _data.clear();
 }
 
 
@@ -58,19 +60,17 @@ void WriteWav::
 
     BOOST_ASSERT(i.valid());
 
-    TIME_WRITEWAV sid.print("data to write");
+    TIME_WRITEWAV TaskTimer tt("Writing data %s", sid.toString().c_str());
     Signal::pBuffer b = _data.readFixedLength( i );
     writeToDisk( _filename, b );
 }
 
 
 void WriteWav::
-        writeToDisk(std::string filename, Signal::pBuffer b)
+        writeToDisk(std::string filename, Signal::pBuffer b, bool normalize)
 {
-    std::stringstream ss;
-    ss << b->getInterval();
-
-    TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(), ss.str().c_str());
+    TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(),
+                               b->getInterval().toString().c_str());
 
     // TODO: figure out a way for Sonic AWE to work with stereo sound as this
     // method could easily write stereo sound if pBuffer had multiple channels.
@@ -86,19 +86,33 @@ void WriteWav::
     float *data=b->waveform_data()->getCpuMemory();
     unsigned N = b->number_of_samples();
 
-    { // Normalize
-
+    if (normalize) // Normalize
+    {
         float high=0, low=0;
         for (unsigned k=0; k<N; k++) {
             if (data[k]>high) high = data[k];
             if (data[k]<low) low = data[k];
         }
 
-        for (unsigned k=0; k<N; k++) {
-            float v = (data[k]-low)/(high-low)*2-1;
-            if (v>1) v = 1;
-            if (v<-1) v = -1;
-            data[k] = v;
+        if (0 == "Move DC")
+        {
+            for (unsigned k=0; k<N; k++) {
+                float v = (data[k]-low)/(high-low)*2-1;
+                if (v>1) v = 1;
+                if (v<-1) v = -1;
+                data[k] = v;
+            }
+        }
+        else
+        {
+            high = std::max( high, -low );
+
+            for (unsigned k=0; k<N; k++) {
+                float v = data[k]/high;
+                if (v>1) v = 1;
+                if (v<-1) v = -1;
+                data[k] = v;
+            }
         }
     }
 

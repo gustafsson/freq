@@ -4,6 +4,10 @@
 #include "renderview.h"
 #include "selectionmodel.h"
 #include "adapters/playback.h"
+#include "filters/ellipse.h"
+#include "tfr/cwt.h"
+
+#include <glPushContext.h>
 
 // Qt
 #include <QTimer>
@@ -28,12 +32,14 @@ void PlaybackView::
         update()
 {
     emit update_view();
+    Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
 }
 
 
 void PlaybackView::
         draw()
 {
+    locatePlaybackMarker();
     drawPlaybackMarker();
 }
 
@@ -57,16 +63,22 @@ void PlaybackView::
         return;
     }
 
+    update();
+
+    // Playback has reached end but continues with zeros to avoid clicks
+    if (model->playback()->hasReachedEnd()) {
+        return;
+    }
+
     _playbackMarker = model->playback()->time();
 
     if (follow_play_marker)
     {
         Tools::RenderView& r = *_render_view;
-        r._qx = _playbackMarker;
+        r.model->_qx = _playbackMarker;
     }
-
-    update();
 }
+
 
 
 void PlaybackView::
@@ -75,22 +87,21 @@ void PlaybackView::
     if (0>_playbackMarker)
         return;
 
-    //glEnable(GL_BLEND);
-    glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glPushAttribContext ac;
+
     glColor4f( 0, 0, 0, .5);
 
-    MyVector* selection = model->selection->selection;
+    if (drawPlaybackMarkerInEllipse())
+        return;
+
+
+    glDepthMask(false);
 
     float
         t = _playbackMarker,
-        x = selection[0].x,
         y = 1,
-        z = selection[0].z,
-        _rx = selection[1].x-selection[0].x,
-        _rz = selection[1].z-selection[0].z,
-        z1 = z-sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz,
-        z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
+        z1 = 0,
+        z2 = 1;
 
 
     glBegin(GL_QUADS);
@@ -113,5 +124,56 @@ void PlaybackView::
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
+
+
+bool PlaybackView::
+        drawPlaybackMarkerInEllipse()
+{
+    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
+            model->selection->current_selection().get() );
+    if (!e)
+        return false;
+
+    glDepthMask(false);
+
+    Tfr::FreqAxis const& fa =
+            _render_view->model->display_scale();
+    float
+            s1 = fa.getFrequencyScalar( e->_f1 ),
+            s2 = fa.getFrequencyScalar( e->_f2 );
+
+    float
+        t = _playbackMarker,
+        x = e->_t1,
+        y = 1,
+        z = s1,
+        _rx = e->_t2 - e->_t1,
+        _rz = s2 - s1,
+        z1 = z-sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz,
+        z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
+
+
+    glBegin(GL_TRIANGLE_STRIP);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z1 );
+        glVertex3f( t, y, z2 );
+    glEnd();
+
+    glDepthMask(true);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonOffset(1.f, 1.f);
+    glBegin(GL_QUADS);
+        glVertex3f( t, 0, z1 );
+        glVertex3f( t, 0, z2 );
+        glVertex3f( t, y, z2 );
+        glVertex3f( t, y, z1 );
+    glEnd();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return true;
+}
+
 
 } // namespace Tools

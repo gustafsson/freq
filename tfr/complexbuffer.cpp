@@ -28,12 +28,15 @@ ComplexBuffer::
 
     for (unsigned z=0; z<sz.depth; z++)
         for (unsigned y=0; y<sz.height; y++)
+        {
+            unsigned o = (y + z*sz.height)*sz.width;
+
             for (unsigned x=0; x<sz.width; x++)
             {
-                unsigned o = x + (y + z*sz.height)*sz.width;
                 // set .y component to 0
-                complex[ o ] = make_float2( real[ o ], 0 );
+                complex[ x + o ] = make_float2( real[ x + o ], 0 );
             }
+        }
 }
 
 

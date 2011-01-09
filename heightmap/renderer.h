@@ -1,32 +1,39 @@
 #ifndef HEIGHTMAPRENDERER_H
 #define HEIGHTMAPRENDERER_H
 
-#include <sstream>
-#include "heightmap/collection.h"
-#ifndef __APPLE__
-  #include <GL/gl.h>
-#else
-  #include <OpenGL/gl.h>
-#endif
-#include "heightmap/glblock.h"
+// Heightmap namespace
+#include "collection.h"
+#include "glblock.h"
+
+// gpumisc
 #include <tmatrix.h>
 #include <GlTexture.h>
 
-typedef tvector<3,GLdouble> GLvector;
+// std
+#include <sstream>
+
+//typedef tvector<3,GLdouble> GLvector;
+typedef tvector<3,GLfloat> GLvector;
+typedef tvector<3,GLfloat> GLvectorF;
 
 namespace Heightmap {
+
+    GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+    GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
 
 class Renderer
 {
 public:
     enum ColorMode {
         ColorMode_Rainbow = 0,
-        ColorMode_Grayscale = 1
+        ColorMode_Grayscale = 1,
+        ColorMode_FixedColor = 2
     };
 
     Renderer( Collection* collection );
 
-    Collection* collection() { return _collection; }
+    Reference findRefAtCurrentZoomLevel( Heightmap::Position p );
+    Collection* collection;
 
     void draw( float scaley );
     void drawAxes( float T );
@@ -38,18 +45,43 @@ public:
 
     bool draw_height_lines;
     ColorMode color_mode;
+    float4 fixed_color;
     float y_scale;
+    float last_ysize;
+
+    void init();
+
+    GLdouble modelview_matrix[16], projection_matrix[16];
+    GLint viewport_matrix[4];
+
+    GLvector gluProject(GLvectorF obj, bool *r=0);
+    GLvector gluUnProject(GLvectorF win, bool *r=0);
+
+    void frustumMinMaxT( float& min_t, float& max_t);
 private:
+    enum LevelOfDetal {
+        Lod_NeedBetterF,
+        Lod_NeedBetterT,
+        Lod_Ok,
+        Lod_Invalid
+    };
+
     std::vector<GLvector> clippedFrustum;
-    Collection* _collection;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
+    unsigned _vbo_size;
     pVbo _mesh_position;
     GLuint _shader_prog;
     bool _initialized;
     bool _draw_flat;
     float _redundancy;
+    bool _invalid_frustum;
+    GLvector projectionPlane, projectionNormal, // for clipFrustum
+        rightPlane, rightNormal,
+        leftPlane, leftNormal,
+        topPlane, topNormal,
+        bottomPlane, bottomNormal;
 
     boost::scoped_ptr<GlTexture> colorTexture;
 
@@ -57,7 +89,6 @@ private:
 
     friend class Heightmap::GlBlock;
 
-    void init();
     void setSize( unsigned w, unsigned h);
     void createMeshIndexBuffer(unsigned w, unsigned h);
     void createMeshPositionVBO(unsigned w, unsigned h);
@@ -66,10 +97,14 @@ private:
     void beginVboRendering();
     void endVboRendering();
 
-    bool renderSpectrogramRef( Reference ref );
+    void renderSpectrogramRef( Reference ref );
+    LevelOfDetal testLod( Reference ref );
     bool renderChildrenSpectrogramRef( Reference ref );
     void renderParentSpectrogramRef( Reference ref );
     bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );
+
+    std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i, float w=0, float h=0 );
+    std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w=0, float h=0 );
 };
 typedef boost::shared_ptr<Renderer> pRenderer;
 

@@ -8,33 +8,36 @@ namespace Signal {
 class OperationRemoveSection: public Operation
 {
 public:
-    OperationRemoveSection( pOperation source, IntervalType firstSample, IntervalType numberOfRemovedSamples );
+    OperationRemoveSection( pOperation source, Interval section );
 
     virtual pBuffer read( const Interval& I );
     virtual IntervalType number_of_samples();
 
-    // TODO overload these as well, Intervals need to be translated
-    // virtual Intervals affected_samples() { return Intervals(); }
-    // virtual Intervals invalid_samples();
-    // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    virtual Intervals affected_samples();
+    virtual Intervals translate_interval(Intervals I);
+    virtual Intervals translate_interval_inverse(Intervals I);
+
 private:
-    IntervalType _firstSample, _numberOfRemovedSamples;
+
+    Interval section_;
 };
 
+/**
+  Has no effect as long as source()->number_of_samples <= section.first.
+  */
 class OperationInsertSilence: public Operation
 {
 public:
-    OperationInsertSilence( pOperation source, IntervalType firstSample, IntervalType numberOfSilentSamples );
+    OperationInsertSilence( pOperation source, Interval section );
 
     virtual pBuffer read( const Interval& I );
     virtual IntervalType number_of_samples();
 
-    // TODO overload these as well, Intervals need to be translated
-    // virtual Intervals affected_samples() { return Intervals(); }
-    // virtual Intervals invalid_samples();
-    // virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    virtual Intervals affected_samples();
+    virtual Intervals translate_interval(Intervals I);
+    virtual Intervals translate_interval_inverse(Intervals I);
 private:
-    IntervalType _firstSample, _numberOfSilentSamples;
+    Interval section_;
 };
 
 class OperationSuperposition: public Operation

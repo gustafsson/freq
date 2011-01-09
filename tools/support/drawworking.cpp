@@ -1,20 +1,16 @@
 #include "drawworking.h"
 
-// OpenGL
-#ifndef __APPLE__
-#include <GL/glut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+// gpumisc
+#include <gl.h>
+#include <glPushContext.h>
 
-// cos, sin, M_PI
+// std
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
 #endif
-#include <math.h>
-
-// min, max
-#include <algorithm>
+#include <math.h> // cos, sin, M_PI
+#include <algorithm> // std::min, std::max
+#include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
 
 namespace Tools {
     namespace Support {
@@ -54,12 +50,14 @@ static void
     float width = orad - irad;
     float step = 360.0 / rects;
 
+    glPushMatrixContext push_model( GL_MODELVIEW );
+
     for(int i = 0; i < rects; i++)
     {
-        glPushMatrix();
-        glRotatef(step * i, 0, 0, 1);
+        glRotatef(step, 0, 0, 1);
+        //glPushMatrixContext push_model( GL_MODELVIEW );
+        //glRotatef(step * i, 0, 0, 1);
         drawRect(irad, -height/2, width, height);
-        glPopMatrix();
     }
 }
 
@@ -88,46 +86,51 @@ void DrawWorking::
 {
     static float computing_rotation = 0.0;
 
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_DEPTH_TEST);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+    glPushAttribContext push_attribs;
 
-    glMatrixMode(GL_PROJECTION);
+    glPushMatrixContext push_proj( GL_PROJECTION );
     glLoadIdentity();
     glOrtho( viewport_width, 0, viewport_height, 0, -1, 1);
 
-    glTranslatef( 30, 30, 0 );
-    glMatrixMode(GL_MODELVIEW);
+    glTranslatef( 30, 30, 0 );  // ? translate GL_PROJECTION
+
+    glDepthFunc(GL_LEQUAL);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,0);
+
+    glPushMatrixContext push_model( GL_MODELVIEW );
+
     glLoadIdentity();
     glScalef(60, 60, 1);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    glColor4f(1, 1, 1, 0.5);
-    glPushMatrix();
-    glRotatef(computing_rotation, 0, 0, 1);
-    drawRectRing(15, 0.10, 0.145);
-    glRotatef(-2*computing_rotation, 0, 0, 1);
-    drawRectRing(20, 0.15, 0.2);
-    computing_rotation += 5;
-    glPopMatrix();
+    glEnable(GL_BLEND);
+    glEnable(GL_COLOR_MATERIAL); // need this to use lighting with primitives without texture
+    glEnable(GL_LIGHTING);
+    glColor4f(1, 1, 1, 0.3);
+    {
+        glPushMatrixContext mc(GL_MODELVIEW);
 
-    glColor4f(0, 0, 1, 0.5);
+        glRotatef(computing_rotation, 0, 0, 1);
+        drawRectRing(15, 0.10, 0.145);
+        glRotatef(-2*computing_rotation, 0, 0, 1);
+        drawRectRing(20, 0.15, 0.2);
+        computing_rotation += 5;
+    }
+
+    glColor4f(0.3, 0.3, 0.3, 0.3);
     drawRoundRect(0.5, 0.5, 0.5);
-    glColor4f(1, 1, 1, 0.5);
+    glColor4f(1, 1, 1, 0.3);
     drawRoundRect(0.55, 0.55, 0.55);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_COLOR_MATERIAL);
 
     //glDisable(GL_BLEND);
     //glDisable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
     glDepthFunc(GL_LEQUAL);
 }
 

@@ -4,6 +4,8 @@
 #include "heightmap/position.h"
 #include "signal/intervals.h"
 
+#include <tvector.h>
+
 namespace Heightmap {
 
 class Collection;
@@ -18,12 +20,17 @@ public:
     unsigned sampleOffset() const;
     unsigned scaleOffset() const;
     unsigned samplesPerBlock() const;
+    unsigned scalesPerBlock() const;
+    Collection* collection() const;
+    void setCollection(Collection* c);
 
     float sample_rate() const;
     unsigned frequency_resolution() const;
 
+    bool containsPoint(Position p) const;
     bool containsSpectrogram() const;
-    bool toLarge() const;
+    bool tooLarge() const;
+    std::string toString() const;
 
     /** child references */
     Reference left() const;
@@ -36,6 +43,12 @@ public:
     Reference sibbling2() const;
     Reference sibbling3() const;
 
+    /** sibblings */
+    Reference sibblingLeft() const;
+    Reference sibblingRight() const;
+    Reference sibblingTop() const;
+    Reference sibblingBottom() const;
+
     /** parent */
     Reference parent() const;
 
@@ -44,10 +57,9 @@ public:
       invalid samples.
       */
     Signal::Interval getInterval() const;
+    Reference( Collection* parent );
 private:
     friend class Collection;
-
-    Reference( Collection* parent );
 
     Collection* _collection;
 };

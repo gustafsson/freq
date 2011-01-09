@@ -9,6 +9,11 @@
 #include <GLUT/glut.h>
 #endif
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#include <math.h>
+#endif
+
 namespace Ui
 {
 
@@ -91,6 +96,17 @@ bool MouseControl::
 
 
 bool MouseControl::
+        planePos(GLdouble x, GLdouble y, float &ox, float &oy, float scale)
+{
+    GLdouble dx, dy;
+    bool r = worldPos(x, y, dx, dy, scale);
+    ox = dx;
+    oy = dy;
+    return r;
+}
+
+
+bool MouseControl::
         worldPos(GLdouble x, GLdouble y, GLdouble &ox, GLdouble &oy, float scale)
 {
     GLdouble s;
@@ -108,11 +124,14 @@ bool MouseControl::
 
     s = (-world_coord[0][1]/(world_coord[1][1]-world_coord[0][1]));
 
+    if (0==world_coord[1][1]-world_coord[0][1])
+        s = 0;
+
     ox = world_coord[0][0] + s * (world_coord[1][0]-world_coord[0][0]);
     oy = world_coord[0][2] + s * (world_coord[1][2]-world_coord[0][2]);
 
     float minAngle = 3;
-    if (0) if( s < 0 || world_coord[0][1]-world_coord[1][1] < scale*sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
+    if(0) if( s < 0 || world_coord[0][1]-world_coord[1][1] < scale*sin(minAngle *(M_PI/180)) * (world_coord[0]-world_coord[1]).length() )
         return false;
 
     return test[0] && test[1];

@@ -1,3 +1,4 @@
+#if 0
 #include "selectionview.h"
 
 #include "selectionmodel.h"
@@ -32,166 +33,7 @@ SelectionView::
 void SelectionView::
         drawSelection()
 {
-    drawSelectionCircle();
-}
-
-
-void SelectionView::
-        drawSelectionSquare()
-{
-    float l = model->project->head_source()->length();
-
-    MyVector* selection = model->selection;
-
-    //glEnable(GL_BLEND);
-    glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f( 0, 0, 0, .5);
-    float
-    x1 = max(0.f, min(selection[0].x, selection[1].x)),
-    z1 = max(0.f, min(selection[0].z, selection[1].z)),
-    x2 = min(l, max(selection[0].x, selection[1].x)),
-    z2 = min(1.f, max(selection[0].z, selection[1].z));
-    float y = 1;
-
-
-    glBegin(GL_QUADS);
-    glVertex3f( 0, y, 0 );
-    glVertex3f( 0, y, 1 );
-    glVertex3f( x1, y, 1 );
-    glVertex3f( x1, y, 0 );
-
-    glVertex3f( x1, y, 0 );
-    glVertex3f( x2, y, 0 );
-    glVertex3f( x2, y, z1 );
-    glVertex3f( x1, y, z1 );
-
-    glVertex3f( x1, y, 1 );
-    glVertex3f( x2, y, 1 );
-    glVertex3f( x2, y, z2 );
-    glVertex3f( x1, y, z2 );
-
-    glVertex3f( l, y, 0 );
-    glVertex3f( l, y, 1 );
-    glVertex3f( x2, y, 1 );
-    glVertex3f( x2, y, 0 );
-
-
-    if (x1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x1, y, z2 );
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( 0, y, 1 );
-    } else {
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 0, 0, z1 );
-        glVertex3f( 0, y, z1 );
-        glVertex3f( 0, y, z2 );
-        glVertex3f( 0, 0, z2 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( 0, y, 1 );
-    }
-
-    if (x2<l) {
-        glVertex3f( x2, y, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-        glVertex3f( l, y, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    } else {
-        glVertex3f( l, y, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, 0, z1 );
-        glVertex3f( l, y, z1 );
-        glVertex3f( l, y, z2 );
-        glVertex3f( l, 0, z2 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    }
-
-    if (z1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, y, z1 );
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, y, 0 );
-    } else {
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( x1, 0, 0 );
-        glVertex3f( x1, y, 0 );
-        glVertex3f( x2, y, 0 );
-        glVertex3f( x2, 0, 0 );
-        glVertex3f( l, 0, 0 );
-        glVertex3f( l, y, 0 );
-    }
-
-    if (z2<1) {
-        glVertex3f( x1, y, z2 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-        glVertex3f( 0, y, 1 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    } else {
-        glVertex3f( 0, y, 1 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( x1, 0, 1 );
-        glVertex3f( x1, y, 1 );
-        glVertex3f( x2, y, 1 );
-        glVertex3f( x2, 0, 1 );
-        glVertex3f( l, 0, 1 );
-        glVertex3f( l, y, 1 );
-    }
-    glEnd();
-    //glDisable(GL_BLEND);
-    glDepthMask(true);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
-    glBegin(GL_QUADS);
-    if (x1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x1, y, z2 );
-    }
-
-    if (x2<l) {
-        glVertex3f( x2, y, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-    }
-
-    if (z1>0) {
-        glVertex3f( x1, y, z1 );
-        glVertex3f( x1, 0, z1 );
-        glVertex3f( x2, 0, z1 );
-        glVertex3f( x2, y, z1 );
-    }
-
-    if (z2<1) {
-        glVertex3f( x1, y, z2 );
-        glVertex3f( x1, 0, z2 );
-        glVertex3f( x2, 0, z2 );
-        glVertex3f( x2, y, z2 );
-    }
-    glEnd();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    drawSelectionCircle2();
 }
 
 
@@ -205,45 +47,6 @@ bool SelectionView::
         _rx = selection[1].x,
         _rz = selection[1].z;
     return (x-x1)*(x-x1)/_rx/_rx + (z-z1)*(z-z1)/_rz/_rz < 1;
-}
-
-
-void SelectionView::
-        drawSelectionCircle()
-{
-    MyVector* selection = model->selection;
-    float
-        x = selection[0].x,
-        z = selection[0].z,
-        _rx = fabs(selection[1].x-selection[0].x),
-        _rz = fabs(selection[1].z-selection[0].z);
-    float y = 1;
-
-    //glEnable(GL_BLEND);
-    glDepthMask(false);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f( 0, 0, 0, .5);
-    glBegin(GL_TRIANGLE_STRIP);
-    for (unsigned k=0; k<=360; k++) {
-        float s = z + _rz*sin(k*M_PI/180);
-        float c = x + _rx*cos(k*M_PI/180);
-        glVertex3f( c, 0, s );
-        glVertex3f( c, y, s );
-    }
-    glEnd();
-
-    glLineWidth(3.2f);
-    glPolygonOffset(1.f, 1.f);
-    glBegin(GL_LINE_LOOP);
-    for (unsigned k=0; k<360; k++) {
-        float s = z + _rz*sin(k*M_PI/180);
-        float c = x + _rx*cos(k*M_PI/180);
-        glVertex3f( c, y, s );
-    }
-    glEnd();
-    glLineWidth(0.5f);
-    glDepthMask(true);
-    //glDisable(GL_BLEND);
 }
 
 
@@ -380,3 +183,4 @@ void SelectionView::
 
 
 } // namespace Tools
+#endif

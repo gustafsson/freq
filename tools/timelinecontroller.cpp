@@ -5,10 +5,16 @@
 #include "timelineview.h"
 #include "renderview.h"
 
+// Gpumisc
+#include <cuda_vector_types_op.h>
+
 // Qt
 #include <QDockWidget>
 #include <QWheelEvent>
 #include <QHBoxLayout>
+
+// std
+#include <stdio.h>
 
 namespace Tools
 {
@@ -27,6 +33,13 @@ TimelineController::
 }
 
 
+TimelineController::
+        ~TimelineController()
+{
+    TaskInfo("%s", __FUNCTION__);
+}
+
+
 void TimelineController::
         setupGui()
 {
@@ -42,10 +55,11 @@ void TimelineController::
     dock->setWidget(view);
     dock->setWindowTitle("Timeline");
     dock->show();
-    MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(8), dock);
 
-    view->setLayout(new QHBoxLayout);
-    view->layout()->setMargin(0);
+    MainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
+
+    view->setLayout( new QHBoxLayout );
+    view->layout()->setMargin( 0 );
     view->layout()->addWidget( this );
 
     // Always redraw the timeline whenever the main render view is painted.
@@ -55,6 +69,8 @@ void TimelineController::
     // the timeline updated as well. Some user input events only need to
     // repaint the timeline view.
     connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+    connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
+    connect(view->_render_view, SIGNAL(painting()), view, SLOT(getLengthNow()) );
 }
 
 
@@ -64,10 +80,10 @@ void TimelineController::
     view->makeCurrent();
     view->setupCamera();
 
-    int x = e->x(), y = height() - e->y();
+    int x = e->x(), y = height() - 1 - e->y();
     float ps = 0.0005f;
 
-    GLvector current;
+    double current[2];
     moveButton.spacePos(x, y, current[0], current[1]);
 
     float f = 1.f - ps * e->delta();
@@ -75,7 +91,7 @@ void TimelineController::
 
     view->setupCamera();
 
-    GLvector newPos;
+    double newPos[2];
     moveButton.spacePos(x, y, newPos[0], newPos[1]);
 
     //_xoffs -= current[0]/prevscale*_xscale-newPos[0];
@@ -84,7 +100,7 @@ void TimelineController::
 
     view->setupCamera();
 
-    GLvector newPos2;
+    double newPos2[2];
     moveButton.spacePos(x, y, newPos2[0], newPos2[1]);
 
     // float tg = _oldoffs + x * prevscale;
@@ -97,7 +113,7 @@ void TimelineController::
            view->_xscale, view->_xoffs);
 
     // Only update the timeline, leave the main render view unaffected
-    view->update();
+    view->userinput_update();
 }
 
 
@@ -107,12 +123,15 @@ void TimelineController::
     view->makeCurrent();
     view->setupCamera();
 
-    int x = e->x(), y = height() - e->y();
+    glScalef(1, 1, 1-view->_barHeight);
+    glTranslatef(0, 0, view->_barHeight);
 
-    GLvector prev;
+    int x = e->x(), y = height() - 1 - e->y();
+
+    double prev[2];
     moveButton.spacePos(prev[0], prev[1]);
 
-    GLvector current;
+    double current[2];
     moveButton.spacePos(x, y, current[0], current[1]);
 
     if (0 == _movingTimeline)
@@ -130,7 +149,7 @@ void TimelineController::
 
             // Update both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).
-            view->_render_view->update();
+            view->_render_view->userinput_update();
         }
 
         if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
@@ -138,7 +157,7 @@ void TimelineController::
             view->_xoffs -= current[0] - prev[0];
 
             // Only update the timeline, leave the main render view unaffected
-            view->update();
+            view->userinput_update();
         }
         break;
 
@@ -148,11 +167,11 @@ void TimelineController::
             view->setupCamera( true );
             moveButton.spacePos(x, y, current[0], current[1]);
 
-            float length = std::max( 1.f, model->project()->worker.source()->length());
+            float length = max1( 1.f, model->project()->worker.source()->length());
             view->_xoffs = current[0] - 0.5f*length/view->_xscale;
 
             // Only update the timeline, leave the main render view unaffected
-            view->update();
+            view->userinput_update();
         }
         break;
     }

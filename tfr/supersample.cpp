@@ -1,7 +1,9 @@
 #include "supersample.h"
-#include "tfr/stft.h"
+#include "stft.h"
 
-namespace Filters {
+#include <cuda_vector_types_op.h>
+
+namespace Tfr {
 
 Signal::pBuffer SuperSample::
         supersample( Signal::pBuffer b, float requested_sample_rate )
@@ -42,13 +44,27 @@ Signal::pBuffer SuperSample::
 
     size_t half = src_sz.width/2;
 
-    memcpy( dest, src, half * sizeof(float2) );
-    memset( dest + half, 0, (dest_sz.width - src_sz.width) * sizeof(float2) );
-    memcpy( dest + (dest_sz.width - half), src + half, half * sizeof(float2) );
+    // Half of the source spectra is enough to reconstruct the signal (as long
+    // as we take special care of the DC-component and the nyquist frequency).
+    // 'ft' doesn't support C2R yet but that would have been faster.
+
+    //float normalize = sqrt(1.f/dest_sz.width/src_sz.width);
+    float normalize = 1.f/src_sz.width;
+    dest[0] = src[0]*normalize;
+    for (unsigned i=1; i<half; ++i)
+    {
+        dest[i] = src[i]*(2*normalize);
+    }
+    if (src_sz.width%2==0)
+    {
+        dest[half] = src[half]*normalize;
+        ++half;
+    }
+    memset( dest + half, 0, (dest_sz.width - half) * sizeof(float2) );
 
     Signal::pBuffer r = ft.inverse( biggerchunk );
     r->sample_rate = requested_sample_rate;
     return r;
 }
 
-} // namespace Filters
+} // namespace Tfr

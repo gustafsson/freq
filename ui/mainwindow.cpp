@@ -1,22 +1,32 @@
 #include "mainwindow.h"
+
+// Ui
 #include "ui_mainwindow.h"
-#include <QKeyEvent>
-#include <QSlider>
-#include <boost/foreach.hpp>
-#include <sstream>
-#include <iomanip>
-#include <demangle.h>
-#include "tfr/filter.h"
-#include "signal/operation-basic.h"
+#include "comboboxaction.h"
+#include "propertiesselection.h"
+
+// Sonic AWE
 #include "adapters/microphonerecorder.h"
 #include "adapters/audiofile.h"
+#include "tfr/filter.h"
+#include "tools/timelineview.h"
+#include "sawe/application.h"
+#include "signal/operation-basic.h"
+
+// Qt
+#include <QMessageBox>
+#include <QKeyEvent>
+#include <QSlider>
+
+// boost
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
-#include "sawe/application.h"
-#include "tools/timelineview.h"
-#include "ui/propertiesselection.h"
-#include "comboboxaction.h"
+
+// std
+#include <sstream>
+#include <iomanip>
+#include <demangle.h>
 
 #if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
@@ -58,8 +68,11 @@ void SaweMainWindow::
     setCorner( Qt::TopRightCorner, Qt::RightDockWidgetArea );
 
     // Connect actions in the File menu
-    connect(ui->actionNew_recording, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
-    connect(ui->actionOpen, SIGNAL(triggered(bool)), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+    connect(ui->actionNew_recording, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
+    connect(ui->actionOpen, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+    connect(ui->actionSave_project, SIGNAL(triggered()), SLOT(saveProject()));
+    connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
+    connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
 
 
     // TODO remove layerWidget and deleteFilterButton
@@ -78,14 +91,15 @@ void SaweMainWindow::
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
 
     // TODO move into each tool
-    this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
+    //this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
     this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
-    this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
-    this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
-    /*this->removeDockWidget( ui->toolPropertiesWindow );
-    this->removeDockWidget( ui->operationsWindow );
+    //this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
+    //this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
+
+    this->removeDockWidget( ui->toolPropertiesWindow );
+    //this->removeDockWidget( ui->operationsWindow );
     this->removeDockWidget( ui->topFilterWindow );
-    this->removeDockWidget( ui->historyWindow );*/
+    this->removeDockWidget( ui->historyWindow );
 
     // todo move into toolfactory
     this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
@@ -107,16 +121,6 @@ void SaweMainWindow::
     ui->toolBarTool->addWidget( qb );*/
 
 
-    // TODO move into brush tool
-    {   ComboBoxAction * qb = new ComboBoxAction();
-        qb->addActionItem( ui->actionAmplitudeBrush );
-        qb->addActionItem( ui->actionAirbrush );
-        qb->addActionItem( ui->actionSmoothBrush );
-        qb->setEnabled( false );
-        ui->toolBarTool->addWidget( qb );
-    }
-
-
     // TODO what does actionToolSelect do?
     /*{   QToolButton * tb = new QToolButton();
 
@@ -125,6 +129,10 @@ void SaweMainWindow::
         ui->toolBarTool->addWidget( tb );
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
+
+    connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
+        Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
+        Qt::QueuedConnection);
 }
 
 /*
@@ -163,6 +171,7 @@ SaweMainWindow::~SaweMainWindow()
     delete ui;
 }
 
+
 /* todo remove
 void SaweMainWindow::slotDbclkFilterItem(QListWidgetItem * item)
 {
@@ -197,10 +206,54 @@ void SaweMainWindow::slotDeleteSelection(void)
 void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
-    // TODO add dialog asking user to save the project
-    e->ignore();
-    Sawe::Application::global_ptr()->slotClosed_window( this );
+    if (project->isModified())
+    {
+        switch( QMessageBox::question(this, "Save Changes",
+                              "Save current state of the project?",
+                              QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save) )
+        {
+        case QMessageBox::Discard:
+            break;
+
+        case QMessageBox::Cancel:
+            e->ignore();
+            return;
+
+        case QMessageBox::Save:
+            if (!project->save())
+            {
+                e->ignore();
+                return;
+            }
+
+            break;
+
+        default:
+            e->ignore();
+            return;
+        }
+    }
+
+    e->accept();
+
+    // TODO hack
+#ifndef __APPLE__
+    emit onMainWindowCloseEvent( this );
+#endif
 }
 
+
+void SaweMainWindow::
+        saveProject()
+{
+    project->save();
+}
+
+
+void SaweMainWindow::
+        saveProjectAs()
+{
+    project->saveAs();
+}
 
 } // namespace Ui

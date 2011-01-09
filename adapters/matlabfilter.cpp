@@ -12,6 +12,9 @@ using namespace std;
 using namespace Signal;
 using namespace Tfr;
 
+//#define TIME_MatlabFilter
+#define TIME_MatlabFilter if(0)
+
 namespace Adapters {
 
 MatlabFilter::
@@ -23,8 +26,7 @@ MatlabFilter::
 void MatlabFilter::
         operator()( Chunk& c)
 {
-    TaskTimer tt("MatlabFilter::operator()");
-//    TaskTimer tt("MatlabFilter::operator() (%f,%f)", c.startTime(), c.endTime() );
+    TIME_MatlabFilter TaskTimer tt("MatlabFilter::operator() [%g,%g)", c.startTime(), c.endTime() );
 
     string file = _matlab->getTempName();
 

@@ -36,8 +36,9 @@ void PlaybackController::
     connect(ui->actionPlaySelection, SIGNAL(triggered()), SLOT(receivePlaySound()));
     connect(ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), SLOT(receiveFollowPlayMarker(bool)));
 
-    // Make RenderView keep on rendering as long as the playback marker moves
-    connect(_view, SIGNAL(update_view()), render_view, SLOT(update()));
+    // Make RenderView keep on rendering (with interactive framerate) as long
+    // as the playback marker moves
+    connect(_view, SIGNAL(update_view()), render_view, SLOT(userinput_update()));
 
     // If playback is active, draw the playback marker in PlaybackView whenever
     // RenderView paints.
@@ -52,33 +53,32 @@ void PlaybackController::
     TaskTimer tt("Initiating playback of selection");
 
 
-    Signal::PostSink* selection_operations = _view->model->selection->getPostSink();
+    Signal::PostSink* postsink_operations = _view->model->getPostSink();
+    Signal::pOperation filter = _view->model->selection->current_selection();
 
     // TODO define selections by a selection structure. Currently selections
     // are defined from the first sampels that is non-zero affected by a
     // filter, to the last non-zero affected sample.
-    if (!selection_operations->filter()) {
+    if (!filter) {
         tt.info("No filter, no selection");
         return; // No filter, no selection...
     }
 
 
-    if (selection_operations->sinks().empty())
+    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
         model()->adapter_playback.reset();
         model()->adapter_playback.reset( new Adapters::Playback( _view->model->playback_device ));
+
         std::vector<Signal::pOperation> sinks;
+        postsink_operations->sinks( sinks );
         sinks.push_back( model()->adapter_playback );
         sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
-        selection_operations->sinks( sinks );
-        Signal::Intervals a = selection_operations->filter()->affected_samples();
 
-        a.print(__FUNCTION__);
-
-        a -= selection_operations->filter()->zeroed_samples();
-
-        a.print(__FUNCTION__);
-        selection_operations->invalidate_samples( a );
+        postsink_operations->filter( Signal::pOperation() );
+        postsink_operations->sinks( sinks );
+        postsink_operations->filter( filter );
+        postsink_operations->invalidate_samples( ~filter->zeroed_samples() );
     }
     else
     {
@@ -93,6 +93,8 @@ void PlaybackController::
         receiveFollowPlayMarker( bool v )
 {
     _view->follow_play_marker = v;
+    // don't need to call update as new frames are continously rendered
+    // during playback anyway
 }
 
 

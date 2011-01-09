@@ -2,33 +2,38 @@
 #define RECORDCONTROLLER_H
 
 #include <QObject>
-#include <signal/operation.h>
+
+#include "recordview.h"
 
 namespace Ui { class MainWindow; }
-namespace Signal { class Worker; }
 namespace Adapters { class MicrophoneRecorder; }
 
 namespace Tools
 {
+    class RecordModel;
     class RenderView;
 
-    class RecordController: QObject
+    class RecordController: public QObject
     {
         Q_OBJECT
     public:
-        RecordController( Signal::Worker* worker, Ui::MainWindow* actions );
+        RecordController( RecordView* view, RenderView* render_view );
         ~RecordController();
 
     protected slots:
+        void destroying();
         void receiveRecord(bool);
-        void recievedBuffer(Signal::pBuffer);
+        void recievedInvalidSamples( Signal::Intervals I );
 
     private:
         // Model
-        Signal::pOperation _record_model;
-        Signal::Worker* _worker;
+        RecordView* view_;
+        RecordModel* model() { return view_->model_; }
+        bool destroyed_;
 
-        void setupGui( Ui::MainWindow* actions );
+        RenderView* render_view_;
+
+        void setupGui();
     };
 } // namespace Tools
 #endif // RECORDCONTROLLER_H

@@ -2,7 +2,7 @@
 
 #include "signal/operation-basic.h"
 #include "filters/move.h"
-#include "filters/ellips.h"
+#include "filters/ellipse.h"
 #include <demangle.h>
 
 using namespace Signal;
@@ -14,134 +14,177 @@ namespace Tools {
     // OperationSubOperations  /////////////////////////////////////////////////////////////////
 
 OperationSubOperations::
-        OperationSubOperations(pOperation source, std::string name)
-:   Operation(source),
-    _sourceSubOperation( new Operation(source)),
-	_name(name)
-{}
-
-
-pBuffer OperationSubOperations ::
-        read( const Interval &I )
+        OperationSubOperations(Signal::pOperation source, std::string name)
+:   Operation(pOperation()),
+    source_sub_operation_( new Operation(source)),
+    name_(name)
 {
-    return _readSubOperation->read( I );
+    enabled(false);
+    source_sub_operation_->enabled(false);
+    _source = source_sub_operation_;
 }
 
-void OperationSubOperations ::
-        source(pOperation v)
-{
-    Operation *o = dynamic_cast<Operation*>(_sourceSubOperation.get());
-    if (0 == o) throw std::runtime_error("0==o");
-    o->source(v);
 
-    Operation::source(v);
+Intervals OperationSubOperations::
+        affected_samples()
+{
+    return _source->affected_samples_until(source_sub_operation_);
+}
+
+    // OperationContainer  /////////////////////////////////////////////////////////////////
+
+OperationContainer::
+        OperationContainer(Signal::pOperation source, std::string name )
+            :
+            OperationSubOperations(source, name)
+{
 }
 
 
     // OperationCrop  /////////////////////////////////////////////////////////////////
 
 OperationCrop::
-        OperationCrop( pOperation source, unsigned firstSample, unsigned numberOfSamples )
-:   OperationSubOperations( source )
+        OperationCrop( pOperation source, const Signal::Interval& section )
+:   OperationSubOperations( source, "Crop" )
 {
-    reset(firstSample, numberOfSamples);
+    reset(section);
 }
 
 void OperationCrop::
-        reset( unsigned firstSample, unsigned numberOfSamples )
+        reset( const Signal::Interval& section )
 {
-    pOperation cropBefore( new OperationRemoveSection( _source, 0, firstSample ));
-    pOperation cropAfter( new OperationRemoveSection( cropBefore, numberOfSamples,
-                                                   cropBefore->number_of_samples() - numberOfSamples ));
+    _source = source_sub_operation_;
+    // remove before section
+    if (section.first)
+        _source = pOperation( new OperationRemoveSection( _source, Signal::Interval(0, section.first) ));
 
-    _sourceSubOperation = cropBefore;
-    _readSubOperation = cropAfter;
+    // remove after section
+    if (section.count()<Signal::Interval::IntervalType_MAX)
+        _source = pOperation( new OperationRemoveSection( _source, Signal::Interval( section.count(), Signal::Interval::IntervalType_MAX)));
 }
 
 
     // OperationSetSilent  /////////////////////////////////////////////////////////////////
 OperationSetSilent::
-        OperationSetSilent( pOperation source, unsigned firstSample, unsigned numberOfSamples )
-:   OperationSubOperations( source )
+        OperationSetSilent( pOperation source, const Signal::Interval& section )
+:   OperationSubOperations( source, "Clear section" ),
+    section_( section )
 {
-    reset(firstSample, numberOfSamples);
+    reset(section);
 }
 
 void OperationSetSilent::
-        reset( unsigned firstSample, unsigned numberOfSamples )
+        reset( const Signal::Interval& section )
 {
-    pOperation remove( new OperationRemoveSection( _sourceSubOperation, firstSample, numberOfSamples ));
-    pOperation addSilence( new OperationInsertSilence (remove, firstSample, numberOfSamples ));
+    section_ = section;
 
-    _readSubOperation = addSilence;
+    pOperation remove( new OperationRemoveSection( source_sub_operation_, section ));
+    pOperation addSilence( new OperationInsertSilence (remove, section ));
+
+    _source = addSilence;
 }
 
+
+    // OperationOtherSilent  /////////////////////////////////////////////////////////////////
+OperationOtherSilent::
+        OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section )
+:   OperationSubOperations( source, "Clear all but section" ),
+    section_(section)
+{
+    reset(section);
+}
+
+void OperationOtherSilent::
+        reset( const Signal::Interval& section )
+{
+    section_ = section;
+    pOperation p = source_sub_operation_;
+    if (section.first)
+        // silent before section
+        p = pOperation( new OperationSetSilent( p, Signal::Interval(0, section.first) ));
+    if (section.last < Interval::IntervalType_MAX)
+        // silent after section
+        p = pOperation( new OperationSetSilent( p, Signal::Interval(section.last, Interval::IntervalType_MAX) ));
+
+    _source = p;
+}
 
     // OperationMove  /////////////////////////////////////////////////////////////////
 
 OperationMove::
-        OperationMove( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
-:   OperationSubOperations( source )
+        OperationMove( pOperation source, const Signal::Interval& section, unsigned newFirstSample )
+:   OperationSubOperations( source, "Move" )
 {
-    reset(firstSample, numberOfSamples, newFirstSample);
+    reset(section, newFirstSample);
 }
 
 void OperationMove::
-        reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
+        reset( const Signal::Interval& section, unsigned newFirstSample )
 {
     // Note: difference to OperationMoveMerge is that OperationMove has the silenceTarget step
-    pOperation silenceTarget( new OperationSetSilent(_sourceSubOperation, newFirstSample, numberOfSamples ));
-    pOperation silence( new OperationSetSilent(silenceTarget, firstSample, numberOfSamples ));
-    pOperation crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
-    pOperation moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
+
+    Intervals newSection = section;
+    if (newFirstSample<section.first)
+        newSection >>= (section.first-newFirstSample);
+    else
+        newSection <<= (newFirstSample-section.first);
+
+    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection ));
+    pOperation silence( new OperationSetSilent(silenceTarget, section ));
+
+    pOperation crop( new OperationCrop( source_sub_operation_, section ));
+    pOperation moveToNewPos( new OperationInsertSilence( crop, Interval(0, newFirstSample)));
+
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    _readSubOperation = addition;
+    _source = addition;
 }
 
 
     // OperationMoveMerge  /////////////////////////////////////////////////////////////////
 
 OperationMoveMerge::
-        OperationMoveMerge( pOperation source, unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
-:   OperationSubOperations( source )
+        OperationMoveMerge( pOperation source, const Signal::Interval& section, unsigned newFirstSample )
+:   OperationSubOperations( source, "Move and merge" )
 {
-    reset(firstSample, numberOfSamples, newFirstSample);
+    reset(section, newFirstSample);
 }
 
 void OperationMoveMerge::
-        reset( unsigned firstSample, unsigned numberOfSamples, unsigned newFirstSample )
+        reset( const Signal::Interval& section, unsigned newFirstSample )
 {
-    pOperation silence( new OperationSetSilent (_sourceSubOperation, firstSample, numberOfSamples ));
-    pOperation crop( new OperationCrop( _sourceSubOperation, firstSample, numberOfSamples ));
-    pOperation moveToNewPos( new OperationInsertSilence( crop, 0, newFirstSample));
+    pOperation silence( new OperationSetSilent (source_sub_operation_, section ));
+
+    pOperation crop( new OperationCrop( source_sub_operation_, section ));
+    pOperation moveToNewPos( new OperationInsertSilence( crop, Interval(0, newFirstSample)));
+
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    _readSubOperation = addition;
+    _source = addition;
 }
 
 
     // OperationShift  /////////////////////////////////////////////////////////////////
 
 OperationShift::
-        OperationShift( pOperation source, int sampleShift )
-:   OperationSubOperations( source )
+        OperationShift( pOperation source, long sampleShift )
+:   OperationSubOperations( source, "Shift" )
 {
     reset(sampleShift);
 }
 
 void OperationShift::
-        reset( int sampleShift )
+        reset( long sampleShift )
 {
     if ( 0 < sampleShift )
     {
-        pOperation addSilence( new OperationInsertSilence( Operation::source(), 0u, (unsigned)sampleShift ));
-        _sourceSubOperation = _readSubOperation = addSilence;
+        pOperation addSilence( new OperationInsertSilence( source_sub_operation_, Interval( 0, sampleShift) ));
+        _source = addSilence;
     } else if (0 > sampleShift ){
-        pOperation removeStart( new OperationRemoveSection( Operation::source(), 0u, (unsigned)-sampleShift ));
-        _sourceSubOperation = _readSubOperation = removeStart;
+        pOperation removeStart( new OperationRemoveSection( source_sub_operation_, Interval( 0, -sampleShift) ));
+        _source = removeStart;
 	} else {
-        _sourceSubOperation = _readSubOperation = _source;
+        _source = source_sub_operation_;
 	}
 }
 
@@ -149,7 +192,7 @@ void OperationShift::
     // OperationShift  /////////////////////////////////////////////////////////////////
 
 OperationMoveSelection::
-        OperationMoveSelection( pOperation source, pOperation selectionFilter, int sampleShift, float freqDelta )
+        OperationMoveSelection( pOperation source, pOperation selectionFilter, long sampleShift, float freqDelta )
 :	OperationSubOperations( source, "OperationMoveSelection" )
 {
 	reset(selectionFilter, sampleShift, freqDelta );
@@ -157,26 +200,26 @@ OperationMoveSelection::
 
 
 void OperationMoveSelection::
-    reset( pOperation selectionFilter, int sampleShift, float freqDelta )
+    reset( pOperation selectionFilter, long sampleShift, float freqDelta )
 {
     // Take out the samples affected by selectionFilter and move them
     // 'sampleShift' in time and 'freqDelta' in frequency
 
     pOperation  extract, remove;
-    if (Filters::Ellips* f = dynamic_cast<Filters::Ellips*>(selectionFilter.get())) {
+    if (Filters::Ellipse* f = dynamic_cast<Filters::Ellipse*>(selectionFilter.get())) {
 
         // Create filter for extracting selection
-        extract.reset( new Filters::Ellips(*f) );
-        dynamic_cast<Filters::Ellips*>(extract.get())->_save_inside = true;
+        extract.reset( new Filters::Ellipse(*f) );
+        dynamic_cast<Filters::Ellipse*>(extract.get())->_save_inside = true;
         extract->source( source() );
 
         // Create filter for removing selection
-        remove.reset( new Filters::Ellips(*f) );
-        dynamic_cast<Filters::Ellips*>(remove.get())->_save_inside = false;
+        remove.reset( new Filters::Ellipse(*f) );
+        dynamic_cast<Filters::Ellipse*>(remove.get())->_save_inside = false;
         remove->source( source() );
 
 	} else {
-		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipsFilter as selectionFilter");
+		throw std::invalid_argument(std::string(__FUNCTION__) + " only supports Tfr::EllipseFilter as selectionFilter");
 	}
 
     pOperation extractAndMove = extract;
@@ -197,7 +240,7 @@ void OperationMoveSelection::
 
     pOperation mergeSelection( new OperationSuperposition( remove, extractAndMove ));
 
-	_readSubOperation = mergeSelection;
+    _source = mergeSelection;
 }
 
     } // namespace Support

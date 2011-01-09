@@ -5,8 +5,8 @@
 #include <demangle.h>
 #include <typeinfo>
 
-#define TIME_READCHECKED
-//#define TIME_READCHECKED if(0)
+//#define TIME_READCHECKED
+#define TIME_READCHECKED if(0)
 
 using namespace std;
 
@@ -17,30 +17,32 @@ Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, u
 :   sample_offset(first_sample),
     sample_rate(fs)
 {
-    if (numberOfSamples)
-        _waveform_data.reset( new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1)));
+    BOOST_ASSERT( 0 < numberOfSamples );
+    BOOST_ASSERT( 0 < numberOfChannels );
+    BOOST_ASSERT( 0 < fs );
+    waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1));
+}
+
+
+Buffer::
+        ~Buffer()
+{
+    delete waveform_data_;
 }
 
 
 GpuCpuData<float>* Buffer::
         waveform_data() const
 {
-    return _waveform_data.get();
-}
-
-
-long unsigned Buffer::
-        number_of_samples() const
-{
-    return _waveform_data->getNumberOfElements().width;
+    return waveform_data_;
 }
 
 
 void Buffer::
         release_extra_resources()
 {
-    _waveform_data->getCpuMemory();
-    _waveform_data->freeUnused();
+    waveform_data_->getCpuMemory();
+    waveform_data_->freeUnused();
 }
 
 
@@ -74,16 +76,16 @@ Buffer& Buffer::
     if (sid.empty())
         return *this;
 
-    Interval i = sid.getInterval(b.number_of_samples());
+    Interval i = sid.getInterval();
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
 
-    float* write = waveform_data()->getCpuMemory();
-    float* read = b.waveform_data()->getCpuMemory();
+    float* write = waveform_data_->getCpuMemory();
+    float const* read = b.waveform_data_->getCpuMemory();
 
-    write+=offs_write;
-    read+=offs_read;
+    write += offs_write;
+    read += offs_read;
 
     memcpy(write, read, i.count()*sizeof(float));
 
@@ -101,17 +103,17 @@ Buffer& Buffer::
     if (sid.empty())
         return *this;
 
-    Interval i = sid.getInterval(b.number_of_samples());
+    Interval i = sid.getInterval();
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
     unsigned length = i.count();
 
-    float* write = waveform_data()->getCpuMemory();
-    float* read = b.waveform_data()->getCpuMemory();
+    float* write = waveform_data_->getCpuMemory();
+    float const* read = b.waveform_data_->getCpuMemory();
 
-    write+=offs_write;
-    read+=offs_read;
+    write += offs_write;
+    read += offs_read;
 
     for (unsigned n=0; n<length; n++)
         write[n] += read[n];
@@ -137,19 +139,18 @@ pBuffer SourceBase::
 pBuffer SourceBase::
         readFixedLength( const Interval& I )
 {
-    std::stringstream ss;
-    TIME_READCHECKED ss << I;
-    TIME_READCHECKED TaskTimer tt("%s.%s %s, count=%lu",
-                  demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
-                  ss.str().c_str(), I.count() );
+    TIME_READCHECKED TaskTimer tt("%s.%s %s",
+                  vartype(*this).c_str(), __FUNCTION__ ,
+                  I.toString().c_str() );
 
     // Try a simple read
     pBuffer p = readChecked( I );
-    if (p->number_of_samples() == I.count() && p->sample_offset==I.first)
+    if (I == p->getInterval())
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
+    //pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
+    pBuffer r( new Buffer(I.first, I.count(), sample_rate() ) );
 
     Intervals sid(I);
 
@@ -170,11 +171,10 @@ pBuffer SourceBase::
         zeros( const Interval& I )
 {
     BOOST_ASSERT( I.valid() );
-    std::stringstream ss;
-    TIME_READCHECKED ss << I;
+
     TIME_READCHECKED TaskTimer tt("%s.%s %s",
-                  demangle(typeid(*this).name()).c_str(), __FUNCTION__ ,
-                  ss.str().c_str() );
+                  vartype(*this).c_str(), __FUNCTION__ ,
+                  I.toString().c_str() );
 
     pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
     memset(r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D());

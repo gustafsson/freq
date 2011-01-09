@@ -31,6 +31,7 @@ namespace Tools
         float _playbackMarker;
 
         void drawPlaybackMarker();
+        bool drawPlaybackMarkerInEllipse();
     };
 } // namespace Tools
 #endif // PLAYBACKVIEW_H

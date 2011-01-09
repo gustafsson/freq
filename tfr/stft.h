@@ -80,9 +80,10 @@ public:
     /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
     void set_exact_chunk_size( unsigned chunk_size ) { _chunk_size = chunk_size; }
 
-    static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 60);
+    static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 private:
     cudaStream_t    _stream;
+    CufftHandleContext _handle_ctx;
 
     static std::vector<unsigned> _ok_chunk_sizes;
 

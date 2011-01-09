@@ -7,8 +7,8 @@ bool Reference::
         operator==(const Reference &b) const
 {
     return log2_samples_size == b.log2_samples_size
-            && block_index == b.block_index
-            && _collection == b._collection;
+            && block_index == b.block_index;
+            // Don't compare _collection == b._collection;
 }
 
 void Reference::
@@ -45,7 +45,7 @@ Reference Reference::
 {
     Reference r = *this;
     r.log2_samples_size[1]--;
-    r.block_index[1]<<=1;
+    (r.block_index[1]<<=1)++;
     return r;
 }
 Reference Reference::
@@ -53,7 +53,7 @@ Reference Reference::
 {
     Reference r = *this;
     r.log2_samples_size[1]--;
-    (r.block_index[1]<<=1)++;
+    r.block_index[1]<<=1;
     return r;
 }
 
@@ -81,6 +81,37 @@ Reference Reference::
     return r;
 }
 
+Reference Reference::
+        sibblingLeft() const
+{
+    Reference r = *this;
+    if(0<r.block_index[0])
+        --r.block_index[0];
+    return r;
+}
+Reference Reference::
+        sibblingRight() const
+{
+    Reference r = *this;
+    ++r.block_index[0];
+    return r;
+}
+Reference Reference::
+        sibblingTop() const
+{
+    Reference r = *this;
+    ++r.block_index[1];
+    return r;
+}
+Reference Reference::
+        sibblingBottom() const
+{
+    Reference r = *this;
+    if(0<r.block_index[1])
+        --r.block_index[1];
+    return r;
+}
+
 /* parent */
 Reference Reference::parent() const {
     Reference r = *this;
@@ -95,6 +126,16 @@ Reference::
         Reference(Collection *collection)
 :   _collection(collection)
 {}
+
+bool Reference::
+        containsPoint(Position p) const
+{
+    Position a, b;
+    getArea( a, b );
+
+    return a.time <= p.time && p.time <= b.time &&
+            a.scale <= p.scale && p.scale <= b.scale;
+}
 
 bool Reference::
         containsSpectrogram() const
@@ -121,7 +162,7 @@ bool Reference::
 }
 
 bool Reference::
-        toLarge() const
+        tooLarge() const
 {
     Position a, b;
     getArea( a, b );
@@ -131,10 +172,41 @@ bool Reference::
     return false;
 }
 
+std::string Reference::
+        toString() const
+{
+    Position a, b;
+    getArea( a, b );
+    std::stringstream ss;
+    ss << "(" << a.time << " " << a.scale << ";" << b.time << " " << b.scale << " ! "
+            << log2_samples_size[0] << " " << log2_samples_size[1] << ";"
+            << block_index[0] << " " << block_index[1]
+            << ")";
+    return ss.str();
+}
+
 unsigned Reference::
         samplesPerBlock() const
 {
     return _collection->samples_per_block();
+}
+
+unsigned Reference::
+        scalesPerBlock() const
+{
+    return _collection->scales_per_block();
+}
+
+Collection* Reference::
+        collection() const
+{
+    return _collection;
+}
+
+void Reference::
+        setCollection(Collection* c)
+{
+    _collection = c;
 }
 
 Signal::Interval Reference::
@@ -149,13 +221,13 @@ Signal::Interval Reference::
     // this block overlap slightly into the samples that are needed for the
     // next block.
     float blockSize = _collection->samples_per_block() * ldexpf(1.f,log2_samples_size[0]);
-    float blockLocalSize = _collection->samples_per_block() / sample_rate();
+    float blockLocalSize = (_collection->samples_per_block()-1) / sample_rate();
 
     float startTime = blockSize * block_index[0];
     float endTime = startTime + blockLocalSize;
 
     float FS = _collection->worker->source()->sample_rate();
-    Signal::Interval i( startTime * FS, endTime * FS );
+    Signal::Interval i( startTime * FS, endTime * FS+1 );
 
     //Position a, b;
     //getArea( a, b );

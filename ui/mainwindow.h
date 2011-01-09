@@ -32,9 +32,13 @@ class SaweMainWindow : public QMainWindow
 
 public:
     SaweMainWindow(const char* title, Sawe::Project* project, QWidget *parent = 0);
-    ~SaweMainWindow();
+    virtual ~SaweMainWindow();
     
     MainWindow* getItems() { return ui; }
+
+signals:
+    void onMainWindowCloseEvent( QWidget* closed );
+
 protected:
     virtual void closeEvent(QCloseEvent *);
 
@@ -58,6 +62,9 @@ protected:
 //signals:
 //    void sendCurrentSelection(int, bool);
 //    void sendRemoveItem(int);
+private slots:
+    void saveProject();
+    void saveProjectAs();
 
 private:
     Sawe::Project* project;

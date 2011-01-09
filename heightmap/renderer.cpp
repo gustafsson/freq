@@ -1,17 +1,13 @@
-#ifdef _MSC_VER
-#define NOMINMAX
-#include <windows.h>
-#endif
-
-#ifndef __APPLE__
- #include "GL/glew.h"
- #include <GL/glut.h>
-#else
-  #include "OpenGL/glu.h"
-  #include <GLUT/glut.h>
-#endif
+#include <gl.h>
 
 #include "heightmap/renderer.h"
+
+#ifndef __APPLE__
+#   include <GL/glut.h>
+#else
+#   include <GLUT/glut.h>
+#endif
+
 #include <float.h>
 #include <GlException.h>
 #include <CudaException.h>
@@ -23,42 +19,53 @@
 #include "msc_stdc.h"
 #endif
 
+//#define TIME_RENDERER
+#define TIME_RENDERER if(0)
+
+//#define TIME_RENDERER_BLOCKS
+#define TIME_RENDERER_BLOCKS if(0)
+
 namespace Heightmap {
 
 
 using namespace std;
 
-static bool g_invalidFrustum = true;
-
 Renderer::Renderer( Collection* collection )
-:   draw_piano(false),
+:   collection(collection),
+    draw_piano(false),
     draw_hz(true),
     camera(0,0,0),
     draw_height_lines(false),
     color_mode( ColorMode_Rainbow ),
+    fixed_color( make_float4(1,0,0,1) ),
     y_scale( 1 ),
-    _collection(collection),
+    last_ysize( 1 ),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
     _draw_flat(false),
-    _redundancy(2), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex
+    _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
+    _invalid_frustum(true),
     _drawn_blocks(0)
 {
+    memset(modelview_matrix, 0, sizeof(modelview_matrix));
+    memset(projection_matrix, 0, sizeof(projection_matrix));
+    memset(viewport_matrix, 0, sizeof(viewport_matrix));
     // Using glut for drawing fonts, so glutInit must be called.
-#ifdef _WIN32
-    int c=1;
-    char* dummy="dummy\0";
-    glutInit(&c,&dummy); // Once per rendering context on Windows
-#else
     static int c=0;
     if (0==c)
     {
-        glutInit(&c,0); // Once per process on Linux and Mac
+		// run glutinit once per process
+#ifdef _WIN32
+		c = 1;
+		char* dummy="dummy\0";
+		glutInit(&c,&dummy);
+#elif !defined(__APPLE__)
+        glutInit(&c,0);
         c = 1;
-    }
 #endif
+    }
 }
 
 void Renderer::setSize( unsigned w, unsigned h)
@@ -80,10 +87,10 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     _mesh_width = w;
     _mesh_height = h;
 
-    int size = ((w*2)+3)*(h-1)*sizeof(GLuint);
+    _vbo_size = ((w*2)+4)*(h-1);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, size, 0, GL_STATIC_DRAW);
+    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(GLuint), 0, GL_STATIC_DRAW);
 
     // fill with indices for rendering mesh as triangle strips
     GLuint *indices = (GLuint *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -92,6 +99,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     }
 
     for(unsigned y=0; y<h-1; y++) {
+        *indices++ = y*w;
         for(unsigned x=0; x<w; x++) {
             *indices++ = y*w+x;
             *indices++ = (y+1)*w+x;
@@ -109,7 +117,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( w*(h+1)*4*sizeof(float)));
+    _mesh_position.reset( new Vbo( w*h*4*sizeof(float)));
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     float *pos = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -117,7 +125,7 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
         return;
     }
 
-    for(unsigned y=0; y<h; y++) {
+    for(unsigned y=0; y<h-1; y++) {
         for(unsigned x=0; x<w; x++) {
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
@@ -144,38 +152,26 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 typedef tvector<4,GLdouble> GLvector4;
 typedef tmatrix<4,GLdouble> GLmatrix;
 
-static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
+// static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
 // static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
-template<typename f>
-GLvector gluProject(tvector<3,f> obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
-    GLvector win;
-    bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
+GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
+    GLdouble win0=0, win1=0, win2=0;
+    bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win0, &win1, &win2));
     if(r) *r=s;
-    return win;
+    return GLvector(win0, win1, win2);
 }
 
-template<typename f>
-GLvector gluUnProject(tvector<3,f> win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0) {
-    GLvector obj;
-    bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj[0], &obj[1], &obj[2]));
+GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
+    GLdouble obj0=0, obj1=0, obj2=0;
+    bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj0, &obj1, &obj2));
     if(r) *r=s;
-    return obj;
+    return GLvector(obj0, obj1, obj2);
 }
 
+/*
 template<typename f>
-GLvector gluProject(tvector<3,f> obj, bool *r=0) {
-    GLdouble model[16], proj[16];
-    GLint view[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, model);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, view);
-
-    return gluProject(obj, model, proj, view, r);
-}
-
-template<typename f>
-GLvector gluProject2(tvector<3,f> obj, bool *r=0) {
+GLvector gluProject2(tvector<3,f> obj, bool *r) {
     GLint view[4];
     glGetIntegerv(GL_VIEWPORT, view);
     GLvector4 eye = applyProjectionMatrix(applyModelMatrix(to4(obj)));
@@ -186,18 +182,8 @@ GLvector gluProject2(tvector<3,f> obj, bool *r=0) {
     GLvector screen(view[0] + (eye[0]+1)*view[2]/2, view[1] + (eye[1]+1)*view[3]/2, eye[2]);
     float dummy=43*23;
     return screen;
-}
+}*/
 
-template<typename f>
-GLvector gluUnProject(tvector<3,f> win, bool *r=0) {
-    GLdouble model[16], proj[16];
-    GLint view[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, model);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, view);
-
-    return gluUnProject(win, model, proj, view, r);
-}
 
 /* static bool validWindowPos(GLvector win) {
     GLint view[4];
@@ -233,6 +219,9 @@ static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvecto
 
 void Renderer::init()
 {
+    if (_initialized)
+        return;
+
     TaskTimer tt("Initializing OpenGL");
 
     // initialize necessary OpenGL extensions
@@ -260,22 +249,24 @@ void Renderer::init()
     }
 
     if (!glewIsSupported( "GL_VERSION_1_5 GL_ARB_vertex_buffer_object GL_ARB_pixel_buffer_object GL_ARB_texture_float" )) {
-            fprintf(stderr, "Error: failed to get minimal extensions\n");
-            fprintf(stderr, "Sonic AWE requires:\n");
-            fprintf(stderr, "  OpenGL version 1.5\n");
-            fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
-            fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
-            fprintf(stderr, "  GL_ARB_texture_float\n");
-            fflush(stderr);
-            exit(-1);
+        fprintf(stderr, "Error: failed to get minimal extensions\n");
+        fprintf(stderr, "Sonic AWE requires:\n");
+        fprintf(stderr, "  OpenGL version 1.5\n");
+        fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
+        fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
+        fprintf(stderr, "  GL_ARB_texture_float\n");
+        fflush(stderr);
+        exit(EXIT_FAILURE);
     }
+
 #endif
 
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    //setSize( _collection->samples_per_block(), _collection->scales_per_block() );
-    setSize( _collection->samples_per_block()/1, _collection->scales_per_block() );
+    //setSize( collection->samples_per_block(), collection->scales_per_block() );
+    setSize( collection->samples_per_block()/8, collection->scales_per_block()/2 );
+
     //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
@@ -285,10 +276,39 @@ void Renderer::init()
     GlException_CHECK_ERROR();
 }
 
-typedef float4 vec4;
 
-vec4 getWavelengthColorCompute( float wavelengthScalar ) {
-    vec4 spectrum[7];
+GLvector Renderer::
+        gluProject(GLvectorF obj, bool *r)
+{
+    return Heightmap::gluProject(obj, modelview_matrix, projection_matrix, viewport_matrix, r);
+}
+
+
+GLvector Renderer::
+        gluUnProject(GLvectorF win, bool *r)
+{
+    return Heightmap::gluUnProject(win, modelview_matrix, projection_matrix, viewport_matrix, r);
+}
+
+
+void Renderer::
+        frustumMinMaxT( float& min_t, float& max_t )
+{
+    max_t = 0;
+    min_t = FLT_MAX;
+
+    foreach( GLvector v, clippedFrustum)
+    {
+        if (max_t < v[0])
+            max_t = v[0];
+        if (min_t > v[0])
+            min_t = v[0];
+    }
+}
+
+
+float4 getWavelengthColorCompute( float wavelengthScalar ) {
+    float4 spectrum[7];
         /* white background */
     spectrum[0] = make_float4( 1, 0, 0, 0 ),
     spectrum[1] = make_float4( 0, 0, 1, 0 ),
@@ -315,7 +335,7 @@ vec4 getWavelengthColorCompute( float wavelengthScalar ) {
     float t = (f-float(i2))*0.5;
     float s = 0.5 + t;
 
-    vec4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
+    float4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
     return rgb*0.5;
 }
 
@@ -327,6 +347,49 @@ void Renderer::createColorTexture(unsigned N) {
     colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
 }
 
+Reference Renderer::
+        findRefAtCurrentZoomLevel( Heightmap::Position p )
+{
+    Position max_ss = collection->max_sample_size();
+    Reference ref = collection->findReference(Position(0, 0), max_ss);
+
+    // The first 'ref' will be a super-ref containing all other refs, thus
+    // containing 'p' too. This while-loop zooms in on a ref containing
+    // 'p' with enough details.
+
+    // 'p' is assumed to be valid to start with. Ff they're not valid
+    // this algorithm will choose some ref along the border closest to the
+    // point 'p'.
+
+    while(true)
+    {
+        LevelOfDetal lod = testLod(ref);
+
+        Position a,b;
+        ref.getArea(a,b);
+
+        switch(lod)
+        {
+        case Lod_NeedBetterF:
+            if ((a.scale+b.scale)/2 > p.scale)
+                ref = ref.bottom();
+            else
+                ref = ref.top();
+            break;
+
+        case Lod_NeedBetterT:
+            if ((a.time+b.time)/2 > p.time)
+                ref = ref.left();
+            else
+                ref = ref.right();
+            break;
+
+        default:
+            return ref;
+        }
+    }
+}
+
 /**
   Note: the parameter scaley is used by RenderView to go seamlessly from 3D to 2D.
   This is different from the 'attribute' Renderer::y_scale which is used to change the
@@ -335,25 +398,31 @@ void Renderer::createColorTexture(unsigned N) {
 void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
-    TaskTimer tt(TaskTimer::LogVerbose, "Rendering scaletime plot");
+    TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
     if (!_initialized) init();
 
-    g_invalidFrustum = true;
+    _invalid_frustum = true;
 
-    if (.01 > scaley)
+    if (.001 > scaley)
 //        setSize(2,2),
-        scaley = 0.01,
+        scaley = 0.001,
         _draw_flat = true;
     else
         _draw_flat = false;
-//        setSize( _collection->samples_per_block(), _collection->scales_per_block() );
 
-    glScalef(1, scaley, 1);
+    last_ysize = scaley;
+//        setSize( collection->samples_per_block(), collection->scales_per_block() );
 
-    glPushMatrixContext mc;
+    glPushMatrixContext mc(GL_MODELVIEW);
 
-    Position mss = _collection->max_sample_size();
-    Reference ref = _collection->findReference(Position(0,0), mss);
+    Position mss = collection->max_sample_size();
+    Reference ref = collection->findReference(Position(0,0), mss);
+
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
+    glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+    glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+
+    glScalef(1, scaley, 1); // global effect on all tools
 
     beginVboRendering();
 
@@ -361,7 +430,7 @@ void Renderer::draw( float scaley )
 
     endVboRendering();
 
-    tt.info("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
+    TIME_RENDERER TaskInfo("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
     _drawn_blocks=0;
 
     GlException_CHECK_ERROR();
@@ -370,13 +439,14 @@ void Renderer::draw( float scaley )
 void Renderer::beginVboRendering()
 {
     GlException_CHECK_ERROR();
-    //unsigned meshW = _collection->samples_per_block();
-    //unsigned meshH = _collection->scales_per_block();
+    //unsigned meshW = collection->samples_per_block();
+    //unsigned meshH = collection->scales_per_block();
 
     glUseProgram(_shader_prog);
 
+    // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniHeightLines, uniYScale;
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniHeightLines, uniYScale, uniScaleTex, uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -390,27 +460,44 @@ void Renderer::beginVboRendering()
         uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
         glUniform1i(uniColorMode, (int)color_mode);
 
+        uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
+        glUniform4f(uniFixedColor, fixed_color.x, fixed_color.y, fixed_color.z, fixed_color.w);
+
         uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
         glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
+
+        float
+                w = collection->samples_per_block(),
+                h = collection->scales_per_block();
+
+        uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
+        glUniform2f(uniScaleTex, (w-1.f)/w, (h-1.f)/h);
+
+        uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
+        glUniform2f(uniOffsTex, .5f/w, .5f/h);
     }
 
     glActiveTexture(GL_TEXTURE2);
     colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    glVertexPointer(4, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    if (!_draw_flat)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
+        glVertexPointer(4, GL_FLOAT, 0, 0);
+        glEnableClientState(GL_VERTEX_ARRAY);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+    }
 
     GlException_CHECK_ERROR();
 }
 
 void Renderer::endVboRendering() {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glActiveTexture(GL_TEXTURE2);
     colorTexture->unbindTexture2D();
@@ -420,33 +507,32 @@ void Renderer::endVboRendering() {
     glUseProgram(0);
 }
 
-bool Renderer::renderSpectrogramRef( Reference ref )
+void Renderer::renderSpectrogramRef( Reference ref )
 {
-    if (!ref.containsSpectrogram())
-        return false;
-
-    TaskTimer(TaskTimer::LogVerbose, "drawing").suppressTiming();
+    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     Position a, b;
     ref.getArea( a, b );
-    glPushMatrixContext mc;
+    glPushMatrixContext mc( GL_MODELVIEW );
 
     glTranslatef(a.time, 0, a.scale);
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
-    pBlock block = _collection->getBlock( ref );
+    pBlock block = collection->getBlock( ref );
     if (0!=block.get()) {
         if (0 /* direct rendering */ )
-            block->glblock->draw_directMode();
+            ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ )
         {
             if (_draw_flat)
                 block->glblock->draw_flat();
             else
-                block->glblock->draw();
+                block->glblock->draw( _vbo_size );
         }
 
     } else {
+        endVboRendering();
         // getBlock would try to find something else if the requested block
         // wasn't readily available.
 
@@ -458,35 +544,36 @@ bool Renderer::renderSpectrogramRef( Reference ref )
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
         glDisable(GL_COLOR_MATERIAL);
-        glColor4f( 1.0f, 0.0f, 0.0f, 1.0f );
+        glDisable(GL_LIGHTING);
+        glColor4f( 0.8f, 0.2f, 0.2f, 0.5f );
+        glLineWidth(2);
 
-        glBegin(GL_LINES );
+        glBegin(GL_LINE_STRIP);
             glVertex3f( 0, 0, 0 );
+            glVertex3f( 1, 0, 1 );
+            glVertex3f( 1, 0, 0 );
             glVertex3f( 0, 0, 1 );
+            glVertex3f( 0, 0, 0 );
             glVertex3f( 1, 0, 0 );
             glVertex3f( 1, 0, 1 );
-            glVertex3f( 0.5f, 0, 0.5f );
-            glVertex3f( 0.25f, 0, 0.5f );
+            glVertex3f( 0, 0, 1 );
         glEnd();
+
+        beginVboRendering();
     }
 
     _drawn_blocks++;
 
-    return true;
+    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 
-bool Renderer::renderChildrenSpectrogramRef( Reference ref )
+
+Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 {
-    Position a, b;
-    ref.getArea( a, b );
-    TaskTimer tt(TaskTimer::LogVerbose, "[%g, %g]", a.time, b.time);
-
-    if (!ref.containsSpectrogram())
-        return false;
-
     float timePixels, scalePixels;
-    if (!computePixelsPerUnit( ref, timePixels, scalePixels))
-        return false;
+    if (!computePixelsPerUnit( ref, timePixels, scalePixels ))
+        return Lod_Invalid;
 
     if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
         fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.block_index[0], ref.block_index[1], timePixels,scalePixels);
@@ -498,22 +585,44 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*_collection->scales_per_block());
+        needBetterF = scalePixels / (_redundancy*collection->scales_per_block());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*_collection->samples_per_block());
+        needBetterT = timePixels / (_redundancy*collection->samples_per_block());
 
-    if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() ) {
-        renderChildrenSpectrogramRef( ref.top() );
+    if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() )
+        return Lod_NeedBetterF;
+
+    else if ( needBetterT > 1 && ref.left().containsSpectrogram() )
+        return Lod_NeedBetterT;
+
+    else
+        return Lod_Ok;
+}
+
+bool Renderer::renderChildrenSpectrogramRef( Reference ref )
+{
+    TIME_RENDERER_BLOCKS TaskTimer tt("%s", ref.toString().c_str());
+
+    if (!ref.containsSpectrogram())
+        return false;
+
+    LevelOfDetal lod = testLod( ref );
+    switch(lod) {
+    case Lod_NeedBetterF:
         renderChildrenSpectrogramRef( ref.bottom() );
-    }
-    else if ( needBetterT > 1 && ref.left().containsSpectrogram() ) {
+        renderChildrenSpectrogramRef( ref.top() );
+        break;
+    case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
         renderChildrenSpectrogramRef( ref.right() );
-    }
-    else {
+        break;
+    case Lod_Ok:
         renderSpectrogramRef( ref );
+        break;
+    case Lod_Invalid: // ref is not within the current view frustum
+        return false;
     }
 
     return true;
@@ -526,12 +635,12 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
     renderChildrenSpectrogramRef( ref.sibbling2() );
     renderChildrenSpectrogramRef( ref.sibbling3() );
 
-    if (!ref.parent().toLarge() )
+    if (!ref.parent().tooLarge() )
         renderParentSpectrogramRef( ref.parent() );
 }
 
 // the normal does not need to be normalized
-static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const GLvector& plane, const GLvector& normal ) {
+static GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, GLvector const& plane, GLvector const& normal ) {
     GLvector dir = pt2-pt1;
 
     s = ((plane-pt1)%normal)/(dir % normal);
@@ -544,24 +653,76 @@ static GLvector planeIntersection( GLvector pt1, GLvector pt2, float &s, const G
 }
 
 
-static std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, GLvector p0, GLvector n ) {
-    std::vector<GLvector> r;
+static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvector& n )
+{
+    if (p.empty())
+        return;
 
-    for (unsigned i=0; i<p.size(); i++) {
-        int nexti=(i+1)%p.size();
-        if ((p0-p[i])%n < 0)
-            r.push_back( p[i] );
+    unsigned i;
 
-        if (((p0-p[i])%n < 0) != ((p0-p[nexti])%n <0) ) {
-            float s;
-            GLvector xy = planeIntersection( p[i], p[nexti], s, p0, n );
+    GLvector const* a, * b = &p[p.size()-1];
+    bool a_side, b_side = (p0-*b)%n < 0;
+    for (i=0; i<p.size(); i++) {
+        a = b;
+        b = &p[i];
 
-            if (!isnan(s) && -.1 <= s && s <= 1.1)
-                r.push_back( xy );
+        a_side = b_side;
+        b_side = (p0-*b)%n < 0;
+
+        if (a_side != b_side )
+        {
+            GLvector dir = *b-*a;
+
+            // planeIntersection
+            float s = ((p0-*a)%n)/(dir % n);
+
+            // TODO why [-.1, 1.1]?
+            //if (!isnan(s) && -.1 <= s && s <= 1.1)
+            if (!isnan(s) && 0 <= s && s <= 1)
+            {
+                break;
+            }
         }
     }
 
-    return r;
+    if (i==p.size())
+    {
+        if (!b_side)
+            p.clear();
+
+        return;
+    }
+
+    std::vector<GLvector> r;
+    r.reserve(2*p.size());
+
+    b = &p[p.size()-1];
+    b_side = (p0-*b)%n < 0;
+
+    for (unsigned i=0; i<p.size(); i++) {
+        a = b;
+        b = &p[i];
+
+        a_side = b_side;
+        b_side = (p0-*b)%n <0;
+
+        if (a_side)
+            r.push_back( *a );
+
+        if (a_side != b_side )
+        {
+            float s;
+            GLvector xy = planeIntersection( *a, *b, s, p0, n );
+
+            //if (!isnan(s) && -.1 <= s && s <= 1.1)
+            if (!isnan(s) && 0 <= s && s <= 1)
+            {
+                r.push_back( xy );
+            }
+        }
+    }
+
+    p = r;
 }
 
 static void printl(const char* str, const std::vector<GLvector>& l) {
@@ -572,7 +733,7 @@ static void printl(const char* str, const std::vector<GLvector>& l) {
     fflush(stdout);
 }
 
-/* returns the first point on the border of the polygon 'l' that lies closest to 'target' */
+/* returns the point on the border of the polygon 'l' that lies closest to 'target' */
 static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &target)
 {
     GLvector r;
@@ -595,7 +756,7 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         if (d%v>0) allPos=false;
         float k = d%v / (d.dot());
         if (0<k && k<1) {
-            f = (l[i]+d*k-target).dot();
+            f = (l[i] + d*k-target).dot();
             if (f<min) {
                 min = f;
                 r = l[i]+d*k;
@@ -607,29 +768,26 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         // point lies within convex polygon, create normal and project to surface
         if (l.size()>2) {
             GLvector n = (l[0]-l[1])^(l[0]-l[2]);
+            n = n.Normalize();
             r = target + n*distanceToPlane( target, l[0], n );
         }
     }
     return r;
 }
 
-static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w=0, float h=0 ) {
-
-    static GLvector projectionPlane, projectionNormal,
-        rightPlane, rightNormal,
-        leftPlane, leftNormal,
-        topPlane, topNormal,
-        bottomPlane, bottomNormal;
-
+std::vector<GLvector> Renderer::
+        clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w, float h )
+{
     if (!(0==w && 0==h))
-        g_invalidFrustum = true;
+        _invalid_frustum = true;
 
-    if (g_invalidFrustum) {
-        GLint view[4];
-        glGetIntegerv(GL_VIEWPORT, view);
-        float z0 = .1, z1=.2;
+    if (_invalid_frustum) {
+        // this takes about 5 us
+        GLint const* const& view = viewport_matrix;
+
+        float z0=.1, z1=.2;
         if (0==w && 0==h)
-            g_invalidFrustum = false;
+            _invalid_frustum = false;
 
         projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
         projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalize();
@@ -637,8 +795,8 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
         rightPlane = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z0) );
         GLvector rightZ = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z1) );
         GLvector rightY = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2+1, z0) );
-        rightZ=rightZ-rightPlane;
-        rightY=rightY-rightPlane;
+        rightZ = rightZ - rightPlane;
+        rightY = rightY - rightPlane;
         rightNormal = ((rightY)^(rightZ)).Normalize();
 
         leftPlane = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2, z0) );
@@ -657,17 +815,17 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
         bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
     }
 
-    // must make all normals negative because one of axes are flipped (glScale with a minus sign on the x-axis)
+    // must make all normals negative because one of the axes is flipped (glScale with a minus sign on the x-axis)
     //printl("Start",l);
-    l = clipPlane(l, projectionPlane, projectionNormal);
+    clipPlane(l, projectionPlane, projectionNormal);
     //printl("Projectionclipped",l);
-    l = clipPlane(l, rightPlane, -rightNormal);
+    clipPlane(l, rightPlane, -rightNormal);
     //printl("Right", l);
-    l = clipPlane(l, leftPlane, -leftNormal);
+    clipPlane(l, leftPlane, -leftNormal);
     //printl("Left", l);
-    l = clipPlane(l, topPlane, -topNormal);
+    clipPlane(l, topPlane, -topNormal);
     //printl("Top",l);
-    l = clipPlane(l, bottomPlane, -bottomNormal);
+    clipPlane(l, bottomPlane, -bottomNormal);
     //printl("Bottom",l);
     //printl("Clipped polygon",l);
 
@@ -675,8 +833,12 @@ static std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &clo
     return l;
 }
 
-static std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i, float w=0, float h=0 ) {
+
+std::vector<GLvector> Renderer::
+        clipFrustum( GLvector corner[4], GLvector &closest_i, float w, float h )
+{
     std::vector<GLvector> l;
+    l.reserve(4);
     for (unsigned i=0; i<4; i++)
         l.push_back( corner[i] );
     return clipFrustum(l, closest_i, w, h);
@@ -701,7 +863,7 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
 
     GLvector closest_i;
     std::vector<GLvector> clippedCorners = clipFrustum(corner, closest_i);
-    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
+    if (0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
     {
         printl("Clipped corners",clippedCorners);
         printf("closest_i %g\t%g\t%g\n", closest_i[0], closest_i[1], closest_i[2]);
@@ -709,17 +871,18 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     if (0==clippedCorners.size())
         return false;
 
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-
     // Find units per pixel at point closest_i with glUnProject
     GLvector screen = gluProject( closest_i );
     GLvector screenX=screen, screenY=screen;
-    if (screen[0]>view[0] + view[2]/2)       screenX[0]--;
-    else                                     screenX[0]++;
+    if (screen[0] > viewport_matrix[0] + viewport_matrix[2]/2)
+        screenX[0]--;
+    else
+        screenX[0]++;
 
-    if (screen[1]>view[1] + view[3]/2)       screenY[1]--;
-    else                                     screenY[1]++;
+    if (screen[1] > viewport_matrix[1] + viewport_matrix[3]/2)
+        screenY[1]--;
+    else
+        screenY[1]++;
 
     GLvector
             wBase = gluUnProject( screen ),
@@ -751,7 +914,7 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     }
 
     // compute {units in xz-plane} per {screen pixel}, that determines the required resolution
-    GLdouble
+    GLvector::T
             timePerPixel = 0,
             freqPerPixel = 0;
 
@@ -790,10 +953,8 @@ void Renderer::drawAxes( float T )
 
     float w = 0.1f, h=0.05f;
     { // 1 gray draw overlay
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
+        glPushMatrixContext push_model(GL_MODELVIEW);
+        glPushMatrixContext push_proj(GL_PROJECTION);
 
         glLoadIdentity();
         gluOrtho2D( 0, 1, 0, 1 );
@@ -803,6 +964,7 @@ void Renderer::drawAxes( float T )
 
         glDisable(GL_DEPTH_TEST);
 
+
         glColor4f( 1.0f, 1.0f, 1.0f, .4f );
         glBegin( GL_QUADS );
             glVertex2f( 0, 0 );
@@ -811,14 +973,14 @@ void Renderer::drawAxes( float T )
             glVertex2f( 0, 1 );
 
             glVertex2f( w, 0 );
-            glVertex2f( w, h );
-            glVertex2f( 1-w, h );
             glVertex2f( 1-w, 0 );
+            glVertex2f( 1-w, h );
+            glVertex2f( w, h );
 
             glVertex2f( 1, 0 );
-            glVertex2f( 1-w, 0 );
-            glVertex2f( 1-w, 1 );
             glVertex2f( 1, 1 );
+            glVertex2f( 1-w, 1 );
+            glVertex2f( 1-w, 0 );
 
             glVertex2f( w, 1 );
             glVertex2f( w, 1-h );
@@ -829,17 +991,12 @@ void Renderer::drawAxes( float T )
         glEnable(GL_DEPTH_TEST);
 
         //glDisable(GL_BLEND);
-
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
     }
 
     // 2 clip entire sound to frustum
     clippedFrustum.clear();
 
-    {   //float T = _collection->worker->source()->length();
+    {   //float T = collection->worker->source()->length();
         GLvector closest_i;
         GLvector corner[4]=
         {
@@ -903,7 +1060,7 @@ void Renderer::drawAxes( float T )
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 
-    float fs = _collection->worker->source()->sample_rate();
+    float fs = collection->worker->source()->sample_rate();
     float min_hz = Tfr::Cwt::Singleton().get_min_hz( fs );
     float max_hz = Tfr::Cwt::Singleton().get_max_hz( fs );
     float steplogsize = log(max_hz) - log(min_hz);
@@ -964,31 +1121,31 @@ void Renderer::drawAxes( float T )
 
                 if (size>1) {
                     glLineWidth(1);
-                    glPushMatrix();
-                        glTranslatef(p[0], 0, p[2]);
+                    glPushMatrixContext push_model( GL_MODELVIEW );
+
+                    glTranslatef(p[0], 0, p[2]);
 //                        glRotatef(90,0,1,0);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00012f*ST,0.00012f*SF,1.f);
-                        char a[100];
-                        char b[100];
-                        sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
-                        int minutes = (int)(t*DT/60);
-                        sprintf(a, b, minutes,t*DT-60*minutes);
-                        float w=0;
-                        float letter_spacing=15;
+                    glRotatef(90,1,0,0);
+                    glScalef(0.00012f*ST,0.00012f*SF,1.f);
+                    char a[100];
+                    char b[100];
+                    sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
+                    int minutes = (int)(t*DT/60);
+                    sprintf(a, b, minutes,t*DT-60*minutes);
+                    float w=0;
+                    float letter_spacing=15;
 
-                        for (char*c=a;*c!=0; c++) {
-                            if (c!=a)
-                                w+=letter_spacing;
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
+                    for (char*c=a;*c!=0; c++) {
+                        if (c!=a)
+                            w+=letter_spacing;
+                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                    }
 
-                        glTranslatef(-.5f*w,sign*120-50.f,0);
-                        for (char*c=a;*c!=0; c++) {
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                            glTranslatef(letter_spacing,0,0);
-                        }
-                    glPopMatrix();
+                    glTranslatef(-.5f*w,sign*120-50.f,0);
+                    for (char*c=a;*c!=0; c++) {
+                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                        glTranslatef(letter_spacing,0,0);
+                    }
                 }
 
                 if (v[0] > 0) t++;
@@ -1007,21 +1164,21 @@ void Renderer::drawAxes( float T )
                 if (size>1 || SF<.8f)
                 {
                     glLineWidth(1);
-                    glPushMatrix();
-                        glTranslatef(p[0],0,p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                        char a[100];
-                        sprintf(a,"%d", f);
-                        unsigned w=20;
-                        if (sign<0) {
-                            for (char*c=a;*c!=0; c++)
-                                w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
-                        glTranslatef(sign*w,-50.f,0);
+                    glPushMatrixContext push_model( GL_MODELVIEW );
+
+                    glTranslatef(p[0],0,p[2]);
+                    glRotatef(90,1,0,0);
+                    glScalef(0.00014f*ST,0.00014f*SF,1.f);
+                    char a[100];
+                    sprintf(a,"%d", f);
+                    unsigned w=20;
+                    if (sign<0) {
                         for (char*c=a;*c!=0; c++)
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    glPopMatrix();
+                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                    }
+                    glTranslatef(sign*w,-50.f,0);
+                    for (char*c=a;*c!=0; c++)
+                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                 }
 
                 if (v[2] > 0) {
@@ -1086,27 +1243,31 @@ void Renderer::drawAxes( float T )
                 GLvector pt = clippedFrustum[i]+v*u;
                 GLvector pn = clippedFrustum[i]+v*un;
                 GLvector pp = clippedFrustum[i]+v*up;
-                    glPushMatrix();
-                    if (sign>0)
-                        glTranslatef( sign*ST*0.14f, 0.f, 0.f );
-                    else
-                        glTranslatef( -sign*ST*0.08f, 0.f, 0.f );
-    glColor4f(0,0,0,.4);
-            glBegin(GL_LINES );
-                glVertex3f(pn[0] - ST*0.14f, 0, pn[2]);
-                glVertex3f(pp[0] - ST*0.14f, 0, pp[2]);
-            glEnd();
-            glBegin(blackKey ? GL_QUADS:GL_LINE_STRIP );
-                glVertex3f(pp[0] - ST*(.14f - .036f*blackKeyP), 0, pp[2]);
-                glVertex3f(pp[0] - ST*(.08f + .024f*blackKey), 0, pp[2]);
-                glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
-                glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
-            glEnd();
-    glColor4f(0,0,0,1);
-                    glPopMatrix();
-                if (tone%12 == 0) {
+
+                glPushMatrixContext push_model( GL_MODELVIEW );
+
+                if (sign>0)
+                    glTranslatef( sign*ST*0.14f, 0.f, 0.f );
+                else
+                    glTranslatef( -sign*ST*0.08f, 0.f, 0.f );
+
+                glColor4f(0,0,0,.4);
+                    glBegin(GL_LINES );
+                        glVertex3f(pn[0] - ST*0.14f, 0, pn[2]);
+                        glVertex3f(pp[0] - ST*0.14f, 0, pp[2]);
+                    glEnd();
+                    glBegin(blackKey ? GL_QUADS:GL_LINE_STRIP );
+                        glVertex3f(pp[0] - ST*(.14f - .036f*blackKeyP), 0, pp[2]);
+                        glVertex3f(pp[0] - ST*(.08f + .024f*blackKey), 0, pp[2]);
+                        glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
+                        glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
+                    glEnd();
+                glColor4f(0,0,0,1);
+
+                if (tone%12 == 0)
+                {
                     glLineWidth(1.f);
-                    glPushMatrix();
+                    glPushMatrixContext push_model( GL_MODELVIEW );
                     glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
                     glRotatef(90,1,0,0);
 
@@ -1122,7 +1283,6 @@ void Renderer::drawAxes( float T )
                     glTranslatef(sign*w,-50.f,0);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    glPopMatrix();
                 }
             }
         }
@@ -1132,6 +1292,11 @@ void Renderer::drawAxes( float T )
     glDepthMask(true);
     //glDisable(GL_BLEND);
 }
+
+template<typename T> void glVertex3v( const T* );
+
+template<> void glVertex3v( const GLdouble* t ) {    glVertex3dv(t); }
+template<>  void glVertex3v( const GLfloat* t )  {    glVertex3fv(t); }
 
 void Renderer::
         drawFrustum(float alpha)
@@ -1153,7 +1318,7 @@ void Renderer::
 
     glDisable(GL_DEPTH_TEST);
 
-    glPushMatrixContext mc;
+    glPushMatrixContext mc(GL_MODELVIEW);
 
     glColor4f(0,0,0,alpha);
     glBegin( GL_TRIANGLE_FAN );
@@ -1163,7 +1328,7 @@ void Renderer::
         {
             float s = (closest-camera).dot()/(*i-camera).dot();
             glColor4f(0,0,0,s*.25f);
-            glVertex3dv( i->v );
+            glVertex3v( i->v );
         }
     glEnd();
 
@@ -1173,7 +1338,7 @@ void Renderer::
                 i!=clippedFrustum.end();
                 i++)
         {
-            glVertex3dv( i->v );
+            glVertex3v( i->v );
         }
     glEnd();
 }

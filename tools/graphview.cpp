@@ -34,10 +34,10 @@ const OperationGraph::vertex_descriptor vertex_descriptor_null = (OperationGraph
 
 //    } else
 
-    if (Filters::EllipsFilter* c = dynamic_cast<Filters::EllipsFilter*>(f.get())) {
+    if (Filters::EllipseFilter* c = dynamic_cast<Filters::EllipseFilter*>(f.get())) {
             float r = fabsf(c->_t1-c->_t2);
-            title << "Ellips [" << c->_t1-r << ", " << c->_t1 + r << "]";
-            tooltip << "Ellips p(" << c->_t1 << ", " << c->_f1 << "), "
+            title << "Ellipse [" << c->_t1-r << ", " << c->_t1 + r << "]";
+            tooltip << "Ellipse p(" << c->_t1 << ", " << c->_f1 << "), "
                             << "r(" << r << ", " << fabsf(c->_f2-c->_f1) << "), "
                             << "area " << r*fabsf((c->_f1-c->_f2)*M_PI);
 
@@ -47,7 +47,7 @@ const OperationGraph::vertex_descriptor vertex_descriptor_null = (OperationGraph
                         << "f[" << c->_f1 << ", " << c->_f2 << "], "
                         << "area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2));
     } else if (f) {
-        title << demangle(typeid(*f).name()) << ", unknown filter";
+        title << vartype(*f) << ", unknown filter";
     } else {
         title << "No filter";
     }
@@ -63,7 +63,7 @@ const OperationGraph::vertex_descriptor vertex_descriptor_null = (OperationGraph
 
 //  TODO remove
 //  if (filter_chain) {
-//        BOOST_FOREACH( Tfr::pFilter f, *filter_chain ) {
+//        foreach( Tfr::pFilter f, *filter_chain ) {
 //            OperationGraph::vertex_descriptor c;
 //            c = populateGraph( f, graph );
 
@@ -104,15 +104,15 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, Operation
     else if ( Tfr::CwtFilter* filter_operation = dynamic_cast<Tfr::CwtFilter*>(s.get()))
     {
         filter_operation;
-        title << "Filter " << demangle(typeid(*s).name());
-        tooltip << "Filter Operation " << demangle(typeid(*s).name());;
+        title << "Filter " << vartype(*s);
+        tooltip << "Filter Operation " << vartype(*s);
 
         // childFilter = filter_operation->filter();
     }
     else if (Signal::OperationSubOperations* sub_operations = dynamic_cast<Signal::OperationSubOperations*>(s.get()))
     {
         title << demangle( typeid(*s).name() );
-        tooltip << "Composite operation " << demangle(typeid(*s).name());
+        tooltip << "Composite operation " << vartype(*s);
 
         childSource = sub_operations->subSource();
     }
@@ -126,7 +126,7 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, Operation
     else
     {
         title << demangle( typeid(*s).name() );
-        tooltip << "Source not further described: " << demangle(typeid(*s).name());
+        tooltip << "Source not further described: " << vartype(*s);
     }
 
     TitleAndTooltip tat;
@@ -264,7 +264,7 @@ static void updateOperationsTree( OperationGraph::vertex_descriptor v, Operation
         }
     }
 
-    BOOST_FOREACH( const OperationGraph::vertex_descriptor& common, commons ) {
+    foreach( const OperationGraph::vertex_descriptor& common, commons ) {
         tt.info("Children converge at: %d %s", common, graph[common].title.c_str());
     }
 
@@ -322,7 +322,7 @@ void SaweMainWindow::updateLayerList( Signal::pOperation s )
         return;
     }
 
-    BOOST_FOREACH( Tfr::pFilter f, *filter_chain ) {
+    foreach( Tfr::pFilter f, *filter_chain ) {
         stringstream title;
         stringstream tooltip;
         title << fixed << setprecision(1);
@@ -332,10 +332,10 @@ void SaweMainWindow::updateLayerList( Signal::pOperation s )
             title << "Chain #" << c->size() << "";
             tooltip << "Chain contains " << c->size() << " subfilters";
 
-        } else if (Tfr::EllipsFilter* c = dynamic_cast<Tfr::EllipsFilter*>(f.get())) {
+        } else if (Tfr::EllipseFilter* c = dynamic_cast<Tfr::EllipseFilter*>(f.get())) {
             float r = fabsf(c->_t1-c->_t2);
-            title << "Ellips [" << c->_t1-r << ", " << c->_t1 + r << "]";
-            tooltip << "Ellips p(" << c->_t1 << ", " << c->_f1 << "), "
+            title << "Ellipse [" << c->_t1-r << ", " << c->_t1 + r << "]";
+            tooltip << "Ellipse p(" << c->_t1 << ", " << c->_f1 << "), "
                             << "r(" << r << ", " << fabsf(c->_f2-c->_f1) << "), "
                             << "area " << r*fabsf((c->_f1-c->_f2)*M_PI);
 
@@ -347,16 +347,16 @@ void SaweMainWindow::updateLayerList( Signal::pOperation s )
 
         }
 //        else if (Tfr::SelectionFilter* c = dynamic_cast<Tfr::SelectionFilter>(f.get())) {
-//            if (EllipsSelection* c = dynamic_cast<EllipsSelection>(c->selection)) {
-//                title << "Ellips, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
-//                tooltip << "Ellips pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
+//            if (EllipseSelection* c = dynamic_cast<EllipseSelection>(c->selection)) {
+//                title << "Ellipse, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)*M_PI) <<"";
+//                tooltip << "Ellipse pos(" << c->_t1 << ", " << c->_f1 << "), radius(" << c->_t2-c->_t1 << ", " << c->_f2-c->_f1 << ")";
 
 //            } else if (Tfr::SquareSelection* c = dynamic_cast<Tfr::SquareSelection>(c->selection)) {
 //                title << "Square, area " << fabsf((c->_t1-c->_t2)*(c->_f1-c->_f2)) <<"";
 //                tooltip << "Square t[" << c->_t1 << ", " << c->_t2 << "], f[" << c->_f1 << ", " << c->_f2 << "]";
 //        }
         else {
-            title << demangle(typeid(*f).name()) << ", unknown attributes";
+            title << vartype(*f) << ", unknown attributes";
         }
 
         QListWidgetItem* itm = new QListWidgetItem( title.str().c_str(), ui->layerWidget, 0 );

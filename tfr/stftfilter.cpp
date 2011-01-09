@@ -1,6 +1,7 @@
 #include "stftfilter.h"
 #include "stft.h"
 
+#include <neat_math.h>
 #include <stringprintf.h>
 #include <CudaException.h>
 #include <memory.h>
@@ -15,52 +16,54 @@ namespace Tfr {
 
 StftFilter::
         StftFilter(pOperation source, pTransform t)
-:   Filter(source)
+:   Filter(source),
+    exclude_end_block(false)
 {
-    if (!t)
-        t = Stft::SingletonP();
+//    if (!t)
+//        t = Stft::SingletonP();
 
-    BOOST_ASSERT( dynamic_cast<Stft*>(t.get()));
+    if (t)
+    {
+        BOOST_ASSERT( dynamic_cast<Stft*>(t.get()));
 
-    transform( t );
+        _transform = t;
+    }
 }
 
 
-Filter::ChunkAndInverse StftFilter::
-        readChunk( const Signal::Interval& I )
+ChunkAndInverse StftFilter::
+        computeChunk( const Signal::Interval& I )
 {
-    unsigned firstSample = I.first, numberOfSamples = I.count();
+    //((Stft*)transform().get())->set_approximate_chunk_size( 1 << 12 );
+    unsigned chunk_size = ((Stft*)transform().get())->chunk_size();
+    // Add a margin to make sure that the STFT is computed for one block before
+    // and one block after the signal. This makes it possible to do proper
+    // interpolations so that there won't be any edges between blocks
 
-    TIME_StftFilter TaskTimer tt("StftFilter::readChunk ( %u, %u )", firstSample, numberOfSamples);
+    unsigned first_chunk = 0,
+             last_chunk = (I.last + 2.5*chunk_size)/chunk_size;
 
-    Filter::ChunkAndInverse ci;
+    if (I.first >= 1.5*chunk_size)
+        first_chunk = (I.first - 1.5*chunk_size)/chunk_size;
 
-    StftFilter* f = dynamic_cast<StftFilter*>(source().get());
-    if ( f && f->transform() == transform()) {
-        ci = f->readChunk( I );
+    ChunkAndInverse ci;
 
-    } else {
-        ci.inverse = _source->readFixedLength( I );
-
-        // Compute the continous wavelet transform
-        ci.chunk = (*transform())( ci.inverse );
-    }
-
-    // Apply filter
-    Intervals work(ci.chunk->getInterval());
-    work -= affected_samples().inverse();
-
-    if (work)
-        ci.inverse.reset();
-
-    // Only apply filter if it would affect these samples
-    if (work || !_try_shortcuts)
+    Interval chunk_interval (
+                first_chunk*chunk_size,
+                last_chunk*chunk_size);
+    if (exclude_end_block)
     {
-        TIME_StftFilter Intervals(ci.chunk->getInterval()).print("StftFilter applying filter");
-        (*this)( *ci.chunk );
+        if (chunk_interval.last>number_of_samples())
+        {
+            last_chunk = number_of_samples()/chunk_size;
+            if (1+first_chunk<last_chunk)
+                chunk_interval.last = last_chunk*chunk_size;
+        }
     }
+    ci.inverse = _source->readFixedLength( chunk_interval );
 
-    TIME_StftFilter Intervals(ci.chunk->getInterval()).print("StftFilter after filter");
+    // Compute the continous wavelet transform
+    ci.chunk = (*transform())( ci.inverse );
 
     return ci;
 }

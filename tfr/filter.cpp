@@ -1,8 +1,13 @@
 #include "filter.h"
 #include "signal/buffersource.h"
 
+#include <demangle.h>
+
 //#define TIME_Filter
 #define TIME_Filter if(0)
+
+//#define TIME_FilterReturn
+#define TIME_FilterReturn if(0)
 
 using namespace Signal;
 
@@ -20,6 +25,9 @@ Filter::
 Signal::pBuffer Filter::
         read(  const Signal::Interval& I )
 {
+    TIME_Filter TaskTimer tt("%s Filter::read( %s )", vartype(*this).c_str(),
+                             I.toString().c_str());
+
     const Signal::Intervals work(I);
 
 
@@ -29,13 +37,13 @@ Signal::pBuffer Filter::
         if (!(work - zeroed_samples()))
         {
             // Doesn't have to read from source, just create a buffer with all samples set to 0
-            TIME_Filter Intervals(I).print("Filter silent");
+            TIME_Filter TaskTimer("Filter silent, %s", I.toString().c_str());
             return zeros(I);
         }
 
         const Signal::Intervals affected = affected_samples();
         // If no samples would be affected, return from source
-        if (!(work & affected))
+        if (this!=affecting_source(I) && !(work & affected))
         {
             // Attempt a regular simple read
             pBuffer b = Signal::Operation::read( I );
@@ -44,32 +52,105 @@ Signal::pBuffer Filter::
             // is unaffected
             const Signal::Intervals b_interval = b->getInterval();
             if (!(affected & b_interval)) {
-                TIME_Filter Intervals(b_interval).print("Filter unaffected");
+                TIME_Filter TaskTimer("Filter unaffected, %s", b_interval.toString().c_str());
                 return b;
             }
 
             // Explicitly return only the unaffected samples
-            TIME_Filter Intervals(b_interval).print("FilterOp fixed unaffected");
+            TIME_Filter TaskTimer tt("FilterOp fixed unaffected, %s", b_interval.toString().c_str());
             BufferSource bs(b);
-            return bs.readFixedLength( (~affected & b_interval).getInterval() );
+            return bs.readFixedLength( (~affected & b_interval & work).getInterval() );
         }
     }
 
 
     // If we've reached this far, the transform will have to be computed
-    ChunkAndInverse ci = readChunk( I );
-
-    pBuffer r;
-    if (false && ci.inverse)
-        r = ci.inverse;
-    else
+    ChunkAndInverse ci;
     {
-        r = _transform->inverse( ci.chunk );
+        TIME_Filter TaskTimer tt("%s filter computing chunk", vartype(*this).c_str());
+        ci = readChunk( I );
+        TIME_FilterReturn TaskInfo("%s filter computed chunk %s", vartype(*this).c_str(),
+                              ci.chunk->getInterval().toString().c_str());
     }
 
-    TIME_Filter Intervals(ci.chunk->getInterval()).print("Filter after inverse");
+    pBuffer r;
+    if (ci.inverse)
+    {
+        TIME_Filter TaskInfo("%s filter chunk is unmodified, doesn't need to compute inverse. Data = %s",
+                              vartype(*this).c_str(),
+                              ci.inverse->getInterval().toString().c_str());
+        r = ci.inverse;
+    }
+    else
+    {
+        TIME_Filter TaskTimer tt("%s filter computing inverse", vartype(*this).c_str());
+        r = transform()->inverse( ci.chunk );
+        TIME_FilterReturn TaskInfo("%s filter computed inverse %s", vartype(*this).c_str(), r->getInterval().toString().c_str());
+    }
 
     return r;
+}
+
+
+ChunkAndInverse Filter::
+        readChunk( const Signal::Interval& I )
+{
+    TIME_Filter TaskTimer tt("%s Filter::readChunk %s",
+                             vartype(*this).c_str(),
+                             I.toString().c_str());
+
+    ChunkAndInverse ci;
+
+    Filter* f = dynamic_cast<Filter*>(source()->affecting_source(I));
+    if ( f && f->transform() == transform()) {
+        ci = f->readChunk( I );
+
+    } else {
+        TIME_Filter
+        {
+            if (f)
+            {
+                TaskInfo("Filter affecting source is %s, but transform() differs", vartype(*f).c_str());
+            }
+            else
+            {
+                Operation* o = source()->affecting_source(I);
+                TaskInfo("source()->affecting_source(I) is %s", vartype(*o).c_str());
+            }
+            TaskInfo("source() is %s", vartype(*source().get()).c_str());
+        }
+
+        TIME_Filter TaskTimer tt("Calling %s::computeChunk",
+                                 vartype(*this).c_str());
+
+        ci = computeChunk( I );
+    }
+
+    // Apply filter
+    Intervals work(ci.chunk->getInterval());
+    work -= affected_samples().inverse();
+
+    if (work)
+        ci.inverse.reset();
+
+    // Only apply filter if it would affect these samples
+    if (this==affecting_source(I) || work || !_try_shortcuts)
+    {
+        TIME_Filter TaskTimer tt("%s filter applying operation, %s",
+                              vartype(*this).c_str(), ci.chunk->getInterval().toString().c_str());
+        applyFilter( ci.chunk );
+        TIME_FilterReturn TaskInfo("%s filter after operation",
+                              vartype(*this).c_str());
+    }
+
+    return ci;
+}
+
+
+void Filter::
+        applyFilter( Tfr::pChunk chunk )
+{
+    (*this)( *chunk );
 }
 
 } // namespace Tfr

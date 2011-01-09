@@ -5,7 +5,9 @@
 #include "signal/source.h"
 #include "signal/intervals.h"
 #include <vector>
+#ifndef SAWE_NO_MUTEX
 #include <QMutex>
+#endif
 
 namespace Signal {
 
@@ -32,6 +34,8 @@ class SinkSource: public Sink
 public:
     /// @see SinkSource
     SinkSource();
+	SinkSource( const SinkSource& b);
+	SinkSource& operator=( const SinkSource& b);
 
     /**
       Insert data into SinkSource
@@ -46,11 +50,12 @@ public:
 
 
     /// Clear cache
-    void reset();
+    void clear();
 
     /**
       Extract an interval from cache, only guaranteed to return a buffer
-      containung I.first.
+      containing I.first. On a cache miss this method returns a buffer with
+      zeros, of the requested interval 'I' or smaller.
       */
     virtual pBuffer read( const Interval& I );
 
@@ -79,10 +84,13 @@ public:
     Intervals samplesDesc();
 
     /// @see Operation::fetch_invalid_samples()
+    //virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= samplesDesc()&I; }
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
 private:
-    QMutex _cache_mutex;
+#ifndef SAWE_NO_MUTEX
+	QMutex _cache_mutex;
+#endif
     std::vector<pBuffer> _cache; // todo use set instead
 
     virtual pOperation source() const { return pOperation(); }

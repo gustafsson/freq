@@ -5,14 +5,13 @@
 #include "tools/toolfactory.h"
 #include "ui/mainwindow.h"
 
-#include <QtGui/QMessageBox>
+// Qt
 #include <QtGui/QFileDialog>
 #include <QVBoxLayout>
-#include <sys/stat.h>
+#include <QtGui/QMessageBox>
 
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
-#include <fstream>
+// Std
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -20,7 +19,8 @@ namespace Sawe {
 
 Project::
         Project( Signal::pOperation head_source )
-:   worker( head_source )
+:   worker( head_source ),
+    is_modified_(true)
 {
 }
 
@@ -29,6 +29,12 @@ Project::
         ~Project()
 {
     TaskTimer tt("~Project");
+
+    if (_mainWindow)
+        delete _mainWindow;
+
+    _tools.reset();
+    root_source_.reset();
 }
 
 
@@ -59,11 +65,11 @@ pProject Project::
 
     if (0 == filename.length()) {
         string filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
-        filter = "All files (*.sonicawe " + filter + ");;";
+        filter = "All files (*.sonicawe *.sonicawe " + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
         filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
 
-		QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
+        QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilemame.length()) {
             // User pressed cancel
             return pProject();
@@ -97,11 +103,32 @@ pProject Project::
 }
 
 
+bool Project::
+        isModified()
+{
+    return is_modified_;
+}
+
+
+void Project::
+        setModified()
+{
+    is_modified_ = true;
+}
+
+
 Ui::SaweMainWindow* Project::
         mainWindow()
 {
     createMainWindow();
     return dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
+}
+
+
+std::string Project::
+        project_name()
+{
+    return QFileInfo(QString::fromLocal8Bit( project_file_name.c_str() )).fileName().toStdString();
 }
 
 
@@ -116,62 +143,44 @@ void Project::
     if (_mainWindow)
         return;
 
+    TaskTimer tt("Project::createMainWindow");
     string title = Sawe::Application::version_string();
     Adapters::Audiofile* af;
     if (0 != (af = dynamic_cast<Adapters::Audiofile*>(worker.source().get()))) {
 		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
-        title = string(info.baseName().toLocal8Bit()) + " - Sonic AWE";
+        title = string(info.baseName().toLocal8Bit()) + " - " + title;
     }
 
-    _mainWindow.reset( new Ui::SaweMainWindow( title.c_str(), this ));
+    _mainWindow = new Ui::SaweMainWindow( title.c_str(), this );
 
-    _tools.reset( new Tools::ToolFactory(this) );
-}
-
-
-void Project::
-        save(std::string project_file)
-{
-    if (project_file.empty()) {
-        string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
-
-        QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
-        if (0 == qfilemame.length()) {
-            // User pressed cancel
-            return;
-        }
-        project_file = qfilemame.toLocal8Bit().data();
-    }
-
-    try
     {
-        // todo use
-        std::ofstream ofs(project_file.c_str());
-        boost::archive::xml_oarchive xml(ofs);
-        xml << boost::serialization::make_nvp("Sonicawe", this);
-    }
-    catch (const std::exception& x)
-    {
-        QMessageBox::warning( 0,
-                     QString("Can't save file"),
-                     QString::fromLocal8Bit(x.what()) );
+        TaskTimer tt("new Tools::ToolFactory");
+        _tools.reset( new Tools::ToolFactory(this) );
+        tt.info("Created tools");
     }
 }
 
 
-pProject Project::
-        openProject(std::string project_file)
+bool Project::
+        saveAs()
 {
-    // todo use
-    std::ifstream ifs(project_file.c_str());
-    boost::archive::xml_iarchive xml(ifs);
+    string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
 
-    Project* new_project;
-    xml >> boost::serialization::make_nvp("SonicaweProject", new_project);
+    QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
+    if (0 == qfilemame.length()) {
+        // User pressed cancel
+        return false;
+    }
 
-    pProject project( new_project );
+    QString extension = ".sonicawe";
+    if (qfilemame.length() < extension.length())
+        qfilemame += extension;
+    if (0 != QString::compare(qfilemame.mid(qfilemame.length() - extension.length()), extension, Qt::CaseInsensitive))
+        qfilemame += extension;
 
-    return project;
+    project_file_name = qfilemame.toLocal8Bit().data();
+
+    return save();
 }
 
 

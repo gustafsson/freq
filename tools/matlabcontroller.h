@@ -10,10 +10,13 @@ namespace Signal { class Worker; }
 
 namespace Tools
 {
+    class RenderView;
+
     class MatlabController: public QObject {
         Q_OBJECT
     public:
-        MatlabController( Sawe::Project* project );
+        MatlabController( Sawe::Project* project, RenderView* render_view );
+        ~MatlabController();
 
     private slots:
         virtual void receiveMatlabOperation(bool);
@@ -23,7 +26,9 @@ namespace Tools
         // Model
         // Model that is controlled, this controller doesn't have a view
         // and shares control of the worker with many others
-        Signal::Worker* _model;
+        Signal::Worker* worker_;
+
+        RenderView* render_view_;
 
         // GUI
         // The fact that this controller doesn't have a view doesn't mean

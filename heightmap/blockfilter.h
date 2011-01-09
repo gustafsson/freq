@@ -9,23 +9,14 @@
 namespace Heightmap
 {
 
-class BlockFilter: public virtual Tfr::Filter
+
+class BlockFilter
 {
 public:
     BlockFilter( Collection* collection );
 
     /// @overload Tfr::Filter::operator ()(Tfr::Chunk&)
     virtual void operator()( Tfr::Chunk& chunk );
-
-    /// @overload Signal::Operation::affected_samples()
-    virtual Signal::Intervals affected_samples();
-
-    /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
-    virtual Signal::Operation* affecting_source( const Signal::Interval& );
-
-    /// @overload Signal::Operation::fetch_invalid_samples()
-    virtual Signal::Intervals fetch_invalid_samples();
-
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
@@ -34,10 +25,101 @@ protected:
 };
 
 
-class CwtToBlock: public Tfr::CwtFilter, public BlockFilter
+template<typename FilterKind>
+class BlockFilterImpl: public FilterKind, public BlockFilter
+{
+public:
+    BlockFilterImpl( Collection* collection )
+        :
+        BlockFilter(collection)
+    {
+    }
+
+
+    BlockFilterImpl( std::vector<boost::shared_ptr<Collection> > collections )
+        :
+        BlockFilter(collections[0].get()),
+        _collections(collections)
+    {
+    }
+
+
+    /// @overload Signal::Operation::fetch_invalid_samples()
+    Signal::Intervals fetch_invalid_samples()
+    {
+        FilterKind::_invalid_samples.clear();
+
+        //if (FilterKind::_invalid_samples)
+        //    TaskInfo("%s %s had %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
+
+        foreach ( boost::shared_ptr<Collection> c, _collections)
+        {
+            Signal::Intervals inv_coll = c->invalid_samples();
+            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            FilterKind::_invalid_samples |= inv_coll;
+        }
+
+        //TaskInfo ti("%s %s %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
+
+        Signal::Intervals inv_samples = FilterKind::_invalid_samples;
+        Signal::Intervals r = Tfr::Filter::fetch_invalid_samples();
+        FilterKind::_invalid_samples = inv_samples;
+        return r;
+    }
+
+
+    virtual void operator()( Tfr::Chunk& chunk )
+    {
+        Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
+        BOOST_ASSERT( fs );
+
+        _collection = _collections[fs->get_channel()].get();
+
+        BlockFilter::operator()(chunk);
+    }
+
+
+    /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
+    Signal::Operation* affecting_source( const Signal::Interval& I)
+    {
+        if (FilterKind::_invalid_samples & I)
+            return this;
+
+        return FilterKind::_source->affecting_source( I );
+    }
+
+
+    /**
+        To prevent anyone from optimizing away a read because it's known to
+        result in zeros. BlockFilter wants to be run anyway, even with zeros.
+        */
+    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
+
+    void applyFilter( Tfr::pChunk pchunk )
+    {
+        // A bit overkill to do every chunk, but it doesn't cost much
+        _collection->update_sample_size(pchunk.get());
+
+        FilterKind::applyFilter( pchunk );
+    }
+
+
+    /// @overload Signal::Operation::affected_samples()
+    virtual Signal::Intervals affected_samples()
+    {
+        return Signal::Intervals::Intervals();
+    }
+
+protected:
+    std::vector<boost::shared_ptr<Collection> > _collections;
+};
+
+
+class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:
     CwtToBlock( Collection* collection );
+    CwtToBlock( std::vector<boost::shared_ptr<Collection> > collections );
 
     /**
       Tells the "chunk-to-block" what information to extract from the complex
@@ -53,10 +135,11 @@ public:
 };
 
 
-class StftToBlock: public Tfr::StftFilter, public BlockFilter
+class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
-    StftToBlock( Collection* collection ) :  BlockFilter(collection) {}
+    StftToBlock( Collection* collection );
+    StftToBlock( std::vector<boost::shared_ptr<Collection> > collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };

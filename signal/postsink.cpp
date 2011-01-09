@@ -1,9 +1,22 @@
 #include "postsink.h"
+
 #include "buffersource.h"
-#include "tfr/filter.h"
-#include <boost/foreach.hpp>
+
+// gpumisc
+#include <Statistics.h>
+#include <TaskTimer.h>
 #include <demangle.h>
+
+// boost
+#include <boost/foreach.hpp>
+
+// std
 #include <typeinfo>
+
+
+#define DEBUG_POSTSINK if(0)
+//#define DEBUG_POSTSINK
+
 
 using namespace std;
 
@@ -12,11 +25,18 @@ namespace Signal {
 Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
+    DEBUG_POSTSINK TaskTimer tt("PostSink( %s )", I.toString().c_str());
+
+    if (_sinks.empty())
+        return source()->read(I);
+
     vector<pOperation> passive_operations;
     vector<pOperation> active_operations;
 
     {
+#ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_sinks_lock);
+#endif
 
         for(std::vector<pOperation>::iterator i = _sinks.begin(); i!=_sinks.end(); )
         {
@@ -24,25 +44,36 @@ Signal::pBuffer PostSink::
 
             if (s && s->isFinished())
             {
-                TaskTimer tt("Removing %s from postsink", demangle( typeid(*s).name() ).c_str());
+                TaskTimer tt("Removing %s from postsink", demangle( typeid(*s) ).c_str());
                 i = _sinks.erase( i );
             }
             else
                 i++;
         }
 
+        DEBUG_POSTSINK TaskTimer tt("Adding %u operations", _sinks.size());
+
         BOOST_FOREACH( pOperation c, _sinks )
         {
             if (c->affected_samples() & I )
+            {
+                DEBUG_POSTSINK TaskTimer("Active %s", vartype(*c).c_str()).suppressTiming();
                 active_operations.push_back(c);
+            }
             else
+            {
+                DEBUG_POSTSINK TaskTimer("Passive %s", vartype(*c).c_str()).suppressTiming();
                 passive_operations.push_back(c);
+            }
         }
     }
 
     pOperation prev = source();
+    DEBUG_POSTSINK TaskTimer("Source %s", vartype(*prev).c_str()).suppressTiming();
+
     if (_filter)
     {
+        DEBUG_POSTSINK TaskTimer("Filter %s", vartype(*_filter).c_str()).suppressTiming();
         _filter->source(prev);
         prev = _filter;
     }
@@ -52,23 +83,26 @@ Signal::pBuffer PostSink::
         prev = c;
     }
 
+    pBuffer b;
+    // Since PostSink is a sink, it doesn't need to return anything.
+    // But since the buffer 'b' will be computed anyway when calling 'read'
+    // PostSink may just as well return it, at least for debugging purposes.
+
     if (1==active_operations.size())
     {
-        pOperation c = active_operations.front();
-        c->source(prev);
+        pOperation c = active_operations[0];
+        c->source( prev );
+        b = c->read( I );
         prev = c;
+        c->source( source() );
         active_operations.clear();
-    }
+    } else
+        b = prev->read( I );
 
-    pBuffer b = prev->read( I );
-
-    if (!active_operations.empty())
-    {
-        prev.reset( new BufferSource( b ));
-        BOOST_FOREACH( pOperation c, active_operations) {
-            c->source(prev);
-            c->read( I );
-        }
+    // prev.reset( new BufferSource( b ));
+    BOOST_FOREACH( pOperation c, active_operations) {
+        c->source( _filter ? _filter : source() );
+        c->read( I );
     }
 
     BOOST_FOREACH( pOperation c, passive_operations )
@@ -103,7 +137,7 @@ void PostSink::
         b = _inverse_cwt( *chunk );
     }
 
-    BOOST_FOREACH( pSink sink, sinks() )
+    foreach( pSink sink, sinks() )
         sink->put(b, s);
 }*/
 
@@ -112,7 +146,7 @@ void PostSink::
 void PostSink::
         reset()
 {
-    BOOST_FOREACH( pSink s, sinks() )
+    foreach( pSink s, sinks() )
         s->reset( );
 
     Tfr::ChunkSink::reset();
@@ -125,7 +159,7 @@ bool PostSink::
 {
     bool r = true;
 
-    BOOST_FOREACH( pSink s, sinks() )
+    foreach( pSink s, sinks() )
         r &= s->isFinished( );
 
     return r;
@@ -152,6 +186,9 @@ Intervals PostSink::
         affected_samples()
 {
     Intervals I;
+
+    if (sinks().empty())
+        return I;
 
     if (_filter)
         I |= _filter->affected_samples();
@@ -196,7 +233,9 @@ void PostSink::
 std::vector<pOperation> PostSink::
         sinks()
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
+#endif
     return _sinks;
 }
 
@@ -204,7 +243,9 @@ std::vector<pOperation> PostSink::
 void PostSink::
         sinks(std::vector<pOperation> v)
 {
+#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
+#endif
     _sinks = v;
 }
 
@@ -221,7 +262,8 @@ void PostSink::
 {
     Intervals I;
 
-    f->source(source());
+    if (f)          f->source(source());
+    if (_filter)    _filter->source(source());
 
     if (f)          I |= f->affected_samples();
     if (_filter)    I |= _filter->affected_samples();

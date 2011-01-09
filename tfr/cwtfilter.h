@@ -1,17 +1,23 @@
 #ifndef TFRCWTFILTER_H
 #define TFRCWTFILTER_H
 
+#pragma once
+
 #include "filter.h"
 
 namespace Tfr {
 
-class CwtFilter : public virtual Filter
+class CwtFilter : public Filter
 {
 public:
     CwtFilter( Signal::pOperation source=Signal::pOperation(),
                Tfr::pTransform transform=Tfr::pTransform() );
 
-    virtual Filter::ChunkAndInverse readChunk( const Signal::Interval& I );
+
+    /**
+      This computes the Cwt chunk covering a given interval.
+      */
+    ChunkAndInverse computeChunk( const Signal::Interval& I );
 
 
     /**
@@ -26,6 +32,12 @@ public:
       Cwt.
       */
     void transform( Tfr::pTransform m );
+
+    Signal::Intervals include_time_support(Signal::Intervals);
+    Signal::Intervals discard_time_support(Signal::Intervals);
+
+protected:
+    void applyFilter( Tfr::pChunk chunk );
 };
 
 // TODO remove

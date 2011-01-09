@@ -1,10 +1,12 @@
 #ifndef PLAYBACKMODEL_H
 #define PLAYBACKMODEL_H
 
-#include <string>
 #include "signal/operation.h"
+#include "signal/postsink.h"
+#include "signal/worker.h"
 
-namespace Signal { class Worker; }
+#include <string>
+
 namespace Adapters { class Playback; }
 
 namespace Tools
@@ -15,6 +17,9 @@ namespace Tools
     {
     public:
         PlaybackModel( SelectionModel* selection );
+
+        Signal::PostSink* getPostSink();
+        Signal::pWorkerCallback postsinkCallback;
 
         unsigned playback_device;
         std::string selection_filename;

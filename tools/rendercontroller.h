@@ -25,6 +25,7 @@ namespace Tools
         // ComboBoxAction color
         void receiveSetRainbowColors();
         void receiveSetGrayscaleColors();
+        void receiveSetColorscaleColors();
 
         // Toggle Buttons
         void receiveToogleHeightlines(bool);
@@ -43,12 +44,14 @@ namespace Tools
         void receiveSetTransform_Cwt_phase();
         void receiveSetTransform_Cwt_reassign();
         void receiveSetTransform_Cwt_ridge();
+        void receiveSetTransform_Cwt_weight();
 
     private slots:
         void clearCachedHeightmap();
-        void frameTick();
 
     private:
+        Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
+
         RenderModel *model();
         RenderView *view;
 
@@ -68,8 +71,6 @@ namespace Tools
         void setupGui();
 
         // Controlling
-        QMutex _invalidRangeMutex;
-        Signal::Intervals _invalidRange;
         Signal::pOperation _updateViewSink;
         Signal::pWorkerCallback _updateViewCallback;
     };

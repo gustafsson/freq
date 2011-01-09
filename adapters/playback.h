@@ -5,7 +5,6 @@
 
 #include <vector>
 #include <time.h>
-#include <QMutex>
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/scoped_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -35,6 +34,7 @@ public:
     float       outputLatency();
     unsigned    output_device() { return _output_device; }
     bool        isStopped();
+    bool        hasReachedEnd();
     bool        isUnderfed();
     float       sample_rate() { return _data.sample_rate(); }
 
@@ -46,6 +46,10 @@ private:
             _last_timestamp,
             _startPlay_timestamp;
 	unsigned _first_buffer_size;
+    float _max_found,
+          _min_found;
+
+    void normalize( float* p, unsigned N );
 
     int readBuffer(const void * /*inputBuffer*/,
                      void *outputBuffer,

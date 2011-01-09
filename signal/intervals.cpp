@@ -1,16 +1,17 @@
 #include "intervals.h"
 
 #include <stdexcept>
-#include <boost/foreach.hpp>
 #include <boost/assert.hpp>
 #include <cfloat>
 #include <TaskTimer.h>
 #include <sstream>
 
+#include <QtGlobal> // foreach
+
 namespace Signal {
 
-const IntervalType Interval::Interval::IntervalType_MIN = (IntervalType)0;
-const IntervalType Interval::Interval::IntervalType_MAX = (IntervalType)-1;
+const IntervalType Interval::IntervalType_MIN = (IntervalType)0;
+const IntervalType Interval::IntervalType_MAX = (IntervalType)-1;
 const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Interval::IntervalType_MAX);
 const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
 
@@ -68,6 +69,8 @@ Intervals::
 Intervals::
         Intervals(IntervalType first, IntervalType last)
 {
+//    if (first<last)
+//        last = Interval::IntervalType_MAX;
     BOOST_ASSERT( first < last );
     this->push_back( Interval( first, last ) );
 }
@@ -76,8 +79,8 @@ Intervals::
 Intervals& Intervals::
         operator |= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b)
-        operator|=( r );
+    foreach (const Interval& r,  b)
+        operator |= ( r );
     return *this;
 }
 
@@ -114,7 +117,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b)
+    foreach (const Interval& r,  b)
         operator-=( r );
     return *this;
 }
@@ -170,7 +173,7 @@ Intervals& Intervals::
     for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 	
-        if (Interval::IntervalType_MIN + b > i.first ) i.first = Interval::Interval::IntervalType_MIN;
+        if (Interval::IntervalType_MIN + b > i.first ) i.first = Interval::IntervalType_MIN;
 		else i.first -= b;
         if (Interval::IntervalType_MIN + b > i.last ) i.last = Interval::IntervalType_MIN;
 		else i.last -= b;
@@ -191,9 +194,9 @@ Intervals& Intervals::
     for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 	
-        if (Interval::IntervalType_MAX - b < i.first ) i.first = Interval::IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b <= i.first ) i.first = Interval::IntervalType_MAX;
 		else i.first += b;
-        if (Interval::IntervalType_MAX - b < i.last ) i.last = Interval::IntervalType_MAX;
+        if (Interval::IntervalType_MAX - b <= i.last ) i.last = Interval::IntervalType_MAX;
 		else i.last += b;
 
         if ( Interval::IntervalType_MAX == i.first && Interval::IntervalType_MAX == i.last )
@@ -210,7 +213,7 @@ Intervals& Intervals::
         operator &= (const Intervals& b)
 {
 	Intervals rebuild;
-    BOOST_FOREACH (const Interval& r,  b) {
+    foreach (const Interval& r,  b) {
 		Intervals copy = *this;
         copy&=( r );
 		rebuild |= copy;
@@ -293,6 +296,11 @@ Interval Intervals::
 Interval Intervals::
         getInterval( IntervalType dt, IntervalType center ) const
 {
+    if (center < dt/2)
+        center = 0;
+    else
+        center -= dt/2;
+
     if (0 == this->size()) {
         return Interval( Interval::IntervalType_MIN, Interval::IntervalType_MIN );
     }
@@ -331,11 +339,13 @@ Interval Intervals::
             return f;
         }
 
-        if (f.last <= center ) {
+        unsigned int_div_ceil = ( center-f.first + dt - 1 ) / dt;
+        IntervalType start = f.first + dt*int_div_ceil;
+
+        if (f.last <= start ) {
             return Interval( f.last-dt, f.last );
         }
 
-        IntervalType start = f.first + dt*(unsigned)((center-f.first) / dt);
         return Interval( start, std::min(start+dt, f.last) );
     }
 }
@@ -359,32 +369,32 @@ Interval Intervals::
 }
 
 
-void Intervals::
-        print( std::string title ) const
+std::string Intervals::toString() const
 {
     std::stringstream ss;
-    ss << *this;
+    ss << "{";
+    if (1<size())
+        ss << size() << "#";
 
-    TaskTimer("%s, %s",
-              title.empty()?"SamplesIntervalDescriptor":title.c_str(),
-              ss.str().c_str()).suppressTiming();
+    foreach (const Interval& r, *this)
+    {
+        if (1<size())
+            ss << " ";
+        ss << r.toString();
+    }
+
+    ss << "}";
+    return ss.str();
 }
 
 
-std::ostream& operator<<( std::ostream& s, const Intervals& I)
+std::string Interval::toString() const
 {
-    s << "{" << I.size() << " interval" << ((I.size()==1)?"":"s");
-
-    BOOST_FOREACH (const Interval& r, I)
-        s << " " << r;
-
-    return s << "}";
-}
-
-
-std::ostream& operator<<( std::ostream& s, const Interval& i)
-{
-    return s << "[" << i.first << ", " << i.last << ")";
+    std::stringstream ss;
+    ss << "[" << first << ", " << last << ")";
+    if (0<first)
+        ss << count() << "#";
+    return ss.str();
 }
 
 } // namespace Signal

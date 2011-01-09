@@ -10,9 +10,12 @@ namespace Tools {
         class SinkSignalProxy: public QObject, public Signal::Sink
         {
             Q_OBJECT
+        public:
+            SinkSignalProxy();
+
         signals:
-            void recievedBuffer( Signal::pBuffer );
-            void recievedInvalidSamples( const Signal::Intervals& I );
+            void recievedBuffer( Signal::Buffer* );
+            void recievedInvalidSamples( Signal::Intervals );
 
         private:
             virtual bool isFinished() { return false; }

@@ -2,8 +2,6 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <boost/foreach.hpp>
-#include <QMutexLocker>
 #include <QMessageBox>
 
 #define TIME_PLAYBACK
@@ -17,7 +15,6 @@ namespace Adapters {
 Playback::
         Playback( int outputDevice )
 :   _first_buffer_size(0),
-    _playback_itr(0),
     _output_device(0)
 {
     portaudio::AutoSystem autoSys;
@@ -29,14 +26,22 @@ Playback::
     if (0>outputDevice || outputDevice>sys.deviceCount()) {
         _output_device = sys.defaultOutputDevice().index();
     } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
-        if(first) cout << "Requested audio device '" << sys.deviceByIndex(outputDevice).name() << "' can only be used for input." << endl;
+        TaskTimer("Creating audio Playback. Requested audio device '%s' can only be used for input.",
+                     sys.deviceByIndex(outputDevice).name()).suppressTiming();
         _output_device = sys.defaultOutputDevice().index();
     } else {
         _output_device = outputDevice;
     }
 
-    if(first) cout << "Using device '" << sys.deviceByIndex(_output_device).name() << "' for audio output." << endl << endl;
+    if(first)
+    {
+        TaskInfo tt("Creating audio Playback. Using device '%s' (%d) for audio output.",
+                 sys.deviceByIndex(_output_device).name(), _output_device);
+        if (_output_device != outputDevice)
+            tt.tt().getStream() << " Requested device was number " << outputDevice;
+    }
 
+    reset();
     // first = false;
 }
 
@@ -126,12 +131,36 @@ void Playback::
         put( Signal::pBuffer buffer )
 {
     TIME_PLAYBACK TaskTimer tt("Playback::put [%lu,%lu]", (unsigned long)buffer->sample_offset, (unsigned long)(buffer->sample_offset+buffer->number_of_samples()));
-
     _last_timestamp = microsec_clock::local_time();
+
     if (_data.empty())
-	{
+    {
+        const Signal::Interval I = buffer->getInterval();
         _first_timestamp = _last_timestamp;
-		_first_buffer_size = buffer->number_of_samples();
+        _first_buffer_size = I.count();
+
+        // Discard zeros in the beginning of the signal
+/*        float* p = buffer->waveform_data()->getCpuMemory();
+        Signal::IntervalType i;
+        for (i=0; i<I.count(); ++i)
+        {
+            if (fabsf(p[i]) > 0.001)
+                break;
+        }
+
+        if (i>0)
+        {
+            Signal::Intervals is = _data.fetch_invalid_samples();
+            _data.clear();
+            _data.invalidate_samples( is - Signal::Interval(I.first, I.first + i) );
+
+            Signal::Interval rI( I.first + i, I.last );
+
+            if (0==rI.count())
+                return;
+
+            buffer = Signal::BufferSource( buffer ).readFixedLength( rI );
+        }*/
 	}
 
     // Make sure the buffer is moved over to CPU memory.
@@ -140,7 +169,6 @@ void Playback::
     GpuCpuData<float>* bdata = buffer->waveform_data();
     bdata->getCpuMemory();
     bdata->freeUnused(); // relase GPU memory as well...
-
     _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
 
     if (streamPlayback)
@@ -149,7 +177,9 @@ void Playback::
             // start over
             streamPlayback->start();
         }
-        TIME_PLAYBACK TaskTimer("Is playing").suppressTiming();
+        if (streamPlayback->isActive()) {
+            TIME_PLAYBACK TaskInfo("Is playing");
+        }
         return;
     }
 
@@ -167,16 +197,17 @@ void Playback::
             streamPlayback->stop();
     }
 
-    _data.reset();
+    _data.clear();
     _playback_itr = 0;
+    _max_found = 1;
+    _min_found = -1;
 }
 
 
 bool Playback::
         isFinished()
 {
-    return false;
-//    return _data.isFinished() && isStopped();
+    return _data.isFinished() && isStopped();
 }
 
 
@@ -233,7 +264,7 @@ void Playback::
         QMessageBox::warning( 0,
                      "Can't play sound",
                      x.what() );
-        _data.reset();
+        _data.clear();
     }
 }
 
@@ -242,6 +273,13 @@ bool Playback::
         isStopped()
 {
     return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
+}
+
+
+bool Playback::
+        hasReachedEnd()
+{
+    return (_data.first_buffer()->sample_offset + _data.number_of_samples())/sample_rate() < time();
 }
 
 
@@ -302,6 +340,19 @@ void Playback::
 }
 
 
+void Playback::
+        normalize( float* p, unsigned N )
+{
+    for (unsigned j=0; j<N; ++j)
+    {
+        if (p[j] > _max_found) _max_found = p[j];
+        if (p[j] < _min_found) _min_found = p[j];
+
+        p[j] = (p[j] - _min_found)/(_max_found - _min_found)*2-1;
+    }
+}
+
+
 int Playback::
         readBuffer(const void * /*inputBuffer*/,
                  void *outputBuffer,
@@ -318,17 +369,18 @@ int Playback::
     }
 
     Signal::pBuffer b = _data.readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
-    memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
+    ::memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
+    normalize( buffer, framesPerBuffer );
     _playback_itr += framesPerBuffer;
 
     if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + 10ul*2024/*framesPerBuffer*/) < _playback_itr ) {
-        TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() ).suppressTiming();
+        TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
         return paComplete;
     } else {
         if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr + framesPerBuffer) {
-            TIME_PLAYBACK TaskTimer("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer ).suppressTiming();
+            TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer );
         } else {
-            TIME_PLAYBACK TaskTimer("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer ).suppressTiming();
+            TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer );
         }
     }
 

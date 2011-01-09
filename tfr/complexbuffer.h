@@ -3,6 +3,8 @@
 
 #include "signal/source.h"
 
+#include <boost/scoped_ptr.hpp>
+
 namespace Tfr
 {
 class ComplexBuffer
@@ -27,13 +29,13 @@ public:
         The pointer is valid for the lifetime of this class, or as long as the
         pBuffer returned from get_real() isn't deleted.
     */
-    virtual GpuCpuData<float>* waveform_data();
+    GpuCpuData<float>* waveform_data();
 
 
     /**
         Overloaded from buffer
     */
-    virtual unsigned number_of_samples() const { return _complex_waveform_data->getNumberOfElements().width; }
+    unsigned number_of_samples() const { return _complex_waveform_data->getNumberOfElements().width; }
 
 
     UnsignedF       sample_offset;
@@ -55,8 +57,7 @@ public:
 protected:
     Signal::pBuffer _my_real;
 
-    boost::scoped_ptr<GpuCpuData<float2> >
-                    _complex_waveform_data;
+    boost::scoped_ptr<GpuCpuData<float2> > _complex_waveform_data;
 };
 
 } // namespace Tfr

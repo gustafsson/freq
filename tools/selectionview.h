@@ -1,3 +1,4 @@
+#if 0
 #ifndef SELECTIONVIEW_H
 #define SELECTIONVIEW_H
 
@@ -18,9 +19,7 @@ namespace Tools
         ~SelectionView();
 
         void drawSelection();
-        void drawSelectionSquare();
         bool insideCircle( float x1, float z1 );
-        void drawSelectionCircle();
         void drawSelectionCircle2();
 
         bool enabled;
@@ -36,3 +35,4 @@ namespace Tools
 } // namespace Tools
 
 #endif // SELECTIONVIEW_H
+#endif

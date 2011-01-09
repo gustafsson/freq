@@ -4,6 +4,11 @@
 // gpumisc
 #include <CudaException.h>
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#include <math.h>
+#endif
+
 //#define TIME_FILTER
 #define TIME_FILTER if(0)
 

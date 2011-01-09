@@ -14,16 +14,30 @@ macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 CONFIG += console # console output
+#DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
-win32:QMAKE_LFLAGS += /FORCE:MULTIPLE
+win32:QMAKE_LFLAGS_DEBUG += \
+	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
+	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
+	/NODEFAULTLIB:MSVCRT \
+	
+win32:QMAKE_LFLAGS_RELEASE += \
+	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
+	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
+	
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-!macx&!win32: QMAKE_CXX = colorgcc
-#macx:QMAKE_CXX = g++ # Should not need this macx: with !macx&!win32 above
+unix:!macx: QMAKE_CXX = colorgcc
+
+profiling {
+    # Profiling with gcc, gprof doesn't work with Os X 10.5 Leopard.
+    !win32:QMAKE_CXXFLAGS_RELEASE += -pg
+    !win32:QMAKE_LFLAGS_RELEASE += -pg
+}
 
 ### Settings for using llvm instead of gcc on linux
 llvm {
@@ -40,142 +54,72 @@ RESOURCES += \
     ui/icon-resources.qrc \
 
 SOURCES += \
-    adapters/audiofile.cpp \
-    adapters/csv.cpp \
-    adapters/hdf5.cpp \
-    adapters/matlabfilter.cpp \
-    adapters/matlaboperation.cpp \
-    adapters/microphonerecorder.cpp \
-    adapters/playback.cpp \
-    adapters/writewav.cpp \
+    adapters/*.cpp \
     filters/*.cpp \
-    heightmap/blockfilter.cpp \
-    heightmap/collection.cpp \
-    heightmap/glblock.cpp \
-    heightmap/reference.cpp \
-    heightmap/renderer.cpp \
-    sawe/application.cpp \
-    sawe/layer.cpp \
-    sawe/main.cpp \
-    sawe/project.cpp \
-    signal/buffersource.cpp \
-    signal/operation.cpp \
-    signal/operation-basic.cpp \
-    signal/operationcache.cpp \
-    signal/postsink.cpp \
-    signal/intervals.cpp \
-    signal/sinksource.cpp \
-    signal/source.cpp \
-    signal/worker.cpp \
-    tfr/chunk.cpp \
-    tfr/complexbuffer.cpp \
-    tfr/cwt.cpp \
-    tfr/cwtchunk.cpp \
-    tfr/cwtfilter.cpp \
+    heightmap/*.cpp \
+    sawe/*.cpp \
+    signal/*.cpp \
     tfr/fft4g.c \
-    tfr/filter.cpp \
-    tfr/stft.cpp \
-    tfr/stftfilter.cpp \
+    tfr/*.cpp \
     tools/*.cpp \
     tools/support/*.cpp \
-    ui/comboboxaction.cpp \
-    ui/mainwindow.cpp \
-    ui/mousecontrol.cpp \
-    ui/propertiesselection.cpp \
-    ui/propertiesstroke.cpp \
-    ui/updatewidgetsink.cpp \
-    heightmap/resampletest.cpp \
+    tools/selections/*.cpp \
+    tools/selections/support/*.cpp \
+    ui/*.cpp \
 
 HEADERS += \
-    adapters/audiofile.h \
-    adapters/csv.h \
-    adapters/hdf5.h \
-    adapters/matlabfilter.h \
-    adapters/matlaboperation.h \
-    adapters/microphonerecorder.h \
-    adapters/playback.h \
-    adapters/writewav.h \
+    adapters/*.h \
     filters/*.h \
-    heightmap/block.cu.h \
-    heightmap/blockfilter.h \
-    heightmap/collection.h \
-    heightmap/glblock.h \
-    heightmap/position.h \
-    heightmap/reference.h \
-    heightmap/renderer.h \
-    heightmap/resample.cu.h \
-    heightmap/slope.cu.h \
-    sawe/application.h \
-    sawe/layer.h \
-    sawe/mainplayback.h \
-    sawe/project.h \
-    signal/buffersource.h \
-    signal/operation.h \
-    signal/operation-basic.h \
-    signal/operationcache.h \
-    signal/postsink.h \
-    signal/intervals.h \
-    signal/sink.h \
-    signal/sinksource.h \
-    signal/source.h \
-    signal/worker.h \
-    tfr/chunk.h \
-    tfr/complexbuffer.h \
-    tfr/cwt.h \
-    tfr/cwtchunk.h \
-    tfr/cwtfilter.h \
-    tfr/filter.h \
-    tfr/freqaxis.h \
-    tfr/stft.h \
-    tfr/transform.h \
-    tfr/wavelet.cu.h \
-    tfr/stftfilter.h \
+    heightmap/*.h \
+    sawe/*.h \
+    signal/*.h \
+    tfr/*.h \
     tools/*.h \
     tools/support/*.h \
-    ui/comboboxaction.h \
-    ui/mainwindow.h \
-    ui/mousecontrol.h \
-    ui/propertiesselection.h \
-    ui/propertiesstroke.h \
-    ui/updatewidgetsink.h \
-    heightmap/resampletest.h \
-    heightmap/resampletest.cu.h \
+    tools/selections/*.h \
+    tools/selections/support/*.h \
+    ui/*.h \
+
+PRECOMPILED_HEADER += sawe/project_header.h
 
 FORMS += \
     tools/selectionviewmodel.ui \
     ui/mainwindow.ui \
     ui/propertiesselection.ui \
     ui/propertiesstroke.ui \
+    tools/commentview.ui
 
 CUDA_SOURCES += \
     filters/*.cu \
     heightmap/block.cu \
     heightmap/resampletest.cu \
+    heightmap/resampletest2.cu \
     heightmap/slope.cu \
     tfr/wavelet.cu \
+    tools/support/brushfilter.cu \
+    tools/support/brushpaint.cu \
+    tools/selections/support/splinefilter.cu \
 
-SHADER_SOURCS += \
+SHADER_SOURCES += \
     heightmap/heightmap.frag \
     heightmap/heightmap.vert \
 
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
-    $$SHADER_SOURCS \ 
+    $$SHADER_SOURCES \
 
 # "Other files" for Visual Studio
 OTHER_SOURCES += \
-    $$SHADERS \
-    sonicawe.pro \
+    $$SHADER_SOURCES \
+    *.pro \
 
-
-# Make shaders show up in project file list in Visual Studio
+# Make OTHER_SOURCES show up in project file list in Visual Studio
 win32 { 
     othersources.input = OTHER_SOURCES
     othersources.output = ${QMAKE_FILE_NAME}
-    QMAKE_EXTRA_UNIX_COMPILERS += othersources
+    QMAKE_EXTRA_COMPILERS += othersources
 }
-
 
 ####################
 # Build settings
@@ -203,36 +147,46 @@ LIBS = \
 macx {
 INCLUDEPATH += \
     ../../libs/include \
+    ../../libs/boost_1_45_0 \
     ../../libs/hdf5/include \
-    ../../libs/zlib/include 
+    ../../libs/zlib/include \
+    ../../libs/include/sndfile
 LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -framework GLUT \
     -framework OpenGL \
     -L../../libs -lportaudiocpp -lportaudio \
     -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/zlib/bin -lz \
-    -L../gpumisc -lgpumisc
+    -L../../libs/zlib/lib -lz \
+    -L../gpumisc -lgpumisc \
+    -L../../libs/boost_1_45_0/stage/lib \
+    -lboost_serialization
 }
 
 win32 {
 INCLUDEPATH += \
-	..\..\winlib\glut \
-	..\..\winlib\glew\include \
-	..\..\winlib\portaudio\include \
-	..\..\winlib\libsndfile\include \
-	..\..\winlib\hdf5lib\include \
-	..\..\winlib\zlib\include \
-	..\..\winlib
+	../../winlib/glut \
+	../../winlib/glew/include \
+	../../winlib/portaudio/include \
+	../../winlib/libsndfile/include \
+	../../winlib/hdf5lib/include \
+	../../winlib/zlib/include \
+	../../winlib
 LIBS += \
-	-l..\..\winlib\glut\glut32 \
-	-l..\..\winlib\glew\lib\glew32 \
-	-l..\..\winlib\libsndfile\libsndfile-1 \
-	-l..\..\winlib\portaudio\portaudio \
-	-l..\..\winlib\portaudio\portaudiocpp \
-	-l..\..\winlib\hdf5lib\dll\hdf5dll \
-	-l..\..\winlib\hdf5lib\dll\hdf5_hldll \
-	-L..\..\winlib\boostlib
+	-l../../winlib/glut/glut32 \
+	-l../../winlib/glew/lib/glew32 \
+	-l../../winlib/libsndfile/libsndfile-1 \
+	-l../../winlib/hdf5lib/dll/hdf5dll \
+	-l../../winlib/hdf5lib/dll/hdf5_hldll \
+	-L../../winlib/boostlib
+win32:QMAKE_LFLAGS_RELEASE += \
+	../../winlib/portaudio/portaudio.lib \
+#	../../winlib/portaudio/portaudio_x86_mt.lib \
+	../../winlib/portaudio/portaudiocpp_mt.lib
+win32:QMAKE_LFLAGS_DEBUG += \
+	../../winlib/portaudio/portaudio.lib \
+#	../../winlib/portaudio/portaudio_x86_mt_gd.lib \
+	../../winlib/portaudio/portaudiocpp_mt_gd.lib
 }
 
 
@@ -255,21 +209,22 @@ LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
 
+
 win32 { 
-    INCLUDEPATH += $(CUDA_INC_PATH)
-    LIBS += -L$(CUDA_LIB_PATH)
+    INCLUDEPATH += "$(CUDA_INC_PATH)"
+    LIBS += -L"$(CUDA_LIB_PATH)"
 	QMAKE_CXXFLAGS -= -Zc:wchar_t-
-	QMAKE_CXXFLAGS += -Zc:wchar_t
+    QMAKE_CXXFLAGS += -Zc:wchar_t
     cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
-    cuda.commands = $(CUDA_BIN_PATH)/nvcc.exe \
+    cuda.commands = \"$(CUDA_BIN_PATH)/nvcc.exe\" \
         -c \
         -Xcompiler \
         \"$$join(QMAKE_CXXFLAGS," ")\" \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
-        ${QMAKE_FILE_BASE}.cu \
-        -o \
-        ${QMAKE_FILE_OUT}
+        "${QMAKE_FILE_NAME}" \
+		-o \
+        "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
     # auto-detect CUDA path
@@ -345,5 +300,5 @@ macx {
 }
 
 cuda.input = CUDA_SOURCES
-QMAKE_EXTRA_UNIX_COMPILERS += cuda
+QMAKE_EXTRA_COMPILERS += cuda
 # end of cuda section #######################################################################

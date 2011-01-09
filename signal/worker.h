@@ -1,12 +1,21 @@
 #ifndef SIGNALWORKER_H
 #define SIGNALWORKER_H
 
-#include "signal/intervals.h"
-#include "signal/postsink.h"
+// Signal namespace
+#include "intervals.h"
+#include "postsink.h"
+
+// Boost
 #include <boost/noncopyable.hpp>
+
+// Qt
+#ifndef SAWE_NO_MUTEX
 #include <QMutex>
 #include <QThread>
 #include <QWaitCondition>
+#endif
+#include <QObject>
+
 
 namespace Signal {
 
@@ -75,7 +84,7 @@ created by the GroupOperation.
 1/ GroupOperation: MergeOperation Root
 9 Operation remove section [Rendering]
 8 Operation: Amplitude*0.5
-7 CwtFilter: remove ellips
+7 CwtFilter: remove ellipse
 6 GroupOperation: move selection in frequency
   2 Operation: merge extracted selection at new location in time
   2 CwtFilter: resample at new frequency
@@ -103,8 +112,14 @@ underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
   */
-class Worker:public QThread
+class Worker
+#ifndef SAWE_NO_MUTEX
+    : public QThread
+#else
+    : public QObject
+#endif
 {
+    Q_OBJECT
 public:
     Worker(pOperation source=pOperation());
     ~Worker();
@@ -124,9 +139,9 @@ public:
     unsigned work_chunks;
 
     /**
-      work_time is incremented each time workOne is invoked.
+      worked_samples is incremented each time workOne is invoked.
       */
-    float work_time;
+    Intervals worked_samples;
 
     /**
       The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
@@ -145,6 +160,8 @@ public:
 
     /**
       Get/set the data source for this worker.
+      // TODO worker should overload operation instead so that source can be
+        set without including "worker.h"
       */
     Signal::pOperation     source() const;
     void                source(Signal::pOperation s);
@@ -163,8 +180,8 @@ public:
     /**
       Get/set requested number of frames per second.
       */
-    unsigned            requested_fps() const;
-    void                requested_fps(unsigned);
+    float               requested_fps() const;
+    void                requested_fps(float);
 
 	/**
 	  Throws an std::exception if one has been caught by run()
@@ -172,20 +189,25 @@ public:
 	void				checkForErrors();
 
 
+    void                invalidate_post_sink(Intervals I);
     /**
       Get all callbacks that data are sent to after each workOne.
 
       TODO Shouldn't be exposed like this.
       */
-    PostSink* postSink();
+    //PostSink* postSink();
+signals:
+    void source_changed();
 
 private:
     friend class WorkerCallback;
 
+#ifndef SAWE_NO_MUTEX
     /**
       Runs the worker thread.
       */
     virtual void run();
+#endif
 
     /**
       A WorkerCallback adds itself to a Worker.
@@ -208,28 +230,36 @@ private:
       All callbacks in this list are called once for each call of workOne().
       */
     PostSink _post_sink;
-    //std::vector<pOperation> _callbacks;
 
+    /**
+      Adjusting chunk size based on fps.
+      */
+    boost::posix_time::ptime _last_work_one;
+
+#ifndef SAWE_NO_MUTEX
     /**
       Thread safety for addCallback, removeCallback and callCallbacks.
       */
     QMutex _callbacks_lock;
-
+#endif
     /**
       @see source
       */
     Signal::pOperation _source;
+    Signal::pOperation _cache;
 
+#ifndef SAWE_NO_MUTEX
     /**
       Thread safety for _todo_list.
       */
     QMutex _todo_lock;
     QWaitCondition _todo_condition;
+#endif
 
     /**
       @see todo_list
       */
-    Intervals _todo_list;
+    Intervals _todo_list, _cheat_work;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.
@@ -238,11 +268,17 @@ private:
       */
     unsigned  _samples_per_chunk;
     unsigned  _max_samples_per_chunk;
+    unsigned  _min_samples_per_chunk;
 
     /**
       _samples_per_chunk is adjusted up and down to reach this given framerate. Default value: requested_fps=30.
       */
-    unsigned _requested_fps;
+    float _requested_fps;
+
+    /**
+      lowest fps allowed, defaults to 0.5
+      */
+    float _min_fps;
 
 	/**
       Worker::run is intended to be executed by a separate worker thread. To

@@ -20,8 +20,11 @@ public:
 
     bool worldPos(double &ox, double &oy, float scale);
     static bool worldPos(double x, double y, double &ox, double &oy, float scale);
+    static bool planePos(double x, double y, float &ox, float &oy, float scale);
+
     /**
-      worldPos projects space coordinates onto the xz-plane. spacePos simple returns the space pos.
+      worldPos projects screen coordinates onto the xz-plane in world space.
+      spacePos simply returns the space pos of screen coordinates.
       */
     bool spacePos(double &out_x, double &out_y);
     static bool spacePos(double in_x, double in_y, double &out_x, double &out_y);

@@ -1,8 +1,10 @@
 #ifndef HEIGHTMAPBLOCK_CU_H
 #define HEIGHTMAPBLOCK_CU_H
 
-#include <cudaPitchedPtrType.h>
 #include "tfr/freqaxis.h"
+
+// gpusmisc
+#include <cudaPitchedPtrType.h>
 
 /**
   The namespace Tfr does not know about the namespace Heightmap
@@ -37,10 +39,19 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
                  uint2 validInputs,
                  float4 inputRegion,
-                 float4 outputRegion );
+                 float4 outputRegion,
+                 Heightmap::ComplexInfo transformMethod,
+                 Tfr::FreqAxis freqAxis
+                 );
 
 extern "C"
 void blockMerge( cudaPitchedPtrType<float> inBlock,
+                 cudaPitchedPtrType<float> outBlock,
+                 float4 in_area,
+                 float4 out_area );
+
+extern "C"
+void blockMergeOld( cudaPitchedPtrType<float> inBlock,
                  cudaPitchedPtrType<float> outBlock,
                  float in_sample_rate,
                  float out_sample_rate,
@@ -72,5 +83,13 @@ void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
                  float in_max_hz,
                  unsigned in_stft_size,
                  unsigned cuda_stream);
+
+extern "C"
+void resampleStft( cudaPitchedPtrType<float2> input,
+                   cudaPitchedPtrType<float> output,
+                   float4 inputRegion,
+                   float4 outputRegion,
+                   Tfr::FreqAxis inputAxis,
+                   Tfr::FreqAxis outputAxis );
 
 #endif // HEIGHTMAPBLOCK_CU_H

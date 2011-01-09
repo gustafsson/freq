@@ -1,576 +1,245 @@
 #include <stdio.h>
-#include "heightmap/block.cu.h"
+#include "block.cu.h"
+#include "tfr/freqaxis.h"
+#include <resample.cu.h>
 
-//#define NORESAMPLE
-#ifndef NORESAMPLE
-#include "resample.cu.h"
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#include <math.h>
 #endif
+
+#define M_PIf ((float)M_PI)
+
+class ConverterPhase
+{
+public:
+    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    {
+        return atan2(v.y, v.x);
+    }
+};
+
+
+class ConverterLogAmplitude
+{
+public:
+    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    {
+        // slightly faster than sqrtf(f) unless '--use_fast_math' is specified
+        // to nvcc
+        // return f*rsqrtf(f);
+        //return log2f(0.01f+sqrtf(v.x*v.x + v.y*v.y)) - log2f(0.01f);
+        return 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+        //return (sqrtf(v.x*v.x + v.y*v.y));
+    }
+};
+
+
+class WeightFetcher
+{
+public:
+    template<typename Reader>
+    __device__ float operator()( float2 const& p, Reader& reader )
+    {
+        float v = InterpolateFetcher<float, ConverterLogAmplitude>()( p, reader );
+        float phase1 = InterpolateFetcher<float, ConverterPhase>()( p, reader );
+        float phase2 = InterpolateFetcher<float, ConverterPhase>()( make_float2(p.x, p.y+1), reader );
+        float phasediff = phase2 - phase1;
+        if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
+        if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
+
+        float k = exp2f(-fabsf(phasediff));
+
+        return v * k;
+    }
+};
+
+
+class SpecialPhaseFetcher
+{
+public:
+    template<typename Reader>
+    __device__ float operator()( float2 const& p, Reader& reader )
+    {
+        // Plot "how wrong" the phase is
+        float2 q1 = p;
+        float2 p2 = p;
+        p2.x++;
+        float2 q2 = p2;
+        q1.x /= getWidth(validInputs4)-1;
+        q1.y /= getHeight(validInputs4)-1;
+        q1.x *= getWidth(inputRegion);
+        q1.y *= getHeight(inputRegion);
+        q1.x += getLeft(inputRegion);
+        q1.y += getTop(inputRegion);
+        q2.x /= getWidth(validInputs4)-1;
+        q2.y /= getHeight(validInputs4)-1;
+        q2.x *= getWidth(inputRegion);
+        q2.y *= getHeight(inputRegion);
+        q2.x += getLeft(inputRegion);
+        q2.y += getTop(inputRegion);
+
+        float phase = InterpolateFetcher<float, ConverterPhase>()( p, reader );
+        float phase2 = InterpolateFetcher<float, ConverterPhase>()( p2, reader );
+        float v = InterpolateFetcher<float, ConverterLogAmplitude>()( p, reader );
+        float phasediff = phase2 - phase;
+        if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
+        if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
+
+        phasediff = (phasediff);
+        float f = freqAxis.getFrequency( q1.y );
+        f *= (q2.x - q1.x)*2*M_PIf;
+        return f*v;
+
+        /*float expected_phase = f * q.x * 2*M_PIf;
+        float phasediff = fmodf( expected_phase+2*M_PIf-phase, 2*M_PIf );
+
+        return expected_phase;*/
+        //return freqAxis.getFrequency( q.y )/22050.0f;
+        //return /*v **/ phasediff / (2*M_PIf);
+    }
+
+    Tfr::FreqAxis freqAxis;
+    float4 inputRegion;
+    uint4 validInputs4;
+};
+
 
 void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
                  uint2 validInputs,
                  float4 inputRegion,
-                 float4 outputRegion )
+                 float4 outputRegion,
+                 Heightmap::ComplexInfo transformMethod,
+                 Tfr::FreqAxis freqAxis
+                 )
 {
-#ifndef NORESAMPLE
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
 
     uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    resample2d<float2, float, ConverterAmplitude >(
-            input,
-            output,
-            validInputs4,
-            validOutputs,
-            inputRegion,
-            outputRegion
-    );
-#endif
-}
-
-
-__global__ void kernel_merge(
-                cudaPitchedPtrType<float> inBlock,
-                cudaPitchedPtrType<float> outBlock,
-                float resample_width,
-                float resample_height,
-                float in_offset,
-                float out_offset,
-                float in_valid_samples)
-{
-    elemSize3_t writePos;
-    if( !outBlock.unwrapCudaGrid( writePos ))
-        return;
-
-    float val = 0;
-    unsigned n = 0;
-
-    if (writePos.x>=out_offset)
+    switch (transformMethod)
     {
-        for (float x = 0; x < resample_width; x++)
-        {
-            float s = in_offset + x + resample_width*(writePos.x-out_offset);
-            if ( s >= in_offset + in_valid_samples + .25f*resample_width )
-                x=resample_width;
-            else for (float y = 0; y < resample_height; y++)
-            {
-                float t = y + resample_height*writePos.y;
-
-                elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
-                if ( inBlock.valid(readPos) ) {
-                    val += inBlock.elem(readPos);
-
-                    //outBlock.e( writePos ) = val;
-                    //return;
-
-                    n ++;
-                }
-            }
-        }
+    case Heightmap::ComplexInfo_Amplitude_Weighted:
+    {
+        resample2d_fetcher<float, float2, float, WeightFetcher, AssignOperator<float> >(
+                input,
+                output,
+                validInputs4,
+                validOutputs,
+                inputRegion,
+                outputRegion
+        );
+        break;
     }
-
-    if (0<n) {
-        val/=n;
-        outBlock.elem( writePos ) = val;
+    case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
+        resample2d<float2, float, ConverterLogAmplitude, AssignOperator<float> >(
+                input,
+                output,
+                validInputs4,
+                validOutputs,
+                inputRegion,
+                outputRegion
+        );
+        break;
+    case Heightmap::ComplexInfo_Phase:
+        resample2d<float2, float, ConverterPhase, AssignOperator<float> >(
+                    input,
+                    output,
+                    validInputs4,
+                    validOutputs,
+                    inputRegion,
+                    outputRegion
+            );
+    /*case Heightmap::ComplexInfo_Phase:
+            SpecialPhaseFetcher specialPhase;
+            specialPhase.freqAxis = freqAxis;
+            specialPhase.inputRegion = inputRegion;
+            specialPhase.validInputs4 = validInputs4;
+            resample2d_fetcher<float, float2, float, SpecialPhaseFetcher, AssignOperator<float> >(
+                    input,
+                    output,
+                    validInputs4,
+                    validOutputs,
+                    inputRegion,
+                    outputRegion,
+                    false,
+                    specialPhase
+            );*/
     }
 }
+
+
+class StftFetcher
+{
+public:
+    template<typename Reader>
+    __device__ float operator()( float2 const& p, Reader& reader )
+    {
+        float2 q;
+        // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
+        // so these are fairly cheap operations. One reciprocal called in
+        // 'getFrequencyScalar' is just as fast.
+        float hz = outputAxis.getFrequency( p.x );
+        q.x = inputAxis.getFrequencyScalar( hz );
+        q.y = p.y;
+        float r = InterpolateFetcher<float, ConverterLogAmplitude>()( q, reader );
+        return r*factor;
+    }
+
+    Tfr::FreqAxis inputAxis;
+    Tfr::FreqAxis outputAxis;
+    float factor;
+};
+
+
+void resampleStft( cudaPitchedPtrType<float2> input,
+                   cudaPitchedPtrType<float> output,
+                   float4 inputRegion,
+                   float4 outputRegion,
+                   Tfr::FreqAxis inputAxis,
+                   Tfr::FreqAxis outputAxis )
+{
+    elemSize3_t sz_input = input.getNumberOfElements();
+    elemSize3_t sz_output = output.getNumberOfElements();
+
+    // We wan't to do our own translation from coordinate position to matrix
+    // position in the input matrix. By giving bottom=0 and top=2 we tell
+    // 'resample2d_fetcher' to only translate to a normalized reading position
+    // [0, height-1) along the input x-axis. 'resample2d_fetcher' does to
+    // transpose for us.
+    uint4 validInputs = make_uint4( 0, 0, 2, sz_input.y );
+    uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
+
+    StftFetcher fetcher;
+    fetcher.inputAxis = inputAxis;
+    fetcher.outputAxis = outputAxis;
+    fetcher.factor = 0.22; // makes it roughly equal height to Cwt
+
+    resample2d_fetcher<float>(
+                input,
+                output,
+                validInputs,
+                validOutputs,
+                inputRegion,
+                outputRegion,
+                true,
+                fetcher,
+                AssignOperator<float>()
+        );
+}
+
 
 extern "C"
 void blockMerge( cudaPitchedPtrType<float> inBlock,
                  cudaPitchedPtrType<float> outBlock,
-                 float in_sample_rate,
-                 float out_sample_rate,
-                 float in_frequency_resolution,
-                 float out_frequency_resolution,
-                 float in_offset,
-                 float out_offset,
-                 float in_valid_samples,
-                 unsigned cuda_stream)
+                 float4 in_area,
+                 float4 out_area)
 {
-    dim3 grid, block;
-    unsigned block_size = 128;
-
-    outBlock.wrapCudaGrid2D( block_size, grid, block );
-
-    float resample_width = in_sample_rate/out_sample_rate;
-    float resample_height = in_frequency_resolution/out_frequency_resolution;
-
-    kernel_merge<<<grid, block, cuda_stream>>>(
-        inBlock, outBlock,
-        resample_width,
-        resample_height,
-        in_offset, out_offset, in_valid_samples );
-}
-
-texture<float2, 1, cudaReadModeElementType> chunkTexture;
-
-/**
- kernel_merge_chunk has one thread for each output element
-*/
-__global__ void kernel_merge_chunk_old(
-                cudaPitchedPtrType<float2> inChunk,
-                cudaPitchedPtrType<float> outBlock,
-                float resample_width,
-                float resample_height,
-                float in_offset,
-                float out_offset,
-                unsigned in_count )
-{
-    elemSize3_t writePos;
-    if( !outBlock.unwrapCudaGrid( writePos ))
-        return;
-
-    float val = 0;
-    float n = 0;
-
-    if (writePos.x>=out_offset)
-    {
-        // TODO xs should depend on hz
-        float ff = writePos.y/((float)outBlock.getNumberOfElements().y - 1);
-
-        float xs = 2.f/(ff*ff);//resample_width/10;
-        if (1>xs) xs=1;
-        for (float x = 0; x < resample_width; x+=xs)
-        {
-            float s = in_offset + x + resample_width*(writePos.x-out_offset);
-
-            if ( s > in_offset + in_count + .25f*resample_width)
-                x=resample_width; // abort for x loop, faster than "break;"
-            else for (float y = 0; y < resample_height; y++)
-            {
-                //float y = 0;
-                float t = y + resample_height*writePos.y;
-
-                elemSize3_t readPos = make_elemSize3_t( s, t, 0 );
-                inChunk.clamp(readPos);
-                if ( inChunk.valid(readPos) ) {
-                    float ff = t/(float)inChunk.getNumberOfElements().y;
-                    float if0 = 40.f/(2 + 35*ff*ff*ff);
-
-                    //float2 c = inChunk.elem(readPos);
-                    float2 c = tex1Dfetch(chunkTexture, inChunk.eOffs(readPos));
-                    val = max(val, if0*sqrt(if0*(c.x*c.x + c.y*c.y)));
-
- //outBlock.e( writePos ) = 4*val;
- //return;
-/*
-  TODO use command line argument "yscale"
-                        case Yscale_Linear:
-                            v[2][df] = amplitude;
-                            break;
-                        case Yscale_ExpLinear:
-                            v[2][df] = amplitude * exp(.001*fi);
-                            break;
-                        case Yscale_LogLinear:
-                            v[2][df] = amplitude;
-                            v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
-                            break;
-                        case Yscale_LogExpLinear:
-                            v[2][df] = amplitude * exp(.001*fi);
-                            v[2][df] = log(1+fabsf(v[2][df]))*(v[2][df]>0?1:-1);
-                            */
-
-                    n++;
-                }
-            }
-        }
-    }
-/*
-    __syncthreads();
-*/
-    if (0<n) {
-        //val/=n;
-        outBlock.e( writePos ) = val;
-    }
-}
-
-#define BLOCK_SIZE 64 // manally adjusted to increase performance
-
-struct read_params {
-    unsigned
-        block_first_read,
-        block_last_read,
-        num_reads,
-        thread_first_read,
-        thread_last_read,
-        start_y,
-        end_y;
-};
-
-__device__ __host__ read_params computeReadParams( unsigned in_sample_offset, unsigned in_count, float out_sample_offset,
-                                                   float in_frequency_offset, float out_frequency_offset,
-                                                   float resample_height, float resample_width,
-                                                   elemSize3_t writePos, bool firstThreadInBlock )
-{
-    read_params p;
-
-    float threadFirstWrite = writePos.x;
-    float threadLastWrite = writePos.x+1;
-
-    // Here, BLOCK_SIZE is the number of elements that each block is responsible for writing
-    float blockFirstWrite = writePos.x/BLOCK_SIZE*BLOCK_SIZE; // integer division
-    float blockLastWrite = blockFirstWrite + BLOCK_SIZE;
-
-    // Don't write anything before out_sample_offset, if the entire range is before out_sample_offset the range will be
-    // [out_sample_offset, out_sample_offset) which is an empty set. However, [blockFirstWrite, blockLastWrite) might be
-    // non-empty even though [myFirstWrite, myLastWrite) is empty.
-    if (threadFirstWrite < out_sample_offset) threadFirstWrite = out_sample_offset;
-    if (threadLastWrite  < out_sample_offset) threadLastWrite  = out_sample_offset;
-    if (blockFirstWrite  < out_sample_offset) blockFirstWrite  = out_sample_offset;
-    if (blockLastWrite   < out_sample_offset) blockLastWrite   = out_sample_offset;
-
-    p.thread_first_read = in_sample_offset + (threadFirstWrite - out_sample_offset) * resample_width;
-    p.thread_last_read  = in_sample_offset + (threadLastWrite  - out_sample_offset) * resample_width;
-
-    if (p.thread_first_read < in_sample_offset)          p.thread_first_read = in_sample_offset;
-    if (p.thread_last_read  > in_sample_offset+in_count) p.thread_last_read  = in_sample_offset+in_count;
-
-    if (firstThreadInBlock)
-    {
-        p.block_first_read = in_sample_offset + (blockFirstWrite - out_sample_offset) * resample_width;
-        p.block_last_read  = in_sample_offset + (blockLastWrite  - out_sample_offset) * resample_width;
-
-        if (p.block_first_read < in_sample_offset)          p.block_first_read = in_sample_offset;
-        if (p.block_last_read  > in_sample_offset+in_count) p.block_last_read  = in_sample_offset+in_count;
-
-        // Here, BLOCK_SIZE is the number of elements that a block reads in each read chunk
-        p.block_first_read =  p.block_first_read              /BLOCK_SIZE; // integer division
-        p.block_last_read  = (p.block_last_read+ BLOCK_SIZE-1)/BLOCK_SIZE;
-
-        if (p.block_first_read<p.block_last_read)
-            p.num_reads = p.block_last_read-p.block_first_read;
-        else
-            p.num_reads = 0;
-
-        p.block_first_read *= BLOCK_SIZE;
-        p.block_last_read  *= BLOCK_SIZE;
-
-        p.start_y = resample_height *  writePos.y    + in_frequency_offset;
-        p.end_y   = resample_height * (writePos.y+1) + in_frequency_offset;
-        if (p.end_y == p.start_y) p.end_y++;
-    }
-
-
-    return p;
-}
-
-
-/**
-    kernel_merge_chunk2 has one thread for each output element.
-    Threads collaborate in warps to serve eachother. Each block only have one warp.
-
-    @param resample_width is the number of input elements that should be taken into
-           account for the output element that each thread is to write.
-*/
-__global__ void kernel_merge_chunk2(
-                cudaPitchedPtrType<float2> inChunk,
-                cudaPitchedPtrType<float> outBlock,
-                float resample_width,
-                float resample_height,
-                unsigned in_sample_offset,
-                float out_sample_offset,
-                float in_frequency_offset,
-                float out_frequency_offset,
-                unsigned in_count,
-                Heightmap::ComplexInfo complexInfo )
-{
-/**
-    Merging like this for resample_width = 3, resample_height=1, in_offset=1, out_offset=0
-    (take max of each group of 3)
-    chunk: 1|1234575652165761|9682657451433|321
-    out:    |  5  7  5  7  9 | 8  7  5  4  | => |57579|8754|
-
-    That is; discard element that begins before outBlock but don't discard fraction of element that end after outBlock.
-
-    If an element would include more than BLOCK_SIZE, the last elements are discarded.
-*/
-    __shared__ float val[BLOCK_SIZE];
-
-    elemSize3_t threadPos = make_elemSize3_t(
-                            blockIdx.x* blockDim.x + threadIdx.x,
-                            blockIdx.y* blockDim.y + threadIdx.y,
-                            blockIdx.z* blockDim.z + threadIdx.z);
-
-    read_params thread_p = computeReadParams(
-            in_sample_offset, in_count, out_sample_offset,
-            in_frequency_offset, out_frequency_offset,
-            resample_height, resample_width,
-            threadPos, 0==threadIdx.x );
-
-    // TODO could use the out_frequency_offset as a float and adjust blocks
-    elemSize3_t writePos = threadPos;
-    writePos.y += out_frequency_offset;
-
-    __shared__ read_params block_read;
-    if (0==threadIdx.x)
-        block_read = thread_p;
-
-    float myVal = -1; // Negative value that indicates that no value was fetched
-
-    __syncthreads();
-
-    if (0 != block_read.num_reads)
-        for (unsigned y = block_read.start_y;
-             y < block_read.end_y && y < inChunk.getNumberOfElements().y;
-             y++)
-    {
-        float ff = y/(float)inChunk.getNumberOfElements().y;
-        float if0 = 20.f/(2 + 35*ff*ff*ff);
-        if0=if0*if0*if0;
-        if0 *= 0.4f;
-
-        for (unsigned i=0; i<block_read.num_reads; i++)
-        {
-            unsigned base = block_read.block_first_read + i*BLOCK_SIZE;
-            elemSize3_t readPos = make_elemSize3_t( base + threadIdx.x, y, 0 );
-
-            bool valid = readPos.x >= in_sample_offset &&
-                         readPos.x < in_sample_offset + in_count &&
-                         inChunk.valid(readPos);
-
-            // Read from global memory
-            float2 c = valid ? inChunk.e(readPos) : make_float2(0,0);
-
-            // TODO use templates instead of switch argument
-            switch (complexInfo)
-            {
-            case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
-                val[threadIdx.x] = c.x*c.x + c.y*c.y;
-                break;
-
-            case Heightmap::ComplexInfo_Phase:
-                val[threadIdx.x] = 0.1f*(((float)M_PI) + atan2(c.y, c.x))*(1.f/(2*(float)M_PI));
-                break;
-
-            default:
-            // case Heightmap::ComplexInfo_Amplitude_Weighted
-                val[threadIdx.x] = if0*(c.x*c.x + c.y*c.y);
-                break;
-            }
-
-            __syncthreads();
-
-            if (0) { // Each thread minds its own business
-                if ( thread_p.thread_last_read  > base &&
-                     thread_p.thread_first_read < thread_p.thread_last_read &&
-                     thread_p.thread_first_read < base+BLOCK_SIZE )
-                {
-                    unsigned start = max(thread_p.thread_first_read, base) - base;
-                    unsigned end = min(thread_p.thread_last_read, base + BLOCK_SIZE) - base;
-    //                myVal = val[start];
-                    for (unsigned x = start; x<end; x++)
-                        myVal = max(myVal, val[x]);
-                }
-            } else {
-                // Find the maxima in all of val and use that, half of the threads go to sleep at each step
-                // This is not as exact as "Each thread minds its own business" but differences are rarely visible.
-                if (128==BLOCK_SIZE) {
-                    if (threadIdx.x<64) val[threadIdx.x] = max(val[threadIdx.x], val[64 + threadIdx.x]);
-                    if (threadIdx.x<32) val[threadIdx.x] = max(val[threadIdx.x], val[32 + threadIdx.x]);
-                }
-                if (128==BLOCK_SIZE || 32==BLOCK_SIZE) {
-                    if (threadIdx.x<16) val[threadIdx.x] = max(val[threadIdx.x], val[16 + threadIdx.x]);
-                    if (threadIdx.x<8) val[threadIdx.x] = max(val[threadIdx.x], val[8 + threadIdx.x]);
-                    if (threadIdx.x<4) val[threadIdx.x] = max(val[threadIdx.x], val[4 + threadIdx.x]);
-                    if (threadIdx.x<2) val[threadIdx.x] = max(val[threadIdx.x], val[2 + threadIdx.x]);
-                    if (threadIdx.x<1) val[0] = max(val[0], val[1]);
-                }
-                if (64==BLOCK_SIZE) {
-                    if (threadIdx.x<16) {
-                        val[threadIdx.x] = max(max(val[threadIdx.x], val[48 + threadIdx.x]),
-                                               max(val[32 + threadIdx.x], val[16 + threadIdx.x]));
-
-                        if (threadIdx.x<4) {
-                            val[threadIdx.x] = max(max(val[threadIdx.x], val[4 + threadIdx.x]),
-                                                   max(val[8 + threadIdx.x], val[12 + threadIdx.x]));
-
-                            if (threadIdx.x<1) {
-                                val[0] = max(max(val[0], val[1]), max(val[2], val[3]));
-                    }}}
-                }
-
-                __syncthreads();
-
-                if ( thread_p.thread_last_read  > base &&
-                     thread_p.thread_first_read < thread_p.thread_last_read &&
-                     thread_p.thread_first_read < base+BLOCK_SIZE )
-                {
-                    myVal = max(myVal, val[0]);
-                }
-            }
-        }
-    }
-
-    if (outBlock.valid( writePos ) && 0<=myVal)
-    {
-        switch (complexInfo)
-        {
-        case Heightmap::ComplexInfo_Phase:
-            // myVal contains phase value
-            break;
-
-        default:
-        // case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
-        // case Heightmap::ComplexInfo_Amplitude_Weighted:
-            myVal = sqrtf(myVal);
-            break;
-        }
-
-        myVal *= .02f;
-        //myVal = .1f;
-        outBlock.elem( writePos ) = myVal;
-    }
-}
-
-
-extern "C"
-void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
-                 cudaPitchedPtrType<float> outBlock,
-                 float in_sample_rate,
-                 float out_sample_rate,
-                 float in_frequency_resolution,
-                 float out_frequency_resolution,
-                 unsigned in_sample_offset,
-                 float out_sample_offset,
-                 float in_frequency_offset,
-                 float out_frequency_offset,
-                 float out_count,
-                 Heightmap::ComplexInfo complexInfo,
-                 unsigned cuda_stream)
-{
-    unsigned block_size;
-
-    const unsigned version = 2;
-    switch (version)
-    {   case 1: block_size = 128; break;
-        case 2: block_size = BLOCK_SIZE; break;
-    }
-
-    // For version 2
-    dim3 block(block_size,1,1);
-    uint3 nElems = outBlock.getNumberOfElements();
-    fprintf(stdout, "\noutBlock.getNumberOfElements() = (%u, %u, %u)", nElems.x, nElems.y, nElems.z );
-    unsigned in_count = ceil(out_count*in_sample_rate/out_sample_rate);
-
-    // Limit kernel size
-    {
-        nElems.y -= out_frequency_offset;
-
-        unsigned last_write = ceil(out_sample_offset + out_count);
-        nElems.x = min(nElems.x, last_write);
-        unsigned unused = out_sample_offset/block_size;
-        unused*=block_size;
-        printf("\nout_count = %g", out_count);
-        printf("\nblock_size = %u", block_size);
-        printf("\nout_sample_offset = %g", out_sample_offset);
-        printf("\nlast_write = %u", last_write);
-        printf("\nunused = %u", unused);
-        printf("\n1 Elems.x = %u", nElems.x);
-        nElems.x -= unused;
-        printf("\n2 Elems.x = %u", nElems.x);
-        out_sample_offset -= unused;
-        cudaPitchedPtr cpp = outBlock.getCudaPitchedPtr();
-        cpp.ptr = &((float*)cpp.ptr)[unused];
-        outBlock =  cudaPitchedPtrType<float>(cpp);
-    }
-
-    dim3 grid;
-
-    switch (version)
-    {   case 1: outBlock.wrapCudaGrid2D(block_size, grid, block); break;
-        case 2: grid = make_uint3(
-                    int_div_ceil(nElems.x, block.x),
-                    int_div_ceil(nElems.y, block.y),
-                    int_div_ceil(nElems.z, block.z));
-            printf("\ngrid.x = %u", grid.x);
-            printf("\nnElems.x = %u", nElems.x);
-            printf("\nblock.x = %u", block.x);
-            printf("\nint_div_ceil(nElems.x, block.x) = %lu", int_div_ceil(nElems.x, block.x));
-            break;
-    }
-
-    float resample_width = in_sample_rate/out_sample_rate;
-    // TODO motivate this '2'
-    float resample_height = (in_frequency_resolution+2)/out_frequency_resolution;
-
-    if (1) {
-        elemSize3_t sz_o = outBlock.getNumberOfElements();
-        elemSize3_t sz_i = inChunk.getNumberOfElements();
-        //fprintf(stdout,"sz_o (%d, %d, %d)\tsz_i (%d, %d, %d)\n", sz_o.x, sz_o.y, sz_o.z, sz_i.x, sz_i.y, sz_i.z );
-
-        fprintf(stdout, "\nint_div_ceil(128,2048) = %lu", int_div_ceil(128,2048));
-
-        fprintf(stdout,"\ngrid (%d, %d, %d)\tblock (%d, %d, %d)\n", grid.x, grid.y, grid.z, block.x, block.y, block.z );
-        fprintf(stdout,"(in sr %g, out sr %g, w=%g) (in f %g, out f %g, h=%g)\n\tin o %u, out o %g, in count = %u, out count %g\n",
-            in_sample_rate, out_sample_rate, resample_width,
-            in_frequency_resolution, out_frequency_resolution, resample_height,
-            in_sample_offset, out_sample_offset, in_count, out_count);
-        fprintf(stdout,"outBlock(%d,%d,%d) pitch %lu\n",
-            outBlock.getNumberOfElements().x,
-            outBlock.getNumberOfElements().y,
-            outBlock.getNumberOfElements().z,
-            outBlock.getCudaPitchedPtr().pitch );
-        fprintf(stdout,"inChunk(%d,%d,%d) pitch %lu\n",
-            inChunk.getNumberOfElements().x,
-            inChunk.getNumberOfElements().y,
-            inChunk.getNumberOfElements().z,
-            inChunk.getCudaPitchedPtr().pitch );
-        fflush(stdout);
-
-    }
-
-    if (0)
-    {
-        unsigned x_count = grid.x*block.x;
-        printf("nElems.x = %u, x_count = %u\n", nElems.x, x_count);
-
-        if(1) for (int x=0; x<x_count; x++)
-        {
-            elemSize3_t writePos = make_elemSize3_t(x,0,0);
-            elemSize3_t myThreadIdx = make_elemSize3_t(0,0,0);
-
-            read_params p = computeReadParams( in_sample_offset, in_count, out_sample_offset,
-                                               in_frequency_offset, out_frequency_offset,
-                                               resample_height, resample_width,
-                                               writePos, 0==myThreadIdx.x );
-
-            printf("%3u [%u, %u](%u) > [%u, %u]\n", x,
-                p.block_first_read, p.block_last_read, p.num_reads,
-                p.thread_first_read, p.thread_last_read);
-        }
-    }
-
-    switch (version)
-    {
-    case 1:
-        {
-            cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float2>();
-            cudaBindTexture(0, &chunkTexture, inChunk.ptr(), &channelDesc, inChunk.getCudaPitchedPtr().pitch * inChunk.getCudaPitchedPtr().ysize);
-
-            kernel_merge_chunk_old<<<grid, block, cuda_stream>>>(
-                inChunk, outBlock,
-                resample_width,
-                resample_height,
-                in_sample_offset, out_sample_offset, in_count );
-            cudaUnbindTexture(&chunkTexture);
-            break;
-        }
-    case 2:
-        {
-            kernel_merge_chunk2<<<grid, block, cuda_stream>>>(
-                inChunk, outBlock,
-                resample_width,
-                resample_height,
-                in_sample_offset, out_sample_offset,
-                in_frequency_offset, out_frequency_offset,
-                in_count, complexInfo );
-            break;
-        }
-    }
-
-    cudaUnbindTexture(&chunkTexture);
+    resample2d_plain<float, float, NoConverter<float,float> >
+            (inBlock, outBlock, in_area, out_area);
 }
 
 __global__ void kernel_expand_stft(
@@ -744,16 +413,9 @@ __global__ void kernel_expand_complete_stft(
         q = 3*q*q-2*q*q*q; // an 'S' curve from 0 to 1.
         val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
 
-//        const float f0 = 2.0f + 35*ff*ff*ff;
-        const float f0 = 15.f;
-        val*=sqrt(f0);
-
-        //float if0 = 40.f/(2.0f + 35*ff*ff*ff);
-        //float if0 = 40.f/(2.0f + 35.f*ff*ff*ff);
-        //if0=if0*if0*if0;
-        //val=sqrt(if0*val);
-
-        val*=19;
+        //ff = (hz_write-20)/22050.f;
+        //const float f0 = 2.0f + 35*ff*ff*ff;
+        val*=0.03f*hz_write;
     }
 
     val /= in_stft_size;

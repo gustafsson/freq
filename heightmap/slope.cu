@@ -1,48 +1,66 @@
-// "This software contains source code provided by NVIDIA Corporation."
-// from oceanFFT example
+#include <resample.cu.h>
 
-//Round a / b to nearest higher integer value
-int cuda_iDivUp(int a, int b)
+#include "slope.cu.h"
+
+class SlopeFetcher
 {
-    return (a + (b - 1)) / b;
-}
+public:
+    SlopeFetcher( float xscale, float yscale, uint2 size )
+        :   xscale( xscale ),
+            yscale( yscale ),
+            size( size )
+    {
+
+    }
 
 
-// generate slope by partial differences in spatial domain
-__global__ void calculateSlopeKernel(float* h, float2 *slopeOut, unsigned int width, unsigned int height, float xscale)
-{
-    unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
-    unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
+    template<typename Reader>
+    __device__ float2 operator()( float2 const& q, Reader& reader )
+    {
+        uint2 p = make_uint2(floor(q.x+.5f), floor(q.y+.5f));
 
-    if (x>=width || y>=height)
-        return;
+        int up=1, left=-1, down=-1, right=1;
 
-    unsigned int i = y*width+x;
+        // clamp
+        if (p.x == 0)
+            left = 0;
+        if (p.y == 0)
+            down = 0;
+        if (p.x + 1 == size.x)
+            right = 0;
+        if (p.y + 1 == size.y)
+            up = 0;
 
-    int top=-1, left=-1, bottom=1, right=1;
+        float2 slope = make_float2(
+            (reader(make_uint2(p.x + right, p.y)) - reader(make_uint2(p.x + left, p.y)))*xscale/(right-left),
+            (reader(make_uint2(p.x, p.y+up)) - reader(make_uint2(p.x, p.y+down)))*yscale/(up-down));
 
-    // clamp
-    if (x == 0)
-        left = 0;
-    if (y == 0)
-        top = 0;
-    if (x == width-1)
-        right = 0;
-    if (y == height-1)
-        bottom = 0;
+        return slope;
+    }
 
-    float2 slope = make_float2(
-        (h[i + right] - h[i + left])/((right-left)*xscale),
-        (h[i + width*bottom] - h[i + width*top])/(bottom-top));
-    slopeOut[i] = slope;
-}
+private:
+    const uint2 size;
+    const float xscale;
+    const float yscale;
+};
 
 
 extern "C"
-void cudaCalculateSlopeKernel(  float* hptr, float2 *slopeOut,
-                                unsigned int width, unsigned int height, float xscale, unsigned cuda_stream)
+void cudaCalculateSlopeKernel(  cudaPitchedPtrType<float> heightmapIn,
+                                cudaPitchedPtrType<float2> slopeOut,
+                                float xscale, float yscale )
 {
-    dim3 block(8, 8, 1);
-    dim3 grid2(cuda_iDivUp(width, block.x), cuda_iDivUp(height, block.y), 1);
-    calculateSlopeKernel<<<grid2, block, cuda_stream>>>(hptr, slopeOut, width, height, xscale);
+    elemSize3_t sz_input = heightmapIn.getNumberOfElements();
+    elemSize3_t sz_output = slopeOut.getNumberOfElements();
+
+    uint4 validInputs = make_uint4( 0, 0, sz_input.x, sz_input.y );
+    uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
+
+    resample2d_fetcher<float2>(heightmapIn, slopeOut,
+                               validInputs, validOutputs,
+                               make_float4(0,0,1,1),
+                               make_float4(0,0,1,1),
+                               false,
+                               SlopeFetcher( 10/xscale, 1/yscale, make_uint2( sz_input.x, sz_input.y) ),
+                               AssignOperator<float2>() );
 }

@@ -15,10 +15,13 @@ FS = data.samplerate(1); % data.samplerate is a matrix, not a scalar
 % Width and height of transform chunk
 [w h] = size(T);
 
-% Apply thresholding, set everything to zero that has an amplitude less than 2 (the transform consists of complex values).
-T(abs(T)<2)=0;
+%disp (['data size = ' num2str(size(T))]);
+%disp (['signal length = ' num2str(w/FS)]);
 
-% Define square in which we will set all transform values to zero
+% Apply thresholding, set everything to zero that has an amplitude less than 2 (the transform consists of complex values).
+T(abs(T)<0.01)=0;
+
+% Define rectangle in which we will set all transform values to zero
 startTime = 1.5;
 endTime = 2.5;
 startRowf = 2/5; % Fraction of entire height

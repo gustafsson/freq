@@ -8,7 +8,7 @@
 % filewatcher does not return. Whatever value returned from func is discarded.
 %
 % Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 20 times per second (dt=0.05).
-function C=filewatcher_oct(datafile, func, arguments, dt)
+function C=sawe_filewatcher_oct(datafile, func, arguments, dt)
 
 if nargin<2
   error "syntax: filewatcher(datafile, function, arguments, dt). 'arguments' defaults to [], 'dt' defaults to 0.05"
@@ -27,7 +27,7 @@ disp (['Monitoring ' datafile]);
 while 1
   if ~isempty(stat(datafile)) % fast octave version
 
-    disp (['Processing ' datafile]);
+    %disp (['Processing ' datafile]);
 	
     %octave
     data=load(datafile); 
@@ -43,7 +43,7 @@ while 1
     
     rename(tempfile,resultfile);   % octave
     
-    disp (['Monitoring ' datafile]);
+    %disp (['Monitoring ' datafile]);
   else
     sleep(dt); % octave
   end

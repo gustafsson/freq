@@ -6,6 +6,7 @@
 #include <throwInvalidArgument.h>
 #include <CudaException.h>
 #include <neat_math.h>
+#include <CudaProperties.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -53,6 +54,10 @@ void CufftHandleContext::
         create()
 {
     destroy();
+
+    if (_elems == 0 || _batch_size==0)
+        return;
+
     int n = _elems;
     CufftException_SAFE_CALL(cufftPlanMany(
             &_handle,
@@ -70,10 +75,17 @@ void CufftHandleContext::
 void CufftHandleContext::
         destroy()
 {
-    if (_handle!=0 && _handle!=(cufftHandle)-1) {
+    if (_handle!=0) {
         _creator_thread.throwIfNotSame(__FUNCTION__);
 
-		CufftException_SAFE_CALL(cufftDestroy(_handle));
+        if (_handle==(cufftHandle)-1)
+            TaskInfo("CufftHandleContext::destroy, _handle==(cufftHandle)-1");
+        else
+        {
+            cufftResult errorCode = cufftDestroy(_handle);
+            if (errorCode != CUFFT_SUCCESS)
+                TaskInfo("CufftHandleContext::destroy, %s", CufftException::getErrorString(errorCode) );
+        }
 
         _handle = 0;
     }
@@ -117,8 +129,8 @@ pChunk Fft::
     GpuCpuData<float2>* input = b.complex_waveform_data();
 
     // TODO choose method based on data size
-    //computeWithCufft( *input, *chunk->transform_data, -1);
-    computeWithOoura( *input, *chunk->transform_data, -1 );
+    computeWithCufft( *input, *chunk->transform_data, -1);
+    //computeWithOoura( *input, *chunk->transform_data, -1 );
 
     chunk->axis_scale = AxisScale_Linear;
     chunk->order = Chunk::Order_column_major;
@@ -236,6 +248,10 @@ void Fft::
                 input.getSizeInBytes().width,
                 cudaMemcpyDeviceToDevice );
 
+    // TODO require that input and output is of the exact same size. Do padding
+    // before calling computeWithCufft. Then use an out-of-place transform
+    // instead of copying the entire input first.
+
     // Transform signal
     CufftHandleContext _fft_single;
     CufftException_SAFE_CALL(cufftExecC2C(
@@ -254,6 +270,7 @@ std::vector<unsigned> Stft::_ok_chunk_sizes;
 Stft::
         Stft( cudaStream_t stream )
 :   _stream( stream ),
+    _handle_ctx(stream),
     _chunk_size( 1<<11 )
 //    _fft_many( -1 )
 {
@@ -263,8 +280,6 @@ Stft::
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer breal)
 {
-    const unsigned stream = 0;
-
     ComplexBuffer b(*breal);
 
     BOOST_ASSERT( 0!=_chunk_size );
@@ -290,34 +305,41 @@ Tfr::pChunk Stft::
     cufftComplex* output = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
 
     // Transform signal
-    cufftHandle fft_many;
     unsigned count = n.height;
 
     unsigned
             slices = n.height,
             i = 0;
 
+    // check for available memory
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    free /= 2; // Don't even try to get close to use all memory
+    // never use more than 64 MB
+    if (free > 64<<20)
+        free = 64<<20;
+    if (slices * _chunk_size*2*sizeof(cufftComplex) > free)
+    {
+        slices = free/(_chunk_size*2*sizeof(cufftComplex));
+        slices = std::min(512u, std::min((unsigned)n.height, slices));
+    }
+
     while(i < count)
     {
+        slices = std::min(slices, count-i);
+
         try
         {
-            int nx = _chunk_size;
-            CufftException_SAFE_CALL(cufftPlanMany(
-                    &fft_many,
-                    1,
-                    &nx,
-                    NULL, 1, 0,
-                    NULL, 1, 0,
-                    CUFFT_C2C,
-                    slices));
-
-            CufftException_SAFE_CALL(cufftSetStream(fft_many, stream));
-            CufftException_SAFE_CALL(cufftExecC2C(fft_many, input + i*n.width, output + i*n.width, CUFFT_FORWARD));
-            cufftDestroy(fft_many);
+            CufftException_SAFE_CALL(cufftExecC2C(
+                    _handle_ctx(_chunk_size, slices),
+                    input + i*n.width,
+                    output + i*n.width,
+                    CUFFT_FORWARD));
 
             i += slices;
-        } catch (const CufftException& x) {
-            if (slices>0)
+        } catch (const CufftException& /*x*/) {
+            _handle_ctx(0,0);
+            if (slices>1)
                 slices/=2;
             else
                 throw;
@@ -329,7 +351,7 @@ Tfr::pChunk Stft::
     chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
     chunk->max_hz = b.sample_rate / 2.f;
-    chunk->min_hz = chunk->max_hz / chunk->nScales();
+    chunk->min_hz = 0; //chunk->max_hz / chunk->nScales();
     chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
     chunk->sample_rate = b.sample_rate / chunk->nScales();
     ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;
@@ -338,33 +360,36 @@ Tfr::pChunk Stft::
 }
 
 
-static unsigned absdiff(unsigned a, unsigned b)
-{
-    return a < b ? b - a : a - b;
-}
+//static unsigned absdiff(unsigned a, unsigned b)
+//{
+//    return a < b ? b - a : a - b;
+//}
 
 
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
-    if (_ok_chunk_sizes.empty())
-        build_performance_statistics();
-
-    std::vector<unsigned>::iterator itr =
-            std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
-
-    unsigned N1 = *itr, N2;
-    if (itr == _ok_chunk_sizes.end())
-    {
-        N2 = spo2g( preferred_size - 1 );
-        N1 = lpo2s( preferred_size + 1 );
-    }
-    else if (itr == _ok_chunk_sizes.begin())
-        N2 = N1;
-    else
-        N2 = *--itr;
-
-    _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
+    _chunk_size = 1 << (unsigned)floor(log2(preferred_size)+0.5);
     return _chunk_size;
+
+//    if (_ok_chunk_sizes.empty())
+//        build_performance_statistics(true);
+
+//    std::vector<unsigned>::iterator itr =
+//            std::lower_bound( _ok_chunk_sizes.begin(), _ok_chunk_sizes.end(), preferred_size );
+
+//    unsigned N1 = *itr, N2;
+//    if (itr == _ok_chunk_sizes.end())
+//    {
+//        N2 = spo2g( preferred_size - 1 );
+//        N1 = lpo2s( preferred_size + 1 );
+//    }
+//    else if (itr == _ok_chunk_sizes.begin())
+//        N2 = N1;
+//    else
+//        N2 = *--itr;
+
+//    _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
+//    return _chunk_size;
 }
 
 
@@ -373,64 +398,52 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     _ok_chunk_sizes.clear();
     Tfr::Stft S;
     scoped_ptr<TaskTimer> tt;
+    if(writeOutput) tt.reset( new TaskTimer("Building STFT performance statistics for %s", CudaProperties::getCudaDeviceProp().name));
     Signal::pBuffer B = boost::shared_ptr<Signal::Buffer>( new Signal::Buffer( 0, 44100*size_of_test_signal_in_seconds, 44100 ) );
     {
-        if(writeOutput) tt.reset( new TaskTimer("Filling %.1f kB (%.1f s with fs=44100) test buffer with random data", B->number_of_samples()*sizeof(float)/1024.f, size_of_test_signal_in_seconds));
+        scoped_ptr<TaskTimer> tt;
+        if(writeOutput) tt.reset( new TaskTimer("Filling test buffer with random data (%.1f kB or %.1f s with fs=44100)", B->number_of_samples()*sizeof(float)/1024.f, size_of_test_signal_in_seconds));
 
         float* p = B->waveform_data()->getCpuMemory();
         for (unsigned i = 0; i < B->number_of_samples(); i++)
             p[i] = rand() / (float)RAND_MAX;
-
-        tt.reset();
     }
 
     time_duration fastest_time;
     unsigned fastest_size = 0;
     unsigned ok_size = 0;
     Tfr::pChunk C;
-    unsigned prevN = -1;
     time_duration latest_time[4];
     unsigned max_base = 3;
-    double base[] = {2,3,5,7};
+    //double base[] = {2,3,5,7};
+    double base[] = {2};
     for (unsigned n = 128; n < B->number_of_samples(); n++ )
     {
         unsigned N = -1;
         unsigned selectedBase = 0;
+
         for (unsigned b=0; b<sizeof(base)/sizeof(base[0]) && b<=max_base; b++)
         {
-            unsigned N2 = pow(base[b], (unsigned)(log(n)/log(base[b])));
+            double x = ceil(log((double)n)/log(base[b]));
+            unsigned N2 = pow(base[b], x);
 
-            unsigned d1 = N>n ? N - n : n - N;
-            unsigned d2 = N2>n ? N2 - n : n - N2;
-            if (d2<d1)
-            {
-                selectedBase = b;
-                N = N2;
-            }
-
-            N2 = pow(base[b], (unsigned)(log(n)/log(base[b])) + 1);
-
-            d1 = N>n ? N - n : n - N;
-            d2 = N2>n ? N2 - n : n - N2;
-            if (d2<d1)
+            if (N2<N)
             {
                 selectedBase = b;
                 N = N2;
             }
         }
 
-        if (N == prevN)
-            continue;
-
-        prevN = N;
+        n = N;
 
         S._chunk_size = N;
 
         {
-            if(writeOutput) tt.reset( new TaskTimer( "n=%u, _chunk_size = %u = %g ^ %g ",
+            scoped_ptr<TaskTimer> tt;
+            if(writeOutput) tt.reset( new TaskTimer( "n=%u, _chunk_size = %u = %g ^ %g",
                                                      n, S._chunk_size,
                                                      base[selectedBase],
-                                                     log(S._chunk_size)/log(base[selectedBase])));
+                                                     log2f((float)S._chunk_size)/log2f(base[selectedBase])));
 
             ptime startTime = microsec_clock::local_time();
 
@@ -461,8 +474,6 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
             }
 
             _ok_chunk_sizes.push_back( S._chunk_size );
-
-            tt.reset();
         }
         C.reset();
 
@@ -470,6 +481,7 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
             break;
     }
 
+    if(writeOutput) TaskInfo("Fastest size = %u", fastest_size);
     return fastest_size;
 }
 

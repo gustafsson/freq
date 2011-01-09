@@ -1,9 +1,7 @@
 #include "chunk.h"
 
-#include "cwt.h"
-#include "stft.h"
-
 #include <math.h>
+#include <float.h>
 
 namespace Tfr {
 
@@ -45,7 +43,7 @@ float2 Chunk::
         debug_getNearestCoeff( float t, float f )
 {
     if (!valid())
-        return make_float2(0.f/0.f, 0.f/0.f);
+        return make_float2(-FLT_MAX, -FLT_MAX);
 
     if ( t < 0 ) t = 0;
 
@@ -99,7 +97,7 @@ Signal::Interval Chunk::
 {
     Signal::Interval i = getInversedInterval();
     float scale = original_sample_rate/sample_rate;
-    return Signal::Interval( i.first * scale, i.last   * scale );
+    return Signal::Interval( i.first * scale, i.last * scale );
 }
 
 

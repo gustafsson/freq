@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include "tfr/wavelet.cu.h"
 
-__global__ void kernel_compute_wavelet_coefficients( float* in_waveform_ft, float* out_wavelet_ft, cudaExtent numElem, unsigned first_j, float v, unsigned half_sizes, float sigma_t0 );
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples );
-__global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
-__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
+__global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, unsigned half_sizes, float sigma_t0 );
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem );
+//__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
+//__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt );
 
 static const char* gLastError = 0;
@@ -47,7 +47,7 @@ void wtCompute(
 //    j = log(fs/2/maxHz) / log(a)
 //    const float log2_a = log2f(2.f) / v = 1.f/v; // a = 2^(1/v)
     float j = (log2(fs/2) - log2(maxHz)) * scales_per_octave;
-    unsigned first_scale = max(0.f, floor(j));
+    float first_scale = j;
 
     if (j<0) {
         printf("j = %g, maxHz = %g, fs = %g\n", j, maxHz, fs);
@@ -56,19 +56,17 @@ void wtCompute(
     }
 
     dim3 block(256,1,1);
-    // work on elements of float instead of float2 to coalesce better, hence numElem.width*2
-    dim3 grid( int_div_ceil(numElem.width*2, block.x), numElem.depth, 1);
+    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.depth, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
         return;
     }
 
-	// float scales_per_octave = numElem.height/((log(maxHz)/log(2.f)-(log(minHz)/log(2.f));
     kernel_compute_wavelet_coefficients<<<grid, block, 0, stream>>>(
-            (float*)in_waveform_ft,
-            (float*)out_wavelet_ft,
-            numElem,
+            in_waveform_ft,
+            out_wavelet_ft,
+            numElem.width, numElem.height,
             first_scale,
             scales_per_octave,
             half_sizes,
@@ -108,57 +106,59 @@ void wtCompute(
   time-frequency resolution ratio.
   */
 __global__ void kernel_compute_wavelet_coefficients(
-        float* in_waveform_ft,
-        float* out_wavelet_ft,
-        cudaExtent numElem, unsigned first_scale, float v, unsigned half_sizes, float sigma_t0 )
+        float2* in_waveform_ft,
+        float2* out_wavelet_ft,
+        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, unsigned half_sizes, float sigma_t0 )
 {
-    // x is an index that refers to which value in the discrete fourier
-    // transform this thread should work with. Even x refers to real parts and
-    // odd refers to imaginary parts.
-    const unsigned
-            x = __umul24(blockIdx.x,blockDim.x) + threadIdx.x;
-
-    if (x>=numElem.width*2)
-        return;
-
     // Which frequency bin in the discrete fourier transform this thread
     // should work with
-    unsigned
-            w_bin = x/2;
+    const unsigned
+            w_bin = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
+
+    if (w_bin>=nFrequencyBins)
+        return;
+
     const float pi = 3.141592654f;
     const float
-            w = w_bin*2*pi/numElem.width;
+            //w = 2.6515*log2f(w_bin*2*pi/nFrequencyBins); // quasi loglets
+            w = w_bin*2*pi/nFrequencyBins;
 
-    float waveform_ft;
+    float2 waveform_ft;
 
-    if (w_bin>numElem.width/2)
+    if (w_bin>nFrequencyBins/2)
     {
-        waveform_ft = 0; // Negative frequencies are defined as 0
+        waveform_ft = make_float2(0,0); // Negative frequencies are defined as 0
     }
     else
     {
-        float cufft_normalize = 1.f/(float)(numElem.width*half_sizes);
-        float jibberish_normalization = 0.1;
+        float cufft_normalize = 1.f/(float)(nFrequencyBins*half_sizes);
+        float jibberish_normalization = 0.0979512048480986;
         cufft_normalize *= jibberish_normalization;
-        waveform_ft = cufft_normalize * in_waveform_ft[x];
+
+        if (0==w_bin)
+            cufft_normalize *= 0.5f;
+
+        waveform_ft = in_waveform_ft[w_bin];
+        waveform_ft.x *= cufft_normalize;
+        waveform_ft.y *= cufft_normalize;
     }
 
     // Find period for this thread
-    const unsigned nScales = numElem.height;
-    const unsigned nFrequencyBins = numElem.width;
     const float log2_a = 1.f / v; // a = 2^(1/v)
 
     float sigma_t0j = sigma_t0; // TODO vary with 'j'
     float sigma_constant = sqrt( 4*pi*sigma_t0j );
 
+    waveform_ft.x *= sigma_constant;
+    waveform_ft.y *= sigma_constant;
     for( unsigned j=0; j<nScales; j++)
     {
         // Compute the child wavelet
         // a = 2^(1/v)
         // aj = a^j
         // aj = pow(a,j) = exp(log(a)*j)
-        float output = 0;
-        if (waveform_ft != 0)
+        float2 output = make_float2(0,0);
+        if (waveform_ft.x != 0 || waveform_ft.y != 0)
         {
             float aj = exp2f(log2_a * (j + first_scale) );
 
@@ -169,22 +169,23 @@ __global__ void kernel_compute_wavelet_coefficients(
                 // float f0 = 2.0f + 35*ff*ff*ff
             }
             float q = (-w*aj + pi)*sigma_t0j;
-            float phi_star = expf( -q*q ) * sigma_constant;
+            float phi_star = expf( -q*q );
 
-            output = phi_star * waveform_ft;
+            output.x = phi_star * waveform_ft.x;
+            output.y = phi_star * waveform_ft.y;
         }
 
         // Find offset for this wavelet coefficient. Writes the scale
         // corresponding to the lowest frequency on the first row of the
         // output matrix
-        unsigned offset = (nScales-1-j)*2*nFrequencyBins;
+        unsigned offset = (nScales-1-j)*nFrequencyBins;
 
         // Write wavelet coefficient in output matrix
-        out_wavelet_ft[offset + x] = output;
+        out_wavelet_ft[offset + w_bin] = output;
     }
 }
 
-void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples, cudaStream_t stream )
+void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -195,16 +196,15 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
         return;
     }
 
-    kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, n_valid_samples );
+    // kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem );
+    kernel_inverse<<<grid, block>>>( in_wavelet, out_inverse_waveform, numElem );
 }
 
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, unsigned n_valid_samples )
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem )
 {
     const unsigned
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
-    if (x>=n_valid_samples)
-        return;
     if (x>=numElem.width )
         return;
 
@@ -213,13 +213,15 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
     // no selection
     for (unsigned fi=0; fi<numElem.height; fi++)
     {
-        a += in_wavelet[ x + fi*numElem.width ].x;
+        float2 v = in_wavelet[ x + fi*numElem.width ];
+        a += v.x;
+        //a += sqrt(v.x*v.x + v.y*v.y);
     }
 
     out_inverse_waveform[x] = a;
 }
-
-void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
+/*
+void wtInverseEllipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -230,10 +232,10 @@ void wtInverseEllips( float2* in_wavelet, float* out_inverse_waveform, cudaExten
         return;
     }
 
-    kernel_inverse_ellips<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
+    kernel_inverse_ellipse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem, area, n_valid_samples );
 }
 
-__global__ void kernel_inverse_ellips( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
+__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples )
 {
     const unsigned
             x = blockIdx.x*blockDim.x + threadIdx.x;
@@ -293,14 +295,15 @@ __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_wavef
       {
         for (unsigned fi=max(0.f,area.y); fi<numElem.height && fi<area.w; fi++)
         {
+            float2 v = in_wavelet[ x + fi*numElem.width ];
             // select only the real component of the complex transform
-            a += in_wavelet[ x + fi*numElem.width ].x;
+            a += v.x;
         }
     }
 
     out_inverse_waveform[x] = a;
 }
-
+*/
 void wtClamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt, cudaStream_t stream  )
 {
     // Multiply the coefficients together and normalize the result
