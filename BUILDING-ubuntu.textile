@@ -1,4 +1,4 @@
-*These steps will setup your development environment for Sonic Awe on Ubuntu 9.10*
+*These steps will setup your development environment for Sonic Awe on Ubuntu 10.10*
 *1. Github*
 "Install git":http://help.github.com/ and send your github user name to "REEP":http://github.com/reep.
 
@@ -14,7 +14,7 @@ $ sudo ldconfig</pre>
 
 *2.2. Packages from the Ubuntu repositories*
 <pre>$ sudo apt-get install libsndfile1-dev portaudio19-dev libglew1.5-dev freeglut3-dev
-$ sudo apt-get install libboost1.37-dev libqt4-dev qt-creator libhdf5-serial-dev</pre>
+$ sudo apt-get install libboost1.40-dev libqt4-dev qtcreator libhdf5-serial-dev</pre>
 
 *3. Sonic Awe*
 *3.1 Get source code*
