@@ -59,14 +59,20 @@ void CufftHandleContext::
         return;
 
     int n = _elems;
-    CufftException_SAFE_CALL(cufftPlanMany(
+    cufftResult r = cufftPlanMany(
             &_handle,
             1,
             &n,
             NULL, 1, 0,
             NULL, 1, 0,
             CUFFT_C2C,
-            _batch_size));
+            _batch_size);
+    if (CUFFT_SUCCESS != r)
+    {
+        TaskInfo ti("cufftPlanMany( n = %d, _batch_size = %u )", n, _batch_size);
+        CufftException_SAFE_CALL( r );
+    }
+
     CufftException_SAFE_CALL(cufftSetStream(_handle, _stream ));
     _creator_thread.reset();
 }
