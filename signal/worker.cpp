@@ -115,6 +115,9 @@ bool Worker::
         //work_time += b->length();
         //work_time -= r;
 
+        if (_samples_per_chunk > b->number_of_samples())
+            _samples_per_chunk = b->number_of_samples();
+
         WORKER_INFO {
             tt->info("Worker got %s, [%g, %g) s. %g x realtime",
                 b->getInterval().toString().c_str(),
