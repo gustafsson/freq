@@ -5,6 +5,7 @@
 // gpumisc
 #include <CudaProperties.h>
 #include <CudaException.h>
+#include <redirectstdout.h>
 
 // Qt
 #include <QtGui/QMessageBox>
@@ -275,6 +276,7 @@ int main(int argc, char *argv[])
 
     //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
+    RedirectStdout rs("sonicawe.log");
 //#endif
 
     TaskInfo("Starting Sonic AWE");
@@ -283,8 +285,16 @@ int main(int argc, char *argv[])
 
     Sawe::Application a(argc, argv, true);
 
-    TaskInfo("Version: %s", a.version_string().c_str());
-    TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
+    {
+        TaskInfo ti("Version: %s", a.version_string().c_str());
+        TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
+
+        boost::gregorian::date today = boost::gregorian::day_clock::local_day();
+        boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
+        ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
+        ti.tt().getStream() << "Program started " << today;
+    }
+
     if (!check_cuda( false ))
         return -1;
 

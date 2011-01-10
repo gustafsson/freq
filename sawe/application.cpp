@@ -85,7 +85,7 @@ Application::
     #else
         ss << __DATE__;
         #ifdef _DEBUG
-            ss << " - " << __TIME__;
+            ss << ", " << __TIME__;
         #endif
     #endif
 #endif

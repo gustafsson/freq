@@ -129,7 +129,7 @@ void Audiofile::
 {
     _original_filename = filename;
 
-    TaskTimer tt("%s %s",__FUNCTION__,filename.c_str());
+    TaskTimer tt("Loading %s", filename.c_str());
 
     SndfileHandle source(filename);
 
@@ -188,8 +188,8 @@ void Audiofile::
         tt << std::setfill('0') << std::setw(2) << minutes << ":";
         L -= minutes * seconds_per_minute;
 
-		tt << std::setiosflags(std::ios::fixed)
-		   << std::setprecision(3) << std::setw(6) << L;
+        tt << std::setiosflags(std::ios::fixed)
+           << std::setprecision(3) << std::setw(6) << L;
     }
     tt.flushStream();
 
