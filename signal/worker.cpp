@@ -35,7 +35,6 @@ Worker::
 :   work_chunks(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
-    _cache( new OperationCacheLayer(pOperation()) ),
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
     _min_samples_per_chunk( 1 ),
@@ -64,7 +63,6 @@ Worker::
     std::vector<pOperation> v;
     _post_sink.sinks( v );
     _post_sink.filter( pOperation() );
-    _cache.reset();
     _source.reset();
 }
 
@@ -305,6 +303,8 @@ void Worker::
     _source = s;
     invalidate_post_sink( s->affected_samples() - still_zeros );
 
+    _source.reset( new OperationCacheLayer(_source) );
+
     tt.tt().info("Worker::appendOperation, worker tree:\n%s", _source->toString().c_str());
 
     emit source_changed();
@@ -367,7 +367,13 @@ void Worker::
         invalidate_post_sink(Intervals I)
 {
     I &= Interval(0, source()->number_of_samples() );
-    dynamic_cast<OperationCacheLayer*>(_cache.get())->invalidate_samples( I );
+
+    {
+        // TODO Is this necessary
+        OperationCacheLayer* topcache = dynamic_cast<OperationCacheLayer*>(_source.get());
+        if (topcache) topcache->invalidate_samples( I );
+    }
+
     _post_sink.invalidate_samples( I );
     WORKER_INFO TaskInfo("Worker invalidate %s. Worker tree:\n%s",
              I.toString().c_str(),
@@ -444,14 +450,7 @@ void Worker::
 pBuffer Worker::
         callCallbacks( Interval I )
 {
-    _cache->source(source());
-    {
-        //Signal::Intervals fetched_invalid = source()->fetch_invalid_samples();
-        //dynamic_cast<OperationCacheLayer*>(_cache.get())->invalidate_samples( fetched_invalid );
-        //_post_sink.invalidate_samples( fetched_invalid );
-    }
-    _post_sink.source( _cache );
-    //_post_sink.source( source() );
+    _post_sink.source( source() );
     return _post_sink.read( I );
 }
 

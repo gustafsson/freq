@@ -246,7 +246,6 @@ private:
       @see source
       */
     Signal::pOperation _source;
-    Signal::pOperation _cache;
 
 #ifndef SAWE_NO_MUTEX
     /**
