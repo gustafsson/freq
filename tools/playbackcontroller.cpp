@@ -44,6 +44,7 @@ void PlaybackController::
     // RenderView paints.
     connect(render_view, SIGNAL(painting()), _view, SLOT(draw()));
     connect(render_view, SIGNAL(prePaint()), _view, SLOT(locatePlaybackMarker()));
+    connect(_view->model->selection, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
 }
 
 
@@ -71,7 +72,7 @@ void PlaybackController::
         model()->adapter_playback.reset( new Adapters::Playback( _view->model->playback_device ));
 
         std::vector<Signal::pOperation> sinks;
-        postsink_operations->sinks( sinks );
+        postsink_operations->sinks( sinks ); // empty
         sinks.push_back( model()->adapter_playback );
         sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
 
@@ -93,8 +94,18 @@ void PlaybackController::
         receiveFollowPlayMarker( bool v )
 {
     _view->follow_play_marker = v;
-    // don't need to call update as new frames are continously rendered
+    // doesn't need to call update as new frames are continously rendered
     // during playback anyway
+}
+
+
+void PlaybackController::
+        onSelectionChanged()
+{
+    model()->playback()->reset();
+    std::vector<Signal::pOperation> empty;
+    model()->getPostSink()->sinks( empty );
+    model()->getPostSink()->filter( Signal::pOperation() );
 }
 
 

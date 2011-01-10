@@ -56,6 +56,7 @@ namespace Tools
     public slots:
         // Action slots
         void setThisAsCurrentTool( bool active );
+        void onSelectionChanged();
 
     private slots:
         // Action slots

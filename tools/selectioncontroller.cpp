@@ -89,6 +89,8 @@ namespace Tools
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );
 
+        connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
+
         setCurrentSelection(Signal::pOperation());
 
         toolfactory();
@@ -148,6 +150,13 @@ namespace Tools
         ui->actionActionAdd_selection->setEnabled( enabled_actions );
         ui->actionActionRemove_selection->setEnabled( enabled_actions );
         ui->actionCropSelection->setEnabled( enabled_actions );
+    }
+
+
+    void SelectionController::
+            onSelectionChanged()
+    {
+        setCurrentSelection( _model->current_selection() );
     }
 
 

@@ -843,6 +843,9 @@ void RenderView::
         //    if (p && p->isUnderfed() && p->invalid_samples_left()) {
         Signal::Intervals missing_in_selection =
                 model->project()->tools().playback_model.postsinkCallback->sink()->fetch_invalid_samples();
+        Signal::Intervals I =
+                model->collectionCallback->sink()->fetch_invalid_samples();
+
         if (missing_in_selection)
         {
             model->project()->worker.center = 0;
@@ -856,9 +859,9 @@ void RenderView::
             //project->worker.todo_list().print("Displaywidget - PostSink");
         } else {
             model->project()->worker.center = model->_qx;
-            Signal::Intervals I = model->collectionCallback->sink()->fetch_invalid_samples();
             model->project()->worker.todo_list( I );
         }
+
         Signal::Operation* first_source = model->project()->worker.source()->root();
         Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
         if(r != 0 && !(r->isStopped()))

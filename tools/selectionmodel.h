@@ -4,6 +4,7 @@
 #include "signal/operation.h"
 #include <vector>
 
+#include <QObject>
 
 namespace Sawe {
     class Project;
@@ -12,11 +13,12 @@ namespace Sawe {
 
 namespace Tools
 {
-    class SelectionModel
+    class SelectionModel: public QObject
     {
+        Q_OBJECT
     public:
         SelectionModel(Sawe::Project* p);
-        ~SelectionModel();
+        virtual ~SelectionModel();
 
         enum SaveInside
         {
@@ -34,6 +36,9 @@ namespace Tools
         // TODO How should 'all_selections' be used?
         // Should SelectionModel only describe one selection?
         std::vector<Signal::pOperation> all_selections;
+
+    signals:
+        void selectionChanged();
 
     private:
         Sawe::Project* project_;
