@@ -121,8 +121,19 @@ ChunkAndInverse CwtFilter::
             p[i] = 0;
     }
 
+    size_t free=0, total=0;
+    DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
+    DEBUG_CwtFilter TaskInfo ti("free = %g, total = %g, inverse_size=%u",
+            free/1024./1024., total/1024./1024.,
+            ci.inverse->number_of_samples());
+
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
+
+    DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
+    DEBUG_CwtFilter TaskInfo("free = %g, total = %g, estimated = %g",
+             free/1024./1024., total/1024./1024.,
+             cwt.required_gpu_bytes( I.count(), sample_rate() )/1024./1024.);
 
     return ci;
 }

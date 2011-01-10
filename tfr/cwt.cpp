@@ -741,7 +741,15 @@ unsigned Cwt::
     unsigned nT = spo2g(T);
     if(nT <= 2*r)
         nT = spo2g(2*r);
-    return nT - 2*r;
+    unsigned L = nT - 2*r;
+
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+
+    if (free < required_gpu_bytes(L, fs ))
+        return prev_good_size( L, fs );
+
+    return L;
 }
 
 
@@ -755,8 +763,29 @@ unsigned Cwt::
     unsigned T = r + current_valid_samples_per_chunk + r;
     unsigned nT = lpo2s(T);
     if (nT <= 2*r)
+    {
         nT = spo2g(2*r);
-    return nT - 2*r;
+        return nT - 2*r;
+    }
+    unsigned L = nT - 2*r;
+
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+
+    if (free < required_gpu_bytes(L, sample_rate ))
+        return prev_good_size( L, sample_rate );
+
+    return L;
+}
+
+
+size_t Cwt::
+        required_gpu_bytes(unsigned L, float sample_rate) const
+{
+    unsigned r = wavelet_time_support_samples( sample_rate );
+    unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
+    size_t sum = sizeof(float2)*2.5*(L+2*r)*nScales( sample_rate )/max_bin;
+    return sum;
 }
 
 
