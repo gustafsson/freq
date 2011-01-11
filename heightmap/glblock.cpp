@@ -282,9 +282,11 @@ void GlBlock::
 void GlBlock::
         update_texture( bool create_slope )
 {
+    bool got_new_slope_data = create_slope && 0==_tex_slope;
     create_texture( create_slope );
 
     _got_new_height_data |= (bool)_mapped_height;
+    got_new_slope_data |= _got_new_height_data;
 
     if (create_slope)
     {
@@ -296,7 +298,7 @@ void GlBlock::
             // TODO just calling 'slope()->data->getCudaGlobal()' here crashes the graphics driver in windows
             // slope()->data->getCudaGlobal()
 #else
-        if (_got_new_height_data)
+        if (got_new_slope_data)
         {
             // Slope needs to be updated (before unmap())
 #endif
@@ -333,6 +335,9 @@ void GlBlock::
             TIME_GLBLOCK CudaException_CHECK_ERROR();
 
             _slope.reset();
+
+            if (!_got_new_height_data)
+                _mapped_height.reset();
 
             TIME_GLBLOCK CudaException_ThreadSynchronize();
         }
