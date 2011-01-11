@@ -291,6 +291,7 @@ private:
         _samples_per_block,
         _scales_per_block,
         _unfinished_count,
+        _created_count,
         _frame_counter;
 
 
@@ -367,7 +368,6 @@ private:
       Add block information from another block. Returns whether any information was merged.
       */
     bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
-    bool        mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream );
 };
 
 } // namespace Heightmap

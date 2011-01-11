@@ -26,6 +26,9 @@
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
 
+//#define VERBOSE_EACH_FRAME_COLLECTION
+#define VERBOSE_EACH_FRAME_COLLECTION if(0)
+
 // #define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
 
@@ -45,6 +48,7 @@ Collection::
     _samples_per_block( 1<<7 ), // Created for each
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
+    _created_count(0),
     _frame_counter(0),
     _postsink( new PostSink )
 {
@@ -133,12 +137,13 @@ unsigned Collection::
     boost::scoped_ptr<TaskTimer> tt;
     if (_unfinished_count)
     {
-        TIME_COLLECTION tt.reset( new TaskTimer("Collection::next_frame(), %u", _unfinished_count));
+        VERBOSE_EACH_FRAME_COLLECTION tt.reset( new TaskTimer("Collection::next_frame(), %u, %u", _unfinished_count, _created_count));
     }
         // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
+    _created_count = 0;
 
 
     /*foreach(const recent_t::value_type& b, _recent)
@@ -304,7 +309,11 @@ pBlock Collection::
     }
 
     if (0 == block.get()) {
-        block = createBlock( ref );
+        if ( 0 == _created_count )
+        {
+            block = createBlock( ref );
+            _created_count++;
+        }
     } else {
 			#ifndef SAWE_NO_MUTEX
         if (block->new_data_available) {
@@ -493,7 +502,7 @@ Intervals Collection::
 
             r |= i;
 
-            VERBOSE_COLLECTION
+            VERBOSE_EACH_FRAME_COLLECTION
                     if (i)
                         TaskInfo("block %s is invalid on %s", b->ref.toString().c_str(), i.toString().c_str());
         } else
@@ -510,18 +519,18 @@ pBlock Collection::
         attempt( Reference ref )
 {
     try {
-        TIME_COLLECTION TaskTimer tt("Attempt");
+        TIME_COLLECTION TaskTimer tt("Allocation attempt");
 
         pBlock attempt( new Block(ref));
         Position a,b;
         ref.getArea(a,b);
         attempt->glblock.reset( new GlBlock( this, b.time-a.time, b.scale-a.scale ));
-        {
+/*        {
             GlBlock::pHeight h = attempt->glblock->height();
             //GlBlock::pSlope sl = attempt->glblock->slope();
         }
         attempt->glblock->unmap();
-
+*/
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
@@ -900,7 +909,8 @@ bool Collection::
     if (ia.scale >= ob.scale || ib.scale<=oa.scale)
         return false;
 
-    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+    TIME_COLLECTION TaskTimer tt("%s, %s into %s", __FUNCTION__,
+                                 inBlock->ref.toString().c_str(), outBlock->ref.toString().c_str());
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
@@ -928,16 +938,6 @@ bool Collection::
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
     return true;
-}
-
-bool Collection::
-	mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream )
-{
-    // assume _cache_mutex is locked
-	cache_t::iterator i = _cache.find(ref);
-	if (i!=_cache.end())
-		return mergeBlock(outBlock, i->second, cuda_stream );
-	return false;
 }
 
 } // namespace Heightmap
