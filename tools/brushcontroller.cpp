@@ -46,7 +46,6 @@ void BrushController::
 
     connect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
     connect(render_view_, SIGNAL(destroying()), SLOT(close()));
-    connect(render_view_, SIGNAL(destroying()), SLOT(destroying()));
 
 
     QToolBar* toolBarTool = new QToolBar(main);
@@ -88,13 +87,6 @@ void BrushController::
         model()->brush_factor = A;
 
     render_view_->toolSelector()->setCurrentTool( this, model()->brush_factor != 0 );
-}
-
-
-void BrushController::
-        destroying()
-{
-    model()->filter()->images->clear();
 }
 
 
@@ -157,7 +149,10 @@ void BrushController::
         model()->brush_factor = org_factor;
     }
 
-    render_view_->userinput_update();
+    if (e->buttons())
+        render_view_->userinput_update();
+    else
+        render_view_->update();
 }
 
 
