@@ -18,13 +18,17 @@ namespace Adapters {
 
 MicrophoneRecorder::
         MicrophoneRecorder(int inputDevice)
+            :
+            input_device_(inputDevice),
+            _sample_rate( 1 )
 {
-    init(inputDevice);
+    init(); // fetch _sample_rate
+    stopRecording();
 }
 
 
 void MicrophoneRecorder::
-        init(int inputDevice)
+        init()
 {
     _channel = 0;
     _offset = 0;
@@ -32,21 +36,34 @@ void MicrophoneRecorder::
     static bool first = true;
     if (first) Playback::list_devices();
 
-    TaskTimer tt("Creating MicrophoneRecorder for device %d", inputDevice);
+    TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
     portaudio::System &sys = portaudio::System::instance();
 
-    if (0>inputDevice || inputDevice>sys.deviceCount()) {
-        inputDevice = sys.defaultInputDevice().index();
-    } else if ( sys.deviceByIndex(inputDevice).isOutputOnlyDevice() ) {
-        tt.getStream() << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output";
-        inputDevice = sys.defaultInputDevice().index();
-    } else {
-        inputDevice = inputDevice;
+    bool has_input_device = false;
+    for (int i=0; i < sys.deviceCount(); ++i)
+    {
+        if (!sys.deviceByIndex(i).isOutputOnlyDevice())
+            has_input_device = true;
     }
 
-    tt.getStream() << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input";
+    if (!has_input_device)
+    {
+        throw std::runtime_error("System didn't report any recording devices. Can't record.");
+    }
 
-    portaudio::Device& device = sys.deviceByIndex(inputDevice);
+    if (0>input_device_ || input_device_>sys.deviceCount()) {
+        input_device_ = sys.defaultInputDevice().index();
+    } else if ( sys.deviceByIndex(input_device_).isOutputOnlyDevice() ) {
+        tt.getStream() << "Requested device '" << sys.deviceByIndex(input_device_).name() << "' can only be used for output";
+        input_device_ = sys.defaultInputDevice().index();
+    } else {
+        ;
+    }
+
+    tt.getStream() << "Using device '" << sys.deviceByIndex(input_device_).name() << "' for audio input";
+
+    portaudio::Device& device = sys.deviceByIndex(input_device_);
+    _sample_rate = device.defaultSampleRate();
 
     unsigned channel_count = device.maxInputChannels();
     if (channel_count>2)
@@ -87,12 +104,8 @@ void MicrophoneRecorder::
 MicrophoneRecorder::~MicrophoneRecorder()
 {
 	TaskTimer tt("%s", __FUNCTION__);
-    if (_stream_record) {
-        _stream_record->isStopped()? void(): _stream_record->stop();
-        _stream_record->isStopped()? void(): _stream_record->abort();
-        _stream_record->close();
-        _stream_record.reset();
-    }
+
+    stopRecording();
 
     QMutexLocker lock(&_data_lock);
     for (unsigned i=0; i<_data.size(); ++i)
@@ -107,6 +120,8 @@ MicrophoneRecorder::~MicrophoneRecorder()
 void MicrophoneRecorder::startRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
+    init();
+
     _stream_record->start();
 
     _start_recording = boost::posix_time::microsec_clock::local_time();
@@ -116,12 +131,17 @@ void MicrophoneRecorder::startRecording()
 void MicrophoneRecorder::stopRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
-    _stream_record->abort();//stop();
+    if (_stream_record) {
+        _stream_record->isStopped()? void(): _stream_record->stop();
+        _stream_record->isStopped()? void(): _stream_record->abort();
+        _stream_record->close();
+        _stream_record.reset();
+    }
 }
 
 bool MicrophoneRecorder::isStopped()
 {
-    return _stream_record->isStopped();
+    return _stream_record?_stream_record->isStopped():true;
 }
 
 Signal::pBuffer MicrophoneRecorder::
@@ -135,8 +155,7 @@ Signal::pBuffer MicrophoneRecorder::
 float MicrophoneRecorder::
         sample_rate()
 {
-    float fs = _stream_record->sampleRate();
-    return fs;
+    return _sample_rate;
 }
 
 long unsigned MicrophoneRecorder::

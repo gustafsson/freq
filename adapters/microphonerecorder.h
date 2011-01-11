@@ -45,11 +45,13 @@ public:
 
 private:
     MicrophoneRecorder() {} // for deserialization
-    void init(int inputDevice);
+    int input_device_;
+    void init();
 
     boost::posix_time::ptime _start_recording;
     float _offset;
     unsigned _channel;
+    float _sample_rate;
     QMutex _data_lock;
     std::vector<Signal::SinkSource> _data;
     Signal::PostSink _postsink;
@@ -90,6 +92,7 @@ private:
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
+        ar & BOOST_SERIALIZATION_NVP(input_device_);
     }
 
     template<class archive>
@@ -99,8 +102,7 @@ private:
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
-
-        init(-1);
+        ar & BOOST_SERIALIZATION_NVP(input_device_);
 
         Signal::Interval I(0, wavfile->number_of_samples());
         for (unsigned c=0; c<num_channels(); ++c)
