@@ -784,7 +784,7 @@ size_t Cwt::
 {
     unsigned r = wavelet_time_support_samples( sample_rate );
     unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
-    size_t sum = sizeof(float2)*2.5*(L+2*r)*nScales( sample_rate )/max_bin;
+    size_t sum = sizeof(float2)*5*(L+2*r)*nScales( sample_rate )/(1+max_bin)*1.15;
     return sum;
 }
 
