@@ -242,11 +242,17 @@ Signal::Intervals Worker::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
 #endif
-    if ( Tfr::Cwt::Singleton().wavelet_time_support() == Tfr::Cwt::Singleton().wavelet_default_time_support() )
+    if ( Tfr::Cwt::Singleton().wavelet_time_support() >= Tfr::Cwt::Singleton().wavelet_default_time_support() )
         _cheat_work.clear();
 
     Signal::Intervals c = _todo_list;
     c -= _cheat_work;
+
+    if (!c)
+    {
+        Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+        return _todo_list;
+    }
 
     return c;
 }
