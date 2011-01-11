@@ -52,9 +52,9 @@ MatlabFunction::
 
     { // Start matlab/octave
         stringstream matlab_command, octave_command;
-        matlab_command << "addpath('/usr/local/share/sonicawe');"
+        matlab_command << "addpath('/usr/share/sonicawe');"
                 << "sawe_filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
-        octave_command << "addpath('/usr/local/share/sonicawe');"
+        octave_command << "addpath('/usr/share/sonicawe');"
                 << "sawe_filewatcher_oct('" << _dataFile << "',@" << matlabFunction << ");";
 
         QStringList matlab_args;
