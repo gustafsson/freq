@@ -58,9 +58,9 @@ ToolFactory::
 
     if (RecordModel::canCreateRecordModel(p))
     {
-        _record_model.reset( new RecordModel(p) );
+        _record_model.reset( new RecordModel(p, _render_view) );
         _record_view.reset( new RecordView(_record_model.data() ));
-        _record_controller = new RecordController( _record_view.data(), _render_view );
+        _record_controller = new RecordController( _record_view.data() );
     }
 
     _comment_controller = new CommentController( _render_view );

@@ -1,13 +1,13 @@
 #ifndef RECORDVIEW_H
 #define RECORDVIEW_H
 
+#include "recordmodel.h"
+
 #include <QObject>
 #include "signal/worker.h"
 
 namespace Tools
 {
-
-class RecordModel;
 
 class RecordView: public QObject
 {
@@ -20,11 +20,12 @@ public:
 
 public slots:
     /// Connected in RecordController
-    virtual void draw();
+    virtual void prePaint();
 
 private:
     friend class RecordController;
     RecordModel* model_;
+    double prev_limit_;
 };
 
 } // namespace Tools

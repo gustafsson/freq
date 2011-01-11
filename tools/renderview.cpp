@@ -55,7 +55,6 @@ RenderView::
             _try_gc(0)
 {
     float l = model->project()->worker.source()->length();
-    _prevLimit = l;
     _last_length = l;
 
     // Validate rotation and set orthoview accordingly
@@ -779,22 +778,8 @@ void RenderView::
 
     // Set up camera position
     _last_length = model->project()->worker.source()->length();
-    float fs = model->project()->worker.source()->sample_rate();
     {   
 		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
-		double limit = std::max(0.f, _last_length - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
-
-        if (model->_qx>=_prevLimit) {
-            // -- Following Record Marker --
-            // Snap just before end so that project->worker.center starts working on
-            // data that has been fetched. If center=length worker will start
-            // at the very end and have to assume that the signal is abruptly
-            // set to zero after the end. This abrupt change creates a false
-            // dirac peek in the transform (false because it will soon be
-            // invalid by newly recorded data).
-            model->_qx = std::max(model->_qx, limit);
-        }
-        _prevLimit = limit;
 
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");

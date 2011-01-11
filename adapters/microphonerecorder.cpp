@@ -26,7 +26,9 @@ MicrophoneRecorder::
 void MicrophoneRecorder::
         init(int inputDevice)
 {
-    channel = 0;
+    _channel = 0;
+    _offset = 0;
+
     static bool first = true;
     if (first) Playback::list_devices();
 
@@ -59,11 +61,11 @@ void MicrophoneRecorder::
             channel_count, // channels
             portaudio::FLOAT32,
             false, // interleaved
-#ifdef __APPLE__ // TODO document why
+//#ifdef __APPLE__ // TODO document why
             device.defaultHighInputLatency(),
-#else
-            device.defaultLowInputLatency(),
-#endif
+//#else
+//            device.defaultLowInputLatency(),
+//#endif
             NULL);
 
     portaudio::StreamParameters paramsRecord(
@@ -77,7 +79,10 @@ void MicrophoneRecorder::
             paramsRecord,
             *this,
             &MicrophoneRecorder::writeBuffer));
+
+    lock.unlock();
 }
+
 
 MicrophoneRecorder::~MicrophoneRecorder()
 {
@@ -103,12 +108,15 @@ void MicrophoneRecorder::startRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
     _stream_record->start();
+
+    _start_recording = boost::posix_time::microsec_clock::local_time();
+    _offset = length();
 }
 
 void MicrophoneRecorder::stopRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
-    _stream_record->stop();
+    _stream_record->abort();//stop();
 }
 
 bool MicrophoneRecorder::isStopped()
@@ -121,7 +129,7 @@ Signal::pBuffer MicrophoneRecorder::
 {
     QMutexLocker lock(&_data_lock);
     // TODO why? return _data[channel].readFixedLength( I );
-    return _data[channel].read( I );
+    return _data[_channel].read( I );
 }
 
 float MicrophoneRecorder::
@@ -135,7 +143,7 @@ long unsigned MicrophoneRecorder::
         number_of_samples()
 {
     QMutexLocker lock(&_data_lock);
-    long unsigned N = _data[channel].number_of_samples();
+    long unsigned N = _data[_channel].number_of_samples();
     return N;
 }
 
@@ -155,14 +163,23 @@ void MicrophoneRecorder::
 {
     //TIME_MICROPHONERECORDER TaskTimer("MicrophoneRecorder::set_channel(%u)", channel).suppressTiming();
     BOOST_ASSERT( channel < num_channels() );
-    this->channel = channel;
+    this->_channel = channel;
 }
 
 
 unsigned MicrophoneRecorder::
         get_channel()
 {
-    return channel;
+    return _channel;
+}
+
+
+float MicrophoneRecorder::
+        time()
+{
+    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _start_recording;
+    float dt = d.total_milliseconds()*0.001f;
+    return dt + _offset;
 }
 
 

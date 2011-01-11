@@ -139,7 +139,6 @@ namespace Tools
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
 
         bool _inited;
-        float _prevLimit;
         unsigned _last_width;
         unsigned _last_height;
         int _try_gc;

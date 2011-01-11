@@ -170,7 +170,7 @@ void TooltipController::
             ->sinks()[0]->source().get()))
        ss << "Morlet standard deviation: " << setprecision(3) << std_t << " s, " << setprecision(1) << std_f << " Hz<br/>";
 
-    ss << "Value here: " << model()->max_so_far;
+    ss << "Value here: " << setprecision(10) << model()->max_so_far << setprecision(1);
 
     if ( 0 < model()->markers )
     {

@@ -15,6 +15,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <QMutex>
 
@@ -38,6 +39,7 @@ public:
     virtual unsigned get_channel();
 
     unsigned recording_itr() { return number_of_samples(); }
+    float time();
 
     Signal::PostSink* getPostSink() { return &_postsink; }
 
@@ -45,7 +47,9 @@ private:
     MicrophoneRecorder() {} // for deserialization
     void init(int inputDevice);
 
-    unsigned channel;
+    boost::posix_time::ptime _start_recording;
+    float _offset;
+    unsigned _channel;
     QMutex _data_lock;
     std::vector<Signal::SinkSource> _data;
     Signal::PostSink _postsink;

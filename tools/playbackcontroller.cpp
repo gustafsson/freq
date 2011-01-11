@@ -102,7 +102,8 @@ void PlaybackController::
 void PlaybackController::
         onSelectionChanged()
 {
-    model()->playback()->reset();
+    if (model()->playback())
+        model()->playback()->reset();
     std::vector<Signal::pOperation> empty;
     model()->getPostSink()->sinks( empty );
     model()->getPostSink()->filter( Signal::pOperation() );
