@@ -350,11 +350,11 @@ int main(int argc, char *argv[])
         // TODO 0 != QGLContext::currentContext() when exiting by an exception
         // that stops the mainloop.
         if( 0 != QGLContext::currentContext() )
-            TaskTimer("Error: OpenGL context was not destroyed prior to application exit").suppressTiming();
+            TaskInfo("Error: OpenGL context was not destroyed prior to application exit");
 
         CUdevice current_device;
         if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( &current_device ))
-            TaskTimer("Error: CUDA context was not destroyed prior to application exit").suppressTiming();
+            TaskInfo("Error: CUDA context was not destroyed prior to application exit");
 
         return r;
     } catch (const std::exception &x) {

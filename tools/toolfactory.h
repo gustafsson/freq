@@ -84,11 +84,11 @@ namespace Tools
         // The currently active tool is already deleted prior to ~ToolFactory
         // when the main window is closed.
 
-        class RenderView* _render_view; // owned by centralwidget
+        QPointer<RenderView> _render_view; // owned by centralwidget
         QScopedPointer<class RenderController> _render_controller;
 
-        class TimelineView* _timeline_view; // owned by timelinedock which is owned by mainwindow
-        class TimelineController* _timeline_controller; // owned by _timeline_view
+        QPointer<class TimelineView> _timeline_view; // owned by timelinedock which is owned by mainwindow
+        QPointer<class TimelineController> _timeline_controller; // owned by _timeline_view
 
         QPointer<class SelectionController> _selection_controller; // might be deleted by _render_view
 

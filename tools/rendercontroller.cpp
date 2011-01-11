@@ -95,7 +95,7 @@ private:
 
 
 RenderController::
-        RenderController( RenderView *view )
+        RenderController( QPointer<RenderView> view )
             :
             view(view),
             toolbar_render(0),
@@ -120,6 +120,9 @@ RenderController::
 {
     if (QGLContext::currentContext())
         clearCachedHeightmap();
+
+    if (view)
+        delete view;
 }
 
 
