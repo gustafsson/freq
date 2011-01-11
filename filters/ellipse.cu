@@ -40,12 +40,16 @@ __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 a
     float dx = fabs(x - area.x);
     float dy = fabs(fi - area.y);
 
-    float g = dx*dx/rx/rx + dy*dy/ry/ry;
+    float ax = 0.03f*fs; // TODO this should be wavelet_time_support_samples( fs, hz ) = k*2^((b+fi)/scales_per_octave)
+    float ay = 1.5f; // only round in time?
 
     // round corners
-    rx = max(1.f, rx-0.3f*fs);
-    ry = max(1.f, ry-4);
     float f = dx*dx/rx/rx + dy*dy/ry/ry;
+
+    rx += ax;
+    ry += ay;
+
+    float g = dx*dx/rx/rx + dy*dy/ry/ry;
     if (f < 1) {
         f = 0;
     } else if (g<1) {
