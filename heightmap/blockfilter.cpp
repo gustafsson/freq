@@ -117,20 +117,28 @@ void CwtToBlock::
             transferDesc.coveredInterval().last / chunk.original_sample_rate ).suppressTiming();
 
     // Remove already computed intervals
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
+    if (!full_resolution)
+    {
+        if (!(transferDesc - block->valid_samples))
+        {
+            TIME_CWTTOBLOCK TaskInfo("%s not accepting %s, early termination", vartype(*this).c_str(), transferDesc.toString().c_str());
+            transferDesc.clear();
+        }
+    }
     // transferDesc -= block->valid_samples;
 
     // If block is already up to date, abort merge
     if (transferDesc.empty())
     {
-        TaskTimer tt("CwtToBlock::mergeChunk, transferDesc empty");
-        tt.getStream() << "outInterval = " << outInterval.toString();
-        tt.getStream() << "inInterval = " << inInterval.toString();
-        tt.suppressTiming();
+        TIME_CWTTOBLOCK TaskInfo tt("CwtToBlock::mergeChunk, transferDesc empty");
+        TIME_CWTTOBLOCK TaskInfo("outInterval = %s", outInterval.toString().c_str());
+        TIME_CWTTOBLOCK TaskInfo("inInterval = %s", inInterval.toString().c_str());
 
         return;
     }
 
-    std::stringstream ss;
     Position a,b;
     block->ref.getArea(a,b);
     float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
@@ -275,8 +283,7 @@ void CwtToBlock::
     CudaException_CHECK_ERROR();
     GlException_CHECK_ERROR();
 
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
-    if( cwt->wavelet_time_support() == cwt->wavelet_default_time_support() )
+    if( full_resolution )
     {
         block->valid_samples |= transfer;
     }
