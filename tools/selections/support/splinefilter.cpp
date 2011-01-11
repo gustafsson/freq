@@ -52,11 +52,14 @@ void SplineFilter::operator()( Chunk& chunk)
 		j++;
     }
 
-	GpuCpuData<float2> pts(&p[0], make_uint3( j, 1, 1 ), GpuCpuVoidData::CpuMemory, true );
+    if (0<j)
+    {
+        GpuCpuData<float2> pts(&p[0], make_uint3( j, 1, 1 ), GpuCpuVoidData::CpuMemory, true );
 
-    ::applyspline(
-            chunk.transform_data->getCudaGlobal(),
-            pts.getCudaGlobal(), _save_inside );
+        ::applyspline(
+                chunk.transform_data->getCudaGlobal(),
+                pts.getCudaGlobal(), _save_inside );
+    }
 
     TIME_SPLINEFILTER CudaException_ThreadSynchronize();
 }
