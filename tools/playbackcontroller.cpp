@@ -65,6 +65,7 @@ void PlaybackController::
         return; // No filter, no selection...
     }
 
+    tt.info("Selection is of type %s", vartype(*filter.get()).c_str());
 
     if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
@@ -79,6 +80,8 @@ void PlaybackController::
         postsink_operations->filter( Signal::pOperation() );
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
+
+        filter->source( Signal::pOperation() );
         postsink_operations->invalidate_samples( ~filter->zeroed_samples() );
     }
     else

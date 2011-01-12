@@ -130,7 +130,7 @@ float Playback::
 void Playback::
         put( Signal::pBuffer buffer )
 {
-    TIME_PLAYBACK TaskTimer tt("Playback::put [%lu,%lu]", (unsigned long)buffer->sample_offset, (unsigned long)(buffer->sample_offset+buffer->number_of_samples()));
+    TIME_PLAYBACK TaskTimer tt("Playback::put %s", buffer->getInterval().toString().c_str());
     _last_timestamp = microsec_clock::local_time();
 
     if (_data.empty())
