@@ -598,8 +598,7 @@ Signal::pBuffer Cwt::
 
     if (pchunk->original_sample_rate != pchunk->sample_rate)
     {
-        // Skip first row
-        p += x.width;
+        // Skip last row
         x.height--;
     }
 
