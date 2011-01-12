@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _MSC_VER
+#include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
+#endif
+
 // OpenGL
 #include <gl.h> // from gpumisc
 #ifndef __APPLE__

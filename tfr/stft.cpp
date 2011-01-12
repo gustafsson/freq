@@ -379,7 +379,7 @@ Tfr::pChunk Stft::
 
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
-    _chunk_size = 1 << (unsigned)floor(log2(preferred_size)+0.5);
+    _chunk_size = 1 << (unsigned)floor(log2((float)preferred_size)+0.5);
     return _chunk_size;
 
 //    if (_ok_chunk_sizes.empty())
