@@ -207,6 +207,9 @@ public:
 
       This method is used by Heightmap::Renderer to get the heightmap data of
       blocks that has been decided for rendering.
+
+      Might return 0 if collections decides that it doesn't want to allocate
+      another block.
       */
     pBlock      getBlock( Reference ref );
 

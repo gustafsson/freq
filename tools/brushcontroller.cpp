@@ -111,7 +111,7 @@ void BrushController::
         mouseMoveEvent ( QMouseEvent * e )
 {
     Tools::RenderView &r = *render_view_;
-    Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
+    Heightmap::Position p = r.getPlanePos( QPointF( e->x(), height() - 1 - e->y() ) );
     Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
     view_->gauss = model()->getGauss( ref, p );
 
