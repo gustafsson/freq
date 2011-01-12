@@ -93,7 +93,7 @@ public:
         To prevent anyone from optimizing away a read because it's known to
         result in zeros. BlockFilter wants to be run anyway, even with zeros.
         */
-    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
+    Signal::Intervals zeroed_samples_recursive() { return Signal::Intervals(); }
 
     void applyFilter( Tfr::pChunk pchunk )
     {

@@ -34,7 +34,7 @@ Signal::pBuffer Filter::
     // Try to take shortcuts and avoid unnecessary work
     if (_try_shortcuts) {
         // If no samples would be non-zero, return zeros
-        if (!(work - zeroed_samples()))
+        if (!(work - zeroed_samples_recursive()))
         {
             // Doesn't have to read from source, just create a buffer with all samples set to 0
             TIME_Filter TaskTimer("Filter silent, %s", I.toString().c_str());

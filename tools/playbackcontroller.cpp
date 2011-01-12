@@ -81,7 +81,6 @@ void PlaybackController::
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
 
-        filter->source( Signal::pOperation() );
         postsink_operations->invalidate_samples( ~filter->zeroed_samples() );
     }
     else

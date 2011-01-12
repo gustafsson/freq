@@ -307,8 +307,8 @@ void Worker::
     s->source( _source );
     Signal::Intervals still_zeros;
     if (_source)
-        still_zeros = _source->zeroed_samples();
-    still_zeros &= s->zeroed_samples();
+        still_zeros = _source->zeroed_samples_recursive();
+    still_zeros &= s->zeroed_samples_recursive();
     _source = s;
     invalidate_post_sink( s->affected_samples() - still_zeros );
 
