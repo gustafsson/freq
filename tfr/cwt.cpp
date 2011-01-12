@@ -739,6 +739,10 @@ unsigned Cwt::
         r = 1 << (max_bin-1);
     unsigned T = r + current_valid_samples_per_chunk + r;
     unsigned nT = spo2g(T);
+
+    if (nT > (1<<19)) // For some reason cufft sais CUFFT_ALLOC_FAILED for fft size (1<<20)
+        nT = 1<<19;
+
     if(nT <= 2*r)
         nT = spo2g(2*r);
     unsigned L = nT - 2*r;

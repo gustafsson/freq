@@ -67,9 +67,14 @@ void CufftHandleContext::
             NULL, 1, 0,
             CUFFT_C2C,
             _batch_size);
+
     if (CUFFT_SUCCESS != r)
     {
-        TaskInfo ti("cufftPlanMany( n = %d, _batch_size = %u )", n, _batch_size);
+        TaskInfo ti("cufftPlanMany( n = %d, _batch_size = %u ) -> %s",
+                    n, _batch_size, CufftException::getErrorString(r));
+        size_t free=0, total=0;
+        cudaMemGetInfo(&free, &total);
+        ti.tt().info("Free mem = %g MB, total = %g MB", free/1024.f/1024.f, total/1024.f/1024.f);
         CufftException_SAFE_CALL( r );
     }
 
