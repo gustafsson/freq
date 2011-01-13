@@ -73,6 +73,8 @@ RenderView::
 {
     TaskTimer tt("%s", __FUNCTION__);
 
+    makeCurrent();
+
     emit destroying();
 
     _render_timer.reset();

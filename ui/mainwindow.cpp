@@ -236,12 +236,7 @@ void SaweMainWindow::
 
     e->accept();
 
-    // TODO hack
-#ifndef _MSC_VER
-#ifndef __APPLE__
     emit onMainWindowCloseEvent( this );
-#endif
-#endif
 }
 
 

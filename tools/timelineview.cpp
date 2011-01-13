@@ -59,6 +59,7 @@ TimelineView::
         ~TimelineView()
 {
     TaskInfo ti("~TimelineView");
+    makeCurrent();
     _timeline_fbo.reset();
     _timeline_bar_fbo.reset();
 }

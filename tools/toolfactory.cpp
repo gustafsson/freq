@@ -81,13 +81,7 @@ ToolFactory::
         ~ToolFactory()
 {
     TaskInfo ti(__FUNCTION__);
-
-    // The _render_view and _timeline_view widget are released by MainWindow
-    // that owns the widget. This should always happen before this destructor.
-
-    BOOST_ASSERT( 0 == _render_view );
-    BOOST_ASSERT( 0 == _timeline_view );
-    BOOST_ASSERT( 0 == _timeline_controller );
+    // Try to clear things in the opposite order that they were created
 
     if (!_selection_controller.isNull())
         delete _selection_controller;
@@ -115,6 +109,18 @@ ToolFactory::
 
     if (!_tooltip_controller.isNull())
         delete _tooltip_controller;
+
+    BOOST_ASSERT( _timeline_controller );
+	delete _timeline_controller;
+
+    BOOST_ASSERT( _timeline_view );
+    delete _timeline_view;
+
+    BOOST_ASSERT( _render_controller );
+    _render_controller.reset();
+
+    BOOST_ASSERT( _render_view );
+    delete _render_view;
 }
 
 } // namespace Tools

@@ -26,7 +26,6 @@ using namespace std;
 namespace Sawe {
 
 // static members
-Application*    Application::_app = 0;
 std::string     Application::_fatal_error;
 
 static void show_fatal_exception_cerr( const std::string& str )
@@ -45,10 +44,12 @@ static void show_fatal_exception_qt( const std::string& str )
 				 QString::fromLocal8Bit(str.c_str()) );
 }
 
-static void show_fatal_exception( const std::string& str )
+void Application::
+        show_fatal_exception( const std::string& str )
 {
     show_fatal_exception_cerr(str);
-    show_fatal_exception_qt(str);
+    if (QApplication::instance())
+        show_fatal_exception_qt(str);
 }
 
 static string fatal_exception_string( const std::exception &x )
@@ -69,9 +70,6 @@ Application::
     default_record_device(-1),
     shared_glwidget_(new QGLWidget(QGLFormat(QGL::SampleBuffers)))
 {
-    BOOST_ASSERT( !_app );
-
-    _app = this;
     _version_string = "Sonic AWE - development snapshot\n";
 
     //QDateTime now = QDateTime::currentDateTime();
@@ -110,15 +108,14 @@ Application::
     _projects.clear();
 
     delete shared_glwidget_;
-
-    BOOST_ASSERT( _app );
-    _app = 0;
 }
 
 Application* Application::
-        global_ptr() {
-    BOOST_ASSERT( _app );
-    return _app;
+        global_ptr() 
+{
+    Application* app = dynamic_cast<Application*>(QApplication::instance());
+    BOOST_ASSERT( app );
+    return app;
 }
 
 

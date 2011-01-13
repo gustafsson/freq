@@ -120,9 +120,6 @@ RenderController::
 {
     if (QGLContext::currentContext())
         clearCachedHeightmap();
-
-    if (view)
-        delete view;
 }
 
 
@@ -288,6 +285,7 @@ void RenderController::
 RenderModel *RenderController::
         model()
 {
+    BOOST_ASSERT( view );
     return view->model;
 }
 
