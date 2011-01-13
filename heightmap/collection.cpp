@@ -33,6 +33,7 @@
 #define TIME_GETBLOCK if(0)
 
 // Don't keep more than this times the number of blocks currently needed
+// TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
 
 using namespace Signal;

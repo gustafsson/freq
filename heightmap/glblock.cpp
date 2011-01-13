@@ -212,11 +212,13 @@ void GlBlock::
 {
     if (_tex_height)
     {
+        TIME_GLBLOCK TaskInfo("Deleting tex_height=%u", _tex_height);
         glDeleteTextures(1, &_tex_height);
         _tex_height = 0;
     }
     if (_tex_slope)
     {
+        TIME_GLBLOCK TaskInfo("Deleting _tex_slope=%u", _tex_slope);
         glDeleteTextures(1, &_tex_slope);
         _tex_slope = 0;
     }
@@ -271,8 +273,6 @@ void GlBlock::
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        _got_new_height_data = true;
-
         TIME_GLBLOCK TaskInfo("Created tex_slope=%d", _tex_slope);
     }
 
@@ -291,18 +291,9 @@ void GlBlock::
     if (create_slope)
     {
         // Need a slope
-
-#ifdef _MSC_VER
-        if (false)
-        {
-            // TODO just calling 'slope()->data->getCudaGlobal()' here crashes the graphics driver in windows
-            // slope()->data->getCudaGlobal()
-#else
         if (got_new_slope_data)
         {
             // Slope needs to be updated (before unmap())
-#endif
-
             computeSlope(0);
 
             {
