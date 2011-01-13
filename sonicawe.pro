@@ -13,13 +13,14 @@ win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
-#CONFIG += console # no console output
+#CONFIG += console # console output
 #DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
+win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
 win32:QMAKE_LFLAGS_DEBUG += \
 	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
 	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB

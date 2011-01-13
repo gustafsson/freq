@@ -274,11 +274,10 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    //#ifndef __GNUC__
-    TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
-
+    // Write all stdout and stderr to sonicawe.log instead
     RedirectStdout rs("sonicawe.log");
-//#endif
+
+    TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 
     TaskInfo("Starting Sonic AWE");
 

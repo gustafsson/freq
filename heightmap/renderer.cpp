@@ -19,8 +19,8 @@
 #include "msc_stdc.h"
 #endif
 
-//#define TIME_RENDERER
-#define TIME_RENDERER if(0)
+#define TIME_RENDERER
+//#define TIME_RENDERER if(0)
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)

@@ -20,8 +20,8 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_COLLECTION
-#define TIME_COLLECTION if(0)
+#define TIME_COLLECTION
+//#define TIME_COLLECTION if(0)
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
@@ -555,7 +555,6 @@ pBlock Collection::
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
         TaskInfo("Collection::attempt swallowed GlException.\n%s", x.what());
     }
-    TIME_COLLECTION TaskTimer("Returning pBlock()").suppressTiming();
     return pBlock();
 }
 
@@ -810,7 +809,7 @@ pBlock Collection::
     // result is non-zero
     _cache[ result->ref ] = result;
 
-    TIME_COLLECTION printCacheSize();
+    //TIME_COLLECTION printCacheSize();
 
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
