@@ -13,7 +13,7 @@ win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
-CONFIG += console # console output
+#CONFIG += console # no console output
 #DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
