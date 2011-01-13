@@ -276,6 +276,7 @@ int main(int argc, char *argv[])
 
     //#ifndef __GNUC__
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
+
     RedirectStdout rs("sonicawe.log");
 //#endif
 
@@ -283,22 +284,23 @@ int main(int argc, char *argv[])
 
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
-    Sawe::Application a(argc, argv, true);
-
-    {
-        TaskInfo ti("Version: %s", a.version_string().c_str());
-        TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
-
-        boost::gregorian::date today = boost::gregorian::day_clock::local_day();
-        boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
-        ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
-        ti.tt().getStream() << "Program started " << today;
-    }
-
-    if (!check_cuda( false ))
-        return -1;
-
     try {
+        Sawe::Application a(argc, argv, true);
+
+        {
+            TaskInfo ti("Version: %s", a.version_string().c_str());
+            TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
+
+            boost::gregorian::date today = boost::gregorian::day_clock::local_day();
+            boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
+            ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
+            ti.tt().getStream() << "Program started " << today;
+        }
+
+        // Check if a cuda context can be created, but don't require OpenGL bindings just yet
+        if (!check_cuda( false ))
+            return -1;
+
         a.parse_command_line_options(argc, argv);
 
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
