@@ -28,9 +28,10 @@
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QGLContext>
+#include <QGraphicsView>
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
+#define TIME_PAINTGL
+//#define TIME_PAINTGL if(0)
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -52,7 +53,8 @@ RenderView::
             model(model),
             _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
-            _try_gc(0)
+            _try_gc(0),
+            _update_timer(0)
 {
     float l = model->project()->worker.source()->length();
     _last_length = l;
@@ -65,6 +67,13 @@ RenderView::
     computeChannelColors();
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
+    connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
+    connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
+
+    _update_timer = new QTimer();
+    _update_timer->setSingleShot( true );
+    _update_timer->setInterval( 1 );
+    connect( _update_timer, SIGNAL( timeout() ), SLOT( update() ) );
 }
 
 
@@ -472,23 +481,11 @@ Heightmap::Position RenderView::
 
 
 void RenderView::
-        drawCollections(GlFrameBuffer* fbo)
+        drawCollections(GlFrameBuffer* fbo, float yscale)
 {
     GlException_CHECK_ERROR();
 
     unsigned N = model->collections.size();
-    unsigned long sumsize = 0;
-    unsigned cacheCount = 0;
-    TIME_PAINTGL for (unsigned i=0; i<N; ++i)
-    {
-        sumsize += model->collections[i]->cacheByteSize();
-        cacheCount += model->collections[i]->cacheCount();
-    }
-    TIME_PAINTGL TaskTimer tt("Drawing %u collections (total cache size: %g MB, for %u blocks)", N, sumsize/1024.f/1024.f, cacheCount);
-    if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
-    {
-        model->collections[i]->printCacheSize();
-    }
 
     Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
                 model->project()->worker.source()->root());
@@ -506,7 +503,7 @@ void RenderView::
     glGetIntegerv(GL_VIEWPORT, current_viewport);
 
     for (unsigned i=0; i < 1; ++i)
-        drawCollection(i, fs);
+        drawCollection(i, fs, yscale);
 
     if (1<N)
     {
@@ -533,7 +530,7 @@ void RenderView::
                 glViewport(0, 0,
                            fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
 
-                drawCollection(i, fs);
+                drawCollection(i, fs, yscale);
             }
 
             glViewport(current_viewport[0], current_viewport[1],
@@ -573,7 +570,14 @@ void RenderView::
 
 
 void RenderView::
-        drawCollection(int i, Signal::FinalSource* fs)
+        queueRepaint()
+{
+    _update_timer->start();
+}
+
+
+void RenderView::
+        drawCollection(int i, Signal::FinalSource* fs, float yscale )
 {
     model->renderer->collection = model->collections[i].get();
     model->renderer->fixed_color = channel_colors[i];
@@ -581,7 +585,7 @@ void RenderView::
         fs->set_channel( i );
     glDisable(GL_BLEND);
     glEnable(GL_LIGHTING);
-    model->renderer->draw( 1 - orthoview ); // 0.6 ms
+    model->renderer->draw( yscale ); // 0.6 ms
     glDisable(GL_LIGHTING);
     glEnable(GL_BLEND);
 }
@@ -715,7 +719,8 @@ void RenderView::
 {
     // todo isn't "requested fps" is a renderview property?
     model->project()->worker.requested_fps(60);
-    QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
+
+    queueRepaint();
 }
 
 
@@ -760,7 +765,24 @@ void RenderView::
     TIME_PAINTGL _render_timer.reset();
     TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-	TIME_PAINTGL TaskTimer tt("RenderView::paintGL");
+	TIME_PAINTGL TaskTimer tt("============================= RenderView::paintGL =============================");
+
+    unsigned N = model->collections.size();
+    unsigned long sumsize = 0;
+    unsigned cacheCount = 0;
+    TIME_PAINTGL for (unsigned i=0; i<N; ++i)
+    {
+        sumsize += model->collections[i]->cacheByteSize();
+        cacheCount += model->collections[i]->cacheCount();
+    }
+    TIME_PAINTGL TaskInfo("Drawing %u collections (total cache size: %g MB, for %u blocks)", N, sumsize/1024.f/1024.f, cacheCount);
+    if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
+    {
+        model->collections[i]->printCacheSize();
+    }
+
+
+    Signal::Worker& worker = model->project()->worker;
 
     _try_gc = 0;
     try {
@@ -779,7 +801,7 @@ void RenderView::
 		}
 
     // Set up camera position
-    _last_length = model->project()->worker.source()->length();
+    _last_length = worker.source()->length();
     {   
 		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
 
@@ -796,7 +818,7 @@ void RenderView::
 	}
 
     // TODO move to rendercontroller
-    bool wasWorking = !model->project()->worker.todo_list().empty();
+    bool wasWorking = !worker.todo_list().empty();
 
     bool onlyUpdateMainRenderView = false;
     { // Render
@@ -808,7 +830,7 @@ void RenderView::
             collection->next_frame(); // Discard needed blocks before this row
         }
 
-        drawCollections( _renderview_fbo.get() );
+        drawCollections( _renderview_fbo.get(), 1 - orthoview );
 
         last_ysize = model->renderer->last_ysize;
         glScalef(1, last_ysize, 1); // global effect on all tools
@@ -835,21 +857,21 @@ void RenderView::
 
         if (missing_in_selection)
         {
-            model->project()->worker.center = 0;
-            model->project()->worker.todo_list( missing_in_selection );
+            worker.center = 0;
+            worker.todo_list( missing_in_selection );
 
             // Request at least 1 fps. Otherwise there is a risk that CUDA
             // will screw up playback by blocking the OS and causing audio
             // starvation.
-            model->project()->worker.requested_fps(1);
+            worker.requested_fps(1);
 
             //project->worker.todo_list().print("Displaywidget - PostSink");
         } else {
-            model->project()->worker.center = model->_qx;
-            model->project()->worker.todo_list( I );
+            worker.center = model->_qx;
+            worker.todo_list( I );
         }
 
-        Signal::Operation* first_source = model->project()->worker.source()->root();
+        Signal::Operation* first_source = worker.source()->root();
         Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
         if(r != 0 && !(r->isStopped()))
         {
@@ -859,45 +881,45 @@ void RenderView::
 
     {   // Work
 		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
-        bool isWorking = !model->project()->worker.todo_list().empty();
+        bool isWorking = !worker.todo_list().empty();
 
-        if (wasWorking || isWorking) {
+        if (isWorking || wasWorking) {
             if (!_work_timer.get())
                 _work_timer.reset( new TaskTimer("Working"));
 
             // project->worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
 #ifndef SAWE_NO_MUTEX
-            if (!model->project()->worker.isRunning()) {
-                model->project()->worker.workOne();
-                QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
+            if (!worker.isRunning()) {
+                worker.workOne();
+                queueRepaint();
             } else {
                 //project->worker.todo_list().print("Work to do");
                 // Wait a bit while the other thread work
                 QTimer::singleShot(200, this, SLOT(update()));
 
-                model->project()->worker.checkForErrors();
+                worker.checkForErrors();
             }
 #else
-            model->project()->worker.workOne();
-            QTimer::singleShot(0, this, SLOT(update())); // this will leave room for others to paint as well, calling 'update' wouldn't
+            worker.workOne();
+            queueRepaint();
 #endif
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
-                float worked_time = model->project()->worker.worked_samples.getInterval().count()/model->project()->worker.source()->sample_rate();
+                float worked_time = worker.worked_samples.getInterval().count()/worker.source()->sample_rate();
                 _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
-                                  model->project()->worker.work_chunks,
+                                  worker.work_chunks,
                                   worked_time,
                                   worked_time/_work_timer->elapsedTime(),
                                   workcount);
-                model->project()->worker.work_chunks = 0;
-                model->project()->worker.worked_samples.clear();
+                worker.work_chunks = 0;
+                worker.worked_samples.clear();
                 workcount++;
                 _work_timer.reset();
 
-                // Useful when debugging to close application after finishing first work chunk
-                //QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
+                // Useful when debugging to close application or do something else after finishing first work chunk
+                emit finishedWorkSection();
             }
         }
     }
@@ -962,6 +984,16 @@ void RenderView::
     model->renderer->color_mode = old_color_mode;
 
     userinput_update();
+}
+
+
+void RenderView::
+        finishedWorkSectionSlot()
+{
+    //QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
+
+    QMainWindow* mw = model->project()->mainWindow();
+    mw->setWindowState( Qt::WindowMaximized ); // WindowFullScreen
 }
 
 

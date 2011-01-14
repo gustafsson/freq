@@ -20,7 +20,7 @@ GraphicsView::
         GraphicsView(QGraphicsScene* scene)
     :   QGraphicsView(scene)
 {
-    setWindowTitle(tr("Boxes"));
+    setWindowTitle(tr("Sonic AWE"));
     //setRenderHints(QPainter::SmoothPixmapTransform);
     //setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::TextAntialiasing);
@@ -30,12 +30,9 @@ GraphicsView::
 
 
     setRenderHints(renderHints() | QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-    //view.show();
-    //view.setWindowTitle("Embedded Dialogs Demo");
 
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
-    //view->tool_selector.reset( new Support::ToolSelector(view->glwidget));
     QGraphicsProxyWidget* toolProxy = new QGraphicsProxyWidget();
     toolParent = new QWidget();
 

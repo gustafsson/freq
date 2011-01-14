@@ -35,7 +35,7 @@ namespace Tools
         virtual ~RenderView();
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
-        void drawCollections(GlFrameBuffer* fbo);
+        void drawCollections(GlFrameBuffer* fbo, float yscale);
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
         Heightmap::Position getHeightmapPos( QPointF viewport_coordinates, bool useRenderViewContext = true );
         Heightmap::Position getPlanePos( QPointF pos, bool* success = 0, bool useRenderViewContext = true );
@@ -90,6 +90,7 @@ namespace Tools
 
     private slots:
         void clearCaches();
+        void finishedWorkSectionSlot();
 
     signals:
         /**
@@ -115,6 +116,10 @@ namespace Tools
           */
         void postPaint();
 
+        /**
+          */
+        void finishedWorkSection();
+
     private:
         /// Similiar to QGLWidget::initializeGL()
         void initializeGL();
@@ -125,8 +130,9 @@ namespace Tools
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
 
+        void queueRepaint();
 
-        void drawCollection(int, Signal::FinalSource*);
+        void drawCollection(int, Signal::FinalSource*, float yscale);
 
         void setStates();
         void setLights();
@@ -142,6 +148,7 @@ namespace Tools
         unsigned _last_width;
         unsigned _last_height;
         int _try_gc;
+        QTimer* _update_timer;
 
         float _last_length;
         double modelview_matrix[16], projection_matrix[16];

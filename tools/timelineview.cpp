@@ -70,7 +70,8 @@ void TimelineView::
 {
     _project->worker.requested_fps(30);
     // this will leave room for others to paint as well, calling 'update' wouldn't
-    QTimer::singleShot(0, this, SLOT(update()));
+    //QTimer::singleShot(1, this, SLOT(update()));
+    update();
 }
 
 
@@ -155,7 +156,7 @@ void TimelineView::
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
-                _render_view->drawCollections( _timeline_fbo.get() );
+                _render_view->drawCollections( _timeline_fbo.get(), 0 );
 
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
@@ -171,7 +172,7 @@ void TimelineView::
             setupCamera( true );
             glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
 
-            _render_view->drawCollections( _timeline_bar_fbo.get() );
+            _render_view->drawCollections( _timeline_bar_fbo.get(), 0 );
 
             glViewport( 0, 0, (GLint)_width, (GLint)_height );
             setupCamera( true );
