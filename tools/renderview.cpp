@@ -92,6 +92,9 @@ RenderView::
 
     QGraphicsScene::clear();
 
+    if ( 1 < Sawe::Application::global_ptr()->count_projects())
+        return;
+
     Sawe::Application::global_ptr()->clearCaches();
 
     TaskInfo("cudaThreadExit()");
@@ -100,8 +103,8 @@ RenderView::
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
     // is corrupt and can't be destroyed nor used properly.
     //
-    // Note though that all renderview uses the same shared OpenGL context
-    // from (Application::shared_glwidget) thar are still active in other
+    // Note though that all renderview's uses the same shared OpenGL context
+    // from (Application::shared_glwidget) that are still active in other
     // Sonic AWE windows. The Cuda context will be recreated as soon as one
     // is needed. Calling 'clearCaches' above ensures that all resources are
     // released though prior to invalidating the cuda context.
@@ -834,6 +837,13 @@ void RenderView::
     // TODO move to rendercontroller
     bool wasWorking = !worker.todo_list().empty();
 
+    bool isRecording = false;
+
+    Signal::Operation* first_source = worker.source()->root();
+    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
+    if(r != 0 && !(r->isStopped()))
+        isRecording = true;
+
     bool onlyUpdateMainRenderView = false;
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
@@ -885,9 +895,7 @@ void RenderView::
             worker.todo_list( I );
         }
 
-        Signal::Operation* first_source = worker.source()->root();
-        Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
-        if(r != 0 && !(r->isStopped()))
+        if(isRecording)
         {
             wasWorking = true;
         }
@@ -905,7 +913,7 @@ void RenderView::
             // execute the computations for one chunk
 #ifndef SAWE_NO_MUTEX
             if (!worker.isRunning()) {
-                worker.workOne();
+                worker.workOne(!isRecording);
                 queueRepaint();
             } else {
                 //project->worker.todo_list().print("Work to do");
@@ -915,7 +923,7 @@ void RenderView::
                 worker.checkForErrors();
             }
 #else
-            worker.workOne();
+            worker.workOne(!isRecording);
             queueRepaint();
 #endif
         } else {

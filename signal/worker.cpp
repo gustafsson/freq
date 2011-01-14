@@ -72,13 +72,13 @@ Worker::
 
 
 bool Worker::
-        workOne()
+        workOne( bool skip_if_low_fps )
 {
     _requested_fps *= 0.9;
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;
 
-    if (_requested_fps>_highest_fps)
+    if (skip_if_low_fps && _requested_fps>_highest_fps)
         return false;
 
     if (todo_list().empty())
@@ -418,7 +418,7 @@ void Worker::
 		try {
             while (todo_list())
 			{
-				workOne();
+				workOne( false );
 				msleep(1);
 			}
 		} catch ( const std::invalid_argument& x ) {

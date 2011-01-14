@@ -131,7 +131,7 @@ public:
 
       @return true if some work was done and false otherwise
       */
-    bool workOne();
+    bool workOne(bool skip_if_low_fps = true);
 
     /**
       work_chunks is incremented by one each time workOne is invoked.

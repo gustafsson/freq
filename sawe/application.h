@@ -30,6 +30,7 @@ public:
 
     void				openadd_project( pProject p );
     int					default_record_device;
+    unsigned            count_projects() { return _projects.size(); }
 
     void parse_command_line_options( int& argc, char **argv );
 
