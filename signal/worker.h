@@ -279,6 +279,13 @@ private:
       */
     float _min_fps;
 
+
+    /**
+      highest measured fps when actually computing something. If requested fps is higher workOne doesn't do anything.
+      _highest_fps is guaranteed to be >= _min_fps.
+    */
+    float _highest_fps;
+
 	/**
       Worker::run is intended to be executed by a separate worker thread. To
       simplify error handling in the GUI thread exceptions are caught by

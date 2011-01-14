@@ -43,6 +43,8 @@ Worker::
     _caught_exception( "" ),
     _caught_invalid_argument("")
 {
+    _highest_fps = _min_fps;
+
     if(s) source( s );
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
@@ -72,6 +74,13 @@ Worker::
 bool Worker::
         workOne()
 {
+    _requested_fps *= 0.9;
+    if (_requested_fps < _min_fps) 
+        _requested_fps = _min_fps;
+
+    if (_requested_fps>_highest_fps)
+        return false;
+
     if (todo_list().empty())
         return false;
 
@@ -199,8 +208,8 @@ bool Worker::
 			TIME_WORKER TaskTimer("Current framerate = %.1f fps", current_fps).suppressTiming();
 		}
 
-        _requested_fps *= 0.9;
-        if (_min_fps>_requested_fps) _requested_fps = _min_fps;
+        if (_highest_fps < current_fps)
+            _highest_fps = current_fps;
     }
 
     // Reset before next workOne
@@ -275,6 +284,7 @@ void Worker::
         _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
     else
         _min_samples_per_chunk = 1;
+    _highest_fps = _min_fps;
     _max_samples_per_chunk = (unsigned)-1;
     invalidate_post_sink( Signal::Interval(0, std::max( 1lu, value->number_of_samples()) ));
 
@@ -285,6 +295,8 @@ void Worker::
 void Worker::
         appendOperation(Signal::pOperation s)
 {
+    BOOST_ASSERT( s );
+
     TaskInfo tt("Worker::appendOperation");
 
     // Check that this operation is not already in the list. Can't move into
@@ -311,6 +323,10 @@ void Worker::
     still_zeros &= s->zeroed_samples_recursive();
     _source = s;
     invalidate_post_sink( s->affected_samples() - still_zeros );
+
+    _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
+    _highest_fps = _min_fps;
+    _max_samples_per_chunk = (unsigned)-1;
 
     _source.reset( new OperationCacheLayer(_source) );
 
