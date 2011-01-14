@@ -14,7 +14,7 @@ macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
 #CONFIG += console # console output
-#DEFINES += SAWE_NO_MUTEX
+DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
