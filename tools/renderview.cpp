@@ -502,6 +502,10 @@ void RenderView::
     GLint current_viewport[4];
     glGetIntegerv(GL_VIEWPORT, current_viewport);
 
+    TIME_PAINTGL TaskTimer tt("Viewport (%u, %u, %u, %u)", 
+        current_viewport[0], current_viewport[1],
+        current_viewport[2], current_viewport[3]);
+
     for (unsigned i=0; i < 1; ++i)
         drawCollection(i, fs, yscale);
 
@@ -566,6 +570,11 @@ void RenderView::
 
     glDisable( GL_CULL_FACE );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+    TIME_PAINTGL TaskInfo("Drew %u*%u block%s", 
+        N,
+        model->renderer->_drawn_blocks, 
+        model->renderer->_drawn_blocks==1?"":"s");
 }
 
 
@@ -770,12 +779,17 @@ void RenderView::
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
     unsigned cacheCount = 0;
-    TIME_PAINTGL for (unsigned i=0; i<N; ++i)
+    TIME_PAINTGL 
     {
-        sumsize += model->collections[i]->cacheByteSize();
-        cacheCount += model->collections[i]->cacheCount();
+        sumsize = model->collections[0]->cacheByteSize();
+        cacheCount = model->collections[0]->cacheCount();
+        for (unsigned i=1; i<N; ++i)
+        {
+            BOOST_ASSERT( sumsize == model->collections[i]->cacheByteSize() );
+            BOOST_ASSERT( cacheCount == model->collections[i]->cacheCount() );
+        }
     }
-    TIME_PAINTGL TaskInfo("Drawing %u collections (total cache size: %g MB, for %u blocks)", N, sumsize/1024.f/1024.f, cacheCount);
+    TIME_PAINTGL TaskInfo("Drawing %u collections (total cache size: %g MB, for %u*%u blocks)", N, N*sumsize/1024.f/1024.f, N, cacheCount);
     if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
     {
         model->collections[i]->printCacheSize();
@@ -992,8 +1006,8 @@ void RenderView::
 {
     //QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
 
-    QMainWindow* mw = model->project()->mainWindow();
-    mw->setWindowState( Qt::WindowMaximized ); // WindowFullScreen
+    //QMainWindow* mw = model->project()->mainWindow();
+    //mw->setWindowState( Qt::WindowMaximized ); // WindowFullScreen
 }
 
 

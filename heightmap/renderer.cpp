@@ -398,6 +398,7 @@ Reference Renderer::
 void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
+
     TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
     if (!_initialized) init();
 
@@ -411,7 +412,7 @@ void Renderer::draw( float scaley )
         _draw_flat = false;
 
     last_ysize = scaley;
-//        setSize( collection->samples_per_block(), collection->scales_per_block() );
+    _drawn_blocks = 0;
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
@@ -429,9 +430,6 @@ void Renderer::draw( float scaley )
     renderChildrenSpectrogramRef(ref);
 
     endVboRendering();
-
-    TIME_RENDERER TaskInfo("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
-    _drawn_blocks=0;
 
     GlException_CHECK_ERROR();
 }

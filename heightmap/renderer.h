@@ -48,6 +48,7 @@ public:
     float4 fixed_color;
     float y_scale;
     float last_ysize;
+    unsigned _drawn_blocks;
 
     void init();
 
@@ -84,8 +85,6 @@ private:
         bottomPlane, bottomNormal;
 
     boost::scoped_ptr<GlTexture> colorTexture;
-
-    unsigned _drawn_blocks;
 
     friend class Heightmap::GlBlock;
 

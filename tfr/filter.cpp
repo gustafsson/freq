@@ -110,12 +110,13 @@ ChunkAndInverse Filter::
         {
             if (f)
             {
-                TaskInfo("Filter affecting source is %s, but transform() differs", vartype(*f).c_str());
+                TaskInfo("Filter affecting source is %s, and is not using the same transform()", vartype(*f).c_str());
             }
             else
             {
                 Operation* o = source()->affecting_source(I);
-                TaskInfo("source()->affecting_source(I) is %s", vartype(*o).c_str());
+                if (o != source().get())
+                    TaskInfo("source()->affecting_source(I) is %s", vartype(*o).c_str());
             }
             TaskInfo("source() is %s", vartype(*source().get()).c_str());
         }

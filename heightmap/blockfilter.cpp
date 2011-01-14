@@ -38,8 +38,8 @@ void BlockFilter::
 {
     Signal::Interval chunk_interval = chunk.getInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, true );
-    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s intersects with %u blocks", 
-        chunk_interval.toString().c_str(), intersecting_blocks.size());
+    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks", 
+        chunk_interval.toString().c_str(), chunk.min_hz, chunk.max_hz, intersecting_blocks.size());
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
