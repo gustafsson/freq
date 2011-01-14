@@ -9,8 +9,8 @@
 
 #include <boost/foreach.hpp>
 
-//#define TIME_CwtFilter
-#define TIME_CwtFilter if(0)
+#define TIME_CwtFilter
+//#define TIME_CwtFilter if(0)
 
 //#define TIME_CwtFilterRead
 #define TIME_CwtFilterRead if(0)

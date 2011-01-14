@@ -8,8 +8,8 @@
 #include <GlException.h>
 #include <TaskTimer.h>
 
-//#define TIME_BLOCKFILTER
-#define TIME_BLOCKFILTER if(0)
+#define TIME_BLOCKFILTER
+//#define TIME_BLOCKFILTER if(0)
 
 //#define TIME_CWTTOBLOCK
 #define TIME_CWTTOBLOCK if(0)
@@ -37,11 +37,13 @@ void BlockFilter::
         operator()( Tfr::Chunk& chunk )
 {
     Signal::Interval chunk_interval = chunk.getInterval();
-    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s", chunk_interval.toString().c_str());
+    std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, true );
+    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s intersects with %u blocks", 
+        chunk_interval.toString().c_str(), intersecting_blocks.size());
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
-    foreach( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
+    foreach( pBlock block, intersecting_blocks)
     {
 #ifndef SAWE_NO_MUTEX
         if (_collection->constructor_thread().isSameThread())
@@ -207,11 +209,7 @@ void CwtToBlock::
 
 
     Signal::Interval transfer = transferDesc.coveredInterval();
-    TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u) to ref %s",
-                                 transfer.first,
-                                 transfer.last,
-                                 block->ref.toString().c_str());
-
+    
     DEBUG_CWTTOBLOCK {
         TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
         TaskTimer("outInterval [%u,%u)", outInterval.first, outInterval.last).suppressTiming();
@@ -237,13 +235,13 @@ void CwtToBlock::
     CudaException_CHECK_ERROR();
 
     //CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
-    CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
+    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
             a.time, a.scale,
             b.time, b.scale,
             chunk_a.time, chunk_a.scale,
             chunk_b.time, chunk_b.scale,
             transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
-        ).suppressTiming();
+        );
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
@@ -294,7 +292,6 @@ void CwtToBlock::
     }
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
-    return;
 }
 
 

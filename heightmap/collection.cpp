@@ -35,6 +35,7 @@
 // Don't keep more than this times the number of blocks currently needed
 // TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
+#define MAX_CREATED_BLOCKS_PER_FRAME 4 // Even numbers look better for stereo signals
 
 using namespace Signal;
 
@@ -310,7 +311,7 @@ pBlock Collection::
     }
 
     if (0 == block.get()) {
-        if ( 0 == _created_count )
+        if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count )
         {
             block = createBlock( ref );
             _created_count++;
@@ -346,7 +347,7 @@ pBlock Collection::
 }
 
 std::vector<pBlock> Collection::
-        getIntersectingBlocks( Interval I )
+        getIntersectingBlocks( Interval I, bool only_visible )
 {
     std::vector<pBlock> r;
     r.reserve(8);
@@ -358,9 +359,13 @@ std::vector<pBlock> Collection::
     foreach ( const cache_t::value_type& c, _cache )
     {
         const pBlock& pb = c.second;
+        
+        if (only_visible && _frame_counter != pb->frame_number_last_used)
+            continue;
+
         // This check is done in mergeBlock as well, but do it here first
         // for a hopefully more local and thus faster loop.
-        if (Intervals(I) & pb->ref.getInterval())
+        if (I.isConnectedTo(pb->ref.getInterval()))
         {
             r.push_back(pb);
         }
@@ -625,7 +630,7 @@ pBlock Collection::
 
             {
                 if (1) {
-                    VERBOSE_COLLECTION TaskTimer tt("Fetching data from others");
+                    TIME_COLLECTION TaskTimer tt("Fetching data from others");
                     // then try to upscale other blocks
                     Signal::Intervals things_to_update = ref.getInterval();
                     /*Signal::Intervals all_things;
@@ -637,9 +642,15 @@ pBlock Collection::
 
                     //for (int dist = 10; dist<-10; --dist)
                     {
-                        foreach( const cache_t::value_type& c, _cache )
+#ifndef SAWE_NO_MUTEX
+                        l.unlock();
+#endif
+                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.coveredInterval(), false );
+#ifndef SAWE_NO_MUTEX
+                        l.relock();
+#endif
+                        foreach( const pBlock& bl, gib )
                         {
-                            const pBlock& bl = c.second;
                             Signal::Interval v = bl->ref.getInterval();
                             if ( !(things_to_update & v ))
                                 continue;
@@ -779,6 +790,7 @@ pBlock Collection::
 
     BOOST_ASSERT( 0 != result.get() );
 
+    {TaskTimer t2("Removing old redundant blocks");
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
@@ -804,6 +816,7 @@ pBlock Collection::
             _cache.erase(_recent.back()->ref);
             _recent.pop_back();
         }
+    }
     }
 
     // result is non-zero

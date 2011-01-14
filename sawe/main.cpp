@@ -61,8 +61,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                         "a negative performance impact on Sonic AWE." << endl
                    << endl
                    << "Total memory free to use by Sonic AWE is "
-                   << (free>>20) << " MB out of total of " << (total>>20)
-                   << " MB on the GPU "
+                   << (free>>20) << " MB out of a total of " << (total>>20)
+                   << " MB on the GPU, "
                    << CudaProperties::getCudaDeviceProp().name << "."
                    << endl
                    << endl
@@ -74,8 +74,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                    << "Sonic AWE will now try to start without using up too "
                    "much memory.";
                 QMessageBox::information(
-                        0,
-                        "A lot of GPU memory is being used",
+                        0, 
+                        "A lot of GPU memory is currently being used",
                         ss.str().c_str());
             }
             return true;

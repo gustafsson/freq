@@ -218,7 +218,7 @@ public:
       Blocks are updated by CwtToBlock and StftToBlock by merging chunks into
       all existing blocks that intersect with the chunk interval.
       */
-    std::vector<pBlock>      getIntersectingBlocks( Signal::Interval I );
+    std::vector<pBlock>      getIntersectingBlocks( Signal::Interval I, bool only_visible );
 
 
     /**

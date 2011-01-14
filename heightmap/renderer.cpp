@@ -531,7 +531,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
                 block->glblock->draw( _vbo_size );
         }
 
-    } else {
+    } else if ( 0 == "render red warning cross") {
         endVboRendering();
         // getBlock would try to find something else if the requested block
         // wasn't readily available.
