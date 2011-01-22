@@ -124,7 +124,7 @@ win32 {
 ####################
 # Build settings
 
-unix:IS64 = $$system(if [ -n "`uname -m | grep x86_64`" ];then echo 64; fi)
+unix:IS64 = $$system(if [ "`uname -m`" == "x86_64" ];then echo 64; fi)
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 
 INCLUDEPATH += \
