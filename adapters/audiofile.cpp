@@ -129,7 +129,7 @@ void Audiofile::
 {
     _original_filename = filename;
 
-    TaskTimer tt("Loading %s", filename.c_str());
+    TaskTimer tt("Loading %s (this=%p)", filename.c_str(), this);
 
     SndfileHandle source(filename);
 

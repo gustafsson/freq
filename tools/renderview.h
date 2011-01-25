@@ -86,7 +86,7 @@ namespace Tools
 		}
 
     public slots:
-        void userinput_update();
+        void userinput_update( bool request_high_fps = true );
 
     private slots:
         void clearCaches();

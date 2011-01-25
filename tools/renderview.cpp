@@ -727,10 +727,11 @@ Support::ToolSelector* RenderView::
 
 
 void RenderView::
-        userinput_update()
+        userinput_update( bool request_high_fps )
 {
     // todo isn't "requested fps" is a renderview property?
-    model->project()->worker.requested_fps(60);
+    if (request_high_fps)
+        model->project()->worker.requested_fps(60);
 
     queueRepaint();
 }
@@ -792,14 +793,17 @@ void RenderView::
             BOOST_ASSERT( cacheCount == model->collections[i]->cacheCount() );
         }
     }
-    TIME_PAINTGL TaskInfo("Drawing %u collections (total cache size: %g MB, for %u*%u blocks)", N, N*sumsize/1024.f/1024.f, N, cacheCount);
+
+    Signal::Worker& worker = model->project()->worker;
+    Signal::Operation* first_source = worker.source()->root();
+
+    TIME_PAINTGL TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p)",
+        N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source);
     if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
     {
         model->collections[i]->printCacheSize();
     }
 
-
-    Signal::Worker& worker = model->project()->worker;
 
     _try_gc = 0;
     try {
@@ -839,7 +843,6 @@ void RenderView::
 
     bool isRecording = false;
 
-    Signal::Operation* first_source = worker.source()->root();
     Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
     if(r != 0 && !(r->isStopped()))
         isRecording = true;

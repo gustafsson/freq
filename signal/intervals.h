@@ -40,6 +40,7 @@ public:
     bool operator<(const Interval& r) const;
     Interval& operator|=(const Interval& r);
     bool operator==(const Interval& r) const;
+    bool operator!=(const Interval& r) const;
 
     std::string toString() const;
 };

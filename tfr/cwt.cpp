@@ -35,8 +35,8 @@
 #define TIME_CWTPART if(0)
 //#define TIME_CWTPART
 
-//#define TIME_ICWT if(0)
-#define TIME_ICWT
+#define TIME_ICWT if(0)
+//#define TIME_ICWT
 
 #define DEBUG_CWT if(0)
 //#define DEBUG_CWT
@@ -253,16 +253,15 @@ pChunk Cwt::
 
         Signal::Interval subinterval(sub_start, sub_start + sub_length );
 
-        //CWT_DISCARD_PREVIOUS_FT
+        CWT_DISCARD_PREVIOUS_FT
                 ft.reset();
 
-        if (!ft ||
-            (Signal::Intervals)ft->getInterval() !=
-            (Signal::Intervals)subinterval)
+        if (!ft || ft->getInterval() != subinterval)
         {
             TIME_CWTPART TaskTimer tt(
-                    "Computing forward fft on GPU of interval %s",
-                    subinterval.toString().c_str());
+                    "Computing forward fft on GPU of interval %s, was %s",
+                    subinterval.toString().c_str(),
+                    ft?ft->getInterval().toString().c_str():0 );
 
             Signal::pBuffer data;
 

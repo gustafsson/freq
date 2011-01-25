@@ -52,6 +52,13 @@ bool Interval::
 }
 
 
+bool Interval::
+        operator!=(const Interval& r) const
+{
+    return !(*this == r);
+}
+
+
 Intervals::
         Intervals()
 {
