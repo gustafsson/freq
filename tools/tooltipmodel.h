@@ -16,7 +16,7 @@ public:
     float frequency;
     float max_so_far;
     unsigned markers;
-    CommentView* comment;
+    QPointer<CommentView> comment;
     bool automarkers;
 };
 
