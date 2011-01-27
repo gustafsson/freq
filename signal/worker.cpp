@@ -33,6 +33,7 @@ namespace Signal {
 Worker::
         Worker(Signal::pOperation s)
 :   work_chunks(0),
+    _number_of_samples(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
     _samples_per_chunk( 1 ),
@@ -74,6 +75,8 @@ Worker::
 bool Worker::
         workOne( bool skip_if_low_fps )
 {
+    _number_of_samples = source()->number_of_samples();
+
     _requested_fps *= 0.9;
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;

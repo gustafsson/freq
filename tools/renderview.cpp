@@ -771,7 +771,7 @@ void RenderView::
     if (!model->collectionCallback)
         return;
 
-    float elapsed_ms = 0;;
+    float elapsed_ms = -1;
 
     TIME_PAINTGL if (_render_timer)
 	    elapsed_ms = _render_timer->elapsedTime()*1000.f;

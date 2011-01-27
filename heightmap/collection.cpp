@@ -173,8 +173,6 @@ unsigned Collection::
 void Collection::
         update_sample_size( Tfr::Chunk* chunk )
 {
-    pOperation wf = worker->source();
-
     if (chunk)
     {
         //_display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
@@ -210,7 +208,7 @@ void Collection::
         _min_sample_size.time *= 0.25f;
     }
 
-    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);
+    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*worker->length()/_samples_per_block);
     _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
 }
 
@@ -239,8 +237,7 @@ Reference Collection::
     Reference r(this);
 
     // make sure the reference becomes valid
-    pOperation wf = worker->source();
-    float length = wf->length();
+    float length = worker->length();
 
     // Validate requested sampleSize
     sampleSize.time = fabs(sampleSize.time);
@@ -479,8 +476,7 @@ void Collection::
     TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    pOperation wf = worker->source();
-    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*wf->length()/_samples_per_block);
+    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*worker->length()/_samples_per_block);
 
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);

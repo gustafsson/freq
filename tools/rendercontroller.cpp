@@ -58,6 +58,7 @@ public:
             Signal::Sink(),
             collections_(collections)
     {
+        BOOST_ASSERT( o );
         _source = o;
     }
 
