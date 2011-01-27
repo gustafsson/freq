@@ -291,6 +291,9 @@ void Worker::
     _max_samples_per_chunk = (unsigned)-1;
     invalidate_post_sink( Signal::Interval(0, std::max( 1lu, value->number_of_samples()) ));
 
+    if (_source)
+        _number_of_samples = _source->number_of_samples();
+
     emit source_changed();
 }
 

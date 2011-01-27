@@ -2,6 +2,7 @@
 #define COMMENTCONTROLLER_H
 
 #include <QWidget>
+#include <QPointer>
 #include "toolmodel.h"
 #include "heightmap/position.h"
 

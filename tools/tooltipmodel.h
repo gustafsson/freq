@@ -1,6 +1,8 @@
 #ifndef TOOLTIPMODEL_H
 #define TOOLTIPMODEL_H
 
+#include <QPointer>
+
 #include "commentview.h"
 
 namespace Tools {
