@@ -181,7 +181,7 @@ void Audiofile::
 		}
 
 		unsigned hours = floor(L/seconds_per_hour);
-        tt << hours << ":";
+        tt << std::setfill('0') << std::setw(2) << hours << ":";
         L -= hours * seconds_per_hour;
 
         unsigned minutes = floor(L/seconds_per_minute);
