@@ -64,7 +64,6 @@ void RecordView::
                     "Available devices are listed in 'sonicawe.log'.", "No data from recording device");
                 Ui::MainWindow* ui = model_->project->mainWindow()->getItems();
                 ui->actionRecord->setChecked(false);
-                model_->recording->stopRecording();
             }
         }
         prev_limit_ = limit;

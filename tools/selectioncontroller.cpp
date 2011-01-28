@@ -67,11 +67,11 @@ namespace Tools
         Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
-        connect(ui->actionActionAdd_selection, SIGNAL(triggered(bool)), SLOT(receiveAddSelection(bool)));
-        connect(ui->actionActionRemove_selection, SIGNAL(triggered(bool)), SLOT(receiveAddClearSelection(bool)));
+        connect(ui->actionActionAdd_selection, SIGNAL(toggled(bool)), SLOT(receiveAddSelection(bool)));
+        connect(ui->actionActionRemove_selection, SIGNAL(toggled(bool)), SLOT(receiveAddClearSelection(bool)));
         connect(ui->actionCropSelection, SIGNAL(triggered()), SLOT(receiveCropSelection()));
-        //connect(ui->actionMoveSelection, SIGNAL(triggered(bool)), SLOT(receiveMoveSelection(bool)));
-        //connect(ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), SLOT(receiveMoveSelectionInTime(bool)));
+        //connect(ui->actionMoveSelection, SIGNAL(toggled(bool)), SLOT(receiveMoveSelection(bool)));
+        //connect(ui->actionMoveSelectionTime, SIGNAL(toggled(bool)), SLOT(receiveMoveSelectionInTime(bool)));
 
         ui->actionActionAdd_selection->setEnabled( false );
         ui->actionActionRemove_selection->setEnabled( true );

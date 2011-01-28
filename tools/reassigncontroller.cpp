@@ -24,8 +24,8 @@ void Reassign::
 {
     Ui::MainWindow* ui = project->mainWindow()->getItems();
 
-    connect(ui->actionTonalizeFilter, SIGNAL(triggered(bool)), SLOT(receiveTonalizeFilter(bool)));
-    connect(ui->actionReassignFilter, SIGNAL(triggered(bool)), SLOT(receiveReassignFilter(bool)));
+    connect(ui->actionTonalizeFilter, SIGNAL(toggled(bool)), SLOT(receiveTonalizeFilter(bool)));
+    connect(ui->actionReassignFilter, SIGNAL(toggled(bool)), SLOT(receiveReassignFilter(bool)));
 }
 
 

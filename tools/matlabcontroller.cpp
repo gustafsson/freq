@@ -32,8 +32,8 @@ void MatlabController::
 {
     Ui::MainWindow* ui = project->mainWindow()->getItems();
 
-    connect(ui->actionMatlabOperation, SIGNAL(triggered(bool)), SLOT(receiveMatlabOperation(bool)));
-    connect(ui->actionMatlabFilter, SIGNAL(triggered(bool)), SLOT(receiveMatlabFilter(bool)));
+    connect(ui->actionMatlabOperation, SIGNAL(toggled(bool)), SLOT(receiveMatlabOperation(bool)));
+    connect(ui->actionMatlabFilter, SIGNAL(toggled(bool)), SLOT(receiveMatlabFilter(bool)));
 }
 
 
