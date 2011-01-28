@@ -23,12 +23,16 @@
 #include <cuda_vector_types_op.h>
 #include <glframebuffer.h>
 
+// cuda
+#include <cuda.h>
+
 // Qt
 #include <QTimer>
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QGLContext>
 #include <QGraphicsView>
+
 
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
@@ -813,8 +817,18 @@ void RenderView::
 		}
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre sync");
-			CudaException_CHECK_ERROR();
+            CudaException_ThreadSynchronize();
 		}
+
+        {
+            // Make sure our cuda context is still alive by invoking
+            // a tiny kernel. This will throw an CudaException otherwise,
+            // thus resulting in restarting the cuda context.
+            Signal::pBuffer b(new Signal::Buffer(0,4,4));
+            Tfr::Stft a;
+            a.set_approximate_chunk_size(4);
+            a(b);
+        }
 
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
