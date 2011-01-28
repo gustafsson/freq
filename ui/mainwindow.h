@@ -66,10 +66,12 @@ protected:
 //    void sendCurrentSelection(int, bool);
 //    void sendRemoveItem(int);
 private slots:
-    void saveProject();
-    void saveProjectAs();
     void askSaveChanges();
     void saveChangesAnswer( QAbstractButton * button );
+
+    void saveProject();
+    void saveProjectAs();
+    void toggleFullscreen( bool );
 
 private:
     Sawe::Project* project;

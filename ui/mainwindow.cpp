@@ -73,6 +73,7 @@ void SaweMainWindow::
     connect(ui->actionSave_project, SIGNAL(triggered()), SLOT(saveProject()));
     connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
+    connect(ui->actionToggleFullscreen, SIGNAL(triggered(bool)), SLOT(toggleFullscreen(bool)));
 
 
     // TODO remove layerWidget and deleteFilterButton
@@ -268,6 +269,13 @@ void SaweMainWindow::
         saveProjectAs()
 {
     project->saveAs();
+}
+
+
+void SaweMainWindow::
+        toggleFullscreen( bool fullscreen )
+{
+    this->setWindowState( fullscreen ? Qt::WindowFullScreen : Qt::WindowActive);
 }
 
 } // namespace Ui

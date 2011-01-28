@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -314,6 +314,7 @@
    <addaction name="actionReassignFilter"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
+   <addaction name="actionToggleFullscreen"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
@@ -1496,6 +1497,27 @@
    </property>
    <property name="toolTip">
     <string>Reset graphics</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleFullscreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle fullscreen</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle fullscreen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+F11</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
