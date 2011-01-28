@@ -9,6 +9,8 @@
 #include <QAction>
 #include <vector>
 #include <QToolButton>
+#include <QMessageBox>
+#include <QPointer>
 
 #ifdef Q_WS_MAC
 void qt_mac_set_menubar_icons(bool enable);
@@ -38,6 +40,7 @@ public:
 
 signals:
     void onMainWindowCloseEvent( QWidget* closed );
+    void onAskSaveChanges();
 
 protected:
     virtual void closeEvent(QCloseEvent *);
@@ -65,11 +68,14 @@ protected:
 private slots:
     void saveProject();
     void saveProjectAs();
+    void askSaveChanges();
+    void saveChangesAnswer( QAbstractButton * button );
 
 private:
     Sawe::Project* project;
     MainWindow *ui;
 
+    QPointer<QMessageBox> save_changes_msgbox_;
     void add_widgets();
     void connectActionToWindow(QAction *a, QWidget *b);
 };
