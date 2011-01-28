@@ -48,7 +48,7 @@ public:
     float4 fixed_color;
     float y_scale;
     float last_ysize;
-    unsigned _drawn_blocks;
+    unsigned drawn_blocks;
 
     void init();
 

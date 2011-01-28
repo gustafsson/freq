@@ -40,13 +40,13 @@ Renderer::Renderer( Collection* collection )
     fixed_color( make_float4(1,0,0,1) ),
     y_scale( 1 ),
     last_ysize( 1 ),
+    drawn_blocks(0),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
     _draw_flat(false),
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
-    _drawn_blocks(0),
     _invalid_frustum(true)
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
@@ -412,7 +412,7 @@ void Renderer::draw( float scaley )
         _draw_flat = false;
 
     last_ysize = scaley;
-    _drawn_blocks = 0;
+    drawn_blocks = 0;
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
@@ -560,7 +560,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
         beginVboRendering();
     }
 
-    _drawn_blocks++;
+    drawn_blocks++;
 
     TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();

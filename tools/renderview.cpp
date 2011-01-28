@@ -580,8 +580,8 @@ void RenderView::
 
     TIME_PAINTGL TaskInfo("Drew %u*%u block%s", 
         N,
-        model->renderer->_drawn_blocks, 
-        model->renderer->_drawn_blocks==1?"":"s");
+        model->renderer->drawn_blocks, 
+        model->renderer->drawn_blocks==1?"":"s");
 }
 
 
