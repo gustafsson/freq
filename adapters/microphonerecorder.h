@@ -40,6 +40,7 @@ public:
 
     unsigned recording_itr() { return number_of_samples(); }
     float time();
+    float time_since_last_update();
 
     Signal::PostSink* getPostSink() { return &_postsink; }
 
@@ -48,7 +49,7 @@ private:
     int input_device_;
     void init();
 
-    boost::posix_time::ptime _start_recording;
+    boost::posix_time::ptime _start_recording, _last_update;
     float _offset;
     unsigned _channel;
     float _sample_rate;

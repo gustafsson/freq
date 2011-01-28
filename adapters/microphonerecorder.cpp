@@ -204,6 +204,18 @@ float MicrophoneRecorder::
     return dt + _offset;
 }
 
+float MicrophoneRecorder::
+        time_since_last_update()
+{
+    if (isStopped())
+        return 0;
+    QMutexLocker lock(&_data_lock);
+    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _last_update;
+    float dt = d.total_milliseconds()*0.001f;
+    return std::min( dt, time() - _offset);
+}
+
+
 
 int MicrophoneRecorder::
         writeBuffer(const void *inputBuffer,
@@ -217,6 +229,7 @@ int MicrophoneRecorder::
 
 	long unsigned offset = number_of_samples();
     QMutexLocker lock(&_data_lock);
+    _last_update = boost::posix_time::microsec_clock::local_time();
 
     for (unsigned i=0; i<_data.size(); ++i)
     {
