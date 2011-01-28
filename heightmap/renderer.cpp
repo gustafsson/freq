@@ -46,8 +46,8 @@ Renderer::Renderer( Collection* collection )
     _initialized(false),
     _draw_flat(false),
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
-    _invalid_frustum(true),
-    _drawn_blocks(0)
+    _drawn_blocks(0),
+    _invalid_frustum(true)
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
     memset(projection_matrix, 0, sizeof(projection_matrix));
