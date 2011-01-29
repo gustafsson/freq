@@ -111,6 +111,10 @@ prioritized and sets the todo_list in Signal::Worker. Otherwise; if it is not
 underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
+
+If one of the receiving sinks is underfed, worker will not take smaller
+chunks and will not skip working even if the requested frame rate is
+higher than the actual achieved framerate.
   */
 class Worker
 #ifndef SAWE_NO_MUTEX
@@ -183,7 +187,15 @@ public:
     float               requested_fps() const;
     void                requested_fps(float);
 
-	/**
+    /**
+      source()->number_of_samples() may change during a workOne() call. This
+      method will always return the same value during the entire lifespan of
+      workOne().
+      */
+    Signal::IntervalType number_of_samples() const { return _number_of_samples; }
+    float length() const { return number_of_samples()/source()->sample_rate(); }
+
+        /**
 	  Throws an std::exception if one has been caught by run()
 	  */
 	void				checkForErrors();
@@ -230,6 +242,11 @@ private:
       All callbacks in this list are called once for each call of workOne().
       */
     PostSink _post_sink;
+
+    /**
+      Number of samples, updated from source when calling workOne().
+      */
+    Signal::IntervalType _number_of_samples;
 
     /**
       Adjusting chunk size based on fps.

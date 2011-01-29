@@ -73,6 +73,7 @@ void SaweMainWindow::
     connect(ui->actionSave_project, SIGNAL(triggered()), SLOT(saveProject()));
     connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
+    connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
 
 
     // TODO remove layerWidget and deleteFilterButton
@@ -130,6 +131,7 @@ void SaweMainWindow::
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
 
+    connect(this, SIGNAL(onAskSaveChanges()), SLOT(askSaveChanges()), Qt::QueuedConnection);
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
         Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
         Qt::QueuedConnection);
@@ -206,37 +208,53 @@ void SaweMainWindow::slotDeleteSelection(void)
 void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
-    if (project->isModified())
+    if (project->isModified() && 0==save_changes_msgbox_)
     {
-        switch( QMessageBox::question(this, "Save Changes",
-                              "Save current state of the project?",
-                              QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save) )
-        {
-        case QMessageBox::Discard:
-            break;
-
-        case QMessageBox::Cancel:
-            e->ignore();
-            return;
-
-        case QMessageBox::Save:
-            if (!project->save())
-            {
-                e->ignore();
-                return;
-            }
-
-            break;
-
-        default:
-            e->ignore();
-            return;
-        }
+        emit onAskSaveChanges();
+        e->ignore();
+        return;
     }
 
     e->accept();
 
     emit onMainWindowCloseEvent( this );
+}
+
+
+void SaweMainWindow::
+        askSaveChanges()
+{
+    save_changes_msgbox_ = new QMessageBox("Save Changes", "Save current state of the project?",
+                                          QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
+    save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
+    save_changes_msgbox_->setDetailedText( QString::fromStdString( "Current state:\n" + project->head_source()->toString()) );
+    save_changes_msgbox_->show();
+    save_changes_msgbox_->open( this, SLOT(saveChangesAnswer(QAbstractButton *)));
+}
+
+
+void SaweMainWindow::
+        saveChangesAnswer( QAbstractButton * button )
+{
+    switch ( save_changes_msgbox_->buttonRole( button ) )
+    {
+    case QMessageBox::DestructiveRole:
+        close();
+        break;
+
+    case QMessageBox::AcceptRole:
+        if (!project->save())
+        {
+            break;
+        }
+
+        close();
+        break;
+
+    case QMessageBox::RejectRole:
+    default:
+        break;
+    }
 }
 
 
@@ -251,6 +269,13 @@ void SaweMainWindow::
         saveProjectAs()
 {
     project->saveAs();
+}
+
+
+void SaweMainWindow::
+        toggleFullscreen( bool fullscreen )
+{
+    this->setWindowState( fullscreen ? Qt::WindowFullScreen : Qt::WindowActive);
 }
 
 } // namespace Ui

@@ -99,6 +99,9 @@ void ToolSelector::
             _parent_tool->update();
         }
     }
+    TaskInfo("Current tool in %s is %s",
+        vartype(*_parent_tool).c_str(),
+        vartype(*_current_tool).c_str());
 }
 
 

@@ -217,6 +217,23 @@ Intervals PostSink::
 }
 
 
+bool PostSink::
+        isUnderfed()
+{
+    bool r = false;
+
+    BOOST_FOREACH( pOperation o, sinks() )
+    {
+        Sink* s = dynamic_cast<Sink*>(o.get());
+
+        if (s)
+            r |= s->isUnderfed();
+    }
+
+    return r;
+}
+
+
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
@@ -269,11 +286,11 @@ void PostSink::
     if (_filter)    I |= _filter->affected_samples();
 
     if (f && _filter)
-        I -= f->zeroed_samples() & _filter->zeroed_samples();
+        I -= f->zeroed_samples_recursive() & _filter->zeroed_samples_recursive();
     else if(f)
-        I -= f->zeroed_samples();
+        I -= f->zeroed_samples_recursive();
     else if(_filter)
-        I -= _filter->zeroed_samples();
+        I -= _filter->zeroed_samples_recursive();
 
     invalidate_samples( I );
 

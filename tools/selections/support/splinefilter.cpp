@@ -97,8 +97,9 @@ Signal::Intervals SplineFilter::
 
     double FS = sample_rate();
     Signal::Intervals sid;
-    if (start_time < end_time)
-        sid = Signal::Intervals(start_time*FS, end_time*FS);
+    Signal::Interval sidint(start_time*FS, end_time*FS);
+    if (sidint.valid())
+        sid = sidint;
 
     return ~sid;
 }

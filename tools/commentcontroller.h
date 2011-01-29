@@ -2,6 +2,7 @@
 #define COMMENTCONTROLLER_H
 
 #include <QWidget>
+#include <QPointer>
 #include "toolmodel.h"
 #include "heightmap/position.h"
 
@@ -20,7 +21,7 @@ public:
 
     virtual void createView( ToolModel* model, Sawe::Project* p, RenderView* r );
 
-    void setComment( Heightmap::Position p, std::string text, CommentView** view = 0 );
+    void setComment( Heightmap::Position p, std::string text, QPointer<CommentView>* view = 0 );
 
 signals:
     void enabledChanged(bool active);

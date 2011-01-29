@@ -23,12 +23,16 @@
 #include <cuda_vector_types_op.h>
 #include <glframebuffer.h>
 
+// cuda
+#include <cuda.h>
+
 // Qt
 #include <QTimer>
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QGLContext>
 #include <QGraphicsView>
+
 
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
@@ -576,8 +580,8 @@ void RenderView::
 
     TIME_PAINTGL TaskInfo("Drew %u*%u block%s", 
         N,
-        model->renderer->_drawn_blocks, 
-        model->renderer->_drawn_blocks==1?"":"s");
+        model->renderer->drawn_blocks, 
+        model->renderer->drawn_blocks==1?"":"s");
 }
 
 
@@ -727,10 +731,11 @@ Support::ToolSelector* RenderView::
 
 
 void RenderView::
-        userinput_update()
+        userinput_update( bool request_high_fps )
 {
     // todo isn't "requested fps" is a renderview property?
-    model->project()->worker.requested_fps(60);
+    if (request_high_fps)
+        model->project()->worker.requested_fps(60);
 
     queueRepaint();
 }
@@ -770,7 +775,7 @@ void RenderView::
     if (!model->collectionCallback)
         return;
 
-    float elapsed_ms = 0;;
+    float elapsed_ms = -1;
 
     TIME_PAINTGL if (_render_timer)
 	    elapsed_ms = _render_timer->elapsedTime()*1000.f;
@@ -792,14 +797,17 @@ void RenderView::
             BOOST_ASSERT( cacheCount == model->collections[i]->cacheCount() );
         }
     }
-    TIME_PAINTGL TaskInfo("Drawing %u collections (total cache size: %g MB, for %u*%u blocks)", N, N*sumsize/1024.f/1024.f, N, cacheCount);
+
+    Signal::Worker& worker = model->project()->worker;
+    Signal::Operation* first_source = worker.source()->root();
+
+    TIME_PAINTGL TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p)",
+        N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source);
     if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
     {
         model->collections[i]->printCacheSize();
     }
 
-
-    Signal::Worker& worker = model->project()->worker;
 
     _try_gc = 0;
     try {
@@ -809,8 +817,18 @@ void RenderView::
 		}
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre sync");
-			CudaException_CHECK_ERROR();
+            CudaException_ThreadSynchronize();
 		}
+
+        {
+            // Make sure our cuda context is still alive by invoking
+            // a tiny kernel. This will throw an CudaException otherwise,
+            // thus resulting in restarting the cuda context.
+            Signal::pBuffer b(new Signal::Buffer(0,4,4));
+            Tfr::Stft a;
+            a.set_approximate_chunk_size(4);
+            a(b);
+        }
 
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
@@ -839,7 +857,6 @@ void RenderView::
 
     bool isRecording = false;
 
-    Signal::Operation* first_source = worker.source()->root();
     Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
     if(r != 0 && !(r->isStopped()))
         isRecording = true;
@@ -874,15 +891,17 @@ void RenderView::
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
         //    if (p && p->isUnderfed() && p->invalid_samples_left()) {
-        Signal::Intervals missing_in_selection =
+        Signal::Intervals missing_for_playback=
                 model->project()->tools().playback_model.postsinkCallback->sink()->fetch_invalid_samples();
-        Signal::Intervals I =
+        Signal::Intervals missing_for_heightmap =
                 model->collectionCallback->sink()->fetch_invalid_samples();
 
-        if (missing_in_selection)
+        bool playback_is_underfed = model->project()->tools().playback_model.getPostSink()->isUnderfed();
+        // Don't bother with computing playback unless it is underfed
+        if (missing_for_playback && playback_is_underfed)
         {
             worker.center = 0;
-            worker.todo_list( missing_in_selection );
+            worker.todo_list( missing_for_playback );
 
             // Request at least 1 fps. Otherwise there is a risk that CUDA
             // will screw up playback by blocking the OS and causing audio
@@ -892,7 +911,7 @@ void RenderView::
             //project->worker.todo_list().print("Displaywidget - PostSink");
         } else {
             worker.center = model->_qx;
-            worker.todo_list( I );
+            worker.todo_list( missing_for_heightmap );
         }
 
         if(isRecording)

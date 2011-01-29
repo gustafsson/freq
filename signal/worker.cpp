@@ -33,6 +33,7 @@ namespace Signal {
 Worker::
         Worker(Signal::pOperation s)
 :   work_chunks(0),
+    _number_of_samples(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
     _samples_per_chunk( 1 ),
@@ -74,11 +75,13 @@ Worker::
 bool Worker::
         workOne( bool skip_if_low_fps )
 {
+    _number_of_samples = source()->number_of_samples();
+
     _requested_fps *= 0.9;
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;
 
-    if (skip_if_low_fps && _requested_fps>_highest_fps)
+    if (!_post_sink.isUnderfed() && skip_if_low_fps && _requested_fps>_highest_fps)
         return false;
 
     if (todo_list().empty())
@@ -287,6 +290,9 @@ void Worker::
     _highest_fps = _min_fps;
     _max_samples_per_chunk = (unsigned)-1;
     invalidate_post_sink( Signal::Interval(0, std::max( 1lu, value->number_of_samples()) ));
+
+    if (_source)
+        _number_of_samples = _source->number_of_samples();
 
     emit source_changed();
 }

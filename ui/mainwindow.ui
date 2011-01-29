@@ -194,7 +194,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Operations</string>
+    <string>History</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -314,6 +314,7 @@
    <addaction name="actionReassignFilter"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
+   <addaction name="actionToggleFullscreen"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
@@ -1496,6 +1497,27 @@
    </property>
    <property name="toolTip">
     <string>Reset graphics</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleFullscreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle fullscreen</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle fullscreen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+F11</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

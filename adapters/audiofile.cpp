@@ -129,7 +129,7 @@ void Audiofile::
 {
     _original_filename = filename;
 
-    TaskTimer tt("Loading %s", filename.c_str());
+    TaskTimer tt("Loading %s (this=%p)", filename.c_str(), this);
 
     SndfileHandle source(filename);
 
@@ -181,7 +181,7 @@ void Audiofile::
 		}
 
 		unsigned hours = floor(L/seconds_per_hour);
-        tt << hours << ":";
+        tt << std::setfill('0') << std::setw(2) << hours << ":";
         L -= hours * seconds_per_hour;
 
         unsigned minutes = floor(L/seconds_per_minute);

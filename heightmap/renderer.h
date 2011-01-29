@@ -12,8 +12,8 @@
 // std
 #include <sstream>
 
-//typedef tvector<3,GLdouble> GLvector;
-typedef tvector<3,GLfloat> GLvector;
+typedef tvector<3,GLdouble> GLvector;
+//typedef tvector<3,GLfloat> GLvector;
 typedef tvector<3,GLfloat> GLvectorF;
 
 namespace Heightmap {
@@ -48,7 +48,7 @@ public:
     float4 fixed_color;
     float y_scale;
     float last_ysize;
-    unsigned _drawn_blocks;
+    unsigned drawn_blocks;
 
     void init();
 

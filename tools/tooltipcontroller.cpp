@@ -92,6 +92,7 @@ void TooltipController::
     {
         bool success=false;
         Heightmap::Position p = render_view_->getPlanePos(QPointF(x, y), &success);
+        TaskTimer tt("TooltipController::mouseMoveEvent (%g, %g)", p.time, p.scale);
         if (success)
         {
             showToolTip( p );
@@ -212,7 +213,7 @@ void TooltipController::
 
     if ( first )
     {
-        model()->comment->resize( 400, 210 );
+        model()->comment->resize( 400, 220 );
     }
 
     if (found_better)
@@ -229,6 +230,7 @@ void TooltipController::
 unsigned TooltipController::
         guessHarmonicNumber( const Heightmap::Position& pos )
 {
+    TaskTimer tt("TooltipController::guessHarmonicNumber (%g, %g)", pos.time, pos.scale);
     double max_s = 0;
     unsigned max_i = 0;
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
@@ -253,6 +255,8 @@ unsigned TooltipController::
     //if (max_i<=1)
         //return 0;
 
+    tt.info("%g Hz is harmonic number number %u, fundamental frequency is %g Hz. Did %u tests",
+        F, max_i, F/max_i, n_tests);
     return max_i;
 }
 

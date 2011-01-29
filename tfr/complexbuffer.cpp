@@ -20,6 +20,7 @@ ComplexBuffer::
 {
     GpuCpuData<float>* real_waveform = buffer.waveform_data();
     cudaExtent sz = real_waveform->getNumberOfElements();
+    TaskTimer tt("ComplexBuffer of %lu x %lu x %lu elements", sz.width, sz.height, sz.depth );
 
     _complex_waveform_data.reset( new GpuCpuData<float2>( 0, sz ));
 

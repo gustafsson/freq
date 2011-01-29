@@ -34,7 +34,7 @@ void PlaybackController::
 
     // User interface buttons
     connect(ui->actionPlaySelection, SIGNAL(triggered()), SLOT(receivePlaySound()));
-    connect(ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), SLOT(receiveFollowPlayMarker(bool)));
+    connect(ui->actionFollowPlayMarker, SIGNAL(toggled(bool)), SLOT(receiveFollowPlayMarker(bool)));
 
     // Make RenderView keep on rendering (with interactive framerate) as long
     // as the playback marker moves
@@ -81,7 +81,7 @@ void PlaybackController::
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
 
-        postsink_operations->invalidate_samples( ~filter->zeroed_samples() );
+        postsink_operations->invalidate_samples( ~filter->zeroed_samples_recursive() );
     }
     else
     {

@@ -100,7 +100,7 @@ void RecordController::
 {
     Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
 
-    connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
+    connect(ui->actionRecord, SIGNAL(toggled(bool)), SLOT(receiveRecord(bool)));
 
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
