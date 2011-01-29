@@ -12,8 +12,8 @@
 // std
 #include <sstream>
 
-//typedef tvector<3,GLdouble> GLvector;
-typedef tvector<3,GLfloat> GLvector;
+typedef tvector<3,GLdouble> GLvector;
+//typedef tvector<3,GLfloat> GLvector;
 typedef tvector<3,GLfloat> GLvectorF;
 
 namespace Heightmap {
