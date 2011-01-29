@@ -19,8 +19,8 @@ namespace Tools
         ~MatlabController();
 
     private slots:
-        virtual void receiveMatlabOperation(bool);
-        virtual void receiveMatlabFilter(bool);
+        virtual void receiveMatlabOperation();
+        virtual void receiveMatlabFilter();
 
     private:
         // Model

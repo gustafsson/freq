@@ -32,14 +32,14 @@ void MatlabController::
 {
     Ui::MainWindow* ui = project->mainWindow()->getItems();
 
-    connect(ui->actionMatlabOperation, SIGNAL(toggled(bool)), SLOT(receiveMatlabOperation(bool)));
-    connect(ui->actionMatlabFilter, SIGNAL(toggled(bool)), SLOT(receiveMatlabFilter(bool)));
+    connect(ui->actionMatlabOperation, SIGNAL(triggered()), SLOT(receiveMatlabOperation()));
+    connect(ui->actionMatlabFilter, SIGNAL(triggered()), SLOT(receiveMatlabFilter()));
 }
 
 
 
 void MatlabController::
-        receiveMatlabOperation(bool)
+        receiveMatlabOperation()
 {
     if (_matlaboperation)
     {
@@ -58,7 +58,7 @@ void MatlabController::
 
 
 void MatlabController::
-        receiveMatlabFilter(bool)
+        receiveMatlabFilter()
 {
     if (_matlabfilter)
     {

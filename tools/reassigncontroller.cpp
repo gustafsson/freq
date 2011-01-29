@@ -24,13 +24,13 @@ void Reassign::
 {
     Ui::MainWindow* ui = project->mainWindow()->getItems();
 
-    connect(ui->actionTonalizeFilter, SIGNAL(toggled(bool)), SLOT(receiveTonalizeFilter(bool)));
-    connect(ui->actionReassignFilter, SIGNAL(toggled(bool)), SLOT(receiveReassignFilter(bool)));
+    connect(ui->actionTonalizeFilter, SIGNAL(triggered()), SLOT(receiveTonalizeFilter()));
+    connect(ui->actionReassignFilter, SIGNAL(triggered()), SLOT(receiveReassignFilter()));
 }
 
 
 void Reassign::
-        receiveTonalizeFilter(bool)
+        receiveTonalizeFilter()
 {
     Signal::pOperation tonalize( new Filters::Tonalize());
     tonalize->source( _model->source() );
@@ -39,7 +39,7 @@ void Reassign::
 
 
 void Reassign::
-        receiveReassignFilter(bool)
+        receiveReassignFilter()
 {
     Signal::pOperation reassign( new Filters::Reassign());
     reassign->source( _model->source() );
