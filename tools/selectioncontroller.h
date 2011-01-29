@@ -60,8 +60,8 @@ namespace Tools
 
     private slots:
         // Action slots
-        void receiveAddSelection(bool);
-        void receiveAddClearSelection(bool);
+        void receiveAddSelection();
+        void receiveAddClearSelection();
 
         void receiveCropSelection();
         //void receiveMoveSelection(bool);
