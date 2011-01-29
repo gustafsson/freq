@@ -81,7 +81,7 @@ void PlaybackController::
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
 
-        postsink_operations->invalidate_samples( ~filter->zeroed_samples() );
+        postsink_operations->invalidate_samples( ~filter->zeroed_samples_recursive() );
     }
     else
     {
