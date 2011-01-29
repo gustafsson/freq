@@ -891,15 +891,17 @@ void RenderView::
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
         //    if (p && p->isUnderfed() && p->invalid_samples_left()) {
-        Signal::Intervals missing_in_selection =
+        Signal::Intervals missing_for_playback=
                 model->project()->tools().playback_model.postsinkCallback->sink()->fetch_invalid_samples();
-        Signal::Intervals I =
+        Signal::Intervals missing_for_heightmap =
                 model->collectionCallback->sink()->fetch_invalid_samples();
 
-        if (missing_in_selection)
+        bool playback_is_underfed = model->project()->tools().playback_model.getPostSink()->isUnderfed();
+        // Don't bother with computing playback unless it is underfed
+        if (missing_for_playback && playback_is_underfed)
         {
             worker.center = 0;
-            worker.todo_list( missing_in_selection );
+            worker.todo_list( missing_for_playback );
 
             // Request at least 1 fps. Otherwise there is a risk that CUDA
             // will screw up playback by blocking the OS and causing audio
@@ -909,7 +911,7 @@ void RenderView::
             //project->worker.todo_list().print("Displaywidget - PostSink");
         } else {
             worker.center = model->_qx;
-            worker.todo_list( I );
+            worker.todo_list( missing_for_heightmap );
         }
 
         if(isRecording)
