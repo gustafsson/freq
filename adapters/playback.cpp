@@ -289,17 +289,17 @@ bool Playback::
     unsigned nAccumulated_samples = _data.number_of_samples();
 
     if (!_data.empty() && _data.isFinished()) {
-        TIME_PLAYBACK TaskTimer("Not underfed").suppressTiming();
+        TIME_PLAYBACK TaskInfo("Not underfed");
         return false; // No more expected samples, not underfed
     }
 
 	if (nAccumulated_samples < 0.1f*_data.sample_rate() || nAccumulated_samples < 3*_first_buffer_size ) {
-        TIME_PLAYBACK TaskTimer("Underfed").suppressTiming();
+        TIME_PLAYBACK TaskInfo("Underfed");
         return true; // Haven't received much data, wait to do a better estimate
     }
 
     time_duration diff = _last_timestamp - _first_timestamp;
-    float accumulation_time = diff.total_milliseconds() / (float)1000.f;
+    float accumulation_time = diff.total_milliseconds() * 0.001f;
 
     // _first_timestamp is taken after the first buffer,
     // _last_timestamp is taken after the last buffer,
@@ -323,8 +323,14 @@ bool Playback::
     // Return if the estimated time to receive all expected samples is greater than
     // the time it would take to play the remaining part of the data.
     // If it is, the sink is underfed.
-    TIME_PLAYBACK TaskTimer("Time left %g %s %g estimated time required. %s underfed", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required, time_left < estimated_time_required?"Is":"Not").suppressTiming();
-    return time_left < estimated_time_required;
+    TIME_PLAYBACK TaskInfo("Time left %g %s %g estimated time required. %s underfed", time_left, time_left < estimated_time_required?"<":">=", estimated_time_required, time_left < estimated_time_required?"Is":"Not");
+    bool underfed = false;
+    underfed |= time_left < estimated_time_required;
+
+    // Also, check that we keep a margin of 3 buffers
+    underfed |= marker + 3*_first_buffer_size > cov.first;
+
+    return underfed;
 }
 
 

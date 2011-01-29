@@ -56,6 +56,7 @@ public:
       work, the caller may remove this Sink.
       */
     virtual bool isFinished() { return !fetch_invalid_samples(); }
+    virtual bool isUnderfed() { return false; }
 
 
     virtual void put(pBuffer) { throw std::logic_error(
@@ -90,9 +91,6 @@ public:
 //      do it in onFinished(). onFinished() may be invoked more than once.
 //      */
 //    virtual void onFinished() {}
-
-
-//    // TODO virtual bool isUnderfed()
 
 
 //    /**

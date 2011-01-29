@@ -217,6 +217,23 @@ Intervals PostSink::
 }
 
 
+bool PostSink::
+        isUnderfed()
+{
+    bool r = false;
+
+    BOOST_FOREACH( pOperation o, sinks() )
+    {
+        Sink* s = dynamic_cast<Sink*>(o.get());
+
+        if (s)
+            r |= s->isUnderfed();
+    }
+
+    return r;
+}
+
+
 void PostSink::
         invalidate_samples( const Intervals& I )
 {

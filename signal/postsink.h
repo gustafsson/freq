@@ -61,6 +61,12 @@ public:
 
 
     /**
+      A PostSink is underfed if any of its sinks are underfed.
+      */
+    virtual bool isUnderfed();
+
+
+    /**
       Will call invalidate_samples on all instances of Signal::Sink in sinks().
       */
     virtual void invalidate_samples( const Intervals& I );

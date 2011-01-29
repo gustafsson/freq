@@ -111,6 +111,10 @@ prioritized and sets the todo_list in Signal::Worker. Otherwise; if it is not
 underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
+
+If one of the receiving sinks is underfed, worker will not take smaller
+chunks and will not skip working even if the requested frame rate is
+higher than the actual achieved framerate.
   */
 class Worker
 #ifndef SAWE_NO_MUTEX

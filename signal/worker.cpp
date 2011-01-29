@@ -78,7 +78,7 @@ bool Worker::
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;
 
-    if (_requested_fps>_highest_fps)
+    if (!_post_sink.isUnderfed() && _requested_fps>_highest_fps)
         return false;
 
     if (todo_list().empty())
