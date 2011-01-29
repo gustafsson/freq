@@ -403,8 +403,6 @@ void RenderController::
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
     // context is required to be created by lazy initialization when painting
     // the widget
-    //view->makeCurrent();
-
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->makeCurrent();
     //view->glwidget->setMouseTracking(true);

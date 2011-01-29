@@ -65,13 +65,32 @@ TimelineView::
 }
 
 
+Heightmap::Position TimelineView::
+        getSpacePos( QPointF pos, bool* success )
+{
+    GLvectorF win_coord( pos.x(), pos.y(), 0.1);
+
+    GLvector world_coord = Heightmap::gluUnProject(
+            win_coord,
+            modelview_matrix,
+            projection_matrix,
+            viewport_matrix,
+            success);
+
+    return Heightmap::Position( world_coord[0], world_coord[2] );
+}
+
+
 void TimelineView::
         userinput_update()
 {
-    _project->worker.requested_fps(30);
-    // this will leave room for others to paint as well, calling 'update' wouldn't
-    //QTimer::singleShot(1, this, SLOT(update()));
-    update();
+    // Never update only the timeline as renderview is responsible for invoking
+    // workOne to update textures as needed. TimelineView::update is connected
+    // to RenderView::postPaint.
+    _render_view->userinput_update();
+
+    //_project->worker.requested_fps(30);
+    //update();
 }
 
 
@@ -126,6 +145,8 @@ void TimelineView::
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    userinput_update();
 }
 
 
@@ -152,6 +173,10 @@ void TimelineView::
 
             setupCamera( false );
             glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
+
+            glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
+            glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+            glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 
             {
                 glPushMatrixContext mc(GL_MODELVIEW);

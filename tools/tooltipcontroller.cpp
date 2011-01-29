@@ -97,20 +97,6 @@ void TooltipController::
         {
             showToolTip( p );
         }
-
-//        double current[2];
-//        render_view_->makeCurrent();
-//        if( infoToolButton.worldPos(x, y, current[0], current[1], render_view_->model->xscale) )
-//        {
-//            float t = current[0];
-//            float s = current[1];
-            //float FS = _model->project()->worker.source()->sample_rate();
-            //t = ((unsigned)(t*FS+.5f))/(float)FS;
-            //s = ((unsigned)(s*c.nScales(FS)+.5f))/(float)c.nScales(FS);
-            //s = ((s*c.nScales(FS)+.5f))/(float)c.nScales(FS);
-
-            //showToolTip(Heightmap::Position(t, s) );
-//        }
     }
 
     infoToolButton.update(x, y);

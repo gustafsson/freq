@@ -18,17 +18,8 @@ public:
     float deltaX( float x );
     float deltaY( float y );
 
-    bool worldPos(double &ox, double &oy, float scale);
-    static bool worldPos(double x, double y, double &ox, double &oy, float scale);
-    static bool planePos(double x, double y, float &ox, float &oy, float scale);
-
-    /**
-      worldPos projects screen coordinates onto the xz-plane in world space.
-      spacePos simply returns the space pos of screen coordinates.
-      */
-    bool spacePos(double &out_x, double &out_y);
-    static bool spacePos(double in_x, double in_y, double &out_x, double &out_y);
-
+    float getLastx() { return lastx; }
+    float getLasty() { return lasty; }
     bool isDown(){return down;}
     bool isTouched();
     int getHold(){return hold;}

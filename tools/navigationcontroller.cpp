@@ -195,7 +195,6 @@ void NavigationController::
 {
     //TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
-    r.makeCurrent();
 
     float rs = 0.2;
 
@@ -226,15 +225,16 @@ void NavigationController::
     if( moveButton.isDown() )
     {
         //Controlling the position with the left button.
-        double last[2], current[2];
-        if( moveButton.worldPos(last[0], last[1], r.model->xscale) &&
-            moveButton.worldPos(x, y, current[0], current[1], r.model->xscale) )
+        bool success1, success2;
+        Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
+        Heightmap::Position current = r.getPlanePos( QPointF(x, y), &success2);
+        if (success1 && success2)
         {
             float l = _view->model->project()->worker.source()->length();
 
             Tools::RenderView& r = *_view;
-            r.model->_qx -= current[0] - last[0];
-            r.model->_qz -= current[1] - last[1];
+            r.model->_qx -= current.time - last.time;
+            r.model->_qz -= current.scale - last.scale;
 
             if (r.model->_qx<0) r.model->_qx=0;
             if (r.model->_qz<0) r.model->_qz=0;
