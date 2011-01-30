@@ -70,7 +70,6 @@ void TimelineController::
     // repaint the timeline view.
     connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
-    connect(view->_render_view, SIGNAL(painting()), view, SLOT(getLengthNow()) );
 }
 
 

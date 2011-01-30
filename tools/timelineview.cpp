@@ -95,13 +95,6 @@ void TimelineView::
 
 
 void TimelineView::
-        getLengthNow()
-{
-    _length = std::max( 1.f, _project->worker.source()->length());
-}
-
-
-void TimelineView::
         initializeGL()
 {
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
@@ -155,6 +148,7 @@ void TimelineView::
 {
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
+    _length = std::max( 1.f, _project->worker.length());
     _except_count = 0;
     try {
         GlException_CHECK_ERROR();
