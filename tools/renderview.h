@@ -55,7 +55,6 @@ namespace Tools
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
         void setPosition( float time, float f );
-        void makeCurrent();
 
         float last_ysize;
         floatAni orthoview;

@@ -38,6 +38,9 @@ public:
 
     void userinput_update();
 
+signals:
+    void hideMe();
+
 protected:
     /// @overload QGLWidget::initializeGL()
     virtual void initializeGL();
@@ -47,6 +50,9 @@ protected:
 
     /// @overload QGLWidget::paintGL()
     virtual void paintGL();
+
+    /// @overload QGLWidget::paintEvent ()
+    virtual void paintEvent ( QPaintEvent * event );
 
     void setupCamera( bool staticTimeLine = false );
 
@@ -61,6 +67,7 @@ private:
     Sawe::Project* _project;
     RenderView* _render_view;
     int _except_count;
+    boost::posix_time::ptime paintEventTime;
 
     double modelview_matrix[16], projection_matrix[16];
     int viewport_matrix[4];

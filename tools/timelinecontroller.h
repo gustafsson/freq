@@ -23,6 +23,9 @@ namespace Tools
         RenderModel *model;
         TimelineView *view;
 
+    private slots:
+        void hideTimeline();
+
     private:
         // GUI
         // These are never used outside setupGui, but they are named here

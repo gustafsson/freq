@@ -41,6 +41,13 @@ TimelineController::
 
 
 void TimelineController::
+        hideTimeline()
+{
+    dock->hide();
+}
+
+
+void TimelineController::
         setupGui()
 {
     Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
@@ -70,6 +77,7 @@ void TimelineController::
     // repaint the timeline view.
     connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
+    connect(view, SIGNAL(hideMe()), SLOT(hideTimeline()));
 }
 
 

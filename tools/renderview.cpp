@@ -86,7 +86,7 @@ RenderView::
 {
     TaskTimer tt("%s", __FUNCTION__);
 
-    makeCurrent();
+    glwidget->makeCurrent();
 
     emit destroying();
 
@@ -116,7 +116,7 @@ RenderView::
     // Also, see Application::clearCaches() which doesn't call cudaThreadExit
     // unless there is a current context (which is the case when clearCaches is
     // called above in this method).
-    makeCurrent();
+    glwidget->makeCurrent();
 
     BOOST_ASSERT( QGLContext::currentContext() );
 
@@ -706,17 +706,6 @@ void RenderView::
     if (model->_qz>1) model->_qz=1;
 
     userinput_update();
-}
-
-
-void RenderView::
-        makeCurrent()
-{
-    glwidget->makeCurrent();
-
-    resizeGL(_last_width, _last_height);
-
-    setupCamera();
 }
 
 
