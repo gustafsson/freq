@@ -115,6 +115,8 @@ namespace Tools
         QScopedPointer<class TooltipView> _tooltip_view;
         QPointer<class TooltipController> _tooltip_controller;
 
+        QPointer<class AboutDialog> _about_dialog;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

@@ -19,6 +19,8 @@
 #include "matlabcontroller.h"
 #include "graphcontroller.h"
 #include "tooltipcontroller.h"
+#include "aboutdialog.h"
+#include "feedbackwizard.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -74,6 +76,8 @@ ToolFactory::
     _tooltip_controller = new TooltipController(
             _tooltip_view.data(), _render_view,
             dynamic_cast<CommentController*>(_comment_controller.data()) );
+
+    _about_dialog = new AboutDialog( p );
 }
 
 
@@ -82,6 +86,8 @@ ToolFactory::
 {
     TaskInfo ti(__FUNCTION__);
     // Try to clear things in the opposite order that they were created
+
+    delete _about_dialog;
 
     if (!_selection_controller.isNull())
         delete _selection_controller;

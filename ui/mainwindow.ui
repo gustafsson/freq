@@ -41,12 +41,12 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
-     <string>Windows</string>
+     <string>&amp;Windows</string>
     </property>
     <addaction name="actionToggleTopFilterWindow"/>
     <addaction name="actionToggleOperationsWindow"/>
@@ -62,7 +62,7 @@
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="actionNew_recording"/>
     <addaction name="actionOpen"/>
@@ -76,8 +76,17 @@
     <addaction name="actionExit"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="actionSend_feedback"/>
+    <addaction name="separator"/>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuWindows"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="toolBarTool">
    <property name="enabled">
@@ -1521,6 +1530,11 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>&amp;About</string>
    </property>
   </action>
  </widget>

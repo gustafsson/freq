@@ -275,6 +275,11 @@ int main(int argc, char *argv[])
     }
 
     // Write all stdout and stderr to sonicawe.log instead
+    rename("sonicawe~4.log~4", "sonicawe~5.log");
+    rename("sonicawe~3.log~3", "sonicawe~4.log");
+    rename("sonicawe~2.log~2", "sonicawe~2.log");
+    rename("sonicawe~.log", "sonicawe~2.log");
+    rename("sonicawe.log", "sonicawe~.log");
     RedirectStdout rs("sonicawe.log");
 
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
