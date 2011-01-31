@@ -89,8 +89,9 @@ Application::
 #endif
 
 #ifdef SONICAWE_BRANCH
-    if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
-        ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
+    if (0 != strcmp("master", TOSTR(SONICAWE_BRANCH)))
+        if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
+            ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
 #endif
 
     _version_string = ss.str();
