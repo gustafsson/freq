@@ -63,12 +63,12 @@ void CommentController::
 
 
 void CommentController::
-        setComment( Heightmap::Position p, std::string text, CommentView** viewp )
+        setComment( Heightmap::Position p, std::string text, QPointer<CommentView>* viewp )
 {
-    CommentView* myview = 0;
+    QPointer<CommentView> myview;
     if (!viewp)
         viewp = &myview;
-    CommentView*& view = *viewp;
+    QPointer<CommentView>& view = *viewp;
 
     if (!view)
     {
@@ -79,6 +79,7 @@ void CommentController::
 
     view->model->pos = p;
     view->setHtml( text );
+    view->show();
 }
 
 

@@ -13,10 +13,18 @@ Operation::Operation(pOperation source )
 
 
 Intervals Operation::
+        zeroed_samples_recursive()
+{
+    Intervals I = zeroed_samples();
+    if (_source)
+        I |= translate_interval( _source->zeroed_samples_recursive() );
+    return I;
+}
+
+
+Intervals Operation::
         zeroed_samples()
 {
-    if (_source)
-        return translate_interval( _source->zeroed_samples() );
     return Intervals();
 }
 

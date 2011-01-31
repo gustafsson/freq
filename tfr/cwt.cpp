@@ -35,8 +35,8 @@
 #define TIME_CWTPART if(0)
 //#define TIME_CWTPART
 
-//#define TIME_ICWT if(0)
-#define TIME_ICWT
+#define TIME_ICWT if(0)
+//#define TIME_ICWT
 
 #define DEBUG_CWT if(0)
 //#define DEBUG_CWT
@@ -253,16 +253,15 @@ pChunk Cwt::
 
         Signal::Interval subinterval(sub_start, sub_start + sub_length );
 
-        //CWT_DISCARD_PREVIOUS_FT
+        CWT_DISCARD_PREVIOUS_FT
                 ft.reset();
 
-        if (!ft ||
-            (Signal::Intervals)ft->getInterval() !=
-            (Signal::Intervals)subinterval)
+        if (!ft || ft->getInterval() != subinterval)
         {
             TIME_CWTPART TaskTimer tt(
-                    "Computing forward fft on GPU of interval %s",
-                    subinterval.toString().c_str());
+                    "Computing forward fft on GPU of interval %s, was %s",
+                    subinterval.toString().c_str(),
+                    ft?ft->getInterval().toString().c_str():0 );
 
             Signal::pBuffer data;
 
@@ -598,8 +597,7 @@ Signal::pBuffer Cwt::
 
     if (pchunk->original_sample_rate != pchunk->sample_rate)
     {
-        // Skip first row
-        p += x.width;
+        // Skip last row
         x.height--;
     }
 
@@ -739,9 +737,21 @@ unsigned Cwt::
         r = 1 << (max_bin-1);
     unsigned T = r + current_valid_samples_per_chunk + r;
     unsigned nT = spo2g(T);
+
+    if (nT > 1<<19) // For some reason cufft sais CUFFT_ALLOC_FAILED for fft size (1<<20)
+        nT = 1<<19;
+
     if(nT <= 2*r)
         nT = spo2g(2*r);
-    return nT - 2*r;
+    unsigned L = nT - 2*r;
+
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+
+    if (free < required_gpu_bytes(L, fs ))
+        return prev_good_size( L, fs );
+
+    return L;
 }
 
 
@@ -755,8 +765,29 @@ unsigned Cwt::
     unsigned T = r + current_valid_samples_per_chunk + r;
     unsigned nT = lpo2s(T);
     if (nT <= 2*r)
+    {
         nT = spo2g(2*r);
-    return nT - 2*r;
+        return nT - 2*r;
+    }
+    unsigned L = nT - 2*r;
+
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+
+    if (free < required_gpu_bytes(L, sample_rate ))
+        return prev_good_size( L, sample_rate );
+
+    return L;
+}
+
+
+size_t Cwt::
+        required_gpu_bytes(unsigned L, float sample_rate) const
+{
+    unsigned r = wavelet_time_support_samples( sample_rate );
+    unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
+    size_t sum = sizeof(float2)*5*(L+2*r)*nScales( sample_rate )/(1+max_bin)*1.15;
+    return sum;
 }
 
 

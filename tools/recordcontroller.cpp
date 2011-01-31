@@ -19,10 +19,9 @@ namespace Tools
 {
 
 RecordController::
-        RecordController( RecordView* view, RenderView* render_view )
+        RecordController( RecordView* view )
             :   view_ ( view ),
-                destroyed_ ( false ),
-                render_view_ ( render_view )
+                destroyed_ ( false )
 {
     setupGui();
 }
@@ -31,7 +30,7 @@ RecordController::
 RecordController::
         ~RecordController()
 {
-    TaskTimer("~RecordController").suppressTiming();
+    TaskInfo("~RecordController");
     destroying();
 }
 
@@ -39,7 +38,7 @@ RecordController::
 void RecordController::
         destroying()
 {
-    TaskTimer("RecordController::destroying()").suppressTiming();
+    TaskInfo("RecordController::destroying()");
     if (destroyed_)
         return;
 
@@ -72,6 +71,8 @@ void RecordController::
         if (!r->isStopped())
             r->stopRecording();
     }
+
+    view_->enabled = active;
 }
 
 
@@ -90,7 +91,7 @@ void RecordController::
 
     model()->project->worker.invalidate_post_sink( v );
 
-    render_view_->userinput_update();
+    model()->render_view->userinput_update();
 }
 
 
@@ -99,9 +100,10 @@ void RecordController::
 {
     Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
 
-    connect(ui->actionRecord, SIGNAL(triggered(bool)), SLOT(receiveRecord(bool)));
+    connect(ui->actionRecord, SIGNAL(toggled(bool)), SLOT(receiveRecord(bool)));
 
-    connect(render_view_, SIGNAL(destroying()), SLOT(destroying()));
+    connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
+    connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
     if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))
     {

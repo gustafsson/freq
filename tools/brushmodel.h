@@ -29,6 +29,11 @@ public:
       */
     Support::BrushFilter* filter();
 
+    /**
+      Finished painting. Removes current filter.
+      */
+    void finished_painting();
+
     float brush_factor;
 
     /**
@@ -42,6 +47,7 @@ public:
 private:
     RenderModel* render_model_;
     Signal::pOperation filter_;
+    Sawe::Project* project_;
 
     Signal::Interval addGauss( Heightmap::Reference ref, Gauss gauss );
 };

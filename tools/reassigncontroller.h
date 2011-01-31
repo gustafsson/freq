@@ -14,8 +14,8 @@ namespace Tools
         Reassign( Sawe::Project* project );
 
     private slots:
-        virtual void receiveTonalizeFilter(bool);
-        virtual void receiveReassignFilter(bool);
+        virtual void receiveTonalizeFilter();
+        virtual void receiveReassignFilter();
 
     private:
         // Model

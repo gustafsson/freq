@@ -20,17 +20,22 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_COLLECTION
-#define TIME_COLLECTION if(0)
+#define TIME_COLLECTION
+//#define TIME_COLLECTION if(0)
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
+
+//#define VERBOSE_EACH_FRAME_COLLECTION
+#define VERBOSE_EACH_FRAME_COLLECTION if(0)
 
 // #define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
 
 // Don't keep more than this times the number of blocks currently needed
+// TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
+#define MAX_CREATED_BLOCKS_PER_FRAME 4 // Even numbers look better for stereo signals
 
 using namespace Signal;
 
@@ -45,6 +50,7 @@ Collection::
     _samples_per_block( 1<<7 ), // Created for each
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
+    _created_count(0),
     _frame_counter(0),
     _postsink( new PostSink )
 {
@@ -133,12 +139,13 @@ unsigned Collection::
     boost::scoped_ptr<TaskTimer> tt;
     if (_unfinished_count)
     {
-        TIME_COLLECTION tt.reset( new TaskTimer("Collection::next_frame(), %u", _unfinished_count));
+        VERBOSE_EACH_FRAME_COLLECTION tt.reset( new TaskTimer("Collection::next_frame(), %u, %u", _unfinished_count, _created_count));
     }
         // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
     unsigned t = _unfinished_count;
     _unfinished_count = 0;
+    _created_count = 0;
 
 
     /*foreach(const recent_t::value_type& b, _recent)
@@ -166,8 +173,6 @@ unsigned Collection::
 void Collection::
         update_sample_size( Tfr::Chunk* chunk )
 {
-    pOperation wf = worker->source();
-
     if (chunk)
     {
         //_display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
@@ -203,7 +208,7 @@ void Collection::
         _min_sample_size.time *= 0.25f;
     }
 
-    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*wf->length()/_samples_per_block);
+    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*worker->length()/_samples_per_block);
     _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
 }
 
@@ -232,8 +237,7 @@ Reference Collection::
     Reference r(this);
 
     // make sure the reference becomes valid
-    pOperation wf = worker->source();
-    float length = wf->length();
+    float length = worker->length();
 
     // Validate requested sampleSize
     sampleSize.time = fabs(sampleSize.time);
@@ -304,7 +308,11 @@ pBlock Collection::
     }
 
     if (0 == block.get()) {
-        block = createBlock( ref );
+        if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count )
+        {
+            block = createBlock( ref );
+            _created_count++;
+        }
     } else {
 			#ifndef SAWE_NO_MUTEX
         if (block->new_data_available) {
@@ -336,7 +344,7 @@ pBlock Collection::
 }
 
 std::vector<pBlock> Collection::
-        getIntersectingBlocks( Interval I )
+        getIntersectingBlocks( Interval I, bool only_visible )
 {
     std::vector<pBlock> r;
     r.reserve(8);
@@ -348,9 +356,13 @@ std::vector<pBlock> Collection::
     foreach ( const cache_t::value_type& c, _cache )
     {
         const pBlock& pb = c.second;
+        
+        if (only_visible && _frame_counter != pb->frame_number_last_used)
+            continue;
+
         // This check is done in mergeBlock as well, but do it here first
         // for a hopefully more local and thus faster loop.
-        if (Intervals(I) & pb->ref.getInterval())
+        if (I.isConnectedTo(pb->ref.getInterval()))
         {
             r.push_back(pb);
         }
@@ -464,8 +476,7 @@ void Collection::
     TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    pOperation wf = worker->source();
-    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*wf->length()/_samples_per_block);
+    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*worker->length()/_samples_per_block);
 
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
@@ -493,7 +504,7 @@ Intervals Collection::
 
             r |= i;
 
-            VERBOSE_COLLECTION
+            VERBOSE_EACH_FRAME_COLLECTION
                     if (i)
                         TaskInfo("block %s is invalid on %s", b->ref.toString().c_str(), i.toString().c_str());
         } else
@@ -510,18 +521,18 @@ pBlock Collection::
         attempt( Reference ref )
 {
     try {
-        TIME_COLLECTION TaskTimer tt("Attempt");
+        TIME_COLLECTION TaskTimer tt("Allocation attempt");
 
         pBlock attempt( new Block(ref));
         Position a,b;
         ref.getArea(a,b);
         attempt->glblock.reset( new GlBlock( this, b.time-a.time, b.scale-a.scale ));
-        {
+/*        {
             GlBlock::pHeight h = attempt->glblock->height();
             //GlBlock::pSlope sl = attempt->glblock->slope();
         }
         attempt->glblock->unmap();
-
+*/
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
@@ -545,7 +556,6 @@ pBlock Collection::
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
         TaskInfo("Collection::attempt swallowed GlException.\n%s", x.what());
     }
-    TIME_COLLECTION TaskTimer("Returning pBlock()").suppressTiming();
     return pBlock();
 }
 
@@ -616,7 +626,7 @@ pBlock Collection::
 
             {
                 if (1) {
-                    VERBOSE_COLLECTION TaskTimer tt("Fetching data from others");
+                    TIME_COLLECTION TaskTimer tt("Fetching data from others");
                     // then try to upscale other blocks
                     Signal::Intervals things_to_update = ref.getInterval();
                     /*Signal::Intervals all_things;
@@ -628,9 +638,15 @@ pBlock Collection::
 
                     //for (int dist = 10; dist<-10; --dist)
                     {
-                        foreach( const cache_t::value_type& c, _cache )
+#ifndef SAWE_NO_MUTEX
+                        l.unlock();
+#endif
+                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.coveredInterval(), false );
+#ifndef SAWE_NO_MUTEX
+                        l.relock();
+#endif
+                        foreach( const pBlock& bl, gib )
                         {
-                            const pBlock& bl = c.second;
                             Signal::Interval v = bl->ref.getInterval();
                             if ( !(things_to_update & v ))
                                 continue;
@@ -770,6 +786,7 @@ pBlock Collection::
 
     BOOST_ASSERT( 0 != result.get() );
 
+    {TaskTimer t2("Removing old redundant blocks");
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
@@ -796,11 +813,12 @@ pBlock Collection::
             _recent.pop_back();
         }
     }
+    }
 
     // result is non-zero
     _cache[ result->ref ] = result;
 
-    TIME_COLLECTION printCacheSize();
+    //TIME_COLLECTION printCacheSize();
 
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
@@ -900,7 +918,8 @@ bool Collection::
     if (ia.scale >= ob.scale || ib.scale<=oa.scale)
         return false;
 
-    TIME_COLLECTION TaskTimer tt("%s", __FUNCTION__);
+    TIME_COLLECTION TaskTimer tt("%s, %s into %s", __FUNCTION__,
+                                 inBlock->ref.toString().c_str(), outBlock->ref.toString().c_str());
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
@@ -928,16 +947,6 @@ bool Collection::
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
     return true;
-}
-
-bool Collection::
-	mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream )
-{
-    // assume _cache_mutex is locked
-	cache_t::iterator i = _cache.find(ref);
-	if (i!=_cache.end())
-		return mergeBlock(outBlock, i->second, cuda_stream );
-	return false;
 }
 
 } // namespace Heightmap

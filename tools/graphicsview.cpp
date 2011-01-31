@@ -20,7 +20,7 @@ GraphicsView::
         GraphicsView(QGraphicsScene* scene)
     :   QGraphicsView(scene)
 {
-    setWindowTitle(tr("Boxes"));
+    setWindowTitle(tr("Sonic AWE"));
     //setRenderHints(QPainter::SmoothPixmapTransform);
     //setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::TextAntialiasing);
@@ -30,12 +30,9 @@ GraphicsView::
 
 
     setRenderHints(renderHints() | QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-    //view.show();
-    //view.setWindowTitle("Embedded Dialogs Demo");
 
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
-    //view->tool_selector.reset( new Support::ToolSelector(view->glwidget));
     QGraphicsProxyWidget* toolProxy = new QGraphicsProxyWidget();
     toolParent = new QWidget();
 
@@ -121,28 +118,6 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *e)
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 {
     QGraphicsView::drawBackground( painter, rect );
-
-    //        view->makeCurrent();
-    //setTransform( QTransform().translate(1000,1) );
-    //setTransform( QTransform() );
-    //setTransform( QTransform().translate(view->_qx*5e18,1).scale(0.5,0.5  ).rotate(45));
-    //setTransform( QTransform().translate(0,1e15*view->_qx).scale(0.5,0.5  ).rotate(45));
-    //setTransform( QTransform().translate(0,0).scale(0.5,0.5  ).rotate(45));
-
-    /*ViewportAnchor a = transformationAnchor();
-    Qt::Alignment al = alignment();
-    setAlignment(Qt::AlignLeft | Qt::AlignTop);*/
-
-    //rotate(0.1);
-    //setTransform( QTransform().rotate(view->_qx, Qt::YAxis) );
-    //setTransform( QTransform().rotate(view->_qx, Qt::YAxis) );
-    //setTransform( QTransform().rotate(0.123, Qt::YAxis), true );
-    //setTransform( QTransform().rotate(0.157, Qt::ZAxis), true );
-    //translate(view->_qx, 0);
-    //scale();
-    //setTransform( QTransform().translate(view->_qx*1e18,1).scale(0.5,0.5  ));
-//        setTransform( QTransform().translate(view->_qx*5e18,1).scale(0.5,0.5  ));
-    //setTransform( QTransform().translate(1,1) );
 }
 
 

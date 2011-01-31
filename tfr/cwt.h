@@ -85,6 +85,7 @@ public:
       */
     unsigned  next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     unsigned  prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    size_t          required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
 
     unsigned        find_bin( unsigned j ) const;
     static void     gc() { _fft_many.clear(); }

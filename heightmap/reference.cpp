@@ -151,8 +151,8 @@ bool Reference::
     if (b.scale-a.scale < _collection->min_sample_size().scale*_collection->scales_per_block() )
         return false;
 
-    Signal::pOperation wf = _collection->worker->source();
-    if (a.time >= wf->length() )
+    float length = _collection->worker->length();
+    if (a.time >= length )
         return false;
 
     if (a.scale >= 1)

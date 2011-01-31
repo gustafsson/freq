@@ -4,6 +4,7 @@
 // Sonic AWE
 #include "signal/sink.h"
 #include "ui/mousecontrol.h"
+#include "heightmap/position.h"
 
 // gpumisc
 #include <gl.h>
@@ -33,10 +34,12 @@ public:
     TimelineView(Sawe::Project* p, RenderView* render_view);
     virtual ~TimelineView();
 
+    Heightmap::Position getSpacePos( QPointF pos, bool* success = 0 );
+
     void userinput_update();
 
-protected slots:
-    void getLengthNow();
+signals:
+    void hideMe();
 
 protected:
     /// @overload QGLWidget::initializeGL()
@@ -47,6 +50,9 @@ protected:
 
     /// @overload QGLWidget::paintGL()
     virtual void paintGL();
+
+    /// @overload QGLWidget::paintEvent ()
+    virtual void paintEvent ( QPaintEvent * event );
 
     void setupCamera( bool staticTimeLine = false );
 
@@ -61,6 +67,10 @@ private:
     Sawe::Project* _project;
     RenderView* _render_view;
     int _except_count;
+    boost::posix_time::ptime paintEventTime;
+
+    double modelview_matrix[16], projection_matrix[16];
+    int viewport_matrix[4];
 
     boost::scoped_ptr<GlFrameBuffer> _timeline_fbo;
     boost::scoped_ptr<GlFrameBuffer> _timeline_bar_fbo;

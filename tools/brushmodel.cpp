@@ -17,25 +17,40 @@ BrushModel::
             :
             brush_factor(0),
             std_t(1),
-            render_model_(render_model)
+            render_model_(render_model),
+            project_(project)
 {
-    filter_ = project->head_source();
-	if (0 == dynamic_cast<Support::MultiplyBrush*>(filter_.get()))
-	{
-		filter_.reset( new Support::MultiplyBrush );
-		filter_->source( project->head_source() );
-		project->head_source( filter_ );
-	} 
-
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model->collections )
-        filter()->validateRefs( collection.get() );
+/*    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections )
+        brush->validateRefs( collection.get() );*/
 }
 
 
 Support::BrushFilter* BrushModel::
         filter()
 {
-    return dynamic_cast<Support::BrushFilter*>(filter_.get());
+    filter_ = project_->head_source();
+    Support::MultiplyBrush* brush = dynamic_cast<Support::MultiplyBrush*>(filter_.get());
+    if (0 == brush)
+    {
+        filter_.reset( brush = new Support::MultiplyBrush );
+        filter_->source( project_->head_source() );
+        project_->head_source( filter_ );
+    }
+
+    return brush;
+}
+
+
+void BrushModel::
+        finished_painting()
+{
+    filter_ = project_->head_source();
+    if (0 != dynamic_cast<Support::MultiplyBrush*>(filter_.get()))
+    {
+        project_->head_source( filter_->source() );
+        project_->worker.appendOperation( filter_ ); // Insert cache layer
+    }
+    filter_.reset();
 }
 
 

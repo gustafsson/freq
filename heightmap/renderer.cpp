@@ -19,8 +19,8 @@
 #include "msc_stdc.h"
 #endif
 
-//#define TIME_RENDERER
-#define TIME_RENDERER if(0)
+#define TIME_RENDERER
+//#define TIME_RENDERER if(0)
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
@@ -40,14 +40,14 @@ Renderer::Renderer( Collection* collection )
     fixed_color( make_float4(1,0,0,1) ),
     y_scale( 1 ),
     last_ysize( 1 ),
+    drawn_blocks(0),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
     _initialized(false),
     _draw_flat(false),
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
-    _invalid_frustum(true),
-    _drawn_blocks(0)
+    _invalid_frustum(true)
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
     memset(projection_matrix, 0, sizeof(projection_matrix));
@@ -264,8 +264,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    //setSize( collection->samples_per_block(), collection->scales_per_block() );
-    setSize( collection->samples_per_block()/8, collection->scales_per_block()/2 );
+    setSize( collection->samples_per_block(), collection->scales_per_block() );
+    //setSize( collection->samples_per_block()/8, collection->scales_per_block()/2 );
 
     //setSize(2,2);
 
@@ -398,6 +398,7 @@ Reference Renderer::
 void Renderer::draw( float scaley )
 {
     GlException_CHECK_ERROR();
+
     TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
     if (!_initialized) init();
 
@@ -411,7 +412,7 @@ void Renderer::draw( float scaley )
         _draw_flat = false;
 
     last_ysize = scaley;
-//        setSize( collection->samples_per_block(), collection->scales_per_block() );
+    drawn_blocks = 0;
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
@@ -429,9 +430,6 @@ void Renderer::draw( float scaley )
     renderChildrenSpectrogramRef(ref);
 
     endVboRendering();
-
-    TIME_RENDERER TaskInfo("Drew %u block%s", _drawn_blocks, _drawn_blocks==1?"":"s");
-    _drawn_blocks=0;
 
     GlException_CHECK_ERROR();
 }
@@ -531,7 +529,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
                 block->glblock->draw( _vbo_size );
         }
 
-    } else {
+    } else if ( 0 == "render red warning cross") {
         endVboRendering();
         // getBlock would try to find something else if the requested block
         // wasn't readily available.
@@ -562,7 +560,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
         beginVboRendering();
     }
 
-    _drawn_blocks++;
+    drawn_blocks++;
 
     TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();

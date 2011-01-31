@@ -56,11 +56,12 @@ namespace Tools
     public slots:
         // Action slots
         void setThisAsCurrentTool( bool active );
+        void onSelectionChanged();
 
     private slots:
         // Action slots
-        void receiveAddSelection(bool);
-        void receiveAddClearSelection(bool);
+        void receiveAddSelection();
+        void receiveAddClearSelection();
 
         void receiveCropSelection();
         //void receiveMoveSelection(bool);

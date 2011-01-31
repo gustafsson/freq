@@ -111,6 +111,10 @@ prioritized and sets the todo_list in Signal::Worker. Otherwise; if it is not
 underfed, some rendering can be done and Heightmap can set the todo_list
 instead. It is up to the global rendering loop to determine which has higher
 priority.
+
+If one of the receiving sinks is underfed, worker will not take smaller
+chunks and will not skip working even if the requested frame rate is
+higher than the actual achieved framerate.
   */
 class Worker
 #ifndef SAWE_NO_MUTEX
@@ -131,7 +135,7 @@ public:
 
       @return true if some work was done and false otherwise
       */
-    bool workOne();
+    bool workOne(bool skip_if_low_fps = true);
 
     /**
       work_chunks is incremented by one each time workOne is invoked.
@@ -183,7 +187,15 @@ public:
     float               requested_fps() const;
     void                requested_fps(float);
 
-	/**
+    /**
+      source()->number_of_samples() may change during a workOne() call. This
+      method will always return the same value during the entire lifespan of
+      workOne().
+      */
+    Signal::IntervalType number_of_samples() const { return _number_of_samples; }
+    float length() const { return number_of_samples()/source()->sample_rate(); }
+
+        /**
 	  Throws an std::exception if one has been caught by run()
 	  */
 	void				checkForErrors();
@@ -232,6 +244,11 @@ private:
     PostSink _post_sink;
 
     /**
+      Number of samples, updated from source when calling workOne().
+      */
+    Signal::IntervalType _number_of_samples;
+
+    /**
       Adjusting chunk size based on fps.
       */
     boost::posix_time::ptime _last_work_one;
@@ -246,7 +263,6 @@ private:
       @see source
       */
     Signal::pOperation _source;
-    Signal::pOperation _cache;
 
 #ifndef SAWE_NO_MUTEX
     /**
@@ -279,6 +295,13 @@ private:
       lowest fps allowed, defaults to 0.5
       */
     float _min_fps;
+
+
+    /**
+      highest measured fps when actually computing something. If requested fps is higher workOne doesn't do anything.
+      _highest_fps is guaranteed to be >= _min_fps.
+    */
+    float _highest_fps;
 
 	/**
       Worker::run is intended to be executed by a separate worker thread. To

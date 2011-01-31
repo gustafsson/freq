@@ -89,7 +89,7 @@ public:
 
     void reset( const Signal::Interval& section );
 
-    virtual Signal::Intervals zeroed_samples() { return source()->zeroed_samples() | affected_samples(); }
+    virtual Signal::Intervals zeroed_samples() { return affected_samples(); }
     virtual Signal::Intervals affected_samples() { return section_; }
 private:
     Signal::Interval section_;

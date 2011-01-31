@@ -67,9 +67,15 @@ public:
 
 
     /**
-      These samples are definitely set to 0 after the filter. As default returns
-      _source->zeroed_samples if source() is not null, or no samples if
-      _source is null.
+      Merges zeroed_samples with _source->zeroed_samples() if _source is not
+      null.
+      */
+    virtual Signal::Intervals zeroed_samples_recursive();
+
+
+    /**
+      These samples are definitely set to 0 by this filter. As default returns
+      no samples.
 
       @remarks zeroed_samples is _assumed_ (but never checked) to be a subset
       of Signal::Operation::affected_samples().

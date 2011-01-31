@@ -35,10 +35,10 @@ namespace Tools
         virtual ~RenderView();
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
-        void drawCollections(GlFrameBuffer* fbo);
+        void drawCollections(GlFrameBuffer* fbo, float yscale);
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
         Heightmap::Position getHeightmapPos( QPointF viewport_coordinates, bool useRenderViewContext = true );
-        Heightmap::Position getPlanePos( QPointF pos, bool* success, bool useRenderViewContext = true );
+        Heightmap::Position getPlanePos( QPointF pos, bool* success = 0, bool useRenderViewContext = true );
         float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false );
 
         /**
@@ -55,7 +55,6 @@ namespace Tools
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
         void setPosition( float time, float f );
-        void makeCurrent();
 
         float last_ysize;
         floatAni orthoview;
@@ -86,10 +85,11 @@ namespace Tools
 		}
 
     public slots:
-        void userinput_update();
+        void userinput_update( bool request_high_fps = true );
 
     private slots:
         void clearCaches();
+        void finishedWorkSectionSlot();
 
     signals:
         /**
@@ -115,6 +115,10 @@ namespace Tools
           */
         void postPaint();
 
+        /**
+          */
+        void finishedWorkSection();
+
     private:
         /// Similiar to QGLWidget::initializeGL()
         void initializeGL();
@@ -125,8 +129,9 @@ namespace Tools
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
 
+        void queueRepaint();
 
-        void drawCollection(int, Signal::FinalSource*);
+        void drawCollection(int, Signal::FinalSource*, float yscale);
 
         void setStates();
         void setLights();
@@ -139,10 +144,10 @@ namespace Tools
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
 
         bool _inited;
-        float _prevLimit;
         unsigned _last_width;
         unsigned _last_height;
         int _try_gc;
+        QTimer* _update_timer;
 
         float _last_length;
         double modelview_matrix[16], projection_matrix[16];

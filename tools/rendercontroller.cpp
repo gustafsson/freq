@@ -58,6 +58,7 @@ public:
             Signal::Sink(),
             collections_(collections)
     {
+        BOOST_ASSERT( o );
         _source = o;
     }
 
@@ -95,7 +96,7 @@ private:
 
 
 RenderController::
-        RenderController( RenderView *view )
+        RenderController( QPointer<RenderView> view )
             :
             view(view),
             toolbar_render(0),
@@ -285,6 +286,7 @@ void RenderController::
 RenderModel *RenderController::
         model()
 {
+    BOOST_ASSERT( view );
     return view->model;
 }
 
@@ -401,8 +403,6 @@ void RenderController::
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
     // context is required to be created by lazy initialization when painting
     // the widget
-    //view->makeCurrent();
-
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->makeCurrent();
     //view->glwidget->setMouseTracking(true);

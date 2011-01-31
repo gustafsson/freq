@@ -207,6 +207,9 @@ public:
 
       This method is used by Heightmap::Renderer to get the heightmap data of
       blocks that has been decided for rendering.
+
+      Might return 0 if collections decides that it doesn't want to allocate
+      another block.
       */
     pBlock      getBlock( Reference ref );
 
@@ -215,7 +218,7 @@ public:
       Blocks are updated by CwtToBlock and StftToBlock by merging chunks into
       all existing blocks that intersect with the chunk interval.
       */
-    std::vector<pBlock>      getIntersectingBlocks( Signal::Interval I );
+    std::vector<pBlock>      getIntersectingBlocks( Signal::Interval I, bool only_visible );
 
 
     /**
@@ -291,6 +294,7 @@ private:
         _samples_per_block,
         _scales_per_block,
         _unfinished_count,
+        _created_count,
         _frame_counter;
 
 
@@ -367,7 +371,6 @@ private:
       Add block information from another block. Returns whether any information was merged.
       */
     bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
-    bool        mergeBlock( pBlock outBlock, Reference ref, unsigned cuda_stream );
 };
 
 } // namespace Heightmap

@@ -46,7 +46,6 @@ void BrushController::
 
     connect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
     connect(render_view_, SIGNAL(destroying()), SLOT(close()));
-    connect(render_view_, SIGNAL(destroying()), SLOT(destroying()));
 
 
     QToolBar* toolBarTool = new QToolBar(main);
@@ -92,13 +91,6 @@ void BrushController::
 
 
 void BrushController::
-        destroying()
-{
-    model()->filter()->images->clear();
-}
-
-
-void BrushController::
         mousePressEvent ( QMouseEvent * e )
 {
     mouseMoveEvent( e );
@@ -119,7 +111,7 @@ void BrushController::
         mouseMoveEvent ( QMouseEvent * e )
 {
     Tools::RenderView &r = *render_view_;
-    Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
+    Heightmap::Position p = r.getPlanePos( QPointF( e->x(), height() - 1 - e->y() ) );
     Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
     view_->gauss = model()->getGauss( ref, p );
 
@@ -157,7 +149,10 @@ void BrushController::
         model()->brush_factor = org_factor;
     }
 
-    render_view_->userinput_update();
+    if (e->buttons())
+        render_view_->userinput_update();
+    else
+        render_view_->userinput_update( false );
 }
 
 

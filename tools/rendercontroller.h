@@ -2,8 +2,11 @@
 #define RENDERCONTROLLER_H
 
 #include "renderview.h"
-#include <QWidget>
+
 #include "signal/worker.h"
+
+#include <QWidget>
+#include <QPointer>
 
 class QToolBar;
 class QSlider;
@@ -16,7 +19,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        RenderController( RenderView *view );
+        RenderController( QPointer<RenderView> view );
         ~RenderController();
 
     public slots:
@@ -53,7 +56,7 @@ namespace Tools
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
 
         RenderModel *model();
-        RenderView *view;
+        QPointer<RenderView> view;
 
         // GUI stuff
         // These are never used outside setupGui, but they are named here

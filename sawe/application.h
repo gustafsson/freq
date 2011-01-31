@@ -30,6 +30,7 @@ public:
 
     void				openadd_project( pProject p );
     int					default_record_device;
+    unsigned            count_projects() { return _projects.size(); }
 
     void parse_command_line_options( int& argc, char **argv );
 
@@ -45,9 +46,9 @@ public slots:
 
 private:
     void apply_command_line_options( pProject p );
+    static void show_fatal_exception( const std::string& str );
 
-    QGLWidget* shared_glwidget_;
-    static Application* _app;
+    QPointer<QGLWidget> shared_glwidget_;
     static std::string _fatal_error;
     std::string _version_string;
     std::set<pProject> _projects;

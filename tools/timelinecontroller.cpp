@@ -41,6 +41,13 @@ TimelineController::
 
 
 void TimelineController::
+        hideTimeline()
+{
+    dock->hide();
+}
+
+
+void TimelineController::
         setupGui()
 {
     Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
@@ -70,47 +77,21 @@ void TimelineController::
     // repaint the timeline view.
     connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
-    connect(view->_render_view, SIGNAL(painting()), view, SLOT(getLengthNow()) );
+    connect(view, SIGNAL(hideMe()), SLOT(hideTimeline()));
 }
 
 
 void TimelineController::
         wheelEvent ( QWheelEvent *e )
 {
-    view->makeCurrent();
-    view->setupCamera();
-
     int x = e->x(), y = height() - 1 - e->y();
     float ps = 0.0005f;
 
-    double current[2];
-    moveButton.spacePos(x, y, current[0], current[1]);
+    Heightmap::Position p = view->getSpacePos(QPointF(x,y));
 
     float f = 1.f - ps * e->delta();
     view->_xscale *= f;
-
-    view->setupCamera();
-
-    double newPos[2];
-    moveButton.spacePos(x, y, newPos[0], newPos[1]);
-
-    //_xoffs -= current[0]/prevscale*_xscale-newPos[0];
-    //_xoffs = current[0] - _xscale*(x/(float)width());
-    view->_xoffs -= newPos[0]-current[0];
-
-    view->setupCamera();
-
-    double newPos2[2];
-    moveButton.spacePos(x, y, newPos2[0], newPos2[1]);
-
-    // float tg = _oldoffs + x * prevscale;
-    // float tg2 = _newoffs + x/(float)width() * _xscale;
-    //_xoffs -= x/(float)width() * (prevscale-_xscale);
-
-    if (0) printf("[%d, %d] -> [%g, %g, %g] -> (%g, %g)\n",
-           x, y,
-           current[0], newPos[0], newPos2[0],
-           view->_xscale, view->_xoffs);
+    view->_xoffs = p.time-(p.time-view->_xoffs)/f;
 
     // Only update the timeline, leave the main render view unaffected
     view->userinput_update();
@@ -120,24 +101,14 @@ void TimelineController::
 void TimelineController::
         mousePressEvent ( QMouseEvent * e )
 {
-    view->makeCurrent();
-    view->setupCamera();
-
-    glScalef(1, 1, 1-view->_barHeight);
-    glTranslatef(0, 0, view->_barHeight);
-
     int x = e->x(), y = height() - 1 - e->y();
-
-    double prev[2];
-    moveButton.spacePos(prev[0], prev[1]);
-
-    double current[2];
-    moveButton.spacePos(x, y, current[0], current[1]);
+    Heightmap::Position prev = view->getSpacePos(QPointF(moveButton.getLastx(), moveButton.getLasty()));
+    Heightmap::Position current = view->getSpacePos(QPointF(x, y));
 
     if (0 == _movingTimeline)
     {
-        if (current[1]>=0)  _movingTimeline = 1;
-        else                _movingTimeline = 2;
+        if (current.scale>=0)   _movingTimeline = 1;
+        else                    _movingTimeline = 2;
     }
 
     switch ( _movingTimeline )
@@ -145,7 +116,7 @@ void TimelineController::
     case 1:
         if (e->buttons() & Qt::LeftButton)
         {
-            view->_render_view->setPosition( current[0], current[1] );
+            view->_render_view->setPosition( current.time, current.scale );
 
             // Update both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).
@@ -154,7 +125,7 @@ void TimelineController::
 
         if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
         {
-            view->_xoffs -= current[0] - prev[0];
+            view->_xoffs -= current.time - prev.time;
 
             // Only update the timeline, leave the main render view unaffected
             view->userinput_update();
@@ -164,11 +135,12 @@ void TimelineController::
    case 2:
         if (e->buttons() & Qt::LeftButton)
         {
-            view->setupCamera( true );
-            moveButton.spacePos(x, y, current[0], current[1]);
+            //view->setupCamera( true );
+            //moveButton.spacePos(x, y, current[0], current[1]);
+            current.time = (current.time - view->_xoffs) * view->_xscale;
 
             float length = max1( 1.f, model->project()->worker.source()->length());
-            view->_xoffs = current[0] - 0.5f*length/view->_xscale;
+            view->_xoffs = current.time - 0.5f*length/view->_xscale;
 
             // Only update the timeline, leave the main render view unaffected
             view->userinput_update();

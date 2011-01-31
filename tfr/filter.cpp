@@ -3,8 +3,8 @@
 
 #include <demangle.h>
 
-//#define TIME_Filter
-#define TIME_Filter if(0)
+#define TIME_Filter
+//#define TIME_Filter if(0)
 
 //#define TIME_FilterReturn
 #define TIME_FilterReturn if(0)
@@ -34,7 +34,7 @@ Signal::pBuffer Filter::
     // Try to take shortcuts and avoid unnecessary work
     if (_try_shortcuts) {
         // If no samples would be non-zero, return zeros
-        if (!(work - zeroed_samples()))
+        if (!(work - zeroed_samples_recursive()))
         {
             // Doesn't have to read from source, just create a buffer with all samples set to 0
             TIME_Filter TaskTimer("Filter silent, %s", I.toString().c_str());
@@ -110,12 +110,13 @@ ChunkAndInverse Filter::
         {
             if (f)
             {
-                TaskInfo("Filter affecting source is %s, but transform() differs", vartype(*f).c_str());
+                TaskInfo("Filter affecting source is %s, and is not using the same transform()", vartype(*f).c_str());
             }
             else
             {
                 Operation* o = source()->affecting_source(I);
-                TaskInfo("source()->affecting_source(I) is %s", vartype(*o).c_str());
+                if (o != source().get())
+                    TaskInfo("source()->affecting_source(I) is %s", vartype(*o).c_str());
             }
             TaskInfo("source() is %s", vartype(*source().get()).c_str());
         }

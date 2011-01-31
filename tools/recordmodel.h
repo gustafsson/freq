@@ -9,10 +9,12 @@ namespace Adapters { class MicrophoneRecorder; }
 namespace Tools
 {
 
+class RenderView;
+
 class RecordModel
 {
 public:
-    RecordModel( Sawe::Project* project );
+    RecordModel( Sawe::Project* project, RenderView* render_view );
     ~RecordModel();
 
     static bool canCreateRecordModel( Sawe::Project* project );
@@ -20,6 +22,7 @@ public:
 
     Adapters::MicrophoneRecorder* recording;
     Sawe::Project* project;
+    RenderView* render_view;
 };
 
 } // namespace Tools

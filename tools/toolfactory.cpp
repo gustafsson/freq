@@ -19,6 +19,8 @@
 #include "matlabcontroller.h"
 #include "graphcontroller.h"
 #include "tooltipcontroller.h"
+#include "aboutdialog.h"
+#include "feedbackwizard.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -58,9 +60,9 @@ ToolFactory::
 
     if (RecordModel::canCreateRecordModel(p))
     {
-        _record_model.reset( new RecordModel(p) );
+        _record_model.reset( new RecordModel(p, _render_view) );
         _record_view.reset( new RecordView(_record_model.data() ));
-        _record_controller = new RecordController( _record_view.data(), _render_view );
+        _record_controller = new RecordController( _record_view.data() );
     }
 
     _comment_controller = new CommentController( _render_view );
@@ -74,6 +76,8 @@ ToolFactory::
     _tooltip_controller = new TooltipController(
             _tooltip_view.data(), _render_view,
             dynamic_cast<CommentController*>(_comment_controller.data()) );
+
+    _about_dialog = new AboutDialog( p );
 }
 
 
@@ -81,6 +85,9 @@ ToolFactory::
         ~ToolFactory()
 {
     TaskInfo ti(__FUNCTION__);
+    // Try to clear things in the opposite order that they were created
+
+    delete _about_dialog;
 
     if (!_selection_controller.isNull())
         delete _selection_controller;
@@ -109,9 +116,17 @@ ToolFactory::
     if (!_tooltip_controller.isNull())
         delete _tooltip_controller;
 
-    // The _render_view and _timeline_view widget are released by MainWindow
-    // that owns the widget. This might happen both before and after this
-    // destructor.
+    BOOST_ASSERT( _timeline_controller );
+	delete _timeline_controller;
+
+    BOOST_ASSERT( _timeline_view );
+    delete _timeline_view;
+
+    BOOST_ASSERT( _render_controller );
+    _render_controller.reset();
+
+    BOOST_ASSERT( _render_view );
+    delete _render_view;
 }
 
 } // namespace Tools

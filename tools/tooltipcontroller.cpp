@@ -92,24 +92,11 @@ void TooltipController::
     {
         bool success=false;
         Heightmap::Position p = render_view_->getPlanePos(QPointF(x, y), &success);
+        TaskTimer tt("TooltipController::mouseMoveEvent (%g, %g)", p.time, p.scale);
         if (success)
         {
             showToolTip( p );
         }
-
-//        double current[2];
-//        render_view_->makeCurrent();
-//        if( infoToolButton.worldPos(x, y, current[0], current[1], render_view_->model->xscale) )
-//        {
-//            float t = current[0];
-//            float s = current[1];
-            //float FS = _model->project()->worker.source()->sample_rate();
-            //t = ((unsigned)(t*FS+.5f))/(float)FS;
-            //s = ((unsigned)(s*c.nScales(FS)+.5f))/(float)c.nScales(FS);
-            //s = ((s*c.nScales(FS)+.5f))/(float)c.nScales(FS);
-
-            //showToolTip(Heightmap::Position(t, s) );
-//        }
     }
 
     infoToolButton.update(x, y);
@@ -170,7 +157,7 @@ void TooltipController::
             ->sinks()[0]->source().get()))
        ss << "Morlet standard deviation: " << setprecision(3) << std_t << " s, " << setprecision(1) << std_f << " Hz<br/>";
 
-    ss << "Value here: " << model()->max_so_far;
+    ss << "Value here: " << setprecision(10) << model()->max_so_far << setprecision(1);
 
     if ( 0 < model()->markers )
     {
@@ -212,7 +199,7 @@ void TooltipController::
 
     if ( first )
     {
-        model()->comment->resize( 400, 210 );
+        model()->comment->resize( 400, 220 );
     }
 
     if (found_better)
@@ -229,6 +216,7 @@ void TooltipController::
 unsigned TooltipController::
         guessHarmonicNumber( const Heightmap::Position& pos )
 {
+    TaskTimer tt("TooltipController::guessHarmonicNumber (%g, %g)", pos.time, pos.scale);
     double max_s = 0;
     unsigned max_i = 0;
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
@@ -253,6 +241,8 @@ unsigned TooltipController::
     //if (max_i<=1)
         //return 0;
 
+    tt.info("%g Hz is harmonic number number %u, fundamental frequency is %g Hz. Did %u tests",
+        F, max_i, F/max_i, n_tests);
     return max_i;
 }
 

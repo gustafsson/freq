@@ -9,8 +9,8 @@
 
 #include <boost/foreach.hpp>
 
-//#define TIME_CwtFilter
-#define TIME_CwtFilter if(0)
+#define TIME_CwtFilter
+//#define TIME_CwtFilter if(0)
 
 //#define TIME_CwtFilterRead
 #define TIME_CwtFilterRead if(0)
@@ -121,8 +121,19 @@ ChunkAndInverse CwtFilter::
             p[i] = 0;
     }
 
+    size_t free=0, total=0;
+    DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
+    DEBUG_CwtFilter TaskInfo("free = %g, total = %g, inverse_size=%u, estimated = %g",
+            free/1024./1024., total/1024./1024.,
+            ci.inverse->number_of_samples(),
+            cwt.required_gpu_bytes( numberOfSamples, sample_rate() )/1024./1024);
+
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
+
+    DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
+    DEBUG_CwtFilter TaskInfo("free = %g, total = %g",
+             free/1024./1024., total/1024./1024. );
 
     return ci;
 }

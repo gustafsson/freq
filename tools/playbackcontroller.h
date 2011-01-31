@@ -20,6 +20,7 @@ namespace Tools
     private slots:
         virtual void receivePlaySound();
         virtual void receiveFollowPlayMarker( bool v );
+        virtual void onSelectionChanged();
 
     private:
         PlaybackModel* model();

@@ -70,11 +70,6 @@ public:
 
     virtual void operator()( Tfr::Chunk& chunk )
     {
-        Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
-        BOOST_ASSERT( fs );
-
-        _collection = _collections[fs->get_channel()].get();
-
         BlockFilter::operator()(chunk);
     }
 
@@ -93,11 +88,18 @@ public:
         To prevent anyone from optimizing away a read because it's known to
         result in zeros. BlockFilter wants to be run anyway, even with zeros.
         */
-    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
+    Signal::Intervals zeroed_samples_recursive() { return Signal::Intervals(); }
 
     void applyFilter( Tfr::pChunk pchunk )
     {
-        // A bit overkill to do every chunk, but it doesn't cost much
+        Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
+        BOOST_ASSERT( fs );
+
+        _collection = _collections[fs->get_channel()].get();
+
+        // A bit overkill to do every chunk, but it doesn't cost much.
+        // Most of 'update_sample_size' is only needed the very first chunk,
+        // and '_max_sample_size.time' is updated in 'invalidate_samples'.
         _collection->update_sample_size(pchunk.get());
 
         FilterKind::applyFilter( pchunk );

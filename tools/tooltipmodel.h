@@ -1,6 +1,8 @@
 #ifndef TOOLTIPMODEL_H
 #define TOOLTIPMODEL_H
 
+#include <QPointer>
+
 #include "commentview.h"
 
 namespace Tools {
@@ -16,7 +18,7 @@ public:
     float frequency;
     float max_so_far;
     unsigned markers;
-    CommentView* comment;
+    QPointer<CommentView> comment;
     bool automarkers;
 };
 

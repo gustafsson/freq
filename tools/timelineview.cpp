@@ -23,6 +23,7 @@
 #include <QMouseEvent>
 #include <QDockWidget>
 #include <QTimer>
+#include <QErrorMessage>
 
 #undef max
 
@@ -59,24 +60,38 @@ TimelineView::
         ~TimelineView()
 {
     TaskInfo ti("~TimelineView");
+    makeCurrent();
     _timeline_fbo.reset();
     _timeline_bar_fbo.reset();
+}
+
+
+Heightmap::Position TimelineView::
+        getSpacePos( QPointF pos, bool* success )
+{
+    GLvectorF win_coord( pos.x(), pos.y(), 0.1);
+
+    GLvector world_coord = Heightmap::gluUnProject(
+            win_coord,
+            modelview_matrix,
+            projection_matrix,
+            viewport_matrix,
+            success);
+
+    return Heightmap::Position( world_coord[0], world_coord[2] );
 }
 
 
 void TimelineView::
         userinput_update()
 {
-    _project->worker.requested_fps(30);
-    // this will leave room for others to paint as well, calling 'update' wouldn't
-    QTimer::singleShot(0, this, SLOT(update()));
-}
+    // Never update only the timeline as renderview is responsible for invoking
+    // workOne to update textures as needed. TimelineView::update is connected
+    // to RenderView::postPaint.
+    _render_view->userinput_update();
 
-
-void TimelineView::
-        getLengthNow()
-{
-    _length = std::max( 1.f, _project->worker.source()->length());
+    //_project->worker.requested_fps(30);
+    //update();
 }
 
 
@@ -124,6 +139,8 @@ void TimelineView::
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    userinput_update();
 }
 
 
@@ -132,6 +149,14 @@ void TimelineView::
 {
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
+    boost::posix_time::time_duration diff = boost::posix_time::microsec_clock::local_time() - paintEventTime;
+    if (diff.total_milliseconds() > 50)
+    {
+        QErrorMessage::qtHandler()->showMessage("Seems like the timeline doesn't work properly on your computer, so it has been removed. Otherwise the program should behave correctly. If you want to help out you can send an error report from the Help menu.");
+        emit hideMe();
+    }
+
+    _length = std::max( 1.f, _project->worker.length());
     _except_count = 0;
     try {
         GlException_CHECK_ERROR();
@@ -151,10 +176,14 @@ void TimelineView::
             setupCamera( false );
             glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
 
+            glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
+            glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+            glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
-                _render_view->drawCollections( _timeline_fbo.get() );
+                _render_view->drawCollections( _timeline_fbo.get(), 0 );
 
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
@@ -170,7 +199,7 @@ void TimelineView::
             setupCamera( true );
             glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
 
-            _render_view->drawCollections( _timeline_bar_fbo.get() );
+            _render_view->drawCollections( _timeline_bar_fbo.get(), 0 );
 
             glViewport( 0, 0, (GLint)_width, (GLint)_height );
             setupCamera( true );
@@ -220,6 +249,14 @@ void TimelineView::
         TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
         Sawe::Application::global_ptr()->clearCaches();
     }
+}
+
+
+void TimelineView::
+        paintEvent ( QPaintEvent * event )
+{
+    paintEventTime = boost::posix_time::microsec_clock::local_time();
+    QGLWidget::paintEvent ( event );
 }
 
 

@@ -37,11 +37,13 @@ void BlockFilter::
         operator()( Tfr::Chunk& chunk )
 {
     Signal::Interval chunk_interval = chunk.getInterval();
-    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s", chunk_interval.toString().c_str());
+    std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, true );
+    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks", 
+        chunk_interval.toString().c_str(), chunk.min_hz, chunk.max_hz, intersecting_blocks.size());
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
-    foreach( pBlock block, _collection->getIntersectingBlocks( chunk_interval ))
+    foreach( pBlock block, intersecting_blocks)
     {
 #ifndef SAWE_NO_MUTEX
         if (_collection->constructor_thread().isSameThread())
@@ -117,20 +119,28 @@ void CwtToBlock::
             transferDesc.coveredInterval().last / chunk.original_sample_rate ).suppressTiming();
 
     // Remove already computed intervals
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
+    if (!full_resolution)
+    {
+        if (!(transferDesc - block->valid_samples))
+        {
+            TIME_CWTTOBLOCK TaskInfo("%s not accepting %s, early termination", vartype(*this).c_str(), transferDesc.toString().c_str());
+            transferDesc.clear();
+        }
+    }
     // transferDesc -= block->valid_samples;
 
     // If block is already up to date, abort merge
     if (transferDesc.empty())
     {
-        TaskTimer tt("CwtToBlock::mergeChunk, transferDesc empty");
-        tt.getStream() << "outInterval = " << outInterval.toString();
-        tt.getStream() << "inInterval = " << inInterval.toString();
-        tt.suppressTiming();
+        TIME_CWTTOBLOCK TaskInfo tt("CwtToBlock::mergeChunk, transferDesc empty");
+        TIME_CWTTOBLOCK TaskInfo("outInterval = %s", outInterval.toString().c_str());
+        TIME_CWTTOBLOCK TaskInfo("inInterval = %s", inInterval.toString().c_str());
 
         return;
     }
 
-    std::stringstream ss;
     Position a,b;
     block->ref.getArea(a,b);
     float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
@@ -199,11 +209,7 @@ void CwtToBlock::
 
 
     Signal::Interval transfer = transferDesc.coveredInterval();
-    TIME_CWTTOBLOCK TaskTimer tt("Inserting chunk [%u,%u) to ref %s",
-                                 transfer.first,
-                                 transfer.last,
-                                 block->ref.toString().c_str());
-
+    
     DEBUG_CWTTOBLOCK {
         TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
         TaskTimer("outInterval [%u,%u)", outInterval.first, outInterval.last).suppressTiming();
@@ -229,13 +235,13 @@ void CwtToBlock::
     CudaException_CHECK_ERROR();
 
     //CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
-    CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
+    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
             a.time, a.scale,
             b.time, b.scale,
             chunk_a.time, chunk_a.scale,
             chunk_b.time, chunk_b.scale,
             transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
-        ).suppressTiming();
+        );
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
@@ -275,8 +281,7 @@ void CwtToBlock::
     CudaException_CHECK_ERROR();
     GlException_CHECK_ERROR();
 
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
-    if( cwt->wavelet_time_support() == cwt->wavelet_default_time_support() )
+    if( full_resolution )
     {
         block->valid_samples |= transfer;
     }
@@ -287,7 +292,6 @@ void CwtToBlock::
     }
 
     TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
-    return;
 }
 
 

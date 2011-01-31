@@ -25,7 +25,6 @@ namespace Tools {
     private slots:
         // Action slots
         void receiveToggleBrush(bool active);
-        void destroying();
 
     private:
         // Event handlers

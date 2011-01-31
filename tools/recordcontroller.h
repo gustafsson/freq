@@ -11,13 +11,12 @@ namespace Adapters { class MicrophoneRecorder; }
 namespace Tools
 {
     class RecordModel;
-    class RenderView;
 
     class RecordController: public QObject
     {
         Q_OBJECT
     public:
-        RecordController( RecordView* view, RenderView* render_view );
+        RecordController( RecordView* view );
         ~RecordController();
 
     protected slots:
@@ -30,8 +29,6 @@ namespace Tools
         RecordView* view_;
         RecordModel* model() { return view_->model_; }
         bool destroyed_;
-
-        RenderView* render_view_;
 
         void setupGui();
     };

@@ -83,11 +83,11 @@ namespace Tools { namespace Selections
         if (e->button() == selection_button_)
         {
             Tools::RenderView &r = *selection_controller_->render_view();
-            r.makeCurrent(); // required for Ui::MouseControl::planePos
 
-            if (false == Ui::MouseControl::planePos(
-                    e->x(), height() - 1 - e->y(),
-					selectionStart.time, selectionStart.scale, r.model->xscale))
+            bool success;
+            selectionStart = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+
+            if (!success)
             {
                 selectionStart.time = -FLT_MAX;
             }
@@ -117,12 +117,10 @@ namespace Tools { namespace Selections
         if (e->buttons().testFlag( selection_button_ ))
         {
             Tools::RenderView &r = *selection_controller_->render_view();
-            r.makeCurrent(); // required for Ui::MouseControl::planePos
 
-            Heightmap::Position p;
-            if (Ui::MouseControl::planePos(
-                    e->x(), height() - 1 - e->y(),
-					p.time, p.scale, r.model->xscale))
+            bool success;
+            Heightmap::Position p = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+            if (success)
             {
                 if (-FLT_MAX == selectionStart.time) // TODO test
                 {

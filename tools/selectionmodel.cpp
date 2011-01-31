@@ -27,8 +27,13 @@ SelectionModel::
 void SelectionModel::
         set_current_selection(Signal::pOperation o)
 {
+    if (o==current_selection_)
+        return;
+
     // Check if 'o' is supported by making a copy of it
     current_selection_ = copy_selection( o );
+
+    emit selectionChanged();
 }
 
 

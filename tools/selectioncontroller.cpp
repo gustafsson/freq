@@ -67,11 +67,11 @@ namespace Tools
         Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
-        connect(ui->actionActionAdd_selection, SIGNAL(triggered(bool)), SLOT(receiveAddSelection(bool)));
-        connect(ui->actionActionRemove_selection, SIGNAL(triggered(bool)), SLOT(receiveAddClearSelection(bool)));
+        connect(ui->actionActionAdd_selection, SIGNAL(triggered()), SLOT(receiveAddSelection()));
+        connect(ui->actionActionRemove_selection, SIGNAL(triggered()), SLOT(receiveAddClearSelection()));
         connect(ui->actionCropSelection, SIGNAL(triggered()), SLOT(receiveCropSelection()));
-        //connect(ui->actionMoveSelection, SIGNAL(triggered(bool)), SLOT(receiveMoveSelection(bool)));
-        //connect(ui->actionMoveSelectionTime, SIGNAL(triggered(bool)), SLOT(receiveMoveSelectionInTime(bool)));
+        //connect(ui->actionMoveSelection, SIGNAL(toggled(bool)), SLOT(receiveMoveSelection(bool)));
+        //connect(ui->actionMoveSelectionTime, SIGNAL(toggled(bool)), SLOT(receiveMoveSelectionInTime(bool)));
 
         ui->actionActionAdd_selection->setEnabled( false );
         ui->actionActionRemove_selection->setEnabled( true );
@@ -88,6 +88,8 @@ namespace Tools
 
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );
+
+        connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
 
         setCurrentSelection(Signal::pOperation());
 
@@ -152,6 +154,13 @@ namespace Tools
 
 
     void SelectionController::
+            onSelectionChanged()
+    {
+        setCurrentSelection( _model->current_selection() );
+    }
+
+
+    void SelectionController::
             addComboBoxAction( QAction* action )
     {
         //selectionComboBox_->parentWidget()->addAction(action);
@@ -178,19 +187,19 @@ namespace Tools
 
 
     void SelectionController::
-            receiveAddSelection(bool active)
+            receiveAddSelection()
     {
         if (!_model->current_selection())
             return;
 
-        receiveAddClearSelection(active);
+        receiveAddClearSelection();
 
         _worker->source()->enabled(false);
     }
 
 
     void SelectionController::
-            receiveAddClearSelection(bool /*active*/)
+            receiveAddClearSelection()
     {
         if (!_model->current_selection())
             return;

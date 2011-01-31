@@ -59,14 +59,25 @@ void CufftHandleContext::
         return;
 
     int n = _elems;
-    CufftException_SAFE_CALL(cufftPlanMany(
+    cufftResult r = cufftPlanMany(
             &_handle,
             1,
             &n,
             NULL, 1, 0,
             NULL, 1, 0,
             CUFFT_C2C,
-            _batch_size));
+            _batch_size);
+
+    if (CUFFT_SUCCESS != r)
+    {
+        TaskInfo ti("cufftPlanMany( n = %d, _batch_size = %u ) -> %s",
+                    n, _batch_size, CufftException::getErrorString(r));
+        size_t free=0, total=0;
+        cudaMemGetInfo(&free, &total);
+        ti.tt().info("Free mem = %g MB, total = %g MB", free/1024.f/1024.f, total/1024.f/1024.f);
+        CufftException_SAFE_CALL( r );
+    }
+
     CufftException_SAFE_CALL(cufftSetStream(_handle, _stream ));
     _creator_thread.reset();
 }
@@ -368,7 +379,7 @@ Tfr::pChunk Stft::
 
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
-    _chunk_size = 1 << (unsigned)floor(log2(preferred_size)+0.5);
+    _chunk_size = 1 << (unsigned)floor(log2((float)preferred_size)+0.5);
     return _chunk_size;
 
 //    if (_ok_chunk_sizes.empty())

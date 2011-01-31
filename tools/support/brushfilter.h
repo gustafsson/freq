@@ -37,7 +37,7 @@ public:
     BrushImagesP images;
 
     void release_extra_resources();
-	void validateRefs(Heightmap::Collection* collection);
+    //void validateRefs(Heightmap::Collection* collection);
     BrushImageDataP getImage(Heightmap::Reference const& ref);
 
 private:

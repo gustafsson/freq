@@ -13,13 +13,14 @@ win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
-CONFIG += console # console output
-#DEFINES += SAWE_NO_MUTEX
+#CONFIG += console # console output
+DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
+win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
 win32:QMAKE_LFLAGS_DEBUG += \
 	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
 	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
@@ -82,12 +83,15 @@ HEADERS += \
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
+# Qt Creator crashes every now and then in Windows if form filenames are expressed with wildcards
 FORMS += \
-    tools/selectionviewmodel.ui \
     ui/mainwindow.ui \
     ui/propertiesselection.ui \
     ui/propertiesstroke.ui \
-    tools/commentview.ui
+    tools/aboutdialog.ui \
+    tools/commentview.ui \
+    tools/feedbackwizard.ui \
+    tools/selectionviewmodel.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \
@@ -126,6 +130,8 @@ win32 {
 
 unix:IS64 = $$system(if [ "`uname -m`" == "x86_64" ];then echo 64; fi)
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
+win32:DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
+DEFINES += SONICAWE_REVISION="\\\"$$system(git rev-parse --short HEAD)\\\""
 
 INCLUDEPATH += \
     ../../sonic/gpumisc \

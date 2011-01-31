@@ -5,6 +5,7 @@
 // gpumisc
 #include <CudaProperties.h>
 #include <CudaException.h>
+#include <redirectstdout.h>
 
 // Qt
 #include <QtGui/QMessageBox>
@@ -60,8 +61,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                         "a negative performance impact on Sonic AWE." << endl
                    << endl
                    << "Total memory free to use by Sonic AWE is "
-                   << (free>>20) << " MB out of total of " << (total>>20)
-                   << " MB on the GPU "
+                   << (free>>20) << " MB out of a total of " << (total>>20)
+                   << " MB on the GPU, "
                    << CudaProperties::getCudaDeviceProp().name << "."
                    << endl
                    << endl
@@ -73,8 +74,8 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                    << "Sonic AWE will now try to start without using up too "
                    "much memory.";
                 QMessageBox::information(
-                        0,
-                        "A lot of GPU memory is being used",
+                        0, 
+                        "A lot of GPU memory is currently being used",
                         ss.str().c_str());
             }
             return true;
@@ -273,22 +274,37 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    //#ifndef __GNUC__
+    // Write all stdout and stderr to sonicawe.log instead
+    rename("sonicawe~4.log~4", "sonicawe~5.log");
+    rename("sonicawe~3.log~3", "sonicawe~4.log");
+    rename("sonicawe~2.log~2", "sonicawe~2.log");
+    rename("sonicawe~.log", "sonicawe~2.log");
+    rename("sonicawe.log", "sonicawe~.log");
+    RedirectStdout rs("sonicawe.log");
+
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
-//#endif
 
     TaskInfo("Starting Sonic AWE");
 
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
-    Sawe::Application a(argc, argv, true);
-
-    TaskInfo("Version: %s", a.version_string().c_str());
-    TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
-    if (!check_cuda( false ))
-        return -1;
-
     try {
+        Sawe::Application a(argc, argv, true);
+
+        {
+            TaskInfo ti("Version: %s", a.version_string().c_str());
+            TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
+
+            boost::gregorian::date today = boost::gregorian::day_clock::local_day();
+            boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
+            ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
+            ti.tt().getStream() << "Program started " << today;
+        }
+
+        // Check if a cuda context can be created, but don't require OpenGL bindings just yet
+        if (!check_cuda( false ))
+            return -1;
+
         a.parse_command_line_options(argc, argv);
 
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
@@ -340,11 +356,11 @@ int main(int argc, char *argv[])
         // TODO 0 != QGLContext::currentContext() when exiting by an exception
         // that stops the mainloop.
         if( 0 != QGLContext::currentContext() )
-            TaskTimer("Error: OpenGL context was not destroyed prior to application exit").suppressTiming();
+            TaskInfo("Error: OpenGL context was not destroyed prior to application exit");
 
         CUdevice current_device;
         if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( &current_device ))
-            TaskTimer("Error: CUDA context was not destroyed prior to application exit").suppressTiming();
+            TaskInfo("Error: CUDA context was not destroyed prior to application exit");
 
         return r;
     } catch (const std::exception &x) {

@@ -82,6 +82,8 @@ float PeakModel::
         heightVal(Heightmap::Reference ref, unsigned x, unsigned y)
 {
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
+    if (!block)
+        return 0;
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
     float* data = blockData->getCpuMemory();
 
@@ -133,8 +135,11 @@ void PeakModel::
     foreach( PeakAreas::value_type const& v, classifictions )
     {
         Heightmap::pBlock block = ref.collection()->getBlock( v.first );
-        GpuCpuData<float>* blockData = block->glblock->height()->data.get();
-        blockData->getCudaGlobal( false );
+        if (block)
+        {
+            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+            blockData->getCudaGlobal( false );
+        }
     }
 
     findBorder();
@@ -413,6 +418,8 @@ void PeakModel::
                              )
 {
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
+    if (!block)
+        return;
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
     float* data = blockData->getCpuMemory();
 

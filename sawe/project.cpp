@@ -30,10 +30,11 @@ Project::
 {
     TaskTimer tt("~Project");
 
+    _tools.reset();
+
     if (_mainWindow)
         delete _mainWindow;
 
-    _tools.reset();
     root_source_.reset();
 }
 

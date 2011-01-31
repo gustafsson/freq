@@ -34,7 +34,7 @@ void PlaybackController::
 
     // User interface buttons
     connect(ui->actionPlaySelection, SIGNAL(triggered()), SLOT(receivePlaySound()));
-    connect(ui->actionFollowPlayMarker, SIGNAL(triggered(bool)), SLOT(receiveFollowPlayMarker(bool)));
+    connect(ui->actionFollowPlayMarker, SIGNAL(toggled(bool)), SLOT(receiveFollowPlayMarker(bool)));
 
     // Make RenderView keep on rendering (with interactive framerate) as long
     // as the playback marker moves
@@ -44,6 +44,7 @@ void PlaybackController::
     // RenderView paints.
     connect(render_view, SIGNAL(painting()), _view, SLOT(draw()));
     connect(render_view, SIGNAL(prePaint()), _view, SLOT(locatePlaybackMarker()));
+    connect(_view->model->selection, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
 }
 
 
@@ -64,6 +65,7 @@ void PlaybackController::
         return; // No filter, no selection...
     }
 
+    tt.info("Selection is of type %s", vartype(*filter.get()).c_str());
 
     if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
@@ -71,14 +73,15 @@ void PlaybackController::
         model()->adapter_playback.reset( new Adapters::Playback( _view->model->playback_device ));
 
         std::vector<Signal::pOperation> sinks;
-        postsink_operations->sinks( sinks );
+        postsink_operations->sinks( sinks ); // empty
         sinks.push_back( model()->adapter_playback );
         sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
 
         postsink_operations->filter( Signal::pOperation() );
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
-        postsink_operations->invalidate_samples( ~filter->zeroed_samples() );
+
+        postsink_operations->invalidate_samples( ~filter->zeroed_samples_recursive() );
     }
     else
     {
@@ -93,8 +96,19 @@ void PlaybackController::
         receiveFollowPlayMarker( bool v )
 {
     _view->follow_play_marker = v;
-    // don't need to call update as new frames are continously rendered
+    // doesn't need to call update as new frames are continously rendered
     // during playback anyway
+}
+
+
+void PlaybackController::
+        onSelectionChanged()
+{
+    if (model()->playback())
+        model()->playback()->reset();
+    std::vector<Signal::pOperation> empty;
+    model()->getPostSink()->sinks( empty );
+    model()->getPostSink()->filter( Signal::pOperation() );
 }
 
 

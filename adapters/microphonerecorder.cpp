@@ -18,38 +18,59 @@ namespace Adapters {
 
 MicrophoneRecorder::
         MicrophoneRecorder(int inputDevice)
+            :
+            input_device_(inputDevice),
+            _sample_rate( 1 )
 {
-    init(inputDevice);
+    init(); // fetch _sample_rate
+    stopRecording();
 }
 
 
 void MicrophoneRecorder::
-        init(int inputDevice)
+        init()
 {
-    channel = 0;
+    _channel = 0;
+    _offset = 0;
+
     static bool first = true;
     if (first) Playback::list_devices();
 
-    TaskTimer tt("Creating MicrophoneRecorder for device %d", inputDevice);
+    TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
     portaudio::System &sys = portaudio::System::instance();
 
-    if (0>inputDevice || inputDevice>sys.deviceCount()) {
-        inputDevice = sys.defaultInputDevice().index();
-    } else if ( sys.deviceByIndex(inputDevice).isOutputOnlyDevice() ) {
-        tt.getStream() << "Requested device '" << sys.deviceByIndex(inputDevice).name() << "' can only be used for output";
-        inputDevice = sys.defaultInputDevice().index();
-    } else {
-        inputDevice = inputDevice;
+    bool has_input_device = false;
+    for (int i=0; i < sys.deviceCount(); ++i)
+    {
+        if (!sys.deviceByIndex(i).isOutputOnlyDevice())
+            has_input_device = true;
     }
 
-    tt.getStream() << "Using device '" << sys.deviceByIndex(inputDevice).name() << "' for audio input";
+    if (!has_input_device)
+    {
+        throw std::runtime_error("System didn't report any recording devices. Can't record.");
+    }
 
-    portaudio::Device& device = sys.deviceByIndex(inputDevice);
+    if (0>input_device_ || input_device_>sys.deviceCount()) {
+        input_device_ = sys.defaultInputDevice().index();
+    } else if ( sys.deviceByIndex(input_device_).isOutputOnlyDevice() ) {
+        tt.getStream() << "Requested device '" << sys.deviceByIndex(input_device_).name() << "' can only be used for output";
+        input_device_ = sys.defaultInputDevice().index();
+    } else {
+        ;
+    }
+
+    tt.getStream() << "Using device '" << sys.deviceByIndex(input_device_).name() << "' for audio input";
+
+    portaudio::Device& device = sys.deviceByIndex(input_device_);
+    _sample_rate = device.defaultSampleRate();
 
     unsigned channel_count = device.maxInputChannels();
     if (channel_count>2)
         channel_count = 2;
-    tt.getStream() << "Opening recording input stream on '" << device.name() << "' with " << channel_count << " channels";
+    tt.getStream() << "Opening recording input stream on '" << device.name() << "' with " << channel_count
+                   << " channels, " << device.defaultSampleRate() << " samples/second"
+                   << " and input latency " << device.defaultHighInputLatency() << " s";
 
     QMutexLocker lock(&_data_lock);
     _data.resize(channel_count);
@@ -59,11 +80,11 @@ void MicrophoneRecorder::
             channel_count, // channels
             portaudio::FLOAT32,
             false, // interleaved
-#ifdef __APPLE__ // TODO document why
+//#ifdef __APPLE__ // TODO document why
             device.defaultHighInputLatency(),
-#else
-            device.defaultLowInputLatency(),
-#endif
+//#else
+//            device.defaultLowInputLatency(),
+//#endif
             NULL);
 
     portaudio::StreamParameters paramsRecord(
@@ -77,17 +98,16 @@ void MicrophoneRecorder::
             paramsRecord,
             *this,
             &MicrophoneRecorder::writeBuffer));
+
+    lock.unlock();
 }
+
 
 MicrophoneRecorder::~MicrophoneRecorder()
 {
 	TaskTimer tt("%s", __FUNCTION__);
-    if (_stream_record) {
-        _stream_record->isStopped()? void(): _stream_record->stop();
-        _stream_record->isStopped()? void(): _stream_record->abort();
-        _stream_record->close();
-        _stream_record.reset();
-    }
+
+    stopRecording();
 
     QMutexLocker lock(&_data_lock);
     for (unsigned i=0; i<_data.size(); ++i)
@@ -102,18 +122,29 @@ MicrophoneRecorder::~MicrophoneRecorder()
 void MicrophoneRecorder::startRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
+    init();
+
     _stream_record->start();
+
+    _start_recording = boost::posix_time::microsec_clock::local_time();
+    _offset = length();
 }
 
 void MicrophoneRecorder::stopRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
-    _stream_record->stop();
+    if (_stream_record) {
+        //stop could hang the ui (codaset #24)
+        //_stream_record->isStopped()? void(): _stream_record->stop();
+        _stream_record->isStopped()? void(): _stream_record->abort();
+        _stream_record->close();
+        _stream_record.reset();
+    }
 }
 
 bool MicrophoneRecorder::isStopped()
 {
-    return _stream_record->isStopped();
+    return _stream_record?_stream_record->isStopped():true;
 }
 
 Signal::pBuffer MicrophoneRecorder::
@@ -121,21 +152,20 @@ Signal::pBuffer MicrophoneRecorder::
 {
     QMutexLocker lock(&_data_lock);
     // TODO why? return _data[channel].readFixedLength( I );
-    return _data[channel].read( I );
+    return _data[_channel].read( I );
 }
 
 float MicrophoneRecorder::
         sample_rate()
 {
-    float fs = _stream_record->sampleRate();
-    return fs;
+    return _sample_rate;
 }
 
 long unsigned MicrophoneRecorder::
         number_of_samples()
 {
     QMutexLocker lock(&_data_lock);
-    long unsigned N = _data[channel].number_of_samples();
+    long unsigned N = _data[_channel].number_of_samples();
     return N;
 }
 
@@ -155,15 +185,36 @@ void MicrophoneRecorder::
 {
     //TIME_MICROPHONERECORDER TaskTimer("MicrophoneRecorder::set_channel(%u)", channel).suppressTiming();
     BOOST_ASSERT( channel < num_channels() );
-    this->channel = channel;
+    this->_channel = channel;
 }
 
 
 unsigned MicrophoneRecorder::
         get_channel()
 {
-    return channel;
+    return _channel;
 }
+
+
+float MicrophoneRecorder::
+        time()
+{
+    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _start_recording;
+    float dt = d.total_milliseconds()*0.001f;
+    return dt + _offset;
+}
+
+float MicrophoneRecorder::
+        time_since_last_update()
+{
+    if (isStopped())
+        return 0;
+    QMutexLocker lock(&_data_lock);
+    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _last_update;
+    float dt = d.total_milliseconds()*0.001f;
+    return std::min( dt, time() - _offset);
+}
+
 
 
 int MicrophoneRecorder::
@@ -173,12 +224,12 @@ int MicrophoneRecorder::
                  const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
-    TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples)", framesPerBuffer);
-    BOOST_ASSERT( inputBuffer );
+    TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
     const float **in = (const float **)inputBuffer;
 
 	long unsigned offset = number_of_samples();
     QMutexLocker lock(&_data_lock);
+    _last_update = boost::posix_time::microsec_clock::local_time();
 
     for (unsigned i=0; i<_data.size(); ++i)
     {
@@ -191,7 +242,10 @@ int MicrophoneRecorder::
         b->sample_offset = offset;
         b->sample_rate = sample_rate();
 
-        TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s", b->getInterval().toString().c_str());
+        TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s, [%g, %g) s",
+                                            b->getInterval().toString().c_str(),
+                                            b->getInterval().first / b->sample_rate,
+                                            b->getInterval().last / b->sample_rate );
 
         _data[i].put( b );
     }
