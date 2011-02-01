@@ -90,7 +90,6 @@ FORMS += \
     ui/propertiesstroke.ui \
     tools/aboutdialog.ui \
     tools/commentview.ui \
-    tools/feedbackwizard.ui \
     tools/selectionviewmodel.ui \
 
 CUDA_SOURCES += \

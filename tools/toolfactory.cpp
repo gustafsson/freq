@@ -20,7 +20,6 @@
 #include "graphcontroller.h"
 #include "tooltipcontroller.h"
 #include "aboutdialog.h"
-#include "feedbackwizard.h"
 
 // Sonic AWE
 #include "sawe/project.h"

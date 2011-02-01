@@ -2,6 +2,7 @@
 #include "ui_aboutdialog.h"
 #include "ui_mainwindow.h"
 #include "sawe/application.h"
+#include "ui/mainwindow.h"
 
 namespace Tools
 {
