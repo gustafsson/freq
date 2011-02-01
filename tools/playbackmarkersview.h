@@ -15,6 +15,7 @@ public:
 
     PlaybackMarkersModel* model() { return model_; }
 
+    bool enabled;
     void setAddingMarker( float t ) { adding_marker_t_; }
     void setHighlightMarker( Markers::iterator highlighted_marker ) { highlighted_marker_ = highlighted_marker; }
 

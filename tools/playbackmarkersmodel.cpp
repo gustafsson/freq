@@ -21,6 +21,9 @@ Markers& PlaybackMarkersModel::
 void PlaybackMarkersModel::
         removeMarker( Markers::iterator itr )
 {
+    if (itr == markers_.end())
+        return;
+
     testIterator( itr ); // will throw if itr is not valid
 
     if (current_marker_ == itr)

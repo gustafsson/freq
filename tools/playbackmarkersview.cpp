@@ -4,7 +4,8 @@ namespace Tools {
 
 PlaybackMarkersView::PlaybackMarkersView(PlaybackMarkersModel* model)
     :
-    model_(model)
+    model_(model),
+    enabled(false)
 {
 }
 

@@ -16,6 +16,10 @@ public:
     typedef std::set<MarkerType> Markers;
     Markers&            markers();
     void                removeMarker( Markers::iterator itr );
+
+    /**
+      Also makes the added marker the current marker.
+      */
     void                addMarker( MarkerType pos );
     Markers::iterator   currentMarker();
     void                setCurrentMaker( Markers::iterator itr );
