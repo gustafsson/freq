@@ -31,7 +31,7 @@ void PlaybackMarkersModel::
 
 
 void PlaybackMarkersModel::
-        addMarker( Signal::IntervalType pos )
+        addMarker( Markers pos )
 {
     std::pair<Markers::iterator, bool> value = markers_.insert( pos );
     current_marker_ = value.first;
@@ -56,15 +56,36 @@ void PlaybackMarkersModel::
 }
 
 
+Markers::iterator PlaybackMarkersModel::
+        findMaker( Markers pos )
+{
+    // The ideal algortihm here would be a binary search, but this method is far from time critical
+    Markers::iterator r = markers_.begin();
+    for (Markers::iterator i = markers_.begin(); i != markers_.end(); ++i)
+    {
+        if (*i < pos)
+            r = i;
+        else
+        {
+            if(*i-pos < pos - *r)
+                r = i;
+            break;
+        }
+    }
+
+    return r;
+}
+
+
 Signal::Interval PlaybackMarkersModel::
-        currentInterval()
+        currentInterval(float FS)
 {
     Signal::Interval I = Signal::Interval::Interval_ALL;
     if (current_marker_ != markers_.end())
     {
-        I.first = *current_marker_;
+        I.first = *current_marker_ * FS;
         if (current_marker_ + 1 != markers_.end())
-            I.last = *(current_marker_ + 1);
+            I.last = *(current_marker_ + 1) * FS;
     }
 
     return I;

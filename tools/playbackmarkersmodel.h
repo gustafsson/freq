@@ -12,13 +12,19 @@ public:
     PlaybackMarkersModel();
 
     // set is an ordered vector
-    typedef std::set<Signal::IntervalType> Markers;
+    typedef float MarkerType;
+    typedef std::set<MarkerType> Markers;
     Markers&            markers();
     void                removeMarker( Markers::iterator itr );
-    void                addMarker( Signal::IntervalType pos );
+    void                addMarker( MarkerType pos );
     Markers::iterator   currentMarker();
     void                setCurrentMaker( Markers::iterator itr );
-    Signal::Interval    currentInterval();
+
+    /**
+      Could return markers().end(), better check for that.
+      */
+    Markers::iterator   findMaker( MarkerType pos );
+    Signal::Interval    currentInterval( float FS );
 
 private:
     Markers::iterator current_marker_;
