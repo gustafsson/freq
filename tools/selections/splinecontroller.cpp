@@ -72,11 +72,19 @@ namespace Tools { namespace Selections
     {
         if (e->button() == stop_button_)
         {
-            setMouseTracking(false);
-            model()->drawing = false;
-            model()->v.pop_back();
+            if (e->modifiers().testFlag(Qt::ControlModifier))
+            {
+                if (!model()->v.empty())
+                    model()->v.pop_back();
+            }
+            else
+            {
+                setMouseTracking(false);
+                model()->drawing = false;
+                model()->v.pop_back();
 
-            selection_controller_->setCurrentSelection( model()->updateFilter() );
+                selection_controller_->setCurrentSelection( model()->updateFilter() );
+            }
         }
         else if (e->button() == selection_button_)
         {
