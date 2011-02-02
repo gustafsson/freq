@@ -5,13 +5,15 @@
 
 #include <QObject>
 
+namespace Sawe { class Project; }
+
 namespace Tools {
 
 class PlaybackMarkersView: public QObject
 {
     Q_OBJECT
 public:
-    PlaybackMarkersView(PlaybackMarkersModel* model);
+    PlaybackMarkersView(PlaybackMarkersModel* model, Sawe::Project* project);
 
     PlaybackMarkersModel* model() { return model_; }
 
@@ -25,6 +27,7 @@ public slots:
 private:
     void drawMarkers();
 
+    Sawe::Project* project_;
     PlaybackMarkersModel* model_;
     bool is_adding_marker_;
     float highlighted_marker_;

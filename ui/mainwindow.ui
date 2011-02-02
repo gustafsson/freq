@@ -288,6 +288,8 @@
    </attribute>
    <addaction name="actionPausePlayBack"/>
    <addaction name="actionPlaySelection"/>
+   <addaction name="actionPlaySection"/>
+   <addaction name="actionPlayEntireSound"/>
    <addaction name="actionStopPlayBack"/>
    <addaction name="actionJumpBackward"/>
    <addaction name="actionJumpForward"/>
@@ -410,6 +412,9 @@
    </property>
   </action>
   <action name="actionPlaySelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset>
      <normalon>:/icons/icons/icon-play.png</normalon>
@@ -649,8 +654,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-lockplayback.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-lockplayback.png</iconset>
+     <normaloff>:/icons/icons/icon-lockplayback.png</normaloff>:/icons/icons/icon-lockplayback.png</iconset>
    </property>
    <property name="text">
     <string>Follow play marker</string>
@@ -1032,30 +1036,22 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-set-mark.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-set-mark.png</iconset>
+     <normaloff>:/icons/icons/icon-set-mark.png</normaloff>:/icons/icons/icon-set-mark.png</iconset>
    </property>
    <property name="text">
     <string>Set playback marker</string>
    </property>
    <property name="toolTip">
-    <string>Set playback marker</string>
+    <string>Set playback markers with left mouse button, remove with right mouse button</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
    </property>
   </action>
   <action name="actionStopPlayBack">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-stop.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-stop.png</iconset>
+     <normaloff>:/icons/icons/icon-stop.png</normaloff>:/icons/icons/icon-stop.png</iconset>
    </property>
    <property name="text">
     <string>Stop playback</string>
@@ -1076,8 +1072,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-paus.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-paus.png</iconset>
+     <normaloff>:/icons/icons/icon-paus.png</normaloff>:/icons/icons/icon-paus.png</iconset>
    </property>
    <property name="text">
     <string>Pause playback</string>
@@ -1090,16 +1085,9 @@
    </property>
   </action>
   <action name="actionJumpForward">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-next-mark.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-next-mark.png</iconset>
+     <normaloff>:/icons/icons/icon-next-mark.png</normaloff>:/icons/icons/icon-next-mark.png</iconset>
    </property>
    <property name="text">
     <string>Jump to next marker</string>
@@ -1112,16 +1100,9 @@
    </property>
   </action>
   <action name="actionJumpBackward">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-prev-mark.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-prev-mark.png</iconset>
+     <normaloff>:/icons/icons/icon-prev-mark.png</normaloff>:/icons/icons/icon-prev-mark.png</iconset>
    </property>
    <property name="text">
     <string>Jump to previous marker</string>
@@ -1531,6 +1512,38 @@
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionPlaySection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/icons/icon-play.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Play current section</string>
+   </property>
+   <property name="toolTip">
+    <string>Play the current section</string>
+   </property>
+  </action>
+  <action name="actionPlayEntireSound">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/icons/icon-play.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Play entire sound starting at current section</string>
+   </property>
+   <property name="toolTip">
+    <string>Play entire sound starting at current section</string>
    </property>
   </action>
  </widget>

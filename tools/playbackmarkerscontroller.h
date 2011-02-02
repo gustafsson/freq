@@ -19,9 +19,13 @@ class PlaybackMarkersController: public QWidget
 public:
     PlaybackMarkersController(PlaybackMarkersView* view, RenderView* render_view);
 
+signals:
+    void enabledChanged(bool enabled);
+
 public slots:
     void enableMarkerTool(bool active);
-    void removeCurrentMarker();
+    void receivePreviousMarker();
+    void receiveNextMarker();
 
 private:
     // Event handlers

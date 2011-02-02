@@ -1,12 +1,17 @@
 #include "playbackmarkersview.h"
+
+#include "sawe/project.h"
+
 #include "glPushContext.h"
+
 #include <boost/foreach.hpp>
 
 namespace Tools {
 
-PlaybackMarkersView::PlaybackMarkersView(PlaybackMarkersModel* model)
+PlaybackMarkersView::PlaybackMarkersView(PlaybackMarkersModel* model, Sawe::Project* project)
     :
     enabled(false),
+    project_(project),
     model_(model),
     is_adding_marker_(false),
     highlighted_marker_(-1)
@@ -49,14 +54,6 @@ void PlaybackMarkersView::
         glVertex3f( m, y, 1 );
         glVertex3f( m, 0, 1 );
 
-        if (m == *model_->currentMarker())
-        {
-            glVertex3f( m, 0, 0 );
-            glVertex3f( m, y, 0 );
-            glVertex3f( m, y, 1 );
-            glVertex3f( m, 0, 1 );
-        }
-
         if ( !is_adding_marker_ && m == highlighted_marker_)
         {
             glVertex3f( m, 0, 0 );
@@ -75,6 +72,34 @@ void PlaybackMarkersView::
         glVertex3f( highlighted_marker_, 0, 1 );
     }
 
+    PlaybackMarkersModel::Markers::iterator itr = model_->currentMarker();
+    float a = *itr, b;
+    itr++;
+    if ( itr != model_->markers().end() )
+        b = *itr;
+    else
+        b = project_->worker.length();
+
+    glVertex3f( a, 0, -.1 );
+    glVertex3f( a, y, -.1 );
+    glVertex3f( a, y, 1.1 );
+    glVertex3f( a, 0, 1.1 );
+
+    glVertex3f( a, 0, -.1 );
+    glVertex3f( a, y, -.1 );
+    glVertex3f( b, 0, -.1 );
+    glVertex3f( b, y, -.1 );
+
+    glVertex3f( a, y, 1.1 );
+    glVertex3f( a, 0, 1.1 );
+    glVertex3f( b, y, 1.1 );
+    glVertex3f( b, 0, 1.1 );
+
+    glVertex3f( b, 0, -.1 );
+    glVertex3f( b, y, -.1 );
+    glVertex3f( b, y, 1.1 );
+    glVertex3f( b, 0, 1.1 );
+
     glEnd();
 
     glLineWidth(1.6f);
@@ -85,12 +110,6 @@ void PlaybackMarkersView::
     {
         glVertex3f( m, y, 0 );
         glVertex3f( m, y, 1 );
-
-        if (m == *model_->currentMarker())
-        {
-            glVertex3f( m, y, 0 );
-            glVertex3f( m, y, 1 );
-        }
 
         if ( !is_adding_marker_ && m == highlighted_marker_)
         {
@@ -105,6 +124,18 @@ void PlaybackMarkersView::
         glVertex3f( highlighted_marker_, y, 0 );
         glVertex3f( highlighted_marker_, y, 1 );
     }
+
+    glVertex3f( a, y, -.1 );
+    glVertex3f( b, y, -.1 );
+
+    glVertex3f( a, y, 1.1 );
+    glVertex3f( b, y, 1.1 );
+
+    glVertex3f( a, y, -.1 );
+    glVertex3f( a, y, 1.1 );
+
+    glVertex3f( b, y, -.1 );
+    glVertex3f( b, y, 1.1 );
 
     glEnd();
     glLineWidth(0.5f);

@@ -36,23 +36,47 @@ void PlaybackMarkersController::
 
 
 void PlaybackMarkersController::
-        removeCurrentMarker()
+        receivePreviousMarker()
 {
-    model()->removeMarker( model()->currentMarker() );
+    PlaybackMarkersModel::Markers::iterator itr = model()->currentMarker();
 
-    render_view_->userinput_update( false );
+    if (itr != model()->markers().begin())
+    {
+        itr--;
+        model()->setCurrentMaker( itr );
+    }
+
+    render_view_->setPosition( *itr, render_view_->model->_qz );
+    render_view_->userinput_update();
+}
+
+
+void PlaybackMarkersController::
+        receiveNextMarker()
+{
+    PlaybackMarkersModel::Markers::iterator itr = model()->currentMarker();
+
+    PlaybackMarkersModel::Markers::iterator next_itr = itr;
+    next_itr++;
+
+    float pos = *next_itr;
+    if (next_itr != model()->markers().end())
+    {
+        model()->setCurrentMaker( next_itr );
+    }
+    else
+    {
+        pos = render_view_->model->project()->worker.length();
+    }
+
+    render_view_->setPosition( pos, render_view_->model->_qz );
+    render_view_->userinput_update();
 }
 
 
 void PlaybackMarkersController::
         mousePressEvent ( QMouseEvent * e )
 {
-    if (e->button() != Qt::LeftButton)
-    {
-        e->setAccepted( false );
-        return;
-    }
-
     e->accept();
 
     RenderView &r = *render_view_;
@@ -65,8 +89,11 @@ void PlaybackMarkersController::
     PlaybackMarkersModel::Markers::iterator itr = model()->findMaker( click.time );
     if (itr == model()->markers().end())
     {
-        // No markers created, create one
-        model()->addMarker( click.time );
+        if (e->button() == Qt::LeftButton)
+        {
+            // No markers created, create one
+            model()->addMarker( click.time );
+        }
     }
     else
     {
@@ -79,11 +106,17 @@ void PlaybackMarkersController::
         if (distance < vicinity_)
         {
             model()->setCurrentMaker( itr );
+
+            if (e->button() == Qt::RightButton)
+                model()->removeMarker( model()->currentMarker() );
         }
         else
         {
-            // Click in-between markers, add a new marker
-            model()->addMarker( click.time );
+            if (e->button() == Qt::LeftButton)
+            {
+                // Click in-between markers, add a new marker
+                model()->addMarker( click.time );
+            }
         }
     }
 
@@ -133,6 +166,7 @@ void PlaybackMarkersController::
             view_->setHighlightMarker( -1, false );
 
         view_->enabled = isEnabled();
+        emit enabledChanged(isEnabled());
     }
 }
 
@@ -145,6 +179,10 @@ void PlaybackMarkersController::
 
     // Connect enabled/disable actions,
     connect(ui->actionSetPlayMarker, SIGNAL(toggled(bool)), SLOT(enableMarkerTool(bool)));
+    connect(this, SIGNAL(enabledChanged(bool)), ui->actionSetPlayMarker, SLOT(setChecked(bool)));
+    connect(ui->actionJumpForward, SIGNAL(triggered()), SLOT(receiveNextMarker()));
+    connect(ui->actionJumpBackward, SIGNAL(triggered()), SLOT(receivePreviousMarker()));
+
 
     // Paint when render view paints
     connect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));

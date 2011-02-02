@@ -7,7 +7,7 @@ namespace Tools {
 PlaybackMarkersModel::
         PlaybackMarkersModel()
 {
-    current_marker_ = markers_.end();
+    addMarker( 0 );
 }
 
 
@@ -21,13 +21,13 @@ PlaybackMarkersModel::Markers& PlaybackMarkersModel::
 void PlaybackMarkersModel::
         removeMarker( Markers::iterator itr )
 {
-    if (itr == markers_.end())
+    if (itr == markers_.end() || itr == markers_.begin())
         return;
 
     testIterator( itr ); // will throw if itr is not valid
 
     if (current_marker_ == itr)
-        current_marker_++;
+        current_marker_--;
 
     markers_.erase( itr );
 }
@@ -38,6 +38,7 @@ void PlaybackMarkersModel::
 {
     std::pair<Markers::iterator, bool> value = markers_.insert( pos );
     current_marker_ = value.first;
+    current_marker_--;
     // if value.second is false the element did already exist.
     // silently don't add a duplicate
 }

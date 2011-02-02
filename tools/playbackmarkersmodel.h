@@ -18,7 +18,7 @@ public:
     void                removeMarker( Markers::iterator itr );
 
     /**
-      Also makes the added marker the current marker.
+      Also makes the marker previous to the added marker the new current marker.
       */
     void                addMarker( MarkerType pos );
     Markers::iterator   currentMarker();
