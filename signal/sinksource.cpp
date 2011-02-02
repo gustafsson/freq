@@ -264,6 +264,8 @@ pBuffer SinkSource::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
+    BOOST_ASSERT( !_cache.empty() );
+
     if (_cache.empty())
         return pBuffer();
     return _cache.front();

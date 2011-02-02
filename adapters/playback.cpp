@@ -105,6 +105,11 @@ float Playback::
     if (_data.empty())
         return 0.f;
 
+    if (isPaused())
+    {
+        return _playback_itr / sample_rate();
+    }
+
     // streamPlayback->time() doesn't seem to work (ubuntu 10.04)
     // float dt = streamPlayback?streamPlayback->time():0;
     
@@ -173,12 +178,10 @@ void Playback::
 
     if (streamPlayback)
     {
-        if (streamPlayback->isStopped()) {
-            // start over
-            streamPlayback->start();
-        }
         if (streamPlayback->isActive()) {
             TIME_PLAYBACK TaskInfo("Is playing");
+        } else {
+            TIME_PLAYBACK TaskInfo("Is paused");
         }
         return;
     }
@@ -195,6 +198,8 @@ void Playback::
         // streamPlayback->stop will invoke a join with readBuffer
         if (!streamPlayback->isStopped())
             streamPlayback->stop();
+
+        streamPlayback.reset();
     }
 
     _data.clear();
@@ -272,14 +277,28 @@ void Playback::
 bool Playback::
         isStopped()
 {
-    return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
+    //return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
+    return streamPlayback ? !streamPlayback->isActive() && !isPaused() : true;
+}
+
+
+bool Playback::
+        isPaused()
+{
+    return streamPlayback ? streamPlayback->isStopped() && !hasReachedEnd(): false;
 }
 
 
 bool Playback::
         hasReachedEnd()
 {
-    return (_data.first_buffer()->sample_offset + _data.number_of_samples())/sample_rate() < time();
+    if (_data.empty())
+        return false;
+
+    if (!_data.fetch_invalid_samples().empty())
+        return false;
+
+    return _playback_itr > _data.first_buffer()->sample_offset + _data.number_of_samples();
 }
 
 
@@ -335,6 +354,32 @@ bool Playback::
 
 
 void Playback::
+        pausePlayback(bool pause)
+{
+    if (!streamPlayback)
+        return;
+
+    if (pause)
+    {
+        _playback_itr = time()*sample_rate();
+
+        if (streamPlayback->isActive() && !streamPlayback->isStopped())
+            streamPlayback->stop();
+    }
+    else
+    {
+        if (!isPaused() || _data.empty())
+            return;
+
+        _startPlay_timestamp = microsec_clock::local_time();
+        _startPlay_timestamp -= time_duration(0, 0, 0, (_playback_itr-_data.first_buffer()->sample_offset)/sample_rate()*time_duration::ticks_per_second() );
+
+        streamPlayback->start();
+    }
+}
+
+
+void Playback::
         restart_playback()
 {
     if (streamPlayback)
@@ -370,7 +415,7 @@ int Playback::
     float **out = static_cast<float **>(outputBuffer);
     float *buffer = out[0];
 
-    if (_playback_itr == _data.first_buffer()->sample_offset) {
+    if (!_data.empty() && _playback_itr == _data.first_buffer()->sample_offset) {
         _startPlay_timestamp = microsec_clock::local_time();
     }
 

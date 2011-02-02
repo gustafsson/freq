@@ -31,7 +31,7 @@ PlaybackView::
 void PlaybackView::
         update()
 {
-    emit update_view();
+    emit update_view(false);
     Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
 }
 
@@ -58,7 +58,12 @@ void PlaybackView::
         return;
     }
 
-    // Playback has stopped
+    // Playback has recently stopped stopped
+    if (model->playback()->isStopped() && model->playback()->hasReachedEnd()) {
+        emit playback_stopped();
+    }
+
+    // Playback has stopped/or hasn't started
     if (model->playback()->isStopped()) {
         return;
     }
@@ -131,7 +136,7 @@ bool PlaybackView::
 {
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
             model->selection->current_selection().get() );
-    if (!e)
+    if (!e || model->getPostSink()->filter() != model->selection->current_selection())
         return false;
 
     glDepthMask(false);

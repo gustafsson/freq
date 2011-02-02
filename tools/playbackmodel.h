@@ -7,16 +7,18 @@
 
 #include <string>
 
+namespace Sawe { class Project; }
 namespace Adapters { class Playback; }
 
 namespace Tools
 {
     class SelectionModel;
+    class PlaybackMarkersModel;
 
     class PlaybackModel
     {
     public:
-        PlaybackModel( SelectionModel* selection );
+        PlaybackModel(Sawe::Project* project);
 
         Signal::PostSink* getPostSink();
         Signal::pWorkerCallback postsinkCallback;
@@ -25,6 +27,8 @@ namespace Tools
         std::string selection_filename;
 
         SelectionModel* selection;
+        PlaybackMarkersModel* markers;
+
         Signal::pOperation adapter_playback;
 
         Adapters::Playback* playback();
