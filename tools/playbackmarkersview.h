@@ -16,20 +16,18 @@ public:
     PlaybackMarkersModel* model() { return model_; }
 
     bool enabled;
-    void setAddingMarker( float t ) { adding_marker_t_; }
-    void setHighlightMarker( Markers::iterator highlighted_marker ) { highlighted_marker_ = highlighted_marker; }
+    void setHighlightMarker( float t, bool is_adding_marker );
 
 public slots:
     /// Connected in EllipseController
     virtual void draw();
 
 private:
-    void drawAddingMarker();
     void drawMarkers();
 
     PlaybackMarkersModel* model_;
-    float adding_marker_t_;
-    Markers::iterator highlighted_marker_;
+    bool is_adding_marker_;
+    float highlighted_marker_;
 };
 
 } // namespace Tools

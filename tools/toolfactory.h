@@ -117,6 +117,10 @@ namespace Tools
 
         QPointer<class AboutDialog> _about_dialog;
 
+        QScopedPointer<class PlaybackMarkersModel> _playbackmarkers_model;
+        QScopedPointer<class PlaybackMarkersView> _playbackmarkers_view;
+        QPointer<class PlaybackMarkersController> _playbackmarkers_controller;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

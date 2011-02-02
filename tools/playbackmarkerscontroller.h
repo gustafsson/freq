@@ -5,6 +5,10 @@
 
 #include <QWidget>
 
+namespace Sawe {
+        class Project;
+}
+
 namespace Tools {
 
 class RenderView;
@@ -27,7 +31,7 @@ private:
 
     void setupGui();
 
-    float vicinity; // in pixels
+    float vicinity_; // in pixels
     RenderView* render_view_;
     PlaybackMarkersView* view_;
     PlaybackMarkersModel* model() { return view_->model(); }

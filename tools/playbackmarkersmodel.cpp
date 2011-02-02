@@ -11,7 +11,7 @@ PlaybackMarkersModel::
 }
 
 
-Markers& PlaybackMarkersModel::
+PlaybackMarkersModel::Markers& PlaybackMarkersModel::
         markers()
 {
     return markers_;
@@ -34,7 +34,7 @@ void PlaybackMarkersModel::
 
 
 void PlaybackMarkersModel::
-        addMarker( Markers pos )
+        addMarker( MarkerType pos )
 {
     std::pair<Markers::iterator, bool> value = markers_.insert( pos );
     current_marker_ = value.first;
@@ -43,7 +43,7 @@ void PlaybackMarkersModel::
 }
 
 
-Markers::iterator PlaybackMarkersModel::
+PlaybackMarkersModel::Markers::iterator PlaybackMarkersModel::
         currentMarker()
 {
     return current_marker_;
@@ -59,8 +59,8 @@ void PlaybackMarkersModel::
 }
 
 
-Markers::iterator PlaybackMarkersModel::
-        findMaker( Markers pos )
+PlaybackMarkersModel::Markers::iterator PlaybackMarkersModel::
+        findMaker( MarkerType pos )
 {
     // The ideal algortihm here would be a binary search, but this method is far from time critical
     Markers::iterator r = markers_.begin();
@@ -86,9 +86,11 @@ Signal::Interval PlaybackMarkersModel::
     Signal::Interval I = Signal::Interval::Interval_ALL;
     if (current_marker_ != markers_.end())
     {
+        Markers::iterator next_marker = current_marker_;
+        next_marker++;
         I.first = *current_marker_ * FS;
-        if (current_marker_ + 1 != markers_.end())
-            I.last = *(current_marker_ + 1) * FS;
+        if (next_marker != markers_.end())
+            I.last = *next_marker * FS;
     }
 
     return I;

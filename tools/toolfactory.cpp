@@ -20,6 +20,7 @@
 #include "graphcontroller.h"
 #include "tooltipcontroller.h"
 #include "aboutdialog.h"
+#include "playbackmarkerscontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -77,6 +78,11 @@ ToolFactory::
             dynamic_cast<CommentController*>(_comment_controller.data()) );
 
     _about_dialog = new AboutDialog( p );
+
+    _playbackmarkers_model.reset( new PlaybackMarkersModel() );
+    _playbackmarkers_view.reset( new PlaybackMarkersView( _playbackmarkers_model.data() ));
+    _playbackmarkers_controller = new PlaybackMarkersController(
+            _playbackmarkers_view.data(), _render_view );
 }
 
 

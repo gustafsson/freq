@@ -9,9 +9,10 @@
 
 namespace Tools {
 
-PlaybackMarkersController::PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view )
+PlaybackMarkersController::
+        PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view )
     :
-    state_(Inactive),
+    vicinity_( 10 ),
     render_view_(render_view),
     view_(view)
 {
@@ -26,7 +27,7 @@ void PlaybackMarkersController::
         enableMarkerTool(bool active)
 {
     if (active)
-        _view->toolSelector()->setCurrentTool( this, active );
+        render_view_->toolSelector()->setCurrentTool( this, active );
 
     setMouseTracking(active);
 
@@ -44,47 +45,47 @@ void PlaybackMarkersController::
 
 
 void PlaybackMarkersController::
-        selectCurrentMarker(bool active)
-{
-    if (active)
-        _view->toolSelector()->setCurrentTool( this, active );
-
-    render_view_->userinput_update();
-}
-
-
-void PlaybackMarkersController::
         mousePressEvent ( QMouseEvent * e )
 {
-    Tools::RenderView &r = *selection_controller_->render_view();
+    if (e->button() != Qt::LeftButton)
+    {
+        e->setAccepted( false );
+        return;
+    }
+
+    e->accept();
+
+    RenderView &r = *render_view_;
     bool success;
     Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
     if (!success)
         // Meaningless click, ignore
         return;
 
-    Markers::iterator itr = model()->findMaker( click.time );
+    PlaybackMarkersModel::Markers::iterator itr = model()->findMaker( click.time );
     if (itr == model()->markers().end())
     {
         // No markers created, create one
         model()->addMarker( click.time );
-        return;
     }
-
-    // Find out the distance to the nearest marker.
-    Heightmap::Position marker_pos( *itr, click.scale );
-    QPointF pt = r.getScreenPos( marker_pos );
-
-    pt -= e->posF();
-    float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );
-    if (distance < vicinity)
+    else
     {
-        model()->setCurrentMaker( itr );
-        return;
-    }
+        // Find out the distance to the nearest marker.
+        Heightmap::Position marker_pos( *itr, click.scale );
+        QPointF pt = r.getScreenPos( marker_pos, 0 );
 
-    // Click in-between markers, add a new marker
-    model()->addMarker( click.time );
+        pt -= e->posF();
+        float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );
+        if (distance < vicinity_)
+        {
+            model()->setCurrentMaker( itr );
+        }
+        else
+        {
+            // Click in-between markers, add a new marker
+            model()->addMarker( click.time );
+        }
+    }
 
     render_view_->userinput_update();
 }
@@ -93,29 +94,30 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    Tools::RenderView &r = *selection_controller_->render_view();
+    Tools::RenderView &r = *render_view_;
     bool success;
     Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
     if (!success)
         return;
 
-    Markers::iterator itr = model()->findMaker( click.time );
+    PlaybackMarkersModel::Markers::iterator itr = model()->findMaker( click.time );
     if (itr == model()->markers().end())
     {
         // No markers created
-        return;
+        view_->setHighlightMarker( click.time, true );
     }
-
-    // Find out the distance to the nearest marker.
-    Heightmap::Position marker_pos( *itr, click.scale );
-    QPointF pt = r.getScreenPos( marker_pos );
-
-    pt -= e->posF();
-    float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );
-    if (distance < vicinity)
+    else
     {
-        view_->setHighlightMarker( itr );
-        return;
+        // Find out the distance to the nearest marker.
+        Heightmap::Position marker_pos( *itr, click.scale );
+        QPointF pt = r.getScreenPos( marker_pos, 0 );
+
+        pt -= e->posF();
+        float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );
+        if (distance < vicinity_)
+            view_->setHighlightMarker( *itr, false );
+        else
+            view_->setHighlightMarker( click.time, true );
     }
 
     render_view_->userinput_update();
@@ -123,12 +125,12 @@ void PlaybackMarkersController::
 
 
 void PlaybackMarkersController::
-        changeEvent(QEvent *)
+        changeEvent(QEvent *event)
 {
     if (event->type() & QEvent::EnabledChange)
     {
         if (!isEnabled())
-            view_->setAddingMarker( -1 );
+            view_->setHighlightMarker( -1, false );
 
         view_->enabled = isEnabled();
     }
@@ -138,7 +140,7 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         setupGui()
 {
-    Ui::SaweMainWindow* main = selection_controller_->model()->project()->mainWindow();
+    Ui::SaweMainWindow* main = render_view_->model->project()->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
     // Connect enabled/disable actions,
