@@ -782,8 +782,8 @@ void RenderView::
         cacheCount = model->collections[0]->cacheCount();
         for (unsigned i=1; i<N; ++i)
         {
-            BOOST_ASSERT( sumsize == model->collections[i]->cacheByteSize() );
-            BOOST_ASSERT( cacheCount == model->collections[i]->cacheCount() );
+            TaskLogIfFalse( sumsize == model->collections[i]->cacheByteSize() );
+            TaskLogIfFalse( cacheCount == model->collections[i]->cacheCount() );
         }
     }
 
