@@ -19,7 +19,8 @@ namespace Tools
         bool follow_play_marker;
 
     signals:
-        void update_view();
+        void update_view(bool);
+        void playback_stopped();
 
     public slots:
         void update();

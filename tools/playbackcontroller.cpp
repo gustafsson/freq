@@ -1,9 +1,12 @@
 #include "playbackcontroller.h"
 
+// Tools
 #include "playbackview.h"
 #include "playbackmodel.h"
 #include "selectionmodel.h"
 #include "renderview.h"
+#include "playbackmarkersmodel.h"
+#include "support/operation-composite.h"
 
 // Sonic AWE
 #include "ui/mainwindow.h"
@@ -21,24 +24,30 @@ namespace Tools
 PlaybackController::
         PlaybackController( Sawe::Project* project, PlaybackView* view, RenderView* render_view )
             :
-            _view(view)
+            _view(view),
+            project_( project ),
+            ui_items_( project_->mainWindow()->getItems() )
 {
-    setupGui( project, render_view );
+    setupGui( render_view );
 }
 
 
 void PlaybackController::
-        setupGui( Sawe::Project* project, RenderView* render_view )
+        setupGui( RenderView* render_view )
 {
-    Ui::MainWindow* ui = project->mainWindow()->getItems();
-
     // User interface buttons
-    connect(ui->actionPlaySelection, SIGNAL(triggered()), SLOT(receivePlaySound()));
-    connect(ui->actionFollowPlayMarker, SIGNAL(toggled(bool)), SLOT(receiveFollowPlayMarker(bool)));
+    connect(ui_items_->actionPlaySelection, SIGNAL(toggled(bool)), SLOT(receivePlaySelection(bool)));
+    connect(ui_items_->actionPlaySection, SIGNAL(toggled(bool)), SLOT(receivePlaySection(bool)));
+    connect(ui_items_->actionPlayEntireSound, SIGNAL(toggled(bool)), SLOT(receivePlayEntireSound(bool)));
+
+    connect(ui_items_->actionPausePlayBack, SIGNAL(toggled(bool)), SLOT(receivePause(bool)));
+    connect(ui_items_->actionStopPlayBack, SIGNAL(triggered()), SLOT(receiveStop()));
+    connect(ui_items_->actionFollowPlayMarker, SIGNAL(toggled(bool)), SLOT(receiveFollowPlayMarker(bool)));
 
     // Make RenderView keep on rendering (with interactive framerate) as long
     // as the playback marker moves
-    connect(_view, SIGNAL(update_view()), render_view, SLOT(userinput_update()));
+    connect(_view, SIGNAL(update_view(bool)), render_view, SLOT(userinput_update(bool)));
+    connect(_view, SIGNAL(playback_stopped()), SLOT(receiveStop()));
 
     // If playback is active, draw the playback marker in PlaybackView whenever
     // RenderView paints.
@@ -49,24 +58,93 @@ void PlaybackController::
 
 
 void PlaybackController::
-        receivePlaySound()
+        receivePlaySelection( bool active )
 {
+    if (!active)
+    {
+        receiveStop();
+        return;
+    }
+
     TaskTimer tt("Initiating playback of selection");
 
+    ui_items_->actionPlaySection->setChecked( false );
+    ui_items_->actionPlayEntireSound->setChecked( false );
+    ui_items_->actionPausePlayBack->setChecked( false );
+    ui_items_->actionPlaySelection->setChecked( true );
 
-    Signal::PostSink* postsink_operations = _view->model->getPostSink();
     Signal::pOperation filter = _view->model->selection->current_selection();
 
-    // TODO define selections by a selection structure. Currently selections
-    // are defined from the first sampels that is non-zero affected by a
-    // filter, to the last non-zero affected sample.
+    startPlayback( filter );
+}
+
+
+void PlaybackController::
+        receivePlaySection( bool active )
+{
+    if (!active)
+    {
+        receiveStop();
+        return;
+    }
+
+    TaskTimer tt("Initiating playback of section");
+
+    ui_items_->actionPlaySelection->setChecked( false );
+    ui_items_->actionPlayEntireSound->setChecked( false );
+    ui_items_->actionPausePlayBack->setChecked( false );
+    ui_items_->actionPlaySection->setChecked( true );
+
+    // startPlayback will insert it in the system so that the source is properly set
+    // here we just need to create a filter that does the right thing to an arbitrary source
+    // and responds properly to zeroed_samples()
+    Signal::pOperation filter( new Support::OperationOtherSilent(
+            Signal::pOperation(),
+            _view->model->markers->currentInterval( project_->worker.source()->sample_rate() ) ));
+
+    startPlayback( filter );
+}
+
+
+void PlaybackController::
+        receivePlayEntireSound( bool active )
+{
+    if (!active)
+    {
+        receiveStop();
+        return;
+    }
+
+    TaskTimer tt("Initiating playback of entire sound");
+
+    ui_items_->actionPlaySelection->setChecked( false );
+    ui_items_->actionPlaySection->setChecked( false );
+    ui_items_->actionPausePlayBack->setChecked( false );
+    ui_items_->actionPlayEntireSound->setChecked( true );
+
+    // startPlayback will insert it in the system so that the source is properly set
+    // here we just need to create a filter that does the right thing to an arbitrary source
+    // and responds properly to zeroed_samples(), that is; a dummy Operation that doesn't do anything
+    // and responds with no samples to zeroed_samples().
+    Signal::pOperation filter( new Signal::Operation(Signal::pOperation()) );
+
+    startPlayback( filter );
+}
+
+
+void PlaybackController::
+        startPlayback ( Signal::pOperation filter )
+{
     if (!filter) {
-        tt.info("No filter, no selection");
+        TaskInfo("No filter, no selection");
         return; // No filter, no selection...
     }
 
-    tt.info("Selection is of type %s", vartype(*filter.get()).c_str());
+    ui_items_->actionPausePlayBack->setEnabled( true );
 
+    TaskInfo("Selection is of type %s", vartype(*filter.get()).c_str());
+
+    Signal::PostSink* postsink_operations = _view->model->getPostSink();
     if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
         model()->adapter_playback.reset();
@@ -81,7 +159,9 @@ void PlaybackController::
         postsink_operations->sinks( sinks );
         postsink_operations->filter( filter );
 
-        postsink_operations->invalidate_samples( ~filter->zeroed_samples_recursive() );
+        Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
+        expected_data &= Signal::Interval(0, project_->worker.source()->number_of_samples());
+        postsink_operations->invalidate_samples( expected_data );
     }
     else
     {
@@ -89,6 +169,22 @@ void PlaybackController::
     }
 
     _view->update();
+}
+
+
+void PlaybackController::
+        receivePause( bool active )
+{
+    if (active)
+    {
+        if (!ui_items_->actionPlaySelection->isChecked() &&
+            !ui_items_->actionPlaySection->isChecked() &&
+            !ui_items_->actionPlayEntireSound->isChecked())
+        {
+            ui_items_->actionPausePlayBack->setChecked( false );
+        } else
+            model()->playback()->pausePlayback( active );
+    }
 }
 
 
@@ -104,11 +200,25 @@ void PlaybackController::
 void PlaybackController::
         onSelectionChanged()
 {
+    if (ui_items_->actionPlaySelection->isChecked())
+        receiveStop();
+}
+
+
+void PlaybackController::
+        receiveStop()
+{
     if (model()->playback())
         model()->playback()->reset();
     std::vector<Signal::pOperation> empty;
     model()->getPostSink()->sinks( empty );
     model()->getPostSink()->filter( Signal::pOperation() );
+
+    ui_items_->actionPlaySelection->setChecked( false );
+    ui_items_->actionPlaySection->setChecked( false );
+    ui_items_->actionPlayEntireSound->setChecked( false );
+    ui_items_->actionPausePlayBack->setChecked( false );
+    ui_items_->actionPausePlayBack->setEnabled( false );
 }
 
 

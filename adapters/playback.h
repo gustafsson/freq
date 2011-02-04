@@ -36,6 +36,8 @@ public:
     bool        isStopped();
     bool        hasReachedEnd();
     bool        isUnderfed();
+    bool        isPaused();
+    void        pausePlayback(bool pause);
     float       sample_rate() { return _data.sample_rate(); }
 
     void        restart_playback();
