@@ -24,6 +24,8 @@ namespace Sawe {
 
 namespace Tools {
 
+namespace Support { class ToolSelector; };
+
 class RenderView;
 
 class TimelineView:
@@ -38,14 +40,21 @@ public:
 
     void userinput_update();
 
+    Support::ToolSelector* tool_selector;
+
 signals:
     void hideMe();
+
+public slots:
+    void paintInGraphicsView();
 
 protected:
     /// @overload QGLWidget::initializeGL()
     virtual void initializeGL();
+    void initializeTimeline();
 
     /// @overload QGLWidget::resizeGL()
+    void resizeGL( int x, int y, int width, int height );
     virtual void resizeGL( int width, int height );
 
     /// @overload QGLWidget::paintGL()

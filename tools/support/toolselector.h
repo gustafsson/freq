@@ -32,6 +32,9 @@ namespace Tools {
         /// @see setCurrentTool
         QWidget* currentTool();
 
+        /// @see ToolSelector(QWidget*)
+        QWidget* parentTool();
+
 
         /**
           Makes tool a child of _render_view, disables any previous tool.

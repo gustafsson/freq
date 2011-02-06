@@ -37,6 +37,7 @@ namespace Tools {
 TimelineView::
         TimelineView( Sawe::Project* p, RenderView* render_view)
 :   QGLWidget( 0, render_view->glwidget, Qt::WindowFlags(0) ),
+    tool_selector( 0 ),
     _xscale( 1 ),
     _xoffs( 0 ),
     _barHeight( 0.1f ),
@@ -96,6 +97,19 @@ void TimelineView::
 
 
 void TimelineView::
+        paintInGraphicsView()
+{
+    initializeTimeline();
+
+    BOOST_ASSERT( tool_selector );
+    QRect rect = tool_selector->parentTool()->geometry();
+    resizeGL( 0, 0, rect.width(), rect.height() );
+    paintEventTime = boost::posix_time::microsec_clock::local_time();
+    paintGL();
+}
+
+
+void TimelineView::
         initializeGL()
 {
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
@@ -119,6 +133,13 @@ void TimelineView::
     glDisable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);
 
+    initializeTimeline();
+}
+
+
+void TimelineView::
+        initializeTimeline()
+{
     if (!_timeline_bar_fbo) _timeline_bar_fbo.reset( new GlFrameBuffer );
     if (!_timeline_fbo) _timeline_fbo.reset( new GlFrameBuffer );
 }
@@ -127,9 +148,18 @@ void TimelineView::
 void TimelineView::
         resizeGL( int width, int height )
 {
+    resizeGL( 0, 0, width, height );
+
+    userinput_update();
+}
+
+
+void TimelineView::
+        resizeGL( int x, int y, int width, int height )
+{
     height = height?height:1;
 
-    glViewport( 0, 0, _width = width, _height = height );
+    glViewport( x, y, _width = width, _height = height );
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -139,8 +169,6 @@ void TimelineView::
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    userinput_update();
 }
 
 
@@ -162,7 +190,11 @@ void TimelineView::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if (!tool_selector)
+        {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+
         glPushMatrixContext mc(GL_MODELVIEW);
 
         { // Render

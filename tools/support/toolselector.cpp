@@ -30,14 +30,22 @@ QWidget* ToolSelector::
     return _current_tool;
 }
 
-class CustomGraphicsProxy: public QGraphicsProxyWidget
-{
-public:
-    CustomGraphicsProxy() {}
 
-    void paint(QPainter *, const QStyleOptionGraphicsItem *, QWidget *)
-    {}
-};
+QWidget* ToolSelector::
+        parentTool()
+{
+    return _parent_tool;
+}
+
+
+//class CustomGraphicsProxy: public QGraphicsProxyWidget
+//{
+//public:
+//    CustomGraphicsProxy() {}
+
+//    void paint(QPainter *, const QStyleOptionGraphicsItem *, QWidget *)
+//    {}
+//};
 
 static void printChildren(QObject* o)
 {

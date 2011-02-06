@@ -39,6 +39,7 @@ GraphicsView::
     // Make all child widgets occupy the entire area
     layout_widget_->setLayout(new QVBoxLayout());
     layout_widget_->layout()->setMargin(0);
+    layout_widget_->layout()->setSpacing(0);
 
     toolProxy->setWidget( layout_widget_ );
     toolProxy->setWindowFlags( Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );

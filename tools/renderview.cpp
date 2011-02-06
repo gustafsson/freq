@@ -192,7 +192,18 @@ void RenderView::
 		}
 
         setStates();
-        resizeGL(_last_width, _last_height);
+
+        {
+            TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+
+        {
+            TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
+            emit prePaint();
+        }
+
+        resizeGL(_last_width, _last_height );
 
         paintGL();
 
@@ -752,7 +763,10 @@ void RenderView::
 {
     height = height?height:1;
 
-    glViewport( 0, 0, (GLint)width, (GLint)height );
+    QRect rect = tool_selector->parentTool()->geometry();
+    glViewport( rect.x(), height - rect.y() - rect.height(), rect.width(), rect.height() );
+    height = rect.height();
+    width = rect.width();
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -824,20 +838,11 @@ void RenderView::
             a(b);
         }
 
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
 
     // Set up camera position
     _last_length = worker.source()->length();
     {   
 		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
-
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
-			emit prePaint();
-		}
 
         setupCamera();
 
@@ -878,7 +883,7 @@ void RenderView::
         model->renderer->drawAxes( _last_length ); // 4.7 ms
 
         if (wasWorking)
-            Support::DrawWorking::drawWorking( _last_width, _last_height );
+            Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
     }
 
     {   // Find things to work on (ie playback and file output)
