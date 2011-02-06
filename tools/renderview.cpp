@@ -59,6 +59,8 @@ RenderView::
             graphicsview(0),
             _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
+            _last_x(0),
+            _last_y(0),
             _try_gc(0),
             _update_timer(0)
 {
@@ -247,12 +249,14 @@ void RenderView::
 
 
 float RenderView::
-        getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation )
+        getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation, bool* is_valid_value )
 {
 #ifdef _MSC_VER
     // getHeightmapValue is tremendously slow in windows for some reason
     //return 0;
 #endif
+    if (is_valid_value)
+        *is_valid_value = false;
 
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
         return 0;
@@ -278,6 +282,18 @@ float RenderView::
     Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
     if (!block)
         return 0;
+    if (is_valid_value)
+    {
+        Signal::IntervalType s = pos.time * ref->sample_rate();
+        Signal::Intervals I = Signal::Intervals(s, s+1);
+        I -= block->valid_samples;
+        I &= ref->getInterval();
+        if (I.empty())
+        {
+            *is_valid_value = true;
+        }
+    }
+
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
 
     float* data = blockData->getCpuMemory();
@@ -387,8 +403,7 @@ QPointF RenderView::
         *dist = d%projectionNormal;
     }
 
-    return QPointF( winX, _last_height-1-winY );
-    //return QPointF( winX, winY );
+    return QPointF( winX -_last_x, _last_height-1 - winY - _last_y);
 }
 
 
@@ -400,7 +415,8 @@ Heightmap::Position RenderView::
 
     TaskTimer tt("RenderView::getPlanePos Newton raphson");
 
-    pos.setY( _last_height - 1 - pos.y() );
+    pos.setX( pos.x() + _last_x );
+    pos.setY( _last_height - 1 - pos.y() + _last_y );
 
     GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
@@ -452,7 +468,8 @@ Heightmap::Position RenderView::
 Heightmap::Position RenderView::
         getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
-    pos.setY( _last_height - 1 - pos.y() );
+    pos.setX( pos.x() + _last_x );
+    pos.setY( _last_height - 1 - pos.y() + _last_y );
 
     GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
@@ -491,7 +508,7 @@ Heightmap::Position RenderView::
     if (success) *success=true;
 
     float minAngle = 3;
-    if (0) if(success)
+    if(success)
     {
         if( s < 0)
             if (success) *success=false;
@@ -518,8 +535,6 @@ void RenderView::
                 model->project()->worker.source()->root());
 
     TIME_PAINTGL CudaException_CHECK_ERROR();
-
-    glEnable( GL_CULL_FACE );
 
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
@@ -595,7 +610,6 @@ void RenderView::
     TIME_PAINTGL CudaException_CHECK_ERROR();
     TIME_PAINTGL GlException_CHECK_ERROR();
 
-    glDisable( GL_CULL_FACE );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     TIME_PAINTGL TaskInfo("Drew %u*%u block%s", 
@@ -621,7 +635,9 @@ void RenderView::
         fs->set_channel( i );
     glDisable(GL_BLEND);
     glEnable(GL_LIGHTING);
+    glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     model->renderer->draw( yscale ); // 0.6 ms
+    glDisable( GL_CULL_FACE );
     glDisable(GL_LIGHTING);
     glEnable(GL_BLEND);
 }
@@ -643,8 +659,7 @@ void RenderView::
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glDisable( GL_CULL_FACE ); // enabled only while drawing collections
-    glFrontFace( GL_CCW );
+    glFrontFace( model->renderer->left_handed_axes ? GL_CCW : GL_CW );
     glCullFace( GL_BACK );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -700,7 +715,6 @@ void RenderView::
     //glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
     glDisable(GL_LIGHTING);
     //glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_TEXTURE_2D);
@@ -769,6 +783,8 @@ void RenderView::
 
     QRect rect = tool_selector->parentTool()->geometry();
     glViewport( rect.x(), height - rect.y() - rect.height(), rect.width(), rect.height() );
+    _last_x = rect.x();
+    _last_y = rect.y();
     height = rect.height();
     width = rect.width();
 
@@ -1055,7 +1071,12 @@ void RenderView::
     glRotatef( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( model->_rz, 0, 0, 1 );
 
-    glScalef(-model->xscale, 1, 5);
+    if (model->renderer->left_handed_axes)
+        glScalef(-1, 1, 1);
+    else
+        glRotatef(-90,0,1,0);
+
+    glScalef(model->xscale, 1, 5);
 
     glTranslatef( -model->_qx, -model->_qy, -model->_qz );
 

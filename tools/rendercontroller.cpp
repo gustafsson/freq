@@ -157,6 +157,19 @@ void RenderController::
 
 
 void RenderController::
+        receiveToggleOrientation(bool value)
+{
+    model()->renderer->left_handed_axes = !value;
+
+    view->graphicsview->setLayoutDirection( value
+                                            ? QBoxLayout::RightToLeft
+                                            : QBoxLayout::TopToBottom );
+
+    view->userinput_update();
+}
+
+
+void RenderController::
         receiveTogglePiano(bool value)
 {
     model()->renderer->draw_piano = value;
@@ -337,6 +350,9 @@ void RenderController::
     // QAction *actionSet_heightlines
     toolbar_render->addAction(ui->actionSet_heightlines);
     connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
+
+    toolbar_render->addAction(ui->actionToggleOrientation);
+    connect(ui->actionToggleOrientation, SIGNAL(toggled(bool)), SLOT(receiveToggleOrientation(bool)));
 
     // ComboBoxAction* transform
     {   transform = new ComboBoxAction();

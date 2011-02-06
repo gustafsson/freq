@@ -32,6 +32,7 @@ namespace Tools
 
         // Toggle Buttons
         void receiveToogleHeightlines(bool);
+        void receiveToggleOrientation(bool);
 
         // ComboBoxAction hzmarker
         void receiveTogglePiano(bool);

@@ -11,6 +11,7 @@
 
 // Qt
 #include <QGLWidget>
+#include <QBoxLayout>
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -47,6 +48,7 @@ signals:
 
 public slots:
     void paintInGraphicsView();
+    void layoutChanged( QBoxLayout::Direction direction );
 
 protected:
     /// @overload QGLWidget::initializeGL()
@@ -83,6 +85,7 @@ private:
 
     boost::scoped_ptr<GlFrameBuffer> _timeline_fbo;
     boost::scoped_ptr<GlFrameBuffer> _timeline_bar_fbo;
+    bool _vertical;
 };
 
 } // namespace Tools

@@ -37,7 +37,7 @@ GraphicsView::
     layout_widget_ = new QWidget();
 
     // Make all child widgets occupy the entire area
-    layout_widget_->setLayout(new QVBoxLayout());
+    layout_widget_->setLayout(new QBoxLayout(QBoxLayout::TopToBottom));
     layout_widget_->layout()->setMargin(0);
     layout_widget_->layout()->setSpacing(0);
 
@@ -164,5 +164,19 @@ unsigned GraphicsView::
 {
     return layout_widget_->layout()->count();
 }
+
+
+void GraphicsView::
+        setLayoutDirection( QBoxLayout::Direction direction )
+{
+    QBoxLayout* bl = dynamic_cast<QBoxLayout*>(layout_widget_->layout());
+    if (bl->direction() != direction)
+    {
+        bl->setDirection( direction );
+
+        emit layoutChanged( direction );
+    }
+}
+
 
 } // namespace Tools

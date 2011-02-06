@@ -24,6 +24,7 @@
 #include <QDockWidget>
 #include <QTimer>
 #include <QErrorMessage>
+#include <QBoxLayout>
 
 #undef max
 
@@ -46,7 +47,8 @@ TimelineView::
     _height( 0 ),
     _project( p ),
     _render_view( render_view ),
-    _except_count( 0 )
+    _except_count( 0 ),
+    _vertical( true )
 {
     BOOST_ASSERT( _render_view );
 
@@ -112,6 +114,25 @@ void TimelineView::
 
 
 void TimelineView::
+        layoutChanged( QBoxLayout::Direction direction )
+{
+    switch (direction)
+    {
+    case QBoxLayout::TopToBottom:
+    case QBoxLayout::BottomToTop:
+        _vertical = true;
+        tool_selector->parentTool()->setMaximumSize( 524287, 100 );
+        break;
+    case QBoxLayout::LeftToRight:
+    case QBoxLayout::RightToLeft:
+        _vertical = false;
+        tool_selector->parentTool()->setMaximumSize( 100, 524287 );
+        break;
+    }
+}
+
+
+void TimelineView::
         initializeGL()
 {
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
@@ -165,8 +186,7 @@ void TimelineView::
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    _barHeight = 20.f/height;
-    //glOrtho(0,1,-_barHeight,1, -10,10);
+    _barHeight = 20.f/(_vertical?height:width);
     glOrtho(0,1,0,1, -10,10);
 
     glMatrixMode(GL_MODELVIEW);
@@ -207,8 +227,15 @@ void TimelineView::
             if (_xoffs<h) _xoffs = h;
             if (_xoffs>_length+h) _xoffs = _length+h;
 
+            if (_render_view->model->renderer->left_handed_axes)
+            {
+                glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
+            }
+            else
+            {
+                glViewport( _width*_barHeight, 0, _width*(1-_barHeight), _height );
+            }
             setupCamera( false );
-            glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
 
             glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
             glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
@@ -230,8 +257,15 @@ void TimelineView::
             // Draw little bar for entire signal at the bottom of the timeline
             //glPushMatrixContext mc(GL_MODELVIEW);
 
+            if (_render_view->model->renderer->left_handed_axes)
+            {
+                glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
+            }
+            else
+            {
+                glViewport( 0, 0, (GLint)_width*_barHeight, (GLint)_height );
+            }
             setupCamera( true );
-            glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
 
             _render_view->drawCollections( _timeline_bar_fbo.get(), 0 );
 
@@ -328,6 +362,14 @@ void TimelineView::
 
     glRotatef( 90, 1, 0, 0 );
     glRotatef( 180, 0, 1, 0 );
+
+    if (!_render_view->model->renderer->left_handed_axes)
+    {
+        glTranslatef(-0.5f,0,0);
+        glScalef(-1,1,1);
+        glTranslatef(-0.5f,0,0);
+        glRotatef(90,0,1,0);
+    }
 
     glScalef(-1/_length, 1, 1);
 

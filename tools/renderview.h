@@ -41,7 +41,7 @@ namespace Tools
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
         Heightmap::Position getHeightmapPos( QPointF widget_coordinates, bool useRenderViewContext = true );
         Heightmap::Position getPlanePos( QPointF widget_coordinates, bool* success = 0, bool useRenderViewContext = true );
-        float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false );
+        float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false, bool* is_valid_value = 0 );
 
         /**
           You might want to use Heightmap::Reference::containsPoint(p) to se
@@ -152,6 +152,8 @@ namespace Tools
         bool _inited;
         unsigned _last_width;
         unsigned _last_height;
+        unsigned _last_x;
+        unsigned _last_y;
         int _try_gc;
         QTimer* _update_timer;
 

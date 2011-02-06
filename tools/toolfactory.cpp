@@ -72,11 +72,10 @@ ToolFactory::
 
     _graph_controller = new GraphController( _render_view );
 
-    _tooltip_model.reset( new TooltipModel() );
+    _tooltip_model.reset( new TooltipModel( _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) ) );
     _tooltip_view.reset( new TooltipView(_tooltip_model.data(), _render_view ));
     _tooltip_controller = new TooltipController(
-            _tooltip_view.data(), _render_view,
-            dynamic_cast<CommentController*>(_comment_controller.data()) );
+            _tooltip_view.data(), _render_view );
 
     _about_dialog = new AboutDialog( p );
 

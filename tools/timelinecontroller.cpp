@@ -78,8 +78,10 @@ void TimelineController::
     } else {
         view->tool_selector = view->_render_view->graphicsview->toolSelector( 1 );
         view->tool_selector->setCurrentTool( this, true );
-        view->tool_selector->parentTool()->setMaximumHeight(100);
         connect(view->_render_view, SIGNAL(prePaint()), view, SLOT(paintInGraphicsView()));
+        connect(view->_render_view->graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
+                view, SLOT(layoutChanged(QBoxLayout::Direction)) );
+        view->layoutChanged( QBoxLayout::TopToBottom );
     }
 
     // Always redraw the timeline whenever the main render view is painted.

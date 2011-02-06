@@ -3,6 +3,7 @@
 
 #include <QGraphicsView>
 #include <QTimer>
+#include <QBoxLayout>
 
 #include "support/toolselector.h"
 
@@ -35,7 +36,13 @@ public:
 
     unsigned toolWindows();
     Support::ToolSelector* toolSelector(int index);
+
+    void setLayoutDirection( QBoxLayout::Direction direction );
+
 signals:
+    /**
+      */
+    void layoutChanged( QBoxLayout::Direction direction );
 
 public slots:
 
