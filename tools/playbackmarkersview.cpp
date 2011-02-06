@@ -87,13 +87,13 @@ void PlaybackMarkersView::
 
     glVertex3f( a, 0, -.1 );
     glVertex3f( a, y, -.1 );
-    glVertex3f( b, 0, -.1 );
     glVertex3f( b, y, -.1 );
+    glVertex3f( b, 0, -.1 );
 
     glVertex3f( a, y, 1.1 );
     glVertex3f( a, 0, 1.1 );
-    glVertex3f( b, y, 1.1 );
     glVertex3f( b, 0, 1.1 );
+    glVertex3f( b, y, 1.1 );
 
     glVertex3f( b, 0, -.1 );
     glVertex3f( b, y, -.1 );

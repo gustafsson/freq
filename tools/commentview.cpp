@@ -30,10 +30,11 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
     //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
 
-    QAction *hideAction = new QAction(tr("T&oggle thumbnail"), this);
+    QAction *hideAction = new QAction(tr("T&humbnail"), this);
     //hideAction->setShortcut(tr("Ctrl+T"));
     hideAction->setCheckable(true);
     connect(hideAction, SIGNAL(toggled(bool)), SLOT(thumbnail(bool)));
+    connect(this, SIGNAL(thumbnailChanged(bool)), hideAction, SLOT(setChecked(bool)));
 
 	connect(ui->textEdit, SIGNAL(textChanged()), SLOT(updateText()));
     addAction(closeAction);
@@ -303,7 +304,11 @@ void CommentView::
 void CommentView::
         thumbnail(bool v)
 {
-    model->thumbnail = v;
+    if (model->thumbnail != v)
+    {
+        model->thumbnail = v;
+        emit thumbnailChanged( model->thumbnail );
+    }
 
     recreatePolygon();
 }
@@ -345,6 +350,9 @@ QSize CommentView::
 void CommentView::
         updatePosition()
 {
+    if (!isVisible())
+        return;
+
     // moveEvent can't be used when updating the reference position while moving
     if (!proxy->pos().isNull())
     {

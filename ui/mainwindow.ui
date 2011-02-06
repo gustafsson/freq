@@ -336,8 +336,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>
-     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-circle-selection.png</iconset>
+     <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>:/icons/icons/icon-circle-selection.png</iconset>
    </property>
    <property name="text">
     <string>Ellipse Selection</string>
@@ -361,8 +360,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-navigation.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-navigation.png</iconset>
+     <normaloff>:/icons/icons/icon-navigation.png</normaloff>:/icons/icons/icon-navigation.png</iconset>
    </property>
    <property name="text">
     <string>Activate Navigation</string>
@@ -418,8 +416,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-play-sel.png</normaloff>
-     <normalon>:/icons/icons/icon-play.png</normalon>:/icons/icons/icon-play-sel.png</iconset>
+     <normaloff>:/icons/icons/icon-play-sel.png</normaloff>:/icons/icons/icon-play-sel.png</iconset>
    </property>
    <property name="text">
     <string>Play Selection</string>
@@ -508,8 +505,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-crop.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-crop.png</iconset>
+     <normaloff>:/icons/icons/icon-crop.png</normaloff>:/icons/icons/icon-crop.png</iconset>
    </property>
    <property name="text">
     <string>Crop Selection</string>
@@ -536,8 +532,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-move.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-move.png</iconset>
+     <normaloff>:/icons/icons/icon-move.png</normaloff>:/icons/icons/icon-move.png</iconset>
    </property>
    <property name="text">
     <string>Move Selection</string>
@@ -564,8 +559,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-move-time.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-move-time.png</iconset>
+     <normaloff>:/icons/icons/icon-move-time.png</normaloff>:/icons/icons/icon-move-time.png</iconset>
    </property>
    <property name="text">
     <string>Move Selection in Time</string>
@@ -589,8 +583,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-matlabfilter.png</iconset>
+     <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>:/icons/icons/icon-matlabfilter.png</iconset>
    </property>
    <property name="text">
     <string>Matlab filter</string>
@@ -608,8 +601,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-matlaboperation.png</iconset>
+     <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>:/icons/icons/icon-matlaboperation.png</iconset>
    </property>
    <property name="text">
     <string>Matlab operation</string>
@@ -633,8 +625,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-record.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-record.png</iconset>
+     <normaloff>:/icons/icons/icon-record.png</normaloff>:/icons/icons/icon-record.png</iconset>
    </property>
    <property name="text">
     <string>Record</string>
@@ -1015,8 +1006,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-zoom.png</normaloff>
-     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-zoom.png</iconset>
+     <normaloff>:/icons/icons/icon-zoom.png</normaloff>:/icons/icons/icon-zoom.png</iconset>
    </property>
    <property name="text">
     <string>Zoom</string>
@@ -1124,8 +1114,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
     <string>Select previous operations</string>
@@ -1211,8 +1200,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
     <string>Tonalize transform</string>
@@ -1230,8 +1218,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
     <string>Reassign transform</string>
@@ -1521,8 +1508,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-play-sec.png</normaloff>
-     <normalon>:/icons/icons/icon-play.png</normalon>:/icons/icons/icon-play-sec.png</iconset>
+     <normaloff>:/icons/icons/icon-play-sec.png</normaloff>:/icons/icons/icon-play-sec.png</iconset>
    </property>
    <property name="text">
     <string>Play current section</string>
@@ -1539,9 +1525,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normalon>:/icons/icons/icon-play.png</normalon>
-    </iconset>
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-play.png</normaloff>:/icons/icons/icon-play.png</iconset>
    </property>
    <property name="text">
     <string>Play entire sound starting at current section</string>
@@ -1569,6 +1554,24 @@
    </property>
    <property name="shortcut">
     <string>Alt+Return</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleOrientation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle orientation (left/right handed coordinate system)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle orientation (left/right handed coordinate system)</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

@@ -14,7 +14,7 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
     ui->setupUi(this);
 
     ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
-    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
+    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
 
     Ui::MainWindow* main_ui = project->mainWindow()->getItems();
     connect(main_ui->actionAbout, SIGNAL(triggered()), SLOT(show()));

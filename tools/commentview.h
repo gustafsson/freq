@@ -41,6 +41,7 @@ public:
 
 signals:
     void setCommentControllerEnabled( bool );
+    void thumbnailChanged( bool );
 
 public slots:
     void updatePosition();
