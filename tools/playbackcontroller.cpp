@@ -137,6 +137,7 @@ void PlaybackController::
 {
     if (!filter) {
         TaskInfo("No filter, no selection");
+        receiveStop();
         return; // No filter, no selection...
     }
 
@@ -182,9 +183,10 @@ void PlaybackController::
             !ui_items_->actionPlayEntireSound->isChecked())
         {
             ui_items_->actionPausePlayBack->setChecked( false );
-        } else
-            model()->playback()->pausePlayback( active );
+        }
     }
+
+    model()->playback()->pausePlayback( active );
 }
 
 
