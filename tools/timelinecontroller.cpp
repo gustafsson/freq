@@ -1,5 +1,8 @@
 #include "timelinecontroller.h"
 
+#include "support/toolselector.h"
+#include "graphicsview.h"
+
 // Sonic AWE
 #include "ui/mainwindow.h"
 #include "timelineview.h"
@@ -43,31 +46,41 @@ TimelineController::
 void TimelineController::
         hideTimeline()
 {
-    dock->hide();
+    if (dock)
+        dock->hide();
 }
 
 
 void TimelineController::
         setupGui()
 {
-    Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
-    dock = new QDockWidget(MainWindow);
-    dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
-    dock->setMinimumSize(QSize(42, 79));
-    dock->setMaximumSize(QSize(524287, 524287));
-    dock->setContextMenuPolicy(Qt::NoContextMenu);
-    dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
-    dock->setEnabled(true);
-    dock->setAutoFillBackground(true);
-    dock->setWidget(view);
-    dock->setWindowTitle("Timeline");
-    dock->show();
+    bool create_dock_window = false;
+    if (create_dock_window)
+    {
+        Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
+        dock = new QDockWidget(MainWindow);
+        dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
+        dock->setMinimumSize(QSize(42, 79));
+        dock->setMaximumSize(QSize(524287, 524287));
+        dock->setContextMenuPolicy(Qt::NoContextMenu);
+        dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
+        dock->setEnabled(true);
+        dock->setAutoFillBackground(true);
+        dock->setWidget(view);
+        dock->setWindowTitle("Timeline");
+        dock->show();
 
-    MainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
+        MainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
 
-    view->setLayout( new QHBoxLayout );
-    view->layout()->setMargin( 0 );
-    view->layout()->addWidget( this );
+        view->setLayout( new QHBoxLayout );
+        view->layout()->setMargin( 0 );
+        view->layout()->addWidget( this );
+    } else {
+        view->tool_selector = view->_render_view->graphicsview->toolSelector( 1 );
+        view->tool_selector->setCurrentTool( this, true );
+        view->tool_selector->parentTool()->setMaximumHeight(100);
+        connect(view->_render_view, SIGNAL(prePaint()), view, SLOT(paintInGraphicsView()));
+    }
 
     // Always redraw the timeline whenever the main render view is painted.
     // User input events that changes the state of this widget often need to

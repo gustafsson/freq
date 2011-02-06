@@ -27,6 +27,8 @@ namespace Heightmap
 
 namespace Tools
 {
+    class GraphicsView;
+
     class RenderView: public QGraphicsScene
     {
         Q_OBJECT
@@ -59,18 +61,22 @@ namespace Tools
         float last_ysize;
         floatAni orthoview;
         //QTransform projectionTransform;
-        QTransform modelviewTransform;
-        QTransform viewTransform;
+        //QTransform modelviewTransform;
+        //QTransform viewTransform;
 
         // TODO need to be able to update a QWidget, signal?
         // is this data/function model or view?
 
         RenderModel* model;
+
         QGLWidget *glwidget;
+
+        // graphicsview belongs in rendercontroller but this simplifies access from other classes
+        GraphicsView* graphicsview;
 
         Support::ToolSelector* toolSelector();
 
-        boost::scoped_ptr<Support::ToolSelector> tool_selector;
+        Support::ToolSelector* tool_selector;
 
         unsigned last_width() { return _last_width; }
         unsigned last_height() { return _last_height; }

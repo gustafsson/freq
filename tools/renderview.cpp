@@ -55,6 +55,8 @@ RenderView::
             :
             orthoview(1),
             model(model),
+            glwidget(0),
+            graphicsview(0),
             _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
             _try_gc(0),
@@ -190,7 +192,18 @@ void RenderView::
 		}
 
         setStates();
-        resizeGL(_last_width, _last_height);
+
+        {
+            TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+
+        {
+            TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
+            emit prePaint();
+        }
+
+        resizeGL(_last_width, _last_height );
 
         paintGL();
 
@@ -208,6 +221,8 @@ void RenderView::
 //            projectionTransform.setMatrix( proj[0], proj[1], proj[2],
 //                                           proj[4], proj[5], proj[6],
 //                                           proj[8], proj[9], proj[10]);
+            /*
+             This would make a mapping from 3D to the 2D plane.
             if (qFuzzyCompare(m[3] + 1, 1) && qFuzzyCompare(m[7] + 1, 1))
             {
                 modelviewTransform = QTransform(m[0]/m[15], m[1]/m[15], m[4]/m[15],
@@ -221,6 +236,7 @@ void RenderView::
             viewTransform = QTransform(vp[2]*0.5, 0,
                                        0, -vp[3]*0.5,
                                       vp[0]+vp[2]*0.5, vp[1]+vp[3]*0.5);
+            */
         }
 
         defaultStates();
@@ -715,7 +731,7 @@ Support::ToolSelector* RenderView::
 //    if (!tool_selector_)
 //        tool_selector_.reset( new Support::ToolSelector(glwidget));
 
-    return tool_selector.get();
+    return tool_selector;
 }
 
 
@@ -747,7 +763,10 @@ void RenderView::
 {
     height = height?height:1;
 
-    glViewport( 0, 0, (GLint)width, (GLint)height );
+    QRect rect = tool_selector->parentTool()->geometry();
+    glViewport( rect.x(), height - rect.y() - rect.height(), rect.width(), rect.height() );
+    height = rect.height();
+    width = rect.width();
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -819,20 +838,11 @@ void RenderView::
             a(b);
         }
 
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
 
     // Set up camera position
     _last_length = worker.source()->length();
     {   
 		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
-
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
-			emit prePaint();
-		}
 
         setupCamera();
 
@@ -873,7 +883,7 @@ void RenderView::
         model->renderer->drawAxes( _last_length ); // 4.7 ms
 
         if (wasWorking)
-            Support::DrawWorking::drawWorking( _last_width, _last_height );
+            Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
     }
 
     {   // Find things to work on (ie playback and file output)
