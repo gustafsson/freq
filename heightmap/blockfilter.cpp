@@ -8,8 +8,8 @@
 #include <GlException.h>
 #include <TaskTimer.h>
 
-//#define TIME_BLOCKFILTER
-#define TIME_BLOCKFILTER if(0)
+#define TIME_BLOCKFILTER
+//#define TIME_BLOCKFILTER if(0)
 
 //#define TIME_CWTTOBLOCK
 #define TIME_CWTTOBLOCK if(0)

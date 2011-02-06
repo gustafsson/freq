@@ -1,4 +1,6 @@
 #include "tooltipview.h"
+#include "commentview.h"
+#include "tooltipcontroller.h"
 
 #include <glPushContext.h>
 
@@ -6,20 +8,25 @@ namespace Tools {
 
 
 TooltipView::
-        TooltipView(TooltipModel* model,
+        TooltipView(TooltipController* controller,
+                    CommentController* comments,
                     RenderView* render_view)
                         :
                         enabled(true),
                         visible(true),
-                        model_(model),
+                        initialized(false),
+                        model_(new TooltipModel(render_view, comments )),
+                        controller_(controller),
                         render_view_(render_view)
 {
+    connect(render_view_, SIGNAL(painting()), SLOT(draw()));
 }
 
 
 TooltipView::
         ~TooltipView()
 {
+    delete model_;
 }
 
 
@@ -28,6 +35,9 @@ void TooltipView::
 {
     if (!model_->comment)
         return;
+
+    if (!initialized)
+        initialize();
 
     Heightmap::Position p = model_->pos;
 
@@ -83,10 +93,55 @@ void TooltipView::
 
 
 void TooltipView::
+        setHidden(bool value)
+{
+    visible = !value;
+}
+
+
+void TooltipView::
+        setFocus()
+{
+    controller_->setCurrentView( this );
+}
+
+
+void TooltipView::
+        seppuku()
+{
+    delete this;
+}
+
+
+void TooltipView::
+        initialize()
+{
+    initialized = true;
+
+    connect(model_->comment.data(), SIGNAL(thumbnailChanged(bool)), SLOT(setHidden(bool)));
+    connect(model_->comment.data(), SIGNAL(gotFocus()), SLOT(setFocus()));
+    connect(model_->comment.data(), SIGNAL(destroyed()), SLOT(seppuku()));
+}
+
+
+void TooltipView::
         draw()
 {
     if (visible)
         drawMarkers();
+
+    if (model_->automarking == TooltipModel::AutoMarkerWorking)
+    {
+        TaskInfo ti("TooltipView doesn't have all data yet");
+
+        model_->showToolTip( model_->pos );
+
+        TaskInfo("%s", model_->comment->html().c_str());
+        if (model_->automarking != TooltipModel::AutoMarkerWorking)
+            TaskInfo("TooltipView just finished");
+
+        render_view_->userinput_update( false );
+    }
 }
 
 } // namespace Tools

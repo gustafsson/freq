@@ -248,6 +248,19 @@ void RenderView::
 }
 
 
+void RenderView::
+        drawForeground(QPainter *painter, const QRectF &)
+{
+    painter->beginNativePainting();
+    setStates();
+
+    emit paintingForeground();
+
+    defaultStates();
+    painter->endNativePainting();
+}
+
+
 float RenderView::
         getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation, bool* is_valid_value )
 {
@@ -256,10 +269,13 @@ float RenderView::
     //return 0;
 #endif
     if (is_valid_value)
-        *is_valid_value = false;
+        *is_valid_value = true;
 
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
         return 0;
+
+    if (is_valid_value)
+        *is_valid_value = false;
 
     Heightmap::Reference myref(model->collections[0].get());
     if (!ref)
@@ -291,7 +307,8 @@ float RenderView::
         if (I.empty())
         {
             *is_valid_value = true;
-        }
+        } else
+            return 0;
     }
 
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
@@ -403,7 +420,16 @@ QPointF RenderView::
         *dist = d%projectionNormal;
     }
 
-    return QPointF( winX -_last_x, _last_height-1 - winY - _last_y);
+    return QPointF( winX, _last_height-1 - winY );
+}
+
+
+QPointF RenderView::
+        getWidgetPos( Heightmap::Position pos, double* dist )
+{
+    QPointF pt = getScreenPos(pos, dist);
+    pt -= QPointF(_last_x, _last_y);
+    return pt;
 }
 
 
@@ -534,7 +560,7 @@ void RenderView::
     Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
                 model->project()->worker.source()->root());
 
-    TIME_PAINTGL CudaException_CHECK_ERROR();
+    TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
 
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
@@ -544,7 +570,7 @@ void RenderView::
     GLint current_viewport[4];
     glGetIntegerv(GL_VIEWPORT, current_viewport);
 
-    TIME_PAINTGL TaskTimer tt("Viewport (%u, %u, %u, %u)", 
+    TIME_PAINTGL_DETAILS TaskTimer tt("Viewport (%u, %u, %u, %u)",
         current_viewport[0], current_viewport[1],
         current_viewport[2], current_viewport[3]);
 
@@ -607,12 +633,12 @@ void RenderView::
         }
     }
 
-    TIME_PAINTGL CudaException_CHECK_ERROR();
-    TIME_PAINTGL GlException_CHECK_ERROR();
+    TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
+    TIME_PAINTGL_DETAILS GlException_CHECK_ERROR();
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL TaskInfo("Drew %u*%u block%s", 
+    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s");
@@ -805,17 +831,17 @@ void RenderView::
 
     float elapsed_ms = -1;
 
-    TIME_PAINTGL if (_render_timer)
+    TIME_PAINTGL_DETAILS if (_render_timer)
 	    elapsed_ms = _render_timer->elapsedTime()*1000.f;
-    TIME_PAINTGL _render_timer.reset();
-    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
+    TIME_PAINTGL_DETAILS _render_timer.reset();
+    TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
 	TIME_PAINTGL TaskTimer tt("============================= RenderView::paintGL =============================");
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
     unsigned cacheCount = 0;
-    TIME_PAINTGL 
+    TIME_PAINTGL_DETAILS
     {
         sumsize = model->collections[0]->cacheByteSize();
         cacheCount = model->collections[0]->cacheCount();

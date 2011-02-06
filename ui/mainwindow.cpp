@@ -2,36 +2,12 @@
 
 // Ui
 #include "ui_mainwindow.h"
-#include "comboboxaction.h"
-#include "propertiesselection.h"
 
 // Sonic AWE
-#include "adapters/microphonerecorder.h"
-#include "adapters/audiofile.h"
-#include "tfr/filter.h"
-#include "tools/timelineview.h"
 #include "sawe/application.h"
-#include "signal/operation-basic.h"
 
 // Qt
-#include <QMessageBox>
-#include <QKeyEvent>
-#include <QSlider>
-
-// boost
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/graph/adjacency_iterator.hpp>
-
-// std
-#include <sstream>
-#include <iomanip>
-#include <demangle.h>
-
-#if defined(_MSC_VER)
-#define _USE_MATH_DEFINES
-#endif
-#include <math.h>
+#include <QCloseEvent>
 
 using namespace std;
 using namespace boost;

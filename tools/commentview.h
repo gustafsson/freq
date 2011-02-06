@@ -39,9 +39,12 @@ public:
     virtual void focusOutEvent(QFocusEvent *event);
     virtual QSize sizeHint() const;
 
+    bool isThumbnail();
+
 signals:
     void setCommentControllerEnabled( bool );
     void thumbnailChanged( bool );
+    void gotFocus();
 
 public slots:
     void updatePosition();

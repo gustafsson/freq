@@ -99,7 +99,7 @@ void PlaybackMarkersController::
     {
         // Find out the distance to the nearest marker.
         Heightmap::Position marker_pos( *itr, click.scale );
-        QPointF pt = r.getScreenPos( marker_pos, 0 );
+        QPointF pt = r.getWidgetPos( marker_pos, 0 );
 
         pt -= e->posF();
         float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );
@@ -143,7 +143,7 @@ void PlaybackMarkersController::
     {
         // Find out the distance to the nearest marker.
         Heightmap::Position marker_pos( *itr, click.scale );
-        QPointF pt = r.getScreenPos( marker_pos, 0 );
+        QPointF pt = r.getWidgetPos( marker_pos, 0 );
 
         pt -= e->posF();
         float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );

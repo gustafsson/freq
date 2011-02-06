@@ -1,5 +1,10 @@
 #if 0
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/unordered_set.hpp>
+#include <boost/graph/adjacency_iterator.hpp>
+#include "signal/operation-basic.h"
+
 // TODO implement
 
 struct TitleAndTooltip {

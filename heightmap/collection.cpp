@@ -10,21 +10,17 @@
 #include <CudaException.h>
 #include <GlException.h>
 #include <string>
-//#include <QThread>
 #include <neat_math.h>
 #include <debugmacros.h>
 #include <Statistics.h>
-//#include <boost/foreach.hpp>
 
-#ifdef _MSC_VER
 #include <msc_stdc.h>
-#endif
 
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
-//#define VERBOSE_COLLECTION
-#define VERBOSE_COLLECTION if(0)
+#define VERBOSE_COLLECTION
+//#define VERBOSE_COLLECTION if(0)
 
 //#define VERBOSE_EACH_FRAME_COLLECTION
 #define VERBOSE_EACH_FRAME_COLLECTION if(0)

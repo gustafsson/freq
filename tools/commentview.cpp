@@ -29,6 +29,7 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
     QAction *closeAction = new QAction(tr("D&elete"), this);
     //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
+    this->setAttribute( Qt::WA_DeleteOnClose );
 
     QAction *hideAction = new QAction(tr("T&humbnail"), this);
     //hideAction->setShortcut(tr("Ctrl+T"));
@@ -173,6 +174,8 @@ void CommentView::
     //TaskInfo("CommentView::focusInEvent, gotFocus = %d, reason = %d", e->gotFocus(), e->reason());
 
     recreatePolygon();
+
+    emit gotFocus();
 }
 
 
@@ -344,6 +347,13 @@ QSize CommentView::
         sizeHint() const
 {
     return QSize(200,200);
+}
+
+
+bool CommentView::
+        isThumbnail()
+{
+    return model->thumbnail;
 }
 
 

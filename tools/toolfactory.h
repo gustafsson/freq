@@ -111,8 +111,6 @@ namespace Tools
 
         QPointer<class GraphController> _graph_controller;
 
-        QScopedPointer<class TooltipModel> _tooltip_model;
-        QScopedPointer<class TooltipView> _tooltip_view;
         QPointer<class TooltipController> _tooltip_controller;
 
         QPointer<class AboutDialog> _about_dialog;
