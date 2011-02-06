@@ -94,7 +94,7 @@ namespace Tools { namespace Selections
 
         if (e->buttons().testFlag( selection_button_ ))
         {
-            Heightmap::Position p = r.getHeightmapPos( QPointF( e->x(), height() - 1 - e->y() ) );
+            Heightmap::Position p = r.getHeightmapPos( e->posF() );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
             if (ref.containsPoint(p))
                 model()->findAddPeak( ref, p );

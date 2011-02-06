@@ -85,7 +85,7 @@ namespace Tools { namespace Selections
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
-            selectionStart = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+            selectionStart = r.getPlanePos( e->posF(), &success);
 
             if (!success)
             {
@@ -119,7 +119,7 @@ namespace Tools { namespace Selections
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
-            Heightmap::Position p = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+            Heightmap::Position p = r.getPlanePos( e->posF(), &success);
             if (success)
             {
                 if (-FLT_MAX == selectionStart.time) // TODO test

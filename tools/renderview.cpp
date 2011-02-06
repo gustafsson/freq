@@ -387,7 +387,7 @@ QPointF RenderView::
         *dist = d%projectionNormal;
     }
 
-    return QPointF( winX, viewport_matrix[3]-1-winY );
+    return QPointF( winX, _last_height-1-winY );
     //return QPointF( winX, winY );
 }
 
@@ -399,6 +399,8 @@ Heightmap::Position RenderView::
         return getPlanePos(pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderView::getPlanePos Newton raphson");
+
+    pos.setY( _last_height - 1 - pos.y() );
 
     GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
@@ -450,6 +452,8 @@ Heightmap::Position RenderView::
 Heightmap::Position RenderView::
         getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
+    pos.setY( _last_height - 1 - pos.y() );
+
     GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
     GLdouble other_m[16], other_proj[16];

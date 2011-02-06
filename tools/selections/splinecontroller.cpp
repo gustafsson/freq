@@ -90,7 +90,7 @@ namespace Tools { namespace Selections
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             bool success;
-            Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+            Heightmap::Position click = r.getPlanePos( e->posF(), &success);
 
             if (success)
             {
@@ -125,7 +125,7 @@ namespace Tools { namespace Selections
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
-            Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+            Heightmap::Position click = r.getPlanePos( e->posF(), &success);
             if (success)
             {
                 if (!model()->drawing)

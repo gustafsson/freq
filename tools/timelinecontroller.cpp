@@ -97,7 +97,7 @@ void TimelineController::
 void TimelineController::
         wheelEvent ( QWheelEvent *e )
 {
-    int x = e->x(), y = height() - 1 - e->y();
+    int x = e->x(), y = e->y();
     float ps = 0.0005f;
 
     Heightmap::Position p = view->getSpacePos(QPointF(x,y));
@@ -114,7 +114,7 @@ void TimelineController::
 void TimelineController::
         mousePressEvent ( QMouseEvent * e )
 {
-    int x = e->x(), y = height() - 1 - e->y();
+    int x = e->x(), y = e->y();
     Heightmap::Position prev = view->getSpacePos(QPointF(moveButton.getLastx(), moveButton.getLasty()));
     Heightmap::Position current = view->getSpacePos(QPointF(x, y));
 

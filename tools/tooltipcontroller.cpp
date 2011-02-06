@@ -70,7 +70,7 @@ void TooltipController::
 {
     if(isEnabled()) {
         if( (e->button() & Qt::LeftButton) == Qt::LeftButton) {
-            infoToolButton.press( e->x(), this->height() - 1 - e->y() );
+            infoToolButton.press( e->x(), e->y() );
 
             model()->max_so_far = -1;
             if (model()->comment && !model()->comment->model->thumbnail)
@@ -86,12 +86,10 @@ void TooltipController::
 void TooltipController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    int x = e->x(), y = this->height() - 1 - e->y();
-
     if (infoToolButton.isDown())
     {
         bool success=false;
-        Heightmap::Position p = render_view_->getPlanePos(QPointF(x, y), &success);
+        Heightmap::Position p = render_view_->getPlanePos( e->posF(), &success);
         TaskTimer tt("TooltipController::mouseMoveEvent (%g, %g)", p.time, p.scale);
         if (success)
         {
@@ -99,7 +97,7 @@ void TooltipController::
         }
     }
 
-    infoToolButton.update(x, y);
+    infoToolButton.update(e->x(), e->y());
 }
 
 

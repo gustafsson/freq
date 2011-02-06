@@ -352,15 +352,7 @@ void CommentView::
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
-            float h = proxy->scene()->height();
-            c.setY( h - 1 - c.y() );
-
             model->pos = view->getHeightmapPos( c );
-
-            /*            float x, y;
-        Ui::MouseControl::planePos( c.x(), c.y(), x, y, view->xscale );
-        pos.time = x;
-        pos.scale = y;*/
         }
 
         keep_pos = false;
@@ -372,7 +364,7 @@ void CommentView::
     }
 
     double z;
-    QPointF pt = view->getScreenPos( Heightmap::Position( model->pos.time, model->pos.scale), &z );
+    QPointF pt = view->getScreenPos( model->pos, &z );
     //TaskInfo("model->pos( %g, %g ) -> ( %g, %g, %g )",
     //         model->pos.time, model->pos.scale,
     //         pt.x(), pt.y(), z);

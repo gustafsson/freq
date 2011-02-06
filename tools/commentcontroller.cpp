@@ -119,8 +119,6 @@ void CommentController::
 {
     if (event->type() & QEvent::EnabledChange)
     {
-        if (!isEnabled() && parent())
-            dynamic_cast<QWidget*>(parent())->graphicsProxyWidget()->setZValue(-1e30);
         emit enabledChanged(isEnabled());
     }
 }
@@ -135,8 +133,6 @@ void CommentController::
     {
         comment_ = createNewComment();
         setVisible( true );
-
-        dynamic_cast<QWidget*>(parent())->graphicsProxyWidget()->setZValue(1e30);
 
         setMouseTracking( true );
         connect(comment_, SIGNAL(setCommentControllerEnabled(bool)), SLOT(setEnabled(bool)));
@@ -155,11 +151,7 @@ void CommentController::
 void CommentController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    QPointF c = e->pos();
-    float h = height();
-    c.setY( h - 1 - c.y() );
-
-    comment_->model->pos = view_->getHeightmapPos( c );
+    comment_->model->pos = view_->getHeightmapPos( e->posF() );
 
     view_->userinput_update();
 

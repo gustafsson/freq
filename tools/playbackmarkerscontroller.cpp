@@ -81,7 +81,7 @@ void PlaybackMarkersController::
 
     RenderView &r = *render_view_;
     bool success;
-    Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+    Heightmap::Position click = r.getPlanePos( e->posF(), &success);
     if (!success)
         // Meaningless click, ignore
         return;
@@ -129,7 +129,7 @@ void PlaybackMarkersController::
 {
     Tools::RenderView &r = *render_view_;
     bool success;
-    Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+    Heightmap::Position click = r.getPlanePos( e->posF(), &success);
     if (!success)
         return;
 
