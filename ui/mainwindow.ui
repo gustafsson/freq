@@ -424,10 +424,10 @@
     <string>Play Selection</string>
    </property>
    <property name="toolTip">
-    <string>Play the selected area [Space]</string>
+    <string>Play the selected area [Ctrl+Space]</string>
    </property>
    <property name="shortcut">
-    <string>Space</string>
+    <string>Ctrl+Space</string>
    </property>
   </action>
   <action name="actionToggleSelectionToolBox">
@@ -1527,7 +1527,10 @@
     <string>Play current section</string>
    </property>
    <property name="toolTip">
-    <string>Play the current section</string>
+    <string>Play the current section [Space]</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
    </property>
   </action>
   <action name="actionPlayEntireSound">
@@ -1543,7 +1546,10 @@
     <string>Play entire sound starting at current section</string>
    </property>
    <property name="toolTip">
-    <string>Play entire sound starting at current section</string>
+    <string>Play entire sound starting at current section [ [Ctrl+Shift+Space]</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Space</string>
    </property>
   </action>
  </widget>
