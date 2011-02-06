@@ -409,7 +409,7 @@ void RenderController::
 
     view->graphicsview = new GraphicsView(view);
     view->graphicsview->setViewport(view->glwidget);
-    view->tool_selector.reset( new Support::ToolSelector(view->graphicsview->toolParent(0)));
+    view->tool_selector = view->graphicsview->toolSelector(0);
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);

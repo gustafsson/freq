@@ -720,7 +720,7 @@ Support::ToolSelector* RenderView::
 //    if (!tool_selector_)
 //        tool_selector_.reset( new Support::ToolSelector(glwidget));
 
-    return tool_selector.get();
+    return tool_selector;
 }
 
 

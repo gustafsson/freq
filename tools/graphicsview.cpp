@@ -130,28 +130,38 @@ void GraphicsView::resizeEvent(QResizeEvent *event) {
 }
 
 
-QWidget* GraphicsView::
-        toolParent(unsigned vbox)
+Support::ToolSelector* GraphicsView::
+        toolSelector(int index)
 {
-    while (vbox >= tool_parent_.size())
+    while (index >= layout_widget_->layout()->count())
     {
         QWidget* parent = new QWidget();
         parent->setLayout(new QVBoxLayout());
         parent->layout()->setMargin(0);
-        layout_widget_->layout()->addWidget( parent );
         parent->setWindowOpacity( 0 );
 
-        tool_parent_.push_back(parent);
+        Support::ToolSelector* tool_selector = new Support::ToolSelector( parent );
+        tool_selector->setParent( parent );
+
+        layout_widget_->layout()->addWidget( parent );
     }
 
-    return tool_parent_[vbox];
+    QWidget* parent = layout_widget_->layout()->itemAt(index)->widget();
+    for (int i = 0; i<parent->children().count(); ++i)
+    {
+        Support::ToolSelector* t = dynamic_cast<Support::ToolSelector*>( parent->children().at(i) );
+        if (t)
+            return t;
+    }
+
+    throw std::logic_error("Support::ToolSelector* GraphicsView::toolSelector");
 }
 
 
 unsigned GraphicsView::
-        toolParents()
+        toolWindows()
 {
-    return tool_parent_.size();
+    return layout_widget_->layout()->count();
 }
 
 } // namespace Tools

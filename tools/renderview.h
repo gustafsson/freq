@@ -76,7 +76,7 @@ namespace Tools
 
         Support::ToolSelector* toolSelector();
 
-        boost::scoped_ptr<Support::ToolSelector> tool_selector;
+        Support::ToolSelector* tool_selector;
 
         unsigned last_width() { return _last_width; }
         unsigned last_height() { return _last_height; }
