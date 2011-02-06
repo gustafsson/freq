@@ -42,7 +42,8 @@ SaweMainWindow::
         SaweMainWindow(const char* title, Sawe::Project* project, QWidget *parent)
 :   QMainWindow(parent),
     project( project ),
-    ui(new MainWindow)
+    ui(new MainWindow),
+    escape_action(0)
 {
 #ifdef Q_WS_MAC
 //    qt_mac_set_menubar_icons(false);
@@ -74,7 +75,14 @@ void SaweMainWindow::
     connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
+    connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));
 
+    // Make the two fullscreen modes exclusive
+    fullscreen_combo.decheckable( true );
+    fullscreen_combo.addAction( ui->actionToggleFullscreen );
+    fullscreen_combo.addAction( ui->actionToggleFullscreenNoMenus );
+
+    ui->actionToggleFullscreenNoMenus->setShortcutContext( Qt::ApplicationShortcut );
 
     // TODO remove layerWidget and deleteFilterButton
     //connect(ui->layerWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(slotDbclkFilterItem(QListWidgetItem*)));
@@ -277,5 +285,47 @@ void SaweMainWindow::
 {
     this->setWindowState( fullscreen ? Qt::WindowFullScreen : Qt::WindowActive);
 }
+
+
+void SaweMainWindow::
+        toggleFullscreenNoMenus( bool fullscreen )
+{
+    TaskInfo ti("%s %d", __FUNCTION__, fullscreen);
+
+    if (fullscreen)
+    {
+        fullscreen_widget = centralWidget();
+        fullscreen_widget->setParent(0);
+        fullscreen_widget->setWindowState( Qt::WindowFullScreen );
+        fullscreen_widget->show();
+        hide();
+
+        QList<QKeySequence> shortcuts;
+        //shortcuts.push_back( Qt::ALT | Qt::Key_Return ); using ui->actionToggleFullscreenNoMenus instead
+        shortcuts.push_back( Qt::ALT | Qt::Key_Enter );
+        shortcuts.push_back( Qt::Key_Escape );
+        if (0==escape_action)
+        {
+            escape_action = new QAction( this );
+            escape_action->setShortcuts( shortcuts );
+            escape_action->setCheckable( true );
+
+            connect(escape_action, SIGNAL(triggered(bool)), ui->actionToggleFullscreenNoMenus, SLOT(setChecked(bool)));
+        }
+
+        escape_action->setChecked( true );
+
+        fullscreen_widget->addAction( escape_action );
+        fullscreen_widget->addAction( ui->actionToggleFullscreenNoMenus );
+    } else {
+        setCentralWidget( fullscreen_widget );
+        fullscreen_widget->setWindowState( Qt::WindowActive );
+        show();
+
+        fullscreen_widget->removeAction( escape_action );
+        fullscreen_widget->removeAction( ui->actionToggleFullscreenNoMenus );
+    }
+}
+
 
 } // namespace Ui

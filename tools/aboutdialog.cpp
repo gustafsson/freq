@@ -18,7 +18,8 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
 
     Ui::MainWindow* main_ui = project->mainWindow()->getItems();
     connect(main_ui->actionAbout, SIGNAL(triggered()), SLOT(show()));
-    connect(ui->buttonBox, SIGNAL(clicked()), SLOT(close()));
+    connect(ui->buttonBox, SIGNAL(accepted()), SLOT(close()));
+    connect(ui->buttonBox, SIGNAL(rejected()), SLOT(close()));
 }
 
 AboutDialog::~AboutDialog()

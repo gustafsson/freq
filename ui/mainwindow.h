@@ -12,6 +12,8 @@
 #include <QMessageBox>
 #include <QPointer>
 
+#include "comboboxaction.h"
+
 #ifdef Q_WS_MAC
 void qt_mac_set_menubar_icons(bool enable);
 #endif
@@ -72,10 +74,14 @@ private slots:
     void saveProject();
     void saveProjectAs();
     void toggleFullscreen( bool );
+    void toggleFullscreenNoMenus( bool fullscreen );
 
 private:
     Sawe::Project* project;
     MainWindow *ui;
+    ComboBoxAction fullscreen_combo;
+    QAction* escape_action;
+    QWidget* fullscreen_widget;
 
     QPointer<QMessageBox> save_changes_msgbox_;
     void add_widgets();
