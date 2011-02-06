@@ -55,6 +55,8 @@ RenderView::
             :
             orthoview(1),
             model(model),
+            glwidget(0),
+            graphicsview(0),
             _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
             _try_gc(0),
@@ -208,6 +210,8 @@ void RenderView::
 //            projectionTransform.setMatrix( proj[0], proj[1], proj[2],
 //                                           proj[4], proj[5], proj[6],
 //                                           proj[8], proj[9], proj[10]);
+            /*
+             This would make a mapping from 3D to the 2D plane.
             if (qFuzzyCompare(m[3] + 1, 1) && qFuzzyCompare(m[7] + 1, 1))
             {
                 modelviewTransform = QTransform(m[0]/m[15], m[1]/m[15], m[4]/m[15],
@@ -221,6 +225,7 @@ void RenderView::
             viewTransform = QTransform(vp[2]*0.5, 0,
                                        0, -vp[3]*0.5,
                                       vp[0]+vp[2]*0.5, vp[1]+vp[3]*0.5);
+            */
         }
 
         defaultStates();

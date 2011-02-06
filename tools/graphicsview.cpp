@@ -34,16 +34,16 @@ GraphicsView::
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
     QGraphicsProxyWidget* toolProxy = new QGraphicsProxyWidget();
-    toolParent = new QWidget();
+    layout_widget_ = new QWidget();
 
     // Make all child widgets occupy the entire area
-    toolParent->setLayout(new QHBoxLayout());
-    toolParent->layout()->setMargin(0);
+    layout_widget_->setLayout(new QVBoxLayout());
+    layout_widget_->layout()->setMargin(0);
 
-    toolProxy->setWidget( toolParent );
+    toolProxy->setWidget( layout_widget_ );
     toolProxy->setWindowFlags( Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
     toolProxy->setZValue( -1e30 );
-    toolParent->setWindowOpacity( 0 );
+    layout_widget_->setWindowOpacity( 0 );
     scene->addItem( toolProxy );
 }
 
@@ -126,8 +126,32 @@ void GraphicsView::resizeEvent(QResizeEvent *event) {
     if (scene())
         scene()->setSceneRect(QRectF(0, 0, event->size().width(), event->size().height()));
 
-    toolParent->resize( event->size() );
+    layout_widget_->resize( event->size() );
 }
 
+
+QWidget* GraphicsView::
+        toolParent(unsigned vbox)
+{
+    while (vbox >= tool_parent_.size())
+    {
+        QWidget* parent = new QWidget();
+        parent->setLayout(new QVBoxLayout());
+        parent->layout()->setMargin(0);
+        layout_widget_->layout()->addWidget( parent );
+        parent->setWindowOpacity( 0 );
+
+        tool_parent_.push_back(parent);
+    }
+
+    return tool_parent_[vbox];
+}
+
+
+unsigned GraphicsView::
+        toolParents()
+{
+    return tool_parent_.size();
+}
 
 } // namespace Tools

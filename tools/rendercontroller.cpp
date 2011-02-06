@@ -407,12 +407,12 @@ void RenderController::
     view->glwidget->makeCurrent();
     //view->glwidget->setMouseTracking(true);
 
-    GraphicsView* g = new GraphicsView(view);
-    g->setViewport(view->glwidget);
-    view->tool_selector.reset( new Support::ToolSelector(g->toolParent));
+    view->graphicsview = new GraphicsView(view);
+    view->graphicsview->setViewport(view->glwidget);
+    view->tool_selector.reset( new Support::ToolSelector(view->graphicsview->toolParent(0)));
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(g);
+    main->centralWidget()->layout()->addWidget(view->graphicsview);
 }
 
 

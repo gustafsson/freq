@@ -31,12 +31,15 @@ public:
 
     void resizeEvent(QResizeEvent *event);
 
-    QWidget* toolParent;
+    QWidget* toolParent(unsigned vbox);
+    unsigned toolParents();
 signals:
 
 public slots:
 
 private:
+    QWidget* layout_widget_;
+    std::vector<QWidget*> tool_parent_;
 };
 
 } // namespace Tools
