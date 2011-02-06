@@ -325,6 +325,7 @@
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
    <addaction name="actionToggleFullscreen"/>
+   <addaction name="actionToggleFullscreenNoMenus"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
@@ -416,9 +417,9 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normalon>:/icons/icons/icon-play.png</normalon>
-    </iconset>
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-play-sel.png</normaloff>
+     <normalon>:/icons/icons/icon-play.png</normalon>:/icons/icons/icon-play-sel.png</iconset>
    </property>
    <property name="text">
     <string>Play Selection</string>
@@ -1251,7 +1252,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
     <string>Rainbow colors</string>
@@ -1272,7 +1273,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-gray.png</normaloff>:/icons/icons/icon-show-gray.png</iconset>
    </property>
    <property name="text">
     <string>Grayscale</string>
@@ -1293,13 +1294,13 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-heightlines.png</normaloff>:/icons/icons/icon-show-heightlines.png</iconset>
    </property>
    <property name="text">
-    <string>Heightlines</string>
+    <string>Heightlines (only visible in 3D)</string>
    </property>
    <property name="toolTip">
-    <string>Heightlines</string>
+    <string>Heightlines (only visible in 3D)</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1314,7 +1315,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-info.png</normaloff>:/icons/icons/icon-show-info.png</iconset>
    </property>
    <property name="text">
     <string>Get info</string>
@@ -1372,7 +1373,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-place-comment.png</normaloff>:/icons/icons/icon-place-comment.png</iconset>
    </property>
    <property name="text">
     <string>Add comment</string>
@@ -1393,7 +1394,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-comment.png</normaloff>:/icons/icons/icon-show-comment.png</iconset>
    </property>
    <property name="text">
     <string>Hide/show comments</string>
@@ -1425,7 +1426,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
     <string>Colorscale</string>
@@ -1519,9 +1520,9 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normalon>:/icons/icons/icon-play.png</normalon>
-    </iconset>
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-play-sec.png</normaloff>
+     <normalon>:/icons/icons/icon-play.png</normalon>:/icons/icons/icon-play-sec.png</iconset>
    </property>
    <property name="text">
     <string>Play current section</string>
@@ -1550,6 +1551,27 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Space</string>
+   </property>
+  </action>
+  <action name="actionToggleFullscreenNoMenus">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle fullscreen (no menus)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle fullscreen  (no menus)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Return</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
  </widget>

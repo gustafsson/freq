@@ -29,6 +29,14 @@
         <file>icons/icon-silence-selection.png</file>
         <file>icons/icon-toggle-piano.png</file>
         <file>icons/icon-circle-selection.png</file>
+        <file>icons/icon-place-comment.png</file>
+        <file>icons/icon-play-sec.png</file>
+        <file>icons/icon-play-sel.png</file>
+        <file>icons/icon-show-color.png</file>
+        <file>icons/icon-show-comment.png</file>
+        <file>icons/icon-show-gray.png</file>
+        <file>icons/icon-show-heightlines.png</file>
+        <file>icons/icon-show-info.png</file>
     </qresource>
     <qresource prefix="/shaders">
         <file alias="heightmap.frag">../heightmap/heightmap.frag</file>
