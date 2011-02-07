@@ -91,6 +91,7 @@ FORMS += \
     tools/aboutdialog.ui \
     tools/commentview.ui \
     tools/selectionviewmodel.ui \
+    tools/transforminfoform.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

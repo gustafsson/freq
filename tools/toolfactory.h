@@ -119,6 +119,8 @@ namespace Tools
         QScopedPointer<class PlaybackMarkersView> _playbackmarkers_view;
         QPointer<class PlaybackMarkersController> _playbackmarkers_controller;
 
+        QPointer<class TransformInfoForm> _transform_info_form;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

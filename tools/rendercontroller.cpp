@@ -208,6 +208,8 @@ void RenderController::
     model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
 
     view->userinput_update();
+
+    emit transformChanged();
 }
 
 
@@ -228,6 +230,8 @@ Signal::PostSink* RenderController::
     ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
 
     view->userinput_update();
+
+    emit transformChanged();
 
     return ps;
 }

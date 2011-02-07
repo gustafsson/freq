@@ -22,6 +22,11 @@ namespace Tools
         RenderController( QPointer<RenderView> view );
         ~RenderController();
 
+        RenderModel *model();
+
+    signals:
+        void transformChanged();
+
     public slots:
         // GUI bindings are set up in RenderController constructor
 
@@ -56,7 +61,6 @@ namespace Tools
     private:
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
 
-        RenderModel *model();
         QPointer<RenderView> view;
 
         // GUI stuff

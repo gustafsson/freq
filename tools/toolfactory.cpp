@@ -21,6 +21,7 @@
 #include "tooltipcontroller.h"
 #include "aboutdialog.h"
 #include "playbackmarkerscontroller.h"
+#include "transforminfoform.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -82,6 +83,8 @@ ToolFactory::
     _playbackmarkers_controller = new PlaybackMarkersController(
             _playbackmarkers_view.data(), _render_view );
     playback_model.markers = _playbackmarkers_model.data();
+
+    _transform_info_form = new TransformInfoForm(p, _render_controller.data() );
 }
 
 
@@ -90,6 +93,12 @@ ToolFactory::
 {
     TaskInfo ti(__FUNCTION__);
     // Try to clear things in the opposite order that they were created
+
+    if (!_transform_info_form.isNull())
+        delete _transform_info_form;
+
+    if (!_playbackmarkers_controller.isNull())
+        delete _playbackmarkers_controller;
 
     delete _about_dialog;
 
