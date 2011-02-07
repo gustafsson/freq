@@ -128,19 +128,21 @@ void TooltipView::
         draw()
 {
     if (visible)
+    {
         drawMarkers();
 
-    if (model_->automarking == TooltipModel::AutoMarkerWorking)
-    {
-        TaskInfo ti("TooltipView doesn't have all data yet");
+        if (model_->automarking == TooltipModel::AutoMarkerWorking)
+        {
+            TaskInfo ti("TooltipView doesn't have all data yet");
 
-        model_->showToolTip( model_->pos );
+            model_->showToolTip( model_->pos );
 
-        TaskInfo("%s", model_->comment->html().c_str());
-        if (model_->automarking != TooltipModel::AutoMarkerWorking)
-            TaskInfo("TooltipView just finished");
+            TaskInfo("%s", model_->comment->html().c_str());
+            if (model_->automarking != TooltipModel::AutoMarkerWorking)
+                TaskInfo("TooltipView just finished");
 
-        render_view_->userinput_update( false );
+            render_view_->userinput_update( false );
+        }
     }
 }
 

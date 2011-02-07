@@ -828,7 +828,7 @@ std::vector<GLvector> Renderer::
 
     //printl("Start",l);
     // Don't bother with projectionNormal?
-    clipPlane(l, projectionPlane, projectionNormal);
+    //clipPlane(l, projectionPlane, projectionNormal);
     //printl("Projectionclipped",l);
     clipPlane(l, rightPlane, rightNormal);
     //printl("Right", l);
@@ -963,6 +963,12 @@ void Renderer::drawAxes( float T )
     // 4 draw axis
 
     float w = 0.1f, h=0.05f;
+    if (!left_handed_axes)
+    {
+        w = 0.05f, h = 0.1f;
+    }
+
+
     { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
         glPushMatrixContext push_proj(GL_PROJECTION);

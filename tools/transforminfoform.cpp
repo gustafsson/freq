@@ -94,6 +94,7 @@ void TransformInfoForm::
         addRow("Type", "Short time fourier");
         addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(stft->chunk_size()));
+        addRow("Overlap", "0");
     }
     else
     {
