@@ -42,7 +42,6 @@ public:
 
 signals:
     void onMainWindowCloseEvent( QWidget* closed );
-    void onAskSaveChanges();
 
 protected:
     virtual void closeEvent(QCloseEvent *);

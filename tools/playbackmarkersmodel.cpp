@@ -38,7 +38,8 @@ void PlaybackMarkersModel::
 {
     std::pair<Markers::iterator, bool> value = markers_.insert( pos );
     current_marker_ = value.first;
-    current_marker_--;
+    if (current_marker_ != markers_.begin())
+        current_marker_--;
     // if value.second is false the element did already exist.
     // silently don't add a duplicate
 }

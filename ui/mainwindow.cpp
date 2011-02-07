@@ -115,7 +115,6 @@ void SaweMainWindow::
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
 
-    connect(this, SIGNAL(onAskSaveChanges()), SLOT(askSaveChanges()), Qt::QueuedConnection);
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
         Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
         Qt::QueuedConnection);
@@ -194,7 +193,7 @@ void SaweMainWindow::
 {
     if (project->isModified() && 0==save_changes_msgbox_)
     {
-        emit onAskSaveChanges();
+        askSaveChanges();
         e->ignore();
         return;
     }
@@ -212,7 +211,6 @@ void SaweMainWindow::
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
     save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
     save_changes_msgbox_->setDetailedText( QString::fromStdString( "Current state:\n" + project->head_source()->toString()) );
-    save_changes_msgbox_->show();
     save_changes_msgbox_->open( this, SLOT(saveChangesAnswer(QAbstractButton *)));
 }
 
