@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -50,13 +50,13 @@
     </property>
     <addaction name="actionToggleHistoryWindow"/>
     <addaction name="actionToggleTimelineWindow"/>
+    <addaction name="actionTransform_info"/>
     <addaction name="separator"/>
     <addaction name="actionToggleToolToolBox"/>
     <addaction name="actionToggleTransformToolBox"/>
     <addaction name="actionToggleNavigationToolBox"/>
     <addaction name="actionToggleTimeControlToolBox"/>
     <addaction name="actionToggleSelectionToolBox"/>
-    <addaction name="actionTransform_info"/>
     <addaction name="actionToggleBrushesToolbar"/>
    </widget>
    <widget class="QMenu" name="menuFile">
@@ -684,9 +684,6 @@
    <property name="toolTip">
     <string>Toggle the tool box</string>
    </property>
-   <property name="shortcut">
-    <string>T</string>
-   </property>
   </action>
   <action name="actionToggleCreationToolBox">
    <property name="checkable">
@@ -717,9 +714,6 @@
    </property>
    <property name="toolTip">
     <string>Toggle the transform tool box</string>
-   </property>
-   <property name="shortcut">
-    <string>F</string>
    </property>
   </action>
   <action name="actionToggleNavigationToolBox">
@@ -791,9 +785,6 @@
    </property>
   </action>
   <action name="actionOpen">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Open </string>
    </property>
@@ -832,9 +823,6 @@
    </property>
    <property name="toolTip">
     <string>Toggle the history window</string>
-   </property>
-   <property name="shortcut">
-    <string>H</string>
    </property>
   </action>
   <action name="actionCutoffSelection">

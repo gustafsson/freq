@@ -23,6 +23,7 @@ public:
 
 public slots:
     void transformChanged();
+    void checkVisibility(bool);
 
 private:
     Ui::TransformInfoForm *ui;

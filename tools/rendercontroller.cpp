@@ -313,7 +313,7 @@ void RenderController::
 {
     Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
     toolbar_render = new QToolBar(main);
-    toolbar_render->setObjectName(QString::fromUtf8("toolBarTool"));
+    toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
     toolbar_render->setEnabled(true);
     toolbar_render->setContextMenuPolicy(Qt::NoContextMenu);
     toolbar_render->setToolButtonStyle(Qt::ToolButtonIconOnly);

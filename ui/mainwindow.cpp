@@ -8,6 +8,7 @@
 
 // Qt
 #include <QCloseEvent>
+#include <QSettings>
 
 using namespace std;
 using namespace boost;
@@ -71,8 +72,10 @@ void SaweMainWindow::
     // TODO remove actionToggleTimelineWindow, and dockWidgetTimeline
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
 //    connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
-    connectActionToWindow(ui->actionToggleHistoryWindow, ui->operationsWindow);
-//    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
+    connect(ui->actionToggleHistoryWindow, SIGNAL(toggled(bool)), ui->operationsWindow, SLOT(setVisible(bool)));
+    connect(ui->operationsWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityOperations(bool)));
+
+    //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
     connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
     connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
@@ -84,15 +87,19 @@ void SaweMainWindow::
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
 
+    ui->toolPropertiesWindow->hide();
+    ui->topFilterWindow->hide();
+    ui->historyWindow->hide();
     this->removeDockWidget( ui->toolPropertiesWindow );
     //this->removeDockWidget( ui->operationsWindow );
     this->removeDockWidget( ui->topFilterWindow );
     this->removeDockWidget( ui->historyWindow );
 
     // todo move into toolfactory
-    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
-    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
-    ui->topFilterWindow->raise();
+//    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
+//    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
+//    ui->topFilterWindow->raise();
+    ui->operationsWindow->raise();
 
     // todo move into toolfactory
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
@@ -143,13 +150,12 @@ void SaweMainWindow::slotCheckActionStates(bool)
 }
 */
 
-/*
- todo create some generic solution for showing/hiding tool windows
- */
-void SaweMainWindow::connectActionToWindow(QAction *a, QWidget *b)
+
+void SaweMainWindow::
+        checkVisibilityOperations(bool visible)
 {
-    connect(a, SIGNAL(toggled(bool)), b, SLOT(setVisible(bool)));
-    connect(b, SIGNAL(visibilityChanged(bool)), a, SLOT(setChecked(bool)));
+    visible |= !tabifiedDockWidgets( ui->operationsWindow ).empty();
+    ui->actionToggleHistoryWindow->setChecked(visible);
 }
 
 
@@ -204,6 +210,14 @@ void SaweMainWindow::
     e->accept();
 
     emit onMainWindowCloseEvent( this );
+
+    {
+        QSettings settings("REEP", "Sonic AWE");
+        settings.setValue("geometry", saveGeometry());
+        settings.setValue("windowState", saveState());
+    }
+
+    QMainWindow::closeEvent(e);
 }
 
 

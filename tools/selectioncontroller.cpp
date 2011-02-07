@@ -80,7 +80,7 @@ namespace Tools
         ui->actionMoveSelectionTime->setEnabled( false );
 
         QToolBar* toolBarTool = new QToolBar(main);
-        toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
+        toolBarTool->setObjectName(QString::fromUtf8("toolBarSelectionController"));
         toolBarTool->setEnabled(true);
         toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
         toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);

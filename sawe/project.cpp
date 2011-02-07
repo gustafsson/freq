@@ -9,6 +9,7 @@
 #include <QtGui/QFileDialog>
 #include <QVBoxLayout>
 #include <QtGui/QMessageBox>
+#include <QSettings>
 
 // Std
 #include <sys/stat.h>
@@ -159,6 +160,10 @@ void Project::
         _tools.reset( new Tools::ToolFactory(this) );
         tt.info("Created tools");
     }
+
+    QSettings settings("REEP", "Sonic AWE");
+    _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
+    _mainWindow->restoreState(settings.value("windowState").toByteArray());
 }
 
 

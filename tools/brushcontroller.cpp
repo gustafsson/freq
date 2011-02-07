@@ -49,7 +49,7 @@ void BrushController::
 
 
     QToolBar* toolBarTool = new QToolBar(main);
-    toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
+    toolBarTool->setObjectName(QString::fromUtf8("toolBarBrushController"));
     toolBarTool->setEnabled(true);
     toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
     toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
