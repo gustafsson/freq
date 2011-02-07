@@ -121,6 +121,10 @@ namespace Tools
 
         /**
           */
+        void populateTodoList();
+
+        /**
+          */
         void postPaint();
 
         /**

@@ -29,6 +29,8 @@ namespace Tools
         void receiveFollowPlayMarker( bool v );
         void onSelectionChanged();
 
+        void populateTodoList();
+
     private:
         PlaybackModel* model();
         PlaybackView* _view;

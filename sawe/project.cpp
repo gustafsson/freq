@@ -70,7 +70,7 @@ pProject Project::
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
         filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
 
-        QString qfilemame = QFileDialog::getOpenFileName(0, "Open file", NULL, QString::fromLocal8Bit(filter.c_str()));
+        QString qfilemame = QFileDialog::getOpenFileName(NULL, "Open file", "", QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilemame.length()) {
             // User pressed cancel
             return pProject();
@@ -167,7 +167,7 @@ bool Project::
 {
     string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
 
-    QString qfilemame = QFileDialog::getSaveFileName(0, "Save project", NULL, QString::fromLocal8Bit(filter.c_str()));
+    QString qfilemame = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", QString::fromLocal8Bit(filter.c_str()));
     if (0 == qfilemame.length()) {
         // User pressed cancel
         return false;

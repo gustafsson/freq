@@ -376,6 +376,20 @@ Interval Intervals::
 }
 
 
+IntervalType Intervals::
+        count() const
+{
+    IntervalType c = 0;
+
+    foreach (const Interval& r, *this)
+    {
+        c += r.count();
+    }
+
+    return c;
+}
+
+
 std::string Intervals::toString() const
 {
     std::stringstream ss;

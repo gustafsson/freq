@@ -121,6 +121,8 @@ namespace Tools
 
         QPointer<class TransformInfoForm> _transform_info_form;
 
+        QPointer<class ExportAudioDialog> _export_audio_dialog;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

@@ -92,6 +92,7 @@ FORMS += \
     tools/commentview.ui \
     tools/selectionviewmodel.ui \
     tools/transforminfoform.ui \
+    tools/exportaudiodialog.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

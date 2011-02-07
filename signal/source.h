@@ -90,6 +90,8 @@ public:
       Length of signal, in seconds.
       */
     float length() { return number_of_samples() / sample_rate(); }
+    std::string lengthLongFormat() { return lengthLongFormat(length()); }
+    static std::string lengthLongFormat( float T );
 
 
 protected:

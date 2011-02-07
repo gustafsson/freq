@@ -22,6 +22,7 @@
 #include "aboutdialog.h"
 #include "playbackmarkerscontroller.h"
 #include "transforminfoform.h"
+#include "exportaudiodialog.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -85,6 +86,8 @@ ToolFactory::
     playback_model.markers = _playbackmarkers_model.data();
 
     _transform_info_form = new TransformInfoForm(p, _render_controller.data() );
+
+    _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
 }
 
 
@@ -93,6 +96,9 @@ ToolFactory::
 {
     TaskInfo ti(__FUNCTION__);
     // Try to clear things in the opposite order that they were created
+
+    if (!_export_audio_dialog .isNull())
+        delete _export_audio_dialog;
 
     if (!_transform_info_form.isNull())
         delete _transform_info_form;

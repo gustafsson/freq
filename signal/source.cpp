@@ -5,6 +5,8 @@
 #include <demangle.h>
 #include <typeinfo>
 
+#include <sstream>
+
 //#define TIME_READCHECKED
 #define TIME_READCHECKED if(0)
 
@@ -166,6 +168,41 @@ pBuffer SourceBase::
 
     return r;
 }
+
+
+std::string SourceBase::
+        lengthLongFormat(float L)
+{
+    std::stringstream ss;
+    unsigned seconds_per_minute = 60;
+    unsigned seconds_per_hour = seconds_per_minute*60;
+    unsigned seconds_per_day = seconds_per_hour*24;
+
+    if (L < seconds_per_minute )
+        ss << L << " seconds";
+    else
+    {
+        if (L <= seconds_per_day )
+        {
+            unsigned days = floor(L/seconds_per_day);
+            ss << days << "d ";
+            L -= days * seconds_per_day;
+        }
+
+        unsigned hours = floor(L/seconds_per_hour);
+        ss << std::setfill('0') << std::setw(2) << hours << ":";
+        L -= hours * seconds_per_hour;
+
+        unsigned minutes = floor(L/seconds_per_minute);
+        ss << std::setfill('0') << std::setw(2) << minutes << ":";
+        L -= minutes * seconds_per_minute;
+
+        ss << std::setiosflags(std::ios::fixed)
+           << std::setprecision(3) << std::setw(6) << L;
+    }
+    return ss.str();
+}
+
 
 pBuffer SourceBase::
         zeros( const Interval& I )

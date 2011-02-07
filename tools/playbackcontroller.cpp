@@ -53,6 +53,7 @@ void PlaybackController::
     // RenderView paints.
     connect(render_view, SIGNAL(painting()), _view, SLOT(draw()));
     connect(render_view, SIGNAL(prePaint()), _view, SLOT(locatePlaybackMarker()));
+    connect(render_view, SIGNAL(populateTodoList()), SLOT(populateTodoList()));
     connect(_view->model->selection, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
 }
 
@@ -204,6 +205,29 @@ void PlaybackController::
 {
     if (ui_items_->actionPlaySelection->isChecked())
         receiveStop();
+}
+
+
+void PlaybackController::
+        populateTodoList()
+{
+    Signal::Intervals missing_for_playback=
+            model()->postsinkCallback->sink()->fetch_invalid_samples();
+
+    bool playback_is_underfed = project_->tools().playback_model.getPostSink()->isUnderfed();
+    // Don't bother with computing playback unless it is underfed
+    if (missing_for_playback && playback_is_underfed)
+    {
+        project_->worker.center = 0;
+        project_->worker.todo_list( missing_for_playback );
+
+        // Request at least 1 fps. Otherwise there is a risk that CUDA
+        // will screw up playback by blocking the OS and causing audio
+        // starvation.
+        project_->worker.requested_fps(1);
+
+        //project->worker.todo_list().print("Displaywidget - PostSink");
+    }
 }
 
 
