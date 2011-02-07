@@ -41,24 +41,23 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
      <string>&amp;Windows</string>
     </property>
-    <addaction name="actionToggleTopFilterWindow"/>
-    <addaction name="actionToggleOperationsWindow"/>
     <addaction name="actionToggleHistoryWindow"/>
     <addaction name="actionToggleTimelineWindow"/>
     <addaction name="separator"/>
     <addaction name="actionToggleToolToolBox"/>
-    <addaction name="actionToggleCreationToolBox"/>
     <addaction name="actionToggleTransformToolBox"/>
     <addaction name="actionToggleNavigationToolBox"/>
     <addaction name="actionToggleTimeControlToolBox"/>
     <addaction name="actionToggleSelectionToolBox"/>
+    <addaction name="actionTransform_info"/>
+    <addaction name="actionToggleBrushesToolbar"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -69,7 +68,6 @@
     <addaction name="actionSave_project"/>
     <addaction name="actionSave_project_as"/>
     <addaction name="separator"/>
-    <addaction name="actionImport_audio"/>
     <addaction name="actionExport_audio"/>
     <addaction name="actionExport_selection"/>
     <addaction name="separator"/>
@@ -80,7 +78,6 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
-    <addaction name="actionSend_feedback"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
@@ -196,6 +193,12 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="operationsWindow">
+   <property name="minimumSize">
+    <size>
+     <width>88</width>
+     <height>113</height>
+    </size>
+   </property>
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -289,6 +292,8 @@
    </attribute>
    <addaction name="actionPausePlayBack"/>
    <addaction name="actionPlaySelection"/>
+   <addaction name="actionPlaySection"/>
+   <addaction name="actionPlayEntireSound"/>
    <addaction name="actionStopPlayBack"/>
    <addaction name="actionJumpBackward"/>
    <addaction name="actionJumpForward"/>
@@ -310,20 +315,13 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="actionActionAdd_selection"/>
    <addaction name="actionActionRemove_selection"/>
-   <addaction name="actionMatlabFilter"/>
-   <addaction name="actionCutoffSelection"/>
    <addaction name="actionMatlabOperation"/>
    <addaction name="actionCropSelection"/>
-   <addaction name="actionMoveSelection"/>
-   <addaction name="actionMoveSelectionTime"/>
-   <addaction name="actionResetGraphics"/>
-   <addaction name="actionTonalizeFilter"/>
-   <addaction name="actionReassignFilter"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
    <addaction name="actionToggleFullscreen"/>
+   <addaction name="actionToggleFullscreenNoMenus"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
@@ -334,8 +332,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>
-     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-circle-selection.png</iconset>
+     <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>:/icons/icons/icon-circle-selection.png</iconset>
    </property>
    <property name="text">
     <string>Ellipse Selection</string>
@@ -359,8 +356,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-navigation.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-navigation.png</iconset>
+     <normaloff>:/icons/icons/icon-navigation.png</normaloff>:/icons/icons/icon-navigation.png</iconset>
    </property>
    <property name="text">
     <string>Activate Navigation</string>
@@ -411,19 +407,21 @@
    </property>
   </action>
   <action name="actionPlaySelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
-    <iconset>
-     <normalon>:/icons/icons/icon-play.png</normalon>
-    </iconset>
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-play-sel.png</normaloff>:/icons/icons/icon-play-sel.png</iconset>
    </property>
    <property name="text">
     <string>Play Selection</string>
    </property>
    <property name="toolTip">
-    <string>Play the selected area [Space]</string>
+    <string>Play the selected area [Ctrl+Space]</string>
    </property>
    <property name="shortcut">
-    <string>Space</string>
+    <string>Ctrl+Space</string>
    </property>
   </action>
   <action name="actionToggleSelectionToolBox">
@@ -503,8 +501,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-crop.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-crop.png</iconset>
+     <normaloff>:/icons/icons/icon-crop.png</normaloff>:/icons/icons/icon-crop.png</iconset>
    </property>
    <property name="text">
     <string>Crop Selection</string>
@@ -531,8 +528,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-move.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-move.png</iconset>
+     <normaloff>:/icons/icons/icon-move.png</normaloff>:/icons/icons/icon-move.png</iconset>
    </property>
    <property name="text">
     <string>Move Selection</string>
@@ -559,8 +555,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-move-time.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-move-time.png</iconset>
+     <normaloff>:/icons/icons/icon-move-time.png</normaloff>:/icons/icons/icon-move-time.png</iconset>
    </property>
    <property name="text">
     <string>Move Selection in Time</string>
@@ -584,8 +579,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-matlabfilter.png</iconset>
+     <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>:/icons/icons/icon-matlabfilter.png</iconset>
    </property>
    <property name="text">
     <string>Matlab filter</string>
@@ -603,8 +597,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-matlaboperation.png</iconset>
+     <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>:/icons/icons/icon-matlaboperation.png</iconset>
    </property>
    <property name="text">
     <string>Matlab operation</string>
@@ -628,8 +621,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-record.png</normaloff>
-     <normalon>:/icons/icons/icon_move.png</normalon>:/icons/icons/icon-record.png</iconset>
+     <normaloff>:/icons/icons/icon-record.png</normaloff>:/icons/icons/icon-record.png</iconset>
    </property>
    <property name="text">
     <string>Record</string>
@@ -650,8 +642,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-lockplayback.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-lockplayback.png</iconset>
+     <normaloff>:/icons/icons/icon-lockplayback.png</normaloff>:/icons/icons/icon-lockplayback.png</iconset>
    </property>
    <property name="text">
     <string>Follow play marker</string>
@@ -753,7 +744,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Time control</string>
+    <string>Playback</string>
    </property>
    <property name="toolTip">
     <string>Toggle the time control tool box</string>
@@ -779,9 +770,6 @@
    </property>
   </action>
   <action name="actionExport_audio">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Export</string>
    </property>
@@ -811,9 +799,6 @@
    </property>
   </action>
   <action name="actionExport_selection">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Export selection</string>
    </property>
@@ -1011,8 +996,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-zoom.png</normaloff>
-     <normalon>:/icons/icons/icon_select.png</normalon>:/icons/icons/icon-zoom.png</iconset>
+     <normaloff>:/icons/icons/icon-zoom.png</normaloff>:/icons/icons/icon-zoom.png</iconset>
    </property>
    <property name="text">
     <string>Zoom</string>
@@ -1031,35 +1015,24 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-set-mark.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-set-mark.png</iconset>
+     <normaloff>:/icons/icons/icon-set-mark.png</normaloff>:/icons/icons/icon-set-mark.png</iconset>
    </property>
    <property name="text">
     <string>Set playback marker</string>
    </property>
    <property name="toolTip">
-    <string>Set playback marker</string>
+    <string>Set playback markers with left mouse button, remove with right mouse button</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
    </property>
   </action>
   <action name="actionStopPlayBack">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-stop.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-stop.png</iconset>
+     <normaloff>:/icons/icons/icon-stop.png</normaloff>:/icons/icons/icon-stop.png</iconset>
    </property>
    <property name="text">
     <string>Stop playback</string>
@@ -1080,8 +1053,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-paus.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-paus.png</iconset>
+     <normaloff>:/icons/icons/icon-paus.png</normaloff>:/icons/icons/icon-paus.png</iconset>
    </property>
    <property name="text">
     <string>Pause playback</string>
@@ -1094,16 +1066,9 @@
    </property>
   </action>
   <action name="actionJumpForward">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-next-mark.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-next-mark.png</iconset>
+     <normaloff>:/icons/icons/icon-next-mark.png</normaloff>:/icons/icons/icon-next-mark.png</iconset>
    </property>
    <property name="text">
     <string>Jump to next marker</string>
@@ -1116,16 +1081,9 @@
    </property>
   </action>
   <action name="actionJumpBackward">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-prev-mark.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/icon-prev-mark.png</iconset>
+     <normaloff>:/icons/icons/icon-prev-mark.png</normaloff>:/icons/icons/icon-prev-mark.png</iconset>
    </property>
    <property name="text">
     <string>Jump to previous marker</string>
@@ -1146,8 +1104,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
     <string>Select previous operations</string>
@@ -1233,8 +1190,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
     <string>Tonalize transform</string>
@@ -1252,8 +1208,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>
-     <normalon>:/icons/icons/icon-lockplayback.png</normalon>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
     <string>Reassign transform</string>
@@ -1274,7 +1229,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
     <string>Rainbow colors</string>
@@ -1295,7 +1250,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-gray.png</normaloff>:/icons/icons/icon-show-gray.png</iconset>
    </property>
    <property name="text">
     <string>Grayscale</string>
@@ -1316,13 +1271,13 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-heightlines.png</normaloff>:/icons/icons/icon-show-heightlines.png</iconset>
    </property>
    <property name="text">
-    <string>Heightlines</string>
+    <string>Heightlines (only visible in 3D)</string>
    </property>
    <property name="toolTip">
-    <string>Heightlines</string>
+    <string>Heightlines (only visible in 3D)</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1337,7 +1292,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-info.png</normaloff>:/icons/icons/icon-show-info.png</iconset>
    </property>
    <property name="text">
     <string>Get info</string>
@@ -1395,7 +1350,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-place-comment.png</normaloff>:/icons/icons/icon-place-comment.png</iconset>
    </property>
    <property name="text">
     <string>Add comment</string>
@@ -1416,7 +1371,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-comment.png</normaloff>:/icons/icons/icon-show-comment.png</iconset>
    </property>
    <property name="text">
     <string>Hide/show comments</string>
@@ -1448,7 +1403,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
     <string>Colorscale</string>
@@ -1535,6 +1490,103 @@
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionPlaySection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-play-sec.png</normaloff>:/icons/icons/icon-play-sec.png</iconset>
+   </property>
+   <property name="text">
+    <string>Play current section</string>
+   </property>
+   <property name="toolTip">
+    <string>Play the current section [Space]</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
+   </property>
+  </action>
+  <action name="actionPlayEntireSound">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-play.png</normaloff>:/icons/icons/icon-play.png</iconset>
+   </property>
+   <property name="text">
+    <string>Play entire sound starting at current section</string>
+   </property>
+   <property name="toolTip">
+    <string>Play entire sound starting at current section [ [Ctrl+Shift+Space]</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Space</string>
+   </property>
+  </action>
+  <action name="actionToggleFullscreenNoMenus">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle fullscreen (no menus)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle fullscreen  (no menus)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Return</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleOrientation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle orientation (left/right handed coordinate system)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle orientation (left/right handed coordinate system)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_info">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Transform info</string>
+   </property>
+  </action>
+  <action name="actionToggleBrushesToolbar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Brushes</string>
    </property>
   </action>
  </widget>

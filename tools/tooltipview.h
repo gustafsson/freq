@@ -7,27 +7,37 @@
 #include "renderview.h"
 
 namespace Tools {
-
+class TooltipController;
 class TooltipView : public QObject
 {
     Q_OBJECT
 public:
-    TooltipView(TooltipModel* model, RenderView* render_view);
+    TooltipView(TooltipController* controller,
+                CommentController* comments,
+                RenderView* render_view);
     ~TooltipView();
 
     void drawMarkers();
     void drawMarker( Heightmap::Position p );
+    TooltipModel* model() { return model_; }
 
     bool enabled;
     bool visible;
 
 public slots:
-    /// Connected in RectangleController
-    virtual void draw();
+    /// Connected in constructor
+    void draw();
+
+    void setHidden(bool value);
+    void setFocus();
+    void seppuku();
 
 private:
-    friend class TooltipController;
+    bool initialized;
+    void initialize();
+
     TooltipModel* model_;
+    TooltipController* controller_;
     RenderView* render_view_;
 };
 

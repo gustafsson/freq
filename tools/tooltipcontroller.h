@@ -5,23 +5,24 @@
 #include "heightmap/position.h"
 #include "commentcontroller.h"
 
-#include "tooltipview.h"
-
 #include <QWidget>
 
 namespace Tools
 {
     class RenderView;
     class RenderModel;
+    class TooltipView;
+    class TooltipModel;
 
     class TooltipController: public QWidget
     {
         Q_OBJECT
     public:
-        TooltipController(TooltipView* view,
-                          RenderView *render_view,
+        TooltipController(RenderView *render_view,
                           CommentController* comments);
         ~TooltipController();
+
+        void setCurrentView(TooltipView* value ) { current_view_ = value; }
 
     signals:
         void enabledChanged(bool active);
@@ -36,23 +37,23 @@ namespace Tools
         virtual void mouseMoveEvent ( QMouseEvent * e );
         virtual void wheelEvent(QWheelEvent *);
         virtual void changeEvent(QEvent *);
-        void showToolTip( Heightmap::Position p );
-        unsigned guessHarmonicNumber( const Heightmap::Position& pos );
-        float computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, Heightmap::Reference* ref=0);
 
 
         // Model and View
-        TooltipView* view_;
-        TooltipModel* model() { return view_->model_; }
+        std::list<QPointer<TooltipView> > views_;
         RenderView* render_view_;
-        CommentController* _comments;
+        CommentController* comments_;
+
+        TooltipModel* current_model();
+        TooltipView* current_view_;
 
         // GUI
         void setupGui();
 
+        void setupView(TooltipView* view);
+
         // State
         Ui::MouseControl infoToolButton;
-        unsigned fetched_heightmap_values;
     };
 }
 

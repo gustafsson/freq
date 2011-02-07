@@ -72,17 +72,25 @@ namespace Tools { namespace Selections
     {
         if (e->button() == stop_button_)
         {
-            setMouseTracking(false);
-            model()->drawing = false;
-            model()->v.pop_back();
+            if (e->modifiers().testFlag(Qt::ControlModifier))
+            {
+                if (!model()->v.empty())
+                    model()->v.pop_back();
+            }
+            else
+            {
+                setMouseTracking(false);
+                model()->drawing = false;
+                model()->v.pop_back();
 
-            selection_controller_->setCurrentSelection( model()->updateFilter() );
+                selection_controller_->setCurrentSelection( model()->updateFilter() );
+            }
         }
         else if (e->button() == selection_button_)
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             bool success;
-            Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+            Heightmap::Position click = r.getPlanePos( e->posF(), &success);
 
             if (success)
             {
@@ -117,7 +125,7 @@ namespace Tools { namespace Selections
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
-            Heightmap::Position click = r.getPlanePos( QPointF(e->x(), height() - 1 - e->y()), &success);
+            Heightmap::Position click = r.getPlanePos( e->posF(), &success);
             if (success)
             {
                 if (!model()->drawing)

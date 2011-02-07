@@ -49,6 +49,7 @@ public:
     float y_scale;
     float last_ysize;
     unsigned drawn_blocks;
+    bool left_handed_axes;
 
     void init();
 

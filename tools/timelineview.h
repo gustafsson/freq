@@ -11,6 +11,7 @@
 
 // Qt
 #include <QGLWidget>
+#include <QBoxLayout>
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -23,6 +24,8 @@ namespace Sawe {
 
 
 namespace Tools {
+
+namespace Support { class ToolSelector; };
 
 class RenderView;
 
@@ -38,14 +41,22 @@ public:
 
     void userinput_update();
 
+    Support::ToolSelector* tool_selector;
+
 signals:
     void hideMe();
+
+public slots:
+    void paintInGraphicsView();
+    void layoutChanged( QBoxLayout::Direction direction );
 
 protected:
     /// @overload QGLWidget::initializeGL()
     virtual void initializeGL();
+    void initializeTimeline();
 
     /// @overload QGLWidget::resizeGL()
+    void resizeGL( int x, int y, int width, int height );
     virtual void resizeGL( int width, int height );
 
     /// @overload QGLWidget::paintGL()
@@ -74,6 +85,7 @@ private:
 
     boost::scoped_ptr<GlFrameBuffer> _timeline_fbo;
     boost::scoped_ptr<GlFrameBuffer> _timeline_bar_fbo;
+    bool _vertical;
 };
 
 } // namespace Tools

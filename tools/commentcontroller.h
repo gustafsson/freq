@@ -31,8 +31,9 @@ private slots:
     void showComments(bool active);
 
 private:
-    void changeEvent ( QEvent * event );
-    void mouseMoveEvent ( QMouseEvent * e );
+    virtual void changeEvent ( QEvent * event );
+    virtual void mouseMoveEvent ( QMouseEvent * e );
+    virtual void mousePressEvent ( QMouseEvent * e );
 
     CommentView* createNewComment();
 
@@ -41,7 +42,7 @@ private:
     RenderView* view_;
 
     CommentView* comment_;
-    QList<CommentView*> comments_;
+    QList<QPointer<CommentView> > comments_;
 };
 
 } // namespace Tools

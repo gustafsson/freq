@@ -157,6 +157,19 @@ void RenderController::
 
 
 void RenderController::
+        receiveToggleOrientation(bool value)
+{
+    model()->renderer->left_handed_axes = !value;
+
+    view->graphicsview->setLayoutDirection( value
+                                            ? QBoxLayout::RightToLeft
+                                            : QBoxLayout::TopToBottom );
+
+    view->userinput_update();
+}
+
+
+void RenderController::
         receiveTogglePiano(bool value)
 {
     model()->renderer->draw_piano = value;
@@ -195,6 +208,8 @@ void RenderController::
     model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
 
     view->userinput_update();
+
+    emit transformChanged();
 }
 
 
@@ -215,6 +230,8 @@ Signal::PostSink* RenderController::
     ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
 
     view->userinput_update();
+
+    emit transformChanged();
 
     return ps;
 }
@@ -302,6 +319,8 @@ void RenderController::
     toolbar_render->setToolButtonStyle(Qt::ToolButtonIconOnly);
     main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
 
+    connect(main->getItems()->actionToggleTransformToolBox, SIGNAL(toggled(bool)), toolbar_render, SLOT(setVisible(bool)));
+
 
     // Find Qt Creator managed actions
     Ui::MainWindow* ui = main->getItems();
@@ -337,6 +356,9 @@ void RenderController::
     // QAction *actionSet_heightlines
     toolbar_render->addAction(ui->actionSet_heightlines);
     connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
+
+    toolbar_render->addAction(ui->actionToggleOrientation);
+    connect(ui->actionToggleOrientation, SIGNAL(toggled(bool)), SLOT(receiveToggleOrientation(bool)));
 
     // ComboBoxAction* transform
     {   transform = new ComboBoxAction();
@@ -407,12 +429,13 @@ void RenderController::
     view->glwidget->makeCurrent();
     //view->glwidget->setMouseTracking(true);
 
-    GraphicsView* g = new GraphicsView(view);
-    g->setViewport(view->glwidget);
-    view->tool_selector.reset( new Support::ToolSelector(g->toolParent));
+    view->graphicsview = new GraphicsView(view);
+    view->graphicsview->setViewport(view->glwidget);
+    view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
+    view->tool_selector = view->graphicsview->toolSelector(0);
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(g);
+    main->centralWidget()->layout()->addWidget(view->graphicsview);
 }
 
 

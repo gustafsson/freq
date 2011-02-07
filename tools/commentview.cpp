@@ -29,11 +29,13 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
     QAction *closeAction = new QAction(tr("D&elete"), this);
     //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
+    this->setAttribute( Qt::WA_DeleteOnClose );
 
-    QAction *hideAction = new QAction(tr("T&oggle thumbnail"), this);
+    QAction *hideAction = new QAction(tr("T&humbnail"), this);
     //hideAction->setShortcut(tr("Ctrl+T"));
     hideAction->setCheckable(true);
     connect(hideAction, SIGNAL(toggled(bool)), SLOT(thumbnail(bool)));
+    connect(this, SIGNAL(thumbnailChanged(bool)), hideAction, SLOT(setChecked(bool)));
 
 	connect(ui->textEdit, SIGNAL(textChanged()), SLOT(updateText()));
     addAction(closeAction);
@@ -79,6 +81,12 @@ void CommentView::
 void CommentView::
         mousePressEvent(QMouseEvent *event)
 {
+    if (model->move_on_hover)
+    {
+        event->setAccepted( false );
+        return;
+    }
+
     if (!mask().contains( event->pos() ))
     {
         event->setAccepted( false );
@@ -134,17 +142,30 @@ void CommentView::
     bool visible = mask().contains( event->pos() );
     setContextMenuPolicy( visible ? Qt::ActionsContextMenu : Qt::NoContextMenu);
 
+    bool moving = false;
+    bool resizing = false;
+
     if (event->buttons() & Qt::LeftButton)
+    {
+        moving |= event->modifiers() == 0 && !model->freezed_position;
+        resizing |= event->modifiers().testFlag(Qt::ControlModifier);
+    }
+
+    moving |= model->move_on_hover;
+    if (model->move_on_hover)
+        dragPosition = proxy->sceneTransform().map(ref_point);
+
+    if (moving || resizing)
     {
         QPoint gp = proxy->sceneTransform().map(event->globalPos());
 
-        if (event->modifiers() == 0 && !model->freezed_position)
+        if (moving)
         {
             move(gp - dragPosition);
             dragPosition = gp;
             event->accept();
         }
-        else if (event->modifiers().testFlag(Qt::ControlModifier))
+        else if (resizing)
         {
             QPoint sz = QPoint(gp.x(),-gp.y()) - resizePosition;
             resize(sz.x(), sz.y());
@@ -172,6 +193,8 @@ void CommentView::
     //TaskInfo("CommentView::focusInEvent, gotFocus = %d, reason = %d", e->gotFocus(), e->reason());
 
     recreatePolygon();
+
+    emit gotFocus();
 }
 
 
@@ -303,7 +326,11 @@ void CommentView::
 void CommentView::
         thumbnail(bool v)
 {
-    model->thumbnail = v;
+    if (model->thumbnail != v)
+    {
+        model->thumbnail = v;
+        emit thumbnailChanged( model->thumbnail );
+    }
 
     recreatePolygon();
 }
@@ -342,9 +369,19 @@ QSize CommentView::
 }
 
 
+bool CommentView::
+        isThumbnail()
+{
+    return model->thumbnail;
+}
+
+
 void CommentView::
         updatePosition()
 {
+    if (!isVisible())
+        return;
+
     // moveEvent can't be used when updating the reference position while moving
     if (!proxy->pos().isNull())
     {
@@ -352,15 +389,7 @@ void CommentView::
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
-            float h = proxy->scene()->height();
-            c.setY( h - 1 - c.y() );
-
             model->pos = view->getHeightmapPos( c );
-
-            /*            float x, y;
-        Ui::MouseControl::planePos( c.x(), c.y(), x, y, view->xscale );
-        pos.time = x;
-        pos.scale = y;*/
         }
 
         keep_pos = false;
@@ -372,7 +401,7 @@ void CommentView::
     }
 
     double z;
-    QPointF pt = view->getScreenPos( Heightmap::Position( model->pos.time, model->pos.scale), &z );
+    QPointF pt = view->getScreenPos( model->pos, &z );
     //TaskInfo("model->pos( %g, %g ) -> ( %g, %g, %g )",
     //         model->pos.time, model->pos.scale,
     //         pt.x(), pt.y(), z);

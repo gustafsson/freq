@@ -8,13 +8,14 @@
 namespace Tools
 {
     PlaybackModel::
-            PlaybackModel( SelectionModel* selection )
+            PlaybackModel(Sawe::Project* project)
                 :
                 playback_device(-1),
-                selection(selection)
+                selection(0),
+                markers(0)
     {
         postsinkCallback.reset( new Signal::WorkerCallback(
-                &selection->project()->worker,
+                &project->worker,
                 Signal::pOperation(new Signal::PostSink)) );
     }
 

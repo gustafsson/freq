@@ -27,6 +27,8 @@ namespace Heightmap
 
 namespace Tools
 {
+    class GraphicsView;
+
     class RenderView: public QGraphicsScene
     {
         Q_OBJECT
@@ -35,11 +37,13 @@ namespace Tools
         virtual ~RenderView();
 
         virtual void drawBackground(QPainter *painter, const QRectF &);
+        virtual void drawForeground(QPainter *painter, const QRectF &);
         void drawCollections(GlFrameBuffer* fbo, float yscale);
         QPointF getScreenPos( Heightmap::Position pos, double* dist );
-        Heightmap::Position getHeightmapPos( QPointF viewport_coordinates, bool useRenderViewContext = true );
-        Heightmap::Position getPlanePos( QPointF pos, bool* success = 0, bool useRenderViewContext = true );
-        float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false );
+        QPointF getWidgetPos( Heightmap::Position pos, double* dist );
+        Heightmap::Position getHeightmapPos( QPointF widget_coordinates, bool useRenderViewContext = true );
+        Heightmap::Position getPlanePos( QPointF widget_coordinates, bool* success = 0, bool useRenderViewContext = true );
+        float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false, bool* is_valid_value = 0 );
 
         /**
           You might want to use Heightmap::Reference::containsPoint(p) to se
@@ -59,18 +63,22 @@ namespace Tools
         float last_ysize;
         floatAni orthoview;
         //QTransform projectionTransform;
-        QTransform modelviewTransform;
-        QTransform viewTransform;
+        //QTransform modelviewTransform;
+        //QTransform viewTransform;
 
         // TODO need to be able to update a QWidget, signal?
         // is this data/function model or view?
 
         RenderModel* model;
+
         QGLWidget *glwidget;
+
+        // graphicsview belongs in rendercontroller but this simplifies access from other classes
+        GraphicsView* graphicsview;
 
         Support::ToolSelector* toolSelector();
 
-        boost::scoped_ptr<Support::ToolSelector> tool_selector;
+        Support::ToolSelector* tool_selector;
 
         unsigned last_width() { return _last_width; }
         unsigned last_height() { return _last_height; }
@@ -113,7 +121,15 @@ namespace Tools
 
         /**
           */
+        void populateTodoList();
+
+        /**
+          */
         void postPaint();
+
+        /**
+          */
+        void paintingForeground();
 
         /**
           */
@@ -146,6 +162,8 @@ namespace Tools
         bool _inited;
         unsigned _last_width;
         unsigned _last_height;
+        unsigned _last_x;
+        unsigned _last_y;
         int _try_gc;
         QTimer* _update_timer;
 

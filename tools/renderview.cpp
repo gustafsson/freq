@@ -55,8 +55,12 @@ RenderView::
             :
             orthoview(1),
             model(model),
+            glwidget(0),
+            graphicsview(0),
             _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
+            _last_x(0),
+            _last_y(0),
             _try_gc(0),
             _update_timer(0)
 {
@@ -190,7 +194,18 @@ void RenderView::
 		}
 
         setStates();
-        resizeGL(_last_width, _last_height);
+
+        {
+            TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+
+        {
+            TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
+            emit prePaint();
+        }
+
+        resizeGL(_last_width, _last_height );
 
         paintGL();
 
@@ -208,6 +223,8 @@ void RenderView::
 //            projectionTransform.setMatrix( proj[0], proj[1], proj[2],
 //                                           proj[4], proj[5], proj[6],
 //                                           proj[8], proj[9], proj[10]);
+            /*
+             This would make a mapping from 3D to the 2D plane.
             if (qFuzzyCompare(m[3] + 1, 1) && qFuzzyCompare(m[7] + 1, 1))
             {
                 modelviewTransform = QTransform(m[0]/m[15], m[1]/m[15], m[4]/m[15],
@@ -221,6 +238,7 @@ void RenderView::
             viewTransform = QTransform(vp[2]*0.5, 0,
                                        0, -vp[3]*0.5,
                                       vp[0]+vp[2]*0.5, vp[1]+vp[3]*0.5);
+            */
         }
 
         defaultStates();
@@ -230,16 +248,34 @@ void RenderView::
 }
 
 
+void RenderView::
+        drawForeground(QPainter *painter, const QRectF &)
+{
+    painter->beginNativePainting();
+    setStates();
+
+    emit paintingForeground();
+
+    defaultStates();
+    painter->endNativePainting();
+}
+
+
 float RenderView::
-        getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation )
+        getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation, bool* is_valid_value )
 {
 #ifdef _MSC_VER
     // getHeightmapValue is tremendously slow in windows for some reason
     //return 0;
 #endif
+    if (is_valid_value)
+        *is_valid_value = true;
 
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
         return 0;
+
+    if (is_valid_value)
+        *is_valid_value = false;
 
     Heightmap::Reference myref(model->collections[0].get());
     if (!ref)
@@ -262,6 +298,19 @@ float RenderView::
     Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
     if (!block)
         return 0;
+    if (is_valid_value)
+    {
+        Signal::IntervalType s = pos.time * ref->sample_rate();
+        Signal::Intervals I = Signal::Intervals(s, s+1);
+        I -= block->valid_samples;
+        I &= ref->getInterval();
+        if (I.empty())
+        {
+            *is_valid_value = true;
+        } else
+            return 0;
+    }
+
     GpuCpuData<float>* blockData = block->glblock->height()->data.get();
 
     float* data = blockData->getCpuMemory();
@@ -371,8 +420,16 @@ QPointF RenderView::
         *dist = d%projectionNormal;
     }
 
-    return QPointF( winX, viewport_matrix[3]-1-winY );
-    //return QPointF( winX, winY );
+    return QPointF( winX, _last_height-1 - winY );
+}
+
+
+QPointF RenderView::
+        getWidgetPos( Heightmap::Position pos, double* dist )
+{
+    QPointF pt = getScreenPos(pos, dist);
+    pt -= QPointF(_last_x, _last_y);
+    return pt;
 }
 
 
@@ -383,6 +440,9 @@ Heightmap::Position RenderView::
         return getPlanePos(pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderView::getPlanePos Newton raphson");
+
+    pos.setX( pos.x() + _last_x );
+    pos.setY( _last_height - 1 - pos.y() + _last_y );
 
     GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
@@ -434,6 +494,9 @@ Heightmap::Position RenderView::
 Heightmap::Position RenderView::
         getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
+    pos.setX( pos.x() + _last_x );
+    pos.setY( _last_height - 1 - pos.y() + _last_y );
+
     GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
     GLdouble other_m[16], other_proj[16];
@@ -471,7 +534,7 @@ Heightmap::Position RenderView::
     if (success) *success=true;
 
     float minAngle = 3;
-    if (0) if(success)
+    if(success)
     {
         if( s < 0)
             if (success) *success=false;
@@ -497,9 +560,7 @@ void RenderView::
     Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
                 model->project()->worker.source()->root());
 
-    TIME_PAINTGL CudaException_CHECK_ERROR();
-
-    glEnable( GL_CULL_FACE );
+    TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
 
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
@@ -509,7 +570,7 @@ void RenderView::
     GLint current_viewport[4];
     glGetIntegerv(GL_VIEWPORT, current_viewport);
 
-    TIME_PAINTGL TaskTimer tt("Viewport (%u, %u, %u, %u)", 
+    TIME_PAINTGL_DETAILS TaskTimer tt("Viewport (%u, %u, %u, %u)",
         current_viewport[0], current_viewport[1],
         current_viewport[2], current_viewport[3]);
 
@@ -572,13 +633,12 @@ void RenderView::
         }
     }
 
-    TIME_PAINTGL CudaException_CHECK_ERROR();
-    TIME_PAINTGL GlException_CHECK_ERROR();
+    TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
+    TIME_PAINTGL_DETAILS GlException_CHECK_ERROR();
 
-    glDisable( GL_CULL_FACE );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL TaskInfo("Drew %u*%u block%s", 
+    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s");
@@ -601,7 +661,9 @@ void RenderView::
         fs->set_channel( i );
     glDisable(GL_BLEND);
     glEnable(GL_LIGHTING);
+    glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     model->renderer->draw( yscale ); // 0.6 ms
+    glDisable( GL_CULL_FACE );
     glDisable(GL_LIGHTING);
     glEnable(GL_BLEND);
 }
@@ -623,8 +685,7 @@ void RenderView::
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glDisable( GL_CULL_FACE ); // enabled only while drawing collections
-    glFrontFace( GL_CCW );
+    glFrontFace( model->renderer->left_handed_axes ? GL_CCW : GL_CW );
     glCullFace( GL_BACK );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -680,7 +741,6 @@ void RenderView::
     //glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
     glDisable(GL_LIGHTING);
     //glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_TEXTURE_2D);
@@ -715,7 +775,7 @@ Support::ToolSelector* RenderView::
 //    if (!tool_selector_)
 //        tool_selector_.reset( new Support::ToolSelector(glwidget));
 
-    return tool_selector.get();
+    return tool_selector;
 }
 
 
@@ -747,7 +807,12 @@ void RenderView::
 {
     height = height?height:1;
 
-    glViewport( 0, 0, (GLint)width, (GLint)height );
+    QRect rect = tool_selector->parentTool()->geometry();
+    glViewport( rect.x(), height - rect.y() - rect.height(), rect.width(), rect.height() );
+    _last_x = rect.x();
+    _last_y = rect.y();
+    height = rect.height();
+    width = rect.width();
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -766,24 +831,24 @@ void RenderView::
 
     float elapsed_ms = -1;
 
-    TIME_PAINTGL if (_render_timer)
+    TIME_PAINTGL_DETAILS if (_render_timer)
 	    elapsed_ms = _render_timer->elapsedTime()*1000.f;
-    TIME_PAINTGL _render_timer.reset();
-    TIME_PAINTGL _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
+    TIME_PAINTGL_DETAILS _render_timer.reset();
+    TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
 	TIME_PAINTGL TaskTimer tt("============================= RenderView::paintGL =============================");
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
     unsigned cacheCount = 0;
-    TIME_PAINTGL 
+    TIME_PAINTGL_DETAILS
     {
         sumsize = model->collections[0]->cacheByteSize();
         cacheCount = model->collections[0]->cacheCount();
         for (unsigned i=1; i<N; ++i)
         {
-            BOOST_ASSERT( sumsize == model->collections[i]->cacheByteSize() );
-            BOOST_ASSERT( cacheCount == model->collections[i]->cacheCount() );
+            TaskLogIfFalse( sumsize == model->collections[i]->cacheByteSize() );
+            TaskLogIfFalse( cacheCount == model->collections[i]->cacheCount() );
         }
     }
 
@@ -819,20 +884,11 @@ void RenderView::
             a(b);
         }
 
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
 
     // Set up camera position
     _last_length = worker.source()->length();
     {   
 		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
-
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
-			emit prePaint();
-		}
 
         setupCamera();
 
@@ -873,33 +929,22 @@ void RenderView::
         model->renderer->drawAxes( _last_length ); // 4.7 ms
 
         if (wasWorking)
-            Support::DrawWorking::drawWorking( _last_width, _last_height );
+            Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
     }
 
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        //    if (p && p->isUnderfed() && p->invalid_samples_left()) {
-        Signal::Intervals missing_for_playback=
-                model->project()->tools().playback_model.postsinkCallback->sink()->fetch_invalid_samples();
-        Signal::Intervals missing_for_heightmap =
-                model->collectionCallback->sink()->fetch_invalid_samples();
+        worker.todo_list( Signal::Intervals() );
+        worker.center = model->_qx;
 
-        bool playback_is_underfed = model->project()->tools().playback_model.getPostSink()->isUnderfed();
-        // Don't bother with computing playback unless it is underfed
-        if (missing_for_playback && playback_is_underfed)
+        emit populateTodoList();
+
+        if (worker.todo_list().empty())
         {
-            worker.center = 0;
-            worker.todo_list( missing_for_playback );
+            Signal::Intervals missing_for_heightmap =
+                    model->collectionCallback->sink()->fetch_invalid_samples();
 
-            // Request at least 1 fps. Otherwise there is a risk that CUDA
-            // will screw up playback by blocking the OS and causing audio
-            // starvation.
-            worker.requested_fps(1);
-
-            //project->worker.todo_list().print("Displaywidget - PostSink");
-        } else {
-            worker.center = model->_qx;
             worker.todo_list( missing_for_heightmap );
         }
 
@@ -1041,7 +1086,12 @@ void RenderView::
     glRotatef( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
     glRotatef( model->_rz, 0, 0, 1 );
 
-    glScalef(-model->xscale, 1, 5);
+    if (model->renderer->left_handed_axes)
+        glScalef(-1, 1, 1);
+    else
+        glRotatef(-90,0,1,0);
+
+    glScalef(model->xscale, 1, 5);
 
     glTranslatef( -model->_qx, -model->_qy, -model->_qz );
 

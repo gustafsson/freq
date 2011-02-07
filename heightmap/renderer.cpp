@@ -41,6 +41,7 @@ Renderer::Renderer( Collection* collection )
     y_scale( 1 ),
     last_ysize( 1 ),
     drawn_blocks(0),
+    left_handed_axes(true),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -423,7 +424,7 @@ void Renderer::draw( float scaley )
     glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
     glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 
-    glScalef(1, scaley, 1); // global effect on all tools
+    glScalef(1, scaley, 1);
 
     beginVboRendering();
 
@@ -811,19 +812,31 @@ std::vector<GLvector> Renderer::
         GLvector bottomZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1]+h*view[3], z1) );
         GLvector bottomX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1]+h*view[3], z0) );
         bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
+
+        // must make all normals negative because one of the axes is flipped (glScale with a minus sign on the x-axis)
+        if (left_handed_axes)
+        {
+            rightNormal = -rightNormal;
+            leftNormal = -leftNormal;
+            topNormal = -topNormal;
+            bottomNormal = -bottomNormal;
+        }
+
+        // Don't bother with projectionNormal?
+        projectionNormal = projectionNormal;
     }
 
-    // must make all normals negative because one of the axes is flipped (glScale with a minus sign on the x-axis)
     //printl("Start",l);
-    clipPlane(l, projectionPlane, projectionNormal);
+    // Don't bother with projectionNormal?
+    //clipPlane(l, projectionPlane, projectionNormal);
     //printl("Projectionclipped",l);
-    clipPlane(l, rightPlane, -rightNormal);
+    clipPlane(l, rightPlane, rightNormal);
     //printl("Right", l);
-    clipPlane(l, leftPlane, -leftNormal);
+    clipPlane(l, leftPlane, leftNormal);
     //printl("Left", l);
-    clipPlane(l, topPlane, -topNormal);
+    clipPlane(l, topPlane, topNormal);
     //printl("Top",l);
-    clipPlane(l, bottomPlane, -bottomNormal);
+    clipPlane(l, bottomPlane, bottomNormal);
     //printl("Bottom",l);
     //printl("Clipped polygon",l);
 
@@ -950,6 +963,12 @@ void Renderer::drawAxes( float T )
     // 4 draw axis
 
     float w = 0.1f, h=0.05f;
+    if (!left_handed_axes)
+    {
+        w = 0.05f, h = 0.1f;
+    }
+
+
     { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
         glPushMatrixContext push_proj(GL_PROJECTION);
@@ -1139,11 +1158,15 @@ void Renderer::drawAxes( float T )
                         w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                     }
 
+                    if (!left_handed_axes)
+                        glScalef(-1,1,1);
                     glTranslatef(-.5f*w,sign*120-50.f,0);
                     for (char*c=a;*c!=0; c++) {
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                         glTranslatef(letter_spacing,0,0);
                     }
+                    if (!left_handed_axes)
+                        glScalef(-1,1,1);
                 }
 
                 if (v[0] > 0) t++;
@@ -1154,6 +1177,8 @@ void Renderer::drawAxes( float T )
 
                 float sign = (v^x)%(v^( p - inside))>0 ? 1.f : -1.f;
                 float o = size*ST*w*.1f*sign;
+                if (!left_handed_axes)
+                    sign *= -1;
                 glBegin(GL_LINES);
                     glVertex3f( p[0], 0, p[2] );
                     glVertex3f( p[0] - o, 0, p[2] );
@@ -1174,9 +1199,13 @@ void Renderer::drawAxes( float T )
                         for (char*c=a;*c!=0; c++)
                             w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                     }
+                    if (!left_handed_axes)
+                        glScalef(-1,1,1);
                     glTranslatef(sign*w,-50.f,0);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    if (!left_handed_axes)
+                        glScalef(-1,1,1);
                 }
 
                 if (v[2] > 0) {
@@ -1208,6 +1237,8 @@ void Renderer::drawAxes( float T )
             int startTone = log(F1/440.f)/log(tva12) + 45;
             int endTone = log(F2/440.f)/log(tva12) + 44;
             float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
+            if (!left_handed_axes)
+                sign *= -1;
 
             for( int tone = startTone; tone<=endTone; tone++)
             {
@@ -1278,9 +1309,13 @@ void Renderer::drawAxes( float T )
                         for (char*c=a;*c!=0; c++)
                             w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                     }
+                    if (!left_handed_axes)
+                        glScalef(-1,1,1);
                     glTranslatef(sign*w,-50.f,0);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    if (!left_handed_axes)
+                        glScalef(-1,1,1);
                 }
             }
         }

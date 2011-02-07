@@ -1,5 +1,8 @@
 #include "complexbuffer.h"
 
+#define TIME_COMPLEX_BUFFER if(0)
+//#define TIME_COMPLEX_BUFFER
+
 namespace Tfr
 {
 
@@ -20,7 +23,7 @@ ComplexBuffer::
 {
     GpuCpuData<float>* real_waveform = buffer.waveform_data();
     cudaExtent sz = real_waveform->getNumberOfElements();
-    TaskTimer tt("ComplexBuffer of %lu x %lu x %lu elements", sz.width, sz.height, sz.depth );
+    TIME_COMPLEX_BUFFER TaskTimer tt("ComplexBuffer of %lu x %lu x %lu elements", sz.width, sz.height, sz.depth );
 
     _complex_waveform_data.reset( new GpuCpuData<float2>( 0, sz ));
 

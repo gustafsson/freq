@@ -85,6 +85,7 @@ namespace Tools
         toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
         toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
         main->addToolBar(Qt::TopToolBarArea, toolBarTool);
+        connect(ui->actionToggleSelectionToolBox, SIGNAL(toggled(bool)), toolBarTool, SLOT(setVisible(bool)));
 
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );

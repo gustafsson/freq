@@ -22,6 +22,11 @@ namespace Tools
         RenderController( QPointer<RenderView> view );
         ~RenderController();
 
+        RenderModel *model();
+
+    signals:
+        void transformChanged();
+
     public slots:
         // GUI bindings are set up in RenderController constructor
 
@@ -32,6 +37,7 @@ namespace Tools
 
         // Toggle Buttons
         void receiveToogleHeightlines(bool);
+        void receiveToggleOrientation(bool);
 
         // ComboBoxAction hzmarker
         void receiveTogglePiano(bool);
@@ -55,7 +61,6 @@ namespace Tools
     private:
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
 
-        RenderModel *model();
         QPointer<RenderView> view;
 
         // GUI stuff

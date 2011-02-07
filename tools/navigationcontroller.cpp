@@ -65,20 +65,20 @@ void NavigationController::
     {
         case Qt::LeftButton:
             if(' '==lastKey)
-                selectionButton.press( e->x(), this->height() - 1 - e->y() );
+                selectionButton.press( e->x(), e->y() );
             else
-                leftButton.press( e->x(), this->height() - 1 - e->y() );
+                leftButton.press( e->x(), e->y() );
             //printf("LeftButton: Press\n");
             break;
 
         case Qt::MidButton:
-            middleButton.press( e->x(), this->height() - 1 - e->y() );
+            middleButton.press( e->x(), e->y() );
             //printf("MidButton: Press\n");
             break;
 
         case Qt::RightButton:
         {
-            rightButton.press( e->x(), this->height() - 1 - e->y() );
+            rightButton.press( e->x(), e->y() );
             //printf("RightButton: Press\n");
         }
             break;
@@ -89,15 +89,15 @@ void NavigationController::
 
     if(isEnabled()) {
         if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
-            moveButton.press( e->x(), this->height() - 1 - e->y() );
+            moveButton.press( e->x(), e->y() );
 
         if( (e->button() & Qt::RightButton) == Qt::RightButton)
-            rotateButton.press( e->x(), this->height() - 1 - e->y() );
+            rotateButton.press( e->x(), e->y() );
 
     }
 
 //    if(leftButton.isDown() && rightButton.isDown())
-//        selectionButton.press( e->x(), this->height() - 1 - e->y() );
+//        selectionButton.press( e->x(), e->y() );
 
     _view->userinput_update();
 }
@@ -198,7 +198,7 @@ void NavigationController::
 
     float rs = 0.2;
 
-    int x = e->x(), y = this->height() - 1 - e->y();
+    int x = e->x(), y = e->y();
 //    TaskTimer tt("moving");
 
     if (scaleButton.isDown()) {
@@ -208,13 +208,13 @@ void NavigationController::
         if (zoom_only_ || e->modifiers().testFlag(Qt::ShiftModifier))
         {
             zoom( -10*rotateButton.deltaX( x ), true );
-            zoom( -10*rotateButton.deltaY( y ), false );
+            zoom( 10*rotateButton.deltaY( y ), false );
         }
         else
         {
             //Controlling the rotation with the right button.
             r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
-            r.model->_rx -= rs * rotateButton.deltaY( y );
+            r.model->_rx += rs * rotateButton.deltaY( y );
             if (r.model->_rx<10) r.model->_rx=10;
             if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
             if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
@@ -227,7 +227,7 @@ void NavigationController::
         //Controlling the position with the left button.
         bool success1, success2;
         Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
-        Heightmap::Position current = r.getPlanePos( QPointF(x, y), &success2);
+        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
         if (success1 && success2)
         {
             float l = _view->model->project()->worker.source()->length();
@@ -276,6 +276,10 @@ void NavigationController::
     one_action_at_a_time_->decheckable( false );
     one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
     one_action_at_a_time_->addActionItem( ui->actionZoom );
+
+    QList<QKeySequence> shortcuts = ui->actionActivateNavigation->shortcuts();
+    shortcuts.push_back( Qt::Key_Escape );
+    ui->actionActivateNavigation->setShortcuts( shortcuts );
 
     ui->actionActivateNavigation->setChecked(true);
 }

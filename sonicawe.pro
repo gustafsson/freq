@@ -91,6 +91,8 @@ FORMS += \
     tools/aboutdialog.ui \
     tools/commentview.ui \
     tools/selectionviewmodel.ui \
+    tools/transforminfoform.ui \
+    tools/exportaudiodialog.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \
@@ -127,7 +129,7 @@ win32 {
 ####################
 # Build settings
 
-unix:IS64 = $$system(if [ "`uname -m`" == "x86_64" ];then echo 64; fi)
+unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
 win32:DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
 DEFINES += SONICAWE_REVISION="\\\"$$system(git rev-parse --short HEAD)\\\""

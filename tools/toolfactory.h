@@ -111,11 +111,17 @@ namespace Tools
 
         QPointer<class GraphController> _graph_controller;
 
-        QScopedPointer<class TooltipModel> _tooltip_model;
-        QScopedPointer<class TooltipView> _tooltip_view;
         QPointer<class TooltipController> _tooltip_controller;
 
         QPointer<class AboutDialog> _about_dialog;
+
+        QScopedPointer<class PlaybackMarkersModel> _playbackmarkers_model;
+        QScopedPointer<class PlaybackMarkersView> _playbackmarkers_view;
+        QPointer<class PlaybackMarkersController> _playbackmarkers_controller;
+
+        QPointer<class TransformInfoForm> _transform_info_form;
+
+        QPointer<class ExportAudioDialog> _export_audio_dialog;
 
         Sawe::Project* _project;
     };

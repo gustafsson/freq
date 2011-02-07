@@ -3,6 +3,9 @@
 
 #include <QGraphicsView>
 #include <QTimer>
+#include <QBoxLayout>
+
+#include "support/toolselector.h"
 
 namespace Tools
 {
@@ -31,12 +34,20 @@ public:
 
     void resizeEvent(QResizeEvent *event);
 
-    QWidget* toolParent;
+    unsigned toolWindows();
+    Support::ToolSelector* toolSelector(int index);
+
+    void setLayoutDirection( QBoxLayout::Direction direction );
+
 signals:
+    /**
+      */
+    void layoutChanged( QBoxLayout::Direction direction );
 
 public slots:
 
 private:
+    QWidget* layout_widget_;
 };
 
 } // namespace Tools

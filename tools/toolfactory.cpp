@@ -20,6 +20,9 @@
 #include "graphcontroller.h"
 #include "tooltipcontroller.h"
 #include "aboutdialog.h"
+#include "playbackmarkerscontroller.h"
+#include "transforminfoform.h"
+#include "exportaudiodialog.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -38,7 +41,7 @@ ToolFactory::
         ToolFactory(Sawe::Project* p)
 :   render_model( p ),
     selection_model( p ),
-    playback_model( &selection_model )
+    playback_model( p )
 {
     _render_view = new RenderView(&render_model);
     _render_controller.reset( new RenderController(_render_view) );
@@ -50,6 +53,7 @@ ToolFactory::
 
     _navigation_controller = new NavigationController(_render_view);
 
+    playback_model.selection = &selection_model;
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
 
@@ -70,13 +74,20 @@ ToolFactory::
 
     _graph_controller = new GraphController( _render_view );
 
-    _tooltip_model.reset( new TooltipModel() );
-    _tooltip_view.reset( new TooltipView(_tooltip_model.data(), _render_view ));
     _tooltip_controller = new TooltipController(
-            _tooltip_view.data(), _render_view,
-            dynamic_cast<CommentController*>(_comment_controller.data()) );
+            _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
 
     _about_dialog = new AboutDialog( p );
+
+    _playbackmarkers_model.reset( new PlaybackMarkersModel() );
+    _playbackmarkers_view.reset( new PlaybackMarkersView( _playbackmarkers_model.data(), p ));
+    _playbackmarkers_controller = new PlaybackMarkersController(
+            _playbackmarkers_view.data(), _render_view );
+    playback_model.markers = _playbackmarkers_model.data();
+
+    _transform_info_form = new TransformInfoForm(p, _render_controller.data() );
+
+    _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
 }
 
 
@@ -85,6 +96,15 @@ ToolFactory::
 {
     TaskInfo ti(__FUNCTION__);
     // Try to clear things in the opposite order that they were created
+
+    if (!_export_audio_dialog .isNull())
+        delete _export_audio_dialog;
+
+    if (!_transform_info_form.isNull())
+        delete _transform_info_form;
+
+    if (!_playbackmarkers_controller.isNull())
+        delete _playbackmarkers_controller;
 
     delete _about_dialog;
 

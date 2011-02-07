@@ -25,6 +25,7 @@ namespace Tools
 
     private slots:
         void hideTimeline();
+        void embeddedVisibilityChanged(bool visible);
 
     private:
         // GUI

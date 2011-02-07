@@ -1,6 +1,8 @@
 #ifndef TOOLSELECTOR_H
 #define TOOLSELECTOR_H
 
+#include <QObject>
+
 class QWidget;
 
 namespace Tools {
@@ -20,7 +22,7 @@ namespace Tools {
 
       Preferably by adding the child tool using another ToolSelector.
      */
-    class ToolSelector
+    class ToolSelector: public QObject
     {
     public:
         /// Sets what RenderView that is controlled by this ToolSelector.
@@ -29,6 +31,9 @@ namespace Tools {
 
         /// @see setCurrentTool
         QWidget* currentTool();
+
+        /// @see ToolSelector(QWidget*)
+        QWidget* parentTool();
 
 
         /**

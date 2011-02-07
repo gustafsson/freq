@@ -119,8 +119,8 @@ void CommentController::
 {
     if (event->type() & QEvent::EnabledChange)
     {
-        if (!isEnabled() && parent())
-            dynamic_cast<QWidget*>(parent())->graphicsProxyWidget()->setZValue(-1e30);
+        if (!isEnabled() && comment_)
+            comment_->model->move_on_hover = false;
         emit enabledChanged(isEnabled());
     }
 }
@@ -134,9 +134,8 @@ void CommentController::
     if (active)
     {
         comment_ = createNewComment();
+        comment_->model->move_on_hover = true;
         setVisible( true );
-
-        dynamic_cast<QWidget*>(parent())->graphicsProxyWidget()->setZValue(1e30);
 
         setMouseTracking( true );
         connect(comment_, SIGNAL(setCommentControllerEnabled(bool)), SLOT(setEnabled(bool)));
@@ -147,24 +146,31 @@ void CommentController::
 void CommentController::
         showComments(bool active)
 {
-    foreach (CommentView* c, comments_)
-        c->setVisible( !active );
+    foreach (const QPointer<CommentView>& c, comments_)
+        if (c)
+            c->setVisible( !active );
 }
 
 
 void CommentController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    QPointF c = e->pos();
-    float h = height();
-    c.setY( h - 1 - c.y() );
-
-    comment_->model->pos = view_->getHeightmapPos( c );
+    comment_->model->pos = view_->getHeightmapPos( e->posF() );
 
     view_->userinput_update();
 
     e->setAccepted(true);
     QWidget::mouseMoveEvent(e);
+}
+
+
+void CommentController::
+        mousePressEvent( QMouseEvent * e )
+{
+    setEnabled( false );
+
+    e->setAccepted(true);
+    QWidget::mousePressEvent(e);
 }
 
 } // namespace Tools
