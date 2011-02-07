@@ -28,13 +28,13 @@ public:
     QGraphicsProxyWidget* proxy;
     CommentModel* model;
 
+    virtual void closeEvent(QCloseEvent *);
     virtual void wheelEvent(QWheelEvent *);
     virtual void resizeEvent(QResizeEvent *);
     virtual void paintEvent(QPaintEvent *);
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseDoubleClickEvent ( QMouseEvent * event );
     virtual void mouseMoveEvent(QMouseEvent *event);
-    virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual void focusInEvent(QFocusEvent *event);
     virtual void focusOutEvent(QFocusEvent *event);
     virtual QSize sizeHint() const;
@@ -42,7 +42,6 @@ public:
     bool isThumbnail();
 
 signals:
-    void setCommentControllerEnabled( bool );
     void thumbnailChanged( bool );
     void gotFocus();
 

@@ -29,7 +29,6 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
     QAction *closeAction = new QAction(tr("D&elete"), this);
     //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
-    this->setAttribute( Qt::WA_DeleteOnClose );
 
     QAction *hideAction = new QAction(tr("T&humbnail"), this);
     //hideAction->setShortcut(tr("Ctrl+T"));
@@ -50,6 +49,7 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
 
 CommentView::~CommentView()
 {
+    TaskInfo("~CommentView");
     delete ui;
 }
 
@@ -83,6 +83,7 @@ void CommentView::
 {
     if (model->move_on_hover)
     {
+        model->move_on_hover = false;
         event->setAccepted( false );
         return;
     }
@@ -180,14 +181,6 @@ void CommentView::
 
 
 void CommentView::
-        mouseReleaseEvent(QMouseEvent *event)
-{
-    emit setCommentControllerEnabled( false );
-    QWidget::mouseReleaseEvent(event);
-}
-
-
-void CommentView::
         focusInEvent(QFocusEvent * /*e*/)
 {
     //TaskInfo("CommentView::focusInEvent, gotFocus = %d, reason = %d", e->gotFocus(), e->reason());
@@ -204,6 +197,13 @@ void CommentView::
     //TaskInfo("CommentView::focusOutEvent, lostFocus = %d, reason = %d", e->lostFocus(), e->reason());
 
     recreatePolygon();
+}
+
+
+void CommentView::
+        closeEvent(QCloseEvent *)
+{
+    proxy->deleteLater();
 }
 
 

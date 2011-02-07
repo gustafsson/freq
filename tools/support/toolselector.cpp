@@ -66,6 +66,10 @@ void ToolSelector::
     {
         if (active || !_must_have_one_tool) if (_current_tool)
         {
+            TaskInfo("Current tool in %s was %s",
+                vartype(*_parent_tool).c_str(),
+                vartype(*_current_tool).c_str());
+
             // Remove the current tool from the render view. Memory management
             // is supposed to be taken care of by someone else. QPointer is a
             // good way of handling memory managment of QObject, as is done in

@@ -119,8 +119,8 @@ void CommentController::
 {
     if (event->type() & QEvent::EnabledChange)
     {
-        if (!isEnabled() && comment_)
-            comment_->model->move_on_hover = false;
+        view_->toolSelector()->setCurrentTool( this, isEnabled() );
+
         emit enabledChanged(isEnabled());
     }
 }
@@ -138,7 +138,15 @@ void CommentController::
         setVisible( true );
 
         setMouseTracking( true );
-        connect(comment_, SIGNAL(setCommentControllerEnabled(bool)), SLOT(setEnabled(bool)));
+    }
+    else
+    {
+        if (comment_ && comment_->model->move_on_hover)
+        {
+            comment_->proxy->deleteLater();
+            comment_ = 0;
+            setVisible( false );
+        }
     }
 }
 
