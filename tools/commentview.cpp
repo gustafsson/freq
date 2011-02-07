@@ -81,6 +81,12 @@ void CommentView::
 void CommentView::
         mousePressEvent(QMouseEvent *event)
 {
+    if (model->move_on_hover)
+    {
+        event->setAccepted( false );
+        return;
+    }
+
     if (!mask().contains( event->pos() ))
     {
         event->setAccepted( false );
@@ -136,17 +142,30 @@ void CommentView::
     bool visible = mask().contains( event->pos() );
     setContextMenuPolicy( visible ? Qt::ActionsContextMenu : Qt::NoContextMenu);
 
+    bool moving = false;
+    bool resizing = false;
+
     if (event->buttons() & Qt::LeftButton)
+    {
+        moving |= event->modifiers() == 0 && !model->freezed_position;
+        resizing |= event->modifiers().testFlag(Qt::ControlModifier);
+    }
+
+    moving |= model->move_on_hover;
+    if (model->move_on_hover)
+        dragPosition = proxy->sceneTransform().map(ref_point);
+
+    if (moving || resizing)
     {
         QPoint gp = proxy->sceneTransform().map(event->globalPos());
 
-        if (event->modifiers() == 0 && !model->freezed_position)
+        if (moving)
         {
             move(gp - dragPosition);
             dragPosition = gp;
             event->accept();
         }
-        else if (event->modifiers().testFlag(Qt::ControlModifier))
+        else if (resizing)
         {
             QPoint sz = QPoint(gp.x(),-gp.y()) - resizePosition;
             resize(sz.x(), sz.y());

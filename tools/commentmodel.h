@@ -24,6 +24,7 @@ public:
     bool thumbnail;
     uint2 window_size;
     bool freezed_position;
+    bool move_on_hover;
 
 private:
     friend class boost::serialization::access;

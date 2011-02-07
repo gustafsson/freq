@@ -119,6 +119,8 @@ void CommentController::
 {
     if (event->type() & QEvent::EnabledChange)
     {
+        if (!isEnabled() && comment_)
+            comment_->model->move_on_hover = false;
         emit enabledChanged(isEnabled());
     }
 }
@@ -132,6 +134,7 @@ void CommentController::
     if (active)
     {
         comment_ = createNewComment();
+        comment_->model->move_on_hover = true;
         setVisible( true );
 
         setMouseTracking( true );
@@ -143,8 +146,9 @@ void CommentController::
 void CommentController::
         showComments(bool active)
 {
-    foreach (CommentView* c, comments_)
-        c->setVisible( !active );
+    foreach (const QPointer<CommentView>& c, comments_)
+        if (c)
+            c->setVisible( !active );
 }
 
 
@@ -157,6 +161,16 @@ void CommentController::
 
     e->setAccepted(true);
     QWidget::mouseMoveEvent(e);
+}
+
+
+void CommentController::
+        mousePressEvent( QMouseEvent * e )
+{
+    setEnabled( false );
+
+    e->setAccepted(true);
+    QWidget::mousePressEvent(e);
 }
 
 } // namespace Tools
