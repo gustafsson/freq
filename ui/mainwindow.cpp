@@ -227,7 +227,6 @@ void SaweMainWindow::
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
     save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
     save_changes_msgbox_->setDetailedText( QString::fromStdString( "Current state:\n" + project->head_source()->toString()) );
-    save_changes_msgbox_->show();
     save_changes_msgbox_->open( this, SLOT(saveChangesAnswer(QAbstractButton *)));
 }
 
