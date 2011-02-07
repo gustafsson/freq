@@ -130,7 +130,6 @@ void SaweMainWindow::
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
 
-    connect(this, SIGNAL(onAskSaveChanges()), SLOT(askSaveChanges()), Qt::QueuedConnection);
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
         Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
         Qt::QueuedConnection);
@@ -209,7 +208,7 @@ void SaweMainWindow::
 {
     if (project->isModified() && 0==save_changes_msgbox_)
     {
-        emit onAskSaveChanges();
+        askSaveChanges();
         e->ignore();
         return;
     }
