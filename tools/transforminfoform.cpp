@@ -7,6 +7,7 @@
 
 #include "heightmap/collection.h"
 #include "heightmap/blockfilter.h"
+#include "heightmap/renderer.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 
@@ -35,6 +36,9 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderController* r
     dock->show();
 
     MainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
+
+    connect(MainWindow->getItems()->actionTransform_info, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
+    connect(dock, SIGNAL(visibilityChanged(bool)), MainWindow->getItems()->actionTransform_info, SLOT(setChecked(bool)));
 
     connect(rendercontroller, SIGNAL(transformChanged()), SLOT(transformChanged()));
 
@@ -88,6 +92,7 @@ void TransformInfoForm::
         addRow("Bins", QString("%1").arg(cwt->find_bin( cwt->scales_per_octave())));
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Min hz", QString("%1").arg(cwt->get_min_hz(fs)));
+        addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
     }
     else if (stft)
     {
@@ -95,6 +100,7 @@ void TransformInfoForm::
         addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(stft->chunk_size()));
         addRow("Overlap", "0");
+        addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
     }
     else
     {

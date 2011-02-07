@@ -71,9 +71,12 @@ void SaweMainWindow::
     // TODO remove actionToggleTimelineWindow, and dockWidgetTimeline
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
 //    connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
-//    connectActionToWindow(ui->actionToggleHistoryWindow, ui->historyWindow);
+    connectActionToWindow(ui->actionToggleHistoryWindow, ui->operationsWindow);
 //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
+    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
+    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
+    connect(ui->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui->toolBarPlay, SLOT(setVisible(bool)));
 
     // TODO move into each tool
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
@@ -94,7 +97,7 @@ void SaweMainWindow::
     // todo move into toolfactory
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
-    this->addToolBar( Qt::BottomToolBarArea, ui->toolBarPlay );
+    this->addToolBar( Qt::LeftToolBarArea, ui->toolBarPlay );
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
     //ui->toolPropertiesWindow-
@@ -142,13 +145,13 @@ void SaweMainWindow::slotCheckActionStates(bool)
 
 /*
  todo create some generic solution for showing/hiding tool windows
+ */
 void SaweMainWindow::connectActionToWindow(QAction *a, QWidget *b)
 {
-    connect(a, SIGNAL(toggled(bool)), this, SLOT(slotCheckActionStates(bool)));
-    connect(b, SIGNAL(visibilityChanged(bool)), this, SLOT(slotCheckWindowStates(bool)));
-    controlledWindows.push_back(ActionWindowPair(b, a));
+    connect(a, SIGNAL(toggled(bool)), b, SLOT(setVisible(bool)));
+    connect(b, SIGNAL(visibilityChanged(bool)), a, SLOT(setChecked(bool)));
 }
-*/
+
 
 SaweMainWindow::~SaweMainWindow()
 {

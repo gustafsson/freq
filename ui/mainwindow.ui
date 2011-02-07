@@ -48,17 +48,16 @@
     <property name="title">
      <string>&amp;Windows</string>
     </property>
-    <addaction name="actionToggleTopFilterWindow"/>
-    <addaction name="actionToggleOperationsWindow"/>
     <addaction name="actionToggleHistoryWindow"/>
     <addaction name="actionToggleTimelineWindow"/>
     <addaction name="separator"/>
     <addaction name="actionToggleToolToolBox"/>
-    <addaction name="actionToggleCreationToolBox"/>
     <addaction name="actionToggleTransformToolBox"/>
     <addaction name="actionToggleNavigationToolBox"/>
     <addaction name="actionToggleTimeControlToolBox"/>
     <addaction name="actionToggleSelectionToolBox"/>
+    <addaction name="actionTransform_info"/>
+    <addaction name="actionToggleBrushesToolbar"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -69,7 +68,6 @@
     <addaction name="actionSave_project"/>
     <addaction name="actionSave_project_as"/>
     <addaction name="separator"/>
-    <addaction name="actionImport_audio"/>
     <addaction name="actionExport_audio"/>
     <addaction name="actionExport_selection"/>
     <addaction name="separator"/>
@@ -195,6 +193,12 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="operationsWindow">
+   <property name="minimumSize">
+    <size>
+     <width>88</width>
+     <height>113</height>
+    </size>
+   </property>
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -311,17 +315,9 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="actionActionAdd_selection"/>
    <addaction name="actionActionRemove_selection"/>
-   <addaction name="actionMatlabFilter"/>
-   <addaction name="actionCutoffSelection"/>
    <addaction name="actionMatlabOperation"/>
    <addaction name="actionCropSelection"/>
-   <addaction name="actionMoveSelection"/>
-   <addaction name="actionMoveSelectionTime"/>
-   <addaction name="actionResetGraphics"/>
-   <addaction name="actionTonalizeFilter"/>
-   <addaction name="actionReassignFilter"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
    <addaction name="actionToggleFullscreen"/>
@@ -748,7 +744,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Time control</string>
+    <string>Playback</string>
    </property>
    <property name="toolTip">
     <string>Toggle the time control tool box</string>
@@ -774,9 +770,6 @@
    </property>
   </action>
   <action name="actionExport_audio">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Export</string>
    </property>
@@ -806,9 +799,6 @@
    </property>
   </action>
   <action name="actionExport_selection">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Export selection</string>
    </property>
@@ -1575,6 +1565,28 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_info">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Transform info</string>
+   </property>
+  </action>
+  <action name="actionToggleBrushesToolbar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Brushes</string>
    </property>
   </action>
  </widget>

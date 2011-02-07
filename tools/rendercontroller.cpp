@@ -319,6 +319,8 @@ void RenderController::
     toolbar_render->setToolButtonStyle(Qt::ToolButtonIconOnly);
     main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
 
+    connect(main->getItems()->actionToggleTransformToolBox, SIGNAL(toggled(bool)), toolbar_render, SLOT(setVisible(bool)));
+
 
     // Find Qt Creator managed actions
     Ui::MainWindow* ui = main->getItems();

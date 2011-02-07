@@ -2,6 +2,7 @@
 
 #include "support/toolselector.h"
 #include "graphicsview.h"
+#include "ui_mainwindow.h"
 
 // Sonic AWE
 #include "ui/mainwindow.h"
@@ -28,6 +29,7 @@ TimelineController::
             :
             model(timeline_view->_render_view->model),
             view(timeline_view),
+            dock(0),
             _movingTimeline( 0 )
 {
     setupGui();
@@ -75,13 +77,19 @@ void TimelineController::
         view->setLayout( new QHBoxLayout );
         view->layout()->setMargin( 0 );
         view->layout()->addWidget( this );
+
+        connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
+        connect(dock, SIGNAL(visibilityChanged(bool)), MainWindow->getItems()->actionToggleTimelineWindow, SLOT(setChecked(bool)));
     } else {
         view->tool_selector = view->_render_view->graphicsview->toolSelector( 1 );
         view->tool_selector->setCurrentTool( this, true );
-        connect(view->_render_view, SIGNAL(paintingForeground()), view, SLOT(paintInGraphicsView()));
         connect(view->_render_view->graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
                 view, SLOT(layoutChanged(QBoxLayout::Direction)) );
         view->layoutChanged( QBoxLayout::TopToBottom );
+
+        Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
+        connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), SLOT(embeddedVisibilityChanged(bool)));
+        embeddedVisibilityChanged(true);
     }
 
     // Always redraw the timeline whenever the main render view is painted.
@@ -95,6 +103,25 @@ void TimelineController::
     connect(view, SIGNAL(hideMe()), SLOT(hideTimeline()));
 }
 
+
+void TimelineController::
+        embeddedVisibilityChanged(bool visible)
+{
+    BOOST_ASSERT( 0 == dock );
+
+    if (!visible)
+    {
+        disconnect(view->_render_view, SIGNAL(paintingForeground()), view, SLOT(paintInGraphicsView()));
+        disconnect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+    }
+    else
+    {
+        connect(view->_render_view, SIGNAL(paintingForeground()), view, SLOT(paintInGraphicsView()));
+        connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+    }
+
+    view->tool_selector->parentTool()->setVisible(visible);
+}
 
 void TimelineController::
         wheelEvent ( QWheelEvent *e )

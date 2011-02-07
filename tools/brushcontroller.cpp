@@ -54,6 +54,7 @@ void BrushController::
     toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
     toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
     main->addToolBar(Qt::TopToolBarArea, toolBarTool);
+    connect(ui->actionToggleBrushesToolbar, SIGNAL(toggled(bool)), toolBarTool, SLOT(setVisible(bool)));
 
     {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
         qb->addActionItem( ui->actionAmplitudeBrush );
