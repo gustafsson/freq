@@ -107,9 +107,16 @@ RenderController::
     setupGui();
 
     // Default values for rendermodel are set in rendermodel constructor
-    receiveSetTimeFrequencyResolution( 50 );
-    receiveSetTransform_Cwt();
-    receiveSetColorscaleColors();
+
+    {
+        // Default values for rendercontroller
+        Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+        Ui::MainWindow* ui = main->getItems();
+
+        transform->actions().at(0)->trigger();
+        ui->actionSet_colorscale->trigger();
+        tf_resolution->setValue( 10 );
+    }
 }
 
 
@@ -358,30 +365,28 @@ void RenderController::
     connect(ui->actionToggleOrientation, SIGNAL(toggled(bool)), SLOT(receiveToggleOrientation(bool)));
 
     // ComboBoxAction* transform
-    {   transform = new ComboBoxAction();
-        transform->addActionItem( ui->actionTransform_Cwt );
-        transform->addActionItem( ui->actionTransform_Stft );
-        transform->addActionItem( ui->actionTransform_Cwt_phase );
-        transform->addActionItem( ui->actionTransform_Cwt_reassign );
-        transform->addActionItem( ui->actionTransform_Cwt_ridge );
-        transform->addActionItem( ui->actionTransform_Cwt_weight );
-
-        unsigned k=0;
-        foreach( QAction* a, transform->actions())
-        {
-            a->setShortcut('1' + k++);
-        }
-
-        transform->decheckable( false );
-        toolbar_render->addWidget( transform );
-
-        connect(ui->actionTransform_Cwt, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt()));
+    {   connect(ui->actionTransform_Cwt, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt()));
         connect(ui->actionTransform_Stft, SIGNAL(triggered()), SLOT(receiveSetTransform_Stft()));
         connect(ui->actionTransform_Cwt_phase, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_phase()));
         connect(ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_reassign()));
         connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
         connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
 
+        transform = new ComboBoxAction();
+        transform->addActionItem( ui->actionTransform_Stft );
+        transform->addActionItem( ui->actionTransform_Cwt );
+//        transform->addActionItem( ui->actionTransform_Cwt_phase );
+//        transform->addActionItem( ui->actionTransform_Cwt_reassign );
+//        transform->addActionItem( ui->actionTransform_Cwt_ridge );
+//        transform->addActionItem( ui->actionTransform_Cwt_weight );
+        transform->decheckable( false );
+        toolbar_render->addWidget( transform );
+
+        unsigned k=0;
+        foreach( QAction* a, transform->actions())
+        {
+            a->setShortcut('1' + k++);
+        }
     }
 
 
