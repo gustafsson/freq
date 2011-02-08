@@ -990,7 +990,7 @@
     <string>Zoom</string>
    </property>
    <property name="toolTip">
-    <string>Zoom with the right mouse button [z]</string>
+    <string>Zoom with the right mouse button [Z]</string>
    </property>
    <property name="shortcut">
     <string>Z</string>

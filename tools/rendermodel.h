@@ -37,6 +37,7 @@ namespace Tools
         float _px, _py, _pz, // TODO beautify
             _rx, _ry, _rz;
         float xscale;
+        float zscale;
 
     private:
         friend class RenderView; // todo remove

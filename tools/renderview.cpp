@@ -1091,7 +1091,7 @@ void RenderView::
     else
         glRotatef(-90,0,1,0);
 
-    glScalef(model->xscale, 1, 5);
+    glScalef(model->xscale, 1, model->zscale);
 
     glTranslatef( -model->_qx, -model->_qy, -model->_qz );
 

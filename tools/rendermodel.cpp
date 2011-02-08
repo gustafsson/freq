@@ -13,6 +13,7 @@ RenderModel::
         _px(0), _py(0), _pz(-6),
         _rx(91), _ry(180), _rz(0),
         xscale(0.1),
+        zscale(5),
         _project(p)
 {
 	Signal::Operation* o = p->head_source()->root();
