@@ -158,7 +158,7 @@ void TimelineController::
     case 1:
         if (e->buttons() & Qt::LeftButton)
         {
-            view->_render_view->setPosition( current.time, current.scale );
+            view->_render_view->setPosition( current );
 
             // Update both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).

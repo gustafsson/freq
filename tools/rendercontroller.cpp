@@ -108,7 +108,7 @@ RenderController::
 
     // Default values
     float l = model()->project()->worker.source()->length();
-    view->setPosition( std::min(l, 10.f)*0.5f, 0.5f );
+    view->setPosition( Heightmap::Position( std::min(l, 10.f)*0.5f, 0.5f ));
 
     receiveSetTimeFrequencyResolution( 50 );
     receiveSetTransform_Cwt();

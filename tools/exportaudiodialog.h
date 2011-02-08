@@ -4,15 +4,14 @@
 #include <QDialog>
 #include <QTimer>
 
-#include "sawe/project.h"
-
 #include "selectionmodel.h"
+#include "signal/worker.h"
+
+namespace Sawe { class Project; }
+namespace Ui { class ExportAudioDialog; }
 
 namespace Tools {
-
-namespace Ui {
-    class ExportAudioDialog;
-}
+class RenderView;
 
 class ExportAudioDialog : public QDialog
 {

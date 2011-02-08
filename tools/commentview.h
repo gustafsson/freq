@@ -5,9 +5,7 @@
 
 #include <QWidget>
 
-namespace Ui {
-    class CommentView;
-}
+namespace Ui { class CommentView; }
 
 namespace Tools {
 
@@ -52,7 +50,7 @@ public slots:
     void thumbnail(bool);
 
 private:
-    Ui::CommentView *ui;
+    ::Ui::CommentView *ui;
 
     QPoint ref_point;
     QPolygonF poly;

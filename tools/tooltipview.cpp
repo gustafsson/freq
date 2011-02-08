@@ -109,6 +109,7 @@ void TooltipView::
 void TooltipView::
         seppuku()
 {
+    render_view_->userinput_update();
     delete this;
 }
 
@@ -142,6 +143,8 @@ void TooltipView::
                 TaskInfo("TooltipView just finished");
 
             render_view_->userinput_update( false );
+
+            emit tooltipChanged();
         }
     }
 }

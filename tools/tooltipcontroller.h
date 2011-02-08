@@ -22,13 +22,17 @@ namespace Tools
                           CommentController* comments);
         ~TooltipController();
 
-        void setCurrentView(TooltipView* value ) { current_view_ = value; }
+        const std::list<QPointer<TooltipView> >& views() const { return views_; }
+        void setCurrentView(TooltipView* value );
+        TooltipView* current_view();
 
     signals:
         void enabledChanged(bool active);
+        void tooltipChanged();
 
     private slots:
-        virtual void receiveToggleInfoTool(bool);
+        void receiveToggleInfoTool(bool);
+        void emitTooltipChanged();
 
     private:
         // Event handlers
@@ -45,7 +49,7 @@ namespace Tools
         CommentController* comments_;
 
         TooltipModel* current_model();
-        TooltipView* current_view_;
+        QPointer<TooltipView> current_view_;
 
         // GUI
         void setupGui();

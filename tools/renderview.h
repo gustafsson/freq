@@ -20,10 +20,7 @@
 class GlFrameBuffer;
 class QGLWidget;
 
-namespace Heightmap
-{
-    class Reference;
-}
+namespace Heightmap { class Reference; }
 
 namespace Tools
 {
@@ -58,7 +55,7 @@ namespace Tools
         virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
-        void setPosition( float time, float f );
+        void setPosition( Heightmap::Position pos );
 
         float last_ysize;
         floatAni orthoview;

@@ -27,7 +27,9 @@ public:
     Heightmap::Position pos;
     float frequency;
     float max_so_far;
+    float compliance;
     unsigned markers;
+    unsigned markers_auto;
     QPointer<CommentView> comment;
     enum AutoMarkersState
     {
@@ -35,7 +37,10 @@ public:
         AutoMarkerWorking,
         AutoMarkerFinished
     } automarking;
+    std::string automarkingStr();
 
+    void toneName(std::string& primaryName, std::string& secondaryName, float& accuracy);
+    std::string toneName();
 private:
     CommentController* _comments;
     RenderView *render_view_;

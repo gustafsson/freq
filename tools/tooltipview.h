@@ -7,7 +7,9 @@
 #include "renderview.h"
 
 namespace Tools {
+
 class TooltipController;
+
 class TooltipView : public QObject
 {
     Q_OBJECT
@@ -23,6 +25,9 @@ public:
 
     bool enabled;
     bool visible;
+
+signals:
+    void tooltipChanged();
 
 public slots:
     /// Connected in constructor

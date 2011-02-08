@@ -123,6 +123,8 @@ namespace Tools
 
         QPointer<class ExportAudioDialog> _export_audio_dialog;
 
+        QPointer<class HarmonicsInfoForm> _harmonics_info_form;
+
         Sawe::Project* _project;
     };
 } // namespace Tools

@@ -93,6 +93,7 @@ FORMS += \
     tools/selectionviewmodel.ui \
     tools/transforminfoform.ui \
     tools/exportaudiodialog.ui \
+    tools/harmonicsinfoform.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

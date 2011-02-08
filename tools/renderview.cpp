@@ -755,13 +755,13 @@ void RenderView::
 
 
 void RenderView::
-        setPosition( float time, float f )
+        setPosition( Heightmap::Position pos )
 {
-    model->_qx = time;
+    model->_qx = pos.time;
     if (model->_qx<0) model->_qx=0;
     if (model->_qx>_last_length) model->_qx=_last_length;
 
-    model->_qz = f;
+    model->_qz = pos.scale;
     if (model->_qz<0) model->_qz=0;
     if (model->_qz>1) model->_qz=1;
 
