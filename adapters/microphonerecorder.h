@@ -109,9 +109,12 @@ private:
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
+        init();
+
         Signal::Interval I(0, wavfile->number_of_samples());
         for (unsigned c=0; c<num_channels(); ++c)
         {
+            wavfile->set_channel( c % wavfile->num_channels() );
             _data[c].put(wavfile->read( I ));
         }
 

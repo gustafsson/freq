@@ -87,12 +87,12 @@ pProject Project::
     catch (const exception& x) {
         if (!err.empty())
             err += '\n';
-        err += x.what();
+        err += "Error: " + vartype(x);
+        err += "\nDetails: " + (std::string)x.what();
     }
 
-    QMessageBox::warning( 0,
-                 QString("Can't open file"),
-				 QString::fromLocal8Bit(err.c_str()) );
+    QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
+    TaskInfo("======================\nCan't open file\n%s\n======================", err.c_str());
     return pProject();
 }
 

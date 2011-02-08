@@ -61,7 +61,8 @@ Worker::
 #ifndef SAWE_NO_MUTEX
     this->quit();
 #endif
-    todo_list( Intervals() );
+    if (_source )
+        todo_list( Intervals() );
 
     std::vector<pOperation> v;
     _post_sink.sinks( v );
@@ -234,6 +235,8 @@ void Worker::
 #ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_todo_lock);
 #endif
+        BOOST_ASSERT( _source );
+
         _todo_list = v & Interval(0, std::max(1lu, _source->number_of_samples()));
         //_todo_list &= Signal::Intervals(0, 44100*7);
 

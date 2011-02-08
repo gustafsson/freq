@@ -209,21 +209,29 @@ void SaweMainWindow::
 
     e->accept();
 
-    emit onMainWindowCloseEvent( this );
+    {
+        TaskInfo ti("onMainWindowCloseEvent");
+        emit onMainWindowCloseEvent( this );
+    }
 
     {
+        TaskInfo ti("Saving settings");
         QSettings settings("REEP", "Sonic AWE");
         settings.setValue("geometry", saveGeometry());
         settings.setValue("windowState", saveState());
     }
 
-    QMainWindow::closeEvent(e);
+    {
+        TaskInfo ti("closeEvent");
+        QMainWindow::closeEvent(e);
+    }
 }
 
 
 void SaweMainWindow::
         askSaveChanges()
 {
+    TaskInfo("Save current state of the project?");
     save_changes_msgbox_ = new QMessageBox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
     save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
@@ -235,6 +243,7 @@ void SaweMainWindow::
 void SaweMainWindow::
         saveChangesAnswer( QAbstractButton * button )
 {
+    TaskInfo("Save changes answer: %d", (int)save_changes_msgbox_->buttonRole( button ));
     switch ( save_changes_msgbox_->buttonRole( button ) )
     {
     case QMessageBox::DestructiveRole:

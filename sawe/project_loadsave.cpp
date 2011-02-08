@@ -23,6 +23,8 @@
 
 // Qt
 #include <QtGui/QMessageBox>
+#include <QFileInfo>
+#include <QDir>
 
 BOOST_CLASS_VERSION(Tools::CommentModel, 1)
 
@@ -31,9 +33,12 @@ using namespace std;
 namespace Sawe {
 
 template<class Archive> 
-void runSerialization(Archive& ar, Project*& project)
+void runSerialization(Archive& ar, Project*& project, QString path)
 {
     TaskInfo ti("Running serialization");
+
+    QDir dir = QDir::current();
+    QDir::setCurrent( QFileInfo( path ).absolutePath() );
 
     ar.template register_type<Adapters::Audiofile>();
     ar.template register_type<Adapters::MicrophoneRecorder>();
@@ -42,6 +47,8 @@ void runSerialization(Archive& ar, Project*& project)
     ar.template register_type<Tools::CommentModel>();
 
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
+
+    QDir::setCurrent( dir.absolutePath() );
 }
 
 
@@ -64,14 +71,14 @@ bool Project::
         std::ofstream ofs(project_file_name.c_str());
         boost::archive::xml_oarchive xml(ofs);
 		Project* p = this;
-		runSerialization(xml, p);
+		runSerialization(xml, p, project_file_name.c_str());
     }
     catch (const std::exception& x)
     {
-        QMessageBox::warning( 0,
-                     QString("Can't save file"),
-					 "Error: " + QString::fromStdString(vartype(x)) + 
-					 "\nDetails: " + QString::fromLocal8Bit(x.what()) );
+        QString msg = "Error: " + QString::fromStdString(vartype(x)) +
+                      "\nDetails: " + QString::fromLocal8Bit(x.what());
+        QMessageBox::warning( 0, "Can't save file", msg );
+        TaskInfo("======================\nCan't save file\n%s\n======================", msg.toStdString().c_str());
     }
 
     return true;
@@ -95,7 +102,7 @@ pProject Project::
     boost::archive::xml_iarchive xml(ifs);
 
     Project* new_project = 0;
-	runSerialization(xml, new_project);
+	runSerialization(xml, new_project, project_file.c_str());
 
     new_project->project_file_name = project_file;
 
