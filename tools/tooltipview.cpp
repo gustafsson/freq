@@ -33,12 +33,6 @@ TooltipView::
 void TooltipView::
         drawMarkers()
 {
-    if (!model_->comment)
-        return;
-
-    if (!initialized)
-        initialize();
-
     Heightmap::Position p = model_->pos;
 
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
@@ -128,7 +122,13 @@ void TooltipView::
 void TooltipView::
         draw()
 {
-    if (visible)
+    if (!model_->comment)
+        return;
+
+    if (!initialized)
+        initialize();
+
+    //if (visible)
     {
         drawMarkers();
 

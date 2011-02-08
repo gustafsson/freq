@@ -106,10 +106,7 @@ RenderController::
 {
     setupGui();
 
-    // Default values
-    float l = model()->project()->worker.source()->length();
-    view->setPosition( Heightmap::Position( std::min(l, 10.f)*0.5f, 0.5f ));
-
+    // Default values for rendermodel are set in rendermodel constructor
     receiveSetTimeFrequencyResolution( 50 );
     receiveSetTransform_Cwt();
     receiveSetColorscaleColors();

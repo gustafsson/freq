@@ -52,8 +52,11 @@ void TooltipController::
         emit tooltipChanged();
     }
 
-    render_view_->toolSelector()->setCurrentTool( this, value != 0 );
-    setEnabled( value != 0 );
+    if (value == 0)
+    {
+        render_view_->toolSelector()->setCurrentTool( this, value != 0 );
+        setEnabled( value != 0 );
+    }
 }
 
 
@@ -165,8 +168,12 @@ void TooltipController::
         changeEvent(QEvent *event)
 {
     if (event->type() & QEvent::EnabledChange)
+    {
         if (!isEnabled())
-            emit enabledChanged(isEnabled());
+            setCurrentView(0);
+
+        emit enabledChanged(isEnabled());
+    }
 }
 
 

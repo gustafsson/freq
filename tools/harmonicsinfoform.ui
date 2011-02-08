@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Harmonics, select row to center camera. Right click on a marker in the plot to delete.</string>
+      <string>Harmonics, select row to center camera. Right click on a marker to delete.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>

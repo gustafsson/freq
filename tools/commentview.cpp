@@ -41,7 +41,6 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
     addAction(hideAction);
     setMouseTracking( true );
 	setHtml(model->html);
-    //setFocusPolicy(Qt::WheelFocus);
     //ui->textEdit->setFocusProxy(this);
     connect(ui->textEdit, SIGNAL(selectionChanged()), SLOT(recreatePolygon()));
 }
@@ -175,28 +174,13 @@ void CommentView::
         resizePosition = -QPoint(width(), height()) + QPoint(gp.x(), -gp.y());
     }
 
-    update();
-    view->userinput_update();
-}
+    if (visible)
+    {
+        emit gotFocus(); // setFocusPolicy, focusInEvent doesn't work because the CommentView recieves focus to easily
 
-
-void CommentView::
-        focusInEvent(QFocusEvent * /*e*/)
-{
-    //TaskInfo("CommentView::focusInEvent, gotFocus = %d, reason = %d", e->gotFocus(), e->reason());
-
-    recreatePolygon();
-
-    emit gotFocus();
-}
-
-
-void CommentView::
-        focusOutEvent(QFocusEvent * /*e*/)
-{
-    //TaskInfo("CommentView::focusOutEvent, lostFocus = %d, reason = %d", e->lostFocus(), e->reason());
-
-    recreatePolygon();
+        update();
+        view->userinput_update();
+    }
 }
 
 
@@ -293,7 +277,8 @@ void CommentView::
         ui->textEdit->setVisible( false );
         poly.clear();
         r = QRect();
-        float s = (ref_point.x()-1)/2;
+        //float s = (ref_point.x()-1)/2;
+        float s = std::min(ref_point.x(), 15);
         poly.push_back(ref_point);
         poly.push_back(ref_point - s*h0 - s*x0);
         poly.push_back(ref_point - s*h0 + s*x0);
