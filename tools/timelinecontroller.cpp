@@ -83,13 +83,14 @@ void TimelineController::
     } else {
         view->tool_selector = view->_render_view->graphicsview->toolSelector( 1 );
         view->tool_selector->setCurrentTool( this, true );
+
+        view->layoutChanged( view->_render_view->graphicsview->layoutDirection());
         connect(view->_render_view->graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
                 view, SLOT(layoutChanged(QBoxLayout::Direction)) );
-        view->layoutChanged( QBoxLayout::TopToBottom );
 
         Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
+        embeddedVisibilityChanged(MainWindow->getItems()->actionToggleTimelineWindow->isChecked());
         connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), SLOT(embeddedVisibilityChanged(bool)));
-        embeddedVisibilityChanged(true);
     }
 
     // Always redraw the timeline whenever the main render view is painted.

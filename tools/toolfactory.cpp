@@ -40,7 +40,8 @@ namespace Tools
 
 ToolFactory::
         ToolFactory(Sawe::Project* p)
-:   render_model( p ),
+:   ToolRepo(p),
+    render_model( p ),
     selection_model( p ),
     playback_model( p )
 {
@@ -70,6 +71,7 @@ ToolFactory::
     }
 
     _comment_controller = new CommentController( _render_view );
+    tool_controllers_.push_back( _comment_controller );
 
     _matlab_controller = new MatlabController( p, _render_view );
 
@@ -77,6 +79,7 @@ ToolFactory::
 
     _tooltip_controller = new TooltipController(
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
+    tool_controllers_.push_back( _tooltip_controller );
 
     _about_dialog = new AboutDialog( p );
 
@@ -90,8 +93,13 @@ ToolFactory::
 
     _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
 
-    _harmonics_info_form = new HarmonicsInfoForm(p, _tooltip_controller, _render_view);
+    _harmonics_info_form = new HarmonicsInfoForm(
+            p,
+            dynamic_cast<TooltipController*>(_tooltip_controller.data()),
+            _render_view
+            );
 }
+
 
 
 ToolFactory::
@@ -142,5 +150,17 @@ ToolFactory::
     BOOST_ASSERT( _render_view );
     delete _render_view;
 }
+
+
+ToolFactory::
+        ToolFactory()
+            :
+            render_model( 0 ),
+            selection_model( 0 ),
+            playback_model( 0 )
+{
+    BOOST_ASSERT( false );
+}
+
 
 } // namespace Tools

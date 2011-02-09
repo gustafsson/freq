@@ -161,30 +161,35 @@ private:
 
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {
+        TaskInfo ti("%s", __FUNCTION__);
         Signal::pOperation head = head_source();
-        TaskInfo("Head tree:\n%s", head->toString().c_str());
+        TaskInfo("Saving head tree:\n%s", head->toString().c_str());
 
         ar & BOOST_SERIALIZATION_NVP(root_source_);
         ar & BOOST_SERIALIZATION_NVP(head);
 
-        QByteArray mainwindowState = _mainWindow->saveState(/* version */);
+        QByteArray mainwindowState = _mainWindow->saveState( version );
 		save_bytearray( ar, mainwindowState );
 
-		_tools->save_tools( ar, version );
+        Tools::ToolFactory& tool_factory = *_tools;
+        ar & BOOST_SERIALIZATION_NVP(tool_factory);
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
-		Signal::pOperation head;
+        TaskInfo ti("%s", __FUNCTION__);
+        Signal::pOperation head;
         ar & BOOST_SERIALIZATION_NVP(root_source_);
         ar & BOOST_SERIALIZATION_NVP(head);
+        TaskInfo("Loaded head tree:\n%s", head->toString().c_str());
         head_source(head);
 
 		createMainWindow();
 
         QByteArray mainwindowState;
         load_bytearray( ar, mainwindowState );
-        _mainWindow->restoreState( mainwindowState/*, version */);
+        _mainWindow->restoreState( mainwindowState, version);
 
-		_tools->load_tools( ar, version );
+        Tools::ToolFactory& tool_factory = *_tools;
+        ar & BOOST_SERIALIZATION_NVP(tool_factory);
     }
 
     template<class Archive> static void save_bytearray(Archive& ar, QByteArray& c)

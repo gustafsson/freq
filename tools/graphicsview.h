@@ -38,6 +38,7 @@ public:
     Support::ToolSelector* toolSelector(int index);
 
     void setLayoutDirection( QBoxLayout::Direction direction );
+    QBoxLayout::Direction layoutDirection();
 
 signals:
     /**

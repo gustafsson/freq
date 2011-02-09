@@ -4,6 +4,7 @@
 #include "ui/mousecontrol.h"
 #include "heightmap/position.h"
 #include "commentcontroller.h"
+#include "toolmodel.h"
 
 #include <QWidget>
 
@@ -14,13 +15,15 @@ namespace Tools
     class TooltipView;
     class TooltipModel;
 
-    class TooltipController: public QWidget
+    class TooltipController: public ToolController
     {
         Q_OBJECT
     public:
         TooltipController(RenderView *render_view,
                           CommentController* comments);
         ~TooltipController();
+
+        virtual void createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ );
 
         const std::list<QPointer<TooltipView> >& views() const { return views_; }
         void setCurrentView(TooltipView* value );

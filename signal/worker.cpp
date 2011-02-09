@@ -33,7 +33,7 @@ namespace Signal {
 Worker::
         Worker(Signal::pOperation s)
 :   work_chunks(0),
-    _number_of_samples(s->number_of_samples()),
+    _number_of_samples(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _source(s),
     _samples_per_chunk( 1 ),

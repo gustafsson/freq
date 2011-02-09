@@ -9,6 +9,7 @@
 
 // Serializable Sonic AWE Tools
 #include "tools/commentmodel.h"
+#include "tools/tooltipmodel.h"
 
 // GpuMisc
 #include <demangle.h>
@@ -44,7 +45,12 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Adapters::MicrophoneRecorder>();
     ar.template register_type<Tools::Support::MultiplyBrush>();
     ar.template register_type<Filters::Ellipse>();
+    ar.template register_type<Filters::Rectangle>();
     ar.template register_type<Tools::CommentModel>();
+    ar.template register_type<Tools::TooltipModel>();
+    ar.template register_type<Tools::ToolFactory>();
+    ar.template register_type<Tools::ToolRepo>();
+    ar.template register_type<Tools::RenderModel>();
 
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 

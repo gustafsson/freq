@@ -16,7 +16,7 @@ class CommentView : public QWidget
     Q_OBJECT
 
 public:
-    explicit CommentView(CommentModel* model, QWidget *parent = 0);
+    explicit CommentView(ToolModelP modelp, QWidget *parent = 0);
     ~CommentView();
 
     std::string html();
@@ -24,7 +24,8 @@ public:
 
     RenderView* view;
     QGraphicsProxyWidget* proxy;
-    CommentModel* model;
+    CommentModel* model();
+    ToolModelP modelp;
 
     virtual void closeEvent(QCloseEvent *);
     virtual void wheelEvent(QWheelEvent *);
@@ -33,6 +34,7 @@ public:
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseDoubleClickEvent ( QMouseEvent * event );
     virtual void mouseMoveEvent(QMouseEvent *event);
+    virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual QSize sizeHint() const;
 
     bool isThumbnail();
@@ -56,6 +58,7 @@ private:
     bool z_hidden;
     QPoint dragPosition;
     QPoint resizePosition;
+    double lastz;
 
     bool testFocus();
 };

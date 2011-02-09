@@ -387,10 +387,10 @@ Heightmap::Reference RenderView::
 
 
 QPointF RenderView::
-        getScreenPos( Heightmap::Position pos, double* dist )
+        getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     GLdouble objY = 0;
-    if (1 != orthoview)
+    if (1 != orthoview && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->renderer->y_scale * 4 * last_ysize;
 
     GLdouble winX, winY, winZ;
@@ -425,24 +425,25 @@ QPointF RenderView::
 
 
 QPointF RenderView::
-        getWidgetPos( Heightmap::Position pos, double* dist )
+        getWidgetPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
-    QPointF pt = getScreenPos(pos, dist);
+    QPointF pt = getScreenPos(pos, dist, use_heightmap_value);
     pt -= QPointF(_last_x, _last_y);
     return pt;
 }
 
 
 Heightmap::Position RenderView::
-        getHeightmapPos( QPointF pos, bool useRenderViewContext )
+        getHeightmapPos( QPointF widget_pos, bool useRenderViewContext )
 {
     if (1 == orthoview)
-        return getPlanePos(pos, 0, useRenderViewContext);
+        return getPlanePos(widget_pos, 0, useRenderViewContext);
 
-    TaskTimer tt("RenderView::getPlanePos Newton raphson");
+    TaskTimer tt("RenderView::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
 
-    pos.setX( pos.x() + _last_x );
-    pos.setY( _last_height - 1 - pos.y() + _last_y );
+    QPointF pos;
+    pos.setX( widget_pos.x() + _last_x );
+    pos.setY( _last_height - 1 - widget_pos.y() + _last_y );
 
     GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
@@ -469,25 +470,43 @@ Heightmap::Position RenderView::
                 &objX2, &objY2, &objZ2);
 
     Heightmap::Position p;
-    float y = 0;
+    double y = 0;
 
-    // Newton raphson
-    for (int i=0; i<10; ++i)
+    double prevs = 1;
+    // Newton raphson with naive damping
+    for (int i=0; i<50; ++i)
     {
-        float s = (y-objY1)/(objY2-objY1);
+        double s = (y-objY1)/(objY2-objY1);
+        double k = 1./8;
+        s = (1-k)*prevs + k*s;
 
         Heightmap::Position q;
         q.time = objX1 + s * (objX2-objX1);
         q.scale = objZ1 + s * (objZ2-objZ1);
 
-        float e = (q.time-p.time)*(q.time-p.time)*model->xscale*model->xscale + (q.scale-p.scale)*(q.scale-p.scale);
+        Heightmap::Position d(
+                (q.time-p.time)*model->xscale,
+                (q.scale-p.scale)*model->zscale);
+
+        QPointF r = getWidgetPos( q, 0 );
+        d.time = r.x() - widget_pos.x();
+        d.scale = r.y() - widget_pos.y();
+        float e = d.time*d.time + d.scale*d.scale;
         p = q;
-        if (e < 1e-5 )
+        if (e < 0.4) // || prevs > s)
             break;
+        //if (e < 1e-5 )
+        //    break;
 
         y = getHeightmapValue(p) * model->renderer->y_scale * 4 * last_ysize;
-        tt.info("(%g, %g) %g", p.time, p.scale, y);
+        tt.info("(%g, %g) %g is Screen(%g, %g), s = %g", p.time, p.scale, y, r.x(), r.y(), s);
+        prevs = s;
     }
+
+    y = getHeightmapValue(p) * model->renderer->y_scale * 4 * last_ysize;
+    TaskInfo("Screen(%g, %g) projects at Heightmap(%g, %g, %g)", widget_pos.x(), widget_pos.y(), p.time, p.scale, y);
+    QPointF r = getWidgetPos( p, 0 );
+    TaskInfo("Heightmap(%g, %g) projects at Screen(%g, %g)", p.time, p.scale, r.x(), r.y() );
     return p;
 }
 
@@ -547,6 +566,20 @@ Heightmap::Position RenderView::
     }
 
     return p;
+}
+
+
+QPointF RenderView::
+        widget_coordinates( QPointF window_coordinates )
+{
+    return window_coordinates - QPointF(_last_x, _last_y);
+}
+
+
+QPointF RenderView::
+        window_coordinates( QPointF widget_coordinates )
+{
+    return widget_coordinates + QPointF(_last_x, _last_y);
 }
 
 
@@ -1089,7 +1122,10 @@ void RenderView::
     if (model->renderer->left_handed_axes)
         glScalef(-1, 1, 1);
     else
+    {
         glRotatef(-90,0,1,0);
+        glScalef(0.35, 1, 2.6);
+    }
 
     glScalef(model->xscale, 1, model->zscale);
 

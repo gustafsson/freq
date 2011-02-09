@@ -224,8 +224,16 @@ void NavigationController::
         }
         else if (zoom_only_ || e->modifiers().testFlag(Qt::ShiftModifier))
         {
-            zoom( -10*rotateButton.deltaX( x ), ScaleX );
-            zoom( 30*rotateButton.deltaY( y ), ScaleZ );
+            if (r.model->renderer->left_handed_axes)
+            {
+                zoom( -10*rotateButton.deltaX( x ), ScaleX );
+                zoom( 30*rotateButton.deltaY( y ), ScaleZ );
+            }
+            else
+            {
+                zoom( 30*rotateButton.deltaY( y ), ScaleX );
+                zoom( -10*rotateButton.deltaX( x ), ScaleZ );
+            }
         }
         else
         {

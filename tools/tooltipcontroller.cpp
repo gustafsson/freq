@@ -38,6 +38,20 @@ TooltipController::
 
 
 void TooltipController::
+        createView( ToolModelP modelp, ToolRepo* repo, Sawe::Project* /*p*/ )
+{
+    TooltipModel* model = dynamic_cast<TooltipModel*>(modelp.get());
+    if (!model)
+        return;
+
+    model->setPtrs( repo->render_view(), this->comments_ );
+
+    setCurrentView( new TooltipView( model, this, repo->render_view() ) );
+    setupView(current_view_);
+}
+
+
+void TooltipController::
         setCurrentView(TooltipView* value )
 {
     if (views_.end() == std::find(views_.begin(), views_.end(), value))
@@ -78,7 +92,7 @@ void TooltipController::
         emitTooltipChanged()
 {
     emit tooltipChanged();
-    render_view_->userinput_update();
+    render_view_->userinput_update(false);
 }
 
 
@@ -99,13 +113,11 @@ void TooltipController::
         if( (e->button() & Qt::LeftButton) == Qt::LeftButton) {
             infoToolButton.press( e->x(), e->y() );
 
-            setCurrentView( new TooltipView( this, comments_, render_view_ ) );
-            setupView(current_view_);
+            TooltipModel* model = new TooltipModel();
 
-            current_model()->max_so_far = -1;
-            //if (model()->comment && !model()->comment->model->thumbnail)
-                current_model()->comment = 0;
-            current_model()->automarking = TooltipModel::AutoMarkerWorking;
+            model->automarking = TooltipModel::AutoMarkerWorking;
+
+            render_view_->model->project()->tools().addModel( model );
 
             mouseMoveEvent( e );
         }

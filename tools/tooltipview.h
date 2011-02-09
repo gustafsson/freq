@@ -9,13 +9,14 @@
 namespace Tools {
 
 class TooltipController;
+class ToolRepo;
 
 class TooltipView : public QObject
 {
     Q_OBJECT
 public:
-    TooltipView(TooltipController* controller,
-                CommentController* comments,
+    TooltipView(TooltipModel* model,
+                TooltipController* controller,
                 RenderView* render_view);
     ~TooltipView();
 

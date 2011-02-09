@@ -116,6 +116,7 @@ RenderController::
         transform->actions().at(0)->trigger();
         ui->actionSet_colorscale->trigger();
         tf_resolution->setValue( 10 );
+        ui->actionToggleOrientation->setChecked(true);
     }
 }
 
@@ -194,7 +195,9 @@ void RenderController::
 {
     float f = value / 50.f - 1.f;
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
+
     view->userinput_update();
+    emit transformChanged();
 }
 
 
@@ -212,7 +215,6 @@ void RenderController::
     model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
 
     view->userinput_update();
-
     emit transformChanged();
 }
 

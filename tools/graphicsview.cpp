@@ -179,4 +179,12 @@ void GraphicsView::
 }
 
 
+QBoxLayout::Direction GraphicsView::
+        layoutDirection()
+{
+    QBoxLayout* bl = dynamic_cast<QBoxLayout*>(layout_widget_->layout());
+    return bl->direction();
+}
+
+
 } // namespace Tools

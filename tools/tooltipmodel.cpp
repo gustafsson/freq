@@ -24,24 +24,33 @@ using namespace std;
 
 namespace Tools {
 
-TooltipModel::TooltipModel(RenderView *render_view, CommentController* comments)
+TooltipModel::TooltipModel()
     :
         frequency(-1),
         max_so_far(-1),
         markers(0),
         comment(0),
         automarking(TooltipModel::ManualMarkers),
-        _comments(comments),
-        render_view_(render_view),
+        comments_(0),
+        render_view_(0),
         fetched_heightmap_values(0)
 {
+}
+
+
+void TooltipModel::
+        setPtrs(RenderView *render_view, CommentController* comments)
+{
+    render_view_ = render_view;
+    comments_ = comments;
+    comment = comments_->findView( this->comment_model );
 }
 
 
 const Heightmap::Position& TooltipModel::
         comment_pos()
 {
-    return comment->model->pos;
+    return comment->model()->pos;
 }
 
 
@@ -126,11 +135,14 @@ void TooltipModel::
     }
 
     bool first = 0 == this->comment;
-    _comments->setComment( this->pos, ss.str(), &this->comment );
+    comments_->setComment( this->pos, ss.str(), &this->comment );
     if (first)
+    {
         this->comment->thumbnail( true );
+        this->comment_model = this->comment->modelp;
+    }
 
-    this->comment->model->pos = Heightmap::Position(
+    this->comment->model()->pos = Heightmap::Position(
             p.time - 0.01/render_view_->model->xscale*render_view_->model->_pz,
             p.scale);
 
@@ -259,9 +271,13 @@ float TooltipModel::
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
     double F = display_scale.getFrequency( pos.scale );
     double F_top = display_scale.getFrequency(1.f);
-    //double k = pow((double)i, -0.97);
-    //double k = pow((double)i, -2);
-    double k = pow((double)i, -0.92);
+    double penalty = 0.95;
+    //double penalty = 0.97;
+    // penalty should be in the range (0,1]
+    // Close to 1 means that it's more likely to find few harmonies
+    // Close to 0 means that it's more likely to find many harmonies
+
+    double k = pow((double)i, -penalty);
     Heightmap::Position p = pos;
 
     double s = 0;

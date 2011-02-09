@@ -6,17 +6,25 @@
 
 // Sonic AWE
 #include "heightmap/reference.h"
+#include "sawe/project.h"
 
 // Qt
 #include <QPointer>
 
+// boost serialization
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/version.hpp>
+#include <boost/mpl/bool.hpp>
+
 namespace Tools {
 class CommentController;
 
-class TooltipModel
+class TooltipModel: public ToolModel
 {
 public:
-    TooltipModel(RenderView *render_view, CommentController* comments );
+    TooltipModel();
+    void setPtrs(RenderView *render_view, CommentController* comments);
 
     const Heightmap::Position& comment_pos();
 
@@ -41,10 +49,34 @@ public:
 
     void toneName(std::string& primaryName, std::string& secondaryName, float& accuracy);
     std::string toneName();
+
 private:
-    CommentController* _comments;
+    CommentController* comments_;
     RenderView *render_view_;
     unsigned fetched_heightmap_values;
+    ToolModelP comment_model;
+
+private:
+    //template <bool T> bool eval_boolean(boost::mpl::bool_<T> const&) { return T; }
+    //template <typename T> bool eval_boolean2(T const&) { return true; }
+
+    friend class boost::serialization::access;
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
+    {
+        bool is_saving = typename Archive::is_saving();
+        TaskInfo("%s is_saving=%d comment_model=%p", __FUNCTION__, is_saving, comment_model.get());
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ToolModel);
+        ar
+                & BOOST_SERIALIZATION_NVP(pos.scale)
+                & BOOST_SERIALIZATION_NVP(pos.time)
+                & BOOST_SERIALIZATION_NVP(frequency)
+                & BOOST_SERIALIZATION_NVP(max_so_far)
+                & BOOST_SERIALIZATION_NVP(compliance)
+                & BOOST_SERIALIZATION_NVP(markers)
+                & BOOST_SERIALIZATION_NVP(markers_auto)
+                & BOOST_SERIALIZATION_NVP(automarking)
+                & BOOST_SERIALIZATION_NVP(comment_model);
+    }
 };
 
 } // namespace Tools

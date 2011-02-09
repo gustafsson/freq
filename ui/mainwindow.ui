@@ -1344,7 +1344,7 @@
     <string>Add comment</string>
    </property>
    <property name="toolTip">
-    <string>Add comment</string>
+    <string>Add comment [C]</string>
    </property>
    <property name="shortcut">
     <string>C</string>

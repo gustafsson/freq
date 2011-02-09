@@ -2,20 +2,22 @@
 #include "commentview.h"
 #include "tooltipcontroller.h"
 
+//#include <sawe/project.h>
+
 #include <glPushContext.h>
 
 namespace Tools {
 
 
 TooltipView::
-        TooltipView(TooltipController* controller,
-                    CommentController* comments,
+        TooltipView(TooltipModel* model,
+                    TooltipController* controller,
                     RenderView* render_view)
                         :
                         enabled(true),
                         visible(true),
                         initialized(false),
-                        model_(new TooltipModel(render_view, comments )),
+                        model_(model),
                         controller_(controller),
                         render_view_(render_view)
 {
@@ -26,7 +28,7 @@ TooltipView::
 TooltipView::
         ~TooltipView()
 {
-    delete model_;
+    model_->removeFromRepo();
 }
 
 
