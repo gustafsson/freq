@@ -97,6 +97,7 @@ void CommentView::
 
     if (!mask().contains( event->pos() ))
     {
+        setEditFocus( false );
         event->setAccepted( false );
         return;
     }
@@ -104,9 +105,7 @@ void CommentView::
     //TaskInfo("CommentView::mousePressEvent");
     if (!testFocus())
     {
-        setFocus(Qt::MouseFocusReason);
-        recreatePolygon();
-        ui->textEdit->setFocus(Qt::MouseFocusReason);
+        setEditFocus(true);
     }
 
 
@@ -250,15 +249,14 @@ void CommentView::
 bool CommentView::
         testFocus()
 {
-    return true;
-    //return hasFocus() || ui->textEdit->hasFocus();
+    return ui->textEdit->hasFocus();
 }
 
 
 void CommentView::
         recreatePolygon()
 {
-    bool create_thumbnail = !testFocus() || model()->thumbnail;
+    bool create_thumbnail = model()->thumbnail;
 
     ui->textEdit->setVisible( !create_thumbnail );
 
@@ -342,10 +340,13 @@ void CommentView::
     if (model()->thumbnail != v)
     {
         model()->thumbnail = v;
+
+        recreatePolygon();
+
+        setEditFocus(!v);
+
         emit thumbnailChanged( model()->thumbnail );
     }
-
-    recreatePolygon();
 }
 
 
@@ -379,6 +380,23 @@ QSize CommentView::
         sizeHint() const
 {
     return QSize(200,200);
+}
+
+
+void CommentView::
+        setEditFocus(bool focus)
+{
+    if (focus)
+    {
+        setFocus(Qt::MouseFocusReason);
+        ui->textEdit->setFocus(Qt::MouseFocusReason);
+    }
+    else
+    {
+        clearFocus();
+        ui->textEdit->clearFocus();
+        view->setFocus(Qt::MouseFocusReason);
+    }
 }
 
 

@@ -37,6 +37,7 @@ public:
     virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual QSize sizeHint() const;
 
+    void setEditFocus(bool focus);
     bool isThumbnail();
 
 signals:

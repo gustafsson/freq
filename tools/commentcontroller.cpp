@@ -204,7 +204,10 @@ void CommentController::
 {
     setEnabled( false );
     if (comment_)
+    {
         comment_->model()->screen_pos.x = -2;
+        comment_->setEditFocus(true);
+    }
 
     e->setAccepted(true);
     QWidget::mousePressEvent(e);
