@@ -132,7 +132,10 @@ __global__ void kernel_compute_wavelet_coefficients(
     else
     {
         float cufft_normalize = 1.f/(float)(nFrequencyBins*half_sizes);
-        float jibberish_normalization = 0.0979512048480986;
+        float jibberish_normalization = 0.3;
+        //jibberish_normalization *= sqrtf(sqrtf(sqrtf(sigma_t0)));
+        jibberish_normalization *= 1.275f / logf(sigma_t0*10.f);
+        //jibberish_normalization /= sqrtf(sqrtf(sigma_t0));
         cufft_normalize *= jibberish_normalization;
 
         if (0==w_bin)
