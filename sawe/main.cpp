@@ -94,8 +94,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     // Show error messages:
     std::string nvidia_url;
 #ifdef __APPLE__
-    nvidia_url = "\"Developer Drivers for MacOS\" at " + endl +
-                 "http://www.nvidia.com/object/cuda_get.html#MacOS";
+    nvidia_url = "\"Developer Drivers for MacOS\" at \nhttp://www.nvidia.com/object/cuda_get.html#MacOS";
 #else
     nvidia_url = "www.nvidia.com";
 #endif
