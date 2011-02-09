@@ -57,7 +57,7 @@ namespace Tools
     public:
         ToolRepo( Sawe::Project* project ) : project_(project) {}
 
-        virtual RenderView* render_view() { BOOST_ASSERT(false); } // can't make pure virtual because of serialization lib
+        virtual RenderView* render_view() { BOOST_ASSERT(false); return 0; } // can't make pure virtual because of serialization lib
 
         template<typename T>
         ToolModelP findToolModel(T* t)
