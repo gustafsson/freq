@@ -284,6 +284,9 @@ void SaweMainWindow::
 void SaweMainWindow::
         toggleFullscreen( bool fullscreen )
 {
+    if (fullscreen)
+        ui->actionToggleFullscreenNoMenus->setChecked( false );
+
     this->setWindowState( fullscreen ? Qt::WindowFullScreen : Qt::WindowActive);
 }
 
@@ -291,6 +294,9 @@ void SaweMainWindow::
 void SaweMainWindow::
         toggleFullscreenNoMenus( bool fullscreen )
 {
+    if (fullscreen)
+        ui->actionToggleFullscreen->setChecked( false );
+
     TaskInfo ti("%s %d", __FUNCTION__, fullscreen);
 
     if (fullscreen)
