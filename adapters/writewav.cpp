@@ -88,11 +88,18 @@ void WriteWav::
 
     if (normalize) // Normalize
     {
+        long double mean = 0;
+        for (unsigned k=0; k<N; k++)
+            mean += data[k]/N;
+
         float high=0, low=0;
+        long double var = 0;
         for (unsigned k=0; k<N; k++) {
             if (data[k]>high) high = data[k];
             if (data[k]<low) low = data[k];
+            var += (data[k]-mean)*(data[k]-mean);
         }
+        var /= N;
 
         if (0 == "Move DC")
         {

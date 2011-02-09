@@ -63,7 +63,7 @@ public:
 
       As default all samples are possibly affected by an Operation.
       */
-    virtual Signal::Intervals affected_samples() { IntervalType it = number_of_samples(); return (_enabled && it)?Intervals(0, it ):Intervals(); }
+    virtual Signal::Intervals affected_samples();
 
 
     /**

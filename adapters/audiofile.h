@@ -256,21 +256,15 @@ private:
 
 
     friend class boost::serialization::access;
-    template<class archive> void save(archive& ar, const unsigned int /*version*/) const {
-        using boost::serialization::make_nvp;
-
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
-        ar & make_nvp("Filename", _original_filename);
-    }
-    template<class archive> void load(archive& ar, const unsigned int /*version*/) {
+    template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & make_nvp("Filename", _original_filename);
 
-        load( _original_filename );
+        if (typename archive::is_loading())
+            load( _original_filename );
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 } // namespace Adapters
