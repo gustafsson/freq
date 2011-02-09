@@ -21,6 +21,7 @@ namespace Sawe {
 Project::
         Project( Signal::pOperation head_source )
 :   worker( head_source ),
+    root_source_(head_source),
     is_modified_(true)
 {
 }

@@ -192,8 +192,9 @@ void ExportAudioDialog::
     else
         setWindowTitle("Exporting entire signal");
 
-    show();
+    hide();
     setWindowModality( Qt::WindowModal );
+    show();
 }
 
 
