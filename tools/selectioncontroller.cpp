@@ -89,6 +89,8 @@ namespace Tools
 
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );
+        toolBarTool->insertAction(0, ui->actionActionRemove_selection);
+        toolBarTool->insertAction(0, ui->actionCropSelection);
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
 

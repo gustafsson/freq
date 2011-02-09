@@ -73,12 +73,13 @@ void SaweMainWindow::
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
 //    connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
     connect(ui->actionToggleHistoryWindow, SIGNAL(toggled(bool)), ui->operationsWindow, SLOT(setVisible(bool)));
+    connect(ui->actionToggleHistoryWindow, SIGNAL(triggered()), ui->operationsWindow, SLOT(raise()));
     connect(ui->operationsWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityOperations(bool)));
+    ui->actionToggleHistoryWindow->setChecked( false );
 
     //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
     connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
-    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
     connect(ui->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui->toolBarPlay, SLOT(setVisible(bool)));
 
     // TODO move into each tool
@@ -99,10 +100,9 @@ void SaweMainWindow::
 //    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
 //    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
 //    ui->topFilterWindow->raise();
-    ui->operationsWindow->raise();
+    ui->operationsWindow->hide();
 
     // todo move into toolfactory
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
     this->addToolBar( Qt::LeftToolBarArea, ui->toolBarPlay );
 
@@ -155,6 +155,7 @@ void SaweMainWindow::
         checkVisibilityOperations(bool visible)
 {
     visible |= !tabifiedDockWidgets( ui->operationsWindow ).empty();
+    visible |= ui->operationsWindow->isVisibleTo( ui->operationsWindow->parentWidget() );
     ui->actionToggleHistoryWindow->setChecked(visible);
 }
 

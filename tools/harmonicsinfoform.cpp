@@ -30,16 +30,13 @@ HarmonicsInfoForm::HarmonicsInfoForm(
     dock->setObjectName(QString::fromUtf8("dockWidgetHarmonicsInfoForm"));
     dock->setMinimumSize(QSize(42, 79));
     dock->setMaximumSize(QSize(524287, 524287));
+    dock->resize(123, 150);
     dock->setContextMenuPolicy(Qt::NoContextMenu);
     dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
     dock->setEnabled(true);
     dock->setWidget(this);
     dock->setWindowTitle("Harmonics info");
-    dock->raise();
-
-    MainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
-    //MainWindow->tabifyDockWidget(MainWindow->getItems()->operationsWindow, dock);
 
     deleteRow = new QAction( this );
     deleteRow->setText("Delete row");
@@ -53,20 +50,10 @@ HarmonicsInfoForm::HarmonicsInfoForm(
     actionHarmonics_info->setCheckable( true );
     actionHarmonics_info->setChecked( true );
 
-    QList<QAction*> actionlist = MainWindow->getItems()->menuWindows->actions();
-    QAction* firstSeparator = 0;
-    foreach(QAction* a, actionlist)
-    {
-        if (a->isSeparator())
-        {
-            firstSeparator = a;
-            break;
-        }
-    }
-
-    MainWindow->getItems()->menuWindows->insertAction( firstSeparator, actionHarmonics_info );
+    MainWindow->getItems()->menu_Windows->insertAction( 0, actionHarmonics_info );
 
     connect(actionHarmonics_info, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
+    connect(actionHarmonics_info, SIGNAL(triggered()), dock, SLOT(raise()));
     connect(dock, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibility(bool)));
 
     connect(harmonicscontroller, SIGNAL(tooltipChanged()), SLOT(harmonicsChanged()));
@@ -75,6 +62,7 @@ HarmonicsInfoForm::HarmonicsInfoForm(
     harmonicsChanged();
 
     dock->setVisible( false );
+    actionHarmonics_info->setChecked( false );
 }
 
 
@@ -89,6 +77,7 @@ void HarmonicsInfoForm::
 {
     Ui::SaweMainWindow* MainWindow = project->mainWindow();
     visible |= !MainWindow->tabifiedDockWidgets( dock ).empty();
+    visible |= dock->isVisibleTo( dock->parentWidget() );
     actionHarmonics_info->setChecked(visible);
 }
 
@@ -151,7 +140,15 @@ void HarmonicsInfoForm::
         ui->tableWidget->setUserData(row, new CurrentViewUserData(view));
     }
 
-    dock->setVisible( true );
+    static bool once_per_process = true;
+    if (once_per_process)
+    {
+        dock->setVisible( true );
+        dock->raise();
+
+        Ui::SaweMainWindow* MainWindow = project->mainWindow();
+        MainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
+    }
 
     rebuilding = 1;
 

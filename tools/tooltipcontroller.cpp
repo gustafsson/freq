@@ -85,6 +85,8 @@ void TooltipController::
         receiveToggleInfoTool(bool active)
 {
     render_view_->toolSelector()->setCurrentTool( this, active );
+
+    emitTooltipChanged();
 }
 
 
