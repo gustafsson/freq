@@ -165,8 +165,9 @@ Signal::Intervals CwtFilter::
 
     BOOST_FOREACH( Signal::Interval& i, I )
     {
-        Signal::Intervals s(i);
-        r |= ((s << n) | (s >> n)).coveredInterval();
+        if (i.first>n) i.first -= n; else i.first = 0;
+        i.last += n;
+        r |= i;
     }
 
     return r;
