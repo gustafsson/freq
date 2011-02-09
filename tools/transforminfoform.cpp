@@ -44,7 +44,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderController* r
     MainWindow->getItems()->actionTransform_info->setChecked( false );
     dock->setVisible(false);
 
-    connect(rendercontroller, SIGNAL(transformChanged()), SLOT(transformChanged()));
+    connect(rendercontroller, SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
 
     transformChanged();
 }
@@ -70,6 +70,7 @@ void TransformInfoForm::
 void TransformInfoForm::
         transformChanged()
 {
+    TaskInfo ti("TransformInfoForm::transformChanged()");
     ui->tableWidget->clear();
     ui->tableWidget->setRowCount(0);
     ui->tableWidget->setColumnCount(2);
@@ -98,6 +99,8 @@ void TransformInfoForm::
     if (cwt)
     {
         addRow("Type", "Morlet wavelet");
+        if (ps->filter())
+            addRow("Filter", vartype(*ps->filter()).c_str());
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
         addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples( fs )/fs));
         addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
@@ -111,6 +114,8 @@ void TransformInfoForm::
     else if (stft)
     {
         addRow("Type", "Short time fourier");
+        if (ps->filter())
+            addRow("Filter", vartype(*ps->filter()).c_str());
         addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(stft->chunk_size()));
         addRow("Overlap", "0");
@@ -140,6 +145,8 @@ void TransformInfoForm::
     ui->tableWidget->insertRow( ui->tableWidget->rowCount());
     ui->tableWidget->setItem(ui->tableWidget->rowCount()-1, 0, new QTableReadOnlyText (name));
     ui->tableWidget->setItem(ui->tableWidget->rowCount()-1, 1, new QTableReadOnlyText (value));
+
+    TaskInfo("%s = %s", name.toStdString().c_str(), value.toStdString().c_str() );
 }
 
 } // namespace Tools

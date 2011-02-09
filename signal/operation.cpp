@@ -12,6 +12,14 @@ Operation::Operation(pOperation source )
 }
 
 
+Signal::Intervals Operation::
+        affected_samples()
+{
+    IntervalType it = number_of_samples();
+    return (_enabled && it)?Intervals(0, it ):Intervals();
+}
+
+
 Intervals Operation::
         zeroed_samples_recursive()
 {

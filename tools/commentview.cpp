@@ -28,9 +28,8 @@ CommentView::CommentView(ToolModelP modelp, QWidget *parent) :
 {
     //
     ui->setupUi(this);
-
     BOOST_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
-
+    this->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
     QAction *closeAction = new QAction(tr("D&elete"), this);
     //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
@@ -326,7 +325,7 @@ void CommentView::
     if (create_thumbnail)
         maskedRegion |= QRegion(0,0,1,1);
 
-    setMask(maskedRegion);
+    //setMask(maskedRegion);
 
     update();
     proxy->update();

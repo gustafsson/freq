@@ -41,6 +41,14 @@ public:
     virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
     virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); }
     virtual Intervals fetch_invalid_samples() { return _cache.fetch_invalid_samples() | Operation::fetch_invalid_samples(); }
+
+private:
+    friend class boost::serialization::access;
+    OperationCacheLayer() : OperationCache(pOperation()) {}
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        TaskInfo("OperationCacheLayer::serialize");
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+    }
 };
 
 } // namespace Signal

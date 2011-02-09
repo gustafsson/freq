@@ -6,6 +6,7 @@
 #include "tools/support/brushfilter.h"
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
+#include "signal/operationcache.h"
 
 // Serializable Sonic AWE Tools
 #include "tools/commentmodel.h"
@@ -51,6 +52,7 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::ToolFactory>();
     ar.template register_type<Tools::ToolRepo>();
     ar.template register_type<Tools::RenderModel>();
+    ar.template register_type<Signal::OperationCacheLayer>();
 
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 

@@ -224,6 +224,7 @@ Signal::PostSink* RenderController::
 {
     Signal::pOperation s = model()->postsink();
     Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
+    ps->filter(Signal::pOperation() );
 
     BOOST_ASSERT( ps );
 

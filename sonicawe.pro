@@ -17,6 +17,9 @@ CONFIG += warn_on
 DEFINES += SAWE_NO_MUTEX
 QT += opengl
 
+macx:QMAKE_LFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
+macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
+macx:QMAKE_CFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
@@ -131,8 +134,8 @@ win32 {
 # Build settings
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
-unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
-win32:DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
+#unix:DEFINES += SONICAWE_BRANCH="\'$$system(if [ -f .git/HEAD ];then cat .git/HEAD | sed -E "s/ref:\ refs\\\/heads\\\/master// | sed -E "s/ref:\ refs\\\/heads\\\///"; fi)\'"
+DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
 DEFINES += SONICAWE_REVISION="\\\"$$system(git rev-parse --short HEAD)\\\""
 
 INCLUDEPATH += \
@@ -289,22 +292,6 @@ macx {
         -o \
         ${QMAKE_FILE_OUT}
     cuda.dependcy_type = TYPE_C
-    cuda.depend_command = nvcc \
-        -M \
-        -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        ${QMAKE_FILE_NAME} \
-        | \
-        sed \
-        "s,^.*: ,," \
-        | \
-        sed \
-        "s,^ *,," \
-        | \
-        tr \
-        -d \
-        '\\\n'
 }
 
 cuda.input = CUDA_SOURCES

@@ -172,8 +172,13 @@ bool Worker::
 
         } else {
             TaskInfo("Worker caught CudaException:\n%s", e.what());
-            throw;
+            TaskInfo("tf_resolution was %g", Tfr::Cwt::Singleton().tf_resolution());
+            Tfr::Cwt::Singleton().tf_resolution( Tfr::Cwt::Singleton().tf_resolution() * 1.5 );
+            TaskInfo("tf_resolution is %g", Tfr::Cwt::Singleton().tf_resolution());
         }
+//            TaskInfo("Worker caught CudaException:\n%s", e.what());
+//            throw;
+//        }
     } catch (const exception& e) {
         TaskInfo("Worker caught exception type %s:\n%s",
                   vartype(e).c_str(), e.what());
@@ -306,7 +311,7 @@ void Worker::
 {
     BOOST_ASSERT( s );
 
-    TaskInfo tt("Worker::appendOperation");
+    TaskInfo tt("Worker::appendOperation( %s )", vartype(*s).c_str());
 
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.
@@ -317,7 +322,7 @@ void Worker::
         if ( itr == s )
         {
             std::stringstream ss;
-            ss << "Worker::appendOperation( " << vartype(s) << ", " << std::hex << s.get() << ") "
+            ss << "Worker::appendOperation( " << vartype(*s) << ", " << std::hex << s.get() << ") "
                     << "is already in operation chain at postion " << i;
             throw std::invalid_argument( ss.str() );
         }
@@ -326,12 +331,18 @@ void Worker::
     }
 
     s->source( _source );
-    Signal::Intervals still_zeros;
+    Signal::Intervals was_zeros;
     if (_source)
-        still_zeros = _source->zeroed_samples_recursive();
-    still_zeros &= s->zeroed_samples_recursive();
+        was_zeros = _source->zeroed_samples_recursive();
+    Signal::Intervals new_zeros = s->zeroed_samples_recursive();
+    Signal::Intervals affected = s->affected_samples();
+    Signal::Intervals still_zeros = was_zeros & new_zeros;
+    TaskInfo("Was zero samples %s", was_zeros.toString().c_str());
+    TaskInfo("New zero samples %s", new_zeros.toString().c_str());
+    TaskInfo("Still zero samples %s", still_zeros.toString().c_str());
+    TaskInfo("Affected samples %s", affected.toString().c_str());
     _source = s;
-    invalidate_post_sink( s->affected_samples() - still_zeros );
+    invalidate_post_sink( affected - still_zeros );
 
     _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
     _highest_fps = _min_fps;
@@ -403,9 +414,9 @@ void Worker::
     I &= Interval(0, source()->number_of_samples() );
 
     {
-        // TODO Is this necessary
-        OperationCacheLayer* topcache = dynamic_cast<OperationCacheLayer*>(_source.get());
-        if (topcache) topcache->invalidate_samples( I );
+        // TODO Is this necessary?
+        //OperationCacheLayer* topcache = dynamic_cast<OperationCacheLayer*>(_source.get());
+        //if (topcache) topcache->invalidate_samples( I );
     }
 
     _post_sink.invalidate_samples( I );
