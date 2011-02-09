@@ -20,10 +20,7 @@
 class GlFrameBuffer;
 class QGLWidget;
 
-namespace Heightmap
-{
-    class Reference;
-}
+namespace Heightmap { class Reference; }
 
 namespace Tools
 {
@@ -39,10 +36,12 @@ namespace Tools
         virtual void drawBackground(QPainter *painter, const QRectF &);
         virtual void drawForeground(QPainter *painter, const QRectF &);
         void drawCollections(GlFrameBuffer* fbo, float yscale);
-        QPointF getScreenPos( Heightmap::Position pos, double* dist );
-        QPointF getWidgetPos( Heightmap::Position pos, double* dist );
+        QPointF getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value = true );
+        QPointF getWidgetPos( Heightmap::Position pos, double* dist, bool use_heightmap_value = true );
         Heightmap::Position getHeightmapPos( QPointF widget_coordinates, bool useRenderViewContext = true );
         Heightmap::Position getPlanePos( QPointF widget_coordinates, bool* success = 0, bool useRenderViewContext = true );
+        QPointF widget_coordinates( QPointF window_coordinates );
+        QPointF window_coordinates( QPointF widget_coordinates );
         float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false, bool* is_valid_value = 0 );
 
         /**
@@ -58,7 +57,7 @@ namespace Tools
         virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
-        void setPosition( float time, float f );
+        void setPosition( Heightmap::Position pos );
 
         float last_ysize;
         floatAni orthoview;

@@ -1,10 +1,10 @@
 Package: sonicawe-stable-candidate
-Version: 0.2011.02.07
+Version: 0.2011.02.09
 Section: non-free/audio
 Priority: optional
 Architecture: amd64
 Essential: no
-Installed-Size: 6400
+Installed-Size: 32092
 Replaces: sonicawe, sonicawe-unstable
 Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.40.0
 Maintainer: Johan Gustafsson [johan.gustafsson@sonicawe.com]

@@ -49,7 +49,13 @@ namespace Tools
         Ui::MouseControl scaleButton;
         QScopedPointer<Ui::ComboBoxAction> one_action_at_a_time_;
 
-        void zoom(int delta, bool xscale);
+        enum ZoomMode {
+            Zoom,
+            ScaleX,
+            ScaleZ
+        };
+        void zoom(int delta, ZoomMode mode);
+        void doZoom(int delta, float* scale=0, float* min_scale=0, float* max_scale=0);
     };
 } // namespace Tools
 

@@ -4,6 +4,8 @@
 #include "renderview.h"
 #include "ui/mousecontrol.h"
 
+#include "sawe/project.h"
+
 // gpumisc
 #include <demangle.h>
 
@@ -16,20 +18,22 @@
 
 namespace Tools {
 
-CommentView::CommentView(CommentModel* model, QWidget *parent) :
+CommentView::CommentView(ToolModelP modelp, QWidget *parent) :
     QWidget(parent),
-    model(model),
+    modelp(modelp),
     ui(new Ui::CommentView),
     keep_pos(false),
-    z_hidden(false)
+    z_hidden(false),
+    lastz(6)
 {
     //
     ui->setupUi(this);
 
+    BOOST_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
+
     QAction *closeAction = new QAction(tr("D&elete"), this);
     //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
-    this->setAttribute( Qt::WA_DeleteOnClose );
 
     QAction *hideAction = new QAction(tr("T&humbnail"), this);
     //hideAction->setShortcut(tr("Ctrl+T"));
@@ -41,8 +45,7 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
     addAction(closeAction);
     addAction(hideAction);
     setMouseTracking( true );
-	setHtml(model->html);
-    //setFocusPolicy(Qt::WheelFocus);
+    setHtml(model()->html);
     //ui->textEdit->setFocusProxy(this);
     connect(ui->textEdit, SIGNAL(selectionChanged()), SLOT(recreatePolygon()));
 }
@@ -50,7 +53,10 @@ CommentView::CommentView(CommentModel* model, QWidget *parent) :
 
 CommentView::~CommentView()
 {
+    TaskInfo("~CommentView");
     delete ui;
+
+    model()->removeFromRepo();
 }
 
 
@@ -65,7 +71,7 @@ void CommentView::
         setHtml(std::string text)
 {
     ui->textEdit->setHtml( QString::fromLocal8Bit( text.c_str() ) );
-	model->html = text;
+    model()->html = text;
 }
 
 
@@ -81,14 +87,17 @@ void CommentView::
 void CommentView::
         mousePressEvent(QMouseEvent *event)
 {
-    if (model->move_on_hover)
+    if (model()->move_on_hover)
     {
+        model()->move_on_hover = false;
+        model()->screen_pos.x = -2;
         event->setAccepted( false );
         return;
     }
 
     if (!mask().contains( event->pos() ))
     {
+        setEditFocus( false );
         event->setAccepted( false );
         return;
     }
@@ -96,9 +105,7 @@ void CommentView::
     //TaskInfo("CommentView::mousePressEvent");
     if (!testFocus())
     {
-        setFocus(Qt::MouseFocusReason);
-        recreatePolygon();
-        ui->textEdit->setFocus(Qt::MouseFocusReason);
+        setEditFocus(true);
     }
 
 
@@ -132,7 +139,7 @@ void CommentView::
         return;
     }
 
-    thumbnail( !model->thumbnail );
+    thumbnail( !model()->thumbnail );
 }
 
 
@@ -147,12 +154,12 @@ void CommentView::
 
     if (event->buttons() & Qt::LeftButton)
     {
-        moving |= event->modifiers() == 0 && !model->freezed_position;
+        moving |= event->modifiers() == 0 && !model()->freezed_position;
         resizing |= event->modifiers().testFlag(Qt::ControlModifier);
     }
 
-    moving |= model->move_on_hover;
-    if (model->move_on_hover)
+    moving |= model()->move_on_hover;
+    if (model()->move_on_hover)
         dragPosition = proxy->sceneTransform().map(ref_point);
 
     if (moving || resizing)
@@ -162,6 +169,11 @@ void CommentView::
         if (moving)
         {
             move(gp - dragPosition);
+            QPoint global_ref_pt = proxy->sceneTransform().map(ref_point);
+
+            model()->screen_pos.x = global_ref_pt.x();
+            model()->screen_pos.y = global_ref_pt.y();
+
             dragPosition = gp;
             event->accept();
         }
@@ -174,36 +186,35 @@ void CommentView::
         resizePosition = -QPoint(width(), height()) + QPoint(gp.x(), -gp.y());
     }
 
-    update();
-    view->userinput_update();
+    if (visible)
+    {
+        emit gotFocus(); // setFocusPolicy, focusInEvent doesn't work because the CommentView recieves focus to easily
+
+        update();
+        view->userinput_update();
+    }
 }
 
 
 void CommentView::
         mouseReleaseEvent(QMouseEvent *event)
 {
-    emit setCommentControllerEnabled( false );
-    QWidget::mouseReleaseEvent(event);
+    if (event->button() == Qt::LeftButton)
+        model()->screen_pos.x = -2;
+}
+
+
+CommentModel* CommentView::
+        model()
+{
+    return dynamic_cast<CommentModel*>(modelp.get());
 }
 
 
 void CommentView::
-        focusInEvent(QFocusEvent * /*e*/)
+        closeEvent(QCloseEvent *)
 {
-    //TaskInfo("CommentView::focusInEvent, gotFocus = %d, reason = %d", e->gotFocus(), e->reason());
-
-    recreatePolygon();
-
-    emit gotFocus();
-}
-
-
-void CommentView::
-        focusOutEvent(QFocusEvent * /*e*/)
-{
-    //TaskInfo("CommentView::focusOutEvent, lostFocus = %d, reason = %d", e->lostFocus(), e->reason());
-
-    recreatePolygon();
+    proxy->deleteLater();
 }
 
 
@@ -217,9 +228,9 @@ void CommentView::
     }
 
     if (e->delta()>0)
-        model->scroll_scale *= 1.1;
+        model()->scroll_scale *= 1.1;
     else
-        model->scroll_scale /= 1.1;
+        model()->scroll_scale /= 1.1;
 
     update();
 }
@@ -228,7 +239,7 @@ void CommentView::
 void CommentView::
         resizeEvent(QResizeEvent *)
 {
-    model->window_size = make_uint2( width(), height() );
+    model()->window_size = make_uint2( width(), height() );
     keep_pos = true;
 
     recreatePolygon();
@@ -238,15 +249,14 @@ void CommentView::
 bool CommentView::
         testFocus()
 {
-    return true;
-    //return hasFocus() || ui->textEdit->hasFocus();
+    return ui->textEdit->hasFocus();
 }
 
 
 void CommentView::
         recreatePolygon()
 {
-    bool create_thumbnail = !testFocus() || model->thumbnail;
+    bool create_thumbnail = model()->thumbnail;
 
     ui->textEdit->setVisible( !create_thumbnail );
 
@@ -293,7 +303,8 @@ void CommentView::
         ui->textEdit->setVisible( false );
         poly.clear();
         r = QRect();
-        float s = (ref_point.x()-1)/2;
+        //float s = (ref_point.x()-1)/2;
+        float s = std::min(ref_point.x(), 15);
         poly.push_back(ref_point);
         poly.push_back(ref_point - s*h0 - s*x0);
         poly.push_back(ref_point - s*h0 + s*x0);
@@ -326,20 +337,23 @@ void CommentView::
 void CommentView::
         thumbnail(bool v)
 {
-    if (model->thumbnail != v)
+    if (model()->thumbnail != v)
     {
-        model->thumbnail = v;
-        emit thumbnailChanged( model->thumbnail );
-    }
+        model()->thumbnail = v;
 
-    recreatePolygon();
+        recreatePolygon();
+
+        setEditFocus(!v);
+
+        emit thumbnailChanged( model()->thumbnail );
+    }
 }
 
 
 void CommentView::
         updateText()
 {
-	model->html = html();
+    model()->html = html();
 }
 
 
@@ -369,10 +383,27 @@ QSize CommentView::
 }
 
 
+void CommentView::
+        setEditFocus(bool focus)
+{
+    if (focus)
+    {
+        setFocus(Qt::MouseFocusReason);
+        ui->textEdit->setFocus(Qt::MouseFocusReason);
+    }
+    else
+    {
+        clearFocus();
+        ui->textEdit->clearFocus();
+        view->setFocus(Qt::MouseFocusReason);
+    }
+}
+
+
 bool CommentView::
         isThumbnail()
 {
-    return model->thumbnail;
+    return model()->thumbnail;
 }
 
 
@@ -382,14 +413,23 @@ void CommentView::
     if (!isVisible())
         return;
 
+    bool use_heightmap_value = true;
+
     // moveEvent can't be used when updating the reference position while moving
-    if (!proxy->pos().isNull())
+    if (!proxy->pos().isNull() || model()->screen_pos.x == -2)
     {
-        if (!keep_pos)
+        if (!keep_pos && model()->screen_pos.x == -2)
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
-            model->pos = view->getHeightmapPos( c );
+            c = view->widget_coordinates( c );
+
+            if (use_heightmap_value)
+                model()->pos = view->getHeightmapPos( c );
+            else
+                model()->pos = view->getPlanePos( c );
+
+            model()->screen_pos.x = -1;
         }
 
         keep_pos = false;
@@ -401,7 +441,18 @@ void CommentView::
     }
 
     double z;
-    QPointF pt = view->getScreenPos( model->pos, &z );
+    QPointF pt;
+    if (model()->screen_pos.x >= 0)
+    {
+        pt.setX( model()->screen_pos.x );
+        pt.setY( model()->screen_pos.y );
+        z = 6;
+    }
+    else
+    {
+        pt = view->getScreenPos( model()->pos, &z, use_heightmap_value );
+        lastz = z;
+    }
     //TaskInfo("model->pos( %g, %g ) -> ( %g, %g, %g )",
     //         model->pos.time, model->pos.scale,
     //         pt.x(), pt.y(), z);
@@ -436,7 +487,7 @@ void CommentView::
 
     float rescale = 1.f/sqrt(z);
 
-    rescale *= model->scroll_scale;
+    rescale *= model()->scroll_scale;
     //TaskInfo("rescale = %g\tz = %g\tmodel->scroll_scale = %g\tlast_ysize = %g",
     //         rescale, z, model->scroll_scale, view->last_ysize );
 

@@ -14,15 +14,13 @@ namespace Sawe {
 
 #include <typeinfo>
 #include <QScopedPointer>
-#include <QPointer>
-#include <boost/serialization/set.hpp>
 
 namespace Tools
 {
     /**
       Find a better name...
       */
-    class ToolFactory
+    class ToolFactory: public ToolRepo
     {
     public:
         ToolFactory(Sawe::Project* p);
@@ -31,47 +29,19 @@ namespace Tools
         RenderModel render_model;
         SelectionModel selection_model;
         PlaybackModel playback_model;
+        virtual RenderView* render_view() { return _render_view; }
 
-        template<class Archive> void save_tools(Archive& ar, const unsigned int version) {
-            serialize_tools( ar, version );
-/*			ar
-                    & BOOST_SERIALIZATION_NVP(_brush_model.data())
-                    & BOOST_SERIALIZATION_NVP(_record_model.data())*/
-        }
-
-        template<class Archive> void load_tools(Archive& ar, const unsigned int version) {
-            serialize_tools( ar, version );
-/*			class BrushModel* brush = 0;
-			ar
-                    & BOOST_SERIALIZATION_NVP(_brush_model.data())
-                    & BOOST_SERIALIZATION_NVP(_record_model)
-*/
-
-            foreach( const boost::shared_ptr<ToolModel>& model, toolModels)
-            {
-                _comment_controller->createView( model.get(), _project, _render_view);
-            }
-        }
-
-
-        std::set<boost::shared_ptr<ToolModel> > toolModels;
 
     private:
-        template<class Archive> void serialize_tools(Archive& ar, const unsigned int /*version*/) {
+        friend class boost::serialization::access;
+        ToolFactory(); // required by serialization, should never be called
+        template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+            TaskInfo ti("%s", __FUNCTION__);
             ar
-                    & BOOST_SERIALIZATION_NVP(render_model._qx)
-                    & BOOST_SERIALIZATION_NVP(render_model._qy)
-                    & BOOST_SERIALIZATION_NVP(render_model._qz)
-                    & BOOST_SERIALIZATION_NVP(render_model._px)
-                    & BOOST_SERIALIZATION_NVP(render_model._py)
-                    & BOOST_SERIALIZATION_NVP(render_model._pz)
-                    & BOOST_SERIALIZATION_NVP(render_model._rx)
-                    & BOOST_SERIALIZATION_NVP(render_model._ry)
-                    & BOOST_SERIALIZATION_NVP(render_model._rz)
-                    & BOOST_SERIALIZATION_NVP(render_model.xscale)
+                    & BOOST_SERIALIZATION_NVP(render_model)
                     & BOOST_SERIALIZATION_NVP(playback_model.playback_device)
                     & BOOST_SERIALIZATION_NVP(playback_model.selection_filename)
-                    & BOOST_SERIALIZATION_NVP(toolModels);
+                    & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ToolRepo);
         }
 
         // QPointer only to tools that are owned by ToolFactory but may be
@@ -111,7 +81,7 @@ namespace Tools
 
         QPointer<class GraphController> _graph_controller;
 
-        QPointer<class TooltipController> _tooltip_controller;
+        QPointer<class ToolController> _tooltip_controller;
 
         QPointer<class AboutDialog> _about_dialog;
 
@@ -123,7 +93,7 @@ namespace Tools
 
         QPointer<class ExportAudioDialog> _export_audio_dialog;
 
-        Sawe::Project* _project;
+        QPointer<class HarmonicsInfoForm> _harmonics_info_form;
     };
 } // namespace Tools
 

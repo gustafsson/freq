@@ -6,6 +6,7 @@
 #include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
+#include "graphicsview.h"
 
 // Qt
 #include <QGraphicsProxyWidget>
@@ -32,18 +33,18 @@ CommentController::
 
 
 void CommentController::
-        createView( ToolModel* model, Sawe::Project* /*p*/, RenderView* render_view )
+        createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ )
 {
-    CommentModel* cmodel = dynamic_cast<CommentModel*>(model);
+    CommentModel* cmodel = dynamic_cast<CommentModel*>(model.get());
     if (0 == cmodel)
         return;
 
     // Create a new comment in the middle of the viewable area
-    CommentView* comment = new CommentView(cmodel);
+    CommentView* comment = new CommentView(model);
 
-    connect(render_view, SIGNAL(painting()), comment, SLOT(updatePosition()));
+    connect(repo->render_view(), SIGNAL(painting()), comment, SLOT(updatePosition()));
 
-    comment->view = render_view;
+    comment->view = repo->render_view();
     comment->move(0, 0);
     comment->resize( cmodel->window_size.x, cmodel->window_size.y );
 
@@ -56,9 +57,19 @@ void CommentController::
     // ZValue is set in commentview
     proxy->setVisible(true);
 
-    render_view->addItem( proxy );
+    repo->render_view()->addItem( proxy );
 
     comments_.append( comment );
+}
+
+
+CommentView* CommentController::
+        findView( ToolModelP model )
+{
+    foreach (const QPointer<CommentView>& c, comments_)
+        if (c->modelp == model)
+            return c;
+    return 0;
 }
 
 
@@ -74,10 +85,10 @@ void CommentController::
     {
         view = createNewComment();
 
-        view->model->freezed_position = true;
+        view->model()->freezed_position = true;
     }
 
-    view->model->pos = p;
+    view->model()->pos = p;
     view->setHtml( text );
     view->show();
 }
@@ -87,13 +98,13 @@ CommentView* CommentController::
         createNewComment()
 {
     CommentModel* model = new CommentModel();
-    ToolModelP modelp(model);
-    view_->model->project()->tools().toolModels.insert( modelp );
 
     model->pos.time = -FLT_MAX;//view_->model->_qx;
     //model->pos.scale = view_->model->_qz;
 
-    createView(modelp.get(), view_->model->project(), view_ );
+    // addModel calls createView
+    view_->model->project()->tools().addModel( model );
+
     return comments_.back();
 }
 
@@ -119,8 +130,8 @@ void CommentController::
 {
     if (event->type() & QEvent::EnabledChange)
     {
-        if (!isEnabled() && comment_)
-            comment_->model->move_on_hover = false;
+        view_->toolSelector()->setCurrentTool( this, isEnabled() );
+
         emit enabledChanged(isEnabled());
     }
 }
@@ -134,11 +145,25 @@ void CommentController::
     if (active)
     {
         comment_ = createNewComment();
-        comment_->model->move_on_hover = true;
+        comment_->model()->move_on_hover = true;
         setVisible( true );
 
         setMouseTracking( true );
-        connect(comment_, SIGNAL(setCommentControllerEnabled(bool)), SLOT(setEnabled(bool)));
+        mouseMoveEvent(new QMouseEvent(
+                QEvent::MouseMove,
+                mapFromGlobal(view_->graphicsview->mapFromGlobal( QCursor::pos())),
+                Qt::NoButton,
+                Qt::MouseButtons(),
+                Qt::KeyboardModifiers()));
+    }
+    else
+    {
+        if (comment_ && comment_->model()->move_on_hover)
+        {
+            comment_->proxy->deleteLater();
+            comment_ = 0;
+            setVisible( false );
+        }
     }
 }
 
@@ -155,7 +180,17 @@ void CommentController::
 void CommentController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    comment_->model->pos = view_->getHeightmapPos( e->posF() );
+    bool use_heightmap_value = true;
+
+    if (use_heightmap_value)
+        comment_->model()->pos = view_->getHeightmapPos( e->posF() );
+    else
+        comment_->model()->pos = view_->getPlanePos( e->posF() );
+    QPointF window_coordinates = view_->window_coordinates( e->posF() );
+    comment_->model()->screen_pos.x = window_coordinates.x();
+    comment_->model()->screen_pos.y = window_coordinates.y();
+
+    comment_->setVisible(true);
 
     view_->userinput_update();
 
@@ -168,6 +203,11 @@ void CommentController::
         mousePressEvent( QMouseEvent * e )
 {
     setEnabled( false );
+    if (comment_)
+    {
+        comment_->model()->screen_pos.x = -2;
+        comment_->setEditFocus(true);
+    }
 
     e->setAccepted(true);
     QWidget::mousePressEvent(e);

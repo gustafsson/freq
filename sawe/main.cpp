@@ -142,6 +142,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     }
     }
 
+    TaskInfo("Couldn't find CUDA, cannot start Sonic AWE\n%s", msg.str().c_str());
     QMessageBox::critical( 0,
                  "Couldn't find CUDA, cannot start Sonic AWE",
                  QString::fromLocal8Bit(msg.str().c_str()) );

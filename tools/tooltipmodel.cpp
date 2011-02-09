@@ -24,24 +24,33 @@ using namespace std;
 
 namespace Tools {
 
-TooltipModel::TooltipModel(RenderView *render_view, CommentController* comments)
+TooltipModel::TooltipModel()
     :
         frequency(-1),
         max_so_far(-1),
         markers(0),
         comment(0),
         automarking(TooltipModel::ManualMarkers),
-        _comments(comments),
-        render_view_(render_view),
+        comments_(0),
+        render_view_(0),
         fetched_heightmap_values(0)
 {
+}
+
+
+void TooltipModel::
+        setPtrs(RenderView *render_view, CommentController* comments)
+{
+    render_view_ = render_view;
+    comments_ = comments;
+    comment = comments_->findView( this->comment_model );
 }
 
 
 const Heightmap::Position& TooltipModel::
         comment_pos()
 {
-    return comment->model->pos;
+    return comment->model()->pos;
 }
 
 
@@ -79,7 +88,7 @@ void TooltipModel::
 
     if (found_better || TooltipModel::ManualMarkers != this->automarking )
     {
-        this->markers = guessHarmonicNumber( p );
+        this->markers = this->markers_auto = guessHarmonicNumber( p );
     }
 
     if (found_better)
@@ -97,10 +106,16 @@ void TooltipModel::
 
     ss << "Value here: " << setprecision(10) << this->max_so_far << setprecision(1);
 
+    this->compliance = 0;
+    this->frequency = f;
+
     if ( 0 < this->markers )
     {
+        this->compliance = computeMarkerMeasure(p, this->markers);
+
         ss << endl << "<br/><br/>Harmonic number: " << this->markers;
-        ss << endl << "<br/>Compliance value: " << setprecision(5) << computeMarkerMeasure(p, this->markers);
+        ss << endl << "<br/>Compliance value: " << setprecision(5) << this->compliance;
+
         switch(this->automarking)
         {
         case ManualMarkers: break; // ss << ", fetched " << fetched_heightmap_values << " values"; break;
@@ -116,33 +131,18 @@ void TooltipModel::
         }
 
         ss << endl << "<br/>Fundamental frequency: " << setprecision(2) << (f/this->markers) << " Hz";
-        //2^(n/12)*440
-        float tva12 = powf(2.f, 1.f/12);
-        float tonef = log(f/this->markers/440.f)/log(tva12) + 45; // 440 is tone number 45, given C1 as tone 0
-        int tone0 = floor(tonef + 0.5);
-        int tone1 = (tone0 == (int)floor(tonef)) ? tone0 + 1 : tone0 - 1;
-        float a = fabs(tonef-tone0);
-        int octave0 = 0;
-        int octave1 = 0;
-        while(tone0<0) { tone0 += 12; octave0--;}
-        while(tone1<0) { tone1 += 12; octave1--;}
-        octave0 += tone0/12 + 1;
-        octave1 += tone1/12 + 1;
-        const char name[][3] = {
-            "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
-        };
-        ss << endl << "<br/>Note: " << name[tone0%12] << octave0
-                << " (" << setprecision(0) << a*100 << "% " << name[tone1%12] << octave1 << ")";
+        ss << endl << "<br/>Note: " << toneName();
     }
 
-    this->frequency = f;
-
     bool first = 0 == this->comment;
-    _comments->setComment( this->pos, ss.str(), &this->comment );
-//    if (first)
-//        this->comment->thumbnail( true );
+    comments_->setComment( this->pos, ss.str(), &this->comment );
+    if (first)
+    {
+        this->comment->thumbnail( true );
+        this->comment_model = this->comment->modelp;
+    }
 
-    this->comment->model->pos = Heightmap::Position(
+    this->comment->model()->pos = Heightmap::Position(
             p.time - 0.01/render_view_->model->xscale*render_view_->model->_pz,
             p.scale);
 
@@ -161,6 +161,60 @@ void TooltipModel::
                 << "fundamental_frequency = " << setprecision(30) << this->frequency/this->markers << ";" << endl
                 << "selected_tone_number = " << this->markers << ";" << endl
                 << "frequencies = fundamental_frequency * (1:3*selected_tone_number);" << endl;
+    }
+}
+
+
+void TooltipModel::
+        toneName(std::string& primaryName, std::string& secondaryName, float& accuracy)
+{
+    //2^(n/12)*440
+    float tva12 = powf(2.f, 1.f/12);
+    float tonef = log(frequency/this->markers/440.f)/log(tva12) + 45; // 440 is tone number 45, given C1 as tone 0
+    int tone0 = floor(tonef + 0.5);
+    int tone1 = (tone0 == (int)floor(tonef)) ? tone0 + 1 : tone0 - 1;
+    accuracy = fabs(tonef-tone0);
+    int octave0 = 0;
+    int octave1 = 0;
+    while(tone0<0) { tone0 += 12; octave0--;}
+    while(tone1<0) { tone1 += 12; octave1--;}
+    octave0 += tone0/12 + 1;
+    octave1 += tone1/12 + 1;
+    const char name[][3] = {
+        "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
+    };
+    stringstream a;
+    primaryName = ((stringstream&)(a << name[tone0%12] << octave0)).str();
+    a.clear();
+    secondaryName = ((stringstream&)(a << name[tone1%12] << octave1)).str();
+}
+
+
+std::string TooltipModel::
+        toneName()
+{
+    std::string primary, secondary;
+    float accuracy;
+    toneName( primary, secondary, accuracy );
+
+    std::stringstream ss;
+    ss << primary << " (" << setprecision(0) << fixed << accuracy*100 << "% " << secondary << ")";
+    return ss.str();
+}
+
+
+std::string TooltipModel::
+        automarkingStr()
+{
+    if (markers_auto == markers && automarking==ManualMarkers)
+        automarking = AutoMarkerWorking;
+
+    switch(automarking)
+    {
+    case ManualMarkers: return "Manual";
+    case AutoMarkerWorking: return "Working";
+    case AutoMarkerFinished: return "Automatic";
+    default: return "Invalid value";
     }
 }
 
@@ -217,9 +271,13 @@ float TooltipModel::
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
     double F = display_scale.getFrequency( pos.scale );
     double F_top = display_scale.getFrequency(1.f);
-    //double k = pow((double)i, -0.97);
-    //double k = pow((double)i, -2);
-    double k = pow((double)i, -0.92);
+    double penalty = 0.95;
+    //double penalty = 0.97;
+    // penalty should be in the range (0,1]
+    // Close to 1 means that it's more likely to find few harmonies
+    // Close to 0 means that it's more likely to find many harmonies
+
+    double k = pow((double)i, -penalty);
     Heightmap::Position p = pos;
 
     double s = 0;

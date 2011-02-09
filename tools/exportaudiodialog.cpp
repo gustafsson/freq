@@ -1,9 +1,13 @@
 #include "exportaudiodialog.h"
 #include "ui_exportaudiodialog.h"
-#include "adapters/writewav.h"
 
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
+
+#include "renderview.h"
+
+#include "sawe/project.h"
+#include "adapters/writewav.h"
 
 #include <QFileDialog>
 
@@ -13,7 +17,8 @@ ExportAudioDialog::ExportAudioDialog(
         Sawe::Project* project,
         SelectionModel* selection_model,
         RenderView* render_view
-        ) :
+        )
+            :
     QDialog(project->mainWindow()),
     ui(new Ui::ExportAudioDialog),
     project(project),
@@ -29,6 +34,7 @@ ExportAudioDialog::ExportAudioDialog(
 
     setupGui();
 }
+
 
 ExportAudioDialog::~ExportAudioDialog()
 {

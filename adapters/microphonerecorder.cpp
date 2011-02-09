@@ -19,8 +19,7 @@ namespace Adapters {
 MicrophoneRecorder::
         MicrophoneRecorder(int inputDevice)
             :
-            input_device_(inputDevice),
-            _sample_rate( 1 )
+            input_device_(inputDevice)
 {
     init(); // fetch _sample_rate
     stopRecording();
@@ -30,8 +29,9 @@ MicrophoneRecorder::
 void MicrophoneRecorder::
         init()
 {
-    _channel = 0;
     _offset = 0;
+    _channel = 0;
+    _sample_rate = 1;
 
     static bool first = true;
     if (first) Playback::list_devices();

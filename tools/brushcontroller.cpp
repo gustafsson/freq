@@ -49,12 +49,16 @@ void BrushController::
 
 
     QToolBar* toolBarTool = new QToolBar(main);
-    toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
+    toolBarTool->setObjectName(QString::fromUtf8("toolBarBrushController"));
     toolBarTool->setEnabled(true);
     toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
     toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
     main->addToolBar(Qt::TopToolBarArea, toolBarTool);
+
+
     connect(ui->actionToggleBrushesToolbar, SIGNAL(toggled(bool)), toolBarTool, SLOT(setVisible(bool)));
+
+    ui->menuWindows->insertAction(0, ui->actionToggleBrushesToolbar);
 
     {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
         qb->addActionItem( ui->actionAmplitudeBrush );

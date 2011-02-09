@@ -19,10 +19,11 @@ class TransformInfoForm : public QWidget
 
 public:
     TransformInfoForm(Sawe::Project* project, RenderController* rendercontroller);
-    ~TransformInfoForm();
+    virtual ~TransformInfoForm();
 
 public slots:
     void transformChanged();
+    void checkVisibility(bool);
 
 private:
     Ui::TransformInfoForm *ui;

@@ -80,7 +80,7 @@ namespace Tools
         ui->actionMoveSelectionTime->setEnabled( false );
 
         QToolBar* toolBarTool = new QToolBar(main);
-        toolBarTool->setObjectName(QString::fromUtf8("toolBarTool"));
+        toolBarTool->setObjectName(QString::fromUtf8("toolBarSelectionController"));
         toolBarTool->setEnabled(true);
         toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
         toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -89,6 +89,8 @@ namespace Tools
 
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );
+        toolBarTool->insertAction(0, ui->actionActionRemove_selection);
+        toolBarTool->insertAction(0, ui->actionCropSelection);
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
 

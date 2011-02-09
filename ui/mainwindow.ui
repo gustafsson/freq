@@ -46,18 +46,34 @@
    </property>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
-     <string>&amp;Windows</string>
+     <string>&amp;Tools</string>
     </property>
-    <addaction name="actionToggleHistoryWindow"/>
-    <addaction name="actionToggleTimelineWindow"/>
+    <widget class="QMenu" name="menuToolbars">
+     <property name="title">
+      <string>&amp;Toolbars</string>
+     </property>
+     <addaction name="actionToggleNavigationToolBox"/>
+     <addaction name="actionToggleTimeControlToolBox"/>
+     <addaction name="actionToggleSelectionToolBox"/>
+     <addaction name="actionToggleTransformToolBox"/>
+    </widget>
+    <widget class="QMenu" name="menuType_Here">
+     <property name="title">
+      <string>Type Here</string>
+     </property>
+    </widget>
+    <widget class="QMenu" name="menu_Windows">
+     <property name="title">
+      <string>&amp;Windows</string>
+     </property>
+     <addaction name="actionToggleTimelineWindow"/>
+     <addaction name="actionToggleHistoryWindow"/>
+     <addaction name="actionTransform_info"/>
+    </widget>
     <addaction name="separator"/>
-    <addaction name="actionToggleToolToolBox"/>
-    <addaction name="actionToggleTransformToolBox"/>
-    <addaction name="actionToggleNavigationToolBox"/>
-    <addaction name="actionToggleTimeControlToolBox"/>
-    <addaction name="actionToggleSelectionToolBox"/>
-    <addaction name="actionTransform_info"/>
-    <addaction name="actionToggleBrushesToolbar"/>
+    <addaction name="menu_Windows"/>
+    <addaction name="menuToolbars"/>
+    <addaction name="menuType_Here"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -84,29 +100,6 @@
    <addaction name="menuFile"/>
    <addaction name="menuWindows"/>
    <addaction name="menuHelp"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarTool">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="contextMenuPolicy">
-    <enum>Qt::NoContextMenu</enum>
-   </property>
-   <property name="windowTitle">
-    <string>Toolbar</string>
-   </property>
-   <property name="toolButtonStyle">
-    <enum>Qt::ToolButtonIconOnly</enum>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionZoom"/>
-   <addaction name="actionActivateNavigation"/>
-   <addaction name="actionActivateInfoTool"/>
   </widget>
   <widget class="QDockWidget" name="toolPropertiesWindow">
    <property name="enabled">
@@ -195,7 +188,7 @@
   <widget class="QDockWidget" name="operationsWindow">
    <property name="minimumSize">
     <size>
-     <width>88</width>
+     <width>113</width>
      <height>113</height>
     </size>
    </property>
@@ -203,7 +196,7 @@
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="allowedAreas">
-    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+    <set>Qt::AllDockWidgetAreas</set>
    </property>
    <property name="windowTitle">
     <string>History</string>
@@ -315,11 +308,13 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="actionActionRemove_selection"/>
+   <addaction name="actionActivateNavigation"/>
+   <addaction name="actionZoom"/>
+   <addaction name="separator"/>
    <addaction name="actionMatlabOperation"/>
-   <addaction name="actionCropSelection"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
+   <addaction name="actionActivateInfoTool"/>
    <addaction name="actionToggleFullscreen"/>
    <addaction name="actionToggleFullscreenNoMenus"/>
   </widget>
@@ -432,10 +427,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Selection tool box</string>
+    <string>&amp;Selection</string>
    </property>
    <property name="toolTip">
-    <string>Toggle the selection tool box</string>
+    <string>Toggle the selection toolbox</string>
    </property>
   </action>
   <action name="actionToggle_hz_grid">
@@ -682,10 +677,7 @@
     <string>Tools</string>
    </property>
    <property name="toolTip">
-    <string>Toggle the tool box</string>
-   </property>
-   <property name="shortcut">
-    <string>T</string>
+    <string>Toggle the additions toolbox</string>
    </property>
   </action>
   <action name="actionToggleCreationToolBox">
@@ -713,13 +705,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Transform</string>
+    <string>&amp;Transform settings</string>
    </property>
    <property name="toolTip">
-    <string>Toggle the transform tool box</string>
-   </property>
-   <property name="shortcut">
-    <string>F</string>
+    <string>Toggle the transform toolbox</string>
    </property>
   </action>
   <action name="actionToggleNavigationToolBox">
@@ -730,10 +719,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Navigation</string>
+    <string>&amp;Navigation</string>
    </property>
    <property name="toolTip">
-    <string>Toggle the navigation tool box</string>
+    <string>Toggle the navigation toolbox</string>
    </property>
   </action>
   <action name="actionToggleTimeControlToolBox">
@@ -744,10 +733,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Playback</string>
+    <string>&amp;Playback</string>
    </property>
    <property name="toolTip">
-    <string>Toggle the time control tool box</string>
+    <string>Toggle the playback control toolbox</string>
    </property>
   </action>
   <action name="actionNew_recording">
@@ -786,11 +775,11 @@
    <property name="text">
     <string>Exit</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::QuitRole</enum>
+   </property>
   </action>
   <action name="actionOpen">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
    <property name="text">
     <string>Open </string>
    </property>
@@ -807,11 +796,8 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
    <property name="text">
-    <string>Timeline window</string>
+    <string>&amp;Timeline</string>
    </property>
    <property name="toolTip">
     <string>Toggle the timeline window</string>
@@ -821,17 +807,11 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
    <property name="text">
-    <string>History</string>
+    <string>&amp;History</string>
    </property>
    <property name="toolTip">
     <string>Toggle the history window</string>
-   </property>
-   <property name="shortcut">
-    <string>H</string>
    </property>
   </action>
   <action name="actionCutoffSelection">
@@ -1002,7 +982,7 @@
     <string>Zoom</string>
    </property>
    <property name="toolTip">
-    <string>Zoom with the right mouse button [z]</string>
+    <string>Zoom with the right mouse button [Z]</string>
    </property>
    <property name="shortcut">
     <string>Z</string>
@@ -1356,7 +1336,7 @@
     <string>Add comment</string>
    </property>
    <property name="toolTip">
-    <string>Add comment</string>
+    <string>Add comment [C]</string>
    </property>
    <property name="shortcut">
     <string>C</string>
@@ -1491,6 +1471,9 @@
    <property name="text">
     <string>&amp;About</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::AboutRole</enum>
+   </property>
   </action>
   <action name="actionPlaySection">
    <property name="checkable">
@@ -1571,11 +1554,8 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
    <property name="text">
-    <string>Transform info</string>
+    <string>Transform &amp;info</string>
    </property>
   </action>
   <action name="actionToggleBrushesToolbar">

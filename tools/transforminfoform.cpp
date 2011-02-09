@@ -29,16 +29,20 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderController* r
     dock->setContextMenuPolicy(Qt::NoContextMenu);
     //dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
     dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
     dock->setEnabled(true);
-    dock->setAutoFillBackground(true);
     dock->setWidget(this);
     dock->setWindowTitle("Transform info");
-    dock->show();
+    dock->hide();
 
     MainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
+    //MainWindow->tabifyDockWidget(MainWindow->getItems()->operationsWindow, dock);
 
     connect(MainWindow->getItems()->actionTransform_info, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
-    connect(dock, SIGNAL(visibilityChanged(bool)), MainWindow->getItems()->actionTransform_info, SLOT(setChecked(bool)));
+    connect(MainWindow->getItems()->actionTransform_info, SIGNAL(triggered()), dock, SLOT(raise()));
+    connect(dock, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibility(bool)));
+    MainWindow->getItems()->actionTransform_info->setChecked( false );
+    dock->setVisible(false);
 
     connect(rendercontroller, SIGNAL(transformChanged()), SLOT(transformChanged()));
 
@@ -50,6 +54,16 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderController* r
 TransformInfoForm::~TransformInfoForm()
 {
     delete ui;
+}
+
+
+void TransformInfoForm::
+        checkVisibility(bool visible)
+{
+    Ui::SaweMainWindow* MainWindow = project->mainWindow();
+    visible |= !MainWindow->tabifiedDockWidgets( dock ).empty();
+    visible |= dock->isVisibleTo( dock->parentWidget() );
+    MainWindow->getItems()->actionTransform_info->setChecked(visible);
 }
 
 

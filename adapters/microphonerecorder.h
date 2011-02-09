@@ -83,7 +83,11 @@ private:
     void save_recording(archive& ar, const unsigned int /*version*/)
     {
         // Save a microphonerecording as if it where an audiofile, save single channeled for now
-        Signal::pBuffer b = readFixedLength( Signal::Interval(0, number_of_samples()) );
+        Signal::IntervalType N = number_of_samples();
+        if (0==N) // workaround for the special case of saving an empty recording.
+            N = 1;
+
+        Signal::pBuffer b = readFixedLength( Signal::Interval(0, N) );
         std::stringstream ss;
         ss << "recording_" << std::oct << (void*)this << ".wav";
 
@@ -105,9 +109,12 @@ private:
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
+        init();
+
         Signal::Interval I(0, wavfile->number_of_samples());
         for (unsigned c=0; c<num_channels(); ++c)
         {
+            wavfile->set_channel( c % wavfile->num_channels() );
             _data[c].put(wavfile->read( I ));
         }
 

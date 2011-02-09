@@ -10,6 +10,7 @@ namespace Tools
 {
     class RenderView;
     class CommentView;
+    class CommentModel;
 
 
 class CommentController: public ToolController
@@ -19,9 +20,11 @@ public:
     CommentController(RenderView* view);
     ~CommentController();
 
-    virtual void createView( ToolModel* model, Sawe::Project* p, RenderView* r );
+    virtual void createView( ToolModelP model, ToolRepo* repo, Sawe::Project* p );
 
     void setComment( Heightmap::Position p, std::string text, QPointer<CommentView>* view = 0 );
+
+    CommentView* findView( ToolModelP model );
 
 signals:
     void enabledChanged(bool active);

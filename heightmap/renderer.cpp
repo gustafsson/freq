@@ -1353,19 +1353,23 @@ void Renderer::
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
-    glColor4f(0,0,0,alpha);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+    float saturation = 1.2;
+    saturation *= 0.5;
+    glColor4f(saturation, saturation, saturation, saturation);
     glBegin( GL_TRIANGLE_FAN );
         for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
                 i!=clippedFrustum.end();
                 i++)
         {
             float s = (closest-camera).dot()/(*i-camera).dot();
-            glColor4f(0,0,0,s*.25f);
+            //glColor4f(0,0,0,s*.25f);
             glVertex3v( i->v );
         }
     glEnd();
 
-    glColor4f(0,0,0,.85);
+    //glColor4f(0,0,0,.85);
     glBegin( GL_LINE_LOOP );
         for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
                 i!=clippedFrustum.end();
@@ -1374,6 +1378,7 @@ void Renderer::
             glVertex3v( i->v );
         }
     glEnd();
+    glDisable(GL_BLEND);
 }
 
 } // namespace Heightmap

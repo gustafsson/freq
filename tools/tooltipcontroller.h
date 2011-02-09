@@ -4,6 +4,7 @@
 #include "ui/mousecontrol.h"
 #include "heightmap/position.h"
 #include "commentcontroller.h"
+#include "toolmodel.h"
 
 #include <QWidget>
 
@@ -14,7 +15,7 @@ namespace Tools
     class TooltipView;
     class TooltipModel;
 
-    class TooltipController: public QWidget
+    class TooltipController: public ToolController
     {
         Q_OBJECT
     public:
@@ -22,13 +23,19 @@ namespace Tools
                           CommentController* comments);
         ~TooltipController();
 
-        void setCurrentView(TooltipView* value ) { current_view_ = value; }
+        virtual void createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ );
+
+        const std::list<QPointer<TooltipView> >& views() const { return views_; }
+        void setCurrentView(TooltipView* value );
+        TooltipView* current_view();
 
     signals:
         void enabledChanged(bool active);
+        void tooltipChanged();
 
     private slots:
-        virtual void receiveToggleInfoTool(bool);
+        void receiveToggleInfoTool(bool);
+        void emitTooltipChanged();
 
     private:
         // Event handlers
@@ -45,7 +52,7 @@ namespace Tools
         CommentController* comments_;
 
         TooltipModel* current_model();
-        TooltipView* current_view_;
+        QPointer<TooltipView> current_view_;
 
         // GUI
         void setupGui();

@@ -74,6 +74,7 @@ private slots:
     void saveProjectAs();
     void toggleFullscreen( bool );
     void toggleFullscreenNoMenus( bool fullscreen );
+    void checkVisibilityOperations( bool visible );
 
 private:
     Sawe::Project* project;
@@ -84,7 +85,6 @@ private:
 
     QPointer<QMessageBox> save_changes_msgbox_;
     void add_widgets();
-    void connectActionToWindow(QAction *a, QWidget *b);
 };
 
 

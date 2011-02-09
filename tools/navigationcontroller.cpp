@@ -133,50 +133,63 @@ void NavigationController::
     float rs = 0.08;
     if( e->orientation() == Qt::Horizontal )
         _view->model->_ry -= rs * e->delta();
+    else if (e->modifiers().testFlag(Qt::ShiftModifier))
+        zoom( e->delta(), ScaleX );
+    else if (e->modifiers().testFlag(Qt::ControlModifier))
+        zoom( e->delta(), ScaleZ );
     else
-        zoom( e->delta(), e->modifiers().testFlag(Qt::ShiftModifier) );
+        zoom( e->delta(), Zoom );
 
     _view->userinput_update();
 }
 
 
 void NavigationController::
-        zoom(int delta, bool xscale)
+        zoom(int delta, ZoomMode mode)
+{
+    Tools::RenderView &r = *_view;
+    float L = r.last_length();
+    float min_xscale = 0.01f/L;
+    float max_xscale = 0.05*r.model->project()->head_source()->sample_rate();
+
+    float min_yscale = FLT_MIN;
+    float max_yscale = FLT_MAX;
+
+    switch(mode)
+    {
+    case Zoom: doZoom(delta); break;
+    case ScaleX: doZoom( delta, &r.model->xscale, &min_xscale, &max_xscale); break;
+    case ScaleZ: doZoom( delta, &r.model->zscale, &min_yscale, &max_yscale ); break;
+    }
+}
+
+
+void NavigationController::
+        doZoom(int delta, float* scale, float* min_scale, float* max_scale)
 {
     //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
     float ps = 0.0005;
-    if(xscale)
+    if(scale)
     {
-        float L = _view->last_length();
         float d = ps * delta;
         if (d>0.1)
             d=0.1;
         if (d<-0.1)
             d=-0.1;
+
+        *scale *= (1-d);
+
         if (d > 0 )
         {
-            /*float min_t, max_t;
-            _view->model->renderer->frustumMinMaxT(min_t, max_t);
-            if ((max_t - min_t)/(1-d) > L)
-            {
-                d = 1 - (max_t - min_t)/L;
-            }*/
-
-            r.model->xscale *= (1-d);
+            if (min_scale && *scale<*min_scale)
+                *scale = *min_scale;
         }
         else
         {
-            r.model->xscale *= (1-d);
-
-            float max_scale = 0.05*r.model->project()->head_source()->sample_rate();
-            if (r.model->xscale>max_scale)
-                r.model->xscale=max_scale;
+            if (max_scale && *scale>*max_scale)
+                *scale = *max_scale;
         }
-
-        float min_scale = 0.01f/L;
-        if (r.model->xscale<min_scale)
-            r.model->xscale=min_scale;
     }
     else
     {
@@ -205,10 +218,22 @@ void NavigationController::
         // TODO scale selection
     }
     if( rotateButton.isDown() ) {
-        if (zoom_only_ || e->modifiers().testFlag(Qt::ShiftModifier))
+        if (e->modifiers().testFlag(Qt::ControlModifier))
         {
-            zoom( -10*rotateButton.deltaX( x ), true );
-            zoom( 10*rotateButton.deltaY( y ), false );
+            zoom( 10* (rotateButton.deltaX( x ) + rotateButton.deltaY( y )), Zoom );
+        }
+        else if (zoom_only_ || e->modifiers().testFlag(Qt::ShiftModifier))
+        {
+            if (r.model->renderer->left_handed_axes)
+            {
+                zoom( -10*rotateButton.deltaX( x ), ScaleX );
+                zoom( 30*rotateButton.deltaY( y ), ScaleZ );
+            }
+            else
+            {
+                zoom( 30*rotateButton.deltaY( y ), ScaleX );
+                zoom( -10*rotateButton.deltaX( x ), ScaleZ );
+            }
         }
         else
         {
@@ -224,22 +249,29 @@ void NavigationController::
 
     if( moveButton.isDown() )
     {
-        //Controlling the position with the left button.
-        bool success1, success2;
-        Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
-        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
-        if (success1 && success2)
+        if (zoom_only_)
         {
-            float l = _view->model->project()->worker.source()->length();
+            zoom( 10* (moveButton.deltaX( x ) + moveButton.deltaY( y )), Zoom );
+        }
+        else
+        {
+            //Controlling the position with the left button.
+            bool success1, success2;
+            Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
+            Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+            if (success1 && success2)
+            {
+                float l = _view->model->project()->worker.source()->length();
 
-            Tools::RenderView& r = *_view;
-            r.model->_qx -= current.time - last.time;
-            r.model->_qz -= current.scale - last.scale;
+                Tools::RenderView& r = *_view;
+                r.model->_qx -= current.time - last.time;
+                r.model->_qz -= current.scale - last.scale;
 
-            if (r.model->_qx<0) r.model->_qx=0;
-            if (r.model->_qz<0) r.model->_qz=0;
-            if (r.model->_qz>1) r.model->_qz=1;
-            if (r.model->_qx>l) r.model->_qx=l;
+                if (r.model->_qx<0) r.model->_qx=0;
+                if (r.model->_qz<0) r.model->_qz=0;
+                if (r.model->_qz>1) r.model->_qz=1;
+                if (r.model->_qx>l) r.model->_qx=l;
+            }
         }
     }
 

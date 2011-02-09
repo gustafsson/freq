@@ -8,6 +8,7 @@
 
 // Qt
 #include <QCloseEvent>
+#include <QSettings>
 
 using namespace std;
 using namespace boost;
@@ -71,11 +72,14 @@ void SaweMainWindow::
     // TODO remove actionToggleTimelineWindow, and dockWidgetTimeline
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
 //    connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
-    connectActionToWindow(ui->actionToggleHistoryWindow, ui->operationsWindow);
-//    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
+    connect(ui->actionToggleHistoryWindow, SIGNAL(toggled(bool)), ui->operationsWindow, SLOT(setVisible(bool)));
+    connect(ui->actionToggleHistoryWindow, SIGNAL(triggered()), ui->operationsWindow, SLOT(raise()));
+    connect(ui->operationsWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityOperations(bool)));
+    ui->actionToggleHistoryWindow->setChecked( false );
+
+    //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
     connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
-    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
     connect(ui->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui->toolBarPlay, SLOT(setVisible(bool)));
 
     // TODO move into each tool
@@ -84,18 +88,21 @@ void SaweMainWindow::
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
 
+    ui->toolPropertiesWindow->hide();
+    ui->topFilterWindow->hide();
+    ui->historyWindow->hide();
     this->removeDockWidget( ui->toolPropertiesWindow );
     //this->removeDockWidget( ui->operationsWindow );
     this->removeDockWidget( ui->topFilterWindow );
     this->removeDockWidget( ui->historyWindow );
 
     // todo move into toolfactory
-    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
-    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
-    ui->topFilterWindow->raise();
+//    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
+//    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
+//    ui->topFilterWindow->raise();
+    ui->operationsWindow->hide();
 
     // todo move into toolfactory
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarTool );
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
     this->addToolBar( Qt::LeftToolBarArea, ui->toolBarPlay );
 
@@ -143,13 +150,13 @@ void SaweMainWindow::slotCheckActionStates(bool)
 }
 */
 
-/*
- todo create some generic solution for showing/hiding tool windows
- */
-void SaweMainWindow::connectActionToWindow(QAction *a, QWidget *b)
+
+void SaweMainWindow::
+        checkVisibilityOperations(bool visible)
 {
-    connect(a, SIGNAL(toggled(bool)), b, SLOT(setVisible(bool)));
-    connect(b, SIGNAL(visibilityChanged(bool)), a, SLOT(setChecked(bool)));
+    visible |= !tabifiedDockWidgets( ui->operationsWindow ).empty();
+    visible |= ui->operationsWindow->isVisibleTo( ui->operationsWindow->parentWidget() );
+    ui->actionToggleHistoryWindow->setChecked(visible);
 }
 
 
@@ -203,13 +210,29 @@ void SaweMainWindow::
 
     e->accept();
 
-    emit onMainWindowCloseEvent( this );
+    {
+        TaskInfo ti("onMainWindowCloseEvent");
+        emit onMainWindowCloseEvent( this );
+    }
+
+    {
+        TaskInfo ti("Saving settings");
+        QSettings settings("REEP", "Sonic AWE");
+        settings.setValue("geometry", saveGeometry());
+        settings.setValue("windowState", saveState());
+    }
+
+    {
+        TaskInfo ti("closeEvent");
+        QMainWindow::closeEvent(e);
+    }
 }
 
 
 void SaweMainWindow::
         askSaveChanges()
 {
+    TaskInfo("Save current state of the project?");
     save_changes_msgbox_ = new QMessageBox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
     save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
@@ -221,6 +244,7 @@ void SaweMainWindow::
 void SaweMainWindow::
         saveChangesAnswer( QAbstractButton * button )
 {
+    TaskInfo("Save changes answer: %d", (int)save_changes_msgbox_->buttonRole( button ));
     switch ( save_changes_msgbox_->buttonRole( button ) )
     {
     case QMessageBox::DestructiveRole:

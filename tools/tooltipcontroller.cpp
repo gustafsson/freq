@@ -38,9 +38,63 @@ TooltipController::
 
 
 void TooltipController::
+        createView( ToolModelP modelp, ToolRepo* repo, Sawe::Project* /*p*/ )
+{
+    TooltipModel* model = dynamic_cast<TooltipModel*>(modelp.get());
+    if (!model)
+        return;
+
+    model->setPtrs( repo->render_view(), this->comments_ );
+
+    setCurrentView( new TooltipView( model, this, repo->render_view() ) );
+    setupView(current_view_);
+}
+
+
+void TooltipController::
+        setCurrentView(TooltipView* value )
+{
+    if (views_.end() == std::find(views_.begin(), views_.end(), value))
+    {
+        current_view_ = 0;
+        views_.push_back(value);
+    }
+
+    if (value != current_view_)
+    {
+        current_view_ = value;
+        emit tooltipChanged();
+    }
+
+    if (value == 0)
+    {
+        render_view_->toolSelector()->setCurrentTool( this, value != 0 );
+        setEnabled( value != 0 );
+    }
+}
+
+
+TooltipView* TooltipController::
+        current_view()
+{
+    return current_view_;
+}
+
+
+void TooltipController::
         receiveToggleInfoTool(bool active)
 {
     render_view_->toolSelector()->setCurrentTool( this, active );
+
+    emitTooltipChanged();
+}
+
+
+void TooltipController::
+        emitTooltipChanged()
+{
+    emit tooltipChanged();
+    render_view_->userinput_update(false);
 }
 
 
@@ -61,13 +115,11 @@ void TooltipController::
         if( (e->button() & Qt::LeftButton) == Qt::LeftButton) {
             infoToolButton.press( e->x(), e->y() );
 
-            current_view_ = new TooltipView( this, comments_, render_view_ );
-            views_.push_back(current_view_);
+            TooltipModel* model = new TooltipModel();
 
-            current_model()->max_so_far = -1;
-            //if (model()->comment && !model()->comment->model->thumbnail)
-                current_model()->comment = 0;
-            current_model()->automarking = TooltipModel::AutoMarkerWorking;
+            model->automarking = TooltipModel::AutoMarkerWorking;
+
+            render_view_->model->project()->tools().addModel( model );
 
             mouseMoveEvent( e );
         }
@@ -88,7 +140,16 @@ void TooltipController::
         TaskTimer tt("TooltipController::mouseMoveEvent (%g, %g)", p.time, p.scale);
         if (success)
         {
+            Heightmap::Position o = current_model()->pos;
+            bool t = TooltipModel::AutoMarkerWorking == current_model()->automarking;
+
             current_model()->showToolTip( p );
+
+            t |= current_model()->pos != o;
+
+            if (t)
+                emitTooltipChanged();
+
             render_view_->userinput_update();
         }
     }
@@ -112,6 +173,7 @@ void TooltipController::
 
     current_model()->automarking = TooltipModel::ManualMarkers;
     current_model()->showToolTip(current_model()->pos );
+    emitTooltipChanged();
     render_view_->userinput_update();
 }
 
@@ -120,8 +182,12 @@ void TooltipController::
         changeEvent(QEvent *event)
 {
     if (event->type() & QEvent::EnabledChange)
+    {
         if (!isEnabled())
-            emit enabledChanged(isEnabled());
+            setCurrentView(0);
+
+        emit enabledChanged(isEnabled());
+    }
 }
 
 
@@ -141,8 +207,8 @@ void TooltipController::
 void TooltipController::
         setupView(TooltipView* view_)
 {
-    // Paint the ellipse when render view paints
-    connect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
+    connect(view_, SIGNAL(tooltipChanged()), SLOT(emitTooltipChanged()));
+    connect(view_, SIGNAL(destroyed()), SLOT(emitTooltipChanged()));
 }
 
 

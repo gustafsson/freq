@@ -2,20 +2,22 @@
 #include "commentview.h"
 #include "tooltipcontroller.h"
 
+//#include <sawe/project.h>
+
 #include <glPushContext.h>
 
 namespace Tools {
 
 
 TooltipView::
-        TooltipView(TooltipController* controller,
-                    CommentController* comments,
+        TooltipView(TooltipModel* model,
+                    TooltipController* controller,
                     RenderView* render_view)
                         :
                         enabled(true),
                         visible(true),
                         initialized(false),
-                        model_(new TooltipModel(render_view, comments )),
+                        model_(model),
                         controller_(controller),
                         render_view_(render_view)
 {
@@ -26,19 +28,13 @@ TooltipView::
 TooltipView::
         ~TooltipView()
 {
-    delete model_;
+    model_->removeFromRepo();
 }
 
 
 void TooltipView::
         drawMarkers()
 {
-    if (!model_->comment)
-        return;
-
-    if (!initialized)
-        initialize();
-
     Heightmap::Position p = model_->pos;
 
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
@@ -109,6 +105,7 @@ void TooltipView::
 void TooltipView::
         seppuku()
 {
+    render_view_->userinput_update();
     delete this;
 }
 
@@ -127,7 +124,13 @@ void TooltipView::
 void TooltipView::
         draw()
 {
-    if (visible)
+    if (!model_->comment)
+        return;
+
+    if (!initialized)
+        initialize();
+
+    //if (visible)
     {
         drawMarkers();
 
@@ -142,6 +145,8 @@ void TooltipView::
                 TaskInfo("TooltipView just finished");
 
             render_view_->userinput_update( false );
+
+            emit tooltipChanged();
         }
     }
 }

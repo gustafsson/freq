@@ -5,9 +5,7 @@
 
 #include <QWidget>
 
-namespace Ui {
-    class CommentView;
-}
+namespace Ui { class CommentView; }
 
 namespace Tools {
 
@@ -18,7 +16,7 @@ class CommentView : public QWidget
     Q_OBJECT
 
 public:
-    explicit CommentView(CommentModel* model, QWidget *parent = 0);
+    explicit CommentView(ToolModelP modelp, QWidget *parent = 0);
     ~CommentView();
 
     std::string html();
@@ -26,8 +24,10 @@ public:
 
     RenderView* view;
     QGraphicsProxyWidget* proxy;
-    CommentModel* model;
+    CommentModel* model();
+    ToolModelP modelp;
 
+    virtual void closeEvent(QCloseEvent *);
     virtual void wheelEvent(QWheelEvent *);
     virtual void resizeEvent(QResizeEvent *);
     virtual void paintEvent(QPaintEvent *);
@@ -35,14 +35,12 @@ public:
     virtual void mouseDoubleClickEvent ( QMouseEvent * event );
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
-    virtual void focusInEvent(QFocusEvent *event);
-    virtual void focusOutEvent(QFocusEvent *event);
     virtual QSize sizeHint() const;
 
+    void setEditFocus(bool focus);
     bool isThumbnail();
 
 signals:
-    void setCommentControllerEnabled( bool );
     void thumbnailChanged( bool );
     void gotFocus();
 
@@ -53,7 +51,7 @@ public slots:
     void thumbnail(bool);
 
 private:
-    Ui::CommentView *ui;
+    ::Ui::CommentView *ui;
 
     QPoint ref_point;
     QPolygonF poly;
@@ -61,6 +59,7 @@ private:
     bool z_hidden;
     QPoint dragPosition;
     QPoint resizePosition;
+    double lastz;
 
     bool testFocus();
 };

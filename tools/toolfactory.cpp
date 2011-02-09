@@ -23,6 +23,7 @@
 #include "playbackmarkerscontroller.h"
 #include "transforminfoform.h"
 #include "exportaudiodialog.h"
+#include "harmonicsinfoform.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -39,7 +40,8 @@ namespace Tools
 
 ToolFactory::
         ToolFactory(Sawe::Project* p)
-:   render_model( p ),
+:   ToolRepo(p),
+    render_model( p ),
     selection_model( p ),
     playback_model( p )
 {
@@ -57,9 +59,12 @@ ToolFactory::
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
 
-    _brush_model.reset( new BrushModel(p, &render_model) );
-    _brush_view.reset( new BrushView(_brush_model.data() ));
-    _brush_controller = new BrushController( _brush_view.data(), _render_view );
+    if (0 /* sss */ )
+    {
+        _brush_model.reset( new BrushModel(p, &render_model) );
+        _brush_view.reset( new BrushView(_brush_model.data() ));
+        _brush_controller = new BrushController( _brush_view.data(), _render_view );
+    }
 
     if (RecordModel::canCreateRecordModel(p))
     {
@@ -69,6 +74,7 @@ ToolFactory::
     }
 
     _comment_controller = new CommentController( _render_view );
+    tool_controllers_.push_back( _comment_controller );
 
     _matlab_controller = new MatlabController( p, _render_view );
 
@@ -76,6 +82,7 @@ ToolFactory::
 
     _tooltip_controller = new TooltipController(
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
+    tool_controllers_.push_back( _tooltip_controller );
 
     _about_dialog = new AboutDialog( p );
 
@@ -88,7 +95,14 @@ ToolFactory::
     _transform_info_form = new TransformInfoForm(p, _render_controller.data() );
 
     _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
+
+    _harmonics_info_form = new HarmonicsInfoForm(
+            p,
+            dynamic_cast<TooltipController*>(_tooltip_controller.data()),
+            _render_view
+            );
 }
+
 
 
 ToolFactory::
@@ -97,43 +111,35 @@ ToolFactory::
     TaskInfo ti(__FUNCTION__);
     // Try to clear things in the opposite order that they were created
 
-    if (!_export_audio_dialog .isNull())
-        delete _export_audio_dialog;
+    // 'delete 0' is a valid operation and does nothing
 
-    if (!_transform_info_form.isNull())
-        delete _transform_info_form;
+    delete _harmonics_info_form;
 
-    if (!_playbackmarkers_controller.isNull())
-        delete _playbackmarkers_controller;
+    delete _export_audio_dialog;
+
+    delete _transform_info_form;
+
+    delete _playbackmarkers_controller;
 
     delete _about_dialog;
 
-    if (!_selection_controller.isNull())
-        delete _selection_controller;
+    delete _selection_controller;
 
-    if (!_navigation_controller .isNull())
-        delete _navigation_controller;
+    delete _navigation_controller;
 
-    if (!_playback_controller.isNull())
-        delete _playback_controller;
+    delete _playback_controller;
 
-    if (!_brush_controller.isNull())
-        delete _brush_controller;
+    delete _brush_controller;
 
-    if (!_record_controller.isNull())
-        delete _record_controller;
+    delete _record_controller;
 
-    if (!_comment_controller.isNull())
-        delete _comment_controller;
+    delete _comment_controller;
 
-    if (!_matlab_controller.isNull())
-        delete _matlab_controller;
+    delete _matlab_controller;
 
-    if (!_graph_controller.isNull())
-        delete _graph_controller;
+    delete _graph_controller;
 
-    if (!_tooltip_controller.isNull())
-        delete _tooltip_controller;
+    delete _tooltip_controller;
 
     BOOST_ASSERT( _timeline_controller );
 	delete _timeline_controller;
@@ -147,5 +153,17 @@ ToolFactory::
     BOOST_ASSERT( _render_view );
     delete _render_view;
 }
+
+
+ToolFactory::
+        ToolFactory()
+            :
+            render_model( 0 ),
+            selection_model( 0 ),
+            playback_model( 0 )
+{
+    BOOST_ASSERT( false );
+}
+
 
 } // namespace Tools
