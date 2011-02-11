@@ -16,6 +16,7 @@
 
 // Qt
 #include <QGLContext>
+#include <QMessageBox>
 
 // std
 #include <string>
@@ -79,14 +80,16 @@ static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
 static std::string _selectionfile = "selection.wav";
 static bool _record = false;
-static bool _list_audio_devices = false;
 static int _record_device = -1;
 static int _playback_device = -1;
 static std::string _soundfile = "";
 #ifndef QT_NO_THREAD
 static bool _multithread = false;
 #endif
-static bool _sawe_exit = false;
+
+
+std::stringstream message;
+
 
 static int prefixcmp(const char *a, const char *prefix) {
     for(;*a && *prefix;a++,prefix++) {
@@ -120,8 +123,7 @@ bool tryreadarg(const char **cmd, const char* prefix, const char* name, Type &va
     if (**cmd == '=')
         atoval(*cmd+1, val);
     else {
-        cout << "default " << name << "=" << val << endl;
-        _sawe_exit = true;
+        message << "default " << name << "=" << val << endl;
     }
     return 1;
 }
@@ -145,11 +147,9 @@ static int handle_options(char ***argv, int *argc)
             break;
 
         if (!strcmp(cmd, "--help")) {
-            printf("%s", _sawe_usage_string);
-            _sawe_exit = true;
+            message << _sawe_usage_string;
         } else if (!strcmp(cmd, "--version")) {
-            printf("%s\n", Sawe::Application::version_string().c_str());
-            _sawe_exit = true;
+            message << Sawe::Application::version_string().c_str();
         }
         else if (readarg(&cmd, samples_per_chunk));
         else if (readarg(&cmd, scales_per_octave));
@@ -160,7 +160,6 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, get_chunk_count));
         else if (readarg(&cmd, record_device));
         else if (readarg(&cmd, record));
-        else if (readarg(&cmd, list_audio_devices));
         else if (readarg(&cmd, playback_device));
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
@@ -170,18 +169,15 @@ static int handle_options(char ***argv, int *argc)
 #endif
         // TODO use _selectionfile
         else {
-            fprintf(stderr, "Unknown option: %s\n", cmd);
-            printf("%s", _sawe_usage_string);
-            exit(1);
+            message << "Unknown option: " << cmd << endl;
+            message << _sawe_usage_string;
+            break;
         }
 
         (*argv)++;
         (*argc)--;
         handled++;
     }
-
-    if (_sawe_exit)
-        exit(0);
 
     return handled;
 }
@@ -197,30 +193,40 @@ void Application::
     while (argc) {
         handle_options(&argv, &argc);
 
+        if (!message.str().empty())
+            break;
+
         if (argc) {
             if (_soundfile.empty()) {
                 _soundfile = argv[0];
             } else {
-                fprintf(stderr, "Unknown option: %s\n", argv[0]);
-                fprintf(stderr, "Sonic AWE takes only one file (%s) as input argument.\n", _soundfile.c_str());
-                printf("%s", _sawe_usage_string);
-                ::exit(1);
+                std::stringstream ss;
+                ss      << "Unknown command line option: " << argv[0] << endl
+                        << "Sonic AWE takes only one file as input argument. Will try to open \""
+                        << _soundfile << "\"" << endl
+                        << endl
+                        << "See the logfile sonicawe.log for a list of valid command line options.";
+                cerr << ss.str() << endl;
+                cerr << _sawe_usage_string << endl;
+                QMessageBox::warning(0, "Sonic AWE", QString::fromStdString( ss.str()) );
+                break;
             }
             argv++;
             argc--;
         }
     }
 
-    if (_list_audio_devices)
+    if (!message.str().empty())
     {
-        Adapters::Playback::list_devices();
-        _sawe_exit = true;
+        cerr << message.str() << endl;
+        QMessageBox::critical(0, "Sonic AWE", QString::fromStdString( message.str()) );
+        ::exit(-1);
+        //mb.setWindowModality( Qt::ApplicationModal );
+        //mb.show();
+
+        return;
     }
 
-    if (_sawe_exit)
-    {
-        ::exit(0);
-    }
 
     Sawe::pProject p; // p will be owned by Application and released before a.exec()
 
@@ -235,14 +241,12 @@ void Application::
 
     this->openadd_project( p );
 
-    p->mainWindow(); // Ensures that an OpenGL context is created
-
-    BOOST_ASSERT( QGLContext::currentContext() );
-
     apply_command_line_options( p );
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source()->sample_rate() );
+
+    bool sawe_exit = false;
 
     if (_get_csv != (unsigned)-1) {
         if (0==p->head_source()->number_of_samples()) {
@@ -253,7 +257,7 @@ void Application::
         Adapters::Csv csv;
         csv.source( p->head_source() );
         csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
-        _sawe_exit = true;
+        sawe_exit = true;
     }
 
     if (_get_hdf != (unsigned)-1) {
@@ -265,20 +269,26 @@ void Application::
         Adapters::Hdf5Chunk hdf5;
         hdf5.source( p->head_source() );
         hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
-        _sawe_exit = true;
+        sawe_exit = true;
     }
 
     if (_get_chunk_count != false) {
         cout << p->head_source()->number_of_samples() / total_samples_per_chunk << endl;
-        _sawe_exit = true;
+        sawe_exit = true;
     }
 
-    if (_sawe_exit)
+    if (sawe_exit)
     {
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
-        ::exit(0);
+    }
+    else
+    {
+        p->mainWindow(); // Ensures that an OpenGL context is created
+
+        BOOST_ASSERT( QGLContext::currentContext() );
     }
 }
+
 
 void Application::
         apply_command_line_options( pProject p )

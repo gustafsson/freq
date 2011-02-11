@@ -345,8 +345,9 @@ int main(int argc, char *argv[])
         }
 
         // Recreate the cuda context and use OpenGL bindings
-        if (!check_cuda( true ))
-            return -1;
+        if( 0 != QGLContext::currentContext() )
+            if (!check_cuda( true ))
+                return -1;
 
         int r = a.exec();
 
