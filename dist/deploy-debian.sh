@@ -21,4 +21,5 @@ echo "Creating debian archive: $filename"
 cd sonicawe/dist
 ./package-debian.sh ${packagename}
 
+passiveftp=passive
 . ./upload.sh
