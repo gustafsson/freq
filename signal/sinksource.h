@@ -5,7 +5,8 @@
 #include "signal/source.h"
 #include "signal/intervals.h"
 #include <vector>
-#ifndef SAWE_NO_MUTEX
+
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
 #include <QMutex>
 #endif
 
@@ -88,7 +89,7 @@ public:
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
 private:
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
 	QMutex _cache_mutex;
 #endif
     std::vector<pBuffer> _cache; // todo use set instead

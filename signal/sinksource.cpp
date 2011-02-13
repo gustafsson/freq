@@ -1,6 +1,6 @@
 #include "sinksource.h"
 
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
 #include <QMutexLocker>
 #endif
 #include <sstream>
@@ -82,7 +82,7 @@ void SinkSource::
         selfmerge()
 {
 	{
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
 		QMutexLocker l(&_cache_mutex);
 #endif
 
@@ -111,7 +111,7 @@ void SinkSource::
 	}
 
 	{
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
 		QMutexLocker l(&_cache_mutex);
 #endif
 	    _cache = new_cache;
@@ -134,7 +134,7 @@ void SinkSource::
     pBuffer n;
 
 	{
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker cache_locker(&_cache_mutex);
 #endif
 
@@ -196,7 +196,7 @@ void SinkSource::
 void SinkSource::
         clear()
 {
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
     _cache.clear();
@@ -210,7 +210,7 @@ pBuffer SinkSource::
     Interval not_found = I;
 
     {
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
         QMutexLocker l(&_cache_mutex);
 #endif
 
@@ -240,7 +240,7 @@ pBuffer SinkSource::
 float SinkSource::
         sample_rate()
 {
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
 
@@ -261,7 +261,7 @@ long unsigned SinkSource::
 pBuffer SinkSource::
         first_buffer()
 {
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
     BOOST_ASSERT( !_cache.empty() );
@@ -274,7 +274,7 @@ pBuffer SinkSource::
 
 bool SinkSource::empty()
 {
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
     return _cache.empty();
@@ -284,7 +284,7 @@ bool SinkSource::empty()
 Intervals SinkSource::
         samplesDesc()
 {
-#ifndef SAWE_NO_MUTEX
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
 
