@@ -11,7 +11,7 @@ filename="${packagename}.zip"
 echo "========================"
 echo "Building Sonic AWE ${packagename}"
 qmake
-/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe /t:Rebuild /p:Configuration=Release sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Rebuild //p:Configuration=Release sonic.sln
 
 echo "========================"
 echo "Creating zip file: $filename"
