@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "tfr/wavelet.cu.h"
 
-__global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, unsigned half_sizes, float sigma_t0 );
+__global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, unsigned half_sizes, float sigma_t0, float normalization_factor );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem );
 //__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 //__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
@@ -35,6 +35,7 @@ void wtCompute(
         unsigned half_sizes,
         float scales_per_octave,
         float sigma_t0,
+        float normalization_factor,
         cudaStream_t stream )
 {
 //    nyquist = FS/2
@@ -70,7 +71,8 @@ void wtCompute(
             first_scale,
             scales_per_octave,
             half_sizes,
-            sigma_t0 );
+            sigma_t0,
+            normalization_factor );
 }
 
 
@@ -108,7 +110,8 @@ void wtCompute(
 __global__ void kernel_compute_wavelet_coefficients(
         float2* in_waveform_ft,
         float2* out_wavelet_ft,
-        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, unsigned half_sizes, float sigma_t0 )
+        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, unsigned half_sizes, float sigma_t0,
+        float normalization_factor )
 {
     // Which frequency bin in the discrete fourier transform this thread
     // should work with
@@ -132,11 +135,12 @@ __global__ void kernel_compute_wavelet_coefficients(
     else
     {
         float cufft_normalize = 1.f/(float)(nFrequencyBins*half_sizes);
-        float jibberish_normalization = 0.3;
+        cufft_normalize *= normalization_factor;
+        //float jibberish_normalization = 0.3;
         //jibberish_normalization *= sqrtf(sqrtf(sqrtf(sigma_t0)));
-        jibberish_normalization *= 1.275f / logf(sigma_t0*10.f);
+        //jibberish_normalization *= 1.275f / logf(sigma_t0*10.f);
         //jibberish_normalization /= sqrtf(sqrtf(sigma_t0));
-        cufft_normalize *= jibberish_normalization;
+        //cufft_normalize *= jibberish_normalization;
 
         if (0==w_bin)
             cufft_normalize *= 0.5f;
