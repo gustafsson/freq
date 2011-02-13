@@ -658,22 +658,23 @@ void Cwt::
 
     _scales_per_octave=value;
 
-    unsigned nFrequencyBins = 1024;
-    float w = M_PI;
+    float w = M_PI/2;
     float phi_sum = 0;
     float v = _scales_per_octave;
     float log2_a = 1.f / v;
 
-    for (int j=-5; j<5; ++j)
+    TaskInfo ti("Cwt::scales_per_octave( %g )", value);
+    for (int j=0; j<2*_scales_per_octave; ++j)
     {
         float aj = exp2f(log2_a * j );
         float q = (-w*aj + M_PI)*sigma();
         float phi_star = expf( -q*q );
 
+        TaskInfo("%d: %g", j, phi_star );
         phi_sum += phi_star;
     }
 
-    _jibberish_normalization = 2 / phi_sum;
+    _jibberish_normalization = 0.2 / phi_sum;
 }
 
 

@@ -57,11 +57,6 @@
      <addaction name="actionToggleSelectionToolBox"/>
      <addaction name="actionToggleTransformToolBox"/>
     </widget>
-    <widget class="QMenu" name="menuType_Here">
-     <property name="title">
-      <string>Type Here</string>
-     </property>
-    </widget>
     <widget class="QMenu" name="menu_Windows">
      <property name="title">
       <string>&amp;Windows</string>
@@ -73,7 +68,6 @@
     <addaction name="separator"/>
     <addaction name="menu_Windows"/>
     <addaction name="menuToolbars"/>
-    <addaction name="menuType_Here"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">

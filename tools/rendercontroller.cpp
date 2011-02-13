@@ -210,7 +210,7 @@ void RenderController::
     c.scales_per_octave( 20.f * exp( -4*(value / 50.f - 1.f)) );
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
+    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
     model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
 

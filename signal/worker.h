@@ -317,6 +317,8 @@ private:
 /**
   TODO this functionality is build upon the purpose of PostSink that is used by Worker. But not in worker itself.
 
+  TODO create a WorkerTarget and force todo_list(Signal::Intervals) to also take pWorkerTarget as argument.
+
   And also, shouldn't be used like this.
 
   Hmm, this class is probably not needed at all. But some more refactoring will have to be done.

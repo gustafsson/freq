@@ -172,9 +172,9 @@ bool Worker::
 
         } else {
             TaskInfo("Worker caught CudaException:\n%s", e.what());
-            TaskInfo("tf_resolution was %g", Tfr::Cwt::Singleton().tf_resolution());
-            Tfr::Cwt::Singleton().tf_resolution( Tfr::Cwt::Singleton().tf_resolution() * 1.5 );
-            TaskInfo("tf_resolution is %g", Tfr::Cwt::Singleton().tf_resolution());
+            TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave());
+            Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() * .75 );
+            TaskInfo("scales_per_octave is %g", Tfr::Cwt::Singleton().scales_per_octave());
         }
 //            TaskInfo("Worker caught CudaException:\n%s", e.what());
 //            throw;
