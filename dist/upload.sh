@@ -11,6 +11,7 @@ echo "user sonicawe.com $pass
 cd data
 mkdir $version
 cd $version
+binary
 $passiveftp
 put $filename" | ftp -n -v ftp.sonicawe.com
 echo "Uploaded file to:"
