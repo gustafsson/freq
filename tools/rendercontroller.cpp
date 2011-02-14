@@ -307,15 +307,6 @@ void RenderController::
 }
 
 
-void RenderController::
-        receiveSetTransform_Cepstrum()
-{
-    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(model()->collections);
-
-    setBlockFilter( cepstrumblock );
-}
-
-
 RenderModel *RenderController::
         model()
 {
@@ -383,12 +374,10 @@ void RenderController::
         connect(ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_reassign()));
         connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
         connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
-        connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
 
         transform = new ComboBoxAction();
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
-        transform->addActionItem( ui->actionTransform_Cepstrum );
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
 //        transform->addActionItem( ui->actionTransform_Cwt_reassign );
 //        transform->addActionItem( ui->actionTransform_Cwt_ridge );

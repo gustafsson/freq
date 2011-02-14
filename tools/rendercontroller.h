@@ -54,7 +54,6 @@ namespace Tools
         void receiveSetTransform_Cwt_reassign();
         void receiveSetTransform_Cwt_ridge();
         void receiveSetTransform_Cwt_weight();
-        void receiveSetTransform_Cepstrum();
 
     private slots:
         void clearCachedHeightmap();
