@@ -283,8 +283,7 @@ void Application::
     }
     else
     {
-        p->mainWindow(); // Ensures that an OpenGL context is created
-
+        // Ensures that an OpenGL context is created
         BOOST_ASSERT( QGLContext::currentContext() );
     }
 }

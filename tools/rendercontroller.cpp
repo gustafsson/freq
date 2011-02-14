@@ -112,11 +112,14 @@ RenderController::
         // Default values for rendercontroller
         Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
         Ui::MainWindow* ui = main->getItems();
-
-        transform->actions().at(0)->trigger();
-        ui->actionSet_colorscale->trigger();
+#ifdef TARGET_sss
         tf_resolution->setValue( 10 );
         ui->actionToggleOrientation->setChecked(true);
+        transform->actions().at(0)->trigger();
+#else
+        transform->actions().at(2)->trigger();
+#endif
+        ui->actionSet_colorscale->trigger();
     }
 }
 

@@ -3,7 +3,10 @@ set -e
 
 bury_copy() { mkdir -p "`dirname $2`" && cp "$1" "$2"; }
 
-if [ "$1" ] && [ -z "$2" ] && [ "$(basename `pwd`)" == "dist" ] ; then
+if [ -n "$1" ] && [ -n "$2" ] && [ -z "$3" ] && [ "$(basename `pwd`)" == "dist" ] ; then
+        versionnumber=$2
+        version=$1
+elif [ -n "$1" ] && [ -z "$2" ] && [ "$(basename `pwd`)" == "dist" ] ; then
         version=$1
 else
 	echo "Creates a Sonic AWE package for Debian linux"
@@ -34,6 +37,10 @@ share=$package/usr/share/sonicawe/.
 pushd ..
 rm -rf $package
 cp -r dist/package-debian $package
+if [ -n "${versionnumber}" ]; then
+	sed "s/Version: .*$/Version: ${versionnumber}/g" $package/DEBIAN/control > $package/DEBIAN/control
+fi
+
 mkdir -p $package/usr/lib
 mkdir -p $package/usr/bin
 cp -r /usr/local/cuda/lib64/libcudart.so* $package/usr/lib/.

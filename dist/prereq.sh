@@ -22,4 +22,4 @@ git pull --rebase origin $branch
 cd ../gpumisc
 git pull --rebase origin master
 
-cd ..
+cd ../sonicawe/dist
