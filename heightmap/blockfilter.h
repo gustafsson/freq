@@ -3,6 +3,7 @@
 
 #include "tfr/cwtfilter.h"
 #include "tfr/stftfilter.h"
+#include "tfr/cepstrumfilter.h"
 #include "heightmap/collection.h"
 #include <iostream>
 
@@ -142,6 +143,16 @@ class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 public:
     StftToBlock( Collection* collection );
     StftToBlock( std::vector<boost::shared_ptr<Collection> > collections );
+
+    virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+};
+
+
+class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
+{
+public:
+    CepstrumToBlock( Collection* collection );
+    CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };
