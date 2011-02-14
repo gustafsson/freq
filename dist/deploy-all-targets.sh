@@ -15,4 +15,4 @@ target=
 . ./deploy.sh; urls="${urls}\n$url"
 
 echo "======================== All urls ========================"
-echo $urls
+echo -e $urls

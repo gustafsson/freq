@@ -28,3 +28,5 @@ md5sums
 *.so*
 project_header.h.cpp
 *.log
+*.zip
+
