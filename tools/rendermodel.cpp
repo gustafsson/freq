@@ -21,8 +21,8 @@ RenderModel::
 	BOOST_ASSERT(fs);
 
 #ifdef TARGET_sss
-    render_model._pz = -6;
-    render_model.xscale = 0.1f;
+    _pz = -6;
+    xscale = 0.1f;
 
     float L = p->worker.length();
     if (L)
