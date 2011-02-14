@@ -20,7 +20,7 @@ fi
 if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
 	platform=windows
 elif [ "$(uname -s)" == "Linux" ]; then
-    platform=ubuntu
+    platform=debian
 else
     echo "Don't know how to build Sonic AWE for this platform: $(uname -s).";
 fi
