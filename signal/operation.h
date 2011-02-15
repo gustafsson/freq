@@ -1,11 +1,15 @@
 #ifndef SIGNALOPERATION_H
 #define SIGNALOPERATION_H
 
-#include "signal/source.h"
-#include "signal/intervals.h"
+//signal
+#include "source.h"
+#include "intervals.h"
+
+// boost
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 
+// gpumisc
 // For debug info while serializing
 #include <demangle.h>
 

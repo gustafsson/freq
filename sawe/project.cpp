@@ -19,11 +19,13 @@ using namespace std;
 namespace Sawe {
 
 Project::
-        Project( Signal::pOperation head_source )
-:   worker( head_source ),
-    root_source_(head_source),
+        Project( Signal::pOperation root )
+:   worker(),
     is_modified_(true)
 {
+    Signal::pChain chain(new Signal::Chain(root));
+    all_layers.addLayer( chain );
+    head.reset( new Signal::ChainHead(chain) );
 }
 
 
@@ -36,8 +38,6 @@ Project::
 
     if (_mainWindow)
         delete _mainWindow;
-
-    root_source_.reset();
 }
 
 

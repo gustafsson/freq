@@ -3,13 +3,17 @@
 
 #include "chain.h"
 
-#include <set>
+#include <boost/serialization/set.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 
 namespace Signal {
 
 class Layers
 {
 public:
+    ~Layers();
+
     std::set<pChain> layers();
 
     virtual void addLayer(pChain);
@@ -18,6 +22,11 @@ public:
     bool isInSet(pChain) const;
 private:
     std::set<pChain> layers_;
+
+//    friend class boost::serialization::access;
+//    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) const {
+//        ar & BOOST_SERIALIZATION_NVP( layers_);
+//    }
 };
 
 
@@ -53,6 +62,11 @@ public:
     void removeLayerHead(pChainHead);
 
     /**
+      Returns the chain head that correspons to a chain, if there is one.
+      */
+    pChainHead findHead( pChain );
+
+    /**
       layer merging doesn't have to be done by superpositioning, it could also
       make a setup so that it puts the results from each layer in its
       own channel
@@ -74,6 +88,7 @@ private:
 
     bool isInSet(pChain) const;
 };
+typedef boost::shared_ptr<Target> pTarget;
 
 } // namespace Signal
 

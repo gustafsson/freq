@@ -66,7 +66,7 @@ void ExportAudioDialog::
 void ExportAudioDialog::
         abortExport()
 {
-    worker_callback.reset();
+    exportTarget.reset();
 }
 
 
@@ -83,14 +83,11 @@ void ExportAudioDialog::
 void ExportAudioDialog::
         populateTodoList()
 {
-    if (!project->worker.todo_list().empty() || !worker_callback)
+    if (!project->worker.todo_list().empty() || !exportTarget)
         return;
 
-    Signal::Intervals missing_for_export =
-            worker_callback->sink()->fetch_invalid_samples();
-
     project->worker.center = 0;
-    project->worker.todo_list( missing_for_export );
+    project->worker.target(exportTarget);
 }
 
 
@@ -99,10 +96,10 @@ void ExportAudioDialog::
 {
     QDialog::paintEvent(event);
 
-    if (!worker_callback)
+    if (!exportTarget)
         return;
 
-    Signal::PostSink* postsink = dynamic_cast<Signal::PostSink*>(worker_callback->sink().get());
+    Signal::PostSink* postsink = exportTarget->post_sink();
     Signal::IntervalType missing = postsink->fetch_invalid_samples().count();
     float finished = 1.f - missing/(double)total;
 
@@ -116,12 +113,12 @@ void ExportAudioDialog::
         ui->buttonBoxAbort->setEnabled( !isFinished );
         ui->buttonBoxOk->setEnabled( isFinished );
 
-        float L = total/project->head_source()->sample_rate();
+        float L = total/postsink->sample_rate();
         ui->labelExporting->setText(QString(
                 "Exported %1 to %2")
                     .arg( Signal::SourceBase::lengthLongFormat(L).c_str() )
                     .arg( filemame ));
-        worker_callback.reset();
+        exportTarget.reset();
     }
     else
     {
@@ -161,9 +158,8 @@ void ExportAudioDialog::
     if (0 != QString::compare(filemame.mid(filemame.length() - extension.length()), extension, Qt::CaseInsensitive))
         filemame += extension;
 
-    Signal::PostSink* postsink = new Signal::PostSink;
-    Signal::pOperation ps(postsink);
-    worker_callback.reset( new Signal::WorkerCallback( &project->worker, ps ));
+    exportTarget.reset(new Signal::Target(&project->all_layers));
+    Signal::PostSink* postsink = exportTarget->post_sink();
 
     postsink->filter( filter );
     std::vector<Signal::pOperation> sinks;
@@ -184,7 +180,7 @@ void ExportAudioDialog::
     ui->buttonBoxAbort->setEnabled( !isFinished );
     ui->buttonBoxOk->setEnabled( isFinished );
 
-    float L = total/project->head_source()->sample_rate();
+    float L = total/postsink->sample_rate();
     ui->labelExporting->setText(QString("Exporting %1").arg( Signal::SourceBase::lengthLongFormat(L).c_str()));
 
     if (filter)

@@ -10,7 +10,7 @@ Chain::
             root_source_(root),
             tip_source_(root)
 {
-
+    name = "Chain";
 }
 
 
@@ -42,16 +42,15 @@ void Chain::
 bool Chain::
         isInChain(Signal::pOperation t) const
 {
-    bool in_chain = false;
-    Signal::pOperation s = chain_->tip_source();
+    Signal::pOperation s = tip_source();
     while( s )
     {
         if (s == t )
-            head_in_chain = true;
+            return true;
         s = s->source();
     }
 
-    return in_chain;
+    return false;
 }
 
 
@@ -77,7 +76,7 @@ void ChainHead::
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.
     unsigned i = 0;
-    Signal::pOperation itr = _source;
+    Signal::pOperation itr = head_source_ref();
     while(itr)
     {
         if ( itr == s )
@@ -110,7 +109,7 @@ void ChainHead::
 
     head_source( pOperation( new OperationCacheLayer(s) ));
 
-    tt.tt().info("Worker::appendOperation, worker tree:\n%s", _source->toString().c_str());
+    tt.tt().info("Worker::appendOperation, worker tree:\n%s", head_source_ref()->toString().c_str());
 }
 
 
@@ -129,7 +128,7 @@ Signal::pOperation ChainHead::
 
 
 Signal::PostSink& ChainHead::
-        post_sink() const
+        post_sink()
 {
     return post_sink_;
 }

@@ -9,7 +9,7 @@ namespace Tools
 RenderModel::
         RenderModel(Sawe::Project* p)
         :
-        renderSignalTarget(&p->all_layers),
+        renderSignalTarget(new Signal::Target(&p->all_layers)),
         _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
         _px(0), _py(0), _pz(-10),
         _rx(91), _ry(180), _rz(0),
@@ -17,7 +17,7 @@ RenderModel::
         zscale(5),
         _project(p)
 {
-	Signal::Operation* o = p->head_source()->root();
+    Signal::Operation* o = p->head_source()->root();
 	Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(o);
 	BOOST_ASSERT(fs);
 
@@ -46,6 +46,8 @@ RenderModel::
 
     renderer->left_handed_axes = false;
 #endif
+
+    p->worker.target( renderSignalTarget );
 }
 
 

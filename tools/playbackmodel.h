@@ -3,7 +3,7 @@
 
 #include "signal/operation.h"
 #include "signal/postsink.h"
-#include "signal/worker.h"
+#include "signal/target.h"
 
 #include <string>
 
@@ -20,8 +20,7 @@ namespace Tools
     public:
         PlaybackModel(Sawe::Project* project);
 
-        Signal::PostSink* getPostSink();
-        Signal::pWorkerCallback postsinkCallback;
+        Signal::Target playbackTarget;
 
         unsigned playback_device;
         std::string selection_filename;

@@ -25,7 +25,7 @@ public:
             return source2_->read( I );
     }
 
-    virtual pOperation source2() const { return _source2; }
+    virtual pOperation source2() const { return source2_; }
 
     virtual unsigned num_channels() { return _source->num_channels() + source2_->num_channels(); }
     virtual void set_channel(unsigned c) {
@@ -44,8 +44,15 @@ private:
 };
 
 
+Layers::
+        ~Layers()
+{
+    TaskInfo ti("~Layers");
+    layers_.clear();
+}
 
-std::vector<pChain> Layers::
+
+std::set<pChain> Layers::
         layers()
 {
     return layers_;
@@ -69,7 +76,7 @@ void Layers::
 
 
 bool Layers::
-        isInSet(pChain) const
+        isInSet(pChain p) const
 {
     return layers_.find( p ) != layers_.end();
 }
@@ -78,10 +85,14 @@ bool Layers::
 Target::
         Target(Layers* all_layers)
             :
-            post_sink_(new PostSink ),
+            post_sink_( new PostSink ),
             add_as_channels_(false),
             all_layers_(all_layers)
 {
+    BOOST_FOREACH( pChain c, all_layers_->layers() )
+    {
+        addLayerHead( pChainHead(new ChainHead(c)));
+    }
 }
 
 
@@ -124,6 +135,19 @@ void Target::
     rebuildSource();
 
     post_sink()->invalidate_samples( ~p->head_source()->zeroed_samples_recursive() );
+}
+
+
+pChainHead Target::
+        findHead( pChain c )
+{
+    BOOST_FOREACH( pChainHead p, layerHeads )
+    {
+        if (c == p->chain())
+            return p;
+    }
+
+    return pChainHead();
 }
 
 

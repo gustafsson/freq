@@ -62,20 +62,14 @@ public:
       */
     Signal::Worker worker;
 
-    Layers all_layers;
-
-    /**
-      Current work point, compare HEAD in a git repo which points to the point
-      in history that current edits are based upon.
-      */
-    Signal::pOperation head_source() const { return worker.source(); }
-    void head_source(Signal::pOperation s) { worker.source(s); }
+    Signal::Layers all_layers;
 
 
     /**
-      The root of the operation tree. The source audio files are leaves in the
-      tree.
+      The HEAD is were edits take place. This is not necessairly the same as the position being played back
+      or the position being rendered.
       */
+    Signal::pChainHead head;
 
 
     /**
@@ -147,8 +141,6 @@ private:
     Project(); // used by deserialization
     void createMainWindow();
 
-    Signal::pOperation root_source_;
-    Signal::pOperation tip_source_;
     bool is_modified_;
 
     std::string project_file_name;
@@ -162,11 +154,8 @@ private:
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {
         TaskInfo ti("%s", __FUNCTION__);
-        Signal::pOperation head = head_source();
-        TaskInfo("Saving head tree:\n%s", head->toString().c_str());
 
-        ar & BOOST_SERIALIZATION_NVP(root_source_);
-        ar & BOOST_SERIALIZATION_NVP(head);
+        //ar & BOOST_SERIALIZATION_NVP(all_layers);
 
         QByteArray mainwindowState = _mainWindow->saveState( version );
 		save_bytearray( ar, mainwindowState );
@@ -176,11 +165,8 @@ private:
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
         TaskInfo ti("%s", __FUNCTION__);
-        Signal::pOperation head;
-        ar & BOOST_SERIALIZATION_NVP(root_source_);
-        ar & BOOST_SERIALIZATION_NVP(head);
-        TaskInfo("Loaded head tree:\n%s", head->toString().c_str());
-        head_source(head);
+
+        //ar & BOOST_SERIALIZATION_NVP(all_layers);
 
 		createMainWindow();
 

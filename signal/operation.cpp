@@ -40,7 +40,7 @@ Intervals Operation::
 std::string Operation::
         name()
 {
-    return vartype(*o.get());
+    return vartype(*this);
 }
 
 

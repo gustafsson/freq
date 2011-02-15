@@ -12,27 +12,32 @@
 #include "ui/mainwindow.h"
 #include "tools/support/operation-composite.h"
 
+#include <boost/foreach.hpp>
+
 namespace Tools
 {
     class TreeItem: public QTreeWidgetItem
     {
     public:
-        TreeItem(QWidget* parent, Signal::pOperation operation)
+        TreeItem(QTreeWidget* parent, Signal::pOperation operation, Signal::pChain chain)
             :
             QTreeWidgetItem( parent ),
-            operation(operation)
+            operation(operation),
+            chain(chain)
         {
 
         }
 
         Signal::pOperation operation;
+        Signal::pChain chain;
     };
+
 
     GraphController::
             GraphController( RenderView* render_view )
                 :
                 render_view_(render_view),
-                project_(&render_view->model->project())
+                project_(render_view->model->project())
     {
         setupGui();
     }
@@ -48,19 +53,24 @@ namespace Tools
     void GraphController::
             redraw_operation_tree()
     {
-        Ui::SaweMainWindow* main = render_view_->model->project()->mainWindow();
-        Ui::MainWindow* ui = main->getItems();
+        operationsTree->clear();
 
-        Signal::pOperation o = worker_->source();
-        ui->operationsTree->clear();
-        while(o)
+        BOOST_FOREACH( Signal::pChain c, project_->all_layers.layers() )
         {
-            QString name = QString::fromStdString( subop->name() );
+            QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
+            chainItm->setText(0, c->name);
 
-            TreeItem* itm = new TreeItem(ui->operationsTree, o);
-            itm->setText(0, name);
+            Signal::pOperation o = c->tip_source();
+            while(o)
+            {
+                QString name = QString::fromStdString( o->name() );
 
-            o = o->source();
+                TreeItem* itm = new TreeItem(operationsTree, o, c);
+                itm->setText(0, name);
+                chainItm->addChild( itm );
+
+                o = o->source();
+            }
         }
     }
 
@@ -69,8 +79,19 @@ namespace Tools
             currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
     {
         TreeItem* currentItem = dynamic_cast<TreeItem*>(current);
-        BOOST_ASSERT( currentItem );
-        worker_->source( currentItem->operation );
+        TreeItem* previousItem = dynamic_cast<TreeItem*>(previous);
+        if ( !currentItem )
+        {
+            if (previousItem)
+                operationsTree->setCurrentItem( previous );
+        }
+        else
+        {
+            Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentItem->chain );
+            head->head_source( currentItem->operation );
+
+            // head_source( pOperation ) invalidates render model where approperiate
+        }
     }
 
 
@@ -126,7 +147,12 @@ namespace Tools
         connect(operationsTree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
                 SLOT(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
 
-        connect( worker_, SIGNAL(source_changed()), SLOT(redraw_operation_tree()));
+
+        BOOST_FOREACH( Signal::pChain c, project_->all_layers.layers() )
+        {
+            connect( c.get(), SIGNAL(chainChanged()), SLOT(redraw_operation_tree()));
+        }
+
         redraw_operation_tree();
     }
 

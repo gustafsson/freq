@@ -225,8 +225,6 @@ void PlaybackController::
         // will screw up playback by blocking the OS and causing audio
         // starvation.
         project_->worker.requested_fps(1);
-
-        //project->worker.todo_list().print("Displaywidget - PostSink");
     }
 }
 

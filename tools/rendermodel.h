@@ -30,7 +30,7 @@ namespace Tools
         Tfr::FreqAxis display_scale();
 
         //Signal::pWorkerCallback collectionCallback;
-        Signal::Target renderSignalTarget;
+        Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
 
         Sawe::Project* project() { return _project; }
@@ -49,7 +49,7 @@ namespace Tools
         Sawe::Project* _project; // project should probably be a member of RenderController instead
 
         friend class boost::serialization::access;
-        RenderModel():renderSignalTarget(0) { BOOST_ASSERT( false ); } // required for serialization to compile, is never called
+        RenderModel() { BOOST_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
             TaskInfo ti("%s", __FUNCTION__);
             ar

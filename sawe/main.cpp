@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
             ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
             ti.tt().getStream() << "Program started " << today;
             TaskInfo ti2("%u command line argument%s", argc, argc==1?"":"s");
-            for (unsigned i=0; i<argc; ++i)
+            for (int i=0; i<argc; ++i)
                 TaskInfo("%s", argv[i]);
         }
 

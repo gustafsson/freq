@@ -6,7 +6,8 @@
 #include <QObject>
 #include <QString>
 
-#include <boost/shared_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/nvp.hpp>
 
 namespace Signal {
 
@@ -45,6 +46,14 @@ private:
     /**
       */
     Signal::pOperation root_source_, tip_source_;
+
+//    friend class boost::serialization::access;
+//    Chain() { } // used by serialization, root is read from archive instead
+//    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) const {
+//        ar & BOOST_SERIALIZATION_NVP(root_source_);
+//        ar & BOOST_SERIALIZATION_NVP(tip_source_);
+//    }
+
 };
 typedef boost::shared_ptr<Chain> pChain;
 
@@ -95,7 +104,7 @@ private:
     PostSink post_sink_;
     Signal::pOperation head_source_;
 };
-typedef boost::shared_ptr<Chain> pChainHead;
+typedef boost::shared_ptr<ChainHead> pChainHead;
 
 } // namespace Signal
 
