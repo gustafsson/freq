@@ -2,6 +2,7 @@
 #define SAWEPROJECT_H
 
 #include "signal/worker.h"
+#include "signal/target.h"
 #include "tools/toolfactory.h"
 
 // boost
@@ -61,6 +62,7 @@ public:
       */
     Signal::Worker worker;
 
+    Layers all_layers;
 
     /**
       Current work point, compare HEAD in a git repo which points to the point

@@ -4,6 +4,7 @@
 #include "postsink.h"
 
 #include <QObject>
+#include <QString>
 
 #include <boost/shared_ptr.hpp>
 
@@ -30,7 +31,13 @@ public:
       */
     void tip_source(Signal::pOperation);
 
-    std::string name;
+    /**
+      Name can be used as a title in the GUI.
+      */
+    QString name;
+
+
+    bool isInChain(Signal::pOperation) const;
 signals:
     void chainChanged();
 
@@ -50,7 +57,7 @@ class ChainHead : public QObject
 {
     Q_OBJECT
 public:
-    ChainHead( pChain chain, pOperation postSink );
+    ChainHead( pChain chain );
 
 
     /**
@@ -61,10 +68,12 @@ public:
 
 
     /**
-      Current HEAD.
+      Current HEAD, As head_source(s) changes head_source->source this
+      pOperation will always be the same.
       */
+    Signal::pOperation     head_source_ref() const;
     Signal::pOperation     head_source() const;
-    Signal::PostSink*      post_sink() const;
+    Signal::PostSink&      post_sink();
 
 
     /**
@@ -73,7 +82,7 @@ public:
     */
     void head_source(Signal::pOperation s);
 
-    pChain chain() { return chain_; }
+    pChain chain();
 
 signals:
     void headChanged();
@@ -83,8 +92,8 @@ private slots:
 
 private:
     pChain chain_;
-    Signal::pOperation head_;
-    Signal::pOperation post_sink_;
+    PostSink post_sink_;
+    Signal::pOperation head_source_;
 };
 typedef boost::shared_ptr<Chain> pChainHead;
 

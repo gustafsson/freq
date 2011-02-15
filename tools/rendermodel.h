@@ -2,7 +2,7 @@
 #define RENDERMODEL_H
 
 #include "tfr/freqaxis.h"
-#include "signal/worker.h"
+#include "signal/target.h"
 
 #include <boost/serialization/nvp.hpp>
 
@@ -29,7 +29,8 @@ namespace Tools
         Signal::pOperation postsink();
         Tfr::FreqAxis display_scale();
 
-        Signal::pWorkerCallback collectionCallback;
+        //Signal::pWorkerCallback collectionCallback;
+        Signal::Target renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
 
         Sawe::Project* project() { return _project; }
@@ -48,7 +49,7 @@ namespace Tools
         Sawe::Project* _project; // project should probably be a member of RenderController instead
 
         friend class boost::serialization::access;
-        RenderModel() { BOOST_ASSERT( false ); } // required by serialization, should never be called
+        RenderModel():renderSignalTarget(0) { BOOST_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
             TaskInfo ti("%s", __FUNCTION__);
             ar

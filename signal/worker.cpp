@@ -278,6 +278,13 @@ Signal::Intervals Worker::
 }
 
 
+pOperation Worker::
+        source() const
+{
+    return head()->head_source();
+}
+
+
 pChainHead Worker::
         head() const
 {
@@ -285,84 +292,20 @@ pChainHead Worker::
 }
 
 
-Signal::pOperation Worker::
-        source() const
-{
-    return _source;
-}
-
-
 void Worker::
-        source(Signal::pOperation value)
+        head(pChainHead value)
 {
     BOOST_ASSERT( value );
 
-    if (_source == value)
+    if (chain_head == value)
         return;
 
-    _source = value;
-    if (_source)
-        _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
-    else
-        _min_samples_per_chunk = 1;
-    _highest_fps = _min_fps;
+    chain_head = value;
+
+    _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, chain_head->head_source()->sample_rate());
     _max_samples_per_chunk = (unsigned)-1;
-    invalidate_post_sink( Signal::Interval(0, std::max( 1lu, value->number_of_samples()) ));
-
-    if (_source)
-        _number_of_samples = _source->number_of_samples();
-
-    emit source_changed();
-}
-
-
-void Worker::
-        appendOperation(Signal::pOperation s)
-{
-    BOOST_ASSERT( s );
-
-    TaskInfo tt("Worker::appendOperation( %s )", vartype(*s).c_str());
-
-    // Check that this operation is not already in the list. Can't move into
-    // composite operations yet as there is no operation iterator implemented.
-    unsigned i = 0;
-    Signal::pOperation itr = _source;
-    while(itr)
-    {
-        if ( itr == s )
-        {
-            std::stringstream ss;
-            ss << "Worker::appendOperation( " << vartype(*s) << ", " << std::hex << s.get() << ") "
-                    << "is already in operation chain at postion " << i;
-            throw std::invalid_argument( ss.str() );
-        }
-        itr = itr->source();
-        ++i;
-    }
-
-    s->source( _source );
-    Signal::Intervals was_zeros;
-    if (_source)
-        was_zeros = _source->zeroed_samples_recursive();
-    Signal::Intervals new_zeros = s->zeroed_samples_recursive();
-    Signal::Intervals affected = s->affected_samples();
-    Signal::Intervals still_zeros = was_zeros & new_zeros;
-    TaskInfo("Was zero samples %s", was_zeros.toString().c_str());
-    TaskInfo("New zero samples %s", new_zeros.toString().c_str());
-    TaskInfo("Still zero samples %s", still_zeros.toString().c_str());
-    TaskInfo("Affected samples %s", affected.toString().c_str());
-    _source = s;
-    invalidate_post_sink( affected - still_zeros );
-
-    _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
     _highest_fps = _min_fps;
-    _max_samples_per_chunk = (unsigned)-1;
-
-    _source.reset( new OperationCacheLayer(_source) );
-
-    tt.tt().info("Worker::appendOperation, worker tree:\n%s", _source->toString().c_str());
-
-    emit source_changed();
+    _number_of_samples = _source->number_of_samples();
 }
 
 
@@ -417,23 +360,6 @@ void Worker::
 	}
 }
 
-
-void Worker::
-        invalidate_post_sink(Intervals I)
-{
-    I &= Interval(0, source()->number_of_samples() );
-
-    {
-        // TODO Is this necessary?
-        //OperationCacheLayer* topcache = dynamic_cast<OperationCacheLayer*>(_source.get());
-        //if (topcache) topcache->invalidate_samples( I );
-    }
-
-    _post_sink.invalidate_samples( I );
-    WORKER_INFO TaskInfo("Worker invalidate %s. Worker tree:\n%s",
-             I.toString().c_str(),
-             source()?source()->toString().c_str():0);
-}
 
 
 ///// PRIVATE

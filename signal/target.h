@@ -3,20 +3,21 @@
 
 #include "chain.h"
 
-#include <list>
+#include <set>
 
 namespace Signal {
 
 class Layers
 {
 public:
-    std::vector<pChain> layers();
+    std::set<pChain> layers();
 
     virtual void addLayer(pChain);
     virtual void removeLayer(pChain);
 
+    bool isInSet(pChain) const;
 private:
-    std::vector<pChain> layers_;
+    std::set<pChain> layers_;
 };
 
 
@@ -37,19 +38,19 @@ private:
   the OperationSuperposition structure is rebuilt whenever addLayer, removeLayer
   or addAsChannels is called.
   */
-class Target : public Layers {
+class Target {
 public:
-    Target(Layers* all_layers_);
+    Target(Layers* all_layers);
 
     /**
-      It is an error to and a layer that is not in 'all_layers_'
+      It is an error to add a layer that is not in 'all_layers_'
       */
-    virtual void addLayer(pChain);
+    void addLayerHead(pChainHead);
 
     /**
-      It is an error to and a layer that is not in 'layers()'
+      It is an error to remove a layer that is not in 'layerHeads'
       */
-    virtual void removeLayer(pChain);
+    void removeLayerHead(pChainHead);
 
     /**
       layer merging doesn't have to be done by superpositioning, it could also
@@ -61,7 +62,7 @@ public:
     /**
       Add sinks to this target group through this PostSink
       */
-    Signal::PostSink*   post_sink() const;
+    PostSink*   post_sink() const;
 
 private:
     void rebuildSource();
@@ -69,8 +70,10 @@ private:
     Signal::pOperation post_sink_;
     bool add_as_channels_;
     Layers* all_layers_;
-};
+    std::set<pChainHead> layerHeads;
 
+    bool isInSet(pChain) const;
+};
 
 } // namespace Signal
 

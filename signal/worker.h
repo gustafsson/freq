@@ -120,11 +120,11 @@ higher than the actual achieved framerate.
 class Worker
 #ifndef SAWE_NO_MUTEX
     : public QThread
-#else
-    : public QObject
 #endif
 {
+#ifndef SAWE_NO_MUTEX
     Q_OBJECT
+#endif
 public:
     Worker(pOperation source=pOperation());
     ~Worker();
@@ -167,7 +167,9 @@ public:
     /**
       The current working point.
       */
+    pOperation          source() const;
     pChainHead          head() const;
+    void                head(pChainHead);
 
     /**
       Get number of samples computed for each iteration.
@@ -198,16 +200,6 @@ public:
 	  */
 	void				checkForErrors();
 
-
-    void                invalidate_post_sink(Intervals I);
-    /**
-      Get all callbacks that data are sent to after each workOne.
-
-      TODO Shouldn't be exposed like this.
-      */
-    //PostSink* postSink();
-signals:
-    void source_changed();
 
 private:
     friend class WorkerCallback;
@@ -319,7 +311,7 @@ private:
   Hmm, this class is probably not needed at all. But some more refactoring will have to be done.
    @see Worker
   */
-class WorkerCallback: boost::noncopyable {
+/*class WorkerCallback: boost::noncopyable {
 public:
     WorkerCallback( Worker* w, pOperation s )
         :   _w(w),
@@ -337,7 +329,7 @@ private:
     pOperation _s;
 };
 typedef boost::shared_ptr<WorkerCallback> pWorkerCallback;
-
+*/
 } // namespace Signal
 
 #endif // SIGNALWORKER_H

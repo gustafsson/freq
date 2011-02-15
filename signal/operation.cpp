@@ -115,4 +115,14 @@ Signal::Intervals Operation::
 }
 
 
+Signal::Intervals FinalSource::
+        zeroed_samples()
+{
+    IntervalType N = number_of_samples();
+    Signal::Intervals r = Signal::Intervals::Intervals_ALL;
+    if (N)
+        r -= Signal::Interval(0, N);
+    return r;
+}
+
 } // namespace Signal

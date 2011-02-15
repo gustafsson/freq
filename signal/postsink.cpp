@@ -105,13 +105,6 @@ Signal::pBuffer PostSink::
         c->read( I );
     }
 
-    BOOST_FOREACH( pOperation c, passive_operations )
-        c->source(source());
-
-    BOOST_FOREACH( pOperation c, active_operations )
-        c->source(source());
-
-
     return b;
 }
 
@@ -277,6 +270,9 @@ pOperation PostSink::
 void PostSink::
         filter(pOperation f)
 {
+    if (f == _filter)
+        return;
+
     Intervals I;
 
     if (f)          f->source(source());
@@ -291,6 +287,8 @@ void PostSink::
         I -= f->zeroed_samples_recursive();
     else if(_filter)
         I -= _filter->zeroed_samples_recursive();
+
+    _filter->source( source() );
 
     invalidate_samples( I );
 

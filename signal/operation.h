@@ -40,7 +40,7 @@ public:
     virtual IntervalType number_of_samples() { return _source->number_of_samples(); } /// @see read(const Interval&)
 
     virtual unsigned num_channels() { return _source->num_channels(); }
-    virtual void set_channel(unsigned c) { return _source->set_channel(c); }
+    virtual void set_channel(unsigned c) { _source->set_channel(c); }
     virtual unsigned get_channel() { return _source->get_channel(); }
 
 
@@ -222,11 +222,13 @@ public:
 
     virtual pBuffer read( const Interval& I ) = 0;
     virtual float sample_rate() = 0;
-    virtual long unsigned number_of_samples() = 0;
+    virtual IntervalType number_of_samples() = 0;
 
     virtual unsigned num_channels() = 0;
 	virtual void set_channel(unsigned c) = 0;
     virtual unsigned get_channel() = 0;
+
+    virtual Signal::Intervals zeroed_samples();
 
 private:
     virtual pOperation source() const { return pOperation(); }
