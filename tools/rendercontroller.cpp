@@ -112,11 +112,14 @@ RenderController::
         // Default values for rendercontroller
         Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
         Ui::MainWindow* ui = main->getItems();
-
-        transform->actions().at(0)->trigger();
-        ui->actionSet_colorscale->trigger();
+#ifdef TARGET_sss
         tf_resolution->setValue( 10 );
         ui->actionToggleOrientation->setChecked(true);
+        transform->actions().at(0)->trigger();
+#else
+        transform->actions().at(transform->actions().count()-1)->trigger();
+#endif
+        ui->actionSet_colorscale->trigger();
     }
 }
 
@@ -207,10 +210,10 @@ void RenderController::
     float FS = model()->project()->worker.source()->sample_rate();
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
-    c.tf_resolution( 2.5f * exp( 4*(value / 50.f - 1.f)) );
+    c.scales_per_octave( 20.f * exp( -4*(value / 50.f - 1.f)) );
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS) );
+    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
     model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
 

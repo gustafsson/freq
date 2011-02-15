@@ -100,10 +100,12 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 #endif
 
     stringstream msg;
+    stringstream title;
 
     switch (namedError.getCudaError())
     {
     case cudaErrorInsufficientDriver:
+        title << "Display drivers to old";
         msg << "Cuda error: " << cudaGetErrorString(cudaErrorInsufficientDriver) << endl
                 << endl
                 << "Sonic AWE requires you to have installed more recent display drivers from NVIDIA. "
@@ -115,6 +117,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                 << "Sonic AWE cannot start. Please try again with updated drivers.";
         break;
     case cudaErrorDevicesUnavailable:
+        title << "Graphics adapter (GPU) occupied";
         msg << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
                 << "Are you currently using the GPU in any other application? "
                 << "If you're not intentionally using the GPU right now the driver might have been left in an inconsistent state after a previous crash. Rebooting your computer could work around this for now. "
@@ -128,6 +131,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
         cerr << ss.str();
         cerr.flush();
 
+        title << "Couldn't find CUDA, cannot start Sonic AWE";
         msg   << "Sonic AWE requires you to have installed recent display drivers from NVIDIA, and no such driver was found." << endl
                 << endl
                 << "Hardware requirements: You need to have one of these graphics cards from NVIDIA:" << endl
@@ -141,9 +145,9 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     }
     }
 
-    TaskInfo("Couldn't find CUDA, cannot start Sonic AWE\n%s", msg.str().c_str());
+    TaskInfo("%s\n%s", title.str().c_str(), msg.str().c_str());
     QMessageBox::critical( 0,
-                 "Couldn't find CUDA, cannot start Sonic AWE",
+                 QString::fromLocal8Bit(title.str().c_str()),
                  QString::fromLocal8Bit(msg.str().c_str()) );
 
     return false;
@@ -299,6 +303,9 @@ int main(int argc, char *argv[])
             boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
             ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
             ti.tt().getStream() << "Program started " << today;
+            TaskInfo ti2("%u command line argument%s", argc, argc==1?"":"s");
+            for (unsigned i=0; i<argc; ++i)
+                TaskInfo("%s", argv[i]);
         }
 
         // Check if a cuda context can be created, but don't require OpenGL bindings just yet
@@ -345,8 +352,9 @@ int main(int argc, char *argv[])
         }
 
         // Recreate the cuda context and use OpenGL bindings
-        if (!check_cuda( true ))
-            return -1;
+        if( 0 != QGLContext::currentContext() )
+            if (!check_cuda( true ))
+                return -1;
 
         int r = a.exec();
 

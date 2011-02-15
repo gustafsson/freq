@@ -561,10 +561,10 @@ Heightmap::Position RenderView::
         if( s < 0)
             if (success) *success=false;
 
-        float L = sqrt((objX1-objX2)*(objX1-objX2)
+        float L = sqrt((objX1-objX2)*(objX1-objX2)*model->xscale*model->xscale
                        +(objY1-objY2)*(objY1-objY2)
-                       +(objZ1-objZ2)*(objZ1-objZ2));
-        if (objY1-objY2 < model->xscale*sin(minAngle *(M_PI/180)) * L )
+                       +(objZ1-objZ2)*(objZ1-objZ2)*model->zscale*model->zscale);
+        if (objY1-objY2 < sin(minAngle *(M_PI/180)) * L )
             if (success) *success=false;
     }
 

@@ -25,6 +25,14 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
     cudaMemGetInfo(&free, &total);
     cudaDeviceProp prop = CudaProperties::getCudaDeviceProp();
 
+#ifdef _MSC_VER
+    ui->textEdit->setHtml( ui->textEdit->toHtml().replace("file:///usr/share/sonicawe/license/license.txt", "file:///license.txt"));
+#endif
+
+    QPalette p = ui->textEdit->palette();
+    p.setColor( QPalette::Base, p.color(QPalette::Window) );
+    ui->textEdit->setPalette( p );
+
     ui->labelSystem->setText(QString(
             "Using GPU (%1 of %2) %3.\n"
             "%4 MB free of %5 MB total graphics memory.\n"

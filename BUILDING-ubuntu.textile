@@ -4,13 +4,15 @@
 
 *2. Prerequisites*
 *2.1. Cuda*
-Download and install the <a href="http://www.nvidia.com/object/cuda_get.html">cuda toolkit from nvidia</a>.
+Download and install the <a href="http://www.nvidia.com/object/cuda_get.html">cuda toolkit from nvidia</a>. You also need libcuda.so which is installed by the cuda devdriver (at the same url). If you don't need to run the program but want to compile it you can extract libcuda.so from the devdriver installation package with the flag -x.
 
 Create link to nvidia cuda compiler (nvcc) in path, and set library path for Cuda:
-<pre>$ sudo ln -s /usr/local/cuda/bin/nvcc /usr/local/bin/nvcc
-$ sudo echo /usr/local/cuda/lib > /etc/ld.so.conf.d/cuda.conf
-$ sudo echo /usr/local/cuda/lib64 >> /etc/ld.so.conf.d/cuda.conf
-$ sudo ldconfig</pre>
+<pre>$ su
+$ ln -s /usr/local/cuda/bin/nvcc /usr/local/bin/nvcc
+$ echo /usr/local/cuda/lib > /etc/ld.so.conf.d/cuda.conf
+$ echo /usr/local/cuda/lib64 >> /etc/ld.so.conf.d/cuda.conf
+$ ldconfig
+$ exit</pre>
 
 *2.2. Packages from the Ubuntu repositories*
 <pre>$ sudo apt-get install libsndfile1-dev portaudio19-dev libglew1.5-dev freeglut3-dev

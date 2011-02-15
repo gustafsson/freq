@@ -58,12 +58,14 @@ Cwt::
 :   _fft( /*stream*/ ),
     _stream( stream ),
     _min_hz( 20 ),
-    _scales_per_octave( scales_per_octave ),
+    _scales_per_octave( 0 ),
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
     _wavelet_time_suppport( wavelet_time_suppport ),
     _wavelet_def_time_suppport( wavelet_time_suppport ),
-    _wavelet_scale_suppport( 6 )
+    _wavelet_scale_suppport( 6 ),
+    _jibberish_normalization( 1 )
 {
+    this->scales_per_octave( scales_per_octave );
 }
 
 
@@ -424,7 +426,8 @@ pChunk Cwt::
                      intermediate_wt->max_hz,
                      intermediate_wt->transform_data->getNumberOfElements(),
                      1<<half_sizes,
-                     _scales_per_octave, sigma() );
+                     _scales_per_octave, sigma(),
+                     _jibberish_normalization );
 
         TIME_CWTPART CudaException_ThreadSynchronize();
     }
@@ -654,6 +657,24 @@ void Cwt::
     _fft_many.clear();
 
     _scales_per_octave=value;
+
+    float w = M_PI/2;
+    float phi_sum = 0;
+    float v = _scales_per_octave;
+    float log2_a = 1.f / v;
+
+    TaskInfo ti("Cwt::scales_per_octave( %g )", value);
+    for (int j=0; j<2*_scales_per_octave; ++j)
+    {
+        float aj = exp2f(log2_a * j );
+        float q = (-w*aj + M_PI)*sigma();
+        float phi_star = expf( -q*q );
+
+        TaskInfo("%d: %g", j, phi_star );
+        phi_sum += phi_star;
+    }
+
+    _jibberish_normalization = 0.2 / phi_sum;
 }
 
 

@@ -1,5 +1,5 @@
 Sonic AWE: A Cross-Platform Digital Audio Visualizer
-Maintainer: sonicawe@reep.se
+Maintainer: info@sonicawe.com
 
 --------------------------------------------------------------------------
 

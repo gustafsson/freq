@@ -115,6 +115,7 @@ private:
     float  _wavelet_time_suppport;
     float  _wavelet_def_time_suppport;
     float _wavelet_scale_suppport;
+    float _jibberish_normalization;
 };
 
 } // namespace Tfr
