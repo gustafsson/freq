@@ -41,7 +41,7 @@ Renderer::Renderer( Collection* collection )
     y_scale( 1 ),
     last_ysize( 1 ),
     drawn_blocks(0),
-    left_handed_axes(false),
+    left_handed_axes(true),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),

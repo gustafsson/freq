@@ -20,18 +20,6 @@ RenderModel::
 	Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(o);
 	BOOST_ASSERT(fs);
 
-#ifdef TARGET_sss
-    _pz = -6;
-    xscale = 0.1f;
-
-    float L = p->worker.length();
-    if (L)
-    {
-        xscale = 14/L;
-        _qx = 0.5*L;
-    }
-#endif
-
     collections.resize(fs->num_channels());
     for (unsigned c=0; c<fs->num_channels(); ++c)
     {
@@ -43,6 +31,20 @@ RenderModel::
     collectionCallback.reset( new Signal::WorkerCallback( &_project->worker, postsink() ));
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
+
+#ifdef TARGET_sss
+    _pz = -6;
+    xscale = 0.1f;
+
+    float L = p->worker.length();
+    if (L)
+    {
+        xscale = 14/L;
+        _qx = 0.5*L;
+    }
+
+    renderer->left_handed_axes = false;
+#endif
 }
 
 

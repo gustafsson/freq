@@ -117,7 +117,7 @@ RenderController::
         ui->actionToggleOrientation->setChecked(true);
         transform->actions().at(0)->trigger();
 #else
-        transform->actions().at(2)->trigger();
+        transform->actions().at(transform->actions().count()-1)->trigger();
 #endif
         ui->actionSet_colorscale->trigger();
     }
