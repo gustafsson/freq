@@ -38,7 +38,7 @@ pushd ..
 rm -rf $package
 cp -r dist/package-debian $package
 if [ -n "${versionnumber}" ]; then
-	sed "s/Version: .*$/Version: ${versionnumber}/g" $package/DEBIAN/control > $package/DEBIAN/control
+	sed -i "s/Version: .*$/Version: ${versionnumber}/g" $package/DEBIAN/control
 fi
 
 mkdir -p $package/usr/lib
@@ -71,6 +71,7 @@ for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done
 popd
 output_deb="sonicawe_"$version"_`uname -m`.deb"
+#http://www.debian.org/doc/debian-policy/ch-controlfields.html
 dpkg -b $package dist/$output_deb
 echo "OUTPUT"
 echo "    `pwd`/dist/$output_deb"
