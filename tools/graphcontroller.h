@@ -3,9 +3,16 @@
 
 #include <QObject>
 
-namespace Signal
+class QDockWidget;
+class QWidget;
+class QVBoxLayout;
+class QTreeWidget;
+class QTreeWidgetItem;
+class QAction;
+
+namespace Sawe
 {
-    class Worker;
+    class Project;
 }
 
 namespace Tools
@@ -23,12 +30,19 @@ public:
 
 private slots:
     void redraw_operation_tree();
+    void currentItemChanged(QTreeWidgetItem* current,QTreeWidgetItem* previous);
 
 private:
     void setupGui();
 
     RenderView* render_view_;
-    Signal::Worker* worker_;
+    Sawe::Project* project_;
+
+    QAction *actionToggleOperationsWindow;
+    QDockWidget *operationsWindow;
+    QWidget *dockWidgetContents;
+    QVBoxLayout *verticalLayout;
+    QTreeWidget *operationsTree;
 };
 
 } // namespace Tools

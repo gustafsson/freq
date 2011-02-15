@@ -27,6 +27,7 @@ public:
       */
     Operation( pOperation source );
 
+    virtual std::string name();
 
     /**
       Overloaded from Source. The default implementation of read is to read
@@ -37,6 +38,10 @@ public:
     virtual pBuffer read( const Interval& I );
     virtual float sample_rate() { return _source->sample_rate(); }  /// @see read(const Interval&)
     virtual IntervalType number_of_samples() { return _source->number_of_samples(); } /// @see read(const Interval&)
+
+    virtual unsigned num_channels() { return _source->num_channels(); }
+    virtual void set_channel(unsigned c) { return _source->set_channel(c); }
+    virtual unsigned get_channel() { return _source->get_channel(); }
 
 
     /**

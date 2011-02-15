@@ -72,11 +72,8 @@ public:
 
     /**
       The root of the operation tree. The source audio files are leaves in the
-      tree. New things are appended by creating a root of the root, thus making
-      the tree "higher".
+      tree.
       */
-    Signal::pOperation root_source() const { return root_source_; }
-    void root_source(Signal::pOperation s) { root_source_ = s; head_source(s); }
 
 
     /**
@@ -149,6 +146,7 @@ private:
     void createMainWindow();
 
     Signal::pOperation root_source_;
+    Signal::pOperation tip_source_;
     bool is_modified_;
 
     std::string project_file_name;

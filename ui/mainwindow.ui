@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -62,7 +62,6 @@
       <string>&amp;Windows</string>
      </property>
      <addaction name="actionToggleTimelineWindow"/>
-     <addaction name="actionToggleHistoryWindow"/>
      <addaction name="actionTransform_info"/>
     </widget>
     <addaction name="separator"/>
@@ -643,23 +642,6 @@
     <bool>true</bool>
    </property>
   </action>
-  <action name="actionToggleOperationsWindow">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Operations</string>
-   </property>
-   <property name="toolTip">
-    <string>Toggle the operations window</string>
-   </property>
-   <property name="shortcut">
-    <string>O</string>
-   </property>
-  </action>
   <action name="actionToggleToolToolBox">
    <property name="checkable">
     <bool>true</bool>
@@ -792,17 +774,6 @@
    </property>
    <property name="toolTip">
     <string>Toggle the timeline window</string>
-   </property>
-  </action>
-  <action name="actionToggleHistoryWindow">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;History</string>
-   </property>
-   <property name="toolTip">
-    <string>Toggle the history window</string>
    </property>
   </action>
   <action name="actionCutoffSelection">

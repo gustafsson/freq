@@ -278,6 +278,13 @@ Signal::Intervals Worker::
 }
 
 
+pChainHead Worker::
+        head() const
+{
+    return chain_head;
+}
+
+
 Signal::pOperation Worker::
         source() const
 {
@@ -289,6 +296,9 @@ void Worker::
         source(Signal::pOperation value)
 {
     BOOST_ASSERT( value );
+
+    if (_source == value)
+        return;
 
     _source = value;
     if (_source)

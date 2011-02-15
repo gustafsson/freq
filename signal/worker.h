@@ -4,6 +4,7 @@
 // Signal namespace
 #include "intervals.h"
 #include "postsink.h"
+#include "chain.h"
 
 // Boost
 #include <boost/noncopyable.hpp>
@@ -162,14 +163,11 @@ public:
       */
     float center;
 
+
     /**
-      Get/set the data source for this worker.
-      // TODO worker should overload operation instead so that source can be
-        set without including "worker.h"
+      The current working point.
       */
-    Signal::pOperation     source() const;
-    void                source(Signal::pOperation s);
-    void                appendOperation(Signal::pOperation s);
+    pChainHead          head() const;
 
     /**
       Get number of samples computed for each iteration.
@@ -259,10 +257,7 @@ private:
       */
     QMutex _callbacks_lock;
 #endif
-    /**
-      @see source
-      */
-    Signal::pOperation _source;
+
 
 #ifndef SAWE_NO_MUTEX
     /**

@@ -37,6 +37,13 @@ Intervals Operation::
 }
 
 
+std::string Operation::
+        name()
+{
+    return vartype(*o.get());
+}
+
+
 pBuffer Operation::
         read( const Interval& I )
 {
