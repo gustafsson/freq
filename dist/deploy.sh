@@ -9,12 +9,14 @@ if [ -z "${version}" ]; then echo "Missing version, can't upload."; exit 1; fi
 
 
 if [ -z "${target}" ]; then 
-  versiontag="${version}_snapshot"
+  versiontag="${version}${snapshot}"
   qmaketarget=
 else
-  versiontag="${version}_${target}-snapshot"
+  versiontag="${version}-${target}${snapshot}"
   qmaketarget="CONIFG+=TARGET_${target} DEFINES+=TARGET_${target}"
 fi
+
+qmaketarget="${qmaketarget} DEFINES+=\"SONICAWE_VERSION=${versiontag}\""
 
 
 if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then

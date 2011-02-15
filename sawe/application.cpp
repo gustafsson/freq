@@ -75,9 +75,7 @@ Application::
     //QDateTime now = QDateTime::currentDateTime();
     //now.date().year();
     stringstream ss;
-    ss << "Sonic AWE";
-#ifndef SONICAWE_RELEASE
-    ss << " - ";
+    ss << "Sonic AWE - ";
     #ifdef SONICAWE_VERSION
         ss << TOSTR(SONICAWE_VERSION);
     #else
@@ -85,13 +83,12 @@ Application::
         #ifdef _DEBUG
             ss << ", " << __TIME__;
         #endif
-    #endif
-#endif
 
-#ifdef SONICAWE_BRANCH
-    if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
-        ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
-#endif
+        #ifdef SONICAWE_BRANCH
+            if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
+                ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
+        #endif
+    #endif
 
     _version_string = ss.str();
 

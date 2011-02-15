@@ -17,7 +17,7 @@ else
 	echo "DESCRIPTIION"
 	echo "     'version_string' is on the form"
 	echo "         0.2011.01.12"
-	echo "         0.2011.01.12_snapshot"
+	echo "         0.2011.01.12-snapshot"
 	echo
 	echo "     Or use 'def' as version_string to produce default format."
 	echo
@@ -28,7 +28,7 @@ fi
 echo $version
 
 if [ $version == "def" ] ; then
-	version="$(date +0.%Y.%m.%d_snapshot)"
+	version="$(date +0.%Y.%m.%d-snapshot)"
 fi
 
 package=dist/package-debian~

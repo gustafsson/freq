@@ -14,5 +14,5 @@ target=sss
 target=
 . ./deploy.sh; urls="${urls}\n$url"
 
-echo "======================== All urls ========================"
+echo "========================== All urls ==========================="
 echo -e $urls

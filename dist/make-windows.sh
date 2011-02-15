@@ -6,12 +6,12 @@ filename="${packagename}.zip"
 
 cd ../..
 
-echo "======================== Building ========================"
+echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename}"  
 qmake $qmaketarget
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //t:Rebuild //p:Configuration=Release sonic.sln
 
-echo "======================== Packaging ========================"
+echo "========================== Packaging =========================="
 echo "Creating zip file: $(pwd)/$filename for package $packagename"
 cd ..
 rm -rf $filename
