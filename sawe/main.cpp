@@ -303,6 +303,9 @@ int main(int argc, char *argv[])
             boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
             ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
             ti.tt().getStream() << "Program started " << today;
+            TaskInfo ti2("%u command line argument%s", argc, argc==1?"":"s");
+            for (unsigned i=0; i<argc; ++i)
+                TaskInfo("%s", argv[i]);
         }
 
         // Check if a cuda context can be created, but don't require OpenGL bindings just yet

@@ -22,55 +22,71 @@ sonicawe \- Cross-platform audio editor and visualizer
 .B 
 .SH DESCRIPTION
 .B Sonic AWE
-is an audio editor and visualizer.  This man page does not
-describe all of the features of Sonic AWE or how to use
-it; for this contact info@sonicawe.com.  This man page 
-contains an incomplete list of the command line options
-and is mostly out-of-date.
+is an audio editor and visualizer that runs on GNU/Linux, Windows and Mac OS X.  This man page describes the command line options.  For a description of all of the features of Sonic AWE or how to use
+Sonic AWE visit www.sonicawe.com.  A lot of information about what Sonic AWE does is written to the Sonic AWE log file named sonicawe.log. It is located in
 
 .SH OPTIONS
-Each parameter takes a value, if no value is given the default value is
-written to standard output and the program exits immediately after.
+Each parameter takes a value, if no value is given the default value is written to standard output and the program exits immediately after.
 .TP 10
-\fB\-help\fR
+\fB\--help\fR
 display a brief list of command line options
 .TP 10
-\fB\-version\fR
+\fB\--version\fR
 display the sonicawe version number
 .TP 10
-\fB\--samples_per_chunk[=value]\fR
-The transform is computed in chunks from the input. This determines the number of input samples that
-should correspond to one chunk of the transform by 2^samples_per_chunk.
+\fB\--samples_per_chunk_hint[=value]\fR
+only used by the get_* options. The transform is computed in chunks from the input. This determines the number of input samples that should correspond to one chunk of the transform by 2^samples_per_chunk. The actual number of samples computed and written to file per chunk might be different
 .TP 10
 \fB\--scales_per_octave[=value]\fR
-Accuracy of transform, higher accuracy takes more time to compute.
+accuracy of transform, higher accuracy takes more time to compute
 .TP 10
-\fB\--wavelet_std_t[=decimal_value]\fR
-Transform chunks overlap this much, given in seconds.
+\fB\--samples_per_block[=value]\fR
+the transform chunks are downsampled to blocks for rendering, this gives the number of samples per block
 .TP 10
-\fB\--extract_chunk=chunk_number\fR
-Saves the given chunk number into sonicawe-n.csv which then can be read by a third part program."
+\fB\--scales_per_block[=value]\fR
+number of scales per block, se samples_per_block
+.TP 10
+\fB\--get_csv[=value]\fR
+saves the given chunk number into sawe.csv which then can be read by matlab or octave
+.TP 10
+\fB\--get_hdf[=value]\fR
+saves the given chunk number into sawe.h5 which then can be read by matlab or octave
+.TP 10
+\fB\--get_chunk_count\fR
+prints number of chunks needed and then exits
+.TP 10
+\fB\--wavelet_time_support[=decimal_value]\fR
+transform CWT chunks with this many sigmas overlap in time domain
+.TP 10
+\fB\--wavelet_scale_support[=decimal_value]\fR
+transform CWT chunks with this many sigmas overlap in scale domain
 .TP 10
 \fB\--get_chunk_count=1\fR
-Makes Sonic AWE exit with the number of chunks as exit code.
+outpus in the log file sonicawe.log the number of chunks that can be fetched by the --get_* options
 .TP 10
 \fB\--record=1\fR
-Makes Sonic AWE record from the default microphone.
+starts Sonic AWE starts in record mode. [default]
+.TP 10
+\fB\--record_device=[value]\fR
+selects a specific device for recording. -1 specifices the default input device/microphone. All available audio devices that Sonic AWE can use are listen in the beginning of the log file sonicawe.log
+.TP 10
+\fB\--playback_device=[value]\fR
+selects a specific device for playback. -1 specifices the default output device. All available audio devices that Sonic AWE can use are listen in the beginning of the log file sonicawe.log
+
 
 .SH LICENSE
 
-Sonic AWE is distributed as commercial software for evaluation purposes only.
-However some of the libraries it links to are distributed under other free licenses, including the
-LGPL and MIT licenses.
+Sonic AWE is distributed as commercial software for evaluation purposes only. Please contact info@sonicawe.com for questions.
+However some of the libraries it uses are distributed under other free licenses, including the
+LGPL and MIT licenses. For a complete list see /usr/share/sonicawe/license/.  There is NO WARRANTY, to the extent permitted by law. 
 
-.SH BUGS
+.SH REPORTING BUGS
 
 To report a bug, fill in the form at http://sonicawe.com/subscribe.php
 
 .SH AUTHORS
-Sonic AWE is a product from REEP. Sonic AWE would not
-be possible without libsndfile, Qt, and many of
-the other libraries it is built upon.  
+Sonic AWE is a product from REEP. Sonic AWE would not be possible without the libraries it is built upon, including cuda, freeglut, boost, glew, hdf5, oourafft, portaudio, qt4, sndfile and zlib. For a complete list see /usr/share/sonicawe/license/.
+
 
 .\" arch-tag: e07678ca-81e0-4147-997c-18a80f6fb8d1
 

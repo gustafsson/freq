@@ -37,11 +37,13 @@ static const char _sawe_usage_string[] =
     "    written to standard output and the program exits immediately after.\n"
     "    Valid parameters are:\n"
     "\n"
-    "    samples_per_chunk  Only used by extract_chunk option.\n"
+    "    samples_per_chunk_hint  Only used by get_* options.\n"
     "                       The transform is computed in chunks from the input\n"
     "                       This determines the number of input samples that \n"
     "                       should correspond to one chunk of the transform by\n"
-    "                       2^samples_per_chunk.\n"
+    "                       2^samples_per_chunk_hint. The actual number of \n"
+    "                       samples computed and written to file per chunk \n"
+    "                       might be different.\n"
     "    scales_per_octave  Accuracy of transform, higher accuracy takes more time\n"
     "                       to compute.\n"
     "    samples_per_block  The transform chunks are downsampled to blocks for\n"
@@ -51,7 +53,8 @@ static const char _sawe_usage_string[] =
     "                       then can be read by matlab or octave.\n"
     "    get_hdf            Saves the given chunk number into sawe.h5 which \n"
     "                       then can be read by matlab or octave.\n"
-    "    get_chunk_count    Sonic AWE prints number of chunks needed and then exits.\n"
+    "    get_chunk_count    outpus in the log file sonicawe.log the number of \n"
+    "                       chunks that can be fetched by the --get_* options\n"
     "    wavelet_time_support Transform CWT chunks with this many sigmas overlap in\n"
     "                       time domain.\n"
     "    wavelet_scale_support Transform CWT chunks with this many sigmas overlap in\n"
@@ -61,7 +64,6 @@ static const char _sawe_usage_string[] =
     "                       the default input device/microphone.\n"
     "    playback_device    Selects a specific device for playback. -1 specifices the\n"
     "                       default output device.\n"
-    "    list_audio_devices Lists all available audio devices that Sonic AWE can use.\n"
 /*    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
     "                       filters are being used as the GUI won't be locked during\n"
     "                       computation.\n"
@@ -72,7 +74,7 @@ static unsigned _channel=0;
 static unsigned _scales_per_octave = 20;
 static float _wavelet_time_support = 5;
 static float _wavelet_scale_support = 4;
-static unsigned _samples_per_chunk = 1;
+static unsigned _samples_per_chunk_hint = 1;
 static unsigned _samples_per_block = 1<<7;
 static unsigned _scales_per_block = 1<<8;
 static unsigned _get_hdf = (unsigned)-1;
@@ -151,7 +153,7 @@ static int handle_options(char ***argv, int *argc)
         } else if (!strcmp(cmd, "--version")) {
             message << Sawe::Application::version_string().c_str();
         }
-        else if (readarg(&cmd, samples_per_chunk));
+        else if (readarg(&cmd, samples_per_chunk_hint));
         else if (readarg(&cmd, scales_per_octave));
         else if (readarg(&cmd, wavelet_time_support));
         else if (readarg(&cmd, wavelet_scale_support));
@@ -244,7 +246,7 @@ void Application::
     apply_command_line_options( p );
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
-    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk, p->head_source()->sample_rate() );
+    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk_hint, p->head_source()->sample_rate() );
 
     bool sawe_exit = false;
 
@@ -273,7 +275,9 @@ void Application::
     }
 
     if (_get_chunk_count != false) {
-        cout << p->head_source()->number_of_samples() / total_samples_per_chunk << endl;
+        TaskInfo("number of samples = %u", p->head_source()->number_of_samples());
+        TaskInfo("samples per chunk = %u", total_samples_per_chunk);
+        TaskInfo("chunk count = %u", (p->head_source()->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk);
         sawe_exit = true;
     }
 
@@ -298,7 +302,6 @@ void Application::
     cwt.wavelet_time_support( _wavelet_time_support );
     cwt.wavelet_scale_support( _wavelet_scale_support );
 
-    //p->worker.samples_per_chunk_hint( _samples_per_chunk );
 #ifndef SAWE_NO_MUTEX
     if (_multithread)
         p->worker.start();
