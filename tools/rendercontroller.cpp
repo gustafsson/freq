@@ -46,48 +46,45 @@ using namespace Ui;
 namespace Tools
 {
 
-class ForAllChannelsOperation: public Signal::Sink
+class BlockFilterSink: public Signal::Sink
 {
 public:
-    ForAllChannelsOperation
+    BlockFilterSink
         (
             Signal::pOperation o,
-            std::vector<boost::shared_ptr<Heightmap::Collection> > collections
+            std::vector<boost::shared_ptr<Heightmap::Collection> > collections,
+            RenderView* renderview
         )
         :
-            Signal::Sink(),
-            collections_(collections)
+            collections_(collections),
+            renderview(renderview)
     {
         BOOST_ASSERT( o );
-        _source = o;
+        source(o);
     }
 
 
-    virtual Signal::pBuffer read( const Signal::Interval& I )
-    {
-        Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(root());
-        if (0==fs)
-            return Signal::Operation::read( I );
-
-        unsigned N = fs->num_channels();
-        Signal::pBuffer r;
-        for (unsigned i=0; i<N; ++i)
-        {
-            fs->set_channel( i );
-            r = Signal::Operation::read( I );
-        }
-
-        return r;
-    }
-
-    virtual void source(Signal::pOperation v) { _source->source(v); }
-    virtual Signal::Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples(); }
-    virtual bool isFinished() { return false; }
+    virtual void source(Signal::pOperation v) { source()->source(v); }
+    virtual bool deleteMe() { return false; } // Never delete this sink
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
         foreach(boost::shared_ptr<Heightmap::Collection> c, collections_)
             c->invalidate_samples(I);
+    }
+
+
+    virtual Signal::Intervals invalid_samples()
+    {
+        _invalid_samples.clear();
+        foreach ( boost::shared_ptr<Collection> c, _collections)
+        {
+            Signal::Intervals inv_coll = c->invalid_samples();
+            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            _invalid_samples |= inv_coll;
+        }
+
+        return Sink::invalid_samples();
     }
 
 private:

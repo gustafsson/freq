@@ -42,7 +42,7 @@ Signal::pBuffer PostSink::
         {
             Sink* s = dynamic_cast<Sink*>(i->get());
 
-            if (s && s->isFinished())
+            if (s && s->deleteMe())
             {
                 TaskTimer tt("Removing %s from postsink", demangle( typeid(*s) ).c_str());
                 i = _sinks.erase( i );
@@ -196,14 +196,15 @@ Intervals PostSink::
 
 
 Intervals PostSink::
-        fetch_invalid_samples()
+        invalid_samples()
 {
     Intervals I;
 
-    BOOST_FOREACH( pOperation s, sinks() )
+    BOOST_FOREACH( pOperation o, sinks() )
     {
         // Sinks doesn't fetch invalid sampels recursively
-        I |= s->fetch_invalid_samples();
+        Sink* s = dynamic_cast<Sink*>(o.get());
+        I |= s->invalid_samples();
     }
 
     return I;
@@ -218,9 +219,7 @@ bool PostSink::
     BOOST_FOREACH( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
-
-        if (s)
-            r |= s->isUnderfed();
+        r |= s->isUnderfed();
     }
 
     return r;
@@ -233,9 +232,7 @@ void PostSink::
     BOOST_FOREACH( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
-
-        if (s)
-            s->invalidate_samples( I );
+        s->invalidate_samples( I );
     }
 }
 
@@ -256,6 +253,13 @@ void PostSink::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
 #endif
+
+    BOOST_FOREACH( pOperation o, v )
+    {
+        Sink* s = dynamic_cast<Sink*>(o.get());
+        BOOST_ASSERT( s );
+    }
+
     _sinks = v;
 }
 

@@ -2,13 +2,34 @@
 
 #include <demangle.h>
 
+#include <boost/foreach.hpp>
+
 namespace Signal {
 
-Operation::Operation(pOperation source )
-:   _source( source ),
-    _enabled( true ),
-    _invalid_samples()
+Operation::Operation(pOperation s )
+:   _enabled( true ) // TODO remove _enabled
 {
+    source( s );
+}
+
+
+Operation::
+        ~Operation()
+{
+    source( pOperation() );
+}
+
+
+void Operation::
+        source(pOperation v)
+{
+    if (_source)
+        _source->_outputs.erase( this );
+
+    _source=v;
+
+    if (_source)
+        _source->_outputs.insert( this );
 }
 
 
@@ -64,24 +85,13 @@ Operation* Operation::
 }
 
 
-// todo rename fetch_invalid_samples to read_invalid_samples
-Intervals Operation::
-        fetch_invalid_samples()
+void Operation::
+        invalidate_samples(const Intervals& I)
 {
-//    TaskInfo tt("%s::fetch_invalid_samples, _invalid_samples=%s",
-//                vartype(*this).c_str(), _invalid_samples.toString().c_str());
-    Intervals r = _invalid_samples;
-
-    Operation* o = _source.get();
-    if (0!=o)
+    BOOST_FOREACH( Operation* p, _outputs )
     {
-        r |= translate_interval(o->fetch_invalid_samples());
+        p->invalidate_samples( p->translate_interval( I ));
     }
-
-    if (_invalid_samples)
-        _invalid_samples = Intervals();
-
-    return r;
 }
 
 

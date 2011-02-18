@@ -86,7 +86,7 @@ ChunkAndInverse CwtFilter::
                                          Interval(firstSample, firstSample+L).toString().c_str(),
                                      vartype(*this).c_str());
 
-        ci.inverse = _source->readFixedLength( Interval(firstSample,
+        ci.inverse = Operation::source()->readFixedLength( Interval(firstSample,
                                                         firstSample+L) );
     }
 
@@ -204,9 +204,13 @@ void CwtFilter::
     if (0 == dynamic_cast<Tfr::Cwt*>( t.get()) )
         throw std::invalid_argument("'transform' must be an instance of Tfr::Cwt");
 
-    // even if '0 == t || transform() == t' the client
-    // probably wants to reset everything when transform( t ) is called
-    //_invalid_samples = Intervals::Intervals_ALL;
+    if ( t == transform() && !_transform )
+        t.reset();
+
+    if (_transform == t )
+        return;
+
+    invalidate_samples( Signal::Interval(0, number_of_samples() ));
 
     _transform = t;
 }

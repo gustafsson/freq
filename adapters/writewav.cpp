@@ -35,9 +35,9 @@ void WriteWav::
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", (long unsigned)buffer->sample_offset, (long unsigned)(buffer->sample_offset + buffer->number_of_samples()));
 
     //Statistics<float>(buffer->waveform_data());
-    _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
+    _data.putExpectedSamples( buffer );
 
-    if (_data.isFinished())
+    if (_data.deleteMe())
         reset(); // Write to file
 }
 

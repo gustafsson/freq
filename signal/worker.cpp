@@ -245,7 +245,7 @@ void Worker::
 #endif
         BOOST_ASSERT( _target );
 
-        _todo_list = v & Interval(0, std::max(1lu, _target->post_sink()->number_of_samples()));
+        _todo_list = v & Interval(0, _target->post_sink()->number_of_samples());
         //_todo_list &= Signal::Intervals(0, 44100*7);
 
         WORKER_INFO TaskInfo("Worker::todo_list = %s (requested %s)",
@@ -310,7 +310,7 @@ void Worker::
     _highest_fps = _min_fps;
     _number_of_samples = _target->post_sink()->number_of_samples();
 
-    todo_list( _target->post_sink()->fetch_invalid_samples() );
+    todo_list( _target->post_sink()->invalid_samples() );
 }
 
 

@@ -62,7 +62,7 @@ public:
       */
     Signal::Worker worker;
 
-    Signal::Layers all_layers;
+    Signal::Layers layers;
 
 
     /**

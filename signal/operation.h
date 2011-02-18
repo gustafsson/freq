@@ -13,6 +13,8 @@
 // For debug info while serializing
 #include <demangle.h>
 
+#include <set>
+
 namespace Signal {
 
 typedef boost::shared_ptr<class Operation> pOperation;
@@ -30,6 +32,7 @@ public:
       to its _source.
       */
     Operation( pOperation source );
+    ~Operation();
 
     virtual std::string name();
 
@@ -55,8 +58,19 @@ public:
       that doesn't rely on its source() but provides all data by itself.
       */
     virtual pOperation source() const { return _source; }
-    virtual void source(pOperation v) { _source=v; } /// @see source()
+    virtual void source(pOperation v); /// @see source(), outputs()
 
+
+    /**
+      outputs() points to all Operations that has this as their source.
+
+      May be empty if no Operation currently has this as source.
+
+      The parent-source relation is setup and maintained by source(pOperation);
+
+      outputs() are used by Operation::invalidate_samples.
+      */
+    virtual std::set<Operation*> outputs() { return _outputs; }
 
     /**
       'affected_samples' describes where it is possible that
@@ -66,9 +80,7 @@ public:
 
       A filter is allowed to be passive in some parts and nonpassive in others.
       'affected_samples' describes where. 'affected_samples' is allowed to
-      change over time as well, but to make sure that changed intervals are
-      requested for _invalid_samples must be changed accordingly.
-      _invalid_samples is then copied and cleared by 'fetch_invalid_samples'.
+      change over time as well.
 
       As default all samples are possibly affected by an Operation.
       */
@@ -127,33 +139,6 @@ public:
 
 
     /**
-      Fetches and clears invalid samples recursively.
-      Returns _invalid_samples merged with source()->invalid_samples().
-
-      Example on how invalid_samples() is used:
-      1. A brand new filter is inserted into the middle of the chain, it will
-         affect some samples. To indicate that a change has been made but not
-         yet processed invalid_samples is set to some equivalent non-empty
-         values.
-      2. Worker is notificed that something has changed and will query the
-         chain for invalid samples. It will then issue invalidate_samples on
-         all sinks connected to the worker.
-      3. Different sinks might react differently to invalidate_samples(...).
-         The Heightmap::Collection for instance might only return a subset in
-         invalid_samples() if those are the only samples that have been
-         requested recently. Heightmap::Collection will return the other
-         invalidated samples from invalid_samples() at a later occassion if
-         they are requested by rendering.
-         Signal::Playback will abort the playback and just stop, returning true
-         from isFinished() and waiting to be deleted by the calling postsink
-         and possibly recreated later.
-      4. fetch_invalid_samples is not const with respect to Operation, because
-         fetch_invalid_samples clears _invalid_samples after each call.
-    */
-    virtual Intervals fetch_invalid_samples();
-
-
-    /**
       An implementation of Operation needs to overload this if the samples are
       moved in some way.
 
@@ -162,14 +147,24 @@ public:
         'translate_interval([0,10))' -> '[0,10)'
         'translate_interval([10,20))' -> '[)'
         'translate_interval([20,30))' -> '[10,20)'
-      (If the method chooses to alter the sample rate is not relevant to this
-      method as it counts signal samples only).
+        'translate_interval([0,30))' -> '[0,20)'
 
       The default implementation returns the same interval.
+
+      translate_interval is used by Operation::zeroed_samples_recursive and
+      Operation::affected_samples_until and Operation::invalidate_samples.
 
       @see OperationRemoveSection, OperationInsertSilence, zeroed_samples
       */
     virtual Signal::Intervals translate_interval(Signal::Intervals I) { return I; }
+
+
+    /**
+      invalidate_samples propagates information that something has changed to
+      all outputs. In the end some outputs should be sinks and register that
+      the data they've got so far is no longer valid.
+      */
+    virtual void invalidate_samples(const Intervals& I);
 
 
     /**
@@ -183,24 +178,14 @@ public:
     Operation* root();
 
     virtual std::string toString();
-protected:
+
+private:
+    std::set<Operation*> _outputs; /// @see Operation::parent()
     pOperation _source; /// @see Operation::source()
     bool _enabled; /// @see Operation::enabled()
 
-    /**
-      _invalid_samples describes which samples that should be re-read off from
-      Operation. It is initialized to an empty interval and can be
-      used by an implementaion to say that the previous results are out of
-      date.
-
-      @see fetch_invalid_samples()
-      */
-    Intervals _invalid_samples;
-
-private:
-    Operation() {} // used by serialization
-
     friend class boost::serialization::access;
+    Operation() {} // used by serialization
 
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)

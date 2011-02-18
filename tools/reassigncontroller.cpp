@@ -13,7 +13,7 @@ namespace Tools
 Reassign::
         Reassign( Sawe::Project* project )
             :
-            _model(&project->worker)
+            _project_chainhead(project->head)
 {
     setupGui(project);
 }
@@ -33,8 +33,7 @@ void Reassign::
         receiveTonalizeFilter()
 {
     Signal::pOperation tonalize( new Filters::Tonalize());
-    tonalize->source( _model->source() );
-    _model->source( tonalize );
+    _project_chainhead->appendOperation( tonalize );
 }
 
 
@@ -42,8 +41,7 @@ void Reassign::
         receiveReassignFilter()
 {
     Signal::pOperation reassign( new Filters::Reassign());
-    reassign->source( _model->source() );
-    _model->source( reassign );
+    _project_chainhead->appendOperation( reassign );
 }
 
 } // namespace Tools

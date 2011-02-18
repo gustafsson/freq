@@ -52,18 +52,6 @@ void RecordController::
     Adapters::MicrophoneRecorder* r = model()->recording;
     if (active)
     {
-        Support::SinkSignalProxy* proxy;
-        Signal::pOperation proxy_operation( proxy = new Support::SinkSignalProxy() );
-
-        std::vector<Signal::pOperation> record_sinks;
-        record_sinks.push_back( proxy_operation );
-        r->getPostSink()->sinks( record_sinks );
-
-        connect(proxy,
-                SIGNAL(recievedInvalidSamples( Signal::Intervals )),
-                SLOT(recievedInvalidSamples( Signal::Intervals )),
-                Qt::QueuedConnection );
-
         r->startRecording();
     }
     else
@@ -84,7 +72,7 @@ void RecordController::
 
     //TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
 
-    float fs = model()->project->head_source()->sample_rate();
+    float fs = model()->project->head->head_source()->sample_rate();
     Signal::IntervalType s = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
 
     Signal::Intervals v = ((I << s) | (I >> s)).coveredInterval();

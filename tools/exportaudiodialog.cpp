@@ -100,7 +100,7 @@ void ExportAudioDialog::
         return;
 
     Signal::PostSink* postsink = exportTarget->post_sink();
-    Signal::IntervalType missing = postsink->fetch_invalid_samples().count();
+    Signal::IntervalType missing = postsink->invalid_samples().count();
     float finished = 1.f - missing/(double)total;
 
     unsigned percent = finished*100;
@@ -158,7 +158,7 @@ void ExportAudioDialog::
     if (0 != QString::compare(filemame.mid(filemame.length() - extension.length()), extension, Qt::CaseInsensitive))
         filemame += extension;
 
-    exportTarget.reset(new Signal::Target(&project->all_layers));
+    exportTarget.reset(new Signal::Target(&project->layers));
     Signal::PostSink* postsink = exportTarget->post_sink();
 
     postsink->filter( filter );

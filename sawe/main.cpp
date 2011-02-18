@@ -182,6 +182,16 @@ A hej()
 
 int main(int argc, char *argv[])
 {
+    if (1)
+    {
+        Signal::Intervals I(100, 200);
+        cout << I << endl;
+        I &= Signal::Interval(150,150);
+        cout << I << endl;
+        I &= Signal::Intervals(150,150);
+        cout << I << endl;
+        return 0;
+    }
     if (0)
     {
         std::vector<float> r;

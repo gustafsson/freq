@@ -174,7 +174,7 @@ void Playback::
     GpuCpuData<float>* bdata = buffer->waveform_data();
     bdata->getCpuMemory();
     bdata->freeUnused(); // relase GPU memory as well...
-    _data.putExpectedSamples( buffer, _data.fetch_invalid_samples() );
+    _data.putExpectedSamples( buffer );
 
     if (streamPlayback)
     {
@@ -210,9 +210,9 @@ void Playback::
 
 
 bool Playback::
-        isFinished()
+        deleteMe()
 {
-    return _data.isFinished() && isStopped();
+    return _data.deleteMe() && isStopped();
 }
 
 
@@ -295,7 +295,7 @@ bool Playback::
     if (_data.empty())
         return false;
 
-    if (!_data.fetch_invalid_samples().empty())
+    if (_data.invalid_samples())
         return false;
 
     return _playback_itr > _data.first_buffer()->sample_offset + _data.number_of_samples();
@@ -307,7 +307,7 @@ bool Playback::
 {
     unsigned nAccumulated_samples = _data.number_of_samples();
 
-    if (!_data.empty() && _data.isFinished()) {
+    if (!_data.empty() && !_data.invalid_samples()) {
         TIME_PLAYBACK TaskInfo("Not underfed");
         return false; // No more expected samples, not underfed
     }
@@ -330,7 +330,7 @@ bool Playback::
     if (0==marker)
         marker = _data.first_buffer()->sample_offset;
 
-    Signal::Interval cov = _data.fetch_invalid_samples().coveredInterval();
+    Signal::Interval cov = _data.invalid_samples().coveredInterval();
     float time_left =
             (cov.last - marker) / _data.sample_rate();
 

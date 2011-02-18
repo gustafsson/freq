@@ -20,7 +20,7 @@ namespace Tools
     public:
         PlaybackModel(Sawe::Project* project);
 
-        Signal::Target playbackTarget;
+        Signal::pTarget playbackTarget;
 
         unsigned playback_device;
         std::string selection_filename;

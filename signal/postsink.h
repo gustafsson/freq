@@ -10,8 +10,9 @@
 namespace Signal {
 
 /**
-  PostSink directs reads through a filter and lets sources chain-read through
-  that filter if they promise not to change the outputs betweeen eachother.
+  PostSink directs reads through a filter and lets sinks chain-read from
+  eachother, through that filter and from the source if the sinks promise not
+  to change the outputs betweeen eachother.
 
   If they however will change their outputs PostSink will cache the read in a
   Buffer and let each source read from the same Buffer.
@@ -47,17 +48,18 @@ public:
 
 
     /**
-      Merges fetch_invalid_samples() from all Operation's in sinks(). Recursive
+      Merges invalid_samples() from all Sinks's in sinks(). Recursive
       behaviour is prevented by clearing Operation::source in each Operation
-      first. Also, this->source()->fetch_invalid_samples() is not called.
+      first. Also, this->source()->invalid_samples() is not called even if
+      source() were a Sink.
       */
-    virtual Intervals fetch_invalid_samples();
+    virtual Intervals invalid_samples();
 
 
     /**
       Postsinks are removed by some controller when appropriate.
       */
-    virtual bool isFinished() { return false; }
+    virtual bool deleteMe() { return false; }
 
 
     /**

@@ -68,18 +68,22 @@ Intervals::
 Intervals::
         Intervals(const Interval& r)
 {
-    BOOST_ASSERT( r.first < r.last );
-    this->push_back( r );
+    if (r.first != r.last)
+    {
+        BOOST_ASSERT( r.valid() );
+        this->push_back( r );
+    }
 }
 
 
 Intervals::
         Intervals(IntervalType first, IntervalType last)
 {
-//    if (first<last)
-//        last = Interval::IntervalType_MAX;
-    BOOST_ASSERT( first < last );
-    this->push_back( Interval( first, last ) );
+    if (first != last)
+    {
+        BOOST_ASSERT( first < last );
+        this->push_back( Interval( first, last ) );
+    }
 }
 
 

@@ -19,21 +19,21 @@ public:
 
     virtual pBuffer read( const Interval& I )
     {
-        if (current_channel_< _source->num_channels())
-            return _source->read( I );
+        if (current_channel_< source()->num_channels())
+            return source()->read( I );
         else
             return source2_->read( I );
     }
 
     virtual pOperation source2() const { return source2_; }
 
-    virtual unsigned num_channels() { return _source->num_channels() + source2_->num_channels(); }
+    virtual unsigned num_channels() { return source()->num_channels() + source2_->num_channels(); }
     virtual void set_channel(unsigned c) {
         BOOST_ASSERT( c < num_channels() );
-        if (c < _source->num_channels())
-            _source->set_channel(c);
+        if (c < source()->num_channels())
+            source()->set_channel(c);
         else
-            source2_->set_channel(c - _source->num_channels());
+            source2_->set_channel(c - source()->num_channels());
         current_channel_ = c;
     }
     virtual unsigned get_channel() { return current_channel_; }
@@ -44,11 +44,54 @@ private:
 };
 
 
+class ForAllChannelsOperation: public Operation
+{
+public:
+    ForAllChannelsOperation
+        (
+            Signal::pOperation o
+        )
+            :
+        Operation(o)
+    {
+    }
+
+
+    virtual pBuffer read( const Interval& I )
+    {
+        unsigned N = num_channels();
+        Signal::pBuffer r;
+        for (unsigned i=0; i<N; ++i)
+        {
+            set_channel( i );
+            r = Signal::Operation::read( I );
+        }
+
+        return r;
+    }
+};
+
+
+Layers::
+        Layers(Sawe::Project* project)
+            :
+            project_(project)
+{
+}
+
+
 Layers::
         ~Layers()
 {
     TaskInfo ti("~Layers");
     layers_.clear();
+}
+
+
+Sawe::Project* Layers::
+        project()
+{
+    return project_;
 }
 
 
@@ -86,6 +129,9 @@ Target::
         Target(Layers* all_layers)
             :
             post_sink_( new PostSink ),
+            rewire_channels_( new RewireChannels(pOperation()) ),
+            forall_channels_( new ForAllChannelsOperation(pOperation()) ),
+            update_view_( new UpdateView( all_layers->project() )),
             add_as_channels_(false),
             all_layers_(all_layers)
 {
@@ -93,6 +139,9 @@ Target::
     {
         addLayerHead( pChainHead(new ChainHead(c)));
     }
+
+    rewire_channels_->source( post_sink_ );
+    forall_channels_->source( rewire_channels_ );
 }
 
 
@@ -169,6 +218,20 @@ PostSink* Target::
         post_sink() const
 {
     return dynamic_cast<PostSink*>(post_sink_.get());
+}
+
+
+RewireChannels* Target::
+        channels() const
+{
+    return dynamic_cast<RewireChannels*>(rewire_channels_.get());
+}
+
+
+pBuffer Target::
+        readChannels( const Interval& I )
+{
+    return forall_channels_->read( I );
 }
 
 

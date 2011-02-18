@@ -20,7 +20,7 @@ pBuffer OperationCache::
 
     // cached samples doesn't count in samplesDesc if they are marked as invalid
     Intervals cached = _cache.samplesDesc();
-    cached -= _cache.fetch_invalid_samples();
+    cached -= _cache.invalid_samples();
 
     Interval ok = (Intervals(I) & cached).getInterval();
 

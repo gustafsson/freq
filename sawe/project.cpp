@@ -21,10 +21,11 @@ namespace Sawe {
 Project::
         Project( Signal::pOperation root )
 :   worker(),
+    layers(this),
     is_modified_(true)
 {
     Signal::pChain chain(new Signal::Chain(root));
-    all_layers.addLayer( chain );
+    layers.addLayer( chain );
     head.reset( new Signal::ChainHead(chain) );
 }
 
@@ -137,6 +138,9 @@ std::string Project::
 
 Project::
         Project()
+            :
+            layers(this),
+            is_modified_(true)
 {}
 
 

@@ -40,7 +40,7 @@ public:
     OperationCacheLayer( pOperation source ):OperationCache(source){}
     virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
     virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); }
-    virtual Intervals fetch_invalid_samples() { return _cache.fetch_invalid_samples() | Operation::fetch_invalid_samples(); }
+    //virtual Intervals fetch_invalid_samples() { return _cache.fetch_invalid_samples() | Operation::fetch_invalid_samples(); }
 
 private:
     friend class boost::serialization::access;

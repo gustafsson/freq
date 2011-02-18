@@ -45,7 +45,7 @@ public:
 
 
     /// @overload Signal::Operation::fetch_invalid_samples()
-    Signal::Intervals fetch_invalid_samples()
+    /*Signal::Intervals fetch_invalid_samples()
     {
         FilterKind::_invalid_samples.clear();
 
@@ -65,7 +65,7 @@ public:
         Signal::Intervals r = Tfr::Filter::fetch_invalid_samples();
         FilterKind::_invalid_samples = inv_samples;
         return r;
-    }
+    }*/
 
 
     virtual void operator()( Tfr::Chunk& chunk )
@@ -77,10 +77,10 @@ public:
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     Signal::Operation* affecting_source( const Signal::Interval& I)
     {
-        if (FilterKind::_invalid_samples & I)
+        if (_collection->invalid_samples() & I)
             return this;
 
-        return FilterKind::_source->affecting_source( I );
+        return FilterKind::source()->affecting_source( I );
     }
 
 

@@ -55,7 +55,7 @@ namespace Tools
     {
         operationsTree->clear();
 
-        BOOST_FOREACH( Signal::pChain c, project_->all_layers.layers() )
+        BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
             chainItm->setText(0, c->name);
@@ -148,7 +148,7 @@ namespace Tools
                 SLOT(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
 
 
-        BOOST_FOREACH( Signal::pChain c, project_->all_layers.layers() )
+        BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             connect( c.get(), SIGNAL(chainChanged()), SLOT(redraw_operation_tree()));
         }

@@ -252,7 +252,7 @@ int MicrophoneRecorder::
 
     lock.unlock();
 
-    _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
+    invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
 
     return paContinue;
 }

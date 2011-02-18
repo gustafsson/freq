@@ -2,17 +2,23 @@
 #define LAYERS_H
 
 #include "chain.h"
+#include "rewirechannels.h"
 
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/shared_ptr.hpp>
+
+namespace Sawe { class Project; }
 
 namespace Signal {
 
 class Layers
 {
 public:
+    Layers(Sawe::Project* project);
     ~Layers();
+
+    Sawe::Project* project();
 
     std::set<pChain> layers();
 
@@ -20,8 +26,10 @@ public:
     virtual void removeLayer(pChain);
 
     bool isInSet(pChain) const;
+
 private:
     std::set<pChain> layers_;
+    Sawe::Project* project_;
 
 //    friend class boost::serialization::access;
 //    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) const {
@@ -78,10 +86,25 @@ public:
       */
     PostSink*   post_sink() const;
 
+    /**
+      Select which channels that gets to propagate through with anything else
+      than silence.
+      */
+    RewireChannels* channels() const;
+
+    /**
+      Will process all active channels (as wired by channels()) and return the
+      buffer from the last channel.
+      */
+    pBuffer readChannels( const Interval& I );
+
 private:
     void rebuildSource();
 
     Signal::pOperation post_sink_;
+    Signal::pOperation rewire_channels_;
+    Signal::pOperation forall_channels_;
+    Signal::pOperation update_view_;
     bool add_as_channels_;
     Layers* all_layers_;
     std::set<pChainHead> layerHeads;
