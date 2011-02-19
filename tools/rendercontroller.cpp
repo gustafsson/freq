@@ -52,39 +52,41 @@ public:
     BlockFilterSink
         (
             Signal::pOperation o,
-            std::vector<boost::shared_ptr<Heightmap::Collection> > collections,
-            RenderView* renderview
+            std::vector<boost::shared_ptr<Heightmap::Collection> > collections
         )
         :
-            collections_(collections),
-            renderview(renderview)
+            collections_(collections)
     {
         BOOST_ASSERT( o );
         source(o);
     }
 
 
-    virtual void source(Signal::pOperation v) { source()->source(v); }
+    virtual void source(Signal::pOperation v) { Operation::source()->source(v); }
     virtual bool deleteMe() { return false; } // Never delete this sink
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
+        Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
+
+        Signal::Intervals v = Signal::Intervals(I).addedSupport( support );
+
         foreach(boost::shared_ptr<Heightmap::Collection> c, collections_)
-            c->invalidate_samples(I);
+            c->invalidate_samples( v );
     }
 
 
     virtual Signal::Intervals invalid_samples()
     {
-        _invalid_samples.clear();
-        foreach ( boost::shared_ptr<Collection> c, _collections)
+        Signal::Intervals I;
+        foreach ( boost::shared_ptr<Heightmap::Collection> c, collections_)
         {
             Signal::Intervals inv_coll = c->invalid_samples();
             //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
-            _invalid_samples |= inv_coll;
+            I |= inv_coll;
         }
 
-        return Sink::invalid_samples();
+        return I;
     }
 
 private:
@@ -212,7 +214,7 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
-    model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
+    model()->renderSignalTarget->post_sink()->invalidate_samples(Signal::Intervals::Intervals_ALL);
 
     view->userinput_update();
     emit transformChanged();
@@ -230,7 +232,7 @@ Signal::PostSink* RenderController::
 
     std::vector<Signal::pOperation> v;
     Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( new ForAllChannelsOperation(blockop, model()->collections));
+    Signal::pOperation channelop( new BlockFilterSink(blockop, model()->collections));
     v.push_back( channelop );
     ps->sinks(v);
 
@@ -415,13 +417,6 @@ void RenderController::
     }
 
 
-    // Update view whenever worker is invalidated
-    Support::SinkSignalProxy* proxy;
-    _updateViewSink.reset( proxy = new Support::SinkSignalProxy() );
-    _updateViewCallback.reset( new Signal::WorkerCallback( &model()->project()->worker, _updateViewSink ));
-    connect( proxy, SIGNAL(recievedInvalidSamples(const Signal::Intervals &)), view, SLOT(update()));
-
-
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
@@ -449,7 +444,10 @@ void RenderController::
 {
     // Stop worker from producing any more heightmaps by disconnecting
     // the collection callback from worker.
-    model()->collectionCallback.reset();
+    if (model()->renderSignalTarget == model()->project()->worker.target())
+        model()->project()->worker.target(Signal::pTarget());
+    model()->renderSignalTarget.reset();
+
 
     // Assuming calling thread is the GUI thread.
 

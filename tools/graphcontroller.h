@@ -31,6 +31,7 @@ public:
 private slots:
     void redraw_operation_tree();
     void currentItemChanged(QTreeWidgetItem* current,QTreeWidgetItem* previous);
+    void checkVisibilityOperations(bool visible);
 
 private:
     void setupGui();

@@ -94,7 +94,7 @@ void TransformInfoForm::
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(f->transform().get());
     Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(f->transform().get());
 
-    float fs = project->head_source()->sample_rate();
+    float fs = project->head->head_source()->sample_rate();
 
     if (cwt)
     {

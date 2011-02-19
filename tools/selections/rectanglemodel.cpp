@@ -39,7 +39,7 @@ Signal::pOperation RectangleModel::
             f1 = fa_.getFrequency( a.scale ),
             f2 = fa_.getFrequency( b.scale );
 
-    float FS = project_->head_source()->sample_rate();
+    float FS = project_->head->head_source()->sample_rate();
     Signal::IntervalType
             a_index = std::max(0.f, a.time)*FS,
             b_index = std::max(0.f, b.time)*FS;
@@ -73,7 +73,7 @@ void RectangleModel::
 
     case RectangleType_FrequencySelection:
         a.time = 0;
-        b.time = project_->head_source()->length();
+        b.time = project_->head->head_source()->length();
         break;
 
     case RectangleType_TimeSelection:

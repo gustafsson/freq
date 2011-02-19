@@ -240,7 +240,7 @@ pBuffer MatlabOperation::
     // just 'read()' might return the entire signal, which would be way to
     // slow to export in an interactive manner
     IntervalType support = sample_rate()*0.5;
-    Interval J = ((Intervals(I) >> support) | Intervals(I) << support).coveredInterval();
+    Interval J = Intervals(I).addedSupport( support ).coveredInterval();
 
     pBuffer b = source()->readFixedLength( J );
 

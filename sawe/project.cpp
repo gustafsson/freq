@@ -1,4 +1,5 @@
 #include "sawe/project.h"
+
 #include "sawe/application.h"
 #include "adapters/audiofile.h"
 #include "adapters/microphonerecorder.h"
@@ -42,13 +43,20 @@ Project::
 }
 
 
-Tools::ToolFactory& Project::
-        tools()
+Tools::ToolRepo& Project::
+        toolRepo()
 {
     if (!_tools)
         throw std::logic_error("tools() was called before createMainWindow()");
 
     return *_tools;
+}
+
+
+Tools::ToolFactory& Project::
+        tools()
+{
+    return *dynamic_cast<Tools::ToolFactory*>(&toolRepo());
 }
 
 

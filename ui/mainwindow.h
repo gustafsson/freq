@@ -74,7 +74,6 @@ private slots:
     void saveProjectAs();
     void toggleFullscreen( bool );
     void toggleFullscreenNoMenus( bool fullscreen );
-    void checkVisibilityOperations( bool visible );
 
 private:
     Sawe::Project* project;

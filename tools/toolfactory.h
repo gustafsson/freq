@@ -10,7 +10,7 @@ namespace Sawe {
 #include "selectionmodel.h"
 #include "playbackmodel.h"
 #include "renderview.h"
-#include "toolmodel.h"
+#include "sawe/toolmodel.h"
 
 #include <typeinfo>
 #include <QScopedPointer>
@@ -29,6 +29,8 @@ namespace Tools
         RenderModel render_model;
         SelectionModel selection_model;
         PlaybackModel playback_model;
+
+        //virtual ToolMainLoop* mainloop() { return render_view(); }
         virtual RenderView* render_view() { return _render_view; }
 
 

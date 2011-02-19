@@ -684,7 +684,9 @@ void RenderView::
 void RenderView::
         queueRepaint()
 {
-    _update_timer->start();
+//    if (!_update_timer->isActive())
+//        _update_timer->start();
+    update();
 }
 
 
@@ -862,7 +864,7 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    if (!model->collectionCallback)
+    if (!model->renderSignalTarget)
         return;
 
     float elapsed_ms = -1;
@@ -971,17 +973,14 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        worker.todo_list( Signal::Intervals() );
+        worker.target( Signal::pTarget() );
         worker.center = model->_qx;
 
         emit populateTodoList();
 
         if (worker.todo_list().empty())
         {
-            Signal::Intervals missing_for_heightmap =
-                    model->collectionCallback->sink()->fetch_invalid_samples();
-
-            worker.todo_list( missing_for_heightmap );
+            worker.target( model->renderSignalTarget );
         }
 
         if(isRecording)

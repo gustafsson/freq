@@ -65,25 +65,6 @@ void RecordController::
 
 
 void RecordController::
-        recievedInvalidSamples( Signal::Intervals I )
-{
-    if ( destroyed_ )
-        return;
-
-    //TaskTimer tt("RecordController::recievedBuffer( %s )", I.toString().c_str());
-
-    float fs = model()->project->head->head_source()->sample_rate();
-    Signal::IntervalType s = Tfr::Cwt::Singleton().wavelet_time_support_samples( fs );
-
-    Signal::Intervals v = ((I << s) | (I >> s)).coveredInterval();
-
-    model()->project->worker.invalidate_post_sink( v );
-
-    model()->render_view->userinput_update();
-}
-
-
-void RecordController::
         setupGui()
 {
     Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
@@ -93,7 +74,7 @@ void RecordController::
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
-    if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head_source()->root()))
+    if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head->head_source()->root()))
     {
         ui->actionRecord->setEnabled( true );
     }

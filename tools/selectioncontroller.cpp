@@ -209,7 +209,7 @@ namespace Tools
 
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
 
-        _worker->appendOperation( o );
+        _model->project()->head->appendOperation( o );
         _model->all_selections.push_back( o );
 
         TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
@@ -232,8 +232,8 @@ namespace Tools
         // Create OperationRemoveSection to remove everything else from the stream
         Signal::pOperation remove(new Tools::Support::OperationCrop(
                 Signal::pOperation(), I.coveredInterval() ));
-        _worker->appendOperation( o );
-        _worker->appendOperation( remove );
+        _model->project()->head->appendOperation( o );
+        _model->project()->head->appendOperation( remove );
         _model->all_selections.push_back( o );
 
         TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());

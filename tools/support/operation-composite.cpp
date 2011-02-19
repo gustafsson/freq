@@ -21,14 +21,14 @@ OperationSubOperations::
 {
     enabled(false);
     source_sub_operation_->enabled(false);
-    _source = source_sub_operation_;
+    Operation::source( source_sub_operation_ );
 }
 
 
 Intervals OperationSubOperations::
         affected_samples()
 {
-    return _source->affected_samples_until(source_sub_operation_);
+    return Operation::source()->affected_samples_until(source_sub_operation_);
 }
 
     // OperationContainer  /////////////////////////////////////////////////////////////////
@@ -53,14 +53,14 @@ OperationCrop::
 void OperationCrop::
         reset( const Signal::Interval& section )
 {
-    _source = source_sub_operation_;
+    Operation::source( source_sub_operation_ );
     // remove before section
     if (section.first)
-        _source = pOperation( new OperationRemoveSection( _source, Signal::Interval(0, section.first) ));
+        Operation::source( pOperation( new OperationRemoveSection( Operation::source(), Signal::Interval(0, section.first) )) );
 
     // remove after section
     if (section.count()<Signal::Interval::IntervalType_MAX)
-        _source = pOperation( new OperationRemoveSection( _source, Signal::Interval( section.count(), Signal::Interval::IntervalType_MAX)));
+        Operation::source( pOperation( new OperationRemoveSection( Operation::source(), Signal::Interval( section.count(), Signal::Interval::IntervalType_MAX))));
 }
 
 
@@ -81,7 +81,7 @@ void OperationSetSilent::
     pOperation remove( new OperationRemoveSection( source_sub_operation_, section ));
     pOperation addSilence( new OperationInsertSilence (remove, section ));
 
-    _source = addSilence;
+    Operation::source( addSilence );
 }
 
 
@@ -106,7 +106,7 @@ void OperationOtherSilent::
         // silent after section
         p = pOperation( new OperationSetSilent( p, Signal::Interval(section.last, Interval::IntervalType_MAX) ));
 
-    _source = p;
+    Operation::source( p );
 }
 
     // OperationMove  /////////////////////////////////////////////////////////////////
@@ -137,7 +137,7 @@ void OperationMove::
 
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    _source = addition;
+    Operation::source( addition );
 }
 
 
@@ -160,7 +160,7 @@ void OperationMoveMerge::
 
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    _source = addition;
+    Operation::source( addition );
 }
 
 
@@ -179,12 +179,12 @@ void OperationShift::
     if ( 0 < sampleShift )
     {
         pOperation addSilence( new OperationInsertSilence( source_sub_operation_, Interval( 0, sampleShift) ));
-        _source = addSilence;
+        Operation::source( addSilence );
     } else if (0 > sampleShift ){
         pOperation removeStart( new OperationRemoveSection( source_sub_operation_, Interval( 0, -sampleShift) ));
-        _source = removeStart;
+        Operation::source( removeStart );
 	} else {
-        _source = source_sub_operation_;
+        Operation::source( source_sub_operation_ );
 	}
 }
 
@@ -240,7 +240,7 @@ void OperationMoveSelection::
 
     pOperation mergeSelection( new OperationSuperposition( remove, extractAndMove ));
 
-    _source = mergeSelection;
+    Operation::source( mergeSelection );
 }
 
     } // namespace Support

@@ -123,9 +123,6 @@ class Worker
     : public QThread
 #endif
 {
-#ifndef SAWE_NO_MUTEX
-    Q_OBJECT
-#endif
 public:
     Worker(pTarget t=pTarget());
     ~Worker();

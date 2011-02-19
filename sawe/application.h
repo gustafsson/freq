@@ -10,6 +10,8 @@
 // std
 #include <set>
 
+class QGLWidget;
+
 namespace Sawe {
 
 class Application: public QApplication

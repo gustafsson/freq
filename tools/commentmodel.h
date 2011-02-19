@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include "heightmap/position.h"
-#include "toolmodel.h"
+#include "sawe/toolmodel.h"
 #include <vector_types.h>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/nvp.hpp>

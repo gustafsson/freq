@@ -4,7 +4,7 @@
 #include "ui/mousecontrol.h"
 #include "heightmap/position.h"
 #include "commentcontroller.h"
-#include "toolmodel.h"
+#include "sawe/toolmodel.h"
 
 #include <QWidget>
 

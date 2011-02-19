@@ -1,6 +1,8 @@
 #ifndef SAWEPROJECT_H
 #define SAWEPROJECT_H
 
+#include "toolmodel.h"
+#include "toolmainloop.h"
 #include "signal/worker.h"
 #include "signal/target.h"
 #include "tools/toolfactory.h"
@@ -73,9 +75,10 @@ public:
 
 
     /**
-      Roughly speaking 'head_source' can be taken as model, 'tools' as
-      controller and '_mainWindow' as view.
+      Roughly speaking 'layers' and 'head' can be taken as model, 'tools' as
+      controller and 'mainWindow' as view.
       */
+    Tools::ToolRepo& toolRepo();
     Tools::ToolFactory& tools();
 
 
@@ -144,8 +147,8 @@ private:
     bool is_modified_;
 
     std::string project_file_name;
-    boost::scoped_ptr<Tools::ToolFactory> _tools;
-    // MainWindow owns all other widgets together with their ToolFactory
+    boost::scoped_ptr<Tools::ToolRepo> _tools;
+    // MainWindow owns all other widgets together with the ToolRepo
     QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
@@ -160,8 +163,8 @@ private:
         QByteArray mainwindowState = _mainWindow->saveState( version );
 		save_bytearray( ar, mainwindowState );
 
-        Tools::ToolFactory& tool_factory = *_tools;
-        ar & BOOST_SERIALIZATION_NVP(tool_factory);
+        Tools::ToolRepo& tool_repo = *_tools;
+        ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
         TaskInfo ti("%s", __FUNCTION__);
@@ -174,8 +177,10 @@ private:
         load_bytearray( ar, mainwindowState );
         _mainWindow->restoreState( mainwindowState, version);
 
-        Tools::ToolFactory& tool_factory = *_tools;
-        ar & BOOST_SERIALIZATION_NVP(tool_factory);
+        // createMainWindow has already created all tools
+        // this deserialization sets their settings
+        Tools::ToolRepo& tool_repo = *_tools;
+        ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
 
     template<class Archive> static void save_bytearray(Archive& ar, QByteArray& c)

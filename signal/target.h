@@ -27,6 +27,8 @@ public:
 
     bool isInSet(pChain) const;
 
+    std::string toString() const;
+
 private:
     std::set<pChain> layers_;
     Sawe::Project* project_;

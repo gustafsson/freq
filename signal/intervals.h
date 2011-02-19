@@ -84,6 +84,7 @@ public:
     Interval                        getInterval() const;
     Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                        coveredInterval() const;
+    Intervals                       addedSupport( IntervalType dt ) const;
     IntervalType                    count() const;
 
     std::string                     toString() const;

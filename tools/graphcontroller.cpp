@@ -98,7 +98,7 @@ namespace Tools
     void GraphController::
             setupGui()
     {
-        Ui::SaweMainWindow* MainWindow = render_view_->model->project()->mainWindow();
+        Ui::SaweMainWindow* MainWindow = project_->mainWindow();
         actionToggleOperationsWindow = new QAction(MainWindow);
         actionToggleOperationsWindow->setObjectName(QString::fromUtf8("actionToggleOperationsWindow"));
         actionToggleOperationsWindow->setCheckable(true);
@@ -131,7 +131,8 @@ namespace Tools
         verticalLayout->addWidget(operationsTree);
 
         operationsWindow->setWidget(dockWidgetContents);
-        MainWindow->addDockWidget(static_cast<Qt::DockWidgetArea>(1), operationsWindow);
+        MainWindow->addDockWidget( Qt::RightDockWidgetArea, operationsWindow );
+        operationsWindow->hide();
 
         QTreeWidgetItem *headeritem = operationsTree->headerItem();
         headeritem->setText(0, QApplication::translate("MainWindow", "1", 0, QApplication::UnicodeUTF8));
@@ -156,4 +157,13 @@ namespace Tools
         redraw_operation_tree();
     }
 
+
+    void GraphController::
+            checkVisibilityOperations(bool visible)
+    {
+        Ui::SaweMainWindow* MainWindow = project_->mainWindow();
+        visible |= !MainWindow->tabifiedDockWidgets( operationsWindow ).empty();
+        visible |= operationsWindow->isVisibleTo( operationsWindow->parentWidget() );
+        actionToggleOperationsWindow->setChecked(visible);
+    }
 }

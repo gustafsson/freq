@@ -298,12 +298,16 @@ pTarget Worker::
 void Worker::
         target(pTarget value)
 {
-    BOOST_ASSERT( value );
-
     if (_target == value)
         return;
 
     _target = value;
+
+    if (!_target)
+    {
+        _todo_list.clear();
+        return;
+    }
 
     _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
     _max_samples_per_chunk = (unsigned)-1;

@@ -185,8 +185,8 @@ private:
     bool _enabled; /// @see Operation::enabled()
 
     friend class boost::serialization::access;
-    Operation() {} // used by serialization
-
+    Operation() /// only used by deserialization, call Operation(pOperation) instead
+    {}
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {

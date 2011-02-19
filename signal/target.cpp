@@ -2,6 +2,9 @@
 
 #include "operation-basic.h"
 
+#include "sawe/project.h"
+#include "tools/renderview.h"
+
 #include <boost/foreach.hpp>
 
 namespace Signal {
@@ -72,6 +75,31 @@ public:
 };
 
 
+class UpdateView: public Operation
+{
+public:
+    UpdateView(Sawe::Project* project)
+        :
+        Operation(pOperation()),
+        render_view_(project->tools().render_view())
+    {
+
+    }
+
+
+    virtual void invalidate_samples(const Intervals& I)
+    {
+        render_view_->userinput_update( false );
+
+        Operation::invalidate_samples(I);
+    }
+
+
+private:
+    Tools::RenderView* render_view_;
+};
+
+
 Layers::
         Layers(Sawe::Project* project)
             :
@@ -122,6 +150,19 @@ bool Layers::
         isInSet(pChain p) const
 {
     return layers_.find( p ) != layers_.end();
+}
+
+
+std::string Layers::
+        toString() const
+{
+    std::string s;
+    for (std::set<pChain>::iterator itr = layers_.begin(); itr != layers_.end(); ++itr)
+    {
+        s += (*itr)->tip_source()->toString();
+        s += "\n\n";
+    }
+    return s;
 }
 
 

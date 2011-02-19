@@ -6,6 +6,7 @@
 #include "rendermodel.h"
 #include "support/toolselector.h"
 #include "commentview.h"
+#include "sawe/toolmainloop.h"
 
 // gpumisc
 #include <TAni.h>
@@ -94,10 +95,6 @@ namespace Tools
     public slots:
         void userinput_update( bool request_high_fps = true );
 
-    private slots:
-        void clearCaches();
-        void finishedWorkSectionSlot();
-
     signals:
         /**
           Emitted in the destructor, before the OpenGL context is destroyed.
@@ -133,6 +130,10 @@ namespace Tools
         /**
           */
         void finishedWorkSection();
+
+    private slots:
+        void clearCaches();
+        void finishedWorkSectionSlot();
 
     private:
         /// Similiar to QGLWidget::initializeGL()

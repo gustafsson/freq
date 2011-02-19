@@ -380,6 +380,23 @@ Interval Intervals::
 }
 
 
+Intervals Intervals::
+        addedSupport( IntervalType dt ) const
+{
+    Intervals I;
+    foreach (Interval r, *this)
+    {
+        if (r.first > dt)
+            r.first -= dt;
+        else
+            r.first = 0;
+        r.last += dt;
+        I |= r;
+    }
+    return I;
+}
+
+
 IntervalType Intervals::
         count() const
 {

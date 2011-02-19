@@ -29,7 +29,6 @@ namespace Tools
         Signal::pOperation postsink();
         Tfr::FreqAxis display_scale();
 
-        //Signal::pWorkerCallback collectionCallback;
         Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
 
