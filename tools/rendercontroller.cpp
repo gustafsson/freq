@@ -52,26 +52,39 @@ public:
     BlockFilterSink
         (
             Signal::pOperation o,
-            std::vector<boost::shared_ptr<Heightmap::Collection> > collections
+            RenderModel* model
         )
         :
-            collections_(collections)
+            model_(model)
     {
         BOOST_ASSERT( o );
-        source(o);
+        Operation::source(o);
     }
 
 
     virtual void source(Signal::pOperation v) { Operation::source()->source(v); }
     virtual bool deleteMe() { return false; } // Never delete this sink
 
+    virtual Signal::pBuffer read(const Signal::Interval& I) { return Signal::Operation::read( I ); }
+
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
-        Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
+        model_->collections.resize(num_channels());
+        for (unsigned c=0; c<num_channels(); ++c)
+        {
+            if (!model_->collections[c])
+                model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+            if (0<c)
+                model_->collections[c]->setPostsink( model_->collections[0]->postsink() );
+        }
 
-        Signal::Intervals v = Signal::Intervals(I).addedSupport( support );
 
-        foreach(boost::shared_ptr<Heightmap::Collection> c, collections_)
+        //Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
+
+        //Signal::Intervals v = Signal::Intervals(I).addedSupport( support );
+        Signal::Intervals v = I;
+
+        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
             c->invalidate_samples( v );
     }
 
@@ -79,10 +92,10 @@ public:
     virtual Signal::Intervals invalid_samples()
     {
         Signal::Intervals I;
-        foreach ( boost::shared_ptr<Heightmap::Collection> c, collections_)
+        foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             Signal::Intervals inv_coll = c->invalid_samples();
-            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
             I |= inv_coll;
         }
 
@@ -90,7 +103,7 @@ public:
     }
 
 private:
-    std::vector<boost::shared_ptr<Heightmap::Collection> > collections_;
+    RenderModel* model_;
 };
 
 
@@ -232,7 +245,7 @@ Signal::PostSink* RenderController::
 
     std::vector<Signal::pOperation> v;
     Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( new BlockFilterSink(blockop, model()->collections));
+    Signal::pOperation channelop( new BlockFilterSink(blockop, model()));
     v.push_back( channelop );
     ps->sinks(v);
 

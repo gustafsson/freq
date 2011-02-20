@@ -19,21 +19,16 @@ using namespace std;
 
 namespace Sawe {
 
-    class DummyTarget: public Signal::Target
-    {
-
-    };
-
 Project::
-        Project( Signal::pOperation root )
+        Project( Signal::pOperation root, std::string filename )
 :   worker(Signal::pTarget()),
     layers(this),
-    is_modified_(true)
+    is_modified_(true),
+    project_filename_( filename )
 {
     Signal::pChain chain(new Signal::Chain(root));
     layers.addLayer( chain );
     head.reset( new Signal::ChainHead(chain) );
-    worker.target( Signal::pTarget(new Signal::Target(&layers)) );
 }
 
 
@@ -117,7 +112,7 @@ pProject Project::
         createRecording(int record_device)
 {
     Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
-    return pProject( new Project( s ));
+    return pProject( new Project( s, "New recording" ));
 }
 
 
@@ -146,7 +141,7 @@ Ui::SaweMainWindow* Project::
 std::string Project::
         project_name()
 {
-    return QFileInfo(QString::fromLocal8Bit( project_file_name.c_str() )).fileName().toStdString();
+    return QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
 }
 
 
@@ -167,11 +162,8 @@ void Project::
 
     TaskTimer tt("Project::createMainWindow");
     string title = Sawe::Application::version_string();
-    Adapters::Audiofile* af;
-    if (0 != (af = dynamic_cast<Adapters::Audiofile*>(worker.source().get()))) {
-		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
-        title = string(info.baseName().toLocal8Bit()) + " - " + title;
-    }
+    if (!project_name().empty())
+        title = project_name() + " - " + title;
 
     _mainWindow = new Ui::SaweMainWindow( title.c_str(), this );
 
@@ -184,6 +176,13 @@ void Project::
     QSettings settings("REEP", "Sonic AWE");
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
+}
+
+
+void Project::
+        updateWindowTitle()
+{
+    _mainWindow->setWindowTitle( (project_name() + " - " + Sawe::Application::version_string()).c_str() );
 }
 
 
@@ -204,7 +203,9 @@ bool Project::
     if (0 != QString::compare(qfilemame.mid(qfilemame.length() - extension.length()), extension, Qt::CaseInsensitive))
         qfilemame += extension;
 
-    project_file_name = qfilemame.toLocal8Bit().data();
+    project_filename_ = qfilemame.toLocal8Bit().data();
+
+    updateWindowTitle();
 
     return save();
 }
@@ -214,7 +215,7 @@ pProject Project::
         openAudio(std::string audio_file)
 {
     Signal::pOperation s( new Adapters::Audiofile( audio_file.c_str() ) );
-    return pProject( new Project( s ));
+    return pProject( new Project( s, audio_file ));
 }
 
 } // namespace Sawe

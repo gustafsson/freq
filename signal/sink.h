@@ -60,7 +60,7 @@ public:
 
 
     virtual void put(pBuffer) { throw std::logic_error(
-            "Neither read nor put seems to have been overridden from Sink."); }
+            "Neither read nor put seems to have been overridden from Sink in " + vartype(*this) + "."); }
 
     /// @see fetch_invalid_samples()
     virtual void invalidate_samples(const Intervals& I) = 0;

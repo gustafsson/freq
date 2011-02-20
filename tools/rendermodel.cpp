@@ -6,6 +6,8 @@
 namespace Tools
 {
 
+
+
 RenderModel::
         RenderModel(Sawe::Project* p)
         :
@@ -17,17 +19,23 @@ RenderModel::
         zscale(5),
         _project(p)
 {
-    Signal::Operation* o = p->head->head_source()->root();
-	Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(o);
-	BOOST_ASSERT(fs);
+    p->worker.target( renderSignalTarget );
 
-    collections.resize(fs->num_channels());
-    for (unsigned c=0; c<fs->num_channels(); ++c)
+    Signal::PostSink* o = renderSignalTarget->post_sink();
+
+    BOOST_ASSERT( o->num_channels() );
+
+    collections.resize(o->num_channels());
+    for (unsigned c=0; c<o->num_channels(); ++c)
     {
         collections[c].reset( new Heightmap::Collection(&_project->worker));
         if (0<c)
             collections[c]->setPostsink( collections[0]->postsink() );
     }
+
+    std::vector<Signal::pOperation> v;
+    v.push_back( collections[0]->postsink() );
+    o->sinks(v);
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
 
@@ -44,8 +52,6 @@ RenderModel::
 
     renderer->left_handed_axes = false;
 #endif
-
-    p->worker.target( renderSignalTarget );
 }
 
 

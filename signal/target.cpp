@@ -7,6 +7,9 @@
 
 #include <boost/foreach.hpp>
 
+//#define DEBUG_Target if(0)
+#define DEBUG_Target
+
 namespace Signal {
 
 class OperationAddChannels: public Operation
@@ -81,7 +84,7 @@ public:
     UpdateView(Sawe::Project* project)
         :
         Operation(pOperation()),
-        render_view_(project->tools().render_view())
+        project_(project)
     {
 
     }
@@ -89,14 +92,14 @@ public:
 
     virtual void invalidate_samples(const Intervals& I)
     {
-        render_view_->userinput_update( false );
+        project_->tools().render_view()->userinput_update( false );
 
         Operation::invalidate_samples(I);
     }
 
 
 private:
-    Tools::RenderView* render_view_;
+    Sawe::Project* project_;
 };
 
 
@@ -176,13 +179,15 @@ Target::
             add_as_channels_(false),
             all_layers_(all_layers)
 {
+    post_sink_->source( rewire_channels_ );
+    forall_channels_->source( post_sink_ );
+    update_view_->source( forall_channels_ );
+    read_ = update_view_;
+
     BOOST_FOREACH( pChain c, all_layers_->layers() )
     {
         addLayerHead( pChainHead(new ChainHead(c)));
     }
-
-    rewire_channels_->source( post_sink_ );
-    forall_channels_->source( rewire_channels_ );
 }
 
 
@@ -270,9 +275,10 @@ RewireChannels* Target::
 
 
 pBuffer Target::
-        readChannels( const Interval& I )
+        read( const Interval& I )
 {
-    return forall_channels_->read( I );
+    DEBUG_Target TaskInfo("Target::reading\n%s", read_->toString().c_str());
+    return read_->read( I );
 }
 
 
@@ -287,14 +293,18 @@ void Target::
         {
             s = p->head_source_ref();
         }
-
-        if (add_as_channels_)
-            s.reset(new OperationAddChannels(s, p->head_source_ref()));
         else
-            s.reset(new OperationSuperposition(s, p->head_source_ref()));
+        {
+            if (add_as_channels_)
+                s.reset(new OperationAddChannels(s, p->head_source_ref()));
+            else
+                s.reset(new OperationSuperposition(s, p->head_source_ref()));
+        }
     }
 
-    post_sink_->source( s );
+    rewire_channels_->source( s );
+
+    DEBUG_Target TaskInfo("Target::rebuildSource created\n%s", read_->toString().c_str());
 }
 
 

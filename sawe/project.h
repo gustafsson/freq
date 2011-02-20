@@ -48,20 +48,9 @@ public:
 /**
       A project currently is entirely defined by its head source.
       */
-    Project(Signal::pOperation head_source);
+    Project(Signal::pOperation head_source, std::string filename);
     ~Project();
 
-    /**
-      TODO this entire comment is out of date
-
-      All sources can be reached from one head Source: worker->source().
-
-      For a source to be writable, there must exists a template specialization to Hdf5Output::add.
-
-      For a source to be readable, there must exists a template specialization to Hdf5Input::read_exact.
-
-      Selections are saved by saving the list of filters i the first CwtFilter.
-      */
     Signal::Worker worker;
 
     Signal::Layers layers;
@@ -81,6 +70,12 @@ public:
     Tools::ToolRepo& toolRepo();
     Tools::ToolFactory& tools();
 
+
+    /**
+
+      */
+    //void userinput_update( bool request_high_fps = true );
+    //void target(Signal::pTarget target, bool request_high_fps = true, Signal::IntervalType center = 0 );
 
     /**
       Opens a Sonic AWE project or imports an audio file. If
@@ -143,10 +138,11 @@ public:
 private:
     Project(); // used by deserialization
     void createMainWindow();
+    void updateWindowTitle();
 
     bool is_modified_;
 
-    std::string project_file_name;
+    std::string project_filename_;
     boost::scoped_ptr<Tools::ToolRepo> _tools;
     // MainWindow owns all other widgets together with the ToolRepo
     QPointer<QMainWindow> _mainWindow;

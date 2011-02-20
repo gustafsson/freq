@@ -144,7 +144,7 @@ public:
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
-    Intervals todo_list();
+    Intervals fetch_todo_list();
 
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
@@ -203,7 +203,7 @@ private:
     virtual void run();
 #endif
 
-    void todo_list( const Intervals& v );
+    //void todo_list( const Intervals& v );
 
     /**
       Self explanatory.
@@ -242,7 +242,7 @@ private:
     /**
       @see todo_list
       */
-    Intervals _todo_list, _cheat_work;
+    Intervals /*_todo_list, */_cheat_work;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.

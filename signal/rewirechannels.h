@@ -22,6 +22,7 @@ public:
     virtual unsigned num_channels();
     virtual void set_channel(unsigned c);
     virtual unsigned get_channel();
+    virtual void source(pOperation v);
 
 
     /**

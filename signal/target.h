@@ -98,7 +98,7 @@ public:
       Will process all active channels (as wired by channels()) and return the
       buffer from the last channel.
       */
-    pBuffer readChannels( const Interval& I );
+    pBuffer read( const Interval& I );
 
 private:
     void rebuildSource();
@@ -107,6 +107,7 @@ private:
     Signal::pOperation rewire_channels_;
     Signal::pOperation forall_channels_;
     Signal::pOperation update_view_;
+    Signal::pOperation read_;
     bool add_as_channels_;
     Layers* all_layers_;
     std::set<pChainHead> layerHeads;

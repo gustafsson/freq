@@ -131,6 +131,9 @@ namespace Tools
           */
         void finishedWorkSection();
 
+
+        void postUpdate();
+
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();
@@ -144,8 +147,6 @@ namespace Tools
 
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
-
-        void queueRepaint();
 
         void drawCollection(int, Signal::FinalSource*, float yscale);
 
@@ -165,7 +166,7 @@ namespace Tools
         unsigned _last_x;
         unsigned _last_y;
         int _try_gc;
-        QTimer* _update_timer;
+        //QTimer* _update_timer;
 
         float _last_length;
         double modelview_matrix[16], projection_matrix[16];

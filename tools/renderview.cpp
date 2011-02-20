@@ -61,8 +61,7 @@ RenderView::
             _inited(false),
             _last_x(0),
             _last_y(0),
-            _try_gc(0),
-            _update_timer(0)
+            _try_gc(0)
 {
     float l = model->project()->worker.source()->length();
     _last_length = l;
@@ -78,10 +77,7 @@ RenderView::
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
 
-    _update_timer = new QTimer();
-    _update_timer->setSingleShot( true );
-    _update_timer->setInterval( 1 );
-    connect( _update_timer, SIGNAL( timeout() ), SLOT( update() ) );
+    connect( this, SIGNAL(postUpdate()), SLOT(update()), Qt::QueuedConnection );
 }
 
 
@@ -682,15 +678,6 @@ void RenderView::
 
 
 void RenderView::
-        queueRepaint()
-{
-//    if (!_update_timer->isActive())
-//        _update_timer->start();
-    update();
-}
-
-
-void RenderView::
         drawCollection(int i, Signal::FinalSource* fs, float yscale )
 {
     model->renderer->collection = model->collections[i].get();
@@ -820,11 +807,10 @@ Support::ToolSelector* RenderView::
 void RenderView::
         userinput_update( bool request_high_fps )
 {
-    // todo isn't "requested fps" is a renderview property?
     if (request_high_fps)
         model->project()->worker.requested_fps(60);
 
-    queueRepaint();
+    emit postUpdate();
 }
 
 
@@ -936,7 +922,7 @@ void RenderView::
 	}
 
     // TODO move to rendercontroller
-    bool wasWorking = !worker.todo_list().empty();
+    bool wasWorking = !worker.fetch_todo_list().empty();
 
     bool isRecording = false;
 
@@ -973,12 +959,12 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        worker.target( Signal::pTarget() );
         worker.center = model->_qx;
 
         emit populateTodoList();
 
-        if (worker.todo_list().empty())
+//        if (worker.fetch_todo_list().empty())
+        if (!worker.target()->post_sink()->isUnderfed())
         {
             worker.target( model->renderSignalTarget );
         }
@@ -991,7 +977,9 @@ void RenderView::
 
     {   // Work
 		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
-        bool isWorking = !worker.todo_list().empty();
+        bool isWorking = !worker.fetch_todo_list().empty();
+
+        TaskInfo("worker.fetch_todo_list() = %s, isWorking = %d", worker.fetch_todo_list().toString().c_str(), isWorking);
 
         if (isWorking || wasWorking) {
             if (!_work_timer.get())
@@ -1002,7 +990,7 @@ void RenderView::
 #ifndef SAWE_NO_MUTEX
             if (!worker.isRunning()) {
                 worker.workOne(!isRecording);
-                queueRepaint();
+                emit postUpdate();
             } else {
                 //project->worker.todo_list().print("Work to do");
                 // Wait a bit while the other thread work
@@ -1012,7 +1000,7 @@ void RenderView::
             }
 #else
             worker.workOne(!isRecording);
-            queueRepaint();
+            emit postUpdate();
 #endif
         } else {
             static unsigned workcount = 0;

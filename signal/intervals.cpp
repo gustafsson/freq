@@ -54,6 +54,16 @@ Interval& Interval::
 }
 
 
+Interval& Interval::
+        operator&=(const Interval& r)
+{
+    first = std::max(first, r.first);
+    last = std::min(last, r.last);
+    first = std::min(first, last);
+    return *this;
+}
+
+
 bool Interval::
         operator==(const Interval& r) const
 {

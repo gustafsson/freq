@@ -22,6 +22,14 @@ using namespace std;
 
 namespace Signal {
 
+PostSink::
+        PostSink()
+            :
+            isUnderfedIfInvalid(false)
+{
+}
+
+
 Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
@@ -103,6 +111,11 @@ Signal::pBuffer PostSink::
     BOOST_FOREACH( pOperation c, active_operations) {
         c->source( _filter ? _filter : source() );
         c->read( I );
+    }
+
+    BOOST_FOREACH( pOperation c, _sinks )
+    {
+        c->source( source() );
     }
 
     return b;
@@ -219,8 +232,11 @@ bool PostSink::
     BOOST_FOREACH( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
-        r |= s->isUnderfed();
+        r = r || s->isUnderfed();
     }
+
+    if (isUnderfedIfInvalid)
+        r = r || invalid_samples();
 
     return r;
 }
@@ -234,6 +250,37 @@ void PostSink::
         Sink* s = dynamic_cast<Sink*>(o.get());
         s->invalidate_samples( I );
     }
+}
+
+
+std::string PostSink::
+        toString()
+{
+    std::stringstream ss;
+    ss << name() << ", " << sinks().size() << " sink" << (sinks().size()!=1?"s":"");
+
+    if (_filter)
+    {
+        _filter->source( pOperation() );
+        ss << std::endl << "Filter: " << _filter->toString();
+        _filter->source( source() );
+    }
+    else
+        ss << ". No filter";
+
+    unsigned i = 0;
+    BOOST_FOREACH( pOperation o, sinks() )
+    {
+        o->source( pOperation() );
+        ss << std::endl << "Sink " << i << ": " << o->toString() << "[/" << i << "]";
+        i++;
+        o->source( source() );
+    }
+
+    if (source())
+        ss << std::endl << source()->toString();
+
+    return ss.str();
 }
 
 
@@ -258,6 +305,7 @@ void PostSink::
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
         BOOST_ASSERT( s );
+        s->source( source() );
     }
 
     _sinks = v;

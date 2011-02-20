@@ -83,7 +83,7 @@ void ExportAudioDialog::
 void ExportAudioDialog::
         populateTodoList()
 {
-    if (!project->worker.todo_list().empty() || !exportTarget)
+    if (!project->worker.fetch_todo_list().empty() || !exportTarget)
         return;
 
     project->worker.center = 0;

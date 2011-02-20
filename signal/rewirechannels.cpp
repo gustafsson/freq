@@ -9,6 +9,7 @@ RewireChannels::
             :
             Operation(source)
 {
+    resetMap();
 }
 
 
@@ -48,11 +49,21 @@ unsigned RewireChannels::
 
 
 void RewireChannels::
+        source(pOperation v)
+{
+    Operation::source(v);
+
+    resetMap();
+}
+
+
+void RewireChannels::
         resetMap()
 {
     scheme_.clear();
 
-    num_channels( source()->num_channels() );
+    if (Operation::source())
+        num_channels( Operation::source()->num_channels() );
 }
 
 
@@ -62,7 +73,7 @@ void RewireChannels::
     if ( output_channel >= num_channels() )
         num_channels( output_channel+1 );
 
-    BOOST_ASSERT( source_channel < source()->num_channels() );
+    BOOST_ASSERT( source_channel < Operation::source()->num_channels() );
 
     scheme_[ output_channel ] = source_channel;
 }
@@ -71,17 +82,12 @@ void RewireChannels::
 void RewireChannels::
         num_channels( unsigned N )
 {
-    if (N < scheme_.size())
-        scheme_.resize( N );
-    else
-    {
-        unsigned M = scheme_.size();
+    unsigned M = scheme_.size();
 
-        scheme_.resize( N );
+    scheme_.resize( N );
 
-        for (unsigned i=M; i<N; ++i)
-            scheme_[i] = i;
-    }
+    for (unsigned i=M; i<N; ++i)
+        scheme_[i] = i;
 }
 
 } // namespace Signal

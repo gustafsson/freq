@@ -60,8 +60,8 @@ Worker::
 #ifndef SAWE_NO_MUTEX
     this->quit();
 #endif
-    if ( _target )
-        todo_list( Intervals() );
+    //if ( _target )
+    //    todo_list( Intervals() );
 
     _target.reset();
 }
@@ -87,7 +87,8 @@ bool Worker::
     if (!_target->post_sink()->isUnderfed() && skip_if_low_fps && _requested_fps>_highest_fps)
         return false;
 
-    if (todo_list().empty())
+    Signal::Intervals todo_list = fetch_todo_list();
+    if (todo_list.empty())
         return false;
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
@@ -95,7 +96,7 @@ bool Worker::
 
     unsigned center_sample = source()->sample_rate() * center;
 
-    Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
+    Interval interval = todo_list.getInterval( _samples_per_chunk, center_sample );
 
     boost::scoped_ptr<TaskTimer> tt;
 
@@ -104,13 +105,13 @@ bool Worker::
             tt.reset( new TaskTimer(
                     "Processing %s. From %s at %u",
                     interval.toString().c_str(),
-                    todo_list().toString().c_str(),
+                    todo_list.toString().c_str(),
                     center_sample));
         else
             tt.reset( new TaskTimer(
                     "Processing %s. From %s at %u, with %u steps",
                     interval.toString().c_str(),
-                    todo_list().toString().c_str(),
+                    todo_list.toString().c_str(),
                     center_sample,
                     _samples_per_chunk));
     }
@@ -235,7 +236,7 @@ bool Worker::
 
 ///// PROPERTIES
 
-void Worker::
+/*void Worker::
         todo_list( const Signal::Intervals& v )
 {
     {
@@ -255,11 +256,11 @@ void Worker::
     if (v)
         _todo_condition.wakeAll();
 #endif
-}
+}*/
 
 
 Signal::Intervals Worker::
-        todo_list()
+        fetch_todo_list()
 {
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
@@ -267,13 +268,15 @@ Signal::Intervals Worker::
     if ( Tfr::Cwt::Singleton().wavelet_time_support() >= Tfr::Cwt::Singleton().wavelet_default_time_support() )
         _cheat_work.clear();
 
-    Signal::Intervals c = _todo_list;
+    Signal::Intervals todoinv = _target->post_sink()->invalid_samples();
+    todoinv &= Interval(0, _target->post_sink()->number_of_samples());
+    Signal::Intervals c = todoinv;
     c -= _cheat_work;
 
     if (!c)
     {
         Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
-        return _todo_list;
+        return todoinv;
     }
 
     return c;
@@ -299,23 +302,15 @@ void Worker::
 {
     BOOST_ASSERT( value );
 
-    if (_target == value)
-        return;
-
     _target = value;
 
-    if (!_target)
+    if (_min_samples_per_chunk==1)
     {
-        _todo_list.clear();
-        return;
+        _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
+        _max_samples_per_chunk = (unsigned)-1;
     }
-
-    _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
-    _max_samples_per_chunk = (unsigned)-1;
     _highest_fps = _min_fps;
     _number_of_samples = _target->post_sink()->number_of_samples();
-
-    todo_list( _target->post_sink()->invalid_samples() );
 }
 
 
@@ -382,7 +377,7 @@ void Worker::
 	while (true)
 	{
 		try {
-            while (todo_list())
+            while (fetch_todo_list())
 			{
 				workOne( false );
 				msleep(1);
@@ -416,7 +411,7 @@ void Worker::
 pBuffer Worker::
         callCallbacks( Interval I )
 {
-    return _target->post_sink()->read( I );
+    return _target->read( I );
 }
 
 } // namespace Signal

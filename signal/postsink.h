@@ -20,6 +20,9 @@ namespace Signal {
 class PostSink: public Sink
 {
 public:    
+    PostSink();
+
+
     /**
       For each Operation in sinks(), sets up a source and calls read(I). For
       performance reasons, different Operation's in sinks() may be chained into
@@ -66,6 +69,7 @@ public:
       A PostSink is underfed if any of its sinks are underfed.
       */
     virtual bool isUnderfed();
+    bool isUnderfedIfInvalid;
 
 
     /**
@@ -73,10 +77,12 @@ public:
       */
     virtual void invalidate_samples( const Intervals& I );
 
+    virtual std::string toString();
 
     /// @see read()
     std::vector<pOperation> sinks();
     void                    sinks(std::vector<pOperation> v);
+
 
     /**
       this->read() redirects reads through this filter which in turn reads from

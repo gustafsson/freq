@@ -108,9 +108,11 @@ Operation* Operation::
 std::string Operation::
         toString()
 {
-    std::string s = vartype(*this);
+    std::string s = name();
+
     if (_source)
         s += "\n" + _source->toString();
+
     return s;
 }
 
