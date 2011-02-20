@@ -182,14 +182,16 @@ A hej()
 
 int main(int argc, char *argv[])
 {
-    if (1)
+    if (0)
     {
-        Signal::Intervals I(100, 200);
-        cout << I << endl;
-        I &= Signal::Interval(150,150);
-        cout << I << endl;
+        Signal::Intervals I(100, 300);
+        cout << I.toString() << endl;
+        I -= Signal::Interval(150,150);
+        cout << I.toString() << endl;
+        I |= Signal::Interval(50,50);
+        cout << I.toString() << endl;
         I &= Signal::Intervals(150,150);
-        cout << I << endl;
+        cout << I.toString() << endl;
         return 0;
     }
     if (0)

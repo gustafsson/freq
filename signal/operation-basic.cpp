@@ -10,7 +10,7 @@ OperationRemoveSection::
 :   Operation( source ),
     section_(section)
 {
-    BOOST_ASSERT(section_.valid());
+    BOOST_ASSERT(section_.count());
 }
 
 pBuffer OperationRemoveSection::

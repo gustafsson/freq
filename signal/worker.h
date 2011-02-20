@@ -22,11 +22,6 @@
 namespace Signal {
 
 /**
-WorkerCallback is a Signal::Put that registers itself as a worker callback for an instance of the worker class.
-*/
-class WorkerCallback; // Implementation below.
-
-/**
 Signal::Worker is a queue of ranges, that might be worked off by one or
 multiple threads (and hence one or multiple GPUs). The calling thread
 calls Worker::workOne as a blocking operation performing the following
@@ -34,12 +29,6 @@ steps:
 
 1. Ask pOperation Signal::Worker::_source for a pBuffer over some samples.
 2. The pBuffer is sent to the callback(s).
-
-WorkerCallback takes a Worker as constructing argument and can thus add itself
-to the Worker by Worker::addCallback which uses a mutex to be more threadsafe.
-Worker aquires the mutex when calling WorkerCallback, and WorkerCallback
-removes itself upon destruction by calling Worker::addCallback which also
-aquires the mutex.
 
 --- Design motivation for Signal::Worker ---
 Heightmap rendering and Playback both needs to read from Signal::Source::read.
@@ -124,7 +113,11 @@ class Worker
 #endif
 {
 public:
-    Worker(pTarget t=pTarget());
+    /**
+      It is allowed to create Worker with a null target. But the instance may
+      not be used until a target is set.
+      */
+    Worker(pTarget t);
     ~Worker();
 
     /**

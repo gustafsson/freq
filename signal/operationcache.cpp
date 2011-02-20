@@ -24,7 +24,7 @@ pBuffer OperationCache::
 
     Interval ok = (Intervals(I) & cached).getInterval();
 
-    if (ok.first == I.first && ok.valid() && enable_cache)
+    if (ok.first == I.first && ok.count() && enable_cache)
     {
         // Don't need anything new, return cache
         pBuffer b = _cache.readFixedLength( ok );
@@ -38,7 +38,7 @@ pBuffer OperationCache::
     }
 
     Interval missing = I;
-    if (ok.first != I.first && ok.valid())
+    if (ok.first != I.first && ok.count())
         missing.last = ok.first;
 
     pBuffer b = readRaw( missing );

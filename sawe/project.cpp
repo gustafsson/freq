@@ -19,15 +19,21 @@ using namespace std;
 
 namespace Sawe {
 
+    class DummyTarget: public Signal::Target
+    {
+
+    };
+
 Project::
         Project( Signal::pOperation root )
-:   worker(),
+:   worker(Signal::pTarget()),
     layers(this),
     is_modified_(true)
 {
     Signal::pChain chain(new Signal::Chain(root));
     layers.addLayer( chain );
     head.reset( new Signal::ChainHead(chain) );
+    worker.target( Signal::pTarget(new Signal::Target(&layers)) );
 }
 
 
@@ -147,6 +153,7 @@ std::string Project::
 Project::
         Project()
             :
+            worker(Signal::pTarget()),
             layers(this),
             is_modified_(true)
 {}

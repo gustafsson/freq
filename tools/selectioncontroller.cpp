@@ -226,7 +226,7 @@ namespace Tools
         Signal::Intervals I = o->affected_samples().coveredInterval();
         I -= o->zeroed_samples();
 
-        if (0==I.coveredInterval().count())
+        if (0==I.count())
             return;
 
         // Create OperationRemoveSection to remove everything else from the stream

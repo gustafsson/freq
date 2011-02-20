@@ -35,7 +35,6 @@ Worker::
 :   work_chunks(0),
     _number_of_samples(0),
     _last_work_one(boost::date_time::not_a_date_time),
-    _target(t),
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
     _min_samples_per_chunk( 1 ),
@@ -46,7 +45,7 @@ Worker::
 {
     _highest_fps = _min_fps;
 
-    if(t) target( t );
+    if (t) target( t );
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
     // but 1<< 12 works well on most GPUs
@@ -298,6 +297,8 @@ pTarget Worker::
 void Worker::
         target(pTarget value)
 {
+    BOOST_ASSERT( value );
+
     if (_target == value)
         return;
 

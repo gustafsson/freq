@@ -22,15 +22,17 @@ public:
     static const IntervalType IntervalType_MAX;
     static const Interval Interval_ALL;
 
-    Interval& operator=( const Interval& i)
-                       { first = i.first, last = i.last; return *this; }
-    Interval( IntervalType first, IntervalType last )
-        :   first(first), last(last)
-    {}
+    /**
+      Failes with assertion if first>last.
+      */
+    Interval( IntervalType first, IntervalType last );
 
     /**
       Describes the interval [first, last). That is, 'last' is excluded from
-      the interval. The length of the interval is computed by "last-first".
+      the interval. The number of samples in the interval is computed by
+      "last-first".
+
+      It is up to the user to ensure the invariant relation first<=last.
       */
     IntervalType first, last;
     IntervalType count() const { return last - first; }

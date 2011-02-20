@@ -55,12 +55,11 @@ void WriteWav::
 void WriteWav::
         writeToDisk()
 {
-    Signal::Intervals sid = _data.samplesDesc();
-    Signal::Interval i = sid.coveredInterval();
+    Signal::Interval i = _data.samplesDesc();
 
-    BOOST_ASSERT(i.valid());
+    BOOST_ASSERT(i.count());
 
-    TIME_WRITEWAV TaskTimer tt("Writing data %s", sid.toString().c_str());
+    TIME_WRITEWAV TaskTimer tt("Writing data %s", i.toString().c_str());
     Signal::pBuffer b = _data.readFixedLength( i );
     writeToDisk( _filename, b );
 }

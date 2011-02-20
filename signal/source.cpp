@@ -127,7 +127,7 @@ Buffer& Buffer::
 pBuffer SourceBase::
         readChecked( const Interval& I )
 {
-    BOOST_ASSERT( I.valid() );
+    BOOST_ASSERT( I.count() );
 
     pBuffer r = read(I);
 
@@ -207,7 +207,7 @@ std::string SourceBase::
 pBuffer SourceBase::
         zeros( const Interval& I )
 {
-    BOOST_ASSERT( I.valid() );
+    BOOST_ASSERT( I.count() );
 
     TIME_READCHECKED TaskTimer tt("%s.%s %s",
                   vartype(*this).c_str(), __FUNCTION__ ,
