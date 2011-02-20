@@ -72,6 +72,12 @@ public:
 
 
     /**
+      It is an error to call tools() or toolRepo() during initialization when
+      areToolsInitialized() returns false.
+      */
+    bool areToolsInitialized();
+
+    /**
 
       */
     //void userinput_update( bool request_high_fps = true );

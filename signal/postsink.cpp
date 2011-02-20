@@ -271,6 +271,8 @@ void PostSink::
         Sink* s = dynamic_cast<Sink*>(o.get());
         s->invalidate_samples( I );
     }
+
+    Operation::invalidate_samples( I );
 }
 
 
@@ -362,8 +364,6 @@ void PostSink::
         I -= f->zeroed_samples_recursive();
     else if(_filter)
         I -= _filter->zeroed_samples_recursive();
-
-    _filter->source( source() );
 
     invalidate_samples( I );
 

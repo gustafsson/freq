@@ -42,6 +42,8 @@ public:
     float time();
     float time_since_last_update();
 
+    Signal::PostSink* getPostSink() { return &_postsink; }
+
 private:
     MicrophoneRecorder() {} // for deserialization
     int input_device_;
@@ -53,6 +55,7 @@ private:
     float _sample_rate;
     QMutex _data_lock;
     std::vector<Signal::SinkSource> _data;
+    Signal::PostSink _postsink;
 
     // todo remove Sink* _callback;
     portaudio::AutoSystem _autoSys;

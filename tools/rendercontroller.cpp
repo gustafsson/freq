@@ -69,18 +69,19 @@ public:
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
-        model_->collections.resize(num_channels());
-        for (unsigned c=0; c<num_channels(); ++c)
+        unsigned N = num_channels();
+        if ( N != model_->collections.size())
         {
-            if (!model_->collections[c])
-                model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+            model_->collections.resize(N);
+            for (unsigned c=0; c<N; ++c)
+            {
+                if (!model_->collections[c])
+                    model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+            }
         }
 
-
-        //Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
-
-        //Signal::Intervals v = Signal::Intervals(I).addedSupport( support );
-        Signal::Intervals v = I;
+        Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
+        Signal::Intervals v = Signal::Intervals(I).enlarge( support );
 
         foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {

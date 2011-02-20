@@ -105,7 +105,8 @@ public:
 
     virtual void invalidate_samples(const Intervals& I)
     {
-        project_->tools().render_view()->userinput_update( false );
+        if (project_->areToolsInitialized())
+            project_->tools().render_view()->userinput_update( false );
 
         Operation::invalidate_samples(I);
     }

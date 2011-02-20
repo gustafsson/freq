@@ -47,7 +47,7 @@ Project::
 Tools::ToolRepo& Project::
         toolRepo()
 {
-    if (!_tools)
+    if (!areToolsInitialized())
         throw std::logic_error("tools() was called before createMainWindow()");
 
     return *_tools;
@@ -58,6 +58,13 @@ Tools::ToolFactory& Project::
         tools()
 {
     return *dynamic_cast<Tools::ToolFactory*>(&toolRepo());
+}
+
+
+bool Project::
+        areToolsInitialized()
+{
+    return _tools;
 }
 
 

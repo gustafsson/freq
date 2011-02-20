@@ -46,13 +46,24 @@ void RecordController::
     destroyed_ = true;
 }
 
-
 void RecordController::
         receiveRecord(bool active)
 {
     Adapters::MicrophoneRecorder* r = model()->recording;
     if (active)
     {
+        Support::SinkSignalProxy* proxy;
+        Signal::pOperation proxy_operation( proxy = new Support::SinkSignalProxy() );
+
+        std::vector<Signal::pOperation> record_sinks;
+        record_sinks.push_back( proxy_operation );
+        r->getPostSink()->sinks( record_sinks );
+
+        connect(proxy,
+                SIGNAL(recievedInvalidSamples( Signal::Intervals )),
+                SLOT(recievedInvalidSamples( Signal::Intervals )),
+                Qt::QueuedConnection );
+
         r->startRecording();
     }
     else
@@ -62,6 +73,16 @@ void RecordController::
     }
 
     view_->enabled = active;
+}
+
+
+void RecordController::
+        recievedInvalidSamples( Signal::Intervals I )
+{
+    if ( destroyed_ )
+        return;
+
+    model()->recording->invalidate_samples( I );
 }
 
 
