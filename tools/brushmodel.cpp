@@ -28,13 +28,11 @@ BrushModel::
 Support::BrushFilter* BrushModel::
         filter()
 {
-    filter_ = project_->head->head_source();
     Support::MultiplyBrush* brush = dynamic_cast<Support::MultiplyBrush*>(filter_.get());
     if (0 == brush)
     {
         filter_.reset( brush = new Support::MultiplyBrush );
         filter_->source( project_->head->head_source() );
-        project_->head->head_source( filter_ );
     }
 
     return brush;
@@ -44,12 +42,9 @@ Support::BrushFilter* BrushModel::
 void BrushModel::
         finished_painting()
 {
-    filter_ = project_->head->head_source();
-    if (0 != dynamic_cast<Support::MultiplyBrush*>(filter_.get()))
-    {
-        project_->head->head_source( filter_->source() );
+    if (filter()->images && filter()->images->size())
         project_->head->appendOperation( filter_ ); // Insert cache layer
-    }
+
     filter_.reset();
 }
 

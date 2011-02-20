@@ -1,6 +1,8 @@
 #ifndef GRAPHCONTROLLER_H
 #define GRAPHCONTROLLER_H
 
+#include "signal/chain.h"
+
 #include <QObject>
 
 class QDockWidget;
@@ -35,6 +37,8 @@ private slots:
 
 private:
     void setupGui();
+
+    QList<Signal::pChainHead> heads;
 
     RenderView* render_view_;
     Sawe::Project* project_;

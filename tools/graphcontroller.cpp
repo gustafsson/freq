@@ -11,6 +11,7 @@
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "tools/support/operation-composite.h"
+#include "signal/operationcache.h"
 
 #include <boost/foreach.hpp>
 
@@ -19,9 +20,9 @@ namespace Tools
     class TreeItem: public QTreeWidgetItem
     {
     public:
-        TreeItem(QTreeWidget* parent, Signal::pOperation operation, Signal::pChain chain)
+        TreeItem(QTreeWidgetItem*itm, Signal::pOperation operation, Signal::pChain chain)
             :
-            QTreeWidgetItem( parent ),
+            QTreeWidgetItem(itm),
             operation(operation),
             chain(chain)
         {
@@ -55,19 +56,33 @@ namespace Tools
     {
         operationsTree->clear();
 
+        QFlags<Qt::ItemFlag> flg = Qt::ItemIsUserCheckable |
+                                   Qt::ItemIsSelectable |
+                                   Qt::ItemIsEnabled;
+
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
             chainItm->setText(0, c->name);
+            chainItm->setExpanded( true );
 
             Signal::pOperation o = c->tip_source();
             while(o)
             {
-                QString name = QString::fromStdString( o->name() );
+                TreeItem* itm = new TreeItem(chainItm, o, c);
+                if (o == project_->head->head_source())
+                    itm->setSelected( true );
 
-                TreeItem* itm = new TreeItem(operationsTree, o, c);
+                if (dynamic_cast<Signal::OperationCacheLayer*>(o.get()))
+                {
+                    if (o->source())
+                        o = o->source();
+                }
+                QString name = QString::fromStdString( o->name() );
                 itm->setText(0, name);
-                chainItm->addChild( itm );
+                //itm->setFlags( flg );
+                //itm->setCheckState(0, Qt::Unchecked);
+                //itm->setCheckState(0, Qt::Checked);
 
                 o = o->source();
             }
@@ -83,14 +98,23 @@ namespace Tools
         if ( !currentItem )
         {
             if (previousItem)
+            {
+                foreach (QTreeWidgetItem* itm, operationsTree->selectedItems() )
+                    itm->setSelected( false );
+
                 operationsTree->setCurrentItem( previous );
+            }
         }
         else
         {
+            // head_source( pOperation ) invalidates models where approperiate
             Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentItem->chain );
             head->head_source( currentItem->operation );
 
-            // head_source( pOperation ) invalidates render model where approperiate
+            head = project_->tools().playback_model.playbackTarget->findHead( currentItem->chain );
+            head->head_source( currentItem->operation );
+
+            project_->head->head_source( currentItem->operation );
         }
     }
 
@@ -125,8 +149,10 @@ namespace Tools
         operationsTree->setAutoFillBackground(true);
         operationsTree->setColumnCount(1);
         operationsTree->header()->setVisible(false);
-        operationsTree->header()->setDefaultSectionSize(10);
-        operationsTree->header()->setMinimumSectionSize(10);
+        operationsTree->setSelectionMode( QAbstractItemView::SingleSelection );
+        //operationsTree->header()->setDefaultSectionSize(60);
+        //operationsTree->header()->setMinimumSectionSize(20);
+        //operationsTree->setSelectionMode( QAbstractItemView::MultiSelection );
 
         verticalLayout->addWidget(operationsTree);
 
@@ -147,12 +173,16 @@ namespace Tools
 
         connect(operationsTree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
                 SLOT(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
+        //connect(operationsTree, SIGNAL(itemSelectionChanged()), SLOT(selectionChanged()));
 
 
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             connect( c.get(), SIGNAL(chainChanged()), SLOT(redraw_operation_tree()));
         }
+
+        connect( project_->head.get(), SIGNAL(headChanged()), SLOT(redraw_operation_tree()));
+
 
         redraw_operation_tree();
     }

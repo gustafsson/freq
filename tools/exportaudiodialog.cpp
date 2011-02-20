@@ -161,7 +161,8 @@ void ExportAudioDialog::
     if (0 != QString::compare(filemame.mid(filemame.length() - extension.length()), extension, Qt::CaseInsensitive))
         filemame += extension;
 
-    exportTarget.reset(new Signal::Target(&project->layers, "File export (" + filemame.toStdString() + ")" ));
+    //exportTarget.reset(new Signal::Target(&project->layers, "File export (" + filemame.toStdString() + ")" ));
+    exportTarget = project->tools().render_model.renderSignalTarget;
     Signal::PostSink* postsink = exportTarget->post_sink();
 
     postsink->filter( filter );
