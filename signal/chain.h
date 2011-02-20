@@ -39,6 +39,7 @@ public:
 
 
     bool isInChain(Signal::pOperation) const;
+
 signals:
     void chainChanged();
 
@@ -50,6 +51,7 @@ private:
 //    friend class boost::serialization::access;
 //    Chain() { } // used by serialization, root is read from archive instead
 //    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) const {
+//        ar & BOOST_SERIALIZATION_NVP(name);
 //        ar & BOOST_SERIALIZATION_NVP(root_source_);
 //        ar & BOOST_SERIALIZATION_NVP(tip_source_);
 //    }

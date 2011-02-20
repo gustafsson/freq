@@ -1355,15 +1355,13 @@ void Renderer::
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
-    float saturation = 1.2;
-    saturation *= 0.5;
-    glColor4f(saturation, saturation, saturation, saturation);
+    glColor4f(alpha, alpha, alpha, alpha);
     glBegin( GL_TRIANGLE_FAN );
         for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
                 i!=clippedFrustum.end();
                 i++)
         {
-            float s = (closest-camera).dot()/(*i-camera).dot();
+            //float s = (closest-camera).dot()/(*i-camera).dot();
             //glColor4f(0,0,0,s*.25f);
             glVertex3v( i->v );
         }

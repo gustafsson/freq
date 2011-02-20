@@ -27,6 +27,7 @@ Project::
     project_filename_( filename )
 {
     Signal::pChain chain(new Signal::Chain(root));
+    chain->name = QString::fromStdString( project_name() );
     layers.addLayer( chain );
     head.reset( new Signal::ChainHead(chain) );
 }

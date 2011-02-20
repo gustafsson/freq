@@ -41,6 +41,7 @@ public:
     virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
     virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); }
     //virtual Intervals fetch_invalid_samples() { return _cache.fetch_invalid_samples() | Operation::fetch_invalid_samples(); }
+    virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
 
 private:
     friend class boost::serialization::access;

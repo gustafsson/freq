@@ -94,12 +94,18 @@ public:
 class UpdateView: public Operation
 {
 public:
-    UpdateView(Sawe::Project* project)
+    UpdateView(Sawe::Project* project, std::string targetname)
         :
         Operation(pOperation()),
-        project_(project)
+        project_(project),
+        targetname_(targetname)
     {
+    }
 
+
+    virtual std::string name()
+    {
+        return Operation::name() + " for '" + targetname_ + "' in '" + project_->project_name() + "'";
     }
 
 
@@ -114,6 +120,7 @@ public:
 
 private:
     Sawe::Project* project_;
+    std::string targetname_;
 };
 
 
@@ -190,7 +197,7 @@ Target::
             post_sink_( new PostSink ),
             rewire_channels_( new RewireChannels(pOperation()) ),
             forall_channels_( new ForAllChannelsOperation(pOperation()) ),
-            update_view_( new UpdateView( all_layers->project() )),
+            update_view_( new UpdateView( all_layers->project(), name )),
             add_as_channels_(false),
             all_layers_(all_layers)
 {
@@ -201,7 +208,10 @@ Target::
 
     BOOST_FOREACH( pChain c, all_layers_->layers() )
     {
-        addLayerHead( pChainHead(new ChainHead(c)));
+        /*if (all_layers->project()->head->chain() == c)
+            addLayerHead(all_layers->project()->head);
+        else*/
+            addLayerHead( pChainHead(new ChainHead(c)));
     }
 }
 

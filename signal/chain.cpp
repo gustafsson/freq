@@ -34,6 +34,9 @@ void Chain::
     if (tip_source_ != tip)
     {
         tip_source_ = tip;
+        TaskInfo("Chain '%s' is now\n%s",
+                 name.toStdString().c_str(),
+                 tip_source_->toString().c_str());
         emit chainChanged();
     }
 }
@@ -75,7 +78,8 @@ void ChainHead::
 {
     BOOST_ASSERT( s );
 
-    TaskInfo tt("ChainHead::appendOperation( %s )", vartype(*s).c_str());
+    TaskInfo tt("ChainHead::appendOperation '%s' on\n%s",
+                s->name().c_str(), head_source_ref()->toString().c_str());
 
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.
@@ -95,25 +99,10 @@ void ChainHead::
     }
 
     s->source( head_source() );
-    Signal::Intervals was_zeros = head_source()->zeroed_samples_recursive();
-    Signal::Intervals new_zeros = s->zeroed_samples_recursive();
-    Signal::Intervals affected = s->affected_samples();
-    Signal::Intervals still_zeros = was_zeros & new_zeros;
-    TaskInfo("Was zero samples %s", was_zeros.toString().c_str());
-    TaskInfo("New zero samples %s", new_zeros.toString().c_str());
-    TaskInfo("Still zero samples %s", still_zeros.toString().c_str());
-    TaskInfo("Affected samples %s", affected.toString().c_str());
-
-    Signal::Intervals signal_length( 0, std::max( 1lu, s->number_of_samples() ));
-    head_source_->invalidate_samples( ( affected - still_zeros ) & signal_length );
-
-    //_min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
-    //_highest_fps = _min_fps;
-    //_max_samples_per_chunk = (unsigned)-1;
 
     head_source( pOperation( new OperationCacheLayer(s) ));
 
-    tt.tt().info("Worker::appendOperation, worker tree:\n%s", head_source_ref()->toString().c_str());
+    TaskInfo("Worker::appendOperation, worker tree:\n%s", head_source_ref()->toString().c_str());
 }
 
 
@@ -139,7 +128,21 @@ void ChainHead::
 
     if (head_source() != s)
     {
+        Signal::Intervals new_data( 0, head_source()->number_of_samples() );
+        Signal::Intervals old_data( 0, s->number_of_samples() );
+        Signal::Intervals invalid = new_data | old_data;
+
+        Signal::Intervals was_zeros = head_source()->zeroed_samples_recursive();
+        Signal::Intervals new_zeros = s->zeroed_samples_recursive();
+        Signal::Intervals still_zeros = was_zeros & new_zeros;
+        invalid -= still_zeros;
+
+        invalid &= s->affected_samples_until( head_source() );
+        invalid &= head_source()->affected_samples_until( s );
+
         head_source_->source( s );
+        head_source_->invalidate_samples( invalid );
+
         emit headChanged();
     }
 }
@@ -155,7 +158,11 @@ pChain ChainHead::
 void ChainHead::
         chainChanged()
 {
-    if (head_source() == chain_->tip_source()->source())
+    Signal::pOperation test = chain_->tip_source();
+    if (dynamic_cast<Signal::OperationCacheLayer*>(test.get()) && test->source() != head_source())
+        test = test->source();
+
+    if (head_source() == test->source())
         head_source( chain_->tip_source() );
     else
     {

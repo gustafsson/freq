@@ -176,8 +176,10 @@ public:
 
 
     Operation* root();
+    virtual bool hasSource(Operation*s);
 
     virtual std::string toString();
+    virtual std::string parentsToString();
 
 private:
     std::set<Operation*> _outputs; /// @see Operation::parent()

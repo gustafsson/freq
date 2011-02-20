@@ -105,6 +105,16 @@ Operation* Operation::
 }
 
 
+bool Operation::
+        hasSource(Operation*s)
+{
+    if (this == s)
+        return true;
+    if (_source)
+        return _source->hasSource( s );
+    return false;
+}
+
 std::string Operation::
         toString()
 {
@@ -117,12 +127,33 @@ std::string Operation::
 }
 
 
+std::string Operation::
+        parentsToString()
+{
+    std::stringstream ss;
+    ss << name() << " (" << _outputs.size() << " parent" << (_outputs.size()==1?"":"s") << ")";
+    unsigned i = 0;
+    BOOST_FOREACH( Operation* p, _outputs )
+    {
+        ss << std::endl;
+        if (_outputs.size())
+            ss << i << ": ";
+        ss << p->parentsToString();
+    }
+    return ss.str();
+}
+
+
 Signal::Intervals Operation::
         affected_samples_until(pOperation stop)
 {
-    Signal::Intervals I = affected_samples();
-    if (this!=stop.get() && _source)
-        I |= translate_interval( _source->affected_samples_until( stop ) );
+    Signal::Intervals I;
+    if (this!=stop.get())
+    {
+        I = affected_samples();
+        if (_source)
+            I |= translate_interval( _source->affected_samples_until( stop ) );
+    }
     return I;
 }
 
