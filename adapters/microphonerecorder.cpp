@@ -252,6 +252,8 @@ int MicrophoneRecorder::
 
     lock.unlock();
 
+    // TODO this is not thread safe as many Operations assume a single threaded application
+    // either need to synchronize this or make other things thread safe
     invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
 
     return paContinue;

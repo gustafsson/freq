@@ -173,6 +173,8 @@ class A
 public:
     A() { std::cout << __FUNCTION__ << this << std::endl; }
     ~A() { std::cout << __FUNCTION__ << this << std::endl; }
+
+    int data;
 };
 
 A hej()
@@ -180,8 +182,56 @@ A hej()
     return A();
 }
 
+class B
+{
+public:
+    int data2;
+};
+
+class C: public A, public B
+{
+public:
+    int data3;
+};
+
+void tsta(A*a)
+{
+    std::cout << a << " a " << a->data << std::endl;
+}
+
+void tstb(B*b)
+{
+    std::cout << b << " b " << b->data2 << std::endl;
+}
+void tstc(C*c)
+{
+    std::cout << c << " c " << c->data3 << std::endl;
+}
 int main(int argc, char *argv[])
 {
+    if (0)
+    {
+        C c;
+        c.data = 1;
+        c.data2 = 2;
+        c.data3 = 3;
+        tsta(&c);
+        tstb(&c);
+        tstc(&c);
+        return 0;
+    }
+    if (0)
+    {
+        Signal::Intervals I(100, 300);
+        cout << I.toString() << endl;
+        I ^= Signal::Interval(150,150);
+        cout << I.toString() << endl;
+        I ^= Signal::Interval(50,50);
+        cout << I.toString() << endl;
+        I ^= Signal::Intervals(50,150);
+        cout << I.toString() << endl;
+        return 0;
+    }
     if (0)
     {
         Signal::Intervals I(100, 300);

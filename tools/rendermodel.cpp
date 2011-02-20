@@ -3,6 +3,8 @@
 
 #include "heightmap/renderer.h"
 
+#include "tfr/filter.h"
+
 namespace Tools
 {
 
@@ -27,15 +29,7 @@ RenderModel::
 
     collections.resize(o->num_channels());
     for (unsigned c=0; c<o->num_channels(); ++c)
-    {
         collections[c].reset( new Heightmap::Collection(&_project->worker));
-        if (0<c)
-            collections[c]->setPostsink( collections[0]->postsink() );
-    }
-
-    std::vector<Signal::pOperation> v;
-    v.push_back( collections[0]->postsink() );
-    o->sinks(v);
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
 
@@ -59,18 +53,9 @@ RenderModel::
         ~RenderModel()
 {
     TaskInfo ti(__FUNCTION__);
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(postsink().get());
-    std::vector<Signal::pOperation> empty;
-    ps->sinks(empty);
-
+    renderer.reset();
     collections.clear();
-}
-
-
-Signal::pOperation RenderModel::
-        postsink()
-{
-    return collections[0]->postsink();
+    renderSignalTarget.reset();
 }
 
 
@@ -78,6 +63,13 @@ Tfr::FreqAxis RenderModel::
         display_scale()
 {
     return collections[0]->display_scale();
+}
+
+
+Tfr::Filter* RenderModel::
+        block_filter()
+{
+    return dynamic_cast<Tfr::Filter*>(collections[0]->block_filter().get());
 }
 
 } // namespace Tools

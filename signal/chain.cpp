@@ -54,14 +54,18 @@ bool Chain::
 }
 
 
+class ChainHeadReference: public Signal::Operation
+{
+public:
+    ChainHeadReference( Signal::pOperation o ): Operation(o) {}
+};
+
 ChainHead::
         ChainHead( pChain chain )
             :
             chain_(chain),
-            head_source_( new Signal::Operation(chain_->tip_source()) )
+            head_source_( new ChainHeadReference(chain_->tip_source()) )
 {
-    post_sink_.source( head_source_ );
-
     connect( chain.get(), SIGNAL(chainChanged()), SLOT(chainChanged()));
 }
 
@@ -101,7 +105,7 @@ void ChainHead::
     TaskInfo("Affected samples %s", affected.toString().c_str());
 
     Signal::Intervals signal_length( 0, std::max( 1lu, s->number_of_samples() ));
-    post_sink_.invalidate_samples( ( affected - still_zeros ) & signal_length );
+    head_source_->invalidate_samples( ( affected - still_zeros ) & signal_length );
 
     //_min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
     //_highest_fps = _min_fps;
@@ -124,13 +128,6 @@ Signal::pOperation ChainHead::
         head_source_ref() const
 {
     return head_source_;
-}
-
-
-Signal::PostSink& ChainHead::
-        post_sink()
-{
-    return post_sink_;
 }
 
 

@@ -38,6 +38,8 @@ void RewireChannels::
     output_channel_ = c;
 
     source_channel_ = scheme_[output_channel_];
+    if (NOTHING != source_channel_)
+        Operation::source()->set_channel( source_channel_ );
 }
 
 
@@ -88,6 +90,12 @@ void RewireChannels::
 
     for (unsigned i=M; i<N; ++i)
         scheme_[i] = i;
+
+    if (output_channel_ >= N && 0 < N)
+        set_channel( N-1 );
+
+    if (N != M)
+        invalidate_samples( Signal::Interval(0, number_of_samples() ));
 }
 
 } // namespace Signal

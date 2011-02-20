@@ -99,9 +99,7 @@ void TooltipModel::
        << "Time: " << setprecision(3) << p.time << " s<br/>"
        << "Frequency: " << setprecision(1) << f << " Hz<br/>";
 
-    if (dynamic_cast<Tfr::CwtFilter*>(
-            dynamic_cast<Signal::PostSink*>(render_view_->model->postsink().get())
-            ->sinks()[0]->source().get()))
+    if (dynamic_cast<Tfr::CwtFilter*>( render_view_->model->block_filter()))
        ss << "Morlet standard deviation: " << setprecision(3) << std_t << " s, " << setprecision(1) << std_f << " Hz<br/>";
 
     ss << "Value here: " << setprecision(10) << this->max_so_far << setprecision(1);

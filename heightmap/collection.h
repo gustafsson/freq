@@ -231,31 +231,11 @@ public:
 
 
     /**
-      When changing filter you might want to change complexInfo accordingly.
+      Notify the Collection what filter that is currently creating blocks.
       */
-    // TODO remove? virtual void chunk_filter(Tfr::pFilter filter);
-    // TODO how do we change transfom?
+    void block_filter(Signal::pOperation filter) { _filter = filter; }
+    Signal::pOperation block_filter() { return _filter; }
 
-
-    /**
-      When changing transform you might want to change complexInfo accordingly.
-      */
-    // TODO transforms are 'filters'. virtual void chunk_transform(Tfr::pTransform transform);
-
-/* each row calls the row below
-worker                 X
-suboperation             RenderFilters
-filter                     F
-filter                     F
-CwtToBlock                 R
-suboperation             PlaybackFilters
-filter                     F
-Playback                   P
-filter                 F
-operation              A
-operation              A
-audiofile              source
-*/
 
     unsigned long cacheByteSize();
     unsigned    cacheCount();
@@ -264,13 +244,6 @@ audiofile              source
 
 
     Tfr::FreqAxis display_scale() { return _display_scale; }
-
-
-    /**
-      PostSink fetches data. TODO Remove postsink from collection
-      */
-    Signal::pOperation postsink() { return _postsink; }
-    void setPostsink(Signal::pOperation s) { _postsink = s; }
 
 
     /**
@@ -302,9 +275,7 @@ private:
             _min_sample_size,
             _max_sample_size;
 
-
-    Signal::pOperation _postsink;
-
+    Signal::pOperation _filter;
 
     /**
       Heightmap blocks are rather agnostic to FreqAxis.

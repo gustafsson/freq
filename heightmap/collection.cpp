@@ -31,7 +31,7 @@
 // Don't keep more than this times the number of blocks currently needed
 // TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
-#define MAX_CREATED_BLOCKS_PER_FRAME 4 // Even numbers look better for stereo signals
+#define MAX_CREATED_BLOCKS_PER_FRAME 2 // Even numbers look better for stereo signals
 
 using namespace Signal;
 
@@ -47,8 +47,7 @@ Collection::
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _created_count(0),
-    _frame_counter(0),
-    _postsink( new PostSink )
+    _frame_counter(0)
 {
 	BOOST_ASSERT( worker->source() );
 
@@ -593,15 +592,10 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        Tfr::Stft* stft = 0;
-        Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(postsink().get());
-        if (ps->sinks().size())
-        {
-            pOperation filterp = ps->sinks()[0]->source();
-            Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(filterp.get());
-            stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
-        }
-        bool tfr_is_stft = 0 != stft;
+        bool tfr_is_stft = false;
+        Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
+        if (filter)
+            tfr_is_stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
 
         if ( 1 /* create from others */ )
         {
@@ -660,7 +654,8 @@ pBlock Collection::
                             d -= ref.log2_samples_size[1];
 
                             //if (d==dist)
-                            if (d==-1 || d==1)
+                            //mergeBlock( block, bl, 0 );
+                            if (d>=-2 && d<=2)
                             {
                                 Position a2,b2;
                                 bl->ref.getArea(a2,b2);

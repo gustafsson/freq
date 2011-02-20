@@ -75,6 +75,19 @@ public:
 
         return r;
     }
+
+
+    virtual void invalidate_samples(const Intervals& I)
+    {
+        unsigned N = num_channels();
+        if (0 < N)
+        {
+            if (get_channel() >= N)
+                set_channel(N - 1);
+        }
+
+        Operation::invalidate_samples( I );
+    }
 };
 
 
@@ -198,17 +211,15 @@ void Target::
     BOOST_ASSERT( !isInSet(p->chain()) );
     BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
+    Signal::Intervals was_zero = read_->zeroed_samples_recursive();
+
     layerHeads.insert( p );
-
-    // Add this target (by its post_sink_) to the ChainHead
-    Signal::PostSink& ps = p->post_sink();
-    std::vector<pOperation> sinks = ps.sinks();
-    sinks.push_back( post_sink_ );
-    ps.sinks( sinks );
-
     rebuildSource();
 
-    post_sink()->invalidate_samples( ~p->head_source()->zeroed_samples_recursive() );
+    Signal::Intervals is_zero = read_->zeroed_samples_recursive();
+    Signal::Intervals need_update = Signal::Intervals::Intervals_ALL - (was_zero&is_zero);
+
+    post_sink()->invalidate_samples( need_update );
 }
 
 
@@ -219,17 +230,15 @@ void Target::
     BOOST_ASSERT( isInSet(p->chain()) );
     BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
+    Signal::Intervals was_zero = read_->zeroed_samples_recursive();
+
     layerHeads.erase( p );
-
-    // Remove this target (by its post_sink_) from the ChainHead
-    Signal::PostSink& ps = p->post_sink();
-    std::vector<pOperation> sinks = ps.sinks();
-    sinks.resize( std::remove( sinks.begin(), sinks.end(), post_sink_ )-sinks.begin() );
-    ps.sinks( sinks );
-
     rebuildSource();
 
-    post_sink()->invalidate_samples( ~p->head_source()->zeroed_samples_recursive() );
+    Signal::Intervals is_zero = read_->zeroed_samples_recursive();
+    Signal::Intervals need_update = Signal::Intervals::Intervals_ALL - (was_zero&is_zero);
+
+    post_sink()->invalidate_samples( need_update );
 }
 
 

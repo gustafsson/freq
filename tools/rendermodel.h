@@ -16,6 +16,8 @@ namespace Heightmap
     class Renderer;
 }
 
+namespace Tfr { class Filter; }
+
 namespace Tools
 {
     class RenderModel
@@ -26,8 +28,8 @@ namespace Tools
 
         std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
 
-        Signal::pOperation postsink();
         Tfr::FreqAxis display_scale();
+        Tfr::Filter* block_filter();
 
         Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;

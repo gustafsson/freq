@@ -174,9 +174,30 @@ bool PostSink::
 
 
 void PostSink::
+        set_channel(unsigned c)
+{
+    Operation::set_channel( c );
+
+    if (_filter)
+    {
+        _filter->source( pOperation() );
+        _filter->set_channel( c );
+        _filter->source( source() );
+    }
+
+    BOOST_FOREACH( pOperation s, sinks() )
+    {
+        s->source( pOperation() );
+        s->set_channel( c );
+        s->source( source() );
+    }
+}
+
+
+void PostSink::
         source(pOperation v)
 {
-    Operation::source(v);
+    Operation::source( v );
 
     if (_filter)
         _filter->source( v );
@@ -309,6 +330,8 @@ void PostSink::
     }
 
     _sinks = v;
+
+    invalidate_samples( Signal::Intervals::Intervals_ALL );
 }
 
 

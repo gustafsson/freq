@@ -87,20 +87,17 @@ void TransformInfoForm::
     if (rendercontroller->model()->collections.empty())
         return;
 
-    Signal::pOperation s = rendercontroller->model()->collections[0]->postsink();
-
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-    Tfr::Filter* f = dynamic_cast<Tfr::Filter*>( ps->sinks()[0]->source().get() );
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(f->transform().get());
-    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(f->transform().get());
+    Tfr::Filter* f = rendercontroller->model()->block_filter();
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(!f?0:f->transform().get());
+    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(!f?0:f->transform().get());
 
     float fs = project->head->head_source()->sample_rate();
 
     if (cwt)
     {
         addRow("Type", "Morlet wavelet");
-        if (ps->filter())
-            addRow("Filter", vartype(*ps->filter()).c_str());
+        if (rendercontroller->model()->renderSignalTarget->post_sink()->filter())
+            addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
         addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples( fs )/fs));
         addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
@@ -114,8 +111,8 @@ void TransformInfoForm::
     else if (stft)
     {
         addRow("Type", "Short time fourier");
-        if (ps->filter())
-            addRow("Filter", vartype(*ps->filter()).c_str());
+        if (rendercontroller->model()->renderSignalTarget->post_sink()->filter())
+            addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
         addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(stft->chunk_size()));
         addRow("Overlap", "0");

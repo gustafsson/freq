@@ -74,8 +74,6 @@ public:
         {
             if (!model_->collections[c])
                 model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
-            if (0<c)
-                model_->collections[c]->setPostsink( model_->collections[0]->postsink() );
         }
 
 
@@ -85,7 +83,10 @@ public:
         Signal::Intervals v = I;
 
         foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
             c->invalidate_samples( v );
+            c->block_filter( Operation::source() );
+        }
     }
 
 
@@ -95,7 +96,7 @@ public:
         foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             Signal::Intervals inv_coll = c->invalid_samples();
-            TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
             I |= inv_coll;
         }
 
@@ -229,7 +230,9 @@ void RenderController::
 
     model()->renderSignalTarget->post_sink()->invalidate_samples(Signal::Intervals::Intervals_ALL);
 
+    // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
+
     emit transformChanged();
 }
 
@@ -237,20 +240,15 @@ void RenderController::
 Signal::PostSink* RenderController::
         setBlockFilter(Signal::Operation* blockfilter)
 {
-    Signal::pOperation s = model()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-    ps->filter(Signal::pOperation() );
-
-    BOOST_ASSERT( ps );
-
-    std::vector<Signal::pOperation> v;
     Signal::pOperation blockop( blockfilter );
     Signal::pOperation channelop( new BlockFilterSink(blockop, model()));
+
+    std::vector<Signal::pOperation> v;
     v.push_back( channelop );
+    Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
     ps->sinks(v);
 
-    ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
-
+    // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
 
     emit transformChanged();
@@ -262,7 +260,7 @@ Signal::PostSink* RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     setBlockFilter( cwtblock );
@@ -272,7 +270,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(model()->collections);
+    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(&model()->collections);
 
     setBlockFilter( stftblock );
 }
@@ -281,7 +279,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
     setBlockFilter( cwtblock );
@@ -291,7 +289,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -303,7 +301,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -315,7 +313,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     setBlockFilter( cwtblock );

@@ -82,16 +82,14 @@ CwtToBlock::
             BlockFilterImpl<Tfr::CwtFilter>(collection),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {
-    //_try_shortcuts = false;
 }
 
 CwtToBlock::
-        CwtToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+        CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
             :
             BlockFilterImpl<Tfr::CwtFilter>(collections),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {
-     //_try_shortcuts = false;
 }
 
 
@@ -300,15 +298,13 @@ StftToBlock::
             :
             BlockFilterImpl<Tfr::StftFilter>(collection)
 {
-    //_try_shortcuts = false;
 }
 
 StftToBlock::
-        StftToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+        StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
             :
             BlockFilterImpl<Tfr::StftFilter>(collections)
 {
-    //_try_shortcuts = false;
 }
 
 

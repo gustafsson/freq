@@ -46,6 +46,7 @@ void RecordController::
     destroyed_ = true;
 }
 
+
 void RecordController::
         receiveRecord(bool active)
 {

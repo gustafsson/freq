@@ -316,6 +316,14 @@ Intervals& Intervals::
 
 
 Intervals& Intervals::
+        operator ^= (const Intervals& b)
+{
+    *this = (*this - b) | (b - *this);
+    return *this;
+}
+
+
+Intervals& Intervals::
         operator*=(const float& scale)
 {
     std::list<Interval>::iterator itr;
@@ -416,7 +424,7 @@ Interval Intervals::
 
 
 Intervals Intervals::
-        addedSupport( IntervalType dt ) const
+        enlarge( IntervalType dt ) const
 {
     Intervals I;
     foreach (Interval r, *this)
@@ -427,6 +435,21 @@ Intervals Intervals::
             r.first = 0;
         r.last += dt;
         I |= r;
+    }
+    return I;
+}
+
+
+Intervals Intervals::
+        shrink( IntervalType dt ) const
+{
+    Intervals I;
+    foreach (Interval r, *this)
+    {
+        r.first += dt;
+        r.last -= dt;
+        if (r.count())
+            I |= r;
     }
     return I;
 }

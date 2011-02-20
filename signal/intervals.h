@@ -35,7 +35,7 @@ public:
       It is up to the user to ensure the invariant relation first<=last.
       */
     IntervalType first, last;
-    IntervalType count() const { return last - first; }
+    IntervalType count() const { return valid() ? last - first : 0; }
 
     bool valid() const;
     bool isConnectedTo(const Interval& r) const;
@@ -74,6 +74,8 @@ public:
     Intervals  operator &  (const Intervals& b) const { Intervals a = *this; return a&=b; }
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
+    Intervals  operator ^  (const Intervals& b) const { Intervals a = *this; return a^=b; }
+    Intervals& operator ^= (const Intervals&);
     Intervals operator >> (const IntervalType& b) const { Intervals a = *this; return a>>=b; }
     Intervals& operator >>= (const IntervalType&);
     Intervals operator << (const IntervalType& b) const { Intervals a = *this; return a<<=b; }
@@ -87,7 +89,8 @@ public:
     Interval                        getInterval() const;
     Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                        coveredInterval() const;
-    Intervals                       addedSupport( IntervalType dt ) const;
+    Intervals                       enlarge( IntervalType dt ) const;
+    Intervals                       shrink( IntervalType dt ) const;
     IntervalType                    count() const;
 
     std::string                     toString() const;

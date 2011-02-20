@@ -82,7 +82,6 @@ public:
       */
     Signal::pOperation     head_source_ref() const;
     Signal::pOperation     head_source() const;
-    Signal::PostSink&      post_sink();
 
 
     /**
@@ -101,7 +100,6 @@ private slots:
 
 private:
     pChain chain_;
-    PostSink post_sink_;
     Signal::pOperation head_source_;
 };
 typedef boost::shared_ptr<ChainHead> pChainHead;

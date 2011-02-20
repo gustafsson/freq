@@ -922,19 +922,18 @@ void RenderView::
 	}
 
     // TODO move to rendercontroller
-    bool wasWorking = !worker.fetch_todo_list().empty();
-
+    bool isWorking = false;
     bool isRecording = false;
 
     Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
     if(r != 0 && !(r->isStopped()))
         isRecording = true;
 
-    bool onlyUpdateMainRenderView = false;
+    bool onlyComputeBlocksForRenderView = false;
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
-		if (onlyUpdateMainRenderView)
+        if (onlyComputeBlocksForRenderView)
         foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
         {
             collection->next_frame(); // Discard needed blocks before this row
@@ -952,8 +951,6 @@ void RenderView::
 
         model->renderer->drawAxes( _last_length ); // 4.7 ms
 
-        if (wasWorking)
-            Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
     }
 
     {   // Find things to work on (ie playback and file output)
@@ -968,20 +965,15 @@ void RenderView::
         {
             worker.target( model->renderSignalTarget );
         }
-
-        if(isRecording)
-        {
-            wasWorking = true;
-        }
     }
 
     {   // Work
 		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
-        bool isWorking = !worker.fetch_todo_list().empty();
+        isWorking = worker.fetch_todo_list();
 
         TaskInfo("worker.fetch_todo_list() = %s, isWorking = %d", worker.fetch_todo_list().toString().c_str(), isWorking);
 
-        if (isWorking || wasWorking) {
+        if (isWorking || isRecording) {
             if (!_work_timer.get())
                 _work_timer.reset( new TaskTimer("Working"));
 
@@ -1022,7 +1014,10 @@ void RenderView::
         }
     }
 
-    if (!onlyUpdateMainRenderView)
+    if (isWorking || isRecording)
+        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
+
+    if (!onlyComputeBlocksForRenderView)
 	{
 		TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
 		foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
