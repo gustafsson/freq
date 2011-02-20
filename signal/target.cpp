@@ -184,8 +184,9 @@ std::string Layers::
 
 
 Target::
-        Target(Layers* all_layers)
+        Target(Layers* all_layers, std::string name)
             :
+            name_( name ),
             post_sink_( new PostSink ),
             rewire_channels_( new RewireChannels(pOperation()) ),
             forall_channels_( new ForAllChannelsOperation(pOperation()) ),
@@ -287,8 +288,15 @@ RewireChannels* Target::
 pBuffer Target::
         read( const Interval& I )
 {
-    DEBUG_Target TaskInfo("Target::reading\n%s", read_->toString().c_str());
+    DEBUG_Target TaskInfo("Target \"%s\", reading\n%s", name_.c_str(), read_->toString().c_str());
     return read_->read( I );
+}
+
+
+std::string Target::
+        name()
+{
+    return name_;
 }
 
 

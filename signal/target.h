@@ -59,7 +59,7 @@ private:
   */
 class Target {
 public:
-    Target(Layers* all_layers);
+    Target(Layers* all_layers, std::string name);
 
     /**
       It is an error to add a layer that is not in 'all_layers_'
@@ -100,9 +100,15 @@ public:
       */
     pBuffer read( const Interval& I );
 
+    /**
+      The name that was given when the target was created.
+      */
+    std::string name();
+
 private:
     void rebuildSource();
 
+    std::string name_;
     Signal::pOperation post_sink_;
     Signal::pOperation rewire_channels_;
     Signal::pOperation forall_channels_;

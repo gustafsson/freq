@@ -162,7 +162,7 @@ void PlaybackController::
         postsink_operations->filter( filter );
 
         Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
-        expected_data &= Signal::Interval(0, project_->worker.source()->number_of_samples());
+        expected_data &= Signal::Interval(0, filter->number_of_samples());
         postsink_operations->invalidate_samples( expected_data );
     }
     else

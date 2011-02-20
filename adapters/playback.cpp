@@ -298,7 +298,7 @@ bool Playback::
     if (_data.invalid_samples())
         return false;
 
-    return _playback_itr > _data.first_buffer()->sample_offset + _data.number_of_samples();
+    return time()*_data.sample_rate() > _data.first_buffer()->sample_offset + _data.number_of_samples();
 }
 
 
@@ -424,11 +424,11 @@ int Playback::
     normalize( buffer, framesPerBuffer );
     _playback_itr += framesPerBuffer;
 
-    if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + 10ul*2024/*framesPerBuffer*/) < _playback_itr ) {
+    if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + framesPerBuffer) < _playback_itr ) {
         TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
         return paComplete;
     } else {
-        if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr + framesPerBuffer) {
+        if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr ) {
             TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer );
         } else {
             TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer );

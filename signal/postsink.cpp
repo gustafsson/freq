@@ -95,14 +95,15 @@ Signal::pBuffer PostSink::
     // Since PostSink is a sink, it doesn't need to return anything.
     // But since the buffer 'b' will be computed anyway when calling 'read'
     // PostSink may just as well return it, at least for debugging purposes.
+    // Also, should that change PostSink implements affected_samples to notify
+    // nested PostSinks that they can or can not use the read from a PostSink
+    // directly.
 
     if (1==active_operations.size())
     {
         pOperation c = active_operations[0];
         c->source( prev );
         b = c->read( I );
-        prev = c;
-        c->source( source() );
         active_operations.clear();
     } else
         b = prev->read( I );
@@ -333,7 +334,7 @@ void PostSink::
 
     _sinks = v;
 
-    invalidate_samples( Signal::Intervals::Intervals_ALL );
+    // The new sinks should not be invalidated, neither should the parents be
 }
 
 
