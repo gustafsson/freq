@@ -29,7 +29,7 @@ ExportAudioDialog::ExportAudioDialog(
     ui->setupUi(this);
 
     update_timer.setSingleShot( true );
-    update_timer.setInterval( 1000 );
+    update_timer.setInterval( 100 );
     connect( &update_timer, SIGNAL( timeout() ), SLOT( update() ) );
 
     setupGui();
@@ -99,32 +99,35 @@ void ExportAudioDialog::
     if (!exportTarget)
         return;
 
+    setUpdatesEnabled( false );
+
     Signal::PostSink* postsink = exportTarget->post_sink();
     Signal::IntervalType missing = postsink->invalid_samples().count();
     float finished = 1.f - missing/(double)total;
 
     unsigned percent = finished*100;
-    ui->progressBar->setValue( percent );
 
     bool isFinished = 0 == missing;
 
     if (isFinished)
     {
-        ui->buttonBoxAbort->setEnabled( !isFinished );
-        ui->buttonBoxOk->setEnabled( isFinished );
-
         float L = total/postsink->sample_rate();
         ui->labelExporting->setText(QString(
-                "Exported %1 to %2")
+                "Exported signal of length %1 to %2")
                     .arg( Signal::SourceBase::lengthLongFormat(L).c_str() )
                     .arg( filemame ));
+
+        ui->buttonBoxAbort->setEnabled( !isFinished );
+        ui->buttonBoxOk->setEnabled( isFinished );
         exportTarget.reset();
     }
-    else
-    {
+
+    ui->progressBar->setValue( percent );
+
+    setUpdatesEnabled( true );
+
+    if (!isFinished)
         update_timer.start();
-        render_view->userinput_update( false );
-    }
 }
 
 
@@ -165,6 +168,7 @@ void ExportAudioDialog::
     std::vector<Signal::pOperation> sinks;
     sinks.push_back( Signal::pOperation( new Adapters::WriteWav( filemame.toStdString() )) );
     postsink->sinks(sinks);
+    postsink->isUnderfedIfInvalid = true;
 
     Signal::Intervals expected_data;
     if (filter)
@@ -181,7 +185,7 @@ void ExportAudioDialog::
     ui->buttonBoxOk->setEnabled( isFinished );
 
     float L = total/postsink->sample_rate();
-    ui->labelExporting->setText(QString("Exporting %1").arg( Signal::SourceBase::lengthLongFormat(L).c_str()));
+    ui->labelExporting->setText(QString("Exporting signal of length %1").arg( Signal::SourceBase::lengthLongFormat(L).c_str()));
 
     if (filter)
         setWindowTitle("Exporting selection");
