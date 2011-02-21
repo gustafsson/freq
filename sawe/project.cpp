@@ -89,12 +89,12 @@ pProject Project::
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
         filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
 
-        QString qfilemame = QFileDialog::getOpenFileName(NULL, "Open file", "", QString::fromLocal8Bit(filter.c_str()));
-        if (0 == qfilemame.length()) {
+        QString qfilename = QFileDialog::getOpenFileName(NULL, "Open file", "", QString::fromLocal8Bit(filter.c_str()));
+        if (0 == qfilename.length()) {
             // User pressed cancel
             return pProject();
         }
-        filename = qfilemame.toLocal8Bit().data();
+        filename = qfilename.toLocal8Bit().data();
     }
 
     string err;
@@ -198,19 +198,19 @@ bool Project::
 {
     QString filter = "SONICAWE - Sonic AWE project (*.sonicawe)";
 
-    QString qfilemame = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", filter);
-    if (0 == qfilemame.length()) {
+    QString qfilename = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", filter);
+    if (0 == qfilename.length()) {
         // User pressed cancel
         return false;
     }
 
     QString extension = ".sonicawe";
-    if (qfilemame.length() < extension.length())
-        qfilemame += extension;
-    if (0 != QString::compare(qfilemame.mid(qfilemame.length() - extension.length()), extension, Qt::CaseInsensitive))
-        qfilemame += extension;
+    if (qfilename.length() < extension.length())
+        qfilename += extension;
+    if (0 != QString::compare(qfilename.mid(qfilename.length() - extension.length()), extension, Qt::CaseInsensitive))
+        qfilename += extension;
 
-    project_filename_ = qfilemame.toLocal8Bit().data();
+    project_filename_ = qfilename.toLocal8Bit().data();
 
     updateWindowTitle();
 

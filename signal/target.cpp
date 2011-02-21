@@ -7,8 +7,8 @@
 
 #include <boost/foreach.hpp>
 
-//#define DEBUG_Target if(0)
-#define DEBUG_Target
+#define DEBUG_Target if(0)
+//#define DEBUG_Target
 
 namespace Signal {
 

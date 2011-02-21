@@ -25,6 +25,10 @@ public:
       */
     virtual pBuffer read( const Interval& I );
 
+    virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); Operation::invalidate_samples(I); }
+
+    virtual Intervals invalid_samples() { return _cache.invalid_samples(); }
+
     /**
       Function to read from on a cache miss
       */
@@ -38,9 +42,8 @@ class OperationCacheLayer: public OperationCache
 {
 public:
     OperationCacheLayer( pOperation source ):OperationCache(source){}
-    virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
-    virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); OperationCache::invalidate_samples(I); }
     virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
+    virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
 
 private:
     friend class boost::serialization::access;

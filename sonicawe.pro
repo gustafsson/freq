@@ -97,6 +97,7 @@ FORMS += \
     tools/transforminfoform.ui \
     tools/exportaudiodialog.ui \
     tools/harmonicsinfoform.ui \
+    tools/matlaboperationwidget.ui
 
 CUDA_SOURCES += \
     filters/*.cu \

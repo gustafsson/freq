@@ -50,6 +50,7 @@ public:
     std::string getTempName();
 
     std::string matlabFunction();
+    std::string matlabFilename();
     float timeout();
 
 private:
@@ -64,6 +65,7 @@ private:
     std::string _dataFile;
     std::string _resultFile;
     std::string _matlab_function;
+    std::string _matlab_filename;
     float _timeout;
 };
 
@@ -72,6 +74,8 @@ class MatlabOperation: public Signal::OperationCache
 public:
     MatlabOperation( Signal::pOperation source, std::string matlabFunction );
     ~MatlabOperation();
+
+    virtual std::string name();
 
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
 

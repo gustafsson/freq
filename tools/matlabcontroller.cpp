@@ -1,4 +1,5 @@
 #include "matlabcontroller.h"
+#include "matlaboperationwidget.h"
 
 // Sonic AWE
 #include "adapters/matlabfilter.h"
@@ -7,6 +8,8 @@
 
 #include "heightmap/collection.h"
 #include "tfr/cwt.h"
+
+#include <QDialogButtonBox>
 
 namespace Tools {
 
@@ -30,12 +33,11 @@ MatlabController::
 void MatlabController::
         setupGui(Sawe::Project* project)
 {
-    Ui::MainWindow* ui = project->mainWindow()->getItems();
+    ::Ui::MainWindow* ui = project->mainWindow()->getItems();
 
     connect(ui->actionMatlabOperation, SIGNAL(triggered()), SLOT(receiveMatlabOperation()));
     connect(ui->actionMatlabFilter, SIGNAL(triggered()), SLOT(receiveMatlabFilter()));
 }
-
 
 
 void MatlabController::
@@ -49,8 +51,29 @@ void MatlabController::
     }
     else*/
     {
-        _matlaboperation.reset( new Adapters::MatlabOperation( Signal::pOperation(), "matlaboperation") );
-        project_->head->appendOperation( _matlaboperation );
+        QDialog d( project_->mainWindow() );
+        d.setWindowTitle("Create Matlab operation");
+        d.setLayout( new QVBoxLayout );
+        MatlabOperationWidget* settings = new MatlabOperationWidget( project_->head->head_source()->sample_rate() );
+        d.layout()->addWidget( settings );
+        QDialogButtonBox* buttonBox = new QDialogButtonBox;
+        buttonBox->setObjectName(QString::fromUtf8("buttonBox"));
+        buttonBox->setGeometry(QRect(30, 460, 471, 32));
+        buttonBox->setOrientation(Qt::Horizontal);
+        buttonBox->setStandardButtons(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
+        buttonBox->raise();
+        d.connect(buttonBox, SIGNAL(accepted()), SLOT(accept()));
+        d.connect(buttonBox, SIGNAL(rejected()), SLOT(reject()));
+
+        d.layout()->addWidget( buttonBox );
+        d.hide();
+        d.setWindowModality( Qt::WindowModal );
+        if (QDialog::Accepted == d.exec())
+        {
+            _matlaboperation = settings->createMatlabOperation();
+            if (_matlaboperation)
+                project_->head->appendOperation( _matlaboperation );
+        }
     }
 
     render_view_->userinput_update();

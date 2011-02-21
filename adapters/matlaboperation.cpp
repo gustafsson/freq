@@ -24,6 +24,7 @@
 #include "tfr/chunk.h"
 
 #include <QProcess>
+#include <QFileInfo>
 
 using namespace std;
 using namespace Signal;
@@ -36,29 +37,38 @@ using namespace boost::posix_time;
 namespace Adapters {
 
 MatlabFunction::
-        MatlabFunction( std::string matlabFunction, float timeout )
+        MatlabFunction( std::string f, float timeout )
 :   _pid(0),
-    _matlab_function(matlabFunction),
+    _matlab_function(f),
+    _matlab_filename(f),
     _timeout( timeout )
 {
-    BOOST_ASSERT(!matlabFunction.empty());
+    BOOST_ASSERT(!_matlab_function.empty());
+
+    std::string path = QFileInfo(f.c_str()).path().toStdString();
+    _matlab_filename = QFileInfo(f.c_str()).fileName().toStdString();
+    _matlab_function = QFileInfo(f.c_str()).baseName().toStdString();
 
     { // Set filenames
         stringstream ss;
-        ss << matlabFunction << "." << hex << this << ".h5";
+        ss << _matlab_function << "." << hex << this << ".h5";
         _dataFile = ss.str();
         _resultFile = _dataFile + ".result.h5";
     }
 
     { // Start matlab/octave
         stringstream matlab_command, octave_command;
-        matlab_command << "addpath('/usr/share/sonicawe');"
-                << "sawe_filewatcher('" << _dataFile << "',@" << matlabFunction << ");";
+        matlab_command
+                << "addpath('/usr/share/sonicawe');"
+                << "addpath('" << path << "');"
+                << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
         octave_command << "addpath('/usr/share/sonicawe');"
-                << "sawe_filewatcher_oct('" << _dataFile << "',@" << matlabFunction << ");";
+                << "addpath('" << path << "');"
+                << "sawe_filewatcher_oct('" << _dataFile << "',@" << _matlab_function << ");";
 
         QStringList matlab_args;
         matlab_args.push_back("-r");
+        // "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash"
         matlab_args.push_back(matlab_command.str().c_str());
         QStringList octave_args;
         octave_args.push_back("-qf");
@@ -82,20 +92,7 @@ MatlabFunction::
         delete _pid;
         _pid = 0;
         /*
-#ifdef __GNUC__
-        _pid = (void*)fork();
-
-        if(0==_pid)
-        {
-            ::execlp("matlab","matlab", "-r", matlab_command.str().c_str(), NULL );
-            TaskInfo("Couldn't start MATLAB, trying Octave instead");
-            // apparently failed, try octave
-            ::execlp("octave","octave", "-qf", "--eval", octave_command.str().c_str(), NULL );
-            TaskInfo("Couldn't start Octave");
-            // failed that to... will eventually time out
-            exit(0);
-        }
-#elif defined(WIN32)
+#if defined(WIN32)
 		_pid = (void*)_spawnlp(_P_NOWAIT, "matlab", 
                         "matlab", "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash", "-r", matlab_command.str().c_str(), NULL );
 
@@ -107,7 +104,7 @@ MatlabFunction::
 		}
 #else
 #error No implementation to spawn processes implemented for this platform/compiler.
-#endif // __GNUC__*/
+#endif */
     }
 }
 
@@ -175,6 +172,13 @@ std::string MatlabFunction::
 }
 
 
+std::string MatlabFunction::
+        matlabFilename()
+{
+    return _matlab_filename;
+}
+
+
 float MatlabFunction::
         timeout()
 {
@@ -230,6 +234,12 @@ MatlabOperation::
         ~MatlabOperation()
 {
     TaskInfo("~MatlabOperation");
+}
+
+std::string MatlabOperation::
+        name()
+{
+    return _matlab->matlabFilename();
 }
 
 pBuffer MatlabOperation::
