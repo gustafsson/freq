@@ -38,7 +38,7 @@ namespace Tools
         friend class boost::serialization::access;
         ToolFactory(); // required by serialization, should never be called
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
-            TaskInfo ti("%s", __FUNCTION__);
+            TaskInfo ti("ToolFactory::serialize");
             ar
                     & BOOST_SERIALIZATION_NVP(render_model)
                     & BOOST_SERIALIZATION_NVP(playback_model.playback_device)

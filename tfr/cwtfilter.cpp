@@ -159,18 +159,10 @@ void CwtFilter::
 Signal::Intervals CwtFilter::
         include_time_support(Signal::Intervals I)
 {
-    Signal::Intervals r;
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
     Signal::IntervalType n = cwt.wavelet_time_support_samples( sample_rate() );
 
-    BOOST_FOREACH( Signal::Interval& i, I )
-    {
-        if (i.first>n) i.first -= n; else i.first = 0;
-        i.last += n;
-        r |= i;
-    }
-
-    return r;
+    return I.enlarge( n );
 }
 
 

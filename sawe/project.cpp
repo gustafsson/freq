@@ -20,14 +20,13 @@ using namespace std;
 namespace Sawe {
 
 Project::
-        Project( Signal::pOperation root, std::string filename )
+        Project( Signal::pOperation root, std::string layer_title )
 :   worker(Signal::pTarget()),
     layers(this),
-    is_modified_(true),
-    project_filename_( filename )
+    is_modified_(true)
 {
     Signal::pChain chain(new Signal::Chain(root));
-    chain->name = QString::fromStdString( project_name() );
+    chain->name = layer_title;
     layers.addLayer( chain );
     head.reset( new Signal::ChainHead(chain) );
 }
@@ -197,9 +196,9 @@ void Project::
 bool Project::
         saveAs()
 {
-    string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
+    QString filter = "SONICAWE - Sonic AWE project (*.sonicawe)";
 
-    QString qfilemame = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", QString::fromLocal8Bit(filter.c_str()));
+    QString qfilemame = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", filter);
     if (0 == qfilemame.length()) {
         // User pressed cancel
         return false;
@@ -223,7 +222,7 @@ pProject Project::
         openAudio(std::string audio_file)
 {
     Signal::pOperation s( new Adapters::Audiofile( audio_file.c_str() ) );
-    return pProject( new Project( s, audio_file ));
+    return pProject( new Project( s, QFileInfo( audio_file.c_str() ).fileName().toStdString() ));
 }
 
 } // namespace Sawe

@@ -433,7 +433,12 @@ Intervals Intervals::
             r.first -= dt;
         else
             r.first = 0;
-        r.last += dt;
+
+        if (r.last < Interval::IntervalType_MAX - dt)
+            r.last += dt;
+        else
+            r.last = Interval::IntervalType_MAX;
+
         I |= r;
     }
     return I;

@@ -33,10 +33,12 @@ private:
     std::set<pChain> layers_;
     Sawe::Project* project_;
 
-//    friend class boost::serialization::access;
-//    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) const {
-//        ar & BOOST_SERIALIZATION_NVP( layers_);
-//    }
+    friend class boost::serialization::access;
+    Layers() { BOOST_ASSERT(false); } // required for serialization to compile, is never called
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        TaskInfo ti("Layers::serialize");
+        ar & BOOST_SERIALIZATION_NVP( layers_);
+    }
 };
 
 

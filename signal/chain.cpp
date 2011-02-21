@@ -35,7 +35,7 @@ void Chain::
     {
         tip_source_ = tip;
         TaskInfo("Chain '%s' is now\n%s",
-                 name.toStdString().c_str(),
+                 name.c_str(),
                  tip_source_->toString().c_str());
         emit chainChanged();
     }
@@ -66,10 +66,9 @@ public:
 ChainHead::
         ChainHead( pChain chain )
             :
-            chain_(chain),
-            head_source_( new ChainHeadReference(chain_->tip_source()) )
+            chain_(chain)
 {
-    connect( chain.get(), SIGNAL(chainChanged()), SLOT(chainChanged()));
+    connectChain();
 }
 
 
@@ -169,6 +168,14 @@ void ChainHead::
         if( !chain_->isInChain(head_source()) )
             head_source( chain_->tip_source() );
     }
+}
+
+
+void ChainHead::
+        connectChain()
+{
+    head_source_.reset( new ChainHeadReference(chain_->tip_source()) );
+    connect( chain_.get(), SIGNAL(chainChanged()), SLOT(chainChanged()));
 }
 
 

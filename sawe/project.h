@@ -158,20 +158,22 @@ private:
 
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {
-        TaskInfo ti("%s", __FUNCTION__);
+        TaskInfo ti("Project::serialize");
 
-        //ar & BOOST_SERIALIZATION_NVP(all_layers);
+        ar & BOOST_SERIALIZATION_NVP(layers);
+        ar & BOOST_SERIALIZATION_NVP(head);
 
         QByteArray mainwindowState = _mainWindow->saveState( version );
 		save_bytearray( ar, mainwindowState );
 
-        Tools::ToolRepo& tool_repo = *_tools;
+        Tools::ToolFactory& tool_repo = *dynamic_cast<Tools::ToolFactory*>(_tools.get());
         ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
-        TaskInfo ti("%s", __FUNCTION__);
+        TaskInfo ti("Project::serialize");
 
-        //ar & BOOST_SERIALIZATION_NVP(all_layers);
+        ar & BOOST_SERIALIZATION_NVP(layers);
+        ar & BOOST_SERIALIZATION_NVP(head);
 
 		createMainWindow();
 
@@ -181,7 +183,7 @@ private:
 
         // createMainWindow has already created all tools
         // this deserialization sets their settings
-        Tools::ToolRepo& tool_repo = *_tools;
+        Tools::ToolFactory& tool_repo = *dynamic_cast<Tools::ToolFactory*>(_tools.get());
         ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
 

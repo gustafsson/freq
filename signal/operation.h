@@ -193,7 +193,7 @@ private:
     void serialize(archive& ar, const unsigned int /*version*/)
     {
         TaskInfo ti("Serializing %s, source: %s",
-                    vartype(*this).c_str(), _source.get()?vartype(*_source).c_str():0);
+                    name().c_str(), _source.get()?_source->name().c_str():0);
         ti.tt().partlyDone();
 
         ar & BOOST_SERIALIZATION_NVP(_source);

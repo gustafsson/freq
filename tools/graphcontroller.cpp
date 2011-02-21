@@ -63,7 +63,7 @@ namespace Tools
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
-            chainItm->setText(0, c->name);
+            chainItm->setText(0, QString::fromStdString( c->name ) );
             chainItm->setExpanded( true );
 
             Signal::pOperation o = c->tip_source();

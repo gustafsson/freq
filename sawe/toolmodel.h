@@ -104,7 +104,7 @@ namespace Tools
         ToolRepo() { BOOST_ASSERT( false ); }
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
         {
-            TaskInfo ti("%s", __FUNCTION__);
+            TaskInfo ti("ToolRepo::serialize");
             ar
                     & BOOST_SERIALIZATION_NVP(tool_models_);
 

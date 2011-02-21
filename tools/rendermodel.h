@@ -52,7 +52,7 @@ namespace Tools
         friend class boost::serialization::access;
         RenderModel() { BOOST_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
-            TaskInfo ti("%s", __FUNCTION__);
+            TaskInfo ti("RenderModel::serialize");
             ar
                     & BOOST_SERIALIZATION_NVP(_qx)
                     & BOOST_SERIALIZATION_NVP(_qy)
@@ -65,7 +65,6 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(_rz)
                     & BOOST_SERIALIZATION_NVP(xscale)
                     & BOOST_SERIALIZATION_NVP(zscale);
-
         }
     };
 } // namespace Tools

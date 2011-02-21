@@ -55,8 +55,9 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::ToolRepo>();
     ar.template register_type<Tools::RenderModel>();
     ar.template register_type<Signal::OperationCacheLayer>();
-//    ar.template register_type<Signal::Layers>();
-//    ar.template register_type<Signal::Chain>();
+    ar.template register_type<Signal::Layers>();
+    ar.template register_type<Signal::Chain>();
+    ar.template register_type<Signal::ChainHead>();
 
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 

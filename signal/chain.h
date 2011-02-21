@@ -5,13 +5,13 @@
 
 #include <QObject>
 #include <QString>
-
+#include <boost/serialization/string.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/nvp.hpp>
 
 namespace Signal {
 
-class Chain : public QObject
+class Chain: public QObject
 {
     Q_OBJECT
 public:
@@ -35,8 +35,7 @@ public:
     /**
       Name can be used as a title in the GUI.
       */
-    QString name;
-
+    std::string name;
 
     bool isInChain(Signal::pOperation) const;
 
@@ -48,13 +47,14 @@ private:
       */
     Signal::pOperation root_source_, tip_source_;
 
-//    friend class boost::serialization::access;
-//    Chain() { } // used by serialization, root is read from archive instead
-//    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) const {
-//        ar & BOOST_SERIALIZATION_NVP(name);
-//        ar & BOOST_SERIALIZATION_NVP(root_source_);
-//        ar & BOOST_SERIALIZATION_NVP(tip_source_);
-//    }
+    friend class boost::serialization::access;
+    Chain() { } // used by serialization, root is read from archive instead
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        TaskInfo ti("Chain::serialize");
+        ar & BOOST_SERIALIZATION_NVP(name);
+        ar & BOOST_SERIALIZATION_NVP(root_source_);
+        ar & BOOST_SERIALIZATION_NVP(tip_source_);
+    }
 
 };
 typedef boost::shared_ptr<Chain> pChain;
@@ -103,6 +103,17 @@ private slots:
 private:
     pChain chain_;
     Signal::pOperation head_source_;
+
+    friend class boost::serialization::access;
+    ChainHead() { } // used by serialization
+    void connectChain();
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        TaskInfo ti("ChainHead::serialize");
+        ar & BOOST_SERIALIZATION_NVP(chain_);
+
+        if (typename Archive::is_loading())
+            connectChain();
+    }
 };
 typedef boost::shared_ptr<ChainHead> pChainHead;
 

@@ -69,16 +69,7 @@ public:
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
-        unsigned N = num_channels();
-        if ( N != model_->collections.size())
-        {
-            model_->collections.resize(N);
-            for (unsigned c=0; c<N; ++c)
-            {
-                if (!model_->collections[c])
-                    model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
-            }
-        }
+        validateSize();
 
         Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
         Signal::Intervals v = Signal::Intervals(I).enlarge( support );
@@ -86,8 +77,9 @@ public:
         foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             c->invalidate_samples( v );
-            c->block_filter( Operation::source() );
         }
+
+        Operation::invalidate_samples( I );
     }
 
 
@@ -103,6 +95,27 @@ public:
 
         return I;
     }
+
+
+    void validateSize()
+    {
+        unsigned N = num_channels();
+        if ( N != model_->collections.size())
+        {
+            model_->collections.resize(N);
+            for (unsigned c=0; c<N; ++c)
+            {
+                if (!model_->collections[c])
+                    model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+            }
+        }
+
+        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
+            c->block_filter( Operation::source() );
+        }
+    }
+
 
 private:
     RenderModel* model_;
@@ -241,13 +254,16 @@ void RenderController::
 Signal::PostSink* RenderController::
         setBlockFilter(Signal::Operation* blockfilter)
 {
+    BlockFilterSink* bfs;
     Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( new BlockFilterSink(blockop, model()));
+    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model()));
 
     std::vector<Signal::pOperation> v;
     v.push_back( channelop );
     Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
     ps->sinks(v);
+    bfs->validateSize();
+    bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
     // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();

@@ -25,7 +25,6 @@ RenderModel::
 
     Signal::PostSink* o = renderSignalTarget->post_sink();
 
-
     BOOST_ASSERT( o->num_channels() );
 
     collections.resize(o->num_channels());
