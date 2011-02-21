@@ -182,7 +182,7 @@ std::string Layers::
         toString() const
 {
     std::string s;
-    for (std::set<pChain>::iterator itr = layers_.begin(); itr != layers_.end(); ++itr)
+    for (std::set<pChain>::const_iterator itr = layers_.begin(); itr != layers_.end(); ++itr)
     {
         s += (*itr)->tip_source()->toString();
         s += "\n\n";
