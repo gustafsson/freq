@@ -13,7 +13,7 @@ namespace Tools {
 MatlabController::
         MatlabController( Sawe::Project* project, RenderView* render_view )
             :
-            worker_(&project->worker),
+            project_(project),
             render_view_(render_view)
 {
     setupGui(project);
@@ -41,16 +41,16 @@ void MatlabController::
 void MatlabController::
         receiveMatlabOperation()
 {
-    if (_matlaboperation)
+    /*if (_matlaboperation)
     {
         // Already created, make it re-read the script
         dynamic_cast<Adapters::MatlabOperation*>(_matlaboperation.get())->restart();
         worker_->invalidate_post_sink(_matlaboperation->affected_samples());
     }
-    else
+    else*/
     {
         _matlaboperation.reset( new Adapters::MatlabOperation( Signal::pOperation(), "matlaboperation") );
-        worker_->appendOperation( _matlaboperation );
+        project_->head->appendOperation( _matlaboperation );
     }
 
     render_view_->userinput_update();
@@ -60,20 +60,20 @@ void MatlabController::
 void MatlabController::
         receiveMatlabFilter()
 {
-    if (_matlabfilter)
+    /*if (_matlabfilter)
     {
         // Already created, make it re-read the script
         dynamic_cast<Adapters::MatlabFilter*>(_matlabfilter.get())->restart();
         worker_->invalidate_post_sink(_matlabfilter->affected_samples());
     }
-    else
+    else*/
     {
         _matlabfilter.reset( new Adapters::MatlabFilter( "matlabfilter" ) );
-        worker_->appendOperation( _matlabfilter );
+        project_->head->appendOperation( _matlabfilter );
 
 #ifndef SAWE_NO_MUTEX
         // Make sure the worker runs in a separate thread
-        worker_->start();
+        project_->worker_->start();
 #endif
     }
 

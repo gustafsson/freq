@@ -26,7 +26,7 @@ namespace Tools
         // Model
         // Model that is controlled, this controller doesn't have a view
         // and shares control of the worker with many others
-        Signal::Worker* worker_;
+        Sawe::Project* project_;
 
         RenderView* render_view_;
 

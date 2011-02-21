@@ -31,7 +31,7 @@
 // Don't keep more than this times the number of blocks currently needed
 // TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
-#define MAX_CREATED_BLOCKS_PER_FRAME 4 // Even numbers look better for stereo signals
+#define MAX_CREATED_BLOCKS_PER_FRAME 2 // Even numbers look better for stereo signals
 
 using namespace Signal;
 
@@ -47,8 +47,7 @@ Collection::
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _created_count(0),
-    _frame_counter(0),
-    _postsink( new PostSink )
+    _frame_counter(0)
 {
 	BOOST_ASSERT( worker->source() );
 
@@ -56,10 +55,6 @@ Collection::
 
     // Updated as soon as the first chunk is received
     update_sample_size( 0 );
-
-    std::vector<pOperation> sinks;
-    sinks.push_back( pOperation(new CwtToBlock(this)));
-    ((PostSink*)_postsink.get())->sinks( sinks );
 
     _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.max_frequency_scalar = 1;
@@ -597,10 +592,10 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        pOperation filterp = dynamic_cast<Signal::PostSink*>(postsink().get())->sinks()[0]->source();
-        Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(filterp.get());
-        Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
-        bool tfr_is_stft = 0 != stft;
+        bool tfr_is_stft = false;
+        Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
+        if (filter)
+            tfr_is_stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
 
         if ( 1 /* create from others */ )
         {
@@ -643,7 +638,7 @@ pBlock Collection::
 #ifndef SAWE_NO_MUTEX
                         l.unlock();
 #endif
-                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.coveredInterval(), false );
+                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update, false );
 #ifndef SAWE_NO_MUTEX
                         l.relock();
 #endif
@@ -659,7 +654,8 @@ pBlock Collection::
                             d -= ref.log2_samples_size[1];
 
                             //if (d==dist)
-                            if (d==-1 || d==1)
+                            //mergeBlock( block, bl, 0 );
+                            if (d>=-2 && d<=2)
                             {
                                 Position a2,b2;
                                 bl->ref.getArea(a2,b2);
@@ -863,8 +859,8 @@ void Collection::
     StftToBlock stftmerger(this);
     Tfr::Stft* transp = new Tfr::Stft();
     transp->set_approximate_chunk_size(1 << 12); // 4096
-    stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.source( fast_source );
+    stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.exclude_end_block = true;
 
     // Only take 4 MB of signal data at a time

@@ -36,35 +36,11 @@ public:
     }
 
 
-    BlockFilterImpl( std::vector<boost::shared_ptr<Collection> > collections )
+    BlockFilterImpl( std::vector<boost::shared_ptr<Collection> >* collections )
         :
-        BlockFilter(collections[0].get()),
+        BlockFilter((*collections)[0].get()),
         _collections(collections)
     {
-    }
-
-
-    /// @overload Signal::Operation::fetch_invalid_samples()
-    Signal::Intervals fetch_invalid_samples()
-    {
-        FilterKind::_invalid_samples.clear();
-
-        //if (FilterKind::_invalid_samples)
-        //    TaskInfo("%s %s had %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
-
-        foreach ( boost::shared_ptr<Collection> c, _collections)
-        {
-            Signal::Intervals inv_coll = c->invalid_samples();
-            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
-            FilterKind::_invalid_samples |= inv_coll;
-        }
-
-        //TaskInfo ti("%s %s %s", vartype(*this).c_str(), __FUNCTION__, FilterKind::_invalid_samples.toString().c_str());
-
-        Signal::Intervals inv_samples = FilterKind::_invalid_samples;
-        Signal::Intervals r = Tfr::Filter::fetch_invalid_samples();
-        FilterKind::_invalid_samples = inv_samples;
-        return r;
     }
 
 
@@ -77,10 +53,10 @@ public:
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     Signal::Operation* affecting_source( const Signal::Interval& I)
     {
-        if (FilterKind::_invalid_samples & I)
+        if (_collection->invalid_samples() & I)
             return this;
 
-        return FilterKind::_source->affecting_source( I );
+        return FilterKind::source()->affecting_source( I );
     }
 
 
@@ -90,18 +66,19 @@ public:
         */
     Signal::Intervals zeroed_samples_recursive() { return Signal::Intervals(); }
 
+    virtual void set_channel(unsigned c)
+    {
+        FilterKind::set_channel(c);
+
+        _collection = (*_collections)[c].get();
+    }
+
     void applyFilter( Tfr::pChunk pchunk )
     {
-        Signal::FinalSource * fs = dynamic_cast<Signal::FinalSource*>(FilterKind::root());
-        BOOST_ASSERT( fs );
-
-        _collection = _collections[fs->get_channel()].get();
-
-        // A bit overkill to do every chunk, but it doesn't cost much.
+        // Not necessary to do every chunk, but it doesn't cost much.
         // Most of 'update_sample_size' is only needed the very first chunk,
         // and '_max_sample_size.time' is updated in 'invalidate_samples'.
         _collection->update_sample_size(pchunk.get());
-
         FilterKind::applyFilter( pchunk );
     }
 
@@ -113,7 +90,7 @@ public:
     }
 
 protected:
-    std::vector<boost::shared_ptr<Collection> > _collections;
+    std::vector<boost::shared_ptr<Collection> >* _collections;
 };
 
 
@@ -121,7 +98,7 @@ class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:
     CwtToBlock( Collection* collection );
-    CwtToBlock( std::vector<boost::shared_ptr<Collection> > collections );
+    CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     /**
       Tells the "chunk-to-block" what information to extract from the complex
@@ -141,7 +118,7 @@ class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
     StftToBlock( Collection* collection );
-    StftToBlock( std::vector<boost::shared_ptr<Collection> > collections );
+    StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };

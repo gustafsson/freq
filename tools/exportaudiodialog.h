@@ -38,7 +38,7 @@ private:
     SelectionModel* selection_model;
     RenderView* render_view;
 
-    Signal::pWorkerCallback worker_callback;
+    Signal::pTarget exportTarget;
     QTimer update_timer;
     QString filemame;
     Signal::IntervalType total;

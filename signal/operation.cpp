@@ -2,13 +2,34 @@
 
 #include <demangle.h>
 
+#include <boost/foreach.hpp>
+
 namespace Signal {
 
-Operation::Operation(pOperation source )
-:   _source( source ),
-    _enabled( true ),
-    _invalid_samples()
+Operation::Operation(pOperation s )
+:   _enabled( true ) // TODO remove _enabled
 {
+    source( s );
+}
+
+
+Operation::
+        ~Operation()
+{
+    source( pOperation() );
+}
+
+
+void Operation::
+        source(pOperation v)
+{
+    if (_source)
+        _source->_outputs.erase( this );
+
+    _source=v;
+
+    if (_source)
+        _source->_outputs.insert( this );
 }
 
 
@@ -37,6 +58,13 @@ Intervals Operation::
 }
 
 
+std::string Operation::
+        name()
+{
+    return vartype(*this);
+}
+
+
 pBuffer Operation::
         read( const Interval& I )
 {
@@ -57,24 +85,13 @@ Operation* Operation::
 }
 
 
-// todo rename fetch_invalid_samples to read_invalid_samples
-Intervals Operation::
-        fetch_invalid_samples()
+void Operation::
+        invalidate_samples(const Intervals& I)
 {
-//    TaskInfo tt("%s::fetch_invalid_samples, _invalid_samples=%s",
-//                vartype(*this).c_str(), _invalid_samples.toString().c_str());
-    Intervals r = _invalid_samples;
-
-    Operation* o = _source.get();
-    if (0!=o)
+    BOOST_FOREACH( Operation* p, _outputs )
     {
-        r |= translate_interval(o->fetch_invalid_samples());
+        p->invalidate_samples( p->translate_interval( I ));
     }
-
-    if (_invalid_samples)
-        _invalid_samples = Intervals();
-
-    return r;
 }
 
 
@@ -88,24 +105,67 @@ Operation* Operation::
 }
 
 
+bool Operation::
+        hasSource(Operation*s)
+{
+    if (this == s)
+        return true;
+    if (_source)
+        return _source->hasSource( s );
+    return false;
+}
+
 std::string Operation::
         toString()
 {
-    std::string s = vartype(*this);
+    std::string s = name();
+
     if (_source)
         s += "\n" + _source->toString();
+
     return s;
+}
+
+
+std::string Operation::
+        parentsToString()
+{
+    std::stringstream ss;
+    ss << name() << " (" << _outputs.size() << " parent" << (_outputs.size()==1?"":"s") << ")";
+    unsigned i = 0;
+    BOOST_FOREACH( Operation* p, _outputs )
+    {
+        ss << std::endl;
+        if (_outputs.size())
+            ss << i << ": ";
+        ss << p->parentsToString();
+    }
+    return ss.str();
 }
 
 
 Signal::Intervals Operation::
         affected_samples_until(pOperation stop)
 {
-    Signal::Intervals I = affected_samples();
-    if (this!=stop.get() && _source)
-        I |= translate_interval( _source->affected_samples_until( stop ) );
+    Signal::Intervals I;
+    if (this!=stop.get())
+    {
+        I = affected_samples();
+        if (_source)
+            I |= translate_interval( _source->affected_samples_until( stop ) );
+    }
     return I;
 }
 
+
+Signal::Intervals FinalSource::
+        zeroed_samples()
+{
+    IntervalType N = number_of_samples();
+    Signal::Intervals r = Signal::Intervals::Intervals_ALL;
+    if (N)
+        r -= Signal::Interval(0, N);
+    return r;
+}
 
 } // namespace Signal

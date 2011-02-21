@@ -86,7 +86,7 @@ ChunkAndInverse CwtFilter::
                                          Interval(firstSample, firstSample+L).toString().c_str(),
                                      vartype(*this).c_str());
 
-        ci.inverse = _source->readFixedLength( Interval(firstSample,
+        ci.inverse = Operation::source()->readFixedLength( Interval(firstSample,
                                                         firstSample+L) );
     }
 
@@ -159,18 +159,10 @@ void CwtFilter::
 Signal::Intervals CwtFilter::
         include_time_support(Signal::Intervals I)
 {
-    Signal::Intervals r;
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
     Signal::IntervalType n = cwt.wavelet_time_support_samples( sample_rate() );
 
-    BOOST_FOREACH( Signal::Interval& i, I )
-    {
-        if (i.first>n) i.first -= n; else i.first = 0;
-        i.last += n;
-        r |= i;
-    }
-
-    return r;
+    return I.enlarge( n );
 }
 
 
@@ -204,9 +196,13 @@ void CwtFilter::
     if (0 == dynamic_cast<Tfr::Cwt*>( t.get()) )
         throw std::invalid_argument("'transform' must be an instance of Tfr::Cwt");
 
-    // even if '0 == t || transform() == t' the client
-    // probably wants to reset everything when transform( t ) is called
-    //_invalid_samples = Intervals::Intervals_ALL;
+    if ( t == transform() && !_transform )
+        t.reset();
+
+    if (_transform == t )
+        return;
+
+    invalidate_samples( Signal::Interval(0, number_of_samples() ));
 
     _transform = t;
 }

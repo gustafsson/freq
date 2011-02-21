@@ -105,10 +105,7 @@ void BrushController::
 void BrushController::
         mouseReleaseEvent ( QMouseEvent * )
 {
-    render_view_->model->project()->worker.invalidate_post_sink( drawn_interval_ );
-    drawn_interval_.clear();
-
-    render_view_->userinput_update();
+    model()->finished_painting();
 }
 
 

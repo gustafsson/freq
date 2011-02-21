@@ -71,11 +71,6 @@ void SaweMainWindow::
     // TODO move into each tool
     // TODO remove actionToggleTimelineWindow, and dockWidgetTimeline
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
-//    connectActionToWindow(ui->actionToggleOperationsWindow, ui->operationsWindow);
-    connect(ui->actionToggleHistoryWindow, SIGNAL(toggled(bool)), ui->operationsWindow, SLOT(setVisible(bool)));
-    connect(ui->actionToggleHistoryWindow, SIGNAL(triggered()), ui->operationsWindow, SLOT(raise()));
-    connect(ui->operationsWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityOperations(bool)));
-    ui->actionToggleHistoryWindow->setChecked( false );
 
     //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
 //    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
@@ -84,7 +79,6 @@ void SaweMainWindow::
 
     // TODO move into each tool
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
-    this->addDockWidget( Qt::RightDockWidgetArea, ui->operationsWindow );
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
 
@@ -100,7 +94,6 @@ void SaweMainWindow::
 //    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
 //    this->tabifyDockWidget(ui->operationsWindow, ui->historyWindow);
 //    ui->topFilterWindow->raise();
-    ui->operationsWindow->hide();
 
     // todo move into toolfactory
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
@@ -151,13 +144,7 @@ void SaweMainWindow::slotCheckActionStates(bool)
 */
 
 
-void SaweMainWindow::
-        checkVisibilityOperations(bool visible)
-{
-    visible |= !tabifiedDockWidgets( ui->operationsWindow ).empty();
-    visible |= ui->operationsWindow->isVisibleTo( ui->operationsWindow->parentWidget() );
-    ui->actionToggleHistoryWindow->setChecked(visible);
-}
+
 
 
 SaweMainWindow::~SaweMainWindow()
@@ -236,7 +223,7 @@ void SaweMainWindow::
     save_changes_msgbox_ = new QMessageBox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
     save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
-    save_changes_msgbox_->setDetailedText( QString::fromStdString( "Current state:\n" + project->head_source()->toString()) );
+    save_changes_msgbox_->setDetailedText( QString::fromStdString( "Current state:\n" + project->layers.toString()) );
     save_changes_msgbox_->open( this, SLOT(saveChangesAnswer(QAbstractButton *)));
 }
 

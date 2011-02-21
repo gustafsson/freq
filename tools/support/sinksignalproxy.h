@@ -18,9 +18,10 @@ namespace Tools {
             void recievedInvalidSamples( Signal::Intervals );
 
         private:
-            virtual bool isFinished() { return false; }
+            virtual bool deleteMe() { return false; }
             virtual void put(Signal::pBuffer);
             virtual void invalidate_samples(const Signal::Intervals& I);
+            virtual Signal::Intervals invalid_samples() { return Signal::Intervals(); }
         };
 
     } // namespace Support

@@ -20,8 +20,10 @@ namespace Signal {
   location it will be overwritten.
 
   There are two different accept strategies that sais whether put should deny
-  parts of incomming buffers or not. Expected samples are given by
-  'Operation::invalid_samples()'.
+  parts of incomming buffers or not. put accepts anything while
+  putExpectedSamples discards all data that has not previously been marked as
+  exptected by invalidate_samples. Expected samples are given by
+  'invalid_samples()'.
 
   Afterwards, any data put into the SinkSource can be fetched with
   'SinkSource::read'. If the read Interval starts at a location where no data
@@ -43,14 +45,18 @@ public:
       */
     void put( pBuffer b );
 
-
     /**
-      Samples in 'b' will only be accepted if they are present in 'expected'.
+      Samples in 'b' will only be accepted if they are present in 'invalid_samples'.
       */
-    void putExpectedSamples( pBuffer b, const Intervals& expected );
+    void putExpectedSamples( pBuffer b )
+    {
+        putExpectedSamples( b, invalid_samples() );
+    }
 
+    virtual Intervals invalid_samples() { return _invalid_samples; }
+    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
 
-    /// Clear cache
+    /// Clear cache, also clears invalid_samples
     void clear();
 
     /**
@@ -84,15 +90,26 @@ public:
     /// Get what samples that are described in the containing buffer
     Intervals samplesDesc();
 
-    /// @see Operation::fetch_invalid_samples()
-    //virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= samplesDesc()&I; }
-    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
-
 private:
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
 	QMutex _cache_mutex;
 #endif
-    std::vector<pBuffer> _cache; // todo use set instead
+    std::vector<pBuffer> _cache;
+
+    /**
+      Samples in 'b' will only be accepted if they are present in 'expected'.
+      */
+    void putExpectedSamples( pBuffer b, const Intervals& expected );
+
+    /**
+      _invalid_samples describes which samples that should be put into this
+      SinkSource. It is initialized to an empty interval and can be used through
+      invalidate_samples() to say that certain samples are missing before
+      calling putExpectedSamples.
+
+      @see SinkSource::invalid_samples(), SinkSource::invalidate_samples()
+      */
+    Intervals _invalid_samples;
 
     virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }

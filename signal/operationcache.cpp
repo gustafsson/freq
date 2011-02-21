@@ -20,11 +20,11 @@ pBuffer OperationCache::
 
     // cached samples doesn't count in samplesDesc if they are marked as invalid
     Intervals cached = _cache.samplesDesc();
-    cached -= _cache.fetch_invalid_samples();
+    cached -= _cache.invalid_samples();
 
     Interval ok = (Intervals(I) & cached).getInterval();
 
-    if (ok.first == I.first && ok.valid() && enable_cache)
+    if (ok.first == I.first && ok.count() && enable_cache)
     {
         // Don't need anything new, return cache
         pBuffer b = _cache.readFixedLength( ok );
@@ -38,7 +38,7 @@ pBuffer OperationCache::
     }
 
     Interval missing = I;
-    if (ok.first != I.first && ok.valid())
+    if (ok.first != I.first && ok.count())
         missing.last = ok.first;
 
     pBuffer b = readRaw( missing );

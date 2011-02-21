@@ -15,10 +15,19 @@ const IntervalType Interval::IntervalType_MAX = (IntervalType)-1;
 const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Interval::IntervalType_MAX);
 const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
 
+Interval::
+        Interval( IntervalType first, IntervalType last )
+    :
+    first(first), last(last)
+{
+    BOOST_ASSERT( valid() );
+}
+
+
 bool Interval::
         valid() const
 {
-    return first < last;
+    return first <= last;
 }
 
 
@@ -41,6 +50,16 @@ Interval& Interval::
 {
     first = std::min(first, r.first);
     last = std::max(last, r.last);
+    return *this;
+}
+
+
+Interval& Interval::
+        operator&=(const Interval& r)
+{
+    first = std::max(first, r.first);
+    last = std::min(last, r.last);
+    first = std::min(first, last);
     return *this;
 }
 
@@ -68,18 +87,22 @@ Intervals::
 Intervals::
         Intervals(const Interval& r)
 {
-    BOOST_ASSERT( r.first < r.last );
-    this->push_back( r );
+    if (r.count())
+    {
+        BOOST_ASSERT( r.valid() );
+        this->push_back( r );
+    }
 }
 
 
 Intervals::
         Intervals(IntervalType first, IntervalType last)
 {
-//    if (first<last)
-//        last = Interval::IntervalType_MAX;
-    BOOST_ASSERT( first < last );
-    this->push_back( Interval( first, last ) );
+    if (first != last)
+    {
+        BOOST_ASSERT( first < last );
+        this->push_back( Interval( first, last ) );
+    }
 }
 
 
@@ -95,6 +118,10 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator |= (const Interval& r)
 {
+    if (0==r.count())
+        return *this;
+    BOOST_ASSERT(r.valid());
+
     this->push_back( r );
     this->sort();
 
@@ -133,6 +160,10 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Interval& r)
 {
+    if (0==r.count())
+        return *this;
+    BOOST_ASSERT(r.valid());
+
     for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
         // Check if interval 'itr' intersects with 'r'
@@ -238,6 +269,14 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator &= (const Interval& r)
 {
+    if (0==r.count())
+    {
+        clear();
+        return *this;
+    }
+
+    BOOST_ASSERT(r.valid());
+
     for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
         Interval& i = *itr;
 
@@ -272,6 +311,14 @@ Intervals& Intervals::
             itr++;
         }
     }
+    return *this;
+}
+
+
+Intervals& Intervals::
+        operator ^= (const Intervals& b)
+{
+    *this = (*this - b) | (b - *this);
     return *this;
 }
 
@@ -373,6 +420,43 @@ Interval Intervals::
     }
 
     return Interval( this->front().first, this->back().last );
+}
+
+
+Intervals Intervals::
+        enlarge( IntervalType dt ) const
+{
+    Intervals I;
+    foreach (Interval r, *this)
+    {
+        if (r.first > dt)
+            r.first -= dt;
+        else
+            r.first = 0;
+
+        if (r.last < Interval::IntervalType_MAX - dt)
+            r.last += dt;
+        else
+            r.last = Interval::IntervalType_MAX;
+
+        I |= r;
+    }
+    return I;
+}
+
+
+Intervals Intervals::
+        shrink( IntervalType dt ) const
+{
+    Intervals I;
+    foreach (Interval r, *this)
+    {
+        r.first += dt;
+        r.last -= dt;
+        if (r.count())
+            I |= r;
+    }
+    return I;
 }
 
 

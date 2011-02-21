@@ -22,19 +22,38 @@ BrushModel::
 {
 /*    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections )
         brush->validateRefs( collection.get() );*/
+    foreach (Signal::pChain c, project->layers.layers())
+    {
+        Signal::pOperation o = c->tip_source();
+        while(o)
+        {
+            Support::BrushFilter* b = dynamic_cast<Support::BrushFilter*>(o.get());
+            if (b && b->images)
+            {
+                Support::BrushFilter::BrushImagesP imgcopy( new Support::BrushFilter::BrushImages );
+
+                foreach (Support::BrushFilter::BrushImages::value_type v, *b->images)
+                {
+                    Heightmap::Reference ref = v.first;
+                    ref.setCollection( render_model->collections[0].get() );
+                    (*imgcopy)[ ref ] = v.second;
+                }
+                b->images = imgcopy;
+            }
+            o = o->source();
+        }
+    }
 }
 
 
 Support::BrushFilter* BrushModel::
         filter()
 {
-    filter_ = project_->head_source();
     Support::MultiplyBrush* brush = dynamic_cast<Support::MultiplyBrush*>(filter_.get());
     if (0 == brush)
     {
         filter_.reset( brush = new Support::MultiplyBrush );
-        filter_->source( project_->head_source() );
-        project_->head_source( filter_ );
+        filter_->source( project_->head->head_source() );
     }
 
     return brush;
@@ -44,12 +63,9 @@ Support::BrushFilter* BrushModel::
 void BrushModel::
         finished_painting()
 {
-    filter_ = project_->head_source();
-    if (0 != dynamic_cast<Support::MultiplyBrush*>(filter_.get()))
-    {
-        project_->head_source( filter_->source() );
-        project_->worker.appendOperation( filter_ ); // Insert cache layer
-    }
+    if (filter()->images && filter()->images->size())
+        project_->head->appendOperation( filter_ ); // Insert cache layer
+
     filter_.reset();
 }
 

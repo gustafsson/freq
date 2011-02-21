@@ -29,7 +29,7 @@ public:
         BOOST_ASSERT(source());
         pBuffer b = source()->read(I);
         put(b);
-        _invalid_samples -= b->getInterval();
+        //_invalid_samples -= b->getInterval();
         return b;
     }
 
@@ -42,7 +42,7 @@ public:
 
       @overload Operation::fetch_invalid_samples()
       */
-    virtual Intervals fetch_invalid_samples() { return _invalid_samples; }
+    //virtual Intervals fetch_invalid_samples() = 0;// { return _invalid_samples; }
 
 
     /**
@@ -55,16 +55,64 @@ public:
       If this Sink has recieved all expected_samples and is finished with its
       work, the caller may remove this Sink.
       */
-    virtual bool isFinished() { return !fetch_invalid_samples(); }
+    virtual bool deleteMe() { return !invalid_samples(); }
     virtual bool isUnderfed() { return false; }
 
 
     virtual void put(pBuffer) { throw std::logic_error(
-            "Neither read nor put seems to have been overridden from Sink."); }
+            "Neither read nor put seems to have been overridden from Sink in " + vartype(*this) + "."); }
 
     /// @see fetch_invalid_samples()
-    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    virtual void invalidate_samples(const Intervals& I) = 0;
+    /*{
+        _invalid_samples |= I;
+        //Operation::invalidate_samples( I );
+    }*/
 
+    /**
+      Fetches and clears invalid samples recursively.
+      Returns _invalid_samples merged with source()->invalid_samples().
+
+      Example on how invalid_samples() is used:
+      1. A brand new filter is inserted into the middle of the chain, it will
+         affect some samples. To indicate that a change has been made but not
+         yet processed invalid_samples is set to some equivalent non-empty
+         values.
+      2. Worker is notificed that something has changed and will query the
+         chain for invalid samples. It will then issue invalidate_samples on
+         all sinks connected to the worker.
+      3. Different sinks might react differently to invalidate_samples(...).
+         The Heightmap::Collection for instance might only return a subset in
+         invalid_samples() if those are the only samples that have been
+         requested recently. Heightmap::Collection will return the other
+         invalidated samples from invalid_samples() at a later occassion if
+         they are requested by rendering.
+         Signal::Playback will abort the playback and just stop, returning true
+         from isFinished() and waiting to be deleted by the calling postsink
+         and possibly recreated later.
+      4. fetch_invalid_samples is not const with respect to Operation, because
+         fetch_invalid_samples clears _invalid_samples after each call.
+    */
+    virtual Intervals invalid_samples() = 0; //{ return _invalid_samples; }
+
+//    // todo rename fetch_invalid_samples to read_invalid_samples
+//    Intervals Operation::
+//            fetch_invalid_samples()
+//    {
+//    //    TaskInfo tt("%s::fetch_invalid_samples, _invalid_samples=%s",
+//    //                vartype(*this).c_str(), _invalid_samples.toString().c_str());
+//        Intervals r = _invalid_samples;
+
+//        if (0!=_source)
+//        {
+//            r |= translate_interval(_source->fetch_invalid_samples());
+//        }
+
+//        if (_invalid_samples)
+//            _invalid_samples = Intervals();
+
+//        return r;
+//    }
 
     static pBuffer put(Operation* receiver, pBuffer buffer) {
         pOperation s( new BufferSource(buffer));

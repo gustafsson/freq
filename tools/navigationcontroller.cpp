@@ -150,7 +150,7 @@ void NavigationController::
     Tools::RenderView &r = *_view;
     float L = r.last_length();
     float min_xscale = 0.01f/L;
-    float max_xscale = 0.05*r.model->project()->head_source()->sample_rate();
+    float max_xscale = 0.05*r.model->project()->head->head_source()->sample_rate();
 
     float min_yscale = FLT_MIN;
     float max_yscale = FLT_MAX;

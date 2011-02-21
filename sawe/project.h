@@ -1,7 +1,10 @@
 #ifndef SAWEPROJECT_H
 #define SAWEPROJECT_H
 
+#include "toolmodel.h"
+#include "toolmainloop.h"
 #include "signal/worker.h"
+#include "signal/target.h"
 #include "tools/toolfactory.h"
 
 // boost
@@ -45,46 +48,40 @@ public:
 /**
       A project currently is entirely defined by its head source.
       */
-    Project(Signal::pOperation head_source);
+    Project(Signal::pOperation head_source, std::string filename);
     ~Project();
 
-    /**
-      TODO this entire comment is out of date
-
-      All sources can be reached from one head Source: worker->source().
-
-      For a source to be writable, there must exists a template specialization to Hdf5Output::add.
-
-      For a source to be readable, there must exists a template specialization to Hdf5Input::read_exact.
-
-      Selections are saved by saving the list of filters i the first CwtFilter.
-      */
     Signal::Worker worker;
 
-
-    /**
-      Current work point, compare HEAD in a git repo which points to the point
-      in history that current edits are based upon.
-      */
-    Signal::pOperation head_source() const { return worker.source(); }
-    void head_source(Signal::pOperation s) { worker.source(s); }
+    Signal::Layers layers;
 
 
     /**
-      The root of the operation tree. The source audio files are leaves in the
-      tree. New things are appended by creating a root of the root, thus making
-      the tree "higher".
+      The HEAD is were edits take place. This is not necessairly the same as the position being played back
+      or the position being rendered.
       */
-    Signal::pOperation root_source() const { return root_source_; }
-    void root_source(Signal::pOperation s) { root_source_ = s; head_source(s); }
+    Signal::pChainHead head;
 
 
     /**
-      Roughly speaking 'head_source' can be taken as model, 'tools' as
-      controller and '_mainWindow' as view.
+      Roughly speaking 'layers' and 'head' can be taken as model, 'tools' as
+      controller and 'mainWindow' as view.
       */
+    Tools::ToolRepo& toolRepo();
     Tools::ToolFactory& tools();
 
+
+    /**
+      It is an error to call tools() or toolRepo() during initialization when
+      areToolsInitialized() returns false.
+      */
+    bool areToolsInitialized();
+
+    /**
+
+      */
+    //void userinput_update( bool request_high_fps = true );
+    //void target(Signal::pTarget target, bool request_high_fps = true, Signal::IntervalType center = 0 );
 
     /**
       Opens a Sonic AWE project or imports an audio file. If
@@ -147,13 +144,13 @@ public:
 private:
     Project(); // used by deserialization
     void createMainWindow();
+    void updateWindowTitle();
 
-    Signal::pOperation root_source_;
     bool is_modified_;
 
-    std::string project_file_name;
-    boost::scoped_ptr<Tools::ToolFactory> _tools;
-    // MainWindow owns all other widgets together with their ToolFactory
+    std::string project_filename_;
+    boost::scoped_ptr<Tools::ToolRepo> _tools;
+    // MainWindow owns all other widgets together with the ToolRepo
     QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
@@ -161,26 +158,22 @@ private:
 
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {
-        TaskInfo ti("%s", __FUNCTION__);
-        Signal::pOperation head = head_source();
-        TaskInfo("Saving head tree:\n%s", head->toString().c_str());
+        TaskInfo ti("Project::serialize");
 
-        ar & BOOST_SERIALIZATION_NVP(root_source_);
+        ar & BOOST_SERIALIZATION_NVP(layers);
         ar & BOOST_SERIALIZATION_NVP(head);
 
         QByteArray mainwindowState = _mainWindow->saveState( version );
 		save_bytearray( ar, mainwindowState );
 
-        Tools::ToolFactory& tool_factory = *_tools;
-        ar & BOOST_SERIALIZATION_NVP(tool_factory);
+        Tools::ToolFactory& tool_repo = *dynamic_cast<Tools::ToolFactory*>(_tools.get());
+        ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
-        TaskInfo ti("%s", __FUNCTION__);
-        Signal::pOperation head;
-        ar & BOOST_SERIALIZATION_NVP(root_source_);
+        TaskInfo ti("Project::serialize");
+
+        ar & BOOST_SERIALIZATION_NVP(layers);
         ar & BOOST_SERIALIZATION_NVP(head);
-        TaskInfo("Loaded head tree:\n%s", head->toString().c_str());
-        head_source(head);
 
 		createMainWindow();
 
@@ -188,8 +181,10 @@ private:
         load_bytearray( ar, mainwindowState );
         _mainWindow->restoreState( mainwindowState, version);
 
-        Tools::ToolFactory& tool_factory = *_tools;
-        ar & BOOST_SERIALIZATION_NVP(tool_factory);
+        // createMainWindow has already created all tools
+        // this deserialization sets their settings
+        Tools::ToolFactory& tool_repo = *dynamic_cast<Tools::ToolFactory*>(_tools.get());
+        ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
 
     template<class Archive> static void save_bytearray(Archive& ar, QByteArray& c)

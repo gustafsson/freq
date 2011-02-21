@@ -77,10 +77,6 @@ namespace Tools
         QSlider * tf_resolution;
 
         void setupGui();
-
-        // Controlling
-        Signal::pOperation _updateViewSink;
-        Signal::pWorkerCallback _updateViewCallback;
     };
 } // namespace Tools
 

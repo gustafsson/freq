@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QPointer>
-#include "toolmodel.h"
+#include "sawe/toolmodel.h"
 #include "heightmap/position.h"
 
 namespace Tools

@@ -37,7 +37,7 @@ public:
 
     void draw( float scaley );
     void drawAxes( float T );
-    void drawFrustum( float alpha=0.25f );
+    void drawFrustum( float alpha=0.6f );
 
     bool draw_piano;
     bool draw_hz;

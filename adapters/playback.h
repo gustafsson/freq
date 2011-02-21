@@ -19,8 +19,8 @@ public:
 
     // Overloaded from Sink
     virtual void put( Signal::pBuffer b, Signal::pOperation ) { put (b); }
-    virtual bool isFinished();
-    virtual Signal::Intervals fetch_invalid_samples() { return _data.fetch_invalid_samples(); }
+    virtual bool deleteMe();
+    virtual Signal::Intervals invalid_samples() { return _data.invalid_samples(); }
     virtual void invalidate_samples( const Signal::Intervals& s ) { _data.invalidate_samples( s ); }
 
     void reset();

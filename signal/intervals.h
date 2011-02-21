@@ -22,23 +22,26 @@ public:
     static const IntervalType IntervalType_MAX;
     static const Interval Interval_ALL;
 
-    Interval& operator=( const Interval& i)
-                       { first = i.first, last = i.last; return *this; }
-    Interval( IntervalType first, IntervalType last )
-        :   first(first), last(last)
-    {}
+    /**
+      Failes with assertion if first>last.
+      */
+    Interval( IntervalType first, IntervalType last );
 
     /**
       Describes the interval [first, last). That is, 'last' is excluded from
-      the interval. The length of the interval is computed by "last-first".
+      the interval. The number of samples in the interval is computed by
+      "last-first".
+
+      It is up to the user to ensure the invariant relation first<=last.
       */
     IntervalType first, last;
-    IntervalType count() const { return last - first; }
+    IntervalType count() const { return valid() ? last - first : 0; }
 
     bool valid() const;
     bool isConnectedTo(const Interval& r) const;
     bool operator<(const Interval& r) const;
     Interval& operator|=(const Interval& r);
+    Interval& operator&=(const Interval& r);
     bool operator==(const Interval& r) const;
     bool operator!=(const Interval& r) const;
 
@@ -71,6 +74,8 @@ public:
     Intervals  operator &  (const Intervals& b) const { Intervals a = *this; return a&=b; }
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
+    Intervals  operator ^  (const Intervals& b) const { Intervals a = *this; return a^=b; }
+    Intervals& operator ^= (const Intervals&);
     Intervals operator >> (const IntervalType& b) const { Intervals a = *this; return a>>=b; }
     Intervals& operator >>= (const IntervalType&);
     Intervals operator << (const IntervalType& b) const { Intervals a = *this; return a<<=b; }
@@ -84,6 +89,8 @@ public:
     Interval                        getInterval() const;
     Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                        coveredInterval() const;
+    Intervals                       enlarge( IntervalType dt ) const;
+    Intervals                       shrink( IntervalType dt ) const;
     IntervalType                    count() const;
 
     std::string                     toString() const;

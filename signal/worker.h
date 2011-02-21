@@ -4,6 +4,8 @@
 // Signal namespace
 #include "intervals.h"
 #include "postsink.h"
+#include "chain.h"
+#include "target.h"
 
 // Boost
 #include <boost/noncopyable.hpp>
@@ -20,11 +22,6 @@
 namespace Signal {
 
 /**
-WorkerCallback is a Signal::Put that registers itself as a worker callback for an instance of the worker class.
-*/
-class WorkerCallback; // Implementation below.
-
-/**
 Signal::Worker is a queue of ranges, that might be worked off by one or
 multiple threads (and hence one or multiple GPUs). The calling thread
 calls Worker::workOne as a blocking operation performing the following
@@ -32,12 +29,6 @@ steps:
 
 1. Ask pOperation Signal::Worker::_source for a pBuffer over some samples.
 2. The pBuffer is sent to the callback(s).
-
-WorkerCallback takes a Worker as constructing argument and can thus add itself
-to the Worker by Worker::addCallback which uses a mutex to be more threadsafe.
-Worker aquires the mutex when calling WorkerCallback, and WorkerCallback
-removes itself upon destruction by calling Worker::addCallback which also
-aquires the mutex.
 
 --- Design motivation for Signal::Worker ---
 Heightmap rendering and Playback both needs to read from Signal::Source::read.
@@ -119,13 +110,14 @@ higher than the actual achieved framerate.
 class Worker
 #ifndef SAWE_NO_MUTEX
     : public QThread
-#else
-    : public QObject
 #endif
 {
-    Q_OBJECT
 public:
-    Worker(pOperation source=pOperation());
+    /**
+      It is allowed to create Worker with a null target. But the instance may
+      not be used until a target is set.
+      */
+    Worker(pTarget t);
     ~Worker();
 
     /**
@@ -152,8 +144,7 @@ public:
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
-    void todo_list( const Intervals& v );
-    Intervals todo_list();
+    Intervals fetch_todo_list();
 
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
@@ -162,14 +153,17 @@ public:
       */
     float center;
 
+
     /**
-      Get/set the data source for this worker.
-      // TODO worker should overload operation instead so that source can be
-        set without including "worker.h"
+      The current working point.
       */
-    Signal::pOperation     source() const;
-    void                source(Signal::pOperation s);
-    void                appendOperation(Signal::pOperation s);
+    pOperation          source() const;
+    Signal::pTarget     target() const;
+
+    /**
+      Setting a new target also sets a new todo list.
+      */
+    void                target(Signal::pTarget target);
 
     /**
       Get number of samples computed for each iteration.
@@ -201,19 +195,7 @@ public:
 	void				checkForErrors();
 
 
-    void                invalidate_post_sink(Intervals I);
-    /**
-      Get all callbacks that data are sent to after each workOne.
-
-      TODO Shouldn't be exposed like this.
-      */
-    //PostSink* postSink();
-signals:
-    void source_changed();
-
 private:
-    friend class WorkerCallback;
-
 #ifndef SAWE_NO_MUTEX
     /**
       Runs the worker thread.
@@ -221,27 +203,13 @@ private:
     virtual void run();
 #endif
 
-    /**
-      A WorkerCallback adds itself to a Worker.
-    @throws invalid_argument if 'c' is not an instance of Signal::Sink.
-      */
-    void addCallback( pOperation c );
-
-    /**
-      A WorkerCallback removes itself from a Worker.
-    @throws invalid_argument if 'c' is not an instance of Signal::Sink.
-      */
-    void removeCallback( pOperation c );
+    //void todo_list( const Intervals& v );
 
     /**
       Self explanatory.
       */
     pBuffer callCallbacks( Interval i );
 
-    /**
-      All callbacks in this list are called once for each call of workOne().
-      */
-    PostSink _post_sink;
 
     /**
       Number of samples, updated from source when calling workOne().
@@ -259,10 +227,7 @@ private:
       */
     QMutex _callbacks_lock;
 #endif
-    /**
-      @see source
-      */
-    Signal::pOperation _source;
+
 
 #ifndef SAWE_NO_MUTEX
     /**
@@ -272,10 +237,12 @@ private:
     QWaitCondition _todo_condition;
 #endif
 
+    Signal::pTarget _target;
+
     /**
       @see todo_list
       */
-    Intervals _todo_list, _cheat_work;
+    Intervals /*_todo_list, */_cheat_work;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.
@@ -313,35 +280,6 @@ private:
 };
 // typedef boost::shared_ptr<Worker> pWorker;
 
-
-/**
-  TODO this functionality is build upon the purpose of PostSink that is used by Worker. But not in worker itself.
-
-  TODO create a WorkerTarget and force todo_list(Signal::Intervals) to also take pWorkerTarget as argument.
-
-  And also, shouldn't be used like this.
-
-  Hmm, this class is probably not needed at all. But some more refactoring will have to be done.
-   @see Worker
-  */
-class WorkerCallback: boost::noncopyable {
-public:
-    WorkerCallback( Worker* w, pOperation s )
-        :   _w(w),
-            _s(s)
-    {
-        _w->addCallback( _s );
-    }
-    ~WorkerCallback( ) { _w->removeCallback( _s ); }
-
-    Worker* worker() { return _w; }
-    pOperation sink() { return _s; }
-
-private:
-    Worker* _w;
-    pOperation _s;
-};
-typedef boost::shared_ptr<WorkerCallback> pWorkerCallback;
 
 } // namespace Signal
 

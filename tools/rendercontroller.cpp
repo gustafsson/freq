@@ -46,52 +46,79 @@ using namespace Ui;
 namespace Tools
 {
 
-class ForAllChannelsOperation: public Signal::Sink
+class BlockFilterSink: public Signal::Sink
 {
 public:
-    ForAllChannelsOperation
+    BlockFilterSink
         (
             Signal::pOperation o,
-            std::vector<boost::shared_ptr<Heightmap::Collection> > collections
+            RenderModel* model
         )
         :
-            Signal::Sink(),
-            collections_(collections)
+            model_(model)
     {
         BOOST_ASSERT( o );
-        _source = o;
+        Operation::source(o);
     }
 
 
-    virtual Signal::pBuffer read( const Signal::Interval& I )
-    {
-        Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(root());
-        if (0==fs)
-            return Signal::Operation::read( I );
+    virtual void source(Signal::pOperation v) { Operation::source()->source(v); }
+    virtual bool deleteMe() { return false; } // Never delete this sink
 
-        unsigned N = fs->num_channels();
-        Signal::pBuffer r;
-        for (unsigned i=0; i<N; ++i)
-        {
-            fs->set_channel( i );
-            r = Signal::Operation::read( I );
-        }
-
-        return r;
-    }
-
-    virtual void source(Signal::pOperation v) { _source->source(v); }
-    virtual Signal::Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples(); }
-    virtual bool isFinished() { return false; }
+    virtual Signal::pBuffer read(const Signal::Interval& I) { return Signal::Operation::read( I ); }
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
-        foreach(boost::shared_ptr<Heightmap::Collection> c, collections_)
-            c->invalidate_samples(I);
+        validateSize();
+
+        Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
+        Signal::Intervals v = Signal::Intervals(I).enlarge( support );
+
+        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
+            c->invalidate_samples( v );
+        }
+
+        Operation::invalidate_samples( I );
     }
 
+
+    virtual Signal::Intervals invalid_samples()
+    {
+        Signal::Intervals I;
+        foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
+            Signal::Intervals inv_coll = c->invalid_samples();
+            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            I |= inv_coll;
+        }
+
+        return I;
+    }
+
+
+    void validateSize()
+    {
+        unsigned N = num_channels();
+        if ( N != model_->collections.size())
+        {
+            model_->collections.resize(N);
+            for (unsigned c=0; c<N; ++c)
+            {
+                if (!model_->collections[c])
+                    model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+            }
+        }
+
+        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
+            c->block_filter( Operation::source() );
+        }
+    }
+
+
 private:
-    std::vector<boost::shared_ptr<Heightmap::Collection> > collections_;
+    RenderModel* model_;
 };
 
 
@@ -215,9 +242,11 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
-    model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
+    model()->renderSignalTarget->post_sink()->invalidate_samples(Signal::Intervals::Intervals_ALL);
 
+    // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
+
     emit transformChanged();
 }
 
@@ -225,20 +254,18 @@ void RenderController::
 Signal::PostSink* RenderController::
         setBlockFilter(Signal::Operation* blockfilter)
 {
-    Signal::pOperation s = model()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-    ps->filter(Signal::pOperation() );
-
-    BOOST_ASSERT( ps );
+    BlockFilterSink* bfs;
+    Signal::pOperation blockop( blockfilter );
+    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model()));
 
     std::vector<Signal::pOperation> v;
-    Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( new ForAllChannelsOperation(blockop, model()->collections));
     v.push_back( channelop );
+    Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
     ps->sinks(v);
+    bfs->validateSize();
+    bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
-    ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
-
+    // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
 
     emit transformChanged();
@@ -250,7 +277,7 @@ Signal::PostSink* RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     setBlockFilter( cwtblock );
@@ -260,7 +287,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(model()->collections);
+    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(&model()->collections);
 
     setBlockFilter( stftblock );
 }
@@ -269,7 +296,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
     setBlockFilter( cwtblock );
@@ -279,7 +306,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -291,7 +318,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -303,7 +330,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     setBlockFilter( cwtblock );
@@ -418,13 +445,6 @@ void RenderController::
     }
 
 
-    // Update view whenever worker is invalidated
-    Support::SinkSignalProxy* proxy;
-    _updateViewSink.reset( proxy = new Support::SinkSignalProxy() );
-    _updateViewCallback.reset( new Signal::WorkerCallback( &model()->project()->worker, _updateViewSink ));
-    connect( proxy, SIGNAL(recievedInvalidSamples(const Signal::Intervals &)), view, SLOT(update()));
-
-
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
@@ -452,7 +472,10 @@ void RenderController::
 {
     // Stop worker from producing any more heightmaps by disconnecting
     // the collection callback from worker.
-    model()->collectionCallback.reset();
+    if (model()->renderSignalTarget == model()->project()->worker.target())
+        model()->project()->worker.target(Signal::pTarget());
+    model()->renderSignalTarget.reset();
+
 
     // Assuming calling thread is the GUI thread.
 

@@ -1,4 +1,5 @@
 #include "sawe/project.h"
+
 #include "sawe/application.h"
 #include "adapters/audiofile.h"
 #include "adapters/microphonerecorder.h"
@@ -19,11 +20,15 @@ using namespace std;
 namespace Sawe {
 
 Project::
-        Project( Signal::pOperation head_source )
-:   worker( head_source ),
-    root_source_(head_source),
+        Project( Signal::pOperation root, std::string layer_title )
+:   worker(Signal::pTarget()),
+    layers(this),
     is_modified_(true)
 {
+    Signal::pChain chain(new Signal::Chain(root));
+    chain->name = layer_title;
+    layers.addLayer( chain );
+    head.reset( new Signal::ChainHead(chain) );
 }
 
 
@@ -36,18 +41,30 @@ Project::
 
     if (_mainWindow)
         delete _mainWindow;
+}
 
-    root_source_.reset();
+
+Tools::ToolRepo& Project::
+        toolRepo()
+{
+    if (!areToolsInitialized())
+        throw std::logic_error("tools() was called before createMainWindow()");
+
+    return *_tools;
 }
 
 
 Tools::ToolFactory& Project::
         tools()
 {
-    if (!_tools)
-        throw std::logic_error("tools() was called before createMainWindow()");
+    return *dynamic_cast<Tools::ToolFactory*>(&toolRepo());
+}
 
-    return *_tools;
+
+bool Project::
+        areToolsInitialized()
+{
+    return _tools;
 }
 
 
@@ -102,7 +119,7 @@ pProject Project::
         createRecording(int record_device)
 {
     Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
-    return pProject( new Project( s ));
+    return pProject( new Project( s, "New recording" ));
 }
 
 
@@ -131,12 +148,16 @@ Ui::SaweMainWindow* Project::
 std::string Project::
         project_name()
 {
-    return QFileInfo(QString::fromLocal8Bit( project_file_name.c_str() )).fileName().toStdString();
+    return QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
 }
 
 
 Project::
         Project()
+            :
+            worker(Signal::pTarget()),
+            layers(this),
+            is_modified_(true)
 {}
 
 
@@ -148,11 +169,8 @@ void Project::
 
     TaskTimer tt("Project::createMainWindow");
     string title = Sawe::Application::version_string();
-    Adapters::Audiofile* af;
-    if (0 != (af = dynamic_cast<Adapters::Audiofile*>(worker.source().get()))) {
-		QFileInfo info( QString::fromLocal8Bit( af->filename().c_str() ));
-        title = string(info.baseName().toLocal8Bit()) + " - " + title;
-    }
+    if (!project_name().empty())
+        title = project_name() + " - " + title;
 
     _mainWindow = new Ui::SaweMainWindow( title.c_str(), this );
 
@@ -168,12 +186,19 @@ void Project::
 }
 
 
+void Project::
+        updateWindowTitle()
+{
+    _mainWindow->setWindowTitle( (project_name() + " - " + Sawe::Application::version_string()).c_str() );
+}
+
+
 bool Project::
         saveAs()
 {
-    string filter = "SONICAWE - Sonic AWE project (*.sonicawe);;";
+    QString filter = "SONICAWE - Sonic AWE project (*.sonicawe)";
 
-    QString qfilemame = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", QString::fromLocal8Bit(filter.c_str()));
+    QString qfilemame = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", filter);
     if (0 == qfilemame.length()) {
         // User pressed cancel
         return false;
@@ -185,7 +210,9 @@ bool Project::
     if (0 != QString::compare(qfilemame.mid(qfilemame.length() - extension.length()), extension, Qt::CaseInsensitive))
         qfilemame += extension;
 
-    project_file_name = qfilemame.toLocal8Bit().data();
+    project_filename_ = qfilemame.toLocal8Bit().data();
+
+    updateWindowTitle();
 
     return save();
 }
@@ -195,7 +222,7 @@ pProject Project::
         openAudio(std::string audio_file)
 {
     Signal::pOperation s( new Adapters::Audiofile( audio_file.c_str() ) );
-    return pProject( new Project( s ));
+    return pProject( new Project( s, QFileInfo( audio_file.c_str() ).fileName().toStdString() ));
 }
 
 } // namespace Sawe
