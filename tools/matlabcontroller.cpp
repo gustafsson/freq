@@ -10,8 +10,11 @@
 #include "tfr/cwt.h"
 
 #include <QDialogButtonBox>
+#include <QFile>
+#include <QSharedPointer>
 
 namespace Tools {
+
 
 MatlabController::
         MatlabController( Sawe::Project* project, RenderView* render_view )
@@ -54,7 +57,7 @@ void MatlabController::
         QDialog d( project_->mainWindow() );
         d.setWindowTitle("Create Matlab operation");
         d.setLayout( new QVBoxLayout );
-        MatlabOperationWidget* settings = new MatlabOperationWidget( project_->head->head_source()->sample_rate() );
+        MatlabOperationWidget* settings = new MatlabOperationWidget( project_ );
         d.layout()->addWidget( settings );
         QDialogButtonBox* buttonBox = new QDialogButtonBox;
         buttonBox->setObjectName(QString::fromUtf8("buttonBox"));
@@ -70,9 +73,21 @@ void MatlabController::
         d.setWindowModality( Qt::WindowModal );
         if (QDialog::Accepted == d.exec())
         {
-            _matlaboperation = settings->createMatlabOperation();
-            if (_matlaboperation)
+            if (!QFile::exists( settings->scriptname().c_str() ))
+            {
+                QMessageBox::warning( project_->mainWindow(), "Opening file", QString("Cannot open file '%1'!").arg(settings->scriptname().c_str()) );
+            }
+            else
+            {
+                Adapters::MatlabOperation* m = new Adapters::MatlabOperation(Signal::pOperation(), settings->scriptname());
+                _matlaboperation.reset(m);
+                settings->setParent(0);
+                connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
+                settings->operation = m;
+                m->settings = settings;
+                m->invalidate_samples( Signal::Interval(0, project_->head->head_source()->number_of_samples()));
                 project_->head->appendOperation( _matlaboperation );
+            }
         }
     }
 
@@ -100,7 +115,8 @@ void MatlabController::
 #endif
     }
 
-    render_view_->userinput_update();}
+    render_view_->userinput_update();
+}
 
 
 } // namespace Tools

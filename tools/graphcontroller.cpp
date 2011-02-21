@@ -169,6 +169,9 @@ namespace Tools
         project_->head->head_source( o );
 
         redraw_operation_tree();
+
+        if (o==currentSource)
+            currentItem->chain->tip_source( o );
     }
 
 

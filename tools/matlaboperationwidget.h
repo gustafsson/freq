@@ -2,8 +2,13 @@
 #define MATLABOPERATIONWIDGET_H
 
 #include "signal/operation.h"
+#include "signal/target.h"
+
+#include "adapters/matlaboperation.h"
 
 #include <QWidget>
+
+namespace Sawe { class Project; }
 
 namespace Tools {
 
@@ -11,33 +16,38 @@ namespace Ui {
     class MatlabOperationWidget;
 }
 
-class MatlabOperationWidget : public QWidget
+class MatlabOperationWidget : public QWidget, public Adapters::MatlabOperationSettings
 {
     Q_OBJECT
 
 public:
-    explicit MatlabOperationWidget(unsigned FS, QWidget *parent = 0);
+    explicit MatlabOperationWidget(Sawe::Project* project, QWidget *parent = 0);
     ~MatlabOperationWidget();
-
-    Signal::pOperation createMatlabOperation();
 
     std::string scriptname();
     void scriptname(std::string);
 
-    int chunksize();
+    virtual int chunksize();
     void chunksize(int);
 
-    bool computeInOrder();
+    virtual bool computeInOrder();
     void computeInOrder(bool);
 
-    int redundant();
+    virtual int redundant();
     void redundant(int);
+
+    Adapters::MatlabOperation* operation;
 
 private slots:
     void browse();
 
+    void populateTodoList();
+
 private:
     Ui::MatlabOperationWidget *ui;
+
+    Signal::pTarget target;
+    Sawe::Project* project;
 };
 
 

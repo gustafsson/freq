@@ -1,41 +1,30 @@
 #include "matlaboperationwidget.h"
 #include "ui_matlaboperationwidget.h"
 
-#include "adapters/matlaboperation.h"
+#include "sawe/project.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
 
 namespace Tools {
 
-MatlabOperationWidget::MatlabOperationWidget(unsigned FS, QWidget *parent) :
+MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::MatlabOperationWidget)
+    ui(new Ui::MatlabOperationWidget),
+    project(project)
 {
     ui->setupUi(this);
-    ui->samplerateLabel->setText( QString("1 second is %1 samples.").arg(FS) );
+    ui->samplerateLabel->setText( QString("1 second is %1 samples.").arg(project->head->head_source()->sample_rate()) );
     connect(ui->browseButton, SIGNAL(clicked()), SLOT(browse()));
+
+    target.reset( new Signal::Target( &project->layers, "Matlab target" ));
+    target->findHead( project->head->chain() )->head_source( project->head->head_source() );
 }
 
 
 MatlabOperationWidget::~MatlabOperationWidget()
 {
     delete ui;
-}
-
-
-Signal::pOperation MatlabOperationWidget::
-        createMatlabOperation()
-{
-    if (!QFile::exists( ui->scriptname->text() ))
-    {
-        QMessageBox::warning( parentWidget(), "Opening file", "Cannot open file '" + ui->scriptname->text() + "'!" );
-        return Signal::pOperation();
-    }
-
-    Adapters::MatlabOperation* m = new Adapters::MatlabOperation(Signal::pOperation(), ui->scriptname->text().toStdString());
-    Signal::pOperation r(m);
-    return r;
 }
 
 
@@ -105,6 +94,24 @@ void MatlabOperationWidget::
 
     if (!qfilename.isEmpty())
         ui->scriptname->setText( qfilename );
+}
+
+
+void MatlabOperationWidget::
+        populateTodoList()
+{
+    if (project->worker.fetch_todo_list().empty())
+    {
+        if (operation->invalid_samples())
+        {
+            if (computeInOrder())
+            {
+                project->worker.center = 0;
+                operation->invalidate_samples(operation->invalid_samples());
+                project->worker.target( target );
+            }
+        }
+    }
 }
 
 

@@ -234,6 +234,7 @@ MatlabOperation::
         ~MatlabOperation()
 {
     TaskInfo("~MatlabOperation");
+    delete settings;
 }
 
 std::string MatlabOperation::
@@ -242,15 +243,37 @@ std::string MatlabOperation::
     return _matlab->matlabFilename();
 }
 
-pBuffer MatlabOperation::
-        readRaw( const Interval& I )
+Signal::pBuffer MatlabOperation::
+        read( const Signal::Interval& I )
 {
+    if (_cache.invalid_samples())
+    {
+        if (settings->computeInOrder() && I.first > _cache.invalid_samples().coveredInterval().first)
+        {
+            // This will fool succeeding output operations to recieve bad data.
+            // But operation->invalidate_samples(operation->invalid_samples()) solves that later;
+            return Operation::read(I);
+        }
+    }
+
+    return OperationCache::read(I);
+}
+
+pBuffer MatlabOperation::
+        readRaw( const Interval& constI )
+{
+    Interval I = constI;
     TaskTimer tt("MatlabOperation::read(%u,%u), count = %u", I.first, I.last, (Signal::IntervalType)I.count() );
 
     // just 'read()' might return the entire signal, which would be way to
     // slow to export in an interactive manner
-    IntervalType support = sample_rate()*0.5;
+    if (settings->chunksize() != I.count() && 0<settings->chunksize())
+        I.last = I.first + settings->chunksize();
+    IntervalType support = settings->redundant();
     Interval J = Intervals(I).enlarge( support );
+
+    if (settings->chunksize() == -1)
+        J = Interval(0, number_of_samples());
 
     pBuffer b = source()->readFixedLength( J );
 

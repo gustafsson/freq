@@ -69,6 +69,16 @@ private:
     float _timeout;
 };
 
+class MatlabOperationSettings
+{
+public:
+    virtual ~MatlabOperationSettings() {}
+
+    virtual int chunksize() = 0;
+    virtual bool computeInOrder() = 0;
+    virtual int redundant() = 0;
+};
+
 class MatlabOperation: public Signal::OperationCache
 {
 public:
@@ -76,11 +86,12 @@ public:
     ~MatlabOperation();
 
     virtual std::string name();
-
+    virtual Signal::pBuffer read( const Signal::Interval& I );
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
 
     void restart();
 
+    MatlabOperationSettings* settings;
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
 };

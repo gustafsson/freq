@@ -971,7 +971,9 @@ void RenderView::
 		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
         isWorking = worker.fetch_todo_list();
 
-        TaskInfo("worker.fetch_todo_list() = %s, isWorking = %d", worker.fetch_todo_list().toString().c_str(), isWorking);
+        TaskInfo("target = %s, worker.fetch_todo_list() = %s, isWorking = %d",
+                 worker.target()->name().c_str(),
+                 worker.fetch_todo_list().toString().c_str(), isWorking);
 
         if (isWorking || isRecording) {
             if (!_work_timer.get())

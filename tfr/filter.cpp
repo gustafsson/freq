@@ -3,8 +3,8 @@
 
 #include <demangle.h>
 
-#define TIME_Filter
-//#define TIME_Filter if(0)
+//#define TIME_Filter
+#define TIME_Filter if(0)
 
 //#define TIME_FilterReturn
 #define TIME_FilterReturn if(0)
