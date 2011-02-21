@@ -35,6 +35,9 @@ private slots:
     void currentItemChanged(QTreeWidgetItem* current,QTreeWidgetItem* previous);
     void checkVisibilityOperations(bool visible);
 
+    void removeSelected();
+    void removeHidden();
+
 private:
     void setupGui();
 

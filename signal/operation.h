@@ -178,6 +178,13 @@ public:
     Operation* root();
     virtual bool hasSource(Operation*s);
 
+    /**
+      If 's' has multiple outputs, find the output that leads to 'this' and
+      return the parent of 's' from that trace.
+      */
+    static pOperation findParentOfSource(pOperation start, pOperation source);
+    static Signal::Intervals affecetedDiff(pOperation source1, pOperation source2);
+
     virtual std::string toString();
     virtual std::string parentsToString();
 

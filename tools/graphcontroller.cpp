@@ -15,6 +15,8 @@
 
 #include <boost/foreach.hpp>
 
+#include <QPushButton>
+
 namespace Tools
 {
     class TreeItem: public QTreeWidgetItem
@@ -120,6 +122,74 @@ namespace Tools
 
 
     void GraphController::
+            removeSelected()
+    {
+        QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
+        if (itms.empty())
+            return;
+
+        TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
+        if ( !currentItem )
+            return;
+
+        Signal::pOperation currentSource;
+        // If the current operation is a cache, don't just remove the cache but
+        // remove what was cached as well. So jump an extra steps down in source()
+        if (dynamic_cast<Signal::OperationCacheLayer*>(currentItem->operation.get()) )
+            currentSource = currentItem->operation->source()->source();
+        else
+            currentSource = currentItem->operation->source();
+
+        if (!currentSource)
+            return;
+
+        Signal::pOperation o = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), currentItem->operation );
+        if (o)
+        {
+            o->invalidate_samples( Signal::Operation::affecetedDiff(o->source(), currentSource ));
+
+            o->source( currentSource );
+
+            // If there is a cache right above this, set the cache as head_source instead
+            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), o );
+            if (dynamic_cast<Signal::OperationCacheLayer*>(o2.get()) )
+                o = o2;
+        }
+        else
+        {
+            o = currentSource;
+        }
+
+        Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentItem->chain );
+        head->head_source( o );
+
+        head = project_->tools().playback_model.playbackTarget->findHead( currentItem->chain );
+        head->head_source( o );
+
+        project_->head->head_source( o );
+
+        redraw_operation_tree();
+    }
+
+
+    void GraphController::
+            removeHidden()
+    {
+        QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
+        if (itms.empty())
+            return;
+
+        TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
+        if ( !currentItem )
+            return;
+
+        currentItem->chain->tip_source( currentItem->operation );
+
+        redraw_operation_tree();
+    }
+
+
+    void GraphController::
             setupGui()
     {
         Ui::SaweMainWindow* MainWindow = project_->mainWindow();
@@ -154,7 +224,17 @@ namespace Tools
         //operationsTree->header()->setMinimumSectionSize(20);
         //operationsTree->setSelectionMode( QAbstractItemView::MultiSelection );
 
+        QWidget* buttons = new QWidget;
+        buttons->setLayout( new QHBoxLayout );
+        QPushButton* removeSelectedButton = new QPushButton("Remove selected");
+        QPushButton* removeHiddenButton = new QPushButton("Remove hidden");
+        connect(removeSelectedButton, SIGNAL(clicked()), SLOT(removeSelected()));
+        connect(removeHiddenButton, SIGNAL(clicked()), SLOT(removeHidden()));
+        buttons->layout()->addWidget( removeSelectedButton );
+        buttons->layout()->addWidget( removeHiddenButton );
+
         verticalLayout->addWidget(operationsTree);
+        verticalLayout->addWidget(buttons);
 
         operationsWindow->setWidget(dockWidgetContents);
         MainWindow->addDockWidget( Qt::RightDockWidgetArea, operationsWindow );

@@ -115,6 +115,38 @@ bool Operation::
     return false;
 }
 
+
+pOperation Operation::
+        findParentOfSource(pOperation start, pOperation source)
+{
+    if (start->_source == source)
+        return start;
+    if (start->_source)
+        return findParentOfSource(start->_source, source);
+
+    return pOperation();
+}
+
+
+Signal::Intervals Operation::
+        affecetedDiff(pOperation source1, pOperation source2)
+{
+    Signal::Intervals new_data( 0, source1->number_of_samples() );
+    Signal::Intervals old_data( 0, source2->number_of_samples() );
+    Signal::Intervals invalid = new_data | old_data;
+
+    Signal::Intervals was_zeros = source1->zeroed_samples_recursive();
+    Signal::Intervals new_zeros = source2->zeroed_samples_recursive();
+    Signal::Intervals still_zeros = was_zeros & new_zeros;
+    invalid -= still_zeros;
+
+    invalid &= source1->affected_samples_until( source2 );
+    invalid &= source2->affected_samples_until( source1 );
+
+    return invalid;
+}
+
+
 std::string Operation::
         toString()
 {

@@ -155,7 +155,7 @@ void Playback::
 
         if (i>0)
         {
-            Signal::Intervals is = _data.fetch_invalid_samples();
+            Signal::Intervals is = _data.invalid_samples();
             _data.clear();
             _data.invalidate_samples( is - Signal::Interval(I.first, I.first + i) );
 

@@ -83,8 +83,7 @@ void ChainHead::
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.
     unsigned i = 0;
-    Signal::pOperation itr = head_source_ref();
-    while(itr)
+    for(Signal::pOperation itr = head_source_ref(); itr; itr = itr->source() )
     {
         if ( itr == s )
         {
@@ -93,13 +92,19 @@ void ChainHead::
                     << "is already in operation chain at postion " << i;
             throw std::invalid_argument( ss.str() );
         }
-        itr = itr->source();
+
         ++i;
     }
 
     s->source( head_source() );
+    pOperation new_head( new OperationCacheLayer(s) );
 
-    head_source( pOperation( new OperationCacheLayer(s) ));
+    // Inject this operation in the middle
+    Signal::pOperation o = Signal::Operation::findParentOfSource( chain_->tip_source(), head_source() );
+    if (o)
+        o->source( new_head );
+
+    head_source( new_head );
 
     TaskInfo("Worker::appendOperation, worker tree:\n%s", head_source_ref()->toString().c_str());
 }
@@ -127,20 +132,8 @@ void ChainHead::
 
     if (head_source() != s)
     {
-        Signal::Intervals new_data( 0, head_source()->number_of_samples() );
-        Signal::Intervals old_data( 0, s->number_of_samples() );
-        Signal::Intervals invalid = new_data | old_data;
-
-        Signal::Intervals was_zeros = head_source()->zeroed_samples_recursive();
-        Signal::Intervals new_zeros = s->zeroed_samples_recursive();
-        Signal::Intervals still_zeros = was_zeros & new_zeros;
-        invalid -= still_zeros;
-
-        invalid &= s->affected_samples_until( head_source() );
-        invalid &= head_source()->affected_samples_until( s );
-
+        head_source_->invalidate_samples( Signal::Operation::affecetedDiff( head_source(), s ));
         head_source_->source( s );
-        head_source_->invalidate_samples( invalid );
 
         emit headChanged();
     }
