@@ -58,22 +58,19 @@ namespace Tools
     {
         operationsTree->clear();
 
-        QFlags<Qt::ItemFlag> flg = Qt::ItemIsUserCheckable |
-                                   Qt::ItemIsSelectable |
-                                   Qt::ItemIsEnabled;
-
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
             chainItm->setText(0, QString::fromStdString( c->name ) );
             chainItm->setExpanded( true );
+            chainItm->setFlags( chainItm->flags() & ~Qt::ItemIsSelectable );
 
             Signal::pOperation o = c->tip_source();
             while(o)
             {
                 TreeItem* itm = new TreeItem(chainItm, o, c);
                 if (o == project_->head->head_source())
-                    itm->setSelected( true );
+                    operationsTree->setCurrentItem( itm );
 
                 if (dynamic_cast<Signal::OperationCacheLayer*>(o.get()))
                 {
@@ -82,7 +79,6 @@ namespace Tools
                 }
                 QString name = QString::fromStdString( o->name() );
                 itm->setText(0, name);
-                //itm->setFlags( flg );
                 //itm->setCheckState(0, Qt::Unchecked);
                 //itm->setCheckState(0, Qt::Checked);
 
@@ -95,20 +91,24 @@ namespace Tools
     void GraphController::
             currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
     {
+        if (!previous || !current)
+            return;
+
         TreeItem* currentItem = dynamic_cast<TreeItem*>(current);
         TreeItem* previousItem = dynamic_cast<TreeItem*>(previous);
+
         if ( !currentItem )
         {
-            if (previousItem)
-            {
-                foreach (QTreeWidgetItem* itm, operationsTree->selectedItems() )
-                    itm->setSelected( false );
-
+            if (current && current->childCount())
+                operationsTree->setCurrentItem( current->child(0) );
+            else if (previousItem)
                 operationsTree->setCurrentItem( previous );
-            }
         }
         else
         {
+            if (previous)
+                previous->setSelected(false);
+
             // head_source( pOperation ) invalidates models where approperiate
             Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentItem->chain );
             head->head_source( currentItem->operation );
