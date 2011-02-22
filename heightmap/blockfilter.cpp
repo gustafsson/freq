@@ -337,4 +337,50 @@ void StftToBlock::
 }
 
 
+CepstrumToBlock::
+        CepstrumToBlock( Collection* collection )
+            :
+            BlockFilterImpl<Tfr::CepstrumFilter>(collection)
+{
+    //_try_shortcuts = false;
+}
+
+CepstrumToBlock::
+        CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+            :
+            BlockFilterImpl<Tfr::CepstrumFilter>(collections)
+{
+    //_try_shortcuts = false;
+}
+
+
+void CepstrumToBlock::
+        mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
+{
+    Position a, b;
+    block->ref.getArea(a,b);
+
+    Position chunk_a, chunk_b;
+    Signal::Interval inInterval = chunk.getInterval();
+    chunk_a.time = inInterval.first/chunk.original_sample_rate;
+    chunk_b.time = (inInterval.last-chunk.nScales())/chunk.original_sample_rate;
+
+    // ::resampleCepstrum computes frequency rows properly with its two instances
+    // of FreqAxis.
+    chunk_a.scale = 0;
+    chunk_b.scale = 1;
+
+    ::resampleStft( chunk.transform_data->getCudaGlobal(),
+                  outData->getCudaGlobal(),
+                  make_float4( chunk_a.time, chunk_a.scale,
+                               chunk_b.time, chunk_b.scale ),
+                  make_float4( a.time, a.scale,
+                               b.time, b.scale ),
+                  chunk.freqAxis(),
+                  _collection->display_scale());
+
+    block->valid_samples |= chunk.getInterval();
+}
+
+
 } // namespace Heightmap
