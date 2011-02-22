@@ -310,6 +310,13 @@ std::string Target::
 }
 
 
+pOperation Target::
+        source() const
+{
+    return read_;
+}
+
+
 void Target::
         rebuildSource()
 {

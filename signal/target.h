@@ -107,6 +107,10 @@ public:
       */
     std::string name();
 
+    /**
+      */
+    pOperation source() const;
+
 private:
     void rebuildSource();
 

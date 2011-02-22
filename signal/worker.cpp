@@ -40,6 +40,7 @@ Worker::
     _min_samples_per_chunk( 1 ),
     _requested_fps( 20 ),
     _min_fps( 0.5 ),
+    _disabled( false ),
     _caught_exception( "" ),
     _caught_invalid_argument("")
 {
@@ -72,7 +73,7 @@ Worker::
 bool Worker::
         workOne( bool skip_if_low_fps )
 {
-    if (!_target)
+    if (_disabled)
     {
         TaskInfo("Can't do any work without a target");
         return false;
@@ -286,7 +287,7 @@ Signal::Intervals Worker::
 pOperation Worker::
         source() const
 {
-    return _target->post_sink()->source();
+    return _target->source();
 }
 
 
@@ -300,7 +301,13 @@ pTarget Worker::
 void Worker::
         target(pTarget value)
 {
-    BOOST_ASSERT( value );
+    _disabled = 0 == value;
+
+    if (_disabled)
+    {
+        _number_of_samples = 0;
+        return;
+    }
 
     _target = value;
 

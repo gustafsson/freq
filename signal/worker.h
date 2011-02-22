@@ -270,6 +270,12 @@ private:
     */
     float _highest_fps;
 
+    /**
+      If the worker shouldn't do any work for any target set target to pTarget(). Worker will however keep a
+      reference so that source() can be provided.
+      */
+    bool _disabled;
+
 	/**
       Worker::run is intended to be executed by a separate worker thread. To
       simplify error handling in the GUI thread exceptions are caught by
