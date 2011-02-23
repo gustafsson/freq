@@ -30,9 +30,17 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     //target.reset( new Signal::Target( &project->layers, "Matlab target" ));
     //target->findHead( project->head->chain() )->head_source( project->head->head_source() );
 
+    setMaximumSize( width(), height() );
+    setMinimumSize( width(), height() );
     announceInvalidSamplesTimer.setSingleShot( true );
     announceInvalidSamplesTimer.setInterval( 200 );
     connect( &announceInvalidSamplesTimer, SIGNAL(timeout()), SLOT(announceInvalidSamples()));
+
+    connect( ui->scriptname, SIGNAL(textChanged(QString)), SLOT(restartScript()));
+    connect( ui->scriptname, SIGNAL(returnPressed()), SLOT(restartScript()));
+    connect( ui->computeInOrder, SIGNAL(toggled(bool)), SLOT(invalidateEverything()));
+    connect( ui->chunksize, SIGNAL(valueChanged(int)), SLOT(invalidateAllSamples()));
+    connect( ui->redundant, SIGNAL(valueChanged(int)), SLOT(invalidateAllSamples()));
 }
 
 
@@ -143,6 +151,31 @@ void MatlabOperationWidget::
 {
     if (operation->invalid_returns())
         operation->invalidate_samples( operation->invalid_returns() );
+}
+
+
+void MatlabOperationWidget::
+        invalidateAllSamples()
+{
+    if (operation)
+        operation->invalidate_samples( operation->getInterval() );
+}
+
+
+void MatlabOperationWidget::
+        restartScript()
+{
+    if (operation)
+    {
+        operation->restart();
+
+        if (text)
+        {
+            text->appendPlainText( QString("\nRestaring script '%1'\n")
+                                   .arg(scriptname().c_str()));
+            text->moveCursor( QTextCursor::End );
+        }
+    }
 }
 
 

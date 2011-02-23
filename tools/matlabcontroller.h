@@ -22,6 +22,7 @@ namespace Tools
     private slots:
         void receiveMatlabOperation();
         void receiveMatlabFilter();
+        void tryHeadAsMatlabOperation();
 
     private:
         // Model

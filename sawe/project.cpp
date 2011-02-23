@@ -189,6 +189,9 @@ void Project::
         tt.info("Created tools");
     }
 
+    defaultGeometry = _mainWindow->saveGeometry();
+    defaultState = _mainWindow->saveState();
+
     QSettings settings("REEP", "Sonic AWE");
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
@@ -201,6 +204,14 @@ void Project::
     if (!project_filename_.empty())
         project_title_ = QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
     _mainWindow->setWindowTitle( (project_title() + " - " + Sawe::Application::version_string()).c_str() );
+}
+
+
+void Project::
+        restoreDefaultLayout()
+{
+    _mainWindow->restoreGeometry(defaultGeometry);
+    _mainWindow->restoreState(defaultState);
 }
 
 

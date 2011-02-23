@@ -97,7 +97,9 @@ void ChainHead::
     }
 
     s->source( head_source() );
-    pOperation new_head( new OperationCacheLayer(s) );
+    pOperation new_head = s;
+    if (0 == dynamic_cast<Signal::OperationCache*>( s.get() ))
+        new_head.reset( new OperationCacheLayer(s) );
 
     // Inject this operation in the middle
     Signal::pOperation o = Signal::Operation::findParentOfSource( chain_->tip_source(), head_source() );

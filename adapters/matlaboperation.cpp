@@ -342,7 +342,7 @@ void MatlabOperation::
     if (_settings->computeInOrder() && (I - _cache.invalid_samples()))
     {
         // Start over and recompute the first block again
-        OperationCache::invalidate_samples(Signal::Interval(0, number_of_samples()));
+        OperationCache::invalidate_samples(getInterval());
     }
     else
         OperationCache::invalidate_samples(I);
@@ -442,8 +442,8 @@ void MatlabOperation::
     _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
     if (source())
     {
-        _invalid_returns = Signal::Interval(0, number_of_samples());
-        invalidate_samples(_invalid_returns);
+        _invalid_returns = getInterval();
+        invalidate_samples( _invalid_returns );
     }
 }
 

@@ -53,6 +53,8 @@ private slots:
 
     void populateTodoList();
     void announceInvalidSamples();
+    void invalidateAllSamples();
+    void restartScript();
 
     void sendCommand();
 

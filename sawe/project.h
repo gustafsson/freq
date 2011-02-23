@@ -147,10 +147,20 @@ public:
       */
     std::string project_filename();
 
+
+    /**
+      The default settings are stored when the project is created and can
+      be restored layer through this method.
+      */
+    void restoreDefaultLayout();
+
 private:
     Project(); // used by deserialization
     void createMainWindow();
     void updateWindowTitle();
+
+    QByteArray defaultGeometry;
+    QByteArray defaultState;
 
     bool is_modified_;
 

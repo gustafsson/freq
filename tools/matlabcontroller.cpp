@@ -52,6 +52,8 @@ void MatlabController::
             }
         }
     }
+
+    connect( project->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsMatlabOperation()));
 }
 
 
@@ -150,6 +152,27 @@ void MatlabController::
     }
 
     render_view_->userinput_update();
+}
+
+
+void MatlabController::
+        tryHeadAsMatlabOperation()
+{
+    Signal::pOperation t = project_->head->head_source();
+    if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
+        t = t->source();
+
+    Adapters::MatlabOperation* m = dynamic_cast<Adapters::MatlabOperation*>(t.get());
+
+    if (m)
+    {
+        QDockWidget* toolWindow = project_->mainWindow()->getItems()->toolPropertiesWindow;
+        MatlabOperationWidget* w = dynamic_cast<MatlabOperationWidget*>( m->settings() );
+        toolWindow->setWidget( w );
+        //toolWindow->hide();
+        toolWindow->show();
+        toolWindow->raise();
+    }
 }
 
 

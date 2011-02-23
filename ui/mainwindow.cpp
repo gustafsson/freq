@@ -53,6 +53,11 @@ void SaweMainWindow::
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));
+    connect(ui->actionRestore_layout, SIGNAL(triggered()), SLOT(restoreLayout()));
+    connect(ui->actionOperation_details, SIGNAL(toggled(bool)), ui->toolPropertiesWindow, SLOT(setVisible(bool)));
+    connect(ui->actionOperation_details, SIGNAL(triggered()), ui->toolPropertiesWindow, SLOT(raise()));
+    connect(ui->toolPropertiesWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityToolProperties(bool)));
+    ui->actionOperation_details->setChecked( false );
 
     // Make the two fullscreen modes exclusive
     fullscreen_combo.decheckable( true );
@@ -73,22 +78,21 @@ void SaweMainWindow::
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
 
     //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
-//    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarTool, SLOT(setVisible(bool)));
-    connect(ui->actionToggleToolToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
+    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
     connect(ui->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui->toolBarPlay, SLOT(setVisible(bool)));
 
     // TODO move into each tool
-    //this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
+    this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->topFilterWindow );
     //this->addDockWidget( Qt::RightDockWidgetArea, ui->historyWindow );
 
-    ui->toolPropertiesWindow->hide();
+    //ui->toolPropertiesWindow->hide();
     ui->topFilterWindow->hide();
     ui->historyWindow->hide();
-    this->removeDockWidget( ui->toolPropertiesWindow );
+    //this->removeDockWidget( ui->toolPropertiesWindow );
     //this->removeDockWidget( ui->operationsWindow );
-    this->removeDockWidget( ui->topFilterWindow );
-    this->removeDockWidget( ui->historyWindow );
+    //this->removeDockWidget( ui->topFilterWindow );
+    //this->removeDockWidget( ui->historyWindow );
 
     // todo move into toolfactory
 //    this->tabifyDockWidget(ui->operationsWindow, ui->topFilterWindow);
@@ -321,6 +325,24 @@ void SaweMainWindow::
         fullscreen_widget->removeAction( ui->actionToggleFullscreenNoMenus );
     }
 }
+
+
+void SaweMainWindow::
+        restoreLayout()
+{
+    project->restoreDefaultLayout();
+}
+
+
+void SaweMainWindow::
+        checkVisibilityToolProperties(bool visible)
+{
+    visible |= !tabifiedDockWidgets( ui->toolPropertiesWindow ).empty();
+    visible |= ui->toolPropertiesWindow->isVisibleTo( ui->toolPropertiesWindow->parentWidget() );
+    ui->actionOperation_details->setChecked(visible);
+}
+
+
 
 
 } // namespace Ui

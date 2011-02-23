@@ -165,8 +165,13 @@ namespace Tools
     void GraphController::
             currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
     {
+        if (!current)
+            operationsTree->setContextMenuPolicy(Qt::NoContextMenu);
+
         if (!previous || !current)
+        {
             return;
+        }
 
         TreeItem* currentItem = dynamic_cast<TreeItem*>(current);
         TreeItem* previousItem = dynamic_cast<TreeItem*>(previous);
@@ -180,6 +185,7 @@ namespace Tools
         }
         else
         {
+            operationsTree->setContextMenuPolicy(Qt::ActionsContextMenu);
             // head_source( pOperation ) invalidates models where approperiate
             Signal::pChain chain = currentItem->chain;
             Signal::pOperation operation = currentItem->operation;
@@ -316,6 +322,9 @@ namespace Tools
         operationsTree->setColumnCount(1);
         operationsTree->header()->setVisible(false);
         operationsTree->setSelectionMode( QAbstractItemView::SingleSelection );
+        QAction* removeCurrentItem = new QAction("Remove", MainWindow);
+        operationsTree->addAction(removeCurrentItem);
+        connect(removeCurrentItem, SIGNAL(triggered()), SLOT(removeSelected()));
         //operationsTree->header()->setDefaultSectionSize(60);
         //operationsTree->header()->setMinimumSectionSize(20);
         //operationsTree->setSelectionMode( QAbstractItemView::MultiSelection );
@@ -343,7 +352,7 @@ namespace Tools
 
         QTreeWidgetItem *headeritem = operationsTree->headerItem();
         headeritem->setText(0, QApplication::translate("MainWindow", "1", 0, QApplication::UnicodeUTF8));
-        operationsWindow->setWindowTitle(QApplication::translate("MainWindow", "History", 0, QApplication::UnicodeUTF8));
+        operationsWindow->setWindowTitle(QApplication::translate("MainWindow", "Operations", 0, QApplication::UnicodeUTF8));
 
 
         MainWindow->getItems()->menu_Windows->addAction(actionToggleOperationsWindow);

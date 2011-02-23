@@ -90,8 +90,9 @@ namespace Tools
 
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );
-        toolBarTool->insertAction(0, ui->actionActionRemove_selection);
-        toolBarTool->insertAction(0, ui->actionCropSelection);
+        toolBarTool->addAction( ui->actionActionRemove_selection );
+        toolBarTool->addAction( ui->actionCropSelection );
+        toolBarTool->setVisible( true );
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
         connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));

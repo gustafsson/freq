@@ -58,7 +58,7 @@ void BrushController::
 
     connect(ui->actionToggleBrushesToolbar, SIGNAL(toggled(bool)), toolBarTool, SLOT(setVisible(bool)));
 
-    ui->menuWindows->insertAction(0, ui->actionToggleBrushesToolbar);
+    ui->menuToolbars->addAction( ui->actionToggleBrushesToolbar );
 
     {   Ui::ComboBoxAction * qb = new Ui::ComboBoxAction();
         qb->addActionItem( ui->actionAmplitudeBrush );

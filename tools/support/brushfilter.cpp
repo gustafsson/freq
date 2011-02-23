@@ -85,7 +85,7 @@ void BrushFilter::
 Signal::Intervals MultiplyBrush::
         affected_samples()
 {
-//    return Signal::Interval(0, number_of_samples());
+//    return getInterval();
     Signal::Intervals r;
 
     BrushImages const& imgs = *images.get();
