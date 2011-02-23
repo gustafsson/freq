@@ -8,6 +8,11 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename}"  
+cd gpumisc
+qmake $qmaketarget
+cd ../sonicawe
+qmake $qmaketarget
+cd ..
 qmake $qmaketarget
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //t:Rebuild //p:Configuration=Release sonic.sln
 
