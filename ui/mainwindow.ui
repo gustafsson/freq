@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -984,10 +984,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Morlet transform</string>
+    <string>Gabor Wavelet transform</string>
    </property>
    <property name="toolTip">
-    <string>Morlet transform</string>
+    <string>Actually, Complex Gabor Wavelet transform</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1018,10 +1018,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Morlet phase plot</string>
+    <string>Gabor Wavelet transform phase</string>
    </property>
    <property name="toolTip">
-    <string>Morlet phase plot</string>
+    <string>Instantaneous phase from Gabor Wavelet transform</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1035,10 +1035,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Reassigned Morlet</string>
+    <string>Reassigned Gabor Wavelet transform</string>
    </property>
    <property name="toolTip">
-    <string>Reassigned Morlet</string>
+    <string>Reassignment 'sharpens' by moving coefficients</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1175,10 +1175,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Morlet ridge</string>
+    <string>Ridges of Gabor Wavelet transform</string>
    </property>
    <property name="toolTip">
-    <string>Morlet ridge</string>
+    <string>Peaks in frequency direction on the Gabor Wavelet transform</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1192,10 +1192,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Weighted Morlet</string>
+    <string>Weighted Gabor Wavelet transform</string>
    </property>
    <property name="toolTip">
-    <string>Weighted Morlet</string>
+    <string>Sharpened Gabor Wavelet transform by a uncertainty weight</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
