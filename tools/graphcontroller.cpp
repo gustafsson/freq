@@ -32,10 +32,6 @@ namespace Tools
 
         }
 
-        virtual QTreeWidgetItem *clone () const {
-            return new TreeItem( parent(), operation, chain );
-        }
-
 
         Signal::pOperation operation;
         Signal::pOperation tail;
@@ -50,16 +46,6 @@ namespace Tools
             :
             QTreeWidget(parent)
         {}
-
-        virtual bool dropMimeData(QTreeWidgetItem *parent, int index,
-                                  const QMimeData *data, Qt::DropAction action) {
-            return QTreeWidget::dropMimeData(parent, index, data, action);
-        }
-
-        /*virtual Qt::DropActions supportedDropActions() const {
-            Qt::DropActions a = QTreeWidget::supportedDropActions();
-            return Qt::CopyAction;
-        }*/
 
         virtual void dropEvent ( QDropEvent * event ) {
             QTreeWidget::dropEvent ( event );
@@ -346,7 +332,7 @@ namespace Tools
         connect(removeCachesdButton, SIGNAL(clicked()), SLOT(removeCaches()));
         buttons->layout()->addWidget( removeSelectedButton );
         buttons->layout()->addWidget( removeHiddenButton );
-        buttons->layout()->addWidget( removeCachesdButton );
+        //buttons->layout()->addWidget( removeCachesdButton );
 
         verticalLayout->addWidget(operationsTree);
         verticalLayout->addWidget(buttons);
