@@ -60,6 +60,22 @@ void RewireChannels::
 
 
 void RewireChannels::
+        invalidate_samples(const Intervals& I)
+{
+    unsigned N = Operation::num_channels();
+    for (unsigned i=0; i<scheme_.size(); )
+    {
+        if (scheme_[i] >= N )
+            scheme_.erase( scheme_.begin() + i );
+        else
+            i++;
+    }
+
+    Operation::invalidate_samples(I);
+}
+
+
+void RewireChannels::
         resetMap()
 {
     scheme_.clear();

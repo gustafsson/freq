@@ -132,8 +132,9 @@ void ChainHead::
 
     if (head_source() != s)
     {
-        head_source_->invalidate_samples( Signal::Operation::affecetedDiff( head_source(), s ));
+        Signal::Intervals diff = Signal::Operation::affecetedDiff( head_source(), s );
         head_source_->source( s );
+        head_source_->invalidate_samples( diff );
 
         emit headChanged();
     }
@@ -168,7 +169,7 @@ void ChainHead::
         connectChain()
 {
     head_source_.reset( new ChainHeadReference(chain_->tip_source()) );
-    connect( chain_.get(), SIGNAL(chainChanged()), SLOT(chainChanged()));
+    connect( chain_.get(), SIGNAL(chainChanged()), SLOT(chainChanged()), Qt::QueuedConnection);
 }
 
 

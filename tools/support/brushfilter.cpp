@@ -99,6 +99,21 @@ Signal::Intervals MultiplyBrush::
 }
 
 
+std::string MultiplyBrush::
+        name()
+{
+    std::stringstream ss;
+    ss << "Brush stroke - multiplicative";
+    if (images)
+    {
+        ss << " - " << images->size() << " block";
+        if (images->size() != 1)
+            ss << "s";
+    }
+    return ss.str();
+}
+
+
 void MultiplyBrush::
         operator()( Tfr::Chunk& chunk )
 {

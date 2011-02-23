@@ -337,7 +337,7 @@ Intervals& Intervals::
 
 
 Interval Intervals::
-        getInterval() const
+        fetchFirstInterval() const
 {
     if (this->empty())
         return Interval( Interval::IntervalType_MIN,
@@ -348,7 +348,7 @@ Interval Intervals::
 
 
 Interval Intervals::
-        getInterval( IntervalType dt, IntervalType center ) const
+        fetchInterval( IntervalType dt, IntervalType center ) const
 {
     if (center < dt/2)
         center = 0;
@@ -451,9 +451,20 @@ Intervals Intervals::
     Intervals I;
     foreach (Interval r, *this)
     {
-        r.first += dt;
-        r.last -= dt;
-        if (r.count())
+        if (r.first > 0)
+        {
+            if (r.first < Interval::IntervalType_MAX - dt)
+                r.first += dt;
+            else
+                r.first = Interval::IntervalType_MAX;
+        }
+
+        if (r.last > dt)
+            r.last -= dt;
+        else
+            r.last = 0;
+
+        if (r.valid() && r.count())
             I |= r;
     }
     return I;

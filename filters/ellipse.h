@@ -10,6 +10,7 @@ class Ellipse: public Tfr::CwtFilter
 public:
     Ellipse(float t1, float f1, float t2, float f2, bool save_inside=false);
 
+    virtual std::string name();
     virtual void operator()( Tfr::Chunk& );
     virtual Signal::Intervals zeroed_samples();
     virtual Signal::Intervals affected_samples();

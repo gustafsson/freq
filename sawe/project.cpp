@@ -23,7 +23,8 @@ Project::
         Project( Signal::pOperation root, std::string layer_title )
 :   worker(Signal::pTarget()),
     layers(this),
-    is_modified_(true)
+    is_modified_(true),
+    project_title_(layer_title)
 {
     Signal::pChain chain(new Signal::Chain(root));
     chain->name = layer_title;
@@ -146,10 +147,18 @@ Ui::SaweMainWindow* Project::
 
 
 std::string Project::
-        project_name()
+        project_title()
+{
+    return project_title_;
+}
+
+
+std::string Project::
+        project_filename()
 {
     return QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
 }
+
 
 
 Project::
@@ -169,8 +178,8 @@ void Project::
 
     TaskTimer tt("Project::createMainWindow");
     string title = Sawe::Application::version_string();
-    if (!project_name().empty())
-        title = project_name() + " - " + title;
+    if (!project_title().empty())
+        title = project_title() + " - " + title;
 
     _mainWindow = new Ui::SaweMainWindow( title.c_str(), this );
 
@@ -189,7 +198,9 @@ void Project::
 void Project::
         updateWindowTitle()
 {
-    _mainWindow->setWindowTitle( (project_name() + " - " + Sawe::Application::version_string()).c_str() );
+    if (!project_filename_.empty())
+        project_title_ = QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
+    _mainWindow->setWindowTitle( (project_title() + " - " + Sawe::Application::version_string()).c_str() );
 }
 
 

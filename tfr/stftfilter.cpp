@@ -60,7 +60,7 @@ ChunkAndInverse StftFilter::
                 chunk_interval.last = last_chunk*chunk_size;
         }
     }
-    ci.inverse = Operation::source()->readFixedLength( chunk_interval );
+    ci.inverse = source()->readFixedLength( chunk_interval );
 
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );

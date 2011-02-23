@@ -40,7 +40,9 @@ public:
     bool valid() const;
     bool isConnectedTo(const Interval& r) const;
     bool operator<(const Interval& r) const;
+    Interval operator|(const Interval& r) { Interval I(*this); return I|=r; }
     Interval& operator|=(const Interval& r);
+    Interval operator&(const Interval& r) { Interval I(*this); return I&=r; }
     Interval& operator&=(const Interval& r);
     bool operator==(const Interval& r) const;
     bool operator!=(const Interval& r) const;
@@ -85,15 +87,15 @@ public:
     operator   Interval    () const { return coveredInterval(); }
     operator   bool        () const { return !empty(); }
 
-    Intervals                       inverse() const;
-    Interval                        getInterval() const;
-    Interval                        getInterval( IntervalType dt, IntervalType center = Interval::IntervalType_MIN ) const;
-    Interval                        coveredInterval() const;
-    Intervals                       enlarge( IntervalType dt ) const;
-    Intervals                       shrink( IntervalType dt ) const;
-    IntervalType                    count() const;
+    Intervals               inverse() const;
+    Interval                fetchFirstInterval() const;
+    Interval                fetchInterval( IntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;
+    Interval                coveredInterval() const;
+    Intervals               enlarge( IntervalType dt ) const;
+    Intervals               shrink( IntervalType dt ) const;
+    IntervalType            count() const;
 
-    std::string                     toString() const;
+    std::string             toString() const;
 };
 
 } // namespace Signal

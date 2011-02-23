@@ -234,7 +234,6 @@
 
 
 #include <boost/serialization/string.hpp>
-#include <boost/serialization/split_member.hpp>
 
 namespace Adapters
 {
@@ -246,6 +245,7 @@ public:
 
     Audiofile(std::string filename);
 
+    virtual std::string name();
     std::string filename() const { return _original_filename; }
 
 private:

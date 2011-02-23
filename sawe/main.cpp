@@ -171,8 +171,8 @@ using namespace Signal;
 class A
 {
 public:
-    A() { std::cout << __FUNCTION__ << this << std::endl; }
-    ~A() { std::cout << __FUNCTION__ << this << std::endl; }
+    A() { std::cout << __FUNCTION__ << " " << this << std::endl; }
+    virtual ~A() { std::cout << __FUNCTION__ << " " << this << std::endl; }
 
     int data;
 };
@@ -185,12 +185,14 @@ A hej()
 class B
 {
 public:
+    virtual ~B() { std::cout << __FUNCTION__ << " " << this << std::endl; }
     int data2;
 };
 
 class C: public A, public B
 {
 public:
+    virtual ~C() { std::cout << __FUNCTION__ << " " << this << std::endl; }
     int data3;
 };
 
@@ -209,6 +211,22 @@ void tstc(C*c)
 }
 int main(int argc, char *argv[])
 {
+    if (0)
+    {
+        C* c = new C;
+        A* a = c;
+        tsta(c);
+        tstb(c);
+        tstc(c);
+        delete a;
+        c = new C;
+        B* b = c;
+        tsta(c);
+        tstb(c);
+        tstc(c);
+        delete b;
+        return 0;
+    }
     if (0)
     {
         C c;

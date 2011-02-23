@@ -105,7 +105,7 @@ public:
 
     virtual std::string name()
     {
-        return Operation::name() + " for '" + targetname_ + "' in '" + project_->project_name() + "'";
+        return Operation::name() + " for '" + targetname_ + "' in '" + project_->project_title() + "'";
     }
 
 

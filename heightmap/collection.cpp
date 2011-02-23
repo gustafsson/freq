@@ -873,7 +873,7 @@ void Collection::
     unsigned time_to_work_ms = 500;
     while (sections)
     {
-        Signal::Interval section = sections.getInterval(section_size);
+        Signal::Interval section = sections.fetchInterval(section_size);
         Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
         stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
         Signal::Interval chunk_interval = ci.chunk->getInterval();

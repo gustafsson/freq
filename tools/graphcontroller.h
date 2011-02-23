@@ -37,6 +37,7 @@ private slots:
 
     void removeSelected();
     void removeHidden();
+    void removeCaches();
 
 private:
     void setupGui();

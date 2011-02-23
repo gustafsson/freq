@@ -185,8 +185,12 @@ void RenderView::
 
 		if (painter->device())
 		{
-			_last_width = painter->device()->width();
-			_last_height = painter->device()->height();
+            unsigned w = painter->device()->width();
+            unsigned h = painter->device()->height();
+            if (w != _last_width || h != _last_height)
+                userinput_update();
+            _last_width = w;
+            _last_height = h;
 		}
 
         setStates();
@@ -960,7 +964,6 @@ void RenderView::
 
         emit populateTodoList();
 
-//        if (worker.fetch_todo_list().empty())
         if (!worker.target()->post_sink()->isUnderfed())
         {
             worker.target( model->renderSignalTarget );
@@ -999,7 +1002,7 @@ void RenderView::
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
-                float worked_time = worker.worked_samples.getInterval().count()/worker.source()->sample_rate();
+                float worked_time = worker.worked_samples.count()/worker.source()->sample_rate();
                 _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
                                   worker.work_chunks,
                                   worked_time,

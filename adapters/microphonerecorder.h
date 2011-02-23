@@ -31,6 +31,7 @@ public:
     void stopRecording();
     bool isStopped();
 
+    virtual std::string name();
     virtual Signal::pBuffer read( const Signal::Interval& I );
     virtual float sample_rate();
     virtual long unsigned number_of_samples();
@@ -72,8 +73,7 @@ private:
     template<class archive>
     void serialize(archive& ar, const unsigned int version)
     {
-        //if (ar.is_saving())
-        if (_data.size())
+        if (typename archive::is_saving())
             save_recording(ar, version);
         else
             load_recording(ar, version);

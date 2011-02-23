@@ -19,10 +19,9 @@ pBuffer OperationCache::
     static bool enable_cache = true;
 
     // cached samples doesn't count in samplesDesc if they are marked as invalid
-    Intervals cached = _cache.samplesDesc();
-    cached -= _cache.invalid_samples();
+    Intervals cached = _cache.samplesDesc() - _cache.invalid_samples();
 
-    Interval ok = (Intervals(I) & cached).getInterval();
+    Interval ok = (cached & I).fetchFirstInterval();
 
     if (ok.first == I.first && ok.count() && enable_cache)
     {
@@ -37,9 +36,7 @@ pBuffer OperationCache::
         return b;
     }
 
-    Interval missing = I;
-    if (ok.first != I.first && ok.count())
-        missing.last = ok.first;
+    Interval missing = Intervals(I) - cached;
 
     pBuffer b = readRaw( missing );
     if (D) TaskTimer tt("%s: raw [%u, %u] got [%u, %u]",
@@ -49,7 +46,34 @@ pBuffer OperationCache::
                  b->getInterval().first,
                  b->getInterval().last);
     _cache.put(b);
-    return b;
+
+    cached = _cache.samplesDesc() - _cache.invalid_samples();
+    ok = cached & I;
+    if (ok.first == I.first && ok.count())
+    {
+        return _cache.readFixedLength( ok );
+    }
+
+    missing = Intervals(I) - cached;
+    _invalid_returns |= missing;
+    return source()->readFixedLength( missing );
 }
+
+
+Intervals OperationCache::
+        invalid_samples()
+{
+    Intervals c = _cache.invalid_samples();
+    return c;
+}
+
+
+Intervals OperationCache::
+        invalid_returns()
+{
+    return _invalid_returns;
+}
+
+
 
 } // namespace Signal

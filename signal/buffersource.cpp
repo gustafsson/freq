@@ -51,7 +51,7 @@ pBuffer BufferSource::
         return _waveforms[channel];
     }
 
-    return zeros((Intervals(I) - myInterval).getInterval());
+    return zeros((Intervals(I) - myInterval).fetchFirstInterval());
 }
 
 

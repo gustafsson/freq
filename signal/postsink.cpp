@@ -267,6 +267,9 @@ bool PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
+    // If this->invalidate_samples is called from source() all sinks will also
+    // be called from source() as they are registered as outputs in source()
+    // In that case invalidate_samples will be called twice for all sinks.
     BOOST_FOREACH( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());

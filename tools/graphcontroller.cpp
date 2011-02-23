@@ -26,15 +26,95 @@ namespace Tools
             :
             QTreeWidgetItem(itm),
             operation(operation),
+            tail(operation),
             chain(chain)
         {
 
         }
 
+        virtual QTreeWidgetItem *clone () const {
+            return new TreeItem( parent(), operation, chain );
+        }
+
+
         Signal::pOperation operation;
+        Signal::pOperation tail;
         Signal::pChain chain;
     };
 
+
+    class TreeWidget: public QTreeWidget
+    {
+    public:
+        TreeWidget(QWidget*parent)
+            :
+            QTreeWidget(parent)
+        {}
+
+        virtual bool dropMimeData(QTreeWidgetItem *parent, int index,
+                                  const QMimeData *data, Qt::DropAction action) {
+            return QTreeWidget::dropMimeData(parent, index, data, action);
+        }
+
+        /*virtual Qt::DropActions supportedDropActions() const {
+            Qt::DropActions a = QTreeWidget::supportedDropActions();
+            return Qt::CopyAction;
+        }*/
+
+        virtual void dropEvent ( QDropEvent * event ) {
+            QTreeWidget::dropEvent ( event );
+
+            for (int l = 0; l<invisibleRootItem()->childCount(); ++l)
+            {
+                QTreeWidgetItem* layer = invisibleRootItem()->child(l);
+
+                // Deselect all
+                for (int i=0; i<layer->childCount(); ++i)
+                    layer->child(i)->setSelected( false );
+
+                // Make sure the root element is at the bottom
+                Signal::pOperation firstmoved;
+                for (int i=0; i<layer->childCount(); ++i)
+                {
+                    TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i));
+                    if (0 == itm->tail->source() && i != layer->childCount()-1)
+                    {
+                        firstmoved = itm->tail;
+                        layer->takeChild( i );
+                        layer->addChild( itm );
+                        setCurrentItem( itm );
+                        break;
+                    }
+                }
+
+                // rebuild the chain bottom up
+                Signal::pOperation src;
+                Signal::pChain chain;
+                for (unsigned i=layer->childCount(); i>0; i--)
+                {
+                    TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i-1));
+                    if (src)
+                    {
+                        if (itm->tail->source() != src)
+                        {
+                            if (!firstmoved)
+                                firstmoved = itm->tail;
+                            itm->tail->source( src );
+                            setCurrentItem( itm );
+                        }
+                    }
+                    else
+                        chain = itm->chain;
+
+                    src = itm->operation;
+                }
+
+                // Set the tip
+                chain->tip_source( src );
+                firstmoved->invalidate_samples(Signal::Interval(0, firstmoved->number_of_samples()));
+            }
+        }
+    };
 
     GraphController::
             GraphController( RenderView* render_view )
@@ -58,6 +138,12 @@ namespace Tools
     {
         operationsTree->clear();
 
+        TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+        TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+
+        operationsTree->invisibleRootItem()->setFlags(
+                operationsTree->invisibleRootItem()->flags() & ~Qt::ItemIsDropEnabled );
+
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
@@ -77,6 +163,8 @@ namespace Tools
                     if (o->source())
                         o = o->source();
                 }
+                itm->tail = o;
+                itm->setFlags( itm->flags() & ~Qt::ItemIsDropEnabled );
                 QString name = QString::fromStdString( o->name() );
                 itm->setText(0, name);
                 //itm->setCheckState(0, Qt::Unchecked);
@@ -106,17 +194,15 @@ namespace Tools
         }
         else
         {
-            if (previous)
-                previous->setSelected(false);
-
             // head_source( pOperation ) invalidates models where approperiate
-            Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentItem->chain );
-            head->head_source( currentItem->operation );
-
-            head = project_->tools().playback_model.playbackTarget->findHead( currentItem->chain );
-            head->head_source( currentItem->operation );
-
-            project_->head->head_source( currentItem->operation );
+            Signal::pChain chain = currentItem->chain;
+            Signal::pOperation operation = currentItem->operation;
+            Signal::pChainHead head1 = project_->tools().render_model.renderSignalTarget->findHead( chain );
+            Signal::pChainHead head2 = project_->tools().playback_model.playbackTarget->findHead( chain );
+            Signal::pChainHead head3 = project_->head;
+            head1->head_source( operation );
+            head2->head_source( operation );
+            head3->head_source( operation );
         }
     }
 
@@ -193,6 +279,23 @@ namespace Tools
 
 
     void GraphController::
+            removeCaches()
+    {
+        QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
+        if (itms.empty())
+            return;
+
+        TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
+        if ( !currentItem )
+            return;
+
+        currentItem->operation->invalidate_samples(Signal::Interval(0, currentItem->operation->number_of_samples()));
+
+        redraw_operation_tree();
+    }
+
+
+    void GraphController::
             setupGui()
     {
         Ui::SaweMainWindow* MainWindow = project_->mainWindow();
@@ -216,7 +319,11 @@ namespace Tools
         verticalLayout->setSpacing(6);
         verticalLayout->setContentsMargins(0, 0, 0, 0);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
-        operationsTree = new QTreeWidget(dockWidgetContents);
+        operationsTree = new TreeWidget(dockWidgetContents);
+        operationsTree->setDragDropMode( QAbstractItemView::InternalMove );
+        operationsTree->setAcceptDrops( true );
+        // setDragEnabled( false );
+        operationsTree->setAlternatingRowColors( true );
         operationsTree->setObjectName(QString::fromUtf8("operationsTree"));
         operationsTree->setContextMenuPolicy(Qt::NoContextMenu);
         operationsTree->setAutoFillBackground(true);
@@ -228,13 +335,18 @@ namespace Tools
         //operationsTree->setSelectionMode( QAbstractItemView::MultiSelection );
 
         QWidget* buttons = new QWidget;
-        buttons->setLayout( new QHBoxLayout );
+        //buttons->setLayout( new QHBoxLayout );
+        buttons->setLayout( new QVBoxLayout );
         QPushButton* removeSelectedButton = new QPushButton("Remove selected");
         QPushButton* removeHiddenButton = new QPushButton("Remove hidden");
+        QPushButton* removeCachesdButton = new QPushButton("Discard caches");
+        removeCachesdButton->setToolTip( "Discard caches for operations above the selected operation" );
         connect(removeSelectedButton, SIGNAL(clicked()), SLOT(removeSelected()));
         connect(removeHiddenButton, SIGNAL(clicked()), SLOT(removeHidden()));
+        connect(removeCachesdButton, SIGNAL(clicked()), SLOT(removeCaches()));
         buttons->layout()->addWidget( removeSelectedButton );
         buttons->layout()->addWidget( removeHiddenButton );
+        buttons->layout()->addWidget( removeCachesdButton );
 
         verticalLayout->addWidget(operationsTree);
         verticalLayout->addWidget(buttons);
@@ -261,10 +373,10 @@ namespace Tools
 
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
-            connect( c.get(), SIGNAL(chainChanged()), SLOT(redraw_operation_tree()));
+            connect( c.get(), SIGNAL(chainChanged()), SLOT(redraw_operation_tree()), Qt::QueuedConnection );
         }
 
-        connect( project_->head.get(), SIGNAL(headChanged()), SLOT(redraw_operation_tree()));
+        connect( project_->head.get(), SIGNAL(headChanged()), SLOT(redraw_operation_tree()), Qt::QueuedConnection );
 
 
         redraw_operation_tree();

@@ -139,7 +139,13 @@ public:
     /**
       Project file name.
       */
-    std::string project_name();
+    std::string project_title();
+
+
+    /**
+      Project file name.
+      */
+    std::string project_filename();
 
 private:
     Project(); // used by deserialization
@@ -148,7 +154,8 @@ private:
 
     bool is_modified_;
 
-    std::string project_filename_;
+    std::string project_filename_, project_title_;
+
     boost::scoped_ptr<Tools::ToolRepo> _tools;
     // MainWindow owns all other widgets together with the ToolRepo
     QPointer<QMainWindow> _mainWindow;

@@ -250,12 +250,23 @@
    <addaction name="actionActivateNavigation"/>
    <addaction name="actionZoom"/>
    <addaction name="separator"/>
-   <addaction name="actionMatlabOperation"/>
+   <addaction name="actionActivateInfoTool"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
-   <addaction name="actionActivateInfoTool"/>
    <addaction name="actionToggleFullscreen"/>
    <addaction name="actionToggleFullscreenNoMenus"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarMatlab">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionMatlabOperation"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">

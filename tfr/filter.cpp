@@ -59,7 +59,7 @@ Signal::pBuffer Filter::
             // Explicitly return only the unaffected samples
             TIME_Filter TaskTimer tt("FilterOp fixed unaffected, %s", b_interval.toString().c_str());
             BufferSource bs(b);
-            return bs.readFixedLength( (~affected & b_interval & work).getInterval() );
+            return bs.readFixedLength( (~affected & b_interval & work).fetchFirstInterval() );
         }
     }
 

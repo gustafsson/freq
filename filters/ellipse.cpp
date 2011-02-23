@@ -23,6 +23,17 @@ Ellipse::Ellipse(float t1, float f1, float t2, float f2, bool save_inside)
 }
 
 
+std::string Ellipse::
+        name()
+{
+    std::stringstream ss;
+    ss << std::setiosflags(std::ios::fixed)
+       << std::setprecision(1)
+       << "Ellipse " <<  _t1 << ";" << _f1 << ", " << std::fabs((_t2-_t1)*(_f2-_f1)*M_PI);
+    return ss.str();
+}
+
+
 void Ellipse::
         operator()( Chunk& chunk )
 {

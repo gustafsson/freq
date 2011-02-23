@@ -24,6 +24,11 @@ public:
     virtual unsigned get_channel();
     virtual void source(pOperation v);
 
+    /**
+      Validate bindings.
+      */
+    virtual void invalidate_samples(const Intervals& I);
+
 
     /**
       Creates a default mapping with no rewiring.

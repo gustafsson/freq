@@ -204,6 +204,8 @@ private:
         ti.tt().partlyDone();
 
         ar & BOOST_SERIALIZATION_NVP(_source);
+
+        Operation::source(_source);
     }
 };
 

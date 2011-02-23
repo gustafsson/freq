@@ -21,6 +21,8 @@ typedef __int64 __int64_t;
 #include <cufft.h>
 #endif
 
+#include <QFileInfo>
+
 using namespace std;
 
 namespace Adapters {
@@ -123,6 +125,14 @@ Audiofile::
 {
     load(filename);
 }
+
+
+std::string Audiofile::
+        name()
+{
+    return QFileInfo( filename().c_str() ).fileName().toStdString();
+}
+
 
 void Audiofile::
         load(std::string filename )

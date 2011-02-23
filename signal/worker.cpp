@@ -97,7 +97,7 @@ bool Worker::
 
     unsigned center_sample = source()->sample_rate() * center;
 
-    Interval interval = todo_list.getInterval( _samples_per_chunk, center_sample );
+    Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
 
     boost::scoped_ptr<TaskTimer> tt;
 
