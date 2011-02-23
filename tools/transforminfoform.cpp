@@ -95,9 +95,11 @@ void TransformInfoForm::
 
     float fs = project->head->head_source()->sample_rate();
 
+    addRow("Sample rate", QString("%1").arg(fs));
+
     if (cwt)
     {
-        addRow("Type", "Morlet wavelet");
+        addRow("Type", "Gabor wavelet");
         if (rendercontroller->model()->renderSignalTarget->post_sink()->filter())
             addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
@@ -129,6 +131,7 @@ void TransformInfoForm::
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
+        addRow("Lowest fundamental", QString("%1").arg( fs / cepstrum->chunk_size()));
     }
     else
     {
