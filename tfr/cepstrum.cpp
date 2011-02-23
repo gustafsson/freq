@@ -14,7 +14,7 @@ pChunk Cepstrum::
 {
     Stft stft = Stft::Singleton();
     pChunk chunk = stft(b);
-    pBuffer buffer( new Buffer(b->sample_offset, b->number_of_samples()/2, b->sample_rate/2));
+    pBuffer buffer( new Buffer(chunk->chunk_offset, chunk->nSamples()*chunk->nScales(), chunk->original_sample_rate));
 
     float2* input = chunk->transform_data->getCpuMemory();
     float* output = buffer->waveform_data()->getCpuMemory();
@@ -23,13 +23,17 @@ pChunk Cepstrum::
 
     for(Signal::IntervalType i=0; i<N; ++i)
     {
-        output[i] = fabsf(input[i].x * input[i].x + input[i].y * input[i].y);
+        output[i] = logf(1+fabsf(input[i].x * input[i].x + input[i].y * input[i].y))/chunk_size();
     }
 
-    stft.set_exact_chunk_size(stft.chunk_size()/2);
     pChunk cepstra = stft(buffer);
+    TaskInfo("Cepstrum debug. Was %s , returned %s ", b->getInterval().toString().c_str(), cepstra->getInterval().toString().c_str());
+
+    cepstra->axis_scale = AxisScale_Quefrency;
+    cepstra->min_hz = 2*cepstra->original_sample_rate/chunk_size();
 
     return cepstra;
+
 }
 
 

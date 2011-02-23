@@ -61,7 +61,7 @@ ChunkAndInverse CepstrumFilter::
                 chunk_interval.last = last_chunk*chunk_size;
         }
     }
-    ci.inverse = _source->readFixedLength( chunk_interval );
+    ci.inverse = source()->readFixedLength( chunk_interval );
 
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
@@ -81,11 +81,15 @@ void CepstrumFilter::
         transform( pTransform t )
 {
     if (0 == dynamic_cast<Cepstrum*>(t.get ()))
-        throw std::invalid_argument("'transform' must be an instance of Cwt");
+        throw std::invalid_argument("'transform' must be an instance of Tfr::Cepstrum");
 
-    // even if '_transform == t || _transform == transform()' the client
-    // probably wants to reset everything when transform( t ) is called
-    _invalid_samples = Intervals::Intervals_ALL;
+    if ( t == transform() && !_transform )
+        t.reset();
+
+    if (_transform == t )
+        return;
+
+    invalidate_samples( Signal::Interval(0, number_of_samples() ));
 
     _transform = t;
 }

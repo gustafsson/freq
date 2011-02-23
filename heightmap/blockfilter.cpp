@@ -346,7 +346,7 @@ CepstrumToBlock::
 }
 
 CepstrumToBlock::
-        CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+        CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
             :
             BlockFilterImpl<Tfr::CepstrumFilter>(collections)
 {

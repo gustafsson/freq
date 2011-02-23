@@ -129,7 +129,7 @@ class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
 {
 public:
     CepstrumToBlock( Collection* collection );
-    CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > collections );
+    CepstrumToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };

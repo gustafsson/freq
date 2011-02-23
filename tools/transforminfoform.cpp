@@ -10,6 +10,7 @@
 #include "heightmap/renderer.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
+#include "tfr/cepstrum.h"
 
 namespace Tools
 {
@@ -90,6 +91,7 @@ void TransformInfoForm::
     Tfr::Filter* f = rendercontroller->model()->block_filter();
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(!f?0:f->transform().get());
     Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(!f?0:f->transform().get());
+    Tfr::Cepstrum* cepstrum = dynamic_cast<Tfr::Cepstrum*>(!f?0:f->transform().get());
 
     float fs = project->head->head_source()->sample_rate();
 
@@ -115,6 +117,16 @@ void TransformInfoForm::
             addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
         addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(stft->chunk_size()));
+        addRow("Overlap", "0");
+        addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
+    }
+    else if (cepstrum)
+    {
+        addRow("Type", "Cepstrum");
+        if (rendercontroller->model()->renderSignalTarget->post_sink()->filter())
+            addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
+        addRow("Window type", "Regular");
+        addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
     }
