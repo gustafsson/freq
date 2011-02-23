@@ -43,4 +43,23 @@ Signal::pOperation EllipseModel::
     return filter;
 }
 
+
+void EllipseModel::
+        tryFilter(Signal::pOperation filter)
+{
+    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(filter.get());
+    if (!e)
+    {
+        b.time = a.time;
+        b.scale = a.scale;
+        return;
+    }
+
+    a.time = e->_t1;
+    b.time = e->_t2;
+    a.scale = fa_.getFrequencyScalar( e->_f1 );
+    b.scale = fa_.getFrequencyScalar( e->_f2 );
+}
+
+
 } } // namespace Tools::Selections

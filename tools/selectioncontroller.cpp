@@ -23,6 +23,7 @@
 #include "selections/rectanglemodel.h"
 #include "selections/rectangleview.h"
 
+#include "signal/operationcache.h"
 
 namespace Tools
 {
@@ -93,6 +94,7 @@ namespace Tools
         toolBarTool->insertAction(0, ui->actionCropSelection);
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
+        connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
 
         setCurrentSelection(Signal::pOperation());
 
@@ -160,6 +162,16 @@ namespace Tools
             onSelectionChanged()
     {
         setCurrentSelection( _model->current_selection() );
+    }
+
+
+    void SelectionController::
+            tryHeadAsSelection()
+    {
+        Signal::pOperation t = _model->project()->head->head_source();
+        if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
+            t = t->source();
+        _model->try_set_current_selection( t );
     }
 
 

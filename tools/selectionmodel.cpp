@@ -37,6 +37,22 @@ void SelectionModel::
 }
 
 
+void SelectionModel::
+        try_set_current_selection(Signal::pOperation o)
+{
+    TaskInfo ti("Trying to set %s:%s as current selection", vartype(*o.get()).c_str(), o->name().c_str());
+
+    try
+    {
+        set_current_selection( o );
+    }
+    catch ( const std::logic_error& )
+    {
+        set_current_selection(Signal::pOperation());
+    }
+}
+
+
 Signal::pOperation SelectionModel::
         current_selection_copy(SaveInside si)
 {

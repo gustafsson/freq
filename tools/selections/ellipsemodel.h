@@ -15,6 +15,7 @@ namespace Tools { namespace Selections
         ~EllipseModel();
 
         Signal::pOperation updateFilter();
+        void tryFilter(Signal::pOperation o);
 
         Heightmap::Position a, b;
 

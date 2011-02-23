@@ -29,6 +29,7 @@ namespace Tools
 
         Signal::pOperation current_selection_copy(SaveInside si = SaveInside_UNCHANGED);
         void               set_current_selection(Signal::pOperation o);
+        void               try_set_current_selection(Signal::pOperation o);
         const Signal::pOperation& current_selection() { return current_selection_; }
 
         Sawe::Project* project() { return project_; }
