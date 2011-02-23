@@ -59,7 +59,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>71</y>
+     <y>81</y>
      <width>71</width>
      <height>21</height>
     </rect>
@@ -72,13 +72,13 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>101</y>
+     <y>105</y>
      <width>281</width>
      <height>51</height>
     </rect>
    </property>
    <property name="text">
-    <string>Number of samples per chunk. '0' lets Sonic AWE decide. '-1' sends the entire signal in one big chunk.</string>
+    <string>Number of samples per chunk. If set to '0' Sonic AWE will decide. Set it to '-1' to filter the entire signal in one big chunk.</string>
    </property>
    <property name="wordWrap">
     <bool>true</bool>
@@ -88,7 +88,7 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>70</y>
+     <y>80</y>
      <width>181</width>
      <height>25</height>
     </rect>
@@ -104,9 +104,6 @@
    </property>
   </widget>
   <widget class="QCheckBox" name="computeInOrder">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="geometry">
     <rect>
      <x>100</x>
@@ -168,13 +165,13 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>290</y>
+     <y>289</y>
      <width>281</width>
      <height>61</height>
     </rect>
    </property>
    <property name="text">
-    <string>Number of redundant samples per chunk. Edge effects from many filters can be reduced or removed by settings this value to a few seconds.</string>
+    <string>Number of redundant samples per chunk. Edge effects from many filters can be reduced or removed by settings this value high enough.</string>
    </property>
    <property name="wordWrap">
     <bool>true</bool>
@@ -204,6 +201,22 @@
    </property>
    <property name="text">
     <string>1 second is 44100 samples.</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>37</y>
+     <width>281</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Leave empty to open a terminal instead of running a script.</string>
    </property>
    <property name="wordWrap">
     <bool>true</bool>

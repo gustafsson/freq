@@ -19,7 +19,7 @@ namespace Adapters {
 
 MatlabFilter::
         MatlabFilter( std::string matlabFunction )
-:   _matlab(new MatlabFunction(matlabFunction, 15))
+:   _matlab(new MatlabFunction(matlabFunction, 15, 0))
 {
 }
 
@@ -28,19 +28,30 @@ void MatlabFilter::
 {
     TIME_MatlabFilter TaskTimer tt("MatlabFilter::operator() [%g,%g)", c.startTime(), c.endTime() );
 
-    string file = _matlab->getTempName();
+    _invalid_returns |= c.getInversedInterval();
 
-    Hdf5Chunk::saveChunk( file, c );
+    std::string file = _matlab->isReady();
+    if (!file.empty())
+    {
+        Tfr::pChunk pc = Hdf5Chunk::loadChunk( file );
+        c.transform_data.swap( pc->transform_data );
 
-    file = _matlab->invokeAndWait( file );
+        ::remove( file.c_str());
 
-	if (file.empty())
-		return;
+        Interval J = c.getInversedInterval();
 
-    Tfr::pChunk pc = Hdf5Chunk::loadChunk( file );
-    c.transform_data.swap( pc->transform_data );
+        Operation::invalidate_samples( _invalid_returns & J );
+        _invalid_returns -= J;
+    }
 
-    ::remove( file.c_str());
+    if (!_matlab->isWaiting())
+    {
+        string file = _matlab->getTempName();
+
+        Hdf5Chunk::saveChunk( file, c );
+
+        _matlab->invoke( file );
+    }
 }
 
 Signal::Intervals MatlabFilter::
@@ -65,7 +76,7 @@ void MatlabFilter::
     float t = _matlab->timeout();
 
     _matlab.reset();
-    _matlab.reset( new MatlabFunction( fn, t ));
+    _matlab.reset( new MatlabFunction( fn, t, 0 ));
 }
 
 

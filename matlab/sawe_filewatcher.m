@@ -11,7 +11,7 @@
 function C=sawe_filewatcher(datafile, func, arguments, dt)
 
 if nargin<2
-  error 'syntax: filewatcher(datafile, function, arguments, dt). \'arguments\' defaults to [], \'dt\' defaults to 0.05'
+  error("syntax: filewatcher(datafile, function, arguments, dt). 'arguments' defaults to [], 'dt' defaults to 0.05")
 end
 if nargin<3
   arguments=[];
@@ -22,39 +22,56 @@ end
 
 resultfile=[datafile '.result.h5'];
 tempfile=datafile;
-
-disp (['Monitoring ' datafile]);
+isoctave=0~=exist('OCTAVE_VERSION','builtin');
+%disp (['Monitoring ' datafile]);
 while 1
-  if exist(datafile,'file') % matlab and octave
+  if isoctave
+    datafile_exists = ~isempty(stat(datafile)); % fast octave version
+  else
+    datafile_exists = exist(datafile,'file'); % matlab and octave
+  end
 
-    disp (['Processing ' datafile]);
-
-    pause(0.1); % matlab, wait for slow file system in windows to finish the move
+  if datafile_exists
+    %disp (['Processing ' datafile]);
 	
-    %matlab workaround begin
-    info=hdf5info(datafile);
-    [dset1]=info.GroupHierarchy.Datasets.Name;
-    if strcmp(dset1,'/buffer')
-        data = sawe_loadbuffer(datafile);
+    if ~isoctave
+      pause(0.1); % matlab, wait for slow file system in windows to finish the move
+
+      info=hdf5info(datafile);
+      [dset1]=info.GroupHierarchy.Datasets.Name;
+      if strcmp(dset1,'/buffer')
+          data = sawe_loadbuffer(datafile);
+      else
+          data = sawe_loadchunk(datafile);
+      end
     else
-        data = sawe_loadchunk(datafile);
+      %octave
+      data=load(datafile); 
     end
-    %matlab workaround end
     
     [data, arguments]=func(data, arguments);
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
-      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate );
+      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy );
     elseif isfield(data,'chunk')
-      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate );
+      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy );
     end
     
-    movefile(tempfile,resultfile); % matlab
+    if isoctave
+      rename(tempfile,resultfile);   % octave
+    else
+      movefile(tempfile,resultfile); % matlab
+    end
     
-    disp (['Monitoring ' datafile]);
+    %disp (['Monitoring ' datafile]);
   else
-    pause(dt); % matlab
+    if isoctave
+      sleep(dt); % octave
+    else
+      pause(dt); % matlab
+    end
   end
 end
 
+endfunction

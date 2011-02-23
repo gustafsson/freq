@@ -40,6 +40,33 @@ void MatlabController::
 
     connect(ui->actionMatlabOperation, SIGNAL(triggered()), SLOT(receiveMatlabOperation()));
     connect(ui->actionMatlabFilter, SIGNAL(triggered()), SLOT(receiveMatlabFilter()));
+
+    std::set<Signal::pChain> ch = project_->layers.layers();
+    for (std::set<Signal::pChain>::iterator itr = ch.begin(); itr != ch.end(); ++itr)
+    {
+        for (Signal::pOperation o = (*itr)->tip_source(); o; o=o->source() )
+        {
+            if (Adapters::MatlabOperation* m = dynamic_cast<Adapters::MatlabOperation*>( o.get()))
+            {
+                prepareLogView( m );
+            }
+        }
+    }
+}
+
+
+void MatlabController::
+        prepareLogView( Adapters::MatlabOperation*m )
+{
+    MatlabOperationWidget* settings = new MatlabOperationWidget( project_ );
+    settings->scriptname( m->settings()->scriptname() );
+    settings->redundant( m->settings()->redundant() );
+    settings->computeInOrder( m->settings()->computeInOrder() );
+    settings->chunksize( m->settings()->chunksize() );
+    settings->operation = m;
+    m->settings( settings );
+
+    connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
 }
 
 
@@ -73,20 +100,27 @@ void MatlabController::
         d.setWindowModality( Qt::WindowModal );
         if (QDialog::Accepted == d.exec())
         {
-            if (!QFile::exists( settings->scriptname().c_str() ))
+            if (!settings->scriptname().empty() && !QFile::exists( settings->scriptname().c_str() ))
             {
                 QMessageBox::warning( project_->mainWindow(), "Opening file", QString("Cannot open file '%1'!").arg(settings->scriptname().c_str()) );
             }
             else
             {
-                Adapters::MatlabOperation* m = new Adapters::MatlabOperation(Signal::pOperation(), settings->scriptname());
-                _matlaboperation.reset(m);
+                Adapters::MatlabOperation* m = new Adapters::MatlabOperation(Signal::pOperation(), settings);
+                Signal::pOperation matlaboperation(m);
                 settings->setParent(0);
                 connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
                 settings->operation = m;
-                m->settings = settings;
-                m->invalidate_samples( Signal::Interval(0, project_->head->head_source()->number_of_samples()));
-                project_->head->appendOperation( _matlaboperation );
+                if (settings->scriptname().empty())
+                {
+                    settings->showOutput();
+                    settings->ownOperation = matlaboperation;
+                }
+                else
+                {
+                    m->invalidate_samples( Signal::Interval(0, project_->head->head_source()->number_of_samples()) );
+                    project_->head->appendOperation( matlaboperation );
+                }
             }
         }
     }
@@ -106,8 +140,8 @@ void MatlabController::
     }
     else*/
     {
-        _matlabfilter.reset( new Adapters::MatlabFilter( "matlabfilter" ) );
-        project_->head->appendOperation( _matlabfilter );
+        Signal::pOperation matlabfilter( new Adapters::MatlabFilter( "matlabfilter" ) );
+        project_->head->appendOperation( matlabfilter );
 
 #ifndef SAWE_NO_MUTEX
         // Make sure the worker runs in a separate thread

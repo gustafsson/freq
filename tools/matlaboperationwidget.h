@@ -7,6 +7,13 @@
 #include "adapters/matlaboperation.h"
 
 #include <QWidget>
+#include <QTimer>
+#include <QProcess>
+#include <QPointer>
+
+class QDockWidget;
+class QPlainTextEdit;
+class QLineEdit;
 
 namespace Sawe { class Project; }
 
@@ -16,7 +23,7 @@ namespace Ui {
     class MatlabOperationWidget;
 }
 
-class MatlabOperationWidget : public QWidget, public Adapters::MatlabOperationSettings
+class MatlabOperationWidget : public QWidget, public Adapters::MatlabFunctionSettings
 {
     Q_OBJECT
 
@@ -34,20 +41,35 @@ public:
     void computeInOrder(bool);
 
     virtual int redundant();
-    void redundant(int);
+    virtual void redundant(int);
 
-    Adapters::MatlabOperation* operation;
+    Signal::pOperation ownOperation;
+
+public slots:
+    void showOutput();
 
 private slots:
     void browse();
 
     void populateTodoList();
+    void announceInvalidSamples();
+
+    void sendCommand();
+
+    void finished ( int exitCode, QProcess::ExitStatus exitStatus );
 
 private:
+    QProcess* pid;
+    void setProcess(QProcess*);
+
     Ui::MatlabOperationWidget *ui;
 
-    Signal::pTarget target;
+    //Signal::pTarget target;
     Sawe::Project* project;
+    QPointer<QDockWidget> octaveWindow;
+    QPlainTextEdit* text;
+    QLineEdit* edit;
+    QTimer announceInvalidSamplesTimer;
 };
 
 

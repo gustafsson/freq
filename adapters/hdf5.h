@@ -66,7 +66,8 @@ public:
                 case 1: return read_exact<T>( datasetname );
             }
         } catch (const std::runtime_error& x) {
-            err = err + x.what() + "\n";
+            if (err.empty() || strcmp(x.what(), err.substr(0, err.size()-1).c_str()) != 0)
+                err = err + x.what() + "\n";
         }
         throw std::runtime_error(err.c_str());
     }
@@ -117,8 +118,8 @@ public:
 
     virtual void put(Signal::pBuffer);
 
-    static void             saveBuffer( std::string filename, const Signal::Buffer& );
-    static Signal::pBuffer  loadBuffer( std::string filename );
+    static void             saveBuffer( std::string filename, const Signal::Buffer&, double redundancy );
+    static Signal::pBuffer  loadBuffer( std::string filename, double* redundancy );
 
 private:
     std::string _filename;

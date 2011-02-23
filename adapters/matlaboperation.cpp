@@ -37,14 +37,12 @@ using namespace boost::posix_time;
 namespace Adapters {
 
 MatlabFunction::
-        MatlabFunction( std::string f, float timeout )
+        MatlabFunction( std::string f, float timeout, MatlabFunctionSettings* settings )
 :   _pid(0),
     _matlab_function(f),
     _matlab_filename(f),
     _timeout( timeout )
 {
-    BOOST_ASSERT(!_matlab_function.empty());
-
     std::string path = QFileInfo(f.c_str()).path().toStdString();
     _matlab_filename = QFileInfo(f.c_str()).fileName().toStdString();
     _matlab_function = QFileInfo(f.c_str()).baseName().toStdString();
@@ -59,30 +57,53 @@ MatlabFunction::
     { // Start matlab/octave
         stringstream matlab_command, octave_command;
         matlab_command
-                << "addpath('/usr/share/sonicawe');"
-                << "addpath('" << path << "');"
-                << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
-        octave_command << "addpath('/usr/share/sonicawe');"
-                << "addpath('" << path << "');"
-                << "sawe_filewatcher_oct('" << _dataFile << "',@" << _matlab_function << ");";
+                << "addpath('/usr/share/sonicawe');";
+        octave_command
+                << "addpath('/usr/share/sonicawe');";
+
+        if (f.empty())
+        {
+
+        }
+        else
+        {
+            matlab_command
+                    << "addpath('" << path << "');"
+                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
+            octave_command
+                    << "addpath('" << path << "');"
+                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
+        }
 
         QStringList matlab_args;
-        matlab_args.push_back("-r");
         // "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash"
-        matlab_args.push_back(matlab_command.str().c_str());
         QStringList octave_args;
         octave_args.push_back("-qf");
-        octave_args.push_back("--eval");
-        octave_args.push_back(octave_command.str().c_str());
+
+        if (f.empty())
+        {
+            octave_args.push_back("--interactive");
+        }
+        else
+        {
+            matlab_args.push_back("-r");
+            matlab_args.push_back(matlab_command.str().c_str());
+            octave_args.push_back("--eval");
+            octave_args.push_back(octave_command.str().c_str());
+        }
 
         _pid = new QProcess();
-        _pid->setProcessChannelMode( QProcess::ForwardedChannels );
-        _pid->start("matlab", matlab_args);
+//        _pid->setProcessChannelMode( QProcess::ForwardedChannels );
+        _pid->setProcessChannelMode( QProcess::MergedChannels );
+        if (settings) settings->setProcess( _pid );
+
+        /*_pid->start("matlab", matlab_args);
         _pid->waitForStarted();
         if (_pid->state() == QProcess::Running)
             return;
 
-        TaskInfo("Couldn't start MATLAB, trying Octave instead");
+        TaskInfo("Couldn't start MATLAB, trying Octave instead");*/
+
         _pid->start("octave", octave_args);
         _pid->waitForStarted();
         if (_pid->state() == QProcess::Running)
@@ -114,54 +135,97 @@ MatlabFunction::
 	kill();
 }
 
-std::string MatlabFunction::
-        invokeAndWait( std::string source )
-{
-	if (0==_pid)
-	{
-        TIME_MatlabFunction TaskTimer tt("Matlab/octave failed, ignoring.");
-		return "";
-	}
 
-    boost::scoped_ptr<TaskTimer> tt;
-    TIME_MatlabFunction tt.reset( new TaskTimer("Waiting for matlab/octave."));
+string MatlabFunction::
+        getTempName()
+{
+    return _dataFile + "~";
+}
+
+
+void MatlabFunction::
+        invoke( std::string source )
+{
+    if (0==_pid)
+    {
+        TIME_MatlabFunction TaskTimer tt("Matlab/octave failed, ignoring.");
+        return;
+    }
+
+    TIME_MatlabFunction TaskInfo("Invoking matlab/octave.");
 
     ::remove(_resultFile.c_str());
     ::rename(source.c_str(), _dataFile.c_str());
+}
+
+
+bool MatlabFunction::
+        isWaiting()
+{
+    struct stat dummy;
+    return 0==_pid || (isReady().empty() && 0==stat( _dataFile.c_str(),&dummy));
+}
+
+
+std::string MatlabFunction::
+        isReady()
+{
+    struct stat dummy;
+    if ( 0!=_pid && 0==stat( _resultFile.c_str(),&dummy) )
+        return _resultFile;
+    return "";
+}
+
+
+std::string MatlabFunction::
+        waitForReady()
+{
+    boost::scoped_ptr<TaskTimer> tt;
+    TIME_MatlabFunction tt.reset( new TaskTimer("Waiting for matlab/octave."));
 
     // Wait for result to be written
-    struct stat dummy;
-
     time_duration timeout(0, 0, _timeout,fmod(_timeout,1.f));
     ptime start = second_clock::local_time();
 
-    while (0!=stat( _resultFile.c_str(),&dummy))
+    while (isReady().empty())
     {
 #ifdef __GNUC__
         usleep(10 * 1000); // Sleep in microseconds
 #elif defined(WIN32)
         Sleep(10); // Sleep in ms
 #else
-#error TODO implement
+#error Does not support this platform
 #endif
         time_duration d = second_clock::local_time()-start;
         if (timeout < d)
-		{
+        {
             abort(); // throws
-		}
+        }
         if (d.total_seconds() > 3)
             TIME_MatlabFunction tt->partlyDone();
     }
 #ifdef WIN32 // wait for slow file system to finish move
     Sleep(100);
 #endif
+
     return _resultFile;
 }
 
-string MatlabFunction::
-        getTempName()
+
+bool MatlabFunction::
+        hasProcessEnded()
 {
-    return _dataFile + "~";
+    return !_pid || _pid->state() == QProcess::NotRunning;
+}
+
+
+void MatlabFunction::
+        endProcess()
+{
+    if (!hasProcessEnded())
+        _pid->kill();  // send SIGKILL
+    else
+        _pid->terminate(); // send platform specific "please close message"
 }
 
 
@@ -173,7 +237,7 @@ std::string MatlabFunction::
 
 
 std::string MatlabFunction::
-        matlabFilename()
+        matlabFunctionFilename()
 {
     return _matlab_filename;
 }
@@ -199,6 +263,7 @@ void MatlabFunction::
         tt.partlyDone();
         delete _pid;
 
+        _pid = 0;
         ::remove(_dataFile.c_str());
         ::remove(_resultFile.c_str());
         ::remove("octave-core");
@@ -224,84 +289,176 @@ void MatlabFunction::
 }
 
 MatlabOperation::
-        MatlabOperation( Signal::pOperation source, std::string matlabFunction )
+        MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* settings )
 :   OperationCache(source),
-    _matlab(new MatlabFunction(matlabFunction, 4))
+    _matlab(new MatlabFunction(settings->scriptname(), 4, settings)),
+    _settings(settings)
 {
 }
+
+
+MatlabOperation::
+        MatlabOperation()
+:   OperationCache(Signal::pOperation()),
+    _settings(0)
+{
+}
+
+
 
 MatlabOperation::
         ~MatlabOperation()
 {
     TaskInfo("~MatlabOperation");
-    delete settings;
+    TaskInfo(".");
+    _matlab->endProcess();
+    _matlab.reset();
+
+    if (_settings->operation)
+    {
+        _settings->operation = 0;
+        delete _settings;
+    }
 }
+
 
 std::string MatlabOperation::
         name()
 {
-    return _matlab->matlabFilename();
+    if (!_matlab)
+        return Operation::name();
+    return _matlab->matlabFunctionFilename();
 }
 
-Signal::pBuffer MatlabOperation::
-        read( const Signal::Interval& I )
+
+void MatlabOperation::
+        invalidate_samples(const Intervals& I)
 {
-    if (_cache.invalid_samples())
-    {
-        if (settings->computeInOrder() && I.first > _cache.invalid_samples().coveredInterval().first)
-        {
-            // This will fool succeeding output operations to recieve bad data.
-            // But operation->invalidate_samples(operation->invalid_samples()) solves that later;
-            return Operation::read(I);
-        }
-    }
+    // If computing in order and invalidating something that has already been
+    // computed
+    TaskInfo("MatlabOperation children: %s", toString().c_str());
+    TaskInfo("MatlabOperation outputs: %s", parentsToString().c_str());
 
-    return OperationCache::read(I);
+    if (_settings->computeInOrder() && (I - _cache.invalid_samples()))
+    {
+        // Start over and recompute the first block again
+        OperationCache::invalidate_samples(Signal::Interval(0, number_of_samples()));
+    }
+    else
+        OperationCache::invalidate_samples(I);
 }
+
 
 pBuffer MatlabOperation::
-        readRaw( const Interval& constI )
+        readRaw( const Interval& I )
 {
-    Interval I = constI;
-    TaskTimer tt("MatlabOperation::read(%u,%u), count = %u", I.first, I.last, (Signal::IntervalType)I.count() );
+    if (_matlab->hasProcessEnded())
+    {
+        TaskInfo("MatlabOperation::read(%s), process ended", I.toString().c_str());
+        return source()->read( I );
+    }
 
-    // just 'read()' might return the entire signal, which would be way to
-    // slow to export in an interactive manner
-    if (settings->chunksize() != I.count() && 0<settings->chunksize())
-        I.last = I.first + settings->chunksize();
-    IntervalType support = settings->redundant();
-    Interval J = Intervals(I).enlarge( support );
+    TaskTimer tt("MatlabOperation::read(%s)", I.toString().c_str() );
+    pBuffer b;
 
-    if (settings->chunksize() == -1)
-        J = Interval(0, number_of_samples());
+    try
+    {
+        std::string file = _matlab->isReady();
+        if (!file.empty())
+        {
+            double redundancy=0;
+            pBuffer b2 = Hdf5Buffer::loadBuffer( file, &redundancy );
 
-    pBuffer b = source()->readFixedLength( J );
+            ::remove( file.c_str());
 
-    string file = _matlab->getTempName();
+            IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
+            _settings->redundant(support);
 
-    Hdf5Buffer::saveBuffer( file, *b );
+            if (b2)
+            {
+                Interval J = b2->getInterval();
+                invalidate_samples( J );
+                _invalid_returns -= J;
 
-    file = _matlab->invokeAndWait( file );
+                if ((invalid_samples() - J).empty())
+                    _matlab->endProcess(); // Finished with matlab
 
-	if (file.empty())
-		return b;
+                return b2;
+            }
+        }
 
-    pBuffer b2 = Hdf5Buffer::loadBuffer( file );
+        if (!_matlab->isWaiting())
+        {
+            Signal::Interval J = I;
+            IntervalType support = 0;
 
-	::remove( file.c_str());
+            if (_settings->chunksize() < 0)
+                J = Interval(0, number_of_samples());
+            else
+            {
+                if (_settings->computeInOrder() )
+                    J = invalid_samples().fetchInterval( I.count() );
 
-    return BufferSource( b2 ).readFixedLength( I );
+                if (0<_settings->chunksize())
+                    J.last = J.first + _settings->chunksize();
+            }
+
+            support = _settings->redundant();
+            Signal::Interval R = J;
+            J = Intervals(J).enlarge( support );
+
+            // just 'read()' might return the entire signal, which would be way to
+            // slow to export in an interactive manner
+            b = source()->readFixedLength( J );
+
+            string file = _matlab->getTempName();
+
+            Hdf5Buffer::saveBuffer( file, *b, support );
+
+            _matlab->invoke( file );
+
+            b = BufferSource( b ).readFixedLength( R );
+        }
+        else
+            b = source()->readFixedLength( I );
+    }
+    catch (const std::runtime_error& e)
+    {
+        TaskInfo("MatlabOperation caught %s", e.what());
+        _matlab->endProcess();
+        throw std::invalid_argument( e.what() ); // invalid_argument doesn't crash the application
+    }
+
+    _invalid_returns |= b->getInterval();
+    return b;
 }
+
 
 void MatlabOperation::
         restart()
 {
-    std::string fn = _matlab->matlabFunction();
-    float t = _matlab->timeout();
-
     _cache.clear();
     _matlab.reset();
-    _matlab.reset( new MatlabFunction( fn, t ));
+    _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
+    if (source())
+    {
+        _invalid_returns = Signal::Interval(0, number_of_samples());
+        invalidate_samples(_invalid_returns);
+    }
+}
+
+
+void MatlabOperation::
+        settings(MatlabFunctionSettings* settings)
+{
+    if (_settings && _settings->operation)
+    {
+        _settings->operation = 0;
+        delete _settings;
+    }
+
+    _settings = settings;
+    restart();
 }
 
 } // namespace Adapters
