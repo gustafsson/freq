@@ -83,6 +83,8 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
+    tfr/cepstrum.h \
+    tfr/cepstrumfilter.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 

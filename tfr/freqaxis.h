@@ -10,7 +10,8 @@ namespace Tfr {
 
 enum AxisScale {
     AxisScale_Linear,
-    AxisScale_Logarithmic
+    AxisScale_Logarithmic,
+    AxisScale_Quefrency
 };
 
 /**
@@ -29,16 +30,24 @@ public:
     }
 
 
-    __device__ __host__ float getFrequency( float scalar ) const
+    __device__ __host__ float getFrequency( float fi ) const
     {
         switch (axis_scale)
         {
         case AxisScale_Linear:
-            return f_min + scalar*f_step;
+            return f_min + fi*f_step;
 
         case AxisScale_Logarithmic:
-            return f_min*exp2f( scalar*log2f_step );
+            return f_min*exp2f( fi*log2f_step );
 
+        case AxisScale_Quefrency:
+            {
+                float binmin = fs/f_min;
+                float binmax = 2;
+                float numbin = binmax-binmin;
+                float bin = binmin + numbin*fi;
+                return fs/bin;
+            }
         default:
             return 0.f;
         }
@@ -71,6 +80,10 @@ public:
                 fi = log2_f/log2f_step;
             }
             break;
+
+        case AxisScale_Quefrency:
+            fi = fs/f;
+            break;
         }
 
         return fi;
@@ -94,6 +107,7 @@ public:
     union {
         float log2f_step;
         float f_step;
+        float fs;
     };
 
     float max_frequency_scalar;

@@ -74,6 +74,11 @@ FreqAxis Chunk::
         x.f_step = (1.f/x.max_frequency_scalar) * (max_hz - min_hz);
         break;
 
+    case AxisScale_Quefrency:
+        x.max_frequency_scalar = nScales()/2 - 1;
+        x.fs = original_sample_rate;
+        break;
+
     default:
         throw std::invalid_argument("Unknown axis scale");
     }

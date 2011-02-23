@@ -1465,6 +1465,17 @@
     <string>Operation details</string>
    </property>
   </action>
+  <action name="actionTransform_Cepstrum">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Cepstragram</string>
+   </property>
+   <property name="toolTip">
+    <string>We call it a cepstragram</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>
