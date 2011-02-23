@@ -7,7 +7,9 @@ const RewireChannels::SourceChannel RewireChannels::NOTHING = (unsigned)-1;
 RewireChannels::
         RewireChannels(pOperation source)
             :
-            Operation(source)
+            Operation(source),
+            output_channel_(0),
+            source_channel_(0)
 {
     resetMap();
 }

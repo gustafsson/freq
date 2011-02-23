@@ -53,12 +53,15 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
+            last_ysize(1),
             orthoview(1),
             model(model),
             glwidget(0),
             graphicsview(0),
             _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
+            _last_width(0),
+            _last_height(0),
             _last_x(0),
             _last_y(0),
             _try_gc(0)

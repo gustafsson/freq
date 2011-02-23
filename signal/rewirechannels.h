@@ -3,11 +3,13 @@
 
 #include "operation.h"
 
+#include <boost/noncopyable.hpp>
+
 #include <vector>
 
 namespace Signal {
 
-class RewireChannels : public Signal::Operation
+class RewireChannels : public Signal::Operation, public boost::noncopyable
 {
 public:
     typedef unsigned SourceChannel;

@@ -6,13 +6,14 @@
 #include "tools/renderview.h"
 
 #include <boost/foreach.hpp>
+#include <boost/noncopyable.hpp>
 
 #define DEBUG_Target if(0)
 //#define DEBUG_Target
 
 namespace Signal {
 
-class OperationAddChannels: public Operation
+class OperationAddChannels: public Operation, public boost::noncopyable
 {
 public:
     OperationAddChannels( pOperation source, pOperation source2 )
@@ -50,7 +51,7 @@ private:
 };
 
 
-class ForAllChannelsOperation: public Operation
+class ForAllChannelsOperation: public Operation, public boost::noncopyable
 {
 public:
     ForAllChannelsOperation
@@ -91,7 +92,7 @@ public:
 };
 
 
-class UpdateView: public Operation
+class UpdateView: public Operation, public boost::noncopyable
 {
 public:
     UpdateView(Sawe::Project* project, std::string targetname)
