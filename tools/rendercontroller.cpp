@@ -247,7 +247,8 @@ void RenderController::
     float FS = model()->project()->worker.source()->sample_rate();
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
-    c.scales_per_octave( 20.f * exp( -4*(value / 50.f - 1.f)) );
+    float f = value / 50.f - 1.f;
+    c.scales_per_octave( 20.f * exp( 4*f ) );
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
