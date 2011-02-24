@@ -147,6 +147,19 @@ bool MicrophoneRecorder::isStopped()
     return _stream_record?_stream_record->isStopped():true;
 }
 
+std::string MicrophoneRecorder::
+        name()
+{
+    std::stringstream ss;
+    portaudio::System &sys = portaudio::System::instance();
+    int d = input_device_;
+    if (d<0)
+        d = sys.defaultInputDevice().index();
+
+    ss << "Recording mic " << sys.deviceByIndex(d).name();
+    return ss.str();
+}
+
 Signal::pBuffer MicrophoneRecorder::
         read( const Signal::Interval& I )
 {

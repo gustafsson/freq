@@ -83,6 +83,8 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
+    tfr/cepstrum.h \
+    tfr/cepstrumfilter.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
@@ -97,6 +99,7 @@ FORMS += \
     tools/transforminfoform.ui \
     tools/exportaudiodialog.ui \
     tools/harmonicsinfoform.ui \
+    tools/matlaboperationwidget.ui
 
 CUDA_SOURCES += \
     filters/*.cu \

@@ -4,6 +4,7 @@
 #include "sawe/project.h"
 
 #include <QWidget>
+#include <QTimer>
 
 class QAbstractTableModel;
 
@@ -35,6 +36,7 @@ private:
 
     void addRow(QString name, QString value);
 
+    QTimer timer;
 };
 
 } // namespace Tools

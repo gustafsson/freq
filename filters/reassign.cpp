@@ -76,7 +76,7 @@ void Reassign::
                 float pb = atan2(b.y, b.x);
                 float FS = chunk.sample_rate;
                 float f = ((pb-pa)*FS)/(2*M_PI);
-                unsigned i = chunk.freqAxis().getFrequencyIndex( fabsf(f) );
+                unsigned i = chunk.freqAxis.getFrequencyIndex( fabsf(f) );
 
                 if (i >= H)
                     i = H-1;
@@ -157,7 +157,7 @@ void Reassign::
             float pb = atan2(b.y, b.x);
             float FS = chunk.sample_rate;
             float f = ((pb-pa)*FS)/(2*M_PI);
-            unsigned i = chunk.freqAxis().getFrequencyIndex( fabsf(f) );
+            unsigned i = chunk.freqAxis.getFrequencyIndex( fabsf(f) );
 
             this_q[ i ].x += a.x;
             this_q[ i ].y += a.y;
@@ -181,7 +181,7 @@ void Reassign::
     for (unsigned reassignLoop=0;reassignLoop<1;reassignLoop++)
     {
         ::reassignFilter( chunk.transform_data->getCudaGlobal(),
-                      chunk.min_hz, chunk.max_hz, chunk.sample_rate );
+                      chunk.minHz(), chunk.maxHz(), chunk.sample_rate );
     }
 
     TIME_FILTER CudaException_ThreadSynchronize();
@@ -203,7 +203,7 @@ void Tonalize::
     TIME_FILTER TaskTimer tt("TonalizeFilter");
 
     ::tonalizeFilter( chunk.transform_data->getCudaGlobal(),
-                  chunk.min_hz, chunk.max_hz, chunk.sample_rate );
+                  chunk.minHz(), chunk.maxHz(), chunk.sample_rate );
 
     TIME_FILTER CudaException_ThreadSynchronize();
 }

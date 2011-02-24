@@ -1,7 +1,7 @@
 #ifndef SIGNALBUFFERSOURCE_H
 #define SIGNALBUFFERSOURCE_H
 
-#include "signal/operation.h"
+#include "operation.h"
 
 namespace Signal
 {

@@ -1,11 +1,20 @@
 #ifndef GRAPHCONTROLLER_H
 #define GRAPHCONTROLLER_H
 
+#include "signal/chain.h"
+
 #include <QObject>
 
-namespace Signal
+class QDockWidget;
+class QWidget;
+class QVBoxLayout;
+class QTreeWidget;
+class QTreeWidgetItem;
+class QAction;
+
+namespace Sawe
 {
-    class Worker;
+    class Project;
 }
 
 namespace Tools
@@ -23,12 +32,26 @@ public:
 
 private slots:
     void redraw_operation_tree();
+    void currentItemChanged(QTreeWidgetItem* current,QTreeWidgetItem* previous);
+    void checkVisibilityOperations(bool visible);
+
+    void removeSelected();
+    void removeHidden();
+    void removeCaches();
 
 private:
     void setupGui();
 
+    QList<Signal::pChainHead> heads;
+
     RenderView* render_view_;
-    Signal::Worker* worker_;
+    Sawe::Project* project_;
+
+    QAction *actionToggleOperationsWindow;
+    QDockWidget *operationsWindow;
+    QWidget *dockWidgetContents;
+    QVBoxLayout *verticalLayout;
+    QTreeWidget *operationsTree;
 };
 
 } // namespace Tools

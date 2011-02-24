@@ -299,7 +299,8 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            _render_view->model->renderer->drawFrustum(0.75);
+            //_render_view->model->renderer->drawFrustum(0.75);
+            _render_view->model->renderer->drawFrustum();
         }
 
         GlException_CHECK_ERROR();

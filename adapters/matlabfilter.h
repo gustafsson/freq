@@ -18,6 +18,7 @@ public:
     void restart();
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
+    Signal::Intervals _invalid_returns;
 };
 
 } // namespace Adapters

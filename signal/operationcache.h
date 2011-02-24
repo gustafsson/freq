@@ -25,6 +25,11 @@ public:
       */
     virtual pBuffer read( const Interval& I );
 
+    virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); Operation::invalidate_samples(I); }
+
+    virtual Intervals invalid_samples();
+    virtual Intervals invalid_returns();
+
     /**
       Function to read from on a cache miss
       */
@@ -32,15 +37,22 @@ public:
 
 protected:
     SinkSource _cache;
+
+    /**
+      OperationCache populates this when readRaw doesn't return the expected interval.
+      It is up to an implementation to use this information somehow, for
+      instance by issueing Operation::invalidate_samples(). To notify callers
+      that the information is now available.
+      */
+    Signal::Intervals _invalid_returns;
 };
 
 class OperationCacheLayer: public OperationCache
 {
 public:
     OperationCacheLayer( pOperation source ):OperationCache(source){}
+    virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
     virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
-    virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); }
-    virtual Intervals fetch_invalid_samples() { return _cache.fetch_invalid_samples() | Operation::fetch_invalid_samples(); }
 
 private:
     friend class boost::serialization::access;

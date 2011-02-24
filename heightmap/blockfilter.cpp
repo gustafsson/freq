@@ -8,8 +8,8 @@
 #include <GlException.h>
 #include <TaskTimer.h>
 
-#define TIME_BLOCKFILTER
-//#define TIME_BLOCKFILTER if(0)
+//#define TIME_BLOCKFILTER
+#define TIME_BLOCKFILTER if(0)
 
 //#define TIME_CWTTOBLOCK
 #define TIME_CWTTOBLOCK if(0)
@@ -39,7 +39,7 @@ void BlockFilter::
     Signal::Interval chunk_interval = chunk.getInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, true );
     TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks", 
-        chunk_interval.toString().c_str(), chunk.min_hz, chunk.max_hz, intersecting_blocks.size());
+        chunk_interval.toString().c_str(), chunk.minHz(), chunk.maxHz(), intersecting_blocks.size());
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
@@ -82,16 +82,14 @@ CwtToBlock::
             BlockFilterImpl<Tfr::CwtFilter>(collection),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {
-    //_try_shortcuts = false;
 }
 
 CwtToBlock::
-        CwtToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+        CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
             :
             BlockFilterImpl<Tfr::CwtFilter>(collections),
             complex_info(ComplexInfo_Amplitude_Non_Weighted)
 {
-     //_try_shortcuts = false;
 }
 
 
@@ -153,8 +151,8 @@ void CwtToBlock::
 
     float merge_first_scale = a.scale;
     float merge_last_scale = b.scale;
-    float chunk_first_scale = _collection->display_scale().getFrequencyScalar( chunk.min_hz );
-    float chunk_last_scale = _collection->display_scale().getFrequencyScalar( chunk.max_hz );
+    float chunk_first_scale = _collection->display_scale().getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = _collection->display_scale().getFrequencyScalar( chunk.maxHz() );
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
     if (merge_first_scale >= merge_last_scale)
@@ -163,11 +161,11 @@ void CwtToBlock::
                   "merge_first_scale(%g) >= merge_last_scale(%g)\n"
                   "a.scale = %g, b.scale = %g\n"
                   "chunk_first_scale = %g, chunk_last_scale = %g\n"
-                  "chunk.min_hz = %g, chunk.max_hz = %g",
+                  "chunk.minHz() = %g, chunk.maxHz() = %g",
                   merge_first_scale, merge_last_scale,
                   a.scale, b.scale,
                   chunk_first_scale, chunk_last_scale,
-                  chunk.min_hz, chunk.max_hz).suppressTiming();
+                  chunk.minHz(), chunk.maxHz()).suppressTiming();
         return;
     }
 
@@ -300,15 +298,13 @@ StftToBlock::
             :
             BlockFilterImpl<Tfr::StftFilter>(collection)
 {
-    //_try_shortcuts = false;
 }
 
 StftToBlock::
-        StftToBlock( std::vector<boost::shared_ptr<Collection> > collections )
+        StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
             :
             BlockFilterImpl<Tfr::StftFilter>(collections)
 {
-    //_try_shortcuts = false;
 }
 
 
@@ -334,7 +330,53 @@ void StftToBlock::
                                chunk_b.time, chunk_b.scale ),
                   make_float4( a.time, a.scale,
                                b.time, b.scale ),
-                  chunk.freqAxis(),
+                  chunk.freqAxis,
+                  _collection->display_scale());
+
+    block->valid_samples |= chunk.getInterval();
+}
+
+
+CepstrumToBlock::
+        CepstrumToBlock( Collection* collection )
+            :
+            BlockFilterImpl<Tfr::CepstrumFilter>(collection)
+{
+    //_try_shortcuts = false;
+}
+
+CepstrumToBlock::
+        CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
+            :
+            BlockFilterImpl<Tfr::CepstrumFilter>(collections)
+{
+    //_try_shortcuts = false;
+}
+
+
+void CepstrumToBlock::
+        mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
+{
+    Position a, b;
+    block->ref.getArea(a,b);
+
+    Position chunk_a, chunk_b;
+    Signal::Interval inInterval = chunk.getInterval();
+    chunk_a.time = inInterval.first/chunk.original_sample_rate;
+    chunk_b.time = (inInterval.last-chunk.nScales())/chunk.original_sample_rate;
+
+    // ::resampleCepstrum computes frequency rows properly with its two instances
+    // of FreqAxis.
+    chunk_a.scale = 0;
+    chunk_b.scale = 1;
+
+    ::resampleStft( chunk.transform_data->getCudaGlobal(),
+                  outData->getCudaGlobal(),
+                  make_float4( chunk_a.time, chunk_a.scale,
+                               chunk_b.time, chunk_b.scale ),
+                  make_float4( a.time, a.scale,
+                               b.time, b.scale ),
+                  chunk.freqAxis,
                   _collection->display_scale());
 
     block->valid_samples |= chunk.getInterval();

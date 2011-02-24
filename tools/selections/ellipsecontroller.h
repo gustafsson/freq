@@ -24,6 +24,7 @@ signals:
 
 private slots:
     void enableEllipseSelection(bool active);
+    void selectionChanged();
 
 private:
     // Event handlers

@@ -16,11 +16,10 @@ namespace Sawe {
 
 namespace Tools
 {
-    // RenderView is so central to everything, it should rather inherit a
-    // ToolMainloop class which could emit all the signals
-    class RenderView;
-
     class ToolRepo;
+
+    class ToolMainLoop;
+    class RenderView;
 
     class ToolModel
     {
@@ -56,8 +55,10 @@ namespace Tools
     {
     public:
         ToolRepo( Sawe::Project* project ) : project_(project) {}
+        virtual ~ToolRepo() {}
 
         virtual RenderView* render_view() { BOOST_ASSERT(false); return 0; } // can't make pure virtual because of serialization lib
+        //virtual ToolMainLoop* mainloop() { BOOST_ASSERT(false); return 0; } // can't make pure virtual because of serialization lib
 
         template<typename T>
         ToolModelP findToolModel(T* t)
@@ -103,7 +104,7 @@ namespace Tools
         ToolRepo() { BOOST_ASSERT( false ); }
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
         {
-            TaskInfo ti("%s", __FUNCTION__);
+            TaskInfo ti("ToolRepo::serialize");
             ar
                     & BOOST_SERIALIZATION_NVP(tool_models_);
 

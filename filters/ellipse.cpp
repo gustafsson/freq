@@ -23,6 +23,17 @@ Ellipse::Ellipse(float t1, float f1, float t2, float f2, bool save_inside)
 }
 
 
+std::string Ellipse::
+        name()
+{
+    std::stringstream ss;
+    ss << std::setiosflags(std::ios::fixed)
+       << std::setprecision(1)
+       << "Ellipse " <<  _t1 << ";" << _f1 << ", " << std::fabs((_t2-_t1)*(_f2-_f1)*M_PI);
+    return ss.str();
+}
+
+
 void Ellipse::
         operator()( Chunk& chunk )
 {
@@ -30,9 +41,9 @@ void Ellipse::
 
     float4 area = make_float4(
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalarNotClamped( _f1 ),
+            chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis().getFrequencyScalarNotClamped( _f2 ));
+            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ));
 
     ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
                   chunk.transform_data->getNumberOfElements(),

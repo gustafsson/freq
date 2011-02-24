@@ -53,16 +53,18 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
+            last_ysize(1),
             orthoview(1),
             model(model),
             glwidget(0),
             graphicsview(0),
             _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
+            _last_width(0),
+            _last_height(0),
             _last_x(0),
             _last_y(0),
-            _try_gc(0),
-            _update_timer(0)
+            _try_gc(0)
 {
     float l = model->project()->worker.source()->length();
     _last_length = l;
@@ -78,10 +80,7 @@ RenderView::
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
 
-    _update_timer = new QTimer();
-    _update_timer->setSingleShot( true );
-    _update_timer->setInterval( 1 );
-    connect( _update_timer, SIGNAL( timeout() ), SLOT( update() ) );
+    connect( this, SIGNAL(postUpdate()), SLOT(update()), Qt::QueuedConnection );
 }
 
 
@@ -189,8 +188,12 @@ void RenderView::
 
 		if (painter->device())
 		{
-			_last_width = painter->device()->width();
-			_last_height = painter->device()->height();
+            unsigned w = painter->device()->width();
+            unsigned h = painter->device()->height();
+            if (w != _last_width || h != _last_height)
+                userinput_update();
+            _last_width = w;
+            _last_height = h;
 		}
 
         setStates();
@@ -682,13 +685,6 @@ void RenderView::
 
 
 void RenderView::
-        queueRepaint()
-{
-    _update_timer->start();
-}
-
-
-void RenderView::
         drawCollection(int i, Signal::FinalSource* fs, float yscale )
 {
     model->renderer->collection = model->collections[i].get();
@@ -818,11 +814,10 @@ Support::ToolSelector* RenderView::
 void RenderView::
         userinput_update( bool request_high_fps )
 {
-    // todo isn't "requested fps" is a renderview property?
     if (request_high_fps)
         model->project()->worker.requested_fps(60);
 
-    queueRepaint();
+    emit postUpdate();
 }
 
 
@@ -862,7 +857,7 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    if (!model->collectionCallback)
+    if (!model->renderSignalTarget)
         return;
 
     float elapsed_ms = -1;
@@ -934,19 +929,18 @@ void RenderView::
 	}
 
     // TODO move to rendercontroller
-    bool wasWorking = !worker.todo_list().empty();
-
+    bool isWorking = false;
     bool isRecording = false;
 
     Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
     if(r != 0 && !(r->isStopped()))
         isRecording = true;
 
-    bool onlyUpdateMainRenderView = false;
+    bool onlyComputeBlocksForRenderView = false;
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
-		if (onlyUpdateMainRenderView)
+        if (onlyComputeBlocksForRenderView)
         foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
         {
             collection->next_frame(); // Discard needed blocks before this row
@@ -964,37 +958,30 @@ void RenderView::
 
         model->renderer->drawAxes( _last_length ); // 4.7 ms
 
-        if (wasWorking)
-            Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
     }
 
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        worker.todo_list( Signal::Intervals() );
         worker.center = model->_qx;
 
         emit populateTodoList();
 
-        if (worker.todo_list().empty())
+        if (!worker.target()->post_sink()->isUnderfed())
         {
-            Signal::Intervals missing_for_heightmap =
-                    model->collectionCallback->sink()->fetch_invalid_samples();
-
-            worker.todo_list( missing_for_heightmap );
-        }
-
-        if(isRecording)
-        {
-            wasWorking = true;
+            worker.target( model->renderSignalTarget );
         }
     }
 
     {   // Work
 		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
-        bool isWorking = !worker.todo_list().empty();
+        isWorking = worker.fetch_todo_list();
 
-        if (isWorking || wasWorking) {
+        TaskInfo("target = %s, worker.fetch_todo_list() = %s, isWorking = %d",
+                 worker.target()->name().c_str(),
+                 worker.fetch_todo_list().toString().c_str(), isWorking);
+
+        if (isWorking || isRecording) {
             if (!_work_timer.get())
                 _work_timer.reset( new TaskTimer("Working"));
 
@@ -1003,7 +990,7 @@ void RenderView::
 #ifndef SAWE_NO_MUTEX
             if (!worker.isRunning()) {
                 worker.workOne(!isRecording);
-                queueRepaint();
+                emit postUpdate();
             } else {
                 //project->worker.todo_list().print("Work to do");
                 // Wait a bit while the other thread work
@@ -1013,12 +1000,12 @@ void RenderView::
             }
 #else
             worker.workOne(!isRecording);
-            queueRepaint();
+            emit postUpdate();
 #endif
         } else {
             static unsigned workcount = 0;
             if (_work_timer) {
-                float worked_time = worker.worked_samples.getInterval().count()/worker.source()->sample_rate();
+                float worked_time = worker.worked_samples.count()/worker.source()->sample_rate();
                 _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
                                   worker.work_chunks,
                                   worked_time,
@@ -1035,7 +1022,10 @@ void RenderView::
         }
     }
 
-    if (!onlyUpdateMainRenderView)
+    if (isWorking || isRecording)
+        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
+
+    if (!onlyComputeBlocksForRenderView)
 	{
 		TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
 		foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )

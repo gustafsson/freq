@@ -3,12 +3,17 @@
 
 #include "heightmap/renderer.h"
 
+#include "tfr/filter.h"
+
 namespace Tools
 {
+
+
 
 RenderModel::
         RenderModel(Sawe::Project* p)
         :
+        renderSignalTarget(new Signal::Target(&p->layers, "Heightmap")),
         _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
         _px(0), _py(0), _pz(-10),
         _rx(91), _ry(180), _rz(0),
@@ -16,19 +21,15 @@ RenderModel::
         zscale(5),
         _project(p)
 {
-	Signal::Operation* o = p->head_source()->root();
-	Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(o);
-	BOOST_ASSERT(fs);
+    p->worker.target( renderSignalTarget );
 
-    collections.resize(fs->num_channels());
-    for (unsigned c=0; c<fs->num_channels(); ++c)
-    {
+    Signal::PostSink* o = renderSignalTarget->post_sink();
+
+    BOOST_ASSERT( o->num_channels() );
+
+    collections.resize(o->num_channels());
+    for (unsigned c=0; c<o->num_channels(); ++c)
         collections[c].reset( new Heightmap::Collection(&_project->worker));
-        if (0<c)
-            collections[c]->setPostsink( collections[0]->postsink() );
-    }
-
-    collectionCallback.reset( new Signal::WorkerCallback( &_project->worker, postsink() ));
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
 
@@ -52,18 +53,9 @@ RenderModel::
         ~RenderModel()
 {
     TaskInfo ti(__FUNCTION__);
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(postsink().get());
-    std::vector<Signal::pOperation> empty;
-    ps->sinks(empty);
-
+    renderer.reset();
     collections.clear();
-}
-
-
-Signal::pOperation RenderModel::
-        postsink()
-{
-    return collections[0]->postsink();
+    renderSignalTarget.reset();
 }
 
 
@@ -71,6 +63,21 @@ Tfr::FreqAxis RenderModel::
         display_scale()
 {
     return collections[0]->display_scale();
+}
+
+
+void RenderModel::
+        display_scale(Tfr::FreqAxis x)
+{
+    for (unsigned c=0; c<collections.size(); ++c)
+        collections[c]->display_scale( x );
+}
+
+
+Tfr::Filter* RenderModel::
+        block_filter()
+{
+    return dynamic_cast<Tfr::Filter*>(collections[0]->block_filter().get());
 }
 
 } // namespace Tools

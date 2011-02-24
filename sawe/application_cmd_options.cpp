@@ -246,38 +246,39 @@ void Application::
     apply_command_line_options( p );
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
-    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk_hint, p->head_source()->sample_rate() );
+    Signal::pOperation source = p->tools().render_model.renderSignalTarget->post_sink()->source();
+    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk_hint, source->sample_rate() );
 
     bool sawe_exit = false;
 
     if (_get_csv != (unsigned)-1) {
-        if (0==p->head_source()->number_of_samples()) {
+        if (0==source->number_of_samples()) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
             ::exit(-1);
         }
 
         Adapters::Csv csv;
-        csv.source( p->head_source() );
+        csv.source( source );
         csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
         sawe_exit = true;
     }
 
     if (_get_hdf != (unsigned)-1) {
-        if (0==p->head_source()->number_of_samples()) {
+        if (0==source->number_of_samples()) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
             ::exit(-1);
         }
 
         Adapters::Hdf5Chunk hdf5;
-        hdf5.source( p->head_source() );
+        hdf5.source( source );
         hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
         sawe_exit = true;
     }
 
     if (_get_chunk_count != false) {
-        TaskInfo("number of samples = %u", p->head_source()->number_of_samples());
+        TaskInfo("number of samples = %u", source->number_of_samples());
         TaskInfo("samples per chunk = %u", total_samples_per_chunk);
-        TaskInfo("chunk count = %u", (p->head_source()->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk);
+        TaskInfo("chunk count = %u", (source->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk);
         sawe_exit = true;
     }
 

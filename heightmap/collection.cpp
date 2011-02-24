@@ -31,7 +31,7 @@
 // Don't keep more than this times the number of blocks currently needed
 // TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
-#define MAX_CREATED_BLOCKS_PER_FRAME 4 // Even numbers look better for stereo signals
+#define MAX_CREATED_BLOCKS_PER_FRAME 2 // Even numbers look better for stereo signals
 
 using namespace Signal;
 
@@ -47,8 +47,7 @@ Collection::
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _created_count(0),
-    _frame_counter(0),
-    _postsink( new PostSink )
+    _frame_counter(0)
 {
 	BOOST_ASSERT( worker->source() );
 
@@ -57,17 +56,16 @@ Collection::
     // Updated as soon as the first chunk is received
     update_sample_size( 0 );
 
-    std::vector<pOperation> sinks;
-    sinks.push_back( pOperation(new CwtToBlock(this)));
-    ((PostSink*)_postsink.get())->sinks( sinks );
-
-    _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
+//    _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
+    _display_scale.axis_scale = Tfr::AxisScale_Linear;
     _display_scale.max_frequency_scalar = 1;
     float fs = worker->source()->sample_rate();
     float minhz = Tfr::Cwt::Singleton().get_min_hz(fs);
     float maxhz = Tfr::Cwt::Singleton().get_max_hz(fs);
-    _display_scale.f_min = minhz;
-    _display_scale.log2f_step = log2(maxhz) - log2(minhz);
+    _display_scale.min_hz = minhz;
+    //_display_scale.log2f_step = log2(maxhz) - log2(minhz);
+    _display_scale.min_hz = 0;
+    _display_scale.f_step = maxhz - minhz;
 }
 
 
@@ -183,7 +181,7 @@ void Collection::
 
         if (chunk->transform_data)
         {
-            Tfr::FreqAxis fx = chunk->freqAxis();
+            Tfr::FreqAxis fx = chunk->freqAxis;
             unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
             _min_sample_size.scale = std::min(
                     _min_sample_size.scale,
@@ -467,6 +465,14 @@ void Collection::
 
 
 void Collection::
+        display_scale(Tfr::FreqAxis a)
+{
+    _display_scale = a;
+    invalidate_samples( worker->source()->getInterval() );
+}
+
+
+void Collection::
         invalidate_samples( const Intervals& sid )
 {
     TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
@@ -597,10 +603,10 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        pOperation filterp = dynamic_cast<Signal::PostSink*>(postsink().get())->sinks()[0]->source();
-        Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(filterp.get());
-        Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
-        bool tfr_is_stft = 0 != stft;
+        bool tfr_is_stft = false;
+        Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
+        if (filter)
+            tfr_is_stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
 
         if ( 1 /* create from others */ )
         {
@@ -643,7 +649,7 @@ pBlock Collection::
 #ifndef SAWE_NO_MUTEX
                         l.unlock();
 #endif
-                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.coveredInterval(), false );
+                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update, false );
 #ifndef SAWE_NO_MUTEX
                         l.relock();
 #endif
@@ -659,7 +665,8 @@ pBlock Collection::
                             d -= ref.log2_samples_size[1];
 
                             //if (d==dist)
-                            if (d==-1 || d==1)
+                            //mergeBlock( block, bl, 0 );
+                            if (d>=-2 && d<=2)
                             {
                                 Position a2,b2;
                                 bl->ref.getArea(a2,b2);
@@ -863,8 +870,8 @@ void Collection::
     StftToBlock stftmerger(this);
     Tfr::Stft* transp = new Tfr::Stft();
     transp->set_approximate_chunk_size(1 << 12); // 4096
-    stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.source( fast_source );
+    stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.exclude_end_block = true;
 
     // Only take 4 MB of signal data at a time
@@ -877,7 +884,7 @@ void Collection::
     unsigned time_to_work_ms = 500;
     while (sections)
     {
-        Signal::Interval section = sections.getInterval(section_size);
+        Signal::Interval section = sections.fetchInterval(section_size);
         Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
         stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
         Signal::Interval chunk_interval = ci.chunk->getInterval();

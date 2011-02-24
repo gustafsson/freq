@@ -146,7 +146,7 @@ void PlaybackController::
 
     TaskInfo("Selection is of type %s", vartype(*filter.get()).c_str());
 
-    Signal::PostSink* postsink_operations = _view->model->getPostSink();
+    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
     if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
         model()->adapter_playback.reset();
@@ -162,7 +162,7 @@ void PlaybackController::
         postsink_operations->filter( filter );
 
         Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
-        expected_data &= Signal::Interval(0, project_->worker.source()->number_of_samples());
+        expected_data &= Signal::Interval(0, filter->number_of_samples());
         postsink_operations->invalidate_samples( expected_data );
     }
     else
@@ -212,21 +212,19 @@ void PlaybackController::
         populateTodoList()
 {
     Signal::Intervals missing_for_playback=
-            model()->postsinkCallback->sink()->fetch_invalid_samples();
+            model()->playbackTarget->post_sink()->invalid_samples();
 
-    bool playback_is_underfed = project_->tools().playback_model.getPostSink()->isUnderfed();
+    bool playback_is_underfed = project_->tools().playback_model.playbackTarget->post_sink()->isUnderfed();
     // Don't bother with computing playback unless it is underfed
     if (missing_for_playback && playback_is_underfed)
     {
         project_->worker.center = 0;
-        project_->worker.todo_list( missing_for_playback );
+        project_->worker.target( project_->tools().playback_model.playbackTarget );
 
         // Request at least 1 fps. Otherwise there is a risk that CUDA
         // will screw up playback by blocking the OS and causing audio
         // starvation.
         project_->worker.requested_fps(1);
-
-        //project->worker.todo_list().print("Displaywidget - PostSink");
     }
 }
 
@@ -237,8 +235,8 @@ void PlaybackController::
     if (model()->playback())
         model()->playback()->reset();
     std::vector<Signal::pOperation> empty;
-    model()->getPostSink()->sinks( empty );
-    model()->getPostSink()->filter( Signal::pOperation() );
+    model()->playbackTarget->post_sink()->sinks( empty );
+    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
 
     ui_items_->actionPlaySelection->setChecked( false );
     ui_items_->actionPlaySection->setChecked( false );

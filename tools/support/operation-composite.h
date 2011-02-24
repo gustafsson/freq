@@ -24,7 +24,7 @@ namespace Tools {
   */
 class OperationSubOperations : public Signal::Operation {
 public:
-    Signal::pOperation subSource() { return _source; }
+    Signal::pOperation subSource() { return Operation::source(); }
 
     /// this do skip all contained suboperations
     virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
@@ -66,11 +66,11 @@ public:
     void setContent(Signal::pOperation content)
     {
         if (!content)
-            _source = source_sub_operation_;
+            Operation::source( source_sub_operation_ );
         else
         {
-            _source = content;
-            _source->source( source_sub_operation_ );
+            Operation::source( content );
+            Operation::source()->source( source_sub_operation_ );
         }
     }
     Signal::pOperation content() { return subSource(); }

@@ -24,7 +24,7 @@ public:
       FreqAxis is used for translating frequencies to chunk indicies and vice
       versa. FreqAxis can be used within Cuda kernels.
       */
-    FreqAxis freqAxis();
+    FreqAxis freqAxis;
 
     enum Order {
         Order_row_major,
@@ -48,11 +48,6 @@ public:
 
     unsigned offset(unsigned sample, unsigned f_index);
 
-    /**
-      The highest and lowest frequency described by the chunk. Inclusive range.
-      */
-    float min_hz, max_hz;
-    AxisScale axis_scale;
 
     /**
       chunk_offset is the start of the chunk, along the timeline. Measured in
@@ -97,6 +92,11 @@ public:
       */
     float original_sample_rate;
 
+    /**
+      The highest and lowest frequency described by the chunk. Inclusive range.
+      */
+    float minHz() const {              return freqAxis.min_hz; }
+    float maxHz() const {              return freqAxis.max_hz(); }
 
     float timeInterval() const {       return n_valid_samples/sample_rate; }
     float startTime() const {          return (chunk_offset+first_valid_sample)/sample_rate; }
@@ -109,7 +109,7 @@ public:
     bool valid() const {
         return 0 != transform_data->getSizeInBytes1D() &&
                0 != sample_rate &&
-               min_hz < max_hz &&
+               minHz() < maxHz() &&
                (order == Order_row_major || order == Order_column_major);
     }
 

@@ -3,8 +3,8 @@
 
 #include <demangle.h>
 
-#define TIME_Filter
-//#define TIME_Filter if(0)
+//#define TIME_Filter
+#define TIME_Filter if(0)
 
 //#define TIME_FilterReturn
 #define TIME_FilterReturn if(0)
@@ -59,7 +59,7 @@ Signal::pBuffer Filter::
             // Explicitly return only the unaffected samples
             TIME_Filter TaskTimer tt("FilterOp fixed unaffected, %s", b_interval.toString().c_str());
             BufferSource bs(b);
-            return bs.readFixedLength( (~affected & b_interval & work).getInterval() );
+            return bs.readFixedLength( (~affected & b_interval & work).fetchFirstInterval() );
         }
     }
 

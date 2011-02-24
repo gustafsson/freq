@@ -10,6 +10,9 @@
 #include "heightmap/renderer.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
+#include "tfr/cepstrum.h"
+
+#include <QTimer>
 
 namespace Tools
 {
@@ -45,6 +48,10 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderController* r
     dock->setVisible(false);
 
     connect(rendercontroller, SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
+
+    timer.setSingleShot( true );
+    timer.setInterval( 500 );
+    connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()));
 
     transformChanged();
 }
@@ -87,20 +94,20 @@ void TransformInfoForm::
     if (rendercontroller->model()->collections.empty())
         return;
 
-    Signal::pOperation s = rendercontroller->model()->collections[0]->postsink();
+    Tfr::Filter* f = rendercontroller->model()->block_filter();
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(!f?0:f->transform().get());
+    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(!f?0:f->transform().get());
+    Tfr::Cepstrum* cepstrum = dynamic_cast<Tfr::Cepstrum*>(!f?0:f->transform().get());
 
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-    Tfr::Filter* f = dynamic_cast<Tfr::Filter*>( ps->sinks()[0]->source().get() );
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(f->transform().get());
-    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(f->transform().get());
+    float fs = project->head->head_source()->sample_rate();
 
-    float fs = project->head_source()->sample_rate();
+    addRow("Sample rate", QString("%1").arg(fs));
 
     if (cwt)
     {
-        addRow("Type", "Morlet wavelet");
-        if (ps->filter())
-            addRow("Filter", vartype(*ps->filter()).c_str());
+        addRow("Type", "Gabor wavelet");
+        if (rendercontroller->model()->renderSignalTarget->post_sink()->filter())
+            addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
         addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples( fs )/fs));
         addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
@@ -114,17 +121,39 @@ void TransformInfoForm::
     else if (stft)
     {
         addRow("Type", "Short time fourier");
-        if (ps->filter())
-            addRow("Filter", vartype(*ps->filter()).c_str());
+        if (rendercontroller->model()->renderSignalTarget->post_sink()->filter())
+            addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
         addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(stft->chunk_size()));
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
     }
+    else if (cepstrum)
+    {
+        addRow("Type", "Cepstrum");
+        if (rendercontroller->model()->renderSignalTarget->post_sink()->filter())
+            addRow("Filter", vartype(*rendercontroller->model()->renderSignalTarget->post_sink()->filter()).c_str());
+        addRow("Window type", "Regular");
+        addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
+        addRow("Overlap", "0");
+        addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
+        addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
+    }
     else
     {
         addRow("Type", "Unknown");
         addRow("Error", "Doesn't recognize transform");
+    }
+
+    if (project->areToolsInitialized())
+    {
+        Signal::Intervals I = project->worker.previous_todo_list();
+
+        if (I.count())
+        {
+            addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs));
+            timer.start();
+        }
     }
 }
 

@@ -10,7 +10,7 @@ OperationRemoveSection::
 :   Operation( source ),
     section_(section)
 {
-    BOOST_ASSERT(section_.valid());
+    BOOST_ASSERT(section_.count());
 }
 
 pBuffer OperationRemoveSection::
@@ -99,7 +99,7 @@ pBuffer OperationInsertSilence::
         return source()->readFixedLength( Interval(I.first, section_.first) );
 
     if (I.first >= section_.last) {
-        pBuffer b = _source->readFixedLength(
+        pBuffer b = source()->readFixedLength(
                 Intervals( I ) >> section_.count());
         b->sample_offset += section_.count();
         return b;
@@ -164,15 +164,18 @@ OperationSuperposition::
 :   Operation( source ),
     _source2( source2 )
 {
-    if (_source->sample_rate() != _source2->sample_rate())
-        throw std::invalid_argument("_source->sample_rate() != _source2->sample_rate()");
+    if (Operation::source()->sample_rate() != _source2->sample_rate())
+        throw std::invalid_argument("source->sample_rate() != source2->sample_rate()");
 }
 
 pBuffer OperationSuperposition::
         read( const Interval& I )
 {
-    pBuffer a = _source->read( I );
+    TaskTimer tt("Superposition");
+    pBuffer a = source()->read( I );
+    tt.info("Reading2");
     pBuffer b = _source2->read( I );
+    tt.info("Merging");
 
     IntervalType offset = std::max( (IntervalType)a->sample_offset, (IntervalType)b->sample_offset );
     IntervalType length = std::min(

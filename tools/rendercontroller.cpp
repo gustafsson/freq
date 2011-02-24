@@ -16,6 +16,7 @@
 #include "heightmap/renderer.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
+#include "tfr/cepstrum.h"
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
@@ -46,52 +47,88 @@ using namespace Ui;
 namespace Tools
 {
 
-class ForAllChannelsOperation: public Signal::Sink
+class BlockFilterSink: public Signal::Sink
 {
 public:
-    ForAllChannelsOperation
+    BlockFilterSink
         (
             Signal::pOperation o,
-            std::vector<boost::shared_ptr<Heightmap::Collection> > collections
+            RenderModel* model,
+            RenderController* controller
         )
         :
-            Signal::Sink(),
-            collections_(collections)
+            model_(model),
+            controller_(controller)
     {
         BOOST_ASSERT( o );
-        _source = o;
+        Operation::source(o);
     }
 
 
-    virtual Signal::pBuffer read( const Signal::Interval& I )
-    {
-        Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(root());
-        if (0==fs)
-            return Signal::Operation::read( I );
+    virtual void source(Signal::pOperation v) { Operation::source()->source(v); }
+    virtual bool deleteMe() { return false; } // Never delete this sink
 
-        unsigned N = fs->num_channels();
-        Signal::pBuffer r;
-        for (unsigned i=0; i<N; ++i)
-        {
-            fs->set_channel( i );
-            r = Signal::Operation::read( I );
-        }
-
+    virtual Signal::pBuffer read(const Signal::Interval& I) {
+        Signal::pBuffer r = Signal::Operation::read( I );
+        controller_->emitTransformChanged();
         return r;
     }
 
-    virtual void source(Signal::pOperation v) { _source->source(v); }
-    virtual Signal::Intervals fetch_invalid_samples() { return Operation::fetch_invalid_samples(); }
-    virtual bool isFinished() { return false; }
-
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
-        foreach(boost::shared_ptr<Heightmap::Collection> c, collections_)
-            c->invalidate_samples(I);
+        validateSize();
+
+        Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
+        Signal::Intervals v = Signal::Intervals(I).enlarge( support );
+
+        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
+            c->invalidate_samples( v );
+        }
+
+        Operation::invalidate_samples( I );
+
+        controller_->emitTransformChanged();
     }
 
+
+    virtual Signal::Intervals invalid_samples()
+    {
+        Signal::Intervals I;
+        foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
+            Signal::Intervals inv_coll = c->invalid_samples();
+            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            I |= inv_coll;
+        }
+
+        return I;
+    }
+
+
+    void validateSize()
+    {
+        unsigned N = num_channels();
+        if ( N != model_->collections.size())
+        {
+            model_->collections.resize(N);
+            for (unsigned c=0; c<N; ++c)
+            {
+                if (!model_->collections[c])
+                    model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+            }
+        }
+
+        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        {
+            c->block_filter( Operation::source() );
+        }
+    }
+
+
 private:
-    std::vector<boost::shared_ptr<Heightmap::Collection> > collections_;
+    RenderModel* model_;
+    RenderController* controller_;
 };
 
 
@@ -117,7 +154,7 @@ RenderController::
         ui->actionToggleOrientation->setChecked(true);
         transform->actions().at(0)->trigger();
 #else
-        transform->actions().at(transform->actions().count()-1)->trigger();
+        transform->actions().at(1)->trigger();
 #endif
         ui->actionSet_colorscale->trigger();
     }
@@ -215,9 +252,13 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
-    model()->project()->worker.invalidate_post_sink(Signal::Intervals::Intervals_ALL);
+    zscale->defaultAction()->trigger();
 
+    model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+
+    // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
+
     emit transformChanged();
 }
 
@@ -225,20 +266,18 @@ void RenderController::
 Signal::PostSink* RenderController::
         setBlockFilter(Signal::Operation* blockfilter)
 {
-    Signal::pOperation s = model()->postsink();
-    Signal::PostSink* ps = dynamic_cast<Signal::PostSink*>(s.get());
-    ps->filter(Signal::pOperation() );
-
-    BOOST_ASSERT( ps );
+    BlockFilterSink* bfs;
+    Signal::pOperation blockop( blockfilter );
+    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), this));
 
     std::vector<Signal::pOperation> v;
-    Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( new ForAllChannelsOperation(blockop, model()->collections));
     v.push_back( channelop );
+    Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
     ps->sinks(v);
+    bfs->validateSize();
+    bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
-    ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
-
+    // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
 
     emit transformChanged();
@@ -250,7 +289,7 @@ Signal::PostSink* RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     setBlockFilter( cwtblock );
@@ -260,7 +299,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(model()->collections);
+    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(&model()->collections);
 
     setBlockFilter( stftblock );
 }
@@ -269,7 +308,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
     setBlockFilter( cwtblock );
@@ -279,7 +318,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -291,7 +330,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -303,10 +342,60 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     setBlockFilter( cwtblock );
+}
+
+
+void RenderController::
+        receiveSetTransform_Cepstrum()
+{
+    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(&model()->collections);
+
+    setBlockFilter( cepstrumblock );
+}
+
+
+void RenderController::
+        receiveLinearScale()
+{
+    float fs = model()->project()->head->head_source()->sample_rate();
+
+    Tfr::FreqAxis fa;
+    fa.setLinear( fs );
+
+    model()->display_scale( fa );
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveLogScale()
+{
+    float fs = model()->project()->head->head_source()->sample_rate();
+
+    Tfr::FreqAxis fa;
+    fa.setLogarithmic(
+            Tfr::Cwt::Singleton().get_min_hz(fs),
+            Tfr::Cwt::Singleton().get_max_hz(fs) );
+
+    model()->display_scale( fa );
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveCepstraScale()
+{
+    float fs = model()->project()->head->head_source()->sample_rate();
+
+    Tfr::FreqAxis fa;
+    fa.setQuefrencyNormalized( fs, Tfr::Cepstrum::Singleton().chunk_size() );
+
+    model()->display_scale( fa );
+    view->userinput_update();
 }
 
 
@@ -315,6 +404,13 @@ RenderModel *RenderController::
 {
     BOOST_ASSERT( view );
     return view->model;
+}
+
+
+void RenderController::
+        emitTransformChanged()
+{
+    emit transformChanged();
 }
 
 
@@ -377,10 +473,12 @@ void RenderController::
         connect(ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_reassign()));
         connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
         connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
+        connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
 
         transform = new ComboBoxAction();
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
+        transform->addActionItem( ui->actionTransform_Cepstrum );
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
 //        transform->addActionItem( ui->actionTransform_Cwt_reassign );
 //        transform->addActionItem( ui->actionTransform_Cwt_ridge );
@@ -395,6 +493,38 @@ void RenderController::
         }
     }
 
+
+    // ComboBoxAction* zscale
+    {   QAction* linearScale = new QAction( main );
+        QAction* logScale = new QAction( main );
+        QAction* cepstraScale = new QAction( main );
+
+        linearScale->setText("Linear scale");
+        logScale->setText("Logarithmic scale");
+        cepstraScale->setText("Cepstra scale");
+
+        linearScale->setCheckable( true );
+        logScale->setCheckable( true );
+        cepstraScale->setCheckable( true );
+
+        connect(linearScale, SIGNAL(triggered()), SLOT(receiveLinearScale()));
+        connect(logScale, SIGNAL(triggered()), SLOT(receiveLogScale()));
+        connect(cepstraScale, SIGNAL(triggered()), SLOT(receiveCepstraScale()));
+
+        zscale = new ComboBoxAction();
+        zscale->addActionItem( linearScale );
+        zscale->addActionItem( logScale );
+        zscale->addActionItem( cepstraScale );
+        zscale->decheckable( false );
+        toolbar_render->addWidget( zscale );
+
+        unsigned k=0;
+        foreach( QAction* a, zscale->actions())
+        {
+            a->setShortcut(QString("Ctrl+") + ('1' + k++));
+        }
+        logScale->trigger();
+    }
 
     // QSlider * yscale
     {   yscale = new QSlider();
@@ -416,13 +546,6 @@ void RenderController::
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
     }
-
-
-    // Update view whenever worker is invalidated
-    Support::SinkSignalProxy* proxy;
-    _updateViewSink.reset( proxy = new Support::SinkSignalProxy() );
-    _updateViewCallback.reset( new Signal::WorkerCallback( &model()->project()->worker, _updateViewSink ));
-    connect( proxy, SIGNAL(recievedInvalidSamples(const Signal::Intervals &)), view, SLOT(update()));
 
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
@@ -452,7 +575,10 @@ void RenderController::
 {
     // Stop worker from producing any more heightmaps by disconnecting
     // the collection callback from worker.
-    model()->collectionCallback.reset();
+    if (model()->renderSignalTarget == model()->project()->worker.target())
+        model()->project()->worker.target(Signal::pTarget());
+    model()->renderSignalTarget.reset();
+
 
     // Assuming calling thread is the GUI thread.
 

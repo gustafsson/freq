@@ -143,12 +143,11 @@ pChunk Fft::
     computeWithCufft( *input, *chunk->transform_data, -1);
     //computeWithOoura( *input, *chunk->transform_data, -1 );
 
-    chunk->axis_scale = AxisScale_Linear;
+    chunk->freqAxis.setLinear( b.sample_rate, chunk->nScales() );
+
     chunk->order = Chunk::Order_column_major;
     chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
-    chunk->max_hz = b.sample_rate / 2.f;
-    chunk->min_hz = chunk->max_hz / chunk->nScales();
     chunk->n_valid_samples = input_n.width;
     chunk->sample_rate = b.sample_rate / chunk->n_valid_samples;
     ((StftChunk*)chunk.get())->original_sample_rate = real_buffer->sample_rate;
@@ -357,12 +356,10 @@ Tfr::pChunk Stft::
         }
     }
 
-    chunk->axis_scale = AxisScale_Linear;
+    chunk->freqAxis.setLinear( breal->sample_rate, chunk->nScales() );
     chunk->order = Chunk::Order_column_major;
     chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
-    chunk->max_hz = b.sample_rate / 2.f;
-    chunk->min_hz = 0; //chunk->max_hz / chunk->nScales();
     chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
     chunk->sample_rate = b.sample_rate / chunk->nScales();
     ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;

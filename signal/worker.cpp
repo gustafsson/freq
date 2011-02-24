@@ -31,22 +31,22 @@ using namespace boost::posix_time;
 namespace Signal {
 
 Worker::
-        Worker(Signal::pOperation s)
+        Worker(Signal::pTarget t)
 :   work_chunks(0),
     _number_of_samples(0),
     _last_work_one(boost::date_time::not_a_date_time),
-    _source(s),
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
     _min_samples_per_chunk( 1 ),
     _requested_fps( 20 ),
     _min_fps( 0.5 ),
+    _disabled( false ),
     _caught_exception( "" ),
     _caught_invalid_argument("")
 {
     _highest_fps = _min_fps;
 
-    if(s) source( s );
+    if (t) target( t );
     // Could create an first estimate of _samples_per_chunk based on available memory
     // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
     // but 1<< 12 works well on most GPUs
@@ -61,13 +61,10 @@ Worker::
 #ifndef SAWE_NO_MUTEX
     this->quit();
 #endif
-    if (_source )
-        todo_list( Intervals() );
+    //if ( _target )
+    //    todo_list( Intervals() );
 
-    std::vector<pOperation> v;
-    _post_sink.sinks( v );
-    _post_sink.filter( pOperation() );
-    _source.reset();
+    _target.reset();
 }
 
 ///// OPERATIONS
@@ -76,16 +73,23 @@ Worker::
 bool Worker::
         workOne( bool skip_if_low_fps )
 {
+    if (_disabled)
+    {
+        TaskInfo("Can't do any work without a target");
+        return false;
+    }
+
     _number_of_samples = source()->number_of_samples();
 
     _requested_fps *= 0.9;
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;
 
-    if (!_post_sink.isUnderfed() && skip_if_low_fps && _requested_fps>_highest_fps)
+    if (!_target->post_sink()->isUnderfed() && skip_if_low_fps && _requested_fps>_highest_fps)
         return false;
 
-    if (todo_list().empty())
+    Signal::Intervals todo_list = fetch_todo_list();
+    if (todo_list.empty())
         return false;
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
@@ -93,7 +97,7 @@ bool Worker::
 
     unsigned center_sample = source()->sample_rate() * center;
 
-    Interval interval = todo_list().getInterval( _samples_per_chunk, center_sample );
+    Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
 
     boost::scoped_ptr<TaskTimer> tt;
 
@@ -102,13 +106,13 @@ bool Worker::
             tt.reset( new TaskTimer(
                     "Processing %s. From %s at %u",
                     interval.toString().c_str(),
-                    todo_list().toString().c_str(),
+                    todo_list.toString().c_str(),
                     center_sample));
         else
             tt.reset( new TaskTimer(
                     "Processing %s. From %s at %u, with %u steps",
                     interval.toString().c_str(),
-                    todo_list().toString().c_str(),
+                    todo_list.toString().c_str(),
                     center_sample,
                     _samples_per_chunk));
     }
@@ -157,7 +161,7 @@ bool Worker::
             }
 */
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
-                    _samples_per_chunk, _source->sample_rate());
+                    _samples_per_chunk, _target->post_sink()->sample_rate());
             _max_samples_per_chunk = _samples_per_chunk;
 
             TaskInfo("scales_per_octave is now %g", Tfr::Cwt::Singleton().scales_per_octave() );
@@ -198,7 +202,7 @@ bool Worker::
             _samples_per_chunk >= _min_samples_per_chunk)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
-                    _samples_per_chunk, _source->sample_rate());
+                    _samples_per_chunk, _target->post_sink()->sample_rate());
             WORKER_INFO TaskInfo(
                     "Low framerate (%.1f fps). Decreased samples per chunk to %u",
                     current_fps, _samples_per_chunk);
@@ -206,7 +210,7 @@ bool Worker::
         else if (current_fps > 2.5f*_requested_fps)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(
-                    _samples_per_chunk, _source->sample_rate());
+                    _samples_per_chunk, _target->post_sink()->sample_rate());
             if (_samples_per_chunk>_max_samples_per_chunk)
                 _samples_per_chunk=_max_samples_per_chunk;
             else
@@ -233,16 +237,16 @@ bool Worker::
 
 ///// PROPERTIES
 
-void Worker::
+/*void Worker::
         todo_list( const Signal::Intervals& v )
 {
     {
 #ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_todo_lock);
 #endif
-        BOOST_ASSERT( _source );
+        BOOST_ASSERT( _target );
 
-        _todo_list = v & Interval(0, std::max(1lu, _source->number_of_samples()));
+        _todo_list = v & Interval(0, _target->post_sink()->number_of_samples());
         //_todo_list &= Signal::Intervals(0, 44100*7);
 
         WORKER_INFO TaskInfo("Worker::todo_list = %s (requested %s)",
@@ -253,11 +257,11 @@ void Worker::
     if (v)
         _todo_condition.wakeAll();
 #endif
-}
+}*/
 
 
 Signal::Intervals Worker::
-        todo_list()
+        fetch_todo_list()
 {
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
@@ -265,94 +269,62 @@ Signal::Intervals Worker::
     if ( Tfr::Cwt::Singleton().wavelet_time_support() >= Tfr::Cwt::Singleton().wavelet_default_time_support() )
         _cheat_work.clear();
 
-    Signal::Intervals c = _todo_list;
+    Signal::Intervals todoinv = _target->post_sink()->invalid_samples();
+    todoinv &= Interval(0, _target->post_sink()->number_of_samples());
+    Signal::Intervals c = todoinv;
     c -= _cheat_work;
 
     if (!c)
     {
         Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
-        return _todo_list;
+        return _previous_todo_list = todoinv;
     }
 
-    return c;
+    return _previous_todo_list = c;
 }
 
 
-Signal::pOperation Worker::
+Intervals Worker::
+        previous_todo_list()
+{
+    return _previous_todo_list;
+}
+
+
+pOperation Worker::
         source() const
 {
-    return _source;
+    return _target->source();
+}
+
+
+pTarget Worker::
+        target() const
+{
+    return _target;
 }
 
 
 void Worker::
-        source(Signal::pOperation value)
+        target(pTarget value)
 {
-    BOOST_ASSERT( value );
+    _disabled = 0 == value;
 
-    _source = value;
-    if (_source)
-        _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
-    else
-        _min_samples_per_chunk = 1;
-    _highest_fps = _min_fps;
-    _max_samples_per_chunk = (unsigned)-1;
-    invalidate_post_sink( Signal::Interval(0, std::max( 1lu, value->number_of_samples()) ));
-
-    if (_source)
-        _number_of_samples = _source->number_of_samples();
-
-    emit source_changed();
-}
-
-
-void Worker::
-        appendOperation(Signal::pOperation s)
-{
-    BOOST_ASSERT( s );
-
-    TaskInfo tt("Worker::appendOperation( %s )", vartype(*s).c_str());
-
-    // Check that this operation is not already in the list. Can't move into
-    // composite operations yet as there is no operation iterator implemented.
-    unsigned i = 0;
-    Signal::pOperation itr = _source;
-    while(itr)
+    if (_disabled)
     {
-        if ( itr == s )
-        {
-            std::stringstream ss;
-            ss << "Worker::appendOperation( " << vartype(*s) << ", " << std::hex << s.get() << ") "
-                    << "is already in operation chain at postion " << i;
-            throw std::invalid_argument( ss.str() );
-        }
-        itr = itr->source();
-        ++i;
+        _number_of_samples = 0;
+        return;
     }
 
-    s->source( _source );
-    Signal::Intervals was_zeros;
-    if (_source)
-        was_zeros = _source->zeroed_samples_recursive();
-    Signal::Intervals new_zeros = s->zeroed_samples_recursive();
-    Signal::Intervals affected = s->affected_samples();
-    Signal::Intervals still_zeros = was_zeros & new_zeros;
-    TaskInfo("Was zero samples %s", was_zeros.toString().c_str());
-    TaskInfo("New zero samples %s", new_zeros.toString().c_str());
-    TaskInfo("Still zero samples %s", still_zeros.toString().c_str());
-    TaskInfo("Affected samples %s", affected.toString().c_str());
-    _source = s;
-    invalidate_post_sink( affected - still_zeros );
+    _target = value;
 
-    _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _source->sample_rate());
+    if (_min_samples_per_chunk==1)
+    {
+        _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
+        _max_samples_per_chunk = (unsigned)-1;
+    }
     _highest_fps = _min_fps;
-    _max_samples_per_chunk = (unsigned)-1;
-
-    _source.reset( new OperationCacheLayer(_source) );
-
-    tt.tt().info("Worker::appendOperation, worker tree:\n%s", _source->toString().c_str());
-
-    emit source_changed();
+    _number_of_samples = _target->post_sink()->number_of_samples();
 }
 
 
@@ -408,23 +380,6 @@ void Worker::
 }
 
 
-void Worker::
-        invalidate_post_sink(Intervals I)
-{
-    I &= Interval(0, source()->number_of_samples() );
-
-    {
-        // TODO Is this necessary?
-        //OperationCacheLayer* topcache = dynamic_cast<OperationCacheLayer*>(_source.get());
-        //if (topcache) topcache->invalidate_samples( I );
-    }
-
-    _post_sink.invalidate_samples( I );
-    WORKER_INFO TaskInfo("Worker invalidate %s. Worker tree:\n%s",
-             I.toString().c_str(),
-             source()?source()->toString().c_str():0);
-}
-
 
 ///// PRIVATE
 
@@ -436,7 +391,7 @@ void Worker::
 	while (true)
 	{
 		try {
-            while (todo_list())
+            while (fetch_todo_list())
 			{
 				workOne( false );
 				msleep(1);
@@ -467,36 +422,10 @@ void Worker::
 #endif
 
 
-void Worker::
-        addCallback( pOperation c )
-{
-    c->source(source());
-
-    std::vector<pOperation> callbacks = _post_sink.sinks();
-    callbacks.push_back( c );
-    _post_sink.sinks(callbacks);
-}
-
-
-void Worker::
-        removeCallback( pOperation c )
-{
-    c->source(pOperation());
-
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l( &_callbacks_lock );
-#endif
-    std::vector<pOperation> callbacks = _post_sink.sinks();
-    callbacks.resize( std::remove( callbacks.begin(), callbacks.end(), c ) - callbacks.begin() );
-    _post_sink.sinks(callbacks);
-}
-
-
 pBuffer Worker::
         callCallbacks( Interval I )
 {
-    _post_sink.source( source() );
-    return _post_sink.read( I );
+    return _target->read( I );
 }
 
 } // namespace Signal

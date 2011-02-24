@@ -128,6 +128,9 @@ Signal::pBuffer Hdf5Input::
 
     if (1!=dims.size() && 2!=dims.size()) throw runtime_error(((stringstream&)(ss << (const char*)"Rank of '" << name << "' is '" << dims.size() << "' instead of 1 or 2.")).str());
 
+    if (0==class_id)
+        return Signal::pBuffer();
+
     if (H5T_FLOAT!=class_id) throw runtime_error(((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_FLOAT.")).str());
 
     Signal::pBuffer buffer( new Signal::Buffer(0, dims[0], 44100 ) );
@@ -182,7 +185,7 @@ void Hdf5Output::
 
 template<>
 Tfr::pChunk Hdf5Input::
-        read_exact<Tfr::pChunk>( std::string name)
+        read_exact<Tfr::pChunk>( std::string name )
 {
     VERBOSE_HDF5 TaskTimer tt("Reading chunk '%s'", name.c_str());
 
@@ -195,13 +198,13 @@ Tfr::pChunk Hdf5Input::
     if (2!=dims.size()) throw runtime_error(((stringstream&)(ss << "Rank of '" << name << "' is '" << dims.size() << "' instead of 3.")).str());
 
     Tfr::pChunk chunk( new Tfr::CwtChunk );
-    chunk->min_hz = 20;
-    chunk->max_hz = 22050;
     chunk->chunk_offset = 0;
     chunk->sample_rate = 44100;
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = dims[1];
     chunk->transform_data.reset( new GpuCpuData<float2>(0, make_cudaExtent( dims[1], dims[0], 1 )));
+    chunk->freqAxis.setLogarithmic( 20, 22050, chunk->nScales() - 1 );
+
     float2* p = chunk->transform_data->getCpuMemory();
 
     if (H5T_COMPOUND==class_id)
@@ -318,6 +321,7 @@ static const char* dsetBuffer="buffer";
 static const char* dsetChunk="chunk";
 static const char* dsetOffset="offset";
 static const char* dsetSamplerate="samplerate";
+static const char* dsetRedundancy="redundancy";
 
 Hdf5Chunk::Hdf5Chunk( std::string filename)
 :   _filename(filename) {}
@@ -348,20 +352,21 @@ void Hdf5Chunk::
 void Hdf5Buffer::
     put( Signal::pBuffer b)
 {
-    Hdf5Buffer::saveBuffer(_filename, *b);
+    Hdf5Buffer::saveBuffer(_filename, *b, 0);
 }
 
 
 // TODO save and load all properties of chunks and buffers, not only raw data.
 // The Hdf5 file is well suited for storing such data as well.
 void Hdf5Buffer::
-        saveBuffer( string filename, const Signal::Buffer& cb)
+        saveBuffer( string filename, const Signal::Buffer& cb, double redundancy)
 {
     Hdf5Output h5(filename);
 
     h5.add<Signal::Buffer>( dsetBuffer, cb );
     h5.add<double>( dsetOffset, cb.sample_offset );
     h5.add<double>( dsetSamplerate, cb.sample_rate );
+    h5.add<double>( dsetRedundancy, redundancy );
 }
 
 
@@ -376,13 +381,17 @@ void Hdf5Chunk::
 
 
 Signal::pBuffer Hdf5Buffer::
-        loadBuffer( string filename )
+        loadBuffer( string filename, double* redundancy )
 {
     Hdf5Input h5(filename);
 
     Signal::pBuffer b = h5.read<Signal::pBuffer>( dsetBuffer );
-    b->sample_offset = h5.read<double>( dsetOffset );
-    b->sample_rate = h5.read<double>( dsetSamplerate );
+    if (b)
+    {
+        b->sample_offset = h5.read<double>( dsetOffset );
+        b->sample_rate = h5.read<double>( dsetSamplerate );
+    }
+    *redundancy = h5.read<double>( dsetRedundancy );
 
     return b;
 }

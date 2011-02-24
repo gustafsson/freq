@@ -85,7 +85,7 @@ void BrushFilter::
 Signal::Intervals MultiplyBrush::
         affected_samples()
 {
-//    return Signal::Interval(0, number_of_samples());
+//    return getInterval();
     Signal::Intervals r;
 
     BrushImages const& imgs = *images.get();
@@ -96,6 +96,21 @@ Signal::Intervals MultiplyBrush::
     }
 
     return include_time_support(r);
+}
+
+
+std::string MultiplyBrush::
+        name()
+{
+    std::stringstream ss;
+    ss << "Brush stroke - multiplicative";
+    if (images)
+    {
+        ss << " - " << images->size() << " block";
+        if (images->size() != 1)
+            ss << "s";
+    }
+    return ss.str();
 }
 
 
@@ -110,8 +125,8 @@ void MultiplyBrush::
         return;
 
     Tfr::FreqAxis const& heightmapAxis = imgs.begin()->first.collection()->display_scale();
-    float scale1 = heightmapAxis.getFrequencyScalar( chunk.min_hz );
-    float scale2 = heightmapAxis.getFrequencyScalar( chunk.max_hz );
+    float scale1 = heightmapAxis.getFrequencyScalar( chunk.minHz() );
+    float scale2 = heightmapAxis.getFrequencyScalar( chunk.maxHz() );
     float time1 = chunk.chunk_offset/chunk.sample_rate;
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 

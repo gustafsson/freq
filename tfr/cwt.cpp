@@ -329,17 +329,18 @@ pChunk Cwt::
     }
 
 
-    wt->axis_scale = AxisScale_Logarithmic;
+    wt->freqAxis.setLogarithmic(
+            get_max_hz( buffer->sample_rate ),
+            get_min_hz( buffer->sample_rate ),
+            nScales(buffer->sample_rate) - 1 );
     wt->chunk_offset = buffer->sample_offset + first_valid_sample;
     wt->first_valid_sample = 0;
-    wt->max_hz = get_max_hz( buffer->sample_rate );
-    wt->min_hz = get_min_hz( buffer->sample_rate );
     wt->n_valid_samples = valid_samples;
     wt->order = Chunk::Order_row_major;
     wt->sample_rate = buffer->sample_rate;
     wt->original_sample_rate = buffer->sample_rate;
 
-    DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->max_hz, wt->min_hz).suppressTiming();
+    DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->maxHz(), wt->minHz()).suppressTiming();
 
     TIME_CWT tt->getStream() << "Resulting interval = " << wt->getInterval().toString();
     TIME_CWT CudaException_ThreadSynchronize();
@@ -400,12 +401,14 @@ pChunk Cwt::
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
 
         unsigned last_scale = first_scale + n_scales-1;
-        intermediate_wt->min_hz = get_max_hz(ft->original_sample_rate)*exp2f( last_scale/-_scales_per_octave );
-        intermediate_wt->max_hz = get_max_hz(ft->original_sample_rate)*exp2f( first_scale/-_scales_per_octave );
+        intermediate_wt->freqAxis.setLogarithmic(
+                get_max_hz(ft->original_sample_rate)*exp2f( last_scale/-_scales_per_octave ),
+                get_max_hz(ft->original_sample_rate)*exp2f( first_scale/-_scales_per_octave ),
+                intermediate_wt->nScales()-1 );
 
         DEBUG_CWT TaskInfo tinfo("scales [%u,%u]%u#, hz [%g, %g]",
                  first_scale, last_scale, n_scales,
-                 intermediate_wt->max_hz, intermediate_wt->min_hz);
+                 intermediate_wt->maxHz(), intermediate_wt->minHz());
 
         DEBUG_CWT
         {
@@ -413,17 +416,17 @@ pChunk Cwt::
             TaskTimer("ft->original_sample_rate = %g", ft->original_sample_rate).suppressTiming();
             TaskTimer("ft->halfs = %u", half_sizes).suppressTiming();
             TaskTimer("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate).suppressTiming();
-            TaskTimer("intermediate_wt->min_hz = %g", intermediate_wt->min_hz).suppressTiming();
-            TaskTimer("intermediate_wt->max_hz = %g", intermediate_wt->max_hz).suppressTiming();
+            TaskTimer("intermediate_wt->min_hz = %g", intermediate_wt->minHz()).suppressTiming();
+            TaskTimer("intermediate_wt->max_hz = %g", intermediate_wt->maxHz()).suppressTiming();
         }
 
-        BOOST_ASSERT( intermediate_wt->max_hz <= intermediate_wt->sample_rate/2 );
+        BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 );
 
         ::wtCompute( ft->transform_data->getCudaGlobal().ptr(),
                      intermediate_wt->transform_data->getCudaGlobal().ptr(),
                      intermediate_wt->sample_rate,
-                     intermediate_wt->min_hz,
-                     intermediate_wt->max_hz,
+                     intermediate_wt->minHz(),
+                     intermediate_wt->maxHz(),
                      intermediate_wt->transform_data->getNumberOfElements(),
                      1<<half_sizes,
                      _scales_per_octave, sigma(),
@@ -438,11 +441,9 @@ pChunk Cwt::
         GpuCpuData<float2>* g = intermediate_wt->transform_data.get();
         cudaExtent n = g->getNumberOfElements();
 
-        intermediate_wt->axis_scale = AxisScale_Logarithmic;
-
         intermediate_wt->chunk_offset = ft->chunk_offset;
 
-        unsigned time_support = wavelet_time_support_samples( ft->original_sample_rate, intermediate_wt->min_hz );
+        unsigned time_support = wavelet_time_support_samples( ft->original_sample_rate, intermediate_wt->minHz() );
         time_support >>= half_sizes;
         intermediate_wt->first_valid_sample = time_support;
 
@@ -550,7 +551,7 @@ Signal::pBuffer Cwt::
         boost::scoped_ptr<TaskTimer> tt;
         DEBUG_CWT tt.reset( new TaskTimer("ChunkPart inverse, c=%g, [%g, %g] Hz",
             log2f(part->original_sample_rate/part->sample_rate),
-            part->min_hz, part->max_hz) );
+            part->freqAxis.min_hz, part->freqAxis.max_hz()) );
 
         Signal::pBuffer inv = inverse(part);
         Signal::pBuffer super = SuperSample::supersample(inv, pchunk->sample_rate);

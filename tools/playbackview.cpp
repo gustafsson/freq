@@ -136,7 +136,7 @@ bool PlaybackView::
 {
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
             model->selection->current_selection().get() );
-    if (!e || model->getPostSink()->filter() != model->selection->current_selection())
+    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
         return false;
 
     glDepthMask(false);

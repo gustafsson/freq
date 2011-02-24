@@ -22,7 +22,7 @@ SplineFilter::SplineFilter(bool save_inside) {
 void SplineFilter::operator()( Chunk& chunk)
 {
     TIME_SPLINEFILTER TaskTimer tt("SplineFilter chunk area (%g %g : %g %g)",
-        chunk.startTime(), chunk.min_hz, chunk.endTime(), chunk.max_hz);
+        chunk.startTime(), chunk.minHz(), chunk.endTime(), chunk.maxHz());
 
     unsigned N = v.size();
 
@@ -44,7 +44,7 @@ void SplineFilter::operator()( Chunk& chunk)
 
         p[j] = make_float2(
 				v[i].t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-                chunk.freqAxis().getFrequencyScalarNotClamped( v[i].f ));
+                chunk.freqAxis.getFrequencyScalarNotClamped( v[i].f ));
 
         TIME_SPLINEFILTER TaskTimer("(%g %g) -> p[%u] = (%g %g)",
                   v[i].t, v[i].f, i, p[i].x, p[i].y).suppressTiming();
@@ -98,7 +98,7 @@ Signal::Intervals SplineFilter::
     double FS = sample_rate();
     Signal::Intervals sid;
     Signal::Interval sidint(start_time*FS, end_time*FS);
-    if (sidint.valid())
+    if (sidint.count())
         sid = sidint;
 
     return ~sid;

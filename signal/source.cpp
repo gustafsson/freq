@@ -72,13 +72,10 @@ Interval Buffer::
 Buffer& Buffer::
         operator|=(const Buffer& b)
 {    
-    Intervals sid = getInterval();
-    sid &= b.getInterval();
+    Interval i = getInterval() & b.getInterval();
 
-    if (sid.empty())
+    if (0 == i.count())
         return *this;
-
-    Interval i = sid.getInterval();
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
@@ -99,13 +96,10 @@ Buffer& Buffer::
 Buffer& Buffer::
         operator+=(const Buffer& b)
 {
-    Intervals sid = getInterval();
-    sid &= b.getInterval();
+    Interval i = getInterval() & b.getInterval();
 
-    if (sid.empty())
+    if (0 == i.count())
         return *this;
-
-    Interval i = sid.getInterval();
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
@@ -127,7 +121,7 @@ Buffer& Buffer::
 pBuffer SourceBase::
         readChecked( const Interval& I )
 {
-    BOOST_ASSERT( I.valid() );
+    BOOST_ASSERT( I.count() );
 
     pBuffer r = read(I);
 
@@ -159,7 +153,7 @@ pBuffer SourceBase::
     while (sid)
     {
         if (!p)
-            p = readChecked( sid.getInterval() );
+            p = readChecked( sid.fetchFirstInterval() );
 
         sid -= p->getInterval();
         (*r) |= *p; // Fill buffer
@@ -207,7 +201,7 @@ std::string SourceBase::
 pBuffer SourceBase::
         zeros( const Interval& I )
 {
-    BOOST_ASSERT( I.valid() );
+    BOOST_ASSERT( I.count() );
 
     TIME_READCHECKED TaskTimer tt("%s.%s %s",
                   vartype(*this).c_str(), __FUNCTION__ ,

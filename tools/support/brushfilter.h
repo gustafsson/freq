@@ -50,6 +50,7 @@ class MultiplyBrush: public BrushFilter
 public:
     virtual Signal::Intervals affected_samples();
 
+    virtual std::string name();
     virtual void operator()( Tfr::Chunk& );
 
 private:

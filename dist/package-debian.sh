@@ -51,17 +51,13 @@ mkdir -p $share
 cp matlab/sawe_extract_cwt.m $share
 cp matlab/sawe_extract_cwt_time.m $share
 cp matlab/sawe_filewatcher.m $share
-cp matlab/sawe_filewatcher_oct.m $share
 cp matlab/matlabfilter.m $share
-cp matlab/matlaboperation.m $share
+cp matlab/matlaboperation_amplify.m $share
+cp matlab/matlaboperation_lowpass.m $share
 cp matlab/sawe_loadbuffer.m $share
-cp matlab/sawe_loadbuffer_oct.m $share
 cp matlab/sawe_loadchunk.m $share
-cp matlab/sawe_loadchunk_oct.m $share
 cp matlab/sawe_savebuffer.m $share
-cp matlab/sawe_savebuffer_oct.m $share
 cp matlab/sawe_savechunk.m $share
-cp matlab/sawe_savechunk_oct.m $share
 cp -r license $share
 pushd $package
 gzip -f usr/local/share/man/man1/sonicawe.1

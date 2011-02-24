@@ -10,7 +10,7 @@ namespace Sawe {
 #include "selectionmodel.h"
 #include "playbackmodel.h"
 #include "renderview.h"
-#include "toolmodel.h"
+#include "sawe/toolmodel.h"
 
 #include <typeinfo>
 #include <QScopedPointer>
@@ -29,6 +29,8 @@ namespace Tools
         RenderModel render_model;
         SelectionModel selection_model;
         PlaybackModel playback_model;
+
+        //virtual ToolMainLoop* mainloop() { return render_view(); }
         virtual RenderView* render_view() { return _render_view; }
 
 
@@ -36,7 +38,7 @@ namespace Tools
         friend class boost::serialization::access;
         ToolFactory(); // required by serialization, should never be called
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
-            TaskInfo ti("%s", __FUNCTION__);
+            TaskInfo ti("ToolFactory::serialize");
             ar
                     & BOOST_SERIALIZATION_NVP(render_model)
                     & BOOST_SERIALIZATION_NVP(playback_model.playback_device)

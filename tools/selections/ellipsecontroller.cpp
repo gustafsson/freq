@@ -58,7 +58,10 @@ namespace Tools { namespace Selections
         connect(selection_controller_->render_view(), SIGNAL(painting()), view_, SLOT(draw()));
         // Close this widget before the OpenGL context is destroyed to perform
         // proper cleanup of resources
-         connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
+        connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
+
+
+        connect(selection_controller_->model(), SIGNAL(selectionChanged()), SLOT(selectionChanged()));
 
         // Add the action as a combo box item in selection controller
         selection_controller_->addComboBoxAction( ui->actionEllipseSelection ) ;
@@ -152,6 +155,14 @@ namespace Tools { namespace Selections
             selection_controller_->setCurrentTool( this, active );
             selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
+    }
+
+
+    void EllipseController::
+            selectionChanged()
+    {
+        Signal::pOperation o = selection_controller_->model()->current_selection();
+        model()->tryFilter( o );
     }
 
 }} // namespace Tools::Selections

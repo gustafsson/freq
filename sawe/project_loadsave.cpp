@@ -2,11 +2,14 @@
 
 // Serializable Sonic AWE classes 
 #include "adapters/audiofile.h"
+#include "adapters/matlaboperation.h"
 #include "adapters/microphonerecorder.h"
 #include "tools/support/brushfilter.h"
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
 #include "signal/operationcache.h"
+#include "signal/chain.h"
+#include "signal/target.h"
 
 // Serializable Sonic AWE Tools
 #include "tools/commentmodel.h"
@@ -37,7 +40,7 @@ namespace Sawe {
 template<class Archive> 
 void runSerialization(Archive& ar, Project*& project, QString path)
 {
-    TaskInfo ti("Running serialization");
+    TaskInfo ti("Running serialization, %s", typename Archive::is_loading()?"loading":"saving");
 
     QDir dir = QDir::current();
     QDir::setCurrent( QFileInfo( path ).absolutePath() );
@@ -53,6 +56,10 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::ToolRepo>();
     ar.template register_type<Tools::RenderModel>();
     ar.template register_type<Signal::OperationCacheLayer>();
+    ar.template register_type<Signal::Layers>();
+    ar.template register_type<Signal::Chain>();
+    ar.template register_type<Signal::ChainHead>();
+    ar.template register_type<Adapters::MatlabOperation>();
 
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 
@@ -63,7 +70,7 @@ void runSerialization(Archive& ar, Project*& project, QString path)
 bool Project::
         save()
 {
-    if (project_file_name.empty()) {
+    if (project_filename_.empty()) {
         return saveAs();
     }
 
@@ -75,11 +82,11 @@ bool Project::
 
     try
     {
-		TaskTimer tt("Saving project to '%s'", project_file_name.c_str());
-        std::ofstream ofs(project_file_name.c_str());
+        TaskTimer tt("Saving project to '%s'", project_filename_.c_str());
+        std::ofstream ofs(project_filename_.c_str());
         boost::archive::xml_oarchive xml(ofs);
 		Project* p = this;
-		runSerialization(xml, p, project_file_name.c_str());
+        runSerialization(xml, p, project_filename_.c_str());
     }
     catch (const std::exception& x)
     {
@@ -112,7 +119,8 @@ pProject Project::
     Project* new_project = 0;
 	runSerialization(xml, new_project, project_file.c_str());
 
-    new_project->project_file_name = project_file;
+    new_project->project_filename_ = project_file;
+    new_project->updateWindowTitle();
 
     pProject project( new_project );
 

@@ -22,6 +22,14 @@ using namespace std;
 
 namespace Signal {
 
+PostSink::
+        PostSink()
+            :
+            isUnderfedIfInvalid(false)
+{
+}
+
+
 Signal::pBuffer PostSink::
         read( const Signal::Interval& I )
 {
@@ -42,7 +50,7 @@ Signal::pBuffer PostSink::
         {
             Sink* s = dynamic_cast<Sink*>(i->get());
 
-            if (s && s->isFinished())
+            if (s && s->deleteMe())
             {
                 TaskTimer tt("Removing %s from postsink", demangle( typeid(*s) ).c_str());
                 i = _sinks.erase( i );
@@ -87,14 +95,15 @@ Signal::pBuffer PostSink::
     // Since PostSink is a sink, it doesn't need to return anything.
     // But since the buffer 'b' will be computed anyway when calling 'read'
     // PostSink may just as well return it, at least for debugging purposes.
+    // Also, should that change PostSink implements affected_samples to notify
+    // nested PostSinks that they can or can not use the read from a PostSink
+    // directly.
 
     if (1==active_operations.size())
     {
         pOperation c = active_operations[0];
         c->source( prev );
         b = c->read( I );
-        prev = c;
-        c->source( source() );
         active_operations.clear();
     } else
         b = prev->read( I );
@@ -105,12 +114,10 @@ Signal::pBuffer PostSink::
         c->read( I );
     }
 
-    BOOST_FOREACH( pOperation c, passive_operations )
-        c->source(source());
-
-    BOOST_FOREACH( pOperation c, active_operations )
-        c->source(source());
-
+    BOOST_FOREACH( pOperation c, _sinks )
+    {
+        c->source( source() );
+    }
 
     return b;
 }
@@ -168,9 +175,30 @@ bool PostSink::
 
 
 void PostSink::
+        set_channel(unsigned c)
+{
+    Operation::set_channel( c );
+
+    if (_filter)
+    {
+        _filter->source( pOperation() );
+        _filter->set_channel( c );
+        _filter->source( source() );
+    }
+
+    BOOST_FOREACH( pOperation s, sinks() )
+    {
+        s->source( pOperation() );
+        s->set_channel( c );
+        s->source( source() );
+    }
+}
+
+
+void PostSink::
         source(pOperation v)
 {
-    Operation::source(v);
+    Operation::source( v );
 
     if (_filter)
         _filter->source( v );
@@ -203,14 +231,15 @@ Intervals PostSink::
 
 
 Intervals PostSink::
-        fetch_invalid_samples()
+        invalid_samples()
 {
     Intervals I;
 
-    BOOST_FOREACH( pOperation s, sinks() )
+    BOOST_FOREACH( pOperation o, sinks() )
     {
         // Sinks doesn't fetch invalid sampels recursively
-        I |= s->fetch_invalid_samples();
+        Sink* s = dynamic_cast<Sink*>(o.get());
+        I |= s->invalid_samples();
     }
 
     return I;
@@ -225,10 +254,11 @@ bool PostSink::
     BOOST_FOREACH( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
-
-        if (s)
-            r |= s->isUnderfed();
+        r = r || s->isUnderfed();
     }
+
+    if (isUnderfedIfInvalid)
+        r = r || invalid_samples();
 
     return r;
 }
@@ -237,13 +267,47 @@ bool PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
+    // If this->invalidate_samples is called from source() all sinks will also
+    // be called from source() as they are registered as outputs in source()
+    // In that case invalidate_samples will be called twice for all sinks.
     BOOST_FOREACH( pOperation o, sinks() )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
-
-        if (s)
-            s->invalidate_samples( I );
+        s->invalidate_samples( I );
     }
+
+    Operation::invalidate_samples( I );
+}
+
+
+std::string PostSink::
+        toString()
+{
+    std::stringstream ss;
+    ss << name() << ", " << sinks().size() << " sink" << (sinks().size()!=1?"s":"");
+
+    if (_filter)
+    {
+        _filter->source( pOperation() );
+        ss << std::endl << "Filter: " << _filter->toString();
+        _filter->source( source() );
+    }
+    else
+        ss << ". No filter";
+
+    unsigned i = 0;
+    BOOST_FOREACH( pOperation o, sinks() )
+    {
+        o->source( pOperation() );
+        ss << std::endl << "Sink " << i << ": " << o->toString() << "[/" << i << "]";
+        i++;
+        o->source( source() );
+    }
+
+    if (source())
+        ss << std::endl << source()->toString();
+
+    return ss.str();
 }
 
 
@@ -263,7 +327,17 @@ void PostSink::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
 #endif
+
+    BOOST_FOREACH( pOperation o, v )
+    {
+        Sink* s = dynamic_cast<Sink*>(o.get());
+        BOOST_ASSERT( s );
+        s->source( source() );
+    }
+
     _sinks = v;
+
+    // The new sinks should not be invalidated, neither should the parents be
 }
 
 
@@ -277,6 +351,9 @@ pOperation PostSink::
 void PostSink::
         filter(pOperation f)
 {
+    if (f == _filter)
+        return;
+
     Intervals I;
 
     if (f)          f->source(source());

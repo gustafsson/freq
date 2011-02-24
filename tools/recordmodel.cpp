@@ -13,7 +13,7 @@ RecordModel::
     render_view(render_view)
 {
     recording = dynamic_cast<Adapters::MicrophoneRecorder*>
-                (project->head_source()->root());
+                (project->head->head_source()->root());
 
     BOOST_ASSERT( recording );
 }
@@ -31,7 +31,7 @@ bool RecordModel::
         canCreateRecordModel( Sawe::Project* project )
 {
     return dynamic_cast<Adapters::MicrophoneRecorder*>
-                (project->head_source()->root());
+                (project->head->head_source()->root());
 }
 
 

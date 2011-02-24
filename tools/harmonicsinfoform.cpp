@@ -50,7 +50,7 @@ HarmonicsInfoForm::HarmonicsInfoForm(
     actionHarmonics_info->setCheckable( true );
     actionHarmonics_info->setChecked( true );
 
-    MainWindow->getItems()->menu_Windows->insertAction( 0, actionHarmonics_info );
+    MainWindow->getItems()->menu_Windows->addAction( actionHarmonics_info );
 
     connect(actionHarmonics_info, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
     connect(actionHarmonics_info, SIGNAL(triggered()), dock, SLOT(raise()));
