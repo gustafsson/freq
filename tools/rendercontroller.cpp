@@ -16,6 +16,7 @@
 #include "heightmap/renderer.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
+#include "tfr/cepstrum.h"
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
@@ -52,10 +53,12 @@ public:
     BlockFilterSink
         (
             Signal::pOperation o,
-            RenderModel* model
+            RenderModel* model,
+            RenderController* controller
         )
         :
-            model_(model)
+            model_(model),
+            controller_(controller)
     {
         BOOST_ASSERT( o );
         Operation::source(o);
@@ -65,7 +68,11 @@ public:
     virtual void source(Signal::pOperation v) { Operation::source()->source(v); }
     virtual bool deleteMe() { return false; } // Never delete this sink
 
-    virtual Signal::pBuffer read(const Signal::Interval& I) { return Signal::Operation::read( I ); }
+    virtual Signal::pBuffer read(const Signal::Interval& I) {
+        Signal::pBuffer r = Signal::Operation::read( I );
+        controller_->emitTransformChanged();
+        return r;
+    }
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
@@ -80,6 +87,8 @@ public:
         }
 
         Operation::invalidate_samples( I );
+
+        controller_->emitTransformChanged();
     }
 
 
@@ -119,6 +128,7 @@ public:
 
 private:
     RenderModel* model_;
+    RenderController* controller_;
 };
 
 
@@ -144,7 +154,7 @@ RenderController::
         ui->actionToggleOrientation->setChecked(true);
         transform->actions().at(0)->trigger();
 #else
-        transform->actions().at(transform->actions().count()-1)->trigger();
+        transform->actions().at(1)->trigger();
 #endif
         ui->actionSet_colorscale->trigger();
     }
@@ -242,7 +252,9 @@ void RenderController::
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
-    model()->renderSignalTarget->post_sink()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+    zscale->defaultAction()->trigger();
+
+    model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
     // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
@@ -256,7 +268,7 @@ Signal::PostSink* RenderController::
 {
     BlockFilterSink* bfs;
     Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model()));
+    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), this));
 
     std::vector<Signal::pOperation> v;
     v.push_back( channelop );
@@ -346,11 +358,59 @@ void RenderController::
 }
 
 
+void RenderController::
+        receiveLinearScale()
+{
+    float fs = model()->project()->head->head_source()->sample_rate();
+
+    Tfr::FreqAxis fa;
+    fa.setLinear( fs );
+
+    model()->display_scale( fa );
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveLogScale()
+{
+    float fs = model()->project()->head->head_source()->sample_rate();
+
+    Tfr::FreqAxis fa;
+    fa.setLogarithmic(
+            Tfr::Cwt::Singleton().get_min_hz(fs),
+            Tfr::Cwt::Singleton().get_max_hz(fs) );
+
+    model()->display_scale( fa );
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveCepstraScale()
+{
+    float fs = model()->project()->head->head_source()->sample_rate();
+
+    Tfr::FreqAxis fa;
+    fa.setQuefrencyNormalized( fs, Tfr::Cepstrum::Singleton().chunk_size() );
+
+    model()->display_scale( fa );
+    view->userinput_update();
+}
+
+
 RenderModel *RenderController::
         model()
 {
     BOOST_ASSERT( view );
     return view->model;
+}
+
+
+void RenderController::
+        emitTransformChanged()
+{
+    emit transformChanged();
 }
 
 
@@ -433,6 +493,38 @@ void RenderController::
         }
     }
 
+
+    // ComboBoxAction* zscale
+    {   QAction* linearScale = new QAction( main );
+        QAction* logScale = new QAction( main );
+        QAction* cepstraScale = new QAction( main );
+
+        linearScale->setText("Linear scale");
+        logScale->setText("Logarithmic scale");
+        cepstraScale->setText("Cepstra scale");
+
+        linearScale->setCheckable( true );
+        logScale->setCheckable( true );
+        cepstraScale->setCheckable( true );
+
+        connect(linearScale, SIGNAL(triggered()), SLOT(receiveLinearScale()));
+        connect(logScale, SIGNAL(triggered()), SLOT(receiveLogScale()));
+        connect(cepstraScale, SIGNAL(triggered()), SLOT(receiveCepstraScale()));
+
+        zscale = new ComboBoxAction();
+        zscale->addActionItem( linearScale );
+        zscale->addActionItem( logScale );
+        zscale->addActionItem( cepstraScale );
+        zscale->decheckable( false );
+        toolbar_render->addWidget( zscale );
+
+        unsigned k=0;
+        foreach( QAction* a, zscale->actions())
+        {
+            a->setShortcut(QString("Ctrl+") + ('1' + k++));
+        }
+        logScale->trigger();
+    }
 
     // QSlider * yscale
     {   yscale = new QSlider();

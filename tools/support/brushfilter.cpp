@@ -125,8 +125,8 @@ void MultiplyBrush::
         return;
 
     Tfr::FreqAxis const& heightmapAxis = imgs.begin()->first.collection()->display_scale();
-    float scale1 = heightmapAxis.getFrequencyScalar( chunk.min_hz );
-    float scale2 = heightmapAxis.getFrequencyScalar( chunk.max_hz );
+    float scale1 = heightmapAxis.getFrequencyScalar( chunk.minHz() );
+    float scale2 = heightmapAxis.getFrequencyScalar( chunk.maxHz() );
     float time1 = chunk.chunk_offset/chunk.sample_rate;
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 

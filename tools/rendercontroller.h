@@ -24,6 +24,8 @@ namespace Tools
 
         RenderModel *model();
 
+        void emitTransformChanged();
+
     signals:
         void transformChanged();
 
@@ -56,6 +58,11 @@ namespace Tools
         void receiveSetTransform_Cwt_weight();
         void receiveSetTransform_Cepstrum();
 
+        // ComboBoxAction yscale
+        void receiveLinearScale();
+        void receiveLogScale();
+        void receiveCepstraScale();
+
     private slots:
         void clearCachedHeightmap();
 
@@ -71,6 +78,7 @@ namespace Tools
         // place in the GUI and take care of events. The objects lifetime
         // depends on the parent QObject which they are inserted into.
         QToolBar* toolbar_render;
+        Ui::ComboBoxAction* zscale;
         Ui::ComboBoxAction* hzmarker;
         Ui::ComboBoxAction* color;
         Ui::ComboBoxAction* transform;

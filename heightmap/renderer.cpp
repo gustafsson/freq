@@ -49,6 +49,7 @@ Renderer::Renderer( Collection* collection )
     _draw_flat(false),
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
     _invalid_frustum(true)
+
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
     memset(projection_matrix, 0, sizeof(projection_matrix));
@@ -1076,12 +1077,7 @@ void Renderer::drawAxes( float T )
     glDisable(GL_DEPTH_TEST);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-
-    float fs = collection->worker->source()->sample_rate();
-    float min_hz = Tfr::Cwt::Singleton().get_min_hz( fs );
-    float max_hz = Tfr::Cwt::Singleton().get_max_hz( fs );
-    float steplogsize = log(max_hz) - log(min_hz);
-    //float steplogsize = log(max_hz-min_hz);
+    Tfr::FreqAxis fa = collection->display_scale();
     // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
@@ -1097,7 +1093,7 @@ void Renderer::drawAxes( float T )
         unsigned t = p[0]/DT; // t marker index along t
         if (v[0] > 0) t++;
 
-        unsigned fc, f = exp(p[2]*steplogsize)*min_hz; // t marker index along f
+        unsigned fc, f = fa.getFrequency( (float)p[2] ); // t marker index along f
         for(fc = 1; fc*10 < f; fc*=10) {}
 
         f = f/fc*fc;
@@ -1114,7 +1110,7 @@ void Renderer::drawAxes( float T )
             // find next intersection along v
             float nu;
             if (taxis)  nu = (t*DT - clippedFrustum[i][0])/v[0];
-            else        nu = (log(f/min_hz)/steplogsize - clippedFrustum[i][2])/v[2];
+            else        nu = (fa.getFrequencyScalar(f) - clippedFrustum[i][2])/v[2];
 
             // if valid intersection
             if ( nu > u && nu<1 ) { u = nu; }
@@ -1226,11 +1222,11 @@ void Renderer::drawAxes( float T )
             // log(F(n)/440)/log(pow(2, 1/12)) = log(n-49)
             // n = exp(log(F(n)/440)/log(pow(2, 1/12))) + 49
 
-            unsigned F1 = exp(clippedFrustum[i][2]*steplogsize)*min_hz;
-            unsigned F2 = exp(clippedFrustum[j][2]*steplogsize)*min_hz;
+            unsigned F1 = fa.getFrequency( (float)clippedFrustum[i][2] );
+            unsigned F2 = fa.getFrequency( (float)clippedFrustum[j][2] );
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
-            if (!(F1>min_hz)) F1=min_hz;
-            if (!(F2<max_hz)) F2=max_hz;
+            if (!(F1>fa.min_hz)) F1=fa.min_hz;
+            if (!(F2<fa.max_hz())) F2=fa.max_hz();
             float tva12 = powf(2.f, 1.f/12);
 
 
@@ -1242,9 +1238,9 @@ void Renderer::drawAxes( float T )
 
             for( int tone = startTone; tone<=endTone; tone++)
             {
-                float ff = log(440 * pow(tva12,tone-45)/min_hz)/steplogsize;
-                float ffN = log(440 * pow(tva12,tone-44)/min_hz)/steplogsize;
-                float ffP = log(440 * pow(tva12,tone-46)/min_hz)/steplogsize;
+                float ff = fa.getFrequencyScalar(440 * pow(tva12,tone-45));
+                float ffN = fa.getFrequencyScalar(440 * pow(tva12,tone-44));
+                float ffP = fa.getFrequencyScalar(440 * pow(tva12,tone-46));
 
                 int toneTest = tone;
                 while(toneTest<0) toneTest+=12;

@@ -244,6 +244,7 @@ public:
 
 
     Tfr::FreqAxis display_scale() { return _display_scale; }
+    void display_scale(Tfr::FreqAxis a);
 
 
     /**

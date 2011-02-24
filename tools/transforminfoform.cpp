@@ -12,6 +12,8 @@
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
 
+#include <QTimer>
+
 namespace Tools
 {
 
@@ -46,6 +48,10 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderController* r
     dock->setVisible(false);
 
     connect(rendercontroller, SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
+
+    timer.setSingleShot( true );
+    timer.setInterval( 500 );
+    connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()));
 
     transformChanged();
 }
@@ -131,12 +137,23 @@ void TransformInfoForm::
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(rendercontroller->model()->renderer->y_scale));
-        addRow("Lowest fundamental", QString("%1").arg( fs / cepstrum->chunk_size()));
+        addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
     }
     else
     {
         addRow("Type", "Unknown");
         addRow("Error", "Doesn't recognize transform");
+    }
+
+    if (project->areToolsInitialized())
+    {
+        Signal::Intervals I = project->worker.previous_todo_list();
+
+        if (I.count())
+        {
+            addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs));
+            timer.start();
+        }
     }
 }
 

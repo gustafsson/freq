@@ -29,8 +29,7 @@ pChunk Cepstrum::
     pChunk cepstra = stft(buffer);
     TaskInfo("Cepstrum debug. Was %s , returned %s ", b->getInterval().toString().c_str(), cepstra->getInterval().toString().c_str());
 
-    cepstra->axis_scale = AxisScale_Quefrency;
-    cepstra->min_hz = 2*cepstra->original_sample_rate/chunk_size();
+    cepstra->freqAxis.setQuefrency( cepstra->original_sample_rate, chunk_size());
 
     return cepstra;
 

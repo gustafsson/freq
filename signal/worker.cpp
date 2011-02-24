@@ -277,10 +277,17 @@ Signal::Intervals Worker::
     if (!c)
     {
         Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
-        return todoinv;
+        return _previous_todo_list = todoinv;
     }
 
-    return c;
+    return _previous_todo_list = c;
+}
+
+
+Intervals Worker::
+        previous_todo_list()
+{
+    return _previous_todo_list;
 }
 
 

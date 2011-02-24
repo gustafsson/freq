@@ -39,7 +39,7 @@ void BlockFilter::
     Signal::Interval chunk_interval = chunk.getInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, true );
     TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks", 
-        chunk_interval.toString().c_str(), chunk.min_hz, chunk.max_hz, intersecting_blocks.size());
+        chunk_interval.toString().c_str(), chunk.minHz(), chunk.maxHz(), intersecting_blocks.size());
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
@@ -151,8 +151,8 @@ void CwtToBlock::
 
     float merge_first_scale = a.scale;
     float merge_last_scale = b.scale;
-    float chunk_first_scale = _collection->display_scale().getFrequencyScalar( chunk.min_hz );
-    float chunk_last_scale = _collection->display_scale().getFrequencyScalar( chunk.max_hz );
+    float chunk_first_scale = _collection->display_scale().getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = _collection->display_scale().getFrequencyScalar( chunk.maxHz() );
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
     if (merge_first_scale >= merge_last_scale)
@@ -161,11 +161,11 @@ void CwtToBlock::
                   "merge_first_scale(%g) >= merge_last_scale(%g)\n"
                   "a.scale = %g, b.scale = %g\n"
                   "chunk_first_scale = %g, chunk_last_scale = %g\n"
-                  "chunk.min_hz = %g, chunk.max_hz = %g",
+                  "chunk.minHz() = %g, chunk.maxHz() = %g",
                   merge_first_scale, merge_last_scale,
                   a.scale, b.scale,
                   chunk_first_scale, chunk_last_scale,
-                  chunk.min_hz, chunk.max_hz).suppressTiming();
+                  chunk.minHz(), chunk.maxHz()).suppressTiming();
         return;
     }
 
@@ -330,7 +330,7 @@ void StftToBlock::
                                chunk_b.time, chunk_b.scale ),
                   make_float4( a.time, a.scale,
                                b.time, b.scale ),
-                  chunk.freqAxis(),
+                  chunk.freqAxis,
                   _collection->display_scale());
 
     block->valid_samples |= chunk.getInterval();
@@ -376,7 +376,7 @@ void CepstrumToBlock::
                                chunk_b.time, chunk_b.scale ),
                   make_float4( a.time, a.scale,
                                b.time, b.scale ),
-                  chunk.freqAxis(),
+                  chunk.freqAxis,
                   _collection->display_scale());
 
     block->valid_samples |= chunk.getInterval();

@@ -185,7 +185,7 @@ void Hdf5Output::
 
 template<>
 Tfr::pChunk Hdf5Input::
-        read_exact<Tfr::pChunk>( std::string name)
+        read_exact<Tfr::pChunk>( std::string name )
 {
     VERBOSE_HDF5 TaskTimer tt("Reading chunk '%s'", name.c_str());
 
@@ -198,13 +198,13 @@ Tfr::pChunk Hdf5Input::
     if (2!=dims.size()) throw runtime_error(((stringstream&)(ss << "Rank of '" << name << "' is '" << dims.size() << "' instead of 3.")).str());
 
     Tfr::pChunk chunk( new Tfr::CwtChunk );
-    chunk->min_hz = 20;
-    chunk->max_hz = 22050;
     chunk->chunk_offset = 0;
     chunk->sample_rate = 44100;
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = dims[1];
     chunk->transform_data.reset( new GpuCpuData<float2>(0, make_cudaExtent( dims[1], dims[0], 1 )));
+    chunk->freqAxis.setLogarithmic( 20, 22050, chunk->nScales() - 1 );
+
     float2* p = chunk->transform_data->getCpuMemory();
 
     if (H5T_COMPOUND==class_id)

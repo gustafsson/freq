@@ -29,6 +29,7 @@ namespace Tools
         std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
 
         Tfr::FreqAxis display_scale();
+        void display_scale(Tfr::FreqAxis x);
         Tfr::Filter* block_filter();
 
         Signal::pTarget renderSignalTarget;

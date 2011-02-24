@@ -62,9 +62,9 @@ Collection::
     float fs = worker->source()->sample_rate();
     float minhz = Tfr::Cwt::Singleton().get_min_hz(fs);
     float maxhz = Tfr::Cwt::Singleton().get_max_hz(fs);
-    _display_scale.f_min = minhz;
+    _display_scale.min_hz = minhz;
     //_display_scale.log2f_step = log2(maxhz) - log2(minhz);
-    _display_scale.f_min = 0;
+    _display_scale.min_hz = 0;
     _display_scale.f_step = maxhz - minhz;
 }
 
@@ -181,7 +181,7 @@ void Collection::
 
         if (chunk->transform_data)
         {
-            Tfr::FreqAxis fx = chunk->freqAxis();
+            Tfr::FreqAxis fx = chunk->freqAxis;
             unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
             _min_sample_size.scale = std::min(
                     _min_sample_size.scale,
@@ -461,6 +461,14 @@ void Collection::
 
     TaskInfo("Now has %u cached blocks (ca %g MB)", _cache.size(),
              _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*1e-6 );
+}
+
+
+void Collection::
+        display_scale(Tfr::FreqAxis a)
+{
+    _display_scale = a;
+    invalidate_samples( worker->source()->getInterval() );
 }
 
 

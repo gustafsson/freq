@@ -146,6 +146,12 @@ public:
       */
     Intervals fetch_todo_list();
 
+
+    /**
+      Returns the last thing returned from fetch todo list.
+      */
+    Intervals previous_todo_list();
+
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
       in the t-axis for rendering, and equal to 0 for playback.
@@ -242,7 +248,7 @@ private:
     /**
       @see todo_list
       */
-    Intervals /*_todo_list, */_cheat_work;
+    Intervals _previous_todo_list, _cheat_work;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.

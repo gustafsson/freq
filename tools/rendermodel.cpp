@@ -66,6 +66,14 @@ Tfr::FreqAxis RenderModel::
 }
 
 
+void RenderModel::
+        display_scale(Tfr::FreqAxis x)
+{
+    for (unsigned c=0; c<collections.size(); ++c)
+        collections[c]->display_scale( x );
+}
+
+
 Tfr::Filter* RenderModel::
         block_filter()
 {

@@ -24,9 +24,7 @@ Signal::pBuffer SuperSample::
     Tfr::Fft ft;
     Tfr::pChunk chunk = ft( b );
     Tfr::pChunk biggerchunk( new Tfr::StftChunk );
-    biggerchunk->min_hz = chunk->min_hz;
-    biggerchunk->max_hz = chunk->max_hz;
-    biggerchunk->axis_scale = chunk->axis_scale;
+    biggerchunk->freqAxis = chunk->freqAxis;
     biggerchunk->chunk_offset = chunk->chunk_offset << multiple;
     biggerchunk->first_valid_sample = chunk->first_valid_sample << multiple;
     biggerchunk->n_valid_samples = chunk->n_valid_samples << multiple;
