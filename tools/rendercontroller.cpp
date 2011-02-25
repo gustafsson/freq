@@ -379,7 +379,7 @@ void RenderController::
 
     Tfr::FreqAxis fa;
     fa.setLogarithmic(
-            Tfr::Cwt::Singleton().get_min_hz(fs),
+            Tfr::Cwt::Singleton().wanted_min_hz(),
             Tfr::Cwt::Singleton().get_max_hz(fs) );
 
     model()->display_scale( fa );
