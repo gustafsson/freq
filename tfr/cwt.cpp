@@ -14,6 +14,7 @@
 #include <Statistics.h>
 
 #include <cmath>
+#include <float.h>
 #include <boost/lambda/lambda.hpp>
 #include <boost/foreach.hpp>
 
@@ -38,8 +39,8 @@
 #define TIME_ICWT if(0)
 //#define TIME_ICWT
 
-#define DEBUG_CWT if(0)
-//#define DEBUG_CWT
+//#define DEBUG_CWT if(0)
+#define DEBUG_CWT
 
 //#define CWT_NOBINS // Also change cwtfilter.cpp
 
@@ -205,7 +206,7 @@ pChunk Cwt::
 
         // If the biggest j required to be in this chunk is close to the end
         // 'n_j' then include all remaining scales in this chunk as well.
-        if (2*(n_j - next_j) < n_j - prev_j)
+        if (2*(n_j - next_j) < n_j - prev_j || next_j+2>=n_j)
             next_j = n_j;
 
         // Move next_j forward one step so that it points to the first 'j'
@@ -362,6 +363,7 @@ pChunk Cwt::
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
+    BOOST_ASSERT( n_scales > 1 );
     TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u, (%g to %g Hz)",
                               first_scale, n_scales, j_to_hz(ft->original_sample_rate, first_scale+n_scales-1),
                               j_to_hz(ft->original_sample_rate, first_scale));
@@ -420,7 +422,7 @@ pChunk Cwt::
             TaskTimer("intermediate_wt->max_hz = %g", intermediate_wt->maxHz()).suppressTiming();
         }
 
-        BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 );
+        BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 * (1.0+4*FLT_EPSILON) );
 
         ::wtCompute( ft->transform_data->getCudaGlobal().ptr(),
                      intermediate_wt->transform_data->getCudaGlobal().ptr(),
