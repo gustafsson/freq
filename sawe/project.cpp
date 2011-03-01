@@ -99,9 +99,10 @@ pProject Project::
     }
 
     string err;
+    pProject p;
     for (int i=0; i<2; i++) try { switch(i) {
-        case 0: return Project::openProject( filename );
-        case 1: return Project::openAudio( filename );
+        case 0: p = Project::openProject( filename ); break;
+        case 1: p = Project::openAudio( filename ); break;
     }}
     catch (const exception& x) {
         if (!err.empty())
@@ -110,9 +111,28 @@ pProject Project::
         err += "\nDetails: " + (std::string)x.what();
     }
 
-    QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
-    TaskInfo("======================\nCan't open file\n%s\n======================", err.c_str());
-    return pProject();
+    if (!p)
+    {
+        QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
+        TaskInfo("======================\nCan't open file\n%s\n======================", err.c_str());
+        return pProject();
+    }
+
+
+    QSettings settings("REEP", "Sonic AWE");
+    QStringList recent_files = settings.value("recent files").toStringList();
+    QFileInfo fi(QString::fromStdString( filename ));
+    fi.makeAbsolute();
+    QString qfilename = fi.canonicalFilePath();
+    if (!qfilename.isEmpty())
+    {
+        recent_files.removeAll( qfilename );
+        recent_files.push_front( qfilename );
+        while (recent_files.size()>8)
+            recent_files.pop_back();
+        settings.setValue("recent files", recent_files);
+    }
+    return p;
 }
 
 
@@ -210,6 +230,8 @@ void Project::
 void Project::
         restoreDefaultLayout()
 {
+    QSettings settings("REEP", "Sonic AWE");
+    settings.clear();
     _mainWindow->restoreGeometry(defaultGeometry);
     _mainWindow->restoreState(defaultState);
 }

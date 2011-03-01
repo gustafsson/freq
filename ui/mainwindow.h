@@ -70,6 +70,7 @@ private slots:
     void askSaveChanges();
     void saveChangesAnswer( QAbstractButton * button );
 
+    void openRecentFile();
     void saveProject();
     void saveProjectAs();
     void toggleFullscreen( bool );

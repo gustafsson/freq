@@ -9,6 +9,7 @@
 // Qt
 #include <QCloseEvent>
 #include <QSettings>
+#include <QDir>
 
 using namespace std;
 using namespace boost;
@@ -122,6 +123,36 @@ void SaweMainWindow::
         ui->toolBarTool->addWidget( tb );
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
+
+
+    {
+        QSettings settings("REEP", "Sonic AWE");
+        QStringList recent_files = settings.value("recent files").toStringList();
+        ui->menu_Recent_files->setEnabled( !recent_files.empty() );
+        int i = 0;
+        foreach(QString recent, recent_files)
+        {
+            QString home = QDir::homePath();
+            QString display = recent;
+            if (display.left(home.size())==home)
+            {
+#ifdef __GNUC__
+                display = "~" + display.mid( home.size() );
+#else
+                display = display.mid( home.size()+1 );
+#endif
+            }
+
+            i++;
+            display = QString("%1%2. %3").arg(i<10?"&":"").arg(i).arg(display);
+
+            QAction * a = new QAction(display, this);
+            a->setData( recent );
+            connect(a, SIGNAL(triggered()), SLOT(openRecentFile()));
+
+            ui->menu_Recent_files->addAction( a );
+        }
+    }
 
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
         Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
@@ -256,6 +287,17 @@ void SaweMainWindow::
     default:
         break;
     }
+}
+
+
+void SaweMainWindow::
+        openRecentFile()
+{
+    QAction* a = dynamic_cast<QAction*>(sender());
+    BOOST_ASSERT( a );
+    QString s = a->data().toString();
+    BOOST_ASSERT( !s.isEmpty() );
+    Sawe::Application::global_ptr()->slotOpen_file( s.toStdString() );
 }
 
 
