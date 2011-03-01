@@ -278,7 +278,7 @@ bool Playback::
         isStopped()
 {
     //return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
-    return streamPlayback ? !streamPlayback->isActive() && !isPaused() : true;
+    return streamPlayback ? !streamPlayback->isActive() && !isPaused() && _data.empty(): true;
 }
 
 

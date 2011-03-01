@@ -58,21 +58,18 @@ void PlaybackView::
         return;
     }
 
-    // Playback has recently stopped stopped
-    if (model->playback()->isStopped() && model->playback()->hasReachedEnd()) {
-        emit playback_stopped();
-    }
-
     // Playback has stopped/or hasn't started
     if (model->playback()->isStopped()) {
         return;
     }
 
-    update();
-
-    // Playback has reached end but continues with zeros to avoid clicks
+    // Playback has recently stopped
     if (model->playback()->hasReachedEnd()) {
-        return;
+        emit playback_stopped();
+    }
+
+    if (!model->playback()->isPaused()) {
+        update();
     }
 
     _playbackMarker = model->playback()->time();
@@ -81,6 +78,11 @@ void PlaybackView::
     {
         Tools::RenderView& r = *_render_view;
         r.model->_qx = _playbackMarker;
+    }
+
+    // Playback has reached end but continues with zeros to avoid clicks
+    if (model->playback()->hasReachedEnd()) {
+        return;
     }
 }
 
