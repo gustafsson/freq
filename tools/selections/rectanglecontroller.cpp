@@ -63,6 +63,7 @@ namespace Tools { namespace Selections
         // Close this widget before the OpenGL context is destroyed to perform
         // proper cleanup of resources
         connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
+        connect(selection_controller_->model(), SIGNAL(selectionChanged()), SLOT(selectionChanged()));
 
         // Add the action as a combo box item in selection controller
         selection_controller_->addComboBoxAction( ui->actionRectangleSelection ) ;
@@ -190,6 +191,15 @@ namespace Tools { namespace Selections
             enableFrequencySelection(bool active)
     {
         enableSelectionType(RectangleModel::RectangleType_FrequencySelection, active);
+    }
+
+
+    void RectangleController::
+            selectionChanged()
+    {
+        Signal::pOperation o = selection_controller_->model()->current_selection();
+        if (o)
+            model()->tryFilter( o );
     }
 
 }} // namespace Tools::Selections

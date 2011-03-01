@@ -250,9 +250,6 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>:/icons/icons/icon-circle-selection.png</iconset>
@@ -332,6 +329,9 @@
   <action name="actionPlaySelection">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">

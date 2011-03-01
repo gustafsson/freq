@@ -64,6 +64,36 @@ Signal::pOperation RectangleModel::
 
 
 void RectangleModel::
+        tryFilter(Signal::pOperation filter)
+{
+    Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(filter.get());
+    Tools::Support::OperationOtherSilent* os = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());
+    float FS = project_->head->head_source()->sample_rate();
+    if (e)
+    {
+        a.time = e->_t1;
+        b.time = e->_t2;
+        a.scale = fa_.getFrequencyScalar( e->_f1 );
+        b.scale = fa_.getFrequencyScalar( e->_f2 );
+    }
+    else if(os)
+    {
+        Signal::Interval section = os->section();
+        a.time = section.first/FS;
+        b.time = section.last/FS;
+        a.scale = 0;
+        b.scale = 1;
+    }
+    else
+    {
+        b.time = a.time;
+        b.scale = a.scale;
+    }
+}
+
+
+
+void RectangleModel::
         validate()
 {
     switch (type)

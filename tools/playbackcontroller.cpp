@@ -205,6 +205,8 @@ void PlaybackController::
 {
     if (ui_items_->actionPlaySelection->isChecked())
         receiveStop();
+
+    ui_items_->actionPlaySelection->setEnabled( 0 != _view->model->selection->current_selection() );
 }
 
 

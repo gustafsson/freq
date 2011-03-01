@@ -95,6 +95,38 @@ void GraphicsView::customEvent(QEvent *e){
     DEBUG_EVENTS TaskTimer("GraphicsView customEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
+void GraphicsView::keyPressEvent(QKeyEvent *event) {
+    if (event->key() != Qt::Key_Control)
+    {
+        event->setAccepted( false );
+        return;
+    }
+
+    unsigned u = toolWindows();
+    for (unsigned i=0; i<u; ++i)
+    {
+        Support::ToolSelector* ts = toolSelector(i);
+        ts->temp_tool = ts->currentTool();
+        ts->setCurrentTool( ts->default_tool, true );
+    }
+}
+
+void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
+    if (event->key() != Qt::Key_Control)
+    {
+        event->setAccepted( false );
+        return;
+    }
+
+    unsigned u = toolWindows();
+    for (unsigned i=0; i<u; ++i)
+    {
+        Support::ToolSelector* ts = toolSelector(i);
+        ts->setCurrentTool( ts->temp_tool, true );
+        ts->temp_tool = 0;
+    }
+}
+
 void GraphicsView::mousePressEvent( QMouseEvent* e )
 {
     DEBUG_EVENTS TaskTimer tt("GraphicsView mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted());

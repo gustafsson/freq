@@ -135,7 +135,7 @@ void NavigationController::
         _view->model->_ry -= rs * e->delta();
     else if (e->modifiers().testFlag(Qt::ShiftModifier))
         zoom( e->delta(), ScaleX );
-    else if (e->modifiers().testFlag(Qt::ControlModifier))
+    else if (e->modifiers().testFlag(Qt::AltModifier))
         zoom( e->delta(), ScaleZ );
     else
         zoom( e->delta(), Zoom );
@@ -218,7 +218,7 @@ void NavigationController::
         // TODO scale selection
     }
     if( rotateButton.isDown() ) {
-        if (e->modifiers().testFlag(Qt::ControlModifier))
+        if (e->modifiers().testFlag(Qt::AltModifier))
         {
             zoom( 10* (rotateButton.deltaX( x ) + rotateButton.deltaY( y )), Zoom );
         }
@@ -290,8 +290,14 @@ void NavigationController::
         changeEvent(QEvent * event)
 {
     if (event->type() & QEvent::EnabledChange)
+    {
         if (!isEnabled())
             emit enabledChanged(isEnabled());
+        else
+        {
+            one_action_at_a_time_->defaultAction()->setChecked(0!=parent());
+        }
+    }
 }
 
 
@@ -308,6 +314,8 @@ void NavigationController::
     one_action_at_a_time_->decheckable( false );
     one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
     one_action_at_a_time_->addActionItem( ui->actionZoom );
+
+    _view->tool_selector->default_tool = this;
 
     QList<QKeySequence> shortcuts = ui->actionActivateNavigation->shortcuts();
     shortcuts.push_back( Qt::Key_Escape );

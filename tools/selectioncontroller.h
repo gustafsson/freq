@@ -72,7 +72,11 @@ namespace Tools
         void receiveCurrentSelection(int, bool);
         void receiveFilterRemoval(int);
 
+        void selectionComboBoxToggled();
+
     private:
+        virtual void changeEvent ( QEvent * event );
+
         // View
         SelectionModel* _model;
         RenderView* _render_view;

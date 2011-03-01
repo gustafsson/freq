@@ -96,6 +96,7 @@ namespace Tools
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
         connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
+        connect(selectionComboBox_, SIGNAL(toggled(bool)), SLOT(selectionComboBoxToggled()));
 
         setCurrentSelection(Signal::pOperation());
 
@@ -138,8 +139,7 @@ namespace Tools
         tool_selector_->setCurrentTool( tool, active );
 //        if (tool_selector_->currentTool())
 //            tool_selector_->currentTool()->setVisible( true );
-        render_view()->toolSelector()->setCurrentTool(
-                this, 0!=tool_selector_->currentTool() );
+        setThisAsCurrentTool( 0!=tool_selector_->currentTool() );
     }
 
 
@@ -187,11 +187,13 @@ namespace Tools
     void SelectionController::
             setThisAsCurrentTool( bool active )
     {
+        if (!active)
+            setCurrentSelection( Signal::pOperation() );
         _render_view->toolSelector()->setCurrentTool( this, active );
     }
 
 
-/*    void SelectionController::
+    void SelectionController::
             changeEvent ( QEvent * event )
     {
         if (event->type() & QEvent::EnabledChange)
@@ -199,7 +201,7 @@ namespace Tools
             setThisAsCurrentTool( isEnabled() );
             emit enabledChanged(isEnabled());
         }
-    }*/
+    }
 
 
     void SelectionController::
@@ -330,6 +332,14 @@ namespace Tools
         throw std::logic_error("receiveFilterRemoval: Not implemented");
         //removeFilter(index);
     }
+
+
+    void SelectionController::
+            selectionComboBoxToggled()
+    {
+        setThisAsCurrentTool( selectionComboBox_->isChecked() );
+    }
+
 
 
 /*    void SelectionController::

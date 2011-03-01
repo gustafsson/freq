@@ -25,6 +25,7 @@ namespace Tools { namespace Selections
         ~RectangleModel();
 
         Signal::pOperation updateFilter();
+        void tryFilter(Signal::pOperation o);
 
         Heightmap::Position a, b;
         RectangleType type;

@@ -26,6 +26,7 @@ private slots:
     void enableRectangleSelection(bool active);
     void enableTimeSelection(bool active);
     void enableFrequencySelection(bool active);
+    void selectionChanged();
 
 private:
     // Event handlers
