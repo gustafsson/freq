@@ -5,6 +5,7 @@
 #include "adapters/matlabfilter.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
+#include "support/operation-composite.h"
 
 #include "heightmap/collection.h"
 #include "tfr/cwt.h"
@@ -123,7 +124,7 @@ void MatlabController::
                 }
                 else
                 {
-                    m->invalidate_samples( Signal::Interval(0, project_->head->head_source()->number_of_samples()) );
+                    m->invalidate_samples( Signal::Intervals::Intervals_ALL );
                     project_->appendOperation( matlaboperation );
                 }
             }
@@ -164,6 +165,8 @@ void MatlabController::
     Signal::pOperation t = project_->head->head_source();
     if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
         t = t->source();
+    if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
+        t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->selection();
 
     Adapters::MatlabOperation* m = dynamic_cast<Adapters::MatlabOperation*>(t.get());
 

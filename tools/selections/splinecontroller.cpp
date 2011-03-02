@@ -76,8 +76,11 @@ namespace Tools { namespace Selections
             {
                 if (!model()->v.empty())
                     model()->v.pop_back();
+
+                model()->drawing = true;
+                setMouseTracking(true);
             }
-            else
+            else if (model()->drawing)
             {
                 setMouseTracking(false);
                 model()->drawing = false;

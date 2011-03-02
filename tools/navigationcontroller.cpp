@@ -133,7 +133,7 @@ void NavigationController::
     float rs = 0.08;
     if( e->orientation() == Qt::Horizontal )
         _view->model->_ry -= rs * e->delta();
-    else if (e->modifiers().testFlag(Qt::ShiftModifier))
+    else if (e->modifiers().testFlag(Qt::ControlModifier))
         zoom( e->delta(), ScaleX );
     else if (e->modifiers().testFlag(Qt::AltModifier))
         zoom( e->delta(), ScaleZ );
@@ -222,7 +222,7 @@ void NavigationController::
         {
             zoom( 10* (rotateButton.deltaX( x ) + rotateButton.deltaY( y )), Zoom );
         }
-        else if (zoom_only_ || e->modifiers().testFlag(Qt::ShiftModifier))
+        else if (zoom_only_ || e->modifiers().testFlag(Qt::ControlModifier))
         {
             if (r.model->renderer->left_handed_axes)
             {

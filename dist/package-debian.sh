@@ -58,6 +58,7 @@ cp matlab/sawe_loadbuffer.m $share
 cp matlab/sawe_loadchunk.m $share
 cp matlab/sawe_savebuffer.m $share
 cp matlab/sawe_savechunk.m $share
+cp matlab/sawe_discard.m $share
 cp -r license $share
 pushd $package
 gzip -f usr/local/share/man/man1/sonicawe.1

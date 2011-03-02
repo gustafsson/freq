@@ -96,7 +96,8 @@ namespace Tools
                 }
 
                 // Set the tip
-                chain->tip_source( src );
+                if (chain && src)
+                    chain->tip_source( src );
                 if (firstmoved)
                     firstmoved->invalidate_samples(firstmoved->getInterval());
             }

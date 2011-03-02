@@ -19,6 +19,15 @@ SplineFilter::SplineFilter(bool save_inside) {
 }
 
 
+std::string SplineFilter::
+        name()
+{
+    std::stringstream ss;
+    ss << "Polygon with " << v.size() << " vertices";
+    return ss.str();
+}
+
+
 void SplineFilter::operator()( Chunk& chunk)
 {
     TIME_SPLINEFILTER TaskTimer tt("SplineFilter chunk area (%g %g : %g %g)",

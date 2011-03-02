@@ -639,7 +639,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>New recording</string>
+    <string>&amp;New recording</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
@@ -673,7 +673,7 @@
   </action>
   <action name="actionOpen">
    <property name="text">
-    <string>Open </string>
+    <string>&amp;Open </string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>

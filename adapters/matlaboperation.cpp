@@ -342,7 +342,7 @@ void MatlabOperation::
     if (_settings->computeInOrder() && (I - _cache.invalid_samples()))
     {
         // Start over and recompute the first block again
-        OperationCache::invalidate_samples(getInterval());
+        OperationCache::invalidate_samples(Signal::Intervals::Intervals_ALL);
     }
     else
         OperationCache::invalidate_samples(I);
@@ -374,7 +374,7 @@ bool MatlabOperation::
         if ((invalid_samples() - J).empty())
             _matlab->endProcess(); // Finished with matlab
 
-        invalidate_samples( invalid_returns() );
+        invalidate_samples( invalid_returns() | J );
 
         return true;
     }

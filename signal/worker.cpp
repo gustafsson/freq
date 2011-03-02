@@ -270,7 +270,7 @@ Signal::Intervals Worker::
         _cheat_work.clear();
 
     Signal::Intervals todoinv = _target->post_sink()->invalid_samples();
-    todoinv &= Interval(0, _target->post_sink()->number_of_samples());
+    todoinv &= _target->post_sink()->getInterval();
     Signal::Intervals c = todoinv;
     c -= _cheat_work;
 
