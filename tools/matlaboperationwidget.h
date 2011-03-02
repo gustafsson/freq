@@ -63,6 +63,7 @@ private slots:
 private:
     QProcess* pid;
     void setProcess(QProcess*);
+    virtual void hideEvent ( QHideEvent * event );
 
     Ui::MatlabOperationWidget *ui;
 

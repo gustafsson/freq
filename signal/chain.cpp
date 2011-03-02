@@ -108,6 +108,9 @@ void ChainHead::
 
     head_source( new_head );
 
+    TaskInfo("%s", s->parentsToString().c_str());
+    s->invalidate_samples( s->affected_samples() );
+
     TaskInfo("Worker::appendOperation, worker tree:\n%s", head_source_ref()->toString().c_str());
 }
 
@@ -134,7 +137,7 @@ void ChainHead::
 
     if (head_source() != s)
     {
-        Signal::Intervals diff = Signal::Operation::affecetedDiff( head_source(), s );
+        Signal::Intervals diff = Signal::Operation::affectedDiff( head_source(), s );
         head_source_->source( s );
         head_source_->invalidate_samples( diff );
 

@@ -12,6 +12,7 @@
 #include <QPlainTextEdit>
 #include <QDockWidget>
 #include <QTextDocumentFragment>
+#include <QSettings>
 
 namespace Tools {
 
@@ -38,9 +39,15 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
 
     connect( ui->scriptname, SIGNAL(textChanged(QString)), SLOT(restartScript()));
     connect( ui->scriptname, SIGNAL(returnPressed()), SLOT(restartScript()));
-    connect( ui->computeInOrder, SIGNAL(toggled(bool)), SLOT(invalidateEverything()));
+    connect( ui->computeInOrder, SIGNAL(toggled(bool)), SLOT(invalidateAllSamples()));
     connect( ui->chunksize, SIGNAL(valueChanged(int)), SLOT(invalidateAllSamples()));
     connect( ui->redundant, SIGNAL(valueChanged(int)), SLOT(invalidateAllSamples()));
+
+    QSettings settings("REEP", "Sonic AWE");
+    ui->scriptname->setText(        settings.value("MatlabOperationWidget scriptname").toString() );
+    ui->computeInOrder->setChecked( settings.value("MatlabOperationWidget computeInOrder" ).toBool());
+    ui->chunksize->setValue(        settings.value("MatlabOperationWidget chunksize" ).toInt());
+    ui->redundant->setValue(        settings.value("MatlabOperationWidget redundant" ).toInt());
 }
 
 
@@ -49,6 +56,11 @@ MatlabOperationWidget::
 {
     TaskInfo ti("~MatlabOperationWidget");
     TaskInfo(".");
+
+    {
+        hideEvent(0);
+    }
+
     octaveWindow = 0;
     text = 0;
     edit = 0;
@@ -124,7 +136,7 @@ void MatlabOperationWidget::
 {
     QString qfilename = QFileDialog::getOpenFileName(
             parentWidget(),
-            "Open MATLAB/octave script","",
+            "Open MATLAB/octave script", ui->scriptname->text(),
             "MATLAB/octave script files (*.m)");
 
     if (!qfilename.isEmpty())
@@ -149,8 +161,16 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         announceInvalidSamples()
 {
-    if (operation->invalid_returns())
-        operation->invalidate_samples( operation->invalid_returns() );
+    if (operation->dataAvailable())
+    {
+        // MatlabOperation calls invalidate_samples which will eventually make
+        // RenderView start working if the new data was needed
+    }
+    else
+    {
+        // restart the timer
+        announceInvalidSamplesTimer.start();
+    }
 }
 
 
@@ -204,6 +224,18 @@ void MatlabOperationWidget::
 
     if (edit)
         edit->setEnabled( false );
+}
+
+
+void MatlabOperationWidget::
+        hideEvent ( QHideEvent * /*event*/ )
+{
+    QSettings settings("REEP", "Sonic AWE");
+    // this->saveGeometry() doesn't save child widget states
+    settings.setValue("MatlabOperationWidget scriptname", ui->scriptname->text() );
+    settings.setValue("MatlabOperationWidget computeInOrder", ui->computeInOrder->isChecked() );
+    settings.setValue("MatlabOperationWidget chunksize", ui->chunksize->value() );
+    settings.setValue("MatlabOperationWidget redundant", ui->redundant->value() );
 }
 
 

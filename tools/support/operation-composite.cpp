@@ -19,8 +19,8 @@ OperationSubOperations::
     source_sub_operation_( new Operation(source)),
     name_(name)
 {
-    enabled(false);
-    source_sub_operation_->enabled(false);
+//    enabled(false);
+//    source_sub_operation_->enabled(false);
     Operation::source( source_sub_operation_ );
 }
 
@@ -189,7 +189,7 @@ void OperationShift::
 }
 
 
-    // OperationShift  /////////////////////////////////////////////////////////////////
+    // OperationMoveSelection  /////////////////////////////////////////////////////////////////
 
 OperationMoveSelection::
         OperationMoveSelection( pOperation source, pOperation selectionFilter, long sampleShift, float freqDelta )
@@ -240,6 +240,48 @@ void OperationMoveSelection::
 
     pOperation mergeSelection( new OperationSuperposition( remove, extractAndMove ));
 
+    Operation::source( mergeSelection );
+}
+
+
+
+
+    // OperationFilterSelection  /////////////////////////////////////////////////////////////////
+
+OperationOnSelection::
+        OperationOnSelection( pOperation source, pOperation insideSelection, pOperation outsideSelection, Signal::pOperation operation )
+:   OperationSubOperations( source, "OperationOnSelection" )
+{
+    reset( insideSelection, outsideSelection, operation );
+}
+
+
+std::string OperationOnSelection::
+        name()
+{
+    return operation_->name() + " in " + insideSelection_->name();
+}
+
+
+void OperationOnSelection::
+        reset( pOperation insideSelection, pOperation outsideSelection, Signal::pOperation operation )
+{
+    BOOST_ASSERT(insideSelection);
+    BOOST_ASSERT(outsideSelection);
+    BOOST_ASSERT(operation);
+
+    insideSelection_ = insideSelection;
+    operation_ = operation;
+
+    // Take out the samples affected by selectionFilter
+
+    outsideSelection->source( source_sub_operation_ );
+    insideSelection->source( source_sub_operation_ );
+    operation->source( insideSelection );
+
+    pOperation mergeSelection( new OperationSuperposition( operation, outsideSelection ));
+
+    // Makes reads read from 'mergeSelection'
     Operation::source( mergeSelection );
 }
 

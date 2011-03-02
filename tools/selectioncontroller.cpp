@@ -68,7 +68,7 @@ namespace Tools
         Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
-        connect(ui->actionActionAdd_selection, SIGNAL(triggered()), SLOT(receiveAddSelection()));
+        //connect(ui->actionActionAdd_selection, SIGNAL(triggered()), SLOT(receiveAddSelection()));
         connect(ui->actionActionRemove_selection, SIGNAL(triggered()), SLOT(receiveAddClearSelection()));
         connect(ui->actionCropSelection, SIGNAL(triggered()), SLOT(receiveCropSelection()));
         //connect(ui->actionMoveSelection, SIGNAL(toggled(bool)), SLOT(receiveMoveSelection(bool)));
@@ -172,6 +172,8 @@ namespace Tools
         Signal::pOperation t = _model->project()->head->head_source();
         if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
             t = t->source();
+        if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
+            t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->selection();
         _model->try_set_current_selection( t );
     }
 
@@ -204,16 +206,16 @@ namespace Tools
     }
 
 
-    void SelectionController::
-            receiveAddSelection()
-    {
-        if (!_model->current_selection())
-            return;
+//    void SelectionController::
+//            receiveAddSelection()
+//    {
+//        if (!_model->current_selection())
+//            return;
 
-        receiveAddClearSelection();
+//        receiveAddClearSelection();
 
-        _worker->source()->enabled(false);
-    }
+//        _worker->source()->enabled(false);
+//    }
 
 
     void SelectionController::
@@ -224,7 +226,9 @@ namespace Tools
 
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
 
-        _model->project()->head->appendOperation( o );
+        _model->set_current_selection( Signal::pOperation() );
+        _model->project()->appendOperation( o );
+        _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
         TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
@@ -247,9 +251,11 @@ namespace Tools
         // Create OperationRemoveSection to remove everything else from the stream
         Signal::pOperation remove(new Tools::Support::OperationCrop(
                 Signal::pOperation(), I.coveredInterval() ));
-        _model->project()->head->appendOperation( o );
-        _model->project()->head->appendOperation( remove );
-        _model->all_selections.push_back( o );
+
+        _model->set_current_selection( Signal::pOperation() );
+        _model->project()->appendOperation( o );
+        _model->project()->appendOperation( remove );
+        _model->set_current_selection( o );
 
         TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
     }

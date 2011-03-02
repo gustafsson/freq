@@ -121,7 +121,7 @@ void MatlabController::
                 else
                 {
                     m->invalidate_samples( Signal::Interval(0, project_->head->head_source()->number_of_samples()) );
-                    project_->head->appendOperation( matlaboperation );
+                    project_->appendOperation( matlaboperation );
                 }
             }
         }
@@ -143,7 +143,7 @@ void MatlabController::
     else*/
     {
         Signal::pOperation matlabfilter( new Adapters::MatlabFilter( "matlabfilter" ) );
-        project_->head->appendOperation( matlabfilter );
+        project_->appendOperation( matlabfilter );
 
 #ifndef SAWE_NO_MUTEX
         // Make sure the worker runs in a separate thread

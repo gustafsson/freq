@@ -64,6 +64,12 @@ public:
 
 
     /**
+      Appends 's' to head. If there is a current selection this only applies 's' to that selection.
+      */
+    void appendOperation(Signal::pOperation s);
+
+
+    /**
       Roughly speaking 'layers' and 'head' can be taken as model, 'tools' as
       controller and 'mainWindow' as view.
       */

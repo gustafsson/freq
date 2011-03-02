@@ -13,16 +13,16 @@ namespace Tools
 Reassign::
         Reassign( Sawe::Project* project )
             :
-            _project_chainhead(project->head)
+            project_(project)
 {
-    setupGui(project);
+    setupGui();
 }
 
 
 void Reassign::
-        setupGui(Sawe::Project* project)
+        setupGui()
 {
-    Ui::MainWindow* ui = project->mainWindow()->getItems();
+    Ui::MainWindow* ui = project_->mainWindow()->getItems();
 
     connect(ui->actionTonalizeFilter, SIGNAL(triggered()), SLOT(receiveTonalizeFilter()));
     connect(ui->actionReassignFilter, SIGNAL(triggered()), SLOT(receiveReassignFilter()));
@@ -33,7 +33,7 @@ void Reassign::
         receiveTonalizeFilter()
 {
     Signal::pOperation tonalize( new Filters::Tonalize());
-    _project_chainhead->appendOperation( tonalize );
+    project_->appendOperation( tonalize );
 }
 
 
@@ -41,7 +41,7 @@ void Reassign::
         receiveReassignFilter()
 {
     Signal::pOperation reassign( new Filters::Reassign());
-    _project_chainhead->appendOperation( reassign );
+    project_->appendOperation( reassign );
 }
 
 } // namespace Tools

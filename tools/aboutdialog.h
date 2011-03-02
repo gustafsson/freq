@@ -24,6 +24,8 @@ public:
     ~AboutDialog();
 
 private:
+    virtual void showEvent(QShowEvent *);
+
     Ui::AboutDialog *ui;
 };
 

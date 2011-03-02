@@ -39,24 +39,39 @@ pBuffer OperationCache::
     Interval missing = Intervals(I) - cached;
 
     pBuffer b = readRaw( missing );
+
     if (D) TaskTimer tt("%s: raw [%u, %u] got [%u, %u]",
                  __FUNCTION__,
                  I.first,
                  I.last,
-                 b->getInterval().first,
-                 b->getInterval().last);
-    _cache.put(b);
-
-    cached = _cache.samplesDesc() - _cache.invalid_samples();
-    ok = cached & I;
-    if (ok.first == I.first && ok.count())
+                 b?b->getInterval().first:0,
+                 b?b->getInterval().last:0);
+    if (b)
     {
-        return _cache.readFixedLength( ok );
+        Signal::Interval J = b->getInterval();
+
+        _cache.put(b);
+
+        if (_invalid_returns & J)
+        {
+            Operation::invalidate_samples( _invalid_returns & J );
+            _invalid_returns -= J;
+        }
+
+        cached = _cache.samplesDesc() - _cache.invalid_samples();
+        ok = (cached & I).fetchFirstInterval();
+        if (ok.first == I.first && ok.count())
+        {
+            return _cache.readFixedLength( ok );
+        }
+
+        missing = (Intervals(I) - cached).fetchFirstInterval();
     }
 
-    missing = Intervals(I) - cached;
     _invalid_returns |= missing;
-    return source()->readFixedLength( missing );
+    b = source()->readFixedLength( missing );
+    _cache.put(b);
+    return b;
 }
 
 

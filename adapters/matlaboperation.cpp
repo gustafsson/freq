@@ -349,6 +349,39 @@ void MatlabOperation::
 }
 
 
+bool MatlabOperation::
+        dataAvailable()
+{
+    if (ready_data)
+        return true;
+
+    std::string file = _matlab->isReady();
+    if (!file.empty())
+    {
+        double redundancy=0;
+        ready_data = Hdf5Buffer::loadBuffer( file, &redundancy );
+
+        ::remove( file.c_str());
+
+        if (_settings->chunksize() < 0)
+            redundancy = 0;
+
+        IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
+        _settings->redundant(support);
+
+        Interval J = ready_data->getInterval();
+
+        if ((invalid_samples() - J).empty())
+            _matlab->endProcess(); // Finished with matlab
+
+        invalidate_samples( invalid_returns() );
+
+        return true;
+    }
+
+    return false;
+}
+
 pBuffer MatlabOperation::
         readRaw( const Interval& I )
 {
@@ -359,33 +392,16 @@ pBuffer MatlabOperation::
     }
 
     TaskTimer tt("MatlabOperation::read(%s)", I.toString().c_str() );
-    pBuffer b;
 
     try
     {
-        std::string file = _matlab->isReady();
-        if (!file.empty())
+        if (dataAvailable())
         {
-            double redundancy=0;
-            pBuffer b2 = Hdf5Buffer::loadBuffer( file, &redundancy );
-
-            ::remove( file.c_str());
-
-            IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
-            _settings->redundant(support);
-
-            if (b2)
-            {
-                Interval J = b2->getInterval();
-                invalidate_samples( J );
-                _invalid_returns -= J;
-
-                if ((invalid_samples() - J).empty())
-                    _matlab->endProcess(); // Finished with matlab
-
-                return b2;
-            }
+            Signal::pBuffer b = ready_data;
+            ready_data.reset();
+            return b;
         }
+
 
         if (!_matlab->isWaiting())
         {
@@ -409,18 +425,14 @@ pBuffer MatlabOperation::
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
-            b = source()->readFixedLength( J );
+            Signal::pBuffer b = source()->readFixedLength( J );
 
             string file = _matlab->getTempName();
 
             Hdf5Buffer::saveBuffer( file, *b, support );
 
             _matlab->invoke( file );
-
-            b = BufferSource( b ).readFixedLength( R );
         }
-        else
-            b = source()->readFixedLength( I );
     }
     catch (const std::runtime_error& e)
     {
@@ -429,8 +441,7 @@ pBuffer MatlabOperation::
         throw std::invalid_argument( e.what() ); // invalid_argument doesn't crash the application
     }
 
-    _invalid_returns |= b->getInterval();
-    return b;
+    return pBuffer();
 }
 
 
@@ -440,11 +451,9 @@ void MatlabOperation::
     _cache.clear();
     _matlab.reset();
     _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
+
     if (source())
-    {
-        _invalid_returns = getInterval();
-        invalidate_samples( _invalid_returns );
-    }
+        invalidate_samples( getInterval() );
 }
 
 

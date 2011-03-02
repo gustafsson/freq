@@ -64,7 +64,7 @@ void BrushModel::
         finished_painting()
 {
     if (filter()->images && filter()->images->size())
-        project_->head->appendOperation( filter_ ); // Insert cache layer
+        project_->appendOperation( filter_ ); // Insert cache layer
 
     filter_.reset();
 }

@@ -122,8 +122,8 @@ public:
       Note that affecting_source may not even be called if a simple chain of
       read() is used instead.
 
-      affecting_source will return source()->affecting_source() if enabled()
-      is false since affected_samples() is empty if enabled() is false.
+//      affecting_source will return source()->affecting_source() if enabled()
+//      is false since affected_samples() is empty if enabled() is false.
 
       This also skips wrapper containers that doesn't do anything themselves.
 
@@ -171,8 +171,8 @@ public:
       An operation can be disabled. If it is not enabled any call to read must
       return source()->read();
       */
-    virtual bool enabled() { return _enabled; }
-    virtual void enabled(bool value) { _enabled = value; }
+//    virtual bool enabled() { return _enabled; }
+//    virtual void enabled(bool value) { _enabled = value; }
 
 
     Operation* root();
@@ -183,7 +183,7 @@ public:
       return the parent of 's' from that trace.
       */
     static pOperation findParentOfSource(pOperation start, pOperation source);
-    static Signal::Intervals affecetedDiff(pOperation source1, pOperation source2);
+    static Signal::Intervals affectedDiff(pOperation source1, pOperation source2);
 
     virtual std::string toString();
     virtual std::string parentsToString();
@@ -191,7 +191,7 @@ public:
 private:
     std::set<Operation*> _outputs; /// @see Operation::parent()
     pOperation _source; /// @see Operation::source()
-    bool _enabled; /// @see Operation::enabled()
+    //bool _enabled; /// @see Operation::enabled()
 
     friend class boost::serialization::access;
     Operation() /// only used by deserialization, call Operation(pOperation) instead

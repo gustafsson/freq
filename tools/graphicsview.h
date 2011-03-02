@@ -51,6 +51,7 @@ signals:
 public slots:
 
 private:
+    bool pressed_control_;
     QWidget* layout_widget_;
 };
 

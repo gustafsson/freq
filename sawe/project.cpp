@@ -5,6 +5,7 @@
 #include "adapters/microphonerecorder.h"
 #include "tools/toolfactory.h"
 #include "ui/mainwindow.h"
+#include "tools/support/operation-composite.h"
 
 // Qt
 #include <QtGui/QFileDialog>
@@ -42,6 +43,30 @@ Project::
 
     if (_mainWindow)
         delete _mainWindow;
+}
+
+
+void Project::
+        appendOperation(Signal::pOperation s)
+{
+    Tools::SelectionModel& m = tools().selection_model;
+
+    if (m.current_selection())
+    {
+        Signal::pOperation onselectionOnly(new Tools::Support::OperationOnSelection(
+                Signal::pOperation(),
+                m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ),
+                m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ),
+                s
+                ));
+
+        s = onselectionOnly;
+    }
+
+    this->head->appendOperation( s );
+
+    tools().render_model.renderSignalTarget->findHead( head->chain() )->head_source( head->head_source() );
+    tools().playback_model.playbackTarget->findHead( head->chain() )->head_source( head->head_source() );
 }
 
 

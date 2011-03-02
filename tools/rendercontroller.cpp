@@ -78,12 +78,11 @@ public:
     {
         validateSize();
 
-        Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
-        Signal::Intervals v = Signal::Intervals(I).enlarge( support );
+        // If BlockFilter is a CwtFilter wavelet time support has already been included in I
 
         foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
-            c->invalidate_samples( v );
+            c->invalidate_samples( I );
         }
 
         Operation::invalidate_samples( I );

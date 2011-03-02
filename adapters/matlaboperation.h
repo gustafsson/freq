@@ -138,9 +138,13 @@ public:
     void settings(MatlabFunctionSettings*);
     MatlabFunctionSettings* settings() { return _settings; }
 
+    /// Will call invalidate_samples if new data is available
+    bool dataAvailable();
+
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
     MatlabFunctionSettings* _settings;
+    Signal::pBuffer ready_data;
 
 private:
     friend class boost::serialization::access;

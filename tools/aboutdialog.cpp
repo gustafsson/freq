@@ -21,10 +21,6 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
     ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
     ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
 
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
-    cudaDeviceProp prop = CudaProperties::getCudaDeviceProp();
-
 #ifdef _MSC_VER
     ui->textEdit->setHtml( ui->textEdit->toHtml().replace("file:///usr/share/sonicawe/license/license.txt", "file:///license.txt"));
 #endif
@@ -32,6 +28,22 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
     QPalette p = ui->textEdit->palette();
     p.setColor( QPalette::Base, p.color(QPalette::Window) );
     ui->textEdit->setPalette( p );
+
+    Ui::MainWindow* main_ui = project->mainWindow()->getItems();
+    connect(main_ui->actionAbout, SIGNAL(triggered()), SLOT(show()));
+    connect(ui->buttonBox, SIGNAL(accepted()), SLOT(hide()));
+    connect(ui->buttonBox, SIGNAL(rejected()), SLOT(hide()));
+
+    showEvent(0);
+}
+
+
+void AboutDialog::
+        showEvent(QShowEvent *)
+{
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    cudaDeviceProp prop = CudaProperties::getCudaDeviceProp();
 
     ui->labelSystem->setText(QString(
             "Using GPU (%1 of %2) %3.\n"
@@ -54,11 +66,6 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
                              .arg(CudaProperties::getCudaDriverVersion())
                              .arg(CudaProperties::getCudaRuntimeVersion())
                              );
-
-    Ui::MainWindow* main_ui = project->mainWindow()->getItems();
-    connect(main_ui->actionAbout, SIGNAL(triggered()), SLOT(show()));
-    connect(ui->buttonBox, SIGNAL(accepted()), SLOT(hide()));
-    connect(ui->buttonBox, SIGNAL(rejected()), SLOT(hide()));
 }
 
 

@@ -18,12 +18,14 @@ namespace Tools
 
 GraphicsView::
         GraphicsView(QGraphicsScene* scene)
-    :   QGraphicsView(scene)
+    :   QGraphicsView(scene),
+        pressed_control_(false)
 {
     setWindowTitle(tr("Sonic AWE"));
     //setRenderHints(QPainter::SmoothPixmapTransform);
     //setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::TextAntialiasing);
+    setMouseTracking( true );
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -102,6 +104,8 @@ void GraphicsView::keyPressEvent(QKeyEvent *event) {
         return;
     }
 
+    pressed_control_ = true;
+
     unsigned u = toolWindows();
     for (unsigned i=0; i<u; ++i)
     {
@@ -117,6 +121,11 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
         event->setAccepted( false );
         return;
     }
+
+    if (!pressed_control_ )
+        return;
+
+    pressed_control_ = false;
 
     unsigned u = toolWindows();
     for (unsigned i=0; i<u; ++i)
@@ -136,6 +145,10 @@ void GraphicsView::mousePressEvent( QMouseEvent* e )
 
 void GraphicsView::mouseMoveEvent(QMouseEvent *e)
 {
+    if (!hasFocus())
+    {
+        setFocus();
+    }
     DEBUG_EVENTS TaskTimer tt("GraphicsView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::mouseMoveEvent(e);
     DEBUG_EVENTS TaskTimer("GraphicsView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();

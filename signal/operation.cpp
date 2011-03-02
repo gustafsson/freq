@@ -7,7 +7,7 @@
 namespace Signal {
 
 Operation::Operation(pOperation s )
-:   _enabled( true ) // TODO remove _enabled
+//:   _enabled( true ) // TODO remove _enabled
 {
     source( s );
 }
@@ -36,8 +36,7 @@ void Operation::
 Signal::Intervals Operation::
         affected_samples()
 {
-    IntervalType it = number_of_samples();
-    return (_enabled && it)?Intervals(0, it ):Intervals();
+    return getInterval();
 }
 
 
@@ -129,7 +128,7 @@ pOperation Operation::
 
 
 Signal::Intervals Operation::
-        affecetedDiff(pOperation source1, pOperation source2)
+        affectedDiff(pOperation source1, pOperation source2)
 {
     Signal::Intervals new_data( 0, source1->number_of_samples() );
     Signal::Intervals old_data( 0, source2->number_of_samples() );
@@ -142,6 +141,9 @@ Signal::Intervals Operation::
 
     invalid &= source1->affected_samples_until( source2 );
     invalid &= source2->affected_samples_until( source1 );
+
+    invalid |= source1->affected_samples();
+    invalid |= source2->affected_samples();
 
     return invalid;
 }
@@ -169,7 +171,7 @@ std::string Operation::
     {
         ss << std::endl;
         if (_outputs.size())
-            ss << i << ": ";
+            ss << i++ << ": ";
         ss << p->parentsToString();
     }
     return ss.str();

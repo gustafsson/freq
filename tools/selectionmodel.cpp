@@ -40,7 +40,7 @@ void SelectionModel::
 void SelectionModel::
         try_set_current_selection(Signal::pOperation o)
 {
-    TaskInfo ti("Trying to set %s:%s as current selection", vartype(*o.get()).c_str(), o->name().c_str());
+    TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), o->name().c_str());
 
     try
     {

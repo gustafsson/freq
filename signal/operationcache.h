@@ -31,13 +31,19 @@ public:
     virtual Intervals invalid_returns();
 
     /**
-      Function to read from on a cache miss
+      Function to read from on a cache miss. Doesn't have to return the data
+      that was actually requested for. It may also return null if the data is
+      not ready yet.
+
+      If readRaw ever returns null there must be a watchdog somewhere to
+      ensure that invalidate_samples(I) are called when data is made available.
       */
     virtual pBuffer readRaw( const Interval& I ) = 0;
 
 protected:
     SinkSource _cache;
 
+private:
     /**
       OperationCache populates this when readRaw doesn't return the expected interval.
       It is up to an implementation to use this information somehow, for
@@ -51,7 +57,7 @@ class OperationCacheLayer: public OperationCache
 {
 public:
     OperationCacheLayer( pOperation source ):OperationCache(source){}
-    virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
+    virtual Signal::Intervals affected_samples() { return source()->affected_samples(); }
     virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
 
 private:

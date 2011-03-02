@@ -39,8 +39,8 @@
 #define TIME_ICWT if(0)
 //#define TIME_ICWT
 
-//#define DEBUG_CWT if(0)
-#define DEBUG_CWT
+#define DEBUG_CWT if(0)
+//#define DEBUG_CWT
 
 //#define CWT_NOBINS // Also change cwtfilter.cpp
 

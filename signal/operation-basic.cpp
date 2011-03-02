@@ -164,8 +164,8 @@ OperationSuperposition::
 :   Operation( source ),
     _source2( source2 )
 {
-    if (Operation::source()->sample_rate() != _source2->sample_rate())
-        throw std::invalid_argument("source->sample_rate() != source2->sample_rate()");
+//    if (Operation::source()->sample_rate() != _source2->sample_rate())
+//        throw std::invalid_argument("source->sample_rate() != source2->sample_rate()");
 }
 
 pBuffer OperationSuperposition::

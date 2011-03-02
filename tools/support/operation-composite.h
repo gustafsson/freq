@@ -26,7 +26,7 @@ class OperationSubOperations : public Signal::Operation {
 public:
     Signal::pOperation subSource() { return Operation::source(); }
 
-    /// this do skip all contained suboperations
+    /// this skips all contained suboperations
     virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
     virtual void source(Signal::pOperation v) { source_sub_operation_->source(v); }
 
@@ -55,7 +55,7 @@ protected:
 
   This happens for instance with selection tools. The selection filter has a
   specific location in the Operation tree but when the user changes the
-  selection the implementatino might change from a Rectangle to a
+  selection the implementation might change from a Rectangle to a
   OperationOtherSilent and back again.
  */
 class OperationContainer: public OperationSubOperations
@@ -210,6 +210,23 @@ public:
 
     void reset( Signal::pOperation selectionFilter, long sampleShift, float freqDelta );
 };
+
+
+class OperationOnSelection: public OperationSubOperations {
+public:
+    OperationOnSelection( Signal::pOperation source, Signal::pOperation insideSelection, Signal::pOperation outsideSelection, Signal::pOperation operation );
+
+    virtual std::string name();
+
+    void reset( Signal::pOperation insideSelection, Signal::pOperation outsideSelection, Signal::pOperation operation );
+
+    Signal::pOperation selection() { return insideSelection_; }
+
+private:
+    Signal::pOperation insideSelection_;
+    Signal::pOperation operation_;
+};
+
 
 } // namespace Support
 } // namespace Tools

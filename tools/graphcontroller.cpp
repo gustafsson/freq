@@ -97,7 +97,8 @@ namespace Tools
 
                 // Set the tip
                 chain->tip_source( src );
-                firstmoved->invalidate_samples(Signal::Interval(0, firstmoved->number_of_samples()));
+                if (firstmoved)
+                    firstmoved->invalidate_samples(firstmoved->getInterval());
             }
         }
     };
@@ -224,7 +225,7 @@ namespace Tools
         Signal::pOperation o = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), currentItem->operation );
         if (o)
         {
-            o->invalidate_samples( Signal::Operation::affecetedDiff(o->source(), currentSource ));
+            o->invalidate_samples( Signal::Operation::affectedDiff(o->source(), currentSource ));
 
             o->source( currentSource );
 
