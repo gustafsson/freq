@@ -38,6 +38,9 @@ void MatlabController::
 {
     ::Ui::MainWindow* ui = project->mainWindow()->getItems();
 
+    connect(ui->actionToogleMatlabToolBox, SIGNAL(toggled(bool)), ui->toolBarMatlab, SLOT(setVisible(bool)));
+    connect(ui->toolBarMatlab, SIGNAL(visibleChanged(bool)), ui->actionToogleMatlabToolBox, SLOT(setChecked(bool)));
+
     connect(ui->actionMatlabOperation, SIGNAL(triggered()), SLOT(receiveMatlabOperation()));
     connect(ui->actionMatlabFilter, SIGNAL(triggered()), SLOT(receiveMatlabFilter()));
 

@@ -2,7 +2,7 @@
 
 // tools
 #include "support/sinksignalproxy.h"
-#include "signal/worker.h"
+#include "support/toolbar.h"
 
 // ui
 #include "ui/comboboxaction.h"
@@ -20,6 +20,7 @@
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
+#include "signal/worker.h"
 
 // gpumisc
 #include <CudaException.h>
@@ -418,7 +419,7 @@ void RenderController::
         setupGui()
 {
     Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    toolbar_render = new QToolBar(main);
+    toolbar_render = new Support::ToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
     toolbar_render->setEnabled(true);
     toolbar_render->setContextMenuPolicy(Qt::NoContextMenu);
@@ -426,6 +427,7 @@ void RenderController::
     main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
 
     connect(main->getItems()->actionToggleTransformToolBox, SIGNAL(toggled(bool)), toolbar_render, SLOT(setVisible(bool)));
+    connect((Support::ToolBar*)toolbar_render, SIGNAL(visibleChanged(bool)), main->getItems()->actionToggleTransformToolBox, SLOT(setChecked(bool)));
 
 
     // Find Qt Creator managed actions

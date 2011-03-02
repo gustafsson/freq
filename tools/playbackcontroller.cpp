@@ -35,6 +35,9 @@ PlaybackController::
 void PlaybackController::
         setupGui( RenderView* render_view )
 {
+    connect(ui_items_->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui_items_->toolBarPlay, SLOT(setVisible(bool)));
+    connect(ui_items_->toolBarPlay, SIGNAL(visibleChanged(bool)), ui_items_->actionToggleTimeControlToolBox, SLOT(setChecked(bool)));
+
     // User interface buttons
     connect(ui_items_->actionPlaySelection, SIGNAL(toggled(bool)), SLOT(receivePlaySelection(bool)));
     connect(ui_items_->actionPlaySection, SIGNAL(toggled(bool)), SLOT(receivePlaySection(bool)));

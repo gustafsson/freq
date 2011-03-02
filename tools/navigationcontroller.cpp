@@ -305,6 +305,11 @@ void NavigationController::
         connectGui()
 {
     Ui::MainWindow* ui = _view->model->project()->mainWindow()->getItems();
+
+    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
+    connect(ui->toolBarOperation, SIGNAL(visibleChanged(bool)), ui->actionToggleNavigationToolBox, SLOT(setChecked(bool)));
+
+
     connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), this, SLOT(receiveToggleNavigation(bool)));
     connect(ui->actionZoom, SIGNAL(toggled(bool)), this, SLOT(receiveToggleZoom(bool)));
     connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateNavigation, SLOT(setChecked(bool)));

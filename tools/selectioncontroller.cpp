@@ -6,6 +6,7 @@
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "support/operation-composite.h"
+#include "support/toolbar.h"
 
 #include "selections/ellipsecontroller.h"
 #include "selections/ellipsemodel.h"
@@ -80,13 +81,15 @@ namespace Tools
         ui->actionMoveSelection->setEnabled( false );
         ui->actionMoveSelectionTime->setEnabled( false );
 
-        QToolBar* toolBarTool = new QToolBar(main);
+        Support::ToolBar* toolBarTool = new Support::ToolBar(main);
         toolBarTool->setObjectName(QString::fromUtf8("toolBarSelectionController"));
         toolBarTool->setEnabled(true);
         toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
         toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
         main->addToolBar(Qt::TopToolBarArea, toolBarTool);
+
         connect(ui->actionToggleSelectionToolBox, SIGNAL(toggled(bool)), toolBarTool, SLOT(setVisible(bool)));
+        connect(toolBarTool, SIGNAL(visibleChanged(bool)), ui->actionToggleSelectionToolBox, SLOT(setChecked(bool)));
 
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );

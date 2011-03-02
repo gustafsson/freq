@@ -16,6 +16,7 @@
 #include <QDockWidget>
 #include <QWheelEvent>
 #include <QHBoxLayout>
+#include <QSettings>
 
 // std
 #include <stdio.h>
@@ -42,6 +43,11 @@ TimelineController::
         ~TimelineController()
 {
     TaskInfo("%s", __FUNCTION__);
+    if (!dock)
+    {
+        QSettings settings("REEP", "Sonic AWE");
+        settings.setValue("TimelineController visible", view->tool_selector->parentTool()->isVisible());
+    }
 }
 
 
@@ -56,10 +62,11 @@ void TimelineController::
 void TimelineController::
         setupGui()
 {
+    Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
+
     bool create_dock_window = false;
     if (create_dock_window)
     {
-        Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
         dock = new QDockWidget(MainWindow);
         dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
         dock->setMinimumSize(QSize(42, 79));
@@ -88,7 +95,6 @@ void TimelineController::
         connect(view->_render_view->graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
                 view, SLOT(layoutChanged(QBoxLayout::Direction)) );
 
-        Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
         embeddedVisibilityChanged(MainWindow->getItems()->actionToggleTimelineWindow->isChecked());
         connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), SLOT(embeddedVisibilityChanged(bool)));
     }
@@ -102,6 +108,13 @@ void TimelineController::
     connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
     connect(view, SIGNAL(hideMe()), SLOT(hideTimeline()));
+
+    if (!dock)
+    {
+        QSettings settings("REEP", "Sonic AWE");
+        MainWindow->getItems()->actionToggleTimelineWindow->setChecked(
+                settings.value("TimelineController visible").toBool());
+    }
 }
 
 

@@ -79,8 +79,6 @@ void SaweMainWindow::
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
 
     //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
-    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
-    connect(ui->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui->toolBarPlay, SLOT(setVisible(bool)));
 
     // TODO move into each tool
     this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
