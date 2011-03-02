@@ -21,9 +21,11 @@ pChunk Cepstrum::
 
     Signal::IntervalType N = buffer->number_of_samples();
 
+    float arbitrary_normalization = 1000;
     for(Signal::IntervalType i=0; i<N; ++i)
     {
         output[i] = logf(1+fabsf(input[i].x * input[i].x + input[i].y * input[i].y))/chunk_size();
+        output[i] *= arbitrary_normalization;
     }
 
     pChunk cepstra = stft(buffer);
