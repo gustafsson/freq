@@ -401,6 +401,7 @@ pChunk Cwt::
         // (except for numerical errors)
         intermediate_wt->sample_rate = ldexp(ft->original_sample_rate, -(int)half_sizes);
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
+        intermediate_wt->order = Chunk::Order_row_major;
 
         unsigned last_scale = first_scale + n_scales-1;
         intermediate_wt->freqAxis.setLogarithmic(
@@ -461,8 +462,6 @@ pChunk Cwt::
         BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->n_valid_samples);
 
         intermediate_wt->n_valid_samples = ft->n_valid_samples - time_support - intermediate_wt->first_valid_sample;
-
-        intermediate_wt->order = Chunk::Order_row_major;
 
         if (0 /* cpu version */ ) {
             TIME_CWTPART TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
