@@ -198,7 +198,7 @@ void Fft::
         TIME_STFT TaskTimer tt("Resizing buffers");
         q.resize(2*N + vector_length_test);
         w.resize(N/2 + vector_length_test);
-        ip.resize(2+(1<<(int)(log2(N+0.5)-1)) + vector_length_test);
+        ip.resize(2+(1<<(int)(log2f(N+0.5)-1)) + vector_length_test);
 
         if (vector_length_test)
         {
@@ -376,7 +376,7 @@ Tfr::pChunk Stft::
 
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
-    _chunk_size = 1 << (unsigned)floor(log2((float)preferred_size)+0.5);
+    _chunk_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
     return _chunk_size;
 
 //    if (_ok_chunk_sizes.empty())

@@ -47,8 +47,10 @@ void wtCompute(
 //    exp(log(a)*j) = fs/2/maxHz
 //    j = log(fs/2/maxHz) / log(a)
 //    const float log2_a = log2f(2.f) / v = 1.f/v; // a = 2^(1/v)
-    float j = (log2(fs/2) - log2(maxHz)) * scales_per_octave;
+    float j = (log2f(fs/2) - log2f(maxHz)) * scales_per_octave;
     float first_scale = j;
+
+    j = floor(j+0.5f);
 
     if (j<0) {
         printf("j = %g, maxHz = %g, fs = %g\n", j, maxHz, fs);

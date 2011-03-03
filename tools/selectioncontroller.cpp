@@ -177,6 +177,13 @@ namespace Tools
             t = t->source();
         if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
             t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->selection();
+
+        if (t && t == _model->current_selection())
+        {
+            // To reset the same selection again, first clear the current selection
+            _model->set_current_selection( Signal::pOperation() );
+        }
+
         _model->try_set_current_selection( t );
     }
 
@@ -328,7 +335,7 @@ namespace Tools
 
 
     void SelectionController::
-            receiveCurrentSelection(int index, bool enabled)
+            receiveCurrentSelection(int /*index*/, bool /*enabled*/)
     {
         throw std::logic_error("receiveCurrentSelection: Not implemented");
         //setSelection(index, enabled);
@@ -336,7 +343,7 @@ namespace Tools
 
 
     void SelectionController::
-            receiveFilterRemoval(int index)
+            receiveFilterRemoval(int /*index*/)
     {
         throw std::logic_error("receiveFilterRemoval: Not implemented");
         //removeFilter(index);

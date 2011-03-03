@@ -56,7 +56,7 @@ public:
 
         this->max_frequency_scalar = max_frequency_scalar;
         this->min_hz = min_hz_inclusive;
-        this->f_step = log2( max_hz_inclusive ) - log2( min_hz_inclusive );
+        this->f_step = log2f( max_hz_inclusive ) - log2f( min_hz_inclusive );
         this->f_step /= max_frequency_scalar;
     }
 

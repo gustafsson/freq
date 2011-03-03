@@ -646,7 +646,7 @@ void Cwt::
 unsigned Cwt::
         nScales(float fs) const
 {
-    float number_of_octaves = log2(get_max_hz(fs)) - log2(_min_hz);
+    float number_of_octaves = log2f(get_max_hz(fs)) - log2f(_min_hz);
     return 1 + (unsigned)(number_of_octaves * scales_per_octave());
 }
 
@@ -702,7 +702,7 @@ float Cwt::
         compute_frequency2( float fs, float normalized_scale ) const
 {
     float start = get_max_hz(fs);
-    float steplogsize = log2(get_min_hz(fs)) - log2(get_max_hz(fs));
+    float steplogsize = log2f(get_min_hz(fs)) - log2f(get_max_hz(fs));
 
     float hz = start * exp2((1-normalized_scale) * steplogsize);
     return hz;
@@ -823,7 +823,7 @@ unsigned Cwt::
 
     float v = _scales_per_octave;
     float log2_a = 1.f/v;
-    float bin = log2_a * j - log2( 1.f + _wavelet_scale_suppport/(2*M_PI*sigma()) );
+    float bin = log2_a * j - log2f( 1.f + _wavelet_scale_suppport/(2*M_PI*sigma()) );
 
     if (bin < 0)
         bin = 0;
