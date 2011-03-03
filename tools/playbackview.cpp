@@ -63,13 +63,14 @@ void PlaybackView::
         return;
     }
 
+    if (!model->playback()->isPaused()) {
+        update();
+    }
+
     // Playback has recently stopped
     if (model->playback()->hasReachedEnd()) {
         emit playback_stopped();
-    }
-
-    if (!model->playback()->isPaused()) {
-        update();
+        return;
     }
 
     _playbackMarker = model->playback()->time();
@@ -78,11 +79,6 @@ void PlaybackView::
     {
         Tools::RenderView& r = *_render_view;
         r.model->_qx = _playbackMarker;
-    }
-
-    // Playback has reached end but continues with zeros to avoid clicks
-    if (model->playback()->hasReachedEnd()) {
-        return;
     }
 }
 
