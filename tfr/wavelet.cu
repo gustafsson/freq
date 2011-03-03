@@ -23,7 +23,7 @@ void setError(const char* staticErrorMessage) {
 
 #define TOSTR2(x) #x
 #define TOSTR(x) TOSTR2(x)
-#define setError(x) setError(TOSTR(__FUNCTION__) ": " x)
+#define setError(x) setError(__FUNCTION__ ": " x)
 
 void wtCompute(
         float2* in_waveform_ft,

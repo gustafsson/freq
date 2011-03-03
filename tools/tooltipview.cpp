@@ -76,7 +76,6 @@ void TooltipView::
     glEnd();
 
     glLineWidth(1.6f);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINE_STRIP);
         glVertex3f( x1, 0, p.scale );
         glVertex3f( x1, y, p.scale );

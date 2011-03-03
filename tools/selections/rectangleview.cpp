@@ -67,7 +67,6 @@ void RectangleView::
     glEnd();
 
     glLineWidth(1.6f);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINE_LOOP);
         glVertex3f( x1, y, z1 );
         glVertex3f( x2, y, z1 );
@@ -199,7 +198,6 @@ void RectangleView::
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_QUADS);
     if (x1>0) {
         glVertex3f( x1, y, z1 );

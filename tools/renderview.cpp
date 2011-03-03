@@ -949,7 +949,7 @@ void RenderView::
         drawCollections( _renderview_fbo.get(), 1 - orthoview );
 
         last_ysize = model->renderer->last_ysize;
-        glScalef(1, last_ysize, 1); // global effect on all tools
+        glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
 
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("emit painting");

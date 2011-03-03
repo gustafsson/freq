@@ -61,7 +61,6 @@ void SplineView::
         glEnd();
 
         glLineWidth( 1.6f );
-        glPolygonOffset( 1.f, 1.f );
         glBegin( model_->drawing ? GL_LINE_STRIP : GL_LINE_LOOP );
             for (unsigned i=0; i<model_->v.size(); ++i )
             {

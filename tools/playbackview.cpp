@@ -118,7 +118,6 @@ void PlaybackView::
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_QUADS);
         glVertex3f( t, 0, z1 );
         glVertex3f( t, 0, z2 );
@@ -166,7 +165,6 @@ bool PlaybackView::
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_QUADS);
         glVertex3f( t, 0, z1 );
         glVertex3f( t, 0, z2 );
