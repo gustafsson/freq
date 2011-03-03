@@ -43,7 +43,7 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     connect( ui->chunksize, SIGNAL(valueChanged(int)), SLOT(invalidateAllSamples()));
     connect( ui->redundant, SIGNAL(valueChanged(int)), SLOT(invalidateAllSamples()));
 
-    QSettings settings("REEP", "Sonic AWE");
+    QSettings settings;
     ui->scriptname->setText(        settings.value("MatlabOperationWidget scriptname").toString() );
     ui->computeInOrder->setChecked( settings.value("MatlabOperationWidget computeInOrder" ).toBool());
     ui->chunksize->setValue(        settings.value("MatlabOperationWidget chunksize" ).toInt());
@@ -230,7 +230,7 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         hideEvent ( QHideEvent * /*event*/ )
 {
-    QSettings settings("REEP", "Sonic AWE");
+    QSettings settings;
     // this->saveGeometry() doesn't save child widget states
     settings.setValue("MatlabOperationWidget scriptname", ui->scriptname->text() );
     settings.setValue("MatlabOperationWidget computeInOrder", ui->computeInOrder->isChecked() );

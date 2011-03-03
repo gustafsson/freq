@@ -144,7 +144,7 @@ pProject Project::
     }
 
 
-    QSettings settings("REEP", "Sonic AWE");
+    QSettings settings;
     QStringList recent_files = settings.value("recent files").toStringList();
     QFileInfo fi(QString::fromStdString( filename ));
     fi.makeAbsolute();
@@ -237,7 +237,7 @@ void Project::
     defaultGeometry = _mainWindow->saveGeometry();
     defaultState = _mainWindow->saveState();
 
-    QSettings settings("REEP", "Sonic AWE");
+    QSettings settings;
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
 }
@@ -255,10 +255,12 @@ void Project::
 void Project::
         restoreDefaultLayout()
 {
-    QSettings settings("REEP", "Sonic AWE");
-    settings.clear();
+    QSettings settings;
     _mainWindow->restoreGeometry(defaultGeometry);
     _mainWindow->restoreState(defaultState);
+    settings.clear();
+    settings.setValue("geometry", _mainWindow->saveGeometry());
+    settings.setValue("windowState", _mainWindow->saveState());
 }
 
 

@@ -124,7 +124,7 @@ void SaweMainWindow::
 
 
     {
-        QSettings settings("REEP", "Sonic AWE");
+        QSettings settings;
         QStringList recent_files = settings.value("recent files").toStringList();
         ui->menu_Recent_files->setEnabled( !recent_files.empty() );
         int i = 0;
@@ -238,7 +238,7 @@ void SaweMainWindow::
 
     {
         TaskInfo ti("Saving settings");
-        QSettings settings("REEP", "Sonic AWE");
+        QSettings settings;
         settings.setValue("geometry", saveGeometry());
         settings.setValue("windowState", saveState());
     }

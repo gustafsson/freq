@@ -70,6 +70,10 @@ Application::
     default_record_device(-1),
     shared_glwidget_(new QGLWidget(QGLFormat(QGL::SampleBuffers)))
 {
+    setOrganizationName("REEP");
+    setOrganizationDomain("sonicawe.com");
+    setApplicationName("Sonic AWE");
+
     _version_string = "Sonic AWE - development snapshot\n";
 
     //QDateTime now = QDateTime::currentDateTime();

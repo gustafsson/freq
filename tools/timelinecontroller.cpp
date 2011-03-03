@@ -45,7 +45,7 @@ TimelineController::
     TaskInfo("%s", __FUNCTION__);
     if (!dock)
     {
-        QSettings settings("REEP", "Sonic AWE");
+        QSettings settings;
         settings.setValue("TimelineController visible", view->tool_selector->parentTool()->isVisible());
     }
 }
@@ -111,7 +111,7 @@ void TimelineController::
 
     if (!dock)
     {
-        QSettings settings("REEP", "Sonic AWE");
+        QSettings settings;
         MainWindow->getItems()->actionToggleTimelineWindow->setChecked(
                 settings.value("TimelineController visible").toBool());
     }
