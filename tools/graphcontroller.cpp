@@ -325,6 +325,7 @@ namespace Tools
         operationsTree->header()->setVisible(false);
         operationsTree->setSelectionMode( QAbstractItemView::SingleSelection );
         QAction* removeCurrentItem = new QAction("Remove", MainWindow);
+        removeCurrentItem->setShortcut(Qt::Key_Backspace);
         operationsTree->addAction(removeCurrentItem);
         connect(removeCurrentItem, SIGNAL(triggered()), SLOT(removeSelected()));
         //operationsTree->header()->setDefaultSectionSize(60);
