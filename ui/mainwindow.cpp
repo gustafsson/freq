@@ -222,11 +222,13 @@ void SaweMainWindow::slotDeleteSelection(void)
 void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
-    if (project->isModified() && 0==save_changes_msgbox_)
+    if (project->isModified())
     {
-        askSaveChanges();
-        e->ignore();
-        return;
+        if (!askSaveChanges())
+        {
+            e->ignore();
+            return;
+        }
     }
 
     e->accept();
@@ -250,27 +252,23 @@ void SaweMainWindow::
 }
 
 
-void SaweMainWindow::
+bool SaweMainWindow::
         askSaveChanges()
 {
     TaskInfo("Save current state of the project?");
-    save_changes_msgbox_ = new QMessageBox("Save Changes", "Save current state of the project?",
+    QMessageBox save_changes_msgbox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
-    save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
-    save_changes_msgbox_->setDetailedText( QString::fromStdString( "Current state:\n" + project->layers.toString()) );
-    save_changes_msgbox_->open( this, SLOT(saveChangesAnswer(QAbstractButton *)));
-}
+    save_changes_msgbox.setDetailedText( QString::fromStdString( "Current state:\n" + project->layers.toString()) );
+    save_changes_msgbox.exec();
+    QAbstractButton * button = save_changes_msgbox.clickedButton();
+    TaskInfo("Save changes answer: %s, %d",
+             button->windowTitle(),
+             (int)save_changes_msgbox.buttonRole(button));
 
-
-void SaweMainWindow::
-        saveChangesAnswer( QAbstractButton * button )
-{
-    TaskInfo("Save changes answer: %d", (int)save_changes_msgbox_->buttonRole( button ));
-    switch ( save_changes_msgbox_->buttonRole( button ) )
+    switch ( save_changes_msgbox.buttonRole(button) )
     {
     case QMessageBox::DestructiveRole:
-        close();
-        break;
+        return true; // close
 
     case QMessageBox::AcceptRole:
         if (!project->save())
@@ -278,12 +276,11 @@ void SaweMainWindow::
             break;
         }
 
-        close();
-        break;
+        return true; // close
 
     case QMessageBox::RejectRole:
     default:
-        break;
+        return false; // abort
     }
 }
 
