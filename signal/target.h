@@ -2,7 +2,7 @@
 #define LAYERS_H
 
 #include "chain.h"
-#include "rewirechannels.h"
+#include "reroutechannels.h"
 
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -94,7 +94,7 @@ public:
       Select which channels that gets to propagate through with anything else
       than silence.
       */
-    RewireChannels* channels() const;
+    RerouteChannels* channels() const;
 
     /**
       Will process all active channels (as wired by channels()) and return the
@@ -116,7 +116,7 @@ private:
 
     std::string name_;
     Signal::pOperation post_sink_;
-    Signal::pOperation rewire_channels_;
+    Signal::pOperation reroute_channels_;
     Signal::pOperation forall_channels_;
     Signal::pOperation update_view_;
     Signal::pOperation read_;

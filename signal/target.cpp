@@ -196,13 +196,13 @@ Target::
             :
             name_( name ),
             post_sink_( new PostSink ),
-            rewire_channels_( new RewireChannels(pOperation()) ),
+            reroute_channels_( new RerouteChannels(pOperation()) ),
             forall_channels_( new ForAllChannelsOperation(pOperation()) ),
             update_view_( new UpdateView( all_layers->project(), name )),
             add_as_channels_(false),
             all_layers_(all_layers)
 {
-    post_sink_->source( rewire_channels_ );
+    post_sink_->source( reroute_channels_ );
     forall_channels_->source( post_sink_ );
     update_view_->source( forall_channels_ );
     read_ = update_view_;
@@ -289,10 +289,10 @@ PostSink* Target::
 }
 
 
-RewireChannels* Target::
+RerouteChannels* Target::
         channels() const
 {
-    return dynamic_cast<RewireChannels*>(rewire_channels_.get());
+    return dynamic_cast<RerouteChannels*>(reroute_channels_.get());
 }
 
 
@@ -338,7 +338,7 @@ void Target::
         }
     }
 
-    rewire_channels_->source( s );
+    reroute_channels_->source( s );
 
     DEBUG_Target TaskInfo("Target::rebuildSource created\n%s", read_->toString().c_str());
 }

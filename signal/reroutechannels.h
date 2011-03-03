@@ -1,5 +1,5 @@
-#ifndef REWIRECHANNELS_H
-#define REWIRECHANNELS_H
+#ifndef REROUTECHANNELS_H
+#define REROUTECHANNELS_H
 
 #include "operation.h"
 
@@ -9,7 +9,7 @@
 
 namespace Signal {
 
-class RewireChannels : public Signal::Operation, public boost::noncopyable
+class RerouteChannels : public Signal::Operation, public boost::noncopyable
 {
 public:
     typedef unsigned SourceChannel;
@@ -18,7 +18,7 @@ public:
 
     static const SourceChannel NOTHING;
 
-    RewireChannels(pOperation source);
+    RerouteChannels(pOperation source);
 
     virtual pBuffer read( const Interval& I );
     virtual unsigned num_channels();
@@ -68,4 +68,4 @@ private:
 
 } // namespace Signal
 
-#endif // REWIRECHANNELS_H
+#endif // REROUTECHANNELS_H
