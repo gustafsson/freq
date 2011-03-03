@@ -47,6 +47,7 @@ void PlaybackView::
 void PlaybackView::
         locatePlaybackMarker()
 {
+    float prev_pos = _playbackMarker;
     _playbackMarker = -1;
 
     // No selection
@@ -59,7 +60,8 @@ void PlaybackView::
     }
 
     // Playback has stopped/or hasn't started
-    if (model->playback()->isStopped()) {
+    bool is_stopped = model->playback()->isStopped();
+    if (is_stopped && 0>prev_pos) {
         return;
     }
 
@@ -68,7 +70,7 @@ void PlaybackView::
     }
 
     // Playback has recently stopped
-    if (model->playback()->hasReachedEnd()) {
+    if (is_stopped) {
         emit playback_stopped();
         return;
     }

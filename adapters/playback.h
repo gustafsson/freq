@@ -23,6 +23,7 @@ public:
     virtual Signal::Intervals invalid_samples() { return _data.invalid_samples(); }
     virtual void invalidate_samples( const Signal::Intervals& s ) { _data.invalidate_samples( s ); }
 
+    void stop();
     void reset();
     void onFinished();
 

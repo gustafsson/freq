@@ -210,6 +210,11 @@ void PlaybackController::
         receiveStop();
 
     ui_items_->actionPlaySelection->setEnabled( 0 != _view->model->selection->current_selection() );
+
+    std::vector<Signal::pOperation> empty;
+    model()->playbackTarget->post_sink()->sinks( empty );
+    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
+    model()->adapter_playback.reset();
 }
 
 
@@ -238,10 +243,7 @@ void PlaybackController::
         receiveStop()
 {
     if (model()->playback())
-        model()->playback()->reset();
-    std::vector<Signal::pOperation> empty;
-    model()->playbackTarget->post_sink()->sinks( empty );
-    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
+        model()->playback()->stop();
 
     ui_items_->actionPlaySelection->setChecked( false );
     ui_items_->actionPlaySection->setChecked( false );

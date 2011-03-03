@@ -53,7 +53,7 @@ Intervals Operation::
 Intervals Operation::
         zeroed_samples()
 {
-    return Intervals();
+    return Intervals(number_of_samples(), Interval::IntervalType_MAX);
 }
 
 
@@ -67,10 +67,17 @@ std::string Operation::
 pBuffer Operation::
         read( const Interval& I )
 {
-    if (Intervals(I) - zeroed_samples())
+    if (_source && Intervals(I) - zeroed_samples())
         return _source->read( I );
 
     return zeros(I);
+}
+
+
+IntervalType Operation::
+        number_of_samples()
+{
+    return _source ? _source->number_of_samples() : 0;
 }
 
 

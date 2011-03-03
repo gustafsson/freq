@@ -38,13 +38,19 @@ public:
 
     /**
       Overloaded from Source. The default implementation of read is to read
-      from source().
+      from _source. Or return zeros if _source is null.
 
       Note that read doesn't have to be called. See affected_samples().
       */
     virtual pBuffer read( const Interval& I );
-    virtual float sample_rate() { return _source->sample_rate(); }  /// @see read(const Interval&)
-    virtual IntervalType number_of_samples() { return _source->number_of_samples(); } /// @see read(const Interval&)
+
+    /**
+      sample_rate is invalid to call if _source is null.
+
+      @see read(const Interval&)
+      */
+    virtual float sample_rate() { return _source->sample_rate(); }
+    virtual IntervalType number_of_samples(); /// @see read(const Interval&)
 
     virtual unsigned num_channels() { return _source->num_channels(); }
     virtual void set_channel(unsigned c) { if(_source) _source->set_channel(c); }

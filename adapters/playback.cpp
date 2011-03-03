@@ -105,7 +105,8 @@ float Playback::
     if (_data.empty())
         return 0.f;
 
-    if (isPaused())
+    // if !isPaused() the stream has started, but it hasn't read anything yet if this holds, and _startPlay_timestamp is not set
+    if (isPaused() || _playback_itr == _data.first_buffer()->sample_offset )
     {
         return _playback_itr / sample_rate();
     }
@@ -191,28 +192,41 @@ void Playback::
 
 
 void Playback::
-        reset()
+        stop()
 {
     if (streamPlayback)
     {
         // streamPlayback->stop will invoke a join with readBuffer
         if (!streamPlayback->isStopped())
             streamPlayback->stop();
-
-        streamPlayback.reset();
     }
+}
 
-    _data.clear();
+
+void Playback::
+        reset()
+{
+    stop();
+
+    if (streamPlayback)
+        streamPlayback.reset();
+
     _playback_itr = 0;
     _max_found = 1;
     _min_found = -1;
+
+    _data.clear();
 }
 
 
 bool Playback::
         deleteMe()
 {
-    return _data.deleteMe() && isStopped();
+    // Keep cache
+    return false;
+
+    // Discard cache
+    //return _data.deleteMe() && isStopped();
 }
 
 
@@ -278,14 +292,23 @@ bool Playback::
         isStopped()
 {
     //return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
-    return streamPlayback ? !streamPlayback->isActive() && !isPaused() && _data.empty(): true;
+    bool isActive = streamPlayback ? streamPlayback->isActive() : false;
+    bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
+    bool paused = isPaused();
+    bool empty = _data.empty();
+    return streamPlayback ? !isActive && !paused : true;
+    //return streamPlayback ? !isActive() && !paused() && _data.empty(): true;
 }
 
 
 bool Playback::
         isPaused()
 {
-    return streamPlayback ? streamPlayback->isStopped() && !hasReachedEnd(): false;
+    bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
+
+    bool read_past_end = _data.empty() ? false : _playback_itr > _data.first_buffer()->sample_offset + _data.number_of_samples();
+
+    return isStopped && !read_past_end;
 }
 
 
@@ -386,6 +409,10 @@ void Playback::
     {
         TIME_PLAYBACK TaskTimer tt("Restaring playback");
 
+        _playback_itr = 0;
+        _max_found = 1;
+        _min_found = -1;
+
         onFinished();
     }
 }
@@ -424,18 +451,28 @@ int Playback::
     normalize( buffer, framesPerBuffer );
     _playback_itr += framesPerBuffer;
 
+    const char* msg = "";
+    int ret = paContinue;
     if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + framesPerBuffer) < _playback_itr ) {
-        TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
-        return paComplete;
+        msg = ". DONE";
+        ret = paComplete;
     } else {
         if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr ) {
-            TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer );
+            msg = ". PAST END";
+            // TODO if !_data.invalid_samples().empty() should pause playback here and continue when data is made available
         } else {
-            TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer );
         }
     }
 
-    return paContinue;
+    float FS;
+    TIME_PLAYBACK FS = _data.sample_rate();
+    TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading [%u, %u)%u# from %u. [%g, %g)%g s%s",
+                           _playback_itr, _playback_itr+framesPerBuffer, framesPerBuffer,
+                           _data.number_of_samples(),
+                           _playback_itr/ FS, (_playback_itr + framesPerBuffer)/ FS,
+                           framesPerBuffer/ FS, msg);
+
+    return ret;
 }
 
 } // namespace Adapters

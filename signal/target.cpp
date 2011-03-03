@@ -220,6 +220,7 @@ Target::
 void Target::
         addLayerHead(pChainHead p)
 {
+    BOOST_ASSERT( p );
     BOOST_ASSERT( all_layers_ );
     BOOST_ASSERT( !isInSet(p->chain()) );
     BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
@@ -230,7 +231,7 @@ void Target::
     rebuildSource();
 
     Signal::Intervals is_zero = read_->zeroed_samples_recursive();
-    Signal::Intervals need_update = Signal::Intervals::Intervals_ALL - (was_zero&is_zero);
+    Signal::Intervals need_update = (was_zero&is_zero).inverse();
 
     post_sink()->invalidate_samples( need_update );
 }
@@ -249,7 +250,7 @@ void Target::
     rebuildSource();
 
     Signal::Intervals is_zero = read_->zeroed_samples_recursive();
-    Signal::Intervals need_update = Signal::Intervals::Intervals_ALL - (was_zero&is_zero);
+    Signal::Intervals need_update = (was_zero&is_zero).inverse();
 
     post_sink()->invalidate_samples( need_update );
 }
