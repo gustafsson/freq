@@ -262,7 +262,7 @@ bool SaweMainWindow::
     save_changes_msgbox.exec();
     QAbstractButton * button = save_changes_msgbox.clickedButton();
     TaskInfo("Save changes answer: %s, %d",
-             button->windowTitle(),
+             button->text().toStdString().c_str(),
              (int)save_changes_msgbox.buttonRole(button));
 
     switch ( save_changes_msgbox.buttonRole(button) )
@@ -273,7 +273,7 @@ bool SaweMainWindow::
     case QMessageBox::AcceptRole:
         if (!project->save())
         {
-            break;
+            return false; // abort
         }
 
         return true; // close
