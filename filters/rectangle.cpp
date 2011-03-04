@@ -25,6 +25,20 @@ Rectangle::Rectangle(float t1, float f1, float t2, float f2, bool save_inside) {
 }
 
 
+std::string Rectangle::
+        name()
+{
+    std::stringstream ss;
+    ss << std::setiosflags(std::ios::fixed)
+       << "Rectangle from "
+       << std::setprecision(1) << _t1 << " s, "
+       << std::setprecision(0) << _f1 << " Hz to "
+       << std::setprecision(1) << _t2 << " s, "
+       << std::setprecision(0) << _f2 << " Hz";
+    return ss.str();
+}
+
+
 void Rectangle::operator()( Chunk& chunk) {
     TIME_FILTER TaskTimer tt("Rectangle");
 
