@@ -4,6 +4,7 @@
 #include "signal/chain.h"
 
 #include <QObject>
+#include <QTimer>
 
 class QDockWidget;
 class QWidget;
@@ -38,6 +39,7 @@ private slots:
     void removeSelected();
     void removeHidden();
     void removeCaches();
+    void updateContextMenu();
 
 private:
     void setupGui();
@@ -52,6 +54,8 @@ private:
     QWidget *dockWidgetContents;
     QVBoxLayout *verticalLayout;
     QTreeWidget *operationsTree;
+    QPushButton *removeSelectedButton;
+    QTimer timerUpdateContextMenu;
 };
 
 } // namespace Tools
