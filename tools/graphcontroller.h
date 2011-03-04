@@ -12,6 +12,7 @@ class QVBoxLayout;
 class QTreeWidget;
 class QTreeWidgetItem;
 class QAction;
+class QPushButton;
 
 namespace Sawe
 {
