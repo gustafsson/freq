@@ -246,6 +246,7 @@
    </attribute>
    <addaction name="actionMatlabOperation"/>
    <addaction name="actionMatlabFilter"/>
+   <addaction name="actionFanTracker"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
@@ -1492,6 +1493,18 @@
    </property>
    <property name="text">
     <string>&amp;Matlab/Octave</string>
+   </property>
+  </action>
+  <action name="actionFanTracker">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fan Tracker</string>
+   </property>
+   <property name="toolTip">
+    <string>Track the fundamental tone using Cepstrum Analysis</string>
    </property>
   </action>
  </widget>
