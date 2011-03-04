@@ -29,7 +29,9 @@ void FanTrackerController::
 void FanTrackerController::
         receiveFanTracker()
 {
-
+    //skapa operation, pOperation
+    //lägga till i fantrackermodell,
+    //lägga till i projktet, via project()->appendOperation(pOperation)
 }
 
 } // namespace Tools
