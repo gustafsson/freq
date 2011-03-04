@@ -185,6 +185,11 @@ namespace Tools
         }
 
         _model->try_set_current_selection( t );
+
+        if (!_model->current_selection())
+        {
+            setThisAsCurrentTool( false );
+        }
     }
 
 

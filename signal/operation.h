@@ -34,6 +34,9 @@ public:
     Operation( pOperation source );
     ~Operation();
 
+    Operation( const Operation& o );
+    Operation& operator=(const Operation& o);
+
     virtual std::string name();
 
     /**
