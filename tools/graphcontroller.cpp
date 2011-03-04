@@ -180,10 +180,13 @@ namespace Tools
 
         if ( !currentItem )
         {
+            QTreeWidgetItem* selectAnother = 0;
             if (current && current->childCount())
-                operationsTree->setCurrentItem( current->child(0) );
+                selectAnother = current->child(0);
             else if (previousItem)
-                operationsTree->setCurrentItem( previous );
+                selectAnother = previous;
+
+            operationsTree->setCurrentItem( selectAnother, 0, QItemSelectionModel::ClearAndSelect );
         }
         else
         {

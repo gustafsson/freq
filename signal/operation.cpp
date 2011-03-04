@@ -20,6 +20,21 @@ Operation::
 }
 
 
+Operation::
+        Operation( const Operation& o )
+{
+    *this = o;
+}
+
+
+Operation& Operation::
+        operator=(const Operation& o )
+{
+    Operation::source( o.Operation::source() );
+    return *this;
+}
+
+
 void Operation::
         source(pOperation v)
 {
