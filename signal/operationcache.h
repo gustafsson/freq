@@ -2,7 +2,7 @@
 #define SIGNALOPERATIONCACHE_H
 
 #include "signal/operation.h"
-#include "signal/sinksource.h"
+#include "signal/sinksourcechannels.h"
 
 namespace Signal {
 
@@ -25,7 +25,7 @@ public:
       */
     virtual pBuffer read( const Interval& I );
 
-    virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); Operation::invalidate_samples(I); }
+    virtual void invalidate_samples(const Intervals& I);
 
     virtual Intervals invalid_samples();
     virtual Intervals invalid_returns();
@@ -40,18 +40,26 @@ public:
       */
     virtual pBuffer readRaw( const Interval& I ) = 0;
 
+    virtual unsigned num_channels();
+    virtual void set_channel(unsigned c);
+    virtual unsigned get_channel();
+
+    virtual void source(pOperation v);
+    virtual pOperation source() { return Operation::source(); }
+
 protected:
-    SinkSource _cache;
+    SinkSourceChannels _cache;
 
 private:
     /**
       OperationCache populates this when readRaw doesn't return the expected interval.
       It is up to an implementation to use this information somehow, for
-      instance by issueing Operation::invalidate_samples(). To notify callers
+      instance by issuing Operation::invalidate_samples(). To notify callers
       that the information is now available.
       */
-    Signal::Intervals _invalid_returns;
+    std::vector<Signal::Intervals> _invalid_returns;
 };
+
 
 class OperationCacheLayer: public OperationCache
 {

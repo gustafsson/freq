@@ -1,7 +1,7 @@
 #ifndef ADAPTERS_PLAYBACK_H
 #define ADAPTERS_PLAYBACK_H
 
-#include "signal/sinksource.h"
+#include "signal/sinksourcechannels.h"
 
 #include <vector>
 #include <time.h>
@@ -43,7 +43,7 @@ public:
 
     void        restart_playback();
 private:
-    Signal::SinkSource _data;
+    Signal::SinkSourceChannels _data;
     boost::posix_time::ptime
             _first_timestamp,
             _last_timestamp,

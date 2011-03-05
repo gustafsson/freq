@@ -37,6 +37,8 @@
         <file>icons/icon-show-gray.png</file>
         <file>icons/icon-show-heightlines.png</file>
         <file>icons/icon-show-info.png</file>
+        <file>icons/fscn-down.png</file>
+        <file>icons/fscn-up.png</file>
     </qresource>
     <qresource prefix="/shaders">
         <file alias="heightmap.frag">../heightmap/heightmap.frag</file>

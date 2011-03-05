@@ -246,7 +246,7 @@ void SaweMainWindow::
     }
 
     {
-        TaskInfo ti("closeEvent");
+        TaskTimer ti("QMainWindow::closeEvent");
         QMainWindow::closeEvent(e);
     }
 }

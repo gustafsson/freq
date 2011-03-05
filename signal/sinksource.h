@@ -37,8 +37,8 @@ class SinkSource: public Sink
 public:
     /// @see SinkSource
     SinkSource();
-	SinkSource( const SinkSource& b);
-	SinkSource& operator=( const SinkSource& b);
+    SinkSource( const SinkSource& b);
+    SinkSource& operator=( const SinkSource& b);
 
     /**
       Insert data into SinkSource
@@ -55,6 +55,7 @@ public:
 
     virtual Intervals invalid_samples() { return _invalid_samples; }
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    void invalidate_and_forget_samples(const Intervals& I);
 
     /// Clear cache, also clears invalid_samples
     void clear();
@@ -114,7 +115,7 @@ private:
     virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
 
-    void selfmerge();
+    void selfmerge( Signal::Intervals forget = Signal::Intervals() );
     void merge( pBuffer );
 };
 

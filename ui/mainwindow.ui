@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -71,6 +71,8 @@
     <addaction name="menuToolbars"/>
     <addaction name="separator"/>
     <addaction name="actionRestore_layout"/>
+    <addaction name="actionToggleFullscreenNoMenus"/>
+    <addaction name="actionToggleFullscreen"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -231,8 +233,6 @@
    <addaction name="actionActivateInfoTool"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
-   <addaction name="actionToggleFullscreen"/>
-   <addaction name="actionToggleFullscreenNoMenus"/>
   </widget>
   <widget class="Tools::Support::ToolBar" name="toolBarMatlab">
    <property name="windowTitle">
@@ -1345,7 +1345,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/fscn-down.png</normaloff>:/icons/icons/fscn-down.png</iconset>
    </property>
    <property name="text">
     <string>Toggle fullscreen</string>
@@ -1407,7 +1407,7 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/fscn-up.png</normaloff>:/icons/icons/fscn-up.png</iconset>
    </property>
    <property name="text">
     <string>Toggle fullscreen (no menus)</string>

@@ -79,7 +79,7 @@ void SinkSource::
 
 
 void SinkSource::
-        selfmerge()
+        selfmerge( Signal::Intervals forget )
 {
 	{
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
@@ -94,7 +94,7 @@ void SinkSource::
     //samplesDesc().print("selfmerged start");
     //tt.info("_cache.size()=%u", _cache.size());
 
-    Intervals sid = samplesDesc();
+    Intervals sid = samplesDesc() - forget;
 	std::vector<pBuffer> new_cache;
 
     BOOST_FOREACH( Interval i, sid )
@@ -190,6 +190,14 @@ void SinkSource::
     selfmerge();
     //samplesDesc().print("SinkSource received samples");
     //_expected_samples.print("SinkSource expected samples");
+}
+
+
+void SinkSource::
+        invalidate_and_forget_samples(const Intervals& I)
+{
+    invalidate_samples( I );
+    selfmerge( I );
 }
 
 

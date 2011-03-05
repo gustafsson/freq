@@ -420,12 +420,29 @@ pBuffer MatlabOperation::
             }
 
             support = _settings->redundant();
-            Signal::Interval R = J;
             J = Intervals(J).enlarge( support );
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
-            Signal::pBuffer b = source()->readFixedLength( J );
+            Signal::pBuffer b;
+            unsigned C = num_channels();
+            if (1 == C)
+                b = source()->readFixedLength( J );
+            else
+            {
+                unsigned current_channel = this->get_channel();
+                b.reset( new Signal::Buffer(J.first, J.count(), sample_rate(), C ));
+
+                float* dst = b->waveform_data()->getCpuMemory();
+                for (unsigned i=0; i<C; ++i)
+                {
+                    source()->set_channel( i );
+                    Signal::pBuffer r = source()->readFixedLength( J );
+                    float* src = r->waveform_data()->getCpuMemory();
+                    memcpy( dst + i*J.count(), src, J.count()*sizeof(float));
+                }
+                source()->set_channel( current_channel );
+            }
 
             string file = _matlab->getTempName();
 
