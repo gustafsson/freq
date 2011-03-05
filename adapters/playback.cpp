@@ -231,6 +231,43 @@ bool Playback::
 
 
 void Playback::
+        invalidate_samples( const Signal::Intervals& s )
+{
+    _data.invalidate_samples( s );
+
+    if (_data.empty())
+        _data.setNumChannels( source()->num_channels() );
+}
+
+
+unsigned Playback::
+        num_channels()
+{
+    return _data.num_channels();
+}
+
+
+void Playback::
+        set_channel(unsigned c)
+{
+    // If more channels are requested for playback than the output device has channels available,
+    // then let the last channel requested go into the last channel available and discard other
+    // superfluous channels
+    if (c >= num_channels())
+        c = num_channels() - 1;
+
+    _data.set_channel( c );
+}
+
+
+Signal::Intervals Playback::
+        invalid_samples()
+{
+    return _data.invalid_samples();
+}
+
+
+void Playback::
         onFinished()
 {
     if (isUnderfed() )
@@ -253,10 +290,19 @@ void Playback::
 
     TIME_PLAYBACK TaskTimer("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
+    unsigned requested_number_of_channels = num_channels();
+    unsigned available_channels = sys.deviceByIndex(_output_device).maxOutputChannels();
+
+    if (available_channels<requested_number_of_channels)
+    {
+        requested_number_of_channels = available_channels;
+        _data.setNumChannels( requested_number_of_channels );
+    }
+
     // Set up the parameters required to open a (Callback)Stream:
     portaudio::DirectionSpecificStreamParameters outParamsPlayback(
             sys.deviceByIndex(_output_device),
-            1, // mono sound
+            requested_number_of_channels,
             portaudio::FLOAT32,
             false,
             sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
@@ -335,7 +381,7 @@ bool Playback::
         return false; // No more expected samples, not underfed
     }
 
-	if (nAccumulated_samples < 0.1f*_data.sample_rate() || nAccumulated_samples < 3*_first_buffer_size ) {
+    if (nAccumulated_samples < 0.1f*_data.sample_rate() || nAccumulated_samples < 3*_first_buffer_size ) {
         TIME_PLAYBACK TaskInfo("Underfed");
         return true; // Haven't received much data, wait to do a better estimate
     }
@@ -439,16 +485,20 @@ int Playback::
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( outputBuffer );
-    float **out = static_cast<float **>(outputBuffer);
-    float *buffer = out[0];
-
     if (!_data.empty() && _playback_itr == _data.first_buffer()->sample_offset) {
         _startPlay_timestamp = microsec_clock::local_time();
     }
 
-    Signal::pBuffer b = _data.readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
-    ::memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
-    normalize( buffer, framesPerBuffer );
+    float **out = static_cast<float **>(outputBuffer);
+    for (int c=0; c<num_channels(); ++c)
+    {
+        float *buffer = out[c];
+
+        Signal::pBuffer b = _data.channel(c).readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
+        ::memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
+        normalize( buffer, framesPerBuffer );
+    }
+
     _playback_itr += framesPerBuffer;
 
     const char* msg = "";

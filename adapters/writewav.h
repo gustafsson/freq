@@ -15,8 +15,8 @@ public:
     virtual void put( Signal::pBuffer b, Signal::pOperation ) { put (b); }
     virtual void reset();
     virtual void invalidate_samples( const Signal::Intervals& s );
-    virtual Signal::Intervals invalid_samples();
     virtual void set_channel(unsigned c);
+    virtual Signal::Intervals invalid_samples();
 
     static void writeToDisk(std::string filename, Signal::pBuffer b, bool normalize = true);
 
