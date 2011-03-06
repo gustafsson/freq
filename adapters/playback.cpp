@@ -106,7 +106,7 @@ float Playback::
         return 0.f;
 
     // if !isPaused() the stream has started, but it hasn't read anything yet if this holds, and _startPlay_timestamp is not set
-    if (isPaused() || _playback_itr == _data.first_buffer()->sample_offset )
+    if (isPaused() || _playback_itr == _data.getInterval().first )
     {
         return _playback_itr / sample_rate();
     }
@@ -117,7 +117,7 @@ float Playback::
     time_duration d = microsec_clock::local_time() - _startPlay_timestamp;
     float dt = d.total_milliseconds()*0.001f;
     float t = dt;
-    t += _data.first_buffer()->sample_offset / sample_rate();
+    t += _data.getInterval().first / sample_rate();
     t -= 0.08f;
 #ifdef _WIN32
     t -= outputLatency();
@@ -200,6 +200,10 @@ void Playback::
         if (!streamPlayback->isStopped())
             streamPlayback->stop();
     }
+
+    _playback_itr = _data.getInterval().last;
+    _max_found = 1;
+    _min_found = -1;
 }
 
 
@@ -212,8 +216,6 @@ void Playback::
         streamPlayback.reset();
 
     _playback_itr = 0;
-    _max_found = 1;
-    _min_found = -1;
 
     _data.clear();
 }
@@ -321,7 +323,7 @@ void Playback::
             *this,
             &Playback::readBuffer) );
 
-    _playback_itr = _data.first_buffer()->sample_offset;
+    _playback_itr = _data.getInterval().first;
 
     streamPlayback->start();
 
@@ -352,7 +354,7 @@ bool Playback::
 {
     bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
 
-    bool read_past_end = _data.empty() ? false : _playback_itr > _data.first_buffer()->sample_offset + _data.number_of_samples();
+    bool read_past_end = _data.empty() ? false : _playback_itr > _data.getInterval().last;
 
     return isStopped && !read_past_end;
 }
@@ -367,7 +369,7 @@ bool Playback::
     if (_data.invalid_samples())
         return false;
 
-    return time()*_data.sample_rate() > _data.first_buffer()->sample_offset + _data.number_of_samples();
+    return time()*_data.sample_rate() > _data.getInterval().last;
 }
 
 
@@ -397,7 +399,7 @@ bool Playback::
 
     long unsigned marker = _playback_itr;
     if (0==marker)
-        marker = _data.first_buffer()->sample_offset;
+        marker = _data.getInterval().first;
 
     Signal::Interval cov = _data.invalid_samples();
     float time_left =
@@ -441,7 +443,7 @@ void Playback::
             return;
 
         _startPlay_timestamp = microsec_clock::local_time();
-        _startPlay_timestamp -= time_duration(0, 0, 0, (_playback_itr-_data.first_buffer()->sample_offset)/sample_rate()*time_duration::ticks_per_second() );
+        _startPlay_timestamp -= time_duration(0, 0, 0, (_playback_itr-_data.getInterval().first)/sample_rate()*time_duration::ticks_per_second() );
 
         streamPlayback->start();
     }
@@ -485,12 +487,12 @@ int Playback::
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( outputBuffer );
-    if (!_data.empty() && _playback_itr == _data.first_buffer()->sample_offset) {
+    if (!_data.empty() && _playback_itr == _data.getInterval().first) {
         _startPlay_timestamp = microsec_clock::local_time();
     }
 
     float **out = static_cast<float **>(outputBuffer);
-    for (int c=0; c<num_channels(); ++c)
+    for (unsigned c=0; c<num_channels(); ++c)
     {
         float *buffer = out[c];
 
@@ -503,11 +505,11 @@ int Playback::
 
     const char* msg = "";
     int ret = paContinue;
-    if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + framesPerBuffer) < _playback_itr ) {
+    if ((unsigned long)(_data.getInterval().last + framesPerBuffer) < _playback_itr ) {
         msg = ". DONE";
         ret = paComplete;
     } else {
-        if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr ) {
+        if ( (unsigned long)(_data.getInterval().last) < _playback_itr ) {
             msg = ". PAST END";
             // TODO if !_data.invalid_samples().empty() should pause playback here and continue when data is made available
         } else {

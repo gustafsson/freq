@@ -98,6 +98,9 @@ public:
     std::string             toString() const;
 };
 
+std::ostream& operator<< (std::ostream& o, const Interval& I);
+std::ostream& operator<< (std::ostream& o, const Intervals& I);
+
 } // namespace Signal
 
 #endif // SAMPLESINTERVALDESCRIPTOR_H

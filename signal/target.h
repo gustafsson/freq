@@ -119,6 +119,7 @@ private:
     Signal::pOperation reroute_channels_;
     Signal::pOperation forall_channels_;
     Signal::pOperation update_view_;
+    Signal::pOperation cache_vars_;
     Signal::pOperation read_;
     bool add_as_channels_;
     Layers* all_layers_;

@@ -61,7 +61,7 @@ void PlaybackView::
 
     // Playback has stopped/or hasn't started
     bool is_stopped = model->playback()->isStopped();
-    if (is_stopped && 0>prev_pos) {
+    if (is_stopped && 0>=prev_pos) {
         return;
     }
 

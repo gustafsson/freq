@@ -98,7 +98,7 @@ public:
         foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             Signal::Intervals inv_coll = c->invalid_samples();
-            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
+            TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
             I |= inv_coll;
         }
 
@@ -115,7 +115,7 @@ public:
             for (unsigned c=0; c<N; ++c)
             {
                 if (!model_->collections[c])
-                    model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+                    model_->collections[c].reset( new Heightmap::Collection(model_->renderSignalTarget->source()));
             }
         }
 

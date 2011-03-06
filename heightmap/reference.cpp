@@ -151,7 +151,7 @@ bool Reference::
     if (b.scale-a.scale < _collection->min_sample_size().scale*_collection->scales_per_block() )
         return false;
 
-    float length = _collection->worker->length();
+    float length = _collection->target->length();
     if (a.time >= length )
         return false;
 
@@ -166,7 +166,7 @@ bool Reference::
 {
     Position a, b;
     getArea( a, b );
-    Signal::pOperation wf = _collection->worker->source();
+    Signal::pOperation wf = _collection->target;
     if (b.time > 2 * wf->length() && b.scale > 2 )
         return true;
     return false;
@@ -226,7 +226,7 @@ Signal::Interval Reference::
     float startTime = blockSize * block_index[0];
     float endTime = startTime + blockLocalSize;
 
-    float FS = _collection->worker->source()->sample_rate();
+    float FS = _collection->target->sample_rate();
     Signal::Interval i( startTime * FS, endTime * FS+1 );
 
     //Position a, b;

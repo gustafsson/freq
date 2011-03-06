@@ -96,6 +96,9 @@ namespace Tools
         QPointer<class ExportAudioDialog> _export_audio_dialog;
 
         QPointer<class HarmonicsInfoForm> _harmonics_info_form;
+
+        QScopedPointer<class WorkerView> _worker_view;
+        QScopedPointer<class WorkerController> _worker_controller;
     };
 } // namespace Tools
 

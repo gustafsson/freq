@@ -250,6 +250,8 @@ void TimelineView::
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
                 _render_view->model->renderer->drawFrustum();
+
+                emit painting();
             }
         }
 

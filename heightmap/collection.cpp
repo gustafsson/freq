@@ -16,6 +16,8 @@
 
 #include <msc_stdc.h>
 
+#include <boost/foreach.hpp>
+
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
@@ -41,15 +43,15 @@ namespace Heightmap {
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-        Collection( Worker* worker )
-:   worker( worker ),
+        Collection( Signal::pOperation target )
+:   target( target ),
     _samples_per_block( 1<<7 ), // Created for each
     _scales_per_block( 1<<8 ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0)
 {
-	BOOST_ASSERT( worker->source() );
+        BOOST_ASSERT( target );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
@@ -59,7 +61,7 @@ Collection::
 //    _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
     _display_scale.axis_scale = Tfr::AxisScale_Linear;
     _display_scale.max_frequency_scalar = 1;
-    float fs = worker->source()->sample_rate();
+    float fs = target->sample_rate();
     float minhz = Tfr::Cwt::Singleton().get_min_hz(fs);
     float maxhz = Tfr::Cwt::Singleton().get_max_hz(fs);
     _display_scale.min_hz = minhz;
@@ -202,7 +204,7 @@ void Collection::
         _min_sample_size.time *= 0.25f;
     }
 
-    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*worker->length()/_samples_per_block);
+    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*target->length()/_samples_per_block);
     _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
 }
 
@@ -231,7 +233,7 @@ Reference Collection::
     Reference r(this);
 
     // make sure the reference becomes valid
-    float length = worker->length();
+    float length = target->length();
 
     // Validate requested sampleSize
     sampleSize.time = fabs(sampleSize.time);
@@ -468,7 +470,7 @@ void Collection::
         display_scale(Tfr::FreqAxis a)
 {
     _display_scale = a;
-    invalidate_samples( worker->source()->getInterval() );
+    invalidate_samples( target->getInterval() );
 }
 
 
@@ -478,7 +480,7 @@ void Collection::
     TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*worker->length()/_samples_per_block);
+    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*target->length()/_samples_per_block);
 
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
@@ -496,8 +498,12 @@ Intervals Collection::
 	QMutexLocker l(&_cache_mutex);
 #endif
 
-    foreach ( const recent_t::value_type& b, _recent )
-	{
+    TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
+
+    //foreach ( const recent_t::value_type& b, _recent )
+
+    BOOST_FOREACH( const recent_t::value_type& b, _recent )
+    {
         if (_frame_counter == b->frame_number_last_used)
         {
             Intervals i ( b->ref.getInterval() );
@@ -507,10 +513,10 @@ Intervals Collection::
             r |= i;
 
             VERBOSE_EACH_FRAME_COLLECTION
-                    if (i)
-                        TaskInfo("block %s is invalid on %s", b->ref.toString().c_str(), i.toString().c_str());
+            if (i)
+                TaskInfo("block %s is invalid on %s", b->ref.toString().c_str(), i.toString().c_str());
         } else
-			break;
+            break;
     }
 
     return r;
@@ -616,7 +622,7 @@ pBlock Collection::
             if (!tfr_is_stft) // don't stubb if they will be filled by stft shortly hereafter
             if (10 > _frame_counter) {
                 //size_t stub_size
-                //if ((b.time - a.time)*fast_source( worker->source())->sample_rate()*sizeof(float) )
+                //if ((b.time - a.time)*fast_source( target)->sample_rate()*sizeof(float) )
                 try
                 {
                     TIME_COLLECTION TaskTimer tt("stft");
@@ -865,7 +871,7 @@ static pOperation
 void Collection::
         fillBlock( pBlock block )
 {
-    pOperation fast_source = Heightmap::fast_source( worker->source() );
+    pOperation fast_source = Heightmap::fast_source( target );
 
     StftToBlock stftmerger(this);
     Tfr::Stft* transp = new Tfr::Stft();

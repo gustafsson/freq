@@ -37,8 +37,8 @@
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
 
-//#define TIME_PAINTGL_DETAILS
-#define TIME_PAINTGL_DETAILS if(0)
+#define TIME_PAINTGL_DETAILS
+//#define TIME_PAINTGL_DETAILS if(0)
 
 //#define DEBUG_EVENTS
 #define DEBUG_EVENTS if(0)
@@ -976,10 +976,10 @@ void RenderView::
     {   // Work
 		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
         isWorking = worker.fetch_todo_list();
-
+        TaskInfo("tst");
         TaskInfo("target = %s, worker.fetch_todo_list() = %s, isWorking = %d",
                  worker.target()->name().c_str(),
-                 worker.fetch_todo_list().toString().c_str(), isWorking);
+                 worker.previous_todo_list().toString().c_str(), isWorking);
 
         if (isWorking || isRecording) {
             if (!_work_timer.get())

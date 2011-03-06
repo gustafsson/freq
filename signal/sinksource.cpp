@@ -266,6 +266,13 @@ long unsigned SinkSource::
 }
 
 
+Interval SinkSource::
+        getInterval()
+{
+    return samplesDesc().coveredInterval();
+}
+
+
 pBuffer SinkSource::
         first_buffer()
 {

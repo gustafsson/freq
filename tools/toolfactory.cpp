@@ -24,6 +24,7 @@
 #include "transforminfoform.h"
 #include "exportaudiodialog.h"
 #include "harmonicsinfoform.h"
+#include "workercontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -101,6 +102,9 @@ ToolFactory::
             dynamic_cast<TooltipController*>(_tooltip_controller.data()),
             _render_view
             );
+
+    _worker_view.reset( new WorkerView(p));
+    _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view ) );
 }
 
 

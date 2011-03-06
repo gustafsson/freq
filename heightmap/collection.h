@@ -8,8 +8,7 @@
 
 // Sonic AWE
 #include "signal/intervals.h"
-#include "signal/source.h"
-#include "signal/worker.h"
+#include "signal/operation.h"
 #include "tfr/chunk.h"
 
 // boost
@@ -163,7 +162,7 @@ inline std::size_t hash_value(Reference const& ref)
   */
 class Collection {
 public:
-    Collection(Signal::Worker* worker);
+    Collection(Signal::pOperation target);
     ~Collection();
 
 
@@ -248,15 +247,15 @@ public:
 
 
     /**
-      Given a chunk and this->_worker->source(), compute how small and big
+      Given a chunk and this->target, compute how small and big
       samples that are meanginful to display.
       */
     void        update_sample_size( Tfr::Chunk* inChunk );
 
 
-    Signal::Worker*     worker;
+    Signal::pOperation target;
 
-	const ThreadChecker& constructor_thread() const { return _constructor_thread; }
+    const ThreadChecker& constructor_thread() const { return _constructor_thread; }
 
 private:
     // TODO remove friends

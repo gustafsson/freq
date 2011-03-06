@@ -125,6 +125,55 @@ private:
 };
 
 
+/**
+  This does save quite a few function calls, probably premature optimization.
+  */
+class CacheVars: public Operation, public boost::noncopyable
+{
+public:
+    CacheVars() : Operation(pOperation()), FS(-1) {}
+
+    virtual Signal::pBuffer read(const Intervals& I)
+    {
+        update();
+        return Operation::read( I );
+    }
+
+
+    virtual IntervalType number_of_samples()
+    {
+        if (0>FS)
+            return Operation::number_of_samples();
+        return number_of_samples_;
+    }
+
+    virtual float sample_rate()
+    {
+        if (0>FS)
+            update();
+        return FS;
+    }
+
+
+    virtual void invalidate_samples(const Intervals& I)
+    {
+        update();
+
+        Operation::invalidate_samples(I);
+    }
+
+
+private:
+    void update()
+    {
+        number_of_samples_ = Operation::number_of_samples();
+        FS = Operation::sample_rate();
+    }
+
+    Signal::IntervalType number_of_samples_;
+    float FS;
+};
+
 Layers::
         Layers(Sawe::Project* project)
             :
@@ -199,13 +248,15 @@ Target::
             reroute_channels_( new RerouteChannels(pOperation()) ),
             forall_channels_( new ForAllChannelsOperation(pOperation()) ),
             update_view_( new UpdateView( all_layers->project(), name )),
+            cache_vars_( new CacheVars ),
             add_as_channels_(false),
             all_layers_(all_layers)
 {
     post_sink_->source( reroute_channels_ );
     forall_channels_->source( post_sink_ );
     update_view_->source( forall_channels_ );
-    read_ = update_view_;
+    cache_vars_->source(update_view_);
+    read_ = cache_vars_;
 
     BOOST_FOREACH( pChain c, all_layers_->layers() )
     {

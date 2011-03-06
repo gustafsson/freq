@@ -112,6 +112,20 @@ IntervalType SinkSourceChannels::
 }
 
 
+Interval SinkSourceChannels::
+        getInterval()
+{
+    Intervals I;
+
+    for (unsigned i=0; i<num_channels(); ++i)
+    {
+        I |= sinksources_[ i ].getInterval();
+    }
+
+    return I.coveredInterval();
+}
+
+
 unsigned SinkSourceChannels::
         num_channels()
 {

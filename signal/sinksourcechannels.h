@@ -28,6 +28,7 @@ public:
     pBuffer readAllChannelsFixedLength( const Interval& I );
     virtual float sample_rate();
     virtual long unsigned number_of_samples();
+    virtual Interval getInterval();
 
     virtual unsigned num_channels();
     virtual void set_channel(unsigned c);

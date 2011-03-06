@@ -82,6 +82,12 @@ public:
       */
     virtual long unsigned number_of_samples();
 
+
+    /**
+      First and last sample in the covered interval, or [0,0).
+      */
+    virtual Interval getInterval();
+
     /// The first buffer in the cache, or pBuffer() if cache is empty
     pBuffer first_buffer();
 

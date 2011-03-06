@@ -45,6 +45,7 @@ public:
 
 signals:
     void hideMe();
+    void painting();
 
 public slots:
     void paintInGraphicsView();

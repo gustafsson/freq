@@ -485,7 +485,8 @@ IntervalType Intervals::
 }
 
 
-std::string Intervals::toString() const
+std::string Intervals::
+        toString() const
 {
     std::stringstream ss;
     ss << "{";
@@ -504,7 +505,15 @@ std::string Intervals::toString() const
 }
 
 
-std::string Interval::toString() const
+std::ostream&
+        operator << (std::ostream& o, const Intervals& I)
+{
+    return o << I.toString();
+}
+
+
+std::string Interval::
+        toString() const
 {
     std::stringstream ss;
     ss << "[" << first << ", " << last << ")";
@@ -512,5 +521,13 @@ std::string Interval::toString() const
         ss << count() << "#";
     return ss.str();
 }
+
+
+std::ostream&
+        operator << (std::ostream& o, const Interval& I)
+{
+    return o << I.toString();
+}
+
 
 } // namespace Signal
