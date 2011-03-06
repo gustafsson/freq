@@ -140,12 +140,21 @@ public:
     Intervals worked_samples;
 
     /**
+      Returns the previous Interval that workOne requested
+      */
+    Interval latest_request;
+
+    /**
+      Returns the previous Interval that workOne requested
+      */
+    Interval latest_result;
+
+    /**
       The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
       is rebuilt each time a new region is requested. It is worked off in a outward direction
       from the variable center.
       */
     Intervals fetch_todo_list();
-
 
     /**
       Returns the last thing returned from fetch todo list.

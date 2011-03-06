@@ -33,6 +33,8 @@ namespace Signal {
 Worker::
         Worker(Signal::pTarget t)
 :   work_chunks(0),
+    latest_request(0,0),
+    latest_result(0,0),
     _number_of_samples(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _samples_per_chunk( 1 ),
@@ -88,7 +90,11 @@ bool Worker::
     if (!_target->post_sink()->isUnderfed() && skip_if_low_fps && _requested_fps>_highest_fps)
         return false;
 
-    Signal::Intervals todo_list = fetch_todo_list();
+    Signal::Intervals todo_list;
+    {
+        TaskTimer tt("Fetching todo");
+        todo_list = fetch_todo_list();
+    }
     if (todo_list.empty())
         return false;
 
@@ -98,6 +104,7 @@ bool Worker::
     unsigned center_sample = source()->sample_rate() * center;
 
     Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
+    latest_request = interval;
 
     boost::scoped_ptr<TaskTimer> tt;
 
@@ -128,7 +135,8 @@ bool Worker::
         b = callCallbacks( interval );
 
         //float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
-        worked_samples |= b->getInterval();
+        latest_result = b->getInterval();
+        worked_samples |= latest_result;
         //work_time += b->length();
         //work_time -= r;
 
@@ -266,17 +274,24 @@ Signal::Intervals Worker::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
 #endif
-    if ( Tfr::Cwt::Singleton().wavelet_time_support() >= Tfr::Cwt::Singleton().wavelet_default_time_support() )
-        _cheat_work.clear();
+    TaskInfo("after lock");
 
     Signal::Intervals todoinv = _target->post_sink()->invalid_samples();
+    TaskInfo("1");
     todoinv &= _target->post_sink()->getInterval();
     Signal::Intervals c = todoinv;
     c -= _cheat_work;
 
     if (!c)
     {
-        Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+        bool is_cheating = Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
+        if (is_cheating)
+        {
+            // Not cheating anymore as there would have been nothing left to work on
+            TaskInfo("Restoring time suppor");
+            _cheat_work.clear();
+            Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+        }
         return _previous_todo_list = todoinv;
     }
 
