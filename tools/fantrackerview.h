@@ -2,6 +2,9 @@
 #define FANTRACKERVIEW_H
 
 #include <QObject>
+#include "renderview.h"
+#include "support/fantrackerfilter.h"
+#include "fantrackermodel.h"
 
 namespace Tools {
 
@@ -9,7 +12,12 @@ class FanTrackerView : public QObject
 {
     Q_OBJECT
 public:
-    explicit FanTrackerView(QObject *parent = 0);
+    explicit FanTrackerView(FanTrackerModel*, RenderView*);
+
+    FanTrackerModel* model_;
+
+private:
+    RenderView* render_view_;
 
 signals:
 

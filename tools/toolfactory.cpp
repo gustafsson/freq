@@ -27,6 +27,7 @@
 #include "workercontroller.h"
 #include "fantrackercontroller.h"
 #include "fantrackerview.h"
+#include "fantrackermodel.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -87,7 +88,8 @@ ToolFactory::
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
     tool_controllers_.push_back( _tooltip_controller );
 
-    _fantracker_view.reset(new FanTrackerView());
+    _fantracker_model.reset( new FanTrackerModel( &render_model ) );
+    _fantracker_view.reset(new FanTrackerView( _fantracker_model.data() ,_render_view ));
     _fantracker_controller = new FanTrackerController(_fantracker_view.data(), _render_view );
 
     _about_dialog = new AboutDialog( p );

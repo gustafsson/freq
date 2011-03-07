@@ -15,6 +15,15 @@ public:
 
     virtual Signal::Intervals affected_samples();
 
+    struct Point
+    {
+        float Hz;
+        float amplitude;
+    };
+
+    typedef std::map<unsigned, Point> PointsT;
+    PointsT track;
+
 };
 
 } // namespace Support

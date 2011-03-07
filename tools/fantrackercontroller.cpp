@@ -22,8 +22,6 @@ void FanTrackerController::
 {
     ::Ui::MainWindow* ui = render_view_->model->project()->mainWindow()->getItems();
 
-    TaskTimer tt("Cepstrum peak filter is bound \n");
-
     connect(ui->actionFanTracker, SIGNAL(triggered()), SLOT(receiveFanTracker()));
     connect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
 
@@ -36,10 +34,12 @@ void FanTrackerController::
 
     Sawe::Project* project_ = render_view_->model->project();
 
-    project_->appendOperation( Signal::pOperation(new Tools::Support::FanTrackerFilter()) );
+    Tools::Support::FanTrackerFilter* filter = new Tools::Support::FanTrackerFilter();
+
+    view_->model_->selected_filter = filter;
+    project_->appendOperation( Signal::pOperation(filter) );
 
     render_view_->userinput_update();
-    TaskTimer tt("Cepstrum peak filter is applied \n");
 
 }
 
