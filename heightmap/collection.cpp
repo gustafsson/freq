@@ -16,8 +16,6 @@
 
 #include <msc_stdc.h>
 
-#include <boost/foreach.hpp>
-
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
@@ -499,10 +497,10 @@ Intervals Collection::
 	QMutexLocker l(&_cache_mutex);
 #endif
 
+    unsigned counter = 0;
     {
     TIME_COLLECTION TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
 
-    unsigned counter = 0;
     foreach ( const recent_t::value_type& b, _recent )
     {
         if (_frame_counter == b->frame_number_last_used)

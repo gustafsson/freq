@@ -8,6 +8,8 @@
 #include <GlException.h>
 #include <TaskTimer.h>
 
+#include <boost/foreach.hpp>
+
 //#define TIME_BLOCKFILTER
 #define TIME_BLOCKFILTER if(0)
 
@@ -43,7 +45,7 @@ void BlockFilter::
 
     // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
-    foreach( pBlock block, intersecting_blocks)
+    BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
 #ifndef SAWE_NO_MUTEX
         if (_collection->constructor_thread().isSameThread())

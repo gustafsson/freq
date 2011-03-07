@@ -13,6 +13,7 @@
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/binary_object.hpp>
+#include <boost/foreach.hpp>
 
 // std
 #include <vector>
@@ -60,7 +61,7 @@ private:
 
 		size_t N = images->size();
         ar & BOOST_SERIALIZATION_NVP(N);
-        foreach(BrushImages::value_type bv, *images)
+        BOOST_FOREACH(BrushImages::value_type bv, *images)
         {
 			Heightmap::Reference rcopy = bv.first;
 			serialize_ref(ar, rcopy);

@@ -13,7 +13,8 @@
 #include <CudaException.h>
 #include <glPushContext.h>
 #include <cuda_vector_types_op.h>
-#include "tfr/cwt.h" // TODO remove
+
+#include <boost/foreach.hpp>
 
 #ifdef _MSC_VER
 #include "msc_stdc.h"
@@ -299,7 +300,7 @@ void Renderer::
     max_t = 0;
     min_t = FLT_MAX;
 
-    foreach( GLvector v, clippedFrustum)
+    BOOST_FOREACH( GLvector v, clippedFrustum)
     {
         if (max_t < v[0])
             max_t = v[0];

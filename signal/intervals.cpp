@@ -272,7 +272,7 @@ Intervals& Intervals::
 
     base::iterator itr = firstIntersecting( r );
     if (itr != base::begin())
-        itr = base::erase(begin(), itr);
+        itr = base::erase(base::begin(), itr);
 
     while (itr!=base::end())
     {
@@ -280,7 +280,7 @@ Intervals& Intervals::
 
         // Check if interval 'itr' does not intersect with 'r'
         if (!i.isConnectedTo(r)) {
-            itr = base::erase(itr, end());
+            itr = base::erase(itr, base::end());
 
         } else {
             // Check if intersection is over the start of 'itr'
