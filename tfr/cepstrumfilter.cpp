@@ -1,6 +1,4 @@
 #include "cepstrumfilter.h"
-
-#include "cepstrumfilter.h"
 #include "cepstrum.h"
 
 #include <neat_math.h>
