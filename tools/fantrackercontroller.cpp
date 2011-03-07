@@ -36,6 +36,9 @@ void FanTrackerController::
 
     project_->appendOperation( Signal::pOperation(new Tools::Support::FanTrackerFilter()) );
 
+    render_view_->userinput_update();
+    TaskInfo("Cepstrum peak \n");
+
 }
 
 } // namespace Tools
