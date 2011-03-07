@@ -4,6 +4,8 @@
 //#include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
+#include "tools/support/fantrackerfilter.h"
+#include "tfr/cepstrum.h"
 
 namespace Tools {
 
@@ -29,9 +31,11 @@ void FanTrackerController::
 void FanTrackerController::
         receiveFanTracker()
 {
-    //skapa operation, pOperation
-    //lägga till i fantrackermodell,
-    //lägga till i projktet, via project()->appendOperation(pOperation)
+
+    Sawe::Project* project_ = render_view_->model->project();
+
+    project_->appendOperation( Signal::pOperation(new Tools::Support::FanTrackerFilter()) );
+
 }
 
 } // namespace Tools

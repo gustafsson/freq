@@ -4,6 +4,7 @@
 #include <QObject>
 #include "renderview.h"
 #include "fantrackerview.h"
+#include "tools/support/fantrackerfilter.h"
 
 namespace Tools {
 
