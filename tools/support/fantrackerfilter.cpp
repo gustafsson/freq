@@ -10,15 +10,20 @@ using namespace Signal;
 namespace Tools {
 namespace Support {
 
-    FanTrackerFilter::FanTrackerFilter(pOperation source, Tfr::pTransform t)
+    FanTrackerFilter::FanTrackerFilter()
         {
 //        source_ = source;
-//        t_ = t;
         }
 
     void FanTrackerFilter::operator()( Tfr::Chunk& c )
     {
         //do stuff
+    }
+
+    Signal::Intervals FanTrackerFilter::
+            affected_samples()
+    {
+        return Signal::Intervals(); //return empty interval
     }
 
 } // namespace Support

@@ -25,6 +25,8 @@
 #include "exportaudiodialog.h"
 #include "harmonicsinfoform.h"
 #include "workercontroller.h"
+#include "fantrackercontroller.h"
+#include "fantrackerview.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -85,6 +87,9 @@ ToolFactory::
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
     tool_controllers_.push_back( _tooltip_controller );
 
+    _fantracker_view.reset(new FanTrackerView());
+    _fantracker_controller = new FanTrackerController(_fantracker_view.data(), _render_view );
+
     _about_dialog = new AboutDialog( p );
 
     _playbackmarkers_model.reset( new PlaybackMarkersModel() );
@@ -143,6 +148,8 @@ ToolFactory::
     delete _graph_controller;
 
     delete _tooltip_controller;
+
+    delete _fantracker_controller;
 
     BOOST_ASSERT( _timeline_controller );
 	delete _timeline_controller;

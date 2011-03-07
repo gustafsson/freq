@@ -9,10 +9,11 @@ namespace Support {
 class FanTrackerFilter : public Tfr::CepstrumFilter
 {
 public:
-    FanTrackerFilter( Signal::pOperation source=Signal::pOperation(),
-                       Tfr::pTransform transform=Tfr::pTransform() );
+    FanTrackerFilter();
 
     virtual void operator()( Tfr::Chunk& );
+
+    virtual Signal::Intervals affected_samples();
 
 };
 

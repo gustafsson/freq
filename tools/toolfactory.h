@@ -85,6 +85,9 @@ namespace Tools
 
         QPointer<class ToolController> _tooltip_controller;
 
+        QScopedPointer<class FanTrackerView> _fantracker_view;
+        QPointer<class FanTrackerController> _fantracker_controller;
+
         QPointer<class AboutDialog> _about_dialog;
 
         QScopedPointer<class PlaybackMarkersModel> _playbackmarkers_model;

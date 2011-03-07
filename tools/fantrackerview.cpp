@@ -7,4 +7,9 @@ FanTrackerView::FanTrackerView(QObject *parent) :
 {
 }
 
+void FanTrackerView::
+        draw()
+{
+}
+
 } // namespace Tools
