@@ -147,7 +147,7 @@ void TransformInfoForm::
 
     if (project->areToolsInitialized())
     {
-        Signal::Intervals I = project->worker.previous_todo_list();
+        Signal::Intervals I = project->worker.todo_list();
 
         if (I.count())
         {

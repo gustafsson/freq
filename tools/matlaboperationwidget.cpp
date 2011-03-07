@@ -147,7 +147,7 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         populateTodoList()
 {
-    if (project->worker.fetch_todo_list().empty())
+    if (project->worker.todo_list().empty())
     {
         if (operation && operation->invalid_returns() && pid->state() != QProcess::NotRunning)
         {

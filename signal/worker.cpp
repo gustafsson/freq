@@ -87,14 +87,12 @@ bool Worker::
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;
 
-    if (!_target->post_sink()->isUnderfed() && skip_if_low_fps && _requested_fps>_highest_fps)
-        return false;
+    if (skip_if_low_fps)
+        if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps)
+            return false;
 
-    Signal::Intervals todo_list;
-    {
-        TaskTimer tt("Fetching todo");
-        todo_list = fetch_todo_list();
-    }
+    Signal::Intervals todo_list = this->todo_list();
+
     if (todo_list.empty())
         return false;
 
@@ -271,13 +269,12 @@ bool Worker::
 Signal::Intervals Worker::
         fetch_todo_list()
 {
+    WORKER_INFO TaskTimer tt("Fetching todo");
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
 #endif
-    TaskInfo("after lock");
-
     Signal::Intervals todoinv = _target->post_sink()->invalid_samples();
-    TaskInfo("1");
+
     todoinv &= _target->post_sink()->getInterval();
     Signal::Intervals c = todoinv;
     c -= _cheat_work;
@@ -288,21 +285,21 @@ Signal::Intervals Worker::
         if (is_cheating)
         {
             // Not cheating anymore as there would have been nothing left to work on
-            TaskInfo("Restoring time suppor");
+            WORKER_INFO TaskInfo("Restoring time suppor");
             _cheat_work.clear();
             Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
         }
-        return _previous_todo_list = todoinv;
+        return _todo_list = todoinv;
     }
 
-    return _previous_todo_list = c;
+    return _todo_list = c;
 }
 
 
 Intervals Worker::
-        previous_todo_list()
+        todo_list()
 {
-    return _previous_todo_list;
+    return _todo_list;
 }
 
 
@@ -328,6 +325,7 @@ void Worker::
     if (_disabled)
     {
         _number_of_samples = 0;
+        _todo_list.clear();
         return;
     }
 
@@ -340,6 +338,8 @@ void Worker::
     }
     _highest_fps = _min_fps;
     _number_of_samples = _target->post_sink()->number_of_samples();
+
+    fetch_todo_list();
 }
 
 

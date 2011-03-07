@@ -4,7 +4,7 @@
 
 #include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
-#include "signal/postsink.h"
+#include "signal/operationcache.h"
 
 #include <InvokeOnDestruction.hpp>
 #include <CudaException.h>
@@ -43,7 +43,7 @@ namespace Heightmap {
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-        Collection( Signal::pOperation target )
+        Collection( pOperation target )
 :   target( target ),
     _samples_per_block( 1<<7 ), // Created for each
     _scales_per_block( 1<<8 ),
@@ -342,6 +342,7 @@ pBlock Collection::
 std::vector<pBlock> Collection::
         getIntersectingBlocks( Interval I, bool only_visible )
 {
+    TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s )", I.toString().c_str(), only_visible?"only visible":"all");
     std::vector<pBlock> r;
     r.reserve(8);
 
@@ -498,15 +499,16 @@ Intervals Collection::
 	QMutexLocker l(&_cache_mutex);
 #endif
 
-    TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
+    {
+    TIME_COLLECTION TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
 
-    //foreach ( const recent_t::value_type& b, _recent )
-
-    BOOST_FOREACH( const recent_t::value_type& b, _recent )
+    unsigned counter = 0;
+    foreach ( const recent_t::value_type& b, _recent )
     {
         if (_frame_counter == b->frame_number_last_used)
         {
-            Intervals i ( b->ref.getInterval() );
+            counter++;
+            Intervals i = b->ref.getInterval();
 
             i -= b->valid_samples;
 
@@ -518,6 +520,9 @@ Intervals Collection::
         } else
             break;
     }
+    }
+
+    TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
 
     return r;
 }
@@ -642,8 +647,8 @@ pBlock Collection::
                 if (1) {
                     TIME_COLLECTION TaskTimer tt("Fetching data from others");
                     // then try to upscale other blocks
-                    Signal::Intervals things_to_update = ref.getInterval();
-                    /*Signal::Intervals all_things;
+                    Intervals things_to_update = ref.getInterval();
+                    /*Intervals all_things;
                     foreach( const cache_t::value_type& c, _cache )
                     {
                         all_things |= c.second->ref.getInterval();
@@ -659,9 +664,10 @@ pBlock Collection::
 #ifndef SAWE_NO_MUTEX
                         l.relock();
 #endif
+                        TIME_COLLECTION TaskTimer tt("Looping");
                         foreach( const pBlock& bl, gib )
                         {
-                            Signal::Interval v = bl->ref.getInterval();
+                            Interval v = bl->ref.getInterval();
                             if ( !(things_to_update & v ))
                                 continue;
 
@@ -842,58 +848,62 @@ pBlock Collection::
 
 
 /**
-  finds last source that does not have a slow operation (i.e. CwtFilter)
-  among its sources.
+  finds a source that we reliably can read from fast
 */
 static pOperation
-        fast_source(pOperation start)
+        fast_source(pOperation start, Interval I)
 {
-    pOperation r = start;
     pOperation itr = start;
+
+    if (!itr)
+        return itr;
 
     while (true)
     {
-        Operation* o = itr.get();
-        if (!o)
-            break;
+        OperationCache* c = dynamic_cast<OperationCache*>( itr.get() );
+        if (c)
+        {
+            if ((Intervals(I) - c->cached_samples()).empty())
+            {
+                return itr;
+            }
+        }
 
-        Tfr::CwtFilter* f = dynamic_cast<Tfr::CwtFilter*>(itr.get());
-        if (f)
-            r = f->source();
-
-        itr = o->source();
+        pOperation s = itr->source();
+        if (!s)
+            return itr;
+        
+        itr = s;
     }
-
-    return r;
 }
 
 
 void Collection::
         fillBlock( pBlock block )
 {
-    pOperation fast_source = Heightmap::fast_source( target );
-
     StftToBlock stftmerger(this);
     Tfr::Stft* transp = new Tfr::Stft();
     transp->set_approximate_chunk_size(1 << 12); // 4096
-    stftmerger.source( fast_source );
     stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.exclude_end_block = true;
 
     // Only take 4 MB of signal data at a time
     unsigned section_size = (4<<20) / sizeof(float);
-    Signal::Intervals sections = block->ref.getInterval();
-    sections &= Signal::Interval(0, fast_source->number_of_samples());
+    Intervals sections = block->ref.getInterval();
+    sections &= Interval(0, target->number_of_samples());
 
     boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
     boost::posix_time::ptime start_time = now;
     unsigned time_to_work_ms = 500;
     while (sections)
     {
-        Signal::Interval section = sections.fetchInterval(section_size);
+        Interval section = sections.fetchInterval(section_size);
+        Interval needed = stftmerger.requiredInterval( section );
+        pOperation fast_source = Heightmap::fast_source( target, needed );
+        stftmerger.source( fast_source );
         Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
         stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
-        Signal::Interval chunk_interval = ci.chunk->getInterval();
+        Interval chunk_interval = ci.chunk->getInterval();
         if (!(sections & chunk_interval))
             break;
         sections -= chunk_interval;

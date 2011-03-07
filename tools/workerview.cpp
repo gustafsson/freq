@@ -23,12 +23,12 @@ Sawe::Project* WorkerView::
 void WorkerView::
         draw()
 {
-    Signal::Intervals I = project_->worker.previous_todo_list();
+    Signal::Intervals I = project_->worker.todo_list();
     float FS = project_->head->head_source()->sample_rate();
 
     std::vector<Heightmap::Position> pts(2);
 
-    for (Signal::Intervals::iterator itr = I.begin(); itr != I.end(); ++itr)
+    for (Signal::Intervals::const_iterator itr = I.begin(); itr != I.end(); ++itr)
     {
         pts[0].time = itr->first/FS;
         pts[1].time = itr->last/FS;

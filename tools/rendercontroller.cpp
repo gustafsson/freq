@@ -98,7 +98,6 @@ public:
         foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             Signal::Intervals inv_coll = c->invalid_samples();
-            TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
             I |= inv_coll;
         }
 

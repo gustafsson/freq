@@ -29,6 +29,7 @@ public:
 
     virtual Intervals invalid_samples();
     virtual Intervals invalid_returns();
+    Intervals cached_samples();
 
     /**
       Function to read from on a cache miss. Doesn't have to return the data

@@ -116,6 +116,13 @@ Intervals OperationCache::
 
 
 Intervals OperationCache::
+        cached_samples()
+{
+    return _cache.samplesDesc_all_channels() - _cache.invalid_samples_all_channels() - invalid_returns();
+}
+
+
+Intervals OperationCache::
         invalid_returns()
 {
     Intervals R;

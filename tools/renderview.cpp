@@ -886,8 +886,8 @@ void RenderView::
     Signal::Worker& worker = model->project()->worker;
     Signal::Operation* first_source = worker.source()->root();
 
-    TIME_PAINTGL TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p)",
-        N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source);
+    TIME_PAINTGL TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p) %s",
+        N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source, first_source->name().c_str());
     if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
     {
         model->collections[i]->printCacheSize();
@@ -969,17 +969,16 @@ void RenderView::
 
         if (!worker.target()->post_sink()->isUnderfed())
         {
+            // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
             worker.target( model->renderSignalTarget );
         }
     }
 
     {   // Work
-		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
-        isWorking = worker.fetch_todo_list();
-        TaskInfo("tst");
-        TaskInfo("target = %s, worker.fetch_todo_list() = %s, isWorking = %d",
+        isWorking = worker.todo_list();
+        TIME_PAINTGL_DETAILS TaskTimer tt("Work target = %s, todo list = %s, isWorking = %d",
                  worker.target()->name().c_str(),
-                 worker.previous_todo_list().toString().c_str(), isWorking);
+                 worker.todo_list().toString().c_str(), isWorking);
 
         if (isWorking || isRecording) {
             if (!_work_timer.get())

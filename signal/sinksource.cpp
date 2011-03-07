@@ -69,7 +69,7 @@ void SinkSource::
 {
     BufferSource bs( buffer );
 
-    Intervals I = expected & buffer->getInterval();
+    const Intervals I = expected & buffer->getInterval();
     BOOST_FOREACH( const Interval& i, I )
     {
         pBuffer s = bs.readFixedLength( i );
@@ -94,7 +94,7 @@ void SinkSource::
     //samplesDesc().print("selfmerged start");
     //tt.info("_cache.size()=%u", _cache.size());
 
-    Intervals sid = samplesDesc() - forget;
+    const Intervals sid = samplesDesc() - forget;
 	std::vector<pBuffer> new_cache;
 
     BOOST_FOREACH( Interval i, sid )
@@ -160,7 +160,7 @@ void SinkSource::
             // thus making this operation inexpensive.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            BOOST_FOREACH( Interval i, toKeep )
+            BOOST_FOREACH( const Interval& i, toKeep )
             {
                 if(D) ss << " +" << i.toString();
 

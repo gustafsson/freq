@@ -31,20 +31,6 @@ bool Interval::
 }
 
 
-bool Interval::
-        isConnectedTo(const Interval& r) const
-{
-    return last >= r.first && r.last >= first;
-}
-
-
-bool Interval::
-        operator<(const Interval& r) const
-{
-    return first < r.first;
-}
-
-
 Interval& Interval::
         operator|=(const Interval& r)
 {
@@ -90,7 +76,7 @@ Intervals::
     if (r.count())
     {
         BOOST_ASSERT( r.valid() );
-        this->push_back( r );
+        base::push_back( r );
     }
 }
 
@@ -101,7 +87,7 @@ Intervals::
     if (first != last)
     {
         BOOST_ASSERT( first < last );
-        this->push_back( Interval( first, last ) );
+        base::push_back( Interval( first, last ) );
     }
 }
 
@@ -120,30 +106,35 @@ Intervals& Intervals::
 {
     if (0==r.count())
         return *this;
-    BOOST_ASSERT(r.valid());
 
-    this->push_back( r );
-    this->sort();
-
-    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end(); ) {
-        std::list<Interval>::iterator next = itr;
-        next++;
-        if (next!=this->end()) {
-            Interval& a = *itr;
-            Interval& b = *next;
-
-            if (a.isConnectedTo(b))
-            {
-                a |= b;
-                itr = this->erase( next );
-                itr--;
-            } else {
-                itr++;
-            }
-        } else {
+    base::iterator first = firstIntersecting( r );
+    if (first==end())
+    {
+        base::iterator itr = base::begin();
+        // find first after
+        while ( itr!=base::end() && itr->first <= r.last)
             itr++;
-        }
+        base::insert( itr, r );
+        return *this;
     }
+
+    base::iterator last = first;
+    last++;
+    // find first after
+    while (last != end() && last->first <= r.last)
+        last++;
+
+    Interval b = r;
+
+    for (base::iterator itr=first; itr!=last; itr++)
+    {
+        Interval& i = *itr;
+        b |= i;
+    }
+
+    base::erase( first, last );
+    base::insert( last, b );
+
     return *this;
 }
 
@@ -162,9 +153,11 @@ Intervals& Intervals::
 {
     if (0==r.count())
         return *this;
-    BOOST_ASSERT(r.valid());
 
-    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
+    base::iterator itr = firstIntersecting( r );
+
+    while (itr!=base::end())
+    {
         Interval& i = *itr;
         // Check if interval 'itr' intersects with 'r'
         if (i.isConnectedTo(r)) {
@@ -183,14 +176,14 @@ Intervals& Intervals::
 
             // Check if intersection is over the entire 'itr'
             else if (i.first >= r.first && i.last <= r.last)
-                itr = this->erase( itr );
+                itr = base::erase( itr );
 
             // Check if intersection is in the middle of 'itr'
             else if (i.first < r.first && i.last > r.last) {
                 Interval j(r.last, i.last);
                 itr->last = r.first;
                 itr++;
-                this->insert(itr, j);
+                base::insert(itr, j);
 
             // Else, error
             } else {
@@ -198,7 +191,7 @@ Intervals& Intervals::
                 throw std::logic_error("Shouldn't reach here");
             }
         } else {
-            itr++;
+            break;
         }
     }
     return *this;
@@ -208,7 +201,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator >>= (const IntervalType& b)
 {
-    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
+    for (base::iterator itr = base::begin(); itr!=base::end();) {
         Interval& i = *itr;
 	
         if (Interval::IntervalType_MIN + b > i.first ) i.first = Interval::IntervalType_MIN;
@@ -217,7 +210,7 @@ Intervals& Intervals::
 		else i.last -= b;
 
         if ( Interval::IntervalType_MIN == i.first && Interval::IntervalType_MIN == i.last )
-            itr = this->erase( itr );
+            itr = base::erase( itr );
 		else
 			itr++;
 	}
@@ -229,7 +222,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator <<= (const IntervalType& b)
 {
-    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
+    for (base::iterator itr = base::begin(); itr!=base::end();) {
         Interval& i = *itr;
 	
         if (Interval::IntervalType_MAX - b <= i.first ) i.first = Interval::IntervalType_MAX;
@@ -238,7 +231,7 @@ Intervals& Intervals::
 		else i.last += b;
 
         if ( Interval::IntervalType_MAX == i.first && Interval::IntervalType_MAX == i.last )
-            itr = this->erase( itr );
+            itr = base::erase( itr );
 		else
 			itr++;
 	}
@@ -250,19 +243,21 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator &= (const Intervals& b)
 {
-	Intervals rebuild;
+    // TODO optimize
+    Intervals rebuild;
+
     foreach (const Interval& r,  b) {
-		Intervals copy = *this;
+        Intervals copy = *this;
         copy&=( r );
-		rebuild |= copy;
-	}
+        rebuild |= copy;
+    }
 
     *this = rebuild;
 
     if (b.empty())
-        this->clear();
+        clear();
 
-	return *this;
+    return *this;
 }
 
 
@@ -275,18 +270,19 @@ Intervals& Intervals::
         return *this;
     }
 
-    BOOST_ASSERT(r.valid());
+    base::iterator itr = firstIntersecting( r );
+    if (itr != base::begin())
+        itr = base::erase(begin(), itr);
 
-    for (std::list<Interval>::iterator itr = this->begin(); itr!=this->end();) {
+    while (itr!=base::end())
+    {
         Interval& i = *itr;
 
         // Check if interval 'itr' does not intersect with 'r'
-        if ((i.last<=r.first) || (r.last<=i.first)) {
-            itr = this->erase(itr);
+        if (!i.isConnectedTo(r)) {
+            itr = base::erase(itr, end());
 
         } else {
-            BOOST_ASSERT(i.isConnectedTo(r));
-
             // Check if intersection is over the start of 'itr'
             if (i.first >= r.first && i.last > r.last)
                 i.last = r.last;
@@ -326,8 +322,8 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator*=(const float& scale)
 {
-    std::list<Interval>::iterator itr;
-    for (itr = this->begin(); itr!=this->end(); itr++) {
+    base::iterator itr;
+    for (itr = base::begin(); itr!=base::end(); itr++) {
         itr->first*=scale;
         itr->last*=scale;
     }
@@ -339,11 +335,11 @@ Intervals& Intervals::
 Interval Intervals::
         fetchFirstInterval() const
 {
-    if (this->empty())
+    if (empty())
         return Interval( Interval::IntervalType_MIN,
                          Interval::IntervalType_MIN );
 
-    return this->front();
+    return base::front();
 }
 
 
@@ -355,24 +351,23 @@ Interval Intervals::
     else
         center -= dt/2;
 
-    if (0 == this->size()) {
+    if (empty()) {
         return Interval( Interval::IntervalType_MIN, Interval::IntervalType_MIN );
     }
 
-    std::list<Interval>::const_iterator itr;
-    for (itr = this->begin(); itr!=this->end(); itr++) {
-        if (itr->first >= center)
+    const_iterator itr;
+    for (itr = begin(); itr!=end(); itr++)
+        if ( itr->first > center )
             break;
-    }
 
     IntervalType distance_to_next = Interval::IntervalType_MAX;
     IntervalType distance_to_prev = Interval::IntervalType_MAX;
 
-    if (itr != this->end()) {
+    if (itr != end()) {
         distance_to_next = itr->first - center;
     }
-    if (itr != this->begin()) {
-        std::list<Interval>::const_iterator itrp = itr;
+    if (itr != begin()) {
+        base::const_iterator itrp = itr;
         itrp--;
         if (itrp->last < center )
             distance_to_prev = center - itrp->last;
@@ -393,12 +388,16 @@ Interval Intervals::
             return f;
         }
 
+        BOOST_ASSERT(center>=f.first);
+
         unsigned int_div_ceil = ( center-f.first + dt - 1 ) / dt;
         IntervalType start = f.first + dt*int_div_ceil;
 
         if (f.last <= start ) {
             return Interval( f.last-dt, f.last );
         }
+
+        BOOST_ASSERT(start>=f.first);
 
         return Interval( start, std::min(start+dt, f.last) );
     }
@@ -415,11 +414,11 @@ Intervals Intervals::
 Interval Intervals::
         coveredInterval() const
 {
-    if (this->empty()) {
+    if (empty()) {
         return Interval( 0, 0 );
     }
 
-    return Interval( this->front().first, this->back().last );
+    return Interval( base::front().first, base::back().last );
 }
 
 
@@ -482,6 +481,16 @@ IntervalType Intervals::
     }
 
     return c;
+}
+
+
+Intervals::base::iterator Intervals::
+        firstIntersecting( const Interval& b )
+{
+    for (base::iterator itr = base::begin(); itr!=base::end(); itr++)
+        if ( itr->isConnectedTo( b ) )
+            return itr;
+    return base::end();
 }
 
 

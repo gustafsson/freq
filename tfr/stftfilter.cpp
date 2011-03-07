@@ -31,8 +31,8 @@ StftFilter::
 }
 
 
-ChunkAndInverse StftFilter::
-        computeChunk( const Signal::Interval& I )
+Signal::Interval StftFilter::
+        requiredInterval( const Signal::Interval& I )
 {
     //((Stft*)transform().get())->set_approximate_chunk_size( 1 << 12 );
     unsigned chunk_size = ((Stft*)transform().get())->chunk_size();
@@ -46,8 +46,6 @@ ChunkAndInverse StftFilter::
     if (I.first >= 1.5*chunk_size)
         first_chunk = (I.first - 1.5*chunk_size)/chunk_size;
 
-    ChunkAndInverse ci;
-
     Interval chunk_interval (
                 first_chunk*chunk_size,
                 last_chunk*chunk_size);
@@ -60,7 +58,17 @@ ChunkAndInverse StftFilter::
                 chunk_interval.last = last_chunk*chunk_size;
         }
     }
-    ci.inverse = source()->readFixedLength( chunk_interval );
+
+    return chunk_interval;
+}
+
+
+ChunkAndInverse StftFilter::
+        computeChunk( const Signal::Interval& I )
+{
+    ChunkAndInverse ci;
+
+    ci.inverse = source()->readFixedLength( requiredInterval( I ) );
 
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );

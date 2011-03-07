@@ -18,7 +18,7 @@
 using namespace std;
 using namespace boost;
 using namespace Ui;
-
+using namespace Signal;
 
 static bool check_cuda( bool use_OpenGL_bindings ) {
     stringstream ss;
@@ -240,6 +240,7 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
+        RedirectStdout rs("sonicawe.log");
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I ^= Signal::Interval(150,150);
@@ -252,6 +253,7 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
+        RedirectStdout rs("sonicawe.log");
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I -= Signal::Interval(150,150);
@@ -260,6 +262,55 @@ int main(int argc, char *argv[])
         cout << I.toString() << endl;
         I &= Signal::Intervals(150,150);
         cout << I.toString() << endl;
+        return 0;
+    }
+    if (0)
+    {
+        RedirectStdout rs("sonicawe.log");
+        Intervals I(100, 300);
+        vector<Intervals> T;
+        T.push_back( Intervals(50,80) );
+        T.push_back( Intervals(50,100));
+        T.push_back( Intervals(50,200));
+        T.push_back( Intervals(50,400));
+        T.push_back( Intervals(100,300));
+        T.push_back( Intervals(200,250));
+        T.push_back( Intervals(200,400));
+        T.push_back( Intervals(300,400));
+        T.push_back( Intervals(350,400));
+
+        // note operator precendence for bit operators:
+        // 'a & b == c' is equivalent to 'a & (b == c)'.
+        // Thas i  not '(a & b) == c' which was probably intended.
+
+        BOOST_ASSERT( (I | T[0]) == (Intervals(100,300) | Intervals(50,80)));
+        BOOST_ASSERT( (I | T[1]) == Intervals(50,300));
+        BOOST_ASSERT( (I | T[2]) == Intervals(50,300));
+        BOOST_ASSERT( (I | T[3]) == Intervals(50,400));
+        BOOST_ASSERT( (I | T[4]) == Intervals(100,300));
+        BOOST_ASSERT( (I | T[5]) == Intervals(100,300));
+        BOOST_ASSERT( (I | T[6]) == Intervals(100,400));
+        BOOST_ASSERT( (I | T[7]) == Intervals(100,400));
+        BOOST_ASSERT( (I | T[8]) == (Intervals(350,400) | Intervals(100,300)));
+        BOOST_ASSERT( (I - T[0]) == Intervals(100,300));
+        BOOST_ASSERT( (I - T[1]) == Intervals(100,300));
+        BOOST_ASSERT( (I - T[2]) == Intervals(200,300));
+        BOOST_ASSERT( (I - T[3]) == Intervals());
+        BOOST_ASSERT( (I - T[4]) == Intervals());
+        BOOST_ASSERT( (I - T[5]) == (Intervals(100,200) | Intervals(250,300)));
+        BOOST_ASSERT( (I - T[6]) == Intervals(100,200));
+        BOOST_ASSERT( (I - T[7]) == Intervals(100,300));
+        BOOST_ASSERT( (I - T[8]) == Intervals(100,300));
+        BOOST_ASSERT( (I & T[0]) == Intervals());
+        BOOST_ASSERT( (I & T[1]) == Intervals());
+        BOOST_ASSERT( (I & T[2]) == Intervals(100,200));
+        BOOST_ASSERT( (I & T[3]) == Intervals(100,300));
+        BOOST_ASSERT( (I & T[4]) == Intervals(100,300));
+        BOOST_ASSERT( (I & T[5]) == Intervals(200,250));
+        BOOST_ASSERT( (I & T[6]) == Intervals(200,300));
+        BOOST_ASSERT( (I & T[7]) == Intervals());
+        BOOST_ASSERT( (I & T[8]) == Intervals());
+        TaskInfo("ok");
         return 0;
     }
     if (0)
