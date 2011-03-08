@@ -14,9 +14,12 @@ public:
 signals:
 
 public slots:
+    void setEnabled( bool enabled );
 
 private:
     WorkerView* view_;
+    class RenderView* renderview_;
+    class TimelineView* timelineview_;
 };
 
 } // namespace Tools
