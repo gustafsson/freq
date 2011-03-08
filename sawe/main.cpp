@@ -355,6 +355,10 @@ int main(int argc, char *argv[])
     }
     if (0) {
         ResampleTest rt;
+        rt.test1();
+        rt.test2();
+        rt.test3();
+        rt.test4();
         rt.test5();
         return 0;
     }

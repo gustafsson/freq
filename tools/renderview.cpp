@@ -867,7 +867,7 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-	TIME_PAINTGL TaskTimer tt("============================= RenderView::paintGL =============================");
+    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL .............................");
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;

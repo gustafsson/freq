@@ -262,6 +262,7 @@ namespace Tools
         head->head_source( o );
 
         project_->head->head_source( o );
+        project_->setModified();
 
         redraw_operation_tree();
 

@@ -12,6 +12,9 @@ namespace Sawe { class Project; }
 
 namespace Signal {
 
+/**
+  Collection of all chains.
+  */
 class Layers
 {
 public:

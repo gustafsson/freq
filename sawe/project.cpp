@@ -24,7 +24,7 @@ Project::
         Project( Signal::pOperation root, std::string layer_title )
 :   worker(Signal::pTarget()),
     layers(this),
-    is_modified_(true),
+    is_modified_(false),
     project_title_(layer_title)
 {
     Signal::pChain chain(new Signal::Chain(root));
@@ -67,6 +67,8 @@ void Project::
 
     tools().render_model.renderSignalTarget->findHead( head->chain() )->head_source( head->head_source() );
     tools().playback_model.playbackTarget->findHead( head->chain() )->head_source( head->head_source() );
+
+    setModified();
 }
 
 
@@ -211,7 +213,7 @@ Project::
             :
             worker(Signal::pTarget()),
             layers(this),
-            is_modified_(true)
+            is_modified_(false)
 {}
 
 

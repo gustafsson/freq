@@ -25,14 +25,14 @@ unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
 win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
 win32:QMAKE_LFLAGS_DEBUG += \
-	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
-	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
-	/NODEFAULTLIB:MSVCRT \
-	
+    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
+    /NODEFAULTLIB:MSVCRT \
+
 win32:QMAKE_LFLAGS_RELEASE += \
-	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
-	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
-	
+    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
+
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 unix:!macx: QMAKE_CXX = colorgcc
