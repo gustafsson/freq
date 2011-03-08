@@ -2,6 +2,8 @@
 *~
 *.pdb
 *.deb
+*.moc
+*.cubin
 moc_*.cpp
 ui_mainwindow.h
 *.wav
