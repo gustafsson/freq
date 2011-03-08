@@ -647,7 +647,7 @@ unsigned Cwt::
         nScales(float fs) const
 {
     float number_of_octaves = log2f(get_max_hz(fs)) - log2f(_min_hz);
-    return 1 + (unsigned)(number_of_octaves * scales_per_octave());
+    return 1 + ceil(number_of_octaves * scales_per_octave());
 }
 
 
