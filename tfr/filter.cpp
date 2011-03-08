@@ -92,6 +92,15 @@ Signal::pBuffer Filter::
 }
 
 
+Operation* Filter::
+        affecting_source( const Interval& I )
+{
+    if (!_try_shortcuts)
+        return this;
+    return Operation::affecting_source( I );
+}
+
+
 ChunkAndInverse Filter::
         readChunk( const Signal::Interval& I )
 {

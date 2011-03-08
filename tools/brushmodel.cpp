@@ -187,11 +187,23 @@ Signal::Interval BrushModel::
         Heightmap::pBlock block = collection->getBlock( ref );
         if (block)
         {
-            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+            Heightmap::Block::pData blockData = block->glblock->height()->data;
+
+#ifdef CUDA_MEMCHECK_TEST
+            Heightmap::Block::pData copy( new GpuCpuData<float>( *blockData ));
+            blockData.swap( copy );
+#endif
+
             ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
                            blockData->getCudaGlobal(),
                            gauss );
             // collection->invalidate_samples is called by brushcontroller on mouse release
+
+#ifdef CUDA_MEMCHECK_TEST
+            blockData.swap( copy );
+            *blockData = *copy;
+#endif
+
         }
     }
 

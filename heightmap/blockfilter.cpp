@@ -148,13 +148,11 @@ void CwtToBlock::
     DEBUG_CWTTOBLOCK TaskTimer tt2("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
                                  chunk_startTime, chunk_startTime + chunk_length, a.time, b.time, a.scale, b.scale);
 
-    float in_sample_rate = chunk.sample_rate;
-    float out_sample_rate = block->ref.sample_rate();
-
     float merge_first_scale = a.scale;
     float merge_last_scale = b.scale;
     float chunk_first_scale = _collection->display_scale().getFrequencyScalar( chunk.minHz() );
     float chunk_last_scale = _collection->display_scale().getFrequencyScalar( chunk.maxHz() );
+
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
     if (merge_first_scale >= merge_last_scale)
@@ -177,35 +175,14 @@ void CwtToBlock::
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = (inInterval.last-1)/chunk.original_sample_rate;
 
-    float in_frequency_resolution = chunk.nScales()/(chunk_last_scale - chunk_first_scale);
-    unsigned out_frequency_resolution = block->ref.frequency_resolution();
-    float in_frequency_offset = (merge_first_scale - chunk_first_scale) * in_frequency_resolution;
-    float out_frequency_offset = (merge_first_scale - a.scale) * out_frequency_resolution;
-    // Either out_frequency_offset or in_frequency_offset is 0
-    if (0<out_frequency_offset)
-    {
-        // Make out_frequency_offset to an integer (by ceil) and add the
-        // remainder to in_frequency_offset
-        float c = ceil(out_frequency_offset);
-        float d = c - out_frequency_offset;
-        out_frequency_offset = c;
-        in_frequency_offset += d*in_frequency_resolution/out_frequency_resolution;
-    }
-    if (out_frequency_offset == _collection->scales_per_block())
-        out_frequency_offset--;
-
-    DEBUG_CWTTOBLOCK TaskTimer("a.scale = %g", a.scale);
-    DEBUG_CWTTOBLOCK TaskTimer("b.scale = %g", b.scale);
-    DEBUG_CWTTOBLOCK TaskTimer("chunk_first_scale = %g", chunk_first_scale);
-    DEBUG_CWTTOBLOCK TaskTimer("chunk_last_scale = %g", chunk_last_scale);
-    DEBUG_CWTTOBLOCK TaskTimer("merge_first_scale = %g", merge_first_scale);
-    DEBUG_CWTTOBLOCK TaskTimer("merge_last_scale = %g", merge_last_scale);
-    DEBUG_CWTTOBLOCK TaskTimer("in_frequency_offset = %g", in_frequency_offset);
-    DEBUG_CWTTOBLOCK TaskTimer("out_frequency_offset = %g", out_frequency_offset);
-    DEBUG_CWTTOBLOCK TaskTimer("in_frequency_resolution = %g", in_frequency_resolution);
-    DEBUG_CWTTOBLOCK TaskTimer("out_frequency_resolution = %u", out_frequency_resolution);
-    DEBUG_CWTTOBLOCK TaskTimer("chunk.nScales() = %u", chunk.nScales());
-    DEBUG_CWTTOBLOCK TaskTimer("_collection->scales_per_block() = %u", _collection->scales_per_block());
+    DEBUG_CWTTOBLOCK TaskInfo("a.scale = %g", a.scale);
+    DEBUG_CWTTOBLOCK TaskInfo("b.scale = %g", b.scale);
+    DEBUG_CWTTOBLOCK TaskInfo("chunk_first_scale = %g", chunk_first_scale);
+    DEBUG_CWTTOBLOCK TaskInfo("chunk_last_scale = %g", chunk_last_scale);
+    DEBUG_CWTTOBLOCK TaskInfo("merge_first_scale = %g", merge_first_scale);
+    DEBUG_CWTTOBLOCK TaskInfo("merge_last_scale = %g", merge_last_scale);
+    DEBUG_CWTTOBLOCK TaskInfo("chunk.nScales() = %u", chunk.nScales());
+    DEBUG_CWTTOBLOCK TaskInfo("_collection->scales_per_block() = %u", _collection->scales_per_block());
 
 
     Signal::Interval transfer = transferDesc.coveredInterval();
@@ -216,21 +193,6 @@ void CwtToBlock::
         TaskTimer("chunk.first_valid_sample = %u", chunk.first_valid_sample).suppressTiming();
         TaskTimer("chunk.n_valid_samples = %u", chunk.n_valid_samples).suppressTiming();
     }
-
-    // Find resolution and offest for the two blocks to be merged
-    float in_sample_offset = transfer.first - inInterval.first;
-    float out_sample_offset = transfer.first - outInterval.first;
-
-    // Rescale in_sample_offset to in_sample_rate (samples are originally
-    // described in the original source sample rate)
-    in_sample_offset *= in_sample_rate / chunk.original_sample_rate;
-
-    // Rescale out_sample_offset to out_sample_rate (samples are originally
-    // described in the original source sample rate)
-    out_sample_offset *= out_sample_rate / chunk.original_sample_rate;
-
-    // Add offset for redundant samples in chunk
-    in_sample_offset += chunk.first_valid_sample;
 
     CudaException_CHECK_ERROR();
 
@@ -245,23 +207,12 @@ void CwtToBlock::
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
-    if(0) {
-        float2* p = chunk.transform_data->getCpuMemory();
-        cudaExtent sz = chunk.transform_data->getNumberOfElements();
-        for (unsigned y=0; y<sz.height; ++y)
-        {
-            for (unsigned x=0; x<=chunk.first_valid_sample+1; ++x)
-            {
-                p[y*sz.width + x ] = make_float2(100,100);
-            }
-
-            for (unsigned x=chunk.first_valid_sample + chunk.n_valid_samples + 1;
-                 x<sz.width; ++x)
-            {
-                p[y*sz.width + x ] = make_float2(100,100);
-            }
-        }
-    }
+    //    cuda-memcheck complains even on this testkernel when using global memory
+    //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
+#ifdef CUDA_MEMCHECK_TEST
+    Block::pData copy( new GpuCpuData<float>( *outData ));
+    outData.swap( copy );
+#endif
 
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
@@ -269,13 +220,19 @@ void CwtToBlock::
                      make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
                      make_float4( chunk_a.time, chunk_a.scale,
-                                  chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // bug workaround, only affects visual
+                                  //chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // numerical error workaround, only affects visual
+                                 chunk_b.time, chunk_b.scale  ), // numerical error workaround, only affects visual
                      make_float4( a.time, a.scale,
                                   b.time, b.scale ),
                      complex_info,
+                     chunk.freqAxis,
                      _collection->display_scale()
                      );
 
+#ifdef CUDA_MEMCHECK_TEST
+    outData.swap( copy );
+    *outData = *copy;
+#endif
 
     // TODO recompute transfer to the samples that have actual support
     CudaException_CHECK_ERROR();
@@ -326,6 +283,11 @@ void StftToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
+#ifdef CUDA_MEMCHECK_TEST
+    Block::pData copy( new GpuCpuData<float>( *outData ));
+    outData.swap( copy );
+#endif
+
     ::resampleStft( chunk.transform_data->getCudaGlobal(),
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
@@ -334,6 +296,11 @@ void StftToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale());
+
+#ifdef CUDA_MEMCHECK_TEST
+    outData.swap( copy );
+    *outData = *copy;
+#endif
 
     block->valid_samples |= chunk.getInterval();
 }
@@ -372,6 +339,11 @@ void CepstrumToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
+#ifdef CUDA_MEMCHECK_TEST
+    Block::pData copy( new GpuCpuData<float>( *outData ));
+    outData.swap( copy );
+#endif
+
     ::resampleStft( chunk.transform_data->getCudaGlobal(),
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
@@ -380,6 +352,11 @@ void CepstrumToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale());
+
+#ifdef CUDA_MEMCHECK_TEST
+    outData.swap( copy );
+    *outData = *copy;
+#endif
 
     block->valid_samples |= chunk.getInterval();
 }
