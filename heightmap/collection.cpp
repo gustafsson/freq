@@ -623,7 +623,7 @@ pBlock Collection::
 
             // fill block by STFT during the very first frames
             if (!tfr_is_stft) // don't stubb if they will be filled by stft shortly hereafter
-            if (10 > _frame_counter) {
+            if (10 > _frame_counter || true) {
                 //size_t stub_size
                 //if ((b.time - a.time)*fast_source( target)->sample_rate()*sizeof(float) )
                 try
@@ -880,9 +880,9 @@ void Collection::
         fillBlock( pBlock block )
 {
     StftToBlock stftmerger(this);
-    Tfr::Stft* transp = new Tfr::Stft();
+    Tfr::Stft* transp;
+    stftmerger.transform( Tfr::pTransform( transp = new Tfr::Stft() ));
     transp->set_approximate_chunk_size(1 << 12); // 4096
-    stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.exclude_end_block = true;
 
     // Only take 4 MB of signal data at a time
@@ -892,7 +892,7 @@ void Collection::
 
     boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
     boost::posix_time::ptime start_time = now;
-    unsigned time_to_work_ms = 500;
+    unsigned time_to_work_ms = 20; // should count as interactive
     while (sections)
     {
         Interval section = sections.fetchInterval(section_size);
@@ -902,8 +902,7 @@ void Collection::
         Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
         stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
         Interval chunk_interval = ci.chunk->getInterval();
-        if (!(sections & chunk_interval))
-            break;
+
         sections -= chunk_interval;
 
         now = boost::posix_time::microsec_clock::local_time();
@@ -947,11 +946,24 @@ bool Collection::
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
 
+    BOOST_ASSERT( in_h.get() != out_h.get() );
+    BOOST_ASSERT( outBlock.get() != inBlock.get() );
+
+#ifdef CUDA_MEMCHECK_TEST
+    Block::pData copy( new GpuCpuData<float>( *out_h->data ));
+    out_h->data.swap( copy );
+#endif
+
     ::blockMerge( in_h->data->getCudaGlobal(),
                   out_h->data->getCudaGlobal(),
 
                   make_float4( ia.time, ia.scale, ib.time, ib.scale ),
                   make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
+
+#ifdef CUDA_MEMCHECK_TEST
+    out_h->data.swap( copy );
+    *out_h->data = *copy;
+#endif
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
     if (0)

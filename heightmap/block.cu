@@ -242,8 +242,6 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
     axes.offs = getTop(inputRegion);
     axes.scale = getHeight(inputRegion);
 
-    cout << "outputAxis.getFrequency( 1.0f ) = " << outputAxis.getFrequency( 1.0f ) << endl;
-
     switch (transformMethod)
     {
     case Heightmap::ComplexInfo_Amplitude_Weighted:
