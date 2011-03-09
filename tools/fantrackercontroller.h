@@ -19,7 +19,7 @@ signals:
 public slots:
 
 private slots:
-    void receiveFanTracker();
+    void receiveToggleFanTracker(bool);
 
 private:
     void setupGui();

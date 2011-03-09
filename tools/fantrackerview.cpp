@@ -15,7 +15,7 @@ void FanTrackerView::
         draw()
 {
 
-    if (( model_->selected_filter() ))
+    if ( model_->selected_filter() )
     {
 
     Tfr::FreqAxis const& fa = render_view_->model->display_scale();
