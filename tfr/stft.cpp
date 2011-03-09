@@ -146,9 +146,9 @@ pChunk Fft::
     chunk->freqAxis.setLinear( b.sample_rate, chunk->nScales() );
 
     chunk->order = Chunk::Order_column_major;
+    chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
-    chunk->chunk_offset = b.sample_offset + input_n.width/2;
-    chunk->n_valid_samples = 1;
+    chunk->n_valid_samples = input_n.width;
     chunk->sample_rate = b.sample_rate / chunk->n_valid_samples;
     ((StftChunk*)chunk.get())->original_sample_rate = real_buffer->sample_rate;
     return chunk;
