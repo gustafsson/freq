@@ -186,7 +186,6 @@ void TimelineView::
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    _barHeight = 20.f/(_vertical?height:width);
     glOrtho(0,1,0,1, -10,10);
 
     glMatrixMode(GL_MODELVIEW);
@@ -207,6 +206,11 @@ void TimelineView::
     }
 
     _length = std::max( 1.f, _project->worker.length());
+    if (_length < 60*10)
+        _barHeight = 0;
+    else
+        _barHeight = 20.f/(_vertical?_height:_width);
+
     _except_count = 0;
     try {
         GlException_CHECK_ERROR();
@@ -253,6 +257,7 @@ void TimelineView::
             }
         }
 
+        if (_barHeight>0)
         {
             // Draw little bar for entire signal at the bottom of the timeline
             //glPushMatrixContext mc(GL_MODELVIEW);
