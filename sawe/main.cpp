@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
 
         {
             TaskInfo ti("Version: %s", a.version_string().c_str());
-            TaskInfo("Build timestamp: %s, %s", __DATE__, __TIME__);
+            TaskInfo("Build timestamp: %s, %s. Revision %s", __DATE__, __TIME__, SONICAWE_REVISION);
 
             boost::gregorian::date today = boost::gregorian::day_clock::local_day();
             boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
