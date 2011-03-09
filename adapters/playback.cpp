@@ -341,7 +341,7 @@ bool Playback::
 {
     //return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
     bool isActive = streamPlayback ? streamPlayback->isActive() : false;
-    bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
+    //bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
     // isActive and isStopped might both be false at the same time
     bool paused = isPaused();
     return streamPlayback ? !isActive && !paused : true;

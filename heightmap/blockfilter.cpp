@@ -275,6 +275,7 @@ void StftToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
+    // hack to extent first window to first sample, instead of interpolating from 0
     if (inInterval.first < chunk.nScales())
         inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
@@ -333,6 +334,7 @@ void CepstrumToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
+    // hack to extent first window to first sample, instead of interpolating from 0
     if (inInterval.first < chunk.nScales())
         inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;

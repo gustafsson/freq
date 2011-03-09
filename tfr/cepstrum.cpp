@@ -14,7 +14,7 @@ pChunk Cepstrum::
 {
     Stft stft = Stft::Singleton();
     pChunk chunk = stft(b);
-    pBuffer buffer( new Buffer(chunk->chunk_offset, chunk->nSamples()*chunk->nScales(), chunk->original_sample_rate));
+    pBuffer buffer( new Buffer(b->sample_offset, chunk->nSamples()*chunk->nScales(), b->sample_rate));
 
     float2* input = chunk->transform_data->getCpuMemory();
     float* output = buffer->waveform_data()->getCpuMemory();
