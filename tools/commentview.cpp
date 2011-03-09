@@ -94,7 +94,7 @@ void CommentView::
         return;
     }
 
-    if (!mask().contains( event->pos() ))
+    if (!maskedRegion.contains( event->pos() ))
     {
         setEditFocus( false );
         event->setAccepted( false );
@@ -132,7 +132,7 @@ void CommentView::
 void CommentView::
         mouseDoubleClickEvent ( QMouseEvent * event )
 {
-    if (!mask().contains( event->pos() ))
+    if (!maskedRegion.contains( event->pos() ))
     {
         event->setAccepted( false );
         return;
@@ -145,7 +145,7 @@ void CommentView::
 void CommentView::
         mouseMoveEvent(QMouseEvent *event)
 {    
-    bool visible = mask().contains( event->pos() );
+    bool visible = maskedRegion.contains( event->pos() );
     setContextMenuPolicy( visible ? Qt::ActionsContextMenu : Qt::NoContextMenu);
 
     bool moving = false;
@@ -220,7 +220,7 @@ void CommentView::
 void CommentView::
         wheelEvent(QWheelEvent *e)
 {
-    if (!mask().contains( e->pos() ))
+    if (!maskedRegion.contains( e->pos() ))
     {
         e->setAccepted( false );
         return;
@@ -310,7 +310,7 @@ void CommentView::
     }
 
 
-    QRegion maskedRegion = r;
+    maskedRegion = r;
     maskedRegion |= QRegion( poly.toPolygon() );
     maskedRegion -= QRegion(0,0,1,1);
     maskedRegion -= QRegion(r.right()-2,0,2,1);
