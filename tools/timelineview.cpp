@@ -221,11 +221,9 @@ void TimelineView::
 
         { // Render
             // Set up camera position
-            float look_ahead = 0; // 1
-            float h = look_ahead - 0.5f*_length/_xscale;
             if (_xscale<1) _xscale = 1;
-            if (_xoffs<h) _xoffs = h;
-            if (_xoffs>_length+h) _xoffs = _length+h;
+            if (_xoffs<0) _xoffs = 0;
+            if (_xoffs>_length-_length/_xscale) _xoffs = _length-_length/_xscale;
 
             if (_render_view->model->renderer->left_handed_axes)
             {
