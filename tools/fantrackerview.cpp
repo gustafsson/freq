@@ -15,18 +15,20 @@ void FanTrackerView::
         draw()
 {
 
-    if (dynamic_cast<Support::FanTrackerFilter*>( model_->selected_filter ))
+    if (( model_->selected_filter() ))
     {
 
     Tfr::FreqAxis const& fa = render_view_->model->display_scale();
- //   float FS = project_->head->head_source()->sample_rate();
-    float FS = model_->selected_filter->sample_rate();
+    float FS = model_->selected_filter()->sample_rate();
 
-    Support::FanTrackerFilter::PointsT map_ = (model_->selected_filter->track);
+    Support::FanTrackerFilter::PointsT map_ = (model_->selected_filter()->track);
 
     std::vector<Heightmap::Position> pts;
 
     pts.resize(map_.size());
+
+    TaskTimer tt("Fantracker - number of points %f", (float)pts.size());
+
     unsigned i = 0;
     foreach(  const Support::FanTrackerFilter::PointsT::value_type& a, map_ )
         {
@@ -34,7 +36,6 @@ void FanTrackerView::
             float hz = a.second.Hz;
             pts[i++] = Heightmap::Position( time, fa.getFrequencyScalar( hz ));
         }
-
     Support::PaintLine::drawSlice( pts.size(), &pts[0], 0, 0, 0);
     }
 }

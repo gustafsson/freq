@@ -10,8 +10,8 @@ class FanTrackerModel
 {
 public:
     FanTrackerModel(RenderModel*);
-//    void SetFilter(Support::FanTrackerFilter*);
-    Support::FanTrackerFilter* selected_filter;
+    Support::FanTrackerFilter* selected_filter();
+    Signal::pOperation filter;
 
 private:
     RenderModel* render_model_;

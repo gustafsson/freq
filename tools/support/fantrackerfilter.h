@@ -15,6 +15,8 @@ public:
 
     virtual Signal::Intervals affected_samples();
 
+    virtual Operation* affecting_source( const Signal::Interval& I );
+
     struct Point
     {
         float Hz;

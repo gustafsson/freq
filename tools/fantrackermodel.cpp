@@ -7,9 +7,9 @@ FanTrackerModel::FanTrackerModel(RenderModel* render_model)
     render_model_ = render_model;
 }
 
-//void FanTrackerModel::SetFilter(Support::FanTrackerFilter* fantracker_filter)
-//{
-//    selected_filter = fantracker_filter;
-//}
+Support::FanTrackerFilter* FanTrackerModel::selected_filter()
+{
+    return dynamic_cast<Support::FanTrackerFilter*>( filter.get() );
+}
 
 } // namespace Tools

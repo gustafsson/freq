@@ -36,8 +36,8 @@ void FanTrackerController::
 
     Tools::Support::FanTrackerFilter* filter = new Tools::Support::FanTrackerFilter();
 
-    view_->model_->selected_filter = filter;
-    project_->appendOperation( Signal::pOperation(filter) );
+    view_->model_->filter = Signal::pOperation(filter);
+    project_->appendOperation( view_->model_->filter );
 
     render_view_->userinput_update();
 
