@@ -276,7 +276,7 @@ void StftToBlock::
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = (inInterval.last-chunk.nScales())/chunk.original_sample_rate;
+    chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
     // ::resampleStft computes frequency rows properly with its two instances
     // of FreqAxis.

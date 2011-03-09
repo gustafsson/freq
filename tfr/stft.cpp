@@ -146,9 +146,9 @@ pChunk Fft::
     chunk->freqAxis.setLinear( b.sample_rate, chunk->nScales() );
 
     chunk->order = Chunk::Order_column_major;
-    chunk->chunk_offset = b.sample_offset;
     chunk->first_valid_sample = 0;
-    chunk->n_valid_samples = input_n.width;
+    chunk->chunk_offset = b.sample_offset + input_n.width/2;
+    chunk->n_valid_samples = 1;
     chunk->sample_rate = b.sample_rate / chunk->n_valid_samples;
     ((StftChunk*)chunk.get())->original_sample_rate = real_buffer->sample_rate;
     return chunk;
@@ -356,11 +356,11 @@ Tfr::pChunk Stft::
         }
     }
 
-    chunk->freqAxis.setLinear( breal->sample_rate, chunk->nScales() );
+    chunk->freqAxis.setLinear( breal->sample_rate, _chunk_size );
     chunk->order = Chunk::Order_column_major;
-    chunk->chunk_offset = b.sample_offset;
+    chunk->chunk_offset = b.sample_offset + _chunk_size/2;
     chunk->first_valid_sample = 0;
-    chunk->n_valid_samples = chunk->nSamples() * chunk->nScales();
+    chunk->n_valid_samples = (chunk->nSamples()-1) * _chunk_size + 1;
     chunk->sample_rate = b.sample_rate / chunk->nScales();
     ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;
 

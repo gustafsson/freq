@@ -596,9 +596,6 @@ void RenderView::
 
     unsigned N = model->collections.size();
 
-    Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
-                model->project()->worker.source()->root());
-
     TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
 
     // Draw the first channel without a frame buffer
@@ -614,7 +611,7 @@ void RenderView::
         current_viewport[2], current_viewport[3]);
 
     for (unsigned i=0; i < 1; ++i)
-        drawCollection(i, fs, yscale);
+        drawCollection(i, yscale);
 
     if (1<N)
     {
@@ -641,7 +638,7 @@ void RenderView::
                 glViewport(0, 0,
                            fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
 
-                drawCollection(i, fs, yscale);
+                drawCollection(i, yscale);
             }
 
             glViewport(current_viewport[0], current_viewport[1],
@@ -685,12 +682,11 @@ void RenderView::
 
 
 void RenderView::
-        drawCollection(int i, Signal::FinalSource* fs, float yscale )
+        drawCollection(int i, float yscale )
 {
+    model->renderSignalTarget->source()->set_channel( i );
     model->renderer->collection = model->collections[i].get();
     model->renderer->fixed_color = channel_colors[i];
-    if (0!=fs)
-        fs->set_channel( i );
     glDisable(GL_BLEND);
     glEnable(GL_LIGHTING);
     glEnable( GL_CULL_FACE ); // enabled only while drawing collections

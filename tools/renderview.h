@@ -148,7 +148,7 @@ namespace Tools
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
 
-        void drawCollection(int, Signal::FinalSource*, float yscale);
+        void drawCollection(int channel, float yscale);
 
         void setStates();
         void setLights();

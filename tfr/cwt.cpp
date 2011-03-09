@@ -459,7 +459,7 @@ pChunk Cwt::
             TaskTimer("ft->n_valid_samples=%u", ft->n_valid_samples).suppressTiming();
         }
 
-        BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->n_valid_samples);
+        BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->nScales() );
 
         intermediate_wt->n_valid_samples = ft->n_valid_samples - time_support - intermediate_wt->first_valid_sample;
 
