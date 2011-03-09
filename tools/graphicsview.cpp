@@ -100,7 +100,7 @@ void GraphicsView::customEvent(QEvent *e){
 void GraphicsView::keyPressEvent(QKeyEvent *event) {
     if (event->key() != Qt::Key_Shift)
     {
-        event->setAccepted( false );
+        QGraphicsView::keyPressEvent( event );
         return;
     }
 
@@ -118,7 +118,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event) {
 void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
     if (event->key() != Qt::Key_Shift)
     {
-        event->setAccepted( false );
+        QGraphicsView::keyReleaseEvent( event );
         return;
     }
 
