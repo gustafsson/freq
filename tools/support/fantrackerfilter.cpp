@@ -12,12 +12,13 @@ namespace Support {
 
     FanTrackerFilter::FanTrackerFilter()
         {
-            _try_shortcuts = false; // johans hack to NOT skip calculation
         }
 
 
     void FanTrackerFilter::operator()( Tfr::Chunk& c )
     {
+        BOOST_ASSERT( this->track.size() == num_channels() );
+
         //find the peak, store time, freq and amp in the map called track.
 
         unsigned nWindows = c.nSamples();
@@ -31,12 +32,16 @@ namespace Support {
 
         float2* p = c.transform_data->getCpuMemory() + i*window_size;
 
-        for (unsigned m = 12 ; m < window_size/2 ; m++)
+        //unsigned start = c.freqAxis.getFrequencyScalar( 100 );
+        //unsigned stop = c.freqAxis.getFrequencyScalar( 50 );
+
+        for (unsigned m = 20 ; m < window_size/2 ; m++)
         {
             float2 & v = p[m];
-            if( v.x*v.x + v.y*v.y > max)
+            float A = v.x*v.x + v.y*v.y;
+            if( A > max)
             {
-                max = v.x*v.x + v.y*v.y;
+                max = A;
                 peak = m;
             }
         }
@@ -51,6 +56,8 @@ namespace Support {
         TaskInfo("Cepstrum peak: %u at %g Hz",peak,point.Hz);
 
         unsigned pos = c.chunk_offset+i*window_size;
+
+        PointsT& track = this->track[ get_channel() ];
 
         if (peak == (unsigned)-1)
         {
@@ -83,6 +90,16 @@ namespace Support {
             return this;
 
         return CepstrumFilter::affecting_source(I);
+    }
+
+
+    void FanTrackerFilter::
+            source(pOperation v)
+    {
+        if (v)
+            track.resize( v->num_channels() );
+
+        return CepstrumFilter::source(v);
     }
 } // namespace Support
 } // namespace Tools

@@ -17,6 +17,7 @@ namespace Tools
         PlaybackModel* model;
 
         bool follow_play_marker;
+        bool just_started;
 
     signals:
         void update_view(bool);

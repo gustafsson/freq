@@ -342,7 +342,7 @@ bool Playback::
     //return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
     bool isActive = streamPlayback ? streamPlayback->isActive() : false;
     bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
-    BOOST_ASSERT( isActive != isStopped );
+    // isActive and isStopped might both be false at the same time
     bool paused = isPaused();
     return streamPlayback ? !isActive && !paused : true;
 }
@@ -353,7 +353,7 @@ bool Playback::
 {
     bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
 
-    bool read_past_end = _data.empty() ? false : _playback_itr > _data.getInterval().last;
+    bool read_past_end = _data.empty() ? true : _playback_itr >= _data.getInterval().last;
 
     return isStopped && !read_past_end;
 }

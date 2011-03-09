@@ -21,22 +21,28 @@ void FanTrackerView::
     Tfr::FreqAxis const& fa = render_view_->model->display_scale();
     float FS = model_->selected_filter()->sample_rate();
 
-    Support::FanTrackerFilter::PointsT map_ = (model_->selected_filter()->track);
+    const std::vector<float4>& colors = render_view_->channelColors();
 
-    std::vector<Heightmap::Position> pts;
+    for (unsigned C = 0; C < model_->selected_filter()->num_channels(); ++C )
+    {
+        Support::FanTrackerFilter::PointsT map_ = (model_->selected_filter()->track[C]);
 
-    pts.resize(map_.size());
+        std::vector<Heightmap::Position> pts;
 
-    TaskTimer tt("Fantracker - number of points %f", (float)pts.size());
+        pts.resize(map_.size());
 
-    unsigned i = 0;
-    foreach(  const Support::FanTrackerFilter::PointsT::value_type& a, map_ )
-        {
-            float time = a.first/FS;
-            float hz = a.second.Hz;
-            pts[i++] = Heightmap::Position( time, fa.getFrequencyScalar( hz ));
-        }
-    Support::PaintLine::drawSlice( pts.size(), &pts[0], 0, 0, 0);
+        TaskTimer tt("Fantracker - number of points %f", (float)pts.size());
+
+        unsigned i = 0;
+        foreach(  const Support::FanTrackerFilter::PointsT::value_type& a, map_ )
+            {
+                float time = a.first/FS;
+                float hz = a.second.Hz;
+                pts[i++] = Heightmap::Position( time, fa.getFrequencyScalar( hz ));
+            }
+
+        Support::PaintLine::drawSlice( pts.size(), &pts[0], colors[C].x, colors[C].y, colors[C].z );
+    }
     }
 }
 

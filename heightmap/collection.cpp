@@ -499,7 +499,7 @@ Intervals Collection::
 
     unsigned counter = 0;
     {
-    TIME_COLLECTION TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
+    //TIME_COLLECTION TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
 
     foreach ( const recent_t::value_type& b, _recent )
     {
@@ -520,7 +520,7 @@ Intervals Collection::
     }
     }
 
-    TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
+    //TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
 
     return r;
 }

@@ -423,7 +423,13 @@ pChunk Cwt::
             TaskTimer("intermediate_wt->max_hz = %g", intermediate_wt->maxHz()).suppressTiming();
         }
 
-        BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 * (1.0+10*FLT_EPSILON) );
+        if( intermediate_wt->maxHz() > intermediate_wt->sample_rate/2 * (1.0+10*FLT_EPSILON) );
+        {
+            TaskInfo("intermediate_wt->max_hz = %g", intermediate_wt->maxHz());
+            TaskInfo("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate);
+
+            BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 * (1.0+10*FLT_EPSILON) );
+        }
 
         ::wtCompute( ft->transform_data->getCudaGlobal().ptr(),
                      intermediate_wt->transform_data->getCudaGlobal().ptr(),

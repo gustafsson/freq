@@ -275,6 +275,8 @@ void StftToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
+    if (inInterval.first < chunk.nScales())
+        inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -302,7 +304,7 @@ void StftToBlock::
     *outData = *copy;
 #endif
 
-    block->valid_samples |= chunk.getInterval();
+    block->valid_samples |= inInterval;
 }
 
 
@@ -331,6 +333,8 @@ void CepstrumToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
+    if (inInterval.first < chunk.nScales())
+        inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -358,7 +362,7 @@ void CepstrumToBlock::
     *outData = *copy;
 #endif
 
-    block->valid_samples |= chunk.getInterval();
+    block->valid_samples |= inInterval;
 }
 
 

@@ -37,8 +37,8 @@
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
 
-#define TIME_PAINTGL_DETAILS
-//#define TIME_PAINTGL_DETAILS if(0)
+//#define TIME_PAINTGL_DETAILS
+#define TIME_PAINTGL_DETAILS if(0)
 
 //#define DEBUG_EVENTS
 #define DEBUG_EVENTS if(0)
@@ -863,7 +863,11 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL .............................");
+    Signal::Worker& worker = model->project()->worker;
+    Signal::Operation* first_source = worker.source()->root();
+
+    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
+                              first_source->name().c_str(), first_source);
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
@@ -879,12 +883,9 @@ void RenderView::
         }
     }
 
-    Signal::Worker& worker = model->project()->worker;
-    Signal::Operation* first_source = worker.source()->root();
-
-    TIME_PAINTGL TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p) %s",
+    TIME_PAINTGL_DETAILS TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p) %s",
         N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source, first_source->name().c_str());
-    if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
+    if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
     {
         model->collections[i]->printCacheSize();
     }

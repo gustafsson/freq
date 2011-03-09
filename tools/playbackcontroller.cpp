@@ -145,6 +145,7 @@ void PlaybackController::
         return; // No filter, no selection...
     }
 
+    _view->just_started = true;
     ui_items_->actionPausePlayBack->setEnabled( true );
 
     TaskInfo("Selection is of type %s", vartype(*filter.get()).c_str());
@@ -245,11 +246,14 @@ void PlaybackController::
     if (model()->playback())
         model()->playback()->stop();
 
+    _view->just_started = false;
     ui_items_->actionPlaySelection->setChecked( false );
     ui_items_->actionPlaySection->setChecked( false );
     ui_items_->actionPlayEntireSound->setChecked( false );
     ui_items_->actionPausePlayBack->setChecked( false );
     ui_items_->actionPausePlayBack->setEnabled( false );
+
+    _view->update();
 }
 
 

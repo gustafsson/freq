@@ -92,6 +92,8 @@ namespace Tools
 			this->*/
 		}
 
+        const std::vector<float4>& channelColors() const { return channel_colors; }
+
     public slots:
         void userinput_update( bool request_high_fps = true );
 

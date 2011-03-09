@@ -21,6 +21,7 @@ PlaybackView::
             :
             model(model),
             follow_play_marker( false ),
+            just_started( false ),
             _render_view( render_view ),
             _playbackMarker(-1)
 {
@@ -61,6 +62,10 @@ void PlaybackView::
 
     // Playback has stopped/or hasn't started
     bool is_stopped = model->playback()->isStopped();
+    is_stopped &= model->playback()->invalid_samples().empty();
+    if (!is_stopped)
+        just_started = false;
+    is_stopped &= !just_started;
     if (is_stopped && 0>=prev_pos) {
         return;
     }

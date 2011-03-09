@@ -15,7 +15,8 @@ public:
 
     virtual Signal::Intervals affected_samples();
 
-    virtual Operation* affecting_source( const Signal::Interval& I );
+    virtual Signal::Operation* affecting_source( const Signal::Interval& I );
+    virtual void source(Signal::pOperation v);
 
     struct Point
     {
@@ -24,7 +25,7 @@ public:
     };
 
     typedef std::map<unsigned, Point> PointsT;
-    PointsT track;
+    std::vector<PointsT> track;
 
 };
 
