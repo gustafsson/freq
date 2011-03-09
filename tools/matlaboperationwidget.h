@@ -34,6 +34,9 @@ public:
     std::string scriptname();
     void scriptname(std::string);
 
+    std::string arguments();
+    void arguments(std::string);
+
     virtual int chunksize();
     void chunksize(int);
 
@@ -55,6 +58,9 @@ private slots:
     void announceInvalidSamples();
     void invalidateAllSamples();
     void restartScript();
+    void postRestartScript();
+    void chunkSizeChanged();
+    void restoreChanges();
 
     void sendCommand();
 
@@ -66,6 +72,8 @@ private:
     virtual void hideEvent ( QHideEvent * event );
 
     Ui::MatlabOperationWidget *ui;
+
+    Adapters::DefaultMatlabFunctionSettings prevsettings;
 
     //Signal::pTarget target;
     Sawe::Project* project;

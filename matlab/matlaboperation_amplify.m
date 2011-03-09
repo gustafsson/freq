@@ -1,4 +1,4 @@
-function [data, d]=matlaboperation_amplify(data, d)
+function [data]=amplify(data)
 
-data.buffer = data.buffer*2;
+data.buffer = data.buffer*4;
 

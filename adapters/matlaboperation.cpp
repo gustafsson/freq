@@ -69,10 +69,25 @@ MatlabFunction::
         {
             matlab_command
                     << "addpath('" << path << "');"
-                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
+                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function;
             octave_command
                     << "addpath('" << path << "');"
-                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
+                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function;
+
+            std::string arguments = settings->arguments();
+
+            // remove trailing ';'
+            while(arguments.size() && arguments[ arguments.size() - 1] == ';')
+                arguments.resize( arguments.size() - 1);
+
+            if (arguments.size())
+            {
+                matlab_command << ", " << arguments;
+                octave_command << ", " << arguments;
+            }
+
+            matlab_command << ");";
+            octave_command << ");";
         }
 
         QStringList matlab_args;

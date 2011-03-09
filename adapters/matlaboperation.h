@@ -26,6 +26,7 @@ public:
     virtual void redundant(int) = 0;
     virtual void setProcess(QProcess*) = 0;
     virtual std::string scriptname() = 0;
+    virtual std::string arguments() = 0;
 
     MatlabOperation* operation;
 };
@@ -41,12 +42,14 @@ public:
     void redundant(int v) { redundant_ = v; }
     void setProcess(QProcess* pid_) { pid_ = pid_; }
     std::string scriptname() { return scriptname_; }
+    std::string arguments() { return arguments_; }
 
     int chunksize_;
     bool computeInOrder_;
     int redundant_;
     QProcess* pid_;
     std::string scriptname_;
+    std::string arguments_;
 };
 
 /**

@@ -1,7 +1,8 @@
-function [data,state]=matlaboperation_lowpass(data,state)
+function [data]=lowpass(data)
 
 %% Update local state
 % The variable 'state' is preserved between calls to this operation
+global state;
 if isempty(state) || data.offset==0
     state.counter = 1;
 else

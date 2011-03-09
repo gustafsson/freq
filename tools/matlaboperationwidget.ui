@@ -222,6 +222,61 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QPushButton" name="pushButtonRestartScript">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>350</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Changes has been made, click here to reload the script with these settings.</string>
+   </property>
+   <property name="text">
+    <string>Reload changes</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonRestoreChanges">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>350</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Changes has been made, click here to restore the changes.</string>
+   </property>
+   <property name="text">
+    <string>Restore changes</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>236</y>
+     <width>91</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Arguments = </string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="arguments">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>230</y>
+     <width>291</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

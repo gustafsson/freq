@@ -46,10 +46,10 @@ while 1
       end
     else
       %octave
-      data=load(datafile); 
+      data = load(datafile); 
     end
     
-    [data, arguments]=func(data, arguments);
+    data = func(data, arguments);
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
