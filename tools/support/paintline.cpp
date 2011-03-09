@@ -30,7 +30,7 @@ void PaintLine::
     glEnd();
 
     glLineWidth(1.6f);
-    glBegin(GL_LINE_LOOP);
+    glBegin(GL_LINE_STRIP);
     for (unsigned k=0; k<N; k++)
     {
         glVertex3f( pts[k].time, y, pts[k].scale );
