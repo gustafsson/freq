@@ -12,6 +12,7 @@
 #endif
 #include <CudaException.h>
 #include <demangle.h>
+#include <boost/foreach.hpp>
 
 #define TIME_WORKER
 //#define TIME_WORKER if(0)
@@ -289,9 +290,17 @@ Signal::Intervals Worker::
             _cheat_work.clear();
             Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
         }
-        return _todo_list = todoinv;
+        c = todoinv;
+    //    return _todo_list = todoinv;
     }
-
+    BOOST_FOREACH(Signal::Interval const &b, c)
+    {
+        if (b.count() == 0) {
+            TaskInfo ti("Worker interval debug. ");
+            ti.tt().getStream() << "\nInvalid samples: " << _target->post_sink()->invalid_samples() << "\nPS interval: "
+                    << _target->post_sink()->getInterval() << "\nCheat interval:" << _cheat_work;
+        }
+    }
     return _todo_list = c;
 }
 

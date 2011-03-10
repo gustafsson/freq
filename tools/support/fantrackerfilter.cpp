@@ -5,6 +5,8 @@
 #include "tfr/filter.h"
 #include "tools/support/fantrackerfilter.h"
 
+#include <boost/foreach.hpp>
+
 using namespace Signal;
 
 namespace Tools {
@@ -83,6 +85,20 @@ namespace Support {
         return Signal::Intervals();
     }
 
+    void FanTrackerFilter::invalidate_samples(Signal::Intervals const & intervals)
+    {
+        for (unsigned i = 0; i < this->track.size(); i++)
+        {
+            PointsT& track = this->track[ i ];
+
+            for (PointsT::iterator ii = track.begin(); ii != track.end();)
+            {
+                if (intervals.testSample( ii->first )) track.erase(ii++);
+                else ii++;
+            }
+        }
+        CepstrumFilter::invalidate_samples(intervals);
+    }
 
     Operation* FanTrackerFilter::affecting_source( const Interval& I )
     {

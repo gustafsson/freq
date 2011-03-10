@@ -276,6 +276,8 @@ void PostSink::
         s->invalidate_samples( I );
     }
 
+    if (filter()) filter()->invalidate_samples( I );
+
     Operation::invalidate_samples( I );
 }
 

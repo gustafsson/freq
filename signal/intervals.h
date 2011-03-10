@@ -96,6 +96,7 @@ public:
     Intervals               enlarge( IntervalType dt ) const;
     Intervals               shrink( IntervalType dt ) const;
     IntervalType            count() const;
+    bool                    testSample( IntervalType const &p) const;
 
     std::string             toString() const;
 
