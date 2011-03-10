@@ -71,7 +71,6 @@ public:
 
     virtual Signal::pBuffer read(const Signal::Interval& I) {
         Signal::pBuffer r = Signal::Operation::read( I );
-        controller_->emitTransformChanged();
         return r;
     }
 
@@ -87,8 +86,6 @@ public:
         }
 
         Operation::invalidate_samples( I );
-
-        controller_->emitTransformChanged();
     }
 
 
@@ -246,8 +243,12 @@ void RenderController::
     float FS = model()->project()->worker.source()->sample_rate();
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
-    float f = value / 50.f - 1.f;
-    c.scales_per_octave( 20.f * exp( 4*f ) );
+
+    // Keep in sync with emitTransformChanged()
+    //float f = value / 50.f - 1.f;
+    //c.scales_per_octave( 20.f * exp( 4*f ) );
+    float f = value / 100.f;
+    c.scales_per_octave( exp( 7*f ) ); // scales_per_octave >= 1
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
@@ -410,6 +411,13 @@ RenderModel *RenderController::
 void RenderController::
         emitTransformChanged()
 {
+    Tfr::Cwt& c = Tfr::Cwt::Singleton();
+
+    // keep in sync with receiveSetTimeFrequencyResolution
+    float f = log(c.scales_per_octave())/7;
+    int value = f * 100;
+
+    this->tf_resolution->setValue( value );
     emit transformChanged();
 }
 
@@ -552,6 +560,7 @@ void RenderController::
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
+    connect(view, SIGNAL(transformChanged()), SLOT(emitTransformChanged()));
 
     // Create the OpenGL rendering context early. Because we want to create the
     // cuda context (in main.cpp) and bind it to an OpenGL context before the

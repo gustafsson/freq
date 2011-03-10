@@ -136,6 +136,9 @@ namespace Tools
 
         void postUpdate();
 
+
+        void transformChanged();
+
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();

@@ -181,10 +181,7 @@ bool Worker::
                      total/1024.f/1024, free/1024.f/1024);
 
         } else {
-            TaskInfo("Worker caught CudaException:\n%s", e.what());
-            TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave());
-            Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() * .75 );
-            TaskInfo("scales_per_octave is %g", Tfr::Cwt::Singleton().scales_per_octave());
+            throw;
         }
 //            TaskInfo("Worker caught CudaException:\n%s", e.what());
 //            throw;

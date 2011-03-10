@@ -24,8 +24,6 @@ namespace Tools
 
         RenderModel *model();
 
-        void emitTransformChanged();
-
     signals:
         void transformChanged();
 
@@ -62,6 +60,8 @@ namespace Tools
         void receiveLinearScale();
         void receiveLogScale();
         void receiveCepstraScale();
+
+        void emitTransformChanged();
 
     private slots:
         void clearCachedHeightmap();

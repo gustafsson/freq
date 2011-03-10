@@ -14,6 +14,9 @@
 
 #include <QTimer>
 
+#define LOG_TRANSFORM_INFO
+//#define LOG_TRANSFORM_INFO if(0)
+
 namespace Tools
 {
 
@@ -77,7 +80,7 @@ void TransformInfoForm::
 void TransformInfoForm::
         transformChanged()
 {
-    TaskInfo ti("TransformInfoForm::transformChanged()");
+    LOG_TRANSFORM_INFO TaskInfo ti("TransformInfoForm::transformChanged()");
     ui->tableWidget->clear();
     ui->tableWidget->setRowCount(0);
     ui->tableWidget->setColumnCount(2);
@@ -175,7 +178,7 @@ void TransformInfoForm::
     ui->tableWidget->setItem(ui->tableWidget->rowCount()-1, 0, new QTableReadOnlyText (name));
     ui->tableWidget->setItem(ui->tableWidget->rowCount()-1, 1, new QTableReadOnlyText (value));
 
-    TaskInfo("%s = %s", name.toStdString().c_str(), value.toStdString().c_str() );
+    LOG_TRANSFORM_INFO TaskInfo("%s = %s", name.toStdString().c_str(), value.toStdString().c_str() );
 }
 
 } // namespace Tools

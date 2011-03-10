@@ -1042,7 +1042,35 @@ void RenderView::
 
     _try_gc = 0;
     } catch (const CudaException &x) {
-        TaskTimer tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
+        TaskInfo tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
+
+        if (cudaErrorMemoryAllocation == x.getCudaError() && _try_gc == 1)
+        {
+            TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave());
+
+            size_t free=0, total=0;
+            cudaMemGetInfo(&free, &total);
+
+            float fs = worker.target()->source()->sample_rate();
+            unsigned L;
+            do
+            {
+                Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() * .99 );
+                if (Tfr::Cwt::Singleton().scales_per_octave() < 1)
+                {
+                    Tfr::Cwt::Singleton().scales_per_octave( 1 );
+                    break;
+                }
+
+                L = Tfr::Cwt::Singleton().next_good_size(1, fs);
+            }
+            while (free < Tfr::Cwt::Singleton().required_gpu_bytes(L, fs ) );
+
+            TaskInfo("scales_per_octave is %g", Tfr::Cwt::Singleton().scales_per_octave());
+
+            emit transformChanged();
+        }
+
 
         if (2>_try_gc) {
             Sawe::Application::global_ptr()->clearCaches();
