@@ -213,6 +213,13 @@ int main(int argc, char *argv[])
 {
     if (0)
     {
+        Intervals I(403456,403457);
+        Intervals J(0,403456);
+        cout << ((I-J) & J) << endl;
+        return 0;
+    }
+    if (0)
+    {
         C* c = new C;
         A* a = c;
         tsta(c);

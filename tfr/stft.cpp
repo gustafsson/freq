@@ -364,6 +364,12 @@ Tfr::pChunk Stft::
     chunk->sample_rate = b.sample_rate / chunk->nScales();
     ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;
 
+    if (0 == b.sample_offset)
+    {
+        chunk->n_valid_samples += chunk->chunk_offset;
+        chunk->chunk_offset = 0;
+    }
+
     return chunk;
 }
 
