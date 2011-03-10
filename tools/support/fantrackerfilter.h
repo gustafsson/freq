@@ -17,6 +17,7 @@ public:
 
     virtual Signal::Operation* affecting_source( const Signal::Interval& I );
     virtual void source(Signal::pOperation v);
+    virtual void invalidate_samples(const Signal::Intervals& I);
 
     struct Point
     {

@@ -484,6 +484,13 @@ IntervalType Intervals::
 }
 
 
+bool Intervals::
+        testSample( IntervalType const& p ) const
+{
+    return *this & Interval( p, p+1 );
+}
+
+
 Intervals::base::iterator Intervals::
         firstIntersecting( const Interval& b )
 {
