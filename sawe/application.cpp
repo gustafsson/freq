@@ -74,12 +74,12 @@ Application::
     setOrganizationDomain("sonicawe.com");
     setApplicationName("Sonic AWE");
 
-    _version_string = "Sonic AWE - development snapshot\n";
+    _version_string = "Evaluation of Sonic AWE - development snapshot\n";
 
     //QDateTime now = QDateTime::currentDateTime();
     //now.date().year();
     stringstream ss;
-    ss << "Sonic AWE - ";
+    ss << "Evaluation of Sonic AWE - ";
     #ifdef SONICAWE_VERSION
         ss << TOSTR(SONICAWE_VERSION);
     #else
