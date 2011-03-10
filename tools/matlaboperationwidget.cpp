@@ -70,10 +70,17 @@ MatlabOperationWidget::
         hideEvent(0);
     }
 
-    octaveWindow = 0;
+    if (octaveWindow)
+        delete octaveWindow.data();
+
     text = 0;
     edit = 0;
-    operation = 0;
+    if (operation)
+    {
+        Adapters::MatlabOperation* o = operation;
+        operation = 0;
+        o->settings( 0 );
+    }
 
     disconnect( this, SLOT(showOutput()));
     disconnect( this, SLOT(finished(int,QProcess::ExitStatus)));
@@ -197,7 +204,8 @@ void MatlabOperationWidget::
 {
     if (project->worker.todo_list().empty())
     {
-        if (operation && operation->invalid_returns() && pid->state() != QProcess::NotRunning)
+        Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
+        if (operation && needupdate && pid->state() != QProcess::NotRunning)
         {
             // restart the timer
             announceInvalidSamplesTimer.start();
@@ -209,16 +217,24 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         announceInvalidSamples()
 {
+    Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
+
     if (operation->dataAvailable())
     {
         // MatlabOperation calls invalidate_samples which will eventually make
         // RenderView start working if the new data was needed
+        project->tools().render_view()->userinput_update( false );
     }
-    else
+
+    if (!operation->isWaiting())
     {
+        operation->invalidate_samples( needupdate );
+        project->tools().render_view()->userinput_update( false );
+    }
+
+    if (needupdate)
         // restart the timer
         announceInvalidSamplesTimer.start();
-    }
 }
 
 
@@ -384,6 +400,9 @@ void MatlabOperationWidget::
             edit = new Support::CommandEdit;
             verticalLayout->addWidget( edit );
             connect( edit, SIGNAL(returnPressed()), SLOT( sendCommand() ));
+            edit->setText( "Enter commands here" );
+            edit->setFocus();
+            edit->setSelection(0, edit->text().size());
         }
 
         octaveWindow->setWidget(dockWidgetContents);

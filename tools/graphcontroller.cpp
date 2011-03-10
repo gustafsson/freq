@@ -126,6 +126,7 @@ namespace Tools
     {
         operationsTree->clear();
 
+        TaskInfo ti("redraw_operation_tree");
         TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
         TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
 
@@ -383,7 +384,7 @@ namespace Tools
         connect(removeCachesdButton, SIGNAL(clicked()), SLOT(removeCaches()));
         buttons->layout()->addWidget( removeSelectedButton );
         buttons->layout()->addWidget( removeHiddenButton );
-        //buttons->layout()->addWidget( removeCachesdButton );
+        buttons->layout()->addWidget( removeCachesdButton );
 
         verticalLayout->addWidget(operationsTree);
         verticalLayout->addWidget(buttons);

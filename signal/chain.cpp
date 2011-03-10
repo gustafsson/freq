@@ -78,7 +78,7 @@ void ChainHead::
     BOOST_ASSERT( s );
 
     TaskInfo tt("ChainHead::appendOperation '%s' on\n%s",
-                s->name().c_str(), head_source_ref()->toString().c_str());
+                s->name().c_str(), head_source()->toString().c_str());
 
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.
@@ -108,10 +108,7 @@ void ChainHead::
 
     head_source( new_head );
 
-    TaskInfo("%s", s->parentsToString().c_str());
     s->invalidate_samples( s->affected_samples() );
-
-    TaskInfo("Worker::appendOperation, worker tree:\n%s", head_source_ref()->toString().c_str());
 }
 
 

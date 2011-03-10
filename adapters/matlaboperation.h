@@ -112,7 +112,7 @@ private:
     MatlabFunction( const MatlabFunction& );
     MatlabFunction& operator=(const MatlabFunction&);
 
-	void kill();
+    //void kill();
 	void abort();
 
     QProcess* _pid;
@@ -143,6 +143,8 @@ public:
 
     /// Will call invalidate_samples if new data is available
     bool dataAvailable();
+
+    bool isWaiting();
 
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;

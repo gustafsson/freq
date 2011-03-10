@@ -109,9 +109,14 @@ Operation* Operation::
 void Operation::
         invalidate_samples(const Intervals& I)
 {
+    Intervals J = I & getInterval();
+
+    if (!J)
+        return;
+
     BOOST_FOREACH( Operation* p, _outputs )
     {
-        p->invalidate_samples( p->translate_interval( I ));
+        p->invalidate_samples( p->translate_interval( J ));
     }
 }
 
@@ -187,13 +192,21 @@ std::string Operation::
         parentsToString()
 {
     std::stringstream ss;
-    ss << name() << " (" << _outputs.size() << " parent" << (_outputs.size()==1?"":"s") << ")";
-    unsigned i = 0;
+    ss << name();
+    if (1 < _outputs.size())
+        ss << " (" << _outputs.size() << " parents)";
+
+    unsigned i = 1;
     BOOST_FOREACH( Operation* p, _outputs )
     {
         ss << std::endl;
-        if (_outputs.size())
-            ss << i++ << ": ";
+        if (_outputs.size() > 1)
+        {
+            if (i>1)
+                ss << std::endl;
+            ss << i << " in " << name() << ": ";
+        }
+        i++;
         ss << p->parentsToString();
     }
     return ss.str();

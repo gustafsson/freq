@@ -147,7 +147,7 @@ MatlabFunction::
 MatlabFunction::
         ~MatlabFunction()
 {
-	kill();
+    endProcess();
 }
 
 
@@ -237,10 +237,16 @@ bool MatlabFunction::
 void MatlabFunction::
         endProcess()
 {
+    if (!_pid)
+        return;
+
     if (!hasProcessEnded())
         _pid->kill();  // send SIGKILL
     else
         _pid->terminate(); // send platform specific "please close message"
+
+    delete _pid;
+    _pid = 0;
 }
 
 
@@ -266,42 +272,12 @@ float MatlabFunction::
 
 
 void MatlabFunction::
-		kill()
-{
-    if (_pid)
-    {
-        TaskTimer tt("MatlabFunction killing MATLAB/Octave process");
-        tt.partlyDone();
-        _pid->terminate();
-        tt.partlyDone();
-        _pid->waitForFinished();
-        tt.partlyDone();
-        delete _pid;
-
-        _pid = 0;
-        ::remove(_dataFile.c_str());
-        ::remove(_resultFile.c_str());
-        ::remove("octave-core");
-    }
-/*	if (_pid)
-	{
-		#ifdef __GNUC__
-			::kill((pid_t)(unsigned long long)_pid, SIGINT);
-		#elif defined(WIN32)
-			TerminateProcess((HANDLE)_pid, 0);
-		#else
-			#error No implementation
-		#endif
-		_pid = 0;
-    }*/
-}
-
-void MatlabFunction::
 		abort()
 {
-	kill();
+    endProcess();
 	throw std::invalid_argument("Timeout in MatlabFunction::invokeAndWait");
 }
+
 
 MatlabOperation::
         MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* settings )
@@ -326,14 +302,8 @@ MatlabOperation::
 {
     TaskInfo("~MatlabOperation");
     TaskInfo(".");
-    _matlab->endProcess();
-    _matlab.reset();
 
-    if (_settings->operation)
-    {
-        _settings->operation = 0;
-        delete _settings;
-    }
+    settings(0);
 }
 
 
@@ -351,12 +321,14 @@ void MatlabOperation::
 {
     // If computing in order and invalidating something that has already been
     // computed
+    TaskInfo("MatlabOperation invalidate_samples(%s)", I.toString().c_str());
     TaskInfo("MatlabOperation children: %s", toString().c_str());
     TaskInfo("MatlabOperation outputs: %s", parentsToString().c_str());
 
-    if (_settings->computeInOrder() && (I - _cache.invalid_samples()))
+    if (_settings && _settings->computeInOrder() && (I - _cache.invalid_samples()))
     {
         // Start over and recompute the first block again
+        TaskInfo("MatlabOperation start over");
         OperationCache::invalidate_samples(Signal::Intervals::Intervals_ALL);
     }
     else
@@ -389,7 +361,12 @@ bool MatlabOperation::
         if ((invalid_samples() - J).empty())
             _matlab->endProcess(); // Finished with matlab
 
-        invalidate_samples( invalid_returns() | J );
+        TaskInfo("invalid_returns = %s, J = %s, invalid_returns & J = %s",
+                 invalid_returns().toString().c_str(),
+                 J.toString().c_str(),
+                 (invalid_returns()&J).toString().c_str());
+
+        invalidate_samples( invalid_returns() & J );
 
         return true;
     }
@@ -397,9 +374,20 @@ bool MatlabOperation::
     return false;
 }
 
+
+bool MatlabOperation::
+        isWaiting()
+{
+    return _matlab->isWaiting();
+}
+
+
 pBuffer MatlabOperation::
         readRaw( const Interval& I )
 {
+    if (!_matlab)
+        return pBuffer();
+
     if (_matlab->hasProcessEnded())
     {
         TaskInfo("MatlabOperation::read(%s), process ended", I.toString().c_str());
@@ -414,11 +402,12 @@ pBuffer MatlabOperation::
         {
             Signal::pBuffer b = ready_data;
             ready_data.reset();
+            TaskInfo("Returning ready data %s", b->getInterval().toString().c_str() );
             return b;
         }
 
 
-        if (!_matlab->isWaiting())
+        if (!isWaiting())
         {
             Signal::Interval J = I;
             IntervalType support = 0;
@@ -463,7 +452,12 @@ pBuffer MatlabOperation::
 
             Hdf5Buffer::saveBuffer( file, *b, support );
 
+            TaskInfo("Sending %s to Matlab/Octave", b->getInterval().toString().c_str() );
             _matlab->invoke( file );
+        }
+        else
+        {
+            TaskInfo("Is waiting for Matlab/Octave to finish");
         }
     }
     catch (const std::runtime_error& e)
@@ -482,10 +476,13 @@ void MatlabOperation::
 {
     _cache.clear();
     _matlab.reset();
-    _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
+    if (_settings)
+    {
+        _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
 
-    if (source())
-        invalidate_samples( getInterval() );
+        if (source())
+            invalidate_samples( getInterval() );
+    }
 }
 
 
@@ -499,6 +496,12 @@ void MatlabOperation::
     }
 
     _settings = settings;
+
+    if (_settings)
+    {
+        _settings->operation = this;
+    }
+
     restart();
 }
 
