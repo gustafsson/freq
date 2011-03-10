@@ -9,7 +9,8 @@ OperationCache::
 :   Operation(source),
     _cache()
 {
-    _cache.setNumChannels(source->num_channels());
+    if (source)
+        _cache.setNumChannels(source->num_channels());
 }
 
 

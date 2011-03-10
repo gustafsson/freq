@@ -340,13 +340,13 @@ pBlock Collection::
 std::vector<pBlock> Collection::
         getIntersectingBlocks( Interval I, bool only_visible )
 {
-    TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s )", I.toString().c_str(), only_visible?"only visible":"all");
     std::vector<pBlock> r;
     r.reserve(8);
 
 	#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
 	#endif
+    //TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s ) from %u caches", I.toString().c_str(), only_visible?"only visible":"all", _cache.size());
 
     foreach ( const cache_t::value_type& c, _cache )
     {

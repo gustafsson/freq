@@ -1,4 +1,6 @@
-function [data]=lowpass(data)
+function [data]=matlaboperation_lowpass(data)
+
+disp('matlaboperation_lowpass');
 
 %% Update local state
 % The variable 'state' is preserved between calls to this operation

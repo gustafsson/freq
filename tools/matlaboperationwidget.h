@@ -14,6 +14,7 @@
 class QDockWidget;
 class QPlainTextEdit;
 class QLineEdit;
+class QVBoxLayout;
 
 namespace Sawe { class Project; }
 
@@ -48,6 +49,9 @@ public:
 
     Signal::pOperation ownOperation;
 
+    void setOperation( Adapters::MatlabOperation* );
+    QDockWidget* getOctaveWindow();
+
 public slots:
     void showOutput();
 
@@ -66,6 +70,8 @@ private slots:
 
     void finished ( int exitCode, QProcess::ExitStatus exitStatus );
 
+    void checkOctaveVisibility();
+
 private:
     QProcess* pid;
     void setProcess(QProcess*);
@@ -79,6 +85,7 @@ private:
     Sawe::Project* project;
     QPointer<QDockWidget> octaveWindow;
     QPlainTextEdit* text;
+    QVBoxLayout* verticalLayout;
     QLineEdit* edit;
     QTimer announceInvalidSamplesTimer;
 };

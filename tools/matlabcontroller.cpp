@@ -116,8 +116,9 @@ void MatlabController::
                 Signal::pOperation matlaboperation(m);
                 settings->setParent(0);
                 connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
-                settings->operation = m;
-                if (settings->scriptname().empty())
+                bool noscript = settings->scriptname().empty();
+                settings->setOperation( m );
+                if (noscript)
                 {
                     settings->showOutput();
                     settings->ownOperation = matlaboperation;
@@ -175,9 +176,14 @@ void MatlabController::
         QDockWidget* toolWindow = project_->mainWindow()->getItems()->toolPropertiesWindow;
         MatlabOperationWidget* w = dynamic_cast<MatlabOperationWidget*>( m->settings() );
         toolWindow->setWidget( w );
+        if (w->getOctaveWindow())
+        {
+            w->getOctaveWindow()->isVisible();
+            w->getOctaveWindow()->raise();
+        }
         //toolWindow->hide();
-        toolWindow->show();
-        toolWindow->raise();
+        //toolWindow->show();
+        //toolWindow->raise();
     }
 }
 

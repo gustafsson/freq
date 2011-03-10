@@ -43,7 +43,7 @@ MatlabFunction::
     _matlab_filename(f),
     _timeout( timeout )
 {
-    std::string path = QFileInfo(f.c_str()).path().toStdString();
+    std::string path = QFileInfo(f.c_str()).path().replace("'", "\\'") .toStdString();
     _matlab_filename = QFileInfo(f.c_str()).fileName().toStdString();
     _matlab_function = QFileInfo(f.c_str()).baseName().toStdString();
 

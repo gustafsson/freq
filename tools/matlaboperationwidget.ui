@@ -107,7 +107,7 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>180</y>
+     <y>163</y>
      <width>211</width>
      <height>21</height>
     </rect>
@@ -120,13 +120,16 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>200</y>
+     <y>183</y>
      <width>261</width>
-     <height>31</height>
+     <height>41</height>
     </rect>
    </property>
    <property name="text">
     <string>If unset Sonic AWE will decide in which order to compute chunks.</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
    </property>
    <property name="wordWrap">
     <bool>true</bool>
@@ -136,7 +139,7 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>259</y>
+     <y>250</y>
      <width>181</width>
      <height>25</height>
     </rect>
@@ -152,7 +155,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>260</y>
+     <y>251</y>
      <width>71</width>
      <height>21</height>
     </rect>
@@ -165,13 +168,16 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>289</y>
+     <y>280</y>
      <width>281</width>
-     <height>61</height>
+     <height>71</height>
     </rect>
    </property>
    <property name="text">
     <string>Number of redundant samples per chunk. Edge effects from many filters can be reduced or removed by settings this value high enough.</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
    </property>
    <property name="wordWrap">
     <bool>true</bool>
@@ -181,7 +187,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>370</y>
+     <y>372</y>
      <width>81</width>
      <height>16</height>
     </rect>
@@ -194,7 +200,7 @@
    <property name="geometry">
     <rect>
      <x>101</x>
-     <y>368</y>
+     <y>370</y>
      <width>281</width>
      <height>20</height>
     </rect>
@@ -206,7 +212,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_8">
+  <widget class="QLabel" name="labelEmptyForTerminal">
    <property name="geometry">
     <rect>
      <x>100</x>
@@ -226,7 +232,7 @@
    <property name="geometry">
     <rect>
      <x>270</x>
-     <y>350</y>
+     <y>349</y>
      <width>121</width>
      <height>21</height>
     </rect>
@@ -235,14 +241,14 @@
     <string>Changes has been made, click here to reload the script with these settings.</string>
    </property>
    <property name="text">
-    <string>Reload changes</string>
+    <string>Restart script</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButtonRestoreChanges">
    <property name="geometry">
     <rect>
      <x>140</x>
-     <y>350</y>
+     <y>349</y>
      <width>121</width>
      <height>21</height>
     </rect>
@@ -258,23 +264,45 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>236</y>
+     <y>227</y>
      <width>91</width>
      <height>17</height>
     </rect>
    </property>
    <property name="text">
-    <string>Arguments = </string>
+    <string>Arguments</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="arguments">
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>230</y>
+     <y>221</y>
      <width>291</width>
      <height>27</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonShowOutput">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>349</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Changes has been made, click here to restore the changes.</string>
+   </property>
+   <property name="text">
+    <string>Show output</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
    </property>
   </widget>
  </widget>

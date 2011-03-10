@@ -22,12 +22,14 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     project(project),
     octaveWindow(0),
     text(0),
+    verticalLayout(0),
     edit(0)
 {
     ui->setupUi(this);
     ui->samplerateLabel->setText( QString("1 second is %1 samples.").arg(project->head->head_source()->sample_rate()) );
     ui->pushButtonRestartScript->setVisible(false);
     ui->pushButtonRestoreChanges->setVisible(false);
+    ui->pushButtonShowOutput->setVisible(false);
 
     connect(ui->browseButton, SIGNAL(clicked()), SLOT(browse()));
 
@@ -158,6 +160,26 @@ void MatlabOperationWidget::
 
 
 void MatlabOperationWidget::
+        setOperation( Adapters::MatlabOperation* m )
+{
+    this->operation = m;
+    ui->pushButtonRestartScript->setVisible(true);
+    ui->pushButtonRestoreChanges->setVisible(true);
+    ui->pushButtonShowOutput->setVisible(true);
+    ui->pushButtonRestoreChanges->setEnabled(false);
+    ui->pushButtonShowOutput->setEnabled(false);
+    ui->labelEmptyForTerminal->setVisible(false);
+}
+
+
+QDockWidget* MatlabOperationWidget::
+        getOctaveWindow()
+{
+    return octaveWindow;
+}
+
+
+void MatlabOperationWidget::
         browse()
 {
     QString qfilename = QFileDialog::getOpenFileName(
@@ -213,12 +235,11 @@ void MatlabOperationWidget::
 {
     if (operation)
     {
-        ui->pushButtonRestartScript->setVisible(false);
-        ui->pushButtonRestoreChanges->setVisible(false);
-
         {
             Adapters::MatlabOperation* t = operation;
             operation = 0;
+            if (!prevsettings.scriptname_.empty() && scriptname().empty())
+                return;
             prevsettings.scriptname_ = scriptname();
             prevsettings.arguments_ = arguments();
             prevsettings.chunksize_ = chunksize();
@@ -227,7 +248,13 @@ void MatlabOperationWidget::
             operation = t;
         }
 
+        ui->pushButtonRestoreChanges->setEnabled(false);
         operation->restart();
+
+        if (operation->name().empty())
+            octaveWindow->setWindowTitle( "Octave window" );
+        else
+            octaveWindow->setWindowTitle( QFileInfo(operation->name().c_str()).fileName() );
 
         if (text)
         {
@@ -244,8 +271,7 @@ void MatlabOperationWidget::
 {
     if (operation)
     {
-        ui->pushButtonRestartScript->setVisible(true);
-        ui->pushButtonRestoreChanges->setVisible(true);
+        ui->pushButtonRestoreChanges->setEnabled(true);
     }
 }
 
@@ -263,14 +289,15 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         restoreChanges()
 {
-    ui->pushButtonRestartScript->setVisible(false);
-    ui->pushButtonRestoreChanges->setVisible(false);
-
+    QWidget* currentFocus = focusWidget();
     scriptname      ( prevsettings.scriptname_ );
     arguments       ( prevsettings.arguments_ );
     chunksize       ( prevsettings.chunksize_ );
     computeInOrder  ( prevsettings.computeInOrder_ );
     redundant       ( prevsettings.redundant_ );
+    currentFocus->setFocus();
+
+    ui->pushButtonRestoreChanges->setEnabled(false);
 }
 
 
@@ -304,6 +331,14 @@ void MatlabOperationWidget::
 
 
 void MatlabOperationWidget::
+        checkOctaveVisibility()
+{
+    if (octaveWindow)
+        ui->pushButtonShowOutput->setChecked( octaveWindow->isVisible() );
+}
+
+
+void MatlabOperationWidget::
         hideEvent ( QHideEvent * /*event*/ )
 {
     QSettings settings;
@@ -323,18 +358,20 @@ void MatlabOperationWidget::
 
     if (0==octaveWindow)
     {
+        BOOST_ASSERT( operation );
+
         octaveWindow = new QDockWidget(project->mainWindow());
         octaveWindow->setObjectName(QString::fromUtf8("octaveWindow"));
         octaveWindow->setMinimumSize(QSize(113, 113));
         octaveWindow->setFeatures(QDockWidget::AllDockWidgetFeatures);
-        octaveWindow->setAllowedAreas(Qt::AllDockWidgetAreas);
-        if (scriptname().empty())
+        octaveWindow->setAllowedAreas(Qt::AllDockWidgetAreas);        
+        if (operation->name().empty())
             octaveWindow->setWindowTitle( "Octave window" );
         else
-            octaveWindow->setWindowTitle( QFileInfo(scriptname().c_str()).fileName() );
+            octaveWindow->setWindowTitle( QFileInfo(operation->name().c_str()).fileName() );
         QWidget* dockWidgetContents = new QWidget();
         dockWidgetContents->setObjectName(QString::fromUtf8("dockWidgetContents"));
-        QVBoxLayout* verticalLayout = new QVBoxLayout(dockWidgetContents);
+        verticalLayout = new QVBoxLayout(dockWidgetContents);
         verticalLayout->setSpacing(0);
         verticalLayout->setContentsMargins(0, 0, 0, 0);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
@@ -342,7 +379,7 @@ void MatlabOperationWidget::
         text->setReadOnly( true );
         verticalLayout->addWidget( text );
 
-        if (scriptname().empty())
+        if (operation->name().empty())
         {
             edit = new Support::CommandEdit;
             verticalLayout->addWidget( edit );
@@ -352,7 +389,12 @@ void MatlabOperationWidget::
         octaveWindow->setWidget(dockWidgetContents);
         project->mainWindow()->addDockWidget( Qt::BottomDockWidgetArea, octaveWindow );
         octaveWindow->hide();
+
+        connect( ui->pushButtonShowOutput, SIGNAL(toggled(bool)), octaveWindow.data(), SLOT(setVisible(bool)));
+        connect( octaveWindow.data(), SIGNAL(visibilityChanged(bool)), SLOT(checkOctaveVisibility()));
+        ui->pushButtonShowOutput->setEnabled( true );
     }
+
     octaveWindow->show();
 
     QByteArray ba = pid->readAllStandardOutput();

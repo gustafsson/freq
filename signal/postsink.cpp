@@ -272,8 +272,7 @@ void PostSink::
     // In that case invalidate_samples will be called twice for all sinks.
     BOOST_FOREACH( pOperation o, sinks() )
     {
-        Sink* s = dynamic_cast<Sink*>(o.get());
-        s->invalidate_samples( I );
+        o->invalidate_samples( I );
     }
 
     Operation::invalidate_samples( I );
