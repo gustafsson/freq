@@ -273,6 +273,7 @@ void CommentView::
     QPointF h0(0, 1);
     QPointF x0(1, 0);
     ref_point = b + y + 0.1f*x;
+    ref_point.setX( std::max(ref_point.x(), 25));
 
     if (!create_thumbnail)
     {
@@ -280,9 +281,12 @@ void CommentView::
         poly.clear();
         poly.push_back(b - 2*h0);
         poly.push_back(b + 2*x0);
-        poly.push_back(b + 0.1f*y + 0.2f*x);
+        //poly.push_back(b + 0.1f*y + 0.05f*x);
+        //poly.push_back(ref_point);
+        //poly.push_back(b + 0.1f*y + 0.15f*x);
+        poly.push_back(b + 0.1f*y + ( ref_point.x() - 0.9f*y.y()) *x0);
         poly.push_back(ref_point);
-        poly.push_back(b + 0.1f*y + 0.4f*x);
+        poly.push_back(b + 0.1f*y + ( ref_point.x() + 0.9f*y.y())*x0);
         poly.push_back(b + x - x0);
         poly.push_back(b + x - h0);
         poly.push_back(b + x + h + 0.5f*h0);
@@ -302,7 +306,6 @@ void CommentView::
         ui->textEdit->setVisible( false );
         poly.clear();
         r = QRect();
-        //float s = (ref_point.x()-1)/2;
         float s = std::min(ref_point.x(), 15);
         poly.push_back(ref_point);
         poly.push_back(ref_point - s*h0 - s*x0);
