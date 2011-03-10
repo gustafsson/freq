@@ -91,7 +91,7 @@ public:
     static void     gc() { _fft_many.clear(); }
     static void     resetSingleton();
 private:
-    Cwt( float scales_per_octave=40, float wavelet_time_suppport=3, cudaStream_t stream=0 );
+    Cwt( float scales_per_octave=20, float wavelet_time_suppport=3, cudaStream_t stream=0 );
 
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;

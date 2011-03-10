@@ -247,7 +247,7 @@ void RenderController::
     // Keep in sync with emitTransformChanged()
     //float f = value / 50.f - 1.f;
     //c.scales_per_octave( 20.f * exp( 4*f ) );
-    float f = value / 100.f;
+    float f = value / (float)tf_resolution->maximum();
     c.scales_per_octave( exp( 7*f ) ); // scales_per_octave >= 1
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
@@ -415,7 +415,7 @@ void RenderController::
 
     // keep in sync with receiveSetTimeFrequencyResolution
     float f = log(c.scales_per_octave())/7;
-    int value = f * 100;
+    int value = f * tf_resolution->maximum() + .5;
 
     this->tf_resolution->setValue( value );
     emit transformChanged();
@@ -549,7 +549,8 @@ void RenderController::
     // QSlider * tf_resolution
     {   tf_resolution = new QSlider();
         tf_resolution->setOrientation( Qt::Horizontal );
-        tf_resolution->setValue( 50 );
+        tf_resolution->setValue( 5000 );
+        tf_resolution->setMaximum( 10000 );
         tf_resolution->setToolTip( "Time/frequency resolution." );
         toolbar_render->addWidget( tf_resolution );
 
@@ -577,6 +578,8 @@ void RenderController::
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
+
+    emitTransformChanged();
 }
 
 
