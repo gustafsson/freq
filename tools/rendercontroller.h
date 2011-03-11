@@ -65,9 +65,11 @@ namespace Tools
 
     private slots:
         void clearCachedHeightmap();
+        void updateFreqAxis();
 
     private:
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
+        class Tfr::Transform* currentTransform();
 
         QPointer<RenderView> view;
 

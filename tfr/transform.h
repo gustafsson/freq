@@ -55,6 +55,12 @@ public:
 
 
     /**
+      The frequency axis of chunks computed from a buffer with sample rate 'FS'.
+      */
+    virtual FreqAxis freqAxis( float FS ) = 0;
+
+
+    /**
       Virtual housekeeping.
       */
     virtual ~Transform() {}

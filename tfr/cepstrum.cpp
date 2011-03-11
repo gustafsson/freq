@@ -31,10 +31,19 @@ pChunk Cepstrum::
     pChunk cepstra = stft(buffer);
     TaskInfo("Cepstrum debug. Was %s , returned %s ", b->getInterval().toString().c_str(), cepstra->getInterval().toString().c_str());
 
-    cepstra->freqAxis.setQuefrency( cepstra->original_sample_rate, chunk_size());
+    cepstra->freqAxis = freqAxis( cepstra->original_sample_rate );
 
     return cepstra;
 
+}
+
+
+FreqAxis Cepstrum::
+        freqAxis( float FS )
+{
+    FreqAxis fa;
+    fa.setQuefrency( FS, chunk_size());
+    return fa;
 }
 
 

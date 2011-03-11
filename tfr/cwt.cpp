@@ -330,10 +330,7 @@ pChunk Cwt::
     }
 
 
-    wt->freqAxis.setLogarithmic(
-            get_max_hz( buffer->sample_rate ),
-            get_min_hz( buffer->sample_rate ),
-            nScales(buffer->sample_rate) - 1 );
+    wt->freqAxis = freqAxis( buffer->sample_rate );
     wt->chunk_offset = buffer->sample_offset + first_valid_sample;
     wt->first_valid_sample = 0;
     wt->n_valid_samples = valid_samples;
@@ -357,6 +354,18 @@ pChunk Cwt::
         _fft_many.clear();
         throw;
     }
+}
+
+
+FreqAxis Cwt::
+        freqAxis( float FS )
+{
+    FreqAxis fa;
+    fa.setLogarithmic(
+            get_min_hz( FS ),
+            get_max_hz( FS ),
+            nScales(FS) - 1 );
+    return fa;
 }
 
 

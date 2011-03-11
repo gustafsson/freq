@@ -44,6 +44,7 @@ public:
 
     virtual pChunk operator()( Signal::pBuffer b ) { return forward(b); }
     virtual Signal::pBuffer inverse( pChunk c ) { return backward(c); }
+    virtual FreqAxis freqAxis( float FS );
 
     pChunk forward( Signal::pBuffer );
     Signal::pBuffer backward( pChunk );
@@ -73,6 +74,7 @@ public:
       */
     virtual pChunk operator()( Signal::pBuffer );
     virtual Signal::pBuffer inverse( pChunk ) { throw std::logic_error("Not implemented"); }
+    virtual FreqAxis freqAxis( float FS );
 
     unsigned chunk_size() { return _chunk_size; }
     unsigned set_approximate_chunk_size( unsigned preferred_size );

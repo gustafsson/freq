@@ -38,6 +38,7 @@ public:
     pChunk computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales );
 
     virtual Signal::pBuffer inverse( pChunk );
+    virtual FreqAxis freqAxis( float FS );
 
     float     get_min_hz(float fs) const;
     float     wanted_min_hz() const;

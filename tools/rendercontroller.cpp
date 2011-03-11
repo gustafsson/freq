@@ -287,6 +287,18 @@ Signal::PostSink* RenderController::
 }
 
 
+Tfr::Transform* RenderController::
+        currentTransform()
+{
+    Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
+    if (ps->sinks().empty())
+        return 0;
+    BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
+    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->Operation::source().get());
+    return filter->transform().get();
+}
+
+
 void RenderController::
         receiveSetTransform_Cwt()
 {
@@ -367,6 +379,12 @@ void RenderController::
     Tfr::FreqAxis fa;
     fa.setLinear( fs );
 
+    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    {
+        fa.min_hz = currentTransform()->freqAxis(fs).min_hz;
+        fa.f_step = (1/fa.max_frequency_scalar) * (fs/2 - fa.min_hz);
+    }
+
     model()->display_scale( fa );
     view->userinput_update();
 }
@@ -382,6 +400,14 @@ void RenderController::
             Tfr::Cwt::Singleton().wanted_min_hz(),
             Tfr::Cwt::Singleton().get_max_hz(fs) );
 
+    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    {
+        BOOST_ASSERT( false ); // Not likely to ever happen
+        fa.setLogarithmic(
+                currentTransform()->freqAxis(fs).min_hz,
+                Tfr::Cwt::Singleton().get_max_hz(fs) );
+    }
+
     model()->display_scale( fa );
     view->userinput_update();
 }
@@ -394,6 +420,13 @@ void RenderController::
 
     Tfr::FreqAxis fa;
     fa.setQuefrencyNormalized( fs, Tfr::Cepstrum::Singleton().chunk_size() );
+
+    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    {
+        // min_hz = 2*fs/window_size;
+        // window_size = 2*fs/min_hz;
+        fa.setQuefrencyNormalized( fs, 2*fs/currentTransform()->freqAxis(fs).min_hz );
+    }
 
     model()->display_scale( fa );
     view->userinput_update();
@@ -557,6 +590,7 @@ void RenderController::
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
     }
 
+    connect(this, SIGNAL(transformChanged()), SLOT(updateFreqAxis()));
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
@@ -600,5 +634,29 @@ void RenderController::
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
         collection->reset();
 }
+
+
+void RenderController::
+        updateFreqAxis()
+{
+    switch(model()->display_scale().axis_scale)
+    {
+    case Tfr::AxisScale_Linear:
+        receiveLinearScale();
+        break;
+
+    case Tfr::AxisScale_Logarithmic:
+        receiveLogScale();
+        break;
+
+    case Tfr::AxisScale_Quefrency:
+        receiveCepstraScale();
+        break;
+
+    default:
+        break;
+    }
+}
+
 
 } // namespace Tools

@@ -155,6 +155,15 @@ pChunk Fft::
 }
 
 
+FreqAxis Fft::
+        freqAxis( float FS )
+{
+    FreqAxis fa;
+    fa.setLinear( FS, FS );
+    return fa;
+}
+
+
 Signal::pBuffer Fft::
         backward( pChunk chunk)
 {
@@ -356,7 +365,7 @@ Tfr::pChunk Stft::
         }
     }
 
-    chunk->freqAxis.setLinear( breal->sample_rate, _chunk_size );
+    chunk->freqAxis = freqAxis( breal->sample_rate );
     chunk->order = Chunk::Order_column_major;
     chunk->chunk_offset = b.sample_offset + _chunk_size/2;
     chunk->first_valid_sample = 0;
@@ -371,6 +380,15 @@ Tfr::pChunk Stft::
     }
 
     return chunk;
+}
+
+
+FreqAxis Stft::
+        freqAxis( float FS )
+{
+    FreqAxis fa;
+    fa.setLinear( FS, _chunk_size );
+    return fa;
 }
 
 
