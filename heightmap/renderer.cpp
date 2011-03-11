@@ -963,15 +963,23 @@ void Renderer::drawAxes( float T )
     // 2 clip entire sound to frustum
     // 3 decide upon scale
     // 4 draw axis
+    unsigned screen_width = viewport_matrix[2];
+    unsigned screen_height = viewport_matrix[3];
 
-    float w = 0.1f, h=0.05f;
+    float borderw = 50*1.1;
+    float borderh = 12.5*1.1;
+    float w = borderw/screen_width, h=borderh/screen_height;
     if (!left_handed_axes)
     {
-        w = 0.05f, h = 0.1f;
+        // swap
+        w = w+h;
+        h = w-h;
+        w = w-h;
     }
+    //float scalew = w, scaleh = h;
 
 
-    { // 1 gray draw overlay
+    if (0) { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
         glPushMatrixContext push_proj(GL_PROJECTION);
 
@@ -1053,6 +1061,9 @@ void Renderer::drawAxes( float T )
         ST = maxt-mint;
         SF = maxf-minf;
 
+        ST *= 8/1.1*borderw/(screen_width-2*borderw);
+        SF *= 20/1.1*borderh/(screen_height-2*borderh);
+
         if (clippedFrustum.size())
         {
             st = 0, sf = 0;
@@ -1069,7 +1080,6 @@ void Renderer::drawAxes( float T )
         }
     }
 
-
     // 4 render
     GLvector x(1,0,0), z(0,0,1);
 
@@ -1082,7 +1092,7 @@ void Renderer::drawAxes( float T )
     // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
-        glColor4f(0,0,0,1);
+        glColor4f(0,0,0,0.8);
         unsigned j=(i+1)%clippedFrustum.size();
         GLvector p = clippedFrustum[i]; // starting point of side
         GLvector v = clippedFrustum[j]-p; // vector pointing from p to the next vertex
@@ -1135,6 +1145,7 @@ void Renderer::drawAxes( float T )
 
                 if (size>1) {
                     glLineWidth(1);
+
                     glPushMatrixContext push_model( GL_MODELVIEW );
 
                     glTranslatef(p[0], 0, p[2]);
@@ -1158,12 +1169,20 @@ void Renderer::drawAxes( float T )
                     if (!left_handed_axes)
                         glScalef(-1,1,1);
                     glTranslatef(-.5f*w,sign*120-50.f,0);
+                    glColor4f(1,1,1,0.5);
+                    float z = 10;
+                    float q = 20;
+                    glBegin(GL_TRIANGLE_STRIP);
+                    glVertex2f(0 - z, 0 - q);
+                    glVertex2f(w + z, 0 - q);
+                    glVertex2f(0 - z, 100 + q);
+                    glVertex2f(w + z, 100 + q);
+                    glEnd();
+                    glColor4f(0,0,0,0.8);
                     for (char*c=a;*c!=0; c++) {
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                         glTranslatef(letter_spacing,0,0);
                     }
-                    if (!left_handed_axes)
-                        glScalef(-1,1,1);
                 }
 
                 if (v[0] > 0) t++;
@@ -1184,6 +1203,7 @@ void Renderer::drawAxes( float T )
                 if (size>1 || SF<.8f)
                 {
                     glLineWidth(1);
+
                     glPushMatrixContext push_model( GL_MODELVIEW );
 
                     glTranslatef(p[0],0,p[2]);
@@ -1192,17 +1212,23 @@ void Renderer::drawAxes( float T )
                     char a[100];
                     sprintf(a,"%d", f);
                     unsigned w=20;
-                    if (sign<0) {
-                        for (char*c=a;*c!=0; c++)
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                    }
+                    for (char*c=a;*c!=0; c++)
+                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                     if (!left_handed_axes)
                         glScalef(-1,1,1);
-                    glTranslatef(sign*w,-50.f,0);
+                    glTranslatef(sign>=0?20:sign*w,-50.f,0);
+                    glColor4f(1,1,1,0.5);
+                    float z = 10;
+                    float q = 20;
+                    glBegin(GL_TRIANGLE_STRIP);
+                    glVertex2f(0 - z, 0 - q);
+                    glVertex2f(w + z, 0 - q);
+                    glVertex2f(0 - z, 100 + q);
+                    glVertex2f(w + z, 100 + q);
+                    glEnd();
+                    glColor4f(0,0,0,0.8);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    if (!left_handed_axes)
-                        glScalef(-1,1,1);
                 }
 
                 if (v[2] > 0) {
@@ -1288,11 +1314,12 @@ void Renderer::drawAxes( float T )
                         glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
                         glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
                     glEnd();
-                glColor4f(0,0,0,1);
+                glColor4f(0,0,0,0.8);
 
                 if (tone%12 == 0)
                 {
-                    glLineWidth(1.f);
+                    glLineWidth(1);
+
                     glPushMatrixContext push_model( GL_MODELVIEW );
                     glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
                     glRotatef(90,1,0,0);
@@ -1309,10 +1336,19 @@ void Renderer::drawAxes( float T )
                     if (!left_handed_axes)
                         glScalef(-1,1,1);
                     glTranslatef(sign*w,-50.f,0);
+                    //glScalef( scalew / 0.1, scaleh / 0.05, 1 );
+                    glColor4f(1,1,1,0.5);
+                    float z = 10;
+                    float q = 20;
+                    glBegin(GL_TRIANGLE_STRIP);
+                    glVertex2f(0 - z, 0 - q);
+                    glVertex2f(w + z, 0 - q);
+                    glVertex2f(0 - z, 100 + q);
+                    glVertex2f(w + z, 100 + q);
+                    glEnd();
+                    glColor4f(0,0,0,0.8);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    if (!left_handed_axes)
-                        glScalef(-1,1,1);
                 }
             }
         }
