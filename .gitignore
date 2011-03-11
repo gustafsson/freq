@@ -31,3 +31,5 @@ md5sums
 project_header.h.cpp
 *.log
 *.zip
+dist/package-macx
+dist/package-macx/*

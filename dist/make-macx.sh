@@ -11,9 +11,9 @@ make distclean
 qmake -spec macx-g++
 
 echo "========================== Packaging =========================="
-echo "Creating debian archive: $filename"
+echo "Creating Mac OS X application: $filename"
 cd sonicawe/dist
 ruby package-macx.rb ${versiontag} ${version}
-#filename="sonicawe_${versiontag}_$(uname -m).deb"
+filename="package-macx/sonicawe_${versiontag}_macos_i386.zip"
 
 passiveftp=passive

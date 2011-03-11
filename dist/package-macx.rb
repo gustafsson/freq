@@ -1,12 +1,12 @@
 #require("Date")
 
-#$platform = "macos_i386"
+$platform = "macos_i386"
 #$build_date = Date.today
 #$version = "0.%d.%02d.%02d" % [$build_date.year, $build_date.month, $build_date.mday]
 $version = ARGV[0]
-$build_name = "sonicawe_#{$version}_snapshot_#{$platform}"
+$build_name = "sonicawe_#{$version}_#{$platform}"
 
-$dist_dir = "mac_dist"
+$dist_dir = "package-macx"
 $build_dir = "../../sandbox"
 
 # Creating a dist directory
