@@ -954,6 +954,14 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     return true;
 }
 
+template<typename T>
+void swap( T& x, T& y) {
+    x = x + y;
+    y = x - y;
+    x = x - y;
+}
+
+
 void Renderer::drawAxes( float T )
 {
     // Draw overlay borders, on top, below, to the right or to the left
@@ -968,16 +976,13 @@ void Renderer::drawAxes( float T )
 
     float borderw = 50*1.1;
     float borderh = 12.5*1.1;
+
     float w = borderw/screen_width, h=borderh/screen_height;
+
     if (!left_handed_axes)
     {
-        // swap
-        w = w+h;
-        h = w-h;
-        w = w-h;
+        swap( h, w );
     }
-    //float scalew = w, scaleh = h;
-
 
     if (0) { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
@@ -1077,6 +1082,16 @@ void Renderer::drawAxes( float T )
 
             DT = powf(10, st);
             DF = powf(10, sf);
+
+            if (st>1)
+            {
+                st = 1;
+                DT = 10;
+                if( 10* 60 < ST*.53f ) DT *= 6, st++;
+                if( 10* 60*10 < ST*.53f ) DT *= 10, st++;
+                if( 10* 60*10*6 < ST*.53f ) DT *= 6, st++;
+                if( 10* 60*10*6*24 < ST*.53f ) DT *= 24, st++;
+            }
         }
     }
 
@@ -1132,7 +1147,18 @@ void Renderer::drawAxes( float T )
 
             // draw marker
             if (taxis) {
-                float size = 1+ (0 == (t%10));
+                float size;
+                if (st<=0)
+                    size = 1+ (0 == (t%10));
+                else if (st == 1)
+                    size = 1+ (0 == (t%6));
+                else if (st == 2)
+                    size = 1+ (0 == (t%10));
+                else if (st == 3)
+                    size = 1+ (0 == (t%6));
+                else
+                    size = 1+ (0 == (t%24));
+
                 glLineWidth(size);
 
                 float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
