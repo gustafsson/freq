@@ -248,7 +248,7 @@ void RenderController::
     //float f = value / 50.f - 1.f;
     //c.scales_per_octave( 20.f * exp( 4*f ) );
     float f = value / (float)tf_resolution->maximum();
-    c.scales_per_octave( exp( 7*f ) ); // scales_per_octave >= 1
+    c.scales_per_octave( 2*exp( 6*f ) ); // scales_per_octave >= 2
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
@@ -447,7 +447,7 @@ void RenderController::
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
 
     // keep in sync with receiveSetTimeFrequencyResolution
-    float f = log(c.scales_per_octave())/7;
+    float f = log(c.scales_per_octave()/2)/6;
     int value = f * tf_resolution->maximum() + .5;
 
     this->tf_resolution->setValue( value );
