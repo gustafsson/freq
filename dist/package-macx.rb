@@ -30,14 +30,11 @@ def package_macos(app_name, version, zip = false)
                  qt_lib_path("QtCore"),
                  cuda_lib_path("cufft"),
                  cuda_lib_path("cudart"),
-                 cuda_lib_path("tlshook"),
-                 custom_lib_path("audiere"),
                  custom_lib_path("portaudio"),
                  custom_lib_path("portaudiocpp"),
                  custom_lib_path("sndfile"),
                  custom_lib_path("hdf5", "hdf5/bin"),
-                 custom_lib_path("hdf5_hl", "hdf5/bin"),
-                 custom_lib_path("sz.2", "sziplib/bin")]
+                 custom_lib_path("hdf5_hl", "hdf5/bin")]
     
     directories = ["Contents/Frameworks",
                    "Contents/MacOS",
@@ -136,7 +133,7 @@ def package_macos(app_name, version, zip = false)
             system("rm #{app_name}.zip")
         end
         puts " creating: #{app_name}.zip"
-        unless system("zip -r #{app_name}.zip  #{app_name}.app")
+        unless system("zip -r #{app_name}.zip  #{app_name}.app") && system("zip -r #{app_name}.zip  ../license")
             puts "Error: Unable to zip application, #{app_name}.app"
             exit(1)
         end
