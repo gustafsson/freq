@@ -1,44 +1,146 @@
-#require("Date")
+$framework_path = "/Library/Frameworks"
+$cuda_library_path = "/usr/local/cuda/lib"
+$custom_library_path = "../../../libs"
+$command_line_width = 80
 
+# Configuration
 $platform = "macos_i386"
-#$build_date = Date.today
-#$version = "0.%d.%02d.%02d" % [$build_date.year, $build_date.month, $build_date.mday]
 $version = ARGV[0]
 $build_name = "sonicawe_#{$version}_#{$platform}"
 
-$dist_dir = "package-macx"
-$build_dir = "../../sandbox"
-
-# Creating a dist directory
-system("mkdir #{$dist_dir}") if( !File.exist?($dist_dir) )
-
-# Copy the build and rename it
-$app_name = "#{$dist_dir}/#{$build_name}.app"
-system("rm -r #{$app_name}") if( File.exist?($app_name) )
-puts "Copying build to #{$app_name}"
-system("cp -r #{$build_dir} #{$app_name}") if( File.exist?($build_dir) )
-
-# Set the QT library search paths
-$unix_app_name = "#{$app_name}/Contents/MacOS/sonicawe"
-puts "Setting QT library search paths"
-system("install_name_tool -change QtOpenGL.framework/Versions/4/QtOpenGL @executable_path/../Frameworks/QtOpenGL #{$unix_app_name}\n
-install_name_tool -change QtGui.framework/Versions/4/QtGui @executable_path/../Frameworks/QtGui #{$unix_app_name}\n
-install_name_tool -change QtCore.framework/Versions/4/QtCore @executable_path/../Frameworks/QtCore #{$unix_app_name}\n
-install_name_tool -change @rpath/libcufft.dylib @executable_path/../Frameworks/libcufft.dylib #{$unix_app_name}\n
-install_name_tool -change @rpath/libcudart.dylib @executable_path/../Frameworks/libcudart.dylib #{$unix_app_name}")
-
-# Update version string in Info.plist
-puts "Updating the Info.plist with version number #{$version}"
-$info_name = "#{$app_name}/Contents/Info.plist"
-$info = File.read($info_name)
-$info.gsub!("(VERSION_TAG)", "#{$version} (Snapshot)")
-$info.gsub!("(LONG_VERSION_TAG)", "SonicAwe #{$version} (Snapshot)")
-File.open($info_name, "w") do |file|
-    file.write($info)
+def qt_lib_path(name, debug = false)
+    return "#{$framework_path}/#{name}.framework/Versions/Current/#{name}#{"_debug" if(debug)}"
 end
 
-# Packaging the application (using zip)
-$packet_name = "#{$dist_dir}/#{$build_name}.zip"
-system("rm -r #{$packet_name}") if( File.exist?($packet_name) )
-puts "Packaging application: #{$packet_name}"
-system("zip -r #{$packet_name}  #{$app_name}")
+def qt_install_name(name)
+    return "#{name}.framework/Versions/4/#{name}"
+end
+
+def cuda_lib_path(name)
+    return "#{$cuda_library_path}/lib#{name}.dylib"
+end
+
+def custom_lib_path(name, path = nil)
+    return "#{$custom_library_path}/#{"#{path}/" if(path)}lib#{name}.dylib"
+end
+
+def package_macos(app_name, version, zip = false)
+    libraries = [qt_lib_path("QtGui"),
+                 qt_lib_path("QtOpenGL"),
+                 qt_lib_path("QtCore"),
+                 cuda_lib_path("cufft"),
+                 cuda_lib_path("cudart"),
+                 cuda_lib_path("tlshook"),
+                 custom_lib_path("audiere"),
+                 custom_lib_path("portaudio"),
+                 custom_lib_path("portaudiocpp"),
+                 custom_lib_path("sndfile"),
+                 custom_lib_path("hdf5", "hdf5/bin"),
+                 custom_lib_path("hdf5_hl", "hdf5/bin"),
+                 custom_lib_path("sz.2", "sziplib/bin")]
+    
+    directories = ["Contents/Frameworks",
+                   "Contents/MacOS",
+                   "Contents/Resources",
+                   "Contents/plugins"]
+    
+    executables = ["../sonicawe"]
+    
+    resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
+                 "package-macos/aweicon-project.icns",
+                 "package-macos/aweicon.icns",
+                 "package-macos/qt.conf"]
+    
+    install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
+                     [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
+                     [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
+                     ["@rpath/libcufft.dylib", "@executable_path/../Frameworks/libcufft.dylib"],
+                     ["@rpath/libcudart.dylib", "@executable_path/../Frameworks/libcudart.dylib"]]
+    
+    use_bin = Array.new()
+    
+    # Creating directories
+    puts " Creating application directories ".center($command_line_width, "=")
+    directories.each do |directory|
+        puts " creating: #{app_name}.app/#{directory}"
+        unless system("mkdir -p #{app_name}.app/#{directory}")
+            puts "Error: Could not create directory, #{directory}"
+            exit(1)
+        end
+    end
+    
+    # Copying libraries
+    puts " Copying dynamic libraries ".center($command_line_width, "=")
+    libraries.each do |library|
+        puts " copying: #{library}"
+        local_lib = "#{app_name}.app/Contents/Frameworks/#{File.basename(library)}"
+        use_bin.push(local_lib)
+        unless system("cp #{library} #{local_lib}")
+            puts "Error: Could not copy library, #{library}"
+            exit(1)
+        end
+    end
+    
+    # Copying executables
+    puts " Copying executables ".center($command_line_width, "=")
+    executables.each do |executable|
+        puts " copying: #{executable}"
+        local_exec = "#{app_name}.app/Contents/MacOS/#{File.basename(executable)}"
+        use_bin.push(local_exec)
+        unless system("cp #{executable} #{local_exec}")
+            puts "Error: Could not copy executable, #{executable}"
+            exit(1)
+        end
+    end
+    
+    # Copying resources
+    puts " Copying resources ".center($command_line_width, "=")
+    resources.each do |resource|
+        puts " copying: #{resource}"
+        unless system("cp -r #{resource} #{app_name}.app/Contents/Resources/#{File.basename(resource)}")
+            puts "Error: Could not copy resource, #{resource}"
+            exit(1)
+        end
+    end
+    
+    # Add application information
+    puts " Adding application information ".center($command_line_width, "=")
+    puts " writing: Info.plist"
+    info = File.read("package-macos/Info.plist")
+    info.gsub!("(VERSION_TAG)", "#{version}")
+    info.gsub!("(LONG_VERSION_TAG)", "SonicAwe #{version}")
+    File.open("#{app_name}.app/Contents/Info.plist", "w") do |file|
+        file.write(info)
+    end
+    puts " copying: package-macos/PkgInfo"
+    system("cp package-macos/PkgInfo #{app_name}.app/Contents/PkgInfo")
+    
+    # Setting install names
+    puts " Fixing install names ".center($command_line_width, "=")
+    use_bin.each do |path|
+        puts " binary: #{path}"
+        install_names.each do |install_name|
+            puts "  changing: #{install_name[0]}"
+            unless system("install_name_tool -change #{install_name[0]} #{install_name[1]} #{path}")
+                puts "Error: Could not change install name, #{install_name[0]}, for executable, #{path}"
+                exit(1)
+            end
+        end
+    end
+    
+    # Generating zip file
+    if( zip )
+        puts " Packaging application ".center($command_line_width, "=")
+        if( File.exist?("#{app_name}.zip") )
+            puts " removing: #{app_name}.zip"
+            system("rm #{app_name}.zip")
+        end
+        puts " creating: #{app_name}.zip"
+        unless system("zip -r #{app_name}.zip  #{app_name}.app")
+            puts "Error: Unable to zip application, #{app_name}.app"
+            exit(1)
+        end
+    end
+end
+
+package_macos($build_name, $version, true)

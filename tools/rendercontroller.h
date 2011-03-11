@@ -11,6 +11,8 @@
 class QToolBar;
 class QSlider;
 
+namespace Tfr { class Transform; }
+
 namespace Ui { class ComboBoxAction; }
 
 namespace Tools
@@ -69,7 +71,7 @@ namespace Tools
 
     private:
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
-        class Tfr::Transform* currentTransform();
+        Tfr::Transform* currentTransform();
 
         QPointer<RenderView> view;
 
