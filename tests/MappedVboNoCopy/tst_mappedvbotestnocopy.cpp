@@ -5,12 +5,12 @@
 #include <QtCore/QCoreApplication>
 #include <QGLWidget>
 
-class MappedVboTest : public QObject
+class MappedVboTestNoCopy : public QObject
 {
     Q_OBJECT
 
 public:
-    MappedVboTest();
+    MappedVboTestNoCopy();
     RedirectStdout rs;
 
     QGLWidget a;
@@ -21,7 +21,7 @@ private Q_SLOTS:
     void testCase1();
 };
 
-MappedVboTest::MappedVboTest()
+MappedVboTestNoCopy::MappedVboTestNoCopy()
 : rs(__FILE__ " log.txt")
 {
 }
@@ -32,26 +32,25 @@ MappedVboTest::MappedVboTest()
 
 void mappedVboTestCuda( cudaPitchedPtrType<float> data );
 
-void MappedVboTest::initTestCase()
+void MappedVboTestNoCopy::initTestCase()
 {
     a.show(); // glew needs an OpenGL context
 }
 
-void MappedVboTest::cleanupTestCase()
+void MappedVboTestNoCopy::cleanupTestCase()
 {
 }
 
-void MappedVboTest::testCase1()
+void MappedVboTestNoCopy::testCase1()
 {
     QVERIFY( cudaSuccess == cudaGLSetGLDevice( 0 ) );
     QVERIFY( 0==glewInit() );
     pVbo vbo( new Vbo(1024));
     MappedVbo<float> mapping(vbo, make_cudaExtent(256,1,1));
-    GpuCpuData<float> copy(*mapping.data);
-    mappedVboTestCuda( copy.getCudaGlobal() );
+    mappedVboTestCuda( mapping.data->getCudaGlobal() );
     QVERIFY2(true, "Failure");
 }
 
-QTEST_MAIN(MappedVboTest);
+QTEST_MAIN(MappedVboTestNoCopy);
 
-#include "tst_mappedvbotest.moc"
+#include "tst_mappedvbotestnocopy.moc"

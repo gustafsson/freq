@@ -10,7 +10,7 @@ TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release
 
-TARGET = tst_mappedvbotest
+TARGET = tst_mappedvbotestnocopy
 CONFIG   += console
 CONFIG   -= app_bundle
 
