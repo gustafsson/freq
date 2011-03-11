@@ -1,5 +1,5 @@
-#if 0
 #include "sawe/project_header.h"
+#include <redirectstdout.h>
 #include <QtCore/QString>
 #include <QtTest/QtTest>
 #include <QtCore/QCoreApplication>
@@ -11,6 +11,7 @@ class MappedVboTest : public QObject
 
 public:
     MappedVboTest();
+    RedirectStdout rs;
 
     QGLWidget a;
 
@@ -18,10 +19,10 @@ private Q_SLOTS:
     void initTestCase();
     void cleanupTestCase();
     void testCase1();
-
 };
 
 MappedVboTest::MappedVboTest()
+: rs(__FILE__ " log.txt")
 {
 }
 
@@ -46,11 +47,11 @@ void MappedVboTest::testCase1()
     QVERIFY( 0==glewInit() );
     pVbo vbo( new Vbo(1024));
     MappedVbo<float> mapping(vbo, make_cudaExtent(256,1,1));
-    mappedVboTestCuda( mapping.data->getCudaGlobal() );
+    GpuCpuData<float> copy(*mapping.data);
+    mappedVboTestCuda( copy.getCudaGlobal() );
     QVERIFY2(true, "Failure");
 }
 
 QTEST_MAIN(MappedVboTest);
 
 #include "tst_mappedvbotest.moc"
-#endif

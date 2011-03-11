@@ -4,17 +4,29 @@
 #
 #-------------------------------------------------
 
-QT       += testlib
+QT += testlib
 QT += opengl
+TEMPLATE = app
+win32:TEMPLATE = vcapp
+win32:CONFIG += debug_and_release
 
 TARGET = tst_mappedvbotest
 CONFIG   += console
 CONFIG   -= app_bundle
 
-TEMPLATE = app
+!win32:QMAKE_CXXFLAGS_RELEASE -= -O2
+!win32:QMAKE_CXXFLAGS_RELEASE += -O3
+win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
+win32:QMAKE_LFLAGS_DEBUG += \
+#    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
+#    /NODEFAULTLIB:MSVCRT \
 
+win32:QMAKE_LFLAGS_RELEASE += \
+    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
 
-SOURCES += tst_mappedvbotest.cpp
+SOURCES += *.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
@@ -23,21 +35,53 @@ INCLUDEPATH += \
     ../../../../sonic/gpumisc \
     ../../../../sonic/sonicawe \
 
+unix:!macx {
 LIBS = \
     -lGLEW \
     -lGLU \
     -lGL \
-    -lglut \
+#    -lglut \
     -L../../../gpumisc -lgpumisc \
 #    -L../../../sonicawe -lsonicawe
+}
 
 CUDA_SOURCES += \
-    tst_mappedvbotest.cu
+    *.cu
 
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
 
+win32 {
+INCLUDEPATH += \
+#	../../../../winlib/glut \
+	../../../../winlib/glew/include \
+#	../../../../winlib/portaudio/include \
+#	../../../../winlib/libsndfile/include \
+#	../../../../winlib/hdf5lib/include \
+#	../../../../winlib/zlib/include \
+	../../../../winlib
+	
+LIBS += \
+    -L../../../gpumisc/Release -lgpumisc \
+#	-l../../../../winlib/glut/glut32 \
+	-l../../../../winlib/glew/lib/glew32 \
+#	-l../../../../winlib/libsndfile/libsndfile-1 \
+#	-l../../../../winlib/hdf5lib/dll/hdf5dll \
+#	-l../../../../winlib/hdf5lib/dll/hdf5_hldll \
+	-L../../../../winlib/boostlib
+	
+win32:QMAKE_LFLAGS_RELEASE += \
+#	../../../../winlib/portaudio/portaudio.lib \
+#	../../../../winlib/portaudio/portaudio_x86_mt.lib \
+#	../../../../winlib/portaudio/portaudiocpp_mt.lib
+	
+win32:QMAKE_LFLAGS_DEBUG += \
+#	../../../../winlib/portaudio/portaudio.lib \
+#	../../../../winlib/portaudio/portaudio_x86_mt_gd.lib \
+#	../../../../winlib/portaudio/portaudiocpp_mt_gd.lib
+	
+}
 ####################
 # Temporary output
 
