@@ -9,6 +9,8 @@ namespace Tfr {
     class CwtChunkPart:public Chunk
     {
     public:
+        CwtChunkPart() : Chunk( Order_row_major ) {}
+
         /**
           If chunks are clamped (cleaned from redundant data) the inverse will produce incorrect results.
           */
@@ -19,6 +21,8 @@ namespace Tfr {
     class CwtChunk:public Chunk
     {
     public:
+        CwtChunk() : Chunk( Order_row_major ) {}
+
         /**
           Collection of CwtChunkPart.
           */

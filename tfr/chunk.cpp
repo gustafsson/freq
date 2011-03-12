@@ -7,8 +7,9 @@ namespace Tfr {
 
 
 Chunk::
-        Chunk( )
-:   chunk_offset(0),
+        Chunk( Order order )
+:   order(order),
+    chunk_offset(0),
     first_valid_sample(0),
     n_valid_samples(0),
     sample_rate(0)

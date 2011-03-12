@@ -28,7 +28,6 @@ Signal::pBuffer SuperSample::
     biggerchunk->chunk_offset = chunk->chunk_offset << multiple;
     biggerchunk->first_valid_sample = chunk->first_valid_sample << multiple;
     biggerchunk->n_valid_samples = chunk->n_valid_samples << multiple;
-    biggerchunk->order = chunk->order;
 
     cudaExtent src_sz = chunk->transform_data->getNumberOfElements();
     cudaExtent dest_sz = src_sz;

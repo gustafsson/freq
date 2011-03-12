@@ -906,6 +906,11 @@ void RenderView::
             // Make sure our cuda context is still alive by invoking
             // a tiny kernel. This will throw an CudaException otherwise,
             // thus resulting in restarting the cuda context.
+
+            // If we don't ensure the context is alive before starting to
+            // use various GPU resources the application will crash, for
+            // instance when another RenderView is closed and releases
+            // the context.
             Signal::pBuffer b(new Signal::Buffer(0,4,4));
             Tfr::Stft a;
             a.set_approximate_chunk_size(4);

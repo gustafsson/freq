@@ -631,6 +631,7 @@ pBlock Collection::
                     TIME_COLLECTION TaskTimer tt("stft");
 
                     fillBlock( block );
+
                     CudaException_CHECK_ERROR();
                 }
                 catch (const CudaException& x )

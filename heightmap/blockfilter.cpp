@@ -276,9 +276,9 @@ void StftToBlock::
 
     cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
 
-    cpp.pitch = sizeof(float2)*chunk.nScales();
-    cpp.xsize = chunk.nScales();
+    cpp.xsize = sizeof(float2)*chunk.nScales();
     cpp.ysize = chunk.nSamples();
+    cpp.pitch = cpp.xsize;
 
     ::resampleStft( cpp,
                   outData->getCudaGlobal(),
@@ -328,9 +328,9 @@ void CepstrumToBlock::
 
     cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
 
-    cpp.pitch = sizeof(float2)*chunk.nScales();
-    cpp.xsize = chunk.nScales();
+    cpp.xsize = sizeof(float2)*chunk.nScales();
     cpp.ysize = chunk.nSamples();
+    cpp.pitch = cpp.xsize;
 
     ::resampleStft( cpp,
                   outData->getCudaGlobal(),

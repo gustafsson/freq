@@ -77,11 +77,11 @@ public:
     virtual Signal::pBuffer inverse( pChunk ) { throw std::logic_error("Not implemented"); }
     virtual FreqAxis freqAxis( float FS );
 
-    unsigned chunk_size() { return _chunk_size; }
+    unsigned chunk_size() { return _window_size; }
     unsigned set_approximate_chunk_size( unsigned preferred_size );
 
     /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
-    void set_exact_chunk_size( unsigned chunk_size ) { _chunk_size = chunk_size; }
+    void set_exact_chunk_size( unsigned chunk_size ) { _window_size = chunk_size; }
 
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 private:
@@ -94,20 +94,24 @@ private:
         Default window size for the windowed fourier transform, or short-time fourier transform, stft
         Default value: chunk_size=1<<11
     */
-    unsigned _chunk_size;
+    unsigned _window_size;
 };
 
 class StftChunk: public Chunk
 {
 public:
-    StftChunk();
+    StftChunk(unsigned window_size = -1);
     void setHalfs( unsigned n );
     unsigned halfs( );
     unsigned nActualScales() const;
 
+    virtual unsigned nSamples() const;
     virtual unsigned nScales() const;
 
     virtual Signal::Interval getInterval() const { return getInversedInterval(); }
+
+    unsigned window_size;
+
 private:
     unsigned halfs_n;
 };
