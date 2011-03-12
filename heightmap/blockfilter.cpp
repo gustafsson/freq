@@ -266,9 +266,6 @@ void StftToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
-    // hack to extent first window to first sample, instead of interpolating from 0
-    if (inInterval.first < chunk.nScales())
-        inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -277,7 +274,13 @@ void StftToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-    ::resampleStft( chunk.transform_data->getCudaGlobal(),
+    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
+
+    cpp.pitch = sizeof(float2)*chunk.nScales();
+    cpp.xsize = chunk.nScales();
+    cpp.ysize = chunk.nSamples();
+
+    ::resampleStft( cpp,
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
@@ -315,9 +318,6 @@ void CepstrumToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
-    // hack to extent first window to first sample, instead of interpolating from 0
-    if (inInterval.first < chunk.nScales())
-        inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -326,7 +326,13 @@ void CepstrumToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-    ::resampleStft( chunk.transform_data->getCudaGlobal(),
+    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
+
+    cpp.pitch = sizeof(float2)*chunk.nScales();
+    cpp.xsize = chunk.nScales();
+    cpp.ysize = chunk.nSamples();
+
+    ::resampleStft( cpp,
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),

@@ -147,7 +147,7 @@ pChunk Fft::
     computeWithCufft( *input, *chunk->transform_data, -1);
     //computeWithOoura( *input, *chunk->transform_data, -1 );
 
-    chunk->freqAxis.setLinear( b.sample_rate, chunk->nScales() );
+    chunk->freqAxis.setLinear( b.sample_rate, chunk->nScales()/2 );
 
     chunk->order = Chunk::Order_column_major;
     chunk->chunk_offset = b.sample_offset;
@@ -163,7 +163,7 @@ FreqAxis Fft::
         freqAxis( float FS )
 {
     FreqAxis fa;
-    fa.setLinear( FS, FS );
+    fa.setLinear( FS, FS/2 );
     return fa;
 }
 
@@ -391,7 +391,7 @@ FreqAxis Stft::
         freqAxis( float FS )
 {
     FreqAxis fa;
-    fa.setLinear( FS, _chunk_size );
+    fa.setLinear( FS, _chunk_size/2 );
     return fa;
 }
 
