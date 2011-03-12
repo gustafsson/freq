@@ -21,9 +21,13 @@ public:
     ~GlBlock();
 
     typedef boost::shared_ptr< MappedVbo<float> > pHeight;
-    typedef boost::shared_ptr< MappedVbo<float2> > pSlope;
+    typedef boost::shared_ptr< GpuCpuData<float> > pHeightReadOnlyCpu;
+    typedef cudaArray* HeightReadOnlyArray;
 
-    pHeight height();
+    pHeight             height();
+    pHeightReadOnlyCpu  heightReadOnlyCpu();
+    HeightReadOnlyArray heightReadOnlyArray();
+    cudaExtent          heightSize() const;
 
     /**
         'unmap' releases copies of pHeight and pSlope held by GlBlock and
@@ -32,7 +36,7 @@ public:
         It is an error for a client to call unmap while keeping an instance
         of pHeight or pSlope. Because if there is an instance of pHeight left.
         The Vbo is not unmapped from cuda, glBindBuffer doesn't do anything and
-        glTexSubImage2D fails.
+        glTexSubImage2D fails. unmap ensures this condition with an assert.
       */
     void unmap();
 
@@ -44,8 +48,13 @@ public:
     //void draw_directMode( );
 
     unsigned allocated_bytes_per_element();
+
 private:
+    typedef boost::shared_ptr< MappedVbo<float2> > pSlope;
     pSlope slope();
+
+    void createHeightVbo();
+
     void create_texture( bool create_slope );
     void update_texture( bool create_slope );
     /**
@@ -55,6 +64,10 @@ private:
     void computeSlope( unsigned /*cuda_stream */);
 
     Collection* _collection;
+
+    pHeightReadOnlyCpu _read_only_cpu;
+    cudaGraphicsResource* _read_only_array_resource;
+    HeightReadOnlyArray _read_only_array;
 
     pVbo _height;
     pVbo _slope;

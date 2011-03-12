@@ -251,7 +251,7 @@ void RenderController::
     c.scales_per_octave( 2*exp( 6*f ) ); // scales_per_octave >= 2
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
+    s.set_approximate_chunk_size( 0.1*c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
     zscale->defaultAction()->trigger();
 

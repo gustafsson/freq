@@ -241,7 +241,7 @@ pBuffer SinkSource::
                              I.last,
                              s->getInterval().first,
                              s->getInterval().last).suppressTiming();
-                cudaExtent sz = s->waveform_data()->getNumberOfElements();
+                // cudaExtent sz = s->waveform_data()->getNumberOfElements();
 
                 return s;
             }
