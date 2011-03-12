@@ -14,7 +14,7 @@ make
 echo "========================== Packaging =========================="
 echo "Creating Mac OS X application: $filename"
 cd sonicawe/dist
-ruby package-macx.rb ${versiontag} ${version}
+ruby package-macx.rb ${versiontag}
 filename="sonicawe_${versiontag}_macos_i386.zip"
 
 passiveftp=passive
