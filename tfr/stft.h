@@ -15,7 +15,7 @@ namespace Tfr {
   */
 class CufftHandleContext {
 public:
-    CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlanMany( CUFFT_C2C )
+    CufftHandleContext( cudaStream_t _stream=0, unsigned type=-1); // type defaults to CUFFT_C2C
     ~CufftHandleContext();
 
     cufftHandle operator()( unsigned elems, unsigned batch_size );
@@ -24,6 +24,7 @@ private:
     ThreadChecker _creator_thread;
     cufftHandle _handle;
     cudaStream_t _stream;
+    unsigned _type;
     unsigned _elems;
     unsigned _batch_size;
 

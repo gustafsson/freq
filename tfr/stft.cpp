@@ -22,10 +22,14 @@ namespace Tfr {
 
 
 CufftHandleContext::
-        CufftHandleContext( cudaStream_t stream )
+        CufftHandleContext( cudaStream_t stream, unsigned type )
 :   _handle(0),
-    _stream(stream)
-{}
+    _stream(stream),
+    _type(type)
+{
+    if (_type == (unsigned)-1)
+        _type = CUFFT_C2C;
+}
 
 
 CufftHandleContext::
@@ -65,7 +69,7 @@ void CufftHandleContext::
             &n,
             NULL, 1, 0,
             NULL, 1, 0,
-            CUFFT_C2C,
+            (cufftType_t)_type,
             _batch_size);
 
     if (CUFFT_SUCCESS != r)
