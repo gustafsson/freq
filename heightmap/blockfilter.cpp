@@ -209,10 +209,6 @@ void CwtToBlock::
 
     //    cuda-memcheck complains even on this testkernel when using global memory
     //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
-#ifdef CUDA_MEMCHECK_TEST
-    Block::pData copy( new GpuCpuData<float>( *outData ));
-    outData.swap( copy );
-#endif
 
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
@@ -228,11 +224,6 @@ void CwtToBlock::
                      chunk.freqAxis,
                      _collection->display_scale()
                      );
-
-#ifdef CUDA_MEMCHECK_TEST
-    outData.swap( copy );
-    *outData = *copy;
-#endif
 
     // TODO recompute transfer to the samples that have actual support
     CudaException_CHECK_ERROR();
@@ -286,11 +277,6 @@ void StftToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-#ifdef CUDA_MEMCHECK_TEST
-    Block::pData copy( new GpuCpuData<float>( *outData ));
-    outData.swap( copy );
-#endif
-
     ::resampleStft( chunk.transform_data->getCudaGlobal(),
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
@@ -299,11 +285,6 @@ void StftToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale());
-
-#ifdef CUDA_MEMCHECK_TEST
-    outData.swap( copy );
-    *outData = *copy;
-#endif
 
     block->valid_samples |= inInterval;
 }
@@ -345,11 +326,6 @@ void CepstrumToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-#ifdef CUDA_MEMCHECK_TEST
-    Block::pData copy( new GpuCpuData<float>( *outData ));
-    outData.swap( copy );
-#endif
-
     ::resampleStft( chunk.transform_data->getCudaGlobal(),
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
@@ -358,11 +334,6 @@ void CepstrumToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale());
-
-#ifdef CUDA_MEMCHECK_TEST
-    outData.swap( copy );
-    *outData = *copy;
-#endif
 
     block->valid_samples |= inInterval;
 }

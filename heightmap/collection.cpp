@@ -949,21 +949,11 @@ bool Collection::
     BOOST_ASSERT( in_h.get() != out_h.get() );
     BOOST_ASSERT( outBlock.get() != inBlock.get() );
 
-#ifdef CUDA_MEMCHECK_TEST
-    Block::pData copy( new GpuCpuData<float>( *out_h->data ));
-    out_h->data.swap( copy );
-#endif
-
     ::blockMerge( in_h->data->getCudaGlobal(),
                   out_h->data->getCudaGlobal(),
 
                   make_float4( ia.time, ia.scale, ib.time, ib.scale ),
                   make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
-
-#ifdef CUDA_MEMCHECK_TEST
-    out_h->data.swap( copy );
-    *out_h->data = *copy;
-#endif
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
     if (0)
