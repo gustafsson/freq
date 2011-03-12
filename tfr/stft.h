@@ -62,6 +62,9 @@ private:
 
     void computeWithOoura( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
     void computeWithCufft( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
+
+    void computeWithCufftR2C( GpuCpuData<float>& input, GpuCpuData<float2>& output );
+    void computeWithCufftC2R( GpuCpuData<float2>& input, GpuCpuData<float>& output );
 };
 
 /**
@@ -113,8 +116,12 @@ public:
 
     virtual Signal::Interval getInterval() const { return getInversedInterval(); }
 
+    // If 'window_size != (unsigned)-1' then this chunks represents a real signal
+    // and doesn't contain redundant coefficients.
+    // window_size is transform size (including counting redundant coefficients)
     unsigned window_size;
 
+    unsigned transformSize() const;
 private:
     unsigned halfs_n;
 };

@@ -145,34 +145,53 @@ pChunk Fft::
     // cufft is faster for larger ffts, but as the GPU is the bottleneck we can
     // just as well offload it some and do it on the CPU instead
 
-    ComplexBuffer b( *real_buffer );
-
-    cudaExtent input_n = b.complex_waveform_data()->getNumberOfElements();
+    cudaExtent input_n = real_buffer->waveform_data()->getNumberOfElements();
     cudaExtent output_n = input_n;
 
-    // The in-signal is padded to a power of 2 (cufft manual suggest a "power
-    // of a small prime") for faster fft calculations
+    // The in-signal is padded to a power of 2 (cufft manual suggest a "multiple
+    // of 2, 3, 5 or 7" but a power of one is even better) for faster fft calculations
     output_n.width = spo2g( output_n.width - 1 );
 
-    pChunk chunk( new StftChunk );
-    chunk->transform_data.reset( new GpuCpuData<float2>(
-            0,
-            output_n,
-            GpuCpuVoidData::CpuMemory ));
+    pChunk chunk;
 
-    GpuCpuData<float2>* input = b.complex_waveform_data();
+    // TODO choose method based on data size and locality
+    if (0 == "ooura")
+    {
+        ComplexBuffer b( *real_buffer );
 
-    // TODO choose method based on data size
-    computeWithCufft( *input, *chunk->transform_data, -1);
-    //computeWithOoura( *input, *chunk->transform_data, -1 );
+        GpuCpuData<float2>* input = b.complex_waveform_data();
 
-    chunk->freqAxis.setLinear( b.sample_rate, chunk->nScales()/2 );
+        chunk.reset( new StftChunk );
+        chunk->transform_data.reset( new GpuCpuData<float2>(
+                0,
+                output_n,
+                GpuCpuVoidData::CpuMemory ));
 
-    chunk->chunk_offset = b.sample_offset;
+        computeWithCufft( *input, *chunk->transform_data, -1);
+        //computeWithOoura( *input, *chunk->transform_data, -1 );
+    }
+    else
+    {
+        if (output_n.width != input_n.width)
+            real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( Signal::Interval( real_buffer->sample_offset, output_n.width));
+
+        chunk.reset( new StftChunk(output_n.width) );
+        output_n.width = ((StftChunk*)chunk.get())->nScales();
+        chunk->transform_data.reset( new GpuCpuData<float2>(
+                0,
+                output_n,
+                GpuCpuVoidData::CpuMemory ));
+
+        computeWithCufftR2C( *real_buffer->waveform_data(), *chunk->transform_data );
+    }
+
+    chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
+
+    chunk->chunk_offset = real_buffer->sample_offset;
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = input_n.width;
-    chunk->sample_rate = b.sample_rate / chunk->n_valid_samples;
-    ((StftChunk*)chunk.get())->original_sample_rate = real_buffer->sample_rate;
+    chunk->sample_rate = real_buffer->sample_rate / ((StftChunk*)chunk.get())->transformSize();
+    chunk->original_sample_rate = real_buffer->sample_rate;
     return chunk;
 }
 
@@ -189,14 +208,29 @@ FreqAxis Fft::
 Signal::pBuffer Fft::
         backward( pChunk chunk)
 {
-    unsigned scales = chunk->nScales();
-    float fs = chunk->sample_rate;
-    ComplexBuffer buffer( 0, scales, fs * scales );
+    Signal::pBuffer r;
+    float fs = chunk->original_sample_rate;
+    if (((StftChunk*)chunk.get())->window_size == (unsigned)-1)
+    {
+        unsigned scales = chunk->nScales();
 
-    computeWithCufft(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
-    // computeWithOoura(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
+        // original_sample_rate == fs * scales
+        ComplexBuffer buffer( 0, scales, fs );
 
-    Signal::pBuffer r = buffer.get_real();
+        computeWithCufft(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
+        //computeWithOoura(*chunk->transform_data, *buffer.complex_waveform_data(), 1);
+
+        r = buffer.get_real();
+    }
+    else
+    {
+        unsigned scales = ((StftChunk*)chunk.get())->window_size;
+
+        r.reset( new Signal::Buffer(0, scales, fs ));
+
+        computeWithCufftC2R(*chunk->transform_data, *r->waveform_data());
+    }
+
     if ( r->number_of_samples() != chunk->n_valid_samples )
         r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, chunk->n_valid_samples ));
 
@@ -301,6 +335,38 @@ void Fft::
         direction==-1?CUFFT_FORWARD:CUFFT_INVERSE));
 
     TIME_STFT CudaException_ThreadSynchronize();
+}
+
+
+void Fft::
+        computeWithCufftR2C( GpuCpuData<float>& input, GpuCpuData<float2>& output )
+{
+    TIME_STFT TaskTimer tt("FFt cufft R2C");
+
+    cufftReal* i = input.getCudaGlobal().ptr();
+    cufftComplex* o = output.getCudaGlobal().ptr();
+
+    BOOST_ASSERT( input.getNumberOfElements().width/2 + 1 == output.getNumberOfElements().width);
+
+    CufftException_SAFE_CALL(cufftExecR2C(
+        CufftHandleContext(0, CUFFT_R2C)(input.getNumberOfElements().width, 1),
+        i, o));
+}
+
+
+void Fft::
+        computeWithCufftC2R( GpuCpuData<float2>& input, GpuCpuData<float>& output )
+{
+    TIME_STFT TaskTimer tt("FFt cufft R2C");
+
+    cufftComplex* i = input.getCudaGlobal().ptr();
+    cufftReal* o = output.getCudaGlobal().ptr();
+
+    BOOST_ASSERT( output.getNumberOfElements().width/2 + 1 == input.getNumberOfElements().width);
+
+    CufftException_SAFE_CALL(cufftExecC2R(
+        CufftHandleContext(0, CUFFT_C2R)(output.getNumberOfElements().width, 1),
+        i, o));
 }
 
 
@@ -605,7 +671,22 @@ unsigned StftChunk::
 unsigned StftChunk::
         nScales() const
 {
-    return nActualScales() >> halfs_n;
+    unsigned s = transformSize();
+    if (window_size == (unsigned)-1)
+        return s;
+    else
+        return s/2 + 1;
 }
+
+
+unsigned StftChunk::
+        transformSize() const
+{
+    if (window_size == (unsigned)-1)
+        return Chunk::nScales() >> halfs_n;
+    else
+        return window_size >> halfs_n;
+}
+
 
 } // namespace Tfr
