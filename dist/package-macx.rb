@@ -5,7 +5,9 @@ $command_line_width = 80
 
 # Configuration
 $platform = "macos_i386"
-$version = ARGV[0]
+$platform = ARGV[1] if( ARGV[1] )
+$version = "dev"
+$version = ARGV[0] if( ARGV[0] )
 $build_name = "sonicawe_#{$version}_#{$platform}"
 
 def qt_lib_path(name, debug = false)
