@@ -277,19 +277,21 @@ Signal::Intervals Worker::
     Signal::Intervals c = todoinv;
     c -= _cheat_work;
 
-    if (!c)
+    bool is_cheating = Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
+    if (is_cheating && !c)
     {
-        bool is_cheating = Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
-        if (is_cheating)
-        {
-            // Not cheating anymore as there would have been nothing left to work on
-            WORKER_INFO TaskInfo("Restoring time suppor");
-            _cheat_work.clear();
-            Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
-        }
-        c = todoinv;
-    //    return _todo_list = todoinv;
+        // Not cheating anymore as there would have been nothing left to work on
+        WORKER_INFO TaskInfo("Restoring time suppor");
+        Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
     }
+
+    if (!is_cheating || !c)
+    {
+        _cheat_work.clear();
+        c = todoinv;
+    }
+
+
     BOOST_FOREACH(Signal::Interval const &b, c)
     {
         if (b.count() == 0) {
@@ -298,6 +300,7 @@ Signal::Intervals Worker::
                     << _target->post_sink()->getInterval() << "\nCheat interval:" << _cheat_work;
         }
     }
+
     return _todo_list = c;
 }
 
