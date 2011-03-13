@@ -3,6 +3,7 @@
 #include "block.cu.h"
 #include "collection.h"
 #include "tfr/cwt.h"
+#include "tfr/cwtchunk.h"
 
 #include <CudaException.h>
 #include <GlException.h>
@@ -36,17 +37,19 @@ BlockFilter::
 
 
 void BlockFilter::
-        operator()( Tfr::Chunk& chunk )
+        applyFilter(Tfr::pChunk pchunk )
 {
-    Signal::Interval chunk_interval = chunk.getInterval();
+    Tfr::Chunk& chunk = *pchunk;
+    Signal::Interval chunk_interval = chunk.getInversedInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, true );
     TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks", 
         chunk_interval.toString().c_str(), chunk.minHz(), chunk.maxHz(), intersecting_blocks.size());
 
-    // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
-
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
+        if (((block->ref.getInterval() - block->valid_samples) & chunk_interval).empty() )
+            continue;
+
 #ifndef SAWE_NO_MUTEX
         if (_collection->constructor_thread().isSameThread())
         {
@@ -97,6 +100,18 @@ CwtToBlock::
 
 void CwtToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
+{
+    Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( &chunk );
+
+    BOOST_FOREACH( const pChunk& chunkpart, chunks.chunks )
+    {
+        mergeChunkpart( block, *chunkpart, outData );
+    }
+}
+
+
+void CwtToBlock::
+        mergeChunkpart( pBlock block, Chunk& chunk, Block::pData outData )
 {
     //unsigned cuda_stream = 0;
 
