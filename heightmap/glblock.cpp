@@ -24,8 +24,8 @@
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)
 
-//#define TIME_GLBLOCK
-#define TIME_GLBLOCK if(0)
+#define TIME_GLBLOCK
+//#define TIME_GLBLOCK if(0)
 
 namespace Heightmap {
 
@@ -127,7 +127,7 @@ GlBlock::
 ~GlBlock()
 {
     boost::scoped_ptr<TaskTimer> tt;
-    TIME_GLBLOCK tt.reset( new TaskTimer ("~GlBlock() tex_height=%u, tex_slope=%u", _tex_height, _tex_slope));
+    TIME_GLBLOCK tt.reset( new TaskTimer ("~GlBlock() _height=%u, _slope=%u", _height?*_height:0u, _slope?*_slope:0u));
 
     // no point in doing a proper unmapping when it might fail and the textures
     // that would recieve the updates are deleted right after anyways
@@ -204,6 +204,16 @@ slope()
     TIME_GLBLOCK CudaException_ThreadSynchronize();
 
     return _mapped_slope;
+}
+
+
+bool GlBlock::
+        has_texture()
+{
+    if (_tex_slope)
+        BOOST_ASSERT(_tex_height);
+
+    return _tex_height;
 }
 
 

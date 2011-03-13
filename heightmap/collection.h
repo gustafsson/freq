@@ -210,7 +210,7 @@ public:
       Might return 0 if collections decides that it doesn't want to allocate
       another block.
       */
-    pBlock      getBlock( Reference ref );
+    pBlock      getBlock( const Reference& ref );
 
 
     /**
@@ -307,18 +307,18 @@ private:
     /**
       Attempts to allocate a new block.
       */
-    pBlock      attempt( Reference ref );
+    pBlock      attempt( const Reference& ref );
 
     /**
       Creates a new block.
       */
-    pBlock      createBlock( Reference ref );
+    pBlock      createBlock( const Reference& ref );
 
     /**
       Compoute a short-time Fourier transform (stft). Usefull for filling new
       blocks with data really fast.
       */
-    void        fillBlock( pBlock block );
+    void        fillBlock( pBlock block, const Signal::Intervals& to_update );
 
 
     /**
@@ -342,6 +342,17 @@ private:
       Add block information from another block. Returns whether any information was merged.
       */
     bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
+
+
+    /**
+      If 'r' exists in _cache, update its last_frame_used so that it wont yet be freed.
+      */
+    void        poke(const Reference& r);
+
+    /**
+      Try to create 'r' and return its invalid samples if it was created.
+      */
+    Signal::Intervals getInvalid(const Reference& r);
 };
 
 } // namespace Heightmap

@@ -40,11 +40,11 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other)
 
     GpuCpuData<float>& data = *other_->waveform_data();
     
-    switch (data.getMemoryLocation())
+    if(0) switch (data.getMemoryLocation())
     {
     case GpuCpuVoidData::CpuMemory:
         waveform_data_ = new GpuCpuData<float>(
-                data.getCpuMemory() + subinterval.first - other->getInterval().first,
+                &data.getCpuMemory()[subinterval.first - other->getInterval().first],
                 make_uint3( subinterval.count(), 1, 1), GpuCpuVoidData::CpuMemory, true );
         return;
 

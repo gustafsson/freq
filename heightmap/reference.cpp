@@ -179,6 +179,7 @@ std::string Reference::
     getArea( a, b );
     std::stringstream ss;
     ss << "(" << a.time << " " << a.scale << ";" << b.time << " " << b.scale << " ! "
+            << getInterval() << " ! "
             << log2_samples_size[0] << " " << log2_samples_size[1] << ";"
             << block_index[0] << " " << block_index[1]
             << ")";

@@ -36,6 +36,7 @@ public:
       */
     void unmap();
 
+    bool has_texture();
     void delete_texture();
 
     void draw( unsigned vbo_size );
