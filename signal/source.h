@@ -26,6 +26,7 @@ public:
            IntervalType numberOfSamples,
            float sample_rate,
            unsigned numberOfChannels = 1);
+    Buffer::Buffer(Signal::Interval subinterval, boost::shared_ptr<Buffer> other);
     ~Buffer();
 
     GpuCpuData<float>*  waveform_data() const;
@@ -49,6 +50,7 @@ public:
 
 protected:
     GpuCpuData<float> *waveform_data_;
+    boost::shared_ptr<Buffer> other_;
 };
 typedef boost::shared_ptr<Buffer> pBuffer;
 

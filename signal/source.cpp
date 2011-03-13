@@ -26,6 +26,55 @@ Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, u
 }
 
 
+Buffer::Buffer(Signal::Interval subinterval, pBuffer other)
+:   sample_offset(subinterval.first),
+    sample_rate(other->sample_rate),
+    other_(other)
+{
+    while (other->other_ && other.get() != this) 
+        other = other->other_;
+
+    BOOST_ASSERT( 0 < sample_rate );
+    BOOST_ASSERT( (subinterval & other->getInterval()) == subinterval );
+    BOOST_ASSERT( other.get() != this );
+
+    GpuCpuData<float>& data = *other_->waveform_data();
+    
+    switch (data.getMemoryLocation())
+    {
+    case GpuCpuVoidData::CpuMemory:
+        waveform_data_ = new GpuCpuData<float>(
+                data.getCpuMemory() + subinterval.first - other->getInterval().first,
+                make_uint3( subinterval.count(), 1, 1), GpuCpuVoidData::CpuMemory, true );
+        return;
+
+    case GpuCpuVoidData::CudaGlobal:
+        {
+            cudaPitchedPtrType<float> cppt = data.getCudaGlobal();
+            cudaPitchedPtr cpp = cppt.getCudaPitchedPtr();
+            cpp.ptr = ((float*)cpp.ptr) + (subinterval.first - other->getInterval().first);
+            cpp.xsize = sizeof(float) * subinterval.count();
+            cpp.ysize = 1;
+            cpp.pitch = cpp.xsize;
+            cppt = cudaPitchedPtrType<float>( cpp );
+
+            waveform_data_ = new GpuCpuData<float>(
+                    &cpp,
+                    cppt.getNumberOfElements(),
+                    GpuCpuVoidData::CudaGlobal, true );
+        }
+        return;
+
+    default:
+        break;
+    }
+
+    waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( subinterval.count(), 1, 1) );
+    *this |= *other;
+    other.reset();
+}
+
+
 Buffer::
         ~Buffer()
 {
@@ -80,13 +129,23 @@ Buffer& Buffer::
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
 
-    float* write = waveform_data_->getCpuMemory();
-    float const* read = b.waveform_data_->getCpuMemory();
+    float* write;
+    float const* read;
+
+    bool toGpu   = waveform_data_->getMemoryLocation() == GpuCpuVoidData::CudaGlobal;
+    bool fromGpu = b.waveform_data_->getMemoryLocation() == GpuCpuVoidData::CudaGlobal;
+
+    if ( toGpu )    write = waveform_data_->getCudaGlobal().ptr();
+    else            write = waveform_data_->getCpuMemory();
+
+    if ( fromGpu )  read = b.waveform_data_->getCudaGlobal().ptr();
+    else            read = b.waveform_data_->getCpuMemory();
 
     write += offs_write;
     read += offs_read;
 
-    memcpy(write, read, i.count()*sizeof(float));
+    cudaMemcpyKind kind = (cudaMemcpyKind)(1*toGpu | 2*fromGpu);
+    cudaMemcpy(write, read, i.count()*sizeof(float), kind );
 
     return *this;
 }
@@ -144,9 +203,22 @@ pBuffer SourceBase::
     if (I == p->getInterval())
         return p;
 
-    // Didn't get exact result, prepare new Buffer
+    //p->waveform_data()->getCudaGlobal();
+
+    // Didn't get exact result, check if it spans all of I
+    if ( (p->getInterval() & I) == I )
+    {
+        pBuffer r( new Buffer( I, p ));
+        BOOST_ASSERT( r->getInterval() == I );
+        return r;
+    }
+
+    // Doesn't span all of I, prepare new Buffer
     //pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
     pBuffer r( new Buffer(I.first, I.count(), sample_rate() ) );
+
+    if ( p->waveform_data()->getMemoryLocation() == GpuCpuVoidData::CudaGlobal )
+        r->waveform_data()->getCudaGlobal();
 
     Intervals sid(I);
 

@@ -427,12 +427,14 @@ Tfr::pChunk Stft::
     if (b->waveform_data()->getMemoryLocation() == GpuCpuVoidData::CpuMemory)
     {
         TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", b->waveform_data()->getSizeInBytes1D()/1024.f/1024.f);
-        input = (cufftReal*)b->waveform_data()->getCudaGlobal().ptr();
+        input = b->waveform_data()->getCudaGlobal().ptr();
         TIME_STFT CudaException_ThreadSynchronize();
     }
     else
-        input = (cufftReal*)b->waveform_data()->getCudaGlobal().ptr();
-    output = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
+    {
+        input = b->waveform_data()->getCudaGlobal().ptr();
+    }
+    output = chunk->transform_data->getCudaGlobal().ptr();
 
     // Transform signal
     unsigned count = actualSize.y;
