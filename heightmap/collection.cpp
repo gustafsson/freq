@@ -46,8 +46,8 @@ namespace Heightmap {
 Collection::
         Collection( pOperation target )
 :   target( target ),
-    _samples_per_block( 1<<7 ), // Created for each
-    _scales_per_block( 1<<8 ),
+    _samples_per_block( 1<<9 ), // Created for each
+    _scales_per_block( 1<<9 ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0)
@@ -75,7 +75,8 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskInfo("%s = %p", __FUNCTION__, this);
+    TaskInfo ti("%s = %p", __FUNCTION__, this);
+    reset();
 }
 
 
@@ -85,6 +86,20 @@ void Collection::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
+    INFO_COLLECTION
+    {
+        TaskInfo ti("Reset, cache count = %u, size = %g MB", _cache.size(), cacheByteSize()/1024.f/1024.f);
+        foreach(const cache_t::value_type& b, _cache)
+        {
+            TaskInfo("%s", b.first.toString().c_str());
+        }
+
+        TaskInfo ti2("of which recent count %u", _recent.size());
+        foreach(const recent_t::value_type& b, _recent)
+        {
+            TaskInfo("%s", b->ref.toString().c_str());
+        }
+    }
     _cache.clear();
     _recent.clear();
 }
@@ -103,11 +118,10 @@ bool Collection::
 void Collection::
         scales_per_block(unsigned v)
 {
+    reset();
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
-    _cache.clear();
-	_recent.clear();
     _scales_per_block=v;
 }
 
@@ -115,11 +129,10 @@ void Collection::
 void Collection::
         samples_per_block(unsigned v)
 {
+    reset();
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
-    _cache.clear();
-	_recent.clear();
     _samples_per_block=v;
 }
 
@@ -713,7 +726,6 @@ pBlock Collection::
         VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
 
         Intervals things_to_update = ref.getInterval();
-        things_to_update.clear();
         if ( 1 /* create from others */ )
         {
             {
