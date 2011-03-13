@@ -31,7 +31,7 @@
 // Don't keep more than this times the number of blocks currently needed
 // TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
-#define MAX_CREATED_BLOCKS_PER_FRAME 2 // Even numbers look better for stereo signals
+#define MAX_CREATED_BLOCKS_PER_FRAME 1 // Even numbers look better for stereo signals
 
 using namespace Signal;
 
@@ -886,8 +886,8 @@ void Collection::
     transp->set_approximate_chunk_size(1 << 12); // 4096
     stftmerger.exclude_end_block = true;
 
-    // Only take 4 MB of signal data at a time
-    unsigned section_size = (4<<20) / sizeof(float);
+    // Only take 64 MB of signal data at a time
+    unsigned section_size = (64<<20) / sizeof(float);
     Intervals sections = block->ref.getInterval();
     sections &= Interval(0, target->number_of_samples());
 

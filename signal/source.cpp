@@ -203,6 +203,8 @@ pBuffer SourceBase::
     if (I == p->getInterval())
         return p;
 
+    // This row gives some performance gain (cpu->gpu copy only once and never back until inverse).
+    // But this also increases complexity to be handled properyl, that is not coded yet.
     //p->waveform_data()->getCudaGlobal();
 
     // Didn't get exact result, check if it spans all of I
@@ -214,8 +216,7 @@ pBuffer SourceBase::
     }
 
     // Doesn't span all of I, prepare new Buffer
-    //pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
-    pBuffer r( new Buffer(I.first, I.count(), sample_rate() ) );
+    pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
 
     if ( p->waveform_data()->getMemoryLocation() == GpuCpuVoidData::CudaGlobal )
         r->waveform_data()->getCudaGlobal();

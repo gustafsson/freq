@@ -464,7 +464,6 @@ Tfr::pChunk Stft::
     while(i < count)
     {
         slices = std::min(slices, count-i);
-        slices = 1;
 
         try
         {
