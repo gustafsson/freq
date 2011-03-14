@@ -984,8 +984,8 @@ void Collection::
     transp->set_approximate_chunk_size(1 << 12); // 4096
     stftmerger.exclude_end_block = true;
 
-    // Only take 64 MB of signal data at a time
-    unsigned section_size = (64<<20) / sizeof(float);
+    // Only take 1 MB of signal data at a time
+    unsigned section_size = (1<<20) / sizeof(float);
     Intervals sections = to_update;
     sections &= Interval(0, target->number_of_samples());
 
@@ -1055,7 +1055,6 @@ bool Collection::
                   make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
-    if (0)
     if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
         inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
     {

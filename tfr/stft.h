@@ -23,6 +23,8 @@ public:
 
     cufftHandle operator()( unsigned elems, unsigned batch_size );
 
+    void setType(unsigned type);
+
 private:
     ThreadChecker _creator_thread;
     cufftHandle _handle;
@@ -89,8 +91,19 @@ public:
     /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
     void set_exact_chunk_size( unsigned chunk_size ) { _window_size = chunk_size; }
 
+    /**
+        If false (default), operator() will do a real-to-complex transform
+        instead of a full complex-to-complex.
+    */
+    bool compute_redundant() { return _compute_redundant; }
+    void compute_redundant(bool);
+
+
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
+
 private:
+    Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
+
     cudaStream_t    _stream;
     CufftHandleContext _handle_ctx;
 
@@ -101,6 +114,7 @@ private:
         Default value: chunk_size=1<<11
     */
     unsigned _window_size;
+    bool _compute_redundant;
 };
 
 class StftChunk: public Chunk

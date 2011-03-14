@@ -402,7 +402,7 @@ void RenderController::
 
     if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
     {
-        BOOST_ASSERT( false ); // Not likely to ever happen
+        // Happens typically when currentTransform is a cepstrum transform with a short window size
         fa.setLogarithmic(
                 currentTransform()->freqAxis(fs).min_hz,
                 Tfr::Cwt::Singleton().get_max_hz(fs) );

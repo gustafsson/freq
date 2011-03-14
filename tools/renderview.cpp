@@ -919,7 +919,7 @@ void RenderView::
 
 
     // Set up camera position
-    _last_length = worker.source()->length();
+    _last_length = model->renderSignalTarget->source()->length();
     {   
 		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
 

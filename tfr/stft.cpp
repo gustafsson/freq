@@ -12,8 +12,8 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_STFT
-#define TIME_STFT if(0)
+#define TIME_STFT
+//#define TIME_STFT if(0)
 
 using namespace boost::posix_time;
 using namespace boost;
@@ -72,6 +72,16 @@ cufftHandle CufftHandleContext::
     return _handle;
 }
 
+
+void CufftHandleContext::
+        setType(unsigned type)
+{
+    if (this->_type != type)
+    {
+        destroy();
+        this->_type = type;
+    }
+}
 
 void CufftHandleContext::
         create()
@@ -378,7 +388,8 @@ Stft::
         Stft( cudaStream_t stream )
 :   _stream( stream ),
     _handle_ctx(stream, CUFFT_R2C),
-    _window_size( 1<<11 )
+    _window_size( 1<<11 ),
+    _compute_redundant(false)
 //    _fft_many( -1 )
 {
 }
@@ -387,6 +398,9 @@ Stft::
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
+    if (compute_redundant())
+        return ChunkWithRedundant(b);
+
     TIME_STFT TaskTimer ti("Stft::operator, _window_size = %d, b = %s", _window_size, b->getInterval().toString().c_str());
     BOOST_ASSERT( 0!=_window_size );
 
@@ -488,6 +502,94 @@ Tfr::pChunk Stft::
 }
 
 
+Tfr::pChunk Stft::
+        ChunkWithRedundant(Signal::pBuffer breal)
+{
+    TIME_STFT TaskTimer ti("Stft::ChunkWithRedundant, _window_size = %d, b = %s", _window_size, breal->getInterval().toString().c_str());
+
+    ComplexBuffer b(*breal);
+
+    BOOST_ASSERT( 0!=_window_size );
+
+    cudaExtent n = make_cudaExtent(
+            _window_size,
+            b.number_of_samples()/_window_size,
+            1 );
+
+    if (0==n.height || 32768<n.height)
+        return Tfr::pChunk();
+
+
+    Tfr::pChunk chunk( new Tfr::StftChunk() );
+
+    chunk->transform_data.reset( new GpuCpuData<float2>(
+            0,
+            n,
+            GpuCpuVoidData::CudaGlobal ));
+
+
+    cufftComplex* input = (cufftComplex*)b.complex_waveform_data()->getCudaGlobal().ptr();
+    cufftComplex* output = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
+
+    // Transform signal
+    unsigned count = n.height;
+
+    unsigned
+            slices = n.height,
+            i = 0;
+
+    // check for available memory
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    free /= 2; // Don't even try to get close to use all memory
+    // never use more than 64 MB
+    if (free > 64<<20)
+        free = 64<<20;
+    if (slices * _window_size*2*sizeof(cufftComplex) > free)
+    {
+        slices = free/(_window_size*2*sizeof(cufftComplex));
+        slices = std::min(512u, std::min((unsigned)n.height, slices));
+    }
+
+    while(i < count)
+    {
+        slices = std::min(slices, count-i);
+
+        try
+        {
+            CufftException_SAFE_CALL(cufftExecC2C(
+                    _handle_ctx(_window_size, slices),
+                    input + i*n.width,
+                    output + i*n.width,
+                    CUFFT_FORWARD));
+
+            i += slices;
+        } catch (const CufftException& /*x*/) {
+            _handle_ctx(0,0);
+            if (slices>1)
+                slices/=2;
+            else
+                throw;
+        }
+    }
+
+    chunk->freqAxis = freqAxis( breal->sample_rate );
+    chunk->chunk_offset = b.sample_offset + _window_size/2;
+    chunk->first_valid_sample = 0;
+    chunk->n_valid_samples = (chunk->nSamples()-1) * _window_size + 1;
+    chunk->sample_rate = b.sample_rate / chunk->nScales();
+    ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;
+
+    if (0 == b.sample_offset)
+    {
+        chunk->n_valid_samples += chunk->chunk_offset;
+        chunk->chunk_offset = 0;
+    }
+
+    return chunk;
+}
+
+
 FreqAxis Stft::
         freqAxis( float FS )
 {
@@ -528,6 +630,14 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 
 //    _chunk_size = absdiff(N1, preferred_size) < absdiff(N2, preferred_size) ? N1 : N2;
 //    return _chunk_size;
+}
+
+
+void Stft::
+        compute_redundant(bool value)
+{
+    _handle_ctx.setType( value?CUFFT_C2C:CUFFT_R2C );
+    _compute_redundant = value;
 }
 
 
@@ -665,6 +775,8 @@ unsigned StftChunk::
 unsigned StftChunk::
         nSamples() const
 {
+    if (window_size == (unsigned)-1)
+        return Chunk::nSamples();
     return transform_data->getNumberOfElements().width / nActualScales();
 }
 
