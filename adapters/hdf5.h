@@ -119,7 +119,7 @@ public:
     virtual void put(Signal::pBuffer);
 
     static void             saveBuffer( std::string filename, const Signal::Buffer&, double redundancy );
-    static Signal::pBuffer  loadBuffer( std::string filename, double* redundancy );
+    static Signal::pBuffer  loadBuffer( std::string filename, double* redundancy, Signal::pBuffer* plot );
 
 private:
     std::string _filename;

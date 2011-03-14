@@ -2,6 +2,7 @@
 #define ADAPTERS_MATLABOPERATION_H
 
 #include "signal/operationcache.h"
+#include "tools/support/plotlines.h"
 
 // boost
 #include <boost/noncopyable.hpp>
@@ -146,6 +147,7 @@ public:
 
     bool isWaiting();
 
+    boost::scoped_ptr<Tools::Support::PlotLines> plotlines;
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
     MatlabFunctionSettings* _settings;

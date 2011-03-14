@@ -11,3 +11,6 @@ end
 
 data.samplerate = data.samplerate(1);
 data.offset = data.offset(1);
+
+data.plot=[]
+

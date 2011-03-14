@@ -346,7 +346,33 @@ bool MatlabOperation::
     if (!file.empty())
     {
         double redundancy=0;
-        ready_data = Hdf5Buffer::loadBuffer( file, &redundancy );
+        pBuffer plot_pts;
+        ready_data = Hdf5Buffer::loadBuffer( file, &redundancy, &plot_pts );
+
+        Interval J = ready_data->getInterval();
+
+        if (this->plotlines){ // Update plot
+            Tools::Support::PlotLines& plotlines = *this->plotlines.get();
+            plotlines.clear( J, ready_data->sample_rate );
+
+            if (plot_pts)
+            {
+                float start = ready_data->start();
+                float length = ready_data->length();
+
+                float* p = plot_pts->waveform_data()->getCpuMemory();
+                cudaExtent N = plot_pts->waveform_data()->getNumberOfElements();
+                if (3 <= N.height)
+                    for (unsigned x=0; x<N.width; ++x)
+                        plotlines.set( p[ x ], p[ x + N.width ], p[ x + 2*N.width ] );
+                else if (2 == N.height)
+                    for (unsigned x=0; x<N.width; ++x)
+                        plotlines.set( p[ x ], p[ x + N.width ] );
+                else if (1 == N.height)
+                    for (unsigned x=0; x<N.width; ++x)
+                        plotlines.set( start + (x+0.5)*length/N.width, p[ x ] );
+            }
+        }
 
         ::remove( file.c_str());
 
@@ -355,8 +381,6 @@ bool MatlabOperation::
 
         IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
         _settings->redundant(support);
-
-        Interval J = ready_data->getInterval();
 
         if ((invalid_samples() - J).empty())
             _matlab->endProcess(); // Finished with matlab

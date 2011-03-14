@@ -46,16 +46,17 @@ while 1
       end
     else
       %octave
-      data = load(datafile); 
+      data = load(datafile);
+      data.plot = [];
     end
     
     data = func(data, arguments);
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
-      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy );
+      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy, data.plot );
     elseif isfield(data,'chunk')
-      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy );
+      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy, data.plot );
     end
     
     if isoctave

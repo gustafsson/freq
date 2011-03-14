@@ -125,19 +125,34 @@ Signal::pBuffer Hdf5Input::
 
     H5T_class_t class_id=H5T_NO_CLASS;
     vector<hsize_t> dims = getInfo(name, &class_id);
+    if (dims.size()==0)
+        dims.push_back( 1 );
+    if (dims.size()==1)
+        dims.push_back( 1 );
 
-    if (1!=dims.size() && 2!=dims.size()) throw runtime_error(((stringstream&)(ss << (const char*)"Rank of '" << name << "' is '" << dims.size() << "' instead of 1 or 2.")).str());
+    if (2!=dims.size()) throw runtime_error(((stringstream&)(ss << (const char*)"Rank of '" << name << "' is '" << dims.size() << "' instead of 0, 1 or 2.")).str());
 
     if (0==class_id)
         return Signal::pBuffer();
 
     if (H5T_FLOAT!=class_id) throw runtime_error(((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_FLOAT.")).str());
 
-    Signal::pBuffer buffer( new Signal::Buffer(0, dims[0], 44100 ) );
+    Signal::pBuffer buffer( new Signal::Buffer(0, dims[0], 44100, dims[1] ) );
     float* p = buffer->waveform_data()->getCpuMemory();
 
     status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
     if (0>status) throw runtime_error("Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'");
+
+    if (1 < dims[1]) // rearrange data to row major as expected by Sonic AWE
+    {
+        Signal::pBuffer b( new Signal::Buffer(0, dims[0], 44100, dims[1] ) );
+        float* q = b->waveform_data()->getCpuMemory();
+        for (unsigned x=0; x < dims[0]; ++x)
+            for (unsigned y=0; y < dims[1]; ++y)
+                q[x + y*dims[0]] = p[x*dims[1] + y];
+
+        buffer = b;
+    }
 
     return buffer;
 }
@@ -322,6 +337,7 @@ static const char* dsetChunk="chunk";
 static const char* dsetOffset="offset";
 static const char* dsetSamplerate="samplerate";
 static const char* dsetRedundancy="redundancy";
+static const char* dsetPlot="plot";
 
 Hdf5Chunk::Hdf5Chunk( std::string filename)
 :   _filename(filename) {}
@@ -381,7 +397,7 @@ void Hdf5Chunk::
 
 
 Signal::pBuffer Hdf5Buffer::
-        loadBuffer( string filename, double* redundancy )
+        loadBuffer( string filename, double* redundancy, Signal::pBuffer* plot )
 {
     Hdf5Input h5(filename);
 
@@ -391,6 +407,9 @@ Signal::pBuffer Hdf5Buffer::
         b->sample_offset = h5.read<double>( dsetOffset );
         b->sample_rate = h5.read<double>( dsetSamplerate );
     }
+    try {
+    *plot = h5.read<Signal::pBuffer>( dsetPlot );
+    } catch (const std::runtime_error& ) {} // ok, never mind then
     *redundancy = h5.read<double>( dsetRedundancy );
 
     return b;

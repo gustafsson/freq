@@ -127,6 +127,8 @@ void MatlabController::
                 {
                     m->invalidate_samples( Signal::Intervals::Intervals_ALL );
                     project_->appendOperation( matlaboperation );
+                    m->plotlines.reset( new Tools::Support::PlotLines( render_view_->model ));
+                    connect( render_view_, SIGNAL(painting()), m->plotlines.get(), SLOT(draw()) );
                 }
             }
         }
