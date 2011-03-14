@@ -14,7 +14,12 @@ namespace Tfr {
 class Chunk
 {
 protected:
-    Chunk( );
+    enum Order {
+        Order_row_major,
+        Order_column_major,
+    } order;
+
+    Chunk( Order order );
     virtual ~Chunk() {}
 
 public:
@@ -25,11 +30,6 @@ public:
       versa. FreqAxis can be used within Cuda kernels.
       */
     FreqAxis freqAxis;
-
-    enum Order {
-        Order_row_major,
-        Order_column_major,
-    } order;
 
     /**
       transform_data contains the complex transform.

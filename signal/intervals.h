@@ -69,20 +69,20 @@ public:
     Intervals( );
     Intervals( const Interval& );
     Intervals( IntervalType first, IntervalType last );
-    Intervals  operator |  (const Intervals& b) const { Intervals a = *this; return a|=b; }
+    Intervals  operator |  (const Intervals& b) const { return Intervals(*this)|=b; }
     Intervals& operator |= (const Intervals&);
     Intervals& operator |= (const Interval&);
-    Intervals  operator -  (const Intervals& b) const { Intervals a = *this; return a-=b; }
+    Intervals  operator -  (const Intervals& b) const { return Intervals(*this)-=b; }
     Intervals& operator -= (const Intervals&);
     Intervals& operator -= (const Interval&);
-    Intervals  operator &  (const Intervals& b) const { Intervals a = *this; return a&=b; }
+    Intervals  operator &  (const Intervals& b) const { return Intervals(*this)&=b; }
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
-    Intervals  operator ^  (const Intervals& b) const { Intervals a = *this; return a^=b; }
+    Intervals  operator ^  (const Intervals& b) const { return Intervals(*this)^=b; }
     Intervals& operator ^= (const Intervals&);
-    Intervals operator >> (const IntervalType& b) const { Intervals a = *this; return a>>=b; }
+    Intervals operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
     Intervals& operator >>= (const IntervalType&);
-    Intervals operator << (const IntervalType& b) const { Intervals a = *this; return a<<=b; }
+    Intervals operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
     Intervals& operator <<= (const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
@@ -117,6 +117,10 @@ private:
 
 std::ostream& operator<< (std::ostream& o, const Interval& I);
 std::ostream& operator<< (std::ostream& o, const Intervals& I);
+Intervals  operator |  (const Interval& a, const Intervals& b);
+Intervals  operator -  (const Interval& a, const Intervals& b);
+Intervals  operator &  (const Interval& a, const Intervals& b);
+Intervals  operator ^  (const Interval& a, const Intervals& b);
 
 } // namespace Signal
 

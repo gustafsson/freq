@@ -3,6 +3,7 @@
 #include "block.cu.h"
 #include "collection.h"
 #include "tfr/cwt.h"
+#include "tfr/cwtchunk.h"
 
 #include <CudaException.h>
 #include <GlException.h>
@@ -36,17 +37,19 @@ BlockFilter::
 
 
 void BlockFilter::
-        operator()( Tfr::Chunk& chunk )
+        applyFilter(Tfr::pChunk pchunk )
 {
-    Signal::Interval chunk_interval = chunk.getInterval();
-    std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, true );
-    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks", 
+    Tfr::Chunk& chunk = *pchunk;
+    Signal::Interval chunk_interval = chunk.getInversedInterval();
+    std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, false );
+    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks",
         chunk_interval.toString().c_str(), chunk.minHz(), chunk.maxHz(), intersecting_blocks.size());
-
-    // TODO Use Tfr::Transform::displayedTimeResolution somewhere...
 
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
+        if (((block->ref.getInterval() - block->valid_samples) & chunk_interval).empty() )
+            continue;
+
 #ifndef SAWE_NO_MUTEX
         if (_collection->constructor_thread().isSameThread())
         {
@@ -97,6 +100,18 @@ CwtToBlock::
 
 void CwtToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
+{
+    Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( &chunk );
+
+    BOOST_FOREACH( const pChunk& chunkpart, chunks.chunks )
+    {
+        mergeChunkpart( block, *chunkpart, outData );
+    }
+}
+
+
+void CwtToBlock::
+        mergeChunkpart( pBlock block, Chunk& chunk, Block::pData outData )
 {
     //unsigned cuda_stream = 0;
 
@@ -209,10 +224,6 @@ void CwtToBlock::
 
     //    cuda-memcheck complains even on this testkernel when using global memory
     //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
-#ifdef CUDA_MEMCHECK_TEST
-    Block::pData copy( new GpuCpuData<float>( *outData ));
-    outData.swap( copy );
-#endif
 
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
@@ -228,11 +239,6 @@ void CwtToBlock::
                      chunk.freqAxis,
                      _collection->display_scale()
                      );
-
-#ifdef CUDA_MEMCHECK_TEST
-    outData.swap( copy );
-    *outData = *copy;
-#endif
 
     // TODO recompute transfer to the samples that have actual support
     CudaException_CHECK_ERROR();
@@ -275,9 +281,6 @@ void StftToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
-    // hack to extent first window to first sample, instead of interpolating from 0
-    if (inInterval.first < chunk.nScales())
-        inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -286,12 +289,13 @@ void StftToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-#ifdef CUDA_MEMCHECK_TEST
-    Block::pData copy( new GpuCpuData<float>( *outData ));
-    outData.swap( copy );
-#endif
+    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
 
-    ::resampleStft( chunk.transform_data->getCudaGlobal(),
+    cpp.xsize = sizeof(float2)*chunk.nScales();
+    cpp.ysize = chunk.nSamples();
+    cpp.pitch = cpp.xsize;
+
+    ::resampleStft( cpp,
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
@@ -299,11 +303,6 @@ void StftToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale());
-
-#ifdef CUDA_MEMCHECK_TEST
-    outData.swap( copy );
-    *outData = *copy;
-#endif
 
     block->valid_samples |= inInterval;
 }
@@ -334,9 +333,6 @@ void CepstrumToBlock::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
-    // hack to extent first window to first sample, instead of interpolating from 0
-    if (inInterval.first < chunk.nScales())
-        inInterval.first = 0;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -345,12 +341,13 @@ void CepstrumToBlock::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-#ifdef CUDA_MEMCHECK_TEST
-    Block::pData copy( new GpuCpuData<float>( *outData ));
-    outData.swap( copy );
-#endif
+    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
 
-    ::resampleStft( chunk.transform_data->getCudaGlobal(),
+    cpp.xsize = sizeof(float2)*chunk.nScales();
+    cpp.ysize = chunk.nSamples();
+    cpp.pitch = cpp.xsize;
+
+    ::resampleStft( cpp,
                   outData->getCudaGlobal(),
                   make_float4( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
@@ -358,11 +355,6 @@ void CepstrumToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale());
-
-#ifdef CUDA_MEMCHECK_TEST
-    outData.swap( copy );
-    *outData = *copy;
-#endif
 
     block->valid_samples |= inInterval;
 }

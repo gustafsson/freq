@@ -191,6 +191,12 @@ void Application::
         clearCaches()
 {
     TaskTimer tt("Application::clearCaches");
+    size_t free=0, total=0;
+
+    cudaMemGetInfo(&free, &total);
+    TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
+             total/1024.f/1024, free/1024.f/1024);
+
     emit clearCachesSignal();
 
     TaskInfo("Reset CWT");
@@ -220,8 +226,6 @@ void Application::
     e = cudaFree( p );
     TaskInfo("cudaFree, error=%s", cudaGetErrorString(e));
     BOOST_ASSERT( cudaSuccess == e );
-
-    size_t free=0, total=0;
 
     cudaMemGetInfo(&free, &total);
     TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",

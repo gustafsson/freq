@@ -103,6 +103,8 @@ private:
 #endif
     std::vector<pBuffer> _cache;
 
+    bool _need_self_merge;
+
     /**
       Samples in 'b' will only be accepted if they are present in 'expected'.
       */

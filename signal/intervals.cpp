@@ -546,4 +546,9 @@ std::ostream&
 }
 
 
+Intervals  operator |  (const Interval& a, const Intervals& b) { return Intervals(a)|=b; }
+Intervals  operator -  (const Interval& a, const Intervals& b) { return Intervals(a)-=b; }
+Intervals  operator &  (const Interval& a, const Intervals& b) { return Intervals(a)&=b; }
+Intervals  operator ^  (const Interval& a, const Intervals& b) { return Intervals(a)^=b; }
+
 } // namespace Signal

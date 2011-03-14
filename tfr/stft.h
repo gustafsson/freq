@@ -15,15 +15,21 @@ namespace Tfr {
   */
 class CufftHandleContext {
 public:
-    CufftHandleContext( cudaStream_t _stream=0 ); // type defaults to cufftPlanMany( CUFFT_C2C )
+    CufftHandleContext( cudaStream_t _stream=0, unsigned type=-1); // type defaults to CUFFT_C2C
     ~CufftHandleContext();
 
+    CufftHandleContext( const CufftHandleContext& b );
+    CufftHandleContext& operator=( const CufftHandleContext& b );
+
     cufftHandle operator()( unsigned elems, unsigned batch_size );
+
+    void setType(unsigned type);
 
 private:
     ThreadChecker _creator_thread;
     cufftHandle _handle;
     cudaStream_t _stream;
+    unsigned _type;
     unsigned _elems;
     unsigned _batch_size;
 
@@ -58,6 +64,9 @@ private:
 
     void computeWithOoura( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
     void computeWithCufft( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
+
+    void computeWithCufftR2C( GpuCpuData<float>& input, GpuCpuData<float2>& output );
+    void computeWithCufftC2R( GpuCpuData<float2>& input, GpuCpuData<float>& output );
 };
 
 /**
@@ -76,14 +85,25 @@ public:
     virtual Signal::pBuffer inverse( pChunk ) { throw std::logic_error("Not implemented"); }
     virtual FreqAxis freqAxis( float FS );
 
-    unsigned chunk_size() { return _chunk_size; }
+    unsigned chunk_size() { return _window_size; }
     unsigned set_approximate_chunk_size( unsigned preferred_size );
 
     /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
-    void set_exact_chunk_size( unsigned chunk_size ) { _chunk_size = chunk_size; }
+    void set_exact_chunk_size( unsigned chunk_size ) { _window_size = chunk_size; }
+
+    /**
+        If false (default), operator() will do a real-to-complex transform
+        instead of a full complex-to-complex.
+    */
+    bool compute_redundant() { return _compute_redundant; }
+    void compute_redundant(bool);
+
 
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
+
 private:
+    Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
+
     cudaStream_t    _stream;
     CufftHandleContext _handle_ctx;
 
@@ -93,20 +113,29 @@ private:
         Default window size for the windowed fourier transform, or short-time fourier transform, stft
         Default value: chunk_size=1<<11
     */
-    unsigned _chunk_size;
+    unsigned _window_size;
+    bool _compute_redundant;
 };
 
 class StftChunk: public Chunk
 {
 public:
-    StftChunk();
+    StftChunk(unsigned window_size = -1);
     void setHalfs( unsigned n );
     unsigned halfs( );
     unsigned nActualScales() const;
 
+    virtual unsigned nSamples() const;
     virtual unsigned nScales() const;
 
     virtual Signal::Interval getInterval() const { return getInversedInterval(); }
+
+    // If 'window_size != (unsigned)-1' then this chunks represents a real signal
+    // and doesn't contain redundant coefficients.
+    // window_size is transform size (including counting redundant coefficients)
+    unsigned window_size;
+
+    unsigned transformSize() const;
 private:
     unsigned halfs_n;
 };

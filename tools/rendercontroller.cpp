@@ -251,7 +251,7 @@ void RenderController::
     c.scales_per_octave( 2*exp( 6*f ) ); // scales_per_octave >= 2
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
+    s.set_approximate_chunk_size( 0.1*c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
 
     zscale->defaultAction()->trigger();
 
@@ -402,7 +402,7 @@ void RenderController::
 
     if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
     {
-        BOOST_ASSERT( false ); // Not likely to ever happen
+        // Happens typically when currentTransform is a cepstrum transform with a short window size
         fa.setLogarithmic(
                 currentTransform()->freqAxis(fs).min_hz,
                 Tfr::Cwt::Singleton().get_max_hz(fs) );

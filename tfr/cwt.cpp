@@ -334,7 +334,6 @@ pChunk Cwt::
     wt->chunk_offset = buffer->sample_offset + first_valid_sample;
     wt->first_valid_sample = 0;
     wt->n_valid_samples = valid_samples;
-    wt->order = Chunk::Order_row_major;
     wt->sample_rate = buffer->sample_rate;
     wt->original_sample_rate = buffer->sample_rate;
 
@@ -380,7 +379,7 @@ pChunk Cwt::
     pChunk intermediate_wt( new CwtChunkPart() );
 
     {
-        cudaExtent requiredWtSz = make_cudaExtent( ft->nScales(), n_scales, 1 );
+        cudaExtent requiredWtSz = make_cudaExtent( dynamic_cast<StftChunk*>(ft.get())->transformSize(), n_scales, 1 );
         TIME_CWTPART TaskTimer tt("Allocating chunk part (%u, %u, %u), %g kB",
                               requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth,
                               requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(float2) / 1024.f);
@@ -410,7 +409,6 @@ pChunk Cwt::
         // (except for numerical errors)
         intermediate_wt->sample_rate = ldexp(ft->original_sample_rate, -(int)half_sizes);
         intermediate_wt->original_sample_rate = ft->original_sample_rate;
-        intermediate_wt->order = Chunk::Order_row_major;
 
         unsigned last_scale = first_scale + n_scales-1;
         intermediate_wt->freqAxis.setLogarithmic(
@@ -474,7 +472,7 @@ pChunk Cwt::
             TaskTimer("ft->n_valid_samples=%u", ft->n_valid_samples).suppressTiming();
         }
 
-        BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->nScales() );
+        BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->n_valid_samples );
 
         intermediate_wt->n_valid_samples = ft->n_valid_samples - time_support - intermediate_wt->first_valid_sample;
 

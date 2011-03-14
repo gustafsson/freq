@@ -20,8 +20,8 @@
 #include "msc_stdc.h"
 #endif
 
-#define TIME_RENDERER
-//#define TIME_RENDERER if(0)
+//#define TIME_RENDERER
+#define TIME_RENDERER if(0)
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
@@ -120,10 +120,10 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( w*h*4*sizeof(float)));
+    _mesh_position.reset( new Vbo( w*h*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
 
-    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    float *pos = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    glBindBuffer(_mesh_position->vbo_type(), *_mesh_position);
+    float *pos = (float *) glMapBuffer(_mesh_position->vbo_type(), GL_WRITE_ONLY);
     if (!pos) {
         return;
     }
@@ -148,8 +148,8 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
         *pos++ = 1.0f;
     }
 
-    glUnmapBuffer(GL_ARRAY_BUFFER);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUnmapBuffer(_mesh_position->vbo_type());
+    glBindBuffer(_mesh_position->vbo_type(), 0);
 }
 
 typedef tvector<4,GLdouble> GLvector4;
