@@ -9,10 +9,14 @@
 
 #include "heightmap/collection.h"
 #include "tfr/cwt.h"
+#include "sawe/application.h"
 
 #include <QDialogButtonBox>
 #include <QFile>
 #include <QSharedPointer>
+#include <QDir>
+#include <QRegExp>
+#include <QDateTime>
 
 namespace Tools {
 
@@ -24,6 +28,28 @@ MatlabController::
             render_view_(render_view)
 {
     setupGui(project);
+
+    // Clean up old h5 files that were probably left from a previous crash
+    // if no other project is currently running
+    // (note, other instances of Sonic AWE might still be running)
+    if ( 0==Sawe::Application::global_ptr()->count_projects())
+    {
+        QDateTime now = QDateTime::currentDateTime();
+        foreach (QFileInfo s, QDir::current().entryInfoList( QStringList("*.0x*.h5") ))
+        {
+            if (QRegExp(".*\\.0x[0-9a-f]{6,16}\\.h5").exactMatch(s.fileName()))
+            {
+                // Delete it if it was created more than 15 minutes ago
+                QDateTime created = s.created();
+                int diff = created.secsTo(now);
+                if (15*60 < diff)
+                {
+                    TaskInfo("Removing %s", s.filePath().toStdString().c_str());
+                    ::remove( s.fileName().toStdString().c_str() );
+                }
+            }
+        }
+    }
 }
 
 

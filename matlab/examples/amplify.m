@@ -1,4 +1,4 @@
-function [data]=matlaboperation_amplify(data)
+function [data]=amplify(data)
 
 global state;
 if isempty(state) || data.offset==0
@@ -12,20 +12,7 @@ disp (['amplify #' num2str(state.counter) ' - ' ...
        '[' num2str(data.offset) ', ' num2str(data.offset+numel(data.buffer)) ') ' ...
        'redundancy = ' num2str(data.redundancy) ]);
 
-data.buffer = data.buffer*4;
-
-% plot hz, evenly distributed
-data.plot = [2000
-             5000
-             6000]';
-
-% plot time and hz
-data.plot = [1 2000
-             2 5000
-             4 6000]';
-
-% plot time, hz and amplitude
-data.plot = [1 2000 1
-             2 5000 2
-             4 6000 1]';
-
+data.buffer(:,1) = data.buffer(:,1)*1;
+data.buffer(:,2) = data.buffer(:,2)*4;
+size(data.buffer)
+data.buffer(:) = 0;

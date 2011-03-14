@@ -17,7 +17,8 @@ namespace Signal {
 
 Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, unsigned numberOfChannels)
 :   sample_offset(first_sample),
-    sample_rate(fs)
+    sample_rate(fs),
+    bitor_channel_(0)
 {
     BOOST_ASSERT( 0 < numberOfSamples );
     BOOST_ASSERT( 0 < numberOfChannels );
@@ -26,7 +27,7 @@ Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, u
 }
 
 
-Buffer::Buffer(Signal::Interval subinterval, pBuffer other)
+Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
 :   sample_offset(subinterval.first),
     sample_rate(other->sample_rate),
     other_(other)
@@ -37,14 +38,17 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other)
     BOOST_ASSERT( 0 < sample_rate );
     BOOST_ASSERT( (subinterval & other->getInterval()) == subinterval );
     BOOST_ASSERT( other.get() != this );
+    BOOST_ASSERT( channel < other->channels() );
 
     GpuCpuData<float>& data = *other_->waveform_data();
     
+    IntervalType offs = channel*other_->number_of_samples() + subinterval.first - other->getInterval().first;
+
     if(0) switch (data.getMemoryLocation())
     {
     case GpuCpuVoidData::CpuMemory:
         waveform_data_ = new GpuCpuData<float>(
-                &data.getCpuMemory()[subinterval.first - other->getInterval().first],
+                data.getCpuMemory() + offs,
                 make_uint3( subinterval.count(), 1, 1), GpuCpuVoidData::CpuMemory, true );
         return;
 
@@ -52,7 +56,7 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other)
         {
             cudaPitchedPtrType<float> cppt = data.getCudaGlobal();
             cudaPitchedPtr cpp = cppt.getCudaPitchedPtr();
-            cpp.ptr = ((float*)cpp.ptr) + (subinterval.first - other->getInterval().first);
+            cpp.ptr = ((float*)cpp.ptr) + offs;
             cpp.xsize = sizeof(float) * subinterval.count();
             cpp.ysize = 1;
             cpp.pitch = cpp.xsize;
@@ -70,6 +74,7 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other)
     }
 
     waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( subinterval.count(), 1, 1) );
+    bitor_channel_ = channel;
     *this |= *other;
     other.reset();
 }
@@ -118,6 +123,13 @@ Interval Buffer::
 }
 
 
+unsigned Buffer::
+        channels() const
+{
+    return waveform_data()->getNumberOfElements().height;
+}
+
+
 Buffer& Buffer::
         operator|=(const Buffer& b)
 {    
@@ -128,6 +140,12 @@ Buffer& Buffer::
 
     unsigned offs_write = i.first - sample_offset;
     unsigned offs_read = i.first - b.sample_offset;
+
+    if (bitor_channel_)
+    {
+        offs_read += bitor_channel_*b.number_of_samples();
+        bitor_channel_ = 0;
+    }
 
     float* write;
     float const* read;

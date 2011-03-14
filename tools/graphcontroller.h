@@ -49,6 +49,7 @@ private:
 
     RenderView* render_view_;
     Sawe::Project* project_;
+    bool dontredraw_;
 
     QAction *actionToggleOperationsWindow;
     QDockWidget *operationsWindow;

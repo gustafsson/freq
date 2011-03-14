@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -245,7 +245,6 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionMatlabOperation"/>
-   <addaction name="actionMatlabFilter"/>
    <addaction name="actionToggleFanTracker"/>
   </widget>
   <action name="actionEllipseSelection">
@@ -529,6 +528,9 @@
    </property>
    <property name="toolTip">
     <string>Apply Matlab operation to everything</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+O</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

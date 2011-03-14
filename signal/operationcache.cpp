@@ -73,7 +73,20 @@ pBuffer OperationCache::
 
         _cache.put(b);
 
-        if (_invalid_returns[c] & J)
+        if (1<b->channels())
+        {
+            Signal::Intervals toinv;
+            for (unsigned d=0; d<b->channels(); d++)
+            {
+                if (_invalid_returns[d] & J)
+                {
+                    toinv |= _invalid_returns[d] & J;
+                    _invalid_returns[d] -= J;
+                }
+            }
+            Operation::invalidate_samples( toinv );
+        }
+        else if (_invalid_returns[c] & J)
         {
             Operation::invalidate_samples( _invalid_returns[c] & J );
             _invalid_returns[c] -= J;
@@ -99,8 +112,10 @@ pBuffer OperationCache::
 void OperationCache::
         invalidate_samples(const Intervals& I)
 {
-    _invalid_returns.resize( num_channels() );
-    _cache.setNumChannels( num_channels() );
+    unsigned N = source() ? source()->num_channels() : num_channels();
+
+    _invalid_returns.resize( N );
+    _cache.setNumChannels( N );
     _cache.invalidate_samples( I );
     // TODO do this
     //_cache.invalidate_and_forget_samples(I);
@@ -159,7 +174,7 @@ unsigned OperationCache::
 void OperationCache::
         source(pOperation v)
 {
-    _cache.setNumChannels(num_channels());
+    _cache.setNumChannels(v->num_channels());
     Operation::source( v );
 }
 

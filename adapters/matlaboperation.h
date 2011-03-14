@@ -132,7 +132,7 @@ public:
     ~MatlabOperation();
 
     // Does only support mono, use first channel
-    virtual unsigned num_channels() { return std::min(1u, Signal::OperationCache::num_channels()); }
+    //virtual unsigned num_channels() { return std::min(1u, Signal::OperationCache::num_channels()); }
 
     virtual std::string name();
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );

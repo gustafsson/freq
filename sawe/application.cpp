@@ -6,6 +6,7 @@
 
 // gpumisc
 #include <demangle.h>
+#include <CudaException.h>
 
 // std
 #include <sstream>
@@ -225,11 +226,12 @@ void Application::
     TaskInfo("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
     e = cudaFree( p );
     TaskInfo("cudaFree, error=%s", cudaGetErrorString(e));
-    BOOST_ASSERT( cudaSuccess == e );
 
     cudaMemGetInfo(&free, &total);
     TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
              total/1024.f/1024, free/1024.f/1024);
+
+    CudaException_ThreadSynchronize();
 
     cudaGetLastError();
     glGetError();

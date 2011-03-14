@@ -108,7 +108,8 @@ namespace Tools
             GraphController( RenderView* render_view )
                 :
                 render_view_(render_view),
-                project_(render_view->model->project())
+                project_(render_view->model->project()),
+                dontredraw_(false)
     {
         setupGui();
     }
@@ -124,6 +125,9 @@ namespace Tools
     void GraphController::
             redraw_operation_tree()
     {
+        if (dontredraw_)
+            return;
+
         operationsTree->clear();
 
         TaskInfo ti("redraw_operation_tree");
@@ -203,6 +207,7 @@ namespace Tools
         }
         else
         {
+            dontredraw_ = true;
             // head_source( pOperation ) invalidates models where approperiate
             Signal::pChain chain = currentItem->chain;
             Signal::pOperation operation = currentItem->operation;
@@ -212,6 +217,7 @@ namespace Tools
             head1->head_source( operation );
             head2->head_source( operation );
             head3->head_source( operation );
+            dontredraw_ = false;
         }
     }
 

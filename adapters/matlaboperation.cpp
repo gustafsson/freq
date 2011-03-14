@@ -362,15 +362,16 @@ bool MatlabOperation::
 
                 float* p = plot_pts->waveform_data()->getCpuMemory();
                 cudaExtent N = plot_pts->waveform_data()->getNumberOfElements();
+                unsigned id = this->get_channel();
                 if (3 <= N.height)
                     for (unsigned x=0; x<N.width; ++x)
-                        plotlines.set( p[ x ], p[ x + N.width ], p[ x + 2*N.width ] );
+                        plotlines.set( id, p[ x ], p[ x + N.width ], p[ x + 2*N.width ] );
                 else if (2 == N.height)
                     for (unsigned x=0; x<N.width; ++x)
-                        plotlines.set( p[ x ], p[ x + N.width ] );
+                        plotlines.set( id, p[ x ], p[ x + N.width ] );
                 else if (1 == N.height)
                     for (unsigned x=0; x<N.width; ++x)
-                        plotlines.set( start + (x+0.5)*length/N.width, p[ x ] );
+                        plotlines.set( id, start + (x+0.5)*length/N.width, p[ x ] );
             }
         }
 
@@ -426,7 +427,9 @@ pBuffer MatlabOperation::
         {
             Signal::pBuffer b = ready_data;
             ready_data.reset();
-            TaskInfo("Returning ready data %s", b->getInterval().toString().c_str() );
+            TaskInfo("Returning ready data %s, %u channels",
+                     b->getInterval().toString().c_str(),
+                     b->waveform_data()->getNumberOfElements().height );
             return b;
         }
 
@@ -441,13 +444,14 @@ pBuffer MatlabOperation::
             else
             {
                 if (_settings->computeInOrder() )
-                    J = invalid_samples().fetchInterval( I.count() );
+                    J = _cache.invalid_samples_current_channel().fetchInterval( I.count() );
 
                 if (0<_settings->chunksize())
                     J.last = J.first + _settings->chunksize();
             }
 
             support = _settings->redundant();
+            Intervals J2 = J;
             J = Intervals(J).enlarge( support );
 
             // just 'read()' might return the entire signal, which would be way to

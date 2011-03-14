@@ -107,6 +107,8 @@ public:
         unsigned N = num_channels();
         if ( N != model_->collections.size())
         {
+            N = num_channels();
+
             model_->collections.resize(N);
             for (unsigned c=0; c<N; ++c)
             {

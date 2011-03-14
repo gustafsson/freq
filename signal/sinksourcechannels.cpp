@@ -14,7 +14,14 @@ SinkSourceChannels::
 void SinkSourceChannels::
         put( pBuffer b )
 {
-    sinksources_[ current_channel_ ].put( b );
+    if (1>=b->channels())
+        sinksources_[ current_channel_ ].put( b );
+
+    else for (unsigned c=0; c < b->channels(); c++)
+    {
+        pBuffer q( new Buffer( b->getInterval(), b, c ));
+        sinksources_[ c ].put( q );
+    }
 }
 
 

@@ -430,7 +430,7 @@ std::vector<pBlock> Collection::
 
         // This check is done in mergeBlock as well, but do it here first
         // for a hopefully more local and thus faster loop.
-        if (I.isConnectedTo(pb->ref.getInterval()))
+        if ((I & pb->ref.getInterval()).count())
         {
             r.push_back(pb);
         }

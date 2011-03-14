@@ -107,7 +107,14 @@ Intervals& Intervals::
     if (0==r.count())
         return *this;
 
-    base::iterator first = firstIntersecting( r );
+    base::iterator first = base::end();
+    for (base::iterator itr = base::begin(); itr!=base::end(); itr++)
+        if ( r.first <= itr->last && itr->first <= r.last )
+        {
+            first = itr;
+            break;
+        }
+
     if (first==end())
     {
         base::iterator itr = base::begin();

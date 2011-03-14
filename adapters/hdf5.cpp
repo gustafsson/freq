@@ -101,13 +101,10 @@ void Hdf5Output::
 {
     VERBOSE_HDF5 TaskTimer tt("Adding buffer '%s'", name.c_str());
 
-    GpuCpuData<float>& b = *cb.waveform_data();
+    float* p = cb.waveform_data()->getCpuMemory();
 
-    float* p = b.getCpuMemory();
-    cudaExtent s = b.getNumberOfElements();
-
-    const unsigned RANK=1;
-    hsize_t     dims[RANK]={s.width};
+    const unsigned RANK=2;
+    hsize_t     dims[RANK]={cb.channels(), cb.number_of_samples()};
 
     herr_t      status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_FLOAT,p);
     if (0>status) throw runtime_error("Could not create and write a H5T_NATIVE_FLOAT type dataset named '" + name + "'");
@@ -128,7 +125,10 @@ Signal::pBuffer Hdf5Input::
     if (dims.size()==0)
         dims.push_back( 1 );
     if (dims.size()==1)
-        dims.push_back( 1 );
+    {
+        dims.push_back( dims[0] );
+        dims[0] = 1;
+    }
 
     if (2!=dims.size()) throw runtime_error(((stringstream&)(ss << (const char*)"Rank of '" << name << "' is '" << dims.size() << "' instead of 0, 1 or 2.")).str());
 
@@ -137,22 +137,11 @@ Signal::pBuffer Hdf5Input::
 
     if (H5T_FLOAT!=class_id) throw runtime_error(((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_FLOAT.")).str());
 
-    Signal::pBuffer buffer( new Signal::Buffer(0, dims[0], 44100, dims[1] ) );
+    Signal::pBuffer buffer( new Signal::Buffer(0, dims[1], 44100, dims[0] ) );
     float* p = buffer->waveform_data()->getCpuMemory();
 
     status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
     if (0>status) throw runtime_error("Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'");
-
-    if (1 < dims[1]) // rearrange data to row major as expected by Sonic AWE
-    {
-        Signal::pBuffer b( new Signal::Buffer(0, dims[0], 44100, dims[1] ) );
-        float* q = b->waveform_data()->getCpuMemory();
-        for (unsigned x=0; x < dims[0]; ++x)
-            for (unsigned y=0; y < dims[1]; ++y)
-                q[x + y*dims[0]] = p[x*dims[1] + y];
-
-        buffer = b;
-    }
 
     return buffer;
 }

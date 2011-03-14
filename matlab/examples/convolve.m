@@ -1,4 +1,4 @@
-function [data]=matlaboperation_convolve(data)
+function [data]=convolve(data)
 
 disp('matlaboperation_convolve');
 
