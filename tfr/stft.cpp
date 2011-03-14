@@ -40,6 +40,25 @@ CufftHandleContext::
 }
 
 
+CufftHandleContext::
+        CufftHandleContext( const CufftHandleContext& b )
+{
+    _handle = 0;
+    this->_stream = b._stream;
+    this->_type = b._type;
+}
+
+
+CufftHandleContext& CufftHandleContext::
+        operator=( const CufftHandleContext& b )
+{
+    destroy();
+    this->_stream = b._stream;
+    this->_type = b._type;
+    return *this;
+}
+
+
 cufftHandle CufftHandleContext::
         operator()( unsigned elems, unsigned batch_size )
 {

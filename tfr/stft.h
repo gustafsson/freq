@@ -18,6 +18,9 @@ public:
     CufftHandleContext( cudaStream_t _stream=0, unsigned type=-1); // type defaults to CUFFT_C2C
     ~CufftHandleContext();
 
+    CufftHandleContext( const CufftHandleContext& b );
+    CufftHandleContext& operator=( const CufftHandleContext& b );
+
     cufftHandle operator()( unsigned elems, unsigned batch_size );
 
 private:
