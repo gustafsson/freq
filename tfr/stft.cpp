@@ -351,8 +351,6 @@ void Fft::
 void Fft::
         computeWithCufftR2C( GpuCpuData<float>& input, GpuCpuData<float2>& output )
 {
-    TIME_STFT TaskTimer tt("FFt cufft R2C");
-
     cufftReal* i = input.getCudaGlobal().ptr();
     cufftComplex* o = output.getCudaGlobal().ptr();
 
@@ -367,8 +365,6 @@ void Fft::
 void Fft::
         computeWithCufftC2R( GpuCpuData<float2>& input, GpuCpuData<float>& output )
 {
-    TIME_STFT TaskTimer tt("FFt cufft R2C");
-
     cufftComplex* i = input.getCudaGlobal().ptr();
     cufftReal* o = output.getCudaGlobal().ptr();
 

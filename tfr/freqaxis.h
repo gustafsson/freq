@@ -31,6 +31,15 @@ public:
     FreqAxis() : axis_scale(AxisScale_Unknown) {}
 
 
+    bool operator==(const FreqAxis& b)
+    {
+        return axis_scale == b.axis_scale &&
+                max_frequency_scalar == b.max_frequency_scalar &&
+                min_hz == b.min_hz &&
+                f_step == b.f_step;
+    }
+
+
     /**
       Let max_frequency_scalar keep its default value 1 to create a normalized FreqAxis.
       */

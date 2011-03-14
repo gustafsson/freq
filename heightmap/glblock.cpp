@@ -24,8 +24,8 @@
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)
 
-#define TIME_GLBLOCK
-//#define TIME_GLBLOCK if(0)
+//#define TIME_GLBLOCK
+#define TIME_GLBLOCK if(0)
 
 namespace Heightmap {
 

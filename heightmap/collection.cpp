@@ -541,6 +541,9 @@ void Collection::
 void Collection::
         display_scale(Tfr::FreqAxis a)
 {
+    if (_display_scale == a)
+        return;
+
     _display_scale = a;
     invalidate_samples( target->getInterval() );
 }
