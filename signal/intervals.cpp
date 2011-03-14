@@ -279,7 +279,7 @@ Intervals& Intervals::
         Interval& i = *itr;
 
         // Check if interval 'itr' does not intersect with 'r'
-        if (!i.isConnectedTo(r)) {
+        if (0 == (i & r).count()) {
             itr = base::erase(itr, base::end());
 
         } else {
