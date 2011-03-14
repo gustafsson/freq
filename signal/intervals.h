@@ -38,9 +38,6 @@ public:
     IntervalType count() const { return valid() ? last - first : 0; }
 
     bool valid() const;
-    bool isConnectedTo(const Interval& r) const {
-        return last >= r.first && r.last >= first;
-    }
     Interval operator|(const Interval& r) { Interval I(*this); return I|=r; }
     Interval& operator|=(const Interval& r);
     Interval operator&(const Interval& r) { Interval I(*this); return I&=r; }

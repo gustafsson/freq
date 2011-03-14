@@ -160,7 +160,7 @@ Intervals& Intervals::
     {
         Interval& i = *itr;
         // Check if interval 'itr' intersects with 'r'
-        if (i.isConnectedTo(r)) {
+        if ((i & r).count()) {
 
             // Check if intersection is over the start of 'itr'
             if (i.first >= r.first && i.last > r.last) {
@@ -296,7 +296,8 @@ Intervals& Intervals::
             {}
 
             // Check if intersection is in the middle of 'itr'
-            else if (i.first < r.first && i.last > r.last) {
+            else if (i.first < r.first && i.last > r.last)
+            {
                 i.first = r.first;
                 i.last = r.last;
 
@@ -495,7 +496,7 @@ Intervals::base::iterator Intervals::
         firstIntersecting( const Interval& b )
 {
     for (base::iterator itr = base::begin(); itr!=base::end(); itr++)
-        if ( itr->isConnectedTo( b ) )
+        if ( (*itr & b).count() )
             return itr;
     return base::end();
 }
