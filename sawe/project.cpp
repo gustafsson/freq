@@ -294,8 +294,9 @@ bool Project::
 pProject Project::
         openAudio(std::string audio_file)
 {
-    Signal::pOperation s( new Adapters::Audiofile( audio_file.c_str() ) );
-    return pProject( new Project( s, QFileInfo( audio_file.c_str() ).fileName().toStdString() ));
+    Adapters::Audiofile*a;
+    Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    return pProject( new Project( s, a->name() ));
 }
 
 } // namespace Sawe

@@ -137,7 +137,7 @@ std::string Audiofile::
 void Audiofile::
         load(std::string filename )
 {
-    _original_filename = filename;
+    _original_relative_filename = filename;
 
     TaskTimer tt("Loading %s (this=%p)", filename.c_str(), this);
 
