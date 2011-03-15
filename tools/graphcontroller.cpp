@@ -180,6 +180,7 @@ namespace Tools
         else
             operationsTree->setContextMenuPolicy(Qt::NoContextMenu);
 
+        dontredraw_ = true;
         timerUpdateContextMenu.start();
 
         if (!previous || !current)
@@ -207,7 +208,6 @@ namespace Tools
         }
         else
         {
-            dontredraw_ = true;
             // head_source( pOperation ) invalidates models where approperiate
             Signal::pChain chain = currentItem->chain;
             Signal::pOperation operation = currentItem->operation;
@@ -217,7 +217,6 @@ namespace Tools
             head1->head_source( operation );
             head2->head_source( operation );
             head3->head_source( operation );
-            dontredraw_ = false;
         }
     }
 
@@ -317,6 +316,7 @@ namespace Tools
     {
         QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
         bool currentHasSource = false;
+        this->dontredraw_ = false;
 
         if (!itms.empty())
         {
