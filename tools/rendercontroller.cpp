@@ -21,6 +21,7 @@
 #include "sawe/application.h"
 #include "signal/buffersource.h"
 #include "signal/worker.h"
+#include "signal/reroutechannels.h"
 
 // gpumisc
 #include <CudaException.h>
@@ -503,6 +504,15 @@ void RenderController::
         color->setCheckedAction(ui->actionSet_colorscale);
     }
 
+    // ComboBoxAction* channels
+    {   channelselector = new QToolButton();
+        channelselector->setCheckable( false );
+        channelselector->setText("Channels");
+        channelselector->setContextMenuPolicy( Qt::ActionsContextMenu );
+        channelselector->setToolTip("Press to get a list of channels (or right click)");
+        toolbar_render->addWidget( channelselector );
+    }
+
     // QAction *actionSet_heightlines
     toolbar_render->addAction(ui->actionSet_heightlines);
     connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
@@ -593,6 +603,7 @@ void RenderController::
     }
 
     connect(this, SIGNAL(transformChanged()), SLOT(updateFreqAxis()));
+    connect(this, SIGNAL(transformChanged()), SLOT(updateChannels()));
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
@@ -660,5 +671,48 @@ void RenderController::
     }
 }
 
+
+void RenderController::
+        updateChannels()
+{
+    Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
+    unsigned N = channels->source()->num_channels();
+    for (unsigned i=0; i<N; ++i)
+    {
+        foreach (QAction* o, channelselector->actions())
+        {
+            QAction* a = dynamic_cast<QAction*>(o);
+            if (!a)
+                continue;
+            if (a->data().toUInt() >= N)
+                delete a;
+        }
+
+        for (unsigned i = channelselector->actions().size(); i<N; ++i)
+        {
+            QAction* a = new QAction(channelselector);
+            a->setText(QString("Channel %1").arg(i));
+            a->setData( i );
+            a->setCheckable( true );
+            a->setChecked( false );
+            connect(a, SIGNAL(toggled(bool)), SLOT( reroute() ));
+            channelselector->addAction( a );
+
+            a->setChecked( true ); // invokes reroute
+        }
+    }
+}
+
+
+void RenderController::
+        reroute()
+{
+    Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
+    foreach (QAction* o, channelselector->actions())
+    {
+        unsigned c = o->data().toUInt();
+        channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
+    }
+}
 
 } // namespace Tools

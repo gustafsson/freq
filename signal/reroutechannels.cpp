@@ -67,7 +67,7 @@ void RerouteChannels::
     unsigned N = Operation::num_channels();
     for (unsigned i=0; i<scheme_.size(); )
     {
-        if (scheme_[i] >= N )
+        if (scheme_[i] >= N && scheme_[i] != NOTHING)
             scheme_.erase( scheme_.begin() + i );
         else
             i++;
@@ -93,9 +93,13 @@ void RerouteChannels::
     if ( output_channel >= num_channels() )
         num_channels( output_channel+1 );
 
-    BOOST_ASSERT( source_channel < Operation::source()->num_channels() );
+    BOOST_ASSERT( source_channel < Operation::source()->num_channels() || NOTHING == source_channel);
+
+    if (scheme_[ output_channel ] == source_channel)
+        return;
 
     scheme_[ output_channel ] = source_channel;
+    invalidate_samples( Signal::Intervals::Intervals_ALL );
 }
 
 

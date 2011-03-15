@@ -10,6 +10,7 @@
 
 class QToolBar;
 class QSlider;
+class QToolButton;
 
 namespace Tfr { class Transform; }
 
@@ -68,6 +69,8 @@ namespace Tools
     private slots:
         void clearCachedHeightmap();
         void updateFreqAxis();
+        void updateChannels();
+        void reroute();
 
     private:
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
@@ -85,7 +88,9 @@ namespace Tools
         Ui::ComboBoxAction* zscale;
         Ui::ComboBoxAction* hzmarker;
         Ui::ComboBoxAction* color;
+        QToolButton* channelselector;
         Ui::ComboBoxAction* transform;
+
         QSlider * yscale;
         QSlider * tf_resolution;
 
