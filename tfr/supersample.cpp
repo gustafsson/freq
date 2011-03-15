@@ -41,10 +41,10 @@ Signal::pBuffer SuperSample::
     float2* dest = biggerchunk->transform_data->getCpuMemory();
 
     float normalize = 1.f/src_window_size;
-    dest[0] = src[0]*normalize;
+    dest[0] = src[0]*0.5*normalize;
     for (unsigned i=1; i<src_sz.width; ++i)
     {
-        dest[i] = src[i]*(2*normalize);
+        dest[i] = src[i]*normalize;
     }
 
     memset( dest + src_sz.width, 0, (dest_sz.width - src_sz.width) * sizeof(float2) );
