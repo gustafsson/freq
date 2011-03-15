@@ -212,14 +212,14 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         populateTodoList()
 {
-    if (project->worker.todo_list().empty())
+    Signal::Intervals needupdate;
+    if (operation && needupdate && pid && pid->state() != QProcess::NotRunning)
     {
-        Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
-        if (operation && needupdate && pid && pid->state() != QProcess::NotRunning)
-        {
-            // restart the timer
-            announceInvalidSamplesTimer.start();
-        }
+        needupdate = operation->invalid_returns() | operation->invalid_samples();
+        project->tools().render_view()->userinput_update( false );
+
+        // restart the timer
+        announceInvalidSamplesTimer.start();
     }
 }
 
