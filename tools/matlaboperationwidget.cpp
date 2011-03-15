@@ -101,8 +101,10 @@ std::string MatlabOperationWidget::
 void MatlabOperationWidget::
         scriptname(std::string v)
 {
+    bool restore = ui->pushButtonRestoreChanges->isEnabled();
     ui->scriptname->setText( QString::fromStdString( v ) );
     prevsettings.scriptname_ = v;
+    ui->pushButtonRestoreChanges->setEnabled(restore);
 }
 
 
@@ -116,8 +118,10 @@ std::string MatlabOperationWidget::
 void MatlabOperationWidget::
         arguments(std::string v)
 {
+    bool restore = ui->pushButtonRestoreChanges->isEnabled();
     ui->arguments->setText( QString::fromStdString( v ) );
     prevsettings.arguments_ = v;
+    ui->pushButtonRestoreChanges->setEnabled(restore);
 }
 
 
@@ -131,8 +135,10 @@ int MatlabOperationWidget::
 void MatlabOperationWidget::
         chunksize(int v)
 {
+    bool restore = ui->pushButtonRestoreChanges->isEnabled();
     ui->chunksize->setValue( v );
     prevsettings.chunksize_ = v;
+    ui->pushButtonRestoreChanges->setEnabled(restore);
 }
 
 
@@ -146,8 +152,10 @@ bool MatlabOperationWidget::
 void MatlabOperationWidget::
         computeInOrder(bool v)
 {
+    bool restore = ui->pushButtonRestoreChanges->isEnabled();
     ui->computeInOrder->setChecked( v );
     prevsettings.computeInOrder_ = v;
+    ui->pushButtonRestoreChanges->setEnabled(restore);
 }
 
 
@@ -161,8 +169,10 @@ int MatlabOperationWidget::
 void MatlabOperationWidget::
         redundant(int v)
 {
+    bool restore = ui->pushButtonRestoreChanges->isEnabled();
     ui->redundant->setValue( v );
     prevsettings.redundant_ = v;
+    ui->pushButtonRestoreChanges->setEnabled(restore);
 }
 
 
@@ -251,6 +261,17 @@ void MatlabOperationWidget::
 {
     if (operation)
     {
+        Adapters::MatlabOperation* t = operation;
+        operation = 0;
+        if (!prevsettings.scriptname_.empty() && scriptname().empty())
+            return;
+        prevsettings.scriptname_ = scriptname();
+        prevsettings.arguments_ = arguments();
+        prevsettings.chunksize_ = chunksize();
+        prevsettings.computeInOrder_ = computeInOrder();
+        prevsettings.redundant_ = redundant();
+        operation = t;
+
         operation->restart();
 
         if (operation->name().empty())

@@ -147,7 +147,12 @@ void HarmonicsInfoForm::
         dock->raise();
 
         Ui::SaweMainWindow* MainWindow = project->mainWindow();
-        MainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
+        if (Qt::NoDockWidgetArea == MainWindow->dockWidgetArea(dock))
+        {
+            MainWindow->addDockWidget(Qt::BottomDockWidgetArea, dock);
+        }
+
+        once_per_process = false;
     }
 
     rebuilding = 1;

@@ -17,6 +17,13 @@
 
 #include <QPushButton>
 
+
+//#define DEBUG_GRAPH
+#define DEBUG_GRAPH if(0)
+
+#define INFO_GRAPH
+//#define INFO_GRAPH if(0)
+
 namespace Tools
 {
     class TreeItem: public QTreeWidgetItem
@@ -131,9 +138,9 @@ namespace Tools
 
         operationsTree->clear();
 
-        TaskInfo ti("redraw_operation_tree");
-        TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
-        TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+        DEBUG_GRAPH TaskInfo ti("redraw_operation_tree");
+        DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+        DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
 
         operationsTree->invisibleRootItem()->setFlags(
                 operationsTree->invisibleRootItem()->flags() & ~Qt::ItemIsDropEnabled );
@@ -146,6 +153,8 @@ namespace Tools
             chainItm->setFlags( chainItm->flags() & ~Qt::ItemIsSelectable );
 
             Signal::pOperation o = c->tip_source();
+            INFO_GRAPH TaskInfo ti("Operation tree: %s", o->toString().c_str());
+
             while(o)
             {
                 TreeItem* itm = new TreeItem(chainItm, o, c);

@@ -12,8 +12,8 @@
 #include <msc_stdc.h>
 #endif
 
-#define TIME_STFT
-//#define TIME_STFT if(0)
+//#define TIME_STFT
+#define TIME_STFT if(0)
 
 using namespace boost::posix_time;
 using namespace boost;

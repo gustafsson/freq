@@ -156,24 +156,18 @@ bool Worker::
         if (cudaErrorMemoryAllocation == e.getCudaError() && min_samples_per_chunk<_samples_per_chunk) {
             TaskInfo ti("Worker caught cudaErrorMemoryAllocation\n/s",  e.what());
             cudaGetLastError(); // consume error
-            TaskInfo("_samples_per_chunk was %u", _samples_per_chunk);
-            TaskInfo("_max_samples_per_chunk was %u", _max_samples_per_chunk);
-            TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave() );
+            TaskInfo("Samples per chunk was %u", _samples_per_chunk);
+            TaskInfo("Max samples per chunk was %u", _max_samples_per_chunk);
+            TaskInfo("Scales per octave is %g", Tfr::Cwt::Singleton().scales_per_octave() );
 
-/*            while (128 < _samples_per_chunk &&
-                   _samples_per_chunk <= Tfr::Cwt::Singleton().prev_good_size(
-                    _samples_per_chunk, _source->sample_rate()))
-            {
-                Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave()*0.99f );
-            }
-*/
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _target->post_sink()->sample_rate());
+
+            if (_max_samples_per_chunk == _samples_per_chunk)
+                throw;
+
             _max_samples_per_chunk = _samples_per_chunk;
 
-            TaskInfo("scales_per_octave is now %g", Tfr::Cwt::Singleton().scales_per_octave() );
-            TaskInfo("_samples_per_chunk now is %u", _samples_per_chunk);
-            TaskInfo("_max_samples_per_chunk now is %u", _max_samples_per_chunk);
             TaskInfo("Setting max samples per chunk to %u", _samples_per_chunk);
 
             size_t free=0, total=0;
