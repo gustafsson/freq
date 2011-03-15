@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
+// Gets application bundle path
 const char *bundlePath(char *path)
 {
     CFBundleRef mainBundle = CFBundleGetMainBundle();
