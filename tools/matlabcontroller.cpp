@@ -30,23 +30,21 @@ MatlabController::
     setupGui(project);
 
     // Clean up old h5 files that were probably left from a previous crash
-    // if no other project is currently running
-    // (note, other instances of Sonic AWE might still be running)
-    if ( 0==Sawe::Application::global_ptr()->count_projects())
+
+    QDateTime now = QDateTime::currentDateTime();
+    foreach (QFileInfo s, QDir::current().entryInfoList( QStringList("*.0x*.h5") ))
     {
-        QDateTime now = QDateTime::currentDateTime();
-        foreach (QFileInfo s, QDir::current().entryInfoList( QStringList("*.0x*.h5") ))
+        if (QRegExp(".*\\.0x[0-9a-f]{6,16}\\.h5").exactMatch(s.fileName()) ||
+            QRegExp(".*\\.0x[0-9a-f]{6,16}\\.h5.result.h5").exactMatch(s.fileName()))
         {
-            if (QRegExp(".*\\.0x[0-9a-f]{6,16}\\.h5").exactMatch(s.fileName()))
+            // Delete it only if it was created more than 15 minutes ago,
+            // because other instances of Sonic AWE might still be running.
+            QDateTime created = s.created();
+            int diff = created.secsTo(now);
+            if (15*60 < diff)
             {
-                // Delete it if it was created more than 15 minutes ago
-                QDateTime created = s.created();
-                int diff = created.secsTo(now);
-                if (15*60 < diff)
-                {
-                    TaskInfo("Removing %s", s.filePath().toStdString().c_str());
-                    ::remove( s.fileName().toStdString().c_str() );
-                }
+                TaskInfo("Removing %s", s.filePath().toStdString().c_str());
+                ::remove( s.fileName().toStdString().c_str() );
             }
         }
     }
