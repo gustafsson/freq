@@ -53,7 +53,10 @@ cp matlab/sawe_extract_cwt.m $share
 cp matlab/sawe_extract_cwt_time.m $share
 cp matlab/sawe_filewatcher.m $share
 cp matlab/sawe_getdatainfo.m $share
-cp matlab/examples/*.m $share/examples
+cp matlab/examples/amplify.m $share/examples
+cp matlab/examples/convolve.m $share/examples
+cp matlab/examples/lowpass.m $share/examples
+cp matlab/examples/plotwaveform.m $share/examples
 cp matlab/sawe_loadbuffer.m $share
 cp matlab/sawe_loadchunk.m $share
 cp matlab/sawe_savebuffer.m $share
