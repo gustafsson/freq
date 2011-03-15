@@ -1,4 +1,4 @@
-//gcc -framework CoreFoundation -o launcher lassare.c
+//gcc -framework CoreFoundation -o launcher launcher.c
 
 #include <CoreFoundation/CFUserNotification.h>
 #include <CoreFoundation/CFBundle.h>
@@ -31,11 +31,24 @@ int main(int argc, char *argv[])
 
     if (pFile==NULL)
     {
+        const char* title = "Couldn't find CUDA, cannot start Sonic AWE";
+        const char* msg = 
+			"Sonic AWE requires you to have installed recent display drivers from NVIDIA, and no such driver was found.\n"
+			"\n"
+            "Hardware requirements: You need to have one of these graphics cards from NVIDIA:\n"
+            "   www.nvidia.com/object/cuda_gpus.html\n"
+            "\n"
+            "\nSoftware requirements: You also need to have installed recent display drivers from NVIDIA:\n"
+            "\n"
+            "\"Developer Drivers for MacOS\" at \nhttp://www.nvidia.com/object/cuda_get.html#MacOS\n"
+            "\n"
+            "\nSonic AWE cannot start. Please try again with updated drivers.";
+
         CFOptionFlags options = kCFUserNotificationStopAlertLevel | kCFUserNotificationNoDefaultButtonFlag;
         CFOptionFlags responseFlags = 0;
         CFUserNotificationDisplayAlert(0, options, NULL, NULL, NULL,
-            CFSTR("CUDA is not installed!"),
-            CFSTR("CUDA could not be found on your computer. You need CUDA in order to run SonicAWE. Please get CUDA!"),
+            CFSTR(title),
+            CFSTR(msg),
             CFSTR("Ok"), NULL, NULL, &responseFlags);
         return 1;
     }
