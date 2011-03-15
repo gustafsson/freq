@@ -902,7 +902,7 @@ void RenderView::
             CudaException_ThreadSynchronize();
 		}
 
-        if (0) {
+        {
             // Make sure our cuda context is still alive by invoking
             // a tiny kernel. This will throw an CudaException otherwise,
             // thus resulting in restarting the cuda context.
