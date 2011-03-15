@@ -32,6 +32,7 @@ def package_macos(app_name, version, zip = false)
                  qt_lib_path("QtCore"),
                  cuda_lib_path("cufft"),
                  cuda_lib_path("cudart"),
+                 cuda_lib_path("tlshook"),
                  custom_lib_path("portaudio"),
                  custom_lib_path("portaudiocpp"),
                  custom_lib_path("sndfile"),
@@ -43,7 +44,8 @@ def package_macos(app_name, version, zip = false)
                    "Contents/Resources",
                    "Contents/plugins"]
     
-    executables = ["../sonicawe"]
+    executables = [["../sonicawe", "sonicawe_app"],
+                   ["package-macos/launcher", "Sonicawe"]]
     
     resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
                  "package-macos/aweicon-project.icns",
@@ -53,6 +55,7 @@ def package_macos(app_name, version, zip = false)
     install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
                      [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
                      [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
+                     ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"],
                      ["@rpath/libcufft.dylib", "@executable_path/../Frameworks/libcufft.dylib"],
                      ["@rpath/libcudart.dylib", "@executable_path/../Frameworks/libcudart.dylib"]]
     
@@ -83,11 +86,11 @@ def package_macos(app_name, version, zip = false)
     # Copying executables
     puts " Copying executables ".center($command_line_width, "=")
     executables.each do |executable|
-        puts " copying: #{executable}"
-        local_exec = "#{app_name}.app/Contents/MacOS/#{File.basename(executable)}"
+        puts " copying: #{executable[0]}"
+        local_exec = "#{app_name}.app/Contents/MacOS/#{File.basename(executable[1])}"
         use_bin.push(local_exec)
-        unless system("cp #{executable} #{local_exec}")
-            puts "Error: Could not copy executable, #{executable}"
+        unless system("cp #{executable[0]} #{local_exec}")
+            puts "Error: Could not copy executable, #{executable[0]}"
             exit(1)
         end
     end
