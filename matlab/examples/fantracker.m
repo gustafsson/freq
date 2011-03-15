@@ -3,7 +3,10 @@ function [data]=fantracker(data, args)
 windowsize = 2^11;
 max_hz = 70;
 min_hz = 50;
-channelnumber = 1:size(data.buffer,2);
+channelnumber = 1;
+
+% Could do all channels
+%channelnumber = 1:size(data.buffer,2);
 
 if nargin==2 && ~isempty(args)
   windowsize = args(1);
@@ -14,7 +17,7 @@ end
 
 min_hz = max(min_hz, 2*data.samplerate/windowsize);
 
-disp( ['fantracker ' getdatainfo(data) ' windowsize=' num2str(windowsize) ' hz=[' num2str(min_hz) ', ' num2str(max_hz) ']' ] );
+disp( ['fantracker ' sawe_getdatainfo(data) ' windowsize=' num2str(windowsize) ' hz=[' num2str(min_hz) ', ' num2str(max_hz) ']' ] );
 
 global state;
 if data.offset==0
@@ -96,14 +99,9 @@ for channel=channelnumber
   k=y1 + y3 - 2*q;
 
   pattern = k.*x.*x + p.*k + q; 
-%  pattern = (1-b).*y(m + offs) + b.*y(m + offs + 1);
 
-  % Plot where pattern is changing the most
-%  patterndiff = pattern(:, 2:end)-pattern(:, 1:end-1);
-%  patterndiff(:,end+1) = patterndiff(:,end);
-%  [v,m]=min(pattern);
-  v=min(pattern);
-%  hz2 = 2.*k/windowsize*data.samplerate;
+  % Plot where the fan is muffled
+  v = min(pattern);
   a = zeros(size(a));
   % For each window
   for k=1:numel(hz)
@@ -116,6 +114,5 @@ for channel=channelnumber
   end
 
   data.plot(:,:,channel*2-1 ) = [t' hz2' a'];
-%  data.plot(:,:,channel*2-1 ) = [t' hz2' v'];
 end
 

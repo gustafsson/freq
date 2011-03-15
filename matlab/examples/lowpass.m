@@ -1,7 +1,7 @@
 function [data]=lowpass(data)
 
 %% Print information
-disp(['lowpass ' getdatainfo(data)]);
+disp(['lowpass ' sawe_getdatainfo(data)]);
 
 
 %% Lowpass filtering

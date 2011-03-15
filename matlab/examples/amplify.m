@@ -1,6 +1,6 @@
 function [data]=amplify(data)
 
-disp(['amplify ' getdatainfo(data)]);
+disp(['amplify ' sawe_getdatainfo(data)]);
 
 % Amplify the first channel with a factor 4
 data.buffer(:,1) = data.buffer(:,1)*4;

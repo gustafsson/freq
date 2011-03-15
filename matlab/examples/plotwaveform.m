@@ -1,6 +1,6 @@
 function [data]=plotwaveform(data)
 
-disp(['plotwaveform ' getdatainfo(data)]);
+disp(['plotwaveform ' sawe_getdatainfo(data)]);
 
 for channel=1:size(data.buffer,2)
   x = (1:100:size(data.buffer,1));

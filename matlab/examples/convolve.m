@@ -1,6 +1,6 @@
 function [data]=convolve(data)
 
-disp(['convolve ' getdatainfo(data)]);
+disp(['convolve ' sawe_getdatainfo(data)]);
 
 filter=[1 -1 1];
 %filter=filter/abs(sum(filter));

@@ -1,4 +1,4 @@
-function [txt]=getdatainfo(data)
+function [txt]=sawe_getdatainfo(data)
 
 global state;
 if isempty(state) || data.offset==0
