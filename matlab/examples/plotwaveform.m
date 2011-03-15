@@ -9,5 +9,3 @@ for channel=1:size(data.buffer,2)
   data.plot(:,:,channel) = [t' hz];
 end
 
-size(data.buffer)
-
