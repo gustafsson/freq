@@ -25,7 +25,8 @@ public:
     Buffer(UnsignedF firstSample,
            IntervalType numberOfSamples,
            float sample_rate,
-           unsigned numberOfChannels = 1);
+           unsigned numberOfChannels = 1,
+           unsigned numberOfSignals = 1);
     /**
       Always creates a single channel buffer.
       */

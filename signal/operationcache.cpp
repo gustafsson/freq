@@ -127,7 +127,9 @@ Intervals OperationCache::
         invalid_samples()
 {
     Intervals c = _cache.invalid_samples_all_channels();
-    return c;
+    Interval i = getInterval();
+    Intervals d = c & i;
+    return d;
 }
 
 
@@ -145,7 +147,7 @@ Intervals OperationCache::
     for (unsigned i=0; i<_invalid_returns.size(); ++i)
         R |= _invalid_returns[i];
 
-    return R;
+    return R & getInterval();
 }
 
 

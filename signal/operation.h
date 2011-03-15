@@ -48,6 +48,11 @@ public:
     virtual pBuffer read( const Interval& I );
 
     /**
+      Merges num_channels() calls to readFixedLength.
+      */
+    virtual pBuffer readFixedLengthAllChannels( const Interval& I );
+
+    /**
       sample_rate is invalid to call if _source is null.
 
       @see read(const Interval&)

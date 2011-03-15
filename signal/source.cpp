@@ -15,7 +15,7 @@ using namespace std;
 namespace Signal {
 
 
-Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, unsigned numberOfChannels)
+Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, unsigned numberOfChannels, unsigned numberOfSignals)
 :   sample_offset(first_sample),
     sample_rate(fs),
     bitor_channel_(0)
@@ -23,7 +23,7 @@ Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, u
     BOOST_ASSERT( 0 < numberOfSamples );
     BOOST_ASSERT( 0 < numberOfChannels );
     BOOST_ASSERT( 0 < fs );
-    waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1));
+    waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, numberOfSignals));
 }
 
 

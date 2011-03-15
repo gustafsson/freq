@@ -29,10 +29,10 @@ public:
 
     typedef float Time;
 
-    // map is sorted on key
     struct Line
     {
         float R, G, B, A;
+        // map is sorted on key=Time
         typedef std::map<Time, Value> Data;
         Data data;
     };

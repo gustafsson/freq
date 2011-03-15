@@ -89,6 +89,29 @@ pBuffer Operation::
 }
 
 
+pBuffer Operation::
+        readFixedLengthAllChannels( const Interval& I )
+{
+    if (1 >= num_channels())
+        return readFixedLength( I );
+
+    unsigned current_channel = this->get_channel();
+    pBuffer b( new Signal::Buffer(I.first, I.count(), sample_rate(), this->num_channels() ));
+
+    float* dst = b->waveform_data()->getCpuMemory();
+    for (unsigned i=0; i<num_channels(); ++i)
+    {
+        this->set_channel( i );
+        Signal::pBuffer r = readFixedLength( I );
+        float* src = r->waveform_data()->getCpuMemory();
+        memcpy( dst + i*I.count(), src, I.count()*sizeof(float));
+    }
+    this->set_channel( current_channel );
+
+    return b;
+}
+
+
 IntervalType Operation::
         number_of_samples()
 {

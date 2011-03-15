@@ -1,26 +1,7 @@
 function [data]=lowpass(data)
 
-%% Update local state
-% The variable 'state' is preserved between calls to this operation
-global state;
-if isempty(state) || data.offset==0
-    state.counter = 1;
-else
-    state.counter = state.counter + 1;
-end
-
-
 %% Print information
-FS = data.samplerate; 
-offset = data.offset;
-redundancy = data.redundancy;
-
-format long
-disp (['matlaboperation #' num2str(state.counter) ' - ' ...
-       'data = [' num2str(offset) ', ' num2str(offset+numel(data.buffer)) ') ' num2str(numel(data.buffer)/FS) ' s, ' ...
-       'redundancy = ' num2str(redundancy) ]);
-
-plot(data.buffer(1:40:end));
+disp(['lowpass ' getdatainfo(data)]);
 
 
 %% Lowpass filtering
@@ -32,9 +13,10 @@ data.buffer=real(ifft(F));
 
 
 %% Discard some data
-% the rough interpolation below only needs one extra sample at the end
-data.redundancy = 0.1*FS;
+% the rough interpolation below needs a couple of extra samples at each end
+data.redundancy = 0.1*data.samplerate;
 data = sawe_discard(data, data.redundancy, data.redundancy-1);
+
 
 % it is ok to return an empty matrix if not enough data was given to start with
 if isempty(data.buffer)

@@ -123,6 +123,17 @@ void PlotLines::
     }
     glEnd();
     glLineWidth(0.5f);
+
+    glPointSize( 6.f );
+    glBegin(GL_POINTS);
+    for (Line::Data::iterator d = l.data.begin(); d != l.data.end(); ++d )
+    {
+        float scale = render_model_->display_scale().getFrequencyScalar( d->second.hz );
+        glColor4f( l.R, l.G, l.B, l.A*(d->second.a+0.1)/1.1);
+        glVertex3f( d->first, d->second.a, scale );
+    }
+    glEnd();
+    glPointSize( 1.f );
     glDepthMask(true);
 
     GlException_CHECK_ERROR();
@@ -142,7 +153,8 @@ void PlotLines::
         itr->second.R = c.redF();
         itr->second.G = c.greenF();
         itr->second.B = c.blueF();
-        itr->second.A = c.alphaF()*0.5;
+        //itr->second.A = c.alphaF()*0.5;
+        itr->second.A = 0.5;
     }
 }
 

@@ -107,6 +107,7 @@ public:
     bool                    empty() const { return base::empty(); }
     void                    clear() { base::clear(); }
     bool operator==         (const Intervals& b) const { return ((base&)*this)==b; }
+    bool operator!=         (const Intervals& b) const { return ((base&)*this)!=b; }
 
 private:
     base::iterator firstIntersecting( const Interval& b );

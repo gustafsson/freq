@@ -52,6 +52,7 @@ mkdir -p $share/examples
 cp matlab/sawe_extract_cwt.m $share
 cp matlab/sawe_extract_cwt_time.m $share
 cp matlab/sawe_filewatcher.m $share
+cp matlab/sawe_getdatainfo.m $share
 cp matlab/examples/*.m $share/examples
 cp matlab/sawe_loadbuffer.m $share
 cp matlab/sawe_loadchunk.m $share

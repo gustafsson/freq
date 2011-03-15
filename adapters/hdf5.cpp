@@ -129,15 +129,21 @@ Signal::pBuffer Hdf5Input::
         dims.push_back( dims[0] );
         dims[0] = 1;
     }
+    if (dims.size()==2)
+    {
+        dims.push_back( dims[1] );
+        dims[1] = dims[0];
+        dims[0] = 1;
+    }
 
-    if (2!=dims.size()) throw runtime_error(((stringstream&)(ss << (const char*)"Rank of '" << name << "' is '" << dims.size() << "' instead of 0, 1 or 2.")).str());
+    if (3!=dims.size()) throw runtime_error(((stringstream&)(ss << (const char*)"Rank of '" << name << "' is '" << dims.size() << "' instead of 0, 1, 2 or 3.")).str());
 
     if (0==class_id)
         return Signal::pBuffer();
 
     if (H5T_FLOAT!=class_id) throw runtime_error(((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_FLOAT.")).str());
 
-    Signal::pBuffer buffer( new Signal::Buffer(0, dims[1], 44100, dims[0] ) );
+    Signal::pBuffer buffer( new Signal::Buffer(0, dims[2], 44100, dims[1], dims[0] ) );
     float* p = buffer->waveform_data()->getCpuMemory();
 
     status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);

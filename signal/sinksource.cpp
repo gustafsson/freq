@@ -16,6 +16,8 @@ namespace Signal {
 
 SinkSource::
         SinkSource()
+            :
+        _need_self_merge( false )
 {
 }
 
@@ -25,7 +27,8 @@ SinkSource::
             :
         Sink(b),
         _cache( b._cache ),
-        _need_self_merge( false )
+        _need_self_merge( b._need_self_merge ),
+        _invalid_samples( b._invalid_samples )
 {
 }
 
@@ -34,6 +37,7 @@ SinkSource& SinkSource::
         operator=( const SinkSource& b)
 {
     _cache = b._cache;
+    _need_self_merge = b._need_self_merge;
     _invalid_samples = b._invalid_samples;
     return *this;
 }

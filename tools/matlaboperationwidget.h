@@ -73,7 +73,7 @@ private slots:
     void checkOctaveVisibility();
 
 private:
-    QProcess* pid;
+    QPointer<QProcess> pid;
     void setProcess(QProcess*);
     virtual void hideEvent ( QHideEvent * event );
 

@@ -1,6 +1,6 @@
 function [data]=convolve(data)
 
-disp('matlaboperation_convolve');
+disp(['convolve ' getdatainfo(data)]);
 
 filter=[1 -1 1];
 %filter=filter/abs(sum(filter));

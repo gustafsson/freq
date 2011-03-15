@@ -49,6 +49,17 @@ while 1
       data = load(datafile);
       data.plot = [];
     end
+
+    % 'Supposed to be scalars' are exported from Sonic AWE as 1x1 matrice, not scalars.
+    % Hence we need to take the value by "data.samplerate(1)" instead of "data.samplerate".
+    % This reduces 1x1 matrices to scalars
+    n = fieldnames(data);
+    for k=1:numel(n)
+        if numel(data.(n{k})) == 1
+            v = data.(n{k});
+            data.(n{k}) = v(1);
+        end
+    end
     
     data = func(data, arguments);
 

@@ -272,8 +272,8 @@ Signal::Intervals Worker::
     QMutexLocker l(&_todo_lock);
 #endif
     Signal::Intervals todoinv = _target->post_sink()->invalid_samples();
-
     todoinv &= _target->post_sink()->getInterval();
+
     Signal::Intervals c = todoinv;
     c -= _cheat_work;
 

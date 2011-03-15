@@ -325,14 +325,21 @@ void MatlabOperation::
     TaskInfo("MatlabOperation children: %s", toString().c_str());
     TaskInfo("MatlabOperation outputs: %s", parentsToString().c_str());
 
-    if (_settings && _settings->computeInOrder() && (I - _cache.invalid_samples()))
+    if (_settings && _settings->computeInOrder() && (I & cached_samples()))
     {
         // Start over and recompute the first block again
         TaskInfo("MatlabOperation start over");
         OperationCache::invalidate_samples(Signal::Intervals::Intervals_ALL);
+        if (plotlines)
+            plotlines->clear();
     }
     else
+    {
         OperationCache::invalidate_samples(I);
+
+        if (plotlines && source())
+            plotlines->clear( I, sample_rate() );
+    }
 }
 
 
@@ -349,32 +356,6 @@ bool MatlabOperation::
         pBuffer plot_pts;
         ready_data = Hdf5Buffer::loadBuffer( file, &redundancy, &plot_pts );
 
-        Interval J = ready_data->getInterval();
-
-        if (this->plotlines){ // Update plot
-            Tools::Support::PlotLines& plotlines = *this->plotlines.get();
-            plotlines.clear( J, ready_data->sample_rate );
-
-            if (plot_pts)
-            {
-                float start = ready_data->start();
-                float length = ready_data->length();
-
-                float* p = plot_pts->waveform_data()->getCpuMemory();
-                cudaExtent N = plot_pts->waveform_data()->getNumberOfElements();
-                unsigned id = this->get_channel();
-                if (3 <= N.height)
-                    for (unsigned x=0; x<N.width; ++x)
-                        plotlines.set( id, p[ x ], p[ x + N.width ], p[ x + 2*N.width ] );
-                else if (2 == N.height)
-                    for (unsigned x=0; x<N.width; ++x)
-                        plotlines.set( id, p[ x ], p[ x + N.width ] );
-                else if (1 == N.height)
-                    for (unsigned x=0; x<N.width; ++x)
-                        plotlines.set( id, start + (x+0.5)*length/N.width, p[ x ] );
-            }
-        }
-
         ::remove( file.c_str());
 
         if (_settings->chunksize() < 0)
@@ -383,15 +364,50 @@ bool MatlabOperation::
         IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
         _settings->redundant(support);
 
-        if ((invalid_samples() - J).empty())
-            _matlab->endProcess(); // Finished with matlab
+        if (!ready_data)
+        {
+            TaskInfo("Couldn't read data from Matlab/Octave");
+            return false;
+        }
+
+        Interval J = ready_data->getInterval();
+
+        if (this->plotlines){ // Update plot
+            Tools::Support::PlotLines& plotlines = *this->plotlines.get();
+
+            if (plot_pts)
+            {
+                float start = ready_data->start();
+                float length = ready_data->length();
+
+                cudaExtent N = plot_pts->waveform_data()->getNumberOfElements();
+                for (unsigned id=0; id<N.depth; ++id)
+                {
+                    float* p = plot_pts->waveform_data()->getCpuMemory() + id*N.width*N.height;
+
+                    if (3 <= N.height)
+                        for (unsigned x=0; x<N.width; ++x)
+                            plotlines.set( id, p[ x ], p[ x + N.width ], p[ x + 2*N.width ] );
+                    else if (2 == N.height)
+                        for (unsigned x=0; x<N.width; ++x)
+                            plotlines.set( id, p[ x ], p[ x + N.width ] );
+                    else if (1 == N.height)
+                        for (unsigned x=0; x<N.width; ++x)
+                            plotlines.set( id, start + (x+0.5)*length/N.width, p[ x ] );
+                }
+            }
+        }
+
+//        Leave the process running so that we can continue a recording
+//        if (((invalid_samples() | invalid_returns()) - J).empty())
+//            _matlab->endProcess(); // Finished with matlab
 
         TaskInfo("invalid_returns = %s, J = %s, invalid_returns & J = %s",
                  invalid_returns().toString().c_str(),
                  J.toString().c_str(),
                  (invalid_returns()&J).toString().c_str());
 
-        invalidate_samples( invalid_returns() & J );
+        OperationCache::invalidate_samples( invalid_returns() & J );
 
         return true;
     }
@@ -444,37 +460,20 @@ pBuffer MatlabOperation::
             else
             {
                 if (_settings->computeInOrder() )
-                    J = _cache.invalid_samples_current_channel().fetchInterval( I.count() );
+                    J = (invalid_samples() | invalid_returns()).fetchInterval( I.count() );
+                else
+                    J = (invalid_samples() | invalid_returns()).fetchInterval( I.count(), I.first );
 
                 if (0<_settings->chunksize())
                     J.last = J.first + _settings->chunksize();
             }
 
             support = _settings->redundant();
-            Intervals J2 = J;
             J = Intervals(J).enlarge( support );
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
-            Signal::pBuffer b;
-            unsigned C = num_channels();
-            if (1 == C)
-                b = source()->readFixedLength( J );
-            else
-            {
-                unsigned current_channel = this->get_channel();
-                b.reset( new Signal::Buffer(J.first, J.count(), sample_rate(), C ));
-
-                float* dst = b->waveform_data()->getCpuMemory();
-                for (unsigned i=0; i<C; ++i)
-                {
-                    source()->set_channel( i );
-                    Signal::pBuffer r = source()->readFixedLength( J );
-                    float* src = r->waveform_data()->getCpuMemory();
-                    memcpy( dst + i*J.count(), src, J.count()*sizeof(float));
-                }
-                source()->set_channel( current_channel );
-            }
+            Signal::pBuffer b = source()->readFixedLengthAllChannels( J );
 
             string file = _matlab->getTempName();
 
@@ -504,12 +503,12 @@ void MatlabOperation::
 {
     _cache.clear();
     _matlab.reset();
+
     if (_settings)
     {
         _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
 
-        if (source())
-            invalidate_samples( getInterval() );
+        invalidate_samples( Signal::Intervals::Intervals_ALL );
     }
 }
 

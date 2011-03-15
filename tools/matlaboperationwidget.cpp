@@ -205,7 +205,7 @@ void MatlabOperationWidget::
     if (project->worker.todo_list().empty())
     {
         Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
-        if (operation && needupdate && pid->state() != QProcess::NotRunning)
+        if (operation && needupdate && pid && pid->state() != QProcess::NotRunning)
         {
             // restart the timer
             announceInvalidSamplesTimer.start();
@@ -228,7 +228,7 @@ void MatlabOperationWidget::
 
     if (!operation->isWaiting())
     {
-        operation->invalidate_samples( needupdate );
+        operation->OperationCache::invalidate_samples( needupdate );
         project->tools().render_view()->userinput_update( false );
     }
 
@@ -251,20 +251,6 @@ void MatlabOperationWidget::
 {
     if (operation)
     {
-        {
-            Adapters::MatlabOperation* t = operation;
-            operation = 0;
-            if (!prevsettings.scriptname_.empty() && scriptname().empty())
-                return;
-            prevsettings.scriptname_ = scriptname();
-            prevsettings.arguments_ = arguments();
-            prevsettings.chunksize_ = chunksize();
-            prevsettings.computeInOrder_ = computeInOrder();
-            prevsettings.redundant_ = redundant();
-            operation = t;
-        }
-
-        ui->pushButtonRestoreChanges->setEnabled(false);
         operation->restart();
 
         if (operation->name().empty())
@@ -324,6 +310,21 @@ void MatlabOperationWidget::
     this->pid = pid;
     connect( pid, SIGNAL(readyRead()), SLOT(showOutput()));
     connect( pid, SIGNAL(finished( int , QProcess::ExitStatus )), SLOT(finished(int,QProcess::ExitStatus)));
+
+    {
+        Adapters::MatlabOperation* t = operation;
+        operation = 0;
+        if (!prevsettings.scriptname_.empty() && scriptname().empty())
+            return;
+        prevsettings.scriptname_ = scriptname();
+        prevsettings.arguments_ = arguments();
+        prevsettings.chunksize_ = chunksize();
+        prevsettings.computeInOrder_ = computeInOrder();
+        prevsettings.redundant_ = redundant();
+        operation = t;
+    }
+
+    ui->pushButtonRestoreChanges->setEnabled(false);
 }
 
 
@@ -372,10 +373,11 @@ void MatlabOperationWidget::
     if (0 == octaveWindow && text != 0)
         return;
 
+    if (0 == operation)
+        return;
+
     if (0==octaveWindow)
     {
-        BOOST_ASSERT( operation );
-
         octaveWindow = new QDockWidget(project->mainWindow());
         octaveWindow->setObjectName(QString::fromUtf8("octaveWindow"));
         octaveWindow->setMinimumSize(QSize(113, 113));

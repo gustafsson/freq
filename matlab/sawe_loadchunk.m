@@ -9,8 +9,3 @@ else
   data.offset=hdf5read(filename,'offset');
 end
 
-data.samplerate = data.samplerate(1);
-data.offset = data.offset(1);
-
-data.plot=[]
-
