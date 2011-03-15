@@ -109,7 +109,8 @@ namespace Tools
                 :
                 render_view_(render_view),
                 project_(render_view->model->project()),
-                dontredraw_(false)
+                dontredraw_(false),
+                removing_(false)
     {
         setupGui();
     }
@@ -125,7 +126,7 @@ namespace Tools
     void GraphController::
             redraw_operation_tree()
     {
-        if (dontredraw_)
+        if (dontredraw_ && !removing_)
             return;
 
         operationsTree->clear();
@@ -244,6 +245,8 @@ namespace Tools
         if (!currentSource)
             return;
 
+        removing_ = true;
+
         Signal::pOperation o = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), currentItem->operation );
         if (o)
         {
@@ -317,6 +320,7 @@ namespace Tools
         QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
         bool currentHasSource = false;
         this->dontredraw_ = false;
+        this->removing_ = false;
 
         if (!itms.empty())
         {
@@ -389,8 +393,8 @@ namespace Tools
         connect(removeHiddenButton, SIGNAL(clicked()), SLOT(removeHidden()));
         connect(removeCachesdButton, SIGNAL(clicked()), SLOT(removeCaches()));
         buttons->layout()->addWidget( removeSelectedButton );
-        buttons->layout()->addWidget( removeHiddenButton );
-        buttons->layout()->addWidget( removeCachesdButton );
+        //buttons->layout()->addWidget( removeHiddenButton );
+        //buttons->layout()->addWidget( removeCachesdButton );
 
         verticalLayout->addWidget(operationsTree);
         verticalLayout->addWidget(buttons);
