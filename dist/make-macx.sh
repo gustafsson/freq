@@ -11,9 +11,15 @@ make distclean
 qmake -spec macx-g++
 make
 
+echo "========================== Building ==========================="
+echo "Building Sonic AWE Launcher"
+cd sonicawe/dist
+cd package-macos
+gcc -framework CoreFoundation -o launcher launcher.c
+
 echo "========================== Packaging =========================="
 echo "Creating Mac OS X application: $filename"
-cd sonicawe/dist
+cd ..
 ruby package-macx.rb ${versiontag}
 filename="sonicawe_${versiontag}_macos_i386.zip"
 
