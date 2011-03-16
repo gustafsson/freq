@@ -11,14 +11,14 @@ ToolBar::ToolBar(QWidget *parent) :
 void ToolBar::
         showEvent(QShowEvent*)
 {
-    emit visibleChanged( isVisible() );
+    emit visibleChanged( isVisibleTo( parentWidget() ) );
 }
 
 
 void ToolBar::
         hideEvent(QHideEvent*)
 {
-    emit visibleChanged( isVisible() );
+    emit visibleChanged( isVisibleTo( parentWidget() ) );
 }
 
 } // namespace Support

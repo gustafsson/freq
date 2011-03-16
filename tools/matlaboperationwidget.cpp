@@ -26,7 +26,7 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     edit(0)
 {
     ui->setupUi(this);
-    ui->samplerateLabel->setText( QString("1 second is %1 samples.").arg(project->head->head_source()->sample_rate()) );
+    ui->samplerateLabel->setText( QString("%1 samples/s in the current signal.").arg(project->head->head_source()->sample_rate()) );
     ui->pushButtonRestartScript->setVisible(false);
     ui->pushButtonRestoreChanges->setVisible(false);
     ui->pushButtonShowOutput->setVisible(false);
