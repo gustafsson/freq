@@ -17,6 +17,7 @@
 #include <QDir>
 #include <QRegExp>
 #include <QDateTime>
+#include <QSettings>
 
 namespace Tools {
 
@@ -27,7 +28,7 @@ MatlabController::
             project_(project),
             render_view_(render_view)
 {
-    setupGui(project);
+    setupGui();
 
     // Clean up old h5 files that were probably left from a previous crash
 
@@ -59,12 +60,13 @@ MatlabController::
 
 
 void MatlabController::
-        setupGui(Sawe::Project* project)
+        setupGui()
 {
-    ::Ui::MainWindow* ui = project->mainWindow()->getItems();
+    ::Ui::SaweMainWindow* main = project_->mainWindow();
+    ::Ui::MainWindow* ui = main->getItems();
 
-    connect(ui->actionToogleMatlabToolBox, SIGNAL(toggled(bool)), ui->toolBarMatlab, SLOT(setVisible(bool)));
-    connect(ui->toolBarMatlab, SIGNAL(visibleChanged(bool)), ui->actionToogleMatlabToolBox, SLOT(setChecked(bool)));
+    //connect(ui->actionToogleMatlabToolBox, SIGNAL(toggled(bool)), ui->toolBarMatlab, SLOT(setVisible(bool)));
+    //connect(ui->toolBarMatlab, SIGNAL(visibleChanged(bool)), ui->actionToogleMatlabToolBox, SLOT(setChecked(bool)));
 
     connect(ui->actionMatlabOperation, SIGNAL(triggered()), SLOT(receiveMatlabOperation()));
     connect(ui->actionMatlabFilter, SIGNAL(triggered()), SLOT(receiveMatlabFilter()));
@@ -81,7 +83,10 @@ void MatlabController::
         }
     }
 
-    connect( project->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsMatlabOperation()));
+    connect( project_->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsMatlabOperation()));
+
+
+    updateScriptsMenu();
 }
 
 
@@ -97,6 +102,74 @@ void MatlabController::
     m->settings( settings );
 
     connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
+}
+
+
+void MatlabController::
+        updateScriptsMenu()
+{
+    ::Ui::SaweMainWindow* main = project_->mainWindow();
+    ::Ui::MainWindow* ui = main->getItems();
+
+    QSettings state;
+    state.beginGroup("MatlabOperation");
+    if (!state.childGroups().empty())
+    {
+        if (!scripts_)
+        {
+            scripts_ = new QMenu( "Matlab/Octave &scripts",  ui->menuWindows );
+            ui->menuWindows->insertMenu( ui->menuToolbars->menuAction(), scripts_ );
+        }
+        scripts_->clear();
+        scripts_->insertAction( 0, ui->actionMatlabOperation );
+        scripts_->addSeparator();
+
+
+        QStringList G = state.childGroups();
+        G.sort();
+        foreach (QString g, G)
+        {
+            state.beginGroup(g);
+            QString path = state.value("path").toString();
+            state.endGroup();
+            if (!QFile::exists(path))
+            {
+                if (QMessageBox::Yes == QMessageBox::question( main, "Can't find script", QString("Couldn't find script \"%1\" at \"%2\". Do you want to remove this item from the menu?").arg(g).arg(path), QMessageBox::Yes, QMessageBox::No ))
+                {
+                    state.remove(g);
+                    continue;
+                }
+            }
+
+            QAction* action = new QAction(g, scripts_ );
+            scripts_->addAction( action );
+            connect( action, SIGNAL(triggered()), SLOT(createFromAction()));
+        }
+    }
+    state.endGroup();
+}
+
+
+void MatlabController::
+        createFromAction()
+{
+    QAction* a = dynamic_cast<QAction*>(sender());
+    BOOST_ASSERT( a );
+
+    QSettings state;
+    state.beginGroup("MatlabOperation");
+    state.beginGroup( a->text());
+
+    MatlabOperationWidget* settings = new MatlabOperationWidget( project_ );
+    settings->scriptname( state.value("path").toString().toStdString() );
+    settings->chunksize( state.value("chunksize").toInt() );
+    settings->computeInOrder( state.value("computeInOrder").toBool() );
+    settings->redundant( state.value("redundant").toInt() );
+    settings->arguments( state.value("arguments").toString().toStdString() );
+    state.endGroup();
+    state.endGroup();
+
+    createOperation( settings );
 }
 
 
@@ -136,29 +209,48 @@ void MatlabController::
             }
             else
             {
-                Adapters::MatlabOperation* m = new Adapters::MatlabOperation(Signal::pOperation(), settings);
-                Signal::pOperation matlaboperation(m);
-                settings->setParent(0);
-                connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
-                bool noscript = settings->scriptname().empty();
-                settings->setOperation( m );
-                if (noscript)
-                {
-                    settings->showOutput();
-                    settings->ownOperation = matlaboperation;
-                }
-                else
-                {
-                    m->invalidate_samples( Signal::Intervals::Intervals_ALL );
-                    project_->appendOperation( matlaboperation );
-                    m->plotlines.reset( new Tools::Support::PlotLines( render_view_->model ));
-                    connect( render_view_, SIGNAL(painting()), m->plotlines.get(), SLOT(draw()) );
-                }
+                createOperation( settings );
+                updateScriptsMenu();
             }
         }
     }
 
     render_view_->userinput_update();
+}
+
+
+void MatlabController::
+        createOperation(MatlabOperationWidget* settings)
+{
+    Adapters::MatlabOperation* m = new Adapters::MatlabOperation(Signal::pOperation(), settings);
+    Signal::pOperation matlaboperation(m);
+    settings->setParent(0);
+    connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
+    bool noscript = settings->scriptname().empty();
+    settings->setOperation( m );
+    if (noscript)
+    {
+        settings->showOutput();
+        settings->ownOperation = matlaboperation;
+    }
+    else
+    {
+        m->invalidate_samples( Signal::Intervals::Intervals_ALL );
+        project_->appendOperation( matlaboperation );
+        m->plotlines.reset( new Tools::Support::PlotLines( render_view_->model ));
+        connect( render_view_, SIGNAL(painting()), m->plotlines.get(), SLOT(draw()) );
+
+        QSettings state;
+        state.beginGroup("MatlabOperation");
+        state.beginGroup( QString::fromStdString( m->functionName() ) );
+        state.setValue("path", QString::fromStdString( m->settings()->scriptname()) );
+        state.setValue("chunksize", m->settings()->chunksize() );
+        state.setValue("computeInOrder", m->settings()->computeInOrder() );
+        state.setValue("redundant", m->settings()->redundant() );
+        state.setValue("arguments", QString::fromStdString( m->settings()->arguments()) );
+        state.endGroup();
+        state.endGroup();
+    }
 }
 
 

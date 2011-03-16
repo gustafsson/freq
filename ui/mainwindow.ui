@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>27</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -56,7 +56,6 @@
      <addaction name="actionToggleTimeControlToolBox"/>
      <addaction name="actionToggleSelectionToolBox"/>
      <addaction name="actionToggleTransformToolBox"/>
-     <addaction name="actionToogleMatlabToolBox"/>
     </widget>
     <widget class="QMenu" name="menu_Windows">
      <property name="title">
@@ -233,19 +232,6 @@
    <addaction name="actionActivateInfoTool"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
-  </widget>
-  <widget class="Tools::Support::ToolBar" name="toolBarMatlab">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionMatlabOperation"/>
-   <addaction name="actionToggleFanTracker"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
@@ -524,10 +510,10 @@
      <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>:/icons/icons/icon-matlaboperation.png</iconset>
    </property>
    <property name="text">
-    <string>Matlab operation</string>
+    <string>Create new Matlab/Octave operation</string>
    </property>
    <property name="toolTip">
-    <string>Apply Matlab operation to everything</string>
+    <string>Apply Matlab/Octave operation</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+O</string>
@@ -1351,7 +1337,7 @@
      <normaloff>:/icons/icons/fscn-down.png</normaloff>:/icons/icons/fscn-down.png</iconset>
    </property>
    <property name="text">
-    <string>Toggle fullscreen</string>
+    <string>&amp;Toggle fullscreen</string>
    </property>
    <property name="toolTip">
     <string>Toggle fullscreen</string>
@@ -1413,7 +1399,7 @@
      <normaloff>:/icons/icons/fscn-up.png</normaloff>:/icons/icons/fscn-up.png</iconset>
    </property>
    <property name="text">
-    <string>Toggle fullscreen (no menus)</string>
+    <string>Toggle fullscreen (&amp;no menus)</string>
    </property>
    <property name="toolTip">
     <string>Toggle fullscreen  (no menus)</string>
@@ -1461,7 +1447,7 @@
   </action>
   <action name="actionRestore_layout">
    <property name="text">
-    <string>Restore layout</string>
+    <string>&amp;Restore layout</string>
    </property>
   </action>
   <action name="actionOperation_details">
@@ -1484,17 +1470,6 @@
    </property>
    <property name="toolTip">
     <string>We call it a cepstragram</string>
-   </property>
-  </action>
-  <action name="actionToogleMatlabToolBox">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Matlab/Octave</string>
    </property>
   </action>
   <action name="actionToggleFanTracker">

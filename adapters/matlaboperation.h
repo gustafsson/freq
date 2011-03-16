@@ -146,6 +146,7 @@ public:
     bool dataAvailable();
 
     bool isWaiting();
+    std::string functionName();
 
     boost::scoped_ptr<Tools::Support::PlotLines> plotlines;
 protected:

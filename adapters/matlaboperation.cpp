@@ -102,9 +102,9 @@ MatlabFunction::
         else
         {
             matlab_args.push_back("-r");
-            matlab_args.push_back(matlab_command.str().c_str());
+            matlab_args.push_back(QString::fromStdString(matlab_command.str()));
             octave_args.push_back("--eval");
-            octave_args.push_back(octave_command.str().c_str());
+            octave_args.push_back(QString::fromStdString(octave_command.str()));
         }
 
         _pid = new QProcess();
@@ -313,6 +313,15 @@ std::string MatlabOperation::
     if (!_matlab)
         return Operation::name();
     return _matlab->matlabFunctionFilename();
+}
+
+
+std::string MatlabOperation::
+        functionName()
+{
+    if (!_matlab)
+        return Operation::name();
+    return _matlab->matlabFunction();
 }
 
 

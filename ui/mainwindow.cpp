@@ -100,7 +100,7 @@ void SaweMainWindow::
 
     // todo move into toolfactory
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarMatlab );
+    //this->addToolBar( Qt::TopToolBarArea, ui->toolBarMatlab );
     this->addToolBar( Qt::LeftToolBarArea, ui->toolBarPlay );
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
@@ -292,7 +292,13 @@ void SaweMainWindow::
     BOOST_ASSERT( a );
     QString s = a->data().toString();
     BOOST_ASSERT( !s.isEmpty() );
-    Sawe::Application::global_ptr()->slotOpen_file( s.toStdString() );
+    if (0 == Sawe::Application::global_ptr()->slotOpen_file( s.toStdString() ))
+    {
+        QSettings settings;
+        QStringList recent_files = settings.value("recent files").toStringList();
+        recent_files.removeAll( s );
+        settings.setValue("recent files", recent_files);
+    }
 }
 
 

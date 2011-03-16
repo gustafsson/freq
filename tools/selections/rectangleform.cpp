@@ -70,8 +70,8 @@ void RectangleForm::
     ui->spinBoxStartFrequency->setValue( hza );
     ui->spinBoxStopFrequency->setValue( hzb );
 
-    QDockWidget* toolWindow = model_->project()->mainWindow()->getItems()->toolPropertiesWindow;
-    toolWindow->setWidget( this );
+    //QDockWidget* toolWindow = model_->project()->mainWindow()->getItems()->toolPropertiesWindow;
+    //toolWindow->setWidget( this );
     dontupdate_ = false;
 }
 
