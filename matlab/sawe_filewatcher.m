@@ -20,11 +20,17 @@ if nargin<4
   dt=0.05;
 end
 
+global sawe_plot_data; %matrix for all lines to be plotted.
+global sawe_hold_plot;
+
 resultfile=[datafile '.result.h5'];
 tempfile=datafile;
 isoctave=0~=exist('OCTAVE_VERSION','builtin');
 %disp (['Monitoring ' datafile]);
 while 1
+
+  sawe_hold_plot = false;
+
   if isoctave
     datafile_exists = ~isempty(stat(datafile)); % fast octave version
   else
@@ -47,7 +53,7 @@ while 1
     else
       %octave
       data = load(datafile);
-      data.plot = [];
+      sawe_plot_data = [];
     end
 
     % 'Supposed to be scalars' are exported from Sonic AWE as 1x1 matrice, not scalars.
@@ -65,9 +71,9 @@ while 1
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
-      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy, data.plot );
+      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy, sawe_plot_data );
     elseif isfield(data,'chunk')
-      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy, data.plot );
+      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy, sawe_plot_data );
     end
     
     if isoctave
