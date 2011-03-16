@@ -73,9 +73,12 @@ Signal::Intervals Ellipse::
 {
     float FS = sample_rate();
 
+    float r = fabsf(_t1 - _t2);
+    r += 0.06f;
+
     unsigned
-        start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
-        end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
+        start_time = (unsigned)(std::max(0.f, (_t1 - r)*FS)),
+        end_time = (unsigned)(std::max(0.f, (_t1 + r)*FS));
 
     Signal::Intervals sid;
     if (start_time < end_time)

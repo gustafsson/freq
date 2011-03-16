@@ -253,7 +253,6 @@ namespace Tools
     void SelectionController::
             receiveCropSelection()
     {
-        // affected_samples need a sample rate
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
         o->source( _worker->source() );
 
