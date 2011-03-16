@@ -21,7 +21,6 @@ if nargin<4
 end
 
 global sawe_plot_data; %matrix for all lines to be plotted.
-global sawe_hold_plot;
 
 resultfile=[datafile '.result.h5'];
 tempfile=datafile;
@@ -29,7 +28,6 @@ isoctave=0~=exist('OCTAVE_VERSION','builtin');
 %disp (['Monitoring ' datafile]);
 while 1
 
-  sawe_hold_plot = false;
 
   if isoctave
     datafile_exists = ~isempty(stat(datafile)); % fast octave version
