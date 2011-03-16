@@ -1,5 +1,7 @@
 #include "chain.h"
 
+#include "tfr/filter.h"
+
 #include "operationcache.h"
 
 namespace Signal {
@@ -98,7 +100,7 @@ void ChainHead::
 
     s->source( head_source() );
     pOperation new_head = s;
-    if (0 == dynamic_cast<Signal::OperationCache*>( s.get() ))
+    if (0 == dynamic_cast<Signal::OperationCache*>( s.get() ) && 0 != dynamic_cast<Tfr::Filter*>( s.get() ))
         new_head.reset( new OperationCacheLayer(s) );
 
     // Inject this operation in the middle

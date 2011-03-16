@@ -222,7 +222,7 @@ void MatlabController::
 void MatlabController::
         createOperation(MatlabOperationWidget* settings)
 {
-    Adapters::MatlabOperation* m = new Adapters::MatlabOperation(Signal::pOperation(), settings);
+    Adapters::MatlabOperation* m = new Adapters::MatlabOperation(project_->head->head_source(), settings);
     Signal::pOperation matlaboperation(m);
     settings->setParent(0);
     connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));

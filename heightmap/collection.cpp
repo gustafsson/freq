@@ -539,6 +539,23 @@ void Collection::
 
 
 void Collection::
+        discardOutside(Signal::Interval I)
+{
+    for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
+    {
+        Signal::Interval blockInterval = itr->second->ref.getInterval();
+        if ( (I & blockInterval).count() < blockInterval.count() )
+        {
+            _recent.remove(itr->second);
+            itr = _cache.erase(itr);
+        } else {
+            itr++;
+        }
+    }
+}
+
+
+void Collection::
         display_scale(Tfr::FreqAxis a)
 {
     if (_display_scale == a)
@@ -963,11 +980,14 @@ static pOperation
         OperationCache* c = dynamic_cast<OperationCache*>( itr.get() );
         if (c)
         {
-            if ((Intervals(I) - c->cached_samples()).empty())
+            if ((I - c->cached_samples()).empty())
             {
                 return itr;
             }
         }
+
+        if ( (I - itr->zeroed_samples_recursive()).empty() )
+            return itr;
 
         pOperation s = itr->source();
         if (!s)

@@ -147,12 +147,6 @@ public:
 
 
     /**
-      @see OperationSubOperations
-      */
-    virtual Signal::Intervals affected_samples_until(pOperation stop);
-
-
-    /**
       An implementation of Operation needs to overload this if the samples are
       moved in some way.
 
@@ -165,8 +159,8 @@ public:
 
       The default implementation returns the same interval.
 
-      translate_interval is used by Operation::zeroed_samples_recursive and
-      Operation::affected_samples_until and Operation::invalidate_samples.
+      translate_interval is used by Operation::zeroed_samples_recursive
+      and Operation::invalidate_samples.
 
       @see OperationRemoveSection, OperationInsertSilence, zeroed_samples
       */

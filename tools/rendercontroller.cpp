@@ -60,7 +60,8 @@ public:
         )
         :
             model_(model),
-            controller_(controller)
+            controller_(controller),
+            prevSignal( o->getInterval() )
     {
         BOOST_ASSERT( o );
         Operation::source(o);
@@ -122,12 +123,22 @@ public:
         {
             c->block_filter( Operation::source() );
         }
+
+        if (prevSignal != getInterval())
+        {
+            foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+            {
+                c->discardOutside( getInterval() );
+            }
+        }
     }
 
 
 private:
     RenderModel* model_;
     RenderController* controller_;
+
+    Signal::Interval prevSignal;
 };
 
 

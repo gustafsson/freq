@@ -240,6 +240,7 @@ public:
     unsigned    cacheCount();
     void        printCacheSize();
     void        gc();
+    void        discardOutside(Signal::Interval I);
 
 
     Tfr::FreqAxis display_scale() { return _display_scale; }

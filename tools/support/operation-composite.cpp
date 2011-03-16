@@ -28,8 +28,24 @@ OperationSubOperations::
 Intervals OperationSubOperations::
         affected_samples()
 {
-    return Operation::source()->affected_samples_until(source_sub_operation_);
+    Intervals I;
+    for (pOperation o = Operation::source(); o && o!=source_sub_operation_; o = o->source())
+        I |= o->affected_samples();
+
+    return I;
 }
+
+
+Intervals OperationSubOperations::
+        zeroed_samples()
+{
+    Intervals I;
+    for (pOperation o = Operation::source(); o && o!=source_sub_operation_; o = o->source())
+        I |= o->zeroed_samples();
+
+    return I;
+}
+
 
     // OperationContainer  /////////////////////////////////////////////////////////////////
 
@@ -53,6 +69,11 @@ OperationCrop::
 void OperationCrop::
         reset( const Signal::Interval& section )
 {
+    std::stringstream ss;
+    float fs = sample_rate();
+    ss << "Crop [" << section.first/fs << ", " << section.last/fs << ") s";
+    name_ = ss.str();
+
     Operation::source( source_sub_operation_ );
     // remove before section
     if (section.first)
@@ -94,9 +115,25 @@ OperationOtherSilent::
     reset(section);
 }
 
-void OperationOtherSilent::
-        reset( const Signal::Interval& section )
+
+OperationOtherSilent::
+        OperationOtherSilent( float fs, const Signal::Interval& section )
+:   OperationSubOperations( pOperation(), "Clear all but section" ),
+    section_(section)
 {
+    reset(section, fs);
+}
+
+void OperationOtherSilent::
+        reset( const Signal::Interval& section, float fs )
+{
+    if (0==fs)
+        fs = sample_rate();
+
+    std::stringstream ss;
+    ss << "Clear all but [" << section.first/fs << ", " << section.last/fs << ") s";
+    name_ = ss.str();
+
     section_ = section;
     pOperation p = source_sub_operation_;
     if (section.first)

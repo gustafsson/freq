@@ -51,10 +51,10 @@ void Project::
 {
     Tools::SelectionModel& m = tools().selection_model;
 
-    if (m.current_selection())
+    if (m.current_selection() && m.current_selection()!=s)
     {
         Signal::pOperation onselectionOnly(new Tools::Support::OperationOnSelection(
-                Signal::pOperation(),
+                head->head_source(),
                 m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ),
                 m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ),
                 s

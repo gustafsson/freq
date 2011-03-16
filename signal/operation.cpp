@@ -168,10 +168,10 @@ bool Operation::
 pOperation Operation::
         findParentOfSource(pOperation start, pOperation source)
 {
-    if (start->_source == source)
+    if (start->source() == source)
         return start;
-    if (start->_source)
-        return findParentOfSource(start->_source, source);
+    if (start->source())
+        return findParentOfSource(start->source(), source);
 
     return pOperation();
 }
@@ -189,8 +189,16 @@ Signal::Intervals Operation::
     Signal::Intervals still_zeros = was_zeros & new_zeros;
     invalid -= still_zeros;
 
-    invalid &= source1->affected_samples_until( source2 );
-    invalid &= source2->affected_samples_until( source1 );
+    Intervals affected_samples_until_source2;
+    for (pOperation o = source1; o && o!=source2; o = o->source())
+        affected_samples_until_source2 |= o->affected_samples();
+
+    Intervals affected_samples_until_source1;
+    for (pOperation o = source2; o && o!=source1; o = o->source())
+        affected_samples_until_source1 |= o->affected_samples();
+
+    invalid &= affected_samples_until_source2;
+    invalid &= affected_samples_until_source1;
 
     invalid |= source1->affected_samples();
     invalid |= source2->affected_samples();
@@ -233,20 +241,6 @@ std::string Operation::
         ss << p->parentsToString();
     }
     return ss.str();
-}
-
-
-Signal::Intervals Operation::
-        affected_samples_until(pOperation stop)
-{
-    Signal::Intervals I;
-    if (this!=stop.get())
-    {
-        I = affected_samples();
-        if (_source)
-            I |= translate_interval( _source->affected_samples_until( stop ) );
-    }
-    return I;
 }
 
 

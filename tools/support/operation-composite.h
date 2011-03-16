@@ -36,6 +36,7 @@ public:
         be overloaded.
     */
     virtual Signal::Intervals affected_samples();
+    virtual Signal::Intervals zeroed_samples();
 
     std::string name() { return name_; }
 
@@ -104,8 +105,9 @@ private:
 class OperationOtherSilent: public OperationSubOperations {
 public:
     OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
+    OperationOtherSilent( float fs, const Signal::Interval& section );
 
-    void reset( const Signal::Interval& section );
+    void reset( const Signal::Interval& section, float fs=0 );
 
     Signal::Interval section() { return section_; }
 private:

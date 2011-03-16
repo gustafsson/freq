@@ -264,10 +264,14 @@ namespace Tools
 
         // Create OperationRemoveSection to remove everything else from the stream
         Signal::pOperation remove(new Tools::Support::OperationCrop(
-                Signal::pOperation(), I.coveredInterval() ));
+                o, I.coveredInterval() ));
 
+        if (0 == dynamic_cast<Tools::Support::OperationOtherSilent*>(o.get()))
+        {
+            _model->set_current_selection( Signal::pOperation() );
+            _model->project()->appendOperation( o );
+        }
         _model->set_current_selection( Signal::pOperation() );
-        _model->project()->appendOperation( o );
         _model->project()->appendOperation( remove );
         _model->set_current_selection( o );
 

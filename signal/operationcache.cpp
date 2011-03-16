@@ -10,7 +10,11 @@ OperationCache::
     _cache()
 {
     if (source)
-        _cache.setNumChannels(source->num_channels());
+    {
+        unsigned N = source->num_channels();
+        _invalid_returns.resize( N );
+        _cache.setNumChannels( N );
+    }
 }
 
 
@@ -113,6 +117,8 @@ void OperationCache::
         invalidate_samples(const Intervals& I)
 {
     unsigned N = source() ? source()->num_channels() : num_channels();
+
+    BOOST_ASSERT( 1 <= N );
 
     _invalid_returns.resize( N );
     _cache.setNumChannels( N );

@@ -57,7 +57,7 @@ Signal::pOperation RectangleModel::
     else
     {
         filter.reset( new Tools::Support::OperationOtherSilent(
-                Signal::pOperation(), Signal::Interval( a_index, b_index) ));
+                FS, Signal::Interval( a_index, b_index) ));
     }
 
     return filter;
