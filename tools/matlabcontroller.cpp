@@ -111,19 +111,19 @@ void MatlabController::
     ::Ui::SaweMainWindow* main = project_->mainWindow();
     ::Ui::MainWindow* ui = main->getItems();
 
+    if (!scripts_)
+    {
+        scripts_ = new QMenu( "Matlab/Octave &scripts",  ui->menuWindows );
+        ui->menuWindows->insertMenu( ui->menuToolbars->menuAction(), scripts_ );
+    }
+    scripts_->clear();
+    scripts_->insertAction( 0, ui->actionMatlabOperation );
+
     QSettings state;
     state.beginGroup("MatlabOperation");
     if (!state.childGroups().empty())
     {
-        if (!scripts_)
-        {
-            scripts_ = new QMenu( "Matlab/Octave &scripts",  ui->menuWindows );
-            ui->menuWindows->insertMenu( ui->menuToolbars->menuAction(), scripts_ );
-        }
-        scripts_->clear();
-        scripts_->insertAction( 0, ui->actionMatlabOperation );
         scripts_->addSeparator();
-
 
         QStringList G = state.childGroups();
         G.sort();
