@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Tools::Selections::RectangleForm</class>
+ <widget class="QWidget" name="Tools::Selections::RectangleForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>516</width>
+    <height>379</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Selection</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="1">
+    <widget class="QDoubleSpinBox" name="spinBoxStartTime">
+     <property name="decimals">
+      <number>5</number>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QDoubleSpinBox" name="spinBoxStopTime">
+     <property name="decimals">
+      <number>5</number>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Time (s)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>Frequency (Hz)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QDoubleSpinBox" name="spinBoxStartFrequency">
+     <property name="decimals">
+      <number>4</number>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="2">
+    <widget class="QDoubleSpinBox" name="spinBoxStopFrequency">
+     <property name="decimals">
+      <number>4</number>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

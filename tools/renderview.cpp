@@ -808,6 +808,13 @@ Support::ToolSelector* RenderView::
 
 
 void RenderView::
+        emitTransformChanged()
+{
+    emit transformChanged();
+}
+
+
+void RenderView::
         userinput_update( bool request_high_fps )
 {
     if (request_high_fps)

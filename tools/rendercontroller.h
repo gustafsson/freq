@@ -27,9 +27,6 @@ namespace Tools
 
         RenderModel *model();
 
-    signals:
-        void transformChanged();
-
     public slots:
         // GUI bindings are set up in RenderController constructor
 
@@ -64,7 +61,7 @@ namespace Tools
         void receiveLogScale();
         void receiveCepstraScale();
 
-        void emitTransformChanged();
+        void transformChanged();
 
     private slots:
         void clearCachedHeightmap();

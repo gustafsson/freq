@@ -10,6 +10,8 @@
 namespace Tools { namespace Selections
 {
 
+class RectangleForm;
+
 class RectangleController: public QWidget
 {
     Q_OBJECT
@@ -39,6 +41,7 @@ private:
 
     // View
     RectangleView* view_;
+    QPointer<RectangleForm> rectangleForm_;
     RectangleModel* model() { return view_->model_; }
 
     // GUI

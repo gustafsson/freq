@@ -1,5 +1,6 @@
 #include "rectanglecontroller.h"
 #include "rectanglemodel.h"
+#include "rectangleform.h"
 
 // Sonic AWE
 #include "tools/selectioncontroller.h"
@@ -39,14 +40,16 @@ namespace Tools { namespace Selections
             ~RectangleController()
     {
         TaskTimer(__FUNCTION__).suppressTiming();
+
+        delete rectangleForm_.data();
     }
 
 
     void RectangleController::
             setupGui()
     {
-        Ui::SaweMainWindow* main = selection_controller_->model()->project()->mainWindow();
-        Ui::MainWindow* ui = main->getItems();
+        ::Ui::SaweMainWindow* main = selection_controller_->model()->project()->mainWindow();
+        ::Ui::MainWindow* ui = main->getItems();
 
         // Connect enabled/disable actions,
         // 'enableRectangleSelection' sets/unsets this as current tool when
@@ -65,12 +68,15 @@ namespace Tools { namespace Selections
         connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
         connect(selection_controller_->model(), SIGNAL(selectionChanged()), SLOT(selectionChanged()));
 
+        rectangleForm_ = new RectangleForm( this->model() );
+        connect(selection_controller_->render_view(), SIGNAL(transformChanged()), rectangleForm_.data(), SLOT(updateSelection()) );
+
         // Add the action as a combo box item in selection controller
         selection_controller_->addComboBoxAction( ui->actionRectangleSelection ) ;
         selection_controller_->addComboBoxAction( ui->actionTimeSelection ) ;
         selection_controller_->addComboBoxAction( ui->actionFrequencySelection ) ;
 
-        one_action_at_a_time_.reset( new Ui::ComboBoxAction() );
+        one_action_at_a_time_.reset( new ::Ui::ComboBoxAction() );
         one_action_at_a_time_->decheckable( false );
         one_action_at_a_time_->addActionItem( ui->actionRectangleSelection );
         one_action_at_a_time_->addActionItem( ui->actionTimeSelection );
@@ -93,7 +99,11 @@ namespace Tools { namespace Selections
                 selectionStart.time = -FLT_MAX;
             }
 
+            model()->a = selectionStart;
+            model()->b = selectionStart;
+
             model()->validate();
+            rectangleForm_->updateGui();
         }
 
         selection_controller_->render_view()->userinput_update();
@@ -133,6 +143,7 @@ namespace Tools { namespace Selections
             }
 
             model()->validate();
+            rectangleForm_->updateGui();
         }
 
         selection_controller_->render_view()->userinput_update();
@@ -199,7 +210,12 @@ namespace Tools { namespace Selections
     {
         Signal::pOperation o = selection_controller_->model()->current_selection();
         if (o)
-            model()->tryFilter( o );
+        {
+            if (model()->tryFilter( o ))
+            {
+                rectangleForm_->updateGui();
+            }
+        }
     }
 
 }} // namespace Tools::Selections

@@ -19,7 +19,7 @@ class TransformInfoForm : public QWidget
     Q_OBJECT
 
 public:
-    TransformInfoForm(Sawe::Project* project, RenderController* rendercontroller);
+    TransformInfoForm(Sawe::Project* project, RenderView* renderview);
     virtual ~TransformInfoForm();
 
 public slots:
@@ -30,7 +30,7 @@ private:
     Ui::TransformInfoForm *ui;
     QAbstractTableModel *model;
     Sawe::Project* project;
-    RenderController* rendercontroller;
+    RenderView* renderview;
 
     QDockWidget* dock;
 

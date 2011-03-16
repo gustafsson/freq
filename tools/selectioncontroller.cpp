@@ -117,7 +117,7 @@ namespace Tools
         ellipse_view_.reset( new Selections::EllipseView(        ellipse_model_.data() ));
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 
-        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model->display_scale(), render_view()->model->project() ));
+        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, render_view()->model->project() ));
         rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data(), &render_view()->model->project()->worker ));
         rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
 

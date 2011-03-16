@@ -2,6 +2,7 @@
 #include "filters/rectangle.h"
 #include "tools/support/operation-composite.h"
 #include "sawe/project.h"
+#include "tools/rendermodel.h"
 
 #ifdef max
 #undef max
@@ -12,9 +13,9 @@ namespace Tools { namespace Selections
 {
 
 RectangleModel::
-        RectangleModel( Tfr::FreqAxis const& fa, Sawe::Project* project )
+        RectangleModel( RenderModel* rendermodel, Sawe::Project* project )
             :
-            fa_(fa),
+            rendermodel_(rendermodel),
             project_(project)
 {
     // no selection
@@ -36,8 +37,8 @@ Signal::pOperation RectangleModel::
     validate();
 
     float
-            f1 = fa_.getFrequency( a.scale ),
-            f2 = fa_.getFrequency( b.scale );
+            f1 = freqAxis().getFrequency( a.scale ),
+            f2 = freqAxis().getFrequency( b.scale );
 
     float FS = project_->head->head_source()->sample_rate();
     Signal::IntervalType
@@ -63,7 +64,7 @@ Signal::pOperation RectangleModel::
 }
 
 
-void RectangleModel::
+bool RectangleModel::
         tryFilter(Signal::pOperation filter)
 {
     Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(filter.get());
@@ -73,8 +74,9 @@ void RectangleModel::
     {
         a.time = e->_t1;
         b.time = e->_t2;
-        a.scale = fa_.getFrequencyScalar( e->_f1 );
-        b.scale = fa_.getFrequencyScalar( e->_f2 );
+        a.scale = freqAxis().getFrequencyScalar( e->_f1 );
+        b.scale = freqAxis().getFrequencyScalar( e->_f2 );
+        return true;
     }
     else if(os)
     {
@@ -83,11 +85,13 @@ void RectangleModel::
         b.time = section.last/FS;
         a.scale = 0;
         b.scale = 1;
+        return true;
     }
     else
     {
         b.time = a.time;
         b.scale = a.scale;
+        return false;
     }
 }
 
@@ -96,6 +100,7 @@ void RectangleModel::
 void RectangleModel::
         validate()
 {
+    float L = project_->head->head_source()->length();
     switch (type)
     {
     case RectangleType_RectangleSelection:
@@ -103,7 +108,7 @@ void RectangleModel::
 
     case RectangleType_FrequencySelection:
         a.time = 0;
-        b.time = project_->head->head_source()->length();
+        b.time = L;
         break;
 
     case RectangleType_TimeSelection:
@@ -122,6 +127,22 @@ void RectangleModel::
     b.time = std::max( t1, t2 );
     a.scale = std::min( f1, f2 );
     b.scale = std::max( f1, f2 );
+
+    if (a.time<0) a.time = 0;
+    if (b.time<0) b.time = 0;
+    if (a.time>L) a.time = L;
+    if (b.time>L) b.time = L;
+    if (a.scale<0) a.scale = 0;
+    if (b.scale<0) b.scale = 0;
+    if (a.scale>1) a.scale = 1;
+    if (b.scale>1) b.scale = 1;
+}
+
+
+Tfr::FreqAxis RectangleModel::
+        freqAxis()
+{
+    return rendermodel_->display_scale();
 }
 
 

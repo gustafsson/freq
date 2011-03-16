@@ -236,7 +236,7 @@ void RenderController::
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
 
     view->userinput_update();
-    emit transformChanged();
+    view->emitTransformChanged();
 }
 
 
@@ -247,7 +247,7 @@ void RenderController::
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
 
-    // Keep in sync with emitTransformChanged()
+    // Keep in sync with transformChanged()
     //float f = value / 50.f - 1.f;
     //c.scales_per_octave( 20.f * exp( 4*f ) );
     float f = value / (float)tf_resolution->maximum();
@@ -263,7 +263,7 @@ void RenderController::
     // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
 
-    emit transformChanged();
+    view->emitTransformChanged();
 }
 
 
@@ -284,7 +284,7 @@ Signal::PostSink* RenderController::
     // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
 
-    emit transformChanged();
+    view->emitTransformChanged();
 
     return ps;
 }
@@ -445,7 +445,7 @@ RenderModel *RenderController::
 
 
 void RenderController::
-        emitTransformChanged()
+        transformChanged()
 {
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
 
@@ -454,7 +454,6 @@ void RenderController::
     int value = f * tf_resolution->maximum() + .5;
 
     this->tf_resolution->setValue( value );
-    emit transformChanged();
 }
 
 
@@ -602,13 +601,12 @@ void RenderController::
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
     }
 
-    connect(this, SIGNAL(transformChanged()), SLOT(updateFreqAxis()));
-    connect(this, SIGNAL(transformChanged()), SLOT(updateChannels()));
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()));
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateChannels()));
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
-    connect(view, SIGNAL(transformChanged()), SLOT(emitTransformChanged()));
 
     // Create the OpenGL rendering context early. Because we want to create the
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
@@ -626,7 +624,7 @@ void RenderController::
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
 
-    emitTransformChanged();
+    view->emitTransformChanged();
 }
 
 

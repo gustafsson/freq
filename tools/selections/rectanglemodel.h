@@ -9,6 +9,8 @@ namespace Sawe {
     class Project;
 }
 
+namespace Tools { class RenderModel; }
+
 namespace Tools { namespace Selections
 {
     class RectangleModel
@@ -21,19 +23,22 @@ namespace Tools { namespace Selections
             RectangleType_TimeSelection
         };
 
-        RectangleModel( Tfr::FreqAxis const& fa, Sawe::Project* p );
+        RectangleModel( RenderModel* rendermodel, Sawe::Project* p );
         ~RectangleModel();
 
         Signal::pOperation updateFilter();
-        void tryFilter(Signal::pOperation o);
+        bool tryFilter(Signal::pOperation o);
 
         Heightmap::Position a, b;
         RectangleType type;
 
         void validate();
+        Tfr::FreqAxis freqAxis();
+        Sawe::Project* project() { return project_; }
+
     private:
         void createFilter();
-        Tfr::FreqAxis fa_;
+        RenderModel* rendermodel_;
         Sawe::Project* project_;
     };
 } } // namespace Tools::Selections
