@@ -277,10 +277,13 @@ void MatlabOperationWidget::
 
         operation->restart();
 
-        if (operation->name().empty())
-            octaveWindow->setWindowTitle( "Octave window" );
-        else
-            octaveWindow->setWindowTitle( QFileInfo(operation->name().c_str()).fileName() );
+        if (octaveWindow)
+        {
+            if (operation->name().empty())
+                octaveWindow->setWindowTitle( "Octave window" );
+            else
+                octaveWindow->setWindowTitle( QFileInfo(operation->name().c_str()).fileName() );
+        }
 
         if (text)
         {
