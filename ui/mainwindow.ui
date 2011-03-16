@@ -207,11 +207,11 @@
    <addaction name="actionPlayEntireSound"/>
    <addaction name="actionStopPlayBack"/>
    <addaction name="actionJumpBackward"/>
+   <addaction name="actionSetPlayMarker"/>
    <addaction name="actionJumpForward"/>
    <addaction name="actionRecord"/>
    <addaction name="separator"/>
    <addaction name="actionFollowPlayMarker"/>
-   <addaction name="actionSetPlayMarker"/>
   </widget>
   <widget class="Tools::Support::ToolBar" name="toolBarOperation">
    <property name="enabled">
