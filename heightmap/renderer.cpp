@@ -267,8 +267,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    setSize( collection->samples_per_block(), collection->scales_per_block() );
-    //setSize( collection->samples_per_block()/8, collection->scales_per_block()/2 );
+    //setSize( collection->samples_per_block(), collection->scales_per_block() );
+    setSize( collection->samples_per_block()/16, collection->scales_per_block() );
 
     //setSize(2,2);
 
