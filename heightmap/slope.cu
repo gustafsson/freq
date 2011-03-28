@@ -61,7 +61,7 @@ void cudaCalculateSlopeKernel(  cudaPitchedPtrType<float> heightmapIn,
                                make_float4(0,0,1,1),
                                make_float4(0,0,1,1),
                                false,
-                               SlopeFetcher( 10/xscale, 1/yscale, make_uint2( sz_input.x, sz_input.y) ),
+                               SlopeFetcher( 1000, 1000, make_uint2( sz_input.x, sz_input.y) ),
                                AssignOperator<float2>() );
 }
 
