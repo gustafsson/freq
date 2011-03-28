@@ -7,6 +7,7 @@
 // gpumisc
 #include <demangle.h>
 #include <CudaException.h>
+#include <gpucpudatacollection.h>
 
 // std
 #include <sstream>
@@ -199,6 +200,7 @@ void Application::
              total/1024.f/1024, free/1024.f/1024);
 
     emit clearCachesSignal();
+    GpuCpuDataCollection::moveAllDataToCpuMemory();
 
     TaskInfo("Reset CWT");
     Tfr::Cwt::Singleton().resetSingleton();
