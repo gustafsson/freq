@@ -137,29 +137,62 @@ bool Reference::
             a.scale <= p.scale && p.scale <= b.scale;
 }
 
+
 bool Reference::
-        containsSpectrogram() const
+        boundsCheck(BoundsCheck c) const
 {
     Position a, b;
     getArea( a, b );
 
-    if (b.time-a.time < _collection->min_sample_size().time*_collection->samples_per_block() )
-        return false;
-    //float msss = _collection->min_sample_size().scale;
-    //unsigned spb = _collection->_scales_per_block;
-    //float ms = msss*spb;
-    if (b.scale-a.scale < _collection->min_sample_size().scale*_collection->scales_per_block() )
-        return false;
+    float FS = _collection->target->sample_rate();
+    const Tfr::FreqAxis& cfa = _collection->display_scale();
+    float ahz = cfa.getFrequency(a.scale);
+    float bhz = cfa.getFrequency(b.scale);
 
-    float length = _collection->target->length();
-    if (a.time >= length )
-        return false;
+    if (c & BoundsCheck_HighS)
+    {
+        float scaledelta = (b.scale-a.scale)/_collection->scales_per_block();
+        float a2hz = cfa.getFrequency(a.scale + scaledelta);
+        float b2hz = cfa.getFrequency(b.scale - scaledelta);
 
-    if (a.scale >= 1)
-        return false;
+        const Tfr::FreqAxis& tfa = _collection->transform()->freqAxis(FS);
+        float scalara = tfa.getFrequencyScalar(ahz);
+        float scalarb = tfa.getFrequencyScalar(bhz);
+        float scalara2 = tfa.getFrequencyScalar(a2hz);
+        float scalarb2 = tfa.getFrequencyScalar(b2hz);
+
+        if (fabsf(scalara2 - scalara) < 0.5f && fabsf(scalarb2 - scalarb) < 0.5f )
+            return false;
+    }
+
+    if (c & BoundsCheck_HighT)
+    {
+        float atres = _collection->transform()->displayedTimeResolution(FS, ahz);
+        float btres = _collection->transform()->displayedTimeResolution(FS, bhz);
+        float tdelta = (b.time-a.time)/_collection->samples_per_block();
+        if (btres > tdelta && atres > tdelta)
+            return false;
+    }
+
+    if (c & BoundsCheck_OutT)
+    {
+        float length = _collection->target->length();
+        if (a.time >= length )
+            return false;
+    }
+
+    if (c & BoundsCheck_OutS)
+    {
+        if (a.scale >= 1)
+            return false;
+
+        if (b.scale > 1)
+            return false;
+    }
 
     return true;
 }
+
 
 bool Reference::
         tooLarge() const

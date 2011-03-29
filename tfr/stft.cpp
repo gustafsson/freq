@@ -215,6 +215,13 @@ FreqAxis Fft::
 }
 
 
+float Fft::
+        displayedTimeResolution( float FS, float /*hz*/ )
+{
+    return 1/FS;
+}
+
+
 Signal::pBuffer Fft::
         backward( pChunk chunk)
 {
@@ -592,6 +599,13 @@ FreqAxis Stft::
     FreqAxis fa;
     fa.setLinear( FS, _window_size/2 );
     return fa;
+}
+
+
+float Stft::
+        displayedTimeResolution( float FS, float /*hz*/ )
+{
+    return FS/_window_size;
 }
 
 

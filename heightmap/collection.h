@@ -10,6 +10,7 @@
 #include "signal/intervals.h"
 #include "signal/operation.h"
 #include "tfr/chunk.h"
+#include "tfr/transform.h"
 
 // boost
 #include <boost/unordered_map.hpp>
@@ -108,6 +109,8 @@ public:
 #endif
     {}
 
+    ~Block();
+
     // TODO move this value to a complementary class
     unsigned frame_number_last_used;
 
@@ -195,10 +198,9 @@ public:
 
 
     /**
-      Returns a Reference for a block containing 'p' in which a block element
-      is as big as possible yet smaller than or equal to 'sampleSize'.
+      Returns a Reference for a block containing the entire heightmap.
       */
-    Reference   findReference( Position p, Position sampleSize );
+    Reference   entireHeightmap();
 
 
     /**
@@ -221,19 +223,16 @@ public:
 
 
     /**
-      As the transform is of finite length and finite sample rate there is a
-      smallest and a largest sample size that is meaningful for the heightmap
-      to render.
-      */
-    Position min_sample_size() { return _min_sample_size; }
-    Position max_sample_size() { return _max_sample_size; }
-
-
-    /**
       Notify the Collection what filter that is currently creating blocks.
       */
     void block_filter(Signal::pOperation filter) { _filter = filter; }
     Signal::pOperation block_filter() { return _filter; }
+
+
+    /**
+      Extract the transform from the current filter.
+      */
+    Tfr::pTransform transform();
 
 
     unsigned long cacheByteSize();
@@ -245,13 +244,6 @@ public:
 
     Tfr::FreqAxis display_scale() { return _display_scale; }
     void display_scale(Tfr::FreqAxis a);
-
-
-    /**
-      Given a chunk and this->target, compute how small and big
-      samples that are meanginful to display.
-      */
-    void        update_sample_size( Tfr::Chunk* inChunk );
 
 
     Signal::pOperation target;
@@ -273,7 +265,6 @@ private:
 
 
     Position
-            _min_sample_size,
             _max_sample_size;
 
     Signal::pOperation _filter;

@@ -39,6 +39,7 @@ public:
 
     virtual Signal::pBuffer inverse( pChunk );
     virtual FreqAxis freqAxis( float FS );
+    virtual float displayedTimeResolution( float FS, float hz );
 
     float     get_min_hz(float fs) const;
     float     wanted_min_hz() const;

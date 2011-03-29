@@ -126,9 +126,10 @@ public:
 
         if (prevSignal != getInterval())
         {
+            Signal::Interval I = getInterval();
             foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
             {
-                c->discardOutside( getInterval() );
+                c->discardOutside( I );
             }
         }
     }

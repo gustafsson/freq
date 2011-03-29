@@ -28,7 +28,7 @@
 //#define VERBOSE_EACH_FRAME_COLLECTION
 #define VERBOSE_EACH_FRAME_COLLECTION if(0)
 
-// #define TIME_GETBLOCK
+//#define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
 
 // Don't keep more than this times the number of blocks currently needed
@@ -39,6 +39,15 @@
 using namespace Signal;
 
 namespace Heightmap {
+
+
+///// HEIGHTMAP::BLOCK
+
+Block::
+        ~Block()
+{
+    //TaskInfo("Deleting block %s", ref.toString().c_str());
+}
 
 
 ///// HEIGHTMAP::COLLECTION
@@ -52,23 +61,11 @@ Collection::
     _created_count(0),
     _frame_counter(0)
 {
-        BOOST_ASSERT( target );
+    BOOST_ASSERT( target );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
-    // Updated as soon as the first chunk is received
-    update_sample_size( 0 );
-
-//    _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
-    _display_scale.axis_scale = Tfr::AxisScale_Linear;
-    _display_scale.max_frequency_scalar = 1;
-    float fs = target->sample_rate();
-    float minhz = Tfr::Cwt::Singleton().get_min_hz(fs);
-    float maxhz = Tfr::Cwt::Singleton().get_max_hz(fs);
-    _display_scale.min_hz = minhz;
-    //_display_scale.log2f_step = log2(maxhz) - log2(minhz);
-    _display_scale.min_hz = 0;
-    _display_scale.f_step = maxhz - minhz;
+    _display_scale.setLinear(target->sample_rate());
 }
 
 
@@ -123,6 +120,7 @@ void Collection::
 	QMutexLocker l(&_cache_mutex);
 #endif
     _scales_per_block=v;
+    _max_sample_size.scale = 1.f/_scales_per_block;
 }
 
 
@@ -237,121 +235,12 @@ Signal::Intervals Collection::
 }
 
 
-void Collection::
-        update_sample_size( Tfr::Chunk* chunk )
-{
-    if (chunk)
-    {
-        //_display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
-        //_display_scale.max_frequency_scalar = 1;
-        //_display_scale.f_min = chunk->min_hz;
-        //_display_scale.log2f_step = log2(chunk->max_hz) - log2(chunk->min_hz);
-
-
-        _min_sample_size.time = std::min( _min_sample_size.time, 0.25f / chunk->sample_rate );
-        _min_sample_size.time = std::min( _min_sample_size.time, 0.25f / chunk->original_sample_rate );
-        //TaskInfo("_min_sample_size.time = %g", _min_sample_size.time);
-
-        if (chunk->transform_data)
-        {
-            Tfr::FreqAxis fx = chunk->freqAxis;
-            unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
-            _min_sample_size.scale = std::min(
-                    _min_sample_size.scale,
-                    (1 - _display_scale.getFrequencyScalar( fx.getFrequency( top_index )))*0.01f);
-
-            // Old naive one:
-            //_min_sample_size.scale = std::min(
-            //        _min_sample_size.scale,
-            //        1.f/Tfr::Cwt::Singleton().nScales( chunk->sample_rate ) );
-        }
-    }
-    else
-    {
-        _min_sample_size.time = 1.f/_samples_per_block;
-        _min_sample_size.scale = 1.f/_scales_per_block;
-        // Allow for some bicubic mesh interpolation when zooming in
-        _min_sample_size.scale *= 0.25f;
-        _min_sample_size.time *= 0.25f;
-    }
-
-    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*target->length()/_samples_per_block);
-    _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
-}
-
-
-/*
-  Canonical implementation of findReference
-
-Reference Collection::findReferenceCanonical( Position p, Position sampleSize )
-{
-    // doesn't ASSERT(r.containsSpectrogram() && !r.toLarge())
-    Reference r(this);
-
-    if (p.time < 0) p.time=0;
-    if (p.scale < 0) p.scale=0;
-
-    r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
-    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
-                                        p.scale / _scales_per_block * pow(2, -r.log2_samples_size[1]));
-
-    return r;
-}*/
-
 Reference Collection::
-        findReference( Position p, Position sampleSize )
+        entireHeightmap()
 {
     Reference r(this);
-
-    // make sure the reference becomes valid
-    float length = target->length();
-
-    // Validate requested sampleSize
-    sampleSize.time = fabs(sampleSize.time);
-    sampleSize.scale = fabs(sampleSize.scale);
-
-    Position minSampleSize = _min_sample_size;
-    Position maxSampleSize = _max_sample_size;
-    if (sampleSize.time > maxSampleSize.time)
-        sampleSize.time = maxSampleSize.time;
-    if (sampleSize.scale > maxSampleSize.scale)
-        sampleSize.scale = maxSampleSize.scale;
-    if (sampleSize.time < minSampleSize.time)
-        sampleSize.time = minSampleSize.time;
-    if (sampleSize.scale < minSampleSize.scale)
-        sampleSize.scale = minSampleSize.scale;
-
-    // Validate requested poistion
-    if (p.time < 0) p.time=0;
-    if (p.time > length) p.time=length;
-    if (p.scale < 0) p.scale=0;
-    if (p.scale > 1) p.scale=1;
-
-    // Compute sample size
-    r.log2_samples_size = tvector<2,int>( floor_log2( sampleSize.time ), floor_log2( sampleSize.scale ));
+    r.log2_samples_size = tvector<2,int>( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
     r.block_index = tvector<2,unsigned>(0,0);
-    //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
-
-    // Validate sample size
-    Position a,b; r.getArea(a,b);
-    if (b.time < minSampleSize.time*_samples_per_block )                r.log2_samples_size[0]++;
-    if (b.scale < minSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]++;
-    if (b.time > maxSampleSize.time*_samples_per_block && 0<length )    r.log2_samples_size[0]--;
-    if (b.scale > maxSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]--;
-    //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
-
-    // Compute chunk index
-    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * ldexpf(1.f, -r.log2_samples_size[0]),
-                                        p.scale / _scales_per_block * ldexpf(1.f, -r.log2_samples_size[1]));
-
-    // Validate chunk index
-    r.getArea(a,b);
-    if (a.time >= length && 0<length)   r.block_index[0]--;
-    if (a.scale == 1)                   r.block_index[1]--;
-
-    // Test result
-    // ASSERT(r.containsSpectrogram() && !r.toLarge());
-
     return r;
 }
 
@@ -379,6 +268,10 @@ pBlock Collection::
         {
             block = createBlock( ref );
             _created_count++;
+        }
+        else
+        {
+            TaskInfo("Delaying creation of block %s", ref.toString().c_str());
         }
     } else {
 			#ifndef SAWE_NO_MUTEX
@@ -466,6 +359,16 @@ std::vector<pBlock> Collection::
 }
 
 
+Tfr::pTransform Collection::
+        transform()
+{
+    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
+    if (filter)
+        return filter->transform();
+    return Tfr::pTransform();
+}
+
+
 unsigned long Collection::
         cacheByteSize()
 {
@@ -544,7 +447,7 @@ void Collection::
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
         Signal::Interval blockInterval = itr->second->ref.getInterval();
-        if ( (I & blockInterval).count() < blockInterval.count() )
+        if ( 0 == (I & blockInterval).count() )
         {
             _recent.remove(itr->second);
             itr = _cache.erase(itr);

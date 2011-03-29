@@ -28,7 +28,17 @@ public:
     unsigned frequency_resolution() const;
 
     bool containsPoint(Position p) const;
-    bool containsSpectrogram() const;
+    enum BoundsCheck
+    {
+        BoundsCheck_HighS = 1,
+        BoundsCheck_HighT = 2,
+        BoundsCheck_OutS = 4,
+        BoundsCheck_OutT = 8,
+        BoundsCheck_All = 15
+    };
+
+    // returns false if the given BoundsCheck is out of bounds
+    bool boundsCheck(BoundsCheck) const;
     bool tooLarge() const;
     std::string toString() const;
 

@@ -44,14 +44,7 @@ public:
       At what time resolution (1/sample rate) it is meaningful to display the
       computed Chunks.
       */
-    virtual float displayedTimeResolution() { return 1/44100.f; }
-
-
-    /**
-      At what frequency resolution (smallest f(i+1)/f(i)) it is meaningful to
-      display the computed Chunks.
-      */
-    virtual float displayedFrequencyResolution() { return 1.01f; }
+    virtual float displayedTimeResolution( float FS, float hz ) = 0;
 
 
     /**

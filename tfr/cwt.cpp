@@ -368,6 +368,13 @@ FreqAxis Cwt::
 }
 
 
+float Cwt::
+        displayedTimeResolution( float FS, float hz )
+{
+    return morlet_sigma_samples(FS, hz) / FS;
+}
+
+
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {

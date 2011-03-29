@@ -79,10 +79,6 @@ public:
 
     void applyFilter( Tfr::pChunk pchunk )
     {
-        // Not necessary to do every chunk, but it doesn't cost much.
-        // Most of 'update_sample_size' is only needed the very first chunk,
-        // and '_max_sample_size.time' is updated in 'invalidate_samples'.
-        _collection->update_sample_size(pchunk.get());
         BlockFilter::applyFilter( pchunk );
     }
 

@@ -56,6 +56,13 @@ FreqAxis Cepstrum::
 }
 
 
+float Cepstrum::
+        displayedTimeResolution( float FS, float /*hz*/ )
+{
+    return FS/chunk_size();
+}
+
+
 Signal::pBuffer Cepstrum::
         inverse( pChunk )
 {

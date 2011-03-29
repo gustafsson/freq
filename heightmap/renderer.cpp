@@ -353,8 +353,8 @@ void Renderer::createColorTexture(unsigned N) {
 Reference Renderer::
         findRefAtCurrentZoomLevel( Heightmap::Position p )
 {
-    Position max_ss = collection->max_sample_size();
-    Reference ref = collection->findReference(Position(0, 0), max_ss);
+    //Position max_ss = collection->max_sample_size();
+    Reference ref = collection->entireHeightmap();
 
     // The first 'ref' will be a super-ref containing all other refs, thus
     // containing 'p' too. This while-loop zooms in on a ref containing
@@ -419,8 +419,9 @@ void Renderer::draw( float scaley )
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
-    Position mss = collection->max_sample_size();
-    Reference ref = collection->findReference(Position(0,0), mss);
+    //Position mss = collection->max_sample_size();
+    //Reference ref = collection->findReference(Position(0,0), mss);
+    Reference ref = collection->entireHeightmap();
 
     glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
     glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
@@ -430,7 +431,8 @@ void Renderer::draw( float scaley )
 
     beginVboRendering();
 
-    renderChildrenSpectrogramRef(ref);
+    if (!renderChildrenSpectrogramRef(ref))
+        renderSpectrogramRef( ref );
 
     endVboRendering();
 
@@ -592,10 +594,10 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     else
         needBetterT = timePixels / (_redundancy*collection->samples_per_block());
 
-    if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() )
+    if ( needBetterF > needBetterT && needBetterF > 1 && (ref.top().boundsCheck(Reference::BoundsCheck_HighS) || ref.bottom().boundsCheck(Reference::BoundsCheck_HighS)) )
         return Lod_NeedBetterF;
 
-    else if ( needBetterT > 1 && ref.left().containsSpectrogram() )
+    else if ( needBetterT > 1 && ref.left().boundsCheck(Reference::BoundsCheck_HighT) )
         return Lod_NeedBetterT;
 
     else
@@ -606,9 +608,6 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     TIME_RENDERER_BLOCKS TaskTimer tt("%s", ref.toString().c_str());
 
-    if (!ref.containsSpectrogram())
-        return false;
-
     LevelOfDetal lod = testLod( ref );
     switch(lod) {
     case Lod_NeedBetterF:
@@ -617,7 +616,8 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
-        renderChildrenSpectrogramRef( ref.right() );
+        if (ref.right().boundsCheck(Reference::BoundsCheck_OutT))
+            renderChildrenSpectrogramRef( ref.right() );
         break;
     case Lod_Ok:
         renderSpectrogramRef( ref );
