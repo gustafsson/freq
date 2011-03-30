@@ -142,6 +142,9 @@ void SaweMainWindow::
             }
 
             i++;
+#ifdef _WIN32
+            display.replace("/", "\\");
+#endif
             display = QString("%1%2. %3").arg(i<10?"&":"").arg(i).arg(display);
 
             QAction * a = new QAction(display, this);

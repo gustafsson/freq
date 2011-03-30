@@ -18,6 +18,7 @@
 #include <QRegExp>
 #include <QDateTime>
 #include <QSettings>
+#include <QErrorMessage>
 
 namespace Tools {
 
@@ -224,9 +225,9 @@ void MatlabController::
 {
     Adapters::MatlabOperation* m = new Adapters::MatlabOperation(project_->head->head_source(), settings);
     Signal::pOperation matlaboperation(m);
-    if (settings->hasProcess())
+    if (!settings->hasProcess())
     {
-        QMessageBox::information(0, "Failed", "Couldn't start neither Octave nor Matlab, make sure that the installation folder is added to your path");
+        QErrorMessage::qtHandler()->showMessage("Couldn't start neither Octave nor Matlab, make sure that the installation folder is added to your path");
         return;
     }
 

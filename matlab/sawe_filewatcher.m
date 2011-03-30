@@ -11,13 +11,17 @@
 function C=sawe_filewatcher(datafile, func, arguments, dt)
 
 if nargin<2
-  error("syntax: filewatcher(datafile, function, arguments, dt). 'arguments' defaults to [], 'dt' defaults to 0.05")
+  error('syntax: filewatcher(datafile, function, arguments, dt). ''arguments'' defaults to [], ''dt'' defaults to 0.05')
 end
 if nargin<3
   arguments=[];
 end
 if nargin<4
   dt=0.05;
+end
+
+if 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
+    disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
 end
 
 global sawe_plot_data; %matrix for all lines to be plotted.
@@ -64,8 +68,12 @@ while 1
             data.(n{k}) = v(1);
         end
     end
-    
-    data = func(data, arguments);
+
+    if 1 == nargin(func2str(func))
+        data = func(data);
+    else
+        data = func(data, arguments);
+    end
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')

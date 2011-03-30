@@ -25,6 +25,9 @@
 
 #include <QProcess>
 #include <QFileInfo>
+#include <QApplication>
+#include <QErrorMessage>
+#include <QDir>
 
 using namespace std;
 using namespace Signal;
@@ -35,6 +38,33 @@ using namespace boost::posix_time;
 #define TIME_MatlabFunction if(0)
 
 namespace Adapters {
+
+bool startProcess(QProcess* pid, const QString& name, const QStringList& args)
+{
+    TaskInfo ti("Trying: ");
+    ti.tt().getStream() << "\"" << name.toStdString() << "\" ";
+    foreach (QString a, args)
+        ti.tt().getStream() << "\"" << a.toStdString() << "\" ";
+    ti.tt().flushStream();
+
+    pid->start(name, args);
+    pid->waitForStarted();
+    if (pid->state() == QProcess::Running)
+        return true;
+    return false;
+}
+
+
+bool startProcess(QProcess* pid, const QStringList& names, const QStringList& args)
+{
+    foreach( QString name, names)
+    {
+        if (startProcess(pid, name, args))
+            return true;
+    }
+    return false;
+}
+
 
 MatlabFunction::
         MatlabFunction( std::string f, float timeout, MatlabFunctionSettings* settings )
@@ -56,10 +86,26 @@ MatlabFunction::
 
     { // Start matlab/octave
         stringstream matlab_command, octave_command;
-        matlab_command
-                << "addpath('/usr/share/sonicawe');";
-        octave_command
-                << "addpath('/usr/share/sonicawe');";
+        std::string matlabpath = QApplication::applicationDirPath().replace("\\", "\\\\").replace("\'", "\\'" ).toStdString() + "/matlab";
+
+        if (QDir(matlabpath.c_str()).exists())
+        {
+            matlab_command
+                    << "addpath('" << matlabpath << "');";
+            octave_command
+                    << "addpath('" << matlabpath << "');";
+        }
+        else if (QDir("matlab").exists())
+        {
+            matlab_command
+                    << "addpath('matlab');";
+            octave_command
+                    << "addpath('matlab');";
+        }
+        else
+        {
+            QErrorMessage::qtHandler()->showMessage("Couldn't locate required Sonic AWE scripts");
+        }
 
         if (f.empty())
         {
@@ -91,7 +137,10 @@ MatlabFunction::
         }
 
         QStringList matlab_args;
-        // "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash"
+        //matlab_args.push_back("-noFigureWindows");
+        //matlab_args.push_back("-nojvm");
+        matlab_args.push_back("-nodesktop");
+        //matlab_args.push_back("-nosplash");
         QStringList octave_args;
         octave_args.push_back("-qf");
 
@@ -112,19 +161,43 @@ MatlabFunction::
         _pid->setProcessChannelMode( QProcess::MergedChannels );
         if (settings) settings->setProcess( _pid );
 
-        /*_pid->start("matlab", matlab_args);
-        _pid->waitForStarted();
-        if (_pid->state() == QProcess::Running)
-            return;
+        if (!f.empty())
+        {
+            if (startProcess(_pid, "matlab", matlab_args))
+                return;
 
-        TaskInfo("Couldn't start MATLAB, trying Octave instead");*/
+            TaskInfo("Couldn't start MATLAB, trying Octave instead");
+        }
 
-        _pid->start("octave", octave_args);
-        _pid->waitForStarted();
-        if (_pid->state() == QProcess::Running)
+        QStringList octave_names;
+        octave_names.push_back("octave-3.2.3");
+        octave_names.push_back("octave");
+        if (startProcess(_pid, octave_names, octave_args))
             return;
 
         TaskInfo("Couldn't start Octave");
+
+        if (!f.empty())
+        {
+            TaskInfo("Trying common installation paths for MATLAB instead");
+            QStringList matlab_paths;
+            matlab_paths.push_back("C:\\Program Files\\MATLAB\\R2008b\\bin\\matlab.exe");
+            matlab_paths.push_back("C:\\Program Files (x86)\\MATLAB\\R2008b\\bin\\matlab.exe");
+            if (startProcess(_pid, matlab_paths, matlab_args))
+                return;
+
+            TaskInfo("Couldn't start Matlab");
+        }
+
+        TaskInfo("Trying common installation paths for Octave instead");
+
+        QStringList octave_paths;
+        octave_paths.push_back("C:\\Octave\\3.2.3_gcc-4.4.0\\bin\\octave-3.2.3.exe");
+        if (startProcess(_pid, octave_paths, octave_args))
+            return;
+
+        TaskInfo("Couldn't find Matlab nor Octave");
+
         delete _pid;
         _pid = 0;
         /*
@@ -240,10 +313,10 @@ void MatlabFunction::
     if (!_pid)
         return;
 
-    if (!hasProcessEnded())
-        _pid->kill();  // send SIGKILL
-    else
-        _pid->terminate(); // send platform specific "please close message"
+    //if (!hasProcessEnded())
+    _pid->kill();  // send SIGKILL
+    //else
+    //    _pid->terminate(); // send platform specific "please close message"
 
     delete _pid;
     _pid = 0;
