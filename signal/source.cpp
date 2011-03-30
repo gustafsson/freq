@@ -73,10 +73,10 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
         break;
     }
 
-    waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( subinterval.count(), 1, 1) );
+    waveform_data_ = new GpuCpuData<float>(0, make_uint3( subinterval.count(), 1, 1) );
     bitor_channel_ = channel;
-    *this |= *other;
-    other.reset();
+    *this |= *other_;
+    other_.reset();
 }
 
 
@@ -163,7 +163,10 @@ Buffer& Buffer::
     read += offs_read;
 
     cudaMemcpyKind kind = (cudaMemcpyKind)(1*toGpu | 2*fromGpu);
-    cudaMemcpy(write, read, i.count()*sizeof(float), kind );
+    if (!toGpu && !fromGpu)
+        memcpy(write, read, i.count()*sizeof(float));
+    else
+        cudaMemcpy(write, read, i.count()*sizeof(float), kind );
 
     return *this;
 }
