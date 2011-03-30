@@ -22,6 +22,7 @@ namespace Tools
     protected slots:
         void destroying();
         void receiveRecord(bool);
+        void receiveStop();
         void recievedInvalidSamples( Signal::Intervals I );
 
     private:
