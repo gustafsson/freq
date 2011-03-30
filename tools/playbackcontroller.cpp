@@ -225,17 +225,21 @@ void PlaybackController::
     Signal::Intervals missing_for_playback=
             model()->playbackTarget->post_sink()->invalid_samples();
 
-    bool playback_is_underfed = project_->tools().playback_model.playbackTarget->post_sink()->isUnderfed();
-    // Don't bother with computing playback unless it is underfed
-    if (missing_for_playback && playback_is_underfed)
+    if (missing_for_playback)
     {
-        project_->worker.center = 0;
-        project_->worker.target( project_->tools().playback_model.playbackTarget );
+        bool playback_is_underfed = project_->tools().playback_model.playbackTarget->post_sink()->isUnderfed();
 
-        // Request at least 1 fps. Otherwise there is a risk that CUDA
-        // will screw up playback by blocking the OS and causing audio
-        // starvation.
-        project_->worker.requested_fps(1);
+        // Don't bother with computing playback unless it is underfed
+        if (playback_is_underfed)
+        {
+            project_->worker.center = 0;
+            project_->worker.target( project_->tools().playback_model.playbackTarget );
+
+            // Request at least 1 fps. Otherwise there is a risk that CUDA
+            // will screw up playback by blocking the OS and causing audio
+            // starvation.
+            project_->worker.requested_fps(1);
+        }
     }
 }
 

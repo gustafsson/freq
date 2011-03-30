@@ -196,6 +196,13 @@ QDockWidget* MatlabOperationWidget::
 }
 
 
+bool MatlabOperationWidget::
+        hasProcess()
+{
+    return !pid.isNull();
+}
+
+
 void MatlabOperationWidget::
         browse()
 {

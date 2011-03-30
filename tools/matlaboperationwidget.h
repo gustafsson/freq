@@ -52,6 +52,8 @@ public:
     void setOperation( Adapters::MatlabOperation* );
     QDockWidget* getOctaveWindow();
 
+    bool hasProcess();
+
 public slots:
     void showOutput();
 
