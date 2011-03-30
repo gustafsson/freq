@@ -103,8 +103,8 @@ void PlaybackController::
     // here we just need to create a filter that does the right thing to an arbitrary source
     // and responds properly to zeroed_samples()
     Signal::pOperation filter( new Support::OperationOtherSilent(
-            Signal::pOperation(),
-            _view->model->markers->currentInterval( project_->worker.source()->sample_rate() ) ));
+            project_->head->head_source(),
+            _view->model->markers->currentInterval( project_->head->head_source()->sample_rate() ) ));
 
     startPlayback( filter );
 }
