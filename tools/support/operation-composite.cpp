@@ -25,25 +25,23 @@ OperationSubOperations::
 }
 
 
-Intervals OperationSubOperations::
-        affected_samples()
+Intervals affected_samples_recursive_until(pOperation o, pOperation stop)
 {
-    Intervals I;
-    for (pOperation o = Operation::source(); o && o!=source_sub_operation_; o = o->source())
-        I |= o->affected_samples();
-
-    return I;
+    Intervals r;
+    if (o)
+    {
+        r = o->affected_samples();
+        if (o!=stop)
+            r |= o->translate_interval( affected_samples_recursive_until(o->source(), stop) );
+    }
+    return r;
 }
 
 
 Intervals OperationSubOperations::
-        zeroed_samples()
+        affected_samples()
 {
-    Intervals I;
-    for (pOperation o = Operation::source(); o && o!=source_sub_operation_; o = o->source())
-        I |= o->zeroed_samples();
-
-    return I;
+    return affected_samples_recursive_until( Operation::source(), source_sub_operation_);
 }
 
 
@@ -166,7 +164,7 @@ void OperationMove::
     else
         newSection <<= (newFirstSample-section.first);
 
-    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection ));
+    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection.coveredInterval() ));
     pOperation silence( new OperationSetSilent(silenceTarget, section ));
 
     pOperation crop( new OperationCrop( source_sub_operation_, section ));

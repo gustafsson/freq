@@ -58,9 +58,16 @@ pBuffer OperationCache::
         return b;
     }
 
-    Interval missing = Intervals(I) - cached;
+    Intervals zeroed = zeroed_samples_recursive();
+    _cache.validate_samples( zeroed - _cache.samplesDesc_current_channel() );
+    Interval first_zero = (I & zeroed).fetchFirstInterval();
+    Interval missing = (I - cached - zeroed).fetchFirstInterval();
 
-    pBuffer b = readRaw( missing );
+    pBuffer b;
+    if (first_zero.first == I.first && first_zero.count())
+        b = zeros(first_zero);
+    else
+        b = readRaw( missing );
 
     if (D) TaskTimer tt("%s: raw [%u, %u] got [%u, %u]",
                  __FUNCTION__,
@@ -103,7 +110,7 @@ pBuffer OperationCache::
             return _cache.readFixedLength( ok );
         }
 
-        missing = (Intervals(I) - cached).fetchFirstInterval();
+        missing = (I - cached).fetchFirstInterval();
     }
 
     _invalid_returns[c] |= missing;

@@ -56,6 +56,7 @@ public:
     virtual Intervals invalid_samples() { return _invalid_samples; }
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
     void invalidate_and_forget_samples(const Intervals& I);
+    void validate_samples( const Intervals& I ) { _invalid_samples -= I; }
 
     /// Clear cache, also clears invalid_samples
     void clear();

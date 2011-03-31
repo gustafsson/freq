@@ -72,6 +72,23 @@ void SinkSourceChannels::
 
 
 void SinkSourceChannels::
+        validate_samples_current_channels( const Intervals& I )
+{
+    sinksources_[ current_channel_ ].validate_samples( I );
+}
+
+
+void SinkSourceChannels::
+        validate_samples_all_channels( const Intervals& I )
+{
+    for (unsigned i=0; i<sinksources_.size(); ++i)
+    {
+        sinksources_[ i ].validate_samples( I );
+    }
+}
+
+
+void SinkSourceChannels::
         clear()
 {
     for (unsigned i=0; i<sinksources_.size(); ++i)

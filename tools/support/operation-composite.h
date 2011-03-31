@@ -36,7 +36,6 @@ public:
         be overloaded.
     */
     virtual Signal::Intervals affected_samples();
-    virtual Signal::Intervals zeroed_samples();
 
     std::string name() { return name_; }
 

@@ -23,6 +23,11 @@ public:
     virtual void invalidate_samples(const Intervals& I);
     void invalidate_and_forget_samples(const Intervals& I);
 
+    void validate_samples( const Intervals& I ) { return validate_samples_all_channels( I ); }
+    void validate_samples_current_channels( const Intervals& I );
+    void validate_samples_all_channels( const Intervals& I );
+
+
     void clear();
     virtual pBuffer read( const Interval& I );
     pBuffer readAllChannelsFixedLength( const Interval& I );
