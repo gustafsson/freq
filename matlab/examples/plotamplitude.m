@@ -1,25 +1,32 @@
 function [data]=plotamplitude(data)
-
+toc
 disp(['plotamplitude ' sawe_getdatainfo(data)]);
-
+tic
 global amplitude
 if isempty(amplitude)
   amplitude=0;
 end
 
 mono = sum(data.buffer, 2);
-s = 3/data.samplerate;
+downsample = 2^13;
+mono=mono(1:end-mod(end, downsample));
+mono = reshape(mono, floor(numel(mono)/downsample), downsample);
+mono = max(abs(mono), [], 2);
+mono_samplerate = data.samplerate/downsample;
+s = 3/mono_samplerate;
 for k=1:numel(mono)
-  % not eactly amplitude, but related to amplitude and simple
-  amplitude = (1-s)*amplitude + s*abs(mono(k));
+  % not exactly amplitude, but related to amplitude and simple
+  amplitude = (1-s)*amplitude + s*mono(k);
   mono(k) = amplitude;
 end
 
-x = 1:100:numel(mono);
-t = (data.offset + x') / data.samplerate;
-hz = 1000 + 1000*mono(x);
-hz2 = 1000 + 1000*ones(size(hz))*mean(mono);
-data.plot(:,:,1) = [t hz];
-data.plot(:,:,2) = [t hz2];
-mean(mono)
-
+x = 1:numel(mono);
+t = data.offset/data.samplerate + x' / mono_samplerate;
+hz = 1000 + 10000*mono(x);
+hz2 = 1000 + 10000*mean(mono);
+toc
+disp('plotting');
+sawe_plot(t, hz);
+%sawe_plot(t, hz2);
+disp(['Mean = ' num2str(mean(mono))]);
+tic

@@ -34,10 +34,14 @@ MatlabController::
     // Clean up old h5 files that were probably left from a previous crash
 
     QDateTime now = QDateTime::currentDateTime();
-    foreach (QFileInfo s, QDir::current().entryInfoList( QStringList("*.0x*.h5") ))
+    foreach (QFileInfo s, QDir::current().entryInfoList( QStringList("*.h5") ))
     {
         if (QRegExp(".*\\.0x[0-9a-f]{6,16}\\.h5").exactMatch(s.fileName()) ||
-            QRegExp(".*\\.0x[0-9a-f]{6,16}\\.h5.result.h5").exactMatch(s.fileName()))
+            QRegExp(".*\\.0x[0-9a-f]{6,16}\\.h5.result.h5").exactMatch(s.fileName()) ||
+            QRegExp(".*\\.[0-9A-F]{8}\\.h5").exactMatch(s.fileName()) ||
+            QRegExp(".*\\.[0-9A-F]{8}\\.h5.result.h5").exactMatch(s.fileName()) ||
+            QRegExp(".*\\.[0-9A-F]{16}\\.h5").exactMatch(s.fileName()) ||
+            QRegExp(".*\\.[0-9A-F]{16}\\.h5.result.h5").exactMatch(s.fileName()))
         {
             // Delete it only if it was created more than 15 minutes ago,
             // because other instances of Sonic AWE might still be running.
@@ -128,6 +132,7 @@ void MatlabController::
 
         QStringList G = state.childGroups();
         G.sort();
+        int i = 0;
         foreach (QString g, G)
         {
             state.beginGroup(g);
@@ -142,7 +147,9 @@ void MatlabController::
                 }
             }
 
-            QAction* action = new QAction(g, scripts_ );
+            i++;
+            QAction* action = new QAction(QString("%1%2. %3").arg(i<10?"&":"").arg(i).arg(g), scripts_ );
+            action->setData(g);
             scripts_->addAction( action );
             connect( action, SIGNAL(triggered()), SLOT(createFromAction()));
         }
@@ -159,7 +166,7 @@ void MatlabController::
 
     QSettings state;
     state.beginGroup("MatlabOperation");
-    state.beginGroup( a->text());
+    state.beginGroup( a->data().toString() );
 
     MatlabOperationWidget* settings = new MatlabOperationWidget( project_ );
     settings->scriptname( state.value("path").toString().toStdString() );
@@ -227,7 +234,11 @@ void MatlabController::
     Signal::pOperation matlaboperation(m);
     if (!settings->hasProcess())
     {
-        QErrorMessage::qtHandler()->showMessage("Couldn't start neither Octave nor Matlab, make sure that the installation folder is added to your path");
+        if (settings->scriptname().empty())
+            QErrorMessage::qtHandler()->showMessage("Couldn't start Octave console, make sure that the installation folder is added to your path");
+        else
+            QErrorMessage::qtHandler()->showMessage("Couldn't start neither Octave nor Matlab, make sure that the installation folder is added to your path");
+
         return;
     }
 

@@ -1,6 +1,11 @@
 function sawe_plot(varargin);
 
-	default_args = cell;
+    if (3==nargin)
+	    sawe_plot2(varargin{:});
+		return
+	end
+	
+	default_args = cell(0);
 
 	assert( ~mod(nargin,2), 'Input must be a multiple of 2');
 
@@ -14,8 +19,8 @@ function sawe_plot(varargin);
 		default_args{3*(n-1) + 2} = f;
 		default_args{3*(n-1) + 3} = a;
 
-	endfor
+	end %for
 
 	sawe_plot2(default_args{:})
 
-endfunction
+end %function

@@ -39,7 +39,7 @@ for n=1:nargin/3
 
     else
       error('Frequency and amplitude vectors need to be of the same length as time vector, or set as scalars. n: %u --- t: %u, f: %u, a: %u', n, numel(t), numel(f), numel(a));
-    endif
+    end %if
 
 	% workaround to cope with lines of different length: repeat the last point to fill the vector!
 	% this will not cause problems, as sawe will prune those points anyway.
@@ -52,7 +52,7 @@ for n=1:nargin/3
 
       sawe_plot_data = [sawe_plot_data; pad_t pad_f pad_a];
 
-    endif
+    end %if
 
     max_length = max(max_length,length_);
 
@@ -62,10 +62,10 @@ for n=1:nargin/3
       f = [f; f(end)*ones( max_length - length_, 1)];
       a = [a; a(end)*ones( max_length - length_, 1)];
 
-    endif
+    end %if
     
 		sawe_plot_data(:,:,offset+n) = [t f a];
 
-endfor
+end %for
 
-endfunction
+end %function

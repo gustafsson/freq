@@ -20,18 +20,12 @@ if nargin<4
   dt=0.05;
 end
 
-if 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
-    disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
-end
-
 global sawe_plot_data; %matrix for all lines to be plotted.
 
 resultfile=[datafile '.result.h5'];
 tempfile=datafile;
 isoctave=0~=exist('OCTAVE_VERSION','builtin');
 %disp (['Monitoring ' datafile]);
-disp([ datestr(now, 31) ': Sonic AWE running script ''' func2str(func) '''']);
-tic
 while 1
 
 
@@ -57,9 +51,8 @@ while 1
     else
       %octave
       data = load(datafile);
+      sawe_plot_data = [];
     end
-
-	sawe_plot_data = [];
 
     % 'Supposed to be scalars' are exported from Sonic AWE as 1x1 matrice, not scalars.
     % Hence we need to take the value by "data.samplerate(1)" instead of "data.samplerate".

@@ -13,9 +13,7 @@ end
 
 % Plot two lines
 % from (1 s, 100 Hz, amplitude 0.5) to (2 s, 200 Hz, amplitude 1)
-data.plot(:,:,1)=[1 100 0.5
-                  2 200 1];
-% from (1 s, 400 Hz, amplitude 2) to (2 s, 500 Hz, amplitude 0.4)
-data.plot(:,:,2)=[1 400 2
-                  2 500 0.4];
+sawe_plot([1 2], [100 200], [0.5, 1]);
 
+% from (1 s, 400 Hz, amplitude 2) to (2 s, 500 Hz, amplitude 0.4)
+sawe_plot([1 2], [400 500], [2, 0.4]);

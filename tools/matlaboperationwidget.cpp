@@ -53,10 +53,12 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     connect( ui->pushButtonRestoreChanges, SIGNAL(clicked()), SLOT(restoreChanges()) );
 
     QSettings settings;
-    ui->scriptname->setText(        settings.value("MatlabOperationWidget scriptname").toString() );
-    ui->computeInOrder->setChecked( settings.value("MatlabOperationWidget computeInOrder" ).toBool());
-    ui->chunksize->setValue(        settings.value("MatlabOperationWidget chunksize" ).toInt());
-    ui->redundant->setValue(        settings.value("MatlabOperationWidget redundant" ).toInt());
+    settings.beginGroup("MatlabOperationWidget");
+    ui->scriptname->setText(        settings.value("scriptname").toString() );
+    ui->computeInOrder->setChecked( settings.value("computeInOrder" ).toBool());
+    ui->chunksize->setValue(        settings.value("chunksize" ).toInt());
+    ui->redundant->setValue(        settings.value("redundant" ).toInt());
+    settings.endGroup();
 }
 
 
@@ -94,7 +96,13 @@ MatlabOperationWidget::
 std::string MatlabOperationWidget::
         scriptname()
 {
-    return operation ? prevsettings.scriptname() : ui->scriptname->text().toStdString();
+    QString display_path = ui->scriptname->text();
+
+#ifdef _WIN32
+    display_path.replace("\\", "/");
+#endif
+
+    return operation ? prevsettings.scriptname() : display_path.toStdString();
 }
 
 
@@ -102,7 +110,13 @@ void MatlabOperationWidget::
         scriptname(std::string v)
 {
     bool restore = ui->pushButtonRestoreChanges->isEnabled();
-    ui->scriptname->setText( QString::fromStdString( v ) );
+    QString display_path = QString::fromStdString( v );
+
+#ifdef _WIN32
+    display_path.replace("/", "\\");
+#endif
+
+    ui->scriptname->setText( display_path );
     prevsettings.scriptname_ = v;
     ui->pushButtonRestoreChanges->setEnabled(restore);
 }
@@ -210,6 +224,10 @@ void MatlabOperationWidget::
             parentWidget(),
             "Open MATLAB/octave script", ui->scriptname->text(),
             "MATLAB/octave script files (*.m)");
+
+#ifdef _WIN32
+    qfilename.replace("/", "\\");
+#endif
 
     if (!qfilename.isEmpty())
         ui->scriptname->setText( qfilename );
@@ -394,10 +412,12 @@ void MatlabOperationWidget::
 {
     QSettings settings;
     // this->saveGeometry() doesn't save child widget states
-    settings.setValue("MatlabOperationWidget scriptname", ui->scriptname->text() );
-    settings.setValue("MatlabOperationWidget computeInOrder", ui->computeInOrder->isChecked() );
-    settings.setValue("MatlabOperationWidget chunksize", ui->chunksize->value() );
-    settings.setValue("MatlabOperationWidget redundant", ui->redundant->value() );
+    settings.beginGroup("MatlabOperationWidget");
+    settings.setValue("scriptname", ui->scriptname->text() );
+    settings.setValue("computeInOrder", ui->computeInOrder->isChecked() );
+    settings.setValue("chunksize", ui->chunksize->value() );
+    settings.setValue("redundant", ui->redundant->value() );
+    settings.endGroup();
 }
 
 
