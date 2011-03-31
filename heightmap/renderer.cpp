@@ -594,10 +594,16 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     else
         needBetterT = timePixels / (_redundancy*collection->samples_per_block());
 
-    if ( needBetterF > needBetterT && needBetterF > 1 && (ref.top().boundsCheck(Reference::BoundsCheck_HighS) || ref.bottom().boundsCheck(Reference::BoundsCheck_HighS)) )
+    if (!ref.top().boundsCheck(Reference::BoundsCheck_HighS) && !ref.bottom().boundsCheck(Reference::BoundsCheck_HighS))
+        needBetterF = 0;
+
+    if (!ref.left().boundsCheck(Reference::BoundsCheck_HighT))
+        needBetterT = 0;
+
+    if ( needBetterF > needBetterT && needBetterF > 1 )
         return Lod_NeedBetterF;
 
-    else if ( needBetterT > 1 && ref.left().boundsCheck(Reference::BoundsCheck_HighT) )
+    else if ( needBetterT > 1 )
         return Lod_NeedBetterT;
 
     else

@@ -129,6 +129,9 @@ void TransformInfoForm::
         addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(stft->chunk_size()));
         addRow("Overlap", "0");
+        addRow("Max hz", QString("%1").arg(fs/2));
+        addRow("Min hz", QString("%1").arg(0));
+        addRow("Hz/row", QString("%1").arg(fs/stft->chunk_size()));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
     }
     else if (cepstrum)
