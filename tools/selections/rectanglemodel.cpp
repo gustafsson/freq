@@ -51,8 +51,11 @@ Signal::pOperation RectangleModel::
         ;
     else if (a.scale>0 || b.scale<1)
     {
+        float bt = b.time;
+        if (type == RectangleType_FrequencySelection)
+            bt = FLT_MAX;
         filter.reset( new Filters::Rectangle(
-                a.time, f1, b.time, f2, true ));
+                a.time, f1, bt, f2, true ));
     }
     else
     {
@@ -76,6 +79,7 @@ bool RectangleModel::
         b.time = e->_t2;
         a.scale = freqAxis().getFrequencyScalar( e->_f1 );
         b.scale = freqAxis().getFrequencyScalar( e->_f2 );
+        validate();
         return true;
     }
     else if(os)

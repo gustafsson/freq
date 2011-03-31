@@ -83,27 +83,6 @@ void OperationCrop::
 }
 
 
-    // OperationSetSilent  /////////////////////////////////////////////////////////////////
-OperationSetSilent::
-        OperationSetSilent( pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source, "Clear section" ),
-    section_( section )
-{
-    reset(section);
-}
-
-void OperationSetSilent::
-        reset( const Signal::Interval& section )
-{
-    section_ = section;
-
-    pOperation remove( new OperationRemoveSection( source_sub_operation_, section ));
-    pOperation addSilence( new OperationInsertSilence (remove, section ));
-
-    Operation::source( addSilence );
-}
-
-
     // OperationOtherSilent  /////////////////////////////////////////////////////////////////
 OperationOtherSilent::
         OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section )
@@ -134,7 +113,7 @@ void OperationOtherSilent::
 
     section_ = section;
     pOperation p = source_sub_operation_;
-    if (section.first)
+    if (0 < section.first)
         // silent before section
         p = pOperation( new OperationSetSilent( p, Signal::Interval(0, section.first) ));
     if (section.last < Interval::IntervalType_MAX)

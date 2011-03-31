@@ -9,7 +9,8 @@ end
 
 mono = sum(data.buffer, 2);
 downsample = 2^13;
-mono=mono(1:end-mod(end, downsample));
+mono_offset = ceil(data.offset/downsample)*downsample;
+mono=mono( (mono_offset+1:data.offset + end-mod(data.offset + end, downsample))- mono_offset);
 mono = reshape(mono, floor(numel(mono)/downsample), downsample);
 mono = max(abs(mono), [], 2);
 mono_samplerate = data.samplerate/downsample;

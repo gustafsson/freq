@@ -80,24 +80,6 @@ public:
 /**
   Example 1:
   start:  1234567
-  OperationSetSilent( start, 1, 2 );
-  result: 1004567
-*/
-class OperationSetSilent: public OperationSubOperations {
-public:
-    OperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
-
-    void reset( const Signal::Interval& section );
-
-    virtual Signal::Intervals zeroed_samples() { return affected_samples(); }
-    virtual Signal::Intervals affected_samples() { return section_; }
-private:
-    Signal::Interval section_;
-};
-
-/**
-  Example 1:
-  start:  1234567
   OperationOtherSilent( start, 1, 2 );
   result: 0230000
 */

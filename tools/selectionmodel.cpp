@@ -93,7 +93,7 @@ Signal::pOperation SelectionModel::
     if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
         return Signal::pOperation( new Tools::Support::OperationOtherSilent( *src ));
     } else {
-        return Signal::pOperation( new Tools::Support::OperationSetSilent(
+        return Signal::pOperation( new Signal::OperationSetSilent(
                 Signal::pOperation(),
                 src->section() )
         );
@@ -103,10 +103,10 @@ Signal::pOperation SelectionModel::
 
 template<>
 Signal::pOperation SelectionModel::
-        copy_selection_type(Tools::Support::OperationSetSilent* src, SaveInside si)
+        copy_selection_type(Signal::OperationSetSilent* src, SaveInside si)
 {
     if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
-        return Signal::pOperation( new Tools::Support::OperationSetSilent( *src ));
+        return Signal::pOperation( new Signal::OperationSetSilent( *src ));
     } else {
         return Signal::pOperation( new Tools::Support::OperationOtherSilent(
                 Signal::pOperation(),
@@ -144,7 +144,7 @@ Signal::pOperation SelectionModel::
     TEST_TYPE(Filters::Ellipse);
     TEST_TYPE(Filters::Rectangle);
     TEST_TYPE(Tools::Support::OperationOtherSilent);
-    TEST_TYPE(Tools::Support::OperationSetSilent);
+    TEST_TYPE(Signal::OperationSetSilent);
     TEST_TYPE(Selections::Support::SplineFilter);
 
     throw std::logic_error("SelectionModel::copy_selection(" + vartype(*o) + ") is not implemented");

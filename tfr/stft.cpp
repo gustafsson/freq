@@ -83,6 +83,7 @@ void CufftHandleContext::
     }
 }
 
+
 void CufftHandleContext::
         create()
 {

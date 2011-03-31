@@ -30,11 +30,13 @@ std::string Rectangle::
 {
     std::stringstream ss;
     ss << std::setiosflags(std::ios::fixed)
-       << "Rectangle from "
-       << std::setprecision(1) << _t1 << " s, "
-       << std::setprecision(0) << _f1 << " Hz to "
-       << std::setprecision(1) << _t2 << " s, "
-       << std::setprecision(0) << _f2 << " Hz";
+       << "Rectangle from ";
+    if (_t2 != FLT_MAX)
+       ss << std::setprecision(1) << _t1 << " s, ";
+    ss << std::setprecision(0) << _f1 << " Hz to ";
+    if (_t2 != FLT_MAX)
+       ss << std::setprecision(1) << _t2 << " s, ";
+    ss << std::setprecision(0) << _f2 << " Hz";
     return ss.str();
 }
 
@@ -74,11 +76,15 @@ Signal::Intervals Rectangle::
 Signal::Intervals Rectangle::
         outside_samples()
 {
-    double FS = sample_rate();
+    long double FS = sample_rate();
 
-    unsigned long
-        start_time = (unsigned long)(std::max(0.f, _t1)*FS),
-        end_time = (unsigned long)(std::max(0.f, _t2)*FS);
+    long double
+        start_time_d = std::max(0.f, _t1)*FS,
+        end_time_d = std::max(0.f, _t2)*FS;
+
+    Signal::IntervalType
+        start_time = std::min((long double)Signal::Interval::IntervalType_MAX, start_time_d),
+        end_time = std::min((long double)Signal::Interval::IntervalType_MAX, end_time_d);
 
     Signal::Intervals sid;
     if (start_time < end_time)

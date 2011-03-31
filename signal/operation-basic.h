@@ -5,6 +5,26 @@
 
 namespace Signal {
 
+/**
+  Example 1:
+  start:  1234567
+  OperationSetSilent( start, 1, 2 );
+  result: 1004567
+*/
+class OperationSetSilent: public Operation {
+public:
+    OperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
+
+    virtual pBuffer read( const Interval& I );
+    virtual std::string name();
+
+    virtual Signal::Intervals zeroed_samples() { return affected_samples(); }
+    virtual Signal::Intervals affected_samples() { return section_; }
+private:
+    Signal::Interval section_;
+};
+
+
 class OperationRemoveSection: public Operation
 {
 public:
@@ -21,6 +41,7 @@ private:
 
     Interval section_;
 };
+
 
 /**
   Has no effect as long as source()->number_of_samples <= section.first.

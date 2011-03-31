@@ -3,6 +3,30 @@
 
 namespace Signal {
 
+    // OperationSetSilent  /////////////////////////////////////////////////////////////////
+OperationSetSilent::
+        OperationSetSilent( pOperation source, const Signal::Interval& section )
+:   Operation( source ),
+    section_( section )
+{
+}
+
+std::string OperationSetSilent::
+        name()
+{
+    return "Clear section";
+}
+
+pBuffer OperationSetSilent::
+        read( const Interval& I )
+{
+    Interval t = (I & section_).fetchFirstInterval();
+    if ( t.first == I.first && t.count() )
+        return zeros( t );
+    return Operation::read( (I - section_).fetchFirstInterval() );
+}
+
+
     // OperationRemoveSection ///////////////////////////////////////////////////////////
 
 OperationRemoveSection::
@@ -118,7 +142,7 @@ IntervalType OperationInsertSilence::
 {
     IntervalType N = Operation::number_of_samples();
     if (N <= section_.first)
-        return N;
+        return section_.last;
     if (N + section_.count() < N)
         return Interval::IntervalType_MAX;
     return N + section_.count();
@@ -171,11 +195,8 @@ OperationSuperposition::
 pBuffer OperationSuperposition::
         read( const Interval& I )
 {
-    TaskTimer tt("Superposition");
     pBuffer a = source()->read( I );
-    tt.info("Reading2");
     pBuffer b = _source2->read( I );
-    tt.info("Merging");
 
     IntervalType offset = std::max( (IntervalType)a->sample_offset, (IntervalType)b->sample_offset );
     IntervalType length = std::min(
