@@ -260,7 +260,11 @@ std::string MatlabFunction::
 {
     struct stat dummy;
     if ( 0!=_pid && 0==stat( _resultFile.c_str(),&dummy) )
-        return _resultFile;
+    {
+        ifstream t(_resultFile.c_str());
+        if (t.is_open())
+            return _resultFile;
+    }
     return "";
 }
 
@@ -292,9 +296,6 @@ std::string MatlabFunction::
         if (d.total_seconds() > 3)
             TIME_MatlabFunction tt->partlyDone();
     }
-#ifdef WIN32 // wait for slow file system to finish move
-    Sleep(100);
-#endif
 
     return _resultFile;
 }
@@ -436,7 +437,21 @@ bool MatlabOperation::
     {
         double redundancy=0;
         pBuffer plot_pts;
-        ready_data = Hdf5Buffer::loadBuffer( file, &redundancy, &plot_pts );
+
+        try
+        {
+            ready_data = Hdf5Buffer::loadBuffer( file, &redundancy, &plot_pts );
+        }
+        catch (const Hdf5Error& e)
+        {
+            if (Hdf5Error::Type_OpenFailed == e.type() && e.data() == file)
+            {
+                // Couldn't open it for reading yet, wait
+                return false;
+            }
+
+            throw e;
+        }
 
         ::remove( file.c_str());
 
@@ -551,7 +566,7 @@ pBuffer MatlabOperation::
             }
 
             support = _settings->redundant();
-            J = Intervals(J).enlarge( support );
+            J = Intervals(J).enlarge( support ).coveredInterval();
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner

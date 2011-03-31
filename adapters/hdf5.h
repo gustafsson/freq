@@ -14,8 +14,28 @@
 
 namespace Adapters {
 
+class Hdf5Error: public std::runtime_error
+{
+public:
+    enum Type
+    {
+        Type_OpenFailed,
+        Type_CreateFailed,
+        Type_MissingDataset,
+        Type_HdfFailure
+    };
+
+    Hdf5Error(Type t, const std::string& message, const std::string& data="");
+    Type type() const { return t_; }
+    const std::string& data() const { return data_; }
+private:
+    Type t_;
+    std::string data_;
+};
+
+
 /**
-  Throws std::runtime_error on errors.
+  Throws Hdf5Error on errors.
   */
 class Hdf5Output {
 public:
@@ -38,7 +58,7 @@ template<> void Hdf5Output::add( std::string name, const double&);
 template<> void Hdf5Output::add( std::string name, const std::string&);
 
 /**
-  Throws std::runtime_error on errors.
+  Throws Hdf5Error on errors.
   */
 class Hdf5Input {
 public:
