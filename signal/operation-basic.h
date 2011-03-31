@@ -47,6 +47,10 @@ public:
 
     virtual pBuffer read( const Interval& I );
 
+    virtual Intervals zeroed_samples();
+    virtual Intervals affected_samples();
+    virtual Intervals zeroed_samples_recursive();
+
     virtual pOperation source2() const { return _source2; }
 
 private:

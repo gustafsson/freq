@@ -126,14 +126,14 @@ private:
 
 
 /**
-  This does save quite a few function calls, probably premature optimization.
+  This is a premature optimization that saves quite a few function calls.
   */
 class CacheVars: public Operation, public boost::noncopyable
 {
 public:
     CacheVars() : Operation(pOperation()), FS(-1) {}
 
-    virtual Signal::pBuffer read(const Intervals& I)
+    virtual Signal::pBuffer read(const Interval& I)
     {
         update();
         return Operation::read( I );

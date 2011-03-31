@@ -31,7 +31,7 @@ pBuffer OperationRemoveSection::
         return zeros(I);
     }
 
-    pBuffer b = source()->readFixedLength( Intervals(I) << section_.count() );
+    pBuffer b = source()->readFixedLength( (Intervals(I) << section_.count() ).coveredInterval() );
     b->sample_offset -= section_.count();
 
     return b;
@@ -100,7 +100,7 @@ pBuffer OperationInsertSilence::
 
     if (I.first >= section_.last) {
         pBuffer b = source()->readFixedLength(
-                Intervals( I ) >> section_.count());
+                (Intervals( I ) >> section_.count()).coveredInterval());
         b->sample_offset += section_.count();
         return b;
     }
@@ -196,6 +196,27 @@ pBuffer OperationSuperposition::
         pr[i] = pa[i] + pb[i];
 
     return r;
+}
+
+
+Intervals OperationSuperposition::
+        zeroed_samples()
+{
+    return source()->zeroed_samples() & _source2->zeroed_samples();
+}
+
+
+Intervals OperationSuperposition::
+        affected_samples()
+{
+    return _source2->affected_samples();
+}
+
+
+Signal::Intervals OperationSuperposition::
+        zeroed_samples_recursive()
+{
+    return Operation::zeroed_samples_recursive() & _source2->zeroed_samples();
 }
 
 } // namespace Signal

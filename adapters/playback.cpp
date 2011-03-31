@@ -400,7 +400,7 @@ bool Playback::
     if (0==marker)
         marker = _data.getInterval().first;
 
-    Signal::Interval cov = _data.invalid_samples();
+    Signal::Interval cov = _data.invalid_samples().coveredInterval();
     float time_left =
             (cov.last - marker) / _data.sample_rate();
 
