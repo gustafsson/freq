@@ -14,7 +14,8 @@ namespace Support {
 PlotLines::
         PlotLines(RenderModel* render_model)
     :
-    render_model_(render_model)
+    render_model_(render_model),
+    rand_color_offs_( rand()/(float)RAND_MAX )
 {
 }
 
@@ -146,10 +147,10 @@ void PlotLines::
     float N = lines_.size();
 
     // Set colors
-    float i = 0;
+    float i = 0, d;
     for (Lines::iterator itr = lines_.begin(); itr != lines_.end(); itr++)
     {
-        QColor c = QColor::fromHsvF( i++/N, 1, 1 );
+        QColor c = QColor::fromHsvF( modf(rand_color_offs_ + i++/N, &d), 1, 1 );
         itr->second.R = c.redF();
         itr->second.G = c.greenF();
         itr->second.B = c.blueF();

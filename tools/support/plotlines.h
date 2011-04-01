@@ -40,7 +40,7 @@ public:
     typedef unsigned LineIdentifier;
 
     typedef std::map<LineIdentifier, Line> Lines;
-    const Lines& lines() { return lines_; }
+    const Lines& lines() const { return lines_; }
 
     void clear();
     void clear( const Signal::Intervals& I, float fs );
@@ -48,6 +48,7 @@ public:
     void set( LineIdentifier id, Time t, float hz, float a = 1);
 
     Line& line(LineIdentifier id);
+
 signals:
 
 public slots:
@@ -56,6 +57,7 @@ public slots:
 private:
     Lines lines_;
     RenderModel* render_model_;
+    float rand_color_offs_;
 
     void draw(Line& l);
     void recomputeColors();
