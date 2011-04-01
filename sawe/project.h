@@ -89,6 +89,8 @@ public:
     //void userinput_update( bool request_high_fps = true );
     //void target(Signal::pTarget target, bool request_high_fps = true, Signal::IntervalType center = 0 );
 
+    static void addRecentFile(std::string filename);
+
     /**
       Opens a Sonic AWE project or imports an audio file. If
       'project_file_or_audio_file' is empty, a Qt Open File dialog will be

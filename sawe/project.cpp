@@ -148,7 +148,15 @@ pProject Project::
         return pProject();
     }
 
+    addRecentFile( filename );
 
+    return p;
+}
+
+
+void Project::
+        addRecentFile( std::string filename )
+{
     QSettings settings;
     QStringList recent_files = settings.value("recent files").toStringList();
     QFileInfo fi(QString::fromStdString( filename ));
@@ -162,7 +170,6 @@ pProject Project::
             recent_files.pop_back();
         settings.setValue("recent files", recent_files);
     }
-    return p;
 }
 
 
@@ -274,7 +281,7 @@ bool Project::
 {
     QString filter = "SONICAWE - Sonic AWE project (*.sonicawe)";
 
-    QString qfilename = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", filter);
+    QString qfilename = QFileDialog::getSaveFileName(mainWindow(), "Save project", QString::fromStdString(project_filename_), filter);
     if (0 == qfilename.length()) {
         // User pressed cancel
         return false;
@@ -290,7 +297,11 @@ bool Project::
 
     updateWindowTitle();
 
-    return save();
+    bool r = save();
+
+    addRecentFile( project_filename_ );
+
+    return r;
 }
 
 
