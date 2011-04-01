@@ -3,9 +3,10 @@
 #include "sawe/application.h"
 #include "adapters/audiofile.h"
 #include "adapters/microphonerecorder.h"
+#include "signal/operationcache.h"
 #include "tools/toolfactory.h"
-#include "ui/mainwindow.h"
 #include "tools/support/operation-composite.h"
+#include "ui/mainwindow.h"
 
 // Qt
 #include <QtGui/QFileDialog>
@@ -55,8 +56,10 @@ void Project::
     {
         Signal::pOperation onselectionOnly(new Tools::Support::OperationOnSelection(
                 head->head_source(),
-                m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ),
-                m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ),
+                Signal::pOperation( new Signal::OperationCachedSub(
+                    m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ))),
+                Signal::pOperation( new Signal::OperationCachedSub(
+                    m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ))),
                 s
                 ));
 

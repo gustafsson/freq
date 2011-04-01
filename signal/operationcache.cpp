@@ -9,12 +9,7 @@ OperationCache::
 :   Operation(source),
     _cache()
 {
-    if (source)
-    {
-        unsigned N = source->num_channels();
-        _invalid_returns.resize( N );
-        _cache.setNumChannels( N );
-    }
+    this->source(source);
 }
 
 
@@ -189,8 +184,59 @@ unsigned OperationCache::
 void OperationCache::
         source(pOperation v)
 {
-    _cache.setNumChannels(v->num_channels());
+    if (v && dynamic_cast<Signal::FinalSource*>(v->root()))
+    {
+        unsigned N = v->num_channels();
+        _invalid_returns.resize( N );
+        _cache.setNumChannels( N );
+    }
+
     Operation::source( v );
+}
+
+
+OperationCachedSub::
+        OperationCachedSub( pOperation source )
+    :
+    OperationCache(source)
+{
+    BOOST_ASSERT( source );
+}
+
+
+std::string OperationCachedSub::
+        name()
+{
+    return Operation::source()->name();
+}
+
+
+Signal::Intervals OperationCachedSub::
+        affected_samples()
+{
+    return Operation::source()->affected_samples();
+}
+
+
+pBuffer OperationCachedSub::readRaw( const Interval& I )
+{
+    return Operation::read(I);
+}
+
+
+void OperationCachedSub::
+        source(pOperation v)
+{
+    pOperation o = Operation::source();
+    o->source( v );
+    OperationCache::source( o );
+}
+
+
+pOperation OperationCachedSub::
+        source()
+{
+    return Operation::source()->source();
 }
 
 

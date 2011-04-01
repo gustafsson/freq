@@ -78,6 +78,27 @@ private:
     }
 };
 
+
+class OperationCachedSub: public OperationCache
+{
+public:
+    OperationCachedSub( pOperation source );
+    virtual std::string name();
+    virtual Signal::Intervals affected_samples();
+    virtual pBuffer readRaw( const Interval& I );
+    virtual void source(pOperation v);
+    virtual pOperation source();
+
+private:
+    friend class boost::serialization::access;
+    OperationCachedSub() : OperationCache(pOperation()) {}
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        TaskInfo("OperationCachedSub::serialize");
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+    }
+};
+
+
 } // namespace Signal
 
 #endif // SIGNALOPERATIONCACHE_H

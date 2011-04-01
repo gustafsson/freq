@@ -29,8 +29,12 @@ std::string Rectangle::
         name()
 {
     std::stringstream ss;
-    ss << std::setiosflags(std::ios::fixed)
-       << "Rectangle from ";
+    ss << std::setiosflags(std::ios::fixed);
+    if (_t2 == FLT_MAX)
+        ss << "Sharp bandpass from ";
+    else
+        ss << "Rectangle from ";
+
     if (_t2 != FLT_MAX)
        ss << std::setprecision(1) << _t1 << " s, ";
     ss << std::setprecision(0) << _f1 << " Hz to ";

@@ -193,7 +193,7 @@ private:
         ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
-        TaskInfo ti("Project::serialize");
+        TaskInfo ti("Project::deserialize");
 
         ar & BOOST_SERIALIZATION_NVP(layers);
         ar & BOOST_SERIALIZATION_NVP(head);
