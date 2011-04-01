@@ -160,7 +160,7 @@ unsigned SinkSourceChannels::
 void SinkSourceChannels::
         set_channel(unsigned c)
 {
-    BOOST_ASSERT( c < num_channels());
+    BOOST_ASSERT( c < num_channels() );
     current_channel_ = c;
 }
 

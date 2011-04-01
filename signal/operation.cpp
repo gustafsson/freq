@@ -212,6 +212,14 @@ std::string Operation::
 {
     std::string s = name();
 
+    std::string n = Operation::name();
+    if (s != n)
+    {
+        s += " (";
+        s += n;
+        s += ")";
+    }
+
     if (_source)
         s += "\n" + _source->toString();
 

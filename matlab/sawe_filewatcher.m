@@ -7,7 +7,7 @@
 %
 % filewatcher does not return. Whatever value returned from func is discarded.
 %
-% Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 20 times per second (dt=0.05).
+% Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 40 times per second (dt=0.025).
 function C=sawe_filewatcher(datafile, func, arguments, dt)
 
 if nargin<2
@@ -17,7 +17,7 @@ if nargin<3
   arguments=[];
 end
 if nargin<4
-  dt=0.05;
+  dt=0.025;
 end
 
 if 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
@@ -29,8 +29,8 @@ global sawe_plot_data; %matrix for all lines to be plotted.
 resultfile=[datafile '.result.h5'];
 tempfile=datafile;
 isoctave=0~=exist('OCTAVE_VERSION','builtin');
-%disp (['Monitoring ' datafile]);
-disp([ datestr(now, 31) ': Sonic AWE running script ''' func2str(func) '''']);
+
+disp([ datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' script waiting Sonic AWE running script ''' func2str(func) ''' (datafile ' datafile ')']);
 tic
 while 1
 
@@ -42,23 +42,26 @@ while 1
   end
 
   if datafile_exists
-    %disp (['Processing ' datafile]);
-	
-    if ~isoctave
-      pause(0.1); % matlab, wait for slow file system in windows to finish the move
+    disp([ datestr(now, 'HH:MM:SS.FFF') ' Processing ''' datafile '''']);
 
-      info=hdf5info(datafile);
-      [dset1]=info.GroupHierarchy.Datasets.Name;
-      if strcmp(dset1,'/buffer')
-          data = sawe_loadbuffer(datafile);
+    try	
+      if ~isoctave
+        info=hdf5info(datafile);
+        [dset1]=info.GroupHierarchy.Datasets.Name;
+        if strcmp(dset1,'/buffer')
+            data = sawe_loadbuffer(datafile);
+        else
+            data = sawe_loadchunk(datafile);
+        end
       else
-          data = sawe_loadchunk(datafile);
+        %octave
+        data = load(datafile);
       end
-    else
-      %octave
-      data = load(datafile);
+	catch me
+	  disp(me)
+	  continue
     end
-
+	
 	sawe_plot_data = [];
 
     % 'Supposed to be scalars' are exported from Sonic AWE as 1x1 matrice, not scalars.
@@ -72,6 +75,7 @@ while 1
         end
     end
 
+    disp([ datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
     if 1 == nargin(func2str(func))
         data = func(data);
     else
@@ -90,8 +94,8 @@ while 1
     else
       movefile(tempfile,resultfile); % matlab
     end
+    disp([ datestr(now, 'HH:MM:SS.FFF') ' saved results']);
     
-    %disp (['Monitoring ' datafile]);
   else
     if isoctave
       sleep(dt); % octave
@@ -101,4 +105,4 @@ while 1
   end
 end
 
-endfunction
+%endfunction

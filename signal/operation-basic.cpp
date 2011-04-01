@@ -14,7 +14,10 @@ OperationSetSilent::
 std::string OperationSetSilent::
         name()
 {
-    return "Clear section";
+    float fs = sample_rate();
+    std::stringstream ss;
+    ss << "Clear section [" << section_.first/fs << ", " << section_.last/fs << ") s";
+    return ss.str();
 }
 
 pBuffer OperationSetSilent::
@@ -23,7 +26,7 @@ pBuffer OperationSetSilent::
     Interval t = (I & section_).fetchFirstInterval();
     if ( t.first == I.first && t.count() )
         return zeros( t );
-    return Operation::read( (I - section_).fetchFirstInterval() );
+    return source()->readFixedLength( (I - section_).fetchFirstInterval() );
 }
 
 
@@ -217,6 +220,15 @@ pBuffer OperationSuperposition::
         pr[i] = pa[i] + pb[i];
 
     return r;
+}
+
+
+void OperationSuperposition::
+        set_channel(unsigned c)
+{
+    _source2->set_channel(c);
+
+    Operation::set_channel(c);
 }
 
 

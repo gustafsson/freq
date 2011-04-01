@@ -67,6 +67,7 @@ public:
     OperationSuperposition( pOperation source, pOperation source2 );
 
     virtual pBuffer read( const Interval& I );
+    virtual void set_channel(unsigned c);
 
     virtual Intervals zeroed_samples();
     virtual Intervals affected_samples();

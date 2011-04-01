@@ -204,6 +204,7 @@ public:
     void reset( Signal::pOperation insideSelection, Signal::pOperation outsideSelection, Signal::pOperation operation );
 
     Signal::pOperation selection() { return insideSelection_; }
+    Signal::pOperation operation() { return operation_; }
 
 private:
     Signal::pOperation insideSelection_;

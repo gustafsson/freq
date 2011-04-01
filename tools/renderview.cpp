@@ -972,14 +972,19 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        worker.center = model->_qx;
-
         emit populateTodoList();
 
         if (!worker.target()->post_sink()->isUnderfed())
         {
             // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
+            Signal::pTarget t = worker.target();
             worker.target( model->renderSignalTarget );
+            if (!worker.todo_list())
+                // Use the previous target (set in populateTodoList) if
+                // renderSignalTarget has nothing to work on
+                worker.target( t );
+            else
+                worker.center = model->_qx;
         }
     }
 

@@ -64,10 +64,10 @@ private:
   */
 class Target {
 public:
-    Target(Layers* all_layers, std::string name);
+    Target(Layers* all_layers, std::string name, bool autocreate_chainheads=true);
 
     /**
-      It is an error to add a layer that is not in 'all_layers_'
+      //It is an error to add a layer that is not in 'all_layers_'
       */
     void addLayerHead(pChainHead);
 
@@ -77,7 +77,7 @@ public:
     void removeLayerHead(pChainHead);
 
     /**
-      Returns the chain head that correspons to a chain, if there is one.
+      Returns the chain head that corresponds to a chain, if there is one.
       */
     pChainHead findHead( pChain );
 

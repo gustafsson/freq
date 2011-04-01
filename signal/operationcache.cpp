@@ -118,6 +118,14 @@ pBuffer OperationCache::
 void OperationCache::
         invalidate_samples(const Intervals& I)
 {
+    invalidate_cached_samples( I );
+    Operation::invalidate_samples( I );
+}
+
+
+void OperationCache::
+        invalidate_cached_samples(const Intervals& I)
+{
     unsigned N = source() ? source()->num_channels() : num_channels();
 
     BOOST_ASSERT( 1 <= N );
@@ -127,7 +135,6 @@ void OperationCache::
     _cache.invalidate_samples( I );
     // TODO do this
     //_cache.invalidate_and_forget_samples(I);
-    Operation::invalidate_samples( I );
 }
 
 

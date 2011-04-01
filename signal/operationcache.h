@@ -26,6 +26,7 @@ public:
     virtual pBuffer read( const Interval& I );
 
     virtual void invalidate_samples(const Intervals& I);
+    virtual void invalidate_cached_samples(const Intervals& I);
 
     virtual Intervals invalid_samples();
     virtual Intervals invalid_returns();
@@ -51,7 +52,6 @@ public:
 protected:
     SinkSourceChannels _cache;
 
-private:
     /**
       OperationCache populates this when readRaw doesn't return the expected interval.
       It is up to an implementation to use this information somehow, for

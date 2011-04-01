@@ -245,7 +245,7 @@ void MatlabController::
     settings->setParent(0);
     connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
     bool noscript = settings->scriptname().empty();
-    settings->setOperation( m );
+    settings->setOperation( matlaboperation );
     if (noscript)
     {
         settings->showOutput();
@@ -300,10 +300,15 @@ void MatlabController::
         tryHeadAsMatlabOperation()
 {
     Signal::pOperation t = project_->head->head_source();
-    if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
-        t = t->source();
-    if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
-        t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->selection();
+    while (true)
+    {
+        if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
+            t = t->source();
+        else if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
+            t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->operation();
+        else
+            break;
+    }
 
     Adapters::MatlabOperation* m = dynamic_cast<Adapters::MatlabOperation*>(t.get());
 

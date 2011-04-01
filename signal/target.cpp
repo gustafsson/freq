@@ -241,7 +241,7 @@ std::string Layers::
 
 
 Target::
-        Target(Layers* all_layers, std::string name)
+        Target(Layers* all_layers, std::string name, bool autocreate_chainheads)
             :
             name_( name ),
             post_sink_( new PostSink ),
@@ -258,12 +258,15 @@ Target::
     cache_vars_->source(update_view_);
     read_ = cache_vars_;
 
-    BOOST_FOREACH( pChain c, all_layers_->layers() )
+    if (autocreate_chainheads)
     {
-        /*if (all_layers->project()->head->chain() == c)
-            addLayerHead(all_layers->project()->head);
-        else*/
-            addLayerHead( pChainHead(new ChainHead(c)));
+        BOOST_FOREACH( pChain c, all_layers_->layers() )
+        {
+            /*if (all_layers->project()->head->chain() == c)
+                addLayerHead(all_layers->project()->head);
+            else*/
+                addLayerHead( pChainHead(new ChainHead(c)));
+        }
     }
 }
 
@@ -274,7 +277,7 @@ void Target::
     BOOST_ASSERT( p );
     BOOST_ASSERT( all_layers_ );
     BOOST_ASSERT( !isInSet(p->chain()) );
-    BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
+    //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
     Signal::Intervals was_zero = read_->zeroed_samples_recursive();
 

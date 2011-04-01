@@ -217,6 +217,7 @@ MatlabFunction::
     }
 }
 
+
 MatlabFunction::
         ~MatlabFunction()
 {
@@ -467,8 +468,6 @@ bool MatlabOperation::
             return false;
         }
 
-        Interval J = ready_data->getInterval();
-
         if (this->plotlines){ // Update plot
             Tools::Support::PlotLines& plotlines = *this->plotlines.get();
 
@@ -495,16 +494,56 @@ bool MatlabOperation::
             }
         }
 
-//        Leave the process running so that we can continue a recording
+        Interval oldI = sent_data->getInterval();
+        Interval newI = ready_data->getInterval();
+
+        float *oldP = sent_data->waveform_data()->getCpuMemory();
+        float *newP = ready_data->waveform_data()->getCpuMemory();
+
+        Intervals J;
+
+        for (unsigned c=0; c<ready_data->channels() && c<sent_data->channels(); c++)
+        {
+            Interval equal = oldI & newI;
+            oldP += equal.first - oldI.first;
+            newP += equal.first - newI.first;
+            oldP += oldI.count() * c;
+            newP += newI.count() * c;
+            for (unsigned i=0; i<equal.count();i++)
+                if (*oldP != *newP)
+                {
+                    equal.last = equal.first;
+                    break;
+                }
+
+            if (equal.count())
+                _invalid_returns[c] -= equal;
+
+            J |= newI - equal;
+        }
+
+
+//        Leave the process running so that we can continue a recording or change the list of operations
 //        if (((invalid_samples() | invalid_returns()) - J).empty())
 //            _matlab->endProcess(); // Finished with matlab
 
+        Signal::Intervals samples_to_invalidate = invalid_returns() & J;
         TaskInfo("invalid_returns = %s, J = %s, invalid_returns & J = %s",
                  invalid_returns().toString().c_str(),
                  J.toString().c_str(),
-                 (invalid_returns()&J).toString().c_str());
+                 samples_to_invalidate.toString().c_str());
 
-        OperationCache::invalidate_samples( invalid_returns() & J );
+        if (J.empty())
+        {
+            TaskInfo("Matlab script didn't change anything");
+        }
+        else
+        {
+            TaskInfo("Matlab script made some changes");
+        }
+
+        if (samples_to_invalidate)
+            OperationCache::invalidate_samples( samples_to_invalidate );
 
         return true;
     }
@@ -570,13 +609,13 @@ pBuffer MatlabOperation::
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
-            Signal::pBuffer b = source()->readFixedLengthAllChannels( J );
+            sent_data = source()->readFixedLengthAllChannels( J );
 
             string file = _matlab->getTempName();
 
-            Hdf5Buffer::saveBuffer( file, *b, support );
+            Hdf5Buffer::saveBuffer( file, *sent_data, support );
 
-            TaskInfo("Sending %s to Matlab/Octave", b->getInterval().toString().c_str() );
+            TaskInfo("Sending %s to Matlab/Octave", sent_data->getInterval().toString().c_str() );
             _matlab->invoke( file );
         }
         else

@@ -39,7 +39,7 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     setMaximumSize( width(), height() );
     setMinimumSize( width(), height() );
     announceInvalidSamplesTimer.setSingleShot( true );
-    announceInvalidSamplesTimer.setInterval( 200 );
+    announceInvalidSamplesTimer.setInterval( 20 );
     connect( &announceInvalidSamplesTimer, SIGNAL(timeout()), SLOT(announceInvalidSamples()));
 
     connect( ui->scriptname, SIGNAL(textChanged(QString)), SLOT(postRestartScript()));
@@ -190,9 +190,42 @@ void MatlabOperationWidget::
 }
 
 
-void MatlabOperationWidget::
-        setOperation( Adapters::MatlabOperation* m )
+class DummySink: public Signal::Sink
 {
+public:
+    DummySink( unsigned C_) :C_(C_) {}
+    virtual void invalidate_samples(const Signal::Intervals& I) { invalid_samples_ |= I; }
+    virtual Signal::Intervals invalid_samples() { return invalid_samples_; }
+    virtual Signal::pBuffer read( const Signal::Interval& I )
+    {
+        Signal::pBuffer b = Operation::read(I);
+        invalid_samples_ -= b->getInterval();
+        return b;
+    }
+    virtual unsigned num_channels() { return C_; }
+
+private:
+    Signal::Intervals invalid_samples_;
+    unsigned C_;
+};
+
+
+void MatlabOperationWidget::
+        setOperation( Signal::pOperation om )
+{
+    Adapters::MatlabOperation* m = dynamic_cast<Adapters::MatlabOperation*>(om.get());
+    BOOST_ASSERT( m );
+
+    matlabChain.reset( new Signal::Chain(om) );
+    Signal::pChainHead ch( new Signal::ChainHead(matlabChain));
+    matlabTarget.reset( new Signal::Target(&project->layers, "Matlab", false));
+    matlabTarget->addLayerHead( ch );
+
+    std::vector<Signal::pOperation> sinks;
+    DummySink* ssc = new DummySink( om->num_channels() );
+    sinks.push_back( Signal::pOperation( ssc ) );
+    matlabTarget->post_sink()->sinks( sinks );
+
     this->operation = m;
     ui->pushButtonRestartScript->setVisible(true);
     ui->pushButtonRestoreChanges->setVisible(true);
@@ -243,7 +276,14 @@ void MatlabOperationWidget::
         if (needupdate && pid && pid->state() != QProcess::NotRunning)
         {
             // restart the timer
-            announceInvalidSamplesTimer.start();
+            if (!announceInvalidSamplesTimer.isActive())
+                announceInvalidSamplesTimer.start();
+
+            if (project->worker.todo_list().empty())
+            {
+                project->worker.center = 0;
+                project->worker.target(matlabTarget);
+            }
         }
     }
 }
@@ -255,7 +295,9 @@ void MatlabOperationWidget::
     if (!operation)
         return;
 
-    Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
+    Signal::Intervals invalid_returns = operation->invalid_returns();
+    Signal::Intervals invalid_samples = operation->invalid_samples();
+    Signal::Intervals needupdate = invalid_returns | invalid_samples;
 
     if (operation->dataAvailable())
     {
@@ -266,7 +308,9 @@ void MatlabOperationWidget::
 
     if (!operation->isWaiting())
     {
-        operation->OperationCache::invalidate_samples( needupdate );
+        TaskInfo("MatlabOperationWidget needupdate %s", needupdate.toString().c_str());
+        operation->OperationCache::invalidate_cached_samples( needupdate );
+        matlabTarget->post_sink()->invalidate_samples( needupdate );
         project->tools().render_view()->userinput_update( false );
     }
 
@@ -477,7 +521,7 @@ void MatlabOperationWidget::
     text->moveCursor( QTextCursor::End );
     text->insertPlainText( s );
     text->moveCursor( QTextCursor::End );
-    TaskInfo("Matlab output (%p): %s", this, s.toStdString().c_str());
+    TaskInfo("Matlab output (%p): %s", this, s.replace("\r","").toStdString().c_str());
 }
 
 

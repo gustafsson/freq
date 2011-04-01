@@ -49,7 +49,7 @@ public:
 
     Signal::pOperation ownOperation;
 
-    void setOperation( Adapters::MatlabOperation* );
+    void setOperation( Signal::pOperation om );
     QDockWidget* getOctaveWindow();
 
     bool hasProcess();
@@ -83,7 +83,9 @@ private:
 
     Adapters::DefaultMatlabFunctionSettings prevsettings;
 
-    //Signal::pTarget target;
+    Signal::pChain matlabChain;
+    Signal::pTarget matlabTarget;
+
     Sawe::Project* project;
     QPointer<QDockWidget> octaveWindow;
     QPlainTextEdit* text;

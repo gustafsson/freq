@@ -153,6 +153,7 @@ protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
     MatlabFunctionSettings* _settings;
     Signal::pBuffer ready_data;
+    Signal::pBuffer sent_data;
 
 private:
     friend class boost::serialization::access;
