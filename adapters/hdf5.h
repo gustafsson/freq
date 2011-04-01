@@ -77,15 +77,21 @@ public:
     template<typename T> T read( std::string datasetname )
     {
         std::string err;
+        static bool looks_like_matlab = false;
 
-        for (int i=0; i<2; i++)
-            try
+        bool looked_like_matlab = looks_like_matlab;
+
+        for (int i=0; i<2; i++) try
         {
-            switch(i) {
+            switch(i ^ looked_like_matlab) {
+                // Octave style
                 case 0: return read_exact<T>( "/" + datasetname + "/value" );
+
+                // Matlab style
                 case 1: return read_exact<T>( datasetname );
             }
         } catch (const std::runtime_error& x) {
+            looks_like_matlab = !looks_like_matlab;
             if (err.empty() || strcmp(x.what(), err.substr(0, err.size()-1).c_str()) != 0)
                 err = err + x.what() + "\n";
         }
