@@ -18,7 +18,7 @@ end
 
 global foundclicks
 if isempty(foundclicks)
-  foundclicks = zeros(derivatives, 1);
+  foundclicks = 0;
 end
 
 %% Compute 'derivatives' number of derivatives
@@ -46,14 +46,26 @@ x = 1:size(data.buffer,1);
 t = (data.offset + x) / data.samplerate;
 d = abs(d);
 
+clicktest = zeros(size(d));
+hz = logspace(log10(data.samplerate/20), log10(data.samplerate/3), derivatives+1);
+
 for k=1:derivatives
    p = d(:,k);
    n = p>limits(k);
-   foundclicks(k) = foundclicks(k) + sum(n(2:end)&~n(1:end-1));
+
+   clicks = [0; (n(2:end-1) & ~n(1:end-2) & ~n(3:end)); 0];
+   clicktest(:,k) = clicks;
+
    m = conv(n, [1 1 1]);
    m = 0~=m(2:end-1);
-   sawe_plot2(t(m), 1000*k, p(m)>limits(k));
+   sawe_plot2(t(m), hz(k), n(m));
+
+   m = conv(clicks, [1 1 1]);
+   m = 0~=m(2:end-1);
+   sawe_plot2(t(m), hz(k)*0.9 + 0.1*hz(k+1), n(m));
 end
+
+foundclicks = foundclicks + sum(any(clicktest,2));
 
 if all(limits==limits(1))
   limitstr = ['threshold ' num2str(limits(1))];
@@ -61,5 +73,5 @@ else
   limitstr = ['thresholds [' num2str(limits') '] respectively'];
 end
 
-disp(['Found [' num2str(foundclicks') '] clicks so far using the 1st, 2nd, ... derivative and ' limitstr]);
+disp(['Found ' num2str(foundclicks') ' clicks so far using the 1st, 2nd, ... derivative and ' limitstr]);
 
