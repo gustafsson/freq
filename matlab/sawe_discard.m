@@ -15,9 +15,9 @@ end
 
 
 if 0==data.offset
-    data.buffer = data.buffer(1:end-discardBack);
+    data.buffer = data.buffer(1:end-discardBack,:);
 else
     data.offset = data.offset + discardFront;
-    data.buffer = data.buffer(1+discardFront:end-discardBack);
+    data.buffer = data.buffer(1+discardFront:end-discardBack,:);
 end
 

@@ -27,7 +27,7 @@ end
 
 %% Interpolate between blocks
 % try to do a rough interpolation between blocks to avoid discontinuities
-data.buffer=data.buffer-linspace(data.buffer(1), data.buffer(end), numel(data.buffer));
+data.buffer=data.buffer-linspace(data.buffer(1), data.buffer(end), numel(data.buffer))';
 
 
 %% Always discard all redundant data before returning

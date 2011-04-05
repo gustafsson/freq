@@ -1,7 +1,7 @@
 function [txt]=sawe_getdatainfo(data)
 
 global state;
-if isempty(state) || data.offset==0
+if isempty(state)
     state.counter = 1;
 else
     state.counter = state.counter + 1;
