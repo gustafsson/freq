@@ -4,6 +4,9 @@
 // gpumisc
 #include <CudaException.h>
 
+
+#include <float.h> // FLT_MAX
+
 using namespace Tfr;
 
 //#define TIME_FILTER

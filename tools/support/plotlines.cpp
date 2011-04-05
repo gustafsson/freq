@@ -150,7 +150,7 @@ void PlotLines::
     float i = 0, d;
     for (Lines::iterator itr = lines_.begin(); itr != lines_.end(); itr++)
     {
-        QColor c = QColor::fromHsvF( modf(rand_color_offs_ + i++/N, &d), 1, 1 );
+        QColor c = QColor::fromHsvF( std::modf(rand_color_offs_ + i++/N, &d), 1, 1 );
         itr->second.R = c.redF();
         itr->second.G = c.greenF();
         itr->second.B = c.blueF();
