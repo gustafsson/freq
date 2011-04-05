@@ -34,6 +34,13 @@ Hdf5Error::
 }
 
 
+Hdf5Error::
+        ~Hdf5Error() throw()
+{
+
+}
+
+
 Hdf5Input::
         Hdf5Input(std::string filename)
 {

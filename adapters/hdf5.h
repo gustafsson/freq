@@ -26,6 +26,9 @@ public:
     };
 
     Hdf5Error(Type t, const std::string& message, const std::string& data="");
+    virtual
+    ~Hdf5Error() throw();
+
     Type type() const { return t_; }
     const std::string& data() const { return data_; }
 private:
