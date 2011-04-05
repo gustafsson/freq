@@ -7,7 +7,9 @@ function sawe_plot(varargin);
 	
 	default_args = cell(0);
 
-	assert( ~mod(nargin,2), 'Input must be a multiple of 2');
+	if 0~=mod(nargin,2)
+		error('Input must be a multiple of 2');
+	end
 
 	for n=1:nargin/2
 
