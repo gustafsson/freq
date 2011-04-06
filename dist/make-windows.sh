@@ -22,7 +22,9 @@ cd ..
 rm -rf $filename
 rm -rf $packagename
 cp -r sonicawe_snapshot_win32_base $packagename
+cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagename
 cp sonic/sonicawe/release/sonicawe.exe $packagename
 zip -r $filename $packagename
 mv $filename sonic/sonicawe/dist
 cd sonic/sonicawe/dist
+
