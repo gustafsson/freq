@@ -21,7 +21,7 @@ if nargin<4
 end
 
 if 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
-    disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
+  disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
 end
 
 global sawe_plot_data; %matrix for all lines to be plotted.
@@ -30,7 +30,8 @@ resultfile=[datafile '.result.h5'];
 tempfile=datafile;
 isoctave=0~=exist('OCTAVE_VERSION','builtin');
 
-disp([ datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' script waiting Sonic AWE running script ''' func2str(func) ''' (datafile ' datafile ')']);
+disp([ sawe_datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) ''' (datafile ''' datafile ''')']);
+disp(['Working dir: ' pwd]);
 tic
 while 1
 
@@ -42,7 +43,7 @@ while 1
   end
 
   if datafile_exists
-    disp([ datestr(now, 'HH:MM:SS.FFF') ' Processing ''' datafile '''']);
+    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
 
     try	
       if ~isoctave
@@ -75,7 +76,7 @@ while 1
         end
     end
 
-    disp([ datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
+    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
     if 1 == nargin(func2str(func))
         data = func(data);
     else
@@ -94,7 +95,7 @@ while 1
     else
       movefile(tempfile,resultfile); % matlab
     end
-    disp([ datestr(now, 'HH:MM:SS.FFF') ' saved results']);
+    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' saved results']);
     
   else
     if isoctave
