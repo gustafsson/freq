@@ -1,5 +1,6 @@
 #include "matlaboperation.h"
 #include "hdf5.h"
+#include "microphonerecorder.h"
 
 #include <signal.h>
 #include <sys/stat.h>
@@ -406,20 +407,18 @@ void MatlabOperation::
     // If computing in order and invalidating something that has already been
     // computed
     TaskInfo("MatlabOperation invalidate_samples(%s)", I.toString().c_str());
-    TaskInfo("MatlabOperation children: %s", toString().c_str());
-    TaskInfo("MatlabOperation outputs: %s", parentsToString().c_str());
 
-    if (_settings && _settings->computeInOrder() && (I & cached_samples()))
+    Intervals previously_computed = cached_samples() & ~invalid_returns();
+    bool start_over = _settings && _settings->computeInOrder() && (I & previously_computed);
+
+    if (start_over)
     {
-        // Start over and recompute the first block again
-        TaskInfo("MatlabOperation start over");
-        OperationCache::invalidate_samples(Signal::Intervals::Intervals_ALL);
-        if (plotlines)
-            plotlines->clear();
+        // Start over and recompute all blocks again
+        restart();
     }
     else
     {
-        OperationCache::invalidate_samples(I);
+        OperationCache::invalidate_samples( I );
 
         if (plotlines && source())
             plotlines->clear( I, sample_rate() );
@@ -522,11 +521,6 @@ bool MatlabOperation::
             J |= newI - equal;
         }
 
-
-//        Leave the process running so that we can continue a recording or change the list of operations
-//        if (((invalid_samples() | invalid_returns()) - J).empty())
-//            _matlab->endProcess(); // Finished with matlab
-
         Signal::Intervals samples_to_invalidate = invalid_returns() & J;
         TaskInfo("invalid_returns = %s, J = %s, invalid_returns & J = %s",
                  invalid_returns().toString().c_str(),
@@ -544,6 +538,18 @@ bool MatlabOperation::
 
         if (samples_to_invalidate)
             OperationCache::invalidate_samples( samples_to_invalidate );
+
+        MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
+        bool isrecording = 0!=recorder;
+        if (isrecording)
+        {
+            // Leave the process running so that we can continue a recording or change the list of operations
+        }
+        else
+        {
+            if (((invalid_samples() | invalid_returns()) - J).empty())
+                _matlab->endProcess(); // Finished with matlab
+        }
 
         return true;
     }
@@ -565,12 +571,6 @@ pBuffer MatlabOperation::
     if (!_matlab)
         return pBuffer();
 
-    if (_matlab->hasProcessEnded())
-    {
-        TaskInfo("MatlabOperation::read(%s), process ended", I.toString().c_str());
-        return source()->read( I );
-    }
-
     TaskTimer tt("MatlabOperation::read(%s)", I.toString().c_str() );
 
     try
@@ -585,6 +585,11 @@ pBuffer MatlabOperation::
             return b;
         }
 
+        if (_matlab->hasProcessEnded())
+        {
+            TaskInfo("process ended");
+            return source()->readFixedLength( I );
+        }
 
         if (!isWaiting())
         {
@@ -605,11 +610,44 @@ pBuffer MatlabOperation::
             }
 
             support = _settings->redundant();
-            J = Intervals(J).enlarge( support ).coveredInterval();
+            Interval signal = getInterval();
+            J &= signal;
+            Interval K = Intervals(J).enlarge( support ).coveredInterval();
+
+            bool need_data_after_end = K.last > signal.last;
+            if (0<_settings->chunksize() && (int)J.count() != _settings->chunksize())
+                need_data_after_end = true;
+
+            if (need_data_after_end)
+            {
+                MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
+                bool isrecording = 0!=recorder;
+                if (isrecording)
+                {
+                    bool need_a_specific_chunk_size = 0<_settings->chunksize();
+                    if (_settings->computeInOrder() && need_a_specific_chunk_size)
+                        return pBuffer();
+
+
+                    if (recorder->isStopped())
+                    {
+                        // Ok, go on
+                    }
+                    else
+                    {
+                        // Don't use any samples after the end while recording
+                        K &= signal;
+
+                        if (Intervals(K).shrink(support).empty())
+                            return pBuffer();
+                    }
+                }
+            }
+
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
-            sent_data = source()->readFixedLengthAllChannels( J );
+            sent_data = source()->readFixedLengthAllChannels( K );
 
             string file = _matlab->getTempName();
 
@@ -644,8 +682,11 @@ void MatlabOperation::
     {
         _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
 
-        invalidate_samples( Signal::Intervals::Intervals_ALL );
+        OperationCache::invalidate_samples( Signal::Intervals::Intervals_ALL );
     }
+
+    if (plotlines)
+        plotlines->clear();
 }
 
 

@@ -13,6 +13,10 @@ mono_offset = ceil(data.offset/downsample)*downsample;
 mono=mono( (mono_offset+1:data.offset + end-mod(data.offset + end, downsample))- mono_offset);
 mono = reshape(mono, floor(numel(mono)/downsample), downsample);
 mono = max(abs(mono), [], 2);
+if 0 == numel(mono)
+  mono = max(abs(sum(data.buffer, 2)));
+  downsample = size(data.buffer, 1);
+end
 mono_samplerate = data.samplerate/downsample;
 s = 3/mono_samplerate;
 for k=1:numel(mono)

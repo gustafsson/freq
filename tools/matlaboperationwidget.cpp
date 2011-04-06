@@ -194,6 +194,7 @@ class DummySink: public Signal::Sink
 {
 public:
     DummySink( unsigned C_) :C_(C_) {}
+    virtual bool deleteMe() { return false; }
     virtual void invalidate_samples(const Signal::Intervals& I) { invalid_samples_ |= I; }
     virtual Signal::Intervals invalid_samples() { return invalid_samples_; }
     virtual Signal::pBuffer read( const Signal::Interval& I )
@@ -432,9 +433,9 @@ void MatlabOperationWidget::
 
     if (text)
     {
-        text->appendPlainText( QString("\nThe process ended with exit code %1:%2")
-                               .arg(exitCode)
-                               .arg(QProcess::NormalExit == exitStatus ? 0 : 1 ));
+        text->appendPlainText( QString("\nThe process ended %1with exit code %2")
+                               .arg(QProcess::NormalExit == exitStatus ? "unexpectedly " : "" )
+                               .arg(exitCode));
         text->moveCursor( QTextCursor::End );
     }
 

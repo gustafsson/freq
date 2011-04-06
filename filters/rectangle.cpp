@@ -34,7 +34,7 @@ std::string Rectangle::
     std::stringstream ss;
     ss << std::setiosflags(std::ios::fixed);
     if (_t2 == FLT_MAX)
-        ss << "Sharp bandpass from ";
+        ss << "Bandpass from ";
     else
         ss << "Rectangle from ";
 
