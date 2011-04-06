@@ -230,8 +230,18 @@ std::string Operation::
 std::string Operation::
         parentsToString()
 {
+    std::string s = name();
+
+    std::string n = Operation::name();
+    if (s != n)
+    {
+        s += " (";
+        s += n;
+        s += ")";
+    }
+
     std::stringstream ss;
-    ss << name();
+    ss << s;
     if (1 < _outputs.size())
         ss << " (" << _outputs.size() << " parents)";
 

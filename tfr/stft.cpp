@@ -606,7 +606,7 @@ FreqAxis Stft::
 float Stft::
         displayedTimeResolution( float FS, float /*hz*/ )
 {
-    return FS/_window_size;
+    return _window_size / FS;
 }
 
 

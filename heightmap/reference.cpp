@@ -169,7 +169,7 @@ bool Reference::
     {
         float atres = _collection->transform()->displayedTimeResolution(FS, ahz);
         float btres = _collection->transform()->displayedTimeResolution(FS, bhz);
-        float tdelta = (b.time-a.time)/_collection->samples_per_block();
+        float tdelta = 2*(b.time-a.time)/_collection->samples_per_block();
         if (btres > tdelta && atres > tdelta)
             return false;
     }

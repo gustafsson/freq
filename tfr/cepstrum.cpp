@@ -57,9 +57,9 @@ FreqAxis Cepstrum::
 
 
 float Cepstrum::
-        displayedTimeResolution( float FS, float /*hz*/ )
+        displayedTimeResolution( float FS, float hz )
 {
-    return FS/chunk_size();
+    return Stft::Singleton().displayedTimeResolution( FS, hz );
 }
 
 
