@@ -148,7 +148,7 @@ namespace Tools
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
-            chainItm->setText(0, QString::fromStdString( c->name ) );
+            chainItm->setText(0, QString::fromLocal8Bit( c->name.c_str() ) );
             chainItm->setExpanded( true );
             chainItm->setFlags( chainItm->flags() & ~Qt::ItemIsSelectable );
 
@@ -168,7 +168,7 @@ namespace Tools
                 }
                 itm->tail = o;
                 itm->setFlags( itm->flags() & ~Qt::ItemIsDropEnabled );
-                QString name = QString::fromStdString( o->name() );
+                QString name = QString::fromLocal8Bit( o->name().c_str() );
                 itm->setText(0, name);
                 //itm->setCheckState(0, Qt::Unchecked);
                 //itm->setCheckState(0, Qt::Checked);

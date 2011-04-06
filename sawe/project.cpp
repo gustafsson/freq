@@ -159,7 +159,7 @@ void Project::
 {
     QSettings settings;
     QStringList recent_files = settings.value("recent files").toStringList();
-    QFileInfo fi(QString::fromStdString( filename ));
+    QFileInfo fi(QString::fromLocal8Bit( filename.c_str() ));
     fi.makeAbsolute();
     QString qfilename = fi.canonicalFilePath();
     if (!qfilename.isEmpty())
