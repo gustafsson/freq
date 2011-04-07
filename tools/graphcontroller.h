@@ -4,6 +4,7 @@
 #include "signal/chain.h"
 
 #include <QObject>
+#include <QTimer>
 
 class QDockWidget;
 class QWidget;
@@ -11,6 +12,7 @@ class QVBoxLayout;
 class QTreeWidget;
 class QTreeWidgetItem;
 class QAction;
+class QPushButton;
 
 namespace Sawe
 {
@@ -38,6 +40,7 @@ private slots:
     void removeSelected();
     void removeHidden();
     void removeCaches();
+    void updateContextMenu();
 
 private:
     void setupGui();
@@ -46,12 +49,15 @@ private:
 
     RenderView* render_view_;
     Sawe::Project* project_;
+    bool dontredraw_, removing_;
 
     QAction *actionToggleOperationsWindow;
     QDockWidget *operationsWindow;
     QWidget *dockWidgetContents;
     QVBoxLayout *verticalLayout;
     QTreeWidget *operationsTree;
+    QPushButton *removeSelectedButton;
+    QTimer timerUpdateContextMenu;
 };
 
 } // namespace Tools

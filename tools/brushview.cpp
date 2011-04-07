@@ -83,7 +83,6 @@ void BrushView::
     glEnd();
 
     glLineWidth(0.6f);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINE_LOOP);
     for (unsigned k=0; k<360; k++) {
         float s = z + _rz*sin(k*M_PI/180);

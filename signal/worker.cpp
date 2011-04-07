@@ -12,6 +12,7 @@
 #endif
 #include <CudaException.h>
 #include <demangle.h>
+#include <boost/foreach.hpp>
 
 #define TIME_WORKER
 //#define TIME_WORKER if(0)
@@ -33,6 +34,8 @@ namespace Signal {
 Worker::
         Worker(Signal::pTarget t)
 :   work_chunks(0),
+    latest_request(0,0),
+    latest_result(0,0),
     _number_of_samples(0),
     _last_work_one(boost::date_time::not_a_date_time),
     _samples_per_chunk( 1 ),
@@ -85,10 +88,12 @@ bool Worker::
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;
 
-    if (!_target->post_sink()->isUnderfed() && skip_if_low_fps && _requested_fps>_highest_fps)
-        return false;
+    if (skip_if_low_fps)
+        if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps)
+            return false;
 
-    Signal::Intervals todo_list = fetch_todo_list();
+    Signal::Intervals todo_list = this->todo_list();
+
     if (todo_list.empty())
         return false;
 
@@ -98,6 +103,7 @@ bool Worker::
     unsigned center_sample = source()->sample_rate() * center;
 
     Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
+    latest_request = interval;
 
     boost::scoped_ptr<TaskTimer> tt;
 
@@ -128,7 +134,8 @@ bool Worker::
         b = callCallbacks( interval );
 
         //float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
-        worked_samples |= b->getInterval();
+        latest_result = b->getInterval();
+        worked_samples |= latest_result;
         //work_time += b->length();
         //work_time -= r;
 
@@ -149,24 +156,18 @@ bool Worker::
         if (cudaErrorMemoryAllocation == e.getCudaError() && min_samples_per_chunk<_samples_per_chunk) {
             TaskInfo ti("Worker caught cudaErrorMemoryAllocation\n/s",  e.what());
             cudaGetLastError(); // consume error
-            TaskInfo("_samples_per_chunk was %u", _samples_per_chunk);
-            TaskInfo("_max_samples_per_chunk was %u", _max_samples_per_chunk);
-            TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave() );
+            TaskInfo("Samples per chunk was %u", _samples_per_chunk);
+            TaskInfo("Max samples per chunk was %u", _max_samples_per_chunk);
+            TaskInfo("Scales per octave is %g", Tfr::Cwt::Singleton().scales_per_octave() );
 
-/*            while (128 < _samples_per_chunk &&
-                   _samples_per_chunk <= Tfr::Cwt::Singleton().prev_good_size(
-                    _samples_per_chunk, _source->sample_rate()))
-            {
-                Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave()*0.99f );
-            }
-*/
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _target->post_sink()->sample_rate());
+
+            if (_max_samples_per_chunk == _samples_per_chunk)
+                throw;
+
             _max_samples_per_chunk = _samples_per_chunk;
 
-            TaskInfo("scales_per_octave is now %g", Tfr::Cwt::Singleton().scales_per_octave() );
-            TaskInfo("_samples_per_chunk now is %u", _samples_per_chunk);
-            TaskInfo("_max_samples_per_chunk now is %u", _max_samples_per_chunk);
             TaskInfo("Setting max samples per chunk to %u", _samples_per_chunk);
 
             size_t free=0, total=0;
@@ -175,10 +176,7 @@ bool Worker::
                      total/1024.f/1024, free/1024.f/1024);
 
         } else {
-            TaskInfo("Worker caught CudaException:\n%s", e.what());
-            TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave());
-            Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() * .75 );
-            TaskInfo("scales_per_octave is %g", Tfr::Cwt::Singleton().scales_per_octave());
+            throw;
         }
 //            TaskInfo("Worker caught CudaException:\n%s", e.what());
 //            throw;
@@ -263,31 +261,48 @@ bool Worker::
 Signal::Intervals Worker::
         fetch_todo_list()
 {
+    WORKER_INFO TaskTimer tt("Fetching todo");
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_todo_lock);
 #endif
-    if ( Tfr::Cwt::Singleton().wavelet_time_support() >= Tfr::Cwt::Singleton().wavelet_default_time_support() )
-        _cheat_work.clear();
-
     Signal::Intervals todoinv = _target->post_sink()->invalid_samples();
-    todoinv &= Interval(0, _target->post_sink()->number_of_samples());
+    todoinv &= _target->post_sink()->getInterval();
+
     Signal::Intervals c = todoinv;
     c -= _cheat_work;
 
-    if (!c)
+    bool is_cheating = Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
+    if (is_cheating && !c)
     {
+        // Not cheating anymore as there would have been nothing left to work on
+        WORKER_INFO TaskInfo("Restoring time suppor");
         Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
-        return _previous_todo_list = todoinv;
     }
 
-    return _previous_todo_list = c;
+    if (!is_cheating || !c)
+    {
+        _cheat_work.clear();
+        c = todoinv;
+    }
+
+
+    BOOST_FOREACH(Signal::Interval const &b, c)
+    {
+        if (b.count() == 0) {
+            TaskInfo ti("Worker interval debug. ");
+            ti.tt().getStream() << "\nInvalid samples: " << _target->post_sink()->invalid_samples() << "\nPS interval: "
+                    << _target->post_sink()->getInterval() << "\nCheat interval:" << _cheat_work;
+        }
+    }
+
+    return _todo_list = c;
 }
 
 
 Intervals Worker::
-        previous_todo_list()
+        todo_list()
 {
-    return _previous_todo_list;
+    return _todo_list;
 }
 
 
@@ -313,6 +328,7 @@ void Worker::
     if (_disabled)
     {
         _number_of_samples = 0;
+        _todo_list.clear();
         return;
     }
 
@@ -325,6 +341,8 @@ void Worker::
     }
     _highest_fps = _min_fps;
     _number_of_samples = _target->post_sink()->number_of_samples();
+
+    fetch_todo_list();
 }
 
 

@@ -94,7 +94,7 @@ void CommentView::
         return;
     }
 
-    if (!mask().contains( event->pos() ))
+    if (!maskedRegion.contains( event->pos() ))
     {
         setEditFocus( false );
         event->setAccepted( false );
@@ -132,7 +132,7 @@ void CommentView::
 void CommentView::
         mouseDoubleClickEvent ( QMouseEvent * event )
 {
-    if (!mask().contains( event->pos() ))
+    if (!maskedRegion.contains( event->pos() ))
     {
         event->setAccepted( false );
         return;
@@ -145,7 +145,7 @@ void CommentView::
 void CommentView::
         mouseMoveEvent(QMouseEvent *event)
 {    
-    bool visible = mask().contains( event->pos() );
+    bool visible = maskedRegion.contains( event->pos() );
     setContextMenuPolicy( visible ? Qt::ActionsContextMenu : Qt::NoContextMenu);
 
     bool moving = false;
@@ -220,7 +220,7 @@ void CommentView::
 void CommentView::
         wheelEvent(QWheelEvent *e)
 {
-    if (!mask().contains( e->pos() ))
+    if (!maskedRegion.contains( e->pos() ))
     {
         e->setAccepted( false );
         return;
@@ -273,6 +273,7 @@ void CommentView::
     QPointF h0(0, 1);
     QPointF x0(1, 0);
     ref_point = b + y + 0.1f*x;
+    ref_point.setX( std::max(ref_point.x(), 25));
 
     if (!create_thumbnail)
     {
@@ -280,9 +281,12 @@ void CommentView::
         poly.clear();
         poly.push_back(b - 2*h0);
         poly.push_back(b + 2*x0);
-        poly.push_back(b + 0.1f*y + 0.2f*x);
+        //poly.push_back(b + 0.1f*y + 0.05f*x);
+        //poly.push_back(ref_point);
+        //poly.push_back(b + 0.1f*y + 0.15f*x);
+        poly.push_back(b + 0.1f*y + ( ref_point.x() - 0.9f*y.y()) *x0);
         poly.push_back(ref_point);
-        poly.push_back(b + 0.1f*y + 0.4f*x);
+        poly.push_back(b + 0.1f*y + ( ref_point.x() + 0.9f*y.y())*x0);
         poly.push_back(b + x - x0);
         poly.push_back(b + x - h0);
         poly.push_back(b + x + h + 0.5f*h0);
@@ -302,7 +306,6 @@ void CommentView::
         ui->textEdit->setVisible( false );
         poly.clear();
         r = QRect();
-        //float s = (ref_point.x()-1)/2;
         float s = std::min(ref_point.x(), 15);
         poly.push_back(ref_point);
         poly.push_back(ref_point - s*h0 - s*x0);
@@ -310,7 +313,7 @@ void CommentView::
     }
 
 
-    QRegion maskedRegion = r;
+    maskedRegion = r;
     maskedRegion |= QRegion( poly.toPolygon() );
     maskedRegion -= QRegion(0,0,1,1);
     maskedRegion -= QRegion(r.right()-2,0,2,1);

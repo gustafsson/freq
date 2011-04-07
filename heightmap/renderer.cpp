@@ -13,14 +13,15 @@
 #include <CudaException.h>
 #include <glPushContext.h>
 #include <cuda_vector_types_op.h>
-#include "tfr/cwt.h" // TODO remove
+
+#include <boost/foreach.hpp>
 
 #ifdef _MSC_VER
 #include "msc_stdc.h"
 #endif
 
-#define TIME_RENDERER
-//#define TIME_RENDERER if(0)
+//#define TIME_RENDERER
+#define TIME_RENDERER if(0)
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
@@ -119,10 +120,10 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( w*h*4*sizeof(float)));
+    _mesh_position.reset( new Vbo( w*h*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
 
-    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    float *pos = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    glBindBuffer(_mesh_position->vbo_type(), *_mesh_position);
+    float *pos = (float *) glMapBuffer(_mesh_position->vbo_type(), GL_WRITE_ONLY);
     if (!pos) {
         return;
     }
@@ -147,8 +148,8 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
         *pos++ = 1.0f;
     }
 
-    glUnmapBuffer(GL_ARRAY_BUFFER);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUnmapBuffer(_mesh_position->vbo_type());
+    glBindBuffer(_mesh_position->vbo_type(), 0);
 }
 
 typedef tvector<4,GLdouble> GLvector4;
@@ -266,8 +267,8 @@ void Renderer::init()
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
 
-    setSize( collection->samples_per_block(), collection->scales_per_block() );
-    //setSize( collection->samples_per_block()/8, collection->scales_per_block()/2 );
+    //setSize( collection->samples_per_block(), collection->scales_per_block() );
+    setSize( collection->samples_per_block()/16, collection->scales_per_block() );
 
     //setSize(2,2);
 
@@ -299,7 +300,7 @@ void Renderer::
     max_t = 0;
     min_t = FLT_MAX;
 
-    foreach( GLvector v, clippedFrustum)
+    BOOST_FOREACH( GLvector v, clippedFrustum)
     {
         if (max_t < v[0])
             max_t = v[0];
@@ -352,8 +353,8 @@ void Renderer::createColorTexture(unsigned N) {
 Reference Renderer::
         findRefAtCurrentZoomLevel( Heightmap::Position p )
 {
-    Position max_ss = collection->max_sample_size();
-    Reference ref = collection->findReference(Position(0, 0), max_ss);
+    //Position max_ss = collection->max_sample_size();
+    Reference ref = collection->entireHeightmap();
 
     // The first 'ref' will be a super-ref containing all other refs, thus
     // containing 'p' too. This while-loop zooms in on a ref containing
@@ -418,8 +419,9 @@ void Renderer::draw( float scaley )
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
-    Position mss = collection->max_sample_size();
-    Reference ref = collection->findReference(Position(0,0), mss);
+    //Position mss = collection->max_sample_size();
+    //Reference ref = collection->findReference(Position(0,0), mss);
+    Reference ref = collection->entireHeightmap();
 
     glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
     glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
@@ -429,7 +431,8 @@ void Renderer::draw( float scaley )
 
     beginVboRendering();
 
-    renderChildrenSpectrogramRef(ref);
+    if (!renderChildrenSpectrogramRef(ref))
+        renderSpectrogramRef( ref );
 
     endVboRendering();
 
@@ -591,10 +594,16 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     else
         needBetterT = timePixels / (_redundancy*collection->samples_per_block());
 
-    if ( needBetterF > needBetterT && needBetterF > 1 && ref.top().containsSpectrogram() )
+    if (!ref.top().boundsCheck(Reference::BoundsCheck_HighS) && !ref.bottom().boundsCheck(Reference::BoundsCheck_HighS))
+        needBetterF = 0;
+
+    if (!ref.left().boundsCheck(Reference::BoundsCheck_HighT))
+        needBetterT = 0;
+
+    if ( needBetterF > needBetterT && needBetterF > 1 )
         return Lod_NeedBetterF;
 
-    else if ( needBetterT > 1 && ref.left().containsSpectrogram() )
+    else if ( needBetterT > 1 )
         return Lod_NeedBetterT;
 
     else
@@ -605,9 +614,6 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     TIME_RENDERER_BLOCKS TaskTimer tt("%s", ref.toString().c_str());
 
-    if (!ref.containsSpectrogram())
-        return false;
-
     LevelOfDetal lod = testLod( ref );
     switch(lod) {
     case Lod_NeedBetterF:
@@ -616,7 +622,8 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
-        renderChildrenSpectrogramRef( ref.right() );
+        if (ref.right().boundsCheck(Reference::BoundsCheck_OutT))
+            renderChildrenSpectrogramRef( ref.right() );
         break;
     case Lod_Ok:
         renderSpectrogramRef( ref );
@@ -953,6 +960,14 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     return true;
 }
 
+template<typename T>
+void swap( T& x, T& y) {
+    x = x + y;
+    y = x - y;
+    x = x - y;
+}
+
+
 void Renderer::drawAxes( float T )
 {
     // Draw overlay borders, on top, below, to the right or to the left
@@ -962,15 +977,20 @@ void Renderer::drawAxes( float T )
     // 2 clip entire sound to frustum
     // 3 decide upon scale
     // 4 draw axis
+    unsigned screen_width = viewport_matrix[2];
+    unsigned screen_height = viewport_matrix[3];
 
-    float w = 0.1f, h=0.05f;
+    float borderw = 50*1.1;
+    float borderh = 12.5*1.1;
+
+    float w = borderw/screen_width, h=borderh/screen_height;
+
     if (!left_handed_axes)
     {
-        w = 0.05f, h = 0.1f;
+        swap( h, w );
     }
 
-
-    { // 1 gray draw overlay
+    if (0) { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
         glPushMatrixContext push_proj(GL_PROJECTION);
 
@@ -1052,6 +1072,9 @@ void Renderer::drawAxes( float T )
         ST = maxt-mint;
         SF = maxf-minf;
 
+        ST *= 8/1.1*borderw/(screen_width-2*borderw);
+        SF *= 20/1.1*borderh/(screen_height-2*borderh);
+
         if (clippedFrustum.size())
         {
             st = 0, sf = 0;
@@ -1065,9 +1088,18 @@ void Renderer::drawAxes( float T )
 
             DT = powf(10, st);
             DF = powf(10, sf);
+
+            if (st>1)
+            {
+                st = 1;
+                DT = 10;
+                if( 10* 60 < ST*.53f ) DT *= 6, st++;
+                if( 10* 60*10 < ST*.53f ) DT *= 10, st++;
+                if( 10* 60*10*6 < ST*.53f ) DT *= 6, st++;
+                if( 10* 60*10*6*24 < ST*.53f ) DT *= 24, st++;
+            }
         }
     }
-
 
     // 4 render
     GLvector x(1,0,0), z(0,0,1);
@@ -1081,7 +1113,7 @@ void Renderer::drawAxes( float T )
     // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
-        glColor4f(0,0,0,1);
+        glColor4f(0,0,0,0.8);
         unsigned j=(i+1)%clippedFrustum.size();
         GLvector p = clippedFrustum[i]; // starting point of side
         GLvector v = clippedFrustum[j]-p; // vector pointing from p to the next vertex
@@ -1121,7 +1153,18 @@ void Renderer::drawAxes( float T )
 
             // draw marker
             if (taxis) {
-                float size = 1+ (0 == (t%10));
+                float size;
+                if (st<=0)
+                    size = 1+ (0 == (t%10));
+                else if (st == 1)
+                    size = 1+ (0 == (t%6));
+                else if (st == 2)
+                    size = 1+ (0 == (t%10));
+                else if (st == 3)
+                    size = 1+ (0 == (t%6));
+                else
+                    size = 1+ (0 == (t%24));
+
                 glLineWidth(size);
 
                 float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
@@ -1134,6 +1177,7 @@ void Renderer::drawAxes( float T )
 
                 if (size>1) {
                     glLineWidth(1);
+
                     glPushMatrixContext push_model( GL_MODELVIEW );
 
                     glTranslatef(p[0], 0, p[2]);
@@ -1157,12 +1201,20 @@ void Renderer::drawAxes( float T )
                     if (!left_handed_axes)
                         glScalef(-1,1,1);
                     glTranslatef(-.5f*w,sign*120-50.f,0);
+                    glColor4f(1,1,1,0.5);
+                    float z = 10;
+                    float q = 20;
+                    glBegin(GL_TRIANGLE_STRIP);
+                    glVertex2f(0 - z, 0 - q);
+                    glVertex2f(w + z, 0 - q);
+                    glVertex2f(0 - z, 100 + q);
+                    glVertex2f(w + z, 100 + q);
+                    glEnd();
+                    glColor4f(0,0,0,0.8);
                     for (char*c=a;*c!=0; c++) {
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                         glTranslatef(letter_spacing,0,0);
                     }
-                    if (!left_handed_axes)
-                        glScalef(-1,1,1);
                 }
 
                 if (v[0] > 0) t++;
@@ -1183,6 +1235,7 @@ void Renderer::drawAxes( float T )
                 if (size>1 || SF<.8f)
                 {
                     glLineWidth(1);
+
                     glPushMatrixContext push_model( GL_MODELVIEW );
 
                     glTranslatef(p[0],0,p[2]);
@@ -1191,17 +1244,23 @@ void Renderer::drawAxes( float T )
                     char a[100];
                     sprintf(a,"%d", f);
                     unsigned w=20;
-                    if (sign<0) {
-                        for (char*c=a;*c!=0; c++)
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                    }
+                    for (char*c=a;*c!=0; c++)
+                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                     if (!left_handed_axes)
                         glScalef(-1,1,1);
-                    glTranslatef(sign*w,-50.f,0);
+                    glTranslatef(sign>=0?20:sign*w,-50.f,0);
+                    glColor4f(1,1,1,0.5);
+                    float z = 10;
+                    float q = 20;
+                    glBegin(GL_TRIANGLE_STRIP);
+                    glVertex2f(0 - z, 0 - q);
+                    glVertex2f(w + z, 0 - q);
+                    glVertex2f(0 - z, 100 + q);
+                    glVertex2f(w + z, 100 + q);
+                    glEnd();
+                    glColor4f(0,0,0,0.8);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    if (!left_handed_axes)
-                        glScalef(-1,1,1);
                 }
 
                 if (v[2] > 0) {
@@ -1287,11 +1346,12 @@ void Renderer::drawAxes( float T )
                         glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
                         glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
                     glEnd();
-                glColor4f(0,0,0,1);
+                glColor4f(0,0,0,0.8);
 
                 if (tone%12 == 0)
                 {
-                    glLineWidth(1.f);
+                    glLineWidth(1);
+
                     glPushMatrixContext push_model( GL_MODELVIEW );
                     glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
                     glRotatef(90,1,0,0);
@@ -1308,10 +1368,19 @@ void Renderer::drawAxes( float T )
                     if (!left_handed_axes)
                         glScalef(-1,1,1);
                     glTranslatef(sign*w,-50.f,0);
+                    //glScalef( scalew / 0.1, scaleh / 0.05, 1 );
+                    glColor4f(1,1,1,0.5);
+                    float z = 10;
+                    float q = 20;
+                    glBegin(GL_TRIANGLE_STRIP);
+                    glVertex2f(0 - z, 0 - q);
+                    glVertex2f(w + z, 0 - q);
+                    glVertex2f(0 - z, 100 + q);
+                    glVertex2f(w + z, 100 + q);
+                    glEnd();
+                    glColor4f(0,0,0,0.8);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                    if (!left_handed_axes)
-                        glScalef(-1,1,1);
                 }
             }
         }

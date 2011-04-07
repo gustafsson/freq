@@ -6,6 +6,8 @@
 
 // gpumisc
 #include <demangle.h>
+#include <CudaException.h>
+#include <gpucpudatacollection.h>
 
 // std
 #include <sstream>
@@ -70,12 +72,16 @@ Application::
     default_record_device(-1),
     shared_glwidget_(new QGLWidget(QGLFormat(QGL::SampleBuffers)))
 {
-    _version_string = "Sonic AWE - development snapshot\n";
+    setOrganizationName("REEP");
+    setOrganizationDomain("sonicawe.com");
+    setApplicationName("Sonic AWE");
+
+    _version_string = "Evaluation of Sonic AWE - development snapshot\n";
 
     //QDateTime now = QDateTime::currentDateTime();
     //now.date().year();
     stringstream ss;
-    ss << "Sonic AWE - ";
+    ss << "Evaluation of Sonic AWE - ";
     #ifdef SONICAWE_VERSION
         ss << TOSTR(SONICAWE_VERSION);
     #else
@@ -144,6 +150,19 @@ bool Application::
     string err;
 
     try {
+        if (e) switch (e->type())
+        {
+            case QEvent::MouseButtonPress:
+            case QEvent::KeyPress:
+            case QEvent::Show:
+            case QEvent::Enter:
+            case QEvent::HoverEnter:
+            case QEvent::HoverMove:
+                foreach (pProject p, _projects)
+                    p->tools().render_view()->userinput_update( true, false );
+                break;
+        }
+
         v = QApplication::notify(receiver,e);
     //} catch (const exception &x) {
     } catch (const std::invalid_argument &x) {
@@ -187,7 +206,14 @@ void Application::
         clearCaches()
 {
     TaskTimer tt("Application::clearCaches");
+    size_t free=0, total=0;
+
+    cudaMemGetInfo(&free, &total);
+    TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
+             total/1024.f/1024, free/1024.f/1024);
+
     emit clearCachesSignal();
+    GpuCpuDataCollection::moveAllDataToCpuMemory();
 
     TaskInfo("Reset CWT");
     Tfr::Cwt::Singleton().resetSingleton();
@@ -215,13 +241,12 @@ void Application::
     TaskInfo("cudaMalloc( 10 ), p=%p, error=%s", p, cudaGetErrorString(e));
     e = cudaFree( p );
     TaskInfo("cudaFree, error=%s", cudaGetErrorString(e));
-    BOOST_ASSERT( cudaSuccess == e );
-
-    size_t free=0, total=0;
 
     cudaMemGetInfo(&free, &total);
     TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
              total/1024.f/1024, free/1024.f/1024);
+
+    CudaException_ThreadSynchronize();
 
     cudaGetLastError();
     glGetError();

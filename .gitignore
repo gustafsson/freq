@@ -2,9 +2,12 @@
 *~
 *.pdb
 *.deb
+*.moc
+*.cubin
 moc_*.cpp
 ui_mainwindow.h
 *.wav
+*.ogg
 *.orig
 *.remote
 sonicawe
@@ -29,3 +32,4 @@ md5sums
 project_header.h.cpp
 *.log
 *.zip
+*.app

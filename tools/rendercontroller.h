@@ -10,6 +10,9 @@
 
 class QToolBar;
 class QSlider;
+class QToolButton;
+
+namespace Tfr { class Transform; }
 
 namespace Ui { class ComboBoxAction; }
 
@@ -23,11 +26,6 @@ namespace Tools
         ~RenderController();
 
         RenderModel *model();
-
-        void emitTransformChanged();
-
-    signals:
-        void transformChanged();
 
     public slots:
         // GUI bindings are set up in RenderController constructor
@@ -63,11 +61,17 @@ namespace Tools
         void receiveLogScale();
         void receiveCepstraScale();
 
+        void transformChanged();
+
     private slots:
         void clearCachedHeightmap();
+        void updateFreqAxis();
+        void updateChannels();
+        void reroute();
 
     private:
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
+        Tfr::Transform* currentTransform();
 
         QPointer<RenderView> view;
 
@@ -81,7 +85,9 @@ namespace Tools
         Ui::ComboBoxAction* zscale;
         Ui::ComboBoxAction* hzmarker;
         Ui::ComboBoxAction* color;
+        QToolButton* channelselector;
         Ui::ComboBoxAction* transform;
+
         QSlider * yscale;
         QSlider * tf_resolution;
 

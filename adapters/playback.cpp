@@ -105,7 +105,8 @@ float Playback::
     if (_data.empty())
         return 0.f;
 
-    if (isPaused())
+    // if !isPaused() the stream has started, but it hasn't read anything yet if this holds, and _startPlay_timestamp is not set
+    if (isPaused() || _playback_itr == _data.getInterval().first )
     {
         return _playback_itr / sample_rate();
     }
@@ -116,7 +117,7 @@ float Playback::
     time_duration d = microsec_clock::local_time() - _startPlay_timestamp;
     float dt = d.total_milliseconds()*0.001f;
     float t = dt;
-    t += _data.first_buffer()->sample_offset / sample_rate();
+    t += _data.getInterval().first / sample_rate();
     t -= 0.08f;
 #ifdef _WIN32
     t -= outputLatency();
@@ -191,28 +192,80 @@ void Playback::
 
 
 void Playback::
-        reset()
+        stop()
 {
     if (streamPlayback)
     {
         // streamPlayback->stop will invoke a join with readBuffer
         if (!streamPlayback->isStopped())
             streamPlayback->stop();
-
-        streamPlayback.reset();
     }
 
-    _data.clear();
-    _playback_itr = 0;
+    _playback_itr = _data.getInterval().last;
     _max_found = 1;
     _min_found = -1;
+}
+
+
+void Playback::
+        reset()
+{
+    stop();
+
+    if (streamPlayback)
+        streamPlayback.reset();
+
+    _playback_itr = 0;
+
+    _data.clear();
 }
 
 
 bool Playback::
         deleteMe()
 {
-    return _data.deleteMe() && isStopped();
+    // Keep cache
+    return false;
+
+    // Discard cache
+    //return _data.deleteMe() && isStopped();
+}
+
+
+void Playback::
+        invalidate_samples( const Signal::Intervals& s )
+{
+    _data.invalidate_samples( s );
+
+    if (_data.empty())
+        _data.setNumChannels( source()->num_channels() );
+}
+
+
+unsigned Playback::
+        num_channels()
+{
+    return _data.num_channels();
+}
+
+
+void Playback::
+        set_channel(unsigned c)
+{
+    // If more channels are requested for playback than the output device has channels available,
+    // then let the last channel requested go into the last channel available and discard other
+    // superfluous channels
+    if (c >= num_channels())
+        c = num_channels() - 1;
+
+    _data.set_channel( c );
+}
+
+
+Signal::Intervals Playback::
+        invalid_samples()
+{
+    return _data.invalid_samples();
 }
 
 
@@ -239,10 +292,19 @@ void Playback::
 
     TIME_PLAYBACK TaskTimer("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
+    unsigned requested_number_of_channels = num_channels();
+    unsigned available_channels = sys.deviceByIndex(_output_device).maxOutputChannels();
+
+    if (available_channels<requested_number_of_channels)
+    {
+        requested_number_of_channels = available_channels;
+        _data.setNumChannels( requested_number_of_channels );
+    }
+
     // Set up the parameters required to open a (Callback)Stream:
     portaudio::DirectionSpecificStreamParameters outParamsPlayback(
             sys.deviceByIndex(_output_device),
-            1, // mono sound
+            requested_number_of_channels,
             portaudio::FLOAT32,
             false,
             sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
@@ -261,7 +323,7 @@ void Playback::
             *this,
             &Playback::readBuffer) );
 
-    _playback_itr = _data.first_buffer()->sample_offset;
+    _playback_itr = _data.getInterval().first;
 
     streamPlayback->start();
 
@@ -278,14 +340,22 @@ bool Playback::
         isStopped()
 {
     //return streamPlayback ? !streamPlayback->isActive() || streamPlayback->isStopped():true;
-    return streamPlayback ? !streamPlayback->isActive() && !isPaused() : true;
+    bool isActive = streamPlayback ? streamPlayback->isActive() : false;
+    //bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
+    // isActive and isStopped might both be false at the same time
+    bool paused = isPaused();
+    return streamPlayback ? !isActive && !paused : true;
 }
 
 
 bool Playback::
         isPaused()
 {
-    return streamPlayback ? streamPlayback->isStopped() && !hasReachedEnd(): false;
+    bool isStopped = streamPlayback ? streamPlayback->isStopped() : true;
+
+    bool read_past_end = _data.empty() ? true : _playback_itr >= _data.getInterval().last;
+
+    return isStopped && !read_past_end;
 }
 
 
@@ -298,7 +368,7 @@ bool Playback::
     if (_data.invalid_samples())
         return false;
 
-    return time()*_data.sample_rate() > _data.first_buffer()->sample_offset + _data.number_of_samples();
+    return time()*_data.sample_rate() > _data.getInterval().last;
 }
 
 
@@ -312,7 +382,7 @@ bool Playback::
         return false; // No more expected samples, not underfed
     }
 
-	if (nAccumulated_samples < 0.1f*_data.sample_rate() || nAccumulated_samples < 3*_first_buffer_size ) {
+    if (nAccumulated_samples < 0.1f*_data.sample_rate() || nAccumulated_samples < 3*_first_buffer_size ) {
         TIME_PLAYBACK TaskInfo("Underfed");
         return true; // Haven't received much data, wait to do a better estimate
     }
@@ -328,9 +398,9 @@ bool Playback::
 
     long unsigned marker = _playback_itr;
     if (0==marker)
-        marker = _data.first_buffer()->sample_offset;
+        marker = _data.getInterval().first;
 
-    Signal::Interval cov = _data.invalid_samples();
+    Signal::Interval cov = _data.invalid_samples().coveredInterval();
     float time_left =
             (cov.last - marker) / _data.sample_rate();
 
@@ -372,7 +442,7 @@ void Playback::
             return;
 
         _startPlay_timestamp = microsec_clock::local_time();
-        _startPlay_timestamp -= time_duration(0, 0, 0, (_playback_itr-_data.first_buffer()->sample_offset)/sample_rate()*time_duration::ticks_per_second() );
+        _startPlay_timestamp -= time_duration(0, 0, 0, (_playback_itr-_data.getInterval().first)/sample_rate()*time_duration::ticks_per_second() );
 
         streamPlayback->start();
     }
@@ -385,6 +455,10 @@ void Playback::
     if (streamPlayback)
     {
         TIME_PLAYBACK TaskTimer tt("Restaring playback");
+
+        _playback_itr = 0;
+        _max_found = 1;
+        _min_found = -1;
 
         onFinished();
     }
@@ -412,30 +486,44 @@ int Playback::
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     BOOST_ASSERT( outputBuffer );
-    float **out = static_cast<float **>(outputBuffer);
-    float *buffer = out[0];
-
-    if (!_data.empty() && _playback_itr == _data.first_buffer()->sample_offset) {
+    if (!_data.empty() && _playback_itr == _data.getInterval().first) {
         _startPlay_timestamp = microsec_clock::local_time();
     }
 
-    Signal::pBuffer b = _data.readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
-    ::memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
-    normalize( buffer, framesPerBuffer );
+    float **out = static_cast<float **>(outputBuffer);
+    for (unsigned c=0; c<num_channels(); ++c)
+    {
+        float *buffer = out[c];
+
+        Signal::pBuffer b = _data.channel(c).readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
+        ::memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
+        normalize( buffer, framesPerBuffer );
+    }
+
     _playback_itr += framesPerBuffer;
 
-    if ((unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples() + framesPerBuffer) < _playback_itr ) {
-        TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. Done at %u", _playback_itr, framesPerBuffer, _data.number_of_samples() );
-        return paComplete;
+    const char* msg = "";
+    int ret = paContinue;
+    if ((unsigned long)(_data.getInterval().last + framesPerBuffer) < _playback_itr ) {
+        msg = ". DONE";
+        ret = paComplete;
     } else {
-        if ( (unsigned long)(_data.first_buffer()->sample_offset + _data.number_of_samples()) < _playback_itr ) {
-            TIME_PLAYBACK TaskInfo("Playback::readBuffer %u, %u. PAST END", _playback_itr, framesPerBuffer );
+        if ( (unsigned long)(_data.getInterval().last) < _playback_itr ) {
+            msg = ". PAST END";
+            // TODO if !_data.invalid_samples().empty() should pause playback here and continue when data is made available
         } else {
-            TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading %u, %u", _playback_itr, framesPerBuffer );
         }
     }
 
-    return paContinue;
+    float FS;
+    TIME_PLAYBACK FS = _data.sample_rate();
+    TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading [%u, %u)%u# from %u. [%g, %g)%g s%s",
+                           _playback_itr, _playback_itr+framesPerBuffer, framesPerBuffer,
+                           _data.number_of_samples(),
+                           _playback_itr/ FS, (_playback_itr + framesPerBuffer)/ FS,
+                           framesPerBuffer/ FS, msg);
+
+    return ret;
 }
 
 } // namespace Adapters

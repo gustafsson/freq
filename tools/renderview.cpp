@@ -22,6 +22,7 @@
 #include <demangle.h>
 #include <cuda_vector_types_op.h>
 #include <glframebuffer.h>
+#include <neat_math.h>
 
 // cuda
 #include <cuda.h>
@@ -373,6 +374,14 @@ float RenderView::
             if (pick_local_max)
                 *pick_local_max = a.scale + (b.scale-a.scale)*(y0)/(h-1);
         }
+
+        float testmax;
+        float testv = quad_interpol( y0, data + x0, h, w, &testmax );
+        float testlocalmax = a.scale + (b.scale-a.scale)*(testmax)/(h-1);
+
+        BOOST_ASSERT( testv == v );
+        if (pick_local_max)
+            BOOST_ASSERT( testlocalmax == *pick_local_max );
     }
 
     return v;
@@ -596,9 +605,6 @@ void RenderView::
 
     unsigned N = model->collections.size();
 
-    Signal::FinalSource* fs = dynamic_cast<Signal::FinalSource*>(
-                model->project()->worker.source()->root());
-
     TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
 
     // Draw the first channel without a frame buffer
@@ -614,7 +620,7 @@ void RenderView::
         current_viewport[2], current_viewport[3]);
 
     for (unsigned i=0; i < 1; ++i)
-        drawCollection(i, fs, yscale);
+        drawCollection(i, yscale);
 
     if (1<N)
     {
@@ -641,7 +647,7 @@ void RenderView::
                 glViewport(0, 0,
                            fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
 
-                drawCollection(i, fs, yscale);
+                drawCollection(i, yscale);
             }
 
             glViewport(current_viewport[0], current_viewport[1],
@@ -685,12 +691,11 @@ void RenderView::
 
 
 void RenderView::
-        drawCollection(int i, Signal::FinalSource* fs, float yscale )
+        drawCollection(int i, float yscale )
 {
+    model->renderSignalTarget->source()->set_channel( i );
     model->renderer->collection = model->collections[i].get();
     model->renderer->fixed_color = channel_colors[i];
-    if (0!=fs)
-        fs->set_channel( i );
     glDisable(GL_BLEND);
     glEnable(GL_LIGHTING);
     glEnable( GL_CULL_FACE ); // enabled only while drawing collections
@@ -812,12 +817,20 @@ Support::ToolSelector* RenderView::
 
 
 void RenderView::
-        userinput_update( bool request_high_fps )
+        emitTransformChanged()
+{
+    emit transformChanged();
+}
+
+
+void RenderView::
+        userinput_update( bool request_high_fps, bool post_update )
 {
     if (request_high_fps)
         model->project()->worker.requested_fps(60);
 
-    emit postUpdate();
+    if (post_update)
+        emit postUpdate();
 }
 
 
@@ -867,7 +880,11 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-	TIME_PAINTGL TaskTimer tt("============================= RenderView::paintGL =============================");
+    Signal::Worker& worker = model->project()->worker;
+    Signal::Operation* first_source = worker.source()->root();
+
+    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
+                              first_source->name().c_str(), first_source);
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
@@ -883,12 +900,9 @@ void RenderView::
         }
     }
 
-    Signal::Worker& worker = model->project()->worker;
-    Signal::Operation* first_source = worker.source()->root();
-
-    TIME_PAINTGL TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p)",
-        N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source);
-    if(0) TIME_PAINTGL for (unsigned i=0; i<N; ++i)
+    TIME_PAINTGL_DETAILS TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p) %s",
+        N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source, first_source->name().c_str());
+    if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
     {
         model->collections[i]->printCacheSize();
     }
@@ -909,15 +923,20 @@ void RenderView::
             // Make sure our cuda context is still alive by invoking
             // a tiny kernel. This will throw an CudaException otherwise,
             // thus resulting in restarting the cuda context.
-            Signal::pBuffer b(new Signal::Buffer(0,4,4));
+
+            // If we don't ensure the context is alive before starting to
+            // use various GPU resources the application will crash, for
+            // instance when another RenderView is closed and releases
+            // the context.
             Tfr::Stft a;
             a.set_approximate_chunk_size(4);
+            Signal::pBuffer b(new Signal::Buffer(0,a.chunk_size(),1));
             a(b);
         }
 
 
     // Set up camera position
-    _last_length = worker.source()->length();
+    _last_length = model->renderSignalTarget->source()->length();
     {   
 		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
 
@@ -949,7 +968,7 @@ void RenderView::
         drawCollections( _renderview_fbo.get(), 1 - orthoview );
 
         last_ysize = model->renderer->last_ysize;
-        glScalef(1, last_ysize, 1); // global effect on all tools
+        glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
 
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("emit painting");
@@ -963,23 +982,27 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        worker.center = model->_qx;
-
         emit populateTodoList();
 
         if (!worker.target()->post_sink()->isUnderfed())
         {
+            // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
+            Signal::pTarget t = worker.target();
             worker.target( model->renderSignalTarget );
+            if (!worker.todo_list())
+                // Use the previous target (set in populateTodoList) if
+                // renderSignalTarget has nothing to work on
+                worker.target( t );
+            else
+                worker.center = model->_qx;
         }
     }
 
     {   // Work
-		TIME_PAINTGL_DETAILS TaskTimer tt("Work");
-        isWorking = worker.fetch_todo_list();
-
-        TaskInfo("target = %s, worker.fetch_todo_list() = %s, isWorking = %d",
+        isWorking = worker.todo_list();
+        TIME_PAINTGL_DETAILS TaskTimer tt("Work target = %s, todo list = %s, isWorking = %d",
                  worker.target()->name().c_str(),
-                 worker.fetch_todo_list().toString().c_str(), isWorking);
+                 worker.todo_list().toString().c_str(), isWorking);
 
         if (isWorking || isRecording) {
             if (!_work_timer.get())
@@ -1046,10 +1069,41 @@ void RenderView::
 
     _try_gc = 0;
     } catch (const CudaException &x) {
-        TaskTimer tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
+        TaskInfo tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
 
-        if (2>_try_gc) {
+        float scales_per_octave = Tfr::Cwt::Singleton().scales_per_octave();
+
+        if (2>_try_gc)
+        {
             Sawe::Application::global_ptr()->clearCaches();
+
+            if (cudaErrorMemoryAllocation == x.getCudaError() && _try_gc == 0)
+            {
+                TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave());
+
+                size_t free=0, total=0;
+                cudaMemGetInfo(&free, &total);
+
+                float fs = worker.target()->source()->sample_rate();
+                Tfr::Cwt::Singleton().scales_per_octave( scales_per_octave / 0.99 );
+                unsigned L;
+                do
+                {
+                    Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() * .99 );
+                    if (Tfr::Cwt::Singleton().scales_per_octave() < 1)
+                    {
+                        Tfr::Cwt::Singleton().scales_per_octave( 1 );
+                        break;
+                    }
+
+                    L = Tfr::Cwt::Singleton().next_good_size(1, fs);
+                }
+                while (free < Tfr::Cwt::Singleton().required_gpu_bytes(L, fs ) );
+
+                TaskInfo("scales_per_octave is %g", Tfr::Cwt::Singleton().scales_per_octave());
+            }
+            emit transformChanged();
+
             _try_gc++;
         }
         else throw;
@@ -1057,6 +1111,7 @@ void RenderView::
         TaskTimer tt("RenderView::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
         if (2>_try_gc) {
             Sawe::Application::global_ptr()->clearCaches();
+            emit transformChanged();
             _try_gc++;
         }
         else throw;

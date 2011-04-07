@@ -92,8 +92,12 @@ namespace Tools
 			this->*/
 		}
 
+        const std::vector<float4>& channelColors() const { return channel_colors; }
+
+        void emitTransformChanged();
+
     public slots:
-        void userinput_update( bool request_high_fps = true );
+        void userinput_update( bool request_high_fps = true, bool post_update = true );
 
     signals:
         /**
@@ -134,6 +138,9 @@ namespace Tools
 
         void postUpdate();
 
+
+        void transformChanged();
+
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();
@@ -148,7 +155,7 @@ namespace Tools
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
 
-        void drawCollection(int, Signal::FinalSource*, float yscale);
+        void drawCollection(int channel, float yscale);
 
         void setStates();
         void setLights();

@@ -35,15 +35,93 @@ public:
 };
 
 
+template<typename DefaultConverter=ConverterLogAmplitude>
+class AxisFetcher
+{
+public:
+    template<typename OtherConverter>
+    AxisFetcher& operator=(const AxisFetcher<OtherConverter>& b)
+    {
+        inputAxis = b.inputAxis;
+        outputAxis = b.outputAxis;
+        scale = b.scale;
+        offs = b.offs;
+        return *this;
+    }
+
+
+    template<typename Reader>
+    __device__ float operator()( float2 const& p, Reader& reader )
+    {
+        return (*this)(p, reader, DefaultConverter());
+    }
+
+
+    __device__ bool near(float a, float b)
+    {
+        return a > b*(1.f-1e-2f) && a < b*(1.f+1e-2f);
+    }
+
+    template<typename Reader, typename Converter>
+    __device__ float operator()( float2 const& p, Reader& reader, const Converter& c = Converter() )
+    {
+        float2 q;
+        // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
+        // so these are fairly cheap operations. One reciprocal called in
+        // 'getFrequencyScalar' is just as fast.
+        q.x = p.x;
+        q.y = p.y*scale+offs;
+        float hz = outputAxis.getFrequency( q.y );
+        q.y = inputAxis.getFrequencyScalar( hz );
+
+        float r = InterpolateFetcher<float, Converter>(c)( q, reader );
+        return r;
+    }
+
+    Tfr::FreqAxis inputAxis;
+    Tfr::FreqAxis outputAxis;
+    float scale;
+    float offs;
+};
+
+
+template<typename DefaultConverter=ConverterLogAmplitude>
+class AxisFetcherTranspose
+{
+public:
+    template<typename Reader>
+    __device__ float operator()( float2 const& p, Reader& reader )
+    {
+        float2 q;
+        // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
+        // so these are fairly cheap operations. One reciprocal called in
+        // 'getFrequencyScalar' is just as fast.
+        // Tests have shown that this doen't affect the total execution time,
+        // when outputAxis and inputAxis are affine transformations of eachother.
+        // Hence the kernel is memory bound.
+        float hz = outputAxis.getFrequency( p.x );
+        q.x = inputAxis.getFrequencyScalar( hz );
+        q.y = p.y;
+
+        float r = InterpolateFetcher<float, DefaultConverter>()( q, reader );
+        return r*factor;
+    }
+
+    Tfr::FreqAxis inputAxis;
+    Tfr::FreqAxis outputAxis;
+    float factor;
+};
+
+
 class WeightFetcher
 {
 public:
     template<typename Reader>
     __device__ float operator()( float2 const& p, Reader& reader )
     {
-        float v = InterpolateFetcher<float, ConverterLogAmplitude>()( p, reader );
-        float phase1 = InterpolateFetcher<float, ConverterPhase>()( p, reader );
-        float phase2 = InterpolateFetcher<float, ConverterPhase>()( make_float2(p.x, p.y+1), reader );
+        float v = axes( p, reader );
+        float phase1 = axes( p, reader, ConverterPhase() );
+        float phase2 = axes( make_float2(p.x, p.y+1), reader, ConverterPhase() );
         float phasediff = phase2 - phase1;
         if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
         if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
@@ -52,6 +130,8 @@ public:
 
         return v * k;
     }
+
+    AxisFetcher<> axes;
 };
 
 
@@ -105,54 +185,110 @@ public:
 };
 
 
+//    cuda-memcheck complains even on this testkernel when using global memory
+//    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
+//__global__ void testkernel(
+//        float* output, elemSize3_t sz)
+//{
+//    elemSize3_t  writePos;
+//    writePos.x = blockIdx.x * 128 + threadIdx.x;
+//    writePos.y = blockIdx.y * 1 + threadIdx.y;
+//    if (writePos.x<sz.x && writePos.y < sz.y)
+//    {
+//        unsigned o = writePos.x  +  writePos.y * sz.x;
+//        o = o % 32;
+//        output[o] = 0;
+//    }
+//}
+
+#include <iostream>
+using namespace std;
+
 void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
-                 uint2 validInputs,
+                 uint2 validInputs, // validInputs is the first and last-1 valid samples in x
                  float4 inputRegion,
                  float4 outputRegion,
                  Heightmap::ComplexInfo transformMethod,
-                 Tfr::FreqAxis freqAxis
+                 Tfr::FreqAxis inputAxis,
+                 Tfr::FreqAxis outputAxis
                  )
 {
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
 
-    uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
+//    cuda-memcheck complains even on this testkernel when using global memory
+//    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
+//    dim3 block( 128 );
+//    dim3 grid( int_div_ceil( sz_output.x, block.x ), sz_output.y );
+//    testkernel<<< grid, block>>>(output.ptr(), sz_output);
+//    float*devptr;
+//    cudaMalloc(&devptr, sizeof(float)*32);
+//    testkernel<<< grid, block>>>(devptr, sz_output);
+//    cudaFree(devptr);
+//    return;
+
+    // We wan't to do our own translation from coordinate position to matrix
+    // position in the input matrix. By giving bottom=0 and top=2 we tell
+    // 'resample2d_fetcher' to only translate to a normalized reading position
+    // [0, height-1) along the input y-axis.
+//    uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
+    uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, 2 );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
+
+    AxisFetcher<> axes;
+    axes.inputAxis = inputAxis;
+    axes.outputAxis = outputAxis;
+    axes.offs = getTop(inputRegion);
+    axes.scale = getHeight(inputRegion);
 
     switch (transformMethod)
     {
     case Heightmap::ComplexInfo_Amplitude_Weighted:
     {
+        WeightFetcher fetcher;
+        fetcher.axes = axes;
+
         resample2d_fetcher<float, float2, float, WeightFetcher, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
                 validOutputs,
                 inputRegion,
-                outputRegion
+                outputRegion,
+                false,
+                fetcher
         );
         break;
     }
     case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
-        resample2d<float2, float, ConverterLogAmplitude, AssignOperator<float> >(
+        resample2d_fetcher<float, float2, float, AxisFetcher<>, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
                 validOutputs,
                 inputRegion,
-                outputRegion
+                outputRegion,
+                false,
+                axes
         );
         break;
     case Heightmap::ComplexInfo_Phase:
-        resample2d<float2, float, ConverterPhase, AssignOperator<float> >(
+    {
+        AxisFetcher<ConverterPhase> axesPhase;
+        axesPhase = axes;
+
+        resample2d_fetcher<float, float2, float, AxisFetcher<ConverterPhase>, AssignOperator<float> >(
                     input,
                     output,
                     validInputs4,
                     validOutputs,
                     inputRegion,
-                    outputRegion
+                    outputRegion,
+                    false,
+                    axesPhase
             );
+    }
     /*case Heightmap::ComplexInfo_Phase:
             SpecialPhaseFetcher specialPhase;
             specialPhase.freqAxis = freqAxis;
@@ -172,29 +308,6 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
 }
 
 
-class StftFetcher
-{
-public:
-    template<typename Reader>
-    __device__ float operator()( float2 const& p, Reader& reader )
-    {
-        float2 q;
-        // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
-        // so these are fairly cheap operations. One reciprocal called in
-        // 'getFrequencyScalar' is just as fast.
-        float hz = outputAxis.getFrequency( p.x );
-        q.x = inputAxis.getFrequencyScalar( hz );
-        q.y = p.y;
-        float r = InterpolateFetcher<float, ConverterLogAmplitude>()( q, reader );
-        return r*factor;
-    }
-
-    Tfr::FreqAxis inputAxis;
-    Tfr::FreqAxis outputAxis;
-    float factor;
-};
-
-
 void resampleStft( cudaPitchedPtrType<float2> input,
                    cudaPitchedPtrType<float> output,
                    float4 inputRegion,
@@ -206,17 +319,17 @@ void resampleStft( cudaPitchedPtrType<float2> input,
     elemSize3_t sz_output = output.getNumberOfElements();
 
     // We wan't to do our own translation from coordinate position to matrix
-    // position in the input matrix. By giving bottom=0 and top=2 we tell
+    // position in the input matrix. By giving left=0 and right=2 we tell
     // 'resample2d_fetcher' to only translate to a normalized reading position
-    // [0, height-1) along the input x-axis. 'resample2d_fetcher' does to
+    // [0, width-1) along the input x-axis. 'resample2d_fetcher' does the
     // transpose for us.
     uint4 validInputs = make_uint4( 0, 0, 2, sz_input.y );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    StftFetcher fetcher;
+    AxisFetcherTranspose<> fetcher;
     fetcher.inputAxis = inputAxis;
     fetcher.outputAxis = outputAxis;
-    fetcher.factor = 0.22; // makes it roughly equal height to Cwt
+    fetcher.factor = 0.22f; // makes it roughly equal height to Cwt
 
     resample2d_fetcher<float>(
                 input,

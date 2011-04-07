@@ -14,6 +14,7 @@
 class QDockWidget;
 class QPlainTextEdit;
 class QLineEdit;
+class QVBoxLayout;
 
 namespace Sawe { class Project; }
 
@@ -34,6 +35,9 @@ public:
     std::string scriptname();
     void scriptname(std::string);
 
+    std::string arguments();
+    void arguments(std::string);
+
     virtual int chunksize();
     void chunksize(int);
 
@@ -45,6 +49,11 @@ public:
 
     Signal::pOperation ownOperation;
 
+    void setOperation( Signal::pOperation om );
+    QDockWidget* getOctaveWindow();
+
+    bool hasProcess();
+
 public slots:
     void showOutput();
 
@@ -55,21 +64,32 @@ private slots:
     void announceInvalidSamples();
     void invalidateAllSamples();
     void restartScript();
+    void postRestartScript();
+    void chunkSizeChanged();
+    void restoreChanges();
 
     void sendCommand();
 
     void finished ( int exitCode, QProcess::ExitStatus exitStatus );
 
+    void checkOctaveVisibility();
+
 private:
-    QProcess* pid;
+    QPointer<QProcess> pid;
     void setProcess(QProcess*);
+    virtual void hideEvent ( QHideEvent * event );
 
     Ui::MatlabOperationWidget *ui;
 
-    //Signal::pTarget target;
+    Adapters::DefaultMatlabFunctionSettings prevsettings;
+
+    Signal::pChain matlabChain;
+    Signal::pTarget matlabTarget;
+
     Sawe::Project* project;
     QPointer<QDockWidget> octaveWindow;
     QPlainTextEdit* text;
+    QVBoxLayout* verticalLayout;
     QLineEdit* edit;
     QTimer announceInvalidSamplesTimer;
 };

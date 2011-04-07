@@ -14,6 +14,7 @@
 // Serializable Sonic AWE Tools
 #include "tools/commentmodel.h"
 #include "tools/tooltipmodel.h"
+#include "tools/selections/support/splinefilter.h"
 
 // GpuMisc
 #include <demangle.h>
@@ -40,7 +41,7 @@ namespace Sawe {
 template<class Archive> 
 void runSerialization(Archive& ar, Project*& project, QString path)
 {
-    TaskInfo ti("Running serialization, %s", typename Archive::is_loading()?"loading":"saving");
+    TaskInfo ti("Running %s", typename Archive::is_loading()?"deserialization":"serialization");
 
     QDir dir = QDir::current();
     QDir::setCurrent( QFileInfo( path ).absolutePath() );
@@ -50,6 +51,8 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::Support::MultiplyBrush>();
     ar.template register_type<Filters::Ellipse>();
     ar.template register_type<Filters::Rectangle>();
+    ar.template register_type<Tools::Selections::Support::SplineFilter>();
+    ar.template register_type<Tools::Selections::Support::SplineFilter::SplineVertex>();
     ar.template register_type<Tools::CommentModel>();
     ar.template register_type<Tools::TooltipModel>();
     ar.template register_type<Tools::ToolFactory>();
@@ -60,6 +63,8 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Signal::Chain>();
     ar.template register_type<Signal::ChainHead>();
     ar.template register_type<Adapters::MatlabOperation>();
+    ar.template register_type<Project>();
+    ar.template register_type<Signal::OperationCachedSub>();
 
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 

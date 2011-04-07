@@ -29,11 +29,10 @@ public:
     const Heightmap::Position& comment_pos();
 
     void showToolTip( Heightmap::Position p );
-    unsigned guessHarmonicNumber( const Heightmap::Position& pos );
-    float computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, Heightmap::Reference* ref=0);
 
-    Heightmap::Position pos;
-    float frequency;
+    float pos_time;
+    float pos_hz;
+    Heightmap::Position pos();
     float max_so_far;
     float compliance;
     unsigned markers;
@@ -51,10 +50,25 @@ public:
     std::string toneName();
 
 private:
+    class FetchData
+    {
+    public:
+        virtual float operator()( float t, float hz, bool* is_valid_value ) = 0;
+
+        static boost::shared_ptr<FetchData> createFetchData( RenderView*, float );
+    };
+
+    class FetchDataTransform;
+    class FetchDataHeightmap;
+
     CommentController* comments_;
     RenderView *render_view_;
     unsigned fetched_heightmap_values;
     ToolModelP comment_model;
+    float last_fetched_scale_;
+
+    unsigned guessHarmonicNumber( const Heightmap::Position& pos, float& best_compliance );
+    float computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, FetchData* fetcher);
 
 private:
     //template <bool T> bool eval_boolean(boost::mpl::bool_<T> const&) { return T; }
@@ -67,9 +81,8 @@ private:
         TaskInfo("%s is_saving=%d comment_model=%p", __FUNCTION__, is_saving, comment_model.get());
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ToolModel);
         ar
-                & BOOST_SERIALIZATION_NVP(pos.scale)
-                & BOOST_SERIALIZATION_NVP(pos.time)
-                & BOOST_SERIALIZATION_NVP(frequency)
+                & BOOST_SERIALIZATION_NVP(pos_time)
+                & BOOST_SERIALIZATION_NVP(pos_hz)
                 & BOOST_SERIALIZATION_NVP(max_so_far)
                 & BOOST_SERIALIZATION_NVP(compliance)
                 & BOOST_SERIALIZATION_NVP(markers)

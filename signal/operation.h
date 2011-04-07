@@ -34,17 +34,31 @@ public:
     Operation( pOperation source );
     ~Operation();
 
+    Operation( const Operation& o );
+    Operation& operator=(const Operation& o);
+
     virtual std::string name();
 
     /**
       Overloaded from Source. The default implementation of read is to read
-      from source().
+      from _source. Or return zeros if _source is null.
 
       Note that read doesn't have to be called. See affected_samples().
       */
     virtual pBuffer read( const Interval& I );
-    virtual float sample_rate() { return _source->sample_rate(); }  /// @see read(const Interval&)
-    virtual IntervalType number_of_samples() { return _source->number_of_samples(); } /// @see read(const Interval&)
+
+    /**
+      Merges num_channels() calls to readFixedLength.
+      */
+    virtual pBuffer readFixedLengthAllChannels( const Interval& I );
+
+    /**
+      sample_rate is invalid to call if _source is null.
+
+      @see read(const Interval&)
+      */
+    virtual float sample_rate() { return _source->sample_rate(); }
+    virtual IntervalType number_of_samples(); /// @see read(const Interval&)
 
     virtual unsigned num_channels() { return _source->num_channels(); }
     virtual void set_channel(unsigned c) { if(_source) _source->set_channel(c); }
@@ -122,20 +136,14 @@ public:
       Note that affecting_source may not even be called if a simple chain of
       read() is used instead.
 
-      affecting_source will return source()->affecting_source() if enabled()
-      is false since affected_samples() is empty if enabled() is false.
+//      affecting_source will return source()->affecting_source() if enabled()
+//      is false since affected_samples() is empty if enabled() is false.
 
       This also skips wrapper containers that doesn't do anything themselves.
 
       Returns 'this' if this Operation does something.
       */
     virtual Operation* affecting_source( const Interval& I );
-
-
-    /**
-      @see OperationSubOperations
-      */
-    virtual Signal::Intervals affected_samples_until(pOperation stop);
 
 
     /**
@@ -151,8 +159,8 @@ public:
 
       The default implementation returns the same interval.
 
-      translate_interval is used by Operation::zeroed_samples_recursive and
-      Operation::affected_samples_until and Operation::invalidate_samples.
+      translate_interval is used by Operation::zeroed_samples_recursive
+      and Operation::invalidate_samples.
 
       @see OperationRemoveSection, OperationInsertSilence, zeroed_samples
       */
@@ -171,8 +179,8 @@ public:
       An operation can be disabled. If it is not enabled any call to read must
       return source()->read();
       */
-    virtual bool enabled() { return _enabled; }
-    virtual void enabled(bool value) { _enabled = value; }
+//    virtual bool enabled() { return _enabled; }
+//    virtual void enabled(bool value) { _enabled = value; }
 
 
     Operation* root();
@@ -183,7 +191,7 @@ public:
       return the parent of 's' from that trace.
       */
     static pOperation findParentOfSource(pOperation start, pOperation source);
-    static Signal::Intervals affecetedDiff(pOperation source1, pOperation source2);
+    static Signal::Intervals affectedDiff(pOperation source1, pOperation source2);
 
     virtual std::string toString();
     virtual std::string parentsToString();
@@ -191,7 +199,7 @@ public:
 private:
     std::set<Operation*> _outputs; /// @see Operation::parent()
     pOperation _source; /// @see Operation::source()
-    bool _enabled; /// @see Operation::enabled()
+    //bool _enabled; /// @see Operation::enabled()
 
     friend class boost::serialization::access;
     Operation() /// only used by deserialization, call Operation(pOperation) instead

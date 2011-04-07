@@ -140,17 +140,19 @@ public:
     Intervals worked_samples;
 
     /**
-      The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
-      is rebuilt each time a new region is requested. It is worked off in a outward direction
-      from the variable center.
+      Returns the previous Interval that workOne requested
       */
-    Intervals fetch_todo_list();
+    Interval latest_request;
 
+    /**
+      Returns the previous Interval that workOne requested
+      */
+    Interval latest_result;
 
     /**
       Returns the last thing returned from fetch todo list.
       */
-    Intervals previous_todo_list();
+    Intervals todo_list();
 
     /**
       This property states which regions that are more important. It should be equivalent to the camera position
@@ -202,6 +204,13 @@ public:
 
 
 private:
+    /**
+      The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
+      is rebuilt each time a new region is requested. It is worked off in a outward direction
+      from the variable center.
+      */
+    Intervals fetch_todo_list();
+
 #ifndef SAWE_NO_MUTEX
     /**
       Runs the worker thread.
@@ -248,7 +257,7 @@ private:
     /**
       @see todo_list
       */
-    Intervals _previous_todo_list, _cheat_work;
+    Intervals _todo_list, _cheat_work;
 
     /**
       samples_per_chunk is optimized for optimal cwt speed while still keeping the user interface responsive.

@@ -64,6 +64,12 @@ void ToolSelector::
 {
     if ((tool != _current_tool) == active)
     {
+        if (!active && default_tool && default_tool != tool)
+        {
+            tool = default_tool;
+            active = true;
+        }
+
         if (active || !_must_have_one_tool) if (_current_tool)
         {
             TaskInfo("Current tool in %s was %s",
@@ -113,7 +119,7 @@ void ToolSelector::
     }
     TaskInfo("Current tool in %s is %s",
         vartype(*_parent_tool).c_str(),
-        vartype(*_current_tool).c_str());
+        _current_tool?vartype(*_current_tool).c_str():0);
 }
 
 

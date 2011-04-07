@@ -103,7 +103,6 @@ void PlaybackMarkersView::
     glEnd();
 
     glLineWidth(1.6f);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINES);
 
     BOOST_FOREACH( const float& m, model_->markers() )

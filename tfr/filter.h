@@ -67,6 +67,10 @@ public:
     virtual void transform( Tfr::pTransform m ) = 0;
 
 
+    /// @see transform()
+    virtual Operation* affecting_source( const Signal::Interval& I );
+
+
 protected:
     /**
       Apply the filter to a computed Tfr::Chunk. This is the method that should

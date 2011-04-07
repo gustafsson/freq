@@ -18,12 +18,14 @@ namespace Tools
 
 GraphicsView::
         GraphicsView(QGraphicsScene* scene)
-    :   QGraphicsView(scene)
+    :   QGraphicsView(scene),
+        pressed_control_(false)
 {
     setWindowTitle(tr("Sonic AWE"));
     //setRenderHints(QPainter::SmoothPixmapTransform);
     //setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::TextAntialiasing);
+    setMouseTracking( true );
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -95,6 +97,45 @@ void GraphicsView::customEvent(QEvent *e){
     DEBUG_EVENTS TaskTimer("GraphicsView customEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
+void GraphicsView::keyPressEvent(QKeyEvent *event) {
+    if (event->key() != Qt::Key_Shift)
+    {
+        QGraphicsView::keyPressEvent( event );
+        return;
+    }
+
+    pressed_control_ = true;
+
+    unsigned u = toolWindows();
+    for (unsigned i=0; i<u; ++i)
+    {
+        Support::ToolSelector* ts = toolSelector(i);
+        ts->temp_tool = ts->currentTool();
+        ts->setCurrentTool( ts->default_tool, true );
+    }
+}
+
+void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
+    if (event->key() != Qt::Key_Shift)
+    {
+        QGraphicsView::keyReleaseEvent( event );
+        return;
+    }
+
+    if (!pressed_control_ )
+        return;
+
+    pressed_control_ = false;
+
+    unsigned u = toolWindows();
+    for (unsigned i=0; i<u; ++i)
+    {
+        Support::ToolSelector* ts = toolSelector(i);
+        ts->setCurrentTool( ts->temp_tool, true );
+        ts->temp_tool = 0;
+    }
+}
+
 void GraphicsView::mousePressEvent( QMouseEvent* e )
 {
     DEBUG_EVENTS TaskTimer tt("GraphicsView mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted());
@@ -104,6 +145,10 @@ void GraphicsView::mousePressEvent( QMouseEvent* e )
 
 void GraphicsView::mouseMoveEvent(QMouseEvent *e)
 {
+    if (!hasFocus())
+    {
+        setFocus();
+    }
     DEBUG_EVENTS TaskTimer tt("GraphicsView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsView::mouseMoveEvent(e);
     DEBUG_EVENTS TaskTimer("GraphicsView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();

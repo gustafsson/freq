@@ -2,7 +2,7 @@
 #define LAYERS_H
 
 #include "chain.h"
-#include "rewirechannels.h"
+#include "reroutechannels.h"
 
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -12,6 +12,9 @@ namespace Sawe { class Project; }
 
 namespace Signal {
 
+/**
+  Collection of all chains.
+  */
 class Layers
 {
 public:
@@ -61,10 +64,10 @@ private:
   */
 class Target {
 public:
-    Target(Layers* all_layers, std::string name);
+    Target(Layers* all_layers, std::string name, bool autocreate_chainheads=true);
 
     /**
-      It is an error to add a layer that is not in 'all_layers_'
+      //It is an error to add a layer that is not in 'all_layers_'
       */
     void addLayerHead(pChainHead);
 
@@ -74,7 +77,7 @@ public:
     void removeLayerHead(pChainHead);
 
     /**
-      Returns the chain head that correspons to a chain, if there is one.
+      Returns the chain head that corresponds to a chain, if there is one.
       */
     pChainHead findHead( pChain );
 
@@ -94,7 +97,7 @@ public:
       Select which channels that gets to propagate through with anything else
       than silence.
       */
-    RewireChannels* channels() const;
+    RerouteChannels* channels() const;
 
     /**
       Will process all active channels (as wired by channels()) and return the
@@ -116,9 +119,10 @@ private:
 
     std::string name_;
     Signal::pOperation post_sink_;
-    Signal::pOperation rewire_channels_;
+    Signal::pOperation reroute_channels_;
     Signal::pOperation forall_channels_;
     Signal::pOperation update_view_;
+    Signal::pOperation cache_vars_;
     Signal::pOperation read_;
     bool add_as_channels_;
     Layers* all_layers_;

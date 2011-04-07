@@ -9,6 +9,7 @@
 // Qt
 #include <QCloseEvent>
 #include <QSettings>
+#include <QDir>
 
 using namespace std;
 using namespace boost;
@@ -78,8 +79,6 @@ void SaweMainWindow::
 //    connectActionToWindow(ui->actionToggleTopFilterWindow, ui->topFilterWindow);
 
     //    connectActionToWindow(ui->actionToggleTimelineWindow, ui->dockWidgetTimeline);
-    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
-    connect(ui->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui->toolBarPlay, SLOT(setVisible(bool)));
 
     // TODO move into each tool
     this->addDockWidget( Qt::RightDockWidgetArea, ui->toolPropertiesWindow );
@@ -101,7 +100,7 @@ void SaweMainWindow::
 
     // todo move into toolfactory
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarMatlab );
+    //this->addToolBar( Qt::TopToolBarArea, ui->toolBarMatlab );
     this->addToolBar( Qt::LeftToolBarArea, ui->toolBarPlay );
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
@@ -122,6 +121,39 @@ void SaweMainWindow::
         ui->toolBarTool->addWidget( tb );
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
+
+
+    {
+        QSettings settings;
+        QStringList recent_files = settings.value("recent files").toStringList();
+        ui->menu_Recent_files->setEnabled( !recent_files.empty() );
+        int i = 0;
+        foreach(QString recent, recent_files)
+        {
+            QString home = QDir::homePath();
+            QString display = recent;
+            if (display.left(home.size())==home)
+            {
+#ifdef __GNUC__
+                display = "~" + display.mid( home.size() );
+#else
+                display = display.mid( home.size()+1 );
+#endif
+            }
+
+            i++;
+#ifdef _WIN32
+            display.replace("/", "\\");
+#endif
+            display = QString("%1%2. %3").arg(i<10?"&":"").arg(i).arg(display);
+
+            QAction * a = new QAction(display, this);
+            a->setData( recent );
+            connect(a, SIGNAL(triggered()), SLOT(openRecentFile()));
+
+            ui->menu_Recent_files->addAction( a );
+        }
+    }
 
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
         Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
@@ -193,11 +225,13 @@ void SaweMainWindow::slotDeleteSelection(void)
 void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
-    if (project->isModified() && 0==save_changes_msgbox_)
+    if (project->isModified())
     {
-        askSaveChanges();
-        e->ignore();
-        return;
+        if (!askSaveChanges())
+        {
+            e->ignore();
+            return;
+        }
     }
 
     e->accept();
@@ -209,52 +243,64 @@ void SaweMainWindow::
 
     {
         TaskInfo ti("Saving settings");
-        QSettings settings("REEP", "Sonic AWE");
+        QSettings settings;
         settings.setValue("geometry", saveGeometry());
         settings.setValue("windowState", saveState());
     }
 
     {
-        TaskInfo ti("closeEvent");
+        TaskTimer ti("QMainWindow::closeEvent");
         QMainWindow::closeEvent(e);
     }
 }
 
 
-void SaweMainWindow::
+bool SaweMainWindow::
         askSaveChanges()
 {
     TaskInfo("Save current state of the project?");
-    save_changes_msgbox_ = new QMessageBox("Save Changes", "Save current state of the project?",
+    QMessageBox save_changes_msgbox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
-    save_changes_msgbox_->setAttribute( Qt::WA_DeleteOnClose );
-    save_changes_msgbox_->setDetailedText( QString::fromStdString( "Current state:\n" + project->layers.toString()) );
-    save_changes_msgbox_->open( this, SLOT(saveChangesAnswer(QAbstractButton *)));
-}
+    save_changes_msgbox.setDetailedText( QString::fromStdString( "Current state:\n" + project->layers.toString()) );
+    save_changes_msgbox.exec();
+    QAbstractButton * button = save_changes_msgbox.clickedButton();
+    TaskInfo("Save changes answer: %s, %d",
+             button->text().toStdString().c_str(),
+             (int)save_changes_msgbox.buttonRole(button));
 
-
-void SaweMainWindow::
-        saveChangesAnswer( QAbstractButton * button )
-{
-    TaskInfo("Save changes answer: %d", (int)save_changes_msgbox_->buttonRole( button ));
-    switch ( save_changes_msgbox_->buttonRole( button ) )
+    switch ( save_changes_msgbox.buttonRole(button) )
     {
     case QMessageBox::DestructiveRole:
-        close();
-        break;
+        return true; // close
 
     case QMessageBox::AcceptRole:
         if (!project->save())
         {
-            break;
+            return false; // abort
         }
 
-        close();
-        break;
+        return true; // close
 
     case QMessageBox::RejectRole:
     default:
-        break;
+        return false; // abort
+    }
+}
+
+
+void SaweMainWindow::
+        openRecentFile()
+{
+    QAction* a = dynamic_cast<QAction*>(sender());
+    BOOST_ASSERT( a );
+    QString s = a->data().toString();
+    BOOST_ASSERT( !s.isEmpty() );
+    if (0 == Sawe::Application::global_ptr()->slotOpen_file( s.toLocal8Bit().constData() ))
+    {
+        QSettings settings;
+        QStringList recent_files = settings.value("recent files").toStringList();
+        recent_files.removeAll( s );
+        settings.setValue("recent files", recent_files);
     }
 }
 

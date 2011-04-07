@@ -7,24 +7,35 @@
 %
 % filewatcher does not return. Whatever value returned from func is discarded.
 %
-% Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 20 times per second (dt=0.05).
+% Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 40 times per second (dt=0.025).
 function C=sawe_filewatcher(datafile, func, arguments, dt)
 
 if nargin<2
-  error("syntax: filewatcher(datafile, function, arguments, dt). 'arguments' defaults to [], 'dt' defaults to 0.05")
+  error('syntax: filewatcher(datafile, function, arguments, dt). ''arguments'' defaults to [], ''dt'' defaults to 0.05')
 end
 if nargin<3
   arguments=[];
 end
 if nargin<4
-  dt=0.05;
+  dt=0.025;
 end
+
+if 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
+  disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
+end
+
+global sawe_plot_data; %matrix for all lines to be plotted.
 
 resultfile=[datafile '.result.h5'];
 tempfile=datafile;
 isoctave=0~=exist('OCTAVE_VERSION','builtin');
-%disp (['Monitoring ' datafile]);
+
+disp([ sawe_datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) ''' (datafile ''' datafile ''')']);
+disp(['Working dir: ' pwd]);
+tic
 while 1
+
+
   if isoctave
     datafile_exists = ~isempty(stat(datafile)); % fast octave version
   else
@@ -32,30 +43,51 @@ while 1
   end
 
   if datafile_exists
-    %disp (['Processing ' datafile]);
-	
-    if ~isoctave
-      pause(0.1); % matlab, wait for slow file system in windows to finish the move
+    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
 
-      info=hdf5info(datafile);
-      [dset1]=info.GroupHierarchy.Datasets.Name;
-      if strcmp(dset1,'/buffer')
-          data = sawe_loadbuffer(datafile);
+    try	
+      if ~isoctave
+        info=hdf5info(datafile);
+        [dset1]=info.GroupHierarchy.Datasets.Name;
+        if strcmp(dset1,'/buffer')
+            data = sawe_loadbuffer(datafile);
+        else
+            data = sawe_loadchunk(datafile);
+        end
       else
-          data = sawe_loadchunk(datafile);
+        %octave
+        data = load(datafile);
       end
-    else
-      %octave
-      data=load(datafile); 
+	catch me
+	  disp(me)
+	  continue
     end
-    
-    [data, arguments]=func(data, arguments);
+	
+	sawe_plot_data = [];
+
+    % 'Supposed to be scalars' are exported from Sonic AWE as 1x1 matrice, not scalars.
+    % Hence we need to take the value by "data.samplerate(1)" instead of "data.samplerate".
+    % This reduces 1x1 matrices to scalars
+    n = fieldnames(data);
+    for k=1:numel(n)
+        if numel(data.(n{k})) == 1
+            v = data.(n{k});
+            data.(n{k}) = v(1);
+        end
+    end
+
+    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
+    if 1 == nargin(func2str(func))
+        data = func(data);
+    else
+        data = func(data, arguments);
+    end
 
     % could perhaps use fieldnames(data) somehow to export this data
     if isfield(data,'buffer')
-      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy );
+      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy, sawe_plot_data );
     elseif isfield(data,'chunk')
-      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy );
+      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy, sawe_plot_data );
     end
     
     if isoctave
@@ -63,8 +95,8 @@ while 1
     else
       movefile(tempfile,resultfile); % matlab
     end
+    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' saved results']);
     
-    %disp (['Monitoring ' datafile]);
   else
     if isoctave
       sleep(dt); % octave
@@ -74,4 +106,4 @@ while 1
   end
 end
 
-endfunction
+%endfunction

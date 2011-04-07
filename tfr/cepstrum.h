@@ -14,6 +14,8 @@ public:
     virtual pChunk operator()( Signal::pBuffer b );
 
     virtual Signal::pBuffer inverse( pChunk chunk );
+    virtual FreqAxis freqAxis( float FS );
+    virtual float displayedTimeResolution( float FS, float hz );
 
     unsigned chunk_size();
 };

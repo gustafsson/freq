@@ -64,7 +64,7 @@ void BrushModel::
         finished_painting()
 {
     if (filter()->images && filter()->images->size())
-        project_->head->appendOperation( filter_ ); // Insert cache layer
+        project_->appendOperation( filter_ ); // Insert cache layer
 
     filter_.reset();
 }
@@ -79,7 +79,7 @@ Gauss BrushModel::
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     float fs = filter()->sample_rate();
-    float hz = cwt.compute_frequency2( fs, pos.scale );
+    float hz = render_model_->display_scale().getFrequency( pos.scale );
     float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;
     float deltascale = cwt.sigma() * cwt.wavelet_scale_support()*0.9f / cwt.nScales(fs);
     float deltat = deltasample / fs;
@@ -187,7 +187,8 @@ Signal::Interval BrushModel::
         Heightmap::pBlock block = collection->getBlock( ref );
         if (block)
         {
-            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+            Heightmap::Block::pData blockData = block->glblock->height()->data;
+
             ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
                            blockData->getCudaGlobal(),
                            gauss );

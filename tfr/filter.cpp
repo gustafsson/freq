@@ -92,6 +92,15 @@ Signal::pBuffer Filter::
 }
 
 
+Operation* Filter::
+        affecting_source( const Interval& I )
+{
+    if (!_try_shortcuts)
+        return this;
+    return Operation::affecting_source( I );
+}
+
+
 ChunkAndInverse Filter::
         readChunk( const Signal::Interval& I )
 {
@@ -102,7 +111,7 @@ ChunkAndInverse Filter::
     ChunkAndInverse ci;
 
     Filter* f = dynamic_cast<Filter*>(source()->affecting_source(I));
-    if ( f && f->transform() == transform()) {
+    if ( false && f && f->transform() == transform()) {
         ci = f->readChunk( I );
 
     } else {

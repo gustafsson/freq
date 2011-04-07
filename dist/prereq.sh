@@ -15,7 +15,7 @@ fi
 echo "===================== Deploying Sonic AWE ====================="
 echo "branch: ${branch}"
 echo "version: ${version}"
-echo "release: sonicawe-${version}${snapshot}"
+echo "release: sonicawe_${version}${snapshot}"
 
 read -s -p "Enter password for ftp.sonicawe.com: " pass; echo
 if [ -z "$pass" ]; then echo "Missing password for ftp.sonicawe.com, can't deploy."; exit 1; fi

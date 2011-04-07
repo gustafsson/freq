@@ -67,9 +67,9 @@ protected:
 //    void sendCurrentSelection(int, bool);
 //    void sendRemoveItem(int);
 private slots:
-    void askSaveChanges();
-    void saveChangesAnswer( QAbstractButton * button );
+    bool askSaveChanges();
 
+    void openRecentFile();
     void saveProject();
     void saveProjectAs();
     void toggleFullscreen( bool );
@@ -84,7 +84,6 @@ private:
     QAction* escape_action;
     QWidget* fullscreen_widget;
 
-    QPointer<QMessageBox> save_changes_msgbox_;
     void add_widgets();
 };
 

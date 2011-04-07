@@ -29,7 +29,8 @@ std::string Ellipse::
     std::stringstream ss;
     ss << std::setiosflags(std::ios::fixed)
        << std::setprecision(1)
-       << "Ellipse " <<  _t1 << ";" << _f1 << ", " << std::fabs((_t2-_t1)*(_f2-_f1)*M_PI);
+       << "Ellipse at " <<  _t1 << " s, "
+       << std::setprecision(0) << _f1 << " Hz, size " << std::log(std::fabs((_t2-_t1)*(_f2-_f1)*M_PI));
     return ss.str();
 }
 
@@ -70,18 +71,24 @@ Signal::Intervals Ellipse::
 Signal::Intervals Ellipse::
         outside_samples()
 {
-    float FS = sample_rate();
+    long double FS = sample_rate();
 
-    unsigned
-        start_time = (unsigned)(std::max(0.f, _t1 - fabsf(_t1 - _t2))*FS),
-        end_time = (unsigned)(std::max(0.f, _t1 + fabsf(_t1 - _t2))*FS);
+    float r = fabsf(_t1 - _t2);
+    r += 0.06f;
+
+    long double
+        start_time_d = std::max(0.f, (_t1 - r))*FS,
+        end_time_d = std::max(0.f, (_t2 + r))*FS;
+
+    Signal::IntervalType
+        start_time = std::min((long double)Signal::Interval::IntervalType_MAX, start_time_d),
+        end_time = std::min((long double)Signal::Interval::IntervalType_MAX, end_time_d);
 
     Signal::Intervals sid;
     if (start_time < end_time)
         sid = Signal::Intervals(start_time, end_time);
 
-    return ~(sid);
-    //return ~include_time_support(sid);
+    return ~sid;
 }
 
 } // namespace Filters

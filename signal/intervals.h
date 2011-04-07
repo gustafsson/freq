@@ -38,8 +38,6 @@ public:
     IntervalType count() const { return valid() ? last - first : 0; }
 
     bool valid() const;
-    bool isConnectedTo(const Interval& r) const;
-    bool operator<(const Interval& r) const;
     Interval operator|(const Interval& r) { Interval I(*this); return I|=r; }
     Interval& operator|=(const Interval& r);
     Interval operator&(const Interval& r) { Interval I(*this); return I&=r; }
@@ -59,32 +57,32 @@ public:
      I = [first, last)
 
   */
-class Intervals: public std::list<Interval>
+class Intervals: private std::list<Interval>
 {
+    typedef std::list<Interval> base;
 public:
     static const Intervals Intervals_ALL;
 
     Intervals( );
     Intervals( const Interval& );
     Intervals( IntervalType first, IntervalType last );
-    Intervals  operator |  (const Intervals& b) const { Intervals a = *this; return a|=b; }
+    Intervals  operator |  (const Intervals& b) const { return Intervals(*this)|=b; }
     Intervals& operator |= (const Intervals&);
     Intervals& operator |= (const Interval&);
-    Intervals  operator -  (const Intervals& b) const { Intervals a = *this; return a-=b; }
+    Intervals  operator -  (const Intervals& b) const { return Intervals(*this)-=b; }
     Intervals& operator -= (const Intervals&);
     Intervals& operator -= (const Interval&);
-    Intervals  operator &  (const Intervals& b) const { Intervals a = *this; return a&=b; }
+    Intervals  operator &  (const Intervals& b) const { return Intervals(*this)&=b; }
     Intervals& operator &= (const Intervals&);
     Intervals& operator &= (const Interval&);
-    Intervals  operator ^  (const Intervals& b) const { Intervals a = *this; return a^=b; }
+    Intervals  operator ^  (const Intervals& b) const { return Intervals(*this)^=b; }
     Intervals& operator ^= (const Intervals&);
-    Intervals operator >> (const IntervalType& b) const { Intervals a = *this; return a>>=b; }
+    Intervals operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
     Intervals& operator >>= (const IntervalType&);
-    Intervals operator << (const IntervalType& b) const { Intervals a = *this; return a<<=b; }
+    Intervals operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
     Intervals& operator <<= (const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
-    operator   Interval    () const { return coveredInterval(); }
     operator   bool        () const { return !empty(); }
 
     Intervals               inverse() const;
@@ -94,9 +92,32 @@ public:
     Intervals               enlarge( IntervalType dt ) const;
     Intervals               shrink( IntervalType dt ) const;
     IntervalType            count() const;
+    bool                    testSample( IntervalType const &p) const;
 
     std::string             toString() const;
+
+    // STL compliant container
+    typedef base::const_iterator const_iterator;
+    typedef base::const_iterator iterator; // doesn't allow arbitrary changes in the list but permits iterations
+    iterator                begin() { return base::begin(); }
+    const_iterator          begin() const { return base::begin(); }
+    iterator                end() { return base::end(); }
+    const_iterator          end() const { return base::end(); }
+    bool                    empty() const { return base::empty(); }
+    void                    clear() { base::clear(); }
+    bool operator==         (const Intervals& b) const { return ((base&)*this)==b; }
+    bool operator!=         (const Intervals& b) const { return ((base&)*this)!=b; }
+
+private:
+    base::iterator firstIntersecting( const Interval& b );
 };
+
+std::ostream& operator<< (std::ostream& o, const Interval& I);
+std::ostream& operator<< (std::ostream& o, const Intervals& I);
+Intervals  operator |  (const Interval& a, const Intervals& b);
+Intervals  operator -  (const Interval& a, const Intervals& b);
+Intervals  operator &  (const Interval& a, const Intervals& b);
+Intervals  operator ^  (const Interval& a, const Intervals& b);
 
 } // namespace Signal
 

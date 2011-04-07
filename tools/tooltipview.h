@@ -45,6 +45,7 @@ private:
     TooltipModel* model_;
     TooltipController* controller_;
     RenderView* render_view_;
+    Heightmap::Position prev_pos_;
 };
 
 } // namespace Tools

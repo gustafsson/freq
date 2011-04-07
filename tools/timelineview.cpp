@@ -28,8 +28,8 @@
 
 #undef max
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
+#define TIME_PAINTGL
+//#define TIME_PAINTGL if(0)
 
 using namespace Signal;
 
@@ -186,7 +186,6 @@ void TimelineView::
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    _barHeight = 20.f/(_vertical?height:width);
     glOrtho(0,1,0,1, -10,10);
 
     glMatrixMode(GL_MODELVIEW);
@@ -207,6 +206,11 @@ void TimelineView::
     }
 
     _length = std::max( 1.f, _project->worker.length());
+    if (_length < 60*10)
+        _barHeight = 0;
+    else
+        _barHeight = 20.f/(_vertical?_height:_width);
+
     _except_count = 0;
     try {
         GlException_CHECK_ERROR();
@@ -221,11 +225,9 @@ void TimelineView::
 
         { // Render
             // Set up camera position
-            float look_ahead = 0; // 1
-            float h = look_ahead - 0.5f*_length/_xscale;
             if (_xscale<1) _xscale = 1;
-            if (_xoffs<h) _xoffs = h;
-            if (_xoffs>_length+h) _xoffs = _length+h;
+            if (_xoffs<0) _xoffs = 0;
+            if (_xoffs>_length-_length/_xscale) _xoffs = _length-_length/_xscale;
 
             if (_render_view->model->renderer->left_handed_axes)
             {
@@ -250,9 +252,12 @@ void TimelineView::
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
                 _render_view->model->renderer->drawFrustum();
+
+                emit painting();
             }
         }
 
+        if (_barHeight>0)
         {
             // Draw little bar for entire signal at the bottom of the timeline
             //glPushMatrixContext mc(GL_MODELVIEW);

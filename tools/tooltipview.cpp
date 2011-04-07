@@ -35,11 +35,15 @@ TooltipView::
 void TooltipView::
         drawMarkers()
 {
-    Heightmap::Position p = model_->pos;
+    Heightmap::Position p = model_->pos();
+
+    if (prev_pos_ != p && model_->comment)
+        model_->comment->model()->pos = p;
+
+    prev_pos_ = p;
 
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
-    double frequency = display_scale.getFrequency( p.scale );
-    double fundamental_frequency = frequency / model_->markers;
+    double fundamental_frequency = model_->pos_hz / model_->markers;
     for (unsigned i=1; i<=2*model_->markers || i <= 10; ++i)
     {
         float harmonic = fundamental_frequency * i;
@@ -76,7 +80,6 @@ void TooltipView::
     glEnd();
 
     glLineWidth(1.6f);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_LINE_STRIP);
         glVertex3f( x1, 0, p.scale );
         glVertex3f( x1, y, p.scale );
@@ -138,11 +141,15 @@ void TooltipView::
         {
             TaskInfo ti("TooltipView doesn't have all data yet");
 
-            model_->showToolTip( model_->pos );
+            std::string prev_html = model_->comment->html();
+            model_->showToolTip( model_->pos() );
 
-            TaskInfo("%s", model_->comment->html().c_str());
+            std::string html = model_->comment->html();
+
             if (model_->automarking != TooltipModel::AutoMarkerWorking)
-                TaskInfo("TooltipView just finished");
+                TaskInfo("TooltipView just finished\n%s", html.c_str());
+            else if(html != prev_html)
+                TaskInfo("Changed tooltip\n%s", html.c_str());
 
             render_view_->userinput_update( false );
 

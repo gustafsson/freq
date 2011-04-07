@@ -36,6 +36,8 @@ public:
     Signal::Intervals include_time_support(Signal::Intervals);
     Signal::Intervals discard_time_support(Signal::Intervals);
 
+    virtual void invalidate_samples(const Signal::Intervals& I);
+
 protected:
     void applyFilter( Tfr::pChunk chunk );
 };

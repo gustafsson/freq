@@ -87,7 +87,7 @@ private:
         if (0==N) // workaround for the special case of saving an empty recording.
             N = 1;
 
-        Signal::pBuffer b = readFixedLength( Signal::Interval(0, N) );
+        Signal::pBuffer b = readFixedLengthAllChannels( Signal::Interval(0, N) );
         std::stringstream ss;
         ss << "recording_" << std::oct << (void*)this << ".wav";
 

@@ -67,8 +67,9 @@ CommentView* CommentController::
         findView( ToolModelP model )
 {
     foreach (const QPointer<CommentView>& c, comments_)
-        if (c->modelp == model)
-            return c;
+        if (c)
+            if (c->modelp == model)
+                return c;
     return 0;
 }
 

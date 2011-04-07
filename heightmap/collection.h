@@ -8,9 +8,9 @@
 
 // Sonic AWE
 #include "signal/intervals.h"
-#include "signal/source.h"
-#include "signal/worker.h"
+#include "signal/operation.h"
 #include "tfr/chunk.h"
+#include "tfr/transform.h"
 
 // boost
 #include <boost/unordered_map.hpp>
@@ -109,6 +109,8 @@ public:
 #endif
     {}
 
+    ~Block();
+
     // TODO move this value to a complementary class
     unsigned frame_number_last_used;
 
@@ -163,7 +165,7 @@ inline std::size_t hash_value(Reference const& ref)
   */
 class Collection {
 public:
-    Collection(Signal::Worker* worker);
+    Collection(Signal::pOperation target);
     ~Collection();
 
 
@@ -196,10 +198,9 @@ public:
 
 
     /**
-      Returns a Reference for a block containing 'p' in which a block element
-      is as big as possible yet smaller than or equal to 'sampleSize'.
+      Returns a Reference for a block containing the entire heightmap.
       */
-    Reference   findReference( Position p, Position sampleSize );
+    Reference   entireHeightmap();
 
 
     /**
@@ -211,7 +212,7 @@ public:
       Might return 0 if collections decides that it doesn't want to allocate
       another block.
       */
-    pBlock      getBlock( Reference ref );
+    pBlock      getBlock( const Reference& ref );
 
 
     /**
@@ -222,41 +223,32 @@ public:
 
 
     /**
-      As the transform is of finite length and finite sample rate there is a
-      smallest and a largest sample size that is meaningful for the heightmap
-      to render.
-      */
-    Position min_sample_size() { return _min_sample_size; }
-    Position max_sample_size() { return _max_sample_size; }
-
-
-    /**
       Notify the Collection what filter that is currently creating blocks.
       */
     void block_filter(Signal::pOperation filter) { _filter = filter; }
     Signal::pOperation block_filter() { return _filter; }
 
 
+    /**
+      Extract the transform from the current filter.
+      */
+    Tfr::pTransform transform();
+
+
     unsigned long cacheByteSize();
     unsigned    cacheCount();
     void        printCacheSize();
     void        gc();
+    void        discardOutside(Signal::Interval I);
 
 
     Tfr::FreqAxis display_scale() { return _display_scale; }
     void display_scale(Tfr::FreqAxis a);
 
 
-    /**
-      Given a chunk and this->_worker->source(), compute how small and big
-      samples that are meanginful to display.
-      */
-    void        update_sample_size( Tfr::Chunk* inChunk );
+    Signal::pOperation target;
 
-
-    Signal::Worker*     worker;
-
-	const ThreadChecker& constructor_thread() const { return _constructor_thread; }
+    const ThreadChecker& constructor_thread() const { return _constructor_thread; }
 
 private:
     // TODO remove friends
@@ -273,7 +265,6 @@ private:
 
 
     Position
-            _min_sample_size,
             _max_sample_size;
 
     Signal::pOperation _filter;
@@ -308,18 +299,18 @@ private:
     /**
       Attempts to allocate a new block.
       */
-    pBlock      attempt( Reference ref );
+    pBlock      attempt( const Reference& ref );
 
     /**
       Creates a new block.
       */
-    pBlock      createBlock( Reference ref );
+    pBlock      createBlock( const Reference& ref );
 
     /**
       Compoute a short-time Fourier transform (stft). Usefull for filling new
       blocks with data really fast.
       */
-    void        fillBlock( pBlock block );
+    void        fillBlock( pBlock block, const Signal::Intervals& to_update );
 
 
     /**
@@ -343,6 +334,17 @@ private:
       Add block information from another block. Returns whether any information was merged.
       */
     bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
+
+
+    /**
+      If 'r' exists in _cache, update its last_frame_used so that it wont yet be freed.
+      */
+    void        poke(const Reference& r);
+
+    /**
+      Try to create 'r' and return its invalid samples if it was created.
+      */
+    Signal::Intervals getInvalid(const Reference& r);
 };
 
 } // namespace Heightmap

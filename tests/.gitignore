@@ -1,0 +1,6 @@
+tst_mappedvbotest
+memcheckerror
+tst_mappedtexture
+tst_blocktest
+*.sln
+*.suo

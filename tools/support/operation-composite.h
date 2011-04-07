@@ -26,7 +26,7 @@ class OperationSubOperations : public Signal::Operation {
 public:
     Signal::pOperation subSource() { return Operation::source(); }
 
-    /// this do skip all contained suboperations
+    /// this skips all contained suboperations
     virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
     virtual void source(Signal::pOperation v) { source_sub_operation_->source(v); }
 
@@ -55,7 +55,7 @@ protected:
 
   This happens for instance with selection tools. The selection filter has a
   specific location in the Operation tree but when the user changes the
-  selection the implementatino might change from a Rectangle to a
+  selection the implementation might change from a Rectangle to a
   OperationOtherSilent and back again.
  */
 class OperationContainer: public OperationSubOperations
@@ -80,32 +80,15 @@ public:
 /**
   Example 1:
   start:  1234567
-  OperationSetSilent( start, 1, 2 );
-  result: 1004567
-*/
-class OperationSetSilent: public OperationSubOperations {
-public:
-    OperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
-
-    void reset( const Signal::Interval& section );
-
-    virtual Signal::Intervals zeroed_samples() { return affected_samples(); }
-    virtual Signal::Intervals affected_samples() { return section_; }
-private:
-    Signal::Interval section_;
-};
-
-/**
-  Example 1:
-  start:  1234567
   OperationOtherSilent( start, 1, 2 );
   result: 0230000
 */
 class OperationOtherSilent: public OperationSubOperations {
 public:
     OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
+    OperationOtherSilent( float fs, const Signal::Interval& section );
 
-    void reset( const Signal::Interval& section );
+    void reset( const Signal::Interval& section, float fs=0 );
 
     Signal::Interval section() { return section_; }
 private:
@@ -210,6 +193,24 @@ public:
 
     void reset( Signal::pOperation selectionFilter, long sampleShift, float freqDelta );
 };
+
+
+class OperationOnSelection: public OperationSubOperations {
+public:
+    OperationOnSelection( Signal::pOperation source, Signal::pOperation insideSelection, Signal::pOperation outsideSelection, Signal::pOperation operation );
+
+    virtual std::string name();
+
+    void reset( Signal::pOperation insideSelection, Signal::pOperation outsideSelection, Signal::pOperation operation );
+
+    Signal::pOperation selection() { return insideSelection_; }
+    Signal::pOperation operation() { return operation_; }
+
+private:
+    Signal::pOperation insideSelection_;
+    Signal::pOperation operation_;
+};
+
 
 } // namespace Support
 } // namespace Tools

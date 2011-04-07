@@ -6,6 +6,7 @@
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "support/operation-composite.h"
+#include "support/toolbar.h"
 
 #include "selections/ellipsecontroller.h"
 #include "selections/ellipsemodel.h"
@@ -68,7 +69,7 @@ namespace Tools
         Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
-        connect(ui->actionActionAdd_selection, SIGNAL(triggered()), SLOT(receiveAddSelection()));
+        //connect(ui->actionActionAdd_selection, SIGNAL(triggered()), SLOT(receiveAddSelection()));
         connect(ui->actionActionRemove_selection, SIGNAL(triggered()), SLOT(receiveAddClearSelection()));
         connect(ui->actionCropSelection, SIGNAL(triggered()), SLOT(receiveCropSelection()));
         //connect(ui->actionMoveSelection, SIGNAL(toggled(bool)), SLOT(receiveMoveSelection(bool)));
@@ -80,13 +81,15 @@ namespace Tools
         ui->actionMoveSelection->setEnabled( false );
         ui->actionMoveSelectionTime->setEnabled( false );
 
-        QToolBar* toolBarTool = new QToolBar(main);
+        Support::ToolBar* toolBarTool = new Support::ToolBar(main);
         toolBarTool->setObjectName(QString::fromUtf8("toolBarSelectionController"));
         toolBarTool->setEnabled(true);
         toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
         toolBarTool->setToolButtonStyle(Qt::ToolButtonIconOnly);
         main->addToolBar(Qt::TopToolBarArea, toolBarTool);
+
         connect(ui->actionToggleSelectionToolBox, SIGNAL(toggled(bool)), toolBarTool, SLOT(setVisible(bool)));
+        connect(toolBarTool, SIGNAL(visibleChanged(bool)), ui->actionToggleSelectionToolBox, SLOT(setChecked(bool)));
 
         selectionComboBox_ = new Ui::ComboBoxAction();
         toolBarTool->addWidget( selectionComboBox_ );
@@ -96,6 +99,7 @@ namespace Tools
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
         connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
+        connect(selectionComboBox_, SIGNAL(toggled(bool)), SLOT(selectionComboBoxToggled()));
 
         setCurrentSelection(Signal::pOperation());
 
@@ -113,7 +117,7 @@ namespace Tools
         ellipse_view_.reset( new Selections::EllipseView(        ellipse_model_.data() ));
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 
-        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model->display_scale(), render_view()->model->project() ));
+        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, render_view()->model->project() ));
         rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data(), &render_view()->model->project()->worker ));
         rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
 
@@ -138,8 +142,7 @@ namespace Tools
         tool_selector_->setCurrentTool( tool, active );
 //        if (tool_selector_->currentTool())
 //            tool_selector_->currentTool()->setVisible( true );
-        render_view()->toolSelector()->setCurrentTool(
-                this, 0!=tool_selector_->currentTool() );
+        setThisAsCurrentTool( 0!=tool_selector_->currentTool() );
     }
 
 
@@ -172,7 +175,21 @@ namespace Tools
         Signal::pOperation t = _model->project()->head->head_source();
         if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
             t = t->source();
+        if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
+            t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->selection();
+
+        if (t && t == _model->current_selection())
+        {
+            // To reset the same selection again, first clear the current selection
+            _model->set_current_selection( Signal::pOperation() );
+        }
+
         _model->try_set_current_selection( t );
+
+        if (!_model->current_selection())
+        {
+            setThisAsCurrentTool( false );
+        }
     }
 
 
@@ -187,11 +204,13 @@ namespace Tools
     void SelectionController::
             setThisAsCurrentTool( bool active )
     {
+        if (!active)
+            setCurrentSelection( Signal::pOperation() );
         _render_view->toolSelector()->setCurrentTool( this, active );
     }
 
 
-/*    void SelectionController::
+    void SelectionController::
             changeEvent ( QEvent * event )
     {
         if (event->type() & QEvent::EnabledChange)
@@ -199,19 +218,19 @@ namespace Tools
             setThisAsCurrentTool( isEnabled() );
             emit enabledChanged(isEnabled());
         }
-    }*/
-
-
-    void SelectionController::
-            receiveAddSelection()
-    {
-        if (!_model->current_selection())
-            return;
-
-        receiveAddClearSelection();
-
-        _worker->source()->enabled(false);
     }
+
+
+//    void SelectionController::
+//            receiveAddSelection()
+//    {
+//        if (!_model->current_selection())
+//            return;
+
+//        receiveAddClearSelection();
+
+//        _worker->source()->enabled(false);
+//    }
 
 
     void SelectionController::
@@ -222,7 +241,9 @@ namespace Tools
 
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
 
-        _model->project()->head->appendOperation( o );
+        _model->set_current_selection( Signal::pOperation() );
+        _model->project()->appendOperation( o );
+        _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
         TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
@@ -232,7 +253,6 @@ namespace Tools
     void SelectionController::
             receiveCropSelection()
     {
-        // affected_samples need a sample rate
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
         o->source( _worker->source() );
 
@@ -244,10 +264,16 @@ namespace Tools
 
         // Create OperationRemoveSection to remove everything else from the stream
         Signal::pOperation remove(new Tools::Support::OperationCrop(
-                Signal::pOperation(), I.coveredInterval() ));
-        _model->project()->head->appendOperation( o );
-        _model->project()->head->appendOperation( remove );
-        _model->all_selections.push_back( o );
+                o, I.coveredInterval() ));
+
+        if (0 == dynamic_cast<Tools::Support::OperationOtherSilent*>(o.get()))
+        {
+            _model->set_current_selection( Signal::pOperation() );
+            _model->project()->appendOperation( o );
+        }
+        _model->set_current_selection( Signal::pOperation() );
+        _model->project()->appendOperation( remove );
+        _model->set_current_selection( o );
 
         TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
     }
@@ -317,7 +343,7 @@ namespace Tools
 
 
     void SelectionController::
-            receiveCurrentSelection(int index, bool enabled)
+            receiveCurrentSelection(int /*index*/, bool /*enabled*/)
     {
         throw std::logic_error("receiveCurrentSelection: Not implemented");
         //setSelection(index, enabled);
@@ -325,11 +351,19 @@ namespace Tools
 
 
     void SelectionController::
-            receiveFilterRemoval(int index)
+            receiveFilterRemoval(int /*index*/)
     {
         throw std::logic_error("receiveFilterRemoval: Not implemented");
         //removeFilter(index);
     }
+
+
+    void SelectionController::
+            selectionComboBoxToggled()
+    {
+        setThisAsCurrentTool( selectionComboBox_->isChecked() );
+    }
+
 
 
 /*    void SelectionController::

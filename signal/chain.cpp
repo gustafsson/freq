@@ -1,5 +1,7 @@
 #include "chain.h"
 
+#include "tfr/filter.h"
+
 #include "operationcache.h"
 
 namespace Signal {
@@ -78,7 +80,7 @@ void ChainHead::
     BOOST_ASSERT( s );
 
     TaskInfo tt("ChainHead::appendOperation '%s' on\n%s",
-                s->name().c_str(), head_source_ref()->toString().c_str());
+                s->name().c_str(), head_source()->toString().c_str());
 
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.
@@ -98,6 +100,8 @@ void ChainHead::
 
     s->source( head_source() );
     pOperation new_head = s;
+
+    // Cache all calculations
     if (0 == dynamic_cast<Signal::OperationCache*>( s.get() ))
         new_head.reset( new OperationCacheLayer(s) );
 
@@ -108,7 +112,7 @@ void ChainHead::
 
     head_source( new_head );
 
-    TaskInfo("Worker::appendOperation, worker tree:\n%s", head_source_ref()->toString().c_str());
+    s->invalidate_samples( s->affected_samples() );
 }
 
 
@@ -134,7 +138,7 @@ void ChainHead::
 
     if (head_source() != s)
     {
-        Signal::Intervals diff = Signal::Operation::affecetedDiff( head_source(), s );
+        Signal::Intervals diff = Signal::Operation::affectedDiff( head_source(), s );
         head_source_->source( s );
         head_source_->invalidate_samples( diff );
 

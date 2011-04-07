@@ -2,6 +2,7 @@
 #define TOOLSELECTOR_H
 
 #include <QObject>
+#include <QPointer>
 
 class QWidget;
 
@@ -34,6 +35,9 @@ namespace Tools {
 
         /// @see ToolSelector(QWidget*)
         QWidget* parentTool();
+
+        QPointer<QWidget> default_tool;
+        QPointer<QWidget> temp_tool;
 
 
         /**

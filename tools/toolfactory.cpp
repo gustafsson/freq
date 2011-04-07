@@ -24,6 +24,10 @@
 #include "transforminfoform.h"
 #include "exportaudiodialog.h"
 #include "harmonicsinfoform.h"
+#include "workercontroller.h"
+#include "fantrackercontroller.h"
+#include "fantrackerview.h"
+#include "fantrackermodel.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -76,13 +80,18 @@ ToolFactory::
     _comment_controller = new CommentController( _render_view );
     tool_controllers_.push_back( _comment_controller );
 
+#ifndef __APPLE__
     _matlab_controller = new MatlabController( p, _render_view );
-
+#endif
     _graph_controller = new GraphController( _render_view );
 
     _tooltip_controller = new TooltipController(
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
     tool_controllers_.push_back( _tooltip_controller );
+
+    _fantracker_model.reset( new FanTrackerModel( &render_model ) );
+    _fantracker_view.reset(new FanTrackerView( _fantracker_model.data() ,_render_view ));
+    _fantracker_controller = new FanTrackerController(_fantracker_view.data(), _render_view );
 
     _about_dialog = new AboutDialog( p );
 
@@ -92,7 +101,7 @@ ToolFactory::
             _playbackmarkers_view.data(), _render_view );
     playback_model.markers = _playbackmarkers_model.data();
 
-    _transform_info_form = new TransformInfoForm(p, _render_controller.data() );
+    _transform_info_form = new TransformInfoForm(p, _render_view );
 
     _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
 
@@ -101,6 +110,9 @@ ToolFactory::
             dynamic_cast<TooltipController*>(_tooltip_controller.data()),
             _render_view
             );
+
+    _worker_view.reset( new WorkerView(p));
+    _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view ) );
 }
 
 
@@ -139,6 +151,8 @@ ToolFactory::
     delete _graph_controller;
 
     delete _tooltip_controller;
+
+    delete _fantracker_controller;
 
     BOOST_ASSERT( _timeline_controller );
 	delete _timeline_controller;

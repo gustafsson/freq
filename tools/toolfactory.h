@@ -85,6 +85,10 @@ namespace Tools
 
         QPointer<class ToolController> _tooltip_controller;
 
+        QScopedPointer<class FanTrackerModel> _fantracker_model;
+        QScopedPointer<class FanTrackerView> _fantracker_view;
+        QPointer<class FanTrackerController> _fantracker_controller;
+
         QPointer<class AboutDialog> _about_dialog;
 
         QScopedPointer<class PlaybackMarkersModel> _playbackmarkers_model;
@@ -96,6 +100,9 @@ namespace Tools
         QPointer<class ExportAudioDialog> _export_audio_dialog;
 
         QPointer<class HarmonicsInfoForm> _harmonics_info_form;
+
+        QScopedPointer<class WorkerView> _worker_view;
+        QScopedPointer<class WorkerController> _worker_controller;
     };
 } // namespace Tools
 

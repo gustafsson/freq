@@ -125,6 +125,55 @@ private:
 };
 
 
+/**
+  This is a premature optimization that saves quite a few function calls.
+  */
+class CacheVars: public Operation, public boost::noncopyable
+{
+public:
+    CacheVars() : Operation(pOperation()), FS(-1) {}
+
+    virtual Signal::pBuffer read(const Interval& I)
+    {
+        update();
+        return Operation::read( I );
+    }
+
+
+    virtual IntervalType number_of_samples()
+    {
+        if (0>FS)
+            return Operation::number_of_samples();
+        return number_of_samples_;
+    }
+
+    virtual float sample_rate()
+    {
+        if (0>FS)
+            update();
+        return FS;
+    }
+
+
+    virtual void invalidate_samples(const Intervals& I)
+    {
+        update();
+
+        Operation::invalidate_samples(I);
+    }
+
+
+private:
+    void update()
+    {
+        number_of_samples_ = Operation::number_of_samples();
+        FS = Operation::sample_rate();
+    }
+
+    Signal::IntervalType number_of_samples_;
+    float FS;
+};
+
 Layers::
         Layers(Sawe::Project* project)
             :
@@ -182,7 +231,7 @@ std::string Layers::
         toString() const
 {
     std::string s;
-    for (std::set<pChain>::iterator itr = layers_.begin(); itr != layers_.end(); ++itr)
+    for (std::set<pChain>::const_iterator itr = layers_.begin(); itr != layers_.end(); ++itr)
     {
         s += (*itr)->tip_source()->toString();
         s += "\n\n";
@@ -192,27 +241,32 @@ std::string Layers::
 
 
 Target::
-        Target(Layers* all_layers, std::string name)
+        Target(Layers* all_layers, std::string name, bool autocreate_chainheads)
             :
             name_( name ),
             post_sink_( new PostSink ),
-            rewire_channels_( new RewireChannels(pOperation()) ),
+            reroute_channels_( new RerouteChannels(pOperation()) ),
             forall_channels_( new ForAllChannelsOperation(pOperation()) ),
             update_view_( new UpdateView( all_layers->project(), name )),
+            cache_vars_( new CacheVars ),
             add_as_channels_(false),
             all_layers_(all_layers)
 {
-    post_sink_->source( rewire_channels_ );
+    post_sink_->source( reroute_channels_ );
     forall_channels_->source( post_sink_ );
     update_view_->source( forall_channels_ );
-    read_ = update_view_;
+    cache_vars_->source(update_view_);
+    read_ = cache_vars_;
 
-    BOOST_FOREACH( pChain c, all_layers_->layers() )
+    if (autocreate_chainheads)
     {
-        /*if (all_layers->project()->head->chain() == c)
-            addLayerHead(all_layers->project()->head);
-        else*/
-            addLayerHead( pChainHead(new ChainHead(c)));
+        BOOST_FOREACH( pChain c, all_layers_->layers() )
+        {
+            /*if (all_layers->project()->head->chain() == c)
+                addLayerHead(all_layers->project()->head);
+            else*/
+                addLayerHead( pChainHead(new ChainHead(c)));
+        }
     }
 }
 
@@ -220,9 +274,10 @@ Target::
 void Target::
         addLayerHead(pChainHead p)
 {
+    BOOST_ASSERT( p );
     BOOST_ASSERT( all_layers_ );
     BOOST_ASSERT( !isInSet(p->chain()) );
-    BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
+    //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
     Signal::Intervals was_zero = read_->zeroed_samples_recursive();
 
@@ -230,7 +285,7 @@ void Target::
     rebuildSource();
 
     Signal::Intervals is_zero = read_->zeroed_samples_recursive();
-    Signal::Intervals need_update = Signal::Intervals::Intervals_ALL - (was_zero&is_zero);
+    Signal::Intervals need_update = (was_zero&is_zero).inverse();
 
     post_sink()->invalidate_samples( need_update );
 }
@@ -249,7 +304,7 @@ void Target::
     rebuildSource();
 
     Signal::Intervals is_zero = read_->zeroed_samples_recursive();
-    Signal::Intervals need_update = Signal::Intervals::Intervals_ALL - (was_zero&is_zero);
+    Signal::Intervals need_update = (was_zero&is_zero).inverse();
 
     post_sink()->invalidate_samples( need_update );
 }
@@ -289,10 +344,10 @@ PostSink* Target::
 }
 
 
-RewireChannels* Target::
+RerouteChannels* Target::
         channels() const
 {
-    return dynamic_cast<RewireChannels*>(rewire_channels_.get());
+    return dynamic_cast<RerouteChannels*>(reroute_channels_.get());
 }
 
 
@@ -338,7 +393,7 @@ void Target::
         }
     }
 
-    rewire_channels_->source( s );
+    reroute_channels_->source( s );
 
     DEBUG_Target TaskInfo("Target::rebuildSource created\n%s", read_->toString().c_str());
 }

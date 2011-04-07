@@ -38,6 +38,8 @@ public:
     pChunk computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales );
 
     virtual Signal::pBuffer inverse( pChunk );
+    virtual FreqAxis freqAxis( float FS );
+    virtual float displayedTimeResolution( float FS, float hz );
 
     float     get_min_hz(float fs) const;
     float     wanted_min_hz() const;
@@ -50,7 +52,6 @@ public:
     float     tf_resolution() const { return _tf_resolution; }
     void      tf_resolution( float );
     float     sigma() const;
-    float     compute_frequency2( float fs, float normalized_scale ) const;
 
     /**
       wavelet_time_support is the size of overlapping required in the windowed
@@ -91,7 +92,7 @@ public:
     static void     gc() { _fft_many.clear(); }
     static void     resetSingleton();
 private:
-    Cwt( float scales_per_octave=40, float wavelet_time_suppport=3, cudaStream_t stream=0 );
+    Cwt( float scales_per_octave=20, float wavelet_time_suppport=3, cudaStream_t stream=0 );
 
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;

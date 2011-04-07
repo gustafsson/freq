@@ -21,6 +21,7 @@ PlaybackView::
             :
             model(model),
             follow_play_marker( false ),
+            just_started( false ),
             _render_view( render_view ),
             _playbackMarker(-1)
 {
@@ -47,6 +48,7 @@ void PlaybackView::
 void PlaybackView::
         locatePlaybackMarker()
 {
+    float prev_pos = _playbackMarker;
     _playbackMarker = -1;
 
     // No selection
@@ -58,20 +60,23 @@ void PlaybackView::
         return;
     }
 
-    // Playback has recently stopped stopped
-    if (model->playback()->isStopped() && model->playback()->hasReachedEnd()) {
-        emit playback_stopped();
-    }
-
     // Playback has stopped/or hasn't started
-    if (model->playback()->isStopped()) {
+    bool is_stopped = model->playback()->isStopped();
+    is_stopped &= model->playback()->invalid_samples().empty();
+    if (!is_stopped)
+        just_started = false;
+    is_stopped &= !just_started;
+    if (is_stopped && 0>=prev_pos) {
         return;
     }
 
-    update();
+    if (!model->playback()->isPaused()) {
+        update();
+    }
 
-    // Playback has reached end but continues with zeros to avoid clicks
-    if (model->playback()->hasReachedEnd()) {
+    // Playback has recently stopped
+    if (is_stopped) {
+        emit playback_stopped();
         return;
     }
 
@@ -120,7 +125,6 @@ void PlaybackView::
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_QUADS);
         glVertex3f( t, 0, z1 );
         glVertex3f( t, 0, z2 );
@@ -168,7 +172,6 @@ bool PlaybackView::
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
     glBegin(GL_QUADS);
         glVertex3f( t, 0, z1 );
         glVertex3f( t, 0, z2 );

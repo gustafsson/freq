@@ -3,6 +3,33 @@
 
 namespace Signal {
 
+    // OperationSetSilent  /////////////////////////////////////////////////////////////////
+OperationSetSilent::
+        OperationSetSilent( pOperation source, const Signal::Interval& section )
+:   Operation( source ),
+    section_( section )
+{
+}
+
+std::string OperationSetSilent::
+        name()
+{
+    float fs = sample_rate();
+    std::stringstream ss;
+    ss << "Clear section [" << section_.first/fs << ", " << section_.last/fs << ") s";
+    return ss.str();
+}
+
+pBuffer OperationSetSilent::
+        read( const Interval& I )
+{
+    Interval t = (I & section_).fetchFirstInterval();
+    if ( t.first == I.first && t.count() )
+        return zeros( t );
+    return source()->readFixedLength( (I - section_).fetchFirstInterval() );
+}
+
+
     // OperationRemoveSection ///////////////////////////////////////////////////////////
 
 OperationRemoveSection::
@@ -31,7 +58,7 @@ pBuffer OperationRemoveSection::
         return zeros(I);
     }
 
-    pBuffer b = source()->readFixedLength( Intervals(I) << section_.count() );
+    pBuffer b = source()->readFixedLength( (Intervals(I) << section_.count() ).coveredInterval() );
     b->sample_offset -= section_.count();
 
     return b;
@@ -100,7 +127,7 @@ pBuffer OperationInsertSilence::
 
     if (I.first >= section_.last) {
         pBuffer b = source()->readFixedLength(
-                Intervals( I ) >> section_.count());
+                (Intervals( I ) >> section_.count()).coveredInterval());
         b->sample_offset += section_.count();
         return b;
     }
@@ -118,7 +145,7 @@ IntervalType OperationInsertSilence::
 {
     IntervalType N = Operation::number_of_samples();
     if (N <= section_.first)
-        return N;
+        return section_.last;
     if (N + section_.count() < N)
         return Interval::IntervalType_MAX;
     return N + section_.count();
@@ -164,18 +191,15 @@ OperationSuperposition::
 :   Operation( source ),
     _source2( source2 )
 {
-    if (Operation::source()->sample_rate() != _source2->sample_rate())
-        throw std::invalid_argument("source->sample_rate() != source2->sample_rate()");
+//    if (Operation::source()->sample_rate() != _source2->sample_rate())
+//        throw std::invalid_argument("source->sample_rate() != source2->sample_rate()");
 }
 
 pBuffer OperationSuperposition::
         read( const Interval& I )
 {
-    TaskTimer tt("Superposition");
     pBuffer a = source()->read( I );
-    tt.info("Reading2");
     pBuffer b = _source2->read( I );
-    tt.info("Merging");
 
     IntervalType offset = std::max( (IntervalType)a->sample_offset, (IntervalType)b->sample_offset );
     IntervalType length = std::min(
@@ -196,6 +220,36 @@ pBuffer OperationSuperposition::
         pr[i] = pa[i] + pb[i];
 
     return r;
+}
+
+
+void OperationSuperposition::
+        set_channel(unsigned c)
+{
+    _source2->set_channel(c);
+
+    Operation::set_channel(c);
+}
+
+
+Intervals OperationSuperposition::
+        zeroed_samples()
+{
+    return source()->zeroed_samples() & _source2->zeroed_samples();
+}
+
+
+Intervals OperationSuperposition::
+        affected_samples()
+{
+    return _source2->affected_samples();
+}
+
+
+Signal::Intervals OperationSuperposition::
+        zeroed_samples_recursive()
+{
+    return Operation::zeroed_samples_recursive() & _source2->zeroed_samples();
 }
 
 } // namespace Signal

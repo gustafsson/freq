@@ -31,15 +31,23 @@ public:
     FreqAxis() : axis_scale(AxisScale_Unknown) {}
 
 
+    bool operator==(const FreqAxis& b)
+    {
+        return axis_scale == b.axis_scale &&
+                max_frequency_scalar == b.max_frequency_scalar &&
+                min_hz == b.min_hz &&
+                f_step == b.f_step;
+    }
+
+
     /**
-      Let window_size keep its default value 2 to create a normalized FreqAxis.
+      Let max_frequency_scalar keep its default value 1 to create a normalized FreqAxis.
       */
-    void setLinear( float fs, float window_size=2 )
+    void setLinear( float fs, float max_frequency_scalar=1 )
     {
         this->axis_scale = AxisScale_Linear;
 
-        // discard negative frequencies
-        this->max_frequency_scalar = window_size/2;
+        this->max_frequency_scalar = max_frequency_scalar;
         float max_hz = fs/2;
         this->min_hz = 0;
         this->f_step = (1/max_frequency_scalar) * (max_hz - min_hz);
@@ -56,7 +64,7 @@ public:
 
         this->max_frequency_scalar = max_frequency_scalar;
         this->min_hz = min_hz_inclusive;
-        this->f_step = log2( max_hz_inclusive ) - log2( min_hz_inclusive );
+        this->f_step = log2f( max_hz_inclusive ) - log2f( min_hz_inclusive );
         this->f_step /= max_frequency_scalar;
     }
 

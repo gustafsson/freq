@@ -23,45 +23,36 @@ Signal::pBuffer SuperSample::
 
     Tfr::Fft ft;
     Tfr::pChunk chunk = ft( b );
-    Tfr::pChunk biggerchunk( new Tfr::StftChunk );
+    unsigned src_window_size = ((Tfr::StftChunk*)chunk.get())->window_size;
+    Tfr::pChunk biggerchunk( new Tfr::StftChunk( src_window_size << multiple ));
     biggerchunk->freqAxis = chunk->freqAxis;
     biggerchunk->chunk_offset = chunk->chunk_offset << multiple;
     biggerchunk->first_valid_sample = chunk->first_valid_sample << multiple;
     biggerchunk->n_valid_samples = chunk->n_valid_samples << multiple;
-    biggerchunk->order = chunk->order;
 
     cudaExtent src_sz = chunk->transform_data->getNumberOfElements();
-    cudaExtent dest_sz = src_sz;
-    dest_sz.width <<= multiple;
+    cudaExtent dest_sz = make_cudaExtent( ((src_sz.width - 1) << multiple) + 1, 1, 1);
     biggerchunk->transform_data.reset( new GpuCpuData<float2>(0, dest_sz) );
 
-    biggerchunk->sample_rate = requested_sample_rate / biggerchunk->nScales();
+    biggerchunk->sample_rate = requested_sample_rate / src_window_size;
+    biggerchunk->original_sample_rate = requested_sample_rate;
 
     float2* src = chunk->transform_data->getCpuMemory();
     float2* dest = biggerchunk->transform_data->getCpuMemory();
 
-    size_t half = src_sz.width/2;
-
-    // Half of the source spectra is enough to reconstruct the signal (as long
-    // as we take special care of the DC-component and the nyquist frequency).
-    // 'ft' doesn't support C2R yet but that would have been faster.
-
-    //float normalize = sqrt(1.f/dest_sz.width/src_sz.width);
-    float normalize = 1.f/src_sz.width;
-    dest[0] = src[0]*normalize;
-    for (unsigned i=1; i<half; ++i)
+    float normalize = 1.f/src_window_size;
+    dest[0] = src[0]*0.5*normalize;
+    for (unsigned i=1; i<src_sz.width; ++i)
     {
-        dest[i] = src[i]*(2*normalize);
+        dest[i] = src[i]*normalize;
     }
-    if (src_sz.width%2==0)
-    {
-        dest[half] = src[half]*normalize;
-        ++half;
-    }
-    memset( dest + half, 0, (dest_sz.width - half) * sizeof(float2) );
+
+    memset( dest + src_sz.width, 0, (dest_sz.width - src_sz.width) * sizeof(float2) );
 
     Signal::pBuffer r = ft.inverse( biggerchunk );
-    r->sample_rate = requested_sample_rate;
+
+    BOOST_ASSERT( r->sample_rate == requested_sample_rate );
+
     return r;
 }
 

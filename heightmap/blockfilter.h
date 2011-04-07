@@ -17,7 +17,10 @@ public:
     BlockFilter( Collection* collection );
 
     /// @overload Tfr::Filter::operator ()(Tfr::Chunk&)
-    virtual void operator()( Tfr::Chunk& chunk );
+    //virtual void operator()( Tfr::Chunk& chunk );
+
+    /// @overload Tfr::Filter::applyFilter(Tfr::pChunk)
+    virtual void applyFilter(Tfr::pChunk pchunk );
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
@@ -45,9 +48,9 @@ public:
     }
 
 
-    virtual void operator()( Tfr::Chunk& chunk )
+    virtual void operator()( Tfr::Chunk& )
     {
-        BlockFilter::operator()(chunk);
+        BOOST_ASSERT( false );
     }
 
 
@@ -76,11 +79,7 @@ public:
 
     void applyFilter( Tfr::pChunk pchunk )
     {
-        // Not necessary to do every chunk, but it doesn't cost much.
-        // Most of 'update_sample_size' is only needed the very first chunk,
-        // and '_max_sample_size.time' is updated in 'invalidate_samples'.
-        _collection->update_sample_size(pchunk.get());
-        FilterKind::applyFilter( pchunk );
+        BlockFilter::applyFilter( pchunk );
     }
 
 
@@ -112,6 +111,7 @@ public:
     ComplexInfo complex_info;
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    void mergeChunkpart( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
 };
 
 

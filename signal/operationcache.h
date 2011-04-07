@@ -2,7 +2,7 @@
 #define SIGNALOPERATIONCACHE_H
 
 #include "signal/operation.h"
-#include "signal/sinksource.h"
+#include "signal/sinksourcechannels.h"
 
 namespace Signal {
 
@@ -25,33 +25,48 @@ public:
       */
     virtual pBuffer read( const Interval& I );
 
-    virtual void invalidate_samples(const Intervals& I) { _cache.invalidate_samples(I); Operation::invalidate_samples(I); }
+    virtual void invalidate_samples(const Intervals& I);
+    virtual void invalidate_cached_samples(const Intervals& I);
 
     virtual Intervals invalid_samples();
     virtual Intervals invalid_returns();
+    Intervals cached_samples();
 
     /**
-      Function to read from on a cache miss
+      Function to read from on a cache miss. Doesn't have to return the data
+      that was actually requested for. It may also return null if the data is
+      not ready yet.
+
+      If readRaw ever returns null there must be a watchdog somewhere to
+      ensure that invalidate_samples(I) are called when data is made available.
       */
     virtual pBuffer readRaw( const Interval& I ) = 0;
 
+    virtual unsigned num_channels();
+    virtual void set_channel(unsigned c);
+    virtual unsigned get_channel();
+
+    virtual void source(pOperation v);
+    virtual pOperation source() { return Operation::source(); }
+
 protected:
-    SinkSource _cache;
+    SinkSourceChannels _cache;
 
     /**
       OperationCache populates this when readRaw doesn't return the expected interval.
       It is up to an implementation to use this information somehow, for
-      instance by issueing Operation::invalidate_samples(). To notify callers
+      instance by issuing Operation::invalidate_samples(). To notify callers
       that the information is now available.
       */
-    Signal::Intervals _invalid_returns;
+    std::vector<Signal::Intervals> _invalid_returns;
 };
+
 
 class OperationCacheLayer: public OperationCache
 {
 public:
     OperationCacheLayer( pOperation source ):OperationCache(source){}
-    virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
+    virtual Signal::Intervals affected_samples() { return source()->affected_samples(); }
     virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
 
 private:
@@ -62,6 +77,27 @@ private:
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
     }
 };
+
+
+class OperationCachedSub: public OperationCache
+{
+public:
+    OperationCachedSub( pOperation source );
+    virtual std::string name();
+    virtual Signal::Intervals affected_samples();
+    virtual pBuffer readRaw( const Interval& I );
+    virtual void source(pOperation v);
+    virtual pOperation source();
+
+private:
+    friend class boost::serialization::access;
+    OperationCachedSub() : OperationCache(pOperation()) {}
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        TaskInfo("OperationCachedSub::serialize");
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+    }
+};
+
 
 } // namespace Signal
 

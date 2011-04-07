@@ -39,8 +39,8 @@
 #define TIME_ICWT if(0)
 //#define TIME_ICWT
 
-//#define DEBUG_CWT if(0)
-#define DEBUG_CWT
+#define DEBUG_CWT if(0)
+//#define DEBUG_CWT
 
 //#define CWT_NOBINS // Also change cwtfilter.cpp
 
@@ -330,14 +330,10 @@ pChunk Cwt::
     }
 
 
-    wt->freqAxis.setLogarithmic(
-            get_max_hz( buffer->sample_rate ),
-            get_min_hz( buffer->sample_rate ),
-            nScales(buffer->sample_rate) - 1 );
+    wt->freqAxis = freqAxis( buffer->sample_rate );
     wt->chunk_offset = buffer->sample_offset + first_valid_sample;
     wt->first_valid_sample = 0;
     wt->n_valid_samples = valid_samples;
-    wt->order = Chunk::Order_row_major;
     wt->sample_rate = buffer->sample_rate;
     wt->original_sample_rate = buffer->sample_rate;
 
@@ -360,6 +356,25 @@ pChunk Cwt::
 }
 
 
+FreqAxis Cwt::
+        freqAxis( float FS )
+{
+    FreqAxis fa;
+    fa.setLogarithmic(
+            get_min_hz( FS ),
+            get_max_hz( FS ),
+            nScales(FS) - 1 );
+    return fa;
+}
+
+
+float Cwt::
+        displayedTimeResolution( float FS, float hz )
+{
+    return morlet_sigma_samples(FS, hz) / FS;
+}
+
+
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
@@ -371,7 +386,7 @@ pChunk Cwt::
     pChunk intermediate_wt( new CwtChunkPart() );
 
     {
-        cudaExtent requiredWtSz = make_cudaExtent( ft->nScales(), n_scales, 1 );
+        cudaExtent requiredWtSz = make_cudaExtent( dynamic_cast<StftChunk*>(ft.get())->transformSize(), n_scales, 1 );
         TIME_CWTPART TaskTimer tt("Allocating chunk part (%u, %u, %u), %g kB",
                               requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth,
                               requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(float2) / 1024.f);
@@ -422,7 +437,13 @@ pChunk Cwt::
             TaskTimer("intermediate_wt->max_hz = %g", intermediate_wt->maxHz()).suppressTiming();
         }
 
-        BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 * (1.0+4*FLT_EPSILON) );
+        if( intermediate_wt->maxHz() > intermediate_wt->sample_rate/2 * (1.0+10*FLT_EPSILON) )
+        {
+            TaskInfo("intermediate_wt->max_hz = %g", intermediate_wt->maxHz());
+            TaskInfo("intermediate_wt->sample_rate = %g", intermediate_wt->sample_rate);
+
+            BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 * (1.0+10*FLT_EPSILON) );
+        }
 
         ::wtCompute( ft->transform_data->getCudaGlobal().ptr(),
                      intermediate_wt->transform_data->getCudaGlobal().ptr(),
@@ -458,11 +479,9 @@ pChunk Cwt::
             TaskTimer("ft->n_valid_samples=%u", ft->n_valid_samples).suppressTiming();
         }
 
-        BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->n_valid_samples);
+        BOOST_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->n_valid_samples );
 
         intermediate_wt->n_valid_samples = ft->n_valid_samples - time_support - intermediate_wt->first_valid_sample;
-
-        intermediate_wt->order = Chunk::Order_row_major;
 
         if (0 /* cpu version */ ) {
             TIME_CWTPART TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
@@ -647,8 +666,8 @@ void Cwt::
 unsigned Cwt::
         nScales(float fs) const
 {
-    float number_of_octaves = log2(get_max_hz(fs)) - log2(_min_hz);
-    return 1 + (unsigned)(number_of_octaves * scales_per_octave());
+    float number_of_octaves = log2f(get_max_hz(fs)) - log2f(_min_hz);
+    return 1 + ceil(number_of_octaves * scales_per_octave());
 }
 
 
@@ -666,14 +685,14 @@ void Cwt::
     float v = _scales_per_octave;
     float log2_a = 1.f / v;
 
-    TaskInfo ti("Cwt::scales_per_octave( %g )", value);
+    //TaskInfo ti("Cwt::scales_per_octave( %g )", value);
     for (int j=0; j<2*_scales_per_octave; ++j)
     {
         float aj = exp2f(log2_a * j );
         float q = (-w*aj + M_PI)*sigma();
         float phi_star = expf( -q*q );
 
-        TaskInfo("%d: %g", j, phi_star );
+        //TaskInfo("%d: %g", j, phi_star );
         phi_sum += phi_star;
     }
 
@@ -696,17 +715,6 @@ float Cwt::
         sigma() const
 {
     return _scales_per_octave/_tf_resolution;
-}
-
-
-float Cwt::
-        compute_frequency2( float fs, float normalized_scale ) const
-{
-    float start = get_max_hz(fs);
-    float steplogsize = log2(get_min_hz(fs)) - log2(get_max_hz(fs));
-
-    float hz = start * exp2((1-normalized_scale) * steplogsize);
-    return hz;
 }
 
 
@@ -810,8 +818,8 @@ size_t Cwt::
 {
     unsigned r = wavelet_time_support_samples( sample_rate );
     unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
-    size_t sum = sizeof(float2)*5*(L+2*r)*nScales( sample_rate )/(1+max_bin)*1.15;
-    return sum;
+    long double sum = sizeof(float2)*(2.L)*(L+2*r)*nScales( sample_rate )/(1+max_bin)*1.15;
+    return sum < (size_t)-1 ? sum : (size_t)-1;
 }
 
 
@@ -824,7 +832,7 @@ unsigned Cwt::
 
     float v = _scales_per_octave;
     float log2_a = 1.f/v;
-    float bin = log2_a * j - log2( 1.f + _wavelet_scale_suppport/(2*M_PI*sigma()) );
+    float bin = log2_a * j - log2f( 1.f + _wavelet_scale_suppport/(2*M_PI*sigma()) );
 
     if (bin < 0)
         bin = 0;

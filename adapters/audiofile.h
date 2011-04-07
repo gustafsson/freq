@@ -246,13 +246,13 @@ public:
     Audiofile(std::string filename);
 
     virtual std::string name();
-    std::string filename() const { return _original_filename; }
+    std::string filename() const { return _original_relative_filename; }
 
 private:
 	Audiofile() {} // for deserialization
     void load(std::string filename );
 
-    std::string _original_filename;
+    std::string _original_relative_filename;
 
 
     friend class boost::serialization::access;
@@ -260,10 +260,10 @@ private:
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
-        ar & make_nvp("Filename", _original_filename);
+        ar & make_nvp("Filename", _original_relative_filename);
 
         if (typename archive::is_loading())
-            load( _original_filename );
+            load( _original_relative_filename );
     }
 };
 

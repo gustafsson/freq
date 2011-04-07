@@ -95,7 +95,7 @@ Signal::Intervals MultiplyBrush::
         r |= v.first.getInterval();
     }
 
-    return include_time_support(r);
+    return r;
 }
 
 

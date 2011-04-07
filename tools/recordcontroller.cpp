@@ -77,6 +77,14 @@ void RecordController::
 
 
 void RecordController::
+        receiveStop()
+{
+    Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
+    ui->actionRecord->setChecked(false);
+}
+
+
+void RecordController::
         recievedInvalidSamples( Signal::Intervals I )
 {
     if ( destroyed_ )
@@ -92,6 +100,7 @@ void RecordController::
     Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
 
     connect(ui->actionRecord, SIGNAL(toggled(bool)), SLOT(receiveRecord(bool)));
+    connect(ui->actionStopPlayBack, SIGNAL(triggered()), SLOT(receiveStop()));
 
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));

@@ -64,6 +64,12 @@ public:
 
 
     /**
+      Appends 's' to head. If there is a current selection this only applies 's' to that selection.
+      */
+    void appendOperation(Signal::pOperation s);
+
+
+    /**
       Roughly speaking 'layers' and 'head' can be taken as model, 'tools' as
       controller and 'mainWindow' as view.
       */
@@ -82,6 +88,8 @@ public:
       */
     //void userinput_update( bool request_high_fps = true );
     //void target(Signal::pTarget target, bool request_high_fps = true, Signal::IntervalType center = 0 );
+
+    static void addRecentFile(std::string filename);
 
     /**
       Opens a Sonic AWE project or imports an audio file. If
@@ -187,7 +195,7 @@ private:
         ar & BOOST_SERIALIZATION_NVP(tool_repo);
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
-        TaskInfo ti("Project::serialize");
+        TaskInfo ti("Project::deserialize");
 
         ar & BOOST_SERIALIZATION_NVP(layers);
         ar & BOOST_SERIALIZATION_NVP(head);

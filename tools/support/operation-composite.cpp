@@ -19,17 +19,31 @@ OperationSubOperations::
     source_sub_operation_( new Operation(source)),
     name_(name)
 {
-    enabled(false);
-    source_sub_operation_->enabled(false);
+//    enabled(false);
+//    source_sub_operation_->enabled(false);
     Operation::source( source_sub_operation_ );
+}
+
+
+Intervals affected_samples_recursive_until(pOperation o, pOperation stop)
+{
+    Intervals r;
+    if (o)
+    {
+        r = o->affected_samples();
+        if (o!=stop)
+            r |= o->translate_interval( affected_samples_recursive_until(o->source(), stop) );
+    }
+    return r;
 }
 
 
 Intervals OperationSubOperations::
         affected_samples()
 {
-    return Operation::source()->affected_samples_until(source_sub_operation_);
+    return affected_samples_recursive_until( Operation::source(), source_sub_operation_);
 }
+
 
     // OperationContainer  /////////////////////////////////////////////////////////////////
 
@@ -53,6 +67,11 @@ OperationCrop::
 void OperationCrop::
         reset( const Signal::Interval& section )
 {
+    std::stringstream ss;
+    float fs = sample_rate();
+    ss << "Crop [" << section.first/fs << ", " << section.last/fs << ") s";
+    name_ = ss.str();
+
     Operation::source( source_sub_operation_ );
     // remove before section
     if (section.first)
@@ -61,27 +80,6 @@ void OperationCrop::
     // remove after section
     if (section.count()<Signal::Interval::IntervalType_MAX)
         Operation::source( pOperation( new OperationRemoveSection( Operation::source(), Signal::Interval( section.count(), Signal::Interval::IntervalType_MAX))));
-}
-
-
-    // OperationSetSilent  /////////////////////////////////////////////////////////////////
-OperationSetSilent::
-        OperationSetSilent( pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source, "Clear section" ),
-    section_( section )
-{
-    reset(section);
-}
-
-void OperationSetSilent::
-        reset( const Signal::Interval& section )
-{
-    section_ = section;
-
-    pOperation remove( new OperationRemoveSection( source_sub_operation_, section ));
-    pOperation addSilence( new OperationInsertSilence (remove, section ));
-
-    Operation::source( addSilence );
 }
 
 
@@ -94,12 +92,28 @@ OperationOtherSilent::
     reset(section);
 }
 
-void OperationOtherSilent::
-        reset( const Signal::Interval& section )
+
+OperationOtherSilent::
+        OperationOtherSilent( float fs, const Signal::Interval& section )
+:   OperationSubOperations( pOperation(), "Clear all but section" ),
+    section_(section)
 {
+    reset(section, fs);
+}
+
+void OperationOtherSilent::
+        reset( const Signal::Interval& section, float fs )
+{
+    if (0==fs)
+        fs = sample_rate();
+
+    std::stringstream ss;
+    ss << "Clear all but [" << section.first/fs << ", " << section.last/fs << ") s";
+    name_ = ss.str();
+
     section_ = section;
     pOperation p = source_sub_operation_;
-    if (section.first)
+    if (0 < section.first)
         // silent before section
         p = pOperation( new OperationSetSilent( p, Signal::Interval(0, section.first) ));
     if (section.last < Interval::IntervalType_MAX)
@@ -129,7 +143,7 @@ void OperationMove::
     else
         newSection <<= (newFirstSample-section.first);
 
-    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection ));
+    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection.coveredInterval() ));
     pOperation silence( new OperationSetSilent(silenceTarget, section ));
 
     pOperation crop( new OperationCrop( source_sub_operation_, section ));
@@ -189,7 +203,7 @@ void OperationShift::
 }
 
 
-    // OperationShift  /////////////////////////////////////////////////////////////////
+    // OperationMoveSelection  /////////////////////////////////////////////////////////////////
 
 OperationMoveSelection::
         OperationMoveSelection( pOperation source, pOperation selectionFilter, long sampleShift, float freqDelta )
@@ -240,6 +254,48 @@ void OperationMoveSelection::
 
     pOperation mergeSelection( new OperationSuperposition( remove, extractAndMove ));
 
+    Operation::source( mergeSelection );
+}
+
+
+
+
+    // OperationFilterSelection  /////////////////////////////////////////////////////////////////
+
+OperationOnSelection::
+        OperationOnSelection( pOperation source, pOperation insideSelection, pOperation outsideSelection, Signal::pOperation operation )
+:   OperationSubOperations( source, "OperationOnSelection" )
+{
+    reset( insideSelection, outsideSelection, operation );
+}
+
+
+std::string OperationOnSelection::
+        name()
+{
+    return operation_->name() + " in " + insideSelection_->name();
+}
+
+
+void OperationOnSelection::
+        reset( pOperation insideSelection, pOperation outsideSelection, Signal::pOperation operation )
+{
+    BOOST_ASSERT(insideSelection);
+    BOOST_ASSERT(outsideSelection);
+    BOOST_ASSERT(operation);
+
+    insideSelection_ = insideSelection;
+    operation_ = operation;
+
+    // Take out the samples affected by selectionFilter
+
+    outsideSelection->source( source_sub_operation_ );
+    insideSelection->source( source_sub_operation_ );
+    operation->source( insideSelection );
+
+    pOperation mergeSelection( new OperationSuperposition( operation, outsideSelection ));
+
+    // Makes reads read from 'mergeSelection'
     Operation::source( mergeSelection );
 }
 

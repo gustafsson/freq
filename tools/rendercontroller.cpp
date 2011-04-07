@@ -2,7 +2,7 @@
 
 // tools
 #include "support/sinksignalproxy.h"
-#include "signal/worker.h"
+#include "support/toolbar.h"
 
 // ui
 #include "ui/comboboxaction.h"
@@ -20,6 +20,8 @@
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
+#include "signal/worker.h"
+#include "signal/reroutechannels.h"
 
 // gpumisc
 #include <CudaException.h>
@@ -58,7 +60,8 @@ public:
         )
         :
             model_(model),
-            controller_(controller)
+            controller_(controller),
+            prevSignal( o->getInterval() )
     {
         BOOST_ASSERT( o );
         Operation::source(o);
@@ -70,7 +73,6 @@ public:
 
     virtual Signal::pBuffer read(const Signal::Interval& I) {
         Signal::pBuffer r = Signal::Operation::read( I );
-        controller_->emitTransformChanged();
         return r;
     }
 
@@ -78,17 +80,14 @@ public:
     {
         validateSize();
 
-        Signal::IntervalType support = Tfr::Cwt::Singleton().wavelet_time_support_samples( sample_rate() );
-        Signal::Intervals v = Signal::Intervals(I).enlarge( support );
+        // If BlockFilter is a CwtFilter wavelet time support has already been included in I
 
         foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
-            c->invalidate_samples( v );
+            c->invalidate_samples( I );
         }
 
         Operation::invalidate_samples( I );
-
-        controller_->emitTransformChanged();
     }
 
 
@@ -98,7 +97,6 @@ public:
         foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             Signal::Intervals inv_coll = c->invalid_samples();
-            //TaskInfo("inv_coll = %s", inv_coll.toString().c_str());
             I |= inv_coll;
         }
 
@@ -111,11 +109,13 @@ public:
         unsigned N = num_channels();
         if ( N != model_->collections.size())
         {
+            N = num_channels();
+
             model_->collections.resize(N);
             for (unsigned c=0; c<N; ++c)
             {
                 if (!model_->collections[c])
-                    model_->collections[c].reset( new Heightmap::Collection(&model_->project()->worker));
+                    model_->collections[c].reset( new Heightmap::Collection(model_->renderSignalTarget->source()));
             }
         }
 
@@ -123,12 +123,23 @@ public:
         {
             c->block_filter( Operation::source() );
         }
+
+        if (prevSignal != getInterval())
+        {
+            Signal::Interval I = getInterval();
+            foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+            {
+                c->discardOutside( I );
+            }
+        }
     }
 
 
 private:
     RenderModel* model_;
     RenderController* controller_;
+
+    Signal::Interval prevSignal;
 };
 
 
@@ -237,7 +248,7 @@ void RenderController::
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
 
     view->userinput_update();
-    emit transformChanged();
+    view->emitTransformChanged();
 }
 
 
@@ -247,8 +258,12 @@ void RenderController::
     float FS = model()->project()->worker.source()->sample_rate();
 
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
-    float f = value / 50.f - 1.f;
-    c.scales_per_octave( 20.f * exp( 4*f ) );
+
+    // Keep in sync with transformChanged()
+    //float f = value / 50.f - 1.f;
+    //c.scales_per_octave( 20.f * exp( 4*f ) );
+    float f = value / (float)tf_resolution->maximum();
+    c.scales_per_octave( 2*exp( 6*f ) ); // scales_per_octave >= 2
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
@@ -260,7 +275,7 @@ void RenderController::
     // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
 
-    emit transformChanged();
+    view->emitTransformChanged();
 }
 
 
@@ -281,9 +296,21 @@ Signal::PostSink* RenderController::
     // Don't lock the UI, instead wait a moment before any change is made
     view->userinput_update();
 
-    emit transformChanged();
+    view->emitTransformChanged();
 
     return ps;
+}
+
+
+Tfr::Transform* RenderController::
+        currentTransform()
+{
+    Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
+    if (ps->sinks().empty())
+        return 0;
+    BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
+    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->Operation::source().get());
+    return filter->transform().get();
 }
 
 
@@ -367,6 +394,12 @@ void RenderController::
     Tfr::FreqAxis fa;
     fa.setLinear( fs );
 
+    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    {
+        fa.min_hz = currentTransform()->freqAxis(fs).min_hz;
+        fa.f_step = (1/fa.max_frequency_scalar) * (fs/2 - fa.min_hz);
+    }
+
     model()->display_scale( fa );
     view->userinput_update();
 }
@@ -382,6 +415,14 @@ void RenderController::
             Tfr::Cwt::Singleton().wanted_min_hz(),
             Tfr::Cwt::Singleton().get_max_hz(fs) );
 
+    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    {
+        // Happens typically when currentTransform is a cepstrum transform with a short window size
+        fa.setLogarithmic(
+                currentTransform()->freqAxis(fs).min_hz,
+                Tfr::Cwt::Singleton().get_max_hz(fs) );
+    }
+
     model()->display_scale( fa );
     view->userinput_update();
 }
@@ -394,6 +435,13 @@ void RenderController::
 
     Tfr::FreqAxis fa;
     fa.setQuefrencyNormalized( fs, Tfr::Cepstrum::Singleton().chunk_size() );
+
+    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    {
+        // min_hz = 2*fs/window_size;
+        // window_size = 2*fs/min_hz;
+        fa.setQuefrencyNormalized( fs, 2*fs/currentTransform()->freqAxis(fs).min_hz );
+    }
 
     model()->display_scale( fa );
     view->userinput_update();
@@ -409,9 +457,15 @@ RenderModel *RenderController::
 
 
 void RenderController::
-        emitTransformChanged()
+        transformChanged()
 {
-    emit transformChanged();
+    Tfr::Cwt& c = Tfr::Cwt::Singleton();
+
+    // keep in sync with receiveSetTimeFrequencyResolution
+    float f = log(c.scales_per_octave()/2)/6;
+    int value = f * tf_resolution->maximum() + .5;
+
+    this->tf_resolution->setValue( value );
 }
 
 
@@ -419,7 +473,7 @@ void RenderController::
         setupGui()
 {
     Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    toolbar_render = new QToolBar(main);
+    toolbar_render = new Support::ToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
     toolbar_render->setEnabled(true);
     toolbar_render->setContextMenuPolicy(Qt::NoContextMenu);
@@ -427,6 +481,7 @@ void RenderController::
     main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
 
     connect(main->getItems()->actionToggleTransformToolBox, SIGNAL(toggled(bool)), toolbar_render, SLOT(setVisible(bool)));
+    connect((Support::ToolBar*)toolbar_render, SIGNAL(visibleChanged(bool)), main->getItems()->actionToggleTransformToolBox, SLOT(setChecked(bool)));
 
 
     // Find Qt Creator managed actions
@@ -458,6 +513,15 @@ void RenderController::
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
         connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
         color->setCheckedAction(ui->actionSet_colorscale);
+    }
+
+    // ComboBoxAction* channels
+    {   channelselector = new QToolButton();
+        channelselector->setCheckable( false );
+        channelselector->setText("Channels");
+        channelselector->setContextMenuPolicy( Qt::ActionsContextMenu );
+        channelselector->setToolTip("Press to get a list of channels (or right click)");
+        toolbar_render->addWidget( channelselector );
     }
 
     // QAction *actionSet_heightlines
@@ -541,13 +605,16 @@ void RenderController::
     // QSlider * tf_resolution
     {   tf_resolution = new QSlider();
         tf_resolution->setOrientation( Qt::Horizontal );
-        tf_resolution->setValue( 50 );
+        tf_resolution->setValue( 5000 );
+        tf_resolution->setMaximum( 10000 );
         tf_resolution->setToolTip( "Time/frequency resolution." );
         toolbar_render->addWidget( tf_resolution );
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
     }
 
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()));
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateChannels()));
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
@@ -568,6 +635,8 @@ void RenderController::
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
+
+    view->emitTransformChanged();
 }
 
 
@@ -587,6 +656,73 @@ void RenderController::
     // context
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
         collection->reset();
+}
+
+
+void RenderController::
+        updateFreqAxis()
+{
+    switch(model()->display_scale().axis_scale)
+    {
+    case Tfr::AxisScale_Linear:
+        receiveLinearScale();
+        break;
+
+    case Tfr::AxisScale_Logarithmic:
+        receiveLogScale();
+        break;
+
+    case Tfr::AxisScale_Quefrency:
+        receiveCepstraScale();
+        break;
+
+    default:
+        break;
+    }
+}
+
+
+void RenderController::
+        updateChannels()
+{
+    Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
+    unsigned N = channels->source()->num_channels();
+    for (unsigned i=0; i<N; ++i)
+    {
+        foreach (QAction* o, channelselector->actions())
+        {
+            QAction* a = dynamic_cast<QAction*>(o);
+            if (!a)
+                continue;
+            if (a->data().toUInt() >= N)
+                delete a;
+        }
+
+        for (unsigned i = channelselector->actions().size(); i<N; ++i)
+        {
+            QAction* a = new QAction(channelselector);
+            a->setText(QString("Channel %1").arg(i));
+            a->setData( i );
+            a->setCheckable( true );
+            a->setChecked( false );
+            connect(a, SIGNAL(toggled(bool)), SLOT( reroute() ));
+            channelselector->addAction( a );
+
+            a->setChecked( true ); // invokes reroute
+        }
+    }
+}
+
+
+void RenderController::
+        reroute()
+{
+    Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
+    foreach (QAction* o, channelselector->actions())
+    {
+        unsigned c = o->data().toUInt();
+        channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
+    }
 }
 
 } // namespace Tools

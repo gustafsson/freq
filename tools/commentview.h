@@ -60,6 +60,7 @@ private:
     QPoint dragPosition;
     QPoint resizePosition;
     double lastz;
+    QRegion maskedRegion;
 
     bool testFocus();
 };

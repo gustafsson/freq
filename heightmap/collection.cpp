@@ -4,7 +4,7 @@
 
 #include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
-#include "signal/postsink.h"
+#include "signal/operationcache.h"
 
 #include <InvokeOnDestruction.hpp>
 #include <CudaException.h>
@@ -19,60 +19,61 @@
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
-#define VERBOSE_COLLECTION
-//#define VERBOSE_COLLECTION if(0)
+//#define INFO_COLLECTION
+#define INFO_COLLECTION if(0)
+
+//#define VERBOSE_COLLECTION
+#define VERBOSE_COLLECTION if(0)
 
 //#define VERBOSE_EACH_FRAME_COLLECTION
 #define VERBOSE_EACH_FRAME_COLLECTION if(0)
 
-// #define TIME_GETBLOCK
+//#define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
 
 // Don't keep more than this times the number of blocks currently needed
 // TODO define this as fraction of total memory instead using cacheByteSize
 #define MAX_REDUNDANT_SIZE 80
-#define MAX_CREATED_BLOCKS_PER_FRAME 2 // Even numbers look better for stereo signals
+#define MAX_CREATED_BLOCKS_PER_FRAME 1 // Even numbers look better for stereo signals
 
 using namespace Signal;
 
 namespace Heightmap {
 
 
+///// HEIGHTMAP::BLOCK
+
+Block::
+        ~Block()
+{
+    //TaskInfo("Deleting block %s", ref.toString().c_str());
+}
+
+
 ///// HEIGHTMAP::COLLECTION
 
 Collection::
-        Collection( Worker* worker )
-:   worker( worker ),
-    _samples_per_block( 1<<7 ), // Created for each
-    _scales_per_block( 1<<8 ),
+        Collection( pOperation target )
+:   target( target ),
+    _samples_per_block( 1<<9 ), // Created for each
+    _scales_per_block( 1<<9 ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0)
 {
-	BOOST_ASSERT( worker->source() );
+    BOOST_ASSERT( target );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
-    // Updated as soon as the first chunk is received
-    update_sample_size( 0 );
-
-//    _display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
-    _display_scale.axis_scale = Tfr::AxisScale_Linear;
-    _display_scale.max_frequency_scalar = 1;
-    float fs = worker->source()->sample_rate();
-    float minhz = Tfr::Cwt::Singleton().get_min_hz(fs);
-    float maxhz = Tfr::Cwt::Singleton().get_max_hz(fs);
-    _display_scale.min_hz = minhz;
-    //_display_scale.log2f_step = log2(maxhz) - log2(minhz);
-    _display_scale.min_hz = 0;
-    _display_scale.f_step = maxhz - minhz;
+    _display_scale.setLinear(target->sample_rate());
 }
 
 
 Collection::
         ~Collection()
 {
-    TaskInfo("%s = %p", __FUNCTION__, this);
+    TaskInfo ti("%s = %p", __FUNCTION__, this);
+    reset();
 }
 
 
@@ -82,6 +83,20 @@ void Collection::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
+    INFO_COLLECTION
+    {
+        TaskInfo ti("Reset, cache count = %u, size = %g MB", _cache.size(), cacheByteSize()/1024.f/1024.f);
+        foreach(const cache_t::value_type& b, _cache)
+        {
+            TaskInfo("%s", b.first.toString().c_str());
+        }
+
+        TaskInfo ti2("of which recent count %u", _recent.size());
+        foreach(const recent_t::value_type& b, _recent)
+        {
+            TaskInfo("%s", b->ref.toString().c_str());
+        }
+    }
     _cache.clear();
     _recent.clear();
 }
@@ -100,23 +115,22 @@ bool Collection::
 void Collection::
         scales_per_block(unsigned v)
 {
+    reset();
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
-    _cache.clear();
-	_recent.clear();
     _scales_per_block=v;
+    _max_sample_size.scale = 1.f/_scales_per_block;
 }
 
 
 void Collection::
         samples_per_block(unsigned v)
 {
+    reset();
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
-    _cache.clear();
-	_recent.clear();
     _samples_per_block=v;
 }
 
@@ -148,143 +162,91 @@ unsigned Collection::
             break;
         b->glblock->unmap();
     }*/
+    foreach(const recent_t::value_type& a, _recent)
+    {
+        Block const& b = *a;
+        if (b.frame_number_last_used == _frame_counter)
+        {
+            const Reference &r = b.ref;
+            // poke children
+            poke(r.left());
+            poke(r.right());
+            poke(r.top());
+            poke(r.bottom());
+
+            // poke parent
+            poke(r.parent());
+
+            // poke surrounding sibblings
+            Reference q = r;
+            for (q.block_index[0] = std::max(1u, r.block_index[0]) - 1;
+                 q.block_index[0] <= r.block_index[0] + 1;
+                 q.block_index[0]++)
+            {
+                for (q.block_index[1] = std::max(1u, r.block_index[1]) - 1;
+                     q.block_index[1] <= r.block_index[1] + 1;
+                     q.block_index[1]++)
+                {
+                    poke(q);
+                }
+            }
+        }
+    }
+
     foreach(const cache_t::value_type& b, _cache)
     {
         b.second->glblock->unmap();
 
         if (b.second->frame_number_last_used != _frame_counter)
         {
-            b.second->glblock->delete_texture();
+            if (b.second->glblock->has_texture())
+            {
+                TaskTimer tt("Deleting texture");
+                b.second->glblock->delete_texture();
+            }
         }
     }
 
-	_frame_counter++;
+    _frame_counter++;
 
     return t;
 }
 
 
 void Collection::
-        update_sample_size( Tfr::Chunk* chunk )
+        poke(const Reference& r)
 {
-    if (chunk)
-    {
-        //_display_scale.axis_scale = Tfr::AxisScale_Logarithmic;
-        //_display_scale.max_frequency_scalar = 1;
-        //_display_scale.f_min = chunk->min_hz;
-        //_display_scale.log2f_step = log2(chunk->max_hz) - log2(chunk->min_hz);
-
-
-        _min_sample_size.time = std::min( _min_sample_size.time, 0.25f / chunk->sample_rate );
-        _min_sample_size.time = std::min( _min_sample_size.time, 0.25f / chunk->original_sample_rate );
-        //TaskInfo("_min_sample_size.time = %g", _min_sample_size.time);
-
-        if (chunk->transform_data)
-        {
-            Tfr::FreqAxis fx = chunk->freqAxis;
-            unsigned top_index = fx.getFrequencyIndex( _display_scale.getFrequency(1.f) ) - 1;
-            _min_sample_size.scale = std::min(
-                    _min_sample_size.scale,
-                    (1 - _display_scale.getFrequencyScalar( fx.getFrequency( top_index )))*0.01f);
-
-            // Old naive one:
-            //_min_sample_size.scale = std::min(
-            //        _min_sample_size.scale,
-            //        1.f/Tfr::Cwt::Singleton().nScales( chunk->sample_rate ) );
-        }
-    }
-    else
-    {
-        _min_sample_size.time = 1.f/_samples_per_block;
-        _min_sample_size.scale = 1.f/_scales_per_block;
-        // Allow for some bicubic mesh interpolation when zooming in
-        _min_sample_size.scale *= 0.25f;
-        _min_sample_size.time *= 0.25f;
-    }
-
-    _max_sample_size.time = std::max(_min_sample_size.time, 2.f*worker->length()/_samples_per_block);
-    _max_sample_size.scale = std::max(_min_sample_size.scale, 1.f/_scales_per_block );
+    cache_t::iterator itr = _cache.find( r );
+    if (itr != _cache.end())
+        itr->second->frame_number_last_used = _frame_counter;
 }
 
 
-/*
-  Canonical implementation of findReference
-
-Reference Collection::findReferenceCanonical( Position p, Position sampleSize )
+Signal::Intervals Collection::
+        getInvalid(const Reference& r)
 {
-    // doesn't ASSERT(r.containsSpectrogram() && !r.toLarge())
-    Reference r(this);
+    cache_t::iterator itr = _cache.find( r );
+    if (itr != _cache.end())
+    {
+        return r.getInterval() - itr->second->valid_samples;
+    }
 
-    if (p.time < 0) p.time=0;
-    if (p.scale < 0) p.scale=0;
+    return Signal::Intervals();
+}
 
-    r.log2_samples_size = tvector<2,int>( floor(log2( sampleSize.time )), floor(log2( sampleSize.scale )) );
-    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * pow(2, -r.log2_samples_size[0]),
-                                        p.scale / _scales_per_block * pow(2, -r.log2_samples_size[1]));
-
-    return r;
-}*/
 
 Reference Collection::
-        findReference( Position p, Position sampleSize )
+        entireHeightmap()
 {
     Reference r(this);
-
-    // make sure the reference becomes valid
-    float length = worker->length();
-
-    // Validate requested sampleSize
-    sampleSize.time = fabs(sampleSize.time);
-    sampleSize.scale = fabs(sampleSize.scale);
-
-    Position minSampleSize = _min_sample_size;
-    Position maxSampleSize = _max_sample_size;
-    if (sampleSize.time > maxSampleSize.time)
-        sampleSize.time = maxSampleSize.time;
-    if (sampleSize.scale > maxSampleSize.scale)
-        sampleSize.scale = maxSampleSize.scale;
-    if (sampleSize.time < minSampleSize.time)
-        sampleSize.time = minSampleSize.time;
-    if (sampleSize.scale < minSampleSize.scale)
-        sampleSize.scale = minSampleSize.scale;
-
-    // Validate requested poistion
-    if (p.time < 0) p.time=0;
-    if (p.time > length) p.time=length;
-    if (p.scale < 0) p.scale=0;
-    if (p.scale > 1) p.scale=1;
-
-    // Compute sample size
-    r.log2_samples_size = tvector<2,int>( floor_log2( sampleSize.time ), floor_log2( sampleSize.scale ));
+    r.log2_samples_size = tvector<2,int>( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
     r.block_index = tvector<2,unsigned>(0,0);
-    //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
-
-    // Validate sample size
-    Position a,b; r.getArea(a,b);
-    if (b.time < minSampleSize.time*_samples_per_block )                r.log2_samples_size[0]++;
-    if (b.scale < minSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]++;
-    if (b.time > maxSampleSize.time*_samples_per_block && 0<length )    r.log2_samples_size[0]--;
-    if (b.scale > maxSampleSize.scale*_scales_per_block )               r.log2_samples_size[1]--;
-    //printf("%d %d\n", r.log2_samples_size[0], r.log2_samples_size[1]);
-
-    // Compute chunk index
-    r.block_index = tvector<2,unsigned>(p.time / _samples_per_block * ldexpf(1.f, -r.log2_samples_size[0]),
-                                        p.scale / _scales_per_block * ldexpf(1.f, -r.log2_samples_size[1]));
-
-    // Validate chunk index
-    r.getArea(a,b);
-    if (a.time >= length && 0<length)   r.block_index[0]--;
-    if (a.scale == 1)                   r.block_index[1]--;
-
-    // Test result
-    // ASSERT(r.containsSpectrogram() && !r.toLarge());
-
     return r;
 }
 
 
 pBlock Collection::
-        getBlock( Reference ref )
+        getBlock( const Reference& ref )
 {
     // Look among cached blocks for this reference
     TIME_GETBLOCK TaskTimer tt("getBlock %s", ref.toString().c_str());
@@ -306,6 +268,10 @@ pBlock Collection::
         {
             block = createBlock( ref );
             _created_count++;
+        }
+        else
+        {
+            TaskInfo("Delaying creation of block %s", ref.toString().c_str());
         }
     } else {
 			#ifndef SAWE_NO_MUTEX
@@ -346,6 +312,7 @@ std::vector<pBlock> Collection::
 	#ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
 	#endif
+    //TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s ) from %u caches", I.toString().c_str(), only_visible?"only visible":"all", _cache.size());
 
     foreach ( const cache_t::value_type& c, _cache )
     {
@@ -356,7 +323,7 @@ std::vector<pBlock> Collection::
 
         // This check is done in mergeBlock as well, but do it here first
         // for a hopefully more local and thus faster loop.
-        if (I.isConnectedTo(pb->ref.getInterval()))
+        if ((I & pb->ref.getInterval()).count())
         {
             r.push_back(pb);
         }
@@ -389,6 +356,16 @@ std::vector<pBlock> Collection::
     }*/
 
     return r;
+}
+
+
+Tfr::pTransform Collection::
+        transform()
+{
+    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
+    if (filter)
+        return filter->transform();
+    return Tfr::pTransform();
 }
 
 
@@ -465,20 +442,40 @@ void Collection::
 
 
 void Collection::
+        discardOutside(Signal::Interval I)
+{
+    for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
+    {
+        Signal::Interval blockInterval = itr->second->ref.getInterval();
+        if ( 0 == (I & blockInterval).count() )
+        {
+            _recent.remove(itr->second);
+            itr = _cache.erase(itr);
+        } else {
+            itr++;
+        }
+    }
+}
+
+
+void Collection::
         display_scale(Tfr::FreqAxis a)
 {
+    if (_display_scale == a)
+        return;
+
     _display_scale = a;
-    invalidate_samples( worker->source()->getInterval() );
+    invalidate_samples( target->getInterval() );
 }
 
 
 void Collection::
         invalidate_samples( const Intervals& sid )
 {
-    TIME_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
+    INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*worker->length()/_samples_per_block);
+    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*target->length()/_samples_per_block);
 
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
@@ -496,23 +493,66 @@ Intervals Collection::
 	QMutexLocker l(&_cache_mutex);
 #endif
 
-    foreach ( const recent_t::value_type& b, _recent )
-	{
-        if (_frame_counter == b->frame_number_last_used)
-        {
-            Intervals i ( b->ref.getInterval() );
+    unsigned counter = 0;
+    {
+    //TIME_COLLECTION TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
 
-            i -= b->valid_samples;
+    foreach ( const recent_t::value_type& a, _recent )
+    {
+        Block const& b = *a;
+        if (_frame_counter == b.frame_number_last_used)
+        {
+            counter++;
+            Intervals i = b.ref.getInterval();
+
+            i -= b.valid_samples;
 
             r |= i;
 
             VERBOSE_EACH_FRAME_COLLECTION
-                    if (i)
-                        TaskInfo("block %s is invalid on %s", b->ref.toString().c_str(), i.toString().c_str());
+            if (i)
+                TaskInfo("block %s is invalid on %s", b.ref.toString().c_str(), i.toString().c_str());
         } else
-			break;
+            break;
+    }
     }
 
+    //TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
+
+    // If all recently used block are up-to-date then also update all their children, if any children are allocated
+    if (!r)
+    {
+        foreach(const recent_t::value_type& a, _recent)
+        {
+            Block const& b = *a;
+            if (b.frame_number_last_used == _frame_counter)
+            {
+                const Reference &p = b.ref;
+                // children
+                r |= getInvalid(p.left());
+                r |= getInvalid(p.right());
+                r |= getInvalid(p.top());
+                r |= getInvalid(p.bottom());
+
+                // parent
+                r |= getInvalid(p.parent());
+
+                // surrounding sibblings
+                Reference q = p;
+                for (q.block_index[0] = std::max(1u, p.block_index[0]) - 1;
+                     q.block_index[0] <= p.block_index[0] + 1;
+                     q.block_index[0]++)
+                {
+                    for (q.block_index[1] = std::max(1u, p.block_index[1]) - 1;
+                         q.block_index[1] <= p.block_index[1] + 1;
+                         q.block_index[1]++)
+                    {
+                        r |= getInvalid(q);
+                    }
+                }
+            }
+        }
+    }
     return r;
 }
 
@@ -520,10 +560,10 @@ Intervals Collection::
 
 
 pBlock Collection::
-        attempt( Reference ref )
+        attempt( const Reference& ref )
 {
     try {
-        TIME_COLLECTION TaskTimer tt("Allocation attempt");
+        INFO_COLLECTION TaskTimer tt("Allocation attempt");
 
         pBlock attempt( new Block(ref));
         Position a,b;
@@ -563,11 +603,9 @@ pBlock Collection::
 
 
 pBlock Collection::
-        createBlock( Reference ref )
+        createBlock( const Reference& ref )
 {
-    Position a,b;
-    ref.getArea(a,b);
-    TIME_COLLECTION TaskTimer tt("Creating a new block [(%g %g), (%g %g)]",a.time, a.scale, b.time, b.scale);
+    INFO_COLLECTION TaskTimer tt("Creating a new block %s", ref.toString().c_str());
     // Try to allocate a new block
     pBlock result;
     try
@@ -583,7 +621,7 @@ pBlock Collection::
 		}
 
         if ( 0 == block.get() && !empty_cache) {
-            TaskTimer tt("Memory allocation failed creating new block [%g, %g]. Doing garbage collection", a.time, b.time);
+            TaskTimer tt("Memory allocation failed creating new block %s. Doing garbage collection", ref.toString().c_str());
             gc();
             block = attempt( ref );
         }
@@ -592,7 +630,7 @@ pBlock Collection::
 #endif
 
         if ( 0 == block.get()) {
-            TaskTimer tt("Failed creating new block [%g, %g]", a.time, b.time);
+            TaskTimer tt("Failed creating new block %s", ref.toString().c_str());
             return pBlock(); // return null-pointer
         }
 
@@ -608,55 +646,28 @@ pBlock Collection::
         if (filter)
             tfr_is_stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
 
+        VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
+
+        Intervals things_to_update = ref.getInterval();
         if ( 1 /* create from others */ )
         {
-            VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
-
-            // fill block by STFT during the very first frames
-            if (!tfr_is_stft) // don't stubb if they will be filled by stft shortly hereafter
-            if (10 > _frame_counter) {
-                //size_t stub_size
-                //if ((b.time - a.time)*fast_source( worker->source())->sample_rate()*sizeof(float) )
-                try
-                {
-                    TIME_COLLECTION TaskTimer tt("stft");
-
-                    fillBlock( block );
-                    CudaException_CHECK_ERROR();
-                }
-                catch (const CudaException& x )
-                {
-                    // Swallow silently, it is not fatal if this stubbed fft can't be computed right away
-                    TaskInfo tt("Collection::fillBlock swallowed CudaException.\n%s", x.what());
-                    printCacheSize();
-                }
-            }
-
             {
                 if (1) {
-                    TIME_COLLECTION TaskTimer tt("Fetching data from others");
-                    // then try to upscale other blocks
-                    Signal::Intervals things_to_update = ref.getInterval();
-                    /*Signal::Intervals all_things;
-                    foreach( const cache_t::value_type& c, _cache )
-                    {
-                        all_things |= c.second->ref.getInterval();
-                    }
-                    things_to_update &= all_things;*/
-
-                    //for (int dist = 10; dist<-10; --dist)
                     {
 #ifndef SAWE_NO_MUTEX
                         l.unlock();
 #endif
-                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update, false );
+                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.coveredInterval(), false );
 #ifndef SAWE_NO_MUTEX
                         l.relock();
 #endif
+
+                        Position a,b;
+                        ref.getArea(a,b);
                         foreach( const pBlock& bl, gib )
                         {
-                            Signal::Interval v = bl->ref.getInterval();
-                            if ( !(things_to_update & v ))
+                            Interval v = bl->ref.getInterval();
+                            if ( (things_to_update & v ).count() <= 1)
                                 continue;
 
                             int d = bl->ref.log2_samples_size[0];
@@ -664,8 +675,6 @@ pBlock Collection::
                             d += bl->ref.log2_samples_size[1];
                             d -= ref.log2_samples_size[1];
 
-                            //if (d==dist)
-                            //mergeBlock( block, bl, 0 );
                             if (d>=-2 && d<=2)
                             {
                                 Position a2,b2;
@@ -764,6 +773,29 @@ pBlock Collection::
 
         }
 
+        // fill block by STFT during the very first frames
+        if (!tfr_is_stft) // don't stubb if they will be filled by stft shortly hereafter
+        if (things_to_update)
+        if (10 > _frame_counter || true) {
+            //size_t stub_size
+            //if ((b.time - a.time)*fast_source( target)->sample_rate()*sizeof(float) )
+            try
+            {
+                INFO_COLLECTION TaskTimer tt("stft %s", things_to_update.toString().c_str());
+
+                fillBlock( block, things_to_update );
+                things_to_update.clear();
+
+                CudaException_CHECK_ERROR();
+            }
+            catch (const CudaException& x )
+            {
+                // Swallow silently, it is not fatal if this stubbed fft can't be computed right away
+                TaskInfo tt("Collection::fillBlock swallowed CudaException.\n%s", x.what());
+                printCacheSize();
+            }
+        }
+
         if ( 0 /* set dummy values */ ) {
             GlBlock::pHeight h = block->glblock->height();
             float* p = h->data->getCpuMemory();
@@ -795,7 +827,7 @@ pBlock Collection::
 
     BOOST_ASSERT( 0 != result.get() );
 
-    {TaskTimer t2("Removing old redundant blocks");
+    {TaskTimer t2("Looking for redundant blocks to remove");
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
@@ -836,60 +868,66 @@ pBlock Collection::
 
 
 /**
-  finds last source that does not have a slow operation (i.e. CwtFilter)
-  among its sources.
+  finds a source that we reliably can read from fast
 */
 static pOperation
-        fast_source(pOperation start)
+        fast_source(pOperation start, Interval I)
 {
-    pOperation r = start;
     pOperation itr = start;
+
+    if (!itr)
+        return itr;
 
     while (true)
     {
-        Operation* o = itr.get();
-        if (!o)
-            break;
+        OperationCache* c = dynamic_cast<OperationCache*>( itr.get() );
+        if (c)
+        {
+            if ((I - c->cached_samples()).empty())
+            {
+                return itr;
+            }
+        }
 
-        Tfr::CwtFilter* f = dynamic_cast<Tfr::CwtFilter*>(itr.get());
-        if (f)
-            r = f->source();
+        if ( (I - itr->zeroed_samples_recursive()).empty() )
+            return itr;
 
-        itr = o->source();
+        pOperation s = itr->source();
+        if (!s)
+            return itr;
+        
+        itr = s;
     }
-
-    return r;
 }
 
 
 void Collection::
-        fillBlock( pBlock block )
+        fillBlock( pBlock block, const Signal::Intervals& to_update )
 {
-    pOperation fast_source = Heightmap::fast_source( worker->source() );
-
     StftToBlock stftmerger(this);
-    Tfr::Stft* transp = new Tfr::Stft();
+    Tfr::Stft* transp;
+    stftmerger.transform( Tfr::pTransform( transp = new Tfr::Stft() ));
     transp->set_approximate_chunk_size(1 << 12); // 4096
-    stftmerger.source( fast_source );
-    stftmerger.transform( Tfr::pTransform( transp ));
     stftmerger.exclude_end_block = true;
 
-    // Only take 4 MB of signal data at a time
-    unsigned section_size = (4<<20) / sizeof(float);
-    Signal::Intervals sections = block->ref.getInterval();
-    sections &= Signal::Interval(0, fast_source->number_of_samples());
+    // Only take 1 MB of signal data at a time
+    unsigned section_size = (1<<20) / sizeof(float);
+    Intervals sections = to_update;
+    sections &= Interval(0, target->number_of_samples());
 
     boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
     boost::posix_time::ptime start_time = now;
-    unsigned time_to_work_ms = 500;
+    unsigned time_to_work_ms = 20; // should count as interactive
     while (sections)
     {
-        Signal::Interval section = sections.fetchInterval(section_size);
+        Interval section = sections.fetchInterval(section_size);
+        Interval needed = stftmerger.requiredInterval( section );
+        pOperation fast_source = Heightmap::fast_source( target, needed );
+        stftmerger.source( fast_source );
         Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
         stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
-        Signal::Interval chunk_interval = ci.chunk->getInterval();
-        if (!(sections & chunk_interval))
-            break;
+        Interval chunk_interval = ci.chunk->getInterval();
+
         sections -= chunk_interval;
 
         now = boost::posix_time::microsec_clock::local_time();
@@ -927,11 +965,14 @@ bool Collection::
     if (ia.scale >= ob.scale || ib.scale<=oa.scale)
         return false;
 
-    TIME_COLLECTION TaskTimer tt("%s, %s into %s", __FUNCTION__,
+    INFO_COLLECTION TaskTimer tt("%s, %s into %s", __FUNCTION__,
                                  inBlock->ref.toString().c_str(), outBlock->ref.toString().c_str());
 
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
+
+    BOOST_ASSERT( in_h.get() != out_h.get() );
+    BOOST_ASSERT( outBlock.get() != inBlock.get() );
 
     ::blockMerge( in_h->data->getCudaGlobal(),
                   out_h->data->getCudaGlobal(),
@@ -940,7 +981,6 @@ bool Collection::
                   make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
-    if (0)
     if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
         inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
     {

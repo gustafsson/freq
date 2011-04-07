@@ -4,6 +4,7 @@
 #include "ui/mainwindow.h"
 #include "renderview.h"
 #include "ui_mainwindow.h"
+#include "support/toolbar.h"
 
 #include "heightmap/renderer.h"
 
@@ -48,7 +49,7 @@ void BrushController::
     connect(render_view_, SIGNAL(destroying()), SLOT(close()));
 
 
-    QToolBar* toolBarTool = new QToolBar(main);
+    Support::ToolBar* toolBarTool = new Support::ToolBar(main);
     toolBarTool->setObjectName(QString::fromUtf8("toolBarBrushController"));
     toolBarTool->setEnabled(true);
     toolBarTool->setContextMenuPolicy(Qt::NoContextMenu);
@@ -57,6 +58,7 @@ void BrushController::
 
 
     connect(ui->actionToggleBrushesToolbar, SIGNAL(toggled(bool)), toolBarTool, SLOT(setVisible(bool)));
+    connect(toolBarTool, SIGNAL(visibleChanged(bool)), ui->actionToggleBrushesToolbar, SLOT(setChecked(bool)));
 
     ui->menuToolbars->addAction( ui->actionToggleBrushesToolbar );
 

@@ -17,6 +17,13 @@
 
 #include <QPushButton>
 
+
+//#define DEBUG_GRAPH
+#define DEBUG_GRAPH if(0)
+
+#define INFO_GRAPH
+//#define INFO_GRAPH if(0)
+
 namespace Tools
 {
     class TreeItem: public QTreeWidgetItem
@@ -96,8 +103,10 @@ namespace Tools
                 }
 
                 // Set the tip
-                chain->tip_source( src );
-                firstmoved->invalidate_samples(Signal::Interval(0, firstmoved->number_of_samples()));
+                if (chain && src)
+                    chain->tip_source( src );
+                if (firstmoved)
+                    firstmoved->invalidate_samples(firstmoved->getInterval());
             }
         }
     };
@@ -106,7 +115,9 @@ namespace Tools
             GraphController( RenderView* render_view )
                 :
                 render_view_(render_view),
-                project_(render_view->model->project())
+                project_(render_view->model->project()),
+                dontredraw_(false),
+                removing_(false)
     {
         setupGui();
     }
@@ -122,10 +133,14 @@ namespace Tools
     void GraphController::
             redraw_operation_tree()
     {
+        if (dontredraw_ && !removing_)
+            return;
+
         operationsTree->clear();
 
-        TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
-        TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+        DEBUG_GRAPH TaskInfo ti("redraw_operation_tree");
+        DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+        DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
 
         operationsTree->invisibleRootItem()->setFlags(
                 operationsTree->invisibleRootItem()->flags() & ~Qt::ItemIsDropEnabled );
@@ -133,11 +148,13 @@ namespace Tools
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             QTreeWidgetItem* chainItm = new QTreeWidgetItem(operationsTree);
-            chainItm->setText(0, QString::fromStdString( c->name ) );
+            chainItm->setText(0, QString::fromLocal8Bit( c->name.c_str() ) );
             chainItm->setExpanded( true );
             chainItm->setFlags( chainItm->flags() & ~Qt::ItemIsSelectable );
 
             Signal::pOperation o = c->tip_source();
+            INFO_GRAPH TaskInfo ti("Operation tree: %s", o->toString().c_str());
+
             while(o)
             {
                 TreeItem* itm = new TreeItem(chainItm, o, c);
@@ -151,7 +168,7 @@ namespace Tools
                 }
                 itm->tail = o;
                 itm->setFlags( itm->flags() & ~Qt::ItemIsDropEnabled );
-                QString name = QString::fromStdString( o->name() );
+                QString name = QString::fromLocal8Bit( o->name().c_str() );
                 itm->setText(0, name);
                 //itm->setCheckState(0, Qt::Unchecked);
                 //itm->setCheckState(0, Qt::Checked);
@@ -165,27 +182,42 @@ namespace Tools
     void GraphController::
             currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
     {
-        if (!current)
+        TreeItem* currentItem = dynamic_cast<TreeItem*>(current);
+        TreeItem* previousItem = dynamic_cast<TreeItem*>(previous);
+
+        if (currentItem && (bool)currentItem->operation->source())
+            operationsTree->setContextMenuPolicy(Qt::ActionsContextMenu);
+        else
             operationsTree->setContextMenuPolicy(Qt::NoContextMenu);
+
+        dontredraw_ = true;
+        timerUpdateContextMenu.start();
 
         if (!previous || !current)
         {
             return;
         }
 
-        TreeItem* currentItem = dynamic_cast<TreeItem*>(current);
-        TreeItem* previousItem = dynamic_cast<TreeItem*>(previous);
 
         if ( !currentItem )
         {
+            QTreeWidgetItem* selectAnother = 0;
             if (current && current->childCount())
-                operationsTree->setCurrentItem( current->child(0) );
+                selectAnother = current->child(0);
             else if (previousItem)
-                operationsTree->setCurrentItem( previous );
+                selectAnother = previous;
+
+            if (selectAnother)
+            {
+                operationsTree->clearSelection();
+                operationsTree->clearFocus();
+                operationsTree->setCurrentItem( selectAnother );
+
+                operationsTree->setContextMenuPolicy(Qt::NoContextMenu);
+            }
         }
         else
         {
-            operationsTree->setContextMenuPolicy(Qt::ActionsContextMenu);
             // head_source( pOperation ) invalidates models where approperiate
             Signal::pChain chain = currentItem->chain;
             Signal::pOperation operation = currentItem->operation;
@@ -211,6 +243,7 @@ namespace Tools
             return;
 
         Signal::pOperation currentSource;
+        Signal::pChain currentChain = currentItem->chain;
         // If the current operation is a cache, don't just remove the cache but
         // remove what was cached as well. So jump an extra steps down in source()
         if (dynamic_cast<Signal::OperationCacheLayer*>(currentItem->operation.get()) )
@@ -221,10 +254,12 @@ namespace Tools
         if (!currentSource)
             return;
 
+        removing_ = true;
+
         Signal::pOperation o = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), currentItem->operation );
         if (o)
         {
-            o->invalidate_samples( Signal::Operation::affecetedDiff(o->source(), currentSource ));
+            o->invalidate_samples( Signal::Operation::affectedDiff(o->source(), currentSource ));
 
             o->source( currentSource );
 
@@ -245,11 +280,12 @@ namespace Tools
         head->head_source( o );
 
         project_->head->head_source( o );
+        project_->setModified();
 
         redraw_operation_tree();
 
         if (o==currentSource)
-            currentItem->chain->tip_source( o );
+            currentChain->tip_source( o );
     }
 
 
@@ -284,6 +320,31 @@ namespace Tools
         currentItem->operation->invalidate_samples(Signal::Interval(0, currentItem->operation->number_of_samples()));
 
         redraw_operation_tree();
+    }
+
+
+    void GraphController::
+            updateContextMenu()
+    {
+        QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
+        bool currentHasSource = false;
+        this->dontredraw_ = false;
+        this->removing_ = false;
+
+        if (!itms.empty())
+        {
+            TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
+
+            if (currentItem)
+                currentHasSource = (bool)currentItem->operation->source();
+        }
+
+        if (currentHasSource)
+            operationsTree->setContextMenuPolicy(Qt::ActionsContextMenu);
+        else
+            operationsTree->setContextMenuPolicy(Qt::NoContextMenu);
+
+        removeSelectedButton->setEnabled( currentHasSource );
     }
 
 
@@ -323,6 +384,7 @@ namespace Tools
         operationsTree->header()->setVisible(false);
         operationsTree->setSelectionMode( QAbstractItemView::SingleSelection );
         QAction* removeCurrentItem = new QAction("Remove", MainWindow);
+        removeCurrentItem->setShortcut(Qt::Key_Backspace);
         operationsTree->addAction(removeCurrentItem);
         connect(removeCurrentItem, SIGNAL(triggered()), SLOT(removeSelected()));
         //operationsTree->header()->setDefaultSectionSize(60);
@@ -332,7 +394,7 @@ namespace Tools
         QWidget* buttons = new QWidget;
         //buttons->setLayout( new QHBoxLayout );
         buttons->setLayout( new QVBoxLayout );
-        QPushButton* removeSelectedButton = new QPushButton("Remove selected");
+        removeSelectedButton = new QPushButton("Remove selected");
         QPushButton* removeHiddenButton = new QPushButton("Remove hidden");
         QPushButton* removeCachesdButton = new QPushButton("Discard caches");
         removeCachesdButton->setToolTip( "Discard caches for operations above the selected operation" );
@@ -340,7 +402,7 @@ namespace Tools
         connect(removeHiddenButton, SIGNAL(clicked()), SLOT(removeHidden()));
         connect(removeCachesdButton, SIGNAL(clicked()), SLOT(removeCaches()));
         buttons->layout()->addWidget( removeSelectedButton );
-        buttons->layout()->addWidget( removeHiddenButton );
+        //buttons->layout()->addWidget( removeHiddenButton );
         //buttons->layout()->addWidget( removeCachesdButton );
 
         verticalLayout->addWidget(operationsTree);
@@ -364,6 +426,10 @@ namespace Tools
         connect(operationsTree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
                 SLOT(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
         //connect(operationsTree, SIGNAL(itemSelectionChanged()), SLOT(selectionChanged()));
+
+        timerUpdateContextMenu.setSingleShot( true );
+        timerUpdateContextMenu.setInterval( 300 );
+        connect(&timerUpdateContextMenu, SIGNAL(timeout()), SLOT(updateContextMenu()));
 
 
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )

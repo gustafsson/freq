@@ -16,6 +16,8 @@ namespace Signal {
 
 SinkSource::
         SinkSource()
+            :
+        _need_self_merge( false )
 {
 }
 
@@ -24,7 +26,9 @@ SinkSource::
         SinkSource( const SinkSource& b)
             :
         Sink(b),
-        _cache( b._cache )
+        _cache( b._cache ),
+        _need_self_merge( b._need_self_merge ),
+        _invalid_samples( b._invalid_samples )
 {
 }
 
@@ -33,6 +37,7 @@ SinkSource& SinkSource::
         operator=( const SinkSource& b)
 {
     _cache = b._cache;
+    _need_self_merge = b._need_self_merge;
     _invalid_samples = b._invalid_samples;
     return *this;
 }
@@ -69,7 +74,7 @@ void SinkSource::
 {
     BufferSource bs( buffer );
 
-    Intervals I = expected & buffer->getInterval();
+    const Intervals I = expected & buffer->getInterval();
     BOOST_FOREACH( const Interval& i, I )
     {
         pBuffer s = bs.readFixedLength( i );
@@ -79,12 +84,13 @@ void SinkSource::
 
 
 void SinkSource::
-        selfmerge()
+        selfmerge( Signal::Intervals forget )
 {
 	{
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
 		QMutexLocker l(&_cache_mutex);
 #endif
+        _need_self_merge = false;
 
 		if (_cache.empty())
 			return;
@@ -94,7 +100,7 @@ void SinkSource::
     //samplesDesc().print("selfmerged start");
     //tt.info("_cache.size()=%u", _cache.size());
 
-    Intervals sid = samplesDesc();
+    const Intervals sid = samplesDesc() - forget;
 	std::vector<pBuffer> new_cache;
 
     BOOST_FOREACH( Interval i, sid )
@@ -114,7 +120,7 @@ void SinkSource::
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
 		QMutexLocker l(&_cache_mutex);
 #endif
-	    _cache = new_cache;
+        _cache = new_cache;
 	}
 
     //samplesDesc().print("selfmerged finished");
@@ -160,7 +166,7 @@ void SinkSource::
             // thus making this operation inexpensive.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
 
-            BOOST_FOREACH( Interval i, toKeep )
+            BOOST_FOREACH( const Interval& i, toKeep )
             {
                 if(D) ss << " +" << i.toString();
 
@@ -187,9 +193,19 @@ void SinkSource::
 
     _invalid_samples -= b.getInterval();
 
-    selfmerge();
+    // can't clear cache directly as it might contain references to gpu memory
+    _need_self_merge = true;
+
     //samplesDesc().print("SinkSource received samples");
     //_expected_samples.print("SinkSource expected samples");
+}
+
+
+void SinkSource::
+        invalidate_and_forget_samples(const Intervals& I)
+{
+    invalidate_samples( I );
+    selfmerge( I );
 }
 
 
@@ -213,6 +229,12 @@ pBuffer SinkSource::
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
         QMutexLocker l(&_cache_mutex);
 #endif
+        if (_need_self_merge)
+        {
+            l.unlock();
+            selfmerge();
+            l.relock();
+        }
 
         BOOST_FOREACH( const pBuffer& s, _cache) {
             if (s->sample_offset <= I.first && s->sample_offset + s->number_of_samples() > I.first )
@@ -223,7 +245,7 @@ pBuffer SinkSource::
                              I.last,
                              s->getInterval().first,
                              s->getInterval().last).suppressTiming();
-                cudaExtent sz = s->waveform_data()->getNumberOfElements();
+                // cudaExtent sz = s->waveform_data()->getNumberOfElements();
 
                 return s;
             }
@@ -255,6 +277,13 @@ long unsigned SinkSource::
         number_of_samples()
 {
     return samplesDesc().coveredInterval().count();
+}
+
+
+Interval SinkSource::
+        getInterval()
+{
+    return samplesDesc().coveredInterval();
 }
 
 

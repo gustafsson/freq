@@ -58,16 +58,16 @@ void main()
 
     float f = abs(v);
 
-    if (colorMode == 0)
+    if (colorMode == 0) // rainbow
     {
         curveColor = getWavelengthColor( f );
         f = 1.0 - (1.0-f)*(1.0-f)*(1.0-f);
     }
-    else if (colorMode == 1)
+    else if (colorMode == 1) // grayscale
     {
         curveColor = vec4(0.0);
     }
-    else if (colorMode == 2)
+    else if (colorMode == 2) // colorscale
     {
         curveColor = fixedColor;
         if (v<0.0) {curveColor = 1.0-curveColor;}

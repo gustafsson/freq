@@ -15,6 +15,7 @@ macx:CONFIG -= app_bundle
 CONFIG += warn_on
 #CONFIG += console # console output
 DEFINES += SAWE_NO_MUTEX
+DEFINES += CUDA_MEMCHECK_TEST
 QT += opengl
 
 macx:QMAKE_LFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
@@ -25,14 +26,14 @@ unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
 win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
 win32:QMAKE_LFLAGS_DEBUG += \
-	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
-	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
-	/NODEFAULTLIB:MSVCRT \
-	
+    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
+    /NODEFAULTLIB:MSVCRT \
+
 win32:QMAKE_LFLAGS_RELEASE += \
-	/NODEFAULTLIB:LIBCPMT \ # LIBCPMT is wrongly linked by boost_serialization, this row is required to link successfully
-	/NODEFAULTLIB:LIBCMT \ # some other lib wrongly links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
-	
+    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
+
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 unix:!macx: QMAKE_CXX = colorgcc
@@ -83,8 +84,6 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
-    tfr/cepstrum.h \
-    tfr/cepstrumfilter.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
@@ -99,7 +98,8 @@ FORMS += \
     tools/transforminfoform.ui \
     tools/exportaudiodialog.ui \
     tools/harmonicsinfoform.ui \
-    tools/matlaboperationwidget.ui
+    tools/matlaboperationwidget.ui \
+    tools/selections/rectangleform.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

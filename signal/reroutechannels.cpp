@@ -1,11 +1,11 @@
-#include "rewirechannels.h"
+#include "reroutechannels.h"
 
 namespace Signal {
 
-const RewireChannels::SourceChannel RewireChannels::NOTHING = (unsigned)-1;
+const RerouteChannels::SourceChannel RerouteChannels::NOTHING = (unsigned)-1;
 
-RewireChannels::
-        RewireChannels(pOperation source)
+RerouteChannels::
+        RerouteChannels(pOperation source)
             :
             Operation(source),
             output_channel_(0),
@@ -15,7 +15,7 @@ RewireChannels::
 }
 
 
-pBuffer RewireChannels::
+pBuffer RerouteChannels::
         read( const Interval& I )
 {
     if (NOTHING == source_channel_)
@@ -25,14 +25,14 @@ pBuffer RewireChannels::
 }
 
 
-unsigned RewireChannels::
+unsigned RerouteChannels::
         num_channels()
 {
     return scheme_.size();
 }
 
 
-void RewireChannels::
+void RerouteChannels::
         set_channel(unsigned c)
 {
     BOOST_ASSERT( c < num_channels() );
@@ -45,14 +45,14 @@ void RewireChannels::
 }
 
 
-unsigned RewireChannels::
+unsigned RerouteChannels::
         get_channel()
 {
     return output_channel_;
 }
 
 
-void RewireChannels::
+void RerouteChannels::
         source(pOperation v)
 {
     Operation::source(v);
@@ -61,13 +61,13 @@ void RewireChannels::
 }
 
 
-void RewireChannels::
+void RerouteChannels::
         invalidate_samples(const Intervals& I)
 {
     unsigned N = Operation::num_channels();
     for (unsigned i=0; i<scheme_.size(); )
     {
-        if (scheme_[i] >= N )
+        if (scheme_[i] >= N && scheme_[i] != NOTHING)
             scheme_.erase( scheme_.begin() + i );
         else
             i++;
@@ -77,7 +77,7 @@ void RewireChannels::
 }
 
 
-void RewireChannels::
+void RerouteChannels::
         resetMap()
 {
     scheme_.clear();
@@ -87,19 +87,23 @@ void RewireChannels::
 }
 
 
-void RewireChannels::
+void RerouteChannels::
         map(OutputChannel output_channel, SourceChannel source_channel)
 {
     if ( output_channel >= num_channels() )
         num_channels( output_channel+1 );
 
-    BOOST_ASSERT( source_channel < Operation::source()->num_channels() );
+    BOOST_ASSERT( source_channel < Operation::source()->num_channels() || NOTHING == source_channel);
+
+    if (scheme_[ output_channel ] == source_channel)
+        return;
 
     scheme_[ output_channel ] = source_channel;
+    invalidate_samples( Signal::Intervals::Intervals_ALL );
 }
 
 
-void RewireChannels::
+void RerouteChannels::
         num_channels( unsigned N )
 {
     unsigned M = scheme_.size();

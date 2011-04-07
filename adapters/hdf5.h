@@ -14,8 +14,31 @@
 
 namespace Adapters {
 
+class Hdf5Error: public std::runtime_error
+{
+public:
+    enum Type
+    {
+        Type_OpenFailed,
+        Type_CreateFailed,
+        Type_MissingDataset,
+        Type_HdfFailure
+    };
+
+    Hdf5Error(Type t, const std::string& message, const std::string& data="");
+    virtual
+    ~Hdf5Error() throw();
+
+    Type type() const { return t_; }
+    const std::string& data() const { return data_; }
+private:
+    Type t_;
+    std::string data_;
+};
+
+
 /**
-  Throws std::runtime_error on errors.
+  Throws Hdf5Error on errors.
   */
 class Hdf5Output {
 public:
@@ -38,7 +61,7 @@ template<> void Hdf5Output::add( std::string name, const double&);
 template<> void Hdf5Output::add( std::string name, const std::string&);
 
 /**
-  Throws std::runtime_error on errors.
+  Throws Hdf5Error on errors.
   */
 class Hdf5Input {
 public:
@@ -57,15 +80,21 @@ public:
     template<typename T> T read( std::string datasetname )
     {
         std::string err;
+        static bool looks_like_matlab = false;
 
-        for (int i=0; i<2; i++)
-            try
+        bool looked_like_matlab = looks_like_matlab;
+
+        for (int i=0; i<2; i++) try
         {
-            switch(i) {
+            switch(i ^ looked_like_matlab) {
+                // Octave style
                 case 0: return read_exact<T>( "/" + datasetname + "/value" );
+
+                // Matlab style
                 case 1: return read_exact<T>( datasetname );
             }
         } catch (const std::runtime_error& x) {
+            looks_like_matlab = !looks_like_matlab;
             if (err.empty() || strcmp(x.what(), err.substr(0, err.size()-1).c_str()) != 0)
                 err = err + x.what() + "\n";
         }
@@ -119,7 +148,7 @@ public:
     virtual void put(Signal::pBuffer);
 
     static void             saveBuffer( std::string filename, const Signal::Buffer&, double redundancy );
-    static Signal::pBuffer  loadBuffer( std::string filename, double* redundancy );
+    static Signal::pBuffer  loadBuffer( std::string filename, double* redundancy, Signal::pBuffer* plot );
 
 private:
     std::string _filename;

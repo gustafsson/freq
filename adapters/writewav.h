@@ -1,7 +1,7 @@
 #ifndef ADAPTERS_WRITEWAV_H
 #define ADAPTERS_WRITEWAV_H
 
-#include "signal/sinksource.h"
+#include "signal/sinksourcechannels.h"
 
 namespace Adapters {
 
@@ -14,16 +14,18 @@ public:
     // Overloaded from Sink
     virtual void put( Signal::pBuffer b, Signal::pOperation ) { put (b); }
     virtual void reset();
-    virtual void invalidate_samples( const Signal::Intervals& s ) { _data.invalidate_samples( s ); }
-    virtual Signal::Intervals invalid_samples() { return _data.invalid_samples(); }
+    virtual void invalidate_samples( const Signal::Intervals& s );
+    virtual void set_channel(unsigned c);
+    virtual Signal::Intervals invalid_samples();
 
     static void writeToDisk(std::string filename, Signal::pBuffer b, bool normalize = true);
 
     void put( Signal::pBuffer );
 
     static Signal::pBuffer crop(Signal::pBuffer b);
+
 private:
-    Signal::SinkSource _data;
+    Signal::SinkSourceChannels _data;
     std::string _filename;
 
     void writeToDisk();

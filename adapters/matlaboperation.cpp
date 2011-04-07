@@ -1,5 +1,6 @@
 #include "matlaboperation.h"
 #include "hdf5.h"
+#include "microphonerecorder.h"
 
 #include <signal.h>
 #include <sys/stat.h>
@@ -25,6 +26,9 @@
 
 #include <QProcess>
 #include <QFileInfo>
+#include <QApplication>
+#include <QErrorMessage>
+#include <QDir>
 
 using namespace std;
 using namespace Signal;
@@ -36,6 +40,33 @@ using namespace boost::posix_time;
 
 namespace Adapters {
 
+bool startProcess(QProcess* pid, const QString& name, const QStringList& args)
+{
+    TaskInfo ti("Trying: ");
+    ti.tt().getStream() << "\"" << name.toStdString() << "\" ";
+    foreach (QString a, args)
+        ti.tt().getStream() << "\"" << a.toStdString() << "\" ";
+    ti.tt().flushStream();
+
+    pid->start(name, args);
+    pid->waitForStarted();
+    if (pid->state() == QProcess::Running)
+        return true;
+    return false;
+}
+
+
+bool startProcess(QProcess* pid, const QStringList& names, const QStringList& args)
+{
+    foreach( QString name, names)
+    {
+        if (startProcess(pid, name, args))
+            return true;
+    }
+    return false;
+}
+
+
 MatlabFunction::
         MatlabFunction( std::string f, float timeout, MatlabFunctionSettings* settings )
 :   _pid(0),
@@ -43,7 +74,7 @@ MatlabFunction::
     _matlab_filename(f),
     _timeout( timeout )
 {
-    std::string path = QFileInfo(f.c_str()).path().toStdString();
+    std::string path = QFileInfo(f.c_str()).path().replace("'", "\\'") .toStdString();
     _matlab_filename = QFileInfo(f.c_str()).fileName().toStdString();
     _matlab_function = QFileInfo(f.c_str()).baseName().toStdString();
 
@@ -56,10 +87,26 @@ MatlabFunction::
 
     { // Start matlab/octave
         stringstream matlab_command, octave_command;
-        matlab_command
-                << "addpath('/usr/share/sonicawe');";
-        octave_command
-                << "addpath('/usr/share/sonicawe');";
+        std::string matlabpath = QApplication::applicationDirPath().replace("\\", "\\\\").replace("\'", "\\'" ).toStdString() + "/matlab";
+
+        if (QDir(matlabpath.c_str()).exists())
+        {
+            matlab_command
+                    << "addpath('" << matlabpath << "');";
+            octave_command
+                    << "addpath('" << matlabpath << "');";
+        }
+        else if (QDir("matlab").exists())
+        {
+            matlab_command
+                    << "addpath('matlab');";
+            octave_command
+                    << "addpath('matlab');";
+        }
+        else
+        {
+            QErrorMessage::qtHandler()->showMessage("Couldn't locate required Sonic AWE scripts");
+        }
 
         if (f.empty())
         {
@@ -69,14 +116,32 @@ MatlabFunction::
         {
             matlab_command
                     << "addpath('" << path << "');"
-                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
+                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function;
             octave_command
                     << "addpath('" << path << "');"
-                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function << ");";
+                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function;
+
+            std::string arguments = settings->arguments();
+
+            // remove trailing ';'
+            while(arguments.size() && arguments[ arguments.size() - 1] == ';')
+                arguments.resize( arguments.size() - 1);
+
+            if (arguments.size())
+            {
+                matlab_command << ", " << arguments;
+                octave_command << ", " << arguments;
+            }
+
+            matlab_command << ");";
+            octave_command << ");";
         }
 
         QStringList matlab_args;
-        // "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash"
+        //matlab_args.push_back("-noFigureWindows");
+        //matlab_args.push_back("-nojvm");
+        matlab_args.push_back("-nodesktop");
+        //matlab_args.push_back("-nosplash");
         QStringList octave_args;
         octave_args.push_back("-qf");
 
@@ -87,9 +152,9 @@ MatlabFunction::
         else
         {
             matlab_args.push_back("-r");
-            matlab_args.push_back(matlab_command.str().c_str());
+            matlab_args.push_back(QString::fromStdString(matlab_command.str()));
             octave_args.push_back("--eval");
-            octave_args.push_back(octave_command.str().c_str());
+            octave_args.push_back(QString::fromStdString(octave_command.str()));
         }
 
         _pid = new QProcess();
@@ -97,19 +162,43 @@ MatlabFunction::
         _pid->setProcessChannelMode( QProcess::MergedChannels );
         if (settings) settings->setProcess( _pid );
 
-        /*_pid->start("matlab", matlab_args);
-        _pid->waitForStarted();
-        if (_pid->state() == QProcess::Running)
-            return;
+        if (!f.empty())
+        {
+            if (startProcess(_pid, "matlab", matlab_args))
+                return;
 
-        TaskInfo("Couldn't start MATLAB, trying Octave instead");*/
+            TaskInfo("Couldn't start MATLAB, trying Octave instead");
+        }
 
-        _pid->start("octave", octave_args);
-        _pid->waitForStarted();
-        if (_pid->state() == QProcess::Running)
+        QStringList octave_names;
+        octave_names.push_back("octave-3.2.3");
+        octave_names.push_back("octave");
+        if (startProcess(_pid, octave_names, octave_args))
             return;
 
         TaskInfo("Couldn't start Octave");
+
+        if (!f.empty())
+        {
+            TaskInfo("Trying common installation paths for MATLAB instead");
+            QStringList matlab_paths;
+            matlab_paths.push_back("C:\\Program Files\\MATLAB\\R2008b\\bin\\matlab.exe");
+            matlab_paths.push_back("C:\\Program Files (x86)\\MATLAB\\R2008b\\bin\\matlab.exe");
+            if (startProcess(_pid, matlab_paths, matlab_args))
+                return;
+
+            TaskInfo("Couldn't start Matlab");
+        }
+
+        TaskInfo("Trying common installation paths for Octave instead");
+
+        QStringList octave_paths;
+        octave_paths.push_back("C:\\Octave\\3.2.3_gcc-4.4.0\\bin\\octave-3.2.3.exe");
+        if (startProcess(_pid, octave_paths, octave_args))
+            return;
+
+        TaskInfo("Couldn't find Matlab nor Octave");
+
         delete _pid;
         _pid = 0;
         /*
@@ -129,10 +218,11 @@ MatlabFunction::
     }
 }
 
+
 MatlabFunction::
         ~MatlabFunction()
 {
-	kill();
+    endProcess();
 }
 
 
@@ -172,7 +262,11 @@ std::string MatlabFunction::
 {
     struct stat dummy;
     if ( 0!=_pid && 0==stat( _resultFile.c_str(),&dummy) )
-        return _resultFile;
+    {
+        ifstream t(_resultFile.c_str());
+        if (t.is_open())
+            return _resultFile;
+    }
     return "";
 }
 
@@ -204,9 +298,6 @@ std::string MatlabFunction::
         if (d.total_seconds() > 3)
             TIME_MatlabFunction tt->partlyDone();
     }
-#ifdef WIN32 // wait for slow file system to finish move
-    Sleep(100);
-#endif
 
     return _resultFile;
 }
@@ -222,10 +313,16 @@ bool MatlabFunction::
 void MatlabFunction::
         endProcess()
 {
-    if (!hasProcessEnded())
-        _pid->kill();  // send SIGKILL
-    else
-        _pid->terminate(); // send platform specific "please close message"
+    if (!_pid)
+        return;
+
+    //if (!hasProcessEnded())
+    _pid->kill();  // send SIGKILL
+    //else
+    //    _pid->terminate(); // send platform specific "please close message"
+
+    delete _pid;
+    _pid = 0;
 }
 
 
@@ -251,42 +348,12 @@ float MatlabFunction::
 
 
 void MatlabFunction::
-		kill()
-{
-    if (_pid)
-    {
-        TaskTimer tt("MatlabFunction killing MATLAB/Octave process");
-        tt.partlyDone();
-        _pid->terminate();
-        tt.partlyDone();
-        _pid->waitForFinished();
-        tt.partlyDone();
-        delete _pid;
-
-        _pid = 0;
-        ::remove(_dataFile.c_str());
-        ::remove(_resultFile.c_str());
-        ::remove("octave-core");
-    }
-/*	if (_pid)
-	{
-		#ifdef __GNUC__
-			::kill((pid_t)(unsigned long long)_pid, SIGINT);
-		#elif defined(WIN32)
-			TerminateProcess((HANDLE)_pid, 0);
-		#else
-			#error No implementation
-		#endif
-		_pid = 0;
-    }*/
-}
-
-void MatlabFunction::
 		abort()
 {
-	kill();
+    endProcess();
 	throw std::invalid_argument("Timeout in MatlabFunction::invokeAndWait");
 }
+
 
 MatlabOperation::
         MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* settings )
@@ -311,14 +378,8 @@ MatlabOperation::
 {
     TaskInfo("~MatlabOperation");
     TaskInfo(".");
-    _matlab->endProcess();
-    _matlab.reset();
 
-    if (_settings->operation)
-    {
-        _settings->operation = 0;
-        delete _settings;
-    }
+    settings(0);
 }
 
 
@@ -331,63 +392,206 @@ std::string MatlabOperation::
 }
 
 
+std::string MatlabOperation::
+        functionName()
+{
+    if (!_matlab)
+        return Operation::name();
+    return _matlab->matlabFunction();
+}
+
+
 void MatlabOperation::
         invalidate_samples(const Intervals& I)
 {
     // If computing in order and invalidating something that has already been
     // computed
-    TaskInfo("MatlabOperation children: %s", toString().c_str());
-    TaskInfo("MatlabOperation outputs: %s", parentsToString().c_str());
+    TaskInfo("MatlabOperation invalidate_samples(%s)", I.toString().c_str());
 
-    if (_settings->computeInOrder() && (I - _cache.invalid_samples()))
+    Intervals previously_computed = cached_samples() & ~invalid_returns();
+    bool start_over = _settings && _settings->computeInOrder() && (I & previously_computed);
+
+    if (start_over)
     {
-        // Start over and recompute the first block again
-        OperationCache::invalidate_samples(getInterval());
+        // Start over and recompute all blocks again
+        restart();
     }
     else
-        OperationCache::invalidate_samples(I);
+    {
+        OperationCache::invalidate_samples( I );
+
+        if (plotlines && source())
+            plotlines->clear( I, sample_rate() );
+    }
+}
+
+
+bool MatlabOperation::
+        dataAvailable()
+{
+    if (ready_data)
+        return true;
+
+    std::string file = _matlab->isReady();
+    if (!file.empty())
+    {
+        double redundancy=0;
+        pBuffer plot_pts;
+
+        try
+        {
+            ready_data = Hdf5Buffer::loadBuffer( file, &redundancy, &plot_pts );
+        }
+        catch (const Hdf5Error& e)
+        {
+            if (Hdf5Error::Type_OpenFailed == e.type() && e.data() == file)
+            {
+                // Couldn't open it for reading yet, wait
+                return false;
+            }
+
+            throw e;
+        }
+
+        ::remove( file.c_str());
+
+        if (_settings->chunksize() < 0)
+            redundancy = 0;
+
+        IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
+        _settings->redundant(support);
+
+        if (!ready_data)
+        {
+            TaskInfo("Couldn't read data from Matlab/Octave");
+            return false;
+        }
+
+        if (this->plotlines){ // Update plot
+            Tools::Support::PlotLines& plotlines = *this->plotlines.get();
+
+            if (plot_pts)
+            {
+                float start = ready_data->start();
+                float length = ready_data->length();
+
+                cudaExtent N = plot_pts->waveform_data()->getNumberOfElements();
+                for (unsigned id=0; id<N.depth; ++id)
+                {
+                    float* p = plot_pts->waveform_data()->getCpuMemory() + id*N.width*N.height;
+
+                    if (3 <= N.height)
+                        for (unsigned x=0; x<N.width; ++x)
+                            plotlines.set( id, p[ x ], p[ x + N.width ], p[ x + 2*N.width ] );
+                    else if (2 == N.height)
+                        for (unsigned x=0; x<N.width; ++x)
+                            plotlines.set( id, p[ x ], p[ x + N.width ] );
+                    else if (1 == N.height)
+                        for (unsigned x=0; x<N.width; ++x)
+                            plotlines.set( id, start + (x+0.5)*length/N.width, p[ x ] );
+                }
+            }
+        }
+
+        Interval oldI = sent_data->getInterval();
+        Interval newI = ready_data->getInterval();
+
+        float *oldP = sent_data->waveform_data()->getCpuMemory();
+        float *newP = ready_data->waveform_data()->getCpuMemory();
+
+        Intervals J;
+
+        for (unsigned c=0; c<ready_data->channels() && c<sent_data->channels(); c++)
+        {
+            Interval equal = oldI & newI;
+            oldP += equal.first - oldI.first;
+            newP += equal.first - newI.first;
+            oldP += oldI.count() * c;
+            newP += newI.count() * c;
+            for (unsigned i=0; i<equal.count();i++)
+                if (*oldP != *newP)
+                {
+                    equal.last = equal.first;
+                    break;
+                }
+
+            if (equal.count())
+                _invalid_returns[c] -= equal;
+
+            J |= newI - equal;
+        }
+
+        Signal::Intervals samples_to_invalidate = invalid_returns() & J;
+        TaskInfo("invalid_returns = %s, J = %s, invalid_returns & J = %s",
+                 invalid_returns().toString().c_str(),
+                 J.toString().c_str(),
+                 samples_to_invalidate.toString().c_str());
+
+        if (J.empty())
+        {
+            TaskInfo("Matlab script didn't change anything");
+        }
+        else
+        {
+            TaskInfo("Matlab script made some changes");
+        }
+
+        if (samples_to_invalidate)
+            OperationCache::invalidate_samples( samples_to_invalidate );
+
+        MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
+        bool isrecording = 0!=recorder;
+        if (isrecording)
+        {
+            // Leave the process running so that we can continue a recording or change the list of operations
+        }
+        else
+        {
+            if (((invalid_samples() | invalid_returns()) - J).empty())
+                _matlab->endProcess(); // Finished with matlab
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+
+bool MatlabOperation::
+        isWaiting()
+{
+    return _matlab->isWaiting();
 }
 
 
 pBuffer MatlabOperation::
         readRaw( const Interval& I )
 {
-    if (_matlab->hasProcessEnded())
-    {
-        TaskInfo("MatlabOperation::read(%s), process ended", I.toString().c_str());
-        return source()->read( I );
-    }
+    if (!_matlab)
+        return pBuffer();
 
     TaskTimer tt("MatlabOperation::read(%s)", I.toString().c_str() );
-    pBuffer b;
 
     try
     {
-        std::string file = _matlab->isReady();
-        if (!file.empty())
+        if (dataAvailable())
         {
-            double redundancy=0;
-            pBuffer b2 = Hdf5Buffer::loadBuffer( file, &redundancy );
-
-            ::remove( file.c_str());
-
-            IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
-            _settings->redundant(support);
-
-            if (b2)
-            {
-                Interval J = b2->getInterval();
-                invalidate_samples( J );
-                _invalid_returns -= J;
-
-                if ((invalid_samples() - J).empty())
-                    _matlab->endProcess(); // Finished with matlab
-
-                return b2;
-            }
+            Signal::pBuffer b = ready_data;
+            ready_data.reset();
+            TaskInfo("Returning ready data %s, %u channels",
+                     b->getInterval().toString().c_str(),
+                     b->waveform_data()->getNumberOfElements().height );
+            return b;
         }
 
-        if (!_matlab->isWaiting())
+        if (_matlab->hasProcessEnded())
+        {
+            TaskInfo("process ended");
+            return source()->readFixedLength( I );
+        }
+
+        if (!isWaiting())
         {
             Signal::Interval J = I;
             IntervalType support = 0;
@@ -397,30 +601,65 @@ pBuffer MatlabOperation::
             else
             {
                 if (_settings->computeInOrder() )
-                    J = invalid_samples().fetchInterval( I.count() );
+                    J = (invalid_samples() | invalid_returns()).fetchInterval( I.count() );
+                else
+                    J = (invalid_samples() | invalid_returns()).fetchInterval( I.count(), I.first );
 
                 if (0<_settings->chunksize())
                     J.last = J.first + _settings->chunksize();
             }
 
             support = _settings->redundant();
-            Signal::Interval R = J;
-            J = Intervals(J).enlarge( support );
+            Interval signal = getInterval();
+            J &= signal;
+            Interval K = Intervals(J).enlarge( support ).coveredInterval();
+
+            bool need_data_after_end = K.last > signal.last;
+            if (0<_settings->chunksize() && (int)J.count() != _settings->chunksize())
+                need_data_after_end = true;
+
+            if (need_data_after_end)
+            {
+                MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
+                bool isrecording = 0!=recorder;
+                if (isrecording)
+                {
+                    bool need_a_specific_chunk_size = 0<_settings->chunksize();
+                    if (_settings->computeInOrder() && need_a_specific_chunk_size)
+                        return pBuffer();
+
+
+                    if (recorder->isStopped())
+                    {
+                        // Ok, go on
+                    }
+                    else
+                    {
+                        // Don't use any samples after the end while recording
+                        K &= signal;
+
+                        if (Intervals(K).shrink(support).empty())
+                            return pBuffer();
+                    }
+                }
+            }
+
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
-            b = source()->readFixedLength( J );
+            sent_data = source()->readFixedLengthAllChannels( K );
 
             string file = _matlab->getTempName();
 
-            Hdf5Buffer::saveBuffer( file, *b, support );
+            Hdf5Buffer::saveBuffer( file, *sent_data, support );
 
+            TaskInfo("Sending %s to Matlab/Octave", sent_data->getInterval().toString().c_str() );
             _matlab->invoke( file );
-
-            b = BufferSource( b ).readFixedLength( R );
         }
         else
-            b = source()->readFixedLength( I );
+        {
+            TaskInfo("Is waiting for Matlab/Octave to finish");
+        }
     }
     catch (const std::runtime_error& e)
     {
@@ -429,8 +668,7 @@ pBuffer MatlabOperation::
         throw std::invalid_argument( e.what() ); // invalid_argument doesn't crash the application
     }
 
-    _invalid_returns |= b->getInterval();
-    return b;
+    return pBuffer();
 }
 
 
@@ -439,12 +677,16 @@ void MatlabOperation::
 {
     _cache.clear();
     _matlab.reset();
-    _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
-    if (source())
+
+    if (_settings)
     {
-        _invalid_returns = getInterval();
-        invalidate_samples( _invalid_returns );
+        _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
+
+        OperationCache::invalidate_samples( Signal::Intervals::Intervals_ALL );
     }
+
+    if (plotlines)
+        plotlines->clear();
 }
 
 
@@ -458,6 +700,12 @@ void MatlabOperation::
     }
 
     _settings = settings;
+
+    if (_settings)
+    {
+        _settings->operation = this;
+    }
+
     restart();
 }
 

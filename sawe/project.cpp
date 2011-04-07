@@ -3,7 +3,9 @@
 #include "sawe/application.h"
 #include "adapters/audiofile.h"
 #include "adapters/microphonerecorder.h"
+#include "signal/operationcache.h"
 #include "tools/toolfactory.h"
+#include "tools/support/operation-composite.h"
 #include "ui/mainwindow.h"
 
 // Qt
@@ -23,7 +25,7 @@ Project::
         Project( Signal::pOperation root, std::string layer_title )
 :   worker(Signal::pTarget()),
     layers(this),
-    is_modified_(true),
+    is_modified_(false),
     project_title_(layer_title)
 {
     Signal::pChain chain(new Signal::Chain(root));
@@ -42,6 +44,34 @@ Project::
 
     if (_mainWindow)
         delete _mainWindow;
+}
+
+
+void Project::
+        appendOperation(Signal::pOperation s)
+{
+    Tools::SelectionModel& m = tools().selection_model;
+
+    if (m.current_selection() && m.current_selection()!=s)
+    {
+        Signal::pOperation onselectionOnly(new Tools::Support::OperationOnSelection(
+                head->head_source(),
+                Signal::pOperation( new Signal::OperationCachedSub(
+                    m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ))),
+                Signal::pOperation( new Signal::OperationCachedSub(
+                    m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ))),
+                s
+                ));
+
+        s = onselectionOnly;
+    }
+
+    this->head->appendOperation( s );
+
+    tools().render_model.renderSignalTarget->findHead( head->chain() )->head_source( head->head_source() );
+    tools().playback_model.playbackTarget->findHead( head->chain() )->head_source( head->head_source() );
+
+    setModified();
 }
 
 
@@ -99,9 +129,10 @@ pProject Project::
     }
 
     string err;
+    pProject p;
     for (int i=0; i<2; i++) try { switch(i) {
-        case 0: return Project::openProject( filename );
-        case 1: return Project::openAudio( filename );
+        case 0: p = Project::openProject( filename ); break;
+        case 1: p = Project::openAudio( filename ); break;
     }}
     catch (const exception& x) {
         if (!err.empty())
@@ -110,9 +141,35 @@ pProject Project::
         err += "\nDetails: " + (std::string)x.what();
     }
 
-    QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
-    TaskInfo("======================\nCan't open file\n%s\n======================", err.c_str());
-    return pProject();
+    if (!p)
+    {
+        QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
+        TaskInfo("======================\nCan't open file\n%s\n======================", err.c_str());
+        return pProject();
+    }
+
+    addRecentFile( filename );
+
+    return p;
+}
+
+
+void Project::
+        addRecentFile( std::string filename )
+{
+    QSettings settings;
+    QStringList recent_files = settings.value("recent files").toStringList();
+    QFileInfo fi(QString::fromLocal8Bit( filename.c_str() ));
+    fi.makeAbsolute();
+    QString qfilename = fi.canonicalFilePath();
+    if (!qfilename.isEmpty())
+    {
+        recent_files.removeAll( qfilename );
+        recent_files.push_front( qfilename );
+        while (recent_files.size()>8)
+            recent_files.pop_back();
+        settings.setValue("recent files", recent_files);
+    }
 }
 
 
@@ -166,7 +223,7 @@ Project::
             :
             worker(Signal::pTarget()),
             layers(this),
-            is_modified_(true)
+            is_modified_(false)
 {}
 
 
@@ -192,7 +249,7 @@ void Project::
     defaultGeometry = _mainWindow->saveGeometry();
     defaultState = _mainWindow->saveState();
 
-    QSettings settings("REEP", "Sonic AWE");
+    QSettings settings;
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
 }
@@ -210,8 +267,12 @@ void Project::
 void Project::
         restoreDefaultLayout()
 {
+    QSettings settings;
     _mainWindow->restoreGeometry(defaultGeometry);
     _mainWindow->restoreState(defaultState);
+    settings.clear();
+    settings.setValue("geometry", _mainWindow->saveGeometry());
+    settings.setValue("windowState", _mainWindow->saveState());
 }
 
 
@@ -220,7 +281,7 @@ bool Project::
 {
     QString filter = "SONICAWE - Sonic AWE project (*.sonicawe)";
 
-    QString qfilename = QFileDialog::getSaveFileName(mainWindow(), "Save project", "", filter);
+    QString qfilename = QFileDialog::getSaveFileName(mainWindow(), "Save project", QString::fromStdString(project_filename_), filter);
     if (0 == qfilename.length()) {
         // User pressed cancel
         return false;
@@ -236,15 +297,20 @@ bool Project::
 
     updateWindowTitle();
 
-    return save();
+    bool r = save();
+
+    addRecentFile( project_filename_ );
+
+    return r;
 }
 
 
 pProject Project::
         openAudio(std::string audio_file)
 {
-    Signal::pOperation s( new Adapters::Audiofile( audio_file.c_str() ) );
-    return pProject( new Project( s, QFileInfo( audio_file.c_str() ).fileName().toStdString() ));
+    Adapters::Audiofile*a;
+    Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    return pProject( new Project( s, a->name() ));
 }
 
 } // namespace Sawe

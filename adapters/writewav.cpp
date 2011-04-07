@@ -30,6 +30,13 @@ WriteWav::
 
 
 void WriteWav::
+        set_channel(unsigned c)
+{
+    _data.set_channel( c );
+}
+
+
+void WriteWav::
         put( Signal::pBuffer buffer )
 {
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", (long unsigned)buffer->sample_offset, (long unsigned)(buffer->sample_offset + buffer->number_of_samples()));
@@ -53,14 +60,29 @@ void WriteWav::
 
 
 void WriteWav::
+        invalidate_samples( const Signal::Intervals& s )
+{
+    _data.invalidate_samples( s );
+    _data.setNumChannels( num_channels() );
+}
+
+
+Signal::Intervals WriteWav::
+        invalid_samples()
+{
+    return _data.invalid_samples(); 
+}
+
+
+void WriteWav::
         writeToDisk()
 {
-    Signal::Interval i = _data.samplesDesc();
+    Signal::Interval i = _data.samplesDesc().coveredInterval();
 
     BOOST_ASSERT(i.count());
 
     TIME_WRITEWAV TaskTimer tt("Writing data %s", i.toString().c_str());
-    Signal::pBuffer b = _data.readFixedLength( i );
+    Signal::pBuffer b = _data.readAllChannelsFixedLength( i );
     writeToDisk( _filename, b );
 }
 
@@ -71,19 +93,17 @@ void WriteWav::
     TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(),
                                b->getInterval().toString().c_str());
 
-    // TODO: figure out a way for Sonic AWE to work with stereo sound as this
-    // method could easily write stereo sound if pBuffer had multiple channels.
-
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
     //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
-    //int number_of_channels = 1;
-    SndfileHandle outfile(filename.c_str(), SFM_WRITE, format, 1, b->sample_rate);
+    int C = b->waveform_data()->getNumberOfElements().height;
+    SndfileHandle outfile(filename.c_str(), SFM_WRITE, format, C, b->sample_rate);
 
     if (!outfile) return;
 
-    float *data=b->waveform_data()->getCpuMemory();
-    unsigned N = b->number_of_samples();
+    Signal::IntervalType Nsamples_per_channel = b->number_of_samples();
+    Signal::IntervalType N = Nsamples_per_channel*C;
+    float* data = b->waveform_data()->getCpuMemory();
 
     if (normalize) // Normalize
     {
@@ -96,9 +116,8 @@ void WriteWav::
         for (unsigned k=0; k<N; k++) {
             if (data[k]>high) high = data[k];
             if (data[k]<low) low = data[k];
-            var += (data[k]-mean)*(data[k]-mean);
+            var += (data[k]-mean)*(data[k]-mean)/N;
         }
-        var /= N;
 
         if (0 == "Move DC")
         {
@@ -122,7 +141,16 @@ void WriteWav::
         }
     }
 
-    outfile.write( data, N); // yes write float
+    std::vector<float> interleaved_data(N);
+    for (Signal::IntervalType i=0; i<Nsamples_per_channel; ++i)
+    {
+        for (int c=0; c<C; ++c)
+        {
+            interleaved_data[i*C+c] = data[i + c*Nsamples_per_channel];
+        }
+    }
+
+    outfile.write( &interleaved_data[0], N ); // sndfile will convert float to short it
 }
 
 

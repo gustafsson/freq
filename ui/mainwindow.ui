@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWindows">
@@ -70,13 +70,21 @@
     <addaction name="menuToolbars"/>
     <addaction name="separator"/>
     <addaction name="actionRestore_layout"/>
+    <addaction name="actionToggleFullscreenNoMenus"/>
+    <addaction name="actionToggleFullscreen"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <widget class="QMenu" name="menu_Recent_files">
+     <property name="title">
+      <string>&amp;Recent files</string>
+     </property>
+    </widget>
     <addaction name="actionNew_recording"/>
     <addaction name="actionOpen"/>
+    <addaction name="menu_Recent_files"/>
     <addaction name="actionSave_project"/>
     <addaction name="actionSave_project_as"/>
     <addaction name="separator"/>
@@ -183,7 +191,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QToolBar" name="toolBarPlay">
+  <widget class="Tools::Support::ToolBar" name="toolBarPlay">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -199,13 +207,13 @@
    <addaction name="actionPlayEntireSound"/>
    <addaction name="actionStopPlayBack"/>
    <addaction name="actionJumpBackward"/>
+   <addaction name="actionSetPlayMarker"/>
    <addaction name="actionJumpForward"/>
    <addaction name="actionRecord"/>
    <addaction name="separator"/>
    <addaction name="actionFollowPlayMarker"/>
-   <addaction name="actionSetPlayMarker"/>
   </widget>
-  <widget class="QToolBar" name="toolBarOperation">
+  <widget class="Tools::Support::ToolBar" name="toolBarOperation">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -224,27 +232,9 @@
    <addaction name="actionActivateInfoTool"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>
-   <addaction name="actionToggleFullscreen"/>
-   <addaction name="actionToggleFullscreenNoMenus"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarMatlab">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionMatlabOperation"/>
-   <addaction name="actionMatlabFilter"/>
   </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
     <bool>true</bool>
    </property>
    <property name="icon">
@@ -326,6 +316,9 @@
   <action name="actionPlaySelection">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
@@ -517,10 +510,13 @@
      <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>:/icons/icons/icon-matlaboperation.png</iconset>
    </property>
    <property name="text">
-    <string>Matlab operation</string>
+    <string>Create new Matlab/Octave operation</string>
    </property>
    <property name="toolTip">
-    <string>Apply Matlab operation to everything</string>
+    <string>Apply Matlab/Octave operation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+O</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -632,7 +628,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>New recording</string>
+    <string>&amp;New recording</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
@@ -666,7 +662,7 @@
   </action>
   <action name="actionOpen">
    <property name="text">
-    <string>Open </string>
+    <string>&amp;Open </string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -1158,7 +1154,7 @@
     <string>Get info</string>
    </property>
    <property name="toolTip">
-    <string>Drag over a ridge to see information of the peak [I]</string>
+    <string>Drag slowly over a ridge to see information of the peak [I]</string>
    </property>
    <property name="shortcut">
     <string>I</string>
@@ -1338,10 +1334,10 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/fscn-down.png</normaloff>:/icons/icons/fscn-down.png</iconset>
    </property>
    <property name="text">
-    <string>Toggle fullscreen</string>
+    <string>&amp;Toggle fullscreen</string>
    </property>
    <property name="toolTip">
     <string>Toggle fullscreen</string>
@@ -1400,10 +1396,10 @@
    </property>
    <property name="icon">
     <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+     <normaloff>:/icons/icons/fscn-up.png</normaloff>:/icons/icons/fscn-up.png</iconset>
    </property>
    <property name="text">
-    <string>Toggle fullscreen (no menus)</string>
+    <string>Toggle fullscreen (&amp;no menus)</string>
    </property>
    <property name="toolTip">
     <string>Toggle fullscreen  (no menus)</string>
@@ -1446,12 +1442,12 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Brushes</string>
+    <string>&amp;Brushes</string>
    </property>
   </action>
   <action name="actionRestore_layout">
    <property name="text">
-    <string>Restore layout</string>
+    <string>&amp;Restore layout</string>
    </property>
   </action>
   <action name="actionOperation_details">
@@ -1476,8 +1472,33 @@
     <string>We call it a cepstragram</string>
    </property>
   </action>
+  <action name="actionToggleFanTracker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fan Tracker</string>
+   </property>
+   <property name="toolTip">
+    <string>Track the fundamental tone using Cepstrum Analysis</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>Tools::Support::ToolBar</class>
+   <extends>QToolBar</extends>
+   <header>tools/support/toolbar.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="icon-resources.qrc"/>
  </resources>

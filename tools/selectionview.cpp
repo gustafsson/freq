@@ -157,8 +157,7 @@ void SelectionView::
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(1.f, 1.f);
-
+    
     for (unsigned j=0; j<4; j++) {
         glBegin(GL_LINE_STIPPLE);
         for (unsigned k=0; k<pts[j].size(); k++) {

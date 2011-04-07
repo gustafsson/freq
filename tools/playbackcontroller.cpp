@@ -35,6 +35,9 @@ PlaybackController::
 void PlaybackController::
         setupGui( RenderView* render_view )
 {
+    connect(ui_items_->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui_items_->toolBarPlay, SLOT(setVisible(bool)));
+    connect(ui_items_->toolBarPlay, SIGNAL(visibleChanged(bool)), ui_items_->actionToggleTimeControlToolBox, SLOT(setChecked(bool)));
+
     // User interface buttons
     connect(ui_items_->actionPlaySelection, SIGNAL(toggled(bool)), SLOT(receivePlaySelection(bool)));
     connect(ui_items_->actionPlaySection, SIGNAL(toggled(bool)), SLOT(receivePlaySection(bool)));
@@ -100,8 +103,8 @@ void PlaybackController::
     // here we just need to create a filter that does the right thing to an arbitrary source
     // and responds properly to zeroed_samples()
     Signal::pOperation filter( new Support::OperationOtherSilent(
-            Signal::pOperation(),
-            _view->model->markers->currentInterval( project_->worker.source()->sample_rate() ) ));
+            project_->head->head_source(),
+            _view->model->markers->currentInterval( project_->head->head_source()->sample_rate() ) ));
 
     startPlayback( filter );
 }
@@ -142,6 +145,7 @@ void PlaybackController::
         return; // No filter, no selection...
     }
 
+    _view->just_started = true;
     ui_items_->actionPausePlayBack->setEnabled( true );
 
     TaskInfo("Selection is of type %s", vartype(*filter.get()).c_str());
@@ -205,6 +209,13 @@ void PlaybackController::
 {
     if (ui_items_->actionPlaySelection->isChecked())
         receiveStop();
+
+    ui_items_->actionPlaySelection->setEnabled( 0 != _view->model->selection->current_selection() );
+
+    std::vector<Signal::pOperation> empty;
+    model()->playbackTarget->post_sink()->sinks( empty );
+    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
+    model()->adapter_playback.reset();
 }
 
 
@@ -214,17 +225,21 @@ void PlaybackController::
     Signal::Intervals missing_for_playback=
             model()->playbackTarget->post_sink()->invalid_samples();
 
-    bool playback_is_underfed = project_->tools().playback_model.playbackTarget->post_sink()->isUnderfed();
-    // Don't bother with computing playback unless it is underfed
-    if (missing_for_playback && playback_is_underfed)
+    if (missing_for_playback)
     {
-        project_->worker.center = 0;
-        project_->worker.target( project_->tools().playback_model.playbackTarget );
+        bool playback_is_underfed = project_->tools().playback_model.playbackTarget->post_sink()->isUnderfed();
 
-        // Request at least 1 fps. Otherwise there is a risk that CUDA
-        // will screw up playback by blocking the OS and causing audio
-        // starvation.
-        project_->worker.requested_fps(1);
+        // Don't bother with computing playback unless it is underfed
+        if (playback_is_underfed)
+        {
+            project_->worker.center = 0;
+            project_->worker.target( project_->tools().playback_model.playbackTarget );
+
+            // Request at least 1 fps. Otherwise there is a risk that CUDA
+            // will screw up playback by blocking the OS and causing audio
+            // starvation.
+            project_->worker.requested_fps(1);
+        }
     }
 }
 
@@ -233,16 +248,16 @@ void PlaybackController::
         receiveStop()
 {
     if (model()->playback())
-        model()->playback()->reset();
-    std::vector<Signal::pOperation> empty;
-    model()->playbackTarget->post_sink()->sinks( empty );
-    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
+        model()->playback()->stop();
 
+    _view->just_started = false;
     ui_items_->actionPlaySelection->setChecked( false );
     ui_items_->actionPlaySection->setChecked( false );
     ui_items_->actionPlayEntireSound->setChecked( false );
     ui_items_->actionPausePlayBack->setChecked( false );
     ui_items_->actionPausePlayBack->setEnabled( false );
+
+    _view->update();
 }
 
 

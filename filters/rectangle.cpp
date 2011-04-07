@@ -4,6 +4,9 @@
 // gpumisc
 #include <CudaException.h>
 
+
+#include <float.h> // FLT_MAX
+
 using namespace Tfr;
 
 //#define TIME_FILTER
@@ -22,6 +25,26 @@ Rectangle::Rectangle(float t1, float f1, float t2, float f2, bool save_inside) {
     _t2 = std::max(t1, t2);
     _f2 = std::max(f1, f2);
     _save_inside = save_inside;
+}
+
+
+std::string Rectangle::
+        name()
+{
+    std::stringstream ss;
+    ss << std::setiosflags(std::ios::fixed);
+    if (_t2 == FLT_MAX)
+        ss << "Bandpass from ";
+    else
+        ss << "Rectangle from ";
+
+    if (_t2 != FLT_MAX)
+       ss << std::setprecision(1) << _t1 << " s, ";
+    ss << std::setprecision(0) << _f1 << " Hz to ";
+    if (_t2 != FLT_MAX)
+       ss << std::setprecision(1) << _t2 << " s, ";
+    ss << std::setprecision(0) << _f2 << " Hz";
+    return ss.str();
 }
 
 
@@ -60,17 +83,21 @@ Signal::Intervals Rectangle::
 Signal::Intervals Rectangle::
         outside_samples()
 {
-    double FS = sample_rate();
+    long double FS = sample_rate();
 
-    unsigned long
-        start_time = (unsigned long)(std::max(0.f, _t1)*FS),
-        end_time = (unsigned long)(std::max(0.f, _t2)*FS);
+    long double
+        start_time_d = std::max(0.f, _t1)*FS,
+        end_time_d = std::max(0.f, _t2)*FS;
+
+    Signal::IntervalType
+        start_time = std::min((long double)Signal::Interval::IntervalType_MAX, start_time_d),
+        end_time = std::min((long double)Signal::Interval::IntervalType_MAX, end_time_d);
 
     Signal::Intervals sid;
     if (start_time < end_time)
         sid = Signal::Intervals(start_time, end_time);
 
-    return ~include_time_support(sid);
+    return ~sid;
 }
 
 } // namespace Filters

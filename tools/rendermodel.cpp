@@ -29,7 +29,7 @@ RenderModel::
 
     collections.resize(o->num_channels());
     for (unsigned c=0; c<o->num_channels(); ++c)
-        collections[c].reset( new Heightmap::Collection(&_project->worker));
+        collections[c].reset( new Heightmap::Collection(renderSignalTarget->source()));
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
 

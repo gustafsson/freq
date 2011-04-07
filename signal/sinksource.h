@@ -37,8 +37,8 @@ class SinkSource: public Sink
 public:
     /// @see SinkSource
     SinkSource();
-	SinkSource( const SinkSource& b);
-	SinkSource& operator=( const SinkSource& b);
+    SinkSource( const SinkSource& b);
+    SinkSource& operator=( const SinkSource& b);
 
     /**
       Insert data into SinkSource
@@ -55,6 +55,8 @@ public:
 
     virtual Intervals invalid_samples() { return _invalid_samples; }
     virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    void invalidate_and_forget_samples(const Intervals& I);
+    void validate_samples( const Intervals& I ) { _invalid_samples -= I; }
 
     /// Clear cache, also clears invalid_samples
     void clear();
@@ -81,6 +83,12 @@ public:
       */
     virtual long unsigned number_of_samples();
 
+
+    /**
+      First and last sample in the covered interval, or [0,0).
+      */
+    virtual Interval getInterval();
+
     /// The first buffer in the cache, or pBuffer() if cache is empty
     pBuffer first_buffer();
 
@@ -95,6 +103,8 @@ private:
 	QMutex _cache_mutex;
 #endif
     std::vector<pBuffer> _cache;
+
+    bool _need_self_merge;
 
     /**
       Samples in 'b' will only be accepted if they are present in 'expected'.
@@ -114,7 +124,7 @@ private:
     virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
 
-    void selfmerge();
+    void selfmerge( Signal::Intervals forget = Signal::Intervals() );
     void merge( pBuffer );
 };
 

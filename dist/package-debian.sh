@@ -48,16 +48,20 @@ cp -r /usr/local/cuda/lib64/libcufft.so* $package/usr/lib/.
 cp sonicawe $package/usr/bin/.
 bury_copy sonicawe.1 $package/usr/local/share/man/man1/.
 mkdir -p $share
+mkdir -p $share/examples
 cp matlab/sawe_extract_cwt.m $share
 cp matlab/sawe_extract_cwt_time.m $share
 cp matlab/sawe_filewatcher.m $share
-cp matlab/matlabfilter.m $share
-cp matlab/matlaboperation_amplify.m $share
-cp matlab/matlaboperation_lowpass.m $share
+cp matlab/sawe_getdatainfo.m $share
+cp matlab/examples/amplify.m $share/examples
+cp matlab/examples/convolve.m $share/examples
+cp matlab/examples/lowpass.m $share/examples
+cp matlab/examples/plotwaveform.m $share/examples
 cp matlab/sawe_loadbuffer.m $share
 cp matlab/sawe_loadchunk.m $share
 cp matlab/sawe_savebuffer.m $share
 cp matlab/sawe_savechunk.m $share
+cp matlab/sawe_discard.m $share
 cp -r license $share
 pushd $package
 gzip -f usr/local/share/man/man1/sonicawe.1

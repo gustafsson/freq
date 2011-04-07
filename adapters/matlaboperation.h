@@ -2,6 +2,7 @@
 #define ADAPTERS_MATLABOPERATION_H
 
 #include "signal/operationcache.h"
+#include "tools/support/plotlines.h"
 
 // boost
 #include <boost/noncopyable.hpp>
@@ -26,6 +27,7 @@ public:
     virtual void redundant(int) = 0;
     virtual void setProcess(QProcess*) = 0;
     virtual std::string scriptname() = 0;
+    virtual std::string arguments() = 0;
 
     MatlabOperation* operation;
 };
@@ -41,12 +43,14 @@ public:
     void redundant(int v) { redundant_ = v; }
     void setProcess(QProcess* pid_) { pid_ = pid_; }
     std::string scriptname() { return scriptname_; }
+    std::string arguments() { return arguments_; }
 
     int chunksize_;
     bool computeInOrder_;
     int redundant_;
     QProcess* pid_;
     std::string scriptname_;
+    std::string arguments_;
 };
 
 /**
@@ -109,7 +113,7 @@ private:
     MatlabFunction( const MatlabFunction& );
     MatlabFunction& operator=(const MatlabFunction&);
 
-	void kill();
+    //void kill();
 	void abort();
 
     QProcess* _pid;
@@ -128,7 +132,7 @@ public:
     ~MatlabOperation();
 
     // Does only support mono, use first channel
-    virtual unsigned num_channels() { return std::min(1u, Signal::OperationCache::num_channels()); }
+    //virtual unsigned num_channels() { return std::min(1u, Signal::OperationCache::num_channels()); }
 
     virtual std::string name();
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
@@ -138,9 +142,18 @@ public:
     void settings(MatlabFunctionSettings*);
     MatlabFunctionSettings* settings() { return _settings; }
 
+    /// Will call invalidate_samples if new data is available
+    bool dataAvailable();
+
+    bool isWaiting();
+    std::string functionName();
+
+    boost::scoped_ptr<Tools::Support::PlotLines> plotlines;
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
     MatlabFunctionSettings* _settings;
+    Signal::pBuffer ready_data;
+    Signal::pBuffer sent_data;
 
 private:
     friend class boost::serialization::access;

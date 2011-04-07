@@ -22,14 +22,14 @@ namespace Tools
         // Model
         // Model that is controlled, this controller doesn't have a view
         // and shares control of the project current chainhead with many others
-        Signal::pChainHead _project_chainhead;
+        Sawe::Project* project_;
 
         // GUI
         // The fact that this controller doesn't have a view doesn't mean
         // it can't have widgets. QToolButton widgets are created by adding
         // their corresponding action to a ToolBar.
         // TODO Could also add this functionality to a menu.
-        void setupGui(Sawe::Project* project);
+        void setupGui();
     };
 } // namespace Tools
 #endif // REASSIGNCONTROLLER_H
