@@ -3,6 +3,8 @@
 #include "sawe/project.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtfilter.h"
+#include "tfr/cepstrum.h"
+#include "tfr/cwtchunk.h"
 
 #include "commentcontroller.h"
 #include "heightmap/renderer.h"
@@ -270,9 +272,81 @@ public:
         fa = chunk->freqAxis;
     }
 
+    FetchDataTransform( RenderModel* m, Tfr::Cepstrum* cepstrum, float t )
+    {
+        Signal::pOperation o = m->renderSignalTarget->source();
+        Signal::IntervalType i = std::max(0.f, t) * o->sample_rate();
+        unsigned w = cepstrum->chunk_size();
+        i = i / w * w;
+        Signal::Interval I( i, i+w );
+        Tfr::pChunk chunk = (*cepstrum)( o->readFixedLength(I) );
+
+        abslog.reset( new GpuCpuData<float>(
+                0,
+                chunk->transform_data->getNumberOfElements(),
+                GpuCpuVoidData::CudaGlobal));
+
+        float2* src = chunk->transform_data->getCpuMemory();
+        float* dst = abslog->getCpuMemory();
+        for (unsigned i=0; i<abslog->getNumberOfElements1D(); ++i)
+        {
+            float2& v = src[i];
+            //dst[i] = sqrt(v.x*v.x + v.y*v.y);
+            dst[i] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+            dst[i] *= dst[i];
+        }
+
+        fa = chunk->freqAxis;
+    }
+
+    FetchDataTransform( RenderModel* m, Tfr::Cwt* cwt, float t )
+    {
+        Signal::pOperation o = m->renderSignalTarget->source();
+        float fs = o->sample_rate();
+        Signal::IntervalType firstSample = std::max(0.f, t) * fs;
+        Signal::IntervalType numberOfSamples = cwt->next_good_size( 1, fs);
+        firstSample = firstSample/numberOfSamples*numberOfSamples;
+        unsigned support = cwt->wavelet_time_support_samples( fs );
+        Signal::Interval I = Signal::Intervals( firstSample, firstSample+numberOfSamples ).enlarge( support ).coveredInterval();
+        Tfr::pChunk chunk = (*cwt)( o->readFixedLength(I) );
+
+        Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunk.get() );
+        unsigned N = 0;
+        for (unsigned i=0; i < cwtchunk->chunks.size(); ++i)
+        {
+            N += cwtchunk->chunks[i]->nScales() - (i!=0);
+        }
+
+        abslog.reset( new GpuCpuData<float>(
+                0,
+                make_cudaExtent( N, 1, 1),
+                GpuCpuVoidData::CudaGlobal));
+
+        float* dst = abslog->getCpuMemory();
+        unsigned k = 0;
+        for (unsigned j=0; j < cwtchunk->chunks.size(); ++j)
+        {
+            float2* src = cwtchunk->chunks[j]->transform_data->getCpuMemory();
+
+            unsigned stride = cwtchunk->chunks[j]->nSamples();
+            src += (unsigned)((t*o->sample_rate() - cwtchunk->chunk_offset)/o->sample_rate());
+
+            for (unsigned i=(j!=0); i<cwtchunk->chunks[j]->nScales(); ++i)
+            {
+                float2& v = src[i*stride];
+                //dst[i] = sqrt(v.x*v.x + v.y*v.y);
+                dst[k] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+                dst[k] *= dst[k];
+                k++;
+            }
+        }
+
+        fa = chunk->freqAxis;
+    }
+
     virtual float operator()( float /*t*/, float hz, bool* is_valid_value )
     {
-        float i = fa.getFrequencyScalar( hz );
+        float i = std::max( 0.f, fa.getFrequencyScalar( hz ) );
         float local_max;
         float v = quad_interpol(i, abslog->getCpuMemory(),
                                 abslog->getNumberOfElements1D(), 1, &local_max);
@@ -320,11 +394,17 @@ boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
 {
     boost::shared_ptr<FetchData> r;
     Tfr::pTransform transform = view->model->collections[0]->transform();
-    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(transform.get());
-    if (stft)
+    if (Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(transform.get()))
         r.reset( new FetchDataTransform( view->model, stft, t ) );
+    else if (Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform.get()))
+        r.reset( new FetchDataTransform( view->model, cwt, t ) );
+    else if (Tfr::Cepstrum* cepstrum = dynamic_cast<Tfr::Cepstrum*>(transform.get()))
+        r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
     else
+    {
+        BOOST_ASSERT( false );
         r.reset( new FetchDataHeightmap( view ) );
+    }
 
     return r;
 }

@@ -268,15 +268,12 @@ void RenderView::
 float RenderView::
         getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref, float* pick_local_max, bool fetch_interpolation, bool* is_valid_value )
 {
+    if (is_valid_value)
+        *is_valid_value = true;
+
 #ifdef __APPLE__
     return 0; //Crash on mac os
 #endif
-#ifdef _MSC_VER
-    // getHeightmapValue is tremendously slow in windows for some reason
-    //return 0;
-#endif
-    if (is_valid_value)
-        *is_valid_value = true;
 
     if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
         return 0;

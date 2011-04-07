@@ -161,6 +161,9 @@ bool Application::
                 foreach (pProject p, _projects)
                     p->tools().render_view()->userinput_update( true, false );
                 break;
+
+            default:
+                break;
         }
 
         v = QApplication::notify(receiver,e);
