@@ -22,6 +22,7 @@
 #include <demangle.h>
 #include <cuda_vector_types_op.h>
 #include <glframebuffer.h>
+#include <neat_math.h>
 
 // cuda
 #include <cuda.h>
@@ -373,6 +374,14 @@ float RenderView::
             if (pick_local_max)
                 *pick_local_max = a.scale + (b.scale-a.scale)*(y0)/(h-1);
         }
+
+        float testmax;
+        float testv = quad_interpol( y0, data + x0, h, w, &testmax );
+        float testlocalmax = a.scale + (b.scale-a.scale)*(testmax)/(h-1);
+
+        BOOST_ASSERT( testv == v );
+        if (pick_local_max)
+            BOOST_ASSERT( testlocalmax == *pick_local_max );
     }
 
     return v;
@@ -815,12 +824,13 @@ void RenderView::
 
 
 void RenderView::
-        userinput_update( bool request_high_fps )
+        userinput_update( bool request_high_fps, bool post_update )
 {
     if (request_high_fps)
         model->project()->worker.requested_fps(60);
 
-    emit postUpdate();
+    if (post_update)
+        emit postUpdate();
 }
 
 

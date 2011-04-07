@@ -150,6 +150,19 @@ bool Application::
     string err;
 
     try {
+        if (e) switch (e->type())
+        {
+            case QEvent::MouseButtonPress:
+            case QEvent::KeyPress:
+            case QEvent::Show:
+            case QEvent::Enter:
+            case QEvent::HoverEnter:
+            case QEvent::HoverMove:
+                foreach (pProject p, _projects)
+                    p->tools().render_view()->userinput_update( true, false );
+                break;
+        }
+
         v = QApplication::notify(receiver,e);
     //} catch (const exception &x) {
     } catch (const std::invalid_argument &x) {
