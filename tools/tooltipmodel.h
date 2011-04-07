@@ -29,8 +29,6 @@ public:
     const Heightmap::Position& comment_pos();
 
     void showToolTip( Heightmap::Position p );
-    unsigned guessHarmonicNumber( const Heightmap::Position& pos );
-    float computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, Heightmap::Reference* ref=0);
 
     float pos_time;
     float pos_hz;
@@ -52,10 +50,25 @@ public:
     std::string toneName();
 
 private:
+    class FetchData
+    {
+    public:
+        virtual float operator()( float t, float hz, bool* is_valid_value ) = 0;
+
+        static boost::shared_ptr<FetchData> createFetchData( RenderView*, float );
+    };
+
+    class FetchDataTransform;
+    class FetchDataHeightmap;
+
     CommentController* comments_;
     RenderView *render_view_;
     unsigned fetched_heightmap_values;
     ToolModelP comment_model;
+    float last_fetched_scale_;
+
+    unsigned guessHarmonicNumber( const Heightmap::Position& pos, float& best_compliance );
+    float computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, FetchData* fetcher);
 
 private:
     //template <bool T> bool eval_boolean(boost::mpl::bool_<T> const&) { return T; }

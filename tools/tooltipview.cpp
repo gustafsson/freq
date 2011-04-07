@@ -141,11 +141,15 @@ void TooltipView::
         {
             TaskInfo ti("TooltipView doesn't have all data yet");
 
+            std::string prev_html = model_->comment->html();
             model_->showToolTip( model_->pos() );
 
-            TaskInfo("%s", model_->comment->html().c_str());
+            std::string html = model_->comment->html();
+
             if (model_->automarking != TooltipModel::AutoMarkerWorking)
-                TaskInfo("TooltipView just finished");
+                TaskInfo("TooltipView just finished\n%s", html.c_str());
+            else if(html != prev_html)
+                TaskInfo("Changed tooltip\n%s", html.c_str());
 
             render_view_->userinput_update( false );
 
