@@ -128,11 +128,11 @@ void HarmonicsInfoForm::
 
         unsigned row = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow( row );
-        setCellInLastRow(0, QString("%1").arg(model->pos.time));
-        setCellInLastRow(1, QString("%1").arg(model->frequency)); // == fa.getFrequency(model->pos.scale)
+        setCellInLastRow(0, QString("%1").arg(model->pos_time));
+        setCellInLastRow(1, QString("%1").arg(model->pos_hz));
         setCellInLastRow(2, QString("%1").arg(model->max_so_far));
         setCellInLastRow(3, QString("%1").arg(model->automarkingStr().c_str()));
-        setCellInLastRow(4, QString("%1").arg(model->frequency/model->markers));
+        setCellInLastRow(4, QString("%1").arg(model->pos_hz/model->markers));
         setCellInLastRow(5, QString("%1").arg(model->markers));
         setCellInLastRow(6, QString("%1").arg(model->toneName().c_str()));
         setCellInLastRow(7, QString("%1").arg(model->compliance));
@@ -192,7 +192,7 @@ void HarmonicsInfoForm::
     {
         harmonicscontroller->setCurrentView( cvud->view() );
         if (0==rebuilding)
-            render_view->setPosition( cvud->view()->model()->pos );
+            render_view->setPosition( cvud->view()->model()->pos() );
     }
 }
 

@@ -140,12 +140,12 @@ void TooltipController::
         TaskTimer tt("TooltipController::mouseMoveEvent (%g, %g)", p.time, p.scale);
         if (success)
         {
-            Heightmap::Position o = current_model()->pos;
+            Heightmap::Position o = current_model()->pos();
             bool t = TooltipModel::AutoMarkerWorking == current_model()->automarking;
 
             current_model()->showToolTip( p );
 
-            t |= current_model()->pos != o;
+            t |= current_model()->pos() != o;
 
             if (t)
                 emitTooltipChanged();
@@ -172,7 +172,7 @@ void TooltipController::
     BOOST_ASSERT(current_model()->comment);
 
     current_model()->automarking = TooltipModel::ManualMarkers;
-    current_model()->showToolTip(current_model()->pos );
+    current_model()->showToolTip(current_model()->pos() );
     emitTooltipChanged();
     render_view_->userinput_update();
 }

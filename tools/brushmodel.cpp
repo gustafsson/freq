@@ -79,7 +79,7 @@ Gauss BrushModel::
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     float fs = filter()->sample_rate();
-    float hz = cwt.compute_frequency2( fs, pos.scale );
+    float hz = render_model_->display_scale().getFrequency( pos.scale );
     float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;
     float deltascale = cwt.sigma() * cwt.wavelet_scale_support()*0.9f / cwt.nScales(fs);
     float deltat = deltasample / fs;

@@ -1,4 +1,5 @@
 #include "toolmodel.h"
+#include "project.h"
 
 namespace Tools
 {
@@ -23,6 +24,8 @@ namespace Tools
 
         foreach( ToolControllerP const& p, tool_controllers_)
             p->createView( modelp, this, project_ );
+
+        project_->setModified();
 
         return modelp;
     }

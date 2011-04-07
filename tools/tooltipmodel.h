@@ -32,8 +32,9 @@ public:
     unsigned guessHarmonicNumber( const Heightmap::Position& pos );
     float computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, Heightmap::Reference* ref=0);
 
-    Heightmap::Position pos;
-    float frequency;
+    float pos_time;
+    float pos_hz;
+    Heightmap::Position pos();
     float max_so_far;
     float compliance;
     unsigned markers;
@@ -67,9 +68,8 @@ private:
         TaskInfo("%s is_saving=%d comment_model=%p", __FUNCTION__, is_saving, comment_model.get());
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ToolModel);
         ar
-                & BOOST_SERIALIZATION_NVP(pos.scale)
-                & BOOST_SERIALIZATION_NVP(pos.time)
-                & BOOST_SERIALIZATION_NVP(frequency)
+                & BOOST_SERIALIZATION_NVP(pos_time)
+                & BOOST_SERIALIZATION_NVP(pos_hz)
                 & BOOST_SERIALIZATION_NVP(max_so_far)
                 & BOOST_SERIALIZATION_NVP(compliance)
                 & BOOST_SERIALIZATION_NVP(markers)

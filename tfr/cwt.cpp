@@ -719,17 +719,6 @@ float Cwt::
 
 
 float Cwt::
-        compute_frequency2( float fs, float normalized_scale ) const
-{
-    float start = get_max_hz(fs);
-    float steplogsize = log2f(get_min_hz(fs)) - log2f(get_max_hz(fs));
-
-    float hz = start * exp2((1-normalized_scale) * steplogsize);
-    return hz;
-}
-
-
-float Cwt::
         morlet_sigma_samples( float fs, float hz ) const
 {
     // float scale = hz/get_max_hz( fs );

@@ -52,7 +52,6 @@ public:
     float     tf_resolution() const { return _tf_resolution; }
     void      tf_resolution( float );
     float     sigma() const;
-    float     compute_frequency2( float fs, float normalized_scale ) const;
 
     /**
       wavelet_time_support is the size of overlapping required in the windowed

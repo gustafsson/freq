@@ -35,11 +35,15 @@ TooltipView::
 void TooltipView::
         drawMarkers()
 {
-    Heightmap::Position p = model_->pos;
+    Heightmap::Position p = model_->pos();
+
+    if (prev_pos_ != p && model_->comment)
+        model_->comment->model()->pos = p;
+
+    prev_pos_ = p;
 
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
-    double frequency = display_scale.getFrequency( p.scale );
-    double fundamental_frequency = frequency / model_->markers;
+    double fundamental_frequency = model_->pos_hz / model_->markers;
     for (unsigned i=1; i<=2*model_->markers || i <= 10; ++i)
     {
         float harmonic = fundamental_frequency * i;
@@ -137,7 +141,7 @@ void TooltipView::
         {
             TaskInfo ti("TooltipView doesn't have all data yet");
 
-            model_->showToolTip( model_->pos );
+            model_->showToolTip( model_->pos() );
 
             TaskInfo("%s", model_->comment->html().c_str());
             if (model_->automarking != TooltipModel::AutoMarkerWorking)

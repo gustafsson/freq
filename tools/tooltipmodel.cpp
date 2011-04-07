@@ -26,7 +26,8 @@ namespace Tools {
 
 TooltipModel::TooltipModel()
     :
-        frequency(-1),
+        pos_time(0),
+        pos_hz(-1),
         max_so_far(-1),
         markers(0),
         comment(0),
@@ -77,14 +78,15 @@ void TooltipModel::
 
     bool found_better = val > max_so_far;
     if (found_better)
-        this->pos = p;
+    {
+        this->pos_time = p.time;
+        this->pos_hz = render_view_->model->display_scale().getFrequency( p.scale );
+    }
     else
-        p = this->pos;
+        p = this->pos();
 
     float FS = render_view_->model->project()->worker.source()->sample_rate();
-    float f = c.compute_frequency2( FS, p.scale );
-    float std_t = c.morlet_sigma_samples( FS, f ) / FS;
-    float std_f = c.morlet_sigma_f( f );
+    float f = this->pos_hz;
 
     if (found_better || TooltipModel::ManualMarkers != this->automarking )
     {
@@ -100,12 +102,15 @@ void TooltipModel::
        << "Frequency: " << setprecision(1) << f << " Hz<br/>";
 
     if (dynamic_cast<Tfr::CwtFilter*>( render_view_->model->block_filter()))
-       ss << "Morlet standard deviation: " << setprecision(3) << std_t << " s, " << setprecision(1) << std_f << " Hz<br/>";
+    {
+        float std_t = c.morlet_sigma_samples( FS, f ) / FS;
+        float std_f = c.morlet_sigma_f( f );
+        ss << "Morlet standard deviation: " << setprecision(3) << std_t << " s, " << setprecision(1) << std_f << " Hz<br/>";
+    }
 
     ss << "Value here: " << setprecision(10) << this->max_so_far << setprecision(1);
 
     this->compliance = 0;
-    this->frequency = f;
 
     if ( 0 < this->markers )
     {
@@ -133,7 +138,7 @@ void TooltipModel::
     }
 
     bool first = 0 == this->comment;
-    comments_->setComment( this->pos, ss.str(), &this->comment );
+    comments_->setComment( this->pos(), ss.str(), &this->comment );
     if (first)
     {
         this->comment->thumbnail( true );
@@ -156,7 +161,7 @@ void TooltipModel::
     {
         ofstream selected_tone("selected_tone.m");
         selected_tone
-                << "fundamental_frequency = " << setprecision(30) << this->frequency/this->markers << ";" << endl
+                << "fundamental_frequency = " << setprecision(30) << this->pos_hz/this->markers << ";" << endl
                 << "selected_tone_number = " << this->markers << ";" << endl
                 << "frequencies = fundamental_frequency * (1:3*selected_tone_number);" << endl;
     }
@@ -168,7 +173,7 @@ void TooltipModel::
 {
     //2^(n/12)*440
     float tva12 = powf(2.f, 1.f/12);
-    float tonef = log(frequency/this->markers/440.f)/log(tva12) + 45; // 440 is tone number 45, given C1 as tone 0
+    float tonef = log(pos_hz/this->markers/440.f)/log(tva12) + 45; // 440 is tone number 45, given C1 as tone 0
     int tone0 = floor(tonef + 0.5);
     int tone1 = (tone0 == (int)floor(tonef)) ? tone0 + 1 : tone0 - 1;
     accuracy = fabs(tonef-tone0);
@@ -303,6 +308,14 @@ float TooltipModel::
     }
 
     return s;
+}
+
+
+Heightmap::Position TooltipModel::
+        pos()
+{
+    Heightmap::Position p( pos_time, render_view_->model->display_scale().getFrequencyScalar( pos_hz ));
+    return p;
 }
 
 } // namespace Tools
