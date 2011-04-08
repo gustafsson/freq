@@ -80,9 +80,11 @@ ToolFactory::
     _comment_controller = new CommentController( _render_view );
     tool_controllers_.push_back( _comment_controller );
 
-#ifndef __APPLE__
+#if !defined(TARGET_sd) && !defined(__APPLE__)
+    // no matlab for sound design version, or any apple version
     _matlab_controller = new MatlabController( p, _render_view );
 #endif
+
     _graph_controller = new GraphController( _render_view );
 
     _tooltip_controller = new TooltipController(
