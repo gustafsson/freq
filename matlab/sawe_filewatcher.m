@@ -77,10 +77,19 @@ while 1
     end
 
     disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
-    if 1 == nargin(func2str(func))
-        data = func(data);
+    if 0 == nargout(func2str(func))
+      if 1 == nargin(func2str(func))
+        func(data);
+      else
+        func(data, arguments);
+      end
+      data = sawe_discard(data);
     else
+      if 1 == nargin(func2str(func))
+        data = func(data);
+      else
         data = func(data, arguments);
+      end
     end
 
     % could perhaps use fieldnames(data) somehow to export this data
