@@ -41,10 +41,12 @@ namespace Sawe {
 template<class Archive> 
 void runSerialization(Archive& ar, Project*& project, QString path)
 {
-    TaskInfo ti("Running %s", typename Archive::is_loading()?"deserialization":"serialization");
+    TaskInfo ti("Running %s from '%s'", typename Archive::is_loading()?"deserialization":"serialization", path.toLocal8Bit().data());
 
     QDir dir = QDir::current();
     QDir::setCurrent( QFileInfo( path ).absolutePath() );
+
+    TaskInfo("Current path is '%s'", QDir::currentPath().toLocal8Bit().data());
 
     ar.template register_type<Adapters::Audiofile>();
     ar.template register_type<Adapters::MicrophoneRecorder>();
@@ -69,6 +71,7 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 
     QDir::setCurrent( dir.absolutePath() );
+    TaskInfo("Current path is '%s'", QDir::currentPath().toLocal8Bit().data());
 }
 
 

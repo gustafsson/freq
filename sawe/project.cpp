@@ -130,10 +130,14 @@ pProject Project::
 
     string err;
     pProject p;
-    for (int i=0; i<2; i++) try { switch(i) {
-        case 0: p = Project::openProject( filename ); break;
-        case 1: p = Project::openAudio( filename ); break;
-    }}
+    for (int i=0; i<2; i++) try
+    {
+        switch(i) {
+            case 0: p = Project::openProject( filename ); break;
+            case 1: p = Project::openAudio( filename ); break;
+        }
+        break; // successful loading without thrown exception
+    }
     catch (const exception& x) {
         if (!err.empty())
             err += '\n';
@@ -144,7 +148,12 @@ pProject Project::
     if (!p)
     {
         QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
-        TaskInfo("======================\nCan't open file\n%s\n======================", err.c_str());
+        TaskInfo("======================\n"
+                 "Can't open file '%s' as project nor audio file\n"
+                 "%s\n"
+                 "======================",
+                 filename.c_str(),
+                 err.c_str());
         return pProject();
     }
 

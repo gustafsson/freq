@@ -130,6 +130,9 @@ Audiofile::
 std::string Audiofile::
         name()
 {
+    if (filename().empty())
+        return Operation::name();
+
     return QFileInfo( filename().c_str() ).fileName().toStdString();
 }
 
@@ -139,7 +142,7 @@ void Audiofile::
 {
     _original_relative_filename = filename;
 
-    TaskTimer tt("Loading %s (this=%p)", filename.c_str(), this);
+    TaskTimer tt("Loading '%s' (this=%p)", filename.c_str(), this);
 
     SndfileHandle source(filename);
 

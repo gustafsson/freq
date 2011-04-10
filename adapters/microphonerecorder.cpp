@@ -153,7 +153,7 @@ std::string MicrophoneRecorder::
     std::stringstream ss;
     portaudio::System &sys = portaudio::System::instance();
     int d = input_device_;
-    if (d<0)
+    if (d<0 || d>=sys.deviceCount())
         d = sys.defaultInputDevice().index();
 
     ss << "Recording mic " << sys.deviceByIndex(d).name();
