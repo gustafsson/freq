@@ -5,6 +5,7 @@ isoctave=0~=exist('OCTAVE_VERSION','builtin');
 
 if ~isoctave
     str = datestr(t, f);
+	return;
 end
 
 strs = strsplit(f,'F');
