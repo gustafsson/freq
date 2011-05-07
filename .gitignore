@@ -13,6 +13,9 @@ ui_mainwindow.h
 sonicawe
 *.user
 Makefile
+Makefile.Debug
+Makefile.Release
+selected_tone.m
 qtc-gdbmacros
 *.xcodeproj
 Info.plist
