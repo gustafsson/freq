@@ -79,9 +79,6 @@ void ChainHead::
 {
     BOOST_ASSERT( s );
 
-    TaskInfo tt("ChainHead::appendOperation '%s' on\n%s",
-                s->name().c_str(), head_source()->toString().c_str());
-
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.
     unsigned i = 0;
@@ -99,6 +96,9 @@ void ChainHead::
     }
 
     s->source( head_source() );
+    TaskInfo tt("ChainHead::appendOperation '%s' on\n%s",
+                s->name().c_str(), head_source()->toString().c_str());
+
     pOperation new_head = s;
 
     // Cache all calculations

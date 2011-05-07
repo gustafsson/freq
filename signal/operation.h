@@ -194,6 +194,7 @@ public:
     static Signal::Intervals affectedDiff(pOperation source1, pOperation source2);
 
     virtual std::string toString();
+    virtual std::string toStringSkipSource();
     virtual std::string parentsToString();
 
 private:

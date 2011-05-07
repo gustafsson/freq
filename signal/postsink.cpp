@@ -289,9 +289,7 @@ std::string PostSink::
 
     if (_filter)
     {
-        _filter->source( pOperation() );
-        ss << std::endl << "Filter: " << _filter->toString();
-        _filter->source( source() );
+        ss << std::endl << "Filter: " << _filter->toStringSkipSource();
     }
     else
         ss << ". No filter";
@@ -299,10 +297,8 @@ std::string PostSink::
     unsigned i = 0;
     BOOST_FOREACH( pOperation o, sinks() )
     {
-        o->source( pOperation() );
-        ss << std::endl << "Sink " << i << ": " << o->toString() << "[/" << i << "]";
+        ss << std::endl << "Sink " << i << ": " << o->toStringSkipSource() << "[/" << i << "]";
         i++;
-        o->source( source() );
     }
 
     if (source())
