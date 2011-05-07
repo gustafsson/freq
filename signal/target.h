@@ -132,6 +132,14 @@ private:
 };
 typedef boost::shared_ptr<Target> pTarget;
 
+
+class OperationTarget: public Target {
+public:
+    OperationTarget(pOperation operation, std::string name);
+
+    void addOperation(pOperation operation);
+};
+
 } // namespace Signal
 
 #endif // LAYERS_H

@@ -258,7 +258,7 @@ Target::
     cache_vars_->source(update_view_);
     read_ = cache_vars_;
 
-    if (autocreate_chainheads)
+    if (autocreate_chainheads && all_layers_)
     {
         BOOST_FOREACH( pChain c, all_layers_->layers() )
         {
@@ -275,7 +275,7 @@ void Target::
         addLayerHead(pChainHead p)
 {
     BOOST_ASSERT( p );
-    BOOST_ASSERT( all_layers_ );
+    //BOOST_ASSERT( all_layers_ );
     BOOST_ASSERT( !isInSet(p->chain()) );
     //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
@@ -294,9 +294,9 @@ void Target::
 void Target::
         removeLayerHead(pChainHead p)
 {
-    BOOST_ASSERT( all_layers_ );
+    //BOOST_ASSERT( all_layers_ );
     BOOST_ASSERT( isInSet(p->chain()) );
-    BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
+    //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
     Signal::Intervals was_zero = read_->zeroed_samples_recursive();
 
@@ -408,6 +408,24 @@ bool Target::
             return true;
     }
     return false;
+}
+
+
+OperationTarget::
+        OperationTarget(pOperation operation, std::string name)
+            :
+            Target(0, name, false)
+{
+    Signal::pChain chain( new Signal::Chain(operation) );
+    Signal::pChainHead ch( new Signal::ChainHead(chain));
+
+    // Add cache layer
+    ch->appendOperation(Signal::pOperation(new Signal::Operation(Signal::pOperation())));
+
+    // Invalidate cache
+    ch->head_source()->invalidate_samples(ch->head_source()->getInterval() );
+
+    addLayerHead( ch );
 }
 
 } // namespace Signal
