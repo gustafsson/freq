@@ -984,12 +984,25 @@ void RenderView::
         if (!worker.target()->post_sink()->isUnderfed())
         {
             // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
-            Signal::pTarget t = worker.target();
+            Signal::pTarget populated_target = worker.target();
             worker.target( model->renderSignalTarget );
             if (!worker.todo_list())
-                // Use the previous target (set in populateTodoList) if
+            {
+                // Use the populated target (set in populateTodoList) if
                 // renderSignalTarget has nothing to work on
-                worker.target( t );
+                worker.target( populated_target );
+
+                if (worker.todo_list().empty())
+                {
+                    // Search for something to work on
+                    foreach(Signal::pTarget t, model->project()->targets)
+                    {
+                        worker.target( t );
+                        if (worker.todo_list())
+                            break;
+                    }
+                }
+            }
             else
                 worker.center = model->_qx;
         }

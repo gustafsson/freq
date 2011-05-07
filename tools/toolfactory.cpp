@@ -28,6 +28,7 @@
 #include "fantrackercontroller.h"
 #include "fantrackerview.h"
 #include "fantrackermodel.h"
+#include "selectionviewinfo.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -113,6 +114,15 @@ ToolFactory::
             _render_view
             );
 
+    _selection_view_info = new SelectionViewInfo(p, &selection_model );
+
+
+    //
+    // Insert new tools here, and delete things in the destructor in the
+    // opposite order that they were created
+    //
+
+
     _worker_view.reset( new WorkerView(p));
     _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view ) );
 }
@@ -125,6 +135,8 @@ ToolFactory::
     // Try to clear things in the opposite order that they were created
 
     // 'delete 0' is a valid operation and does nothing
+
+    delete _selection_view_info;
 
     delete _harmonics_info_form;
 
