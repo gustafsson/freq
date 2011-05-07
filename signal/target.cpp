@@ -252,6 +252,9 @@ Target::
             add_as_channels_(false),
             all_layers_(all_layers)
 {
+    // all_layers_ might not actually be needed, but, project() is for update_view
+    BOOST_ASSERT( all_layers_ );
+
     post_sink_->source( reroute_channels_ );
     forall_channels_->source( post_sink_ );
     update_view_->source( forall_channels_ );
@@ -275,7 +278,6 @@ void Target::
         addLayerHead(pChainHead p)
 {
     BOOST_ASSERT( p );
-    //BOOST_ASSERT( all_layers_ );
     BOOST_ASSERT( !isInSet(p->chain()) );
     //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
@@ -294,7 +296,6 @@ void Target::
 void Target::
         removeLayerHead(pChainHead p)
 {
-    //BOOST_ASSERT( all_layers_ );
     BOOST_ASSERT( isInSet(p->chain()) );
     //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
 
@@ -412,9 +413,16 @@ bool Target::
 
 
 OperationTarget::
-        OperationTarget(pOperation operation, std::string name)
+        OperationTarget(Layers* all_layers, pOperation operation, std::string name)
             :
-            Target(0, name, false)
+            Target(all_layers, name, false)
+{
+    addOperation(operation);
+}
+
+
+void OperationTarget::
+        addOperation(pOperation operation)
 {
     Signal::pChain chain( new Signal::Chain(operation) );
     Signal::pChainHead ch( new Signal::ChainHead(chain));

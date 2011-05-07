@@ -27,6 +27,7 @@ public:
 public slots:
     void setText(QString text);
     void selectionChanged();
+    virtual void setVisible(bool visible);
 
 private:
     Sawe::Project* project_;
@@ -36,16 +37,21 @@ private:
 };
 
 
-class SelectionViewInfoOperation: public Signal::Operation
+class SelectionViewInfoSink: public Signal::Sink
 {
 public:
-    SelectionViewInfoOperation( Signal::pOperation, SelectionViewInfo* info );
+    SelectionViewInfoSink( SelectionViewInfo* info );
 
     virtual Signal::pBuffer read( const Signal::Interval& I );
 
+    virtual void source(Signal::pOperation v);
+
+    virtual void invalidate_samples(const Signal::Intervals& I);
+    virtual Signal::Intervals invalid_samples();
 private:
     SelectionViewInfo* info_;
     Signal::pOperation rms_;
+    Signal::Intervals missing_;
 };
 
 } // namespace Tools

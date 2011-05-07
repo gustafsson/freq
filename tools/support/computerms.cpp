@@ -20,7 +20,11 @@ pBuffer ComputeRms::
         read( const Interval& I )
 {
     pBuffer b = Operation::read(I);
-    b = BufferSource(b).readFixedLength( (b->getInterval() - rms_I).coveredInterval() );
+    Intervals missing = b->getInterval() - rms_I;
+    if (missing.empty())
+        return b;
+
+    b = BufferSource(b).readFixedLength( missing.coveredInterval() );
     float* p = b->waveform_data()->getCpuMemory();
     unsigned L = b->number_of_samples();
     unsigned C = b->channels();
@@ -34,6 +38,10 @@ pBuffer ComputeRms::
 
     unsigned newL = rms_I.count() + L;
     rms = sqrt(rms*rms * rms_I.count()/newL + S/newL);
+
+    rms_I |= b->getInterval();
+
+    return b;
 }
 
 
@@ -42,6 +50,8 @@ void ComputeRms::
 {
     rms_I.clear();
     rms = 0;
+
+    Operation::invalidate_samples(I);
 }
 
 } // namespace Support

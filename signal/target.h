@@ -133,10 +133,17 @@ private:
 typedef boost::shared_ptr<Target> pTarget;
 
 
+/**
+  * Not used
+  */
 class OperationTarget: public Target {
 public:
-    OperationTarget(pOperation operation, std::string name);
+    /**
+      * @param all_layers Pass &Sawe::Projecct::layers
+      */
+    OperationTarget(Layers* all_layers, pOperation operation, std::string name);
 
+private:
     void addOperation(pOperation operation);
 };
 
