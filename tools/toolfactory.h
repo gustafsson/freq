@@ -101,6 +101,8 @@ namespace Tools
 
         QPointer<class HarmonicsInfoForm> _harmonics_info_form;
 
+        QPointer<class SelectionViewInfo> _selection_view_info;
+
         QScopedPointer<class WorkerView> _worker_view;
         QScopedPointer<class WorkerController> _worker_controller;
     };

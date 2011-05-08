@@ -24,6 +24,8 @@ std::string SplineFilter::
 {
     std::stringstream ss;
     ss << "Polygon with " << v.size() << " vertices";
+    if (!this->_save_inside)
+        ss << ", saving outside";
     return ss.str();
 }
 

@@ -54,6 +54,7 @@ public:
     Signal::Worker worker;
 
     Signal::Layers layers;
+    std::set<Signal::pTarget> targets;
 
 
     /**

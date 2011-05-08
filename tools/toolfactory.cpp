@@ -5,7 +5,6 @@
 #include "rendercontroller.h"
 #include "renderview.h"
 #include "selectioncontroller.h"
-#include "selectionview.h"
 #include "timelinecontroller.h"
 #include "timelineview.h"
 #include "playbackcontroller.h"
@@ -28,6 +27,7 @@
 #include "fantrackercontroller.h"
 #include "fantrackerview.h"
 #include "fantrackermodel.h"
+#include "selectionviewinfo.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -80,9 +80,11 @@ ToolFactory::
     _comment_controller = new CommentController( _render_view );
     tool_controllers_.push_back( _comment_controller );
 
-#ifndef __APPLE__
+#if !defined(TARGET_sd) && !defined(__APPLE__)
+    // no matlab for sound design version, or any apple version
     _matlab_controller = new MatlabController( p, _render_view );
 #endif
+
     _graph_controller = new GraphController( _render_view );
 
     _tooltip_controller = new TooltipController(
@@ -111,6 +113,15 @@ ToolFactory::
             _render_view
             );
 
+    _selection_view_info = new SelectionViewInfo(p, &selection_model );
+
+
+    //
+    // Insert new tools here, and delete things in the destructor in the
+    // opposite order that they were created
+    //
+
+
     _worker_view.reset( new WorkerView(p));
     _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view ) );
 }
@@ -123,6 +134,8 @@ ToolFactory::
     // Try to clear things in the opposite order that they were created
 
     // 'delete 0' is a valid operation and does nothing
+
+    delete _selection_view_info;
 
     delete _harmonics_info_form;
 

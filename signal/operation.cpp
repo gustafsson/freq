@@ -210,6 +210,18 @@ Signal::Intervals Operation::
 std::string Operation::
         toString()
 {
+    std::string s = toStringSkipSource();
+
+    if (_source)
+        s += "\n" + _source->toString();
+
+    return s;
+}
+
+
+std::string Operation::
+        toStringSkipSource()
+{
     std::string s = name();
 
     std::string n = Operation::name();
@@ -219,9 +231,6 @@ std::string Operation::
         s += n;
         s += ")";
     }
-
-    if (_source)
-        s += "\n" + _source->toString();
 
     return s;
 }

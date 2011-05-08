@@ -23,14 +23,32 @@ PlaybackView::
             follow_play_marker( false ),
             just_started( false ),
             _render_view( render_view ),
-            _playbackMarker(-1)
+            _playbackMarker(-1),
+            _qtimer( new QTimer )
 {
+    connect(_qtimer, SIGNAL(timeout()), SLOT(emit_update_view()));
+    _qtimer->setSingleShot( true );
+}
 
+
+PlaybackView::
+        ~PlaybackView()
+{
+    delete _qtimer;
 }
 
 
 void PlaybackView::
         update()
+{
+    float fps = 30;
+    if (!_qtimer->isActive())
+        _qtimer->start( 1000/fps );
+}
+
+
+void PlaybackView::
+        emit_update_view()
 {
     emit update_view(false);
     Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );

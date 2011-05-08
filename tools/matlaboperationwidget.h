@@ -49,7 +49,6 @@ public:
 
     Signal::pOperation ownOperation;
 
-    void setOperation( Signal::pOperation om );
     QDockWidget* getOctaveWindow();
 
     bool hasProcess();
@@ -75,6 +74,8 @@ private slots:
     void checkOctaveVisibility();
 
 private:
+    bool hasValidTarget();
+
     QPointer<QProcess> pid;
     void setProcess(QProcess*);
     virtual void hideEvent ( QHideEvent * event );

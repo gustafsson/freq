@@ -1,12 +1,5 @@
 #include "graphcontroller.h"
 
-// connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateLayerList(Signal::pOperation)));
-// connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateOperationsTree(Signal::pOperation)));
-//connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(receiveCurrentSelection(int, bool)));
-//connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(receiveFilterRemoval(int)));
-
-// updateOperationsTree( project->worker.source() );
-
 #include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
@@ -18,8 +11,8 @@
 #include <QPushButton>
 
 
-//#define DEBUG_GRAPH
-#define DEBUG_GRAPH if(0)
+#define DEBUG_GRAPH
+//#define DEBUG_GRAPH if(0)
 
 #define INFO_GRAPH
 //#define INFO_GRAPH if(0)
@@ -48,14 +41,20 @@ namespace Tools
 
     class TreeWidget: public QTreeWidget
     {
+        Sawe::Project* project_;
     public:
-        TreeWidget(QWidget*parent)
+        TreeWidget(QWidget*parent, Sawe::Project* project)
             :
-            QTreeWidget(parent)
+            QTreeWidget(parent),
+            project_(project)
         {}
 
         virtual void dropEvent ( QDropEvent * event ) {
             QTreeWidget::dropEvent ( event );
+
+            DEBUG_GRAPH TaskInfo ti("operation_tree dropEvent");
+            DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+            DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
 
             for (int l = 0; l<invisibleRootItem()->childCount(); ++l)
             {
@@ -65,8 +64,14 @@ namespace Tools
                 for (int i=0; i<layer->childCount(); ++i)
                     layer->child(i)->setSelected( false );
 
+                Signal::pOperation
+                        // The operation closest to root that was changed by the move operation
+                        firstmoved,
+
+                        // The operation furthest away from root that was changed by the move operation
+                        lastmoved;
+
                 // Make sure the root element is at the bottom
-                Signal::pOperation firstmoved;
                 for (int i=0; i<layer->childCount(); ++i)
                 {
                     TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i));
@@ -92,6 +97,7 @@ namespace Tools
                         {
                             if (!firstmoved)
                                 firstmoved = itm->tail;
+                            lastmoved = itm->tail;
                             itm->tail->source( src );
                             setCurrentItem( itm );
                         }
@@ -106,8 +112,12 @@ namespace Tools
                 if (chain && src)
                     chain->tip_source( src );
                 if (firstmoved)
-                    firstmoved->invalidate_samples(firstmoved->getInterval());
+                    firstmoved->source()->invalidate_samples(Signal::Operation::affectedDiff( firstmoved, lastmoved ));
             }
+
+            DEBUG_GRAPH TaskInfo("results");
+            DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+            DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
         }
     };
 
@@ -234,58 +244,70 @@ namespace Tools
     void GraphController::
             removeSelected()
     {
+        DEBUG_GRAPH TaskInfo ti("removeSelected");
+        DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+        DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+
         QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
         if (itms.empty())
             return;
 
-        TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
-        if ( !currentItem )
-            return;
+        Signal::pOperation currentOperation, newCurrentOperation;
+        Signal::pChain currentChain;
 
-        Signal::pOperation currentSource;
-        Signal::pChain currentChain = currentItem->chain;
+        {
+            TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
+            if ( !currentItem )
+                return;
+
+            currentOperation = currentItem->operation;
+            currentChain = currentItem->chain;
+        }
+
         // If the current operation is a cache, don't just remove the cache but
         // remove what was cached as well. So jump an extra steps down in source()
-        if (dynamic_cast<Signal::OperationCacheLayer*>(currentItem->operation.get()) )
-            currentSource = currentItem->operation->source()->source();
+        if (dynamic_cast<Signal::OperationCacheLayer*>(currentOperation.get()) )
+            newCurrentOperation = currentOperation->source()->source();
         else
-            currentSource = currentItem->operation->source();
+            newCurrentOperation = currentOperation->source();
 
-        if (!currentSource)
+        if (!newCurrentOperation)
             return;
 
         removing_ = true;
 
-        Signal::pOperation o = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), currentItem->operation );
-        if (o)
+        Signal::pOperation newHead = Signal::Operation::findParentOfSource( currentChain->tip_source(), currentOperation );
+        if (newHead)
         {
-            o->invalidate_samples( Signal::Operation::affectedDiff(o->source(), currentSource ));
+            newHead->invalidate_samples( Signal::Operation::affectedDiff(newHead->source(), newCurrentOperation ));
 
-            o->source( currentSource );
+            newHead->source( newCurrentOperation );
 
             // If there is a cache right above this, set the cache as head_source instead
-            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), o );
+            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentChain->tip_source(), newHead );
             if (dynamic_cast<Signal::OperationCacheLayer*>(o2.get()) )
-                o = o2;
+                newHead = o2;
         }
         else
         {
-            o = currentSource;
+            newHead = newCurrentOperation;
         }
 
-        Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentItem->chain );
-        head->head_source( o );
+        Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentChain );
+        head->head_source( newHead );
 
-        head = project_->tools().playback_model.playbackTarget->findHead( currentItem->chain );
-        head->head_source( o );
+        head = project_->tools().playback_model.playbackTarget->findHead( currentChain );
+        head->head_source( newHead );
 
-        project_->head->head_source( o );
+        project_->head->head_source( newHead );
         project_->setModified();
+
+        currentOperation->source(Signal::pOperation());
 
         redraw_operation_tree();
 
-        if (o==currentSource)
-            currentChain->tip_source( o );
+        if (newHead==newCurrentOperation)
+            currentChain->tip_source( newHead );
     }
 
 
@@ -372,7 +394,7 @@ namespace Tools
         verticalLayout->setSpacing(6);
         verticalLayout->setContentsMargins(0, 0, 0, 0);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
-        operationsTree = new TreeWidget(dockWidgetContents);
+        operationsTree = new TreeWidget(dockWidgetContents, project_);
         operationsTree->setDragDropMode( QAbstractItemView::InternalMove );
         operationsTree->setAcceptDrops( true );
         // setDragEnabled( false );

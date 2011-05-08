@@ -54,6 +54,10 @@ MatlabController::
             }
         }
     }
+
+
+    // create gui for operations already loaded
+    createView();
 }
 
 
@@ -182,6 +186,52 @@ void MatlabController::
 
 
 void MatlabController::
+        createView()
+{
+    foreach(Signal::pChain c, project_->layers.layers())
+    {
+        createView(c->root_source().get());
+    }
+}
+
+
+void MatlabController::
+        createView(Signal::Operation* o)
+{
+    Adapters::MatlabOperation* operation = dynamic_cast<Adapters::MatlabOperation*>(o);
+    if (operation)
+    {
+        MatlabOperationWidget* settings = new MatlabOperationWidget( project_ );
+        Adapters::MatlabFunctionSettings* s = operation->settings();
+        settings->scriptname( s->scriptname() );
+        settings->chunksize( s->chunksize() );
+        settings->computeInOrder( s->computeInOrder() );
+        settings->redundant( s->redundant() );
+        settings->arguments( s->arguments() );
+        operation->settings( settings );
+
+        Signal::pOperation om;
+        foreach(Signal::Operation* c, operation->outputs())
+        {
+            BOOST_ASSERT(c->source().get() == operation);
+            om = c->source();
+        }
+        if (om)
+            connectOperation(settings, om);
+    }
+
+    // work recursively up to find all operations
+    foreach(Signal::Operation* p, o->outputs())
+    {
+        // verify a correct structure while at it
+        BOOST_ASSERT( p->Operation::source().get() == o );
+
+        createView( p );
+    }
+}
+
+
+void MatlabController::
         receiveMatlabOperation()
 {
     /*if (_matlaboperation)
@@ -232,6 +282,20 @@ void MatlabController::
 {
     Adapters::MatlabOperation* m = new Adapters::MatlabOperation(project_->head->head_source(), settings);
     Signal::pOperation matlaboperation(m);
+    connectOperation(settings, matlaboperation);
+
+    bool noscript = settings->scriptname().empty();
+
+    if (!noscript)
+        project_->appendOperation( matlaboperation );
+}
+
+
+void MatlabController::
+        connectOperation(MatlabOperationWidget* settings, Signal::pOperation matlaboperation)
+{
+    Adapters::MatlabOperation* m = dynamic_cast<Adapters::MatlabOperation*>(matlaboperation.get());
+
     if (!settings->hasProcess())
     {
         if (settings->scriptname().empty())
@@ -245,7 +309,7 @@ void MatlabController::
     settings->setParent(0);
     connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
     bool noscript = settings->scriptname().empty();
-    settings->setOperation( matlaboperation );
+
     if (noscript)
     {
         settings->showOutput();
@@ -254,7 +318,6 @@ void MatlabController::
     else
     {
         m->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        project_->appendOperation( matlaboperation );
         m->plotlines.reset( new Tools::Support::PlotLines( render_view_->model ));
         connect( render_view_, SIGNAL(painting()), m->plotlines.get(), SLOT(draw()) );
 
@@ -316,6 +379,7 @@ void MatlabController::
     {
         QDockWidget* toolWindow = project_->mainWindow()->getItems()->toolPropertiesWindow;
         MatlabOperationWidget* w = dynamic_cast<MatlabOperationWidget*>( m->settings() );
+        BOOST_ASSERT( w );
         toolWindow->setWidget( w );
         if (w->getOctaveWindow())
         {

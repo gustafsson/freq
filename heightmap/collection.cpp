@@ -827,7 +827,6 @@ pBlock Collection::
 
     BOOST_ASSERT( 0 != result.get() );
 
-    {TaskTimer t2("Looking for redundant blocks to remove");
     if (0!= "Remove old redundant blocks")
     {
         unsigned youngest_age = -1, youngest_count = 0;
@@ -853,7 +852,6 @@ pBlock Collection::
             _cache.erase(_recent.back()->ref);
             _recent.pop_back();
         }
-    }
     }
 
     // result is non-zero

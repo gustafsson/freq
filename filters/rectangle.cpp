@@ -44,6 +44,10 @@ std::string Rectangle::
     if (_t2 != FLT_MAX)
        ss << std::setprecision(1) << _t2 << " s, ";
     ss << std::setprecision(0) << _f2 << " Hz";
+
+    if (!this->_save_inside)
+        ss << ", save outside";
+
     return ss.str();
 }
 

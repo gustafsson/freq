@@ -194,6 +194,7 @@ public:
     static Signal::Intervals affectedDiff(pOperation source1, pOperation source2);
 
     virtual std::string toString();
+    virtual std::string toStringSkipSource();
     virtual std::string parentsToString();
 
 private:
@@ -208,7 +209,7 @@ private:
     void serialize(archive& ar, const unsigned int /*version*/)
     {
         TaskInfo ti("Serializing %s, source: %s",
-                    name().c_str(), _source.get()?_source->name().c_str():0);
+                    name().c_str(), _source?_source->name().c_str():0);
         ti.tt().partlyDone();
 
         ar & BOOST_SERIALIZATION_NVP(_source);

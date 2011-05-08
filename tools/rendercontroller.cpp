@@ -249,6 +249,8 @@ void RenderController::
 
     view->userinput_update();
     view->emitTransformChanged();
+
+    yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->y_scale));
 }
 
 
@@ -266,7 +268,7 @@ void RenderController::
     c.scales_per_octave( 2*exp( 6*f ) ); // scales_per_octave >= 2
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.wavelet_time_support() );
+    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
 
     zscale->defaultAction()->trigger();
 
@@ -276,6 +278,8 @@ void RenderController::
     view->userinput_update();
 
     view->emitTransformChanged();
+
+    tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1\nSTFT window: %2 samples").arg(c.sigma()).arg(s.chunk_size()));
 }
 
 
@@ -599,6 +603,7 @@ void RenderController::
         toolbar_render->addWidget( yscale );
 
         connect(yscale, SIGNAL(valueChanged(int)), SLOT(receiveSetYScale(int)));
+        receiveSetYScale(yscale->value());
     }
 
 
@@ -611,6 +616,7 @@ void RenderController::
         toolbar_render->addWidget( tf_resolution );
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
+        receiveSetTimeFrequencyResolution(tf_resolution->value());
     }
 
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()));

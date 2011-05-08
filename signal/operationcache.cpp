@@ -214,7 +214,7 @@ OperationCachedSub::
 std::string OperationCachedSub::
         name()
 {
-    return Operation::source()->name();
+    return (Operation::source()?Operation::source()->name():"(null)");
 }
 
 
@@ -241,7 +241,7 @@ void OperationCachedSub::
 
 
 pOperation OperationCachedSub::
-        source()
+        source() const
 {
     return Operation::source()->source();
 }

@@ -59,7 +59,8 @@ OperationContainer::
 
 OperationCrop::
         OperationCrop( pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source, "Crop" )
+:   OperationSubOperations( source, "Crop" ),
+    section_(section)
 {
     reset(section);
 }
@@ -67,6 +68,8 @@ OperationCrop::
 void OperationCrop::
         reset( const Signal::Interval& section )
 {
+    section_ = section;
+
     std::stringstream ss;
     float fs = sample_rate();
     ss << "Crop [" << section.first/fs << ", " << section.last/fs << ") s";
@@ -273,7 +276,7 @@ OperationOnSelection::
 std::string OperationOnSelection::
         name()
 {
-    return operation_->name() + " in " + insideSelection_->name();
+    return (operation_?operation_->name():"(null)") + " in " + (insideSelection_?insideSelection_->name():"(null)");
 }
 
 

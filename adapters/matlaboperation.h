@@ -145,6 +145,7 @@ public:
     /// Will call invalidate_samples if new data is available
     bool dataAvailable();
 
+    Signal::Interval intervalToCompute( const Signal::Interval& I );
     bool isWaiting();
     std::string functionName();
 
@@ -185,6 +186,7 @@ private:
         settings.operation = this;
 
         this->settings(settingsp);
+        invalidate_cached_samples(Signal::Intervals());
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };

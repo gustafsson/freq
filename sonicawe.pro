@@ -84,6 +84,7 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
+    tools/support/computerms.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
@@ -94,7 +95,7 @@ FORMS += \
     ui/propertiesstroke.ui \
     tools/aboutdialog.ui \
     tools/commentview.ui \
-    tools/selectionviewmodel.ui \
+    tools/selectionviewinfo.ui \
     tools/transforminfoform.ui \
     tools/exportaudiodialog.ui \
     tools/harmonicsinfoform.ui \

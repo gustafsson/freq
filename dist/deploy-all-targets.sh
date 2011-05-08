@@ -11,6 +11,9 @@ target=sss
 #target=addiva
 #. ./deploy.sh; urls="${urls}\n$url"
 
+target=sd
+. ./deploy.sh; urls="${urls}\n$url"
+
 target=
 . ./deploy.sh; urls="${urls}\n$url"
 

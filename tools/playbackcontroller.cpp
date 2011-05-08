@@ -77,7 +77,7 @@ void PlaybackController::
     ui_items_->actionPausePlayBack->setChecked( false );
     ui_items_->actionPlaySelection->setChecked( true );
 
-    Signal::pOperation filter = _view->model->selection->current_selection();
+    Signal::pOperation filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
 
     startPlayback( filter );
 }

@@ -47,7 +47,7 @@ public:
     virtual unsigned get_channel();
 
     virtual void source(pOperation v);
-    virtual pOperation source() { return Operation::source(); }
+    virtual pOperation source() const { return Operation::source(); }
 
 protected:
     SinkSourceChannels _cache;
@@ -59,9 +59,16 @@ protected:
       that the information is now available.
       */
     std::vector<Signal::Intervals> _invalid_returns;
+
+    // can't deserialize virtual class
 };
 
 
+/**
+  OperationCacheLayer is an Operation that remembers everything that has been
+  read and will not recompute old data when read is called for an interval that
+  has already been computed.
+  */
 class OperationCacheLayer: public OperationCache
 {
 public:
@@ -75,10 +82,15 @@ private:
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
         TaskInfo("OperationCacheLayer::serialize");
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+
+        invalidate_cached_samples(Signal::Intervals());
     }
 };
 
 
+/**
+  OperationCachedSub is an Operation that hides another Operation.
+  */
 class OperationCachedSub: public OperationCache
 {
 public:
@@ -87,7 +99,7 @@ public:
     virtual Signal::Intervals affected_samples();
     virtual pBuffer readRaw( const Interval& I );
     virtual void source(pOperation v);
-    virtual pOperation source();
+    virtual pOperation source() const;
 
 private:
     friend class boost::serialization::access;
@@ -95,6 +107,8 @@ private:
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
         TaskInfo("OperationCachedSub::serialize");
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+
+        invalidate_cached_samples(Signal::Intervals());
     }
 };
 

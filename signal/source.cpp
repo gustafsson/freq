@@ -267,7 +267,7 @@ std::string SourceBase::
     unsigned seconds_per_day = seconds_per_hour*24;
 
     if (L < seconds_per_minute )
-        ss << L << " seconds";
+        ss << L << " s";
     else
     {
         if (L <= seconds_per_day )

@@ -33,6 +33,7 @@ isoctave=0~=exist('OCTAVE_VERSION','builtin');
 disp([ sawe_datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) ''' (datafile ''' datafile ''')']);
 disp(['Working dir: ' pwd]);
 tic
+logginfo=false;
 while 1
 
 
@@ -43,7 +44,9 @@ while 1
   end
 
   if datafile_exists
-    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
+    if logginfo
+      disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
+    end
 
     try	
       if ~isoctave
@@ -76,11 +79,23 @@ while 1
         end
     end
 
-    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
-    if 1 == nargin(func2str(func))
-        data = func(data);
+    if logginfo
+      disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
+    end
+
+    if 0 == nargout(func2str(func))
+      if 1 == nargin(func2str(func))
+        func(data);
+      else
+        func(data, arguments);
+      end
+      data = sawe_discard(data);
     else
+      if 1 == nargin(func2str(func))
+        data = func(data);
+      else
         data = func(data, arguments);
+      end
     end
 
     % could perhaps use fieldnames(data) somehow to export this data
@@ -95,7 +110,10 @@ while 1
     else
       movefile(tempfile,resultfile); % matlab
     end
-    disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' saved results']);
+
+    if logginfo
+      disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' saved results']);
+    end
     
   else
     if isoctave

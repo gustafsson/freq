@@ -14,7 +14,7 @@ OperationSetSilent::
 std::string OperationSetSilent::
         name()
 {
-    float fs = sample_rate();
+    float fs = source()?sample_rate():1;
     std::stringstream ss;
     ss << "Clear section [" << section_.first/fs << ", " << section_.last/fs << ") s";
     return ss.str();
