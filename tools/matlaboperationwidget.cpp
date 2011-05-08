@@ -274,7 +274,8 @@ void MatlabOperationWidget::
     if (operation)
     {
         Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
-        if (needupdate && (chunksize()<=0 || needupdate.count()>=(Signal::IntervalType)chunksize()))
+        Signal::Interval i = needupdate.coveredInterval();
+        if (operation->intervalToCompute( i ).count())
         if (pid && pid->state() != QProcess::NotRunning)
         {
             // restart the timer
@@ -316,7 +317,8 @@ void MatlabOperationWidget::
         project->tools().render_view()->userinput_update( false );
     }
 
-    if (needupdate && (chunksize()<=0 || needupdate.count()>=(Signal::IntervalType)chunksize()))
+    Signal::Interval i = needupdate.coveredInterval();
+    if (operation->intervalToCompute( i ).count())
     {
         // restart the timer
         announceInvalidSamplesTimer.start();

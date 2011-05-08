@@ -148,6 +148,7 @@ public:
     /// Will call invalidate_samples if new data is available
     bool dataAvailable();
 
+    Signal::Interval intervalToCompute( const Signal::Interval& I );
     bool isWaiting();
     std::string functionName();
 

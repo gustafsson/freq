@@ -566,6 +566,63 @@ bool MatlabOperation::
 }
 
 
+Interval MatlabOperation::
+        intervalToCompute( const Interval& I )
+{
+    Signal::Interval J = I;
+
+    if (_settings->chunksize() < 0)
+        J = Interval(0, number_of_samples());
+    else
+    {
+        if (_settings->computeInOrder() )
+            J = (invalid_samples() | invalid_returns()).fetchInterval( I.count() );
+        else
+            J = (invalid_samples() | invalid_returns()).fetchInterval( I.count(), I.first );
+
+        if (0<_settings->chunksize())
+            J.last = J.first + _settings->chunksize();
+    }
+
+    IntervalType support = _settings->redundant();
+    Interval signal = getInterval();
+    J &= signal;
+    Interval K = Intervals(J).enlarge( support ).coveredInterval();
+
+    bool need_data_after_end = K.last > signal.last;
+    if (0<_settings->chunksize() && (int)J.count() != _settings->chunksize())
+        need_data_after_end = true;
+
+    if (need_data_after_end)
+    {
+        MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
+        bool isrecording = 0!=recorder;
+        if (isrecording)
+        {
+            bool need_a_specific_chunk_size = 0<_settings->chunksize();
+            if (_settings->computeInOrder() && need_a_specific_chunk_size)
+                return Interval(0,0);
+
+
+            if (recorder->isStopped())
+            {
+                // Ok, go on
+            }
+            else
+            {
+                // Don't use any samples after the end while recording
+                K &= signal;
+
+                if (Intervals(K).shrink(support).empty())
+                    return Interval(0,0);
+            }
+        }
+    }
+
+    return K;
+}
+
+
 pBuffer MatlabOperation::
         readRaw( const Interval& I )
 {
@@ -594,57 +651,10 @@ pBuffer MatlabOperation::
         if (!isWaiting())
         {
             TaskTimer tt("MatlabOperation::read(%s)", I.toString().c_str() );
-            Signal::Interval J = I;
-            IntervalType support = 0;
+            Interval K = intervalToCompute(I);
 
-            if (_settings->chunksize() < 0)
-                J = Interval(0, number_of_samples());
-            else
-            {
-                if (_settings->computeInOrder() )
-                    J = (invalid_samples() | invalid_returns()).fetchInterval( I.count() );
-                else
-                    J = (invalid_samples() | invalid_returns()).fetchInterval( I.count(), I.first );
-
-                if (0<_settings->chunksize())
-                    J.last = J.first + _settings->chunksize();
-            }
-
-            support = _settings->redundant();
-            Interval signal = getInterval();
-            J &= signal;
-            Interval K = Intervals(J).enlarge( support ).coveredInterval();
-
-            bool need_data_after_end = K.last > signal.last;
-            if (0<_settings->chunksize() && (int)J.count() != _settings->chunksize())
-                need_data_after_end = true;
-
-            if (need_data_after_end)
-            {
-                MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
-                bool isrecording = 0!=recorder;
-                if (isrecording)
-                {
-                    bool need_a_specific_chunk_size = 0<_settings->chunksize();
-                    if (_settings->computeInOrder() && need_a_specific_chunk_size)
-                        return pBuffer();
-
-
-                    if (recorder->isStopped())
-                    {
-                        // Ok, go on
-                    }
-                    else
-                    {
-                        // Don't use any samples after the end while recording
-                        K &= signal;
-
-                        if (Intervals(K).shrink(support).empty())
-                            return pBuffer();
-                    }
-                }
-            }
-
+            if (0 == K.count())
+                return pBuffer();
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
@@ -652,6 +662,7 @@ pBuffer MatlabOperation::
 
             string file = _matlab->getTempName();
 
+            IntervalType support = _settings->redundant();
             Hdf5Buffer::saveBuffer( file, *sent_data, support );
 
             TaskInfo("Sending %s to Matlab/Octave", sent_data->getInterval().toString().c_str() );
