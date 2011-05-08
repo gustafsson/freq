@@ -5,7 +5,6 @@
 #include "rendercontroller.h"
 #include "renderview.h"
 #include "selectioncontroller.h"
-#include "selectionview.h"
 #include "timelinecontroller.h"
 #include "timelineview.h"
 #include "playbackcontroller.h"

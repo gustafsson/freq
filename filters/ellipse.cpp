@@ -31,6 +31,10 @@ std::string Ellipse::
        << std::setprecision(1)
        << "Ellipse at " <<  _t1 << " s, "
        << std::setprecision(0) << _f1 << " Hz, size " << std::log(std::fabs((_t2-_t1)*(_f2-_f1)*M_PI));
+
+    if (!this->_save_inside)
+        ss << ", save outside";
+
     return ss.str();
 }
 
