@@ -245,7 +245,7 @@ void MatlabController::
     settings->setParent(0);
     connect( render_view_, SIGNAL(populateTodoList()), settings, SLOT(populateTodoList()));
     bool noscript = settings->scriptname().empty();
-    settings->setOperation( matlaboperation );
+
     if (noscript)
     {
         settings->showOutput();

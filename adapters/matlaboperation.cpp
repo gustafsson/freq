@@ -356,11 +356,11 @@ void MatlabFunction::
 
 
 MatlabOperation::
-        MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* settings )
+        MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* s )
 :   OperationCache(source),
-    _matlab(new MatlabFunction(settings->scriptname(), 4, settings)),
-    _settings(settings)
+    _settings(0)
 {
+    settings(s);
 }
 
 
@@ -369,6 +369,7 @@ MatlabOperation::
 :   OperationCache(Signal::pOperation()),
     _settings(0)
 {
+    settings(0);
 }
 
 
@@ -569,6 +570,9 @@ bool MatlabOperation::
 Interval MatlabOperation::
         intervalToCompute( const Interval& I )
 {
+    if (0 == I.count())
+        return I;
+
     Signal::Interval J = I;
 
     if (_settings->chunksize() < 0)

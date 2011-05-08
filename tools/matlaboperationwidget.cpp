@@ -33,9 +33,6 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
 
     connect(ui->browseButton, SIGNAL(clicked()), SLOT(browse()));
 
-    //target.reset( new Signal::Target( &project->layers, "Matlab target" ));
-    //target->findHead( project->head->chain() )->head_source( project->head->head_source() );
-
     setMaximumSize( width(), height() );
     setMinimumSize( width(), height() );
     announceInvalidSamplesTimer.setSingleShot( true );
@@ -211,11 +208,23 @@ private:
 };
 
 
-void MatlabOperationWidget::
-        setOperation( Signal::pOperation om )
+bool MatlabOperationWidget::
+        hasValidTarget()
 {
-    Adapters::MatlabOperation* m = dynamic_cast<Adapters::MatlabOperation*>(om.get());
-    BOOST_ASSERT( m );
+    if (!this->operation)
+        return false;
+
+    if (matlabTarget)
+        return true;
+
+    Signal::pOperation om;
+    foreach(Signal::Operation* c, this->operation->outputs())
+    {
+        BOOST_ASSERT(c->source().get() == this->operation);
+        om = c->source();
+    }
+    if (!om)
+        return false;
 
     matlabChain.reset( new Signal::Chain(om) );
     Signal::pChainHead ch( new Signal::ChainHead(matlabChain));
@@ -227,13 +236,14 @@ void MatlabOperationWidget::
     sinks.push_back( Signal::pOperation( ssc ) );
     matlabTarget->post_sink()->sinks( sinks );
 
-    this->operation = m;
     ui->pushButtonRestartScript->setVisible(true);
     ui->pushButtonRestoreChanges->setVisible(true);
     ui->pushButtonShowOutput->setVisible(true);
     ui->pushButtonRestoreChanges->setEnabled(false);
     ui->pushButtonShowOutput->setEnabled(false);
     ui->labelEmptyForTerminal->setVisible(false);
+
+    return true;
 }
 
 
@@ -271,7 +281,7 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         populateTodoList()
 {
-    if (operation)
+    if (hasValidTarget())
     {
         Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
         Signal::Interval i = needupdate.coveredInterval();
@@ -295,8 +305,7 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         announceInvalidSamples()
 {
-    if (!operation)
-        return;
+    BOOST_ASSERT(operation);
 
     Signal::Intervals invalid_returns = operation->invalid_returns();
     Signal::Intervals invalid_samples = operation->invalid_samples();
