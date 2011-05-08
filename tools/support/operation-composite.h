@@ -47,7 +47,7 @@ protected:
 
 
     friend class boost::serialization::access;
-    OperationSubOperations():Signal::Operation(Signal::pOperation()) {} // only used by deserialization
+    OperationSubOperations():Operation(Signal::pOperation()) {} // only used by deserialization
 
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
@@ -120,6 +120,25 @@ public:
     OperationCrop( Signal::pOperation source, const Signal::Interval& section );
 
     void reset( const Signal::Interval& section );
+
+private:
+    Signal::Interval section_;
+
+    friend class boost::serialization::access;
+    OperationCrop():OperationSubOperations(Signal::pOperation(),""),section_(0,0) {} // only used by deserialization
+
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(OperationSubOperations)
+           & BOOST_SERIALIZATION_NVP(section_.first)
+           & BOOST_SERIALIZATION_NVP(section_.last);
+
+        if (typename archive::is_loading())
+            reset(section_);
+    }
 };
 
 /**

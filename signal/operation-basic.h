@@ -53,6 +53,18 @@ public:
 private:
 
     Interval section_;
+
+    friend class boost::serialization::access;
+    OperationRemoveSection():Operation(pOperation()),section_(0,0) {} // only used by deserialization
+
+    template<class archive> void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
+           & BOOST_SERIALIZATION_NVP(section_.first)
+           & BOOST_SERIALIZATION_NVP(section_.last);
+    }
 };
 
 
