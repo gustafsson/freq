@@ -7,6 +7,7 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
+qmake $qmaketarget
 make distclean
 qmake $qmaketarget
 make -j5
