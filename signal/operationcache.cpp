@@ -241,7 +241,7 @@ void OperationCachedSub::
 
 
 pOperation OperationCachedSub::
-        source()
+        source() const
 {
     return Operation::source()->source();
 }

@@ -47,7 +47,7 @@ public:
     virtual unsigned get_channel();
 
     virtual void source(pOperation v);
-    virtual pOperation source() { return Operation::source(); }
+    virtual pOperation source() const { return Operation::source(); }
 
 protected:
     SinkSourceChannels _cache;
@@ -87,7 +87,7 @@ public:
     virtual Signal::Intervals affected_samples();
     virtual pBuffer readRaw( const Interval& I );
     virtual void source(pOperation v);
-    virtual pOperation source();
+    virtual pOperation source() const;
 
 private:
     friend class boost::serialization::access;

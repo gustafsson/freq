@@ -1,12 +1,5 @@
 #include "graphcontroller.h"
 
-// connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateLayerList(Signal::pOperation)));
-// connect(d, SIGNAL(operationsUpdated(Signal::pOperation)), this, SLOT(updateOperationsTree(Signal::pOperation)));
-//connect(this, SIGNAL(sendCurrentSelection(int, bool)), d, SLOT(receiveCurrentSelection(int, bool)));
-//connect(this, SIGNAL(sendRemoveItem(int)), d, SLOT(receiveFilterRemoval(int)));
-
-// updateOperationsTree( project->worker.source() );
-
 #include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
@@ -18,8 +11,8 @@
 #include <QPushButton>
 
 
-//#define DEBUG_GRAPH
-#define DEBUG_GRAPH if(0)
+#define DEBUG_GRAPH
+//#define DEBUG_GRAPH if(0)
 
 #define INFO_GRAPH
 //#define INFO_GRAPH if(0)
@@ -234,57 +227,69 @@ namespace Tools
     void GraphController::
             removeSelected()
     {
+        DEBUG_GRAPH TaskInfo ti("removeSelected");
+        DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+        DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+
         QList<QTreeWidgetItem*> itms = operationsTree->selectedItems();
         if (itms.empty())
             return;
 
-        TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
-        if ( !currentItem )
-            return;
+        Signal::pOperation currentOperation, newCurrentOperation;
+        Signal::pChain currentChain;
 
-        Signal::pOperation currentSource;
-        Signal::pChain currentChain = currentItem->chain;
+        {
+            TreeItem* currentItem = dynamic_cast<TreeItem*>(itms.front());
+            if ( !currentItem )
+                return;
+
+            currentOperation = currentItem->operation;
+            currentChain = currentItem->chain;
+        }
+
         // If the current operation is a cache, don't just remove the cache but
         // remove what was cached as well. So jump an extra steps down in source()
-        if (dynamic_cast<Signal::OperationCacheLayer*>(currentItem->operation.get()) )
-            currentSource = currentItem->operation->source()->source();
+        if (dynamic_cast<Signal::OperationCacheLayer*>(currentOperation.get()) )
+            newCurrentOperation = currentOperation->source()->source();
         else
-            currentSource = currentItem->operation->source();
+            newCurrentOperation = currentOperation->source();
 
-        if (!currentSource)
+        if (!newCurrentOperation)
             return;
 
         removing_ = true;
 
-        Signal::pOperation o = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), currentItem->operation );
+        Signal::pOperation o = Signal::Operation::findParentOfSource( currentChain->tip_source(), currentOperation );
         if (o)
         {
-            o->invalidate_samples( Signal::Operation::affectedDiff(o->source(), currentSource ));
+            o->invalidate_samples( Signal::Operation::affectedDiff(o->source(), newCurrentOperation ));
 
-            o->source( currentSource );
+            o->source( newCurrentOperation );
 
             // If there is a cache right above this, set the cache as head_source instead
-            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentItem->chain->tip_source(), o );
+            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentChain->tip_source(), o );
             if (dynamic_cast<Signal::OperationCacheLayer*>(o2.get()) )
                 o = o2;
         }
         else
         {
-            o = currentSource;
+            o = newCurrentOperation;
         }
 
-        Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentItem->chain );
+        Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentChain );
         head->head_source( o );
 
-        head = project_->tools().playback_model.playbackTarget->findHead( currentItem->chain );
+        head = project_->tools().playback_model.playbackTarget->findHead( currentChain );
         head->head_source( o );
 
         project_->head->head_source( o );
         project_->setModified();
 
+        currentOperation->source(Signal::pOperation());
+
         redraw_operation_tree();
 
-        if (o==currentSource)
+        if (o==newCurrentOperation)
             currentChain->tip_source( o );
     }
 
