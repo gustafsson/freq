@@ -44,6 +44,20 @@ protected:
 
     Signal::pOperation source_sub_operation_;
     std::string name_;
+
+
+    friend class boost::serialization::access;
+    OperationSubOperations():Signal::Operation(Signal::pOperation()) {} // only used by deserialization
+
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
+           & BOOST_SERIALIZATION_NVP(source_sub_operation_)
+           & BOOST_SERIALIZATION_NVP(name_);
+    }
 };
 
 
@@ -209,6 +223,20 @@ public:
 private:
     Signal::pOperation insideSelection_;
     Signal::pOperation operation_;
+
+
+    friend class boost::serialization::access;
+    OperationOnSelection():OperationSubOperations(Signal::pOperation(),"") {} // only used by deserialization
+
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(OperationSubOperations)
+           & BOOST_SERIALIZATION_NVP(insideSelection_)
+           & BOOST_SERIALIZATION_NVP(operation_);
+    }
 };
 
 

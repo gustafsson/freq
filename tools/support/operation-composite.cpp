@@ -273,7 +273,7 @@ OperationOnSelection::
 std::string OperationOnSelection::
         name()
 {
-    return operation_->name() + " in " + insideSelection_->name();
+    return (operation_?operation_->name():"(null)") + " in " + (insideSelection_?insideSelection_->name():"(null)");
 }
 
 

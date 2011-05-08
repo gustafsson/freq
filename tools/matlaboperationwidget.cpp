@@ -215,7 +215,16 @@ bool MatlabOperationWidget::
         return false;
 
     if (matlabTarget)
+    {
+        unsigned outputs = matlabChain->root_source()->outputs().size();
+        // If the matlab operation is only needed by the MatlabOperationWidget it has been removed, delete this
+        if (outputs == 1)
+        {
+            delete this;
+            return false;
+        }
         return true;
+    }
 
     Signal::pOperation om;
     foreach(Signal::Operation* c, this->operation->outputs())

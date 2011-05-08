@@ -688,23 +688,6 @@ pBuffer MatlabOperation::
 }
 
 
-pOperation MatlabOperation::
-        source() const
-{
-    return Signal::OperationCache::source();
-}
-
-
-void MatlabOperation::
-        source(pOperation v)
-{
-    if (!v)
-        settings(0);
-
-    Signal::OperationCache::source(v);
-}
-
-
 void MatlabOperation::
         restart()
 {

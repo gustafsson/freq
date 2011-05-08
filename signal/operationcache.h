@@ -59,6 +59,8 @@ protected:
       that the information is now available.
       */
     std::vector<Signal::Intervals> _invalid_returns;
+
+    // can't deserialize virtual class
 };
 
 
@@ -80,6 +82,8 @@ private:
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
         TaskInfo("OperationCacheLayer::serialize");
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+
+        invalidate_cached_samples(Signal::Intervals());
     }
 };
 
@@ -103,6 +107,8 @@ private:
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
         TaskInfo("OperationCachedSub::serialize");
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+
+        invalidate_cached_samples(Signal::Intervals());
     }
 };
 

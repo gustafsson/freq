@@ -1,6 +1,8 @@
 #ifndef MATLABCONTROLLER_H
 #define MATLABCONTROLLER_H
 
+#include "sawe/toolmodel.h"
+
 #include <signal/operation.h>
 
 #include <QObject>
@@ -30,8 +32,12 @@ namespace Tools
         void createFromAction();
 
     private:
+        void createView();
+        void createView(Signal::Operation* o);
+
         void updateScriptsMenu();
         void createOperation(MatlabOperationWidget* settings);
+        void connectOperation(MatlabOperationWidget* settings, Signal::pOperation matlaboperation);
 
         // Model
         // Model that is controlled, this controller doesn't have a view

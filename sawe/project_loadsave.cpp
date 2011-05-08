@@ -10,11 +10,13 @@
 #include "signal/operationcache.h"
 #include "signal/chain.h"
 #include "signal/target.h"
+#include "signal/operation-basic.h"
 
 // Serializable Sonic AWE Tools
 #include "tools/commentmodel.h"
 #include "tools/tooltipmodel.h"
 #include "tools/selections/support/splinefilter.h"
+#include "tools/support/operation-composite.h"
 
 // GpuMisc
 #include <demangle.h>
@@ -67,7 +69,9 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Adapters::MatlabOperation>();
     ar.template register_type<Project>();
     ar.template register_type<Signal::OperationCachedSub>();
-
+    ar.template register_type<Signal::OperationSuperposition>();
+    ar.template register_type<Tools::Support::OperationSubOperations>();
+    ar.template register_type<Tools::Support::OperationOnSelection>();
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 
     QDir::setCurrent( dir.absolutePath() );

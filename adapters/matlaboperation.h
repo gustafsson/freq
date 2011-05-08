@@ -138,9 +138,6 @@ public:
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
     virtual void invalidate_samples(const Signal::Intervals& I);
 
-    virtual Signal::pOperation source() const;
-    virtual void source(Signal::pOperation v);
-
     void restart();
     void settings(MatlabFunctionSettings*);
     MatlabFunctionSettings* settings() { return _settings; }
@@ -189,6 +186,7 @@ private:
         settings.operation = this;
 
         this->settings(settingsp);
+        invalidate_cached_samples(Signal::Intervals());
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
