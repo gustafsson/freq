@@ -64,8 +64,14 @@ namespace Tools
                 for (int i=0; i<layer->childCount(); ++i)
                     layer->child(i)->setSelected( false );
 
+                Signal::pOperation
+                        // The operation closest to root that was changed by the move operation
+                        firstmoved,
+
+                        // The operation furthest away from root that was changed by the move operation
+                        lastmoved;
+
                 // Make sure the root element is at the bottom
-                Signal::pOperation firstmoved;
                 for (int i=0; i<layer->childCount(); ++i)
                 {
                     TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i));
@@ -91,6 +97,7 @@ namespace Tools
                         {
                             if (!firstmoved)
                                 firstmoved = itm->tail;
+                            lastmoved = itm->tail;
                             itm->tail->source( src );
                             setCurrentItem( itm );
                         }
@@ -105,7 +112,7 @@ namespace Tools
                 if (chain && src)
                     chain->tip_source( src );
                 if (firstmoved)
-                    firstmoved->invalidate_samples(firstmoved->getInterval());
+                    firstmoved->source()->invalidate_samples(Signal::Operation::affectedDiff( firstmoved, lastmoved ));
             }
 
             DEBUG_GRAPH TaskInfo("results");

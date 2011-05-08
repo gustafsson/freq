@@ -62,6 +62,11 @@ protected:
 };
 
 
+/**
+  OperationCacheLayer is an Operation that remembers everything that has been
+  read and will not recompute old data when read is called for an interval that
+  has already been computed.
+  */
 class OperationCacheLayer: public OperationCache
 {
 public:
@@ -79,6 +84,9 @@ private:
 };
 
 
+/**
+  OperationCachedSub is an Operation that hides another Operation.
+  */
 class OperationCachedSub: public OperationCache
 {
 public:
