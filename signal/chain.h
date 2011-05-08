@@ -50,10 +50,13 @@ private:
     friend class boost::serialization::access;
     Chain() { } // used by serialization, root is read from archive instead
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
-        TaskInfo ti("Chain::serialize");
-        ar & BOOST_SERIALIZATION_NVP(name);
-        ar & BOOST_SERIALIZATION_NVP(root_source_);
-        ar & BOOST_SERIALIZATION_NVP(tip_source_);
+        TaskInfo ti("Chain::serialize %s", name.c_str() );
+        if (typename Archive::is_saving())
+            TaskInfo("%s", tip_source_->toString().c_str());
+
+        ar & BOOST_SERIALIZATION_NVP(name)
+           & BOOST_SERIALIZATION_NVP(root_source_)
+           & BOOST_SERIALIZATION_NVP(tip_source_);
     }
 
 };

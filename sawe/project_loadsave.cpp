@@ -70,8 +70,12 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Project>();
     ar.template register_type<Signal::OperationCachedSub>();
     ar.template register_type<Signal::OperationSuperposition>();
+    ar.template register_type<Signal::OperationSetSilent>();
     ar.template register_type<Tools::Support::OperationSubOperations>();
     ar.template register_type<Tools::Support::OperationOnSelection>();
+
+    // add new types at the end to preserve backwards compatibility
+
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 
     QDir::setCurrent( dir.absolutePath() );
