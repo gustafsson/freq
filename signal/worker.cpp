@@ -116,7 +116,7 @@ bool Worker::
                     center_sample));
         else
             tt.reset( new TaskTimer(
-                    "Processing %s. From %s at %u, with %u steps",
+                    "Processing %s. From %s at %u, with stepsize %u",
                     interval.toString().c_str(),
                     todo_list.toString().c_str(),
                     center_sample,

@@ -435,6 +435,7 @@ bool MatlabOperation::
     std::string file = _matlab->isReady();
     if (!file.empty())
     {
+        TaskTimer tt("Reading data from Matlab/Octave");
         double redundancy=0;
         pBuffer plot_pts;
 
@@ -571,15 +572,14 @@ pBuffer MatlabOperation::
     if (!_matlab)
         return pBuffer();
 
-    TaskTimer tt("MatlabOperation::read(%s)", I.toString().c_str() );
-
     try
     {
         if (dataAvailable())
         {
             Signal::pBuffer b = ready_data;
             ready_data.reset();
-            TaskInfo("Returning ready data %s, %u channels",
+            TaskInfo("MatlabOperation::read(%s) Returning ready data %s, %u channels",
+                     I.toString().c_str(),
                      b->getInterval().toString().c_str(),
                      b->waveform_data()->getNumberOfElements().height );
             return b;
@@ -587,12 +587,13 @@ pBuffer MatlabOperation::
 
         if (_matlab->hasProcessEnded())
         {
-            TaskInfo("process ended");
+            TaskInfo("MatlabOperation::read(%s) process ended", I.toString().c_str() );
             return source()->readFixedLength( I );
         }
 
         if (!isWaiting())
         {
+            TaskTimer tt("MatlabOperation::read(%s)", I.toString().c_str() );
             Signal::Interval J = I;
             IntervalType support = 0;
 
@@ -658,7 +659,7 @@ pBuffer MatlabOperation::
         }
         else
         {
-            TaskInfo("Is waiting for Matlab/Octave to finish");
+            TaskInfo("MatlabOperation::read(%s) Is waiting for Matlab/Octave to finish", I.toString().c_str() );
         }
     }
     catch (const std::runtime_error& e)

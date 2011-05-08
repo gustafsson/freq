@@ -41,14 +41,20 @@ namespace Tools
 
     class TreeWidget: public QTreeWidget
     {
+        Sawe::Project* project_;
     public:
-        TreeWidget(QWidget*parent)
+        TreeWidget(QWidget*parent, Sawe::Project* project)
             :
-            QTreeWidget(parent)
+            QTreeWidget(parent),
+            project_(project)
         {}
 
         virtual void dropEvent ( QDropEvent * event ) {
             QTreeWidget::dropEvent ( event );
+
+            DEBUG_GRAPH TaskInfo ti("operation_tree dropEvent");
+            DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+            DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
 
             for (int l = 0; l<invisibleRootItem()->childCount(); ++l)
             {
@@ -101,6 +107,10 @@ namespace Tools
                 if (firstmoved)
                     firstmoved->invalidate_samples(firstmoved->getInterval());
             }
+
+            DEBUG_GRAPH TaskInfo("results");
+            DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+            DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
         }
     };
 
@@ -259,38 +269,38 @@ namespace Tools
 
         removing_ = true;
 
-        Signal::pOperation o = Signal::Operation::findParentOfSource( currentChain->tip_source(), currentOperation );
-        if (o)
+        Signal::pOperation newHead = Signal::Operation::findParentOfSource( currentChain->tip_source(), currentOperation );
+        if (newHead)
         {
-            o->invalidate_samples( Signal::Operation::affectedDiff(o->source(), newCurrentOperation ));
+            newHead->invalidate_samples( Signal::Operation::affectedDiff(newHead->source(), newCurrentOperation ));
 
-            o->source( newCurrentOperation );
+            newHead->source( newCurrentOperation );
 
             // If there is a cache right above this, set the cache as head_source instead
-            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentChain->tip_source(), o );
+            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentChain->tip_source(), newHead );
             if (dynamic_cast<Signal::OperationCacheLayer*>(o2.get()) )
-                o = o2;
+                newHead = o2;
         }
         else
         {
-            o = newCurrentOperation;
+            newHead = newCurrentOperation;
         }
 
         Signal::pChainHead head = project_->tools().render_model.renderSignalTarget->findHead( currentChain );
-        head->head_source( o );
+        head->head_source( newHead );
 
         head = project_->tools().playback_model.playbackTarget->findHead( currentChain );
-        head->head_source( o );
+        head->head_source( newHead );
 
-        project_->head->head_source( o );
+        project_->head->head_source( newHead );
         project_->setModified();
 
         currentOperation->source(Signal::pOperation());
 
         redraw_operation_tree();
 
-        if (o==newCurrentOperation)
-            currentChain->tip_source( o );
+        if (newHead==newCurrentOperation)
+            currentChain->tip_source( newHead );
     }
 
 
@@ -377,7 +387,7 @@ namespace Tools
         verticalLayout->setSpacing(6);
         verticalLayout->setContentsMargins(0, 0, 0, 0);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
-        operationsTree = new TreeWidget(dockWidgetContents);
+        operationsTree = new TreeWidget(dockWidgetContents, project_);
         operationsTree->setDragDropMode( QAbstractItemView::InternalMove );
         operationsTree->setAcceptDrops( true );
         // setDragEnabled( false );
