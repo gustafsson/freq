@@ -1,5 +1,4 @@
 ;Including header files
-!include xml.nsh
 !include logiclib.nsh
 !include x64.nsh
 !include WordFunc.nsh
@@ -24,7 +23,6 @@ OutFile ${FILE_NAME}
 !define MUI_PAGE_HEADER_TEXT "Sonic AWE Setup"
 !define MUI_WELCOMEPAGE_TITLE "Welcome to the Sonic AWE Setup"
 !define MUI_TEXT_WELCOME_INFO_TEXT "Welcome to the installation wizard for Sonic AWE. This will install Sonic AWE on your computer. Click Next to proceed"
-;!define MUI_WELCOMEFINISHPAGE_BITMAP "C:\Users\fatcomp\Pictures\Reep\SonicAWE\Installer\SonicHeader.bmp"
 
 ; The default installation directory
 InstallDir "$PROGRAMFILES\Reep\Sonic AWE"
