@@ -38,7 +38,7 @@ sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$vers
 sed -i.backup -e "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"$packagename\"/" $nsisscript 
 sed -i.backup -e "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"$filename\"/" $nsisscript 
 licensepath=`pwd`\/$packagename\/license.txt
-licensepath=`echo $licensepath | sed 's@\\/C\\/@C:\\\\\\\@'`
+licensepath=`echo $licensepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 licensepath=`echo $licensepath | sed 's@\\/@\\\\\\\@g'`
 sed -i.backup -e "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
 
