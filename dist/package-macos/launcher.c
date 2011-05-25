@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
+#include "common_message.h"
+
 // Gets application bundle path
 const char *bundlePath(char *path)
 {
@@ -43,11 +45,15 @@ int main(int argc, char *argv[])
     
     if ( test == NULL )
     {
+        
         // Notify the user that CUDA drivers could not be found.
         CFUserNotificationDisplayAlert(0, options, NULL, NULL, NULL,
-            CFSTR("Couldn't find CUDA, unable to start Sonic AWE"),
-            CFSTR("Sonic AWE requires you to have a CUDA enabled display driver from NVIDIA, and no such driver was found.\n\nHardware requirements: You need to have one of these graphics cards from NVIDIA: www.nvidia.com/object/cuda_gpus.html\n\nSoftware requirements: You also need to have installed recent display drivers from NVIDIA: (Developer Drivers for MacOS) www.nvidia.com/object/cuda_get.html#MacOS\n\nSonic AWE cannot start. Please try again with updated drivers."),
-            CFSTR("Quit"), CFSTR("Check requirements"), CFSTR("Get driver"), &responseFlags);
+            CFStringCreateWithCString(NULL, get_error_title(), kCFStringEncodingASCII),
+            CFStringCreateWithCString(NULL, get_error_message(), kCFStringEncodingASCII),
+            CFStringCreateWithCString(NULL, get_quit(), kCFStringEncodingASCII),
+            CFStringCreateWithCString(NULL, get_check_requirements(), kCFStringEncodingASCII),
+            CFStringCreateWithCString(NULL, get_get_driver(), kCFStringEncodingASCII),
+            &responseFlags);
         
         if( (unsigned long)responseFlags == 0)
         {
@@ -59,23 +65,23 @@ int main(int argc, char *argv[])
         {
             // Quit and load the driver download site
             char *a[3];
-            a[0] = "/usr/bin/open";
-            a[1] = "http://www.nvidia.com/object/cuda_get.html#MacOS";
+            a[0] = (char*)get_browser_bin();
+            a[1] = (char*)get_driver_download();
             a[2] = NULL;
     
             printf("Getting CUDA drivers.\n");
-            execv("/usr/bin/open", a);
+            execv(a[0], a);
         }
         else
         {
             // Quit and load the availablity site
             char *a[3];
-            a[0] = "/usr/bin/open";
-            a[1] = "http://www.nvidia.com/object/cuda_gpus.html";
+            a[0] = (char*)get_browser_bin();
+            a[1] = (char*)get_requirements_page();
             a[2] = NULL;
     
             printf("Checking requirements.\n");
-            execv("/usr/bin/open", a);
+            execv(a[0], a);
         }
     }
     
