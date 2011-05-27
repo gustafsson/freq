@@ -26,6 +26,7 @@ rm -rf $packagename
 cp -r sonicawe_snapshot_win32_base $packagename
 cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagename
 cp sonic/sonicawe/release/sonicawe.exe $packagename
+cp -r sonic/sonicawe/matlab $packagename/matlab
 cp sonic/sonicawe/license/$licensefile $packagename
 
 #retrieving nvidia build version for minimum requirement
