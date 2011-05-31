@@ -36,7 +36,10 @@ version=${version:`expr index "$version" *[^0-9]\.`-2}
 
 #inserting filename, version and nvidia version number in NSIS script
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$version\"/" $nsisscript 
-sed -i.backup -e "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"$packagename\"/" $nsisscript 
+instfilepath=`pwd`\/$packagename
+instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
+instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
+sed -i.backup -e "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"$instfilepath\"/" $nsisscript 
 sed -i.backup -e "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"$filename\"/" $nsisscript 
 licensepath=`pwd`\/$packagename\/license.txt
 licensepath=`echo $licensepath | sed 's@\\/c\\/@C:\\\\\\\@'`

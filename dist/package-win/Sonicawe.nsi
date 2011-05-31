@@ -6,8 +6,8 @@
 
 ;Defining compile time constants and necessary variables
 !define NVID_VERSION "8.16.11.8933"
-!define INST_FILES "sonicawe_0.2011.04.08-snapshot_win32"
-!define FILE_NAME "sonicawe_0.2011.04.08-snapshot_win32_setup.exe"
+!define INST_FILES "sonicawe_0.2011.05.31-snapshot_win32"
+!define FILE_NAME "sonicawe_0.2011.05.31-snapshot_win32_setup.exe"
 
 ;var NVID_VERSION 
 var INSTALLATION_DONE
@@ -31,7 +31,7 @@ ShowInstDetails show
 
 ; Pages to display during the installation process
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "C:\Work\sonicawe_0.2011.04.08-snapshot_win32\license.txt"
+!insertmacro MUI_PAGE_LICENSE "C:\Users\fatcomp\Reep\sonicawe\sonicawe_0.2011.05.31-snapshot_win32\license.txt"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
