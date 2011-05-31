@@ -31,11 +31,11 @@ cp sonic/sonicawe/license/$licensefile $packagename
 
 #retrieving nvidia build version for minimum requirement
 windir=`cmd //c echo %WINDIR%`
-version=`$windir\\\\sysnative\\\\cmd.exe //c REG QUERY "HKLM\SOFTWARE\NVIDIA Corporation\Installer" //v Version`
-version=${version:`expr index "$version" *[^0-9]\.`-2}
+nvid_version=`$windir\\\\sysnative\\\\cmd.exe //c REG QUERY "HKLM\SOFTWARE\NVIDIA Corporation\Installer" //v Version`
+nvid_version=${nvid_version:`expr index "$nvid_version" *[^0-9]\.`-2}
 
 #inserting filename, version and nvidia version number in NSIS script
-sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$version\"/" $nsisscript 
+sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
 instfilepath=`pwd`\/$packagename
 instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
