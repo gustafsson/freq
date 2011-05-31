@@ -52,4 +52,13 @@ type -P makensis &>/dev/null || { echo "NSIS is not installed.  Aborting install
 #compile & move installer
 makensis $nsisscript
 mv $filename sonic/sonicawe/dist
+
+#clean sonicawe.nsi for git consistency
+sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"\"/" $nsisscript
+sed -i.backup -e "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"\"/" $nsisscript 
+sed -i.backup -e "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"\"/" $nsisscript 
+sed -i.backup -e "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"\"/" $nsisscript 
+
 cd sonic/sonicawe/dist
+
+
