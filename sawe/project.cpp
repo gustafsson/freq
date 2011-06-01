@@ -261,6 +261,8 @@ void Project::
     QSettings settings;
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
+    
+    _mainWindow->show();
 }
 
 

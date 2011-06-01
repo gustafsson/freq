@@ -33,7 +33,6 @@ SaweMainWindow::
     add_widgets();
 
     hide();
-    show();
 }
 
 
