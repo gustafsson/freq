@@ -116,6 +116,8 @@ public:
             project_->tools().render_view()->userinput_update( false );
 
         Operation::invalidate_samples(I);
+
+        project_->setModified();
     }
 
 
