@@ -475,13 +475,34 @@ void Collection::
     INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*target->length()/_samples_per_block);
+    float length = target->length();
+    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*length/_samples_per_block);
 
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
     foreach ( const cache_t::value_type& c, _cache )
 		c.second->valid_samples -= sid;
+
+    // If the signal has gotten shorter, make sure to discard all blocks that
+    // go outside the new shorter interval
+    if (_prev_length > length)
+    {
+        Interval I(target->number_of_samples(), Interval::IntervalType_MAX);
+        for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
+        {
+            Signal::Interval blockInterval = itr->second->ref.getInterval();
+            if ( 0 < (I & blockInterval).count() )
+            {
+                _recent.remove(itr->second);
+                itr = _cache.erase(itr);
+            } else {
+                itr++;
+            }
+        }
+    }
+
+    _prev_length = length;
 }
 
 Intervals Collection::

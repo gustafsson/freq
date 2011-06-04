@@ -263,6 +263,8 @@ private:
         _created_count,
         _frame_counter;
 
+    float
+        _prev_length;
 
     Position
             _max_sample_size;
