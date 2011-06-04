@@ -420,9 +420,6 @@ bool CommentView::
 void CommentView::
         updatePosition()
 {
-    if (!isVisible())
-        return;
-
     bool use_heightmap_value = true;
 
     // moveEvent can't be used when updating the reference position while moving
