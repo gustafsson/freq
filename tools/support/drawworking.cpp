@@ -115,9 +115,9 @@ void DrawWorking::
         glPushMatrixContext mc(GL_MODELVIEW);
 
         glRotatef(computing_rotation, 0, 0, 1);
-        drawRectRing(15, 0.10, 0.145);
+        drawRectRing(5, 0.10, 0.145);
         glRotatef(-2*computing_rotation, 0, 0, 1);
-        drawRectRing(20, 0.15, 0.2);
+        drawRectRing(7, 0.15, 0.2);
         computing_rotation += 5;
     }
 

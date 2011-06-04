@@ -39,6 +39,7 @@ public:
 
     void setEditFocus(bool focus);
     bool isThumbnail();
+    void setMovable(bool move);
 
 signals:
     void thumbnailChanged( bool );
