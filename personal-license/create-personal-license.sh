@@ -39,17 +39,17 @@ else
   ApplicationTitle="Sonic AWE"
 fi
 
-LicenseName="`echo $LicenseeEmail | sed s/@/_at_/`-$LicenseEnd"
+LicenseName="`echo $LicenseeEmail | sed s/@/_at_/ | sed s/\\\\./_/g`_until_$LicenseEnd"
 echo "License text: \"$LicenseText\""
 echo "Application title: \"$ApplicationTitle\""
 echo "License filename: \"$LicenseName\""
 
-read -p "License text ok? (Y/n): " LicenseTextOk
+#read -p "License text ok? (Y/n): " LicenseTextOk
 
-if [ "$LicenseTextOk" != "Y" ] && [ "$LicenseTextOk" != "y" ] && [ -n "$LicenseTextOk" ]; then
-  echo "License text not ok, aborting"
-  $(exit 1)
-fi
+#if [ "$LicenseTextOk" != "Y" ] && [ "$LicenseTextOk" != "y" ] && [ -n "$LicenseTextOk" ]; then
+#  echo "License text not ok, aborting"
+#  $(exit 1)
+#fi
 
 pushd reader
 qmake DEFINES+=LICENSEEMASH='\\\"'`../masher/masher "${LicenseText}"`'\\\"' DEFINES+=TITLEMASH='\\\"'`../masher/masher "${ApplicationTitle}"`'\\\"'
