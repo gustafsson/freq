@@ -18,7 +18,7 @@ popd
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
-if [ -z $simpleclean ]; then
+if [ -z $rebuildall ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
   qmake $qmaketarget
   make distclean
   qmake $qmaketarget
@@ -28,9 +28,9 @@ fi
 make -j5
 
 echo "========================== Packaging =========================="
-echo "Creating debian archive: $filename"
-cd sonicawe/dist
-source ./package-debian.sh ${versiontag} ${version}
 filename="sonicawe_${versiontag}_$(uname -m)_${LicenseName}.deb"
+echo "Creating debian archive: $filename for $LicenseName ($personalemail), version ${version}"
+cd sonicawe/dist
+./package-debian.sh ${versiontag} ${version}
 
 passiveftp=passive
