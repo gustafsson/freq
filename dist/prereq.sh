@@ -19,6 +19,7 @@ echo "release: sonicawe_${version}${snapshot}"
 
 read -s -p "Enter password for ftp.sonicawe.com: " pass; echo
 if [ -z "$pass" ]; then echo "Missing password for ftp.sonicawe.com, can't deploy."; exit 1; fi
+read -p "Create a personal license? (Y/n) " personal; echo
 echo "================= Checking local repo status =================="
 cd ../../gpumisc
 if [ -n "$(git status -uno --porcelain)" ]; then echo "In gpumisc: local git repo is not clean."; exit 1; fi

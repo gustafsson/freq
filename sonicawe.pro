@@ -155,7 +155,8 @@ LIBS = \
     -lglut \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
-    -L../gpumisc -lgpumisc
+    -L../gpumisc -lgpumisc \
+    -Lpersonal-license/reader -lreader
 }
 
 macx {

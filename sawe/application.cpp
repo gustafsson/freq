@@ -20,6 +20,9 @@
 // cuda
 #include "cuda.h"
 
+// license
+#include "personal-license/reader/reader.h"
+
 using namespace std;
 
 #define STRINGIFY(x) #x
@@ -81,7 +84,8 @@ Application::
     //QDateTime now = QDateTime::currentDateTime();
     //now.date().year();
     stringstream ss;
-    ss << "Evaluation of Sonic AWE - ";
+    //ss << "Evaluation of Sonic AWE - ";
+    ss << reader_title() << " - ";
     #ifdef SONICAWE_VERSION
         ss << TOSTR(SONICAWE_VERSION);
     #else

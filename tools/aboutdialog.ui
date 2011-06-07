@@ -51,7 +51,7 @@
      <x>130</x>
      <y>15</y>
      <width>361</width>
-     <height>41</height>
+     <height>61</height>
     </rect>
    </property>
    <property name="font">
@@ -74,7 +74,7 @@
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>170</y>
+     <y>191</y>
      <width>381</width>
      <height>21</height>
     </rect>
@@ -90,7 +90,7 @@
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>200</y>
+     <y>215</y>
      <width>371</width>
      <height>20</height>
     </rect>
@@ -103,7 +103,7 @@
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>230</y>
+     <y>236</y>
      <width>361</width>
      <height>71</height>
     </rect>
@@ -144,8 +144,8 @@
   <widget class="QTextEdit" name="textEdit">
    <property name="geometry">
     <rect>
-     <x>126</x>
-     <y>56</y>
+     <x>127</x>
+     <y>80</y>
      <width>380</width>
      <height>111</height>
     </rect>
@@ -179,15 +179,31 @@ p, li { white-space: pre-wrap; }
     <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
    </property>
   </widget>
-  <zorder>labelSystem</zorder>
-  <zorder>buttonBox</zorder>
-  <zorder>label</zorder>
-  <zorder>labelVersion</zorder>
-  <zorder>labelTimestamp</zorder>
-  <zorder>label_5</zorder>
-  <zorder>label_6</zorder>
-  <zorder>line</zorder>
-  <zorder>textEdit</zorder>
+  <widget class="QLabel" name="labelLicense">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>44</y>
+     <width>361</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Sonic AWE version name</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
  </widget>
  <resources>
   <include location="../ui/icon-resources.qrc"/>

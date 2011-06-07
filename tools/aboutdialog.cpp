@@ -7,6 +7,9 @@
 // gpumisc
 #include <CudaProperties.h>
 
+// license
+#include "personal-license/reader/reader.h"
+
 namespace Tools
 {
 
@@ -20,6 +23,9 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
 
     ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
     ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
+    ui->labelLicense->setText( reader_text().c_str() );
+    if (reader_title() == reader_text() )
+        ui->labelLicense->clear();
 
 #ifdef _MSC_VER
     ui->textEdit->setHtml( ui->textEdit->toHtml().replace("file:///usr/share/sonicawe/license/license.txt", "file:///license.txt"));
