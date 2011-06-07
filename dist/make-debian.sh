@@ -18,12 +18,12 @@ popd
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
-if [ -z $rebuildall ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
   qmake $qmaketarget
   make distclean
   qmake $qmaketarget
 else
-  rm sonicawe/sonicawe
+  rm -f sonicawe/sonicawe
 fi
 make -j5
 

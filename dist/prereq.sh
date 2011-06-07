@@ -21,7 +21,7 @@ if [ -z "${rebuildall}" ]; then read -p "Rebuild all code? (Y/n) " rebuildall; e
 
 read -s -p "Enter password for ftp.sonicawe.com: " pass; echo
 if [ -z "$pass" ]; then echo "Missing password for ftp.sonicawe.com, can't deploy."; exit 1; fi
-read -p "Create a personal license? (Y/n) " personal; echo
+if [ -z "$personal" ]; then read -p "Create a personal license? (Y/n) " personal; echo; fi
 echo "================= Checking local repo status =================="
 cd ../../gpumisc
 if [ -n "$(git status -uno --porcelain)" ]; then echo "In gpumisc: local git repo is not clean."; exit 1; fi
