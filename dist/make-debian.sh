@@ -31,6 +31,6 @@ echo "========================== Packaging =========================="
 filename="sonicawe_${versiontag}_$(uname -m)_${LicenseName}.deb"
 echo "Creating debian archive: $filename for $LicenseName ($personalemail), version ${version}"
 cd sonicawe/dist
-./package-debian.sh ${versiontag} ${version}
+source ./package-debian.sh ${versiontag} ${version}
 
 passiveftp=passive

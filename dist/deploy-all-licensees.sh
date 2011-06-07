@@ -4,25 +4,34 @@ set -e
 urls=
 
 INPUT=licensees.txt
-OLDIFS=$IFS
-
-# IFS is set to 'tab'
-IFS="	"
-
-echo "Licensee's:"
 [ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
-cat $INPUT | while read personalemail personallicensetype personalexpired target
-do
-	echo "email: '$personalemail'	license type: '$personallicensetype'	license expires: '$personalexpired'	license target: '$target'"
-done
-IFS=$OLDIFS
+
 
 personal=y
+echo "Licensee's:"
 
-IFS="	"
-[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
-while read personalemail personallicensetype personalexpired target < $INPUT
-do
+OLDIFS=$IFS
+# IFS is set to 'newline'
+IFS="
+"
+tmp=`tempfile`
+for i in `cat $INPUT`; do
+	# IFS is set to 'tab'
+	IFS="	"
+	echo "$i" > $tmp
+	read personalemail personallicensetype personalexpired target < $tmp
+	echo "email: '$personalemail'	license type: '$personallicensetype'	license expires: '$personalexpired'	license target: '$target'"
+done
+
+IFS="
+"
+for i in `cat $INPUT`; do
+	# IFS is set to 'tab'
+	IFS="	"
+	echo "$i" > $tmp
+	read personalemail personallicensetype personalexpired target < $tmp
+	echo "email: '$personalemail'	license type: '$personallicensetype'	license expires: '$personalexpired'	license target: '$target'"
+
 	if [ -z "$personalemail" ]; then
 		continue;
 	fi
