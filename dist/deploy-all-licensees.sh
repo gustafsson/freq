@@ -3,7 +3,11 @@ set -e
 
 urls=
 
+read -p "Rebuild all code? (Y/n) " simpleclean; echo
+if [ "${simpleclean}" == "y" ] || [ "${simpleclean}" == "Y" ]; then
 simpleclean=
+fi
+
 INPUT=licensees.txt
 OLDIFS=$IFS
 
@@ -23,3 +27,4 @@ IFS=$OLDIFS
 
 echo "========================== All urls ==========================="
 echo -e $urls
+
