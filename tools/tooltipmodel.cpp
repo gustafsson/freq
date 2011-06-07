@@ -83,11 +83,11 @@ void TooltipModel::
     // within '1 pixel') to create a more accurate position. Move 'p' to this
     // local max if any is found.
     bool is_valid_value;
-    float val;
+    float val = 0;
     if (last_fetched_scale_is_valid )
         val = render_view_->getHeightmapValue( p, 0, &p.scale,
                                                false, &is_valid_value );
-
+	// elseor
     if (!is_valid_value || !last_fetched_scale_is_valid)
     {
         if (TooltipModel::ManualMarkers != this->automarking)
