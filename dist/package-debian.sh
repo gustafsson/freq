@@ -71,6 +71,9 @@ for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done
 popd
 output_deb="sonicawe_"$version"_`uname -m`.deb"
+if [ -n "${LicenseName}" ]; then
+output_deb="sonicawe_"$version"_`uname -m`_${LicenseName}.deb"
+fi
 #http://www.debian.org/doc/debian-policy/ch-controlfields.html
 dpkg -b $package dist/$output_deb
 echo "OUTPUT"
