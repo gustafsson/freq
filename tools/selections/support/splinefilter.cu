@@ -45,14 +45,11 @@ public:
             }
         }
 
-        // TODO soft edges
-
         if (inside != save_inside)
         {
             float d = 1 - min(mindisty*(1/1.f), mindistx*(1/4.f));
             if (d < 0)
                 d = 0;
-            //mindisty = 0.5;
 
             e.x *= d;
             e.y *= d;
