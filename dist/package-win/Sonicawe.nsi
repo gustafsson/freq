@@ -11,6 +11,8 @@
 
 ;var NVID_VERSION 
 var INSTALLATION_DONE
+var USR_DRIVER_VERSION
+var done
 
 ; Name of the installer
 Name "Sonic AWE"
@@ -43,23 +45,39 @@ Section "Application Files (required)"
 	SetOutPath $INSTDIR
 	
 	Strcpy $INSTALLATION_DONE "0"
-;	Strcpy $NVID_VERSION "8.17.12.6099"
 	
 	;check windows version
 	${If} ${RunningX64}
 		SetRegView 64
 	${EndIf}
 	
-	;Get NVIDIA version from ini file. This version will be compared against the user's drivers
-	;${GetSection} "C:\Work\Sonic\SONICAWE_NSIS.ini" "Nvidia build info" "get_nvid_version"	
-	
 	;Retrieving user's driver version
-	readRegStr $0 HKLM "SOFTWARE\NVIDIA Corporation\Installer" version
+	CreateDirectory $APPDATA\Reep\SonicAWE
+	DetailPrint "Launching dxdiag for NVIDIA driver compatibility check"
+	exec '"dxdiag" /x $APPDATA\Reep\SonicAWE\dxdiag.xml'
+	Strcpy $done "0"
+	Strcpy $8 "0"
+	${While} $done == "0"
+		Sleep 5000	
+		IntOp $8 $8 + 1
+		IfFileExists $APPDATA\Reep\SonicAWE\dxdiag.xml 0 +7
+			nsisXML::Create
+			nsisXML::Load $APPDATA\Reep\SonicAWE\dxdiag.xml
+			nsisXML::select '/DxDiag/DisplayDevices/DisplayDevice/DriverVersion'
+			nsisXML::getText
+			Strcpy $USR_DRIVER_VERSION "$3" 
+			Strcpy $done "1"
+		${if} $8 == "15" 
+			DetailPrint "DxDiag -- Time Out"
+			Strcpy $done "1"
+		${EndIf}	
+	${Endwhile}
 	
-	${if} $0 == ""
+	;Comparing driver version
+	${if} $USR_DRIVER_VERSION == ""
 		messageBox MB_OK "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
-	${elseif} $0 != ""
-		${VersionCompare} $0 ${NVID_VERSION} $R0
+	${elseif} $USR_DRIVER_VERSION != ""
+		${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
 		${if} $R0 <= 1  
 			messageBox MB_OK "version $0 is ok"
 			File /r ${INST_FILES}\*.*
