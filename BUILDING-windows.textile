@@ -36,6 +36,8 @@ Then send your public public ssh-key to sonicawe@reep.se.
 *2.6 NSIS*
 Install NSIS installer. Get it from http://nsis.sourceforge.net/Main_Page
 Make sure you have the NSIS folder in your path environment variable. 
+Download and install Wizou's XML plugin from : http://wiz0u.free.fr/prog/nsisXML/
+	-To install the plugin, unzip the nsisXML.dll file from the bin directory into the corresponding directory of your NSIS installation. 
 
 ---
 
