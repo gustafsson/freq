@@ -31,7 +31,12 @@ cp sonic/sonicawe/license/$licensefile $packagename
 
 #Executing dxdiag for Nvidia driver version minimum requirement
 CMD //C dxdiag //x %CD%\\dxdiag.xml
+if [ -f dxdiag.xml ]; then
 nvid_version==`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
+else
+echo Nvidia driver version could not be read because dxdiag xml file was not found. WARNING, version value is set to \"1.0.0.0\" any version of Nvidia drivers will be recognized as compatible.
+nvid_version=="1.0.0.0"
+fi
 
 #inserting filename, version and nvidia version number in NSIS script
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
