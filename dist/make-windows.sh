@@ -29,10 +29,9 @@ cp sonic/sonicawe/release/sonicawe.exe $packagename
 cp -r sonic/sonicawe/matlab $packagename/matlab
 cp sonic/sonicawe/license/$licensefile $packagename
 
-#retrieving nvidia build version for minimum requirement
-windir=`cmd //c echo %WINDIR%`
-nvid_version=`$windir\\\\sysnative\\\\cmd.exe //c REG QUERY "HKLM\SOFTWARE\NVIDIA Corporation\Installer" //v Version`
-nvid_version=${nvid_version:`expr index "$nvid_version" *[^0-9]\.`-2}
+#Executing dxdiag for Nvidia driver version minimum requirement
+CMD //C dxdiag //x %CD%\\dxdiag.xml
+nvid_version==`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
 
 #inserting filename, version and nvidia version number in NSIS script
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
