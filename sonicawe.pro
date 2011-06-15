@@ -10,7 +10,7 @@ TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release
-win32:CONFUG += embed_manifest_exe
+win32:CONFIG += embed_manifest_exe
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
