@@ -10,6 +10,7 @@ TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release
+win32:CONFIG += embed_manifest_exe
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
@@ -84,7 +85,6 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
-    tools/support/computerms.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
@@ -101,6 +101,7 @@ FORMS += \
     tools/harmonicsinfoform.ui \
     tools/matlaboperationwidget.ui \
     tools/selections/rectangleform.ui \
+    sawe/enterlicense.ui
 
 CUDA_SOURCES += \
     filters/*.cu \

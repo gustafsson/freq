@@ -19,6 +19,8 @@ public:
 
         // Walk along +y axis only
         bool inside = false;
+        float mindisty = FLT_MAX;
+        float mindistx = FLT_MAX;
         for (unsigned i=0; i<N; ++i)
         {
             unsigned j = (i+1)%N;
@@ -31,13 +33,27 @@ public:
                 {
                     inside = !inside;
                 }
+                if (mindisty > fabsf(y-v.y))
+                    mindisty = fabsf(y-v.y);
+            }
+            r = (v.y - p.y)/(q.y - p.y);
+            if (0 <= r && 1 > r)
+            {
+                float x = p.x + (q.x-p.x)*r;
+                if (mindistx > fabsf(x-v.x))
+                    mindistx = fabsf(x-v.x);
             }
         }
 
-        // TODO soft edges
-
         if (inside != save_inside)
-            e = make_float2(0, 0);
+        {
+            float d = 1 - min(mindisty*(1/1.f), mindistx*(1/4.f));
+            if (d < 0)
+                d = 0;
+
+            e.x *= d;
+            e.y *= d;
+        }
     }
 
 

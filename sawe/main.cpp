@@ -1,6 +1,7 @@
 // Sonic AWE
 #include "sawe/application.h"
 #include "tfr/cwt.h"
+#include "sawe/reader.h"
 
 // gpumisc
 #include <CudaProperties.h>
@@ -498,7 +499,9 @@ int main(int argc, char *argv[])
             if (!check_cuda( true ))
                 return -1;
 
-        int r = a.exec();
+        int r = -1;
+        if (0 < a.count_projects())
+            r = a.exec();
 
         // When the OpenGL context is destroyed, the Cuda context becomes
         // invalid. Check that some kind of cleanup took place and that the

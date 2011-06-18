@@ -146,7 +146,7 @@ void CommentController::
     if (active)
     {
         comment_ = createNewComment();
-        comment_->model()->move_on_hover = true;
+        comment_->setMovable( true );
         setVisible( true );
 
         setMouseTracking( true );

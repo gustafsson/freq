@@ -28,6 +28,8 @@ public:
     static void         display_fatal_exception(const std::exception& );
     static Application* global_ptr();
 
+    static void         check_license();
+
     virtual bool notify(QObject * receiver, QEvent * e);
 
     void				openadd_project( pProject p );
@@ -49,6 +51,7 @@ public slots:
 private:
     void apply_command_line_options( pProject p );
     static void show_fatal_exception( const std::string& str );
+    void build_version_string();
 
     QPointer<QGLWidget> shared_glwidget_;
     static std::string _fatal_error;

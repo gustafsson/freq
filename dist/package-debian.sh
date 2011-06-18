@@ -5,7 +5,7 @@ bury_copy() { mkdir -p "`dirname $2`" && cp "$1" "$2"; }
 
 if [ -n "$1" ] && [ -n "$2" ] && [ -z "$3" ] && [ "$(basename `pwd`)" == "dist" ] ; then
         versionnumber=$2
-        version=$1
+        versionname=$1
 elif [ -n "$1" ] && [ -z "$2" ] && [ "$(basename `pwd`)" == "dist" ] ; then
         version=$1
 else
@@ -25,10 +25,10 @@ else
     exit
 fi
 
-echo $version
+echo $versionname
 
-if [ $version == "def" ] ; then
-	version="$(date +0.%Y.%m.%d-snapshot)"
+if [ $versionname == "def" ] ; then
+	versionname="$(date +0.%Y.%m.%d-snapshot)"
 fi
 
 package=dist/package-debian~
@@ -70,7 +70,7 @@ for i in `find -name *~`; do rm $i; done
 for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done
 popd
-output_deb="sonicawe_"$version"_`uname -m`.deb"
+output_deb="sonicawe_"$versionname"_`uname -m`.deb"
 #http://www.debian.org/doc/debian-policy/ch-controlfields.html
 dpkg -b $package dist/$output_deb
 echo "OUTPUT"

@@ -261,6 +261,11 @@ void Project::
     QSettings settings;
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
+    
+    _mainWindow->show();
+
+    Sawe::Application::check_license();
+    updateWindowTitle();
 }
 
 
@@ -279,7 +284,9 @@ void Project::
     QSettings settings;
     _mainWindow->restoreGeometry(defaultGeometry);
     _mainWindow->restoreState(defaultState);
+    QString value = settings.value("value").toString();
     settings.clear();
+    settings.setValue("value", value);
     settings.setValue("geometry", _mainWindow->saveGeometry());
     settings.setValue("windowState", _mainWindow->saveState());
 }

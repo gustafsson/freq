@@ -30,13 +30,9 @@ __global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 a
 
     if (x>=numElem.width )
         return;
-    /*float dx = area.x;
-    float dy = area.y;
-    float dh = area.z - area.x;
-    float dw = area.w - area.y;*/
+
     float f;
 
-    //if(x > dx - dh && x < dx + dh && fi > dy - dw && fi < dy + dw)
     if(x >= area.x && x <= area.z && fi >= area.y && fi <= area.w)
     {
         f = save_inside;
@@ -44,6 +40,15 @@ __global__ void kernel_remove_rect(float2* wavelet, cudaExtent numElem, float4 a
     else
     {
         f = !save_inside;
+    }
+
+    if (f == 0.f)
+    {
+        float dx = min(fabsf(x-area.x), fabsf(x-area.z));
+        float dy = min(fabsf(fi-area.y), fabsf(fi-area.y));
+        float f = 1.f - min(dy*(1/1.f), dx*(1/4.f));
+        if (f < 0.f)
+            f = 0.f;
     }
 
     wavelet[ x + fi*numElem.width ].x *= f;

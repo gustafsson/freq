@@ -84,11 +84,19 @@ void CommentView::
 
 
 void CommentView::
+        setMovable(bool move)
+{
+    model()->move_on_hover = move;
+    ui->textEdit->setEnabled(!move);
+    ui->textEdit->setAttribute(Qt::WA_TransparentForMouseEvents, move);
+}
+
+void CommentView::
         mousePressEvent(QMouseEvent *event)
 {
     if (model()->move_on_hover)
     {
-        model()->move_on_hover = false;
+        setMovable( false );
         model()->screen_pos.x = -2;
         event->setAccepted( false );
         return;
@@ -110,7 +118,7 @@ void CommentView::
 
     if (event->buttons() & Qt::LeftButton)
     {
-        QPoint gp = proxy->sceneTransform().map(event->globalPos());
+        QPoint gp = proxy->sceneTransform().map(mapToParent(mapFromGlobal(event->globalPos())));
 
         if (event->modifiers() == 0)
         {
@@ -163,7 +171,7 @@ void CommentView::
 
     if (moving || resizing)
     {
-        QPoint gp = proxy->sceneTransform().map(event->globalPos());
+        QPoint gp = proxy->sceneTransform().map(mapToParent(mapFromGlobal(event->globalPos())));
 
         if (moving)
         {
@@ -412,9 +420,6 @@ bool CommentView::
 void CommentView::
         updatePosition()
 {
-    if (!isVisible())
-        return;
-
     bool use_heightmap_value = true;
 
     // moveEvent can't be used when updating the reference position while moving

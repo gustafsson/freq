@@ -5,10 +5,13 @@ $command_line_width = 80
 
 # Configuration
 $platform = "macos_i386"
-$platform = ARGV[1] if( ARGV[1] )
+$platform = ARGV[1] if( ARGV[1] and !ARGV[1].match(/^--/))
 $version = "dev"
-$version = ARGV[0] if( ARGV[0] )
+$version = ARGV[0] if( ARGV[0] and !ARGV[0].match(/^--/))
 $build_name = "sonicawe_#{$version}_#{$platform}"
+
+$zip = true
+$zip = false if(ARGV.index("--nozip"))
 
 def qt_lib_path(name, debug = false)
     return "#{$framework_path}/#{name}.framework/Versions/Current/#{name}#{"_debug" if(debug)}"
@@ -104,6 +107,10 @@ def package_macos(app_name, version, zip = false)
             exit(1)
         end
     end
+    unless system("cp -r ../matlab #{app_name}.app/Contents/MacOS/matlab")
+        puts "Error: Could not copy resource, matlab directory"
+        exit(1)
+    end
     
     # Add application information
     puts " Adding application information ".center($command_line_width, "=")
@@ -145,4 +152,4 @@ def package_macos(app_name, version, zip = false)
     end
 end
 
-package_macos($build_name, $version, true)
+package_macos($build_name, $version, $zip)

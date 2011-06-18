@@ -7,15 +7,19 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
-qmake $qmaketarget
-make distclean
-qmake $qmaketarget
-make -j5
+if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+  qmake $qmaketarget
+  make distclean
+  qmake $qmaketarget
+else
+  rm -f sonicawe/sonicawe
+fi
+time make -j5
 
 echo "========================== Packaging =========================="
-echo "Creating debian archive: $filename"
-cd sonicawe/dist
-./package-debian.sh ${versiontag} ${version}
 filename="sonicawe_${versiontag}_$(uname -m).deb"
+echo "Creating debian archive: $filename version ${version}"
+cd sonicawe/dist
+source ./package-debian.sh ${versiontag} ${version}
 
 passiveftp=passive

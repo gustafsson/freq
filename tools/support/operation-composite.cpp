@@ -10,13 +10,25 @@ using namespace Signal;
 namespace Tools {
     namespace Support {
 
+class DummyOperation: public Signal::Operation
+{
+public:
+    DummyOperation(Signal::pOperation o):
+            Operation(o)
+    {}
+
+    virtual Signal::Intervals affected_samples()
+    {
+        return Signal::Intervals();
+    }
+};
 
     // OperationSubOperations  /////////////////////////////////////////////////////////////////
 
 OperationSubOperations::
         OperationSubOperations(Signal::pOperation source, std::string name)
 :   Operation(pOperation()),
-    source_sub_operation_( new Operation(source)),
+    source_sub_operation_( new DummyOperation(source)),
     name_(name)
 {
 //    enabled(false);
@@ -41,7 +53,27 @@ Intervals affected_samples_recursive_until(pOperation o, pOperation stop)
 Intervals OperationSubOperations::
         affected_samples()
 {
-    return affected_samples_recursive_until( Operation::source(), source_sub_operation_);
+    return affected_samples_recursive_until( subSource(), source_sub_operation_);
+}
+
+
+Intervals zeroed_samples_recursive_until(pOperation o, pOperation stop)
+{
+    Intervals r;
+    if (o)
+    {
+        r = o->zeroed_samples();
+        if (o!=stop)
+            r |= o->translate_interval( zeroed_samples_recursive_until(o->source(), stop) );
+    }
+    return r;
+}
+
+
+Signal::Intervals OperationSubOperations::
+        zeroed_samples()
+{
+    return zeroed_samples_recursive_until( subSource(), source_sub_operation_);
 }
 
 
