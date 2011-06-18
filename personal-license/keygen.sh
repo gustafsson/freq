@@ -41,8 +41,8 @@ fi
 
 LicenseName="`echo $LicenseeEmail | sed s/@/_at_/ | sed s/\\\\./_/g`_until_$LicenseEnd"
 echo "License text: \"$LicenseText\""
-echo "Application title: \"$ApplicationTitle\""
-echo "License filename: \"$LicenseName\""
+#echo "Application title: \"$ApplicationTitle\""
+#echo "License filename: \"$LicenseName\""
 
 #read -p "License text ok? (Y/n): " LicenseTextOk
 
@@ -51,8 +51,10 @@ echo "License filename: \"$LicenseName\""
 #  $(exit 1)
 #fi
 
-pushd reader
-qmake DEFINES+=LICENSEEMASH='\\\"'`../masher/masher "${LicenseText}"`'\\\"' DEFINES+=TITLEMASH='\\\"'`../masher/masher "${ApplicationTitle}"`'\\\"'
-make clean all
-popd
+echo "LicenseText (copy and send in email):"
+masher/masher "${LicenseText}"
+echo
+#echo "ApplicationTitle:"
+#masher/masher "${ApplicationTitle}"
+#echo
 

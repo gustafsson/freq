@@ -284,7 +284,9 @@ void Project::
     QSettings settings;
     _mainWindow->restoreGeometry(defaultGeometry);
     _mainWindow->restoreState(defaultState);
+    QString value = settings.value("value").toString();
     settings.clear();
+    settings.setValue("value", value);
     settings.setValue("geometry", _mainWindow->saveGeometry());
     settings.setValue("windowState", _mainWindow->saveState());
 }

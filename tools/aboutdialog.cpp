@@ -21,12 +21,6 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
 
     ui->setupUi(this);
 
-    ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
-    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
-    ui->labelLicense->setText( reader_text().c_str() );
-    if (reader_title() == reader_text() )
-        ui->labelLicense->clear();
-
 #ifdef _MSC_VER
     ui->textEdit->setHtml( ui->textEdit->toHtml().replace("file:///usr/share/sonicawe/license/license.txt", "file:///license.txt"));
 #endif
@@ -47,6 +41,12 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
 void AboutDialog::
         showEvent(QShowEvent *)
 {
+    ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
+    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
+    ui->labelLicense->setText( reader_text().c_str() );
+    if (reader_title() == reader_text() )
+        ui->labelLicense->clear();
+
     size_t free=0, total=0;
     cudaMemGetInfo(&free, &total);
     cudaDeviceProp prop = CudaProperties::getCudaDeviceProp();

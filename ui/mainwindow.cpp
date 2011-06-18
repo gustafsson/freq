@@ -57,6 +57,8 @@ void SaweMainWindow::
     connect(ui->actionOperation_details, SIGNAL(toggled(bool)), ui->toolPropertiesWindow, SLOT(setVisible(bool)));
     connect(ui->actionOperation_details, SIGNAL(triggered()), ui->toolPropertiesWindow, SLOT(raise()));
     connect(ui->toolPropertiesWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityToolProperties(bool)));
+    connect(ui->action_Enter_product_key, SIGNAL(triggered()), SLOT(reenterProductKey()));
+
     ui->actionOperation_details->setChecked( false );
 
     // Make the two fullscreen modes exclusive
@@ -376,6 +378,15 @@ void SaweMainWindow::
         restoreLayout()
 {
     project->restoreDefaultLayout();
+}
+
+
+void SaweMainWindow::
+        reenterProductKey()
+{
+    QSettings settings;
+    settings.remove("value");
+    QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new product key");
 }
 
 

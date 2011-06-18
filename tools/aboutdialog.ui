@@ -204,6 +204,16 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
   </widget>
+  <zorder>labelSystem</zorder>
+  <zorder>buttonBox</zorder>
+  <zorder>label</zorder>
+  <zorder>labelVersion</zorder>
+  <zorder>labelTimestamp</zorder>
+  <zorder>label_5</zorder>
+  <zorder>label_6</zorder>
+  <zorder>line</zorder>
+  <zorder>textEdit</zorder>
+  <zorder>labelLicense</zorder>
  </widget>
  <resources>
   <include location="../ui/icon-resources.qrc"/>

@@ -89,6 +89,21 @@ string backward(const std::vector<unsigned char>& mash)
     return row2;
 }
 
+string tryread(string mash)
+{
+    try
+    {
+        string lic = backward(textradix(mash));
+        TaskInfo("found %s. %s", mash.c_str(), lic.c_str());
+        return lic;
+    }
+    catch (invalid_argument x)
+    {
+        TaskInfo("entered %s", mash.c_str());
+    }
+    return "";
+}
+
 string reader_text(bool annoy)
 {
     while (true)
@@ -97,16 +112,9 @@ string reader_text(bool annoy)
         {
             string LICENSEEMASH = QSettings().value("value").toString().toStdString();
             // try to parse
-            try
-            {
-                string lic = backward(textradix(LICENSEEMASH));
-                TaskInfo("found %s. %s", LICENSEEMASH.c_str(), lic.c_str());
+            string lic = tryread(LICENSEEMASH);
+            if (!lic.empty())
                 return lic;
-            }
-            catch (invalid_argument x)
-            {
-                TaskInfo("entered %s", LICENSEEMASH.c_str());
-            }
         }
 
         if (!annoy)

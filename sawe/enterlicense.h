@@ -7,18 +7,26 @@ namespace Ui {
     class EnterLicense;
 }
 
+namespace Sawe
+{
+
 class EnterLicense : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit EnterLicense(QWidget *parent = 0);
+    explicit EnterLicense();
     ~EnterLicense();
 
     QString lineEdit();
 
+private slots:
+    void validate();
+
 private:
     Ui::EnterLicense *ui;
 };
+
+} // namespace Sawe
 
 #endif // ENTERLICENSE_H
