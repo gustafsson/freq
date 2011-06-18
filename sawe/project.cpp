@@ -263,6 +263,9 @@ void Project::
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
     
     _mainWindow->show();
+
+    Sawe::Application::check_license();
+    updateWindowTitle();
 }
 
 

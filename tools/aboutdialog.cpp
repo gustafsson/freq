@@ -8,7 +8,7 @@
 #include <CudaProperties.h>
 
 // license
-#include "personal-license/reader/reader.h"
+#include "sawe/reader.h"
 
 namespace Tools
 {

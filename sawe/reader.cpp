@@ -7,6 +7,12 @@
 
 #include <vector>
 #include <sstream>
+#include <QSettings>
+#include "enterlicense.h"
+
+#include <QApplication>
+#include <stdexcept>
+#include <TaskTimer.h>
 
 using namespace std;
 
@@ -31,8 +37,7 @@ unsigned cton(char c)
 	cton_helper('P', 'R');
 	cton_helper('T', 'Y');
 
-	cout << "Invalid character: " << (int)c << '\'' << c << '\'' << endl;
-	throw string("Invalid character: ") + c;
+    throw invalid_argument(string("Invalid character: ") + c);
 }
 
 std::vector<unsigned char> textradix(string s)
@@ -67,30 +72,61 @@ std::vector<unsigned char> textradix(string s)
 string backward(const std::vector<unsigned char>& mash)
 {
 	if (mash.size()<5)
-	    return "invalid license";
+        throw invalid_argument("invalid license");
 
 	srand(mash[0] | (mash[1]<<8));
     string row2;
     char P = rand();
     if (mash[3] != (char)rand())
-	    return "invalid license";
+        throw invalid_argument("invalid license");
     for (unsigned i=4; i<mash.size(); ++i)
         row2.push_back( P ^= mash[i] ^ rand() );
 
     P ^= mash[2];
     if (P != (char)rand())
-	    return "invalid license";
+        throw invalid_argument("invalid license");
 
     return row2;
 }
 
-READERSHARED_EXPORT string reader_text()
+string reader_text(bool annoy)
 {
-    return backward(textradix(LICENSEEMASH));
+    while (true)
+    {
+        if (QSettings().contains("value"))
+        {
+            string LICENSEEMASH = QSettings().value("value").toString().toStdString();
+            // try to parse
+            try
+            {
+                string lic = backward(textradix(LICENSEEMASH));
+                TaskInfo("found %s. %s", LICENSEEMASH.c_str(), lic.c_str());
+                return lic;
+            }
+            catch (invalid_argument x)
+            {
+                TaskInfo("entered %s", LICENSEEMASH.c_str());
+            }
+        }
+
+        if (!annoy)
+            return "not licensed";
+
+        EnterLicense lic;
+        if (QDialog::Accepted == lic.exec())
+        {
+            QString LICENSEEMASH = lic.lineEdit();
+            QSettings().setValue("value", LICENSEEMASH);
+        }
+        else
+        {
+            return "not licensed";
+        }
+    }
 }
 
-READERSHARED_EXPORT string reader_title()
+string reader_title()
 {
-    return backward(textradix(TITLEMASH));
+    return reader_text();
 }
 

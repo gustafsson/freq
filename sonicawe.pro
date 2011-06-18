@@ -85,7 +85,6 @@ HEADERS += \
     tools/selections/*.h \
     tools/selections/support/*.h \
     ui/*.h \
-    tools/support/computerms.h
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
@@ -102,6 +101,7 @@ FORMS += \
     tools/harmonicsinfoform.ui \
     tools/matlaboperationwidget.ui \
     tools/selections/rectangleform.ui \
+    sawe/enterlicense.ui
 
 CUDA_SOURCES += \
     filters/*.cu \
@@ -156,8 +156,7 @@ LIBS = \
     -lglut \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
-    -L../gpumisc -lgpumisc \
-    -Lpersonal-license/reader -lreader
+    -L../gpumisc -lgpumisc
 }
 
 macx {

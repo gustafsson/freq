@@ -1,5 +1,7 @@
 #include "sawe/application.h"
 
+#include "reader.h"
+
 // Sonic AWE
 #include "ui/mainwindow.h"
 #include "tfr/cwt.h"
@@ -19,9 +21,6 @@
 
 // cuda
 #include "cuda.h"
-
-// license
-#include "personal-license/reader/reader.h"
 
 using namespace std;
 
@@ -72,35 +71,15 @@ static string fatal_unknown_exception_string() {
 Application::
         Application(int& argc, char **argv, bool dont_parse_sawe_argument )
 :   QApplication(argc, argv),
-    default_record_device(-1),
-    shared_glwidget_(new QGLWidget(QGLFormat(QGL::SampleBuffers)))
+    default_record_device(-1)
 {
+    shared_glwidget_ = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+
     setOrganizationName("REEP");
     setOrganizationDomain("sonicawe.com");
     setApplicationName("Sonic AWE");
 
-    _version_string = "Evaluation of Sonic AWE - development snapshot\n";
-
-    //QDateTime now = QDateTime::currentDateTime();
-    //now.date().year();
-    stringstream ss;
-    //ss << "Evaluation of Sonic AWE - ";
-    ss << reader_title() << " - ";
-    #ifdef SONICAWE_VERSION
-        ss << TOSTR(SONICAWE_VERSION);
-    #else
-        ss << "dev " << __DATE__;
-        #ifdef _DEBUG
-            ss << ", " << __TIME__;
-        #endif
-
-        #ifdef SONICAWE_BRANCH
-            if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
-                ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
-        #endif
-    #endif
-
-    _version_string = ss.str();
+    build_version_string();
 
     if (!dont_parse_sawe_argument)
         parse_command_line_options(argc, argv); // will call 'exit(0)' on invalid arguments
@@ -151,7 +130,7 @@ bool Application::
         notify(QObject * receiver, QEvent * e)
 {
     bool v = false;
-    string err;
+    std::string err;
 
     try {
         if (e) switch (e->type())
@@ -204,7 +183,8 @@ void Application::
     p->mainWindow()->activateWindow();
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
-    _projects.insert( p );
+    if ("not"!=reader_text().substr(0,3))
+        _projects.insert( p );
 
     apply_command_line_options( p );
 }
@@ -299,5 +279,40 @@ void Application::
     }
 }
 
+
+void Application::
+        build_version_string()
+{
+    _version_string = "Evaluation of Sonic AWE - development snapshot\n";
+
+    //QDateTime now = QDateTime::currentDateTime();
+    //now.date().year();
+    stringstream ss;
+    //ss << "Evaluation of Sonic AWE - ";
+    ss << reader_title() << " - ";
+    #ifdef SONICAWE_VERSION
+        ss << TOSTR(SONICAWE_VERSION);
+    #else
+        ss << "dev " << __DATE__;
+        #ifdef _DEBUG
+            ss << ", " << __TIME__;
+        #endif
+
+        #ifdef SONICAWE_BRANCH
+            if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
+                ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
+        #endif
+    #endif
+
+    _version_string = ss.str();
+}
+
+void Application::
+        check_license()
+{
+    reader_text(true);
+
+    global_ptr()->build_version_string();
+}
 
 } // namespace Sawe

@@ -289,7 +289,8 @@ void Application::
     else
     {
         // Ensures that an OpenGL context is created
-        BOOST_ASSERT( QGLContext::currentContext() );
+        if( !QGLContext::currentContext() )
+            QMessageBox::information(0,"Sonic AWE", "Sonic AWE couldn't start");
     }
 }
 
