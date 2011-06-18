@@ -14,7 +14,7 @@ if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y
 else
   rm -f sonicawe/sonicawe
 fi
-make -j5
+time make -j5
 
 echo "========================== Packaging =========================="
 filename="sonicawe_${versiontag}_$(uname -m).deb"
