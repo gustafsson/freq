@@ -117,8 +117,11 @@ std::vector<unsigned char> textradix(string s)
     return v;
 }
 
-std::vector<unsigned char> forward(const string& row)
+std::vector<unsigned char> forward(string row)
 {
+	if (row.size()%2)
+		row.push_back(0);
+
     std::vector<unsigned char> mash;
 	srand( time(NULL) );
 	unsigned short s = rand()^(rand() << 8);

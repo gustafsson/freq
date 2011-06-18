@@ -13,6 +13,8 @@
 #include <QApplication>
 #include <stdexcept>
 #include <TaskTimer.h>
+#include <QDate>
+#include <QTextStream>
 
 using namespace std;
 
@@ -86,6 +88,9 @@ string backward(const std::vector<unsigned char>& mash)
     if (P != (char)rand())
         throw invalid_argument("invalid license");
 
+    if (0 == row2[row2.length()-1])
+        row2 = row2.substr(0, row2.length()-1);
+
     return row2;
 }
 
@@ -95,7 +100,34 @@ string tryread(string mash)
     {
         string lic = backward(textradix(mash));
         TaskInfo("found %s. %s", mash.c_str(), lic.c_str());
-        return lic;
+        QString qlic = QString::fromStdString(lic);
+        QStringList parts = qlic.split("|");
+        if (parts.size()<3)
+            return "";
+
+        QString type = parts[0];
+        QString licensee = parts[1];
+        QString expires = parts[2];
+        QTextStream qts(&expires);
+        int year=-1, month=-1, day=-1;
+        char dummy=-1;
+        qts >> year >> dummy >> month >> dummy >> day;
+        if (-1==day)
+            return "";
+
+        QDate qd(year, month, day);
+        if (qd.addMonths(1) < QDate::currentDate())
+            return "";
+
+        QString licenseText;
+
+        if (type!="-")
+        {
+            licenseText = type + " of ";
+        }
+
+        licenseText+="Sonic AWE licensed to " + licensee + " until " + expires;
+        return licenseText.toStdString();
     }
     catch (invalid_argument x)
     {
@@ -120,7 +152,7 @@ string reader_text(bool annoy)
         if (!annoy)
             return "not licensed";
 
-        EnterLicense lic;
+        Sawe::EnterLicense lic;
         if (QDialog::Accepted == lic.exec())
         {
             QString LICENSEEMASH = lic.lineEdit();

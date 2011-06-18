@@ -33,6 +33,7 @@ else
   LicenseText=""
 fi
 LicenseText="${LicenseText}Sonic AWE licensed to $LicenseeEmail until $LicenseEnd"
+LicenseText="$LicenseType|$LicenseeEmail|$LicenseEnd"
 if [ ! -z "$LicenseType" ]; then
   ApplicationTitle=$LicenseText
 else

@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Please enter your product key. Contact us at sonicawe.com to obtain a new key.</string>
+      <string>Please enter the product key you recieved from us at sonicawe.com.</string>
      </property>
     </widget>
    </item>
