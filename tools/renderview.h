@@ -144,6 +144,7 @@ namespace Tools
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();
+        void restartUpdateTimer();
 
     private:
         /// Similiar to QGLWidget::initializeGL()
@@ -173,7 +174,7 @@ namespace Tools
         unsigned _last_x;
         unsigned _last_y;
         int _try_gc;
-        //QTimer* _update_timer;
+        QPointer<QTimer> _update_timer;
 
         float _last_length;
         double modelview_matrix[16], projection_matrix[16];

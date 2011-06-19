@@ -81,7 +81,11 @@ RenderView::
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
 
-    connect( this, SIGNAL(postUpdate()), SLOT(update()), Qt::QueuedConnection );
+    _update_timer = new QTimer;
+    _update_timer->setSingleShot( true );
+
+    connect( this, SIGNAL(postUpdate()), SLOT(restartUpdateTimer()), Qt::QueuedConnection );
+    connect( _update_timer.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
 }
 
 
@@ -89,6 +93,8 @@ RenderView::
         ~RenderView()
 {
     TaskTimer tt("%s", __FUNCTION__);
+
+    delete _update_timer;
 
     glwidget->makeCurrent();
 
@@ -828,6 +834,25 @@ void RenderView::
 
     if (post_update)
         emit postUpdate();
+
+    if (request_high_fps && post_update)
+        update();
+}
+
+
+void RenderView::
+        restartUpdateTimer()
+{
+    float dt = _render_timer?_render_timer->elapsedTime():0;
+    float wait = 1.f/60;
+    if (wait<dt)
+        update();
+    else if (!_update_timer->isActive())
+    {
+        unsigned ms = (wait-dt)*1000;
+        TaskInfo("Waiting %u ms to update", ms);
+        _update_timer->start(ms);
+    }
 }
 
 
