@@ -9,8 +9,8 @@ Replaces: sonicawe-stable-candidate
 Conflicts: 
 Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.40.0
 Maintainer: Johan Gustafsson [johan.gustafsson@sonicawe.com]
-Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
- With Sonic AWE it is possible to edit audio directly within the time-frequency representation.
+Description: A fast and smooth spectrum analyzer.
+ Sonic AWE navigates large spectrums as map software navigates earth. You can seemlessly zoom in anywhere and scale the spectrum to focus on your points of interest. It is easy to change spectrum parameters and transform methods interactively. This workflow makes it easy to understand signal components fast.
  
  :
  
@@ -18,8 +18,8 @@ Description: Sonic AWE is an audio visualizer and a tool for signal analysis.
  
  "Couldn't find CUDA, cannot start Sonic AWE"
  
- Sonic AWE is built using CUDA technology from NVIDIA. You need to have a CUDA compatible graphics card with the latest drivers installed. For a complete list of CUDA compatible hardware, see this url: http://www.nvidia.com/object/cuda_gpus.html
+ Sonic AWE is built using CUDA technology from NVIDIA. You need to have a CUDA compatible graphics card with the latest drivers installed. There is a guide at http://sonicawe.com on how to install drivers. A complete list of CUDA compatible can be found at http://www.nvidia.com/object/cuda_gpus.html.
  
  "Dependency is not satisfiable: libglew1.5, libportaudiocpp0, libhdf5-serial-1.8.4"
  
- Sonic AWE is built using several community developed open source libraries. In Ubuntu, some of these libraries (such as libglew1.5) are contained in the 'universe' repository. Enable settings->repositories->universe in synaptic and press the reload button in synaptic, then try installing this package again.
+ Sonic AWE is built using several community developed open source libraries. In Ubuntu, some of these libraries (such as libglew1.5) are contained in the 'universe' repository. Start 'synaptic' and enable settings->repositories->universe, then press the reload button in synaptic and try to install this package again.
