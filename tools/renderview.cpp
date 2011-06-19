@@ -81,7 +81,11 @@ RenderView::
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
 
-    connect( this, SIGNAL(postUpdate()), SLOT(update()), Qt::QueuedConnection );
+    _update_timer = new QTimer;
+    _update_timer->setSingleShot( true );
+
+    connect( this, SIGNAL(postUpdate()), SLOT(restartUpdateTimer()), Qt::QueuedConnection );
+    connect( _update_timer.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
 }
 
 
@@ -89,6 +93,8 @@ RenderView::
         ~RenderView()
 {
     TaskTimer tt("%s", __FUNCTION__);
+
+    delete _update_timer;
 
     glwidget->makeCurrent();
 
@@ -828,6 +834,25 @@ void RenderView::
 
     if (post_update)
         emit postUpdate();
+
+    if (request_high_fps && post_update)
+        update();
+}
+
+
+void RenderView::
+        restartUpdateTimer()
+{
+    float dt = _render_timer?_render_timer->elapsedTime():0;
+    float wait = 1.f/60;
+    if (wait<dt)
+        update();
+    else if (!_update_timer->isActive())
+    {
+        unsigned ms = (wait-dt)*1000;
+        TaskInfo("Waiting %u ms to update", ms);
+        _update_timer->start(ms);
+    }
 }
 
 
@@ -931,26 +956,29 @@ void RenderView::
             a(b);
         }
 
+    // TODO move to rendercontroller
+    bool isWorking = false;
+    bool isRecording = false;
+
+    _last_length = model->renderSignalTarget->source()->length();
+
+    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
+    if(r != 0 && !(r->isStopped()))
+    {
+        isRecording = true;
+        _last_length = r->time();
+    }
 
     // Set up camera position
-    _last_length = model->renderSignalTarget->source()->length();
-    {   
-		TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
 
         setupCamera();
 
         glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
         glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
         glGetIntegerv(GL_VIEWPORT, viewport_matrix);
-	}
-
-    // TODO move to rendercontroller
-    bool isWorking = false;
-    bool isRecording = false;
-
-    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
-    if(r != 0 && !(r->isStopped()))
-        isRecording = true;
+    }
 
     bool onlyComputeBlocksForRenderView = false;
     { // Render
