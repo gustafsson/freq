@@ -290,7 +290,7 @@ void Application::
     //ss << "Evaluation of Sonic AWE - ";
     ss << reader_title() << " - ";
     #ifdef SONICAWE_VERSION
-        ss << TOSTR(SONICAWE_VERSION);
+        ss << "v" << TOSTR(SONICAWE_VERSION);
     #else
         ss << "dev " << __DATE__;
         #ifdef _DEBUG

@@ -117,6 +117,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                 << endl
                 << "Sonic AWE cannot start. Please try again with updated drivers.";
         break;
+#if 3000 < CUDART_VERSION
     case cudaErrorDevicesUnavailable:
         title << "Graphics adapter (GPU) occupied";
         msg << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
@@ -127,6 +128,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                 << endl
                 << "Sonic AWE cannot start. Please try again after closing some other graphics applications.";
         break;
+#endif
     default:
     {
         cerr << ss.str();
