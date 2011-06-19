@@ -21,7 +21,7 @@ unsigned char pseudorand()
 }
 
 
-unsigned radix = 53;
+unsigned radix = 52; // >= 41 is enough for 3 letters for 2 bytes
 
 #define cton_helper(low, high) \
 do { \
@@ -37,7 +37,8 @@ unsigned cton(char c)
 	cton_helper('6', '9');
 	cton_helper('a', 'k');
 	cton_helper('m', 'z');
-	cton_helper('A', 'H');
+	cton_helper('A', 'C');
+	cton_helper('E', 'H');
 	cton_helper('J', 'N');
 	cton_helper('P', 'R');
 	cton_helper('T', 'Y');
@@ -60,7 +61,8 @@ char ntoc(unsigned n)
 	ntoc_helper('6', '9');
 	ntoc_helper('a', 'k');
 	ntoc_helper('m', 'z');
-	ntoc_helper('A', 'H');
+	ntoc_helper('A', 'C');
+	ntoc_helper('E', 'H');
 	ntoc_helper('J', 'N');
 	ntoc_helper('P', 'R');
 	ntoc_helper('T', 'Y');

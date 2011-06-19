@@ -18,7 +18,7 @@
 
 using namespace std;
 
-unsigned radix = 53;
+unsigned radix = 52;
 
 #define cton_helper(low, high) \
 do { \
@@ -29,15 +29,16 @@ do { \
 
 static inline unsigned cton(char c)
 {
-	unsigned n = 0;
-	cton_helper('3', '4');
-	cton_helper('6', '9');
-	cton_helper('a', 'k');
-	cton_helper('m', 'z');
-	cton_helper('A', 'H');
-	cton_helper('J', 'N');
-	cton_helper('P', 'R');
-	cton_helper('T', 'Y');
+    unsigned n = 0;
+    cton_helper('3', '4');
+    cton_helper('6', '9');
+    cton_helper('a', 'k');
+    cton_helper('m', 'z');
+    cton_helper('A', 'C');
+    cton_helper('E', 'H');
+    cton_helper('J', 'N');
+    cton_helper('P', 'R');
+    cton_helper('T', 'Y');
 
     throw invalid_argument(string("Invalid character: ") + c);
 }
