@@ -180,7 +180,6 @@ bool Application::
 void Application::
 		openadd_project( pProject p )
 {
-    p->mainWindow()->activateWindow();
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
     if ("not"!=reader_text().substr(0,3))
