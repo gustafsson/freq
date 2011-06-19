@@ -109,8 +109,13 @@ void SinkSource::
 		{
             L = lpo2s( i.count() + 1);
 
+            // don't bother with small intervals
             if (L < (1<<13))
                 L = i.count();
+
+            // no point in allocating memory chunks bigger than, say, 16 MB = sizeof(float)*(1<<22), this also allows for swapping
+            if (L >= (1<<22))
+                L = 1<<22;
 
             new_cache.push_back(readFixedLength( Interval( i.first, i.first + L) ));
 		}
