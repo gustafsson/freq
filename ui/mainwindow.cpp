@@ -384,9 +384,12 @@ void SaweMainWindow::
 void SaweMainWindow::
         reenterProductKey()
 {
-    QSettings settings;
-    settings.remove("value");
-    QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new product key");
+    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear the currently stored product key?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+    {
+        QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new product key");
+        QSettings settings;
+        settings.remove("value");
+    }
 }
 
 
