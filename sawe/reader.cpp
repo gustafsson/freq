@@ -27,7 +27,7 @@ do { \
     n += high-low+1; \
 } while (false);
 
-unsigned cton(char c)
+static inline unsigned cton(char c)
 {
 	unsigned n = 0;
 	cton_helper('3', '4');
@@ -42,7 +42,7 @@ unsigned cton(char c)
     throw invalid_argument(string("Invalid character: ") + c);
 }
 
-std::vector<unsigned char> textradix(string s)
+static inline std::vector<unsigned char> textradix(string s)
 {
     std::vector<unsigned char> v;
 	unsigned val = 0;
@@ -71,22 +71,36 @@ std::vector<unsigned char> textradix(string s)
 }
 
 
-string backward(const std::vector<unsigned char>& mash)
+unsigned long long X = 1;
+#define A 8433437992146984169
+#define B 7905438737954111703
+static inline void pseudoseed(unsigned long long seed)
 {
-	if (mash.size()<5)
-        throw invalid_argument("invalid license");
+    X = seed;
+}
+static inline unsigned char pseudorand()
+{
+    X = A*X + B;
+    return X / (2^56);
+}
 
-	srand(mash[0] | (mash[1]<<8));
+static inline string backward(const std::vector<unsigned char>& mash)
+{
+    // nothing is encrypted, the mashed key is just obfuscated by a "secret algorithm"
+    if (mash.size()<5)
+        return "invalid license";
+
+    pseudoseed(mash[0] | (mash[1]<<8));
     string row2;
-    char P = rand();
-    if (mash[3] != (char)rand())
-        throw invalid_argument("invalid license");
+    unsigned char P = pseudorand();
+    if (mash[3] != pseudorand())
+        return "invalid license";
     for (unsigned i=4; i<mash.size(); ++i)
-        row2.push_back( P ^= mash[i] ^ rand() );
+        row2.push_back( P ^= mash[i] ^ pseudorand() );
 
     P ^= mash[2];
-    if (P != (char)rand())
-        throw invalid_argument("invalid license");
+    if (P != pseudorand())
+        return "invalid license";
 
     if (0 == row2[row2.length()-1])
         row2 = row2.substr(0, row2.length()-1);

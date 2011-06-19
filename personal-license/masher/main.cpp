@@ -7,6 +7,20 @@
 
 using namespace std;
 
+unsigned long long X = 1;
+unsigned long long A = 8433437992146984169;
+unsigned long long B = 7905438737954111703;
+void pseudoseed(unsigned long long seed)
+{
+	X = seed;
+}
+unsigned char pseudorand()
+{
+	X = A*X + B;
+	return X / (2^56);
+}
+
+
 unsigned radix = 53;
 
 #define cton_helper(low, high) \
@@ -119,45 +133,50 @@ std::vector<unsigned char> textradix(string s)
 
 std::vector<unsigned char> forward(string row)
 {
+    // nothing is encrypted, the mashed key is just obfuscated by a "secret algorithm"
 	if (row.size()%2)
 		row.push_back(0);
 
     std::vector<unsigned char> mash;
-	srand( time(NULL) );
-	unsigned short s = rand()^(rand() << 8);
+	pseudoseed( time(NULL) );
+	unsigned short s = pseudorand()^(pseudorand() << 8);
     mash.push_back( s );
     mash.push_back( s>>8 );
-	srand( s );
-    char P = rand();
+	pseudoseed( s );
+    unsigned char P = pseudorand();
     mash.push_back( 0 );
-    mash.push_back( rand() );
+    mash.push_back( pseudorand() );
 	for (unsigned i=0; i<row.size(); ++i)
     {
-        mash.push_back( P ^ rand() ^ row[i] );
+        mash.push_back( P ^ pseudorand() ^ row[i] );
 
         P = row[i];
     }
-    mash[2]=( P ^ rand() );
+    mash[2]=( P ^ pseudorand() );
 
     return mash;
 }
 
 string backward(const std::vector<unsigned char>& mash)
 {
+    // nothing is encrypted, the mashed key is just obfuscated by a "secret algorithm"
 	if (mash.size()<5)
 	    return "invalid license";
 
-	srand(mash[0] | (mash[1]<<8));
+	pseudoseed(mash[0] | (mash[1]<<8));
     string row2;
-    char P = rand();
-    if (mash[3] != (char)rand())
+    unsigned char P = pseudorand();
+    if (mash[3] != pseudorand())
 	    return "invalid license";
     for (unsigned i=4; i<mash.size(); ++i)
-        row2.push_back( P ^= mash[i] ^ rand() );
+        row2.push_back( P ^= mash[i] ^ pseudorand() );
 
     P ^= mash[2];
-    if (P != (char)rand())
+    if (P != pseudorand())
 	    return "invalid license";
+
+    if (0 == row2[row2.length()-1])
+        row2 = row2.substr(0, row2.length()-1);
 
     return row2;
 }
@@ -198,6 +217,8 @@ int main(int argc, char *argv[])
 		cout << "Mash : " << radixtext(mash) << endl;
 
 		string row2 = backward(mash);
+		if (row2.size()%2)
+			row2.push_back('\0');
 
 		cout << "Row2 : " << radixtext(row2) << endl;
 		cout << "Row2 : " << row2 << endl;
