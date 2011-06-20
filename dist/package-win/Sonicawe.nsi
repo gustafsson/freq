@@ -79,13 +79,12 @@ Section "Application Files (required)"
 	${elseif} $USR_DRIVER_VERSION != ""
 		${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
 		${if} $R0 <= 1  
-			messageBox MB_OK "version $0 is ok"
 			File /r ${INST_FILES}\*.*
 			Strcpy $INSTALLATION_DONE "1"
 			Goto done
 		${elseif} $R0 == 2 
 			;messageBox MB_OK "Your driver version $0 is too old and you might encounter issues running Sonic AWE. Please make sure you visit www.nvidia.com and install the latest drivers available."			
-			MessageBox MB_OKCANCEL "Your Nvidia driver version $0 is too old and you might encounter issues running Sonic AWE. \ 
+			MessageBox MB_OKCANCEL "Your Nvidia driver version $USR_DRIVER_VERSION is too old and you might encounter issues running Sonic AWE. \ 
 			$\nChoose cancel to abort the installation or OK to download newer drivers." IDOK downloadDrivers 
 			Strcpy $INSTALLATION_DONE "0"
 			Goto done
