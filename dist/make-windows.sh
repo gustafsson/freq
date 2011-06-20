@@ -55,6 +55,7 @@ type -P makensis &>/dev/null || { echo "NSIS is not installed.  Aborting install
 
 #compile & move installer
 makensis $nsisscript
+mv $filename ../$filename
 
 #clean sonicawe.nsi for git consistency
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"\"/" $nsisscript
