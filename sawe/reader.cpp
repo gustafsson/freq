@@ -73,8 +73,13 @@ static inline std::vector<unsigned char> textradix(string s)
 
 
 unsigned long long X = 1;
+#ifndef _MSC_VER
 #define A 8433437992146984169LLU
 #define B 7905438737954111703LLU
+#else
+#define A 8433437992146984169
+#define B 7905438737954111703
+#endif
 static inline void pseudoseed(unsigned long long seed)
 {
     X = seed;
