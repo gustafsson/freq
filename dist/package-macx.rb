@@ -47,8 +47,8 @@ def package_macos(app_name, version, zip = false)
                    "Contents/Resources",
                    "Contents/plugins"]
     
-    executables = [["../sonicawe", "sonicawe_app"],
-                   ["package-macos/launcher", "Sonicawe"]]
+    executables = [["../sonicawe", "sonicawe"],
+                   ["package-macos/launcher", "launcher"]]
     
     resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
                  "package-macos/aweicon-project.icns",

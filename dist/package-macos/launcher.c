@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     char app_path[2048];
     
     // Get the sonicawe application path.
-    sprintf(app_path, "%s/Contents/MacOS/sonicawe_app", bundlePath(path));
+    sprintf(app_path, "%s/Contents/MacOS/sonicawe", bundlePath(path));
     printf("%s\n", app_path);
 
     // Option flags for notification
