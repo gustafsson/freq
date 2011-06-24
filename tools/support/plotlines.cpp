@@ -119,7 +119,7 @@ void PlotLines::
     for (Line::Data::iterator d = l.data.begin(); d != l.data.end(); ++d )
     {
         float scale = render_model_->display_scale().getFrequencyScalar( d->second.hz );
-        glColor4f( l.R, l.G, l.B, l.A*(d->second.a+0.1)/1.1);
+        glColor4f( l.R, l.G, l.B, l.A*d->second.a);
         glVertex3f( d->first, d->second.a, scale );
     }
     glEnd();
@@ -130,7 +130,7 @@ void PlotLines::
     for (Line::Data::iterator d = l.data.begin(); d != l.data.end(); ++d )
     {
         float scale = render_model_->display_scale().getFrequencyScalar( d->second.hz );
-        glColor4f( l.R, l.G, l.B, l.A*(d->second.a+0.1)/1.1);
+        glColor4f( l.R, l.G, l.B, scale*l.A*d->second.a);
         glVertex3f( d->first, d->second.a, scale );
     }
     glEnd();
