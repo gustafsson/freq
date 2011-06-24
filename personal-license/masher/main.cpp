@@ -5,6 +5,10 @@
 #include <iomanip>
 #include <stdlib.h>
 
+#ifdef _MSC_VER
+#include <time.h>
+#endif
+
 using namespace std;
 
 unsigned long long X = 1;
