@@ -10,7 +10,8 @@ TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release
-win32:CONFIG += embed_manifest_exe
+#win32:CONFIG += embed_manifest_exe
+win32:QMAKE_LFLAGS += /MANIFESTUAC:\"level=\'requireAdministrator\' uiAccess=\'false\'\"
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
