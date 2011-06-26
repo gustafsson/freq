@@ -237,7 +237,8 @@ void CwtToBlock::
                                   b.time, b.scale ),
                      complex_info,
                      chunk.freqAxis,
-                     _collection->display_scale()
+                     _collection->display_scale(),
+                     Heightmap::AmplitudeAxis_5thRoot
                      );
 
     // TODO recompute transfer to the samples that have actual support
@@ -302,7 +303,9 @@ void StftToBlock::
                   make_float4( a.time, a.scale,
                                b.time, b.scale ),
                   chunk.freqAxis,
-                  _collection->display_scale());
+                  _collection->display_scale(),
+                  Heightmap::AmplitudeAxis_5thRoot
+                  );
 
     block->valid_samples |= inInterval;
 }
@@ -354,7 +357,9 @@ void CepstrumToBlock::
                   make_float4( a.time, a.scale,
                                b.time, b.scale ),
                   chunk.freqAxis,
-                  _collection->display_scale());
+                  _collection->display_scale(),
+                  Heightmap::AmplitudeAxis_5thRoot
+                  );
 
     block->valid_samples |= inInterval;
 }

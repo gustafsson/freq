@@ -25,20 +25,60 @@ class ConverterLogAmplitude
 public:
     __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
     {
-        // slightly faster than sqrtf(f) unless '--use_fast_math' is specified
-        // to nvcc
-        // return f*rsqrtf(f);
-        //return log2f(0.01f+sqrtf(v.x*v.x + v.y*v.y)) - log2f(0.01f);
-        return 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
-        //return (sqrtf(v.x*v.x + v.y*v.y));
+        return log2f(0.01f+sqrtf(v.x*v.x + v.y*v.y)) - log2f(0.01f);
     }
 };
 
 
-template<typename DefaultConverter=ConverterLogAmplitude>
+class Converter5thRootAmplitude
+{
+public:
+    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    {
+        return 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+    }
+};
+
+
+class ConverterAmplitudeAxis
+{
+public:
+    ConverterAmplitudeAxis(Heightmap::AmplitudeAxis amplitudeAxis)
+        : _amplitudeAxis(amplitudeAxis)
+    {
+
+    }
+
+    __device__ float operator()( float2 v, uint2 const& dataPosition )
+    {
+        switch(_amplitudeAxis)
+        {
+        case Heightmap::AmplitudeAxis_Linear:
+            return ConverterAmplitude()( v, dataPosition );
+        case Heightmap::AmplitudeAxis_Logarithmic:
+            return ConverterLogAmplitude()( v, dataPosition );
+        case Heightmap::AmplitudeAxis_5thRoot:
+            return Converter5thRootAmplitude()( v, dataPosition );
+        default:
+            return -1.f;
+        }
+    }
+private:
+    Heightmap::AmplitudeAxis _amplitudeAxis;
+};
+
+
+template<typename DefaultConverter>
 class AxisFetcher
 {
 public:
+    AxisFetcher(const DefaultConverter& default_converter)
+        :   defaultConverter(default_converter)
+    {
+
+    }
+
+
     template<typename OtherConverter>
     AxisFetcher& operator=(const AxisFetcher<OtherConverter>& b)
     {
@@ -53,7 +93,7 @@ public:
     template<typename Reader>
     __device__ float operator()( float2 const& p, Reader& reader )
     {
-        return (*this)(p, reader, DefaultConverter());
+        return (*this)(p, reader, defaultConverter);
     }
 
 
@@ -61,6 +101,7 @@ public:
     {
         return a > b*(1.f-1e-2f) && a < b*(1.f+1e-2f);
     }
+
 
     template<typename Reader, typename Converter>
     __device__ float operator()( float2 const& p, Reader& reader, const Converter& c = Converter() )
@@ -80,15 +121,24 @@ public:
 
     Tfr::FreqAxis inputAxis;
     Tfr::FreqAxis outputAxis;
+    DefaultConverter defaultConverter;
+
     float scale;
     float offs;
 };
 
 
-template<typename DefaultConverter=ConverterLogAmplitude>
+template<typename DefaultConverter>
 class AxisFetcherTranspose
 {
 public:
+public:
+    AxisFetcherTranspose(const DefaultConverter& default_converter)
+        :   defaultConverter(default_converter)
+    {
+
+    }
+
     template<typename Reader>
     __device__ float operator()( float2 const& p, Reader& reader )
     {
@@ -103,19 +153,27 @@ public:
         q.x = inputAxis.getFrequencyScalar( hz );
         q.y = p.y;
 
-        float r = InterpolateFetcher<float, DefaultConverter>()( q, reader );
+        float r = InterpolateFetcher<float, DefaultConverter>(defaultConverter)( q, reader );
         return r*factor;
     }
 
+    DefaultConverter defaultConverter;
     Tfr::FreqAxis inputAxis;
     Tfr::FreqAxis outputAxis;
     float factor;
 };
 
 
+template<typename DefaultConverter>
 class WeightFetcher
 {
 public:
+    WeightFetcher(const DefaultConverter& b)
+        : axes(b)
+    {
+
+    }
+
     template<typename Reader>
     __device__ float operator()( float2 const& p, Reader& reader )
     {
@@ -131,7 +189,7 @@ public:
         return v * k;
     }
 
-    AxisFetcher<> axes;
+    AxisFetcher<DefaultConverter> axes;
 };
 
 
@@ -204,6 +262,7 @@ public:
 #include <iostream>
 using namespace std;
 
+
 void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
                  uint2 validInputs, // validInputs is the first and last-1 valid samples in x
@@ -211,7 +270,8 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  float4 outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
-                 Tfr::FreqAxis outputAxis
+                 Tfr::FreqAxis outputAxis,
+                 Heightmap::AmplitudeAxis amplitudeAxis
                  )
 {
     elemSize3_t sz_input = input.getNumberOfElements();
@@ -236,7 +296,7 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
     uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, 2 );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    AxisFetcher<> axes;
+    AxisFetcher<ConverterAmplitudeAxis> axes = ConverterAmplitudeAxis(amplitudeAxis);
     axes.inputAxis = inputAxis;
     axes.outputAxis = outputAxis;
     axes.offs = getTop(inputRegion);
@@ -246,10 +306,10 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
     {
     case Heightmap::ComplexInfo_Amplitude_Weighted:
     {
-        WeightFetcher fetcher;
+        WeightFetcher<ConverterAmplitudeAxis> fetcher = WeightFetcher<ConverterAmplitudeAxis>(ConverterAmplitudeAxis(amplitudeAxis));
         fetcher.axes = axes;
 
-        resample2d_fetcher<float, float2, float, WeightFetcher, AssignOperator<float> >(
+        resample2d_fetcher<float, float2, float, WeightFetcher<ConverterAmplitudeAxis>, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
@@ -262,7 +322,7 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
         break;
     }
     case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
-        resample2d_fetcher<float, float2, float, AxisFetcher<>, AssignOperator<float> >(
+        resample2d_fetcher<float, float2, float, AxisFetcher<ConverterAmplitudeAxis>, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
@@ -275,7 +335,7 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
         break;
     case Heightmap::ComplexInfo_Phase:
     {
-        AxisFetcher<ConverterPhase> axesPhase;
+        AxisFetcher<ConverterPhase> axesPhase = ConverterPhase();
         axesPhase = axes;
 
         resample2d_fetcher<float, float2, float, AxisFetcher<ConverterPhase>, AssignOperator<float> >(
@@ -313,7 +373,8 @@ void resampleStft( cudaPitchedPtrType<float2> input,
                    float4 inputRegion,
                    float4 outputRegion,
                    Tfr::FreqAxis inputAxis,
-                   Tfr::FreqAxis outputAxis )
+                   Tfr::FreqAxis outputAxis,
+                   Heightmap::AmplitudeAxis amplitudeAxis )
 {
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
@@ -326,10 +387,16 @@ void resampleStft( cudaPitchedPtrType<float2> input,
     uint4 validInputs = make_uint4( 0, 0, 2, sz_input.y );
     uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
 
-    AxisFetcherTranspose<> fetcher;
+    AxisFetcherTranspose<ConverterAmplitudeAxis> fetcher = ConverterAmplitudeAxis(amplitudeAxis);
     fetcher.inputAxis = inputAxis;
     fetcher.outputAxis = outputAxis;
-    fetcher.factor = 0.22f; // makes it roughly equal height to Cwt
+    // makes it roughly equal height to Cwt
+    switch(amplitudeAxis)
+    {
+    case Heightmap::AmplitudeAxis_Linear:       fetcher.factor = 0.22f; break;
+    case Heightmap::AmplitudeAxis_Logarithmic:  fetcher.factor = 0.22f; break;
+    case Heightmap::AmplitudeAxis_5thRoot:      fetcher.factor = 0.22f; break;
+    }
 
     resample2d_fetcher<float>(
                 input,

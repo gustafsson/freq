@@ -17,8 +17,13 @@ namespace Heightmap {
         ComplexInfo_Amplitude_Non_Weighted,
         ComplexInfo_Phase
     };
-};
 
+    enum AmplitudeAxis {
+        AmplitudeAxis_Linear,
+        AmplitudeAxis_Logarithmic,
+        AmplitudeAxis_5thRoot
+    };
+};
 extern "C"
 void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
                  cudaPitchedPtrType<float> outBlock,
@@ -42,7 +47,8 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  float4 outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
-                 Tfr::FreqAxis outputAxis
+                 Tfr::FreqAxis outputAxis,
+                 Heightmap::AmplitudeAxis amplitudeAxis
                  );
 
 extern "C"
@@ -91,6 +97,7 @@ void resampleStft( cudaPitchedPtrType<float2> input,
                    float4 inputRegion,
                    float4 outputRegion,
                    Tfr::FreqAxis inputAxis,
-                   Tfr::FreqAxis outputAxis );
+                   Tfr::FreqAxis outputAxis,
+                   Heightmap::AmplitudeAxis amplitudeAxis );
 
 #endif // HEIGHTMAPBLOCK_CU_H
