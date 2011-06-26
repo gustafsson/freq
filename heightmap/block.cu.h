@@ -24,20 +24,6 @@ namespace Heightmap {
         AmplitudeAxis_5thRoot
     };
 };
-extern "C"
-void blockMergeChunk( cudaPitchedPtrType<float2> inChunk,
-                 cudaPitchedPtrType<float> outBlock,
-                 float in_sample_rate,
-                 float out_sample_rate,
-                 float in_frequency_resolution,
-                 float out_frequency_resolution,
-                 unsigned in_sample_offset,
-                 float out_sample_offset,
-                 float in_frequency_offset,
-                 float out_frequency_offset,
-                 float out_count,
-                 Heightmap::ComplexInfo transformMethod,
-                 unsigned cuda_stream);
 
 extern "C"
 void blockResampleChunk( cudaPitchedPtrType<float2> input,
@@ -56,19 +42,7 @@ void blockMerge( cudaPitchedPtrType<float> inBlock,
                  cudaPitchedPtrType<float> outBlock,
                  float4 in_area,
                  float4 out_area );
-
-extern "C"
-void blockMergeOld( cudaPitchedPtrType<float> inBlock,
-                 cudaPitchedPtrType<float> outBlock,
-                 float in_sample_rate,
-                 float out_sample_rate,
-                 float in_frequency_resolution,
-                 float out_frequency_resolution,
-                 float in_offset,
-                 float out_offset,
-                 float in_valid_samples,
-                 unsigned cuda_stream);
-
+/*
 extern "C"
 void expandStft( cudaPitchedPtrType<float2> inStft,
                  cudaPitchedPtrType<float> outBlock,
@@ -77,7 +51,6 @@ void expandStft( cudaPitchedPtrType<float2> inStft,
                  float out_offset,
                  float out_length,
                  unsigned cuda_stream);
-
 
 extern "C"
 void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
@@ -90,7 +63,7 @@ void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
                  float in_max_hz,
                  unsigned in_stft_size,
                  unsigned cuda_stream);
-
+*/
 extern "C"
 void resampleStft( cudaPitchedPtrType<float2> input,
                    cudaPitchedPtrType<float> output,
