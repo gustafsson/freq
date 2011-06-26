@@ -244,19 +244,6 @@ void RenderController::
 
 
 void RenderController::
-        receiveSetYScale( int value )
-{
-    float f = 2.f * value / yscale->maximum() - 1.f;
-    model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
-
-    view->userinput_update();
-    view->emitTransformChanged();
-
-    yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->y_scale));
-}
-
-
-void RenderController::
         transformChanged()
 {
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
@@ -266,6 +253,28 @@ void RenderController::
     int value = f * tf_resolution->maximum() + .5;
 
     this->tf_resolution->setValue( value );
+
+
+    // keep in sync with receiveSetYScale
+    f = log(model()->renderer->y_scale)/4.f;
+    f = (f > 0 ? 1 : -1) * sqrtf( f > 0 ? f : -f );
+    value = (f + 1)/2 * yscale->maximum() + .5;
+
+    this->yscale->setValue( value );
+}
+
+
+void RenderController::
+        receiveSetYScale( int value )
+{
+    // Keep in sync with transformChanged()
+    float f = 2.f * value / yscale->maximum() - 1.f;
+    model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
+
+    view->userinput_update();
+    view->emitTransformChanged();
+
+    yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->y_scale));
 }
 
 
