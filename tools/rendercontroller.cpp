@@ -148,6 +148,8 @@ RenderController::
             :
             view(view),
             toolbar_render(0),
+            hz_scale(0),
+            amplitude_scale(0),
             hzmarker(0),
             color(0),
             transform(0)
@@ -244,13 +246,26 @@ void RenderController::
 void RenderController::
         receiveSetYScale( int value )
 {
-    float f = value / 50.f - 1.f;
+    float f = 2.f * value / yscale->maximum() - 1.f;
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
 
     view->userinput_update();
     view->emitTransformChanged();
 
     yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->y_scale));
+}
+
+
+void RenderController::
+        transformChanged()
+{
+    Tfr::Cwt& c = Tfr::Cwt::Singleton();
+
+    // keep in sync with receiveSetTimeFrequencyResolution
+    float f = log(c.scales_per_octave()/2)/8;
+    int value = f * tf_resolution->maximum() + .5;
+
+    this->tf_resolution->setValue( value );
 }
 
 
@@ -262,15 +277,11 @@ void RenderController::
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
 
     // Keep in sync with transformChanged()
-    //float f = value / 50.f - 1.f;
-    //c.scales_per_octave( 20.f * exp( 4*f ) );
     float f = value / (float)tf_resolution->maximum();
-    c.scales_per_octave( 2*exp( 6*f ) ); // scales_per_octave >= 2
+    c.scales_per_octave( 2*exp( 8*f ) ); // scales_per_octave >= 2
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
-
-    zscale->defaultAction()->trigger();
+    s.set_approximate_chunk_size( 0.25f*c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
 
     model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
@@ -452,24 +463,35 @@ void RenderController::
 }
 
 
+void RenderController::
+        receiveLinearAmplitude()
+{
+    model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveLogAmplitude()
+{
+    model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
+    view->userinput_update();
+}
+
+
+void RenderController::
+        receiveFifthAmplitude()
+{
+    model()->amplitude_axis( Heightmap::AmplitudeAxis_5thRoot );
+    view->userinput_update();
+}
+
+
 RenderModel *RenderController::
         model()
 {
     BOOST_ASSERT( view );
     return view->model;
-}
-
-
-void RenderController::
-        transformChanged()
-{
-    Tfr::Cwt& c = Tfr::Cwt::Singleton();
-
-    // keep in sync with receiveSetTimeFrequencyResolution
-    float f = log(c.scales_per_octave()/2)/6;
-    int value = f * tf_resolution->maximum() + .5;
-
-    this->tf_resolution->setValue( value );
 }
 
 
@@ -563,7 +585,7 @@ void RenderController::
     }
 
 
-    // ComboBoxAction* zscale
+    // ComboBoxAction* hz-scale
     {   QAction* linearScale = new QAction( main );
         QAction* logScale = new QAction( main );
         QAction* cepstraScale = new QAction( main );
@@ -580,25 +602,60 @@ void RenderController::
         connect(logScale, SIGNAL(triggered()), SLOT(receiveLogScale()));
         connect(cepstraScale, SIGNAL(triggered()), SLOT(receiveCepstraScale()));
 
-        zscale = new ComboBoxAction();
-        zscale->addActionItem( linearScale );
-        zscale->addActionItem( logScale );
-        zscale->addActionItem( cepstraScale );
-        zscale->decheckable( false );
-        toolbar_render->addWidget( zscale );
+        hz_scale = new ComboBoxAction();
+        hz_scale->addActionItem( linearScale );
+        hz_scale->addActionItem( logScale );
+        hz_scale->addActionItem( cepstraScale );
+        hz_scale->decheckable( false );
+        toolbar_render->addWidget( hz_scale );
 
         unsigned k=0;
-        foreach( QAction* a, zscale->actions())
+        foreach( QAction* a, hz_scale->actions())
         {
             a->setShortcut(QString("Ctrl+") + ('1' + k++));
         }
         logScale->trigger();
     }
 
+
+    // ComboBoxAction* amplitude-scale
+    {   QAction* linearAmplitude = new QAction( main );
+        QAction* logAmpltidue = new QAction( main );
+        QAction* fifthAmpltidue = new QAction( main );
+
+        linearAmplitude->setText("Linear amplitude");
+        logAmpltidue->setText("Logarithmic amplitude");
+        fifthAmpltidue->setText("|A|^(1/5) amplitude");
+
+        linearAmplitude->setCheckable( true );
+        logAmpltidue->setCheckable( true );
+        fifthAmpltidue->setCheckable( true );
+
+        connect(linearAmplitude, SIGNAL(triggered()), SLOT(receiveLinearAmplitude()));
+        connect(logAmpltidue, SIGNAL(triggered()), SLOT(receiveLogAmplitude()));
+        connect(fifthAmpltidue, SIGNAL(triggered()), SLOT(receiveFifthAmplitude()));
+
+        amplitude_scale = new ComboBoxAction();
+        amplitude_scale->addActionItem( linearAmplitude );
+        amplitude_scale->addActionItem( logAmpltidue );
+        amplitude_scale->addActionItem( fifthAmpltidue );
+        amplitude_scale->decheckable( false );
+        toolbar_render->addWidget( amplitude_scale );
+
+        unsigned k=0;
+        foreach( QAction* a, amplitude_scale->actions())
+        {
+            a->setShortcut(QString("Alt+") + ('1' + k++));
+        }
+        linearAmplitude->trigger();
+    }
+
+
     // QSlider * yscale
     {   yscale = new QSlider();
         yscale->setOrientation( Qt::Horizontal );
-        yscale->setValue( 50 );
+        yscale->setMaximum( 10000 );
+        yscale->setValue( 5000 );
         yscale->setToolTip( "Intensity level" );
         toolbar_render->addWidget( yscale );
 

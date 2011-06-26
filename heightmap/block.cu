@@ -23,9 +23,9 @@ public:
 class ConverterLogAmplitude
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    __device__ float operator()( float2 v, uint2 const& dataPosition )
     {
-        return log2f(0.01f+sqrtf(v.x*v.x + v.y*v.y)) - log2f(0.01f);
+        return log2f(0.0001f + ConverterAmplitude()(v,dataPosition)) - log2f(0.0001f);
     }
 };
 
@@ -54,9 +54,9 @@ public:
         switch(_amplitudeAxis)
         {
         case Heightmap::AmplitudeAxis_Linear:
-            return ConverterAmplitude()( v, dataPosition );
+            return 25.f * ConverterAmplitude()( v, dataPosition );
         case Heightmap::AmplitudeAxis_Logarithmic:
-            return ConverterLogAmplitude()( v, dataPosition );
+            return 0.02f * ConverterLogAmplitude()( v, dataPosition );
         case Heightmap::AmplitudeAxis_5thRoot:
             return Converter5thRootAmplitude()( v, dataPosition );
         default:
@@ -393,8 +393,8 @@ void resampleStft( cudaPitchedPtrType<float2> input,
     // makes it roughly equal height to Cwt
     switch(amplitudeAxis)
     {
-    case Heightmap::AmplitudeAxis_Linear:       fetcher.factor = 0.22f; break;
-    case Heightmap::AmplitudeAxis_Logarithmic:  fetcher.factor = 0.22f; break;
+    case Heightmap::AmplitudeAxis_Linear:       fetcher.factor = 0.00052f; break;
+    case Heightmap::AmplitudeAxis_Logarithmic:  fetcher.factor = 0.3f; break;
     case Heightmap::AmplitudeAxis_5thRoot:      fetcher.factor = 0.22f; break;
     }
 

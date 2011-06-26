@@ -238,7 +238,7 @@ void CwtToBlock::
                      complex_info,
                      chunk.freqAxis,
                      _collection->display_scale(),
-                     Heightmap::AmplitudeAxis_5thRoot
+                     _collection->amplitude_axis()
                      );
 
     // TODO recompute transfer to the samples that have actual support
@@ -304,7 +304,7 @@ void StftToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale(),
-                  Heightmap::AmplitudeAxis_5thRoot
+                  _collection->amplitude_axis()
                   );
 
     block->valid_samples |= inInterval;
@@ -358,7 +358,7 @@ void CepstrumToBlock::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale(),
-                  Heightmap::AmplitudeAxis_5thRoot
+                  _collection->amplitude_axis()
                   );
 
     block->valid_samples |= inInterval;

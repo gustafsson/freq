@@ -245,6 +245,8 @@ public:
     Tfr::FreqAxis display_scale() { return _display_scale; }
     void display_scale(Tfr::FreqAxis a);
 
+    Heightmap::AmplitudeAxis amplitude_axis() { return _amplitude_axis; }
+    void amplitude_axis(Heightmap::AmplitudeAxis a);
 
     Signal::pOperation target;
 
@@ -272,10 +274,14 @@ private:
     Signal::pOperation _filter;
 
     /**
-      Heightmap blocks are rather agnostic to FreqAxis.
+      Heightmap blocks are rather agnostic to FreqAxis. But it's needed to create them.
       */
     Tfr::FreqAxis _display_scale;
 
+    /**
+      Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But it's needed to create them.
+      */
+    Heightmap::AmplitudeAxis _amplitude_axis;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.

@@ -59,7 +59,8 @@ Collection::
     _scales_per_block( 1<<9 ),
     _unfinished_count(0),
     _created_count(0),
-    _frame_counter(0)
+    _frame_counter(0),
+    _amplitude_axis(AmplitudeAxis_5thRoot)
 {
     BOOST_ASSERT( target );
 
@@ -465,6 +466,17 @@ void Collection::
         return;
 
     _display_scale = a;
+    invalidate_samples( target->getInterval() );
+}
+
+
+void Collection::
+        amplitude_axis(Heightmap::AmplitudeAxis a)
+{
+    if (_amplitude_axis == a)
+        return;
+
+    _amplitude_axis = a;
     invalidate_samples( target->getInterval() );
 }
 

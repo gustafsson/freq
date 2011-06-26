@@ -3,6 +3,7 @@
 
 #include "tfr/freqaxis.h"
 #include "signal/target.h"
+#include "heightmap/block.cu.h"
 
 #include <boost/serialization/nvp.hpp>
 
@@ -30,6 +31,10 @@ namespace Tools
 
         Tfr::FreqAxis display_scale();
         void display_scale(Tfr::FreqAxis x);
+
+        Heightmap::AmplitudeAxis amplitude_axis();
+        void amplitude_axis(Heightmap::AmplitudeAxis);
+
         Tfr::Filter* block_filter();
 
         Signal::pTarget renderSignalTarget;

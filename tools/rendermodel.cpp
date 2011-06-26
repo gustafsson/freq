@@ -74,6 +74,21 @@ void RenderModel::
 }
 
 
+Heightmap::AmplitudeAxis RenderModel::
+        amplitude_axis()
+{
+    return collections[0]->amplitude_axis();
+}
+
+
+void RenderModel::
+        amplitude_axis(Heightmap::AmplitudeAxis x)
+{
+    for (unsigned c=0; c<collections.size(); ++c)
+        collections[c]->amplitude_axis( x );
+}
+
+
 Tfr::Filter* RenderModel::
         block_filter()
 {
