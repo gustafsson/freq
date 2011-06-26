@@ -491,6 +491,9 @@ void GlBlock::
     } else {
         glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_INT, 0);
     }
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     TIME_GLBLOCK CudaException_CHECK_ERROR();
