@@ -616,21 +616,32 @@ Interval MatlabOperation::
         if (isrecording)
         {
             bool need_a_specific_chunk_size = 0<_settings->chunksize();
-            if (_settings->computeInOrder() && need_a_specific_chunk_size)
-                return Interval(0,0);
-
-
-            if (recorder->isStopped())
+            if (need_a_specific_chunk_size)
             {
-                // Ok, go on
+                if (recorder->isStopped() && !_settings->computeInOrder())
+                {
+                    // Ok, go on
+                }
+                else
+                {
+                    return Interval(0,0);
+                }
             }
             else
             {
-                // Don't use any samples after the end while recording
-                K &= signal;
-
-                if (Intervals(K).shrink(support).empty())
+                if (recorder->isStopped())
+                {
+                    // Ok, go on
+                }
+                else
+                {
                     return Interval(0,0);
+                    // Don't use any samples after the end while recording
+                    K &= signal;
+
+                    if (Intervals(K).shrink(support).empty())
+                        return Interval(0,0);
+                }
             }
         }
     }
