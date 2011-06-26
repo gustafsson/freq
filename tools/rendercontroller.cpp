@@ -279,7 +279,7 @@ void RenderController::
 
     view->emitTransformChanged();
 
-    tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1\nSTFT window: %2 samples").arg(c.sigma()).arg(s.chunk_size()));
+    tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1 (%2 scales/octave)\nSTFT window: %3 samples").arg(c.sigma(), 0, 'f', 1).arg(c.scales_per_octave(), 0, 'f', 1).arg(s.chunk_size()));
 }
 
 
@@ -610,8 +610,8 @@ void RenderController::
     // QSlider * tf_resolution
     {   tf_resolution = new QSlider();
         tf_resolution->setOrientation( Qt::Horizontal );
-        tf_resolution->setValue( 5000 );
         tf_resolution->setMaximum( 10000 );
+        tf_resolution->setValue( 5000 );
         tf_resolution->setToolTip( "Time/frequency resolution." );
         toolbar_render->addWidget( tf_resolution );
 
@@ -621,6 +621,7 @@ void RenderController::
 
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()));
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateChannels()));
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(transformChanged()));
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.

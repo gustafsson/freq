@@ -319,6 +319,8 @@ void Application::
         c->samples_per_block( _samples_per_block );
         c->scales_per_block( _scales_per_block );
     }
+
+    tools.render_view()->emitTransformChanged();
 }
 
 } // namespace Sawe
