@@ -18,6 +18,9 @@
 
 using namespace std;
 
+namespace Sawe
+{
+
 unsigned radix = 52;
 
 #define cton_helper(low, high) \
@@ -43,9 +46,10 @@ static inline unsigned cton(char c)
     throw invalid_argument(string("Invalid character: ") + c);
 }
 
-static inline std::vector<unsigned char> textradix(string s)
+
+static inline vector<unsigned char> textradix(string s)
 {
-    std::vector<unsigned char> v;
+    vector<unsigned char> v;
 	unsigned val = 0;
 	unsigned byteradix = 1<<8;
 	int counter = 0;
@@ -114,7 +118,8 @@ static inline string backward(const std::vector<unsigned char>& mash)
     return row2;
 }
 
-string tryread(string mash)
+string Reader::
+        tryread(string mash)
 {
     try
     {
@@ -156,7 +161,8 @@ string tryread(string mash)
     return "";
 }
 
-string reader_text(bool annoy)
+string Reader::
+        reader_text(bool annoy)
 {
     while (true)
     {
@@ -185,8 +191,10 @@ string reader_text(bool annoy)
     }
 }
 
-string reader_title()
+string Reader::
+        reader_title()
 {
     return reader_text();
 }
 
+} // namespace Sawe

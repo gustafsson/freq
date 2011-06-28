@@ -34,7 +34,7 @@ QString EnterLicense::
 void EnterLicense::
         validate()
 {
-    if (!tryread(ui->lineEdit->text().toStdString()).empty())
+    if (!Reader::tryread(ui->lineEdit->text().toStdString()).empty())
         accept();
     else
     {
