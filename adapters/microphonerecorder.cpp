@@ -21,6 +21,12 @@ MicrophoneRecorder::
             :
             input_device_(inputDevice)
 {
+    std::stringstream ss;
+    ::srand(::time(0));
+    unsigned int s = rand()^(rand() << 8) ^ (rand() << 16) ^ (rand() << 24);
+
+    ss << "recording_" << s << ".wav";
+
     init(); // fetch _sample_rate
     stopRecording();
 }
@@ -148,16 +154,30 @@ bool MicrophoneRecorder::isStopped()
 }
 
 std::string MicrophoneRecorder::
-        name()
+        deviceName()
 {
-    std::stringstream ss;
     portaudio::System &sys = portaudio::System::instance();
     int d = input_device_;
     if (d<0 || d>=sys.deviceCount())
         d = sys.defaultInputDevice().index();
 
-    ss << "Recording mic " << sys.deviceByIndex(d).name();
-    return ss.str();
+    return sys.deviceByIndex(d).name();
+}
+
+void MicrophoneRecorder::
+        setProjectName(std::string project, int i)
+{
+    stringstream ss;
+    string device = deviceName();
+    replace(device.begin(), device.end(), ' ', '_');
+    ss << project << "_" << i << "_" << device << ".wav";
+    _filename = ss.str();
+}
+
+std::string MicrophoneRecorder::
+        name()
+{
+    return "Recording mic " + deviceName();
 }
 
 Signal::pBuffer MicrophoneRecorder::

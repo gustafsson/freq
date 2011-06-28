@@ -103,6 +103,16 @@ bool Project::
 	BOOST_ASSERT( 0 == memcmp(mainwindowState.data(), mainwindowState2.data(), mainwindowState2.size()));
     _mainWindow->restoreState( mainwindowState );
 
+    {
+        int microphoneCounter = 0;
+        foreach(Signal::pChain c, layers.layers())
+        {
+            Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( c->root_source().get() );
+            if (r)
+                r->setProjectName(project_filename_, ++microphoneCounter);
+        }
+    }
+
     try
     {
         TaskTimer tt("Saving project to '%s'", project_filename_.c_str());
