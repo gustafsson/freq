@@ -1,6 +1,8 @@
 #ifndef ADAPTERS_CSV_H
 #define ADAPTERS_CSV_H
 
+#include <string>
+
 #include "tfr/cwtfilter.h"
 
 namespace Adapters {
@@ -14,7 +16,12 @@ namespace Adapters {
 class Csv: public Tfr::CwtFilter
 {
 public:
+    Csv(std::string filename="") : _filename(filename) {}
+
     virtual void operator()( Tfr::Chunk& );
+
+private:
+    std::string _filename;
 };
 
 } // namespace Adapters

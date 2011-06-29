@@ -28,7 +28,12 @@ string csv_number()
 void Csv::
         operator()( Tfr::Chunk& c )
 {
-    string filename = csv_number();
+    string filename;
+    if (this->_filename.empty())
+        filename = csv_number();
+    else
+        filename = this->_filename;
+
     TaskTimer tt("Saving CSV-file %s", filename.c_str());
     ofstream csv(filename.c_str());
 
