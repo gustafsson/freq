@@ -157,7 +157,7 @@ Section "Application Files (required)"
 			nsisXML::getText
 			Strcpy $USR_DRIVER_VERSION "$3" 
 			Strcpy $done "1"
-		${if} $8 == "15" 
+		${if} $8 == "30" 
 			DetailPrint "DxDiag -- Time Out"
 			Strcpy $done "1"
 		${EndIf}	
@@ -169,7 +169,7 @@ Section "Application Files (required)"
 	${elseif} $USR_DRIVER_VERSION != ""
 		${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
 		${if} $R0 <= 1  
-			${File} /r ${INST_FILES}\*.*
+			${File} ${INST_FILES} "*.*"
 			Strcpy $INSTALLATION_DONE "1"
 			Goto done
 		${elseif} $R0 == 2 
