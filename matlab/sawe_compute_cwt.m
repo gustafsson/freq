@@ -5,8 +5,7 @@ function s_cwt = sawe_compute_cwt(X)
 	soundfile = tempname();
 	wavwrite(X, 44100, soundfile);
 
-	size(X,1)/(2
-	for k=0:(ceil(log2(size(X,1)/13));
+	for k=0:floor(log2(size(X,1)/13));
 		system(['sonicawe --samples_per_chunk_hint=13 --get_hdf=' num2str(k) ' "' soundfile '"' ]);
         outputfile = ['save_chunk-' num2str(k) '.h5'];
         data = sawe_loadchunk(outputfile);
