@@ -191,19 +191,34 @@ string Reader::
         if (-1==day)
             return "";
 
-        QDate qd(year, month, day);
-        if (qd.addMonths(1) < QDate::currentDate())
-            return "";
-
-        QString licenseText;
-
-        if (type!="-")
+        if (0==year)
         {
-            licenseText = type + " of ";
-        }
+            QString licenseText;
 
-        licenseText+="Sonic AWE licensed to " + licensee + " until " + expires;
-        return licenseText.toStdString();
+            if (type!="-")
+            {
+                licenseText = type + " of ";
+            }
+
+            licenseText+="Sonic AWE licensed to " + licensee;
+            return licenseText.toStdString();
+        }
+        else
+        {
+            QDate qd(year, month, day);
+            if (qd.addMonths(1) < QDate::currentDate())
+                return "";
+
+            QString licenseText;
+
+            if (type!="-")
+            {
+                licenseText = type + " of ";
+            }
+
+            licenseText+="Sonic AWE licensed to " + licensee + " until " + expires;
+            return licenseText.toStdString();
+        }
     }
     catch (invalid_argument x)
     {
