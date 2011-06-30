@@ -11,6 +11,9 @@
 #include "adapters/hdf5.h"
 #include "adapters/playback.h"
 
+// gpumisc
+#include <redirectstdout.h>
+
 // boost
 #include <boost/foreach.hpp>
 
@@ -33,37 +36,53 @@ static const char _sawe_usage_string[] =
     "sonicawe [--help] \n"
     "sonicawe [--version] \n"
     "\n"
-    "    Each parameter takes a value, if no value is given the default value is\n"
-    "    written to standard output and the program exits immediately after.\n"
-    "    Valid parameters are:\n"
+    "    Sonic AWE is a signal analysis tool based on visualization.\n"
     "\n"
-    "    samples_per_chunk_hint  Only used by get_* options.\n"
-    "                       The transform is computed in chunks from the input\n"
-    "                       This determines the number of input samples that \n"
-    "                       should correspond to one chunk of the transform by\n"
-    "                       2^samples_per_chunk_hint. The actual number of \n"
-    "                       samples computed and written to file per chunk \n"
-    "                       might be different.\n"
-    "    scales_per_octave  Accuracy of transform, higher accuracy takes more time\n"
-    "                       to compute.\n"
-    "    samples_per_block  The transform chunks are downsampled to blocks for\n"
-    "                       rendering, this gives the number of samples per block.\n"
-    "    scales_per_block   Number of scales per block, se samples_per_block.\n"
-    "    get_csv            Saves the given chunk number into sawe.csv which \n"
-    "                       then can be read by matlab or octave.\n"
-    "    get_hdf            Saves the given chunk number into sawe.h5 which \n"
-    "                       then can be read by matlab or octave.\n"
-    "    get_chunk_count    outpus in the log file sonicawe.log the number of \n"
-    "                       chunks that can be fetched by the --get_* options\n"
-    "    wavelet_time_support Transform CWT chunks with this many sigmas overlap in\n"
-    "                       time domain.\n"
-    "    wavelet_scale_support Transform CWT chunks with this many sigmas overlap in\n"
-    "                       scale domain.\n"
-    "    record             Starts Sonic AWE starts in record mode. [default]\n"
-    "    record_device      Selects a specific device for recording. -1 specifices\n"
-    "                       the default input device/microphone.\n"
-    "    playback_device    Selects a specific device for playback. -1 specifices the\n"
-    "                       default output device.\n"
+    "    By using command line parameters it's possible to let Sonic AWE compute\n"
+    "    a Continious Gabor Wavelet Transform (CWT below). Each parameter takes a\n"
+    "    number as value, if no value is given the default value is written to \n"
+    "    standard output and the program exits immediately after. Valid parameters \n"
+    "    are:\n"
+    "\n"
+    "Ways of extracting data from a Continious Gabor Wavelet Transform (CWT)\n"
+    "    --get_csv=number    Saves the given chunk number into sawe.csv which \n"
+    "                        then can be read by matlab or octave.\n"
+    "    --get_hdf=number    Saves the given chunk number into sawe.h5 which \n"
+    "                        then can be read by matlab or octave.\n"
+    "    --get_chunk_count=1 outpus the number of chunks that can be fetched by \n"
+    "                        the --get_* options\n"
+    "\n"
+    "Settings for computing CWT\n"
+    "    --samples_per_chunk_hint\n"
+    "                        The transform is computed in chunks from the input\n"
+    "                        This value determines the number of input samples that\n"
+    "                        should correspond to one chunk of the transform by \n"
+    "                        2^samples_per_chunk_hint. The actual number of samples\n"
+    "                        computed and written to file per chunk might be \n"
+    "                        different.\n"
+    "    --scales_per_octave Frequency accuracy of CWT, higher accuracy takes more\n"
+    "                        time to compute.\n"
+    "    --wavelet_time_support\n"
+    "                        Transform CWT chunks with this many sigmas overlap in time\n"
+    "                        domain.\n"
+    "    --wavelet_scale_support\n"
+    "                        Transform CWT chunks with this many sigmas overlap in scale\n"
+    "                        domain.\n"
+    "    --min_hz            Transform CWT with scales logarithmically distributed\n"
+    "                        on (min_hz, fs/2]\n"
+    "\n"
+    "Audio devices (see log file from previous start for list of available devices)\n"
+    "    --record            Starts Sonic AWE starts in record mode. [default]\n"
+    "    --record_device     Selects a specific device for recording. -1 specifices\n"
+    "                        the default input device/microphone.\n"
+    "    --playback_device   Selects a specific device for playback. -1 specifices\n"
+    "                        the default output device.\n"
+    "\n"
+    "Rendering settings\n"
+    "    --samples_per_block The transform chunks are downsampled to blocks for\n"
+    "                        rendering, this gives the number of samples per block.\n"
+    "    --scales_per_block  Number of scales per block, se samples_per_block.\n"
+
 /*    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
     "                       filters are being used as the GUI won't be locked during\n"
     "                       computation.\n"
@@ -74,6 +93,7 @@ static unsigned _channel=0;
 static unsigned _scales_per_octave = 20;
 static float _wavelet_time_support = 5;
 static float _wavelet_scale_support = 4;
+static float _min_hz = 20;
 static unsigned _samples_per_chunk_hint = 1;
 static unsigned _samples_per_block = 1<<9;
 static unsigned _scales_per_block = 1<<7;
@@ -149,7 +169,7 @@ static int handle_options(char ***argv, int *argc)
             break;
 
         if (!strcmp(cmd, "--help")) {
-            message << _sawe_usage_string;
+            message  << "See the logfile sonicawe.log for a list of valid command line options.";
         } else if (!strcmp(cmd, "--version")) {
             message << Sawe::Application::version_string().c_str();
         }
@@ -166,13 +186,14 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
         else if (readarg(&cmd, get_csv));
+        else if (readarg(&cmd, min_hz));
 #ifndef QT_NO_THREAD
         else if (readarg(&cmd, multithread));
 #endif
         // TODO use _selectionfile
         else {
-            message << "Unknown option: " << cmd << endl;
-            message << _sawe_usage_string;
+            message << "Unknown option: " << cmd << endl
+                    << "See the logfile sonicawe.log for a list of valid command line options.";
             break;
         }
 
@@ -220,7 +241,11 @@ void Application::
 
     if (!message.str().empty())
     {
-        cerr << message.str() << endl;
+        cerr    << message.str() << endl    // Want output in logfile
+                << _sawe_usage_string;
+        this->rs.reset();
+        cerr    << message.str() << endl    // Want output in console window, if any
+                << _sawe_usage_string;
         QMessageBox::critical(0, "Sonic AWE", QString::fromStdString( message.str()) );
         ::exit(-1);
         //mb.setWindowModality( Qt::ApplicationModal );
@@ -257,9 +282,10 @@ void Application::
             ::exit(-1);
         }
 
-        Adapters::Csv csv;
+        Adapters::Csv csv(QString("sonicawe-%1.csv").arg(_get_csv).toStdString());
         csv.source( source );
         csv.read( Signal::Interval( _get_csv*total_samples_per_chunk, (_get_csv+1)*total_samples_per_chunk ));
+        TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
     }
 
@@ -269,9 +295,10 @@ void Application::
             ::exit(-1);
         }
 
-        Adapters::Hdf5Chunk hdf5;
+        Adapters::Hdf5Chunk hdf5(QString("sonicawe-%1.h5").arg(_get_hdf).toStdString());
         hdf5.source( source );
         hdf5.read( Signal::Interval(_get_hdf*total_samples_per_chunk, (_get_hdf+1)*total_samples_per_chunk ));
+        TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
     }
 
@@ -279,12 +306,16 @@ void Application::
         TaskInfo("number of samples = %u", source->number_of_samples());
         TaskInfo("samples per chunk = %u", total_samples_per_chunk);
         TaskInfo("chunk count = %u", (source->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk);
+        this->rs.reset();
+        cout    << "number_of_samples = " << source->number_of_samples() << endl
+                << "samples_per_chunk = " << total_samples_per_chunk << endl
+                << "chunk_count = " << (source->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk << endl;
         sawe_exit = true;
     }
 
     if (sawe_exit)
     {
-        TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
+        ::exit(0);
     }
     else
     {
@@ -303,6 +334,7 @@ void Application::
     cwt.scales_per_octave( _scales_per_octave );
     cwt.wavelet_time_support( _wavelet_time_support );
     cwt.wavelet_scale_support( _wavelet_scale_support );
+    cwt.set_wanted_min_hz( _min_hz );
 
 #ifndef SAWE_NO_MUTEX
     if (_multithread)
@@ -319,6 +351,8 @@ void Application::
         c->samples_per_block( _samples_per_block );
         c->scales_per_block( _scales_per_block );
     }
+
+    tools.render_view()->emitTransformChanged();
 }
 
 } // namespace Sawe

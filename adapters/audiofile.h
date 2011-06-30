@@ -231,7 +231,7 @@
 */
 
 #include "signal/buffersource.h"
-
+#include "sawe/reader.h"
 
 #include <boost/serialization/string.hpp>
 
@@ -260,7 +260,19 @@ private:
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+
+#ifdef _DEBUG
         ar & make_nvp("Filename", _original_relative_filename);
+#else
+        std::vector<unsigned char> data;
+        if (typename archive::is_saving())
+            data = Sawe::Reader::mash(_original_relative_filename);
+
+        ar & make_nvp("Filename", data);
+
+        if (typename archive::is_loading())
+            _original_relative_filename = Sawe::Reader::unmash(data);
+#endif
 
         if (typename archive::is_loading())
             load( _original_relative_filename );

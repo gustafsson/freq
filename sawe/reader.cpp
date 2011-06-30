@@ -18,6 +18,9 @@
 
 using namespace std;
 
+namespace Sawe
+{
+
 unsigned radix = 52;
 
 #define cton_helper(low, high) \
@@ -43,9 +46,10 @@ static inline unsigned cton(char c)
     throw invalid_argument(string("Invalid character: ") + c);
 }
 
-static inline std::vector<unsigned char> textradix(string s)
+
+static inline vector<unsigned char> textradix(string s)
 {
-    std::vector<unsigned char> v;
+    vector<unsigned char> v;
 	unsigned val = 0;
 	unsigned byteradix = 1<<8;
 	int counter = 0;
@@ -114,12 +118,65 @@ static inline string backward(const std::vector<unsigned char>& mash)
     return row2;
 }
 
-string tryread(string mash)
+inline vector<unsigned char> forward2(const string& row)
+{
+    // nothing is encrypted, the mashed key is just obfuscated by a "secret algorithm"
+    vector<unsigned char> mash;
+    pseudoseed( time(NULL) );
+    unsigned short s = pseudorand()^(pseudorand() << 8);
+    mash.push_back( s );
+    mash.push_back( s>>8 );
+    mash.push_back( 0 );
+    pseudoseed( s );
+    for (unsigned i=0; i<row.size(); ++i)
+    {
+        mash.push_back( pseudorand() ^ row[i] );
+    }
+    mash[2] = row.size() ^ pseudorand();
+
+    return mash;
+}
+
+static inline string backward2(const vector<unsigned char>& mash)
+{
+    // nothing is encrypted, the mashed key is just obfuscated by a "secret algorithm"
+    if (mash.size()<5)
+        return "";
+
+    pseudoseed(mash[0] | (mash[1]<<8));
+    string row2;
+    for (unsigned i=3; i<mash.size(); ++i)
+        row2.push_back( pseudorand() ^ mash[i] );
+
+    if (mash[2] != (row2.size() ^ pseudorand()))
+        return "";
+
+    return row2;
+}
+
+
+vector<unsigned char> Reader::
+        mash(const string& unmashed)
+{
+    return forward2(unmashed);
+}
+
+
+string Reader::
+        unmash(const vector<unsigned char>& mash)
+{
+    return backward2(mash);
+}
+
+
+string Reader::
+        tryread(string mash)
 {
     try
     {
+        for(static bool once = true; once; once=false) TaskInfo("found %s", mash.c_str());
+
         string lic = backward(textradix(mash));
-        TaskInfo("found %s. %s", mash.c_str(), lic.c_str());
         QString qlic = QString::fromStdString(lic);
         QStringList parts = qlic.split("|");
         if (parts.size()<3)
@@ -135,19 +192,34 @@ string tryread(string mash)
         if (-1==day)
             return "";
 
-        QDate qd(year, month, day);
-        if (qd.addMonths(1) < QDate::currentDate())
-            return "";
-
-        QString licenseText;
-
-        if (type!="-")
+        if (0==year)
         {
-            licenseText = type + " of ";
-        }
+            QString licenseText;
 
-        licenseText+="Sonic AWE licensed to " + licensee + " until " + expires;
-        return licenseText.toStdString();
+            if (type!="-")
+            {
+                licenseText = type + " of ";
+            }
+
+            licenseText+="Sonic AWE licensed to " + licensee;
+            return licenseText.toStdString();
+        }
+        else
+        {
+            QDate qd(year, month, day);
+            if (qd.addMonths(1) < QDate::currentDate())
+                return "";
+
+            QString licenseText;
+
+            if (type!="-")
+            {
+                licenseText = type + " of ";
+            }
+
+            licenseText+="Sonic AWE licensed to " + licensee + " until " + expires;
+            return licenseText.toStdString();
+        }
     }
     catch (invalid_argument x)
     {
@@ -156,7 +228,8 @@ string tryread(string mash)
     return "";
 }
 
-string reader_text(bool annoy)
+string Reader::
+        reader_text(bool annoy)
 {
     while (true)
     {
@@ -185,8 +258,10 @@ string reader_text(bool annoy)
     }
 }
 
-string reader_title()
+string Reader::
+        reader_title()
 {
     return reader_text();
 }
 
+} // namespace Sawe

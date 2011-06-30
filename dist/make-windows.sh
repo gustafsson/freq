@@ -10,14 +10,19 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename}"  
-cd gpumisc
-qmake $qmaketarget
-cd ../sonicawe
-qmake $qmaketarget
-cd ..
-qmake $qmaketarget
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //t:Rebuild //p:Configuration=Release sonic.sln
-
+if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+	cd gpumisc
+	qmake $qmaketarget
+	cd ../sonicawe
+	qmake $qmaketarget
+	cd ..
+	qmake $qmaketarget
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+else
+  rm -f sonicawe/release/sonicawe.exe
+fi
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+	
 echo "========================== Installer =========================="
 echo "Creating Windows installer file: $(pwd)/$filename for package $packagename"
 cd ..
@@ -28,17 +33,20 @@ cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagename
 cp sonic/sonicawe/release/sonicawe.exe $packagename
 cp -r sonic/sonicawe/matlab $packagename/matlab
 cp sonic/sonicawe/license/$licensefile $packagename
+cp sonic/sonicawe/dist/package-win/awe_256.ico $packagename
 
 #Executing dxdiag for Nvidia driver version minimum requirement
 CMD //C dxdiag //x %CD%\\dxdiag.xml
 if [ -f dxdiag.xml ]; then
-nvid_version==`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
+nvid_version=`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
+echo nvid_version
 else
 echo Nvidia driver version could not be read because dxdiag xml file was not found. WARNING, version value is set to \"1.0.0.0\" any version of Nvidia drivers will be recognized as compatible.
-nvid_version=="1.0.0.0"
+nvid_version="1.0.0.0"
 fi
 
-#inserting filename, version and nvidia version number in NSIS script
+#inserting filename, version and nvidia version number in NSIS script 
+sed -i.backup -e "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"${versiontag}\"/" $nsisscript 
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
 instfilepath=`pwd`\/$packagename
 instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
@@ -58,6 +66,7 @@ makensis $nsisscript
 mv sonic/sonicawe/dist/package-win/$filename sonic/sonicawe/dist/$filename
 
 #clean sonicawe.nsi for git consistency
+sed -i.backup -e "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"\"/" $nsisscript
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"\"/" $nsisscript
 sed -i.backup -e "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"\"/" $nsisscript 
 sed -i.backup -e "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"\"/" $nsisscript 

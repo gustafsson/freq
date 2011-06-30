@@ -11,6 +11,7 @@
 #include <set>
 
 class QGLWidget;
+class RedirectStdout;
 
 namespace Sawe {
 
@@ -39,6 +40,8 @@ public:
     void parse_command_line_options( int& argc, char **argv );
 
     void clearCaches();
+
+    boost::shared_ptr<RedirectStdout> rs;
 
 signals:
     void clearCachesSignal();

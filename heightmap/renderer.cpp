@@ -548,6 +548,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
         glDisable(GL_BLEND);
         glDisable(GL_COLOR_MATERIAL);
         glDisable(GL_LIGHTING);
+        glBindTexture(GL_TEXTURE_2D, 0);
         glColor4f( 0.8f, 0.2f, 0.2f, 0.5f );
         glLineWidth(2);
 

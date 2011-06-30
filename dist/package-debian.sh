@@ -49,10 +49,12 @@ cp sonicawe $package/usr/bin/.
 bury_copy sonicawe.1 $package/usr/local/share/man/man1/.
 mkdir -p $share
 mkdir -p $share/examples
+cp matlab/sawe_compute_cwt.m $share
 cp matlab/sawe_extract_cwt.m $share
 cp matlab/sawe_extract_cwt_time.m $share
 cp matlab/sawe_filewatcher.m $share
 cp matlab/sawe_getdatainfo.m $share
+cp matlab/sawe_datestr.m $share
 cp matlab/examples/amplify.m $share/examples
 cp matlab/examples/convolve.m $share/examples
 cp matlab/examples/lowpass.m $share/examples

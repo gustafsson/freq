@@ -53,6 +53,12 @@ llvm {
     QMAKE_LINK = llvm-g++
 }
 
+gcc-4.3 {
+    QMAKE_CXX = g++-4.3
+    QMAKE_CC = gcc-4.3
+    QMAKE_LINK = g++-4.3
+}
+
 
 ####################
 # Source code
@@ -73,6 +79,9 @@ SOURCES += \
     tools/selections/*.cpp \
     tools/selections/support/*.cpp \
     ui/*.cpp \
+
+#Windows Icon
+win32:SOURCES += sonicawe.rc \
 
 HEADERS += \
     adapters/*.h \
@@ -123,6 +132,7 @@ SHADER_SOURCES += \
 OTHER_FILES += \
     $$CUDA_SOURCES \
     $$SHADER_SOURCES \
+    sonicawe.rc
 
 # "Other files" for Visual Studio
 OTHER_SOURCES += \
@@ -220,6 +230,7 @@ else:OBJECTS_DIR = tmp/release/
 # #######################################################################
 # CUDA
 # #######################################################################
+!nocuda {
 
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
@@ -233,6 +244,7 @@ win32 {
     QMAKE_CXXFLAGS += -Zc:wchar_t
     cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
     cuda.commands = \"$(CUDA_BIN_PATH)/nvcc.exe\" \
+		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
         \"$$join(QMAKE_CXXFLAGS," ")\" \
@@ -250,6 +262,7 @@ unix:!macx {
     QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
+		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
@@ -288,6 +301,7 @@ macx {
     QMAKE_LIBDIR += $$CUDA_DIR/lib
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
+		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
         $$join(QMAKE_CXXFLAGS,",") \
@@ -301,4 +315,6 @@ macx {
 
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
+
+} #!nocuda
 # end of cuda section #######################################################################

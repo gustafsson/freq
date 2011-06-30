@@ -182,7 +182,7 @@ void Application::
 {
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
-    if ("not"!=reader_text().substr(0,3))
+    if ("not"!=Reader::reader_text().substr(0,3))
         _projects.insert( p );
 
     apply_command_line_options( p );
@@ -288,7 +288,7 @@ void Application::
     //now.date().year();
     stringstream ss;
     //ss << "Evaluation of Sonic AWE - ";
-    ss << reader_title() << " - ";
+    ss << Reader::reader_title() << " - ";
     #ifdef SONICAWE_VERSION
         ss << "v" << TOSTR(SONICAWE_VERSION);
     #else
@@ -309,7 +309,7 @@ void Application::
 void Application::
         check_license()
 {
-    reader_text(true);
+    Reader::reader_text(true);
 
     global_ptr()->build_version_string();
 }

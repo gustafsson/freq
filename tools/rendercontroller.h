@@ -56,10 +56,15 @@ namespace Tools
         void receiveSetTransform_Cwt_weight();
         void receiveSetTransform_Cepstrum();
 
-        // ComboBoxAction yscale
+        // ComboBoxAction hz_scale
         void receiveLinearScale();
         void receiveLogScale();
         void receiveCepstraScale();
+
+        // ComboBoxAction amplitude_scale
+        void receiveLinearAmplitude();
+        void receiveLogAmplitude();
+        void receiveFifthAmplitude();
 
         void transformChanged();
 
@@ -82,7 +87,8 @@ namespace Tools
         // place in the GUI and take care of events. The objects lifetime
         // depends on the parent QObject which they are inserted into.
         QToolBar* toolbar_render;
-        Ui::ComboBoxAction* zscale;
+        Ui::ComboBoxAction* hz_scale;
+        Ui::ComboBoxAction* amplitude_scale;
         Ui::ComboBoxAction* hzmarker;
         Ui::ComboBoxAction* color;
         QToolButton* channelselector;

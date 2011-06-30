@@ -87,21 +87,33 @@ MatlabFunction::
 
     { // Start matlab/octave
         stringstream matlab_command, octave_command;
-        std::string matlabpath = QApplication::applicationDirPath().replace("\\", "\\\\").replace("\'", "\\'" ).toStdString() + "/matlab";
+        QString sawescript_paths[] =
+        {
+            // local working directory
+            "matlab",
+#if defined(_WIN32) || defined(__APPLE__)
+            // windows and mac install path
+            QApplication::applicationDirPath().replace("\\", "\\\\").replace("\'", "\\'" ) + "/matlab",
+#else
+            // ubuntu
+            "/usr/share/sonicawe",
+#endif
+        };
 
-        if (QDir(matlabpath.c_str()).exists())
+        string scriptpath;
+        for (unsigned i=0; i<sizeof(sawescript_paths)/sizeof(sawescript_paths[0]); i++)
+            if (QDir(sawescript_paths[i]).exists())
+            {
+                scriptpath = sawescript_paths[i].toStdString();
+                break;
+            }
+
+        if (!scriptpath.empty())
         {
             matlab_command
-                    << "addpath('" << matlabpath << "');";
+                    << "addpath('" << scriptpath << "');";
             octave_command
-                    << "addpath('" << matlabpath << "');";
-        }
-        else if (QDir("matlab").exists())
-        {
-            matlab_command
-                    << "addpath('matlab');";
-            octave_command
-                    << "addpath('matlab');";
+                    << "addpath('" << scriptpath << "');";
         }
         else
         {
@@ -604,21 +616,32 @@ Interval MatlabOperation::
         if (isrecording)
         {
             bool need_a_specific_chunk_size = 0<_settings->chunksize();
-            if (_settings->computeInOrder() && need_a_specific_chunk_size)
-                return Interval(0,0);
-
-
-            if (recorder->isStopped())
+            if (need_a_specific_chunk_size)
             {
-                // Ok, go on
+                if (recorder->isStopped() && !_settings->computeInOrder())
+                {
+                    // Ok, go on
+                }
+                else
+                {
+                    return Interval(0,0);
+                }
             }
             else
             {
-                // Don't use any samples after the end while recording
-                K &= signal;
-
-                if (Intervals(K).shrink(support).empty())
+                if (recorder->isStopped())
+                {
+                    // Ok, go on
+                }
+                else
+                {
                     return Interval(0,0);
+                    // Don't use any samples after the end while recording
+                    K &= signal;
+
+                    if (Intervals(K).shrink(support).empty())
+                        return Interval(0,0);
+                }
             }
         }
     }
@@ -717,12 +740,12 @@ void MatlabOperation::
 
     _settings = settings;
 
+    restart();
+
     if (_settings)
     {
         _settings->operation = this;
     }
-
-    restart();
 }
 
 } // namespace Adapters

@@ -9,8 +9,9 @@ Replaces: sonicawe-stable-candidate
 Conflicts: 
 Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.40.0
 Maintainer: Johan Gustafsson [johan.gustafsson@sonicawe.com]
-Description: A fast and smooth spectrum analyzer.
- Sonic AWE navigates large spectrums as map software navigates earth. You can seemlessly zoom in anywhere and scale the spectrum to focus on your points of interest. It is easy to change spectrum parameters and transform methods interactively. This workflow makes it easy to understand signal components fast.
+Description: Visualization based signal analysis
+ 
+ Sonic AWE is a signal analysis tool based on visualization that runs on GNU/Linux, Windows and Mac OS X. Sonic AWE navigates large spectrums as map software navigates earth so you can seemlessly zoom in anywhere and scale the spectrum to focus on your points of interest. It is easy to change spectrum parameters and transform methods interactively. This workflow makes it easy to understand signal components fast.
  
  :
  

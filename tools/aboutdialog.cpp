@@ -43,8 +43,8 @@ void AboutDialog::
 {
     ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
     ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
-    ui->labelLicense->setText( reader_text().c_str() );
-    if (reader_title() == reader_text() )
+    ui->labelLicense->setText( Sawe::Reader::reader_text().c_str() );
+    if (Sawe::Reader::reader_title() == Sawe::Reader::reader_text() )
         ui->labelLicense->clear();
 
     size_t free=0, total=0;

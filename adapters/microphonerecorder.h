@@ -30,6 +30,7 @@ public:
     void startRecording();
     void stopRecording();
     bool isStopped();
+    void setProjectName(std::string, int);
 
     virtual std::string name();
     virtual Signal::pBuffer read( const Signal::Interval& I );
@@ -54,6 +55,7 @@ private:
         _sample_rate(1)
     {} // for deserialization
 
+    std::string deviceName();
     int input_device_;
     void init();
 
@@ -75,6 +77,8 @@ private:
                      const PaStreamCallbackTimeInfo *timeInfo,
                      PaStreamCallbackFlags statusFlags);
 
+    std::string _filename;
+
     friend class boost::serialization::access;
 
     template<class archive>
@@ -95,12 +99,10 @@ private:
             N = 1;
 
         Signal::pBuffer b = readFixedLengthAllChannels( Signal::Interval(0, N) );
-        std::stringstream ss;
-        ss << "recording_" << std::oct << (void*)this << ".wav";
 
-        WriteWav::writeToDisk(ss.str(), b, false);
+        WriteWav::writeToDisk(_filename, b, false);
 
-        boost::shared_ptr<Audiofile> wavfile( new Audiofile(ss.str()) );
+        boost::shared_ptr<Audiofile> wavfile( new Audiofile(_filename) );
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);

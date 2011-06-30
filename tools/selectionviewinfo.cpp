@@ -33,7 +33,7 @@ SelectionViewInfo::
 
     connect(ui_->actionSelection_Info, SIGNAL(toggled(bool)), this, SLOT(setVisible(bool)));
     connect(ui_->actionSelection_Info, SIGNAL(triggered()), this, SLOT(raise()));
-    connect(this, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibility(bool)));
+    connect(this, SIGNAL(visibilityChanged(bool)), SLOT(setVisible(bool)));
     ui_->actionSelection_Info->setChecked( false );
 
     project->mainWindow()->getItems()->menu_Windows->addAction(ui_->actionSelection_Info);

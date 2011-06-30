@@ -25,8 +25,13 @@
 #include <fstream>
 
 // Boost
+#ifdef _DEBUG
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
+#else
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#endif
 #include <boost/algorithm/string.hpp>
 
 // Qt
@@ -98,12 +103,26 @@ bool Project::
 	BOOST_ASSERT( 0 == memcmp(mainwindowState.data(), mainwindowState2.data(), mainwindowState2.size()));
     _mainWindow->restoreState( mainwindowState );
 
+    {
+        int microphoneCounter = 0;
+        foreach(Signal::pChain c, layers.layers())
+        {
+            Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( c->root_source().get() );
+            if (r)
+                r->setProjectName(project_filename_, ++microphoneCounter);
+        }
+    }
+
     try
     {
         TaskTimer tt("Saving project to '%s'", project_filename_.c_str());
         std::ofstream ofs(project_filename_.c_str());
+#ifdef _DEBUG
         boost::archive::xml_oarchive xml(ofs);
-		Project* p = this;
+#else
+        boost::archive::binary_oarchive xml(ofs);
+#endif
+        Project* p = this;
         runSerialization(xml, p, project_filename_.c_str());
     }
     catch (const std::exception& x)
@@ -122,17 +141,24 @@ pProject Project::
         openProject(std::string project_file)
 {
     std::ifstream ifs(project_file.c_str());
-    string xmltest;
-	xmltest.resize(5);
 
-    ifs.read( &xmltest[0], 5 );
-    if( !boost::iequals( xmltest, "<?xml") )
-        throw std::invalid_argument("Project file '" + project_file + "' is not an xml file");
+#ifdef _DEBUG
+        {
+            string xmltest;
+            xmltest.resize(5);
 
-    for (int i=xmltest.size()-1; i>=0; i--)
-        ifs.putback( xmltest[i] );
+            ifs.read( &xmltest[0], 5 );
+            if( !boost::iequals( xmltest, "<?xml") )
+                throw std::invalid_argument("Project file '" + project_file + "' is not an xml file");
 
-    boost::archive::xml_iarchive xml(ifs);
+            for (int i=xmltest.size()-1; i>=0; i--)
+                ifs.putback( xmltest[i] );
+        }
+
+        boost::archive::xml_iarchive xml(ifs);
+#else
+        boost::archive::binary_iarchive xml(ifs);
+#endif
 
     Project* new_project = 0;
 	runSerialization(xml, new_project, project_file.c_str());

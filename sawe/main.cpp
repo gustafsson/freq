@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
     rename("sonicawe~2.log~2", "sonicawe~2.log");
     rename("sonicawe~.log", "sonicawe~2.log");
     rename("sonicawe.log", "sonicawe~.log");
-    RedirectStdout rs("sonicawe.log");
+    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout("sonicawe.log"));
 
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 
@@ -439,6 +439,8 @@ int main(int argc, char *argv[])
 
     try {
         Sawe::Application a(argc, argv, true);
+        a.rs = rs;
+        rs.reset();
 
         {
             TaskInfo ti("Version: %s", a.version_string().c_str());
@@ -519,9 +521,11 @@ int main(int argc, char *argv[])
 
         return r;
     } catch (const std::exception &x) {
+        if (!rs) rs.reset(new RedirectStdout("sonicawe.log"));
         Sawe::Application::display_fatal_exception(x);
         return -2;
     } catch (...) {
+        if (!rs) rs.reset(new RedirectStdout("sonicawe.log"));
         Sawe::Application::display_fatal_exception();
         return -3;
     }

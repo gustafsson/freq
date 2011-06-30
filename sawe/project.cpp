@@ -261,7 +261,10 @@ void Project::
     QSettings settings;
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
-    
+
+    // don't start in fullscreen mode
+    dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data())->disableFullscreen();
+
     _mainWindow->show();
 
     Sawe::Application::check_license();

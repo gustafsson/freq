@@ -519,6 +519,7 @@ pChunk Cwt::
 
             {
                 CufftHandleContext& fftctx = _fft_many[ n.width*n.height ];
+
                 {
                     //TIME_CWTPART TaskTimer tt("Allocating inverse fft");
                     fftctx(n.width, n.height);
@@ -653,7 +654,7 @@ float Cwt::
 
 
 void Cwt::
-        set_min_hz(float value)
+        set_wanted_min_hz(float value)
 {
     if (value == _min_hz) return;
 
