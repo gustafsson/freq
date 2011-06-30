@@ -18,10 +18,11 @@ namespace Ui {
 
 SaweMainWindow::
         SaweMainWindow(const char* title, Sawe::Project* project, QWidget *parent)
-:   QMainWindow(parent),
+:   QMainWindow( parent ),
     project( project ),
-    ui(new MainWindow),
-    escape_action(0)
+    ui( new MainWindow ),
+    escape_action( 0 ),
+    fullscreen_widget( 0 )
 {
 #ifdef Q_WS_MAC
 //    qt_mac_set_menubar_icons(false);
@@ -222,6 +223,14 @@ void SaweMainWindow::slotDeleteSelection(void)
 }
 */
 
+void SaweMainWindow::
+        disableFullscreen()
+{
+    ui->actionToggleFullscreen->setChecked( false );
+    ui->actionToggleFullscreenNoMenus->setChecked( false );
+    toggleFullscreen( false );
+    toggleFullscreenNoMenus( false );
+}
 
 void SaweMainWindow::
         closeEvent(QCloseEvent * e)
@@ -338,9 +347,11 @@ void SaweMainWindow::
 
     TaskInfo ti("%s %d", __FUNCTION__, fullscreen);
 
+    if (0 == fullscreen_widget)
+        fullscreen_widget = centralWidget();
+
     if (fullscreen)
     {
-        fullscreen_widget = centralWidget();
         fullscreen_widget->setParent(0);
         fullscreen_widget->setWindowState( Qt::WindowFullScreen );
         fullscreen_widget->show();
@@ -363,7 +374,7 @@ void SaweMainWindow::
 
         fullscreen_widget->addAction( escape_action );
         fullscreen_widget->addAction( ui->actionToggleFullscreenNoMenus );
-    } else {
+    } else {            
         setCentralWidget( fullscreen_widget );
         fullscreen_widget->setWindowState( Qt::WindowActive );
         show();

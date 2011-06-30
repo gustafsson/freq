@@ -40,6 +40,8 @@ public:
     
     MainWindow* getItems() { return ui; }
 
+    void disableFullscreen();
+
 signals:
     void onMainWindowCloseEvent( QWidget* closed );
 
