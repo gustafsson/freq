@@ -226,6 +226,17 @@ p, li { white-space: pre-wrap; }
 &lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;signal analysis&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
+  <zorder>labelSystem</zorder>
+  <zorder>buttonBox</zorder>
+  <zorder>label</zorder>
+  <zorder>labelVersion</zorder>
+  <zorder>labelTimestamp</zorder>
+  <zorder>label_5</zorder>
+  <zorder>label_6</zorder>
+  <zorder>line</zorder>
+  <zorder>textEdit</zorder>
+  <zorder>labelLicense</zorder>
+  <zorder>label_2</zorder>
  </widget>
  <resources>
   <include location="../ui/icon-resources.qrc"/>
