@@ -174,8 +174,9 @@ string Reader::
 {
     try
     {
+        for(static bool once = true; once; once=false) TaskInfo("found %s", mash.c_str());
+
         string lic = backward(textradix(mash));
-        TaskInfo("found %s. %s", mash.c_str(), lic.c_str());
         QString qlic = QString::fromStdString(lic);
         QStringList parts = qlic.split("|");
         if (parts.size()<3)
