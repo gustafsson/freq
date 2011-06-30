@@ -653,7 +653,7 @@ float Cwt::
 
 
 void Cwt::
-        set_min_hz(float value)
+        set_wanted_min_hz(float value)
 {
     if (value == _min_hz) return;
 

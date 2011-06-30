@@ -52,7 +52,7 @@ static const char _sawe_usage_string[] =
     "    --get_chunk_count=1 outpus the number of chunks that can be fetched by \n"
     "                        the --get_* options\n"
     "\n"
-    "Settings for extracting CWT\n"
+    "Settings for computing CWT\n"
     "    --samples_per_chunk_hint\n"
     "                        The transform is computed in chunks from the input\n"
     "                        This value determines the number of input samples that\n"
@@ -68,6 +68,8 @@ static const char _sawe_usage_string[] =
     "    --wavelet_scale_support\n"
     "                        Transform CWT chunks with this many sigmas overlap in scale\n"
     "                        domain.\n"
+    "    --min_hz            Transform CWT with scales logarithmically distributed\n"
+    "                        on (min_hz, fs/2]\n"
     "\n"
     "Audio devices (see log file from previous start for list of available devices)\n"
     "    --record            Starts Sonic AWE starts in record mode. [default]\n"
@@ -91,6 +93,7 @@ static unsigned _channel=0;
 static unsigned _scales_per_octave = 20;
 static float _wavelet_time_support = 5;
 static float _wavelet_scale_support = 4;
+static float _min_hz = 20;
 static unsigned _samples_per_chunk_hint = 1;
 static unsigned _samples_per_block = 1<<9;
 static unsigned _scales_per_block = 1<<7;
@@ -183,6 +186,7 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
         else if (readarg(&cmd, get_csv));
+        else if (readarg(&cmd, min_hz));
 #ifndef QT_NO_THREAD
         else if (readarg(&cmd, multithread));
 #endif
@@ -330,6 +334,7 @@ void Application::
     cwt.scales_per_octave( _scales_per_octave );
     cwt.wavelet_time_support( _wavelet_time_support );
     cwt.wavelet_scale_support( _wavelet_scale_support );
+    cwt.set_wanted_min_hz( _min_hz );
 
 #ifndef SAWE_NO_MUTEX
     if (_multithread)

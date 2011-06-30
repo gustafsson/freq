@@ -45,7 +45,7 @@ saves the given chunk number into sawe.h5 which then can be read by matlab or oc
 \fB\--get_chunk_count=1\fR
 outpus the number of chunks that can be fetched by the --get_* options
 .TP 10
-\fBSettings for extracting CWT\fR
+\fBSettings for computing CWT\fR
 .TP 10
 \fB\--samples_per_chunk_hint[=value]\fR
 only used by the get_* options. The transform is computed in chunks from the input. This determines the number of input samples that should correspond to one chunk of the transform by 2^samples_per_chunk. The actual number of samples computed and written to file per chunk might be different
@@ -58,6 +58,9 @@ transform CWT chunks with this many sigmas overlap in time domain
 .TP 10
 \fB\--wavelet_scale_support[=decimal_value]\fR
 transform CWT chunks with this many sigmas overlap in scale domain
+.TP 10
+\fB\--min_hz[=decimal_value]\fR
+Transform CWT with scales logarithmically distributed on (min_hz, fs/2]
 .TP 10
 \fBAudio devices (see log file from previous start for list of available devices)\fR
 .TP 10
