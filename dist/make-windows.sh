@@ -33,6 +33,7 @@ cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagename
 cp sonic/sonicawe/release/sonicawe.exe $packagename
 cp -r sonic/sonicawe/matlab $packagename/matlab
 cp sonic/sonicawe/license/$licensefile $packagename
+cp sonic/sonicawe/dist/package-win/awe_256.ico $packagename
 
 #Executing dxdiag for Nvidia driver version minimum requirement
 CMD //C dxdiag //x %CD%\\dxdiag.xml
@@ -44,7 +45,8 @@ echo Nvidia driver version could not be read because dxdiag xml file was not fou
 nvid_version="1.0.0.0"
 fi
 
-#inserting filename, version and nvidia version number in NSIS script
+#inserting filename, version and nvidia version number in NSIS script 
+sed -i.backup -e "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"${versiontag}\"/" $nsisscript 
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
 instfilepath=`pwd`\/$packagename
 instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
@@ -64,6 +66,7 @@ makensis $nsisscript
 mv sonic/sonicawe/dist/package-win/$filename sonic/sonicawe/dist/$filename
 
 #clean sonicawe.nsi for git consistency
+sed -i.backup -e "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"\"/" $nsisscript
 sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"\"/" $nsisscript
 sed -i.backup -e "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"\"/" $nsisscript 
 sed -i.backup -e "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"\"/" $nsisscript 

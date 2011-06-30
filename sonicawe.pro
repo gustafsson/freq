@@ -80,6 +80,9 @@ SOURCES += \
     tools/selections/support/*.cpp \
     ui/*.cpp \
 
+#Windows Icon
+win32:SOURCES += sonicawe.rc \
+
 HEADERS += \
     adapters/*.h \
     filters/*.h \
@@ -129,6 +132,7 @@ SHADER_SOURCES += \
 OTHER_FILES += \
     $$CUDA_SOURCES \
     $$SHADER_SOURCES \
+    sonicawe.rc
 
 # "Other files" for Visual Studio
 OTHER_SOURCES += \
