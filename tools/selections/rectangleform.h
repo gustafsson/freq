@@ -21,6 +21,7 @@ public:
     ~RectangleForm();
 
     void updateGui();
+    void showAsCurrentTool( bool isCurrent );
 
 private slots:
     void updateSelection();

@@ -55,9 +55,24 @@ void RectangleForm::
 
 
 void RectangleForm::
+        showAsCurrentTool( bool isCurrent )
+{
+    QDockWidget* toolWindow = model_->project()->mainWindow()->getItems()->toolPropertiesWindow;
+    if (isCurrent)
+    {
+        toolWindow->setWidget( this );
+        updateGui();
+    }
+    else if (this == toolWindow->widget())
+        toolWindow->setWidget( NULL );
+}
+
+
+void RectangleForm::
         updateGui()
 {
     dontupdate_ = true;
+
     ui->spinBoxStartFrequency->setMaximum( model_->freqAxis().getFrequency( 1.f ) );
     ui->spinBoxStopFrequency->setMaximum( model_->freqAxis().getFrequency( 1.f ) );
     ui->spinBoxStartFrequency->setMinimum( model_->freqAxis().getFrequency( 0.f ) );
@@ -70,8 +85,6 @@ void RectangleForm::
     ui->spinBoxStartFrequency->setValue( hza );
     ui->spinBoxStopFrequency->setValue( hzb );
 
-    //QDockWidget* toolWindow = model_->project()->mainWindow()->getItems()->toolPropertiesWindow;
-    //toolWindow->setWidget( this );
     dontupdate_ = false;
 }
 

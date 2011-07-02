@@ -211,10 +211,7 @@ namespace Tools { namespace Selections
         Signal::pOperation o = selection_controller_->model()->current_selection();
         if (o)
         {
-            if (model()->tryFilter( o ))
-            {
-                rectangleForm_->updateGui();
-            }
+            rectangleForm_->showAsCurrentTool( model()->tryFilter( o ) );
         }
     }
 
