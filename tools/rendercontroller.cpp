@@ -303,6 +303,16 @@ void RenderController::
 }
 
 
+void RenderController::yscaleIncrease()
+{    yscale->triggerAction( QAbstractSlider::SliderPageStepAdd ); }
+void RenderController::yscaleDecrease()
+{    yscale->triggerAction( QAbstractSlider::SliderPageStepSub ); }
+void RenderController::tfresolutionIncrease()
+{    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepAdd ); }
+void RenderController::tfresolutionDecrease()
+{    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepSub ); }
+
+
 Signal::PostSink* RenderController::
         setBlockFilter(Signal::Operation* blockfilter)
 {
@@ -524,7 +534,7 @@ void RenderController::
 
 
     // ComboBoxAction* hzmarker
-    {   hzmarker = new ComboBoxAction();
+    {   hzmarker = new ComboBoxAction(toolbar_render);
         hzmarker->addActionItem( ui->actionToggle_hz_grid );
         hzmarker->addActionItem( ui->actionToggle_piano_grid );
         toolbar_render->addWidget( hzmarker );
@@ -537,7 +547,7 @@ void RenderController::
 
 
     // ComboBoxAction* color
-    {   color = new ComboBoxAction();
+    {   color = new ComboBoxAction(toolbar_render);
         color->decheckable( false );
         color->addActionItem( ui->actionSet_rainbow_colors );
         color->addActionItem( ui->actionSet_grayscale );
@@ -551,7 +561,7 @@ void RenderController::
     }
 
     // ComboBoxAction* channels
-    {   channelselector = new QToolButton();
+    {   channelselector = new QToolButton(toolbar_render);
         channelselector->setCheckable( false );
         channelselector->setText("Channels");
         channelselector->setContextMenuPolicy( Qt::ActionsContextMenu );
@@ -575,7 +585,7 @@ void RenderController::
         connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
         connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
 
-        transform = new ComboBoxAction();
+        transform = new ComboBoxAction(toolbar_render);
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
         transform->addActionItem( ui->actionTransform_Cepstrum );
@@ -595,9 +605,9 @@ void RenderController::
 
 
     // ComboBoxAction* hz-scale
-    {   QAction* linearScale = new QAction( main );
-        QAction* logScale = new QAction( main );
-        QAction* cepstraScale = new QAction( main );
+    {   QAction* linearScale = new QAction( toolbar_render );
+        QAction* logScale = new QAction( toolbar_render );
+        QAction* cepstraScale = new QAction( toolbar_render );
 
         linearScale->setText("Linear scale");
         logScale->setText("Logarithmic scale");
@@ -628,9 +638,9 @@ void RenderController::
 
 
     // ComboBoxAction* amplitude-scale
-    {   QAction* linearAmplitude = new QAction( main );
-        QAction* logAmpltidue = new QAction( main );
-        QAction* fifthAmpltidue = new QAction( main );
+    {   QAction* linearAmplitude = new QAction( toolbar_render );
+        QAction* logAmpltidue = new QAction( toolbar_render );
+        QAction* fifthAmpltidue = new QAction( toolbar_render );
 
         linearAmplitude->setText("Linear amplitude");
         logAmpltidue->setText("Logarithmic amplitude");
@@ -661,28 +671,54 @@ void RenderController::
 
 
     // QSlider * yscale
-    {   yscale = new QSlider();
+    {   yscale = new QSlider( toolbar_render );
         yscale->setOrientation( Qt::Horizontal );
         yscale->setMaximum( 10000 );
         yscale->setValue( 5000 );
         yscale->setToolTip( "Intensity level" );
+        yscale->setPageStep( 100 );
         toolbar_render->addWidget( yscale );
 
         connect(yscale, SIGNAL(valueChanged(int)), SLOT(receiveSetYScale(int)));
         receiveSetYScale(yscale->value());
+
+        QAction* yscaleIncrease = new QAction(yscale);
+        QAction* yscaleDecrease = new QAction(yscale);
+
+        yscaleIncrease->setShortcut(QString("Alt+Up"));
+        yscaleDecrease->setShortcut(QString("Alt+Down"));
+
+        connect(yscaleIncrease, SIGNAL(triggered()), SLOT(yscaleIncrease()));
+        connect(yscaleDecrease, SIGNAL(triggered()), SLOT(yscaleDecrease()));
+
+        yscale->addAction( yscaleIncrease );
+        yscale->addAction( yscaleDecrease );
     }
 
 
     // QSlider * tf_resolution
-    {   tf_resolution = new QSlider();
+    {   tf_resolution = new QSlider( toolbar_render );
         tf_resolution->setOrientation( Qt::Horizontal );
         tf_resolution->setMaximum( 10000 );
         tf_resolution->setValue( 5000 );
         tf_resolution->setToolTip( "Time/frequency resolution." );
+        tf_resolution->setPageStep( 100 );
         toolbar_render->addWidget( tf_resolution );
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
         receiveSetTimeFrequencyResolution(tf_resolution->value());
+
+        QAction* tfresolutionIncrease = new QAction(yscale);
+        QAction* tfresolutionDecrease = new QAction(yscale);
+
+        tfresolutionIncrease->setShortcut(QString("Alt+Right"));
+        tfresolutionDecrease->setShortcut(QString("Alt+Left"));
+
+        connect(tfresolutionIncrease, SIGNAL(triggered()), SLOT(tfresolutionIncrease()));
+        connect(tfresolutionDecrease, SIGNAL(triggered()), SLOT(tfresolutionDecrease()));
+
+        tf_resolution->addAction( tfresolutionIncrease );
+        tf_resolution->addAction( tfresolutionDecrease );
     }
 
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()));

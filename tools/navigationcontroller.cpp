@@ -56,6 +56,70 @@ void NavigationController::
         zoom_only_ = true;
 }
 
+
+void NavigationController::
+        moveUp()
+{
+    moveCamera(0, 0.1f/_view->model->zscale);
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        moveDown()
+{
+    moveCamera(0, -0.1f/_view->model->zscale);
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        moveLeft()
+{
+    moveCamera(-0.1f/_view->model->xscale, 0);
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        moveRight()
+{
+    moveCamera(0.1f/_view->model->xscale, 0);
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        scaleUp()
+{
+    zoom( -40, ScaleZ );
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        scaleDown()
+{
+    zoom( 40, ScaleZ );
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        scaleLeft()
+{
+    zoom( 40, ScaleX );
+    _view->userinput_update();
+}
+
+
+void NavigationController::
+        scaleRight()
+{
+    zoom( -40, ScaleX );
+    _view->userinput_update();
+}
+
 void NavigationController::
         mousePressEvent ( QMouseEvent * e )
 {
@@ -261,16 +325,7 @@ void NavigationController::
             Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
             if (success1 && success2)
             {
-                float l = _view->model->project()->worker.source()->length();
-
-                Tools::RenderView& r = *_view;
-                r.model->_qx -= current.time - last.time;
-                r.model->_qz -= current.scale - last.scale;
-
-                if (r.model->_qx<0) r.model->_qx=0;
-                if (r.model->_qz<0) r.model->_qz=0;
-                if (r.model->_qz>1) r.model->_qz=1;
-                if (r.model->_qx>l) r.model->_qx=l;
+                moveCamera( last.time - current.time, last.scale - current.scale);
             }
         }
     }
@@ -304,7 +359,8 @@ void NavigationController::
 void NavigationController::
         connectGui()
 {
-    Ui::MainWindow* ui = _view->model->project()->mainWindow()->getItems();
+    Ui::SaweMainWindow* main = _view->model->project()->mainWindow();
+    Ui::MainWindow* ui = main->getItems();
 
     connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
     connect(ui->toolBarOperation, SIGNAL(visibleChanged(bool)), ui->actionToggleNavigationToolBox, SLOT(setChecked(bool)));
@@ -327,7 +383,42 @@ void NavigationController::
     ui->actionActivateNavigation->setShortcuts( shortcuts );
 
     ui->actionActivateNavigation->setChecked(true);
+
+    void bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot );
+
+    bindKeyToSlot( main, "Up", this, SLOT(moveUp()) );
+    bindKeyToSlot( main, "Down", this, SLOT(moveDown()) );
+    bindKeyToSlot( main, "Left", this, SLOT(moveLeft()) );
+    bindKeyToSlot( main, "Right", this, SLOT(moveRight()) );
+    bindKeyToSlot( main, "Shift+Up", this, SLOT(scaleUp()) );
+    bindKeyToSlot( main, "Shift+Down", this, SLOT(scaleDown()) );
+    bindKeyToSlot( main, "Shift+Left", this, SLOT(scaleLeft()) );
+    bindKeyToSlot( main, "Shift+Right", this, SLOT(scaleRight()) );
 }
 
+
+void bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot )
+{
+    QAction* a = new QAction(owner);
+    a->setShortcut(QString(keySequence));
+    QObject::connect(a, SIGNAL(triggered()), receiver, slot);
+    owner->addAction( a );
+}
+
+
+void NavigationController::
+        moveCamera( float dt, float ds )
+{
+    float l = _view->model->project()->worker.source()->length();
+
+    Tools::RenderView& r = *_view;
+    r.model->_qx += dt;
+    r.model->_qz += ds;
+
+    if (r.model->_qx<0) r.model->_qx=0;
+    if (r.model->_qz<0) r.model->_qz=0;
+    if (r.model->_qz>1) r.model->_qz=1;
+    if (r.model->_qx>l) r.model->_qx=l;
+}
 
 } // namespace Tools

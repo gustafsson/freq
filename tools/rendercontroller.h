@@ -46,6 +46,10 @@ namespace Tools
         // Sliders
         void receiveSetYScale(int);
         void receiveSetTimeFrequencyResolution(int);
+        void yscaleIncrease();
+        void yscaleDecrease();
+        void tfresolutionIncrease();
+        void tfresolutionDecrease();
 
         // ComboBoxAction transform
         void receiveSetTransform_Cwt();
