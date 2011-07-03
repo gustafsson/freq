@@ -133,20 +133,25 @@ bool Application::
     std::string err;
 
     try {
-        if (e) switch (e->type())
+        if (e)
         {
-            case QEvent::MouseButtonPress:
-            case QEvent::KeyPress:
-            case QEvent::Show:
-            case QEvent::Enter:
-            case QEvent::HoverEnter:
-            case QEvent::HoverMove:
-                foreach (pProject p, _projects)
-                    p->tools().render_view()->userinput_update( true, false );
-                break;
+            QEvent::Type t = e->type();
+            switch (t)
+            {
+                case QEvent::MouseButtonPress:
+                case QEvent::KeyPress:
+                case QEvent::Show:
+                case QEvent::Enter:
+                    foreach (pProject p, _projects)
+                    {
+                        if (receiver == p->mainWindow())
+                            p->tools().render_view()->userinput_update( true, false );
+                    }
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
+            }
         }
 
         v = QApplication::notify(receiver,e);
