@@ -68,7 +68,7 @@ namespace Tools { namespace Selections
         connect(selection_controller_->render_view(), SIGNAL(destroying()), SLOT(close()));
         connect(selection_controller_->model(), SIGNAL(selectionChanged()), SLOT(selectionChanged()));
 
-        rectangleForm_ = new RectangleForm( this->model() );
+        rectangleForm_ = new RectangleForm( this->model(), selection_controller_ );
         connect(selection_controller_->render_view(), SIGNAL(transformChanged()), rectangleForm_.data(), SLOT(updateSelection()) );
 
         // Add the action as a combo box item in selection controller

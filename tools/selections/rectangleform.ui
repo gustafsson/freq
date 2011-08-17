@@ -16,15 +16,27 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="2" column="1">
     <widget class="QDoubleSpinBox" name="spinBoxStartTime">
+     <property name="suffix">
+      <string> s</string>
+     </property>
      <property name="decimals">
       <number>5</number>
+     </property>
+     <property name="maximum">
+      <double>2147483647.000000000000000</double>
      </property>
     </widget>
    </item>
    <item row="4" column="1">
     <widget class="QDoubleSpinBox" name="spinBoxStopTime">
+     <property name="suffix">
+      <string> s</string>
+     </property>
      <property name="decimals">
       <number>5</number>
+     </property>
+     <property name="maximum">
+      <double>2147483647.000000000000000</double>
      </property>
     </widget>
    </item>
@@ -44,6 +56,9 @@
    </item>
    <item row="2" column="2">
     <widget class="QDoubleSpinBox" name="spinBoxStartFrequency">
+     <property name="suffix">
+      <string> hz</string>
+     </property>
      <property name="decimals">
       <number>4</number>
      </property>
@@ -51,6 +66,9 @@
    </item>
    <item row="4" column="2">
     <widget class="QDoubleSpinBox" name="spinBoxStopFrequency">
+     <property name="suffix">
+      <string> hz</string>
+     </property>
      <property name="decimals">
       <number>4</number>
      </property>
