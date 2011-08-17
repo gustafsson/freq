@@ -1,5 +1,6 @@
 #include "rectanglemodel.h"
 #include "filters/rectangle.h"
+#include "filters/bandpass.h"
 #include "tools/support/operation-composite.h"
 #include "sawe/project.h"
 #include "tools/rendermodel.h"
@@ -51,11 +52,11 @@ Signal::pOperation RectangleModel::
         ;
     else if (a.scale>0 || b.scale<1)
     {
-        float bt = b.time;
         if (type == RectangleType_FrequencySelection)
-            bt = FLT_MAX;
-        filter.reset( new Filters::Rectangle(
-                a.time, f1, bt, f2, true ));
+            filter.reset( new Filters::Bandpass(f1, f2, true ));
+        else
+            filter.reset( new Filters::Rectangle(
+                a.time, f1, b.time, f2, true ));
     }
     else
     {
@@ -71,6 +72,7 @@ bool RectangleModel::
         tryFilter(Signal::pOperation filter)
 {
     Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(filter.get());
+    Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(filter.get());
     Tools::Support::OperationOtherSilent* os = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());
     float FS = project_->head->head_source()->sample_rate();
     if (e)
@@ -79,6 +81,15 @@ bool RectangleModel::
         b.time = e->_t2;
         a.scale = freqAxis().getFrequencyScalar( e->_f1 );
         b.scale = freqAxis().getFrequencyScalar( e->_f2 );
+        validate();
+        return true;
+    }
+    else if(bp)
+    {
+        a.time = 0;
+        b.time = FLT_MAX;
+        a.scale = freqAxis().getFrequencyScalar( bp->_f1 );
+        b.scale = freqAxis().getFrequencyScalar( bp->_f2 );
         validate();
         return true;
     }

@@ -1,6 +1,7 @@
 #include "stft.h"
 #include "complexbuffer.h"
 #include "signal/buffersource.h"
+#include "wavelet.cu.h"
 
 #include <cufft.h>
 #include <throwInvalidArgument.h>
@@ -391,17 +392,21 @@ std::vector<unsigned> Stft::_ok_chunk_sizes;
 Stft::
         Stft( cudaStream_t stream )
 :   _stream( stream ),
-    _handle_ctx(stream, CUFFT_R2C),
+    _handle_ctx_c2c(stream, CUFFT_C2C),
+    _handle_ctx_r2c(stream, CUFFT_R2C),
+    _handle_ctx_c2r(stream, CUFFT_C2R),
     _window_size( 1<<11 ),
     _compute_redundant(false)
 //    _fft_many( -1 )
 {
+    compute_redundant( _compute_redundant );
 }
 
 
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
+    // @see compute_redundant()
     if (compute_redundant())
         return ChunkWithRedundant(b);
 
@@ -414,10 +419,10 @@ Tfr::pChunk Stft::
 
     cudaExtent n = make_cudaExtent( actualSize.x * actualSize.y, 1, 1 );
 
-    if (0==n.height)
+    if (0==n.height) // not enough data
         return Tfr::pChunk();
 
-    if (32768<n.height)
+    if (32768<n.height) // TODO can't handle this
         n.height = 32768;
 
     Tfr::pChunk chunk( new Tfr::StftChunk(_window_size) );
@@ -486,13 +491,13 @@ Tfr::pChunk Stft::
         try
         {
             CufftException_SAFE_CALL(cufftExecR2C(
-                    _handle_ctx(_window_size, slices),
+                    _handle_ctx_r2c(_window_size, slices),
                     input + i*_window_size,
                     output + i*actualSize.x));
 
             i += slices;
         } catch (const CufftException& /*x*/) {
-            _handle_ctx(0,0);
+            _handle_ctx_r2c(0,0);
             if (slices>1)
                 slices/=2;
             else
@@ -501,6 +506,27 @@ Tfr::pChunk Stft::
     }
 
     TIME_STFT CudaException_ThreadSynchronize();
+
+
+    if (false)
+    {
+        Signal::pBuffer breal = b;
+        Signal::pBuffer binv = inverse( chunk );
+        float* binv_p = binv->waveform_data()->getCpuMemory();
+        float* breal_p = breal->waveform_data()->getCpuMemory();
+        Signal::IntervalType breal_length = breal->number_of_samples();
+        Signal::IntervalType binv_length = binv->number_of_samples();
+        BOOST_ASSERT( breal_length = binv_length );
+        float maxd = 0;
+        for(Signal::IntervalType i =0; i<breal_length; i++)
+        {
+            float d = breal_p[i]-binv_p[i];
+            if (d*d > maxd)
+                maxd = d*d;
+        }
+
+        TaskInfo("Difftest %s (value %g)", maxd<1e-8?"passed":"failed", maxd);
+    }
 
     return chunk;
 }
@@ -520,9 +546,11 @@ Tfr::pChunk Stft::
             b.number_of_samples()/_window_size,
             1 );
 
-    if (0==n.height || 32768<n.height)
+    if (0==n.height) // not enough data
         return Tfr::pChunk();
 
+    if (32768<n.height) // TODO can't handle this
+        n.height = 32768;
 
     Tfr::pChunk chunk( new Tfr::StftChunk() );
 
@@ -562,14 +590,14 @@ Tfr::pChunk Stft::
         try
         {
             CufftException_SAFE_CALL(cufftExecC2C(
-                    _handle_ctx(_window_size, slices),
+                    _handle_ctx_c2c(_window_size, slices),
                     input + i*n.width,
                     output + i*n.width,
                     CUFFT_FORWARD));
 
             i += slices;
         } catch (const CufftException& /*x*/) {
-            _handle_ctx(0,0);
+            _handle_ctx_c2c(0,0);
             if (slices>1)
                 slices/=2;
             else
@@ -591,6 +619,173 @@ Tfr::pChunk Stft::
     }
 
     return chunk;
+}
+
+
+Signal::pBuffer Stft::
+        inverse( pChunk chunk )
+{
+    if (compute_redundant())
+        return inverseWithRedundant( chunk );
+
+    BOOST_ASSERT( chunk->nChannels() == 1 );
+
+    const int chunk_window_size = (int)(chunk->freqAxis.max_frequency_scalar*2 + 0.5f);
+    const int actualSize = chunk_window_size/2 + 1;
+    int nwindows = chunk->transform_data->getNumberOfElements().width / actualSize;
+
+    TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
+
+    int
+            firstSample = 0;
+
+    if (chunk->chunk_offset != 0)
+        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
+
+    Signal::pBuffer b(new Signal::Buffer(firstSample, nwindows*chunk_window_size, chunk->original_sample_rate));
+
+    BOOST_ASSERT( 0!= chunk_window_size );
+
+    if (0==nwindows) // not enough data
+        return Signal::pBuffer();
+
+    if (32768<nwindows) // TODO can't handle this
+        nwindows = 32768;
+
+    const cudaExtent n = make_cudaExtent(
+            chunk_window_size,
+            nwindows,
+            1 );
+
+    cufftComplex* input = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
+    cufftReal* output = (cufftReal*)b->waveform_data()->getCudaGlobal().ptr();
+
+    // Transform signal
+    const unsigned count = n.height;
+
+    unsigned
+            slices = n.height,
+            i = 0;
+
+    // check for available memory
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    free /= 2; // Don't even try to get close to use all memory
+    // and never use more than 64 MB
+    if (free > 64<<20)
+        free = 64<<20;
+    if (slices * _window_size*2*sizeof(cufftComplex) > free)
+    {
+        slices = free/(_window_size*2*sizeof(cufftComplex));
+        slices = std::min(512u, std::min((unsigned)n.height, slices));
+    }
+
+    while(i < count)
+    {
+        slices = std::min(slices, count-i);
+
+        try
+        {
+            CufftException_SAFE_CALL(cufftExecC2R(
+                    _handle_ctx_c2r(_window_size, slices),
+                    input + i*actualSize,
+                    output + i*n.width));
+
+            i += slices;
+        } catch (const CufftException& /*x*/) {
+            _handle_ctx_c2r(0,0);
+            if (slices>1)
+                slices/=2;
+            else
+                throw;
+        }
+    }
+
+    stftNormalizeInverse( b->waveform_data()->getCudaGlobal(), n.width );
+
+    return b;
+}
+
+Signal::pBuffer Stft::
+        inverseWithRedundant( pChunk chunk )
+{
+    BOOST_ASSERT( chunk->nChannels() == 1 );
+    int
+            chunk_window_size = chunk->nScales(),
+            nwindows = chunk->nSamples();
+
+    TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
+
+    int
+            firstSample = 0;
+
+    if (chunk->chunk_offset != 0)
+        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
+
+    ComplexBuffer b(firstSample, nwindows*chunk_window_size, chunk->original_sample_rate);
+
+    BOOST_ASSERT( 0!= chunk_window_size );
+
+    if (0==nwindows) // not enough data
+        return Signal::pBuffer();
+
+    if (32768<nwindows) // TODO can't handle this
+        nwindows = 32768;
+
+    cudaExtent n = make_cudaExtent(
+            chunk_window_size,
+            nwindows,
+            1 );
+
+    cufftComplex* input = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
+    cufftComplex* output = (cufftComplex*)b.complex_waveform_data()->getCudaGlobal().ptr();
+
+    // Transform signal
+    unsigned count = n.height;
+
+    unsigned
+            slices = n.height,
+            i = 0;
+
+    // check for available memory
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    free /= 2; // Don't even try to get close to use all memory
+    // and never use more than 64 MB
+    if (free > 64<<20)
+        free = 64<<20;
+    if (slices * _window_size*2*sizeof(cufftComplex) > free)
+    {
+        slices = free/(_window_size*2*sizeof(cufftComplex));
+        slices = std::min(512u, std::min((unsigned)n.height, slices));
+    }
+
+    while(i < count)
+    {
+        slices = std::min(slices, count-i);
+
+        try
+        {
+            CufftException_SAFE_CALL(cufftExecC2C(
+                    _handle_ctx_c2c(_window_size, slices),
+                    input + i*n.width,
+                    output + i*n.width,
+                    CUFFT_INVERSE));
+
+            i += slices;
+        } catch (const CufftException& /*x*/) {
+            _handle_ctx_c2c(0,0);
+            if (slices>1)
+                slices/=2;
+            else
+                throw;
+        }
+    }
+
+    Signal::pBuffer realinv = b.get_real();
+    stftNormalizeInverse( realinv->waveform_data()->getCudaGlobal(), n.width );
+
+    return realinv;
 }
 
 
@@ -647,8 +842,18 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 void Stft::
         compute_redundant(bool value)
 {
-    _handle_ctx.setType( value?CUFFT_C2C:CUFFT_R2C );
     _compute_redundant = value;
+    if (_compute_redundant)
+    {
+        // free unused memory
+        _handle_ctx_c2r(0,0);
+        _handle_ctx_r2c(0,0);
+    }
+    else
+    {
+        // free unused memory
+        _handle_ctx_c2c(0,0);
+    }
 }
 
 
