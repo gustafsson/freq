@@ -1347,7 +1347,7 @@
     <string>Toggle fullscreen</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+F11</string>
+    <string>F11</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
