@@ -113,6 +113,8 @@ void CwtToBlock::
 void CwtToBlock::
         mergeChunkpart( pBlock block, Chunk& chunk, Block::pData outData )
 {
+    CudaException_CHECK_ERROR();
+
     //unsigned cuda_stream = 0;
 
     // Find out what intervals that match

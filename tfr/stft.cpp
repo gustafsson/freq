@@ -392,9 +392,9 @@ std::vector<unsigned> Stft::_ok_chunk_sizes;
 Stft::
         Stft( cudaStream_t stream )
 :   _stream( stream ),
-    _handle_ctx_c2c(stream, CUFFT_C2C),
-    _handle_ctx_r2c(stream, CUFFT_R2C),
-    _handle_ctx_c2r(stream, CUFFT_C2R),
+//    _handle_ctx_c2c(stream, CUFFT_C2C),
+//    _handle_ctx_r2c(stream, CUFFT_R2C),
+//    _handle_ctx_c2r(stream, CUFFT_C2R),
     _window_size( 1<<11 ),
     _compute_redundant(false)
 //    _fft_many( -1 )
@@ -484,6 +484,9 @@ Tfr::pChunk Stft::
 
     BOOST_ASSERT( slices > 0 );
 
+    CufftHandleContext
+            _handle_ctx_r2c(_stream, CUFFT_R2C);
+
     while(i < count)
     {
         slices = std::min(slices, count-i);
@@ -507,6 +510,8 @@ Tfr::pChunk Stft::
 
     TIME_STFT CudaException_ThreadSynchronize();
 
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
 
     if (false)
     {
@@ -527,6 +532,9 @@ Tfr::pChunk Stft::
 
         TaskInfo("Difftest %s (value %g)", maxd<1e-8?"passed":"failed", maxd);
     }
+
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
 
     return chunk;
 }
@@ -583,6 +591,9 @@ Tfr::pChunk Stft::
         slices = std::min(512u, std::min((unsigned)n.height, slices));
     }
 
+    CufftHandleContext
+            _handle_ctx_c2c(_stream, CUFFT_C2C);
+
     while(i < count)
     {
         slices = std::min(slices, count-i);
@@ -618,6 +629,8 @@ Tfr::pChunk Stft::
         chunk->chunk_offset = 0;
     }
 
+    TIME_STFT CudaException_ThreadSynchronize();
+
     return chunk;
 }
 
@@ -625,6 +638,9 @@ Tfr::pChunk Stft::
 Signal::pBuffer Stft::
         inverse( pChunk chunk )
 {
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
+
     if (compute_redundant())
         return inverseWithRedundant( chunk );
 
@@ -634,7 +650,8 @@ Signal::pBuffer Stft::
     const int actualSize = chunk_window_size/2 + 1;
     int nwindows = chunk->transform_data->getNumberOfElements().width / actualSize;
 
-    TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
+    //TIME_STFT
+            TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
 
     int
             firstSample = 0;
@@ -657,8 +674,14 @@ Signal::pBuffer Stft::
             nwindows,
             1 );
 
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
+
     cufftComplex* input = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
     cufftReal* output = (cufftReal*)b->waveform_data()->getCudaGlobal().ptr();
+
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
 
     // Transform signal
     const unsigned count = n.height;
@@ -680,6 +703,12 @@ Signal::pBuffer Stft::
         slices = std::min(512u, std::min((unsigned)n.height, slices));
     }
 
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
+
+    CufftHandleContext
+            _handle_ctx_c2r(_stream, CUFFT_C2R);
+
     while(i < count)
     {
         slices = std::min(slices, count-i);
@@ -691,6 +720,9 @@ Signal::pBuffer Stft::
                     input + i*actualSize,
                     output + i*n.width));
 
+            CudaException_ThreadSynchronize();
+            CudaException_CHECK_ERROR();
+
             i += slices;
         } catch (const CufftException& /*x*/) {
             _handle_ctx_c2r(0,0);
@@ -701,7 +733,13 @@ Signal::pBuffer Stft::
         }
     }
 
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
+
     stftNormalizeInverse( b->waveform_data()->getCudaGlobal(), n.width );
+
+    CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
 
     return b;
 }
@@ -760,6 +798,9 @@ Signal::pBuffer Stft::
         slices = std::min(512u, std::min((unsigned)n.height, slices));
     }
 
+    CufftHandleContext
+            _handle_ctx_c2c(_stream, CUFFT_C2C);
+
     while(i < count)
     {
         slices = std::min(slices, count-i);
@@ -782,8 +823,12 @@ Signal::pBuffer Stft::
         }
     }
 
+    TIME_STFT CudaException_ThreadSynchronize();
+
     Signal::pBuffer realinv = b.get_real();
     stftNormalizeInverse( realinv->waveform_data()->getCudaGlobal(), n.width );
+
+    TIME_STFT CudaException_ThreadSynchronize();
 
     return realinv;
 }
@@ -846,13 +891,13 @@ void Stft::
     if (_compute_redundant)
     {
         // free unused memory
-        _handle_ctx_c2r(0,0);
-        _handle_ctx_r2c(0,0);
+        //_handle_ctx_c2r(0,0);
+        //_handle_ctx_r2c(0,0);
     }
     else
     {
         // free unused memory
-        _handle_ctx_c2c(0,0);
+        //_handle_ctx_c2c(0,0);
     }
 }
 

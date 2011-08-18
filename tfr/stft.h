@@ -114,10 +114,10 @@ private:
     Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
 
     cudaStream_t    _stream;
-    CufftHandleContext
-            _handle_ctx_c2c,
-            _handle_ctx_r2c,
-            _handle_ctx_c2r;
+//    CufftHandleContext
+//            _handle_ctx_c2c,
+//            _handle_ctx_r2c,
+//            _handle_ctx_c2r;
 
     static std::vector<unsigned> _ok_chunk_sizes;
 
