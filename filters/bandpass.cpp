@@ -1,6 +1,9 @@
 #include "bandpass.h"
 #include <sstream>
 
+#define TIME_BANDPASS
+//#define TIME_BANDPASS if(0)
+
 using namespace std;
 
 namespace Filters {
@@ -28,6 +31,11 @@ std::string Bandpass::
 void Bandpass::
         operator()( Tfr::Chunk& c )
 {
+    TIME_BANDPASS TaskTimer tt("%s (save %sside) on %s",
+                               name().c_str(),
+                               _save_inside?"in":"out",
+                               c.getInversedInterval().toString().c_str());
+
     float minf = min(_f1, _f2);
     float maxf = max(_f1, _f2);
     float a = c.freqAxis.getFrequencyScalar( minf );
@@ -40,6 +48,9 @@ void Bandpass::
     unsigned actualSize = window/2 + 1;
     unsigned windows = c.transform_data->getNumberOfElements().width / actualSize;
 
+    TIME_BANDPASS TaskInfo("window = %u, actualSize = %u, windows = %u, a=%g, b=%g",
+                               window, actualSize, windows, a, b);
+
     if (_save_inside)
     {
         for (unsigned t=0; t<windows; ++t)
@@ -50,7 +61,7 @@ void Bandpass::
             for (unsigned s=b+1; s<window-1-b && s<actualSize; ++s)
                 p[t*actualSize + s] = zero;
 
-            for (unsigned s=window-1; s > max(window - 1.f, window - 1 - a) && s>=window/2 && s<actualSize; --s)
+            for (unsigned s=min(actualSize-1, window-1); s > max(window - 1.f, window - 1 - a) && s>=window/2; --s)
                 p[t*actualSize + s] = zero;
         }
     }
@@ -61,7 +72,7 @@ void Bandpass::
             for (unsigned s=max(0.f, a); s<=b && s<window/2 && s<actualSize; ++s)
                 p[t*actualSize + s] = zero;
 
-            for (unsigned s=max(window - 1.f, window - 1 - a); s>=window - 1 - b && s>=window/2 && s<actualSize; --s)
+            for (unsigned s=min(actualSize-1, max(window - 1, (unsigned)(window - 1 - a))); s>=window - 1 - b && s>=window/2; --s)
                 p[t*actualSize + s] = zero;
         }
     }
