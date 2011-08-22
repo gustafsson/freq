@@ -4,12 +4,15 @@
 #include "collection.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
+#include "tfr/drawnwaveform.h"
 
 #include <CudaException.h>
 #include <GlException.h>
 #include <TaskTimer.h>
 
 #include <boost/foreach.hpp>
+
+#include <float.h>
 
 //#define TIME_BLOCKFILTER
 #define TIME_BLOCKFILTER if(0)
@@ -40,7 +43,7 @@ void BlockFilter::
         applyFilter(Tfr::pChunk pchunk )
 {
     Tfr::Chunk& chunk = *pchunk;
-    Signal::Interval chunk_interval = chunk.getInversedInterval();
+    Signal::Interval chunk_interval = chunk.getInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, false );
     TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks",
         chunk_interval.toString().c_str(), chunk.minHz(), chunk.maxHz(), intersecting_blocks.size());
@@ -354,5 +357,61 @@ void CepstrumToBlock::
     mergeColumnMajorChunk(block, chunk, outData);
 }
 
+
+/////////////////////////// DrawnWaveformToBlock ///////////////////////////
+
+DrawnWaveformToBlock::
+        DrawnWaveformToBlock( Collection* collection )
+            :
+            BlockFilterImpl<Tfr::DrawnWaveformFilter>(collection)
+{
+    //_try_shortcuts = false;
+}
+
+
+DrawnWaveformToBlock::
+        DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
+            :
+            BlockFilterImpl<Tfr::DrawnWaveformFilter>(collections)
+{
+    //_try_shortcuts = false;
+}
+
+
+ChunkAndInverse DrawnWaveformToBlock::
+        computeChunk( const Signal::Interval& I )
+{
+    std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( I, false );
+
+    float largest_fs = 0;
+    BOOST_FOREACH( pBlock block, intersecting_blocks)
+    {
+        if (((block->ref.getInterval() - block->valid_samples) & I).empty() )
+            continue;
+
+        largest_fs = std::max(largest_fs, block->ref.sample_rate());
+    }
+
+    DrawnWaveform* wt = dynamic_cast<DrawnWaveform*>(transform().get());
+    wt->block_fs = largest_fs;
+
+    return Tfr::DrawnWaveformFilter::computeChunk(I);
+}
+
+void DrawnWaveformToBlock::
+        mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
+{
+    DrawnWaveformChunk* dwc = dynamic_cast<DrawnWaveformChunk*>(&chunk);
+
+    float block_fs = block->ref.sample_rate();
+
+    if (dwc->block_fs != block_fs)
+    {
+        int a = 342;
+        return;
+    }
+
+    mergeRowMajorChunk(block, chunk, outData, true, ComplexInfo_Amplitude_Non_Weighted);
+}
 
 } // namespace Heightmap

@@ -119,6 +119,7 @@ CUDA_SOURCES += \
     heightmap/resampletest.cu \
     heightmap/resampletest2.cu \
     heightmap/slope.cu \
+    tfr/drawnwaveform.cu \
     tfr/wavelet.cu \
     tools/support/brushfilter.cu \
     tools/support/brushpaint.cu \
