@@ -59,6 +59,7 @@ namespace Tools
         void receiveSetTransform_Cwt_ridge();
         void receiveSetTransform_Cwt_weight();
         void receiveSetTransform_Cepstrum();
+        void receiveSetTransform_DrawnWaveform();
 
         // ComboBoxAction hz_scale
         void receiveLinearScale();

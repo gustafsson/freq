@@ -4,6 +4,7 @@
 #include "tfr/cwtfilter.h"
 #include "tfr/stftfilter.h"
 #include "tfr/cepstrumfilter.h"
+#include "tfr/drawnwaveformfilter.h"
 #include "heightmap/collection.h"
 #include <iostream>
 
@@ -21,6 +22,7 @@ public:
 
     /// @overload Tfr::Filter::applyFilter(Tfr::pChunk)
     virtual void applyFilter(Tfr::pChunk pchunk );
+    virtual bool stubWithStft() { return true; }
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
@@ -126,6 +128,7 @@ public:
     StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual bool stubWithStft() { return false; }
 };
 
 
@@ -136,6 +139,21 @@ public:
     CepstrumToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual bool stubWithStft() { return false; }
+};
+
+
+class DrawnWaveformToBlock: public BlockFilterImpl<Tfr::DrawnWaveformFilter>
+{
+public:
+    DrawnWaveformToBlock( Collection* collection );
+    DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
+
+    // @overloads Tfr::DrawnWaveformFilter::computeChunk
+    virtual Tfr::ChunkAndInverse computeChunk( const Signal::Interval& I );
+
+    virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual bool stubWithStft() { return false; }
 };
 
 } // namespace Heightmap

@@ -1502,6 +1502,17 @@
     <string>Update product key</string>
    </property>
   </action>
+  <action name="actionTransform_Waveform">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Waveform</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw the signal as a waveform</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>

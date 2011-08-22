@@ -421,6 +421,15 @@ void RenderController::
 
 
 void RenderController::
+        receiveSetTransform_DrawnWaveform()
+{
+    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(&model()->collections);
+
+    setBlockFilter( drawnwaveformblock );
+}
+
+
+void RenderController::
         receiveLinearScale()
 {
     float fs = model()->project()->head->head_source()->sample_rate();
@@ -584,11 +593,13 @@ void RenderController::
         connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
         connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
         connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
+        connect(ui->actionTransform_Waveform, SIGNAL(triggered()), SLOT(receiveSetTransform_DrawnWaveform()));
 
         transform = new ComboBoxAction(toolbar_render);
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
         transform->addActionItem( ui->actionTransform_Cepstrum );
+        transform->addActionItem( ui->actionTransform_Waveform );
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
 //        transform->addActionItem( ui->actionTransform_Cwt_reassign );
 //        transform->addActionItem( ui->actionTransform_Cwt_ridge );
