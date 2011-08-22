@@ -11,6 +11,14 @@
 // Qt
 #include <QtGui/QMessageBox>
 #include <qgl.h>
+#include <QDesktopServices>
+#include <QDir>
+
+//for debug purposes
+#include <QFile>
+#include <QCoreApplication>
+#include <QTextStream>
+#include <QSettings>
 
 // cuda
 #include <cuda_gl_interop.h>
@@ -214,6 +222,16 @@ void tstc(C*c)
 }
 int main(int argc, char *argv[])
 {
+    QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+    localAppDir+="\\MuchDifferent\\Sonic AWE\\";
+    if (QDir(localAppDir).exists()==false)
+    {
+                QDir().mkpath(localAppDir);
+    }
+
+    QByteArray byteArray = (localAppDir+"sonicawe.log").toUtf8();
+    const char* logdir = byteArray.constData();
+
     if (0)
     {
         Intervals I(403456,403457);
@@ -250,7 +268,11 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        RedirectStdout rs("sonicawe.log");
+        #ifdef _MSC_VER
+            RedirectStdout rs(logdir);
+        #else
+            RedirectStdout rs("sonicawe.log");
+        #endif
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I ^= Signal::Interval(150,150);
@@ -261,9 +283,14 @@ int main(int argc, char *argv[])
         cout << I.toString() << endl;
         return 0;
     }
+
     if (0)
     {
-        RedirectStdout rs("sonicawe.log");
+        #ifdef _MSC_VER
+            RedirectStdout rs(logdir);
+        #else
+            RedirectStdout rs("sonicawe.log");
+        #endif
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I -= Signal::Interval(150,150);
@@ -276,7 +303,11 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        RedirectStdout rs("sonicawe.log");
+        #ifdef _MSC_VER
+            RedirectStdout rs(logdir);
+        #else
+            RedirectStdout rs("sonicawe.log");
+        #endif
         Intervals I(100, 300);
         vector<Intervals> T;
         T.push_back( Intervals(50,80) );
@@ -429,7 +460,13 @@ int main(int argc, char *argv[])
     rename("sonicawe~2.log~2", "sonicawe~2.log");
     rename("sonicawe~.log", "sonicawe~2.log");
     rename("sonicawe.log", "sonicawe~.log");
-    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout("sonicawe.log"));
+
+
+    #ifdef _MSC_VER
+        boost::shared_ptr<RedirectStdout> rs(new RedirectStdout(logdir));
+    #else
+        boost::shared_ptr<RedirectStdout> rs(new RedirectStdout("sonicawe.log"));
+    #endif
 
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 
