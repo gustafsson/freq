@@ -384,8 +384,6 @@ void NavigationController::
 
     ui->actionActivateNavigation->setChecked(true);
 
-    void bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot );
-
     bindKeyToSlot( main, "Up", this, SLOT(moveUp()) );
     bindKeyToSlot( main, "Down", this, SLOT(moveDown()) );
     bindKeyToSlot( main, "Left", this, SLOT(moveLeft()) );
@@ -397,7 +395,7 @@ void NavigationController::
 }
 
 
-void bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot )
+void NavigationController::bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot )
 {
     QAction* a = new QAction(owner);
     a->setShortcut(QString(keySequence));

@@ -34,6 +34,7 @@ namespace Tools
         void scaleLeft();
         void scaleRight();
 
+
     private:
         // Event handlers
         virtual void mousePressEvent ( QMouseEvent * e );
@@ -65,7 +66,9 @@ namespace Tools
         void zoom(int delta, ZoomMode mode);
         void doZoom(int delta, float* scale=0, float* min_scale=0, float* max_scale=0);
         void moveCamera( float dt, float ds );
-    };
+        void bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot );
+
+	};
 } // namespace Tools
 
 #endif // NAVIGATIONCONTROLLER_H
