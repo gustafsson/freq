@@ -7,13 +7,13 @@
 
 ;Defining compile time constants and necessary variables
 !define APP_NAME "Sonic AWE"
-!define PUBLISHER "REEP"
+!define PUBLISHER "MuchDifferent"
 !define SA_VERSION ""
 !define NVID_VERSION ""
 !define INST_FILES ""
 !define FILE_NAME ""
 !define REG_ROOT HKCU
-!define REG_APP_PATH "Software\REEP\Sonic AWE"
+!define REG_APP_PATH "Software\MuchDifferent\Sonic AWE"
 
 ;--------------------------------
 ; Configure UnInstall log to only remove what is installed
@@ -92,10 +92,10 @@ RequestExecutionLevel admin
 !define MUI_ICON "awe256.ico"
 
 ; The default installation directory
-InstallDir "$PROGRAMFILES\REEP\Sonic AWE"
+InstallDir "$PROGRAMFILES\${PUBLISHER}\${APP_NAME}"
 
 ;Get installation folder from registry if available
-InstallDirRegKey ${REG_ROOT} "Software\REEP\Sonic AWE" ""
+InstallDirRegKey ${REG_ROOT} "Software\${PUBLISHER}\${APP_NAME}" ""
 
 ;Show installation details
 ShowInstDetails show
@@ -108,7 +108,7 @@ ShowInstDetails show
 
 ;Start Menu Folder Page Configuration
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU" 
-!define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\REEP\Sonic AWE" 
+!define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${PUBLISHER}\${APP_NAME}" 
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER "${PUBLISHER}\${APP_NAME}"
   
@@ -132,18 +132,18 @@ Section "Application Files (required)"
 	Strcpy $INSTALLATION_DONE "0"
 
 	;Retrieving user's driver version
-	${CreateDirectory} "$LOCALAPPDATA\REEP\Sonic AWE"
+	${CreateDirectory} "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}"
 	DetailPrint "Launching dxdiag for NVIDIA driver compatibility check"
 	${DxDiag}
-	exec 'dxdiag /x $LOCALAPPDATA\REEP\Sonic AWE\dxdiag.xml'
+	exec 'dxdiag /x $LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml'
 	Strcpy $done "0"
 	Strcpy $8 "0"
 	${While} $done == "0"
 		Sleep 5000	
 		IntOp $8 $8 + 1
-		IfFileExists "$LOCALAPPDATA\REEP\Sonic AWE\dxdiag.xml" 0 +7
+		IfFileExists "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml" 0 +7
 			nsisXML::Create
-			nsisXML::Load "$LOCALAPPDATA\REEP\Sonic AWE\dxdiag.xml"
+			nsisXML::Load "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml"
 			nsisXML::select '/DxDiag/DisplayDevices/DisplayDevice/DriverVersion'
 			nsisXML::getText
 			Strcpy $USR_DRIVER_VERSION "$3" 
@@ -165,7 +165,7 @@ Section "Application Files (required)"
 		
 			;Write the installation path into the registry
 			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "Install Directory" "$INSTDIR"
-			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "AppData" "$LOCALAPPDATA\REEP\Sonic AWE"
+			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "AppData" "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}"
 			
 			;Write the Uninstall information into the registry
 			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "UninstallString" "$INSTDIR\uninstall.exe"
@@ -187,7 +187,7 @@ Section "Application Files (required)"
 						 "DisplayVersion" "${SA_VERSION}"
 						 
 			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
-						 "Publisher" "REEP"
+						 "Publisher" "${PUBLISHER}"
 						 
 			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
 						 "HelpLink" "www.sonicawe.com"
@@ -204,142 +204,7 @@ Section "Application Files (required)"
 			;Create uninstaller
 			${WriteUninstaller} "$INSTDIR\Uninstall.exe"
 			
-			${File} ${INST_FILES}\matlab\examples amplify.m
-			${File} ${INST_FILES}\matlab\examples amplify2.m
-			${File} ${INST_FILES}\matlab\examples convolve.m
-			${File} ${INST_FILES}\matlab\examples fantracker.m
-			${File} ${INST_FILES}\matlab\examples lowpass.m
-			${File} ${INST_FILES}\matlab\examples markclicks.m
-			${File} ${INST_FILES}\matlab\examples plotalarm.m
-			${File} ${INST_FILES}\matlab\examples plotamplitude.m
-			${File} ${INST_FILES}\matlab\examples plotwaveform.m
-			${File} ${INST_FILES}\matlab\examples verifyregulation.m
-			${File} ${INST_FILES}\matlab a440.m
-			${File} ${INST_FILES}\matlab encavi.sh
-			${File} ${INST_FILES}\matlab heightmap.frag.m
-			${File} ${INST_FILES}\matlab matlabfilter.m
-			${File} ${INST_FILES}\matlab plotspectra2d.m
-			${File} ${INST_FILES}\matlab plot_producevideo.m
-			${File} ${INST_FILES}\matlab read_csv_from_sonicawe.m
-			${File} ${INST_FILES}\matlab sawe_compute_cwt.m
-			${File} ${INST_FILES}\matlab sawe_datestr.m
-			${File} ${INST_FILES}\matlab sawe_discard.m
-			${File} ${INST_FILES}\matlab sawe_extract_cwt.m
-			${File} ${INST_FILES}\matlab sawe_extract_cwt_time.m
-			${File} ${INST_FILES}\matlab sawe_filewatcher.asv
-			${File} ${INST_FILES}\matlab sawe_filewatcher.m
-			${File} ${INST_FILES}\matlab sawe_getdatainfo.m
-			${File} ${INST_FILES}\matlab sawe_loadbuffer.m
-			${File} ${INST_FILES}\matlab sawe_loadchunk.m
-			${File} ${INST_FILES}\matlab sawe_plot.m
-			${File} ${INST_FILES}\matlab sawe_plot2.m
-			${File} ${INST_FILES}\matlab sawe_savebuffer.m
-			${File} ${INST_FILES}\matlab sawe_savechunk.m
-			${File} ${INST_FILES}\matlab soundtoavi.sh
-			${File} ${INST_FILES} credits.txt
-			${File} ${INST_FILES} cudart32_32_16.dll
-			${File} ${INST_FILES} cufft32_32_16.dll
-			${File} ${INST_FILES} glew-license.txt
-			${File} ${INST_FILES} glew32.dll
-			${File} ${INST_FILES} glut32.dll
-			${File} ${INST_FILES} hdf5-license.txt
-			${File} ${INST_FILES} hdf5dll.dll
-			${File} ${INST_FILES} hdf5_hldll.dll
-			${File} ${INST_FILES} libsndfile-1.dll
-			${File} ${INST_FILES} license.txt
-			${File} ${INST_FILES} Microsoft.VC80.CRT.manifest
-			${File} ${INST_FILES} Microsoft.VC90.CRT.manifest
-			${File} ${INST_FILES} msvcm80.dll
-			${File} ${INST_FILES} msvcm90.dll
-			${File} ${INST_FILES} msvcp80.dll
-			${File} ${INST_FILES} msvcp90.dll
-			${File} ${INST_FILES} msvcr80.dll
-			${File} ${INST_FILES} msvcr90.dll
-			${File} ${INST_FILES} portaudio-license.txt
-			${File} ${INST_FILES} portaudio_x86.dll
-			${File} ${INST_FILES} qt4-license.txt
-			${File} ${INST_FILES} QtCore4.dll
-			${File} ${INST_FILES} QtGui4.dll
-			${File} ${INST_FILES} QtOpenGL4.dll
-			${File} ${INST_FILES} selected_tone.m
-			${File} ${INST_FILES} selection.wav
-			${File} ${INST_FILES} sndfile-license.txt
-			${File} ${INST_FILES} sonicawe.exe
-			${File} ${INST_FILES} sonicawe.exe.manifest
-			${File} ${INST_FILES} SonicAWE_Icon.png
-			${File} ${INST_FILES} zlib1.dll
-			${File} ${INST_FILES} awe_256.ico
-
-			CreateDirectory $INSTDIR\matlab
-			CopyFiles $INSTDIR\a440.m $INSTDIR\matlab\a440.m
-			CopyFiles $INSTDIR\encavi.sh $INSTDIR\matlab\encavi.sh
-			CopyFiles $INSTDIR\heightmap.frag.m $INSTDIR\matlab\heightmap.frag.m
-			CopyFiles $INSTDIR\matlabfilter.m $INSTDIR\matlab\matlabfilter.m
-			CopyFiles $INSTDIR\plotspectra2d.m $INSTDIR\matlab\plotspectra2d.m
-			CopyFiles $INSTDIR\plot_producevideo.m $INSTDIR\matlab\plot_producevideo.m
-			CopyFiles $INSTDIR\read_csv_from_sonicawe.m $INSTDIR\matlab\read_csv_from_sonicawe.m
-			CopyFiles $INSTDIR\sawe_compute_cwt.m $INSTDIR\matlab\sawe_compute_cwt.m
-			CopyFiles $INSTDIR\sawe_datestr.m $INSTDIR\matlab\sawe_datestr.m
-			CopyFiles $INSTDIR\sawe_discard.m $INSTDIR\matlab\sawe_discard.m
-			CopyFiles $INSTDIR\sawe_extract_cwt.m $INSTDIR\matlab\sawe_extract_cwt.m
-			CopyFiles $INSTDIR\sawe_extract_cwt_time.m $INSTDIR\matlab\sawe_extract_cwt_time.m
-			CopyFiles $INSTDIR\sawe_filewatcher.asv $INSTDIR\matlab\sawe_filewatcher.asv
-			CopyFiles $INSTDIR\sawe_filewatcher.m $INSTDIR\matlab\sawe_filewatcher.m
-			CopyFiles $INSTDIR\sawe_getdatainfo.m $INSTDIR\matlab\sawe_getdatainfo.m
-			CopyFiles $INSTDIR\sawe_loadbuffer.m $INSTDIR\matlab\sawe_loadbuffer.m
-			CopyFiles $INSTDIR\sawe_loadchunk.m $INSTDIR\matlab\sawe_loadchunk.m
-			CopyFiles $INSTDIR\sawe_plot.m $INSTDIR\matlab\sawe_plot.m
-			CopyFiles $INSTDIR\sawe_plot2.m $INSTDIR\matlab\sawe_plot2.m
-			CopyFiles $INSTDIR\sawe_savebuffer.m $INSTDIR\matlab\sawe_savebuffer.m
-			CopyFiles $INSTDIR\sawe_savechunk.m $INSTDIR\matlab\sawe_savechunk.m
-			CopyFiles $INSTDIR\soundtoavi.sh $INSTDIR\matlab\soundtoavi.sh
-			
-			CreateDirectory $INSTDIR\matlab\examples
-			CopyFiles $INSTDIR\amplify.m $INSTDIR\matlab\examples\amplify.m
-			CopyFiles $INSTDIR\amplify2.m $INSTDIR\matlab\examples\amplify2.m
-			CopyFiles $INSTDIR\convolve.m $INSTDIR\matlab\examples\convolve.m
-			CopyFiles $INSTDIR\fantracker.m $INSTDIR\matlab\examples\fantracker.m
-			CopyFiles $INSTDIR\lowpass.m $INSTDIR\matlab\examples\lowpass.m
-			CopyFiles $INSTDIR\markclicks.m $INSTDIR\matlab\examples\markclicks.m
-			CopyFiles $INSTDIR\plotalarm.m $INSTDIR\matlab\examples\plotalarm.m
-			CopyFiles $INSTDIR\plotamplitude.m $INSTDIR\matlab\examples\plotamplitude.m
-			CopyFiles $INSTDIR\plotwaveform.m $INSTDIR\matlab\examples\plotwaveform.m
-			CopyFiles $INSTDIR\verifyregulation.m $INSTDIR\matlab\examples\verifyregulation.m
-			
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\amplify.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\amplify2.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\convolve.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\fantracker.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\lowpass.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\markclicks.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\plotalarm.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\plotamplitude.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\plotwaveform.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples\verifyregulation.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\a440.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\encavi.sh $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\heightmap.frag.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\matlabfilter.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\plotspectra2d.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\plot_producevideo.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\read_csv_from_sonicawe.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_compute_cwt.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_datestr.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_discard.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_extract_cwt.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_extract_cwt_time.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_filewatcher.asv $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_filewatcher.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_getdatainfo.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_loadbuffer.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_loadchunk.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_plot.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_plot2.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_savebuffer.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\sawe_savechunk.m $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\soundtoavi.sh $\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab\examples$\r$\n"
-			FileWrite $UninstLog "$INSTDIR\matlab$\r$\n"
+			;Insert files here
 			
 			Strcpy $INSTALLATION_DONE "1"
 			Goto done
@@ -442,24 +307,20 @@ Section "Uninstall"
 		  
 	Delete "$INSTDIR\Uninstall.exe"
 	
-	StrCpy $0 "$INSTDIR\matlab"
-	Call un.DeleteDirIfEmpty
-	
-	StrCpy $0 "$INSTDIR\matlab\examples"
-	Call un.DeleteDirIfEmpty
+	;Insert Uninstall folders command here
 	
 	StrCpy $0 "$INSTDIR"
 	Call un.DeleteDirIfEmpty
 
-	StrCpy $0 "$SMPROGRAMS\REEP"
+	StrCpy $0 "$SMPROGRAMS\${PUBLISHER}"
 	Call un.DeleteDirIfEmpty
 	
-	StrCpy $0 "$LOCALAPPDATA\REEP"
+	StrCpy $0 "$LOCALAPPDATA\${PUBLISHER}"
 	Call un.DeleteDirIfEmpty
 	
-	DeleteRegKey "${REG_ROOT}" "Software\REEP\Sonic AWE"
-	DeleteRegKey /ifempty "${REG_ROOT}" "Software\REEP"
-	DeleteRegKey "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE"
+	DeleteRegKey "${REG_ROOT}" "Software\${PUBLISHER}\${APP_NAME}"
+	DeleteRegKey /ifempty "${REG_ROOT}" "Software\${PUBLISHER}"
+	DeleteRegKey "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
 
 SectionEnd
 
