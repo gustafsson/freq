@@ -4,6 +4,8 @@
 
 #include "neat_math.h"
 
+#include <math.h>
+
 namespace Tfr {
 
 
@@ -109,9 +111,8 @@ unsigned DrawnWaveform::
 {
     if (0 == this->block_fs)
         this->block_fs = FS;
-
     //return FS / this->block_fs * 3;
-    return fmaxf(1.f, FS / this->block_fs);
+    return fmax(1.f, FS / this->block_fs);
 }
 
 
