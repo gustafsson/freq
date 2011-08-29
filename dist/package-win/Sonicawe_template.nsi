@@ -156,7 +156,9 @@ Section "Application Files (required)"
 	
 	;Comparing driver version
 	${if} $USR_DRIVER_VERSION == ""
-		messageBox MB_OK "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
+		messageBox MB_OK|MB_ICONSTOP "Nvidia drivers could not be verified. Please make sure your hardware meets the requirements to run Sonic AWE and install the latest Nvidia drivers. \
+		                 $\n$\nPlease visit www.sonicawe.com for more information \
+						 $\n$\nThe installer will now quit"
 		Strcpy $INSTALLATION_DONE "0"
 		Goto done
 	${elseif} $USR_DRIVER_VERSION != ""
@@ -209,17 +211,18 @@ Section "Application Files (required)"
 			Strcpy $INSTALLATION_DONE "1"
 			Goto done
 		${elseif} $R0 == 2 
-			MessageBox MB_OKCANCEL "Your Nvidia driver version $USR_DRIVER_VERSION is too old and you might encounter issues running Sonic AWE. \ 
+			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia driver version $USR_DRIVER_VERSION is too old and you might encounter issues running Sonic AWE. \ 
 			$\nChoose cancel to abort the installation or OK to download newer drivers." IDOK downloadDrivers 
 			Strcpy $INSTALLATION_DONE "0"
 			Goto done
 		${else}
-			messageBox MB_OK "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
+			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
 			Strcpy $INSTALLATION_DONE "0"
 			Goto done
 		${endif}
 	${else}
-		messageBox MB_OK "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
+		messageBox MB_OK|MB_ICONSTOP "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE \
+		$\n$\nThe installer will now quit"
 			Strcpy $INSTALLATION_DONE "0"
 			Goto done
 	${endif}
@@ -230,7 +233,7 @@ Section "Application Files (required)"
 	done: 
 		${if} $INSTALLATION_DONE == "0"
 			DetailPrint "The installation did not complete"
-			Abort	
+			Quit	
 		${endif}
 SectionEnd
 
