@@ -12,8 +12,8 @@
 using namespace std;
 
 unsigned long long X = 1;
-unsigned long long A = 8433437992146984169;
-unsigned long long B = 7905438737954111703;
+unsigned long long A = 8433437992146984169ull;
+unsigned long long B = 7905438737954111703ull;
 void pseudoseed(unsigned long long seed)
 {
 	X = seed;
