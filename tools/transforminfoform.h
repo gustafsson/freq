@@ -25,6 +25,7 @@ public:
 public slots:
     void transformChanged();
     void checkVisibility(bool);
+    void binResolutionChanged();
 
 private:
     Ui::TransformInfoForm *ui;

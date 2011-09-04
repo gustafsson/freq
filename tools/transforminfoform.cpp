@@ -56,6 +56,8 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()));
 
+    connect(ui->lineEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
+
     transformChanged();
 }
 
@@ -120,6 +122,8 @@ void TransformInfoForm::
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Min hz", QString("%1").arg(cwt->get_min_hz(fs)));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        ui->label->setVisible(false);
+        ui->lineEdit->setVisible(false);
     }
     else if (stft)
     {
@@ -131,8 +135,16 @@ void TransformInfoForm::
         addRow("Overlap", "0");
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
-        addRow("Hz/row", QString("%1").arg(fs/stft->chunk_size()));
+        //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
+        addRow("Rendered height", QString("%1 px").arg(renderview->height()));
+        addRow("Rendered width", QString("%1 px").arg(renderview->width()));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        ui->label->setVisible(true);
+        ui->lineEdit->setVisible(true);
+        ui->label->setText("Hz/bin");
+        QString lineEditText = QString("%1").arg(fs/stft->chunk_size(),0,'f',2);
+        if (ui->lineEdit->text() != lineEditText)
+            ui->lineEdit->setText(lineEditText);
     }
     else if (cepstrum)
     {
@@ -144,12 +156,28 @@ void TransformInfoForm::
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
+        ui->label->setVisible(false);
+        ui->lineEdit->setVisible(false);
     }
     else
     {
         addRow("Type", "Unknown");
         addRow("Error", "Doesn't recognize transform");
+        ui->label->setVisible(false);
+        ui->lineEdit->setVisible(false);
     }
+
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    addRow("Free GPU mem", GpuCpuVoidData::getMemorySizeText( free ).c_str());
+    addRow("Total GPU mem", GpuCpuVoidData::getMemorySizeText( total ).c_str());
+
+    size_t cacheByteSize=0;
+    foreach( boost::shared_ptr<Heightmap::Collection> h, renderview->model->collections)
+    {
+        cacheByteSize += h->cacheByteSize();
+    }
+    addRow("Sonic AWE caches", GpuCpuVoidData::getMemorySizeText( cacheByteSize ).c_str());
 
     if (project->areToolsInitialized())
     {
@@ -157,9 +185,34 @@ void TransformInfoForm::
 
         if (I.count())
         {
-            addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs));
+            addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs, 0, 'f', 1));
             timer.start();
         }
+    }
+}
+
+
+void TransformInfoForm::
+        binResolutionChanged()
+{
+    float fs = project->head->head_source()->sample_rate();
+    float newValue = ui->lineEdit->text().toFloat();
+    if (newValue<0.1)
+        newValue=0.1;
+    if (newValue>fs/4)
+        newValue=fs/4;
+
+    Tfr::Filter* f = renderview->model->block_filter();
+    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(!f?0:f->transform().get());
+    if (0==stft)
+        return;
+
+    unsigned new_chunk_size = fs/newValue;
+    if (new_chunk_size != stft->chunk_size())
+    {
+        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        stft->set_exact_chunk_size( new_chunk_size );
+        transformChanged();
     }
 }
 
