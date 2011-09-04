@@ -65,6 +65,7 @@ private:
     float _sample_rate;
     QMutex _data_lock;
     std::vector<Signal::SinkSource> _data;
+    std::vector<float> _rolling_mean;
     Signal::PostSink _postsink;
 
     // todo remove Sink* _callback;

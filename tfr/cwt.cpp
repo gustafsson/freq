@@ -518,13 +518,15 @@ pChunk Cwt::
             //stft.set_exact_chunk_size(n.width);
 
             {
-                CufftHandleContext& fftctx = _fft_many[ n.width*n.height ];
+                //CufftHandleContext& fftctx = _fft_many[ n.width*n.height ];
+                CufftHandleContext fftctx; // TODO time optimization of keeping CufftHandleContext, "seems" unstable
 
                 {
                     //TIME_CWTPART TaskTimer tt("Allocating inverse fft");
                     fftctx(n.width, n.height);
                 }
 
+                TIME_CWTPART TaskInfo("n = { %u, %u, %u }, d = %ul", n.width, n.height, n.depth, g->getNumberOfElements1D());
                 CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
             }
 

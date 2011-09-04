@@ -9,7 +9,7 @@ namespace Ui
 class ComboBoxAction: public QToolButton {
     Q_OBJECT
 public:
-    ComboBoxAction();
+    ComboBoxAction(QWidget * parent=0);
     void addActionItem( QAction* a );
     void setCheckedAction( QAction* a );
     void decheckable(bool);

@@ -8,8 +8,8 @@
 
 #include <Statistics.h>
 
-#define TIME_MICROPHONERECORDER
-//#define TIME_MICROPHONERECORDER if(0)
+//#define TIME_MICROPHONERECORDER
+#define TIME_MICROPHONERECORDER if(0)
 
 using namespace std;
 
@@ -80,6 +80,9 @@ void MicrophoneRecorder::
 
     QMutexLocker lock(&_data_lock);
     _data.resize(channel_count);
+    _rolling_mean.resize(channel_count);
+    for (int i=0; i<channel_count; ++i)
+        _rolling_mean[i] = 0;
 
     portaudio::DirectionSpecificStreamParameters inParamsRecord(
             device,
@@ -268,9 +271,17 @@ int MicrophoneRecorder::
     {
         const float *buffer = in[i];
         Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
-        memcpy ( b->waveform_data()->getCpuMemory(),
-                 buffer,
-                 framesPerBuffer*sizeof(float) );
+        float* p = b->waveform_data()->getCpuMemory();
+        float& mean = _rolling_mean[i];
+        for (unsigned j=0; j<framesPerBuffer; ++j)
+        {
+            p[j] = buffer[j] - mean;
+            mean = mean*0.99999f + buffer[j]*0.00001f;
+        }
+
+//        memcpy ( b->waveform_data()->getCpuMemory(),
+//                 buffer,
+//                 framesPerBuffer*sizeof(float) );
 
         b->sample_offset = offset;
         b->sample_rate = sample_rate();

@@ -674,10 +674,10 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
 
-        bool tfr_is_stft = false;
-        Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
-        if (filter)
-            tfr_is_stft = dynamic_cast<Tfr::Stft*>(filter->transform().get());
+        bool stubWithStft = true;
+        BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
+        if (blockFilter)
+            stubWithStft = blockFilter->stubWithStft();
 
         VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
 
@@ -807,7 +807,7 @@ pBlock Collection::
         }
 
         // fill block by STFT during the very first frames
-        if (!tfr_is_stft) // don't stubb if they will be filled by stft shortly hereafter
+        if (stubWithStft) // don't stubb if they will be filled by stft shortly hereafter
         if (things_to_update)
         if (10 > _frame_counter || true) {
             //size_t stub_size

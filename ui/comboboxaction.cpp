@@ -5,8 +5,9 @@ namespace Ui
 {
 
 ComboBoxAction::
-        ComboBoxAction()
-            :   _decheckable(true)
+        ComboBoxAction(QWidget * parent)
+            :   QToolButton(parent),
+                _decheckable(true)
 {
     connect( this, SIGNAL(triggered(QAction *)), this, SLOT(checkAction(QAction *)));
     this->setContextMenuPolicy( Qt::ActionsContextMenu );

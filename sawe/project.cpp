@@ -277,7 +277,7 @@ void Project::
 {
     if (!project_filename_.empty())
         project_title_ = QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
-    _mainWindow->setWindowTitle( (project_title() + " - " + Sawe::Application::version_string()).c_str() );
+    _mainWindow->setWindowTitle( QString::fromLocal8Bit( (project_title() + " - " + Sawe::Application::version_string()).c_str() ));
 }
 
 

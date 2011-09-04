@@ -7,6 +7,7 @@ __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform,
 //__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 //__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt );
+__global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float> wave, float v );
 
 static const char* gLastError = 0;
 
@@ -344,3 +345,30 @@ __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_of
     out_clamped_wt.e( writePos ) = in_wt.elem(readPos);
 }
 
+void stftNormalizeInverse(
+        cudaPitchedPtrType<float> wave,
+        unsigned length, cudaStream_t stream)
+{
+    // Multiply the coefficients together and normalize the result
+
+    dim3 grid, block;
+    unsigned block_size = 256;
+    wave.wrapCudaGrid2D( block_size, grid, block );
+
+    if(grid.x>65535) {
+        setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
+        return;
+    }
+
+    kernel_stftNormalizeInverse<<<grid, block, 0, stream>>>( wave, 1.f/length );
+}
+
+
+__global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float> wave, float v )
+{
+    elemSize3_t writePos;
+    if( !wave.unwrapCudaGrid( writePos ))
+        return;
+
+    wave.e( writePos ) *= v;
+}

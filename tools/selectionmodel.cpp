@@ -5,6 +5,7 @@
 #include "support/operation-composite.h"
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
+#include "filters/bandpass.h"
 #include "tools/selections/support/splinefilter.h"
 
 namespace Tools
@@ -88,6 +89,19 @@ Signal::pOperation SelectionModel::
 
 template<>
 Signal::pOperation SelectionModel::
+        copy_selection_type(Filters::Bandpass* src, SaveInside si)
+{
+    Filters::Bandpass* dst;
+    Signal::pOperation o( dst=new Filters::Bandpass( *src ));
+
+    if (si != SaveInside_UNCHANGED)
+        dst->_save_inside = si == SaveInside_TRUE;
+    return o;
+}
+
+
+template<>
+Signal::pOperation SelectionModel::
         copy_selection_type(Tools::Support::OperationOtherSilent* src, SaveInside si)
 {
     if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
@@ -143,6 +157,7 @@ Signal::pOperation SelectionModel::
 
     TEST_TYPE(Filters::Ellipse);
     TEST_TYPE(Filters::Rectangle);
+    TEST_TYPE(Filters::Bandpass);
     TEST_TYPE(Tools::Support::OperationOtherSilent);
     TEST_TYPE(Signal::OperationSetSilent);
     TEST_TYPE(Selections::Support::SplineFilter);

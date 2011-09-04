@@ -4,12 +4,15 @@
 #include "collection.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
+#include "tfr/drawnwaveform.h"
 
 #include <CudaException.h>
 #include <GlException.h>
 #include <TaskTimer.h>
 
 #include <boost/foreach.hpp>
+
+#include <float.h>
 
 //#define TIME_BLOCKFILTER
 #define TIME_BLOCKFILTER if(0)
@@ -40,7 +43,7 @@ void BlockFilter::
         applyFilter(Tfr::pChunk pchunk )
 {
     Tfr::Chunk& chunk = *pchunk;
-    Signal::Interval chunk_interval = chunk.getInversedInterval();
+    Signal::Interval chunk_interval = chunk.getInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, false );
     TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks",
         chunk_interval.toString().c_str(), chunk.minHz(), chunk.maxHz(), intersecting_blocks.size());
@@ -81,38 +84,49 @@ void BlockFilter::
 }
 
 
-CwtToBlock::
-        CwtToBlock( Collection* collection )
-            :
-            BlockFilterImpl<Tfr::CwtFilter>(collection),
-            complex_info(ComplexInfo_Amplitude_Non_Weighted)
+void BlockFilter::
+        mergeColumnMajorChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
+    Position a, b;
+    block->ref.getArea(a,b);
+
+    Position chunk_a, chunk_b;
+    Signal::Interval inInterval = chunk.getInterval();
+    chunk_a.time = inInterval.first/chunk.original_sample_rate;
+    chunk_b.time = inInterval.last/chunk.original_sample_rate;
+
+    // ::resampleStft computes frequency rows properly with its two instances
+    // of FreqAxis.
+    chunk_a.scale = 0;
+    chunk_b.scale = 1;
+
+    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
+
+    cpp.xsize = sizeof(float2)*chunk.nScales();
+    cpp.ysize = chunk.nSamples();
+    cpp.pitch = cpp.xsize;
+
+    ::resampleStft( cpp,
+                  outData->getCudaGlobal(),
+                  make_float4( chunk_a.time, chunk_a.scale,
+                               chunk_b.time, chunk_b.scale ),
+                  make_float4( a.time, a.scale,
+                               b.time, b.scale ),
+                  chunk.freqAxis,
+                  _collection->display_scale(),
+                  _collection->amplitude_axis()
+                  );
+
+    block->valid_samples |= inInterval;
 }
 
-CwtToBlock::
-        CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
-            :
-            BlockFilterImpl<Tfr::CwtFilter>(collections),
-            complex_info(ComplexInfo_Amplitude_Non_Weighted)
+
+void BlockFilter::
+        mergeRowMajorChunk( pBlock block, Chunk& chunk, Block::pData outData,
+                            bool full_resolution, ComplexInfo complex_info )
 {
-}
+    CudaException_CHECK_ERROR();
 
-
-void CwtToBlock::
-        mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
-{
-    Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( &chunk );
-
-    BOOST_FOREACH( const pChunk& chunkpart, chunks.chunks )
-    {
-        mergeChunkpart( block, *chunkpart, outData );
-    }
-}
-
-
-void CwtToBlock::
-        mergeChunkpart( pBlock block, Chunk& chunk, Block::pData outData )
-{
     //unsigned cuda_stream = 0;
 
     // Find out what intervals that match
@@ -134,8 +148,6 @@ void CwtToBlock::
             transferDesc.coveredInterval().last / chunk.original_sample_rate ).suppressTiming();
 
     // Remove already computed intervals
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
-    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
     if (!full_resolution)
     {
         if (!(transferDesc - block->valid_samples))
@@ -201,7 +213,7 @@ void CwtToBlock::
 
 
     Signal::Interval transfer = transferDesc.coveredInterval();
-    
+
     DEBUG_CWTTOBLOCK {
         TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
         TaskTimer("outInterval [%u,%u)", outInterval.first, outInterval.last).suppressTiming();
@@ -259,12 +271,50 @@ void CwtToBlock::
 }
 
 
+//////////////////////////////// CwtToBlock ///////////////////////////////
+
+CwtToBlock::
+        CwtToBlock( Collection* collection )
+            :
+            BlockFilterImpl<Tfr::CwtFilter>(collection),
+            complex_info(ComplexInfo_Amplitude_Non_Weighted)
+{
+}
+
+CwtToBlock::
+        CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
+            :
+            BlockFilterImpl<Tfr::CwtFilter>(collections),
+            complex_info(ComplexInfo_Amplitude_Non_Weighted)
+{
+}
+
+
+void CwtToBlock::
+        mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
+{
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
+
+    Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( &chunk );
+
+    BOOST_FOREACH( const pChunk& chunkpart, chunks.chunks )
+    {
+        mergeRowMajorChunk( block, *chunkpart, outData,
+                            full_resolution, complex_info );
+    }
+}
+
+
+/////////////////////////////// StftToBlock ///////////////////////////////
+
 StftToBlock::
         StftToBlock( Collection* collection )
             :
             BlockFilterImpl<Tfr::StftFilter>(collection)
 {
 }
+
 
 StftToBlock::
         StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
@@ -277,39 +327,11 @@ StftToBlock::
 void StftToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    Position a, b;
-    block->ref.getArea(a,b);
-
-    Position chunk_a, chunk_b;
-    Signal::Interval inInterval = chunk.getInterval();
-    chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = inInterval.last/chunk.original_sample_rate;
-
-    // ::resampleStft computes frequency rows properly with its two instances
-    // of FreqAxis.
-    chunk_a.scale = 0;
-    chunk_b.scale = 1;
-
-    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
-
-    cpp.xsize = sizeof(float2)*chunk.nScales();
-    cpp.ysize = chunk.nSamples();
-    cpp.pitch = cpp.xsize;
-
-    ::resampleStft( cpp,
-                  outData->getCudaGlobal(),
-                  make_float4( chunk_a.time, chunk_a.scale,
-                               chunk_b.time, chunk_b.scale ),
-                  make_float4( a.time, a.scale,
-                               b.time, b.scale ),
-                  chunk.freqAxis,
-                  _collection->display_scale(),
-                  _collection->amplitude_axis()
-                  );
-
-    block->valid_samples |= inInterval;
+    mergeColumnMajorChunk(block, chunk, outData);
 }
 
+
+///////////////////////////// CepstrumToBlock /////////////////////////////
 
 CepstrumToBlock::
         CepstrumToBlock( Collection* collection )
@@ -318,6 +340,7 @@ CepstrumToBlock::
 {
     //_try_shortcuts = false;
 }
+
 
 CepstrumToBlock::
         CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
@@ -331,38 +354,64 @@ CepstrumToBlock::
 void CepstrumToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    Position a, b;
-    block->ref.getArea(a,b);
-
-    Position chunk_a, chunk_b;
-    Signal::Interval inInterval = chunk.getInterval();
-    chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = inInterval.last/chunk.original_sample_rate;
-
-    // ::resampleCepstrum computes frequency rows properly with its two instances
-    // of FreqAxis.
-    chunk_a.scale = 0;
-    chunk_b.scale = 1;
-
-    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
-
-    cpp.xsize = sizeof(float2)*chunk.nScales();
-    cpp.ysize = chunk.nSamples();
-    cpp.pitch = cpp.xsize;
-
-    ::resampleStft( cpp,
-                  outData->getCudaGlobal(),
-                  make_float4( chunk_a.time, chunk_a.scale,
-                               chunk_b.time, chunk_b.scale ),
-                  make_float4( a.time, a.scale,
-                               b.time, b.scale ),
-                  chunk.freqAxis,
-                  _collection->display_scale(),
-                  _collection->amplitude_axis()
-                  );
-
-    block->valid_samples |= inInterval;
+    mergeColumnMajorChunk(block, chunk, outData);
 }
 
+
+/////////////////////////// DrawnWaveformToBlock ///////////////////////////
+
+DrawnWaveformToBlock::
+        DrawnWaveformToBlock( Collection* collection )
+            :
+            BlockFilterImpl<Tfr::DrawnWaveformFilter>(collection)
+{
+    //_try_shortcuts = false;
+}
+
+
+DrawnWaveformToBlock::
+        DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
+            :
+            BlockFilterImpl<Tfr::DrawnWaveformFilter>(collections)
+{
+    //_try_shortcuts = false;
+}
+
+
+ChunkAndInverse DrawnWaveformToBlock::
+        computeChunk( const Signal::Interval& I )
+{
+    std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( I, false );
+
+    float largest_fs = 0;
+    BOOST_FOREACH( pBlock block, intersecting_blocks)
+    {
+        if (((block->ref.getInterval() - block->valid_samples) & I).empty() )
+            continue;
+
+        largest_fs = std::max(largest_fs, block->ref.sample_rate());
+    }
+
+    DrawnWaveform* wt = dynamic_cast<DrawnWaveform*>(transform().get());
+    wt->block_fs = largest_fs;
+
+    return Tfr::DrawnWaveformFilter::computeChunk(I);
+}
+
+void DrawnWaveformToBlock::
+        mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
+{
+    DrawnWaveformChunk* dwc = dynamic_cast<DrawnWaveformChunk*>(&chunk);
+
+    float block_fs = block->ref.sample_rate();
+
+    if (dwc->block_fs != block_fs)
+    {
+        int a = 342;
+        return;
+    }
+
+    mergeRowMajorChunk(block, chunk, outData, true, ComplexInfo_Amplitude_Non_Weighted);
+}
 
 } // namespace Heightmap

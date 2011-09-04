@@ -25,6 +25,15 @@ namespace Tools
         void receiveToggleNavigation(bool active);
         void receiveToggleZoom(bool active);
 
+        void moveUp();
+        void moveDown();
+        void moveLeft();
+        void moveRight();
+        void scaleUp();
+        void scaleDown();
+        void scaleLeft();
+        void scaleRight();
+
 
     private:
         // Event handlers
@@ -56,7 +65,10 @@ namespace Tools
         };
         void zoom(int delta, ZoomMode mode);
         void doZoom(int delta, float* scale=0, float* min_scale=0, float* max_scale=0);
-    };
+        void moveCamera( float dt, float ds );
+        void bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot );
+
+	};
 } // namespace Tools
 
 #endif // NAVIGATIONCONTROLLER_H

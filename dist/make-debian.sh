@@ -8,9 +8,9 @@ cd ../..
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  qmake $qmaketarget
+  qmake $qmaketarget CONFIG+=gcc-4.3
   make distclean
-  qmake $qmaketarget
+  qmake $qmaketarget CONFIG+=gcc-4.3
 else
   rm -f sonicawe/sonicawe
 fi

@@ -83,7 +83,8 @@ public:
       The contents of the input Signal::pBuffer is converted to complex values.
       */
     virtual pChunk operator()( Signal::pBuffer );
-    virtual Signal::pBuffer inverse( pChunk ) { throw std::logic_error("Not implemented"); }
+    virtual Signal::pBuffer inverse( pChunk );
+    virtual Signal::pBuffer inverseWithRedundant( pChunk );
     virtual FreqAxis freqAxis( float FS );
     virtual float displayedTimeResolution( float FS, float hz );
 
@@ -96,6 +97,9 @@ public:
     /**
         If false (default), operator() will do a real-to-complex transform
         instead of a full complex-to-complex.
+
+        (also known as R2C and C2R transforms are being used instead of C2C
+        forward and C2C backward)
     */
     bool compute_redundant() { return _compute_redundant; }
     void compute_redundant(bool);
@@ -104,10 +108,16 @@ public:
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
 private:
+    /**
+      @see compute_redundant()
+      */
     Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
 
     cudaStream_t    _stream;
-    CufftHandleContext _handle_ctx;
+//    CufftHandleContext
+//            _handle_ctx_c2c,
+//            _handle_ctx_r2c,
+//            _handle_ctx_c2r;
 
     static std::vector<unsigned> _ok_chunk_sizes;
 

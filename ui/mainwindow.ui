@@ -418,10 +418,10 @@
     <string>Crop Selection</string>
    </property>
    <property name="toolTip">
-    <string>Crop selection [C]</string>
+    <string>Crop selection [Shift+Del]</string>
    </property>
    <property name="shortcut">
-    <string>C</string>
+    <string>Shift+Del</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -737,6 +737,9 @@
    </property>
    <property name="toolTip">
     <string>Rectangle selection</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1213,10 +1216,10 @@
     <string>Add comment</string>
    </property>
    <property name="toolTip">
-    <string>Add comment [C]</string>
+    <string>Add comment [A]</string>
    </property>
    <property name="shortcut">
-    <string>C</string>
+    <string>A</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1344,7 +1347,7 @@
     <string>Toggle fullscreen</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+F11</string>
+    <string>F11</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1497,6 +1500,17 @@
    </property>
    <property name="iconText">
     <string>Update product key</string>
+   </property>
+  </action>
+  <action name="actionTransform_Waveform">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Waveform</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw the signal as a waveform</string>
    </property>
   </action>
  </widget>
