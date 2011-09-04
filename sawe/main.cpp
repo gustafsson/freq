@@ -14,12 +14,6 @@
 #include <QDesktopServices>
 #include <QDir>
 
-//for debug purposes
-#include <QFile>
-#include <QCoreApplication>
-#include <QTextStream>
-#include <QSettings>
-
 // cuda
 #include <cuda_gl_interop.h>
 #include <cuda.h>
@@ -222,6 +216,7 @@ void tstc(C*c)
 }
 int main(int argc, char *argv[])
 {
+#ifdef _MSC_VER
     QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
     localAppDir+="\\MuchDifferent\\Sonic AWE\\";
     if (QDir(localAppDir).exists()==false)
@@ -231,6 +226,7 @@ int main(int argc, char *argv[])
 
     QByteArray byteArray = (localAppDir+"sonicawe.log").toUtf8();
     const char* logdir = byteArray.constData();
+#endif
 
     if (0)
     {
