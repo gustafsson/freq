@@ -28,6 +28,7 @@
 #include "fantrackerview.h"
 #include "fantrackermodel.h"
 #include "selectionviewinfo.h"
+#include "openandcomparecontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -115,6 +116,8 @@ ToolFactory::
 
     _selection_view_info = new SelectionViewInfo(p, &selection_model );
 
+    _objects.push_back( QPointer<QObject>( new OpenAndCompareController( p ) ));
+
 
     //
     // Insert new tools here, and delete things in the destructor in the
@@ -134,6 +137,12 @@ ToolFactory::
     // Try to clear things in the opposite order that they were created
 
     // 'delete 0' is a valid operation and does nothing
+
+    while(!_objects.empty())
+    {
+        delete _objects.back();
+        _objects.pop_back();
+    }
 
     delete _selection_view_info;
 

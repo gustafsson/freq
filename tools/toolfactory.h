@@ -103,6 +103,8 @@ namespace Tools
 
         QPointer<class SelectionViewInfo> _selection_view_info;
 
+        QList<QPointer<QObject> > _objects;
+
         QScopedPointer<class WorkerView> _worker_view;
         QScopedPointer<class WorkerController> _worker_controller;
     };

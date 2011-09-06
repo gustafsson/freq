@@ -13,43 +13,6 @@
 
 namespace Signal {
 
-class OperationAddChannels: public Operation, public boost::noncopyable
-{
-public:
-    OperationAddChannels( pOperation source, pOperation source2 )
-        :
-        Operation(source),
-        source2_(source2),
-        current_channel_(0)
-    {
-    }
-
-    virtual pBuffer read( const Interval& I )
-    {
-        if (current_channel_< source()->num_channels())
-            return source()->read( I );
-        else
-            return source2_->read( I );
-    }
-
-    virtual pOperation source2() const { return source2_; }
-
-    virtual unsigned num_channels() { return source()->num_channels() + source2_->num_channels(); }
-    virtual void set_channel(unsigned c) {
-        BOOST_ASSERT( c < num_channels() );
-        if (c < source()->num_channels())
-            source()->set_channel(c);
-        else
-            source2_->set_channel(c - source()->num_channels());
-        current_channel_ = c;
-    }
-    virtual unsigned get_channel() { return current_channel_; }
-
-private:
-    pOperation source2_;
-    unsigned current_channel_;
-};
-
 
 class ForAllChannelsOperation: public Operation, public boost::noncopyable
 {

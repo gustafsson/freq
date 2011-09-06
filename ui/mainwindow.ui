@@ -84,6 +84,7 @@
     </widget>
     <addaction name="actionNew_recording"/>
     <addaction name="actionOpen"/>
+    <addaction name="actionOpen_and_compare"/>
     <addaction name="menu_Recent_files"/>
     <addaction name="actionSave_project"/>
     <addaction name="actionSave_project_as"/>
@@ -1511,6 +1512,11 @@
    </property>
    <property name="toolTip">
     <string>Draw the signal as a waveform</string>
+   </property>
+  </action>
+  <action name="actionOpen_and_compare">
+   <property name="text">
+    <string>Open and &amp;compare</string>
    </property>
   </action>
  </widget>

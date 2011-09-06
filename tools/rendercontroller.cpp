@@ -56,10 +56,12 @@ public:
         (
             Signal::pOperation o,
             RenderModel* model,
+            RenderView* view,
             RenderController* controller
         )
         :
             model_(model),
+            view_(view),
             controller_(controller),
             prevSignal( o->getInterval() )
     {
@@ -117,6 +119,8 @@ public:
                 if (!model_->collections[c])
                     model_->collections[c].reset( new Heightmap::Collection(model_->renderSignalTarget->source()));
             }
+
+            view_->emitTransformChanged();
         }
 
         foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
@@ -137,6 +141,7 @@ public:
 
 private:
     RenderModel* model_;
+    RenderView* view_;
     RenderController* controller_;
 
     Signal::Interval prevSignal;
@@ -318,7 +323,7 @@ Signal::PostSink* RenderController::
 {
     BlockFilterSink* bfs;
     Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), this));
+    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), view, this));
 
     std::vector<Signal::pOperation> v;
     v.push_back( channelop );

@@ -117,6 +117,25 @@ private:
     }
 };
 
+
+class OperationAddChannels: public Operation, public boost::noncopyable
+{
+public:
+    OperationAddChannels( pOperation source, pOperation source2 );
+
+    virtual pBuffer read( const Interval& I );
+    virtual pOperation source2() const { return source2_; }
+    virtual IntervalType number_of_samples();
+
+    virtual unsigned num_channels();
+    virtual void set_channel(unsigned c);
+    virtual unsigned get_channel() { return current_channel_; }
+
+private:
+    pOperation source2_;
+    unsigned current_channel_;
+};
+
 } // namespace Signal
 
 #endif // SIGNALOPERATIONBASIC_H

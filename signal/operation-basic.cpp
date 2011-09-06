@@ -252,4 +252,54 @@ Signal::Intervals OperationSuperposition::
     return Operation::zeroed_samples_recursive() & _source2->zeroed_samples();
 }
 
+
+// OperationAddChannels ///////////////////////////////////////////////////////////
+
+
+OperationAddChannels::
+        OperationAddChannels( pOperation source, pOperation source2 )
+    :
+    Operation(source),
+    source2_(source2),
+    current_channel_(0)
+{
+}
+
+
+pBuffer OperationAddChannels::
+        read( const Interval& I )
+{
+    if (current_channel_< source()->num_channels())
+        return source()->read( I );
+    else
+        return source2_->read( I );
+}
+
+
+IntervalType OperationAddChannels::
+        number_of_samples()
+{
+    return std::max(source()->number_of_samples(), source2_->number_of_samples());
+}
+
+
+unsigned OperationAddChannels::
+        num_channels()
+{
+    return source()->num_channels() + source2_->num_channels();
+}
+
+
+void OperationAddChannels::
+        set_channel(unsigned c)
+{
+    BOOST_ASSERT( c < num_channels() );
+    if (c < source()->num_channels())
+        source()->set_channel(c);
+    else
+        source2_->set_channel(c - source()->num_channels());
+    current_channel_ = c;
+}
+
+
 } // namespace Signal

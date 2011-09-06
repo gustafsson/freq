@@ -822,6 +822,7 @@ Support::ToolSelector* RenderView::
 void RenderView::
         emitTransformChanged()
 {
+    computeChannelColors();
     emit transformChanged();
 }
 

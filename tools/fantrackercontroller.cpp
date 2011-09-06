@@ -9,7 +9,7 @@
 
 namespace Tools {
 
-    FanTrackerController::FanTrackerController(FanTrackerView* view, RenderView* render_view)
+FanTrackerController::FanTrackerController(FanTrackerView* view, RenderView* render_view)
 {
     render_view_ = render_view;
     view_ = view;

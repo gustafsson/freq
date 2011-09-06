@@ -65,12 +65,13 @@ void RerouteChannels::
         invalidate_samples(const Intervals& I)
 {
     unsigned N = Operation::num_channels();
-    for (unsigned i=0; i<scheme_.size(); )
+    if (N != scheme_.size())
+        num_channels( N );
+
+    for (unsigned i=0; i<scheme_.size(); ++i)
     {
         if (scheme_[i] >= N && scheme_[i] != NOTHING)
-            scheme_.erase( scheme_.begin() + i );
-        else
-            i++;
+            scheme_[i] = NOTHING;
     }
 
     Operation::invalidate_samples(I);
@@ -117,7 +118,7 @@ void RerouteChannels::
         set_channel( N-1 );
 
     if (N != M)
-        invalidate_samples( Signal::Interval(0, number_of_samples() ));
+        invalidate_samples( getInterval() );
 }
 
 } // namespace Signal
