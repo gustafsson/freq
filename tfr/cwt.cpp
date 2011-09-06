@@ -526,6 +526,11 @@ pChunk Cwt::
                     fftctx(n.width, n.height);
                 }
 
+                DEBUG_CWT {
+                    size_t free = availableMemoryForSingleAllocation();
+                    size_t required = n.width*n.height*sizeof(float2)*2;
+                    TaskInfo("free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
+                }
                 TIME_CWTPART TaskInfo("n = { %u, %u, %u }, d = %ul", n.width, n.height, n.depth, g->getNumberOfElements1D());
                 CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
             }
@@ -764,55 +769,74 @@ unsigned Cwt::
 
 
 unsigned Cwt::
-        next_good_size( unsigned current_valid_samples_per_chunk, float fs )
+        required_length( unsigned current_valid_samples_per_chunk, float fs )
 {
     unsigned r = wavelet_time_support_samples( fs );
     unsigned max_bin = find_bin( nScales( fs ) - 1 );
     if ( 0 == r>>max_bin )
         r = 1 << (max_bin-1);
     unsigned T = r + current_valid_samples_per_chunk + r;
+    return T;
+}
+
+
+unsigned Cwt::
+        next_good_size( unsigned current_valid_samples_per_chunk, float fs )
+{
+    unsigned r = wavelet_time_support_samples( fs );
+    unsigned T = required_length( current_valid_samples_per_chunk, fs );
     unsigned nT = spo2g(T);
-
-    if (nT > 1<<19) // For some reason cufft sais CUFFT_ALLOC_FAILED for fft size (1<<20)
-        nT = 1<<19;
-
-    if(nT <= 2*r)
-        nT = spo2g(2*r);
     unsigned L = nT - 2*r;
 
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
+    size_t free = availableMemoryForSingleAllocation();
+    size_t required = required_gpu_bytes(L, fs );
 
-    if (free < required_gpu_bytes(L, fs ))
+    if (free < required)
         return prev_good_size( L, fs );
 
+    DEBUG_CWT TaskInfo("Cwt::next_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
     return L;
 }
 
 
 unsigned Cwt::
-        prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate )
-{
-    unsigned r = wavelet_time_support_samples( sample_rate );
-    unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
-    if ( 0 == r>>max_bin )
-        r = 1 << (max_bin-1);
-    unsigned T = r + current_valid_samples_per_chunk + r;
-    unsigned nT = lpo2s(T);
-    if (nT <= 2*r)
+        prev_good_size( unsigned current_valid_samples_per_chunk, float fs )
+{    
+    size_t free = availableMemoryForSingleAllocation();
+
+    while(true)
     {
-        nT = spo2g(2*r);
-        return nT - 2*r;
+        unsigned r = wavelet_time_support_samples( fs );
+        unsigned T = required_length( current_valid_samples_per_chunk, fs );
+        unsigned nT = lpo2s(T);
+        if (nT <= 2*r)
+            nT = spo2g(2*r);
+
+        while (nT > 2*r)
+        {
+            unsigned L = nT - 2*r;
+            size_t required = required_gpu_bytes(L, fs );
+            if (free >= required ||
+                (nT == spo2g(2*r) && scales_per_octave()==2))
+            {
+                DEBUG_CWT TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
+                return L;
+            }
+
+            nT = lpo2s(nT);
+        }
+
+        unsigned L = spo2g(nT) - 2*r;
+        TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g requires L = %u and %g MB free memory. %g MB memory is available",
+                 scales_per_octave(),
+                 L,
+                 required_gpu_bytes(L, fs )/1024.f/1024.f,
+                 free/1024.f/1024.f);
+
+        scales_per_octave(scales_per_octave()*0.99f);
+        if (scales_per_octave()<2)
+            scales_per_octave(2);
     }
-    unsigned L = nT - 2*r;
-
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
-
-    if (free < required_gpu_bytes(L, sample_rate ))
-        return prev_good_size( L, sample_rate );
-
-    return L;
 }
 
 
@@ -821,8 +845,15 @@ size_t Cwt::
 {
     unsigned r = wavelet_time_support_samples( sample_rate );
     unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
-    long double sum = sizeof(float2)*(2.L)*(L+2*r)*nScales( sample_rate )/(1+max_bin)*1.15;
-    return sum < (size_t)-1 ? sum : (size_t)-1;
+    long double sum = sizeof(float2)*(L + 2*r)*nScales( sample_rate )/(1+max_bin);
+
+    // sum is now equal to the amount of memory required by the biggest CwtChunk
+    // the stft algorithm needs to allocate the same amount of memory while working
+    // the rest of the chunks are in total basically equal to the size of the biggest chunk
+    // take one extra for margin
+    sum = 4L*sum;
+
+   return sum < (size_t)-1 ? sum : (size_t)-1;
 }
 
 

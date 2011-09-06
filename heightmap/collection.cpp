@@ -6,6 +6,7 @@
 #include "tfr/cwt.h"
 #include "signal/operationcache.h"
 
+// Gpumisc
 #include <InvokeOnDestruction.hpp>
 #include <CudaException.h>
 #include <GlException.h>
@@ -13,7 +14,9 @@
 #include <neat_math.h>
 #include <debugmacros.h>
 #include <Statistics.h>
+#include <cudaUtil.h>
 
+// MSVC-GCC-compatibility workarounds
 #include <msc_stdc.h>
 
 #define TIME_COLLECTION
@@ -644,6 +647,24 @@ pBlock Collection::
     try
     {
         pBlock block = attempt( ref );
+
+        // estimate if there is enough memory available
+        size_t s = 0;
+        s += sizeof(float); // OpenGL VBO
+        s += sizeof(float); // Cuda device memory
+        s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
+        s += 2*sizeof(float2); // OpenGL texture, 2 times the size for mipmaps
+        s*=scales_per_block()*samples_per_block();
+        s*=1.5f; // 50% arbitrary extra
+
+        s += 4<<20; // 4 MB to stub stft
+        size_t free = availableMemoryForSingleAllocation();
+
+        if (s>free)
+        {
+            TaskInfo("Require %g MB free memory for new block (including margins), only %g MB available", s/1024.f/1024.f, free/1024.f/1024.f);
+            return pBlock();
+        }
 
 		bool empty_cache;
 		{

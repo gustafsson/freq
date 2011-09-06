@@ -96,6 +96,7 @@ private:
 
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
+    unsigned        required_length( unsigned current_valid_samples_per_chunk, float fs );
 
     Signal::pBuffer inverse( Tfr::CwtChunk* );
     Signal::pBuffer inverse( Tfr::CwtChunkPart* );

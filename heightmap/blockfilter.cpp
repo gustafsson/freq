@@ -87,6 +87,8 @@ void BlockFilter::
 void BlockFilter::
         mergeColumnMajorChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
+    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
+
     Position a, b;
     block->ref.getArea(a,b);
 
@@ -118,6 +120,8 @@ void BlockFilter::
                   );
 
     block->valid_samples |= inInterval;
+
+    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
 }
 
 
@@ -406,10 +410,7 @@ void DrawnWaveformToBlock::
     float block_fs = block->ref.sample_rate();
 
     if (dwc->block_fs != block_fs)
-    {
-        int a = 342;
         return;
-    }
 
     mergeRowMajorChunk(block, chunk, outData, true, ComplexInfo_Amplitude_Non_Weighted);
 }
