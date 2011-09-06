@@ -81,7 +81,7 @@ void MicrophoneRecorder::
     QMutexLocker lock(&_data_lock);
     _data.resize(channel_count);
     _rolling_mean.resize(channel_count);
-    for (int i=0; i<channel_count; ++i)
+    for (unsigned i=0; i<channel_count; ++i)
         _rolling_mean[i] = 0;
 
     portaudio::DirectionSpecificStreamParameters inParamsRecord(

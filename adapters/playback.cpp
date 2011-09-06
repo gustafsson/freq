@@ -17,6 +17,8 @@ Playback::
 :   _first_buffer_size(0),
     _output_device(0)
 {
+    _data.setNumChannels(0);
+
     portaudio::AutoSystem autoSys;
     portaudio::System &sys = portaudio::System::instance();
 
@@ -237,7 +239,7 @@ void Playback::
 {
     _data.invalidate_samples( s );
 
-    if (_data.empty())
+    if (0 == _data.num_channels())
         _data.setNumChannels( source()->num_channels() );
 }
 
