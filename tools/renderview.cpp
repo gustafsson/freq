@@ -1088,7 +1088,9 @@ void RenderView::
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
 
+#if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
+#endif
 
     if (!onlyComputeBlocksForRenderView)
 	{

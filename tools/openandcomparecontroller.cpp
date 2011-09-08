@@ -40,13 +40,18 @@ void OpenAndCompareController::
     Ui::SaweMainWindow* main = _project->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
+#if !defined(TARGET_reader)
     connect(ui->actionOpen_and_compare, SIGNAL(triggered()), this, SLOT(slotOpenAndCompare()));
+#else
+    ui->actionOpen_and_compare->setEnabled( false );
+#endif
 }
 
 
 void OpenAndCompareController::
         slotOpenAndCompare()
 {
+#if !defined(TARGET_reader)
     try
     {
         string filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
@@ -72,6 +77,7 @@ void OpenAndCompareController::
     {
         TaskInfo("%s: %s", __FUNCTION__, x.what());
     }
+#endif
 }
 
 } // namespace Tools

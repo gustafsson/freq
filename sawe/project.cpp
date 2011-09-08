@@ -1,7 +1,9 @@
 #include "sawe/project.h"
 
 #include "sawe/application.h"
+#if !defined(TARGET_reader)
 #include "adapters/audiofile.h"
+#endif
 #include "adapters/microphonerecorder.h"
 #include "signal/operationcache.h"
 #include "tools/toolfactory.h"
@@ -115,10 +117,15 @@ pProject Project::
     }
 
     if (0 == filename.length()) {
-        string filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
+        string filter;
+#if !defined(TARGET_reader)
+        filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
+#endif
         filter = "All files (*.sonicawe *.sonicawe " + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
+#if !defined(TARGET_reader)
         filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
+#endif
 
         QString qfilename = QFileDialog::getOpenFileName(NULL, "Open file", "", QString::fromLocal8Bit(filter.c_str()));
         if (0 == qfilename.length()) {
@@ -130,11 +137,17 @@ pProject Project::
 
     string err;
     pProject p;
-    for (int i=0; i<2; i++) try
+    int availableFileTypes = 1;
+#if !defined(TARGET_reader)
+    availableFileTypes++;
+#endif
+    for (int i=0; i<availableFileTypes; i++) try
     {
         switch(i) {
             case 0: p = Project::openProject( filename ); break;
+#if !defined(TARGET_reader)
             case 1: p = Project::openAudio( filename ); break;
+#endif
         }
         break; // successful loading without thrown exception
     }
@@ -295,6 +308,7 @@ void Project::
 }
 
 
+#if !defined(TARGET_reader)
 bool Project::
         saveAs()
 {
@@ -322,8 +336,9 @@ bool Project::
 
     return r;
 }
+#endif
 
-
+#if !defined(TARGET_reader)
 pProject Project::
         openAudio(std::string audio_file)
 {
@@ -331,5 +346,6 @@ pProject Project::
     Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     return pProject( new Project( s, a->name() ));
 }
+#endif
 
 } // namespace Sawe

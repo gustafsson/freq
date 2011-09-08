@@ -123,6 +123,7 @@ public:
     void setModified();
 
 
+#if !defined(TARGET_reader)
     /**
       If 'project_file_name' is empty, calls saveAs.
 
@@ -137,7 +138,7 @@ public:
       @returns true if the project was saved.
      */
     bool saveAs();
-
+#endif
 
     /**
       Obtain the main window for this project.
@@ -180,7 +181,9 @@ private:
     QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openProject(std::string project_file);
+#if !defined(TARGET_reader)
     static boost::shared_ptr<Project> openAudio(std::string audio_file);
+#endif
 
     friend class boost::serialization::access;
     template<class Archive> void save(Archive& ar, const unsigned int version) const {

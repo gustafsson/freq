@@ -231,6 +231,9 @@ string Reader::
 string Reader::
         reader_text(bool annoy)
 {
+#if defined(TARGET_reader)
+    return "Sonic AWE Reader";
+#else
     while (true)
     {
         if (QSettings().contains("value"))
@@ -256,6 +259,7 @@ string Reader::
             return "not licensed";
         }
     }
+#endif
 }
 
 string Reader::

@@ -11,6 +11,7 @@ ui_mainwindow.h
 *.orig
 *.remote
 sonicawe
+sonicawe-reader
 *.user
 Makefile
 Makefile.Debug

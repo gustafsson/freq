@@ -49,8 +49,13 @@ void SaweMainWindow::
     // Connect actions in the File menu
     connect(ui->actionNew_recording, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotNew_recording()));
     connect(ui->actionOpen, SIGNAL(triggered()), Sawe::Application::global_ptr(), SLOT(slotOpen_file()));
+#if !defined(TARGET_reader)
     connect(ui->actionSave_project, SIGNAL(triggered()), SLOT(saveProject()));
     connect(ui->actionSave_project_as, SIGNAL(triggered()), SLOT(saveProjectAs()));
+#else
+    ui->actionSave_project->setEnabled( false );
+    ui->actionSave_project_as->setEnabled( false );
+#endif
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));
@@ -58,7 +63,11 @@ void SaweMainWindow::
     connect(ui->actionOperation_details, SIGNAL(toggled(bool)), ui->toolPropertiesWindow, SLOT(setVisible(bool)));
     connect(ui->actionOperation_details, SIGNAL(triggered()), ui->toolPropertiesWindow, SLOT(raise()));
     connect(ui->toolPropertiesWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityToolProperties(bool)));
+#if !defined(TARGET_reader)
     connect(ui->action_Enter_product_key, SIGNAL(triggered()), SLOT(reenterProductKey()));
+#else
+    ui->action_Enter_product_key->setVisible( false );
+#endif
 
     ui->actionOperation_details->setChecked( false );
 
@@ -235,6 +244,7 @@ void SaweMainWindow::
 void SaweMainWindow::
         closeEvent(QCloseEvent * e)
 {
+#if !defined(TARGET_reader)
     if (project->isModified())
     {
         if (!askSaveChanges())
@@ -243,6 +253,7 @@ void SaweMainWindow::
             return;
         }
     }
+#endif
 
     e->accept();
 
@@ -265,6 +276,7 @@ void SaweMainWindow::
 }
 
 
+#if !defined(TARGET_reader)
 bool SaweMainWindow::
         askSaveChanges()
 {
@@ -296,7 +308,7 @@ bool SaweMainWindow::
         return false; // abort
     }
 }
-
+#endif
 
 void SaweMainWindow::
         openRecentFile()
@@ -315,18 +327,19 @@ void SaweMainWindow::
 }
 
 
+#if !defined(TARGET_reader)
 void SaweMainWindow::
         saveProject()
 {
     project->save();
 }
 
-
 void SaweMainWindow::
         saveProjectAs()
 {
     project->saveAs();
 }
+#endif
 
 
 void SaweMainWindow::
@@ -395,9 +408,9 @@ void SaweMainWindow::
 void SaweMainWindow::
         reenterProductKey()
 {
-    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear the currently stored product key?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear the currently stored license key?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
-        QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new product key");
+        QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new license key");
         QSettings settings;
         settings.remove("value");
     }

@@ -134,6 +134,10 @@ void ExportAudioDialog::
 void ExportAudioDialog::
         setupGui()
 {
+#if defined(TARGET_reader)
+    project->mainWindow()->getItems()->actionExport_audio->setEnabled(false);
+    project->mainWindow()->getItems()->actionExport_selection->setEnabled(false);
+#else
     connect(project->mainWindow()->getItems()->actionExport_audio, SIGNAL(triggered()), SLOT(exportEntireFile()));
     connect(project->mainWindow()->getItems()->actionExport_selection, SIGNAL(triggered()), SLOT(exportSelection()));
     connect(selection_model, SIGNAL(selectionChanged()), SLOT(selectionChanged()));
@@ -143,6 +147,7 @@ void ExportAudioDialog::
     connect(ui->buttonBoxOk, SIGNAL(accepted()), SLOT(close()));
 
     selectionChanged();
+#endif
 }
 
 

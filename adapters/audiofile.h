@@ -276,10 +276,36 @@ private:
 
         if (typename archive::is_loading())
             load( _original_relative_filename );
+
+        unsigned long long X = 0;
+        for (unsigned c=0; c<_waveforms.size(); ++c)
+        {
+            unsigned char* p = (unsigned char*)_waveforms[c]->waveform_data()->getSizeInBytes1D();
+            unsigned N = _waveforms[c]->waveform_data()->getSizeInBytes1D();
+
+            for (unsigned i=0; i<N; ++i)
+            {
+                X = *p*X + *p;
+                ++p;
+            }
+        }
+
+        unsigned v = X >> 32;
+        unsigned V = v;
+        ar & make_nvp("V", V);
+
+#if defined(TARGET_reader)
+        if (typename archive::is_loading())
+        {
+            if (v != V)
+            {
+                throw std::ios_base::failure("Sonic AWE Reader can only open original files");
+            }
+        }
+#endif
     }
 };
 
 } // namespace Adapters
-
 
 #endif // ADAPTERS_AUDIOFILE_H

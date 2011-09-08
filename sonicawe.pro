@@ -7,6 +7,10 @@
 # Compiler settings
 
 TARGET = sonicawe
+TARGET_reader {
+    TARGET = sonicawe-reader
+}
+
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release

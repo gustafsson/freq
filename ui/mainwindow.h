@@ -69,11 +69,13 @@ protected:
 //    void sendCurrentSelection(int, bool);
 //    void sendRemoveItem(int);
 private slots:
-    bool askSaveChanges();
 
     void openRecentFile();
+#if !defined(TARGET_reader)
+    bool askSaveChanges();
     void saveProject();
     void saveProjectAs();
+#endif
     void toggleFullscreen( bool );
     void toggleFullscreenNoMenus( bool fullscreen );
     void restoreLayout();

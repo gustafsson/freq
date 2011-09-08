@@ -90,6 +90,7 @@ void runSerialization(Archive& ar, Project*& project, QString path)
 }
 
 
+#if !defined(TARGET_reader)
 bool Project::
         save()
 {
@@ -135,6 +136,7 @@ bool Project::
 
     return true;
 }
+#endif
 
 
 pProject Project::
