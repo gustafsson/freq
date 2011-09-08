@@ -39,7 +39,7 @@ void DrawWatermark::
 
 
         {
-            std::vector<unsigned char> swizzled(data.byteCount());
+            QVector<unsigned char> swizzled(data.byteCount());
 
             QRgb*ptr = (QRgb*)data.bits();
             for (int y=0; y<data.height(); ++y) for (int x=0; x<data.width(); ++x)
