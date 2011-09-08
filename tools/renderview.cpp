@@ -11,6 +11,7 @@
 #include "tfr/cwt.h"
 #include "toolfactory.h"
 #include "support/drawworking.h"
+#include "support/drawwatermark.h"
 #include "adapters/microphonerecorder.h"
 #include "heightmap/renderer.h"
 #include "sawe/application.h"
@@ -1086,6 +1087,8 @@ void RenderView::
 
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
+
+    Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 
     if (!onlyComputeBlocksForRenderView)
 	{
