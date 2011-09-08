@@ -1497,10 +1497,10 @@
   </action>
   <action name="action_Enter_product_key">
    <property name="text">
-    <string>Update product key</string>
+    <string>Update license key</string>
    </property>
    <property name="iconText">
-    <string>Update product key</string>
+    <string>Update license key</string>
    </property>
   </action>
   <action name="actionTransform_Waveform">

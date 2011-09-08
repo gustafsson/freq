@@ -76,7 +76,7 @@ Application::
     shared_glwidget_ = new QGLWidget(QGLFormat(QGL::SampleBuffers));
 
     setOrganizationName("MuchDifferent");
-    setOrganizationDomain("sonicawe.com");
+    setOrganizationDomain("muchdifferent.com");
     setApplicationName("Sonic AWE");
 
     build_version_string();

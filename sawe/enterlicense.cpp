@@ -38,7 +38,7 @@ void EnterLicense::
         accept();
     else
     {
-        ui->label->setText("Your product key is not valid. Contact us at sonicawe.com to obtain a new key.");
+        ui->label->setText("Your license key is not valid. Contact us at muchdifferent.com to obtain a new key.");
     }
 }
 
