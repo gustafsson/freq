@@ -55,8 +55,8 @@ void AboutDialog::
             "Using GPU (%1 of %2) %3.\n"
             "%4 MB free of %5 MB total graphics memory.\n"
             "Gpu Gflops: %6\n"
-            "Gpu memory speed: %7 GB/s\n"
-            "Cpu memory speed: %8 GB/s\n"
+            "Gpu memory speed: %7 GB/s (estimated)\n"
+            "Cpu memory speed: %8 GB/s (estimated)\n"
             "Cuda compute capability: %9.%10\n"
             "Cuda driver version: %11\n"
             "Cuda runtime version: %12\n")

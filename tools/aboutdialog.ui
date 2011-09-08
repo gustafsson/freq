@@ -91,12 +91,12 @@
     <rect>
      <x>130</x>
      <y>215</y>
-     <width>371</width>
+     <width>381</width>
      <height>20</height>
     </rect>
    </property>
    <property name="text">
-    <string>Copyright 2009-2011 REEP. All rights reserved.</string>
+    <string>Copyright 2009-2011 MuchDifferent. All rights reserved.</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_6">
