@@ -14,12 +14,15 @@ if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y
 else
   rm -f sonicawe/sonicawe
 fi
+
+# We need to create multiple packages that can't depend on packages outside the ubuntu repos. So shared things between our packages need to be duplicated.
+LD_RUN_PATH=/usr/share/${packagename}
 time make -j5
 
 echo "========================== Packaging =========================="
-filename="sonicawe_${versiontag}_$(uname -m).deb"
+filename="${packagename}_${versiontag}_$(uname -m).deb"
 echo "Creating debian archive: $filename version ${version}"
 cd sonicawe/dist
-source ./package-debian.sh ${versiontag} ${version}
+source fakeroot ./package-debian.sh ${versiontag} ${version} ${packagename}
 
 passiveftp=passive

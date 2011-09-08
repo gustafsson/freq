@@ -7,8 +7,8 @@
 # Compiler settings
 
 TARGET = sonicawe
-TARGET_reader {
-    TARGET = sonicawe-reader
+customtarget {
+    TARGET = $$CUSTOMTARGET
 }
 
 TEMPLATE = app

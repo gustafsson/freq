@@ -9,11 +9,13 @@ if [ -z "${version}" ]; then echo "Missing version, can't upload."; exit 1; fi
 
 
 if [ -z "${target}" ]; then 
+  packagename=sonicawe
   versiontag="${version}${snapshot}"
   qmaketarget=
 else
-  versiontag="${version}-${target}${snapshot}"
-  qmaketarget="CONIFG+=TARGET_${target} DEFINES+=TARGET_${target}"
+  packagename=sonicawe-${target}
+  versiontag="${version}${snapshot}"
+  qmaketarget="CONIFG+=TARGET_${target} DEFINES+=TARGET_${target} CONFIG+=customtarget CUSTOMTARGET=$packagename"
 fi
 
 qmaketarget="${qmaketarget} DEFINES+=\"SONICAWE_VERSION=${versiontag}\""
