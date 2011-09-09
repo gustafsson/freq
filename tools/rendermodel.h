@@ -4,6 +4,7 @@
 #include "tfr/freqaxis.h"
 #include "signal/target.h"
 #include "heightmap/block.cu.h"
+#include "heightmap/renderer.h"
 
 #include <boost/serialization/nvp.hpp>
 
@@ -14,7 +15,6 @@ namespace Sawe {
 namespace Heightmap
 {
     class Collection;
-    class Renderer;
 }
 
 namespace Tfr { class Filter; }
@@ -70,7 +70,13 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(_ry)
                     & BOOST_SERIALIZATION_NVP(_rz)
                     & BOOST_SERIALIZATION_NVP(xscale)
-                    & BOOST_SERIALIZATION_NVP(zscale);
+                    & BOOST_SERIALIZATION_NVP(zscale)
+                    & boost::serialization::make_nvp("color_mode", renderer->color_mode)
+                    & boost::serialization::make_nvp("y_scale", renderer->y_scale)
+                    & boost::serialization::make_nvp("draw_height_lines", renderer->draw_height_lines)
+                    & boost::serialization::make_nvp("draw_piano", renderer->draw_piano)
+                    & boost::serialization::make_nvp("draw_hz", renderer->draw_hz)
+                    & boost::serialization::make_nvp("left_handed_axes", renderer->left_handed_axes);
         }
     };
 } // namespace Tools

@@ -83,6 +83,12 @@ void runSerialization(Archive& ar, Project*& project, QString path)
 
     // add new types at the end to preserve backwards compatibility
 
+    const unsigned magicConst=74610957;
+    unsigned magic = magicConst;
+    ar & boost::serialization::make_nvp("Magic", magic);
+    if (magic != magicConst)
+        throw std::ios_base::failure("Not a Sonic AWE project");
+
     ar & boost::serialization::make_nvp("Sonic_AWE", project);
 
     QDir::setCurrent( dir.absolutePath() );
@@ -125,6 +131,8 @@ bool Project::
 #endif
         Project* p = this;
         runSerialization(xml, p, project_filename_.c_str());
+
+        p->is_modified_ = false;
     }
     catch (const std::exception& x)
     {
@@ -167,6 +175,7 @@ pProject Project::
 
     new_project->project_filename_ = project_file;
     new_project->updateWindowTitle();
+    new_project->is_modified_ = false;
 
     pProject project( new_project );
 

@@ -839,6 +839,8 @@ void RenderView::
 
     if (request_high_fps && post_update)
         update();
+
+    model->project()->setModified();
 }
 
 

@@ -266,6 +266,21 @@ void RenderController::
     value = (f + 1)/2 * yscale->maximum() + .5;
 
     this->yscale->setValue( value );
+
+
+    // keep buttons in sync
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+    if (model()->renderer->draw_piano)  hzmarker->setCheckedAction( ui->actionToggle_piano_grid );
+    if (model()->renderer->draw_hz)  hzmarker->setCheckedAction( ui->actionToggle_hz_grid );
+    switch( model()->renderer->color_mode )
+    {
+    case Heightmap::Renderer::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_colorscale); break;
+    case Heightmap::Renderer::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
+    case Heightmap::Renderer::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
+    }
+    ui->actionSet_heightlines->setChecked(model()->renderer->draw_height_lines);
+    ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
 }
 
 
@@ -549,6 +564,7 @@ void RenderController::
 
     // ComboBoxAction* hzmarker
     {   hzmarker = new ComboBoxAction(toolbar_render);
+        hzmarker->setObjectName("hzmarker");
         hzmarker->addActionItem( ui->actionToggle_hz_grid );
         hzmarker->addActionItem( ui->actionToggle_piano_grid );
         toolbar_render->addWidget( hzmarker );
@@ -562,6 +578,7 @@ void RenderController::
 
     // ComboBoxAction* color
     {   color = new ComboBoxAction(toolbar_render);
+        color->setObjectName("ComboBoxActioncolor");
         color->decheckable( false );
         color->addActionItem( ui->actionSet_rainbow_colors );
         color->addActionItem( ui->actionSet_grayscale );
@@ -576,6 +593,7 @@ void RenderController::
 
     // ComboBoxAction* channels
     {   channelselector = new QToolButton(toolbar_render);
+        channelselector->setObjectName("channelselector");
         channelselector->setCheckable( false );
         channelselector->setText("Channels");
         channelselector->setContextMenuPolicy( Qt::ActionsContextMenu );
@@ -601,6 +619,7 @@ void RenderController::
         connect(ui->actionTransform_Waveform, SIGNAL(triggered()), SLOT(receiveSetTransform_DrawnWaveform()));
 
         transform = new ComboBoxAction(toolbar_render);
+        transform->setObjectName("ComboBoxActiontransform");
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
         transform->addActionItem( ui->actionTransform_Cepstrum );
@@ -638,6 +657,7 @@ void RenderController::
         connect(cepstraScale, SIGNAL(triggered()), SLOT(receiveCepstraScale()));
 
         hz_scale = new ComboBoxAction();
+        hz_scale->setObjectName("hz_scale");
         hz_scale->addActionItem( linearScale );
         hz_scale->addActionItem( logScale );
         hz_scale->addActionItem( cepstraScale );
@@ -688,6 +708,7 @@ void RenderController::
 
     // QSlider * yscale
     {   yscale = new QSlider( toolbar_render );
+        yscale->setObjectName("yscale");
         yscale->setOrientation( Qt::Horizontal );
         yscale->setMaximum( 10000 );
         yscale->setValue( 5000 );
@@ -714,6 +735,7 @@ void RenderController::
 
     // QSlider * tf_resolution
     {   tf_resolution = new QSlider( toolbar_render );
+        tf_resolution->setObjectName("tf_resolution");
         tf_resolution->setOrientation( Qt::Horizontal );
         tf_resolution->setMaximum( 10000 );
         tf_resolution->setValue( 5000 );
