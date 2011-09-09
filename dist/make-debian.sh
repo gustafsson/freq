@@ -12,7 +12,9 @@ if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y
   make distclean
   qmake $qmaketarget CONFIG+=gcc-4.3
 else
-  rm -f sonicawe/sonicawe
+  rm -f sonicawe/${packagename}
+  qmake
+  qmake $qmaketarget CONFIG+=gcc-4.3
 fi
 
 # We need to create multiple packages that can't depend on packages outside the ubuntu repos. So shared things between our packages need to be duplicated.
@@ -23,6 +25,6 @@ echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_$(uname -m).deb"
 echo "Creating debian archive: $filename version ${version}"
 cd sonicawe/dist
-source fakeroot ./package-debian.sh ${versiontag} ${version} ${packagename}
+fakeroot ./package-debian.sh ${versiontag} ${version} ${packagename}
 
 passiveftp=passive
