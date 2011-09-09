@@ -254,6 +254,9 @@ private:
 
     std::string _original_relative_filename;
 
+    std::vector<char> rawdata;
+    static std::vector<char> getRawFileData(std::string filename);
+    void load(std::vector<char> rawFileData);
 
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
@@ -273,14 +276,21 @@ private:
         if (typename archive::is_loading())
             _original_relative_filename = Sawe::Reader::unmash(data);
 #endif
+//        if (typename archive::is_loading())
+//            load( _original_relative_filename );
+
+        if (typename archive::is_saving() && rawdata.empty())
+            rawdata = getRawFileData(_original_relative_filename);
+
+        ar & make_nvp("Rawdata", rawdata);
 
         if (typename archive::is_loading())
-            load( _original_relative_filename );
+            load( rawdata );
 
         unsigned long long X = 0;
         for (unsigned c=0; c<_waveforms.size(); ++c)
         {
-            unsigned char* p = (unsigned char*)_waveforms[c]->waveform_data()->getSizeInBytes1D();
+            unsigned char* p = (unsigned char*)_waveforms[c]->waveform_data()->getCpuMemoryVoidConst();
             unsigned N = _waveforms[c]->waveform_data()->getSizeInBytes1D();
 
             for (unsigned i=0; i<N; ++i)

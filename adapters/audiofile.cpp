@@ -21,7 +21,12 @@ typedef __int64 __int64_t;
 #include <cufft.h>
 #endif
 
+// Qt
 #include <QFileInfo>
+#include <QVector>
+#include <QFile>
+#include <QByteArray>
+#include <QTemporaryFile>
 
 using namespace std;
 
@@ -182,35 +187,39 @@ void Audiofile::
 
     tt.info("Data size: %lu samples, %lu channels", (size_t)source.frames(), (size_t)source.channels() );
     tt.info("Sample rate: %lu samples/second", source.samplerate() );
-#if LEKA_FFT
-/* do stupid things: */
-    num_frames = 1<<13;
-    GpuCpuData<float> ut2(0, make_cudaExtent(3*num_frames*sizeof(float),1,1));
-    GpuCpuData<float> ut(0, make_cudaExtent(3*num_frames*sizeof(float),1,1));
-//    for (unsigned i=0; i<num_frames/2; i++)
-//        printf("\t%g\n",fdata[i]);
+}
 
-    cufftHandle                             _fft_dummy;
-    CufftException_SAFE_CALL(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_R2C, 1));
-    CufftException_SAFE_CALL(cufftExecR2C(_fft_dummy,
-                               (cufftReal *)_waveform.waveform_data->getCudaGlobal().ptr(),
-                               (cufftComplex *)ut2.getCudaGlobal().ptr()));
-    CufftException_SAFE_CALL(cufftPlan1d(&_fft_dummy, num_frames, CUFFT_C2C, 1));
-    /*CufftException_SAFE_CALL(cufftExecC2C(_fft_dummy,
-                               (cufftComplex *)_waveform.waveform_data->getCudaGlobal().ptr(),
-                               (cufftComplex *)ut2.getCudaGlobal().ptr(),
-                               CUFFT_FORWARD));*/
-    CufftException_SAFE_CALL(cufftExecC2C(_fft_dummy,
-                               (cufftComplex *)ut2.getCudaGlobal().ptr(),
-                               (cufftComplex *)ut.getCudaGlobal().ptr(),
-                               CUFFT_INVERSE));
-    cufftDestroy( _fft_dummy );
-    //GpuCpuData<float> d = *_waveform.waveform_data;
-    fdata = ut.getCpuMemory();
-    printf("num_frames/2=%d\n", num_frames/2);
-    for (unsigned i=0; i<num_frames; i++)
-        printf("\t%g  \t%g\n",fdata[2*i], fdata[2*i+1]);
-#endif
+
+std::vector<char> Audiofile::
+        getRawFileData(std::string filename)
+{
+    QFile f(filename.c_str());
+    if (!f.open(QIODevice::ReadOnly))
+        throw std::ios_base::failure("Couldn't get raw data");
+
+    QByteArray bytes = f.readAll();
+    std::vector<char>rawFileData;
+    rawFileData.resize( bytes.size() );
+    memcpy(rawFileData.data(), bytes.constData(), bytes.size());
+
+    return rawFileData;
+}
+
+
+void Audiofile::
+        load( std::vector<char>rawFileData)
+{
+    TaskInfo ti("Audiofile::load(rawFile)");
+
+    QTemporaryFile file;
+    if (!file.open())
+        throw std::ios_base::failure("Couldn't create raw data");
+
+    std::string filename = file.fileName().toStdString();
+    file.write(QByteArray::fromRawData(rawFileData.data(), rawFileData.size()));
+    file.close();
+
+    load(filename);
 }
 
 } // namespace Adapters
