@@ -128,7 +128,9 @@ std::string Audiofile::
 Audiofile::
         Audiofile(std::string filename)
 {
+    _original_relative_filename = filename;
     load(filename);
+    rawdata = getRawFileData(filename);
 }
 
 
@@ -145,8 +147,6 @@ std::string Audiofile::
 void Audiofile::
         load(std::string filename )
 {
-    _original_relative_filename = filename;
-
     TaskTimer tt("Loading '%s' (this=%p)", filename.c_str(), this);
 
     SndfileHandle source(filename);
@@ -193,9 +193,9 @@ void Audiofile::
 std::vector<char> Audiofile::
         getRawFileData(std::string filename)
 {
-    QFile f(filename.c_str());
+    QFile f(QString::fromLocal8Bit( filename.c_str() ));
     if (!f.open(QIODevice::ReadOnly))
-        throw std::ios_base::failure("Couldn't get raw data");
+        throw std::ios_base::failure("Couldn't get raw data from " + filename);
 
     QByteArray bytes = f.readAll();
     std::vector<char>rawFileData;

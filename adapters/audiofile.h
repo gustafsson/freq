@@ -276,11 +276,6 @@ private:
         if (typename archive::is_loading())
             _original_relative_filename = Sawe::Reader::unmash(data);
 #endif
-//        if (typename archive::is_loading())
-//            load( _original_relative_filename );
-
-        if (typename archive::is_saving() && rawdata.empty())
-            rawdata = getRawFileData(_original_relative_filename);
 
         ar & make_nvp("Rawdata", rawdata);
 
