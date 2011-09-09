@@ -45,16 +45,17 @@ void MicrophoneRecorder::
     TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
     portaudio::System &sys = portaudio::System::instance();
 
-    bool has_input_device = false;
+    _has_input_device = false;
     for (int i=0; i < sys.deviceCount(); ++i)
     {
         if (!sys.deviceByIndex(i).isOutputOnlyDevice())
-            has_input_device = true;
+            _has_input_device = true;
     }
 
-    if (!has_input_device)
+    if (!_has_input_device)
     {
-        throw std::runtime_error("System didn't report any recording devices. Can't record.");
+        TaskInfo("System didn't report any recording devices. Can't record.");
+        return;
     }
 
     if (0>input_device_ || input_device_>sys.deviceCount()) {
@@ -133,6 +134,12 @@ void MicrophoneRecorder::startRecording()
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
     init();
 
+    if (!canRecord())
+    {
+        TaskInfo("MicrophoneRecorder::startRecording() cant start recording");
+        return;
+    }
+
     _stream_record->start();
 
     _start_recording = boost::posix_time::microsec_clock::local_time();
@@ -176,6 +183,14 @@ void MicrophoneRecorder::
     ss << project << "_" << i << "_" << device << ".wav";
     _filename = ss.str();
 }
+
+
+bool MicrophoneRecorder::
+        canRecord()
+{
+    return _has_input_device;
+}
+
 
 std::string MicrophoneRecorder::
         name()

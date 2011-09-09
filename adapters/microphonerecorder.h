@@ -31,6 +31,7 @@ public:
     void stopRecording();
     bool isStopped();
     void setProjectName(std::string, int);
+    bool canRecord();
 
     virtual std::string name();
     virtual Signal::pBuffer read( const Signal::Interval& I );
@@ -63,6 +64,7 @@ private:
     float _offset;
     unsigned _channel;
     float _sample_rate;
+    bool _has_input_device;
     QMutex _data_lock;
     std::vector<Signal::SinkSource> _data;
     std::vector<float> _rolling_mean;

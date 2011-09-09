@@ -105,10 +105,16 @@ void RecordController::
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
-    if (dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head->head_source()->root()))
+    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head->head_source()->root());
+    if (r)
     {
-        ui->actionRecord->setEnabled( true );
+        if (r->canRecord())
+            ui->actionRecord->setEnabled( true );
+        else
+            ui->actionRecord->setToolTip("Can't record, no record devices found");
     }
+    else
+        ui->actionRecord->setToolTip("Can only record on recordings");
 }
 
 
