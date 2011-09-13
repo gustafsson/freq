@@ -200,7 +200,7 @@ std::vector<char> Audiofile::
     QByteArray bytes = f.readAll();
     std::vector<char>rawFileData;
     rawFileData.resize( bytes.size() );
-    memcpy(rawFileData.data(), bytes.constData(), bytes.size());
+    memcpy(&rawFileData[0], bytes.constData(), bytes.size());
 
     return rawFileData;
 }
@@ -216,7 +216,7 @@ void Audiofile::
         throw std::ios_base::failure("Couldn't create raw data");
 
     std::string filename = file.fileName().toStdString();
-    file.write(QByteArray::fromRawData(rawFileData.data(), rawFileData.size()));
+    file.write(QByteArray::fromRawData(&rawFileData[0], rawFileData.size()));
     file.close();
 
     load(filename);
