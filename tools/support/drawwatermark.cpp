@@ -39,7 +39,7 @@ void DrawWatermark::
 
 
         {
-            QVector<unsigned char> swizzled(data.byteCount());
+            std::vector<unsigned char> swizzled(data.byteCount());
 
             QRgb*ptr = (QRgb*)data.bits();
             for (int y=0; y<data.height(); ++y) for (int x=0; x<data.width(); ++x)
@@ -52,7 +52,7 @@ void DrawWatermark::
                 swizzled[4*o + 3] = qAlpha(p);
             }
 
-            img.reset(new GlTexture(data.width(), data.height(), GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, swizzled.data()));
+            img.reset(new GlTexture(data.width(), data.height(), GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, &swizzled[0]));
         }
 
 
