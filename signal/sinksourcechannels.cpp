@@ -200,7 +200,7 @@ void SinkSourceChannels::
 pBuffer SinkSourceChannels::
         first_buffer()
 {
-    return sinksources_[ current_channel_ ].first_buffer();
+    return sinksources_.empty() ? Intervals() : sinksources_[ current_channel_ ].samplesDesc();
 }
 
 
@@ -214,7 +214,7 @@ bool SinkSourceChannels::
 Intervals SinkSourceChannels::
         samplesDesc_current_channel()
 {
-    return sinksources_[ current_channel_ ].samplesDesc();
+    return sinksources_.empty() ? Intervals() : sinksources_[ current_channel_ ].samplesDesc();
 }
 
 
