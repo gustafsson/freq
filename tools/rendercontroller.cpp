@@ -254,7 +254,7 @@ void RenderController::
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
 
     // keep in sync with receiveSetTimeFrequencyResolution
-    float f = log(c.scales_per_octave()/2)/8;
+    float f = log(c.scales_per_octave()/2.L)/8;
     int value = f * tf_resolution->maximum() + .5;
 
     this->tf_resolution->setValue( value );
@@ -281,6 +281,9 @@ void RenderController::
     }
     ui->actionSet_heightlines->setChecked(model()->renderer->draw_height_lines);
     ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
+
+    // clear worker assumptions of target
+    model()->project()->worker.target(model()->renderSignalTarget);
 }
 
 
@@ -292,7 +295,7 @@ void RenderController::
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
 
     view->userinput_update();
-    view->emitTransformChanged();
+    //view->emitTransformChanged();
 
     yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->y_scale));
 }
@@ -307,10 +310,17 @@ void RenderController::
 
     // Keep in sync with transformChanged()
     float f = value / (float)tf_resolution->maximum();
-    c.scales_per_octave( 2*exp( 8*f ) ); // scales_per_octave >= 2
+    c.scales_per_octave( 2*exp( 8.L*f ) ); // scales_per_octave >= 2
+
+    float wavelet_default_time_support = c.wavelet_default_time_support();
+    float wavelet_fast_time_support = c.wavelet_time_support();
+    c.wavelet_time_support(wavelet_default_time_support);
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     s.set_approximate_chunk_size( 0.25f*c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+
+    c.wavelet_fast_time_support( wavelet_fast_time_support );
+
 
     model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
 

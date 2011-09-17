@@ -183,6 +183,10 @@ public:
 	*/
     void				samples_per_chunk_hint(unsigned);
 
+    void                nextFrame();
+    float               get_current_fps() const;
+    float               get_min_fps() const;
+
     /**
       Get/set requested number of frames per second.
       */
@@ -284,6 +288,10 @@ private:
       _highest_fps is guaranteed to be >= _min_fps.
     */
     float _highest_fps;
+
+    /**
+      */
+    float current_fps;
 
     /**
       If the worker shouldn't do any work for any target set target to pTarget(). Worker will however keep a

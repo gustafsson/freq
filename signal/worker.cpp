@@ -43,6 +43,7 @@ Worker::
     _min_samples_per_chunk( 1 ),
     _requested_fps( 20 ),
     _min_fps( 0.5 ),
+    current_fps( 1 ),
     _disabled( false ),
     _caught_exception( "" ),
     _caught_invalid_argument("")
@@ -84,12 +85,11 @@ bool Worker::
 
     _number_of_samples = source()->number_of_samples();
 
-    _requested_fps *= 0.9;
     if (_requested_fps < _min_fps) 
         _requested_fps = _min_fps;
 
     if (skip_if_low_fps)
-        if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps)
+        if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps && _requested_fps>_min_fps)
             return false;
 
     Signal::Intervals todo_list = this->todo_list();
@@ -172,7 +172,7 @@ bool Worker::
 
             size_t free=0, total=0;
             cudaMemGetInfo(&free, &total);
-            TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
+            TaskInfo("Cuda RAM size %g MB (of which %g MB are currently available)",
                      total/1024.f/1024, free/1024.f/1024);
 
         } else {
@@ -190,11 +190,7 @@ bool Worker::
         throw;
     }
 
-    ptime now = microsec_clock::local_time();
-
     if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
-        time_duration diff = now - _last_work_one;
-        float current_fps = 1000000.0/diff.total_microseconds();
 
         if (current_fps < _requested_fps &&
             _samples_per_chunk >= _min_samples_per_chunk)
@@ -226,8 +222,6 @@ bool Worker::
     // Reset before next workOne
     //TaskInfo("wavelet_default_time_support = %g", Tfr::Cwt::Singleton().wavelet_default_time_support());
     Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
-
-    _last_work_one = now;
 
     return true;
 }
@@ -357,6 +351,35 @@ void Worker::
 		samples_per_chunk_hint(unsigned value)
 {
     _samples_per_chunk = max(_min_samples_per_chunk, value);
+}
+
+
+float Worker::
+        get_current_fps() const
+{
+    return current_fps;
+}
+
+
+float Worker::
+        get_min_fps() const
+{
+    return _min_fps;
+}
+
+
+void Worker::
+        nextFrame()
+{
+    _requested_fps *= 0.8f;
+
+    ptime now = microsec_clock::local_time();
+    if (!_last_work_one.is_not_a_date_time())
+    {
+        time_duration diff = now - _last_work_one;
+        current_fps = 1000000.0/diff.total_microseconds();
+    }
+    _last_work_one = now;
 }
 
 

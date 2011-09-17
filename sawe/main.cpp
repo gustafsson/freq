@@ -52,7 +52,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
             size_t free=0, total=0;
             cudaMemGetInfo(&free, &total);
-            TaskInfo("Cuda memory available %g MB (of which %g MB is free to use)",
+            TaskInfo("Cuda RAM size %g MB (of which %g MB are currently available)",
                      total/1024.f/1024, free/1024.f/1024);
 
             if (!use_OpenGL_bindings) if (free < total/2)

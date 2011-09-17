@@ -966,6 +966,14 @@ void RenderView::
 
     _last_length = model->renderSignalTarget->source()->length();
 
+    if (0 == "stop after 30 seconds")
+    {
+        static unsigned frame_counter = 0;
+        TaskInfo("frame_counter = %u", ++frame_counter);
+        if (_last_length > 30) for (static bool once=true; once; once=false)
+            QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
+    }
+
     Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
     if(r != 0 && !(r->isStopped()))
     {
@@ -1005,7 +1013,6 @@ void RenderView::
 		}
 
         model->renderer->drawAxes( _last_length ); // 4.7 ms
-
     }
 
     {   // Find things to work on (ie playback and file output)
@@ -1080,10 +1087,10 @@ void RenderView::
                 worker.worked_samples.clear();
                 workcount++;
                 _work_timer.reset();
-
-                // Useful when debugging to close application or do something else after finishing first work chunk
-                emit finishedWorkSection();
             }
+
+            // Useful when debugging to close application or do something else after finishing first work chunk
+            emit finishedWorkSection();
         }
     }
 
@@ -1103,6 +1110,8 @@ void RenderView::
 			collection->next_frame();
 		}
 	}
+
+    worker.nextFrame();
 
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post check errors");
