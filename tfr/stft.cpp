@@ -850,9 +850,77 @@ float Stft::
 //}
 
 
+unsigned powerprod(const unsigned*bases, const unsigned*b, unsigned N)
+{
+    unsigned v = 1;
+    for (unsigned i=0; i<N; i++)
+        for (unsigned x=0; x<b[i]; x++)
+            v*=bases[i];
+    return v;
+}
+
+unsigned findGreatestSmaller(const unsigned* bases, unsigned* a, unsigned maxv, unsigned x, unsigned n, unsigned N)
+{
+    unsigned i = 0;
+    while(true)
+    {
+        a[n] = i;
+
+        unsigned v = powerprod(bases, a, N);
+        if (v > x)
+            break;
+
+        if (n+1<N)
+            maxv = findGreatestSmaller(bases, a, maxv, x, n+1, N);
+        else if (v > maxv)
+            maxv = v;
+
+        ++i;
+    }
+    a[n] = 0;
+
+    return maxv;
+}
+
+unsigned findSmallestGreater(const unsigned* bases, unsigned* a, unsigned minv, unsigned x, unsigned n, unsigned N)
+{
+    unsigned i = 0;
+    while(true)
+    {
+        a[n] = i;
+
+        unsigned v = powerprod(bases, a, N);
+        if (n+1<N)
+            minv = findSmallestGreater(bases, a, minv, x, n+1, N);
+        else if (v>=x && (v < minv || minv==0))
+            minv = v;
+
+        if (v > x)
+            break;
+
+        ++i;
+    }
+    a[n] = 0;
+
+    return minv;
+}
+
+unsigned oksz(unsigned x)
+{
+    unsigned bases[]={2, 3, 5, 7};
+    unsigned a[]={0, 0, 0, 0};
+    unsigned gs = findGreatestSmaller(bases, a, 0, x, 0, 4);
+    unsigned sg = findSmallestGreater(bases, a, 0, x, 0, 4);
+    if (x-gs < sg-x)
+        return gs;
+    else
+        return sg;
+}
+
 unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
-    _window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
+    //_window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
+    _window_size = oksz( preferred_size );
     _window_size = _window_size > 4 ? _window_size : 4;
     return _window_size;
 
