@@ -66,7 +66,8 @@ RenderView::
             _last_height(0),
             _last_x(0),
             _last_y(0),
-            _try_gc(0)
+            _try_gc(0),
+            _target_fps(20.0f)
 {
     float l = model->project()->worker.source()->length();
     _last_length = l;
@@ -847,13 +848,18 @@ void RenderView::
 void RenderView::
         restartUpdateTimer()
 {
-    float dt = _render_timer?_render_timer->elapsedTime():0;
-    float wait = 1.f/60;
-    if (wait<dt)
-        update();
-    else if (!_update_timer->isActive())
+    boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+    float dt = _last_frame.is_not_a_date_time()? 0 :
+        (now - _last_frame).total_microseconds()*1e-6;
+    _last_frame = now;
+
+    float wait = 1.f/_target_fps;
+    if (!_update_timer->isActive())
     {
-        unsigned ms = (wait-dt)*1000;
+        if (wait<dt)
+            wait = dt;
+
+        unsigned ms = (wait-dt)*1e3; // round down
         TaskInfo("Waiting %u ms to update", ms);
         _update_timer->start(ms);
     }

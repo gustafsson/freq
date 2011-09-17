@@ -176,6 +176,12 @@ namespace Tools
         int _try_gc;
         QPointer<QTimer> _update_timer;
 
+        /**
+          Adjusting sleep between frames based on fps.
+          */
+        boost::posix_time::ptime _last_frame;
+        float _target_fps;
+
         float _last_length;
         double modelview_matrix[16], projection_matrix[16];
         int viewport_matrix[4];
