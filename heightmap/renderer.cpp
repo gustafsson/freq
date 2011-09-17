@@ -46,6 +46,8 @@ Renderer::Renderer( Collection* collection )
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
+    _mesh_fraction_width(1),
+    _mesh_fraction_height(1),
     _initialized(false),
     _draw_flat(false),
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
@@ -70,6 +72,15 @@ Renderer::Renderer( Collection* collection )
 #endif
     }
 }
+
+
+void Renderer::
+        setFractionSize( unsigned divW, unsigned divH)
+{
+    _mesh_fraction_width = divW;
+    _mesh_fraction_height = divH;
+}
+
 
 void Renderer::setSize( unsigned w, unsigned h)
 {
@@ -404,6 +415,7 @@ void Renderer::draw( float scaley )
 
     TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
     if (!_initialized) init();
+    setSize( collection->samples_per_block()/_mesh_fraction_width, collection->scales_per_block()/_mesh_fraction_height );
 
     _invalid_frustum = true;
 

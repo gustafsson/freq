@@ -51,6 +51,7 @@ public:
     unsigned drawn_blocks;
     bool left_handed_axes;
 
+    void setFractionSize( unsigned divW=1, unsigned divH=1);
     void init();
 
     GLdouble modelview_matrix[16], projection_matrix[16];
@@ -72,6 +73,8 @@ private:
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
+    unsigned _mesh_fraction_width;
+    unsigned _mesh_fraction_height;
     unsigned _vbo_size;
     pVbo _mesh_position;
     GLuint _shader_prog;
