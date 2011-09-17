@@ -11,6 +11,6 @@
  */
 void drawWaveform( cudaPitchedPtrType<float> in_waveform,
                    cudaPitchedPtrType<float2> out_waveform_matrix,
-                   float blob, unsigned readstop );
+                   float blob, unsigned readstop, float maxValue );
 
 #endif // DRAWNWAVEFORM_CU_H

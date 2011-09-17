@@ -23,6 +23,7 @@ public:
 
     float block_fs;
     unsigned signal_length;
+    float maxValue;
 };
 
 

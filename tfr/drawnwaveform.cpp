@@ -12,7 +12,8 @@ namespace Tfr {
 DrawnWaveform::
         DrawnWaveform()
             :
-            block_fs(0)
+            block_fs(0),
+            maxValue(0.0001f)
 {}
 
 
@@ -60,7 +61,8 @@ pChunk DrawnWaveform::
             b->waveform_data()->getCudaGlobal(),
             c->transform_data->getCudaGlobal(),
             blobsize,
-            readstop);
+            readstop,
+            maxValue);
 
     this->block_fs = 0;
 

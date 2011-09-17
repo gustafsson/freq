@@ -44,7 +44,9 @@ Signal::Interval DrawnWaveformFilter::
                         )
                 .coveredInterval();*/
 
-    J.last = J.first + int_div_ceil( J.count(), blobsize*drawWaveform_BLOCK_SIZE)*blobsize*drawWaveform_BLOCK_SIZE;
+    J.first = align_down( J.first, blobsize*drawWaveform_BLOCK_SIZE );
+    J.last = align_up( J.last, blobsize*drawWaveform_BLOCK_SIZE );
+    //J.last = J.first + int_div_ceil( J.count(), blobsize*drawWaveform_BLOCK_SIZE)*blobsize*drawWaveform_BLOCK_SIZE;
     //J.last = J.first + spo2g(J.count() - 1);
 
     return J;
@@ -57,6 +59,20 @@ ChunkAndInverse DrawnWaveformFilter::
     ChunkAndInverse ci;
 
     ci.inverse = source()->readFixedLength( requiredInterval( I ) );
+
+    float *p = ci.inverse->waveform_data()->getCpuMemory();
+    float maxValue=0;
+    for(unsigned i=0; i<ci.inverse->number_of_samples(); ++i)
+        maxValue = std::max(std::abs(p[i]), maxValue);
+
+    DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(transform().get());
+    if (0 == w)
+        throw std::invalid_argument("'transform' must be an instance of Tfr::DrawnWaveform");
+    if (maxValue > w->maxValue)
+    {
+        invalidate_samples(Signal::Intervals::Intervals_ALL);
+        w->maxValue = maxValue;
+    }
 
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );

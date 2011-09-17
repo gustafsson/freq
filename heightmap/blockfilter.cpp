@@ -387,19 +387,37 @@ ChunkAndInverse DrawnWaveformToBlock::
 {
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( I, false );
 
-    float largest_fs = 0;
+    Signal::Intervals missingSamples;
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
-        if (((block->ref.getInterval() - block->valid_samples) & I).empty() )
-            continue;
-
-        largest_fs = std::max(largest_fs, block->ref.sample_rate());
+        missingSamples |= block->ref.getInterval() - block->valid_samples;
     }
 
-    DrawnWaveform* wt = dynamic_cast<DrawnWaveform*>(transform().get());
-    wt->block_fs = largest_fs;
+    missingSamples &= I;
 
-    return Tfr::DrawnWaveformFilter::computeChunk(I);
+    float largest_fs = 0;
+    Signal::Interval toCompute = I;
+    if (missingSamples)
+    {
+        Signal::Interval first(0, 0);
+        first.first = missingSamples.coveredInterval().first;
+        first.last = first.first + 1;
+
+        BOOST_FOREACH( pBlock block, intersecting_blocks)
+        {
+            if (((block->ref.getInterval() - block->valid_samples) & first).empty() )
+                continue;
+
+            largest_fs = std::max(largest_fs, block->ref.sample_rate());
+        }
+
+        DrawnWaveform* wt = dynamic_cast<DrawnWaveform*>(transform().get());
+        wt->block_fs = largest_fs;
+
+        toCompute = missingSamples.fetchFirstInterval();
+    }
+
+    return Tfr::DrawnWaveformFilter::computeChunk(toCompute);
 }
 
 void DrawnWaveformToBlock::

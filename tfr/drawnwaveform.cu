@@ -9,13 +9,13 @@
 __global__ void kernel_draw_waveform(
         cudaPitchedPtrType<float> in_waveform,
         cudaPitchedPtrType<float2> out_waveform_matrix,
-        float blob, unsigned readstop );
+        float blob, unsigned readstop, float scaling );
 
 
 void drawWaveform(
         cudaPitchedPtrType<float> in_waveform,
         cudaPitchedPtrType<float2> out_waveform_matrix,
-        float blob, unsigned readstop )
+        float blob, unsigned readstop, float maxValue )
 {
 
     cudaMemset( out_waveform_matrix.ptr(), 0, out_waveform_matrix.getTotalBytes() );
@@ -29,13 +29,13 @@ void drawWaveform(
         return;
     }
 
-    kernel_draw_waveform<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop );
+    kernel_draw_waveform<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue );
 }
 
 
 __global__ void kernel_draw_waveform(
         cudaPitchedPtrType<float> in_waveform,
-        cudaPitchedPtrType<float2> out_waveform_matrix, float blob, unsigned readstop )
+        cudaPitchedPtrType<float2> out_waveform_matrix, float blob, unsigned readstop, float scaling )
 {
     elemSize_t writePos_x = blockIdx.x * blockDim.x + threadIdx.x;
     elemSize3_t matrix_sz = out_waveform_matrix.getNumberOfElements();
@@ -53,7 +53,7 @@ __global__ void kernel_draw_waveform(
         elemSize3_t readPos = make_elemSize3_t(read_x, 0, 0);
 
         float v = in_waveform.elem( readPos );
-        v *= 2;
+        v *= scaling;
         v = fmaxf(-1.f, fminf(1.f, v));
         float y = (v+1.f)*.5f*(matrix_sz.y-1.f);
         elemSize_t y1 = (elemSize_t)y;
