@@ -24,6 +24,8 @@ public:
     typedef boost::shared_ptr< GpuCpuData<float> > pHeightReadOnlyCpu;
     typedef cudaArray* HeightReadOnlyArray;
 
+    void                reset( float width, float height );
+
     pHeight             height();
     pHeightReadOnlyCpu  heightReadOnlyCpu();
     HeightReadOnlyArray heightReadOnlyArray();

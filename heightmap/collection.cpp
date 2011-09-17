@@ -34,10 +34,9 @@
 //#define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
 
-// Don't keep more than this times the number of blocks currently needed
-// TODO define this as fraction of total memory instead using cacheByteSize
-#define MAX_REDUNDANT_SIZE 80
-#define MAX_CREATED_BLOCKS_PER_FRAME 1 // Even numbers look better for stereo signals
+// Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
+#define MAX_FRACTION_FOR_CACHES (1.f/5.f)
+#define MAX_CREATED_BLOCKS_PER_FRAME 8
 
 using namespace Signal;
 
@@ -641,12 +640,74 @@ pBlock Collection::
 pBlock Collection::
         createBlock( const Reference& ref )
 {
-    INFO_COLLECTION TaskTimer tt("Creating a new block %s", ref.toString().c_str());
-    // Try to allocate a new block
     pBlock result;
+    INFO_COLLECTION TaskTimer tt("Creating a new block %s", ref.toString().c_str());
+    // Try to create a new block
     try
     {
-        pBlock block = attempt( ref );
+        pBlock block;
+
+        if (0!= "Reuse old redundant blocks")
+        {
+            unsigned youngest_age = -1, youngest_count = 0;
+            foreach ( const recent_t::value_type& b, _recent )
+            {
+                unsigned age = _frame_counter - b->frame_number_last_used;
+                if (age < youngest_age) {
+                    youngest_age = age;
+                    youngest_count = 1;
+                } else if (age <= youngest_age + 1) {
+                    ++youngest_count;
+                } else {
+                    break; // _recent is ordered with the most recently accessed blocks first
+                }
+            }
+
+            size_t memForNewBlock = 0;
+            memForNewBlock += sizeof(float); // OpenGL VBO
+            memForNewBlock += sizeof(float); // Cuda device memory
+            memForNewBlock += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
+            memForNewBlock += 2*sizeof(float2); // OpenGL texture, 2 times the size for mipmaps
+            memForNewBlock *= scales_per_block()*samples_per_block();
+            size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
+            size_t free = availableMemoryForSingleAllocation();
+
+            size_t margin = memForNewBlock;
+            // prefer to use block rather than discard an old block and then reallocate it
+            if (youngest_count < _recent.size() && allocatedMemory+memForNewBlock+margin> free*MAX_FRACTION_FOR_CACHES)
+            {
+                block = _recent.back();
+                Position a,b;
+                block->ref.getArea(a,b);
+
+                TaskTimer tt("Stealing block [%g:%g, %g:%g]. %u blocks, recent %u blocks.",
+                             a.time, a.scale, b.time, b.scale, _cache.size(), _recent.size());
+
+                _recent.remove( block );
+                _cache.erase( block->ref );
+
+                block->ref = ref;
+                block->valid_samples.clear();
+                ref.getArea(a,b);
+                block->glblock->reset( b.time-a.time, b.scale-a.scale );
+            }
+
+            // Need to release even more blocks?
+            while (youngest_count < _recent.size() && allocatedMemory+memForNewBlock> free*MAX_FRACTION_FOR_CACHES)
+            {
+                Position a,b;
+                _recent.back()->ref.getArea(a,b);
+
+                size_t blockMemory = _recent.back()->glblock->allocated_bytes_per_element()*scales_per_block()*samples_per_block();
+                allocatedMemory -= std::min(allocatedMemory,blockMemory);
+
+                TaskTimer tt("Removing block [%g:%g, %g:%g] (freeing %g KB). %u remaining blocks, recent %u blocks.",
+                             a.time, a.scale, b.time, b.scale, blockMemory/1024.f/1024.f, _cache.size(), _recent.size());
+
+                _cache.erase(_recent.back()->ref);
+                _recent.pop_back();
+            }
+        }
 
         // estimate if there is enough memory available
         size_t s = 0;
@@ -666,6 +727,9 @@ pBlock Collection::
             return pBlock();
         }
 
+        if (!block) // couldn't reuse recent block, allocate a new one instead
+            block = attempt( ref );
+
 		bool empty_cache;
 		{
 #ifndef SAWE_NO_MUTEX
@@ -674,10 +738,10 @@ pBlock Collection::
 			empty_cache = _cache.empty();
 		}
 
-        if ( 0 == block.get() && !empty_cache) {
+        if ( !block && !empty_cache) {
             TaskTimer tt("Memory allocation failed creating new block %s. Doing garbage collection", ref.toString().c_str());
             gc();
-            block = attempt( ref );
+            block = attempt( ref ); // try again
         }
 #ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_cache_mutex); // Keep in scope for the remainder of this function
@@ -691,6 +755,7 @@ pBlock Collection::
         // set to zero
         GlBlock::pHeight h = block->glblock->height();
         cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
+        // will be unmapped in next_frame() or right before it's drawn
 
         GlException_CHECK_ERROR();
         CudaException_CHECK_ERROR();
@@ -720,7 +785,15 @@ pBlock Collection::
                         ref.getArea(a,b);
                         foreach( const pBlock& bl, gib )
                         {
+                            // The switch from high resolution blocks to low resolution blocks (or
+                            // the other way around) should be as invisible as possible. Therefor
+                            // the contents should be stubbed from whatever contents the previous
+                            // blocks already have, even if the contents are out-of-date.
+                            //
+                            // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
                             Interval v = bl->ref.getInterval();
+
+                            // Check if these samples are still considered for update
                             if ( (things_to_update & v ).count() <= 1)
                                 continue;
 
@@ -735,12 +808,18 @@ pBlock Collection::
                                 bl->ref.getArea(a2,b2);
                                 if (a2.scale <= a.scale && b2.scale >= b.scale )
                                 {
+                                    // 'bl' covers all scales in 'block' (not necessarily all time samples though)
                                     things_to_update -= v;
                                     mergeBlock( block, bl, 0 );
                                 }
                                 else if (bl->ref.log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                                 {
+                                    // mergeBlock makes sure that their scales overlap more or less
                                     mergeBlock( block, bl, 0 );
+                                }
+                                else
+                                {
+                                    // don't bother with things that doesn't match very well
                                 }
                             }
                         }
@@ -830,7 +909,7 @@ pBlock Collection::
         // fill block by STFT during the very first frames
         if (stubWithStft) // don't stubb if they will be filled by stft shortly hereafter
         if (things_to_update)
-        if (10 > _frame_counter || true) {
+        if (10 > _frame_counter) {
             //size_t stub_size
             //if ((b.time - a.time)*fast_source( target)->sample_rate()*sizeof(float) )
             try
@@ -881,37 +960,8 @@ pBlock Collection::
 
     BOOST_ASSERT( 0 != result.get() );
 
-    if (0!= "Remove old redundant blocks")
-    {
-        unsigned youngest_age = -1, youngest_count = 0;
-        foreach ( const recent_t::value_type& b, _recent )
-        {
-            unsigned age = _frame_counter - b->frame_number_last_used;
-            if (youngest_age > age) {
-                youngest_age = age;
-                youngest_count = 1;
-            } else if (youngest_age == age) {
-                ++youngest_count;
-            } else {
-                break; // _recent is ordered with the most recently accessed blocks first
-            }
-        }
-
-        while (MAX_REDUNDANT_SIZE*youngest_count < _recent.size() && 0<youngest_count)
-        {
-            Position a,b;
-            _recent.back()->ref.getArea(a,b);
-            TaskTimer tt("Removing block [%g:%g, %g:%g]. %u remaining blocks, recent %u blocks.", a.time, a.scale, b.time, b.scale, _cache.size(), _recent.size());
-
-            _cache.erase(_recent.back()->ref);
-            _recent.pop_back();
-        }
-    }
-
     // result is non-zero
     _cache[ result->ref ] = result;
-
-    //TIME_COLLECTION printCacheSize();
 
     TIME_COLLECTION CudaException_ThreadSynchronize();
 
