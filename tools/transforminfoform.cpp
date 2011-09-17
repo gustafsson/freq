@@ -11,6 +11,7 @@
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
+#include "tfr/drawnwaveform.h"
 
 #include <QTimer>
 
@@ -56,7 +57,9 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()));
 
-    connect(ui->lineEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
+    connect(ui->minHzEdit, SIGNAL(textEdited(QString)), SLOT(minHzChanged()));
+    //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
+    connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
 
     transformChanged();
 }
@@ -103,10 +106,14 @@ void TransformInfoForm::
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(!f?0:f->transform().get());
     Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(!f?0:f->transform().get());
     Tfr::Cepstrum* cepstrum = dynamic_cast<Tfr::Cepstrum*>(!f?0:f->transform().get());
+    Tfr::DrawnWaveform* waveform = dynamic_cast<Tfr::DrawnWaveform*>(!f?0:f->transform().get());
 
-    float fs = project->head->head_source()->sample_rate();
+    Signal::pOperation head = project->head->head_source();
+    float fs = head->sample_rate();
 
+    addRow("Length", QString("%1").arg(head->lengthLongFormat().c_str()));
     addRow("Sample rate", QString("%1").arg(fs));
+    addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
 
     if (cwt)
     {
@@ -120,10 +127,20 @@ void TransformInfoForm::
         addRow("Sigma", QString("%1").arg(cwt->sigma()));
         addRow("Bins", QString("%1").arg(cwt->find_bin( cwt->scales_per_octave())));
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
-        addRow("Min hz", QString("%1").arg(cwt->get_min_hz(fs)));
+        addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
-        ui->label->setVisible(false);
-        ui->lineEdit->setVisible(false);
+        ui->minHzLabel->setVisible(true);
+        ui->minHzEdit->setVisible(true);
+        ui->maxHzLabel->setVisible(false);
+        ui->maxHzEdit->setVisible(false);
+        ui->binResolutionLabel->setVisible(false);
+        ui->binResolutionEdit->setVisible(false);
+        QString minHzText = QString("%1").arg(cwt->wanted_min_hz());
+        if (ui->minHzEdit->text() != minHzText)
+            ui->minHzEdit->setText(minHzText);
+        //QString maxHzText = QString("%1").arg(cwt->get_max_hz(fs));
+        //if (ui->maxHzEdit->text() != maxHzText)
+        //    ui->maxHzEdit->setText(maxHzText);
     }
     else if (stft)
     {
@@ -139,12 +156,15 @@ void TransformInfoForm::
         addRow("Rendered height", QString("%1 px").arg(renderview->height()));
         addRow("Rendered width", QString("%1 px").arg(renderview->width()));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
-        ui->label->setVisible(true);
-        ui->lineEdit->setVisible(true);
-        ui->label->setText("Hz/bin");
-        QString lineEditText = QString("%1").arg(fs/stft->chunk_size(),0,'f',2);
-        if (ui->lineEdit->text() != lineEditText)
-            ui->lineEdit->setText(lineEditText);
+        ui->minHzLabel->setVisible(false);
+        ui->minHzEdit->setVisible(false);
+        ui->maxHzLabel->setVisible(false);
+        ui->maxHzEdit->setVisible(false);
+        ui->binResolutionLabel->setVisible(true);
+        ui->binResolutionEdit->setVisible(true);
+        QString binResolutionText = QString("%1").arg(fs/stft->chunk_size(),0,'f',2);
+        if (ui->binResolutionEdit->text() != binResolutionText)
+            ui->binResolutionEdit->setText(binResolutionText);
     }
     else if (cepstrum)
     {
@@ -156,15 +176,33 @@ void TransformInfoForm::
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
-        ui->label->setVisible(false);
-        ui->lineEdit->setVisible(false);
+        ui->minHzLabel->setVisible(false);
+        ui->minHzEdit->setVisible(false);
+        ui->maxHzLabel->setVisible(false);
+        ui->maxHzEdit->setVisible(false);
+        ui->binResolutionLabel->setVisible(false);
+        ui->binResolutionEdit->setVisible(false);
+    }
+    else if (waveform)
+    {
+        addRow("Type", "Waveform");
+        ui->minHzLabel->setVisible(false);
+        ui->minHzEdit->setVisible(false);
+        ui->maxHzLabel->setVisible(false);
+        ui->maxHzEdit->setVisible(false);
+        ui->binResolutionLabel->setVisible(false);
+        ui->binResolutionEdit->setVisible(false);
     }
     else
     {
         addRow("Type", "Unknown");
         addRow("Error", "Doesn't recognize transform");
-        ui->label->setVisible(false);
-        ui->lineEdit->setVisible(false);
+        ui->minHzLabel->setVisible(false);
+        ui->minHzEdit->setVisible(false);
+        ui->maxHzLabel->setVisible(false);
+        ui->maxHzEdit->setVisible(false);
+        ui->binResolutionLabel->setVisible(false);
+        ui->binResolutionEdit->setVisible(false);
     }
 
     size_t free=0, total=0;
@@ -193,10 +231,34 @@ void TransformInfoForm::
 
 
 void TransformInfoForm::
+        minHzChanged()
+{
+    float fs = project->head->head_source()->sample_rate();
+    float newValue = ui->minHzEdit->text().toFloat();
+    if (newValue<0.1)
+        newValue=0.1;
+    if (newValue>fs/2)
+        newValue=fs/2;
+
+    Tfr::Filter* f = renderview->model->block_filter();
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(!f?0:f->transform().get());
+    if (0==cwt)
+        return;
+
+    if (cwt->wanted_min_hz() != newValue)
+    {
+        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        cwt->set_wanted_min_hz(newValue);
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
         binResolutionChanged()
 {
     float fs = project->head->head_source()->sample_rate();
-    float newValue = ui->lineEdit->text().toFloat();
+    float newValue = ui->binResolutionEdit->text().toFloat();
     if (newValue<0.1)
         newValue=0.1;
     if (newValue>fs/4)
@@ -212,7 +274,7 @@ void TransformInfoForm::
     {
         project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
         stft->set_exact_chunk_size( new_chunk_size );
-        transformChanged();
+        renderview->emitTransformChanged();
     }
 }
 

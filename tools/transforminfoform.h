@@ -25,6 +25,9 @@ public:
 public slots:
     void transformChanged();
     void checkVisibility(bool);
+
+    void minHzChanged();
+    //void maxHzChanged();
     void binResolutionChanged();
 
 private:
