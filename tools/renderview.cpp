@@ -67,7 +67,7 @@ RenderView::
             _last_x(0),
             _last_y(0),
             _try_gc(0),
-            _target_fps(20.0f)
+            _target_fps(30.0f)
 {
     float l = model->project()->worker.source()->length();
     _last_length = l;
@@ -972,7 +972,7 @@ void RenderView::
 
     _last_length = model->renderSignalTarget->source()->length();
 
-    if (0 == "stop after 30 seconds")
+    if (0 == "stop after 31 seconds")
     {
         static unsigned frame_counter = 0;
         TaskInfo("frame_counter = %u", ++frame_counter);
