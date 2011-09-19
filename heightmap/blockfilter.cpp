@@ -23,7 +23,7 @@
 //#define CWTTOBLOCK_INFO
 #define CWTTOBLOCK_INFO if(0)
 
-// #define DEBUG_CWTTOBLOCK
+//#define DEBUG_CWTTOBLOCK
 #define DEBUG_CWTTOBLOCK if(0)
 
 using namespace Tfr;
@@ -140,7 +140,7 @@ void BlockFilter::
     Signal::Intervals transferDesc = inInterval;
     transferDesc &= outInterval;
 
-    DEBUG_CWTTOBLOCK TaskTimer tt("CwtToBlock::mergeChunk");
+    DEBUG_CWTTOBLOCK TaskTimer tt3("CwtToBlock::mergeChunk");
     DEBUG_CWTTOBLOCK TaskTimer("outInterval=[%g, %g)",
             outInterval.first / chunk.original_sample_rate,
             outInterval.last / chunk.original_sample_rate ).suppressTiming();

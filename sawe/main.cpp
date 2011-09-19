@@ -214,6 +214,7 @@ void tstc(C*c)
 {
     std::cout << c << " c " << c->data3 << std::endl;
 }
+
 int main(int argc, char *argv[])
 {
 #ifdef _MSC_VER

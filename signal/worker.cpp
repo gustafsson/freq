@@ -200,6 +200,9 @@ bool Worker::
             WORKER_INFO TaskInfo(
                     "Low framerate (%.1f fps). Decreased samples per chunk to %u",
                     current_fps, _samples_per_chunk);
+
+            if (_samples_per_chunk < _min_samples_per_chunk)
+                _min_samples_per_chunk = _samples_per_chunk;
         }
         else if (current_fps > 2.5f*_requested_fps)
         {

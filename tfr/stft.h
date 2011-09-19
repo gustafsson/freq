@@ -56,6 +56,20 @@ public:
     pChunk forward( Signal::pBuffer );
     Signal::pBuffer backward( pChunk );
 
+    /**
+      Returns the smallest ok chunk size strictly greater than x that also is
+      a multiple of 'multiple'.
+      'multiple' must be a power of 2.
+      */
+    static unsigned sChunkSizeG(unsigned x, unsigned multiple);
+
+    /**
+      Returns the largest ok chunk size strictly smaller than x that also is
+      a multiple of 'multiple'.
+      'multiple' must be a power of 2.
+      */
+    static unsigned lChunkSizeS(unsigned x, unsigned multiple);
+
 private:
 //    CufftHandleContext _fft_single;
     cudaStream_t _stream;

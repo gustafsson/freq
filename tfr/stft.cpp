@@ -162,7 +162,7 @@ pChunk Fft::
 
     // The in-signal is padded to a power of 2 (cufft manual suggest a "multiple
     // of 2, 3, 5 or 7" but a power of one is even better) for faster fft calculations
-    output_n.width = spo2g( output_n.width - 1 );
+    output_n.width = Fft::sChunkSizeG( output_n.width - 1, 4 );
 
     pChunk chunk;
 
@@ -184,8 +184,10 @@ pChunk Fft::
     }
     else
     {
+        BOOST_ASSERT(output_n.width == input_n.width);
+
         if (output_n.width != input_n.width)
-            real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( Signal::Interval( real_buffer->sample_offset, output_n.width));
+            real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( Signal::Interval( real_buffer->sample_offset, real_buffer->sample_offset + output_n.width));
 
         chunk.reset( new StftChunk(output_n.width) );
         output_n.width = ((StftChunk*)chunk.get())->nScales();
@@ -859,7 +861,7 @@ unsigned powerprod(const unsigned*bases, const unsigned*b, unsigned N)
     return v;
 }
 
-unsigned findGreatestSmaller(const unsigned* bases, unsigned* a, unsigned maxv, unsigned x, unsigned n, unsigned N)
+unsigned findLargestSmaller(const unsigned* bases, unsigned* a, unsigned maxv, unsigned x, unsigned n, unsigned N)
 {
     unsigned i = 0;
     while(true)
@@ -871,7 +873,7 @@ unsigned findGreatestSmaller(const unsigned* bases, unsigned* a, unsigned maxv, 
             break;
 
         if (n+1<N)
-            maxv = findGreatestSmaller(bases, a, maxv, x, n+1, N);
+            maxv = findLargestSmaller(bases, a, maxv, x, n+1, N);
         else if (v > maxv)
             maxv = v;
 
@@ -905,14 +907,40 @@ unsigned findSmallestGreater(const unsigned* bases, unsigned* a, unsigned minv, 
     return minv;
 }
 
-unsigned oksz(unsigned x)
+unsigned Fft::
+        lChunkSizeS(unsigned x, unsigned multiple)
 {
+    // It's faster but less flexible to only accept powers of 2
+    //return lpo2s(x);
+
+    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
+    multiple = std::max(4u, multiple);
+
     unsigned bases[]={2, 3, 5, 7};
     unsigned a[]={0, 0, 0, 0};
-    unsigned gs = findGreatestSmaller(bases, a, 0, x, 0, 4);
-    unsigned sg = findSmallestGreater(bases, a, 0, x, 0, 4);
-    if (x-gs < sg-x)
-        return gs;
+    return multiple*findLargestSmaller(bases, a, 0, (x-1)/multiple, 0, 2);
+}
+
+unsigned Fft::
+        sChunkSizeG(unsigned x, unsigned multiple)
+{
+    // It's faster but less flexible to only accept powers of 2
+    //return spo2g(x);
+
+    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
+    multiple = std::max(4u, multiple);
+
+    unsigned bases[]={2, 3, 5, 7};
+    unsigned a[]={0, 0, 0, 0};
+    return multiple*findSmallestGreater(bases, a, 0, x/multiple+1, 0, 2);
+}
+
+unsigned oksz(unsigned x)
+{
+    unsigned ls = Fft::lChunkSizeS(x+1, 4);
+    unsigned sg = Fft::sChunkSizeG(x-1, 4);
+    if (x-ls < sg-x)
+        return ls;
     else
         return sg;
 }
@@ -921,7 +949,7 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
     //_window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
     _window_size = oksz( preferred_size );
-    _window_size = _window_size > 4 ? _window_size : 4;
+    _window_size = std::max(4u, _window_size);
     return _window_size;
 
 //    if (_ok_chunk_sizes.empty())

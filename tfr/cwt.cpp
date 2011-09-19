@@ -150,6 +150,11 @@ pChunk Cwt::
     valid_samples = valid_samples>>max_bin<<max_bin;
     BOOST_ASSERT( 0 < valid_samples );
 
+    DEBUG_CWT size_t free = availableMemoryForSingleAllocation();
+    DEBUG_CWT TaskInfo("Free memory: %f MB. Required: %f MB",
+             free/1024.f/1024.f,
+             required_gpu_bytes(valid_samples, buffer->sample_rate )/1024.f/1024.f);
+
     DEBUG_CWT TaskTimer("offset = %lu", offset).suppressTiming();
     DEBUG_CWT TaskTimer("std_samples = %lu", std_samples).suppressTiming();
     DEBUG_CWT TaskTimer("first_valid_sample = %lu", first_valid_sample).suppressTiming();
@@ -238,9 +243,15 @@ pChunk Cwt::
         unsigned sub_length = sub_first_valid + valid_samples + sub_std_samples + sub_silence;
         BOOST_ASSERT( sub_length == valid_samples + 2*sub_std_samples );
 
-        // Add some extra length to make length a power of 2 for faster fft
-        // calculations
-        unsigned extra = spo2g(sub_length - 1) - sub_length;
+        // Add some extra length to make length align with fast fft calculations
+        unsigned extra = 0;
+        unsigned L = 2*std_samples + valid_samples;
+        bool ispowerof2 = spo2g(L-1) == lpo2s(L+1);
+        if (ispowerof2)
+            extra = spo2g(sub_length - 1) - sub_length;
+        else
+            extra = Fft::sChunkSizeG(sub_length - 1, 1<<c) - sub_length;
+
 
         sub_std_samples += extra/2;
 
@@ -337,6 +348,25 @@ pChunk Cwt::
     wt->sample_rate = buffer->sample_rate;
     wt->original_sample_rate = buffer->sample_rate;
 
+    DEBUG_CWT {
+        size_t sum = 0;
+        size_t alt = 0;
+        BOOST_FOREACH( const pChunk& chunkpart, ((CwtChunk*)wt.get())->chunks )
+        {
+            size_t s = chunkpart->transform_data->getSizeInBytes1D();
+            sum += s;
+            size_t tmp_stft_and_fft = s + sizeof(float2)*chunkpart->nSamples()*chunkpart->original_sample_rate/chunkpart->sample_rate;
+            if (sum + tmp_stft_and_fft > alt)
+                alt = sum + tmp_stft_and_fft; // biggest stft
+        }
+
+        if (alt>sum)
+            sum = alt;
+
+        free = availableMemoryForSingleAllocation();
+        TaskInfo("Free memory: %f MB. Allocated %f MB", free/1024.f/1024.f, sum/1024.f/1024.f);
+    }
+
     DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->maxHz(), wt->minHz()).suppressTiming();
 
     TIME_CWT tt->getStream() << "Resulting interval = " << wt->getInterval().toString();
@@ -392,7 +422,7 @@ pChunk Cwt::
                               requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(float2) / 1024.f);
 
         // allocate a new chunk
-        intermediate_wt->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal ));
+        intermediate_wt->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal, false, false ));
 
         TIME_CWTPART {
             ft->transform_data->getCudaGlobal();
@@ -783,16 +813,33 @@ unsigned Cwt::
 unsigned Cwt::
         next_good_size( unsigned current_valid_samples_per_chunk, float fs )
 {
+    DEBUG_CWT TaskInfo ti("next_good_size(%u, %g)", current_valid_samples_per_chunk, fs);
+    unsigned multiple = 1<<find_bin( nScales( fs ) - 1 );
     unsigned r = wavelet_time_support_samples( fs );
     unsigned T = required_length( current_valid_samples_per_chunk, fs );
-    unsigned nT = spo2g(T);
+    unsigned nT = align_up( spo2g(T), multiple);
+    BOOST_ASSERT(nT != T);
+
     unsigned L = nT - 2*r;
 
     size_t free = availableMemoryForSingleAllocation();
     size_t required = required_gpu_bytes(L, fs );
 
     if (free < required)
-        return prev_good_size( L, fs );
+    {
+        TaskInfo("next_good_size: current_valid_samples_per_chunk = %u requires %f MB. Free: %f MB",
+                 current_valid_samples_per_chunk,
+                 required/1024.f/1024.f, free/1024.f/1024.f);
+
+        unsigned nTtest = Fft::sChunkSizeG(T, multiple);
+        unsigned Ltest = nTtest - 2*r;
+
+        required = required_gpu_bytes(Ltest, fs );
+        if (free < required)
+            return prev_good_size( L, fs );
+        else
+            L = Ltest;
+    }
 
     DEBUG_CWT TaskInfo("Cwt::next_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
     return L;
@@ -802,34 +849,61 @@ unsigned Cwt::
 unsigned Cwt::
         prev_good_size( unsigned current_valid_samples_per_chunk, float fs )
 {    
+    DEBUG_CWT TaskInfo ti("prev_good_size(%u, %g)", current_valid_samples_per_chunk, fs);
+    unsigned multiple = 1<<find_bin( nScales( fs ) - 1 );
     size_t free = availableMemoryForSingleAllocation();
+    size_t required;
 
+    {
+        // Check if the current size is ok memory-wise
+        unsigned r = wavelet_time_support_samples( fs );
+        unsigned T = required_length( current_valid_samples_per_chunk, fs );
+        unsigned L = T - 2*r;
+        required = required_gpu_bytes(L, fs );
+        if (free >= required)
+        {
+            // current size is ok, take something smaller. Don't bother with
+            // detailed sizes, just use powers of 2.
+            unsigned nT = align_up( lpo2s(T), multiple);
+            unsigned L = nT - 2*r;
+            size_t required = required_gpu_bytes(L, fs );
+            BOOST_ASSERT (free >= required);
+            return L;
+        }
+    }
+
+    DEBUG_CWT TaskInfo("prev_good_size: current_valid_samples_per_chunk = %u requires %f MB. Free: %f MB",
+             current_valid_samples_per_chunk,
+             required/1024.f/1024.f, free/1024.f/1024.f);
+
+    // No, the current size doesn't fit in memory, try something smaller.
     while(true)
     {
         unsigned r = wavelet_time_support_samples( fs );
         unsigned T = required_length( current_valid_samples_per_chunk, fs );
-        unsigned nT = lpo2s(T);
+        unsigned nT = Fft::lChunkSizeS(T, multiple);
+        BOOST_ASSERT(nT != T);
         if (nT <= 2*r)
-            nT = spo2g(2*r);
+            nT = Fft::sChunkSizeG(2*r, multiple);
 
         while (nT > 2*r)
         {
             unsigned L = nT - 2*r;
             size_t required = required_gpu_bytes(L, fs );
             if (free >= required ||
-                (nT == spo2g(2*r) && scales_per_octave()==2))
+                (nT == Fft::sChunkSizeG(2*r, multiple) && scales_per_octave()==2))
             {
-                DEBUG_CWT TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
+                TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
                 return L;
             }
 
-            nT = lpo2s(nT);
+            nT = Fft::lChunkSizeS(nT, multiple);
         }
 
-        unsigned L = spo2g(nT) - 2*r;
-        TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g requires L = %u and %g MB free memory. %g MB memory is available",
+        unsigned L = Fft::sChunkSizeG(nT, multiple) - 2*r;
+        DEBUG_CWT TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g requires L = %u (r=%u) and %f MB free memory. %f MB memory is available",
                  scales_per_octave(),
-                 L,
+                 L, r,
                  required_gpu_bytes(L, fs )/1024.f/1024.f,
                  free/1024.f/1024.f);
 
@@ -841,19 +915,90 @@ unsigned Cwt::
 
 
 size_t Cwt::
-        required_gpu_bytes(unsigned L, float sample_rate) const
+        required_gpu_bytes(unsigned valid_samples, float sample_rate) const
 {
-    unsigned r = wavelet_time_support_samples( sample_rate );
+    DEBUG_CWT TaskInfo ti("required_gpu_bytes(%u, %g), scales_per_octave=%g, wavelet_time_suppport=%g", valid_samples, sample_rate, _scales_per_octave, _wavelet_time_suppport);
+
+/*    unsigned r = wavelet_time_support_samples( sample_rate );
     unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
     long double sum = sizeof(float2)*(L + 2*r)*nScales( sample_rate )/(1+max_bin);
 
     // sum is now equal to the amount of memory required by the biggest CwtChunk
-    // the stft algorithm needs to allocate the same amount of memory while working
-    // the rest of the chunks are in total basically equal to the size of the biggest chunk
-    // take one extra for margin
-    sum = 4L*sum;
+    // the stft algorithm needs to allocate the same amount of memory while working (+sum)
+    // the rest of the chunks are in total basically equal to the size of the biggest chunk (+sum)
+    sum = 3*sum;
+*/
+    size_t sum = 0;
+    size_t alt = 0;
 
-   return sum < (size_t)-1 ? sum : (size_t)-1;
+    unsigned max_bin = find_bin( nScales( sample_rate ) - 1 );
+    unsigned
+            prev_j = 0,
+            n_j = nScales( sample_rate );
+
+    unsigned std_samples = wavelet_time_support_samples( sample_rate );
+
+    for( unsigned c=0; prev_j<n_j; ++c )
+    {
+        // find the biggest j that is required to be in this chunk
+        unsigned next_j;
+        if (c == max_bin)
+            next_j = n_j;
+        else
+        {
+            next_j = prev_j;
+
+            for (unsigned j = prev_j; j<n_j; ++j)
+            {
+                if ( c == find_bin( j ) )
+                    next_j = j;
+            }
+
+            if (next_j==prev_j)
+                continue;
+        }
+
+        // If the biggest j required to be in this chunk is close to the end
+        // 'n_j' then include all remaining scales in this chunk as well.
+        if (2*(n_j - next_j) < n_j - prev_j || next_j+2>=n_j)
+            next_j = n_j;
+
+        // Move next_j forward one step so that it points to the first 'j'
+        // that is not needed in this chunk part
+        next_j = std::min(n_j, next_j+1);
+
+        // Include next_j in this chunk so that parts can be interpolated
+        // between in filters
+        unsigned stop_j = std::min(n_j, next_j+1);
+
+        unsigned n_scales = stop_j - prev_j;
+        float hz = j_to_hz(sample_rate, stop_j-1);
+
+        unsigned sub_std_samples = wavelet_time_support_samples( sample_rate, hz );
+        unsigned sub_length = 2*sub_std_samples+valid_samples;
+
+        unsigned L = valid_samples + 2*std_samples;
+        bool ispowerof2 = spo2g(L-1) == lpo2s(L+1);
+        if (ispowerof2)
+            sub_length = spo2g(sub_length - 1);
+        else
+            sub_length = Fft::sChunkSizeG(sub_length - 1, 1<<c);
+
+        size_t s = sizeof(float2)*(sub_length >> c)*n_scales;
+
+        sum += s;
+        size_t tmp_stft_and_fft = s + sizeof(float2)*(sub_length);
+        if (sum + tmp_stft_and_fft > alt)
+            alt = sum + tmp_stft_and_fft;
+
+        //TaskInfo("c = %d -> %f MB", c, (s+ tmp_stft_and_fft)/1024.f/1024.f);
+        prev_j = next_j;
+    }
+
+    if (alt>sum)
+        sum = alt;
+
+    return sum < (size_t)-1 ? sum : (size_t)-1;
 }
 
 
