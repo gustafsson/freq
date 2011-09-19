@@ -123,10 +123,11 @@ bool Project::
     try
     {
         TaskTimer tt("Saving project to '%s'", project_filename_.c_str());
-        std::ofstream ofs(project_filename_.c_str());
 #ifdef _DEBUG
+        std::ofstream ofs(project_filename_.c_str(), ios_base::out | ios_base::trunc);
         boost::archive::xml_oarchive xml(ofs);
 #else
+        std::ofstream ofs(project_filename_.c_str(), ios_base::out | ios_base::trunc | ios_base::binary);
         boost::archive::binary_oarchive xml(ofs);
 #endif
         Project* p = this;
@@ -150,9 +151,9 @@ bool Project::
 pProject Project::
         openProject(std::string project_file)
 {
-    std::ifstream ifs(project_file.c_str());
-
 #ifdef _DEBUG
+        std::ifstream ifs(project_file.c_str(), ios_base::in);
+
         {
             string xmltest;
             xmltest.resize(5);
@@ -167,6 +168,7 @@ pProject Project::
 
         boost::archive::xml_iarchive xml(ifs);
 #else
+        std::ifstream ifs(project_file.c_str(), ios_base::in | ios_base::binary);
         boost::archive::binary_iarchive xml(ifs);
 #endif
 
