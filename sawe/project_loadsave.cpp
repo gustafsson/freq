@@ -82,15 +82,15 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::Support::OperationCrop>();
 
     // add new types at the end to preserve backwards compatibility
-
-    const unsigned magicConst=74610957;
-    unsigned magic = magicConst;
-    ar & boost::serialization::make_nvp("Magic", magic);
+	
+	const unsigned magicConst=74610957;
+	unsigned magic = magicConst;
+    ar & BOOST_SERIALIZATION_NVP(magic);
     if (magic != magicConst)
         throw std::ios_base::failure("Not a Sonic AWE project");
-
-    ar & boost::serialization::make_nvp("Sonic_AWE", project);
-
+	
+	ar & BOOST_SERIALIZATION_NVP(project);
+	
     QDir::setCurrent( dir.absolutePath() );
     TaskInfo("Current path is '%s'", QDir::currentPath().toLocal8Bit().data());
 }
@@ -123,6 +123,7 @@ bool Project::
     try
     {
         TaskTimer tt("Saving project to '%s'", project_filename_.c_str());
+
 #ifdef _DEBUG
         std::ofstream ofs(project_filename_.c_str(), ios_base::out | ios_base::trunc);
         boost::archive::xml_oarchive xml(ofs);
