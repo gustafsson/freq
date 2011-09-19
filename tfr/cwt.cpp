@@ -150,10 +150,12 @@ pChunk Cwt::
     valid_samples = valid_samples>>max_bin<<max_bin;
     BOOST_ASSERT( 0 < valid_samples );
 
-    DEBUG_CWT size_t free = availableMemoryForSingleAllocation();
-    DEBUG_CWT TaskInfo("Free memory: %f MB. Required: %f MB",
+    DEBUG_CWT {
+        size_t free = availableMemoryForSingleAllocation();
+        TaskInfo("Free memory: %f MB. Required: %f MB",
              free/1024.f/1024.f,
              required_gpu_bytes(valid_samples, buffer->sample_rate )/1024.f/1024.f);
+    }
 
     DEBUG_CWT TaskTimer("offset = %lu", offset).suppressTiming();
     DEBUG_CWT TaskTimer("std_samples = %lu", std_samples).suppressTiming();
@@ -363,7 +365,7 @@ pChunk Cwt::
         if (alt>sum)
             sum = alt;
 
-        free = availableMemoryForSingleAllocation();
+        size_t free = availableMemoryForSingleAllocation();
         TaskInfo("Free memory: %f MB. Allocated %f MB", free/1024.f/1024.f, sum/1024.f/1024.f);
     }
 
