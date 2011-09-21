@@ -22,7 +22,7 @@ public:
     virtual unsigned get_channel() { return channel; }
 
 protected:
-	unsigned channel;
+    unsigned channel;
     std::vector<pBuffer> _waveforms;
 };
 

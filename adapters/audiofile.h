@@ -237,6 +237,13 @@
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>
 
+#ifdef _MSC_VER
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+#else
+#include <stdint.h>
+#endif
+
 namespace Adapters
 {
 
@@ -292,7 +299,7 @@ private:
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
 
-        ar & make_nvp("Original filename", _original_relative_filename);
+        ar & make_nvp("Original_filename", _original_relative_filename);
 
         typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
             BOOST_DEDUCED_TYPENAME archive::is_saving,
@@ -305,7 +312,7 @@ private:
         if (typename archive::is_loading())
             load( rawdata );
 
-        unsigned long long X = 0;
+        uint64_t X = 0;
         for (unsigned c=0; c<_waveforms.size(); ++c)
         {
             unsigned char* p = (unsigned char*)_waveforms[c]->waveform_data()->getCpuMemoryVoidConst();
@@ -318,17 +325,14 @@ private:
             }
         }
 
-        unsigned v = X >> 32;
-        unsigned V = v;
+        const uint32_t checksum = (uint32_t)X;
+        uint32_t V = checksum;
         ar & make_nvp("V", V);
 
 #if defined(TARGET_reader)
-        if (typename archive::is_loading())
+        if (checksum != V)
         {
-            if (v != V)
-            {
-                throw std::ios_base::failure("Sonic AWE Reader can only open original files");
-            }
+            throw std::ios_base::failure("Sonic AWE Reader can only open original files");
         }
 #endif
     }
