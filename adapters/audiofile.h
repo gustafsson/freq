@@ -234,12 +234,40 @@
 #include "sawe/reader.h"
 
 #include <boost/serialization/string.hpp>
+#include <boost/mpl/eval_if.hpp>
+#include <boost/mpl/identity.hpp>
 
 namespace Adapters
 {
 
 class Audiofile: public Signal::BufferSource
 {
+private:
+    template<class Archive>
+    struct save_binary_type {
+        static void invoke(
+            Archive & ar,
+            const std::vector<char> & data
+        ){
+            unsigned N = data.size();
+            ar & boost::serialization::make_nvp( "N", N );
+            ar.save_binary( &data[0], N );
+        }
+    };
+
+    template<class Archive>
+    struct load_binary_type {
+        static void invoke(
+            Archive & ar,
+            std::vector<char> & data
+        ){
+            unsigned N = 0;
+            ar & boost::serialization::make_nvp( "N", N );
+            data.resize(N);
+            ar.load_binary( &data[0], N );
+        }
+    };
+
 public:
     static std::string getFileFormatsQtFilter( bool split );
 
@@ -264,20 +292,15 @@ private:
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
 
-#ifdef _DEBUG
-        ar & make_nvp("Filename", _original_relative_filename);
-#else
-        std::vector<unsigned char> data;
-        if (typename archive::is_saving())
-            data = Sawe::Reader::mash(_original_relative_filename);
+        ar & make_nvp("Original filename", _original_relative_filename);
 
-        ar & make_nvp("Filename", data);
-
-        if (typename archive::is_loading())
-            _original_relative_filename = Sawe::Reader::unmash(data);
-#endif
-
-        ar & make_nvp("Rawdata", rawdata);
+        typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
+            BOOST_DEDUCED_TYPENAME archive::is_saving,
+            boost::mpl::identity<save_binary_type<archive> >,
+            boost::mpl::identity<load_binary_type<archive> >
+        >::type typex;
+        typex::invoke(ar, rawdata);
+        //ar & make_nvp("Rawdata", rawdata);
 
         if (typename archive::is_loading())
             load( rawdata );

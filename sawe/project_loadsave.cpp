@@ -1,3 +1,10 @@
+// settings
+#define SAWE_USE_XML
+#ifdef _DEBUG
+#define SAWE_USE_XML
+#endif
+
+// class header
 #include "project.h"
 
 // Serializable Sonic AWE classes 
@@ -25,7 +32,7 @@
 #include <fstream>
 
 // Boost
-#ifdef _DEBUG
+#ifdef SAWE_USE_XML
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #else
@@ -124,7 +131,7 @@ bool Project::
     {
         TaskTimer tt("Saving project to '%s'", project_filename_.c_str());
 
-#ifdef _DEBUG
+#ifdef SAWE_USE_XML
         std::ofstream ofs(project_filename_.c_str(), ios_base::out | ios_base::trunc);
         boost::archive::xml_oarchive xml(ofs);
 #else
@@ -152,7 +159,7 @@ bool Project::
 pProject Project::
         openProject(std::string project_file)
 {
-#ifdef _DEBUG
+#ifdef SAWE_USE_XML
         std::ifstream ifs(project_file.c_str(), ios_base::in);
 
         {
