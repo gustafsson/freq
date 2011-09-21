@@ -7,8 +7,10 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
-make distclean
-qmake -spec macx-g++
+if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+  make distclean
+  qmake $qmaketarget -spec macx-g++
+fi
 make
 
 echo "========================== Building ==========================="
@@ -18,9 +20,10 @@ cd package-macos
 gcc -framework CoreFoundation -o launcher launcher.c
 
 echo "========================== Packaging =========================="
-echo "Creating Mac OS X application: $filename"
+filename="sonicawe_${packagename}_${versiontag}_macos_i386.zip"
+echo "Creating Mac OS X application: $filename version ${version}"
 cd ..
-ruby package-macx.rb ${versiontag}
-filename="sonicawe_${versiontag}_macos_i386.zip"
+ruby package-macx.rb ${packagename}_${versiontag} macos_i386 ../${packagename}
+
 
 passiveftp=passive

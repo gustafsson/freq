@@ -4,10 +4,12 @@ $custom_library_path = "../../../libs"
 $command_line_width = 80
 
 # Configuration
+$custom_exec = "../sonicawe"
+$custom_exec = ARGV[2] if( ARGV[1] and !ARGV[1].match(/^--/) )
 $platform = "macos_i386"
-$platform = ARGV[1] if( ARGV[1] and !ARGV[1].match(/^--/))
+$platform = ARGV[1] if( ARGV[1] and !ARGV[1].match(/^--/) )
 $version = "dev"
-$version = ARGV[0] if( ARGV[0] and !ARGV[0].match(/^--/))
+$version = ARGV[0] if( ARGV[0] and !ARGV[0].match(/^--/) )
 $build_name = "sonicawe_#{$version}_#{$platform}"
 
 $zip = true
@@ -47,7 +49,7 @@ def package_macos(app_name, version, zip = false)
                    "Contents/Resources",
                    "Contents/plugins"]
     
-    executables = [["../sonicawe", "sonicawe"],
+    executables = [[$custom_exec, "sonicawe"],
                    ["package-macos/launcher", "launcher"]]
     
     resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
