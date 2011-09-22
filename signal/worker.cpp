@@ -153,7 +153,19 @@ bool Worker::
         CudaException_CHECK_ERROR();
     } catch (const CudaException& e ) {
         unsigned min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(1, source()->sample_rate());
-        if (cudaErrorMemoryAllocation == e.getCudaError() && min_samples_per_chunk<_samples_per_chunk) {
+
+        bool trySmallerChunk = false;
+        if (const CufftException* cuffte = dynamic_cast<const CufftException*>(&e))
+        {
+            trySmallerChunk |= cuffte->getCufftError() == CUFFT_EXEC_FAILED;
+            trySmallerChunk |= cuffte->getCufftError() == CUFFT_ALLOC_FAILED;
+        }
+        else
+        {
+            trySmallerChunk |= e.getCudaError() == cudaErrorMemoryAllocation;
+        }
+
+        if (trySmallerChunk && min_samples_per_chunk<_samples_per_chunk) {
             TaskInfo ti("Worker caught cudaErrorMemoryAllocation\n/s",  e.what());
             cudaGetLastError(); // consume error
             TaskInfo("Samples per chunk was %u", _samples_per_chunk);
