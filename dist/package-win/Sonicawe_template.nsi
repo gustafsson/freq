@@ -6,7 +6,7 @@
 !include UninstallLog.nsh
 
 ;Defining compile time constants and necessary variables
-!define APP_NAME "Sonic AWE"
+!define APP_NAME ""
 !define PUBLISHER "MuchDifferent"
 !define SA_VERSION ""
 !define NVID_VERSION ""
@@ -75,7 +75,7 @@ Var done
 Var StartMenuFolder
   
 ;Name of the installer
-Name "Sonic AWE"
+Name "${APP_NAME}"
 
 ;The file to write
 OutFile ${FILE_NAME}
@@ -85,9 +85,9 @@ RequestExecutionLevel admin
 
 ;defining page look&feel
 ;!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_PAGE_HEADER_TEXT "Sonic AWE Setup"
-!define MUI_WELCOMEPAGE_TITLE "Welcome to the Sonic AWE Setup"
-!define MUI_TEXT_WELCOME_INFO_TEXT "Welcome to the installation wizard for Sonic AWE. This will install Sonic AWE on your computer. Click Next to proceed"
+!define MUI_PAGE_HEADER_TEXT "${APP_NAME} Setup"
+!define MUI_WELCOMEPAGE_TITLE "Welcome to the ${APP_NAME} Setup"
+!define MUI_TEXT_WELCOME_INFO_TEXT "Welcome to the installation wizard for ${APP_NAME}. This will install ${APP_NAME} on your computer. Click Next to proceed"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "Side_Banner.bmp"
 !define MUI_ICON "awe256.ico"
 
@@ -173,34 +173,34 @@ Section "Application Files (required)"
 			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "UninstallString" "$INSTDIR\uninstall.exe"
 	
 			;Write the Uninstall information to the registry for add/remove program 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
-						 "DisplayName" "Sonic AWE -- Visualization based signal analysis"
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
+						 "DisplayName" "${APP_NAME} -- Visualization based signal analysis"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "DisplayIcon" "$\"$INSTDIR\awe_256.ico$\""
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "InstallLocation" "$\"$INSTDIR$\""
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "DisplayVersion" "${SA_VERSION}"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "Publisher" "${PUBLISHER}"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "HelpLink" "www.sonicawe.com"
 						 
-			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "NoModify" "1"
 						 
-			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "NoRepair" "1"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "URLInfoAbout" "www.sonicawe.com"
 		  
 			;Create uninstaller
@@ -249,7 +249,7 @@ Section "Start Menu Shortcut"
 		;create desktop shortcut
 		!insertmacro MUI_STARTMENU_WRITE_BEGIN Application
 			${CreateDirectory} "$SMPROGRAMS\$StartMenuFolder"
-			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\Sonic AWE.lnk" "$INSTDIR\Sonicawe.exe" "" "" ""
+			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\${APP_NAME}.lnk" "$INSTDIR\Sonicawe.exe" "" "" ""
 			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "" ""
 		!insertmacro MUI_STARTMENU_WRITE_END
 	${endif}

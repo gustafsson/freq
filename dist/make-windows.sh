@@ -1,12 +1,14 @@
 #!/bin/bash
 set -e
 
-packagename="sonicawe_${versiontag}_win32"
+packagename="${packagename}_${versiontag}_win32"
 filename="${packagename}_setup.exe"
 nsistemplate="sonic/sonicawe/dist/package-win/Sonicawe_template.nsi"
 nsisscript="sonic/sonicawe/dist/package-win/Sonicawe.nsi"
 nsiswriter="sonic/sonicawe/dist/package-win/Nsi_Writer.exe"
 licensefile="license.txt"
+
+
 
 cd ../..
 
@@ -59,6 +61,14 @@ instfilepathwin=`echo $instfilepathwin | sed 's@\\/@\\\\@g'`
 instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
 $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
+
+if [ -z "${target}" ]; then 
+sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE\"/" $nsisscript 
+elif ["${target}" == "reader"]; then
+sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE Reader\"/" $nsisscript 
+else
+sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE ${target}\"/" $nsisscript 
+fi
 
 #inserting filename, version and nvidia version number in NSIS script 
 sed -i.backup -e "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"${versiontag}\"/" $nsisscript 
