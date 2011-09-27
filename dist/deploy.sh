@@ -20,7 +20,6 @@ fi
 
 qmaketarget="${qmaketarget} DEFINES+=\"SONICAWE_VERSION=${versiontag}\""
 
-
 if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
 	platform=windows
 elif [ "$(uname -s)" == "Linux" ]; then

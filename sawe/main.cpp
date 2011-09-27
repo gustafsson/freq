@@ -217,16 +217,23 @@ void tstc(C*c)
 
 int main(int argc, char *argv[])
 {
+
 #ifdef _MSC_VER
     QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-    localAppDir+="\\MuchDifferent\\Sonic AWE\\";
+    #if defined(TARGET_reader)
+        localAppDir+="\\MuchDifferent\\Sonic AWE reader\\";
+    #else
+        localAppDir+="\\MuchDifferent\\Sonic AWE\\";
+    #endif
     if (QDir(localAppDir).exists()==false)
     {
                 QDir().mkpath(localAppDir);
     }
-
-    QByteArray byteArray = (localAppDir+"sonicawe.log").toUtf8();
-    const char* logdir = byteArray.constData();
+    std::string logpath = localAppDir.toStdString();
+    const char* logdir = (logpath+"sonicawe.log").data();
+#else
+    std::string logpath = "";
+    const char* logdir = new QByteArray("sonicawe.log").constData();
 #endif
 
     if (0)
@@ -265,11 +272,7 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        #ifdef _MSC_VER
-            RedirectStdout rs(logdir);
-        #else
-            RedirectStdout rs("sonicawe.log");
-        #endif
+        RedirectStdout rs(logdir);
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I ^= Signal::Interval(150,150);
@@ -283,11 +286,7 @@ int main(int argc, char *argv[])
 
     if (0)
     {
-        #ifdef _MSC_VER
-            RedirectStdout rs(logdir);
-        #else
-            RedirectStdout rs("sonicawe.log");
-        #endif
+        RedirectStdout rs(logdir);
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I -= Signal::Interval(150,150);
@@ -300,11 +299,7 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        #ifdef _MSC_VER
-            RedirectStdout rs(logdir);
-        #else
-            RedirectStdout rs("sonicawe.log");
-        #endif
+        RedirectStdout rs(logdir);
         Intervals I(100, 300);
         vector<Intervals> T;
         T.push_back( Intervals(50,80) );
@@ -452,18 +447,13 @@ int main(int argc, char *argv[])
     }
 
     // Write all stdout and stderr to sonicawe.log instead
-    rename("sonicawe~4.log~4", "sonicawe~5.log");
-    rename("sonicawe~3.log~3", "sonicawe~4.log");
-    rename("sonicawe~2.log~2", "sonicawe~2.log");
-    rename("sonicawe~.log", "sonicawe~2.log");
-    rename("sonicawe.log", "sonicawe~.log");
 
-
-    #ifdef _MSC_VER
-        boost::shared_ptr<RedirectStdout> rs(new RedirectStdout(logdir));
-    #else
-        boost::shared_ptr<RedirectStdout> rs(new RedirectStdout("sonicawe.log"));
-    #endif
+    rename((logpath+"sonicawe~4.log~4").data(), (logpath+"sonicawe~5.log").data());
+    rename((logpath+"sonicawe~3.log~3").data(), (logpath+"sonicawe~4.log").data());
+    rename((logpath+"sonicawe~2.log~2").data(), (logpath+"sonicawe~2.log").data());
+    rename((logpath+"sonicawe~.log").data(), (logpath+"sonicawe~2.log").data());
+    rename((logpath+"sonicawe.log").data(), (logpath+"sonicawe~.log").data());
+    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout((logpath+"sonicawe.log").data()));
 
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 
@@ -555,12 +545,13 @@ int main(int argc, char *argv[])
 
         return r;
     } catch (const std::exception &x) {
-        if (!rs) rs.reset(new RedirectStdout("sonicawe.log"));
-        Sawe::Application::display_fatal_exception(x);
-        return -2;
+
+    if (!rs) rs.reset(new RedirectStdout((logpath+"sonicawe.log").data()));
+    Sawe::Application::display_fatal_exception(x);
+    return -2;
     } catch (...) {
-        if (!rs) rs.reset(new RedirectStdout("sonicawe.log"));
-        Sawe::Application::display_fatal_exception();
-        return -3;
+    if (!rs) rs.reset(new RedirectStdout((logpath+"sonicawe.log").data()));
+    Sawe::Application::display_fatal_exception();
+    return -3;
     }
 }

@@ -7,7 +7,7 @@
 # Compiler settings
 
 TARGET = sonicawe
-customtarget {
+!win32:customtarget {
     TARGET = $$CUSTOMTARGET
 }
 
