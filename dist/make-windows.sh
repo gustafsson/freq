@@ -33,9 +33,9 @@ rm -rf $packagename
 cp -r sonicawe_snapshot_win32_base $packagename
 cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagename
 if [ -z "${target}" ]; then 
-	cp sonic/sonicawe/release/sonicawe.exe $packagename/"sonicawe_${target}.exe"
-else
 	cp sonic/sonicawe/release/sonicawe.exe $packagename
+else
+	cp sonic/sonicawe/release/sonicawe.exe $packagename/"sonicawe_${target}.exe"
 fi
 cp -r sonic/sonicawe/matlab $packagename/matlab
 cp sonic/sonicawe/license/$licensefile $packagename
@@ -67,12 +67,15 @@ $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
 if [ -z "${target}" ]; then 
 sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE\"/" $nsisscript 
 sed -i.backup -e "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"Side\_Banner\.bmp\"/" $nsisscript 
+sed -i.backup -e "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe.exe\"/" $nsisscript 
 elif ["${target}" == "reader"]; then
 sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE Reader\"/" $nsisscript 
 sed -i.backup -e "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"reader\-Side\_Banner\.bmp\"/" $nsisscript 
+sed -i.backup -e "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_reader.exe\"/" $nsisscript 
 else
 sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE ${target}\"/" $nsisscript 
-sed -i.backup -e "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"${target}\-Side\_Banner\.bmp\"/" $nsisscript 
+sed -i.backup -e "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"${target}\-Side\_Banner\.bmp\"/" $nsisscript
+sed -i.backup -e "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_${target}.exe\"/" $nsisscript 
 fi
 
 #inserting filename, version and nvidia version number in NSIS script 

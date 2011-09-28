@@ -7,6 +7,7 @@
 
 ;Defining compile time constants and necessary variables
 !define APP_NAME ""
+!define EXE_NAME ""
 !define PUBLISHER "MuchDifferent"
 !define SA_VERSION ""
 !define NVID_VERSION ""
@@ -240,7 +241,7 @@ SectionEnd
 Section "Desktop Icon"
 	${if} $INSTALLATION_DONE == "1"
 		;create desktop shortcut
-		${CreateShortCut} "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\Sonicawe.exe" "" "" ""
+		${CreateShortCut} "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}" "" "" ""
 	${endif}
 SectionEnd
 
@@ -249,7 +250,7 @@ Section "Start Menu Shortcut"
 		;create desktop shortcut
 		!insertmacro MUI_STARTMENU_WRITE_BEGIN Application
 			${CreateDirectory} "$SMPROGRAMS\$StartMenuFolder"
-			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\${APP_NAME}.lnk" "$INSTDIR\Sonicawe.exe" "" "" ""
+			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}" "" "" ""
 			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "" ""
 		!insertmacro MUI_STARTMENU_WRITE_END
 	${endif}
