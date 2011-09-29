@@ -89,6 +89,8 @@ private:
     QAction* escape_action;
     QWidget* fullscreen_widget;
 
+    void writeSettings();
+    void readSettings();
     void add_widgets();
 };
 

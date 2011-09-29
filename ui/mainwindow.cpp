@@ -31,6 +31,7 @@ SaweMainWindow::
     QString qtitle = QString::fromLocal8Bit(title);
     this->setWindowTitle( qtitle );
 
+    readSettings();
     add_widgets();
 
     hide();
@@ -264,9 +265,7 @@ void SaweMainWindow::
 
     {
         TaskInfo ti("Saving settings");
-        QSettings settings;
-        settings.setValue("geometry", saveGeometry());
-        settings.setValue("windowState", saveState());
+        writeSettings();
     }
 
     {
@@ -425,7 +424,33 @@ void SaweMainWindow::
     ui->actionOperation_details->setChecked(visible);
 }
 
+void SaweMainWindow::readSettings() {
+#if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
+    QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
+    QSize size = settings.value("size", QSize(400, 400)).toSize();
+    QByteArray state = settings.value("windowState", QByteArray()).toByteArray();
+    restoreState(state);
+    resize(size);
+    move(pos);
+    restoreGeometry(settings.value("geometry").toByteArray());
+}
 
+void SaweMainWindow::writeSettings() {
+    /* Save postion/size of main window */
+#if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
+    settings.setValue("geometry", saveGeometry());
+    settings.setValue("windowState", saveState());
+    settings.setValue("pos", pos());
+    settings.setValue("size", size());
+}
 
 
 } // namespace Ui
