@@ -150,6 +150,7 @@ void MicrophoneRecorder::stopRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
     if (_stream_record) {
+        TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
         //stop could hang the ui (codaset #24)
         //_stream_record->isStopped()? void(): _stream_record->stop();
         _stream_record->isStopped()? void(): _stream_record->abort();

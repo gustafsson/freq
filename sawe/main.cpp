@@ -446,13 +446,14 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // Write all stdout and stderr to sonicawe.log instead
-
-    rename((logpath+"sonicawe~4.log~4").data(), (logpath+"sonicawe~5.log").data());
-    rename((logpath+"sonicawe~3.log~3").data(), (logpath+"sonicawe~4.log").data());
-    rename((logpath+"sonicawe~2.log~2").data(), (logpath+"sonicawe~2.log").data());
+    // Save previous log files
+    rename((logpath+"sonicawe~4.log").data(), (logpath+"sonicawe~5.log").data());
+    rename((logpath+"sonicawe~3.log").data(), (logpath+"sonicawe~4.log").data());
+    rename((logpath+"sonicawe~2.log").data(), (logpath+"sonicawe~3.log").data());
     rename((logpath+"sonicawe~.log").data(), (logpath+"sonicawe~2.log").data());
     rename((logpath+"sonicawe.log").data(), (logpath+"sonicawe~.log").data());
+
+    // Write all stdout and stderr to sonicawe.log instead
     boost::shared_ptr<RedirectStdout> rs(new RedirectStdout((logpath+"sonicawe.log").data()));
 
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
