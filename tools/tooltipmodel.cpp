@@ -3,6 +3,7 @@
 #include "sawe/project.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtfilter.h"
+#include "tfr/stftfilter.h"
 #include "tfr/cepstrum.h"
 #include "tfr/cwtchunk.h"
 
@@ -63,8 +64,6 @@ const Heightmap::Position& TooltipModel::
 void TooltipModel::
         showToolTip( Heightmap::Position p )
 {
-    Tfr::Cwt& c = Tfr::Cwt::Singleton();
-
     if (TooltipModel::ManualMarkers != this->automarking)
     {
         // computeMarkerMeasure and others will set automarking back to working if it is not finished
@@ -117,16 +116,33 @@ void TooltipModel::
         this->max_so_far = val;
 
     stringstream ss;
-    ss << setiosflags(ios::fixed)
-       << "Time: " << setprecision(3) << p.time << " s<br/>"
-       << "Frequency: " << setprecision(1) << f << " Hz<br/>";
+
+    float std_t = 0;
+    float std_f = 0;
 
     if (dynamic_cast<Tfr::CwtFilter*>( render_view_->model->block_filter()))
     {
-        float std_t = c.morlet_sigma_samples( FS, f ) / FS;
-        float std_f = c.morlet_sigma_f( f );
-        ss << "Morlet standard deviation: " << setprecision(3) << std_t << " s, " << setprecision(1) << std_f << " Hz<br/>";
+        Tfr::Cwt& c = Tfr::Cwt::Singleton();
+        std_t = c.morlet_sigma_samples( FS, f ) / FS;
+        std_f = c.morlet_sigma_f( f );
     }
+    else if (dynamic_cast<Tfr::StftFilter*>( render_view_->model->block_filter()))
+    {
+        Tfr::Stft& f = Tfr::Stft::Singleton();
+        std_t = f.chunk_size() / FS / 2;
+        std_f = FS / f.chunk_size() / 2;
+    }
+
+    ss << setiosflags(ios::fixed);
+    if (std_t != 0)
+        ss << "Time: " << setprecision(3) << p.time << " \u00B1 " << " " << setprecision(3) << std_t << " s<br/>";
+    else
+        ss << "Time: " << setprecision(3) << p.time << " s<br/>";
+
+    if (std_f != 0)
+        ss << "Frequency: " << setprecision(1) << f << " \u00B1 " << setprecision(1) << std_f << " Hz<br/>";
+    else
+        ss << "Frequency: " << setprecision(1) << f << " Hz<br/>";
 
     ss << "Value here: " << setprecision(10) << this->max_so_far << setprecision(1);
 
