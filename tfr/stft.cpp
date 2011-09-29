@@ -181,6 +181,7 @@ pChunk Fft::
 
         computeWithCufft( *input, *chunk->transform_data, -1);
         //computeWithOoura( *input, *chunk->transform_data, -1 );
+        chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
     }
     else
     {
@@ -197,9 +198,8 @@ pChunk Fft::
                 GpuCpuVoidData::CpuMemory ));
 
         computeWithCufftR2C( *real_buffer->waveform_data(), *chunk->transform_data );
+        chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales() );
     }
-
-    chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
 
     chunk->chunk_offset = real_buffer->sample_offset;
     chunk->first_valid_sample = 0;
@@ -869,7 +869,7 @@ unsigned findLargestSmaller(const unsigned* bases, unsigned* a, unsigned maxv, u
         a[n] = i;
 
         unsigned v = powerprod(bases, a, N);
-        if (v > x)
+        if (v >= x)
             break;
 
         if (n+1<N)
@@ -894,7 +894,7 @@ unsigned findSmallestGreater(const unsigned* bases, unsigned* a, unsigned minv, 
         unsigned v = powerprod(bases, a, N);
         if (n+1<N)
             minv = findSmallestGreater(bases, a, minv, x, n+1, N);
-        else if (v>=x && (v < minv || minv==0))
+        else if (v > x && (v < minv || minv==0))
             minv = v;
 
         if (v > x)
@@ -918,7 +918,10 @@ unsigned Fft::
 
     unsigned bases[]={2, 3, 5, 7};
     unsigned a[]={0, 0, 0, 0};
-    return multiple*findLargestSmaller(bases, a, 0, (x-1)/multiple, 0, 2);
+    unsigned N_bases = 4; // could limit to 2 bases
+    unsigned x2 = multiple*findLargestSmaller(bases, a, 0, int_div_ceil(x, multiple), 0, N_bases);
+    BOOST_ASSERT( x2 < x );
+    return x2;
 }
 
 unsigned Fft::
@@ -932,7 +935,10 @@ unsigned Fft::
 
     unsigned bases[]={2, 3, 5, 7};
     unsigned a[]={0, 0, 0, 0};
-    return multiple*findSmallestGreater(bases, a, 0, x/multiple+1, 0, 2);
+    unsigned N_bases = 4;
+    unsigned x2 = multiple*findSmallestGreater(bases, a, 0, x/multiple, 0, N_bases);
+    BOOST_ASSERT( x2 > x );
+    return x2;
 }
 
 unsigned oksz(unsigned x)

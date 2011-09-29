@@ -19,29 +19,32 @@ ComputeRms::
 pBuffer ComputeRms::
         read( const Interval& I )
 {
-    pBuffer b = Operation::read(I);
-    Intervals missing = b->getInterval() - rms_I;
-    if (missing.empty())
-        return b;
+    const pBuffer read_b = Operation::read(I);
+    Intervals missing = read_b->getInterval() - rms_I;
 
-    b = BufferSource(b).readFixedLength( missing.coveredInterval() );
-    float* p = b->waveform_data()->getCpuMemory();
-    unsigned L = b->number_of_samples();
-    unsigned C = b->channels();
-    double S = 0;
-    for (unsigned i = 0; i<L*C; ++i)
+    while (missing)
     {
-        S += p[i]*p[i];
+        Interval i = missing.fetchFirstInterval();
+        missing -= i;
+        pBuffer b = BufferSource(read_b).readFixedLength( i );
+        float* p = b->waveform_data()->getCpuMemory();
+        unsigned L = b->number_of_samples();
+        unsigned C = b->channels();
+        double S = 0;
+        for (unsigned i = 0; i<L*C; ++i)
+        {
+            S += p[i]*p[i];
+        }
+
+        S/=C;
+
+        unsigned newL = rms_I.count() + L;
+        rms = sqrt(rms*rms * rms_I.count()/newL + S/newL);
+
+        rms_I |= b->getInterval();
     }
 
-    S/=C;
-
-    unsigned newL = rms_I.count() + L;
-    rms = sqrt(rms*rms * rms_I.count()/newL + S/newL);
-
-    rms_I |= b->getInterval();
-
-    return b;
+    return read_b;
 }
 
 

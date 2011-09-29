@@ -48,9 +48,12 @@ public:
 
     virtual void invalidate_samples(const Signal::Intervals& I);
     virtual Signal::Intervals invalid_samples();
+
+    virtual void set_channel(unsigned ) { return; }
 private:
     SelectionViewInfo* info_;
     Signal::pOperation rms_;
+    Signal::pOperation mixchannels_;
     Signal::Intervals missing_;
 };
 

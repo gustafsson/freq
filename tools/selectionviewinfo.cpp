@@ -9,6 +9,11 @@
 #include "ui_mainwindow.h"
 #include "signal/target.h"
 #include "signal/sinksourcechannels.h"
+#include "signal/operation-basic.h"
+#include "tfr/stft.h"
+
+// gpumisc
+#include "neat_math.h"
 
 using namespace Signal;
 
@@ -96,7 +101,8 @@ SelectionViewInfoSink::
             :
             info_(info)
 {
-    rms_.reset(new Support::ComputeRms(pOperation()));
+    mixchannels_.reset(new OperationSuperpositionChannels(pOperation()));
+    rms_.reset(new Support::ComputeRms(mixchannels_));
     Operation::source(rms_);
 }
 
@@ -104,10 +110,11 @@ SelectionViewInfoSink::
 pBuffer SelectionViewInfoSink::
         read( const Interval& I )
 {
-    pBuffer b = Operation::read(I);
+    pBuffer b = Operation::read(I); // note: Operation::source() == rms_
     Support::ComputeRms* rms = dynamic_cast<Support::ComputeRms*>(rms_.get());
     Intervals all = this->getInterval() - this->zeroed_samples_recursive();
-    Intervals not_processed = all-rms->rms_I;
+    Intervals processed = rms->rms_I;
+    Intervals not_processed = all - processed;
     double P0 = 1;
     double P = rms->rms;
     double db = 10*log10(P/P0);
@@ -121,9 +128,63 @@ pBuffer SelectionViewInfoSink::
     text += "\n";
     text += QString("Total signal length: %1").arg(QString::fromStdString(lengthLongFormat()));
 
+    missing_ -= b->getInterval();
+
+    if (missing_.empty())
+    {
+        text +="\n";
+        while(!all.empty())
+        {
+            Interval f = all.fetchInterval( sample_rate() );
+            f.last = f.first + Tfr::Fft::sChunkSizeG( f.count() - 1, 4 );
+            all-=f;
+            pBuffer a = Operation::source()->readFixedLength(f);
+            Tfr::pChunk c = Tfr::Fft::Singleton().forward(a);
+            float2* p = c->transform_data->getCpuMemory();
+            unsigned N = f.count()/2;
+            std::vector<float> absValues(N);
+            float* q = &absValues[0];
+            for (unsigned i=0; i<N; ++i)
+                q[i] = p[i].x*p[i].x + p[i].y*p[i].y;
+
+            unsigned max_i = 0;
+            float max_v = 0;
+            // use i=1 to skip DC component of ft
+            for (unsigned i=1; i<N; ++i)
+            {
+                if (q[i]>max_v)
+                {
+                    max_v = q[i];
+                    max_i = i;
+                }
+            }
+
+            text +="\n";
+            if (0 == max_i)
+            {
+                text += QString("[%1 s, %2) s, peak n/a").arg(f.first/sample_rate(), 0, 'f', 2).arg(f.last/sample_rate(), 0, 'f', 2);
+            }
+            else
+            {
+                float interpolated_i = 0;
+                quad_interpol(max_i, q, f.count()/2, 1, &interpolated_i);
+                float hz = c->freqAxis.getFrequency( interpolated_i );
+                float hz2 = c->freqAxis.getFrequency( max_i + 1);
+                float hz1 = c->freqAxis.getFrequency( max_i - 1);
+                float dhz = (hz2 - hz1)*.5; // distance between bins
+                dhz = sqrtf(1.f/12)*dhz;
+                text += QString("[%1, %2) s, peak %3 %4 %5 Hz")
+                        .arg(f.first/sample_rate(), 0, 'f', 2)
+                        .arg(f.last/sample_rate(), 0, 'f', 2)
+                        .arg(hz, 0, 'f', 2)
+                        .arg(QChar(0xB1))
+                        .arg(dhz, 0, 'f', 2);
+            }
+        }
+    }
+
     info_->setText(text);
 
-    missing_ -= b->getInterval();
     return b;
 }
 
@@ -131,7 +192,7 @@ pBuffer SelectionViewInfoSink::
 void SelectionViewInfoSink::
         source(pOperation v)
 {
-    rms_->source(v);
+    mixchannels_->source(v);
 }
 
 
