@@ -195,19 +195,27 @@ OperationSuperposition::
 //        throw std::invalid_argument("source->sample_rate() != source2->sample_rate()");
 }
 
+
 pBuffer OperationSuperposition::
         read( const Interval& I )
 {
     pBuffer a = source()->read( I );
     pBuffer b = _source2->read( I );
+    return superPosition(a, b);
+}
 
+
+pBuffer OperationSuperposition::
+        superPosition( pBuffer a, pBuffer b )
+{
+    BOOST_ASSERT( a->sample_rate == b->sample_rate );
     IntervalType offset = std::max( (IntervalType)a->sample_offset, (IntervalType)b->sample_offset );
     IntervalType length = std::min(
             (IntervalType)a->sample_offset + a->number_of_samples(),
             (IntervalType)b->sample_offset + b->number_of_samples() );
     length -= offset;
 
-    pBuffer r(new Buffer( offset, length, sample_rate() ));
+    pBuffer r(new Buffer( offset, length, a->sample_rate ));
 
     float *pa = a->waveform_data()->getCpuMemory();
     float *pb = b->waveform_data()->getCpuMemory();
@@ -301,5 +309,47 @@ void OperationAddChannels::
     current_channel_ = c;
 }
 
+
+
+// OperationSuperPositionChannels ///////////////////////////////////////////////////////////
+
+
+OperationSuperpositionChannels::
+        OperationSuperpositionChannels( pOperation source )
+    :
+    Operation(source)
+{
+}
+
+
+pBuffer OperationSuperpositionChannels::
+        read( const Interval& I )
+{
+    pBuffer sum;
+    for (unsigned c = 0; c < source()->num_channels(); c++)
+    {
+        source()->set_channel( c );
+        pBuffer b = source()->read( I );
+        if (sum)
+            sum = OperationSuperposition::superPosition(sum, b);
+        else
+            sum = b;
+    }
+    return sum;
+}
+
+
+void OperationSuperpositionChannels::
+        set_channel(unsigned c)
+{
+    BOOST_ASSERT( c == 0 );
+}
+
+
+Signal::Intervals OperationSuperpositionChannels::
+        affected_samples()
+{
+    return getInterval();
+}
 
 } // namespace Signal

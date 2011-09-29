@@ -100,6 +100,7 @@ public:
 
     virtual pOperation source2() const { return _source2; }
 
+    static pBuffer superPosition( pBuffer a, pBuffer b );
 private:
     pOperation _source2;
 
@@ -135,6 +136,22 @@ private:
     pOperation source2_;
     unsigned current_channel_;
 };
+
+
+class OperationSuperpositionChannels: public Operation, public boost::noncopyable
+{
+public:
+    OperationSuperpositionChannels( pOperation source );
+
+    virtual pBuffer read( const Interval& I );
+
+    virtual unsigned num_channels() { return 1; }
+    virtual void set_channel(unsigned c);
+    virtual unsigned get_channel() { return 0; }
+
+    virtual Signal::Intervals affected_samples();
+};
+
 
 } // namespace Signal
 
