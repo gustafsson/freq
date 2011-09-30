@@ -136,7 +136,11 @@ void SaweMainWindow::
 
 
     {
-        QSettings settings;
+        #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
         QStringList recent_files = settings.value("recent files").toStringList();
         ui->menu_Recent_files->setEnabled( !recent_files.empty() );
         int i = 0;
@@ -318,7 +322,11 @@ void SaweMainWindow::
     BOOST_ASSERT( !s.isEmpty() );
     if (0 == Sawe::Application::global_ptr()->slotOpen_file( s.toLocal8Bit().constData() ))
     {
-        QSettings settings;
+        #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
         QStringList recent_files = settings.value("recent files").toStringList();
         recent_files.removeAll( s );
         settings.setValue("recent files", recent_files);
@@ -410,7 +418,11 @@ void SaweMainWindow::
     if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear the currently stored license key?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
         QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new license key");
-        QSettings settings;
+        #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
         settings.remove("value");
     }
 }

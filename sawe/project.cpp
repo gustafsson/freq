@@ -183,7 +183,11 @@ pProject Project::
 void Project::
         addRecentFile( std::string filename )
 {
-    QSettings settings;
+    #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
     QStringList recent_files = settings.value("recent files").toStringList();
     QFileInfo fi(QString::fromLocal8Bit( filename.c_str() ));
     fi.makeAbsolute();
@@ -275,7 +279,11 @@ void Project::
     defaultGeometry = _mainWindow->saveGeometry();
     defaultState = _mainWindow->saveState();
 
-    QSettings settings;
+    #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
     _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
     _mainWindow->restoreState(settings.value("windowState").toByteArray());
 
@@ -301,7 +309,11 @@ void Project::
 void Project::
         restoreDefaultLayout()
 {
-    QSettings settings;
+    #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
     _mainWindow->restoreGeometry(defaultGeometry);
     _mainWindow->restoreState(defaultState);
     QString value = settings.value("value").toString();

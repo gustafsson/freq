@@ -45,7 +45,11 @@ TimelineController::
     TaskInfo("%s", __FUNCTION__);
     if (!dock)
     {
-        QSettings settings;
+        #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
         settings.setValue("TimelineController visible", view->tool_selector->parentTool()->isVisible());
     }
 }
@@ -111,7 +115,11 @@ void TimelineController::
 
     if (!dock)
     {
-        QSettings settings;
+        #if !defined(TARGET_reader)
+    QSettings settings("MuchDifferent","Sonic AWE");
+#else
+    QSettings settings("MuchDifferent","Sonic AWE reader");
+#endif
         MainWindow->getItems()->actionToggleTimelineWindow->setChecked(
                 settings.value("TimelineController visible").toBool());
     }
