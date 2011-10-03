@@ -15,6 +15,7 @@ public:
 
     virtual pBuffer read( const Interval& I );
     virtual float sample_rate();
+    void set_sample_rate( float fs );
     virtual long unsigned number_of_samples();
 
     virtual unsigned num_channels();

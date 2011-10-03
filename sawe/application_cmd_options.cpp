@@ -334,7 +334,7 @@ void Application::
     cwt.scales_per_octave( _scales_per_octave );
     cwt.wavelet_time_support( _wavelet_time_support );
     cwt.wavelet_scale_support( _wavelet_scale_support );
-    cwt.set_wanted_min_hz( _min_hz );
+    //cwt.set_wanted_min_hz( _min_hz );
 
 #ifndef SAWE_NO_MUTEX
     if (_multithread)

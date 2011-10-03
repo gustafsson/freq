@@ -12,6 +12,7 @@
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
 #include "tfr/drawnwaveform.h"
+#include "adapters/csvtimeseries.h"
 
 #include <QTimer>
 
@@ -60,6 +61,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     connect(ui->minHzEdit, SIGNAL(textEdited(QString)), SLOT(minHzChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
+    connect(ui->sampleRateEdit, SIGNAL(textEdited(QString)), SLOT(sampleRateChanged()));
 
     transformChanged();
 }
@@ -112,7 +114,19 @@ void TransformInfoForm::
     float fs = head->sample_rate();
 
     addRow("Length", QString("%1").arg(head->lengthLongFormat().c_str()));
-    addRow("Sample rate", QString("%1").arg(fs));
+    bool adjustable_sample_rate = 0 != dynamic_cast<Adapters::CsvTimeseries*>(project->head->head_source()->root());
+    ui->sampleRateEdit->setVisible(adjustable_sample_rate);
+    ui->sampleRateLabel->setVisible(adjustable_sample_rate);
+    if (adjustable_sample_rate)
+    {
+        QString sampleRateText = QString("%1").arg(fs);
+        if (ui->sampleRateEdit->text() != sampleRateText)
+            ui->sampleRateEdit->setText(sampleRateText);
+    }
+    else
+    {
+        addRow("Sample rate", QString("%1").arg(fs));
+    }
     addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
 
     if (cwt)
@@ -235,15 +249,12 @@ void TransformInfoForm::
 {
     float fs = project->head->head_source()->sample_rate();
     float newValue = ui->minHzEdit->text().toFloat();
-    if (newValue<0.1)
-        newValue=0.1;
+    if (newValue<fs/100000)
+        newValue=fs/100000;
     if (newValue>fs/2)
         newValue=fs/2;
 
-    Tfr::Filter* f = renderview->model->block_filter();
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(!f?0:f->transform().get());
-    if (0==cwt)
-        return;
+    Tfr::Cwt* cwt = &Tfr::Cwt::Singleton();
 
     if (cwt->wanted_min_hz() != newValue)
     {
@@ -264,16 +275,39 @@ void TransformInfoForm::
     if (newValue>fs/4)
         newValue=fs/4;
 
-    Tfr::Filter* f = renderview->model->block_filter();
-    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(!f?0:f->transform().get());
-    if (0==stft)
-        return;
+    Tfr::Stft* stft = &Tfr::Stft::Singleton();
 
     unsigned new_chunk_size = fs/newValue;
     if (new_chunk_size != stft->chunk_size())
     {
         project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
         stft->set_exact_chunk_size( new_chunk_size );
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        sampleRateChanged()
+{
+    float newValue = ui->sampleRateEdit->text().toFloat();
+    if (newValue<0.01)
+        newValue=0.01;
+    float minHz = ui->minHzEdit->text().toFloat();
+    float orgMinHz = minHz;
+    if (minHz<newValue/100000)
+        minHz=newValue/100000;
+    if (minHz>newValue/2)
+        minHz=newValue/2;
+    if (orgMinHz != minHz)
+        Tfr::Cwt::Singleton().set_wanted_min_hz(minHz);
+
+    Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
+    if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
+    {
+        bs->set_sample_rate( newValue );
+
+        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
         renderview->emitTransformChanged();
     }
 }

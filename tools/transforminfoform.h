@@ -29,6 +29,7 @@ public slots:
     void minHzChanged();
     //void maxHzChanged();
     void binResolutionChanged();
+    void sampleRateChanged();
 
 private:
     Ui::TransformInfoForm *ui;

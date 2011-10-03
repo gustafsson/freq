@@ -1,5 +1,7 @@
 #include "buffersource.h"
 
+#include <boost/foreach.hpp>
+
 namespace Signal {
 
 
@@ -62,6 +64,23 @@ float BufferSource::
 }
 
 
+void BufferSource::
+        set_sample_rate( float fs )
+{
+    bool changed = false;
+    for (unsigned i=0; i< _waveforms.size(); ++i )
+    {
+        pBuffer b = _waveforms[i];
+
+        changed |= b->sample_rate != fs;
+
+        b->sample_rate = fs;
+    }
+
+    invalidate_samples( Signal::Interval::Interval_ALL );
+}
+
+
 long unsigned BufferSource::
         number_of_samples()
 {
@@ -87,7 +106,6 @@ void BufferSource::
 
     channel = c;
 }
-
 
 
 } // namespace Signal

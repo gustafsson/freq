@@ -90,7 +90,7 @@ pTransform Cwt::
 
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
-{
+{    
     try {
     boost::scoped_ptr<TaskTimer> tt;
     TIME_CWT tt.reset( new TaskTimer (
@@ -410,7 +410,7 @@ float Cwt::
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
-    BOOST_ASSERT( n_scales > 1 );
+    BOOST_ASSERT( n_scales > 1 || (first_scale == 0 && n_scale==1) );
     TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u, (%g to %g Hz)",
                               first_scale, n_scales, j_to_hz(ft->original_sample_rate, first_scale+n_scales-1),
                               j_to_hz(ft->original_sample_rate, first_scale));
@@ -706,6 +706,7 @@ void Cwt::
 unsigned Cwt::
         nScales(float fs) const
 {
+    BOOST_ASSERT( _min_hz <= get_max_hz(fs) );
     float number_of_octaves = log2f(get_max_hz(fs)) - log2f(_min_hz);
     return 1 + ceil(number_of_octaves * scales_per_octave());
 }
