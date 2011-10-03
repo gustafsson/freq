@@ -236,6 +236,7 @@ int main(int argc, char *argv[])
 
     std::string logdir = localAppDir.toLocal8Bit().data();
     std::string logpath = logdir+"sonicawe.log";
+    cout << "Saving log file at \"" << logpath << "\"" << endl;
 
     if (0)
     {
