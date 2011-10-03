@@ -3,6 +3,7 @@
 #include "sawe/application.h"
 #if !defined(TARGET_reader)
 #include "adapters/audiofile.h"
+#include "adapters/csvtimeseries.h"
 #endif
 #include "adapters/microphonerecorder.h"
 #include "signal/operationcache.h"
@@ -119,12 +120,14 @@ pProject Project::
     if (0 == filename.length()) {
         string filter;
 #if !defined(TARGET_reader)
-        filter = Adapters::Audiofile::getFileFormatsQtFilter( false ).c_str();
+        filter += " " + Adapters::Audiofile::getFileFormatsQtFilter( false );
+        filter += " " + Adapters::CsvTimeseries::getFileFormatsQtFilter( false );
 #endif
-        filter = "All files (*.sonicawe *.sonicawe " + filter + ");;";
-        filter += "SONICAWE - Sonic AWE project (*.sonicawe);;";
+        filter = "All files (*.sonicawe *.sonicawe" + filter + ");;";
+        filter += "SONICAWE - Sonic AWE project (*.sonicawe)";
 #if !defined(TARGET_reader)
-        filter += Adapters::Audiofile::getFileFormatsQtFilter( true ).c_str();
+        filter += ";;" + Adapters::Audiofile::getFileFormatsQtFilter( true );
+        filter += ";;" + Adapters::CsvTimeseries::getFileFormatsQtFilter( true );
 #endif
 
         QString qfilename = QFileDialog::getOpenFileName(NULL, "Open file", "", QString::fromLocal8Bit(filter.c_str()));
@@ -139,7 +142,7 @@ pProject Project::
     pProject p;
     int availableFileTypes = 1;
 #if !defined(TARGET_reader)
-    availableFileTypes++;
+    availableFileTypes+=2;
 #endif
     for (int i=0; i<availableFileTypes; i++) try
     {
@@ -147,6 +150,7 @@ pProject Project::
             case 0: p = Project::openProject( filename ); break;
 #if !defined(TARGET_reader)
             case 1: p = Project::openAudio( filename ); break;
+            case 2: p = Project::openCsvTimeseries( filename ); break;
 #endif
         }
         break; // successful loading without thrown exception
@@ -344,6 +348,14 @@ pProject Project::
 {
     Adapters::Audiofile*a;
     Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    return pProject( new Project( s, a->name() ));
+}
+
+pProject Project::
+        openCsvTimeseries(std::string audio_file)
+{
+    Adapters::CsvTimeseries*a;
+    Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     return pProject( new Project( s, a->name() ));
 }
 #endif

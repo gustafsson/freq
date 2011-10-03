@@ -183,6 +183,7 @@ private:
     static boost::shared_ptr<Project> openProject(std::string project_file);
 #if !defined(TARGET_reader)
     static boost::shared_ptr<Project> openAudio(std::string audio_file);
+    static boost::shared_ptr<Project> openCsvTimeseries(std::string audio_file);
 #endif
 
     friend class boost::serialization::access;
