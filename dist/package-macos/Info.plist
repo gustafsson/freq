@@ -39,8 +39,6 @@
 	<dict>
 		<key>LD_LIBRARY_PATH</key>
 		<string>/usr/local/cuda/lib</string>
-		<key>PATH</key>
-		<string>/Applications/Octave.app/Contents/Resources/bin</string>
 	</dict>
 	
 	<key>NOTE</key>

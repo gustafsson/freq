@@ -192,25 +192,34 @@ MatlabFunction::
 
         if (!f.empty())
         {
+#ifdef _WIN32
             TaskInfo("Trying common installation paths for MATLAB instead");
             QStringList matlab_paths;
             matlab_paths.push_back("C:\\Program Files\\MATLAB\\R2008b\\bin\\matlab.exe");
             matlab_paths.push_back("C:\\Program Files (x86)\\MATLAB\\R2008b\\bin\\matlab.exe");
+
             if (startProcess(_pid, matlab_paths, matlab_args))
                 return;
 
             TaskInfo("Couldn't start Matlab");
+#endif
         }
 
+#if defined(_WIN32) || defined(__APPLE__)
         TaskInfo("Trying common installation paths for Octave instead");
 
         QStringList octave_paths;
+#ifdef _WIN32
         octave_paths.push_back("C:\\Octave\\3.2.3_gcc-4.4.0\\bin\\octave-3.2.3.exe");
+#endif
+#ifdef __APPLE__
+        octave_paths.push_back("/Applications/Octave.app/Contents/Resources/bin/octave");
+#endif
         if (startProcess(_pid, octave_paths, octave_args))
             return;
 
         TaskInfo("Couldn't find Matlab nor Octave");
-
+#endif
         delete _pid;
         _pid = 0;
         /*
