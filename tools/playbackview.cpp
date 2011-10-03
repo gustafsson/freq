@@ -104,6 +104,8 @@ void PlaybackView::
     {
         Tools::RenderView& r = *_render_view;
         r.model->_qx = _playbackMarker;
+
+        r.userinput_update(true, false);
     }
 }
 

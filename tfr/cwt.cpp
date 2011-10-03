@@ -410,7 +410,7 @@ float Cwt::
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {
-    BOOST_ASSERT( n_scales > 1 || (first_scale == 0 && n_scale==1) );
+    BOOST_ASSERT( n_scales > 1 || (first_scale == 0 && n_scales==1) );
     TIME_CWTPART TaskTimer tt("computeChunkPart first_scale=%u, n_scales=%u, (%g to %g Hz)",
                               first_scale, n_scales, j_to_hz(ft->original_sample_rate, first_scale+n_scales-1),
                               j_to_hz(ft->original_sample_rate, first_scale));
