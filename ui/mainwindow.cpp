@@ -136,11 +136,7 @@ void SaweMainWindow::
 
 
     {
-        #if !defined(TARGET_reader)
-    QSettings settings("MuchDifferent","Sonic AWE");
-#else
-    QSettings settings("MuchDifferent","Sonic AWE reader");
-#endif
+        QSettings settings;
         QStringList recent_files = settings.value("recent files").toStringList();
         ui->menu_Recent_files->setEnabled( !recent_files.empty() );
         int i = 0;
@@ -322,11 +318,7 @@ void SaweMainWindow::
     BOOST_ASSERT( !s.isEmpty() );
     if (0 == Sawe::Application::global_ptr()->slotOpen_file( s.toLocal8Bit().constData() ))
     {
-        #if !defined(TARGET_reader)
-    QSettings settings("MuchDifferent","Sonic AWE");
-#else
-    QSettings settings("MuchDifferent","Sonic AWE reader");
-#endif
+        QSettings settings;
         QStringList recent_files = settings.value("recent files").toStringList();
         recent_files.removeAll( s );
         settings.setValue("recent files", recent_files);
@@ -418,11 +410,7 @@ void SaweMainWindow::
     if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear the currently stored license key?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
         QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new license key");
-        #if !defined(TARGET_reader)
-    QSettings settings("MuchDifferent","Sonic AWE");
-#else
-    QSettings settings("MuchDifferent","Sonic AWE reader");
-#endif
+        QSettings settings;
         settings.remove("value");
     }
 }
@@ -437,31 +425,19 @@ void SaweMainWindow::
 }
 
 void SaweMainWindow::readSettings() {
-#if !defined(TARGET_reader)
-    QSettings settings("MuchDifferent","Sonic AWE");
-#else
-    QSettings settings("MuchDifferent","Sonic AWE reader");
-#endif
+    QSettings settings;
     QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
     QSize size = settings.value("size", QSize(400, 400)).toSize();
     QByteArray state = settings.value("windowState", QByteArray()).toByteArray();
     restoreState(state);
-    resize(size);
-    move(pos);
     restoreGeometry(settings.value("geometry").toByteArray());
 }
 
 void SaweMainWindow::writeSettings() {
     /* Save postion/size of main window */
-#if !defined(TARGET_reader)
-    QSettings settings("MuchDifferent","Sonic AWE");
-#else
-    QSettings settings("MuchDifferent","Sonic AWE reader");
-#endif
+    QSettings settings;
     settings.setValue("geometry", saveGeometry());
     settings.setValue("windowState", saveState());
-    settings.setValue("pos", pos());
-    settings.setValue("size", size());
 }
 
 

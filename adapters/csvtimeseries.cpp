@@ -111,7 +111,7 @@ void CsvTimeseries::
 
         for (channel=0; channel < ssc.num_channels(); ++channel)
         {
-            chunkBuffers[channel]->sample_offset = line - bufferCount;
+            chunkBuffers[channel]->sample_offset = (double)(line - bufferCount);
             ssc.set_channel( channel );
             ssc.put( BufferSource( chunkBuffers[channel] ).readFixedLength( Interval( line - bufferCount, line )) );
         }

@@ -77,7 +77,13 @@ Application::
 
     setOrganizationName("MuchDifferent");
     setOrganizationDomain("muchdifferent.com");
-    setApplicationName("Sonic AWE");
+
+    #if !defined(TARGET_reader)
+        setApplicationName("Sonic AWE");
+    #else
+        setApplicationName("Sonic AWE Reader");
+    #endif
+
 
     build_version_string();
 

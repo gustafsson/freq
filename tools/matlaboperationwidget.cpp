@@ -49,11 +49,7 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     connect( ui->pushButtonRestartScript, SIGNAL(clicked()), SLOT(restartScript()) );
     connect( ui->pushButtonRestoreChanges, SIGNAL(clicked()), SLOT(restoreChanges()) );
 
-    #if !defined(TARGET_reader)
-    QSettings settings("MuchDifferent","Sonic AWE");
-#else
-    QSettings settings("MuchDifferent","Sonic AWE reader");
-#endif
+    QSettings settings;
     settings.beginGroup("MatlabOperationWidget");
     ui->scriptname->setText(        settings.value("scriptname").toString() );
     ui->computeInOrder->setChecked( settings.value("computeInOrder" ).toBool());
@@ -482,11 +478,7 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         hideEvent ( QHideEvent * /*event*/ )
 {
-    #if !defined(TARGET_reader)
-    QSettings settings("MuchDifferent","Sonic AWE");
-#else
-    QSettings settings("MuchDifferent","Sonic AWE reader");
-#endif
+    QSettings settings;
     // this->saveGeometry() doesn't save child widget states
     settings.beginGroup("MatlabOperationWidget");
     settings.setValue("scriptname", ui->scriptname->text() );
