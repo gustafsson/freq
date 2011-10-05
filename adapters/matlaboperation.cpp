@@ -80,8 +80,14 @@ MatlabFunction::
 
     { // Set filenames
         stringstream ss;
-        ss << _matlab_function << "." << hex << this << ".h5";
-        _dataFile = ss.str();
+
+        {
+            QTemporaryFile tempFile;
+            tempFile.open();
+            ss << tempFile.fileName().toStdString();
+        }
+
+        _dataFile = ss.str() + ".h5";
         _resultFile = _dataFile + ".result.h5";
     }
 
@@ -170,6 +176,7 @@ MatlabFunction::
         }
 
         _pid = new QProcess();
+        connect( _pid, SIGNAL(finished( int , QProcess::ExitStatus )), SLOT(finished(int,QProcess::ExitStatus)));
 //        _pid->setProcessChannelMode( QProcess::ForwardedChannels );
         _pid->setProcessChannelMode( QProcess::MergedChannels );
         if (settings) settings->setProcess( _pid );
@@ -239,7 +246,6 @@ MatlabFunction::
     }
 }
 
-
 MatlabFunction::
         ~MatlabFunction()
 {
@@ -251,6 +257,20 @@ string MatlabFunction::
         getTempName()
 {
     return _dataFile + "~";
+}
+
+
+void MatlabFunction::
+		finished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    if (exitCode != 0)
+    {
+        _hasCrashed = TRUE;
+    }
+    else
+    {
+        _hasCrashed = FALSE;
+    }
 }
 
 
@@ -330,6 +350,11 @@ bool MatlabFunction::
     return !_pid || _pid->state() == QProcess::NotRunning;
 }
 
+bool MatlabFunction::
+        hasProcessCrashed()
+{
+    return _hasCrashed;
+}
 
 void MatlabFunction::
         endProcess()
@@ -680,8 +705,16 @@ pBuffer MatlabOperation::
 
         if (_matlab->hasProcessEnded())
         {
-            TaskInfo("MatlabOperation::read(%s) process ended", I.toString().c_str() );
-            return source()->readFixedLength( I );
+            if (_matlab->hasProcessCrashed())
+            {
+                TaskInfo("MatlabOperation::read(%s) process ended", I.toString().c_str() );
+
+                return source()->readFixedLength( I );
+            }
+            else
+            {
+                restart();
+            }
         }
 
         if (!isWaiting())

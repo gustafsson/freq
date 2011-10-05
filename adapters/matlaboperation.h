@@ -9,6 +9,9 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/serialization/split_member.hpp>
 
+#include <QTemporaryFile>
+#include <QProcess>
+
 class QProcess;
 
 namespace Adapters {
@@ -72,8 +75,9 @@ public:
   One instance of octave or matlab will be created for each instance of
   MatlabFunction. Each instance is then killed in each destructor.
   */
-class MatlabFunction: boost::noncopyable
+class MatlabFunction: QObject, boost::noncopyable
 {
+    Q_OBJECT
 public:
     /**
       Name of a matlab function and timeout measuerd in seconds.
@@ -102,11 +106,15 @@ public:
     std::string waitForReady();
 
     bool hasProcessEnded();
+    bool hasProcessCrashed();
     void endProcess();
 
     std::string matlabFunction();
     std::string matlabFunctionFilename();
     float timeout();
+
+private slots:
+    void finished ( int exitCode, QProcess::ExitStatus exitStatus );
 
 private:
     // Not copyable
@@ -121,6 +129,8 @@ private:
     std::string _resultFile;
     std::string _matlab_function;
     std::string _matlab_filename;
+    bool _hasCrashed;
+
     float _timeout;
 };
 

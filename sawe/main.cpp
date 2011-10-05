@@ -231,10 +231,10 @@ int main(int argc, char *argv[])
         localAppDir += "MuchDifferent/Sonic AWE/";
     #endif
 #endif
-    if (QDir(localAppDir).exists()==false)
+	if (QDir(localAppDir).exists()==false)
         QDir().mkpath(localAppDir);
 
-    std::string logdir = localAppDir.toLocal8Bit().data();
+	std::string logdir = localAppDir.toLocal8Bit().data();
     std::string logpath = logdir+"sonicawe.log";
     cout << "Saving log file at \"" << logpath << "\"" << endl;
 
@@ -448,15 +448,17 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+	
+
     // Save previous log files
-    rename((logdir+"sonicawe~4.log").data(), (logdir+"sonicawe~5.log").data());
-    rename((logdir+"sonicawe~3.log").data(), (logdir+"sonicawe~4.log").data());
-    rename((logdir+"sonicawe~2.log").data(), (logdir+"sonicawe~3.log").data());
-    rename((logdir+"sonicawe~.log").data(), (logdir+"sonicawe~2.log").data());
-    rename((logpath).data(), (logdir+"sonicawe~.log").data());
+    rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
+    rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
+    rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
+    rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
+    rename((logpath).c_str(), (logdir+"sonicawe~.log").c_str());
 
     // Write all stdout and stderr to sonicawe.log instead
-    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout((logpath).data()));
+    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout((logpath).c_str()));
 
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 

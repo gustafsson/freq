@@ -10,6 +10,8 @@
 % Note: one call to stat takes roughly 0.00004s on johan-laptop. So it shouldn't be an issue to invoke stat 40 times per second (dt=0.025).
 function C=sawe_filewatcher(datafile, func, arguments, dt)
 
+time_out = 10;
+
 if nargin<2
   error('syntax: filewatcher(datafile, function, arguments, dt). ''arguments'' defaults to [], ''dt'' defaults to 0.05')
 end
@@ -34,9 +36,14 @@ disp([ sawe_datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' Sonic AWE running script '
 disp(['Working dir: ' pwd]);
 tic
 logginfo=false;
+start_waiting_time = clock;
+
 while 1
 
-
+  if etime(clock,start_waiting_time) > time_out
+    exit;
+  end
+  
   if isoctave
     datafile_exists = ~isempty(stat(datafile)); % fast octave version
   else
@@ -44,6 +51,7 @@ while 1
   end
 
   if datafile_exists
+    start_waiting_time = clock;
     if logginfo
       disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
     end

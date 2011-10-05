@@ -105,8 +105,12 @@ vector<hsize_t> Hdf5Input::
     if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_ndims failed");
 
     vector<hsize_t> dims(RANK);
-    status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
-    if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_info failed");
+	if (0 < RANK) 
+	{
+		// only non-scalars have dimensions
+		status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
+		if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_info failed");
+	}
 
     return dims;
 }

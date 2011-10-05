@@ -457,9 +457,10 @@ void MatlabOperationWidget::
     if (text)
     {
         text->appendPlainText( QString("\nThe process ended %1with exit code %2")
-                               .arg(QProcess::NormalExit == exitStatus ? "unexpectedly " : "" )
+                               .arg(0 != exitCode ? "unexpectedly " : "" )
                                .arg(exitCode));
         text->moveCursor( QTextCursor::End );
+
     }
 
     if (edit)
