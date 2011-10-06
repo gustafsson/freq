@@ -98,9 +98,6 @@ InstallDir "$PROGRAMFILES\${PUBLISHER}\${APP_NAME}"
 ;Get installation folder from registry if available
 InstallDirRegKey ${REG_ROOT} "Software\${PUBLISHER}\${APP_NAME}" ""
 
-;Show installation details
-ShowInstDetails show
-
 ; Pages to display during the installation process
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE ""
@@ -112,6 +109,10 @@ ShowInstDetails show
 !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${PUBLISHER}\${APP_NAME}" 
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER "${PUBLISHER}\${APP_NAME}"
+
+;Adding some branding!  
+BrandingText "by MuchDifferent" 
+!define MUI_CUSTOMFUNCTION_GUIINIT onGUIInit   
   
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuFolder
 
@@ -157,8 +158,8 @@ Section "Application Files (required)"
 	
 	;Comparing driver version
 	${if} $USR_DRIVER_VERSION == ""
-		messageBox MB_OK|MB_ICONSTOP "Nvidia drivers could not be verified. Please make sure your hardware meets the requirements to run Sonic AWE and install the latest Nvidia drivers. \
-		                 $\n$\nPlease visit www.sonicawe.com for more information \
+		messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure your hardware meets the requirements to run Sonic AWE and install the latest Nvidia drivers. \
+		                 $\n$\nPlease visit www.MuchDifferent.com for more information \
 						 $\n$\nThe installer will now quit"
 		Strcpy $INSTALLATION_DONE "0"
 		Goto done
@@ -233,7 +234,7 @@ Section "Application Files (required)"
 		Strcpy $INSTALLATION_DONE "1"
 	done: 
 		${if} $INSTALLATION_DONE == "0"
-			DetailPrint "The installation did not complete"
+			DetailPrint "The installation could not complete"
 			Quit	
 		${endif}
 SectionEnd
@@ -343,3 +344,11 @@ Function un.DeleteDirIfEmpty
    FindClose $R0
 FunctionEnd
 
+Function onGUIInit
+	Aero::Apply
+	BrandingURL::Set /NOUNLOAD "0" "0" "200" "http://www.MuchDifferent.com"
+FunctionEnd
+
+Function .onGUIEnd
+	BrandingURL::Unload
+FunctionEnd
