@@ -860,6 +860,10 @@ void RenderView::
             wait = dt;
 
         unsigned ms = (wait-dt)*1e3; // round down
+#ifdef _MSC_VER
+        // windows message loop, allow others to jump in before the next update if ms=0
+        ms = std::max(1u, ms);
+#endif
         TaskInfo("Waiting %u ms to update", ms);
         _update_timer->start(ms);
     }
