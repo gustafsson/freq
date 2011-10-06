@@ -231,12 +231,15 @@ int main(int argc, char *argv[])
         localAppDir += "MuchDifferent/Sonic AWE/";
     #endif
 #endif
-	if (QDir(localAppDir).exists()==false)
+    if (QDir(localAppDir).exists()==false)
         QDir().mkpath(localAppDir);
 
-	std::string logdir = localAppDir.toLocal8Bit().data();
+    std::string logdir = localAppDir.toLocal8Bit().data();
     std::string logpath = logdir+"sonicawe.log";
+#ifndef _MSC_VER
+    //The following line hinders the redirection from working in windows
     cout << "Saving log file at \"" << logpath << "\"" << endl;
+#endif
 
     if (0)
     {
