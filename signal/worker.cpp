@@ -420,7 +420,7 @@ void Worker::
 
 
 bool Worker::
-        is_cheating() const
+        is_cheating()
 {
     return Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
 }
