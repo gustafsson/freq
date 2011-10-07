@@ -226,9 +226,9 @@ int main(int argc, char *argv[])
     #endif
 #else
     #if defined(TARGET_reader)
-        localAppDir += "MuchDifferent/Sonic AWE Reader/";
+        localAppDir += "/MuchDifferent/Sonic AWE Reader/";
     #else
-        localAppDir += "MuchDifferent/Sonic AWE/";
+        localAppDir += "/MuchDifferent/Sonic AWE/";
     #endif
 #endif
     if (QDir(localAppDir).exists()==false)

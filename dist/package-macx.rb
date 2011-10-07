@@ -8,9 +8,9 @@ $custom_exec = "../sonicawe"
 $custom_exec = ARGV[2] if( ARGV[1] and !ARGV[1].match(/^--/) )
 $platform = "macos_i386"
 $platform = ARGV[1] if( ARGV[1] and !ARGV[1].match(/^--/) )
-$version = "dev"
+$version = "sonicawe_dev"
 $version = ARGV[0] if( ARGV[0] and !ARGV[0].match(/^--/) )
-$build_name = "sonicawe_#{$version}_#{$platform}"
+$build_name = "#{$version}_#{$platform}"
 
 $zip = true
 $zip = false if(ARGV.index("--nozip"))
