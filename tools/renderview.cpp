@@ -833,7 +833,14 @@ void RenderView::
         userinput_update( bool request_high_fps, bool post_update )
 {
     if (request_high_fps)
+    {
         model->project()->worker.requested_fps(60);
+        model->renderer->setFractionSize( 4, 2 );
+    }
+    else
+    {
+        model->renderer->setFractionSize( 1, 1 );
+    }
 
     if (post_update)
         emit postUpdate();
