@@ -213,7 +213,7 @@ Section "Application Files (required)"
 			Strcpy $INSTALLATION_DONE "1"
 			Goto done
 		${elseif} $R0 == 2 
-			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia driver version $USR_DRIVER_VERSION is too old and you might encounter issues running Sonic AWE. \ 
+			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia drivers, version $USR_DRIVER_VERSION, are too old and you might encounter issues running Sonic AWE. \ 
 			$\nChoose cancel to abort the installation or OK to download newer drivers." IDOK downloadDrivers 
 			Strcpy $INSTALLATION_DONE "0"
 			Goto done
@@ -345,7 +345,7 @@ Function un.DeleteDirIfEmpty
 FunctionEnd
 
 Function onGUIInit
-	Aero::Apply
+	;Aero::Apply
 	BrandingURL::Set /NOUNLOAD "0" "0" "200" "http://www.MuchDifferent.com"
 FunctionEnd
 
