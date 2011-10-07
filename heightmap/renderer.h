@@ -52,6 +52,7 @@ public:
     bool left_handed_axes;
 
     void setFractionSize( unsigned divW=1, unsigned divH=1);
+    bool fullMeshResolution();
     void init();
 
     GLdouble modelview_matrix[16], projection_matrix[16];

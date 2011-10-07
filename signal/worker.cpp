@@ -280,7 +280,7 @@ Signal::Intervals Worker::
     Signal::Intervals c = todoinv;
     c -= _cheat_work;
 
-    bool is_cheating = Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
+    bool is_cheating = this->is_cheating();
     if (is_cheating && !c)
     {
         // Not cheating anymore as there would have been nothing left to work on
@@ -416,6 +416,13 @@ void Worker::
         _max_samples_per_chunk = (unsigned)-1;
         Tfr::Cwt::Singleton().wavelet_fast_time_support( 0.5 );
     }
+}
+
+
+bool Worker::
+        is_cheating() const
+{
+    return Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
 }
 
 

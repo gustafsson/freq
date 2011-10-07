@@ -837,10 +837,6 @@ void RenderView::
         model->project()->worker.requested_fps(60);
         model->renderer->setFractionSize( 4, 2 );
     }
-    else
-    {
-        model->renderer->setFractionSize( 1, 1 );
-    }
 
     if (post_update)
         emit postUpdate();
@@ -1113,6 +1109,14 @@ void RenderView::
 
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
+
+    if (worker.is_cheating())
+        model->renderer->setFractionSize( 4, 2 );
+    else if (!model->renderer->fullMeshResolution())
+    {
+        model->renderer->setFractionSize( 1, 1 );
+        emit postUpdate();
+    }
 
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );

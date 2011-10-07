@@ -82,6 +82,13 @@ void Renderer::
 }
 
 
+bool Renderer::
+        fullMeshResolution()
+{
+    return _mesh_fraction_height == 1 && _mesh_fraction_width == 1;
+}
+
+
 void Renderer::setSize( unsigned w, unsigned h)
 {
     if (w == _mesh_width && h ==_mesh_height)
