@@ -439,7 +439,7 @@ void Renderer::draw( float scaley )
     glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
     glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 
-    glScalef(1, scaley, 1);
+    glScalef(1, _draw_flat ? 0 : scaley, 1);
 
     beginVboRendering();
 
