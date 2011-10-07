@@ -1110,10 +1110,10 @@ void RenderView::
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
 
-    if (worker.is_cheating())
-        model->renderer->setFractionSize( 4, 2 );
-    else if (!model->renderer->fullMeshResolution())
+    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
     {
+        // userinput_update will set setFractionSize before the next
+        // frame during recording, playback and continuous user interactions
         model->renderer->setFractionSize( 1, 1 );
         emit postUpdate();
     }
