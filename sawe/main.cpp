@@ -454,14 +454,15 @@ int main(int argc, char *argv[])
 	
 
     // Save previous log files
+    remove((logdir + "sonicawe~5.log").c_str());
     rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
     rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
     rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
     rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
-    rename((logpath).c_str(), (logdir+"sonicawe~.log").c_str());
+    rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
 
     // Write all stdout and stderr to sonicawe.log instead
-    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout((logpath).c_str()));
+    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout(logpath.c_str()));
 
     TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 
@@ -553,11 +554,11 @@ int main(int argc, char *argv[])
 
         return r;
     } catch (const std::exception &x) {
-        if (!rs) rs.reset(new RedirectStdout(logdir.c_str()));
+        if (!rs) rs.reset(new RedirectStdout(logpath.c_str()));
         Sawe::Application::display_fatal_exception(x);
         return -2;
     } catch (...) {
-        if (!rs) rs.reset(new RedirectStdout(logdir.c_str()));
+        if (!rs) rs.reset(new RedirectStdout(logpath.c_str()));
         Sawe::Application::display_fatal_exception();
         return -3;
     }
