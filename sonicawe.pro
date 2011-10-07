@@ -21,7 +21,7 @@ macx:CONFIG -= app_bundle
 CONFIG += warn_on
 #CONFIG += console # console output
 DEFINES += SAWE_NO_MUTEX
-DEFINES += CUDA_MEMCHECK_TEST
+#DEFINES += CUDA_MEMCHECK_TEST
 QT += opengl
 
 macx:QMAKE_LFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386

@@ -90,7 +90,7 @@ RequestExecutionLevel admin
 !define MUI_WELCOMEPAGE_TITLE "Welcome to the ${APP_NAME} Setup"
 !define MUI_TEXT_WELCOME_INFO_TEXT "Welcome to the installation wizard for ${APP_NAME}. This will install ${APP_NAME} on your computer. Click Next to proceed"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "Side_Banner.bmp"
-!define MUI_ICON "awe256.ico"
+!define MUI_ICON "awe32.ico"
 
 ; The default installation directory
 InstallDir "$PROGRAMFILES\${PUBLISHER}\${APP_NAME}"
