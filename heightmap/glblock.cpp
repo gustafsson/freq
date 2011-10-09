@@ -637,9 +637,12 @@ void GlBlock::
 {
     TIME_GLBLOCK TaskTimer tt("Slope computeSlope");
 
-    ::cudaCalculateSlopeKernel( height()->data->getCudaGlobal(),
-                                slope()->data->getCudaGlobal(),
-                                _world_width, _world_height );
+    height();
+    slope();
+
+//    ::cudaCalculateSlopeKernel( height()->data->getCudaGlobal(),
+//                                slope()->data->getCudaGlobal(),
+//                                _world_width, _world_height );
 //    ::cudaCalculateSlopeKernelArray( heightReadOnlyArray(), heightSize(),
 //                                slope()->data->getCudaGlobal(),
 //                                _world_width, _world_height );

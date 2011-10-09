@@ -835,7 +835,7 @@ void RenderView::
     if (request_high_fps)
     {
         model->project()->worker.requested_fps(60);
-        model->renderer->setFractionSize( 4, 2 );
+        //model->renderer->setFractionSize( 4, 2 );
     }
 
     if (post_update)

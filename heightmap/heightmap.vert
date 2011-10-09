@@ -36,8 +36,8 @@ void main()
     eyeSpacePos      = (gl_ModelViewMatrix * pos).xyz;
     eyeSpaceNormal   = (gl_NormalMatrix * worldSpaceNormal).xyz;
 
-    eyeSpacePos      = normalize(eyeSpacePos);
-    eyeSpaceNormal   = normalize(eyeSpaceNormal);
-    worldSpaceNormal = normalize(worldSpaceNormal);
+    //eyeSpacePos      = normalize(eyeSpacePos);
+    //eyeSpaceNormal   = normalize(eyeSpaceNormal);
+    //worldSpaceNormal = normalize(worldSpaceNormal);
     vertex_height = height;
 }
