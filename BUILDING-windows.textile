@@ -1,7 +1,7 @@
 *These steps will setup your development environment for Sonic Awe on Windows 7*
 
-*1. Codaset*
-Create an account at Codaset and send your Codaset user name (and public ssh-key if any) to sonicawe@reep.se
+*1. Username*
+Send your public ssh-key to sonicawe@muchdifferent.com, se 2.5
 
 ---
 
@@ -31,7 +31,7 @@ Follow this guide
 http://help.github.com/win-set-up-git/
 and this
 http://help.github.com/working-with-key-passphrases/
-Then send your public public ssh-key to sonicawe@reep.se.
+Then send your public public ssh-key to sonicawe@muchdifferernt.com.
 
 *2.6 NSIS*
 Install NSIS installer. Get it from http://nsis.sourceforge.net/Main_Page
@@ -44,7 +44,7 @@ Download and install Wizou's XML plugin from : http://wiz0u.free.fr/prog/nsisXML
 *3. Sonic Awe*
 *3.1 Get source code*
 Go to the same directory as where you put 'sonicawe-winlib' and run the following commands.
-<pre>$ git clone git@github.com:reep/sonic.git
+<pre>$ git clone path-to-sonic-repo
 $ cd sonic
 $ git submodule update ----init
 $ cd sonicawe; git pull origin master

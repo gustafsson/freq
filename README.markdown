@@ -10,8 +10,8 @@ Use mouse dragging to navigate.
 #### Development setup, license, ...
 
 
-[dev page](http://reep.github.com/sonicawe/dev.html)
+[homepage](www.muchdifferent.com)
 
 * * * 
 #### have fun
-sonicawe@reep.se
+sonicawe@muchdifferent.com

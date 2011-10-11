@@ -1,6 +1,6 @@
 *These steps will setup your development environment for Sonic Awe on Mac OS X*
 *1. Github*
-<a href="http://help.github.com/">Install git</a> and send your github user name to reep.<br/>
+<a href="http://help.github.com/">Install git</a> and send your public SSH key to MuchDifferent.<br/>
 
 *2. Prerequisites*
 *2.1. OS Version*

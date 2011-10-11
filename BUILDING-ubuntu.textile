@@ -1,6 +1,6 @@
 *These steps will setup your development environment for Sonic Awe on Ubuntu 10.10*
 *1. Github*
-"Install git":http://help.github.com/ and send your github user name to "REEP":http://github.com/reep.
+"Install git":http://help.github.com/ and send your github user name to "MuchDifferent":http://www.muchdifferent.com
 
 *2. Prerequisites*
 *2.1. Cuda*
@@ -21,7 +21,7 @@ $ sudo apt-get install build-essential colorgcc</pre>
 
 *3. Sonic Awe*
 *3.1 Get source code*
-<pre>$ git clone git@codaset.com:reep/sonic.git
+<pre>$ git clone ssh-path-to-repo
 $ cd sonic
 $ git submodule update ----init
 $ cd sonicawe; git pull origin master
