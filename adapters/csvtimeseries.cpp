@@ -72,9 +72,9 @@ void CsvTimeseries::
 
     for (size_t bufferCount, channel, line=0; ifs.good();)
     {
-        for (bufferCount = 0; ifs.good() && bufferCount < chunk; ++bufferCount, ++line )
+        for (bufferCount = 0; bufferCount < chunk; ++bufferCount, ++line )
         {
-            for (channel=0; ifs.good(); ++channel)
+            for (channel=0; ; ++channel)
             {
                 if (line==0)
                 {
@@ -107,9 +107,12 @@ void CsvTimeseries::
 
             if (ifs.good() && channel + 1 != ssc.num_channels())
                 throw std::ios_base::failure(QString("CsvTimeseries - Unexpected format in '%1' on line %2").arg(filename.c_str()).arg(line).toStdString());
+
+            if (!ifs.good())
+                break;
         }
 
-        for (channel=0; channel < ssc.num_channels(); ++channel)
+        if (0 < bufferCount) for (channel=0; channel < ssc.num_channels(); ++channel)
         {
             chunkBuffers[channel]->sample_offset = (double)(line - bufferCount);
             ssc.set_channel( channel );

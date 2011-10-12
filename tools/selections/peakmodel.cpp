@@ -216,8 +216,6 @@ void PeakModel::
             if (i<border_pts.size()) // nope not ok,
             {
                 border_nodes.push_back( border_pts.back() );
-                printf("%d, %d;\n", border_pts.back().x, border_pts.back().y);
-                fflush(stdout);
                 border_pts.clear();
             }
         }
