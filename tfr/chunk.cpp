@@ -66,9 +66,11 @@ Signal::Interval Chunk::
 Signal::Interval Chunk::
         getInterval() const
 {
-    Signal::Interval i = getInversedInterval();
-    float scale = original_sample_rate/sample_rate;
-    return Signal::Interval( i.first * scale, i.last * scale );
+    double scale = original_sample_rate/sample_rate;
+    return Signal::Interval(
+            std::floor((chunk_offset + first_valid_sample).asFloat() * scale + 0.5),
+            std::floor((chunk_offset + first_valid_sample + n_valid_samples).asFloat() * scale + 0.5)
+    );
 }
 
 

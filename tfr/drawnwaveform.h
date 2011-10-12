@@ -19,7 +19,7 @@ public:
 
     virtual FreqAxis freqAxis( float FS );
 
-    unsigned blob(float FS);
+    float blob(float FS);
 
     float block_fs;
     unsigned signal_length;

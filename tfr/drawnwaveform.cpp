@@ -20,9 +20,9 @@ DrawnWaveform::
 pChunk DrawnWaveform::
         operator()( Signal::pBuffer b )
 {
-    unsigned blobsize = blob(b->sample_rate);
+    float blobsize = blob(b->sample_rate);
 
-    unsigned w = b->number_of_samples() / blobsize / drawWaveform_BLOCK_SIZE *drawWaveform_BLOCK_SIZE;
+    unsigned w = ((unsigned)(b->number_of_samples() / blobsize / drawWaveform_BLOCK_SIZE)) *drawWaveform_BLOCK_SIZE;
 
     if (0 == w)
         throw std::logic_error("DrawnWaveform::operator() Not enough data");
@@ -66,7 +66,7 @@ pChunk DrawnWaveform::
 
     this->block_fs = 0;
 
-    c->chunk_offset = b->sample_offset / (float)blobsize;
+    c->chunk_offset = b->sample_offset / blobsize;
     c->freqAxis = freqAxis( b->sample_rate );
 
     c->first_valid_sample = 0;
@@ -97,24 +97,29 @@ FreqAxis DrawnWaveform::
         freqAxis( float FS )
 {
     FreqAxis a;
-    a.setLogarithmic(20, FS/2, drawWaveform_YRESOLUTION - 1);
+    a.setLinear(FS, drawWaveform_YRESOLUTION - 1);
+    //a.setLogarithmic(20, FS/2, drawWaveform_YRESOLUTION - 1);
 
-    //a.max_frequency_scalar = 1;
-    //float max_hz = 1;
-    //a.min_hz = -1;
-    //a.f_step = (1/a.max_frequency_scalar) * (max_hz - a.min_hz);
-
+    //a.setLinear(44100, drawWaveform_YRESOLUTION - 1);
+    /*a.axis_scale = AxisScale_Linear;
+    a.max_frequency_scalar = drawWaveform_YRESOLUTION - 1;
+    float max_hz = 1000;
+    a.min_hz = 0;
+    a.f_step = (1/a.max_frequency_scalar) * (max_hz - a.min_hz);
+*/
     return a;
 }
 
 
-unsigned DrawnWaveform::
+float DrawnWaveform::
         blob(float FS)
 {
     if (0 == this->block_fs)
         this->block_fs = FS;
-    //return FS / this->block_fs * 3;
-    return fmax(1.f, FS / this->block_fs);
+    float b = FS / this->block_fs;
+    if (b > 1)
+        b = (unsigned)(b + 0.5f);
+    return b;
 }
 
 

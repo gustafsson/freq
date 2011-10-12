@@ -12,6 +12,12 @@ __global__ void kernel_draw_waveform(
         float blob, unsigned readstop, float scaling );
 
 
+__global__ void kernel_draw_waveform_with_lines(
+        cudaPitchedPtrType<float> in_waveform,
+        cudaPitchedPtrType<float2> out_waveform_matrix,
+        float blob, unsigned readstop, float scaling );
+
+
 void drawWaveform(
         cudaPitchedPtrType<float> in_waveform,
         cudaPitchedPtrType<float2> out_waveform_matrix,
@@ -29,7 +35,16 @@ void drawWaveform(
         return;
     }
 
-    kernel_draw_waveform<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue );
+    if (blob > 1)
+    {
+        printf("blob > 1: %g", blob);
+        kernel_draw_waveform<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue );
+    }
+    else
+    {
+        printf("blob <= 1: %g", blob);
+        kernel_draw_waveform_with_lines<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue );
+    }
 }
 
 
@@ -71,4 +86,41 @@ __global__ void kernel_draw_waveform(
         writePos = make_elemSize3_t( writePos_x, y2, 0 );
         out_waveform_matrix.e( writePos ).x += 0.8f*blobinv * py;
     }
+}
+
+
+__global__ void kernel_draw_waveform_with_lines(
+        cudaPitchedPtrType<float> in_waveform,
+        cudaPitchedPtrType<float2> out_waveform_matrix, float blob, unsigned readstop, float scaling )
+{
+    elemSize_t writePos_x = blockIdx.x * blockDim.x + threadIdx.x;
+    elemSize3_t matrix_sz = out_waveform_matrix.getNumberOfElements();
+    elemSize_t readPos = writePos_x * blob;
+    float px = writePos_x * blob - readPos;
+
+    if( writePos_x >= matrix_sz.x || readPos >= readstop )
+        return;
+
+    float blobinv = 1.f/blob;
+
+    float v1 = in_waveform.elem( make_elemSize3_t(readPos, 0, 0) );
+    float v2 = in_waveform.elem( make_elemSize3_t(readPos+1, 0, 0) );
+    float v = v1*(1-px) + v2*px;
+    v *= scaling;
+    v = fmaxf(-1.f, fminf(1.f, v));
+    float y = (v+1.f)*.5f*(matrix_sz.y-1.f);
+    elemSize_t y1 = (elemSize_t)y;
+    elemSize_t y2 = y1+1;
+    if (y2 >= matrix_sz.y)
+    {
+        y2 = matrix_sz.y - 1;
+        y1 = y2 - 1;
+    }
+    float py = y-y1;
+
+    elemSize3_t writePos = make_elemSize3_t( writePos_x, y1, 0 );
+    out_waveform_matrix.e( writePos ).x += 0.8f*blobinv * (1.f-py);
+
+    writePos = make_elemSize3_t( writePos_x, y2, 0 );
+    out_waveform_matrix.e( writePos ).x += 0.8f*blobinv * py;
 }
