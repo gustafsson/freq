@@ -154,6 +154,9 @@ RenderController::
             view(view),
             toolbar_render(0),
             hz_scale(0),
+            linearScale(0),
+            logScale(0),
+            cepstraScale(0),
             amplitude_scale(0),
             hzmarker(0),
             color(0),
@@ -362,6 +365,8 @@ Signal::PostSink* RenderController::
 
     view->emitTransformChanged();
 
+    hz_scale->setEnabled( true );
+
     return ps;
 }
 
@@ -394,6 +399,8 @@ void RenderController::
     Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(&model()->collections);
 
     setBlockFilter( stftblock );
+
+    hz_scale->setEnabled( true );
 }
 
 
@@ -456,6 +463,12 @@ void RenderController::
     Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(&model()->collections);
 
     setBlockFilter( drawnwaveformblock );
+    model()->renderer->draw_hz = false;
+    model()->renderer->draw_piano = false;
+
+    linearScale->trigger();
+    hz_scale->setDefaultAction( 0 );
+    hz_scale->setEnabled( false );
 }
 
 
@@ -650,9 +663,9 @@ void RenderController::
 
 
     // ComboBoxAction* hz-scale
-    {   QAction* linearScale = new QAction( toolbar_render );
-        QAction* logScale = new QAction( toolbar_render );
-        QAction* cepstraScale = new QAction( toolbar_render );
+    {   linearScale = new QAction( toolbar_render );
+        logScale = new QAction( toolbar_render );
+        cepstraScale = new QAction( toolbar_render );
 
         linearScale->setText("Linear scale");
         logScale->setText("Logarithmic scale");

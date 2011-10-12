@@ -93,6 +93,9 @@ namespace Tools
         // depends on the parent QObject which they are inserted into.
         QToolBar* toolbar_render;
         Ui::ComboBoxAction* hz_scale;
+        QAction* linearScale;
+        QAction* logScale;
+        QAction* cepstraScale;
         Ui::ComboBoxAction* amplitude_scale;
         Ui::ComboBoxAction* hzmarker;
         Ui::ComboBoxAction* color;
