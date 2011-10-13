@@ -415,6 +415,11 @@ void PeakModel::
                              PropagationState prevState, float prevVal
                              )
 {
+    Heightmap::Position a,b;
+    ref.getArea(a,b);
+    if (b.scale > 1 || a.scale >= 1)
+        return;
+
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
     if (!block)
         return;
@@ -580,6 +585,14 @@ void PeakModel::
         {
             ref = ref.sibblingTop();
             y -= h;
+
+            Heightmap::Position a, b;
+            ref.getArea( a, b );
+            if (a.scale >= 1 || b.scale > 1 )
+            {
+                this->classifictions.clear();
+                return;
+            }
         }
 
         if (!(ref == prevRef))

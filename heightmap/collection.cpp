@@ -603,6 +603,7 @@ pBlock Collection::
         pBlock attempt( new Block(ref));
         Position a,b;
         ref.getArea(a,b);
+        BOOST_ASSERT( a.scale < 1 && b.scale <= 1 );
         attempt->glblock.reset( new GlBlock( this, b.time-a.time, b.scale-a.scale ));
 /*        {
             GlBlock::pHeight h = attempt->glblock->height();
