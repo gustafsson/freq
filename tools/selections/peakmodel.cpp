@@ -586,7 +586,12 @@ void PeakModel::
         {
             Heightmap::pBlock block = ref.collection()->getBlock( ref );
             if (!block)
-                throw CudaException( cudaErrorMemoryAllocation );
+            {
+                // Would have needed unavailable blocks to compute this,
+                // abort instead
+                this->classifictions.clear();
+                return;
+            }
 
             GpuCpuData<float>* blockData = block->glblock->height()->data.get();
             data = blockData->getCpuMemory();
