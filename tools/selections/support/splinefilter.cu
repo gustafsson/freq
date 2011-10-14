@@ -68,14 +68,12 @@ void applyspline(
         cudaPitchedPtrType<float2> data,
         cudaPitchedPtrType<float2> spline, bool save_inside )
 {
-    bindtex<float2>( spline.getCudaPitchedPtr(), false );
-
     Spliner< Read1D<float2> > spliner(
-            Read1D<float2>( spline.getNumberOfElements().x ),
+            Read1D_Create<float2>( spline ),
             spline.getNumberOfElements().x,
             save_inside );
 
+
     elemSize3_t sz = data.getNumberOfElements();
     element_operate<float2>( data, make_float4(0, 0, sz.x, sz.y), spliner );
-
 }
