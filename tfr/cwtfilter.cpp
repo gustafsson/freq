@@ -27,7 +27,8 @@ namespace Tfr {
 
 CwtFilter::
         CwtFilter(pOperation source, Tfr::pTransform t)
-:   Filter(source)
+:   Filter(source),
+    _previous_scales_per_octave(0)
 {
 //    if (!t)
 //        t = Tfr::Cwt::SingletonP();
@@ -50,6 +51,7 @@ ChunkAndInverse CwtFilter::
 
     unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
 
+    verify_scales_per_octave();
     // hack to make it work without subsampling
 #ifdef CWT_NOBINS
     numberOfSamples = cwt.next_good_size( 1, sample_rate() );
@@ -214,6 +216,18 @@ void CwtFilter::
         invalidate_samples(const Intervals& I)
 {
     Operation::invalidate_samples( include_time_support(I) );
+}
+
+void CwtFilter::
+        verify_scales_per_octave()
+{
+    Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
+
+    if (_previous_scales_per_octave != cwt.scales_per_octave())
+    {
+        _previous_scales_per_octave = cwt.scales_per_octave();
+        invalidate_samples(Signal::Intervals::Intervals_ALL);
+    }
 }
 
 

@@ -1147,8 +1147,6 @@ void RenderView::
     } catch (const CudaException &x) {
         TaskInfo tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
 
-        float scales_per_octave = Tfr::Cwt::Singleton().scales_per_octave();
-
         if (2>_try_gc)
         {
             Sawe::Application::global_ptr()->clearCaches();
@@ -1157,26 +1155,12 @@ void RenderView::
             {
                 TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave());
 
-                size_t free=0, total=0;
-                cudaMemGetInfo(&free, &total);
-
                 float fs = worker.target()->source()->sample_rate();
-                Tfr::Cwt::Singleton().scales_per_octave( scales_per_octave / 0.99 );
-                unsigned L;
-                do
-                {
-                    Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() * .99 );
-                    if (Tfr::Cwt::Singleton().scales_per_octave() < 1)
-                    {
-                        Tfr::Cwt::Singleton().scales_per_octave( 1 );
-                        break;
-                    }
-
-                    L = Tfr::Cwt::Singleton().next_good_size(1, fs);
-                }
-                while (free < Tfr::Cwt::Singleton().required_gpu_bytes(L, fs ) );
+                Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() , fs );
 
                 TaskInfo("scales_per_octave is %g", Tfr::Cwt::Singleton().scales_per_octave());
+
+                model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
             }
             emit transformChanged();
 

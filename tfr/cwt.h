@@ -48,7 +48,7 @@ public:
     float     get_max_hz(float sample_rate) const { return sample_rate/2.f; }
     unsigned  nScales(float FS) const;
     float     scales_per_octave() const { return _scales_per_octave; }
-    void      scales_per_octave( float );
+    void      scales_per_octave( float, float fs=0 );
     float     tf_resolution() const { return _tf_resolution; }
     void      tf_resolution( float );
     float     sigma() const;
@@ -85,8 +85,11 @@ public:
       compute a good number of valid samples per chunk.
       */
     unsigned  next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    unsigned  prev_good_size_gold( unsigned current_valid_samples_per_chunk, float sample_rate );
     unsigned  prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
-    size_t          required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
+    void      largest_scales_per_octave( float fs, float scales, float last_ok = 0 );
+    bool      is_small_enough( float fs );
+    size_t    required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
 
     unsigned        find_bin( unsigned j ) const;
     static void     gc() { _fft_many.clear(); }
@@ -97,6 +100,7 @@ private:
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
     unsigned        required_length( unsigned current_valid_samples_per_chunk, float fs );
+    void            scales_per_octave_internal( float );
 
     Signal::pBuffer inverse( Tfr::CwtChunk* );
     Signal::pBuffer inverse( Tfr::CwtChunkPart* );

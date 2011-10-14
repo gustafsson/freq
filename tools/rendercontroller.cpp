@@ -313,7 +313,7 @@ void RenderController::
 
     // Keep in sync with transformChanged()
     float f = value / (float)tf_resolution->maximum();
-    c.scales_per_octave( 2*exp( 8.L*f ) ); // scales_per_octave >= 2
+    c.scales_per_octave( 2*exp( 8.L*f ), FS ); // scales_per_octave >= 2
 
     float wavelet_default_time_support = c.wavelet_default_time_support();
     float wavelet_fast_time_support = c.wavelet_time_support();

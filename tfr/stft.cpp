@@ -162,7 +162,7 @@ pChunk Fft::
 
     // The in-signal is padded to a power of 2 (cufft manual suggest a "multiple
     // of 2, 3, 5 or 7" but a power of one is even better) for faster fft calculations
-    output_n.width = Fft::sChunkSizeG( output_n.width - 1, 4 );
+    output_n.width = Fft::sChunkSizeG( output_n.width - 1 );
 
     pChunk chunk;
 
@@ -913,8 +913,8 @@ unsigned Fft::
     // It's faster but less flexible to only accept powers of 2
     //return lpo2s(x);
 
+    multiple = std::max(1u, multiple);
     BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
-    multiple = std::max(4u, multiple);
 
     unsigned bases[]={2, 3, 5, 7};
     unsigned a[]={0, 0, 0, 0};
@@ -930,8 +930,8 @@ unsigned Fft::
     // It's faster but less flexible to only accept powers of 2
     //return spo2g(x);
 
+    multiple = std::max(1u, multiple);
     BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
-    multiple = std::max(4u, multiple);
 
     unsigned bases[]={2, 3, 5, 7};
     unsigned a[]={0, 0, 0, 0};

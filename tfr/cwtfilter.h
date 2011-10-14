@@ -40,9 +40,13 @@ public:
 
 protected:
     void applyFilter( Tfr::pChunk chunk );
-};
 
+private:
+    float   _previous_scales_per_octave;
+    void    verify_scales_per_octave();
+};
 // TODO remove
+
 class DummyCwtFilter: public CwtFilter {
 public:
     virtual void operator()( Chunk& ) {}
