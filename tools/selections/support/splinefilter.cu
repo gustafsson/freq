@@ -73,7 +73,8 @@ void applyspline(
             spline.getNumberOfElements().x,
             save_inside );
 
-
     elemSize3_t sz = data.getNumberOfElements();
     element_operate<float2>( data, make_float4(0, 0, sz.x, sz.y), spliner );
+
+    Read1D_UnbindTexture<float2>();
 }
