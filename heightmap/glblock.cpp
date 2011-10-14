@@ -640,9 +640,9 @@ void GlBlock::
     height();
     slope();
 
-//    ::cudaCalculateSlopeKernel( height()->data->getCudaGlobal(),
-//                                slope()->data->getCudaGlobal(),
-//                                _world_width, _world_height );
+    ::cudaCalculateSlopeKernel( height()->data->getCudaGlobal(),
+                                slope()->data->getCudaGlobal(),
+                                _world_width, _world_height );
 //    ::cudaCalculateSlopeKernelArray( heightReadOnlyArray(), heightSize(),
 //                                slope()->data->getCudaGlobal(),
 //                                _world_width, _world_height );
