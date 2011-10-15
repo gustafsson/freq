@@ -92,7 +92,8 @@ bool Worker::
         if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps && _requested_fps>_min_fps)
             return false;
 
-    Signal::Intervals todo_list = this->todo_list();
+    Signal::Intervals todo_list = this->fetch_todo_list();
+    //Signal::Intervals todo_list = this->todo_list();
 
     if (todo_list.empty())
         return false;

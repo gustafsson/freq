@@ -28,7 +28,14 @@ public:
     /// @overload Operation::read()
     virtual pBuffer read(const Interval& I) {
         BOOST_ASSERT(source());
+        BOOST_ASSERT(I.count());
+
         pBuffer b = source()->read(I);
+
+        // Check if read contains I.first
+        BOOST_ASSERT(b->sample_offset <= I.first);
+        BOOST_ASSERT(b->sample_offset + b->number_of_samples() > I.first);
+
         put(b);
         //_invalid_samples -= b->getInterval();
         return b;
