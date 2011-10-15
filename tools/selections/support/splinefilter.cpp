@@ -9,8 +9,11 @@
 
 using namespace Tfr;
 
-//#define TIME_SPLINEFILTER
-#define TIME_SPLINEFILTER if(0)
+#define TIME_SPLINEFILTER
+//#define TIME_SPLINEFILTER if(0)
+
+//#define DEBUG_SPLINEFILTER
+#define DEBUG_SPLINEFILTER if(0)
 
 namespace Tools { namespace Selections { namespace Support {
 
@@ -57,7 +60,7 @@ void SplineFilter::operator()( Chunk& chunk)
 				v[i].t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
                 chunk.freqAxis.getFrequencyScalarNotClamped( v[i].f ));
 
-        TIME_SPLINEFILTER TaskTimer("(%g %g) -> p[%u] = (%g %g)",
+        DEBUG_SPLINEFILTER TaskTimer("(%g %g) -> p[%u] = (%g %g)",
                   v[i].t, v[i].f, i, p[i].x, p[i].y).suppressTiming();
 
 		j++;
@@ -65,6 +68,8 @@ void SplineFilter::operator()( Chunk& chunk)
 
     if (0<j)
     {
+        TIME_SPLINEFILTER TaskTimer tt("SplineFilter applyspline (using subset with %u points out of %u total points)", j, N);
+
         GpuCpuData<float2> pts(&p[0], make_uint3( j, 1, 1 ), GpuCpuVoidData::CpuMemory, true );
 
         ::applyspline(

@@ -51,8 +51,8 @@ public:
             if (d < 0)
                 d = 0;
 
-            e.x *= d;
-            e.y *= d;
+            float2 f = e;
+            e = make_float2( f.x*d, f.y*d );
         }
     }
 
