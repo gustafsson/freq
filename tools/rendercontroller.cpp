@@ -378,6 +378,7 @@ Tfr::Transform* RenderController::
     if (ps->sinks().empty())
         return 0;
     BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
+    BOOST_ASSERT( bfs != 0 );
     Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->Operation::source().get());
     return filter->transform().get();
 }
