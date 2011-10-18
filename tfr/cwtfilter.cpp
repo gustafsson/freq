@@ -137,11 +137,13 @@ ChunkAndInverse CwtFilter::
     DEBUG_CwtFilter TaskInfo("free = %g, total = %g",
              free/1024./1024., total/1024./1024. );
 
+#ifdef _DEBUG
     BOOST_FOREACH( const pChunk& chunk, dynamic_cast<Tfr::CwtChunk*>(ci.chunk.get())->chunks )
     {
         Signal::Interval cii = chunk->getInterval();
         BOOST_ASSERT( cii & Signal::Intervals(I.first, I.first+1) );
     }
+#endif
 
     return ci;
 }
