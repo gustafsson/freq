@@ -234,11 +234,6 @@ void PlaybackController::
         {
             project_->worker.center = 0;
             project_->worker.target( project_->tools().playback_model.playbackTarget );
-
-            // Request at least 1 fps. Otherwise there is a risk that CUDA
-            // will screw up playback by blocking the OS and causing audio
-            // starvation.
-            project_->worker.requested_fps(1);
         }
     }
 }

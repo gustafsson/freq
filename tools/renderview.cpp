@@ -1084,7 +1084,7 @@ void RenderView::
                 worker.checkForErrors();
             }
 #else
-            worker.workOne(!isRecording);
+            worker.workOne(!isRecording && !worker.target()->post_sink()->isUnderfed());
             emit postUpdate();
 #endif
         } else {

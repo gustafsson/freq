@@ -88,7 +88,8 @@ void PlaybackView::
         return;
     }
 
-    if (!model->playback()->isPaused()) {
+    bool is_paused = model->playback()->isPaused();
+    if (!is_paused) {
         update();
     }
 
@@ -103,9 +104,12 @@ void PlaybackView::
     if (follow_play_marker)
     {
         Tools::RenderView& r = *_render_view;
-        r.model->_qx = _playbackMarker;
+        if (r.model->_qx != _playbackMarker)
+        {
+            r.model->_qx = _playbackMarker;
 
-        r.userinput_update(true, false);
+            r.userinput_update(true, false);
+        }
     }
 }
 
