@@ -61,10 +61,13 @@ private:
 
   the OperationSuperposition structure is rebuilt whenever addLayer, removeLayer
   or addAsChannels is called.
+
+  Default allow_cheat_resolution = false
+  Default autocreate_chainheads = true
   */
 class Target {
 public:
-    Target(Layers* all_layers, std::string name, bool autocreate_chainheads=true);
+    Target(Layers* all_layers, std::string name, bool allow_cheat_resolution, bool autocreate_chainheads);
 
     /**
       //It is an error to add a layer that is not in 'all_layers_'
@@ -114,6 +117,10 @@ public:
       */
     pOperation source() const;
 
+    /**
+      */
+    bool allow_cheat_resolution() const;
+
 private:
     void rebuildSource();
 
@@ -125,6 +132,7 @@ private:
     Signal::pOperation cache_vars_;
     Signal::pOperation read_;
     bool add_as_channels_;
+    bool allow_cheat_resolution_;
     Layers* all_layers_;
     std::set<pChainHead> layerHeads;
 
@@ -141,7 +149,7 @@ public:
     /**
       * @param all_layers Pass &Sawe::Projecct::layers
       */
-    OperationTarget(Layers* all_layers, pOperation operation, std::string name);
+    OperationTarget(Layers* all_layers, pOperation operation, std::string name, bool allow_cheat_resolution);
 
 private:
     void addOperation(pOperation operation);

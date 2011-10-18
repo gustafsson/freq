@@ -206,7 +206,7 @@ std::string Layers::
 
 
 Target::
-        Target(Layers* all_layers, std::string name, bool autocreate_chainheads)
+        Target(Layers* all_layers, std::string name, bool allow_cheat_resolution, bool autocreate_chainheads)
             :
             name_( name ),
             post_sink_( new PostSink ),
@@ -215,6 +215,7 @@ Target::
             update_view_( new UpdateView( all_layers->project(), name )),
             cache_vars_( new CacheVars ),
             add_as_channels_(false),
+            allow_cheat_resolution_(allow_cheat_resolution),
             all_layers_(all_layers)
 {
     // all_layers_ might not actually be needed, but, project() is for update_view
@@ -339,6 +340,13 @@ pOperation Target::
 }
 
 
+bool Target::
+        allow_cheat_resolution() const
+{
+    return allow_cheat_resolution_;
+}
+
+
 void Target::
         rebuildSource()
 {
@@ -378,9 +386,9 @@ bool Target::
 
 
 OperationTarget::
-        OperationTarget(Layers* all_layers, pOperation operation, std::string name)
+        OperationTarget(Layers* all_layers, pOperation operation, std::string name, bool allow_cheat_resolution)
             :
-            Target(all_layers, name, false)
+            Target(all_layers, name, allow_cheat_resolution, false)
 {
     addOperation(operation);
 }

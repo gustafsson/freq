@@ -42,7 +42,9 @@ Worker::
     _max_samples_per_chunk( (unsigned)-1 ),
     _min_samples_per_chunk( 1 ),
     _requested_fps( 20 ),
-    _min_fps( 0.5 ),
+    _min_fps( 1 ),  // Always request at least 1 fps. Otherwise there is a risk that CUDA
+                    // will screw up playback by blocking the OS and causing audio
+                    // starvation and kernel timeouts.
     current_fps( 1 ),
     _disabled( false ),
     _caught_exception( "" ),
@@ -79,14 +81,11 @@ bool Worker::
 {
     if (_disabled)
     {
-        TaskInfo("Can't do any work without a target");
+        TaskInfo("Worker::workOne. Can't do any work without a target");
         return false;
     }
 
     _number_of_samples = source()->number_of_samples();
-
-    if (_requested_fps < _min_fps) 
-        _requested_fps = _min_fps;
 
     if (skip_if_low_fps)
         if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps && _requested_fps>_min_fps)
@@ -352,6 +351,9 @@ void Worker::
     _highest_fps = _min_fps;
     _number_of_samples = _target->post_sink()->number_of_samples();
 
+    if (!_target->allow_cheat_resolution())
+        Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+
     fetch_todo_list();
 }
 
@@ -388,6 +390,8 @@ void Worker::
         nextFrame()
 {
     _requested_fps *= 0.8f;
+    if (_requested_fps<_min_fps)
+        _requested_fps = _min_fps;
 
     ptime now = microsec_clock::local_time();
     if (!_last_work_one.is_not_a_date_time())
@@ -415,7 +419,8 @@ void Worker::
         _requested_fps = value;
         samples_per_chunk_hint(1);
         _max_samples_per_chunk = (unsigned)-1;
-        Tfr::Cwt::Singleton().wavelet_fast_time_support( 0.5 );
+        if (_target->allow_cheat_resolution())
+            Tfr::Cwt::Singleton().wavelet_fast_time_support( 0.5 );
     }
 }
 

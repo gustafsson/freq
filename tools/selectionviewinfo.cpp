@@ -72,7 +72,7 @@ void SelectionViewInfo::
     }
 
     Signal::pOperation selection = model_->current_selection_copy();
-    target_.reset( new Target(&model_->project()->layers, "SelectionViewInfo", false) );
+    target_.reset( new Target(&model_->project()->layers, "SelectionViewInfo", true, false) );
     target_->addLayerHead(project_->head);
 
     std::vector<Signal::pOperation> svso;

@@ -237,7 +237,7 @@ bool MatlabOperationWidget::
 
     matlabChain.reset( new Signal::Chain(om) );
     Signal::pChainHead ch( new Signal::ChainHead(matlabChain));
-    matlabTarget.reset( new Signal::Target(&project->layers, "Matlab", false));
+    matlabTarget.reset( new Signal::Target(&project->layers, "Matlab", false, false));
     matlabTarget->addLayerHead( ch );
 
     std::vector<Signal::pOperation> sinks;
