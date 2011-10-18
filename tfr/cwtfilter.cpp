@@ -57,11 +57,9 @@ ChunkAndInverse CwtFilter::
     numberOfSamples = cwt.next_good_size( 1, sample_rate() );
 #endif
 
-    unsigned c = cwt.find_bin( cwt.nScales( sample_rate() ) - 1 );
+    unsigned multiple = 2<<cwt.find_bin( cwt.nScales( sample_rate() ) - 1 );
     Signal::IntervalType firstSample = I.first;
-    firstSample = firstSample/numberOfSamples*numberOfSamples;
-    //firstSample = firstSample>>c<<c;
-    BOOST_ASSERT( firstSample == firstSample>>c<<c );
+    firstSample = firstSample/multiple*multiple;
 
     unsigned time_support = cwt.wavelet_time_support_samples( sample_rate() );
 
