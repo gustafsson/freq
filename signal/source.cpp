@@ -205,8 +205,8 @@ pBuffer SourceBase::
 
     pBuffer r = read(I);
 
-    // Check if read contains firstSample
-    BOOST_ASSERT(r->sample_offset <= I.first);
+    // Check if read returned any samples form the interval I
+    BOOST_ASSERT(r->sample_offset < I.last);
     BOOST_ASSERT(r->sample_offset + r->number_of_samples() > I.first);
 
     return r;

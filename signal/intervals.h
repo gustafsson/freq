@@ -44,6 +44,7 @@ public:
     Interval& operator&=(const Interval& r);
     bool operator==(const Interval& r) const;
     bool operator!=(const Interval& r) const;
+    operator   bool() const { return 0 < count(); }
 
     std::string toString() const;
 };

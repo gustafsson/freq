@@ -135,9 +135,9 @@ ChunkAndInverse Filter::
 
         ci = computeChunk( I );
 
-        Signal::Interval cii = ci.chunk->getInterval();
 #ifdef _DEBUG
-        BOOST_ASSERT( cii & Signal::Intervals(I.first, I.first+1) );
+        Signal::Interval cii = ci.chunk->getInterval();
+        BOOST_ASSERT( cii & I );
 #endif
     }
 

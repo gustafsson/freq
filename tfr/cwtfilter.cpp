@@ -96,33 +96,6 @@ ChunkAndInverse CwtFilter::
                                  ci.inverse->getInterval().toString().c_str(),
                                  vartype(*this).c_str());
 
-    unsigned N_data=ci.inverse->number_of_samples();
-    unsigned N_source=number_of_samples();
-    if(0) if (firstSample<N_source)
-    {
-        unsigned N=N_data;
-        if (N_data>N_source-firstSample)
-            N = N_source-firstSample;
-        unsigned L=time_support/4;
-        if (L>=N)
-        {
-            L=0;
-            N=0;
-        }
-
-        float *p=ci.inverse->waveform_data()->getCpuMemory();
-        for (unsigned i=0; i<L; ++i)
-        {
-            float k = i/(float)L;
-            k = 1 - (1-k)*(1-k);
-
-            p[i] *= k;
-            p[N-1-i] *= k;
-        }
-        for (unsigned i=N;i<N_data;++i)
-            p[i] = 0;
-    }
-
     size_t free=0, total=0;
     DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
     DEBUG_CwtFilter TaskInfo("free = %g, total = %g, inverse_size=%u, estimated = %g",
@@ -141,8 +114,11 @@ ChunkAndInverse CwtFilter::
     BOOST_FOREACH( const pChunk& chunk, dynamic_cast<Tfr::CwtChunk*>(ci.chunk.get())->chunks )
     {
         Signal::Interval cii = chunk->getInterval();
-        BOOST_ASSERT( cii & Signal::Intervals(I.first, I.first+1) );
+        BOOST_ASSERT( cii & I );
     }
+
+    Signal::Interval cii = ci.chunk->getInterval();
+    BOOST_ASSERT( cii & I );
 #endif
 
     return ci;

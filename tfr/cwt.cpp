@@ -126,7 +126,21 @@ pChunk Cwt::
         }
         else
         {
-            L = next_good_size( 0, buffer->sample_rate );
+            // use as much as possible from the data we got
+            BOOST_ASSERT( buffer->number_of_samples() > std_samples );
+            L = 0;
+            unsigned nL = 0;
+            do
+            {
+                L = nL;
+                nL = next_good_size( L, buffer->sample_rate );
+            } while( nL <= buffer->number_of_samples() - std_samples);
+
+            if (false)
+            {
+                // or compute smallest possible chunk
+                L = next_good_size( 0, buffer->sample_rate );
+            }
         }
 
         added_silence = L + 2*std_samples - buffer->number_of_samples();
@@ -957,7 +971,7 @@ unsigned Cwt::
             unsigned nT = align_up( lpo2s(T), multiple);
 
             //check whether we have reached the smallest acceptable
-            if ( nT >= T )
+            if ( nT <= 2*r )
             {
                 return L;
             }

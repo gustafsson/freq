@@ -68,9 +68,11 @@ ChunkAndInverse DrawnWaveformFilter::
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
 
+#ifdef _DEBUG
     Signal::Interval cii = ci.chunk->getInterval();
 
-    BOOST_ASSERT( cii.first <= I.first && cii.last > I.first );
+    BOOST_ASSERT( cii & I );
+#endif
 
     return ci;
 }
