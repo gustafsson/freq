@@ -959,11 +959,8 @@ unsigned Cwt::
         unsigned T = required_length( current_valid_samples_per_chunk, fs );
         unsigned L = T - 2*r;
         required = required_gpu_bytes(L, fs );
-        TaskInfo("prev_good_size: Length = %u, T = %u, multiple = %u. Free: %f MB, required memory: %f MB",
-                 L,
-                 T,
-                 multiple,
-                 free/1024.f/1024.f,required/1024.f/1024.f);
+        DEBUG_CWT TaskInfo("prev_good_size: Length = %u, T = %u, multiple = %u. Free: %f MB, required memory: %f MB",
+                 L, T, multiple, free/1024.f/1024.f,required/1024.f/1024.f);
         if (free >= required)
         {
             // current size is ok, take something smaller. Don't bother with
@@ -979,15 +976,13 @@ unsigned Cwt::
             size_t required = required_gpu_bytes(L, fs );
             if (free < required)
             {
-                TaskInfo("Memory usage error! nT = %u, free memory = %f MB and required = %f MB",
-                         nT, 
-                         free/1024.f/1024.f,
-                         required/1024.f/1024.f);
+                DEBUG_CWT TaskInfo("Memory usage error! nT = %u, free memory = %f MB and required = %f MB",
+                         nT, free/1024.f/1024.f, required/1024.f/1024.f);
                 BOOST_ASSERT (free >= required);
             }
             return L;
         }
-        TaskInfo("prev_good_size: current_valid_samples_per_chunk = %u requires %f MB. Free: %f MB",
+        DEBUG_CWT TaskInfo("prev_good_size: current_valid_samples_per_chunk = %u requires %f MB. Free: %f MB",
                  current_valid_samples_per_chunk,
                  required/1024.f/1024.f, free/1024.f/1024.f);
 
@@ -1011,8 +1006,8 @@ unsigned Cwt::
 
         required = required_gpu_bytes(L, fs );
         //If L is not low enough, will result in an exception releasing GPU ressources and retrying
-        return L;
         TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
+        return L;
     }
 }
 
@@ -1026,6 +1021,7 @@ void Cwt::
         BOOST_ASSERT(last_ok != 0);
         scales_per_octave( last_ok );
 
+        TaskInfo("largest_scales_per_octave is %g", scales_per_octave());
         return;
     }
 
@@ -1042,6 +1038,7 @@ void Cwt::
     if (scales_per_octave()<2)
     {
         scales_per_octave(2);
+        TaskInfo("largest_scales_per_octave is %g", scales_per_octave());
         return;
     }
 
@@ -1065,23 +1062,18 @@ bool Cwt::
     {
         unsigned L = nT - 2*r;
         size_t required = required_gpu_bytes(L, fs );
-        if (free >= required ||
-            (nT == Fft::sChunkSizeG(2*r, multiple) && scales_per_octave()==2))
+        if (free >= required)
         {
+            DEBUG_CWT TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
             return true;
-            TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
         }
-        else
-        {
-            return false;
-        }
+
         nT = Fft::lChunkSizeS(nT, multiple);
     }
 
-    TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g. %f MB memory is available",
-             scales_per_octave(),
-             r,
-             free/1024.f/1024.f);
+    DEBUG_CWT TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g. %f MB memory is available",
+             scales_per_octave(), r, free/1024.f/1024.f);
+    return false;
 }
 
 size_t Cwt::
