@@ -126,21 +126,11 @@ pChunk Cwt::
         }
         else
         {
-            // use as much as possible from the data we got
-            BOOST_ASSERT( buffer->number_of_samples() > std_samples );
-            L = 0;
-            unsigned nL = 0;
-            do
-            {
-                L = nL;
-                nL = next_good_size( L, buffer->sample_rate );
-            } while( nL <= buffer->number_of_samples() - std_samples && L != nL );
-
-            if (false)
-            {
-                // or compute smallest possible chunk
-                L = next_good_size( 0, buffer->sample_rate );
-            }
+            // compute smallest possible chunk, this will violate the above and
+            // require a larger fft than would have been required if the same
+            // buffer size was used with offset != 0. We'll take the smallest
+            // possible that still makes any sense though.
+            L = next_good_size( 0, buffer->sample_rate );
         }
 
         added_silence = L + 2*std_samples - buffer->number_of_samples();
@@ -301,7 +291,9 @@ pChunk Cwt::
                 TIME_CWTPART TaskTimer("Adding silence %u", sub_silence ).suppressTiming();
                 Signal::Interval actualData = subinterval;
                 actualData.last -= sub_silence;
+#ifdef _DEBUG
                 BOOST_ASSERT( (Signal::Intervals(actualData) - buffer->getInterval()).empty() );
+#endif
 
                 Signal::BufferSource addSilence( bs.readFixedLength( actualData ) );
                 data = addSilence.readFixedLength( subinterval );
