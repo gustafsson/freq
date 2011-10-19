@@ -7,7 +7,7 @@ Essential: no
 Installed-Size: 32332
 Replaces: sonicawe-stable-candidate
 Conflicts: 
-Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.40.0, nvidia-current
+Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.40.0
 Maintainer: Johan Gustafsson [johan.gustafsson@sonicawe.com]
 Description: Visualization based signal analysis
  
