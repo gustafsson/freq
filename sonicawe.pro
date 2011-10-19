@@ -173,6 +173,8 @@ LIBS = \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
     -L../gpumisc -lgpumisc
+
+QMAKE_LFLAGS += -Wl,-rpath=/usr/share/sonicawe/
 }
 
 macx {
