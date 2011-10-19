@@ -525,12 +525,17 @@ void GlBlock::
 
     glDisable(GL_CULL_FACE);
     glColor4f(1.0, 1.0, 1.0, 1.0);
+    const bool wireFrame = false;
+    if (wireFrame)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
     glBegin( GL_TRIANGLE_STRIP );
         glTexCoord2f(0,0);    glVertex3f(0,0,0);
         glTexCoord2f(0,1);    glVertex3f(1,0,0);
         glTexCoord2f(1,0);    glVertex3f(0,0,1);
         glTexCoord2f(1,1);    glVertex3f(1,0,1);
     glEnd();
+    if (wireFrame)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
