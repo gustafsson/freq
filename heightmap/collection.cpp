@@ -57,14 +57,16 @@ Block::
 Collection::
         Collection( pOperation target )
 :   target( target ),
-    _samples_per_block( 1<<9 ), // Created for each
-    _scales_per_block( 1<<9 ),
+    _samples_per_block( -1 ), // Created for each
+    _scales_per_block( -1 ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),
     _amplitude_axis(AmplitudeAxis_5thRoot)
 {
     BOOST_ASSERT( target );
+    samples_per_block( 1<<9 );
+    scales_per_block( 1<<9 );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
