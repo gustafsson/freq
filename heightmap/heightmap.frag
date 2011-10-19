@@ -46,7 +46,7 @@ void main()
     vec3 worldSpaceNormalVector = worldSpaceNormal;
 
     float facing    = max(0.0, dot(eyeSpaceNormalVector, -eyeVector));
-    float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
+//    float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
     float diffuse   = max(0.0, worldSpaceNormalVector.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
     float v = texture2D(tex, gl_TexCoord[0].xy).x;
 
