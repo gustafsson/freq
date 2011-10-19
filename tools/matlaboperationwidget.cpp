@@ -449,7 +449,7 @@ void MatlabOperationWidget::
 
 
 void MatlabOperationWidget::
-        finished ( int exitCode, QProcess::ExitStatus exitStatus )
+        finished ( int exitCode, QProcess::ExitStatus /*exitStatus*/ )
 {
     if (!octaveWindow)
         return;
