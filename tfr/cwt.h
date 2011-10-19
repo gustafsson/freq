@@ -47,6 +47,7 @@ public:
     /// returns the nyquist frequency
     float     get_max_hz(float sample_rate) const { return sample_rate/2.f; }
     unsigned  nScales(float FS) const;
+    unsigned  nBins(float fs) const;
     float     scales_per_octave() const { return _scales_per_octave; }
     void      scales_per_octave( float, float fs=0 );
     float     tf_resolution() const { return _tf_resolution; }
@@ -91,12 +92,13 @@ public:
     bool      is_small_enough( float fs );
     size_t    required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
 
-    unsigned        find_bin( unsigned j ) const;
+    unsigned        chunk_alignment(float fs) const;
     static void     gc() { _fft_many.clear(); }
     static void     resetSingleton();
 private:
     Cwt( float scales_per_octave=20, float wavelet_time_suppport=3, cudaStream_t stream=0 );
 
+    unsigned        find_bin( unsigned j ) const;
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
     unsigned        required_length( unsigned current_valid_samples_per_chunk, float fs );

@@ -134,7 +134,7 @@ pChunk Cwt::
             {
                 L = nL;
                 nL = next_good_size( L, buffer->sample_rate );
-            } while( nL <= buffer->number_of_samples() - std_samples);
+            } while( nL <= buffer->number_of_samples() - std_samples && L != nL );
 
             if (false)
             {
@@ -266,7 +266,7 @@ pChunk Cwt::
         if (ispowerof2)
             extra = spo2g(sub_length - 1) - sub_length;
         else
-            extra = Fft::sChunkSizeG(sub_length - 1, 1<<c) - sub_length;
+            extra = Fft::sChunkSizeG(sub_length - 1, chunk_alignment( buffer->sample_rate )) - sub_length;
 
 
         sub_std_samples += extra/2;
@@ -726,6 +726,13 @@ unsigned Cwt::
 }
 
 
+unsigned Cwt::
+        nBins(float fs) const
+{
+    return find_bin( nScales(fs) );
+}
+
+
 void Cwt::
         scales_per_octave( float value, float fs )
 {
@@ -821,8 +828,9 @@ unsigned Cwt::
 {
     unsigned support_samples = std::ceil(morlet_sigma_samples( fs, hz ) * _wavelet_time_suppport);
     unsigned c = find_bin( hz_to_j( fs, hz ));
-    // Align to 1<<c upwards
-    support_samples = (support_samples + (1<<c) - 1) >> c << c;
+    // Make 2*support_samples align to chunk_alignment for the lowest frequency
+    unsigned half_chunk_alignment_hz = 1 << c;
+    support_samples = int_div_ceil( support_samples, half_chunk_alignment_hz ) * half_chunk_alignment_hz;
     return support_samples;
 }
 
@@ -832,8 +840,9 @@ unsigned Cwt::
 {
     unsigned r = wavelet_time_support_samples( fs );
     unsigned max_bin = find_bin( nScales( fs ) - 1 );
-    if ( 0 == r>>max_bin )
-        r = 1 << (max_bin-1);
+    BOOST_ASSERT( (r>>max_bin) >= 2 );
+    BOOST_ASSERT( ((2*r) % chunk_alignment( fs )) == 0 );
+    current_valid_samples_per_chunk = int_div_ceil( current_valid_samples_per_chunk, chunk_alignment( fs ) ) * chunk_alignment( fs );
     unsigned T = r + current_valid_samples_per_chunk + r;
     return T;
 }
@@ -843,10 +852,9 @@ unsigned Cwt::
         next_good_size( unsigned current_valid_samples_per_chunk, float fs )
 {
     DEBUG_CWT TaskInfo ti("next_good_size(%u, %g)", current_valid_samples_per_chunk, fs);
-    unsigned multiple = 2<<find_bin( nScales( fs ) - 1 );
     unsigned r = wavelet_time_support_samples( fs );
     unsigned T = required_length( current_valid_samples_per_chunk, fs );
-    unsigned nT = align_up( spo2g(T), multiple);
+    unsigned nT = align_up( spo2g(T), chunk_alignment( fs ));
     BOOST_ASSERT(nT != T);
 
     unsigned L = nT - 2*r;
@@ -860,7 +868,7 @@ unsigned Cwt::
                  current_valid_samples_per_chunk,
                  required/1024.f/1024.f, free/1024.f/1024.f);
 
-        unsigned nTtest = Fft::sChunkSizeG(T, multiple);
+        unsigned nTtest = Fft::sChunkSizeG(T, chunk_alignment( fs ));
         unsigned Ltest = nTtest - 2*r;
 
         required = required_gpu_bytes(Ltest, fs );
@@ -876,136 +884,74 @@ unsigned Cwt::
 
 
 unsigned Cwt::
-        prev_good_size_gold( unsigned current_valid_samples_per_chunk, float fs )
-{    
-    DEBUG_CWT TaskInfo ti("prev_good_size(%u, %g)", current_valid_samples_per_chunk, fs);
-    unsigned multiple = 1<<find_bin( nScales( fs ) - 1 );
-    size_t free = availableMemoryForSingleAllocation();
-    size_t required;
-
-    {
-        // Check if the current size is ok memory-wise
-        unsigned r = wavelet_time_support_samples( fs );
-        unsigned T = required_length( current_valid_samples_per_chunk, fs );
-        unsigned L = T - 2*r;
-        required = required_gpu_bytes(L, fs );
-        if (free >= required)
-        {
-            // current size is ok, take something smaller. Don't bother with
-            // detailed sizes, just use powers of 2.
-            unsigned nT = align_up( lpo2s(T), multiple);
-            unsigned L = nT - 2*r;
-            size_t required = required_gpu_bytes(L, fs );
-            TaskInfo("I decide to crash when free = %u and required = %u MB.",
-                     free,
-                     required);
-            BOOST_ASSERT (free >= required);
-            return L;
-        }
-    }
-
-    TaskInfo("prev_good_size: current_valid_samples_per_chunk = %u requires %f MB. Free: %f MB",
-             current_valid_samples_per_chunk,
-             required/1024.f/1024.f, free/1024.f/1024.f);
-
-    // No, the current size doesn't fit in memory, try something smaller.
-    while(true)
-    {
-        unsigned r = wavelet_time_support_samples( fs );
-        unsigned T = required_length( current_valid_samples_per_chunk, fs );
-        unsigned nT = Fft::lChunkSizeS(T, multiple);
-        BOOST_ASSERT(nT != T);
-        if (nT <= 2*r)
-            nT = Fft::sChunkSizeG(2*r, multiple);
-
-        while (nT > 2*r)
-        {
-            unsigned L = nT - 2*r;
-            size_t required = required_gpu_bytes(L, fs );
-            if (free >= required ||
-                (nT == Fft::sChunkSizeG(2*r, multiple) && scales_per_octave()==2))
-            {
-                TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
-                return L;
-            }
-
-            nT = Fft::lChunkSizeS(nT, multiple);
-        }
-
-        unsigned L = Fft::sChunkSizeG(nT, multiple) - 2*r;
-        TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g requires L = %u (r=%u) and %f MB free memory. %f MB memory is available",
-                 scales_per_octave(),
-                 L, r,
-                 required_gpu_bytes(L, fs )/1024.f/1024.f,
-                 free/1024.f/1024.f);
-
-        scales_per_octave(scales_per_octave()*0.99f);
-        if (scales_per_octave()<2)
-            scales_per_octave(2);
-    }
-}
-
-unsigned Cwt::
         prev_good_size( unsigned current_valid_samples_per_chunk, float fs )
 {
     DEBUG_CWT TaskInfo ti("prev_good_size(%u, %g)", current_valid_samples_per_chunk, fs);
-    unsigned multiple = 2<<find_bin( nScales( fs ) - 1 );
-    size_t free = availableMemoryForSingleAllocation();
-    size_t required;
 
     // Check if the current size is ok memory-wise
     unsigned r = wavelet_time_support_samples( fs );
     unsigned T = required_length( current_valid_samples_per_chunk, fs );
     unsigned L = T - 2*r;
-    required = required_gpu_bytes(L, fs );
-    DEBUG_CWT TaskInfo("prev_good_size: Length = %u, T = %u, multiple = %u. Free: %f MB, required memory: %f MB",
-             L, T, multiple, free/1024.f/1024.f,required/1024.f/1024.f);
+
+    size_t free = availableMemoryForSingleAllocation();
+    size_t required = required_gpu_bytes(L, fs );
+    DEBUG_CWT TaskInfo("prev_good_size: Length = %u, T = %u, chunk_alignment( %g ) = %u. Free: %f MB, required memory: %f MB",
+             L, T, fs, chunk_alignment( fs ), free/1024.f/1024.f,required/1024.f/1024.f);
+
     if (free >= required)
     {
         // current size is ok, take something smaller. Don't bother with
-        // detailed sizes, just use powers of 2.
-        unsigned nT = align_up( lpo2s(T), multiple);
+        // detailed sizes, just use powers of 2 but make sure it's still
+        // larger than chunk_alignment.
+        unsigned nT = align_up( lpo2s(T), chunk_alignment( fs ));
 
-        //check whether we have reached the smallest acceptable
+        //check whether we have reached the smallest acceptable length
         if ( nT <= 2*r )
-        {
+            // return valid length that is equal to or larger than
+            // 'current_valid_samples_per_chunk'
             return L;
-        }
+
+        // is possible to take something smaller than
+        // 'current_valid_samples_per_chunk'
         L = nT - 2*r;
-        size_t required = required_gpu_bytes(L, fs );
-        if (free < required)
+
         {
-            DEBUG_CWT TaskInfo("Memory usage error! nT = %u, free memory = %f MB and required = %f MB",
-                     nT, free/1024.f/1024.f, required/1024.f/1024.f);
-            BOOST_ASSERT (free >= required);
+            // debug
+            size_t required = required_gpu_bytes(L, fs );
+            if (free < required)
+            {
+                DEBUG_CWT TaskInfo("Memory usage error! nT = %u, free memory = %f MB and required = %f MB",
+                         nT, free/1024.f/1024.f, required/1024.f/1024.f);
+                BOOST_ASSERT (free >= required);
+            }
         }
+
         return L;
     }
+
     DEBUG_CWT TaskInfo("prev_good_size: current_valid_samples_per_chunk = %u requires %f MB. Free: %f MB",
              current_valid_samples_per_chunk,
              required/1024.f/1024.f, free/1024.f/1024.f);
 
     // No, the current size doesn't fit in memory, find something smaller.
-    largest_scales_per_octave(fs,scales_per_octave());
+    largest_scales_per_octave( fs, scales_per_octave() );
 
-    free = availableMemoryForSingleAllocation();
-    multiple = 2<<find_bin( nScales( fs ) - 1 );
+    // scales per octave has most likely been changed here
     r = wavelet_time_support_samples( fs );
-    T = required_length( 1, fs );
-    unsigned nT = Fft::lChunkSizeS(T, multiple);
+    T = Fft::sChunkSizeG(2*r, chunk_alignment( fs ));
+    L = T - 2*r;
 
-    BOOST_ASSERT(nT != T);
+    {
+        // need to have an even number of samples in all chunks, chunk_alignment ensures that
+        BOOST_ASSERT((L / (chunk_alignment( fs )/2)) % 2 == 0);
 
-    if (nT <= 2*r)
-        nT = Fft::sChunkSizeG(2*r, multiple);
+        // debug
+        //If L is not low enough, will result in an exception releasing GPU ressources and retrying
+        free = availableMemoryForSingleAllocation();
+        required = required_gpu_bytes(L, fs );
+        TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
+    }
 
-    L = nT - 2*r;
-    // need to have an even number of samples in all chunks, multiple ensures that
-    BOOST_ASSERT((L / (1<<find_bin( nScales( fs ) - 1 ))) % 2 == 0);
-
-    required = required_gpu_bytes(L, fs );
-    //If L is not low enough, will result in an exception releasing GPU ressources and retrying
-    TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
     return L;
 }
 
@@ -1047,14 +993,13 @@ bool Cwt::
         is_small_enough( float fs )
 {
     size_t free = availableMemoryForSingleAllocation();
-    unsigned multiple = 2<<find_bin( nScales( fs ) - 1 );
     unsigned r = wavelet_time_support_samples( fs );
     unsigned T = required_length( 1, fs );
-    unsigned nT = Fft::lChunkSizeS(T, multiple);
+    unsigned nT = Fft::lChunkSizeS(T, chunk_alignment( fs ));
     BOOST_ASSERT(nT != T);
 
     if (nT <= 2*r)
-        nT = Fft::sChunkSizeG(2*r, multiple);
+        nT = Fft::sChunkSizeG(2*r, chunk_alignment( fs ));
 
     while (nT > 2*r)
     {
@@ -1066,7 +1011,7 @@ bool Cwt::
             return true;
         }
 
-        nT = Fft::lChunkSizeS(nT, multiple);
+        nT = Fft::lChunkSizeS(nT, chunk_alignment( fs ));
     }
 
     DEBUG_CWT TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g. %f MB memory is available",
@@ -1142,7 +1087,7 @@ size_t Cwt::
         if (ispowerof2)
             sub_length = spo2g(sub_length - 1);
         else
-            sub_length = Fft::sChunkSizeG(sub_length - 1, 1<<c);
+            sub_length = Fft::sChunkSizeG(sub_length - 1, chunk_alignment( sample_rate ));
 
         size_t s = sizeof(float2)*(sub_length >> c)*n_scales;
 
@@ -1159,6 +1104,18 @@ size_t Cwt::
         sum = alt;
 
     return sum < (size_t)-1 ? sum : (size_t)-1;
+}
+
+
+unsigned Cwt::
+        chunk_alignment(float fs) const
+{
+    unsigned sample_size = 1<<find_bin( nScales( fs ) - 1 );
+    // In the lowest chunk, one sample equals 'sample_size' samples in the
+    // original sample rate.
+    // To be able to use supersampling properly the length must be a multiple
+    // of 2. Thus all chunks need to be aligned to '2*sample_size'.
+    return 2*sample_size;
 }
 
 

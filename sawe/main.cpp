@@ -503,8 +503,8 @@ int main(int argc, char *argv[])
             Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
 
             unsigned firstSample = 44100*2;
-            unsigned c = cwt.find_bin( cwt.nScales( file.sample_rate() ) - 1 );
-            firstSample = (firstSample+(1<<c)-1)>>c<<c;
+            unsigned chunk_alignment = cwt.chunk_alignment( file.sample_rate() );
+            firstSample = int_div_ceil(firstSample, chunk_alignment)*chunk_alignment;
             unsigned time_support = cwt.wavelet_time_support_samples( file.sample_rate() );
 
             pBuffer data = file.readFixedLength(Interval(firstSample,firstSample+65536));

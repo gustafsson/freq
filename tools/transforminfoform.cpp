@@ -139,7 +139,7 @@ void TransformInfoForm::
         addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
         addRow("Scales per octave", QString("%1").arg(cwt->scales_per_octave()));
         addRow("Sigma", QString("%1").arg(cwt->sigma()));
-        addRow("Bins", QString("%1").arg(cwt->find_bin( cwt->scales_per_octave())));
+        addRow("Bins", QString("%1").arg(cwt->nBins(fs)));
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
