@@ -9,7 +9,7 @@ echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
   make distclean
-  qmake $qmaketarget -spec macx-g++
+  qmake $qmaketarget -spec macx-g++ CONFIG-=debug CONFIG+=release
 fi
 make
 
