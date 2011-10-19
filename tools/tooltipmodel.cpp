@@ -280,9 +280,9 @@ public:
         for (unsigned i=0; i<abslog->getNumberOfElements1D(); ++i)
         {
             float2& v = src[i];
-            //dst[i] = sqrt(v.x*v.x + v.y*v.y);
-            dst[i] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
-            dst[i] *= dst[i];
+            dst[i] = sqrt(v.x*v.x + v.y*v.y);
+            //dst[i] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+            //dst[i] *= dst[i];
         }
 
         fa = chunk->freqAxis;
@@ -307,9 +307,9 @@ public:
         for (unsigned i=0; i<abslog->getNumberOfElements1D(); ++i)
         {
             float2& v = src[i];
-            //dst[i] = sqrt(v.x*v.x + v.y*v.y);
-            dst[i] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
-            dst[i] *= dst[i];
+            dst[i] = sqrt(v.x*v.x + v.y*v.y);
+            //dst[i] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+            //dst[i] *= dst[i];
         }
 
         fa = chunk->freqAxis;
@@ -350,9 +350,9 @@ public:
             for (unsigned i=(j!=0); i<cwtchunk->chunks[j]->nScales(); ++i)
             {
                 float2& v = src[i*stride];
-                //dst[i] = sqrt(v.x*v.x + v.y*v.y);
-                dst[k] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
-                dst[k] *= dst[k];
+                dst[i] = sqrt(v.x*v.x + v.y*v.y);
+                //dst[k] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+                //dst[k] *= dst[k];
                 k++;
             }
         }
@@ -369,6 +369,12 @@ public:
         if (is_valid_value)
             *is_valid_value = true;
         return v;
+    }
+
+    virtual float nextFrequency( float hz )
+    {
+        float i = std::max( 0.f, fa.getFrequencyScalar( hz ) );
+        return fa.getFrequency(i+1);
     }
 
 private:
@@ -397,6 +403,11 @@ public:
         float value = render_view_->getHeightmapValue( p, &ref_, 0, true, is_valid_value );
         value*=value;
         return value;
+    }
+
+    virtual float nextFrequency( float hz )
+    {
+        return hz * 1.02f;
     }
 
 private:
@@ -430,17 +441,18 @@ unsigned TooltipModel::
         guessHarmonicNumber( const Heightmap::Position& pos, float& best_compliance )
 {
     TaskTimer tt("TooltipController::guessHarmonicNumber (%g, %g)", pos.time, pos.scale);
+
     double max_s = 0;
     unsigned max_i = 0;
+    fetched_heightmap_values = 0;
+
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
-
-    double F_min = 8;
-    double F = display_scale.getFrequency( pos.scale );
-
     boost::shared_ptr<FetchData> fetcher = FetchData::createFetchData( render_view_, pos.time );
 
-    fetched_heightmap_values = 0;
-    unsigned n_tests = F/F_min;
+    double F = display_scale.getFrequency( pos.scale );
+    double F2 = fetcher->nextFrequency( F );
+    unsigned n_tests = F/(F2-F)/3;
+
     for (unsigned i=1; i<n_tests; ++i)
     {
         double s = computeMarkerMeasure(pos, i, fetcher.get());
