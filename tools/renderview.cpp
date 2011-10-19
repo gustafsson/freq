@@ -835,7 +835,6 @@ void RenderView::
     if (request_high_fps)
     {
         model->project()->worker.requested_fps(60);
-        //model->renderer->setFractionSize( 4, 2 );
     }
 
     if (post_update)
@@ -854,12 +853,12 @@ void RenderView::
     boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
     float dt = _last_frame.is_not_a_date_time()? 0 :
         (now - _last_frame).total_microseconds()*1e-6;
-    _last_frame = now;
 
     float wait = 1.f/_target_fps;
     if (!_update_timer->isActive())
     {
-        if (wait<dt)
+        _last_frame = now;
+        if (wait < dt)
             wait = dt;
 
         unsigned ms = (wait-dt)*1e3; // round down
@@ -1112,8 +1111,6 @@ void RenderView::
 
     if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
     {
-        // userinput_update will set setFractionSize before the next
-        // frame during recording, playback and continuous user interactions
         model->renderer->setFractionSize( 1, 1 );
         emit postUpdate();
     }
