@@ -59,7 +59,7 @@ ChunkAndInverse CwtFilter::
 
     unsigned chunk_alignment = cwt.chunk_alignment( sample_rate() );
     Signal::IntervalType firstSample = I.first;
-    firstSample = int_div_ceil(firstSample, chunk_alignment);
+    firstSample = int_div_ceil(firstSample, chunk_alignment)*chunk_alignment;
 
     unsigned time_support = cwt.wavelet_time_support_samples( sample_rate() );
 

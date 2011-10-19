@@ -266,7 +266,7 @@ pChunk Cwt::
         if (ispowerof2)
             extra = spo2g(sub_length - 1) - sub_length;
         else
-            extra = Fft::sChunkSizeG(sub_length - 1, chunk_alignment( buffer->sample_rate )) - sub_length;
+            extra = Fft::sChunkSizeG(sub_length - 1, chunkpart_alignment( c )) - sub_length;
 
 
         sub_std_samples += extra/2;
@@ -729,7 +729,7 @@ unsigned Cwt::
 unsigned Cwt::
         nBins(float fs) const
 {
-    return find_bin( nScales(fs) );
+    return find_bin( nScales(fs)-1 );
 }
 
 
@@ -829,8 +829,8 @@ unsigned Cwt::
     unsigned support_samples = std::ceil(morlet_sigma_samples( fs, hz ) * _wavelet_time_suppport);
     unsigned c = find_bin( hz_to_j( fs, hz ));
     // Make 2*support_samples align to chunk_alignment for the lowest frequency
-    unsigned half_chunk_alignment_hz = 1 << c;
-    support_samples = int_div_ceil( support_samples, half_chunk_alignment_hz ) * half_chunk_alignment_hz;
+    unsigned half_chunkpart_alignment = chunkpart_alignment( c )/2;
+    support_samples = int_div_ceil( support_samples, half_chunkpart_alignment ) * half_chunkpart_alignment;
     return support_samples;
 }
 
@@ -941,10 +941,10 @@ unsigned Cwt::
     T = Fft::sChunkSizeG(2*r, chunk_alignment( fs ));
     L = T - 2*r;
 
-    {
-        // need to have an even number of samples in all chunks, chunk_alignment ensures that
-        BOOST_ASSERT((L / (chunk_alignment( fs )/2)) % 2 == 0);
+    // need to have an even number of samples in all chunks, chunk_alignment ensures that
+    BOOST_ASSERT((L / (chunk_alignment( fs )/2)) % 2 == 0);
 
+    {
         // debug
         //If L is not low enough, will result in an exception releasing GPU ressources and retrying
         free = availableMemoryForSingleAllocation();
@@ -1110,11 +1110,19 @@ size_t Cwt::
 unsigned Cwt::
         chunk_alignment(float fs) const
 {
-    unsigned sample_size = 1<<find_bin( nScales( fs ) - 1 );
-    // In the lowest chunk, one sample equals 'sample_size' samples in the
+    return chunkpart_alignment(nBins(fs));
+}
+
+
+unsigned Cwt::
+        chunkpart_alignment(unsigned c) const
+{
+    unsigned sample_size = 1<<c;
+    // In subchunk number 'c', one sample equals 'sample_size' samples in the
     // original sample rate.
     // To be able to use supersampling properly the length must be a multiple
-    // of 2. Thus all chunks need to be aligned to '2*sample_size'.
+    // of 2. Thus all subchunks need to be aligned to their respective
+    // '2*sample_size'.
     return 2*sample_size;
 }
 

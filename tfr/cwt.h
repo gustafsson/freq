@@ -103,6 +103,7 @@ private:
     unsigned        hz_to_j( float sample_rate, float hz ) const;
     unsigned        required_length( unsigned current_valid_samples_per_chunk, float fs );
     void            scales_per_octave_internal( float );
+    unsigned        chunkpart_alignment(unsigned c) const;
 
     Signal::pBuffer inverse( Tfr::CwtChunk* );
     Signal::pBuffer inverse( Tfr::CwtChunkPart* );
