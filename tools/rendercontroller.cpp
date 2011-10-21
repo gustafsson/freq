@@ -581,6 +581,7 @@ void RenderController::
     connect(main->getItems()->actionToggleTransformToolBox, SIGNAL(toggled(bool)), toolbar_render, SLOT(setVisible(bool)));
     connect((Support::ToolBar*)toolbar_render, SIGNAL(visibleChanged(bool)), main->getItems()->actionToggleTransformToolBox, SLOT(setChecked(bool)));
 
+    main->installEventFilter( this );
 
     // Find Qt Creator managed actions
     Ui::MainWindow* ui = main->getItems();
@@ -895,5 +896,41 @@ void RenderController::
         channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
     }
 }
+
+
+bool RenderController::
+        eventFilter(QObject *o, QEvent *e)
+{
+    //eventFilter is called a lot, do the most simple test possible to
+    // determine if we're interested or not
+    if (e->type() == QEvent::FocusIn || e->type() == QEvent::FocusOut)
+    {
+        if (model()->project()->mainWindow() == o)
+        {
+            if (e->type() == QEvent::FocusIn)
+                windowGotFocus();
+            else
+                windowLostFocus();
+        }
+    }
+
+    // this eventFilter doesn't block any events
+    return false;
+}
+
+
+void RenderController::
+        windowLostFocus()
+{
+    model()->project()->worker.min_fps( 20 );
+}
+
+
+void RenderController::
+        windowGotFocus()
+{
+    model()->project()->worker.min_fps( 2 );
+}
+
 
 } // namespace Tools

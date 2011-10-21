@@ -185,7 +185,8 @@ public:
 
     void                nextFrame();
     float               get_current_fps() const;
-    float               get_min_fps() const;
+    float               min_fps() const;
+    void                min_fps(float);
 
     /**
       Get/set requested number of frames per second.

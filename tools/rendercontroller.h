@@ -106,6 +106,9 @@ namespace Tools
         QSlider * tf_resolution;
 
         void setupGui();
+        void windowLostFocus();
+        void windowGotFocus();
+        virtual bool eventFilter(QObject*, QEvent*);
     };
 } // namespace Tools
 

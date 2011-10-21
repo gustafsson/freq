@@ -380,9 +380,16 @@ float Worker::
 
 
 float Worker::
-        get_min_fps() const
+        min_fps() const
 {
     return _min_fps;
+}
+
+
+void Worker::
+        min_fps(float f)
+{
+    _min_fps = f;
 }
 
 
