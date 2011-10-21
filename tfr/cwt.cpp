@@ -61,6 +61,8 @@ Cwt::
     _min_hz( 20 ),
     _scales_per_octave( 0 ),
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
+    _least_meaningful_fraction_of_r( 0.01f ),
+    _least_meaningful_samples_per_chunk( 1024 ),
     _wavelet_time_suppport( wavelet_time_suppport ),
     _wavelet_def_time_suppport( wavelet_time_suppport ),
     _wavelet_scale_suppport( 6 ),
@@ -831,9 +833,9 @@ unsigned Cwt::
         required_length( unsigned current_valid_samples_per_chunk, float fs )
 {
     unsigned r = wavelet_time_support_samples( fs );
-    unsigned max_bin = find_bin( nScales( fs ) - 1 );
-    BOOST_ASSERT( (r>>max_bin) >= 2 );
     BOOST_ASSERT( ((2*r) % chunk_alignment( fs )) == 0 );
+    current_valid_samples_per_chunk = std::max((unsigned)(_least_meaningful_fraction_of_r*r), current_valid_samples_per_chunk);
+    current_valid_samples_per_chunk = std::max(_least_meaningful_samples_per_chunk, current_valid_samples_per_chunk);
     current_valid_samples_per_chunk = int_div_ceil( current_valid_samples_per_chunk, chunk_alignment( fs ) ) * chunk_alignment( fs );
     unsigned T = r + current_valid_samples_per_chunk + r;
     return T;
@@ -898,7 +900,7 @@ unsigned Cwt::
         unsigned nT = align_up( lpo2s(T), chunk_alignment( fs ));
 
         //check whether we have reached the smallest acceptable length
-        if ( nT <= 2*r )
+        if ( nT <= required_length(1, fs))
             // return valid length that is equal to or larger than
             // 'current_valid_samples_per_chunk'
             return L;
@@ -947,12 +949,17 @@ unsigned Cwt::
     return L;
 }
 
+
 void Cwt::
         largest_scales_per_octave(float fs, float scales, float last_ok )
 {   
-    bool is_ok = is_small_enough( fs );
+    if (scales_per_octave()<2)
+    {
+        scales = 0;
+        last_ok = 2;
+    }
 
-    if ( (scales <= 0.1) )
+    if (scales <= 0.1)
     {
         BOOST_ASSERT(last_ok != 0);
         scales_per_octave( last_ok );
@@ -961,55 +968,35 @@ void Cwt::
         return;
     }
 
-    if (is_ok)
+    scales /= 2;
+
+    if (is_small_enough( fs ))
     {
         last_ok = scales_per_octave();
-        scales_per_octave(scales_per_octave()+scales/2);
+        scales_per_octave(scales_per_octave() + scales);
     }
     else
     {
-        scales_per_octave(scales_per_octave()-scales/2);
+        scales_per_octave(scales_per_octave() - scales);
     }
 
-    if (scales_per_octave()<2)
-    {
-        scales_per_octave(2);
-        TaskInfo("largest_scales_per_octave is %g", scales_per_octave());
-        return;
-    }
-
-    largest_scales_per_octave( fs, scales/2, last_ok );
+    largest_scales_per_octave( fs, scales, last_ok );
 }
+
 
 bool Cwt::
         is_small_enough( float fs )
 {
-    size_t free = availableMemoryForSingleAllocation();
-    unsigned r = wavelet_time_support_samples( fs );
     unsigned T = required_length( 1, fs );
-    unsigned nT = Fft::lChunkSizeS(T, chunk_alignment( fs ));
-    BOOST_ASSERT(nT != T);
 
-    if (nT <= 2*r)
-        nT = Fft::sChunkSizeG(2*r, chunk_alignment( fs ));
+    unsigned r = wavelet_time_support_samples( fs );
+    unsigned L = T - 2*r;
 
-    while (nT > 2*r)
-    {
-        unsigned L = nT - 2*r;
-        size_t required = required_gpu_bytes(L, fs );
-        if (free >= required)
-        {
-            DEBUG_CWT TaskInfo("Cwt::prev_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
-            return true;
-        }
-
-        nT = Fft::lChunkSizeS(nT, chunk_alignment( fs ));
-    }
-
-    DEBUG_CWT TaskInfo("Cwt::prev_good_size trying smaller scale per octave to fit in memory. scales_per_octave %g. %f MB memory is available",
-             scales_per_octave(), r, free/1024.f/1024.f);
-    return false;
+    size_t free = availableMemoryForSingleAllocation();
+    size_t required = required_gpu_bytes(L, fs );
+    return free >= required;
 }
+
 
 size_t Cwt::
         required_gpu_bytes(unsigned valid_samples, float sample_rate) const

@@ -113,6 +113,8 @@ private:
     float           _min_hz;
     float           _scales_per_octave;
     float           _tf_resolution;
+    float           _least_meaningful_fraction_of_r;
+    unsigned        _least_meaningful_samples_per_chunk;
     static pTransform static_singleton;
 
     static std::map<unsigned, CufftHandleContext> _fft_many;
