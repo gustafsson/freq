@@ -421,11 +421,8 @@ Tfr::pChunk Stft::
 
     cudaExtent n = make_cudaExtent( actualSize.x * actualSize.y, 1, 1 );
 
-    if (0==n.height) // not enough data
+    if (0==actualSize.y) // not enough data
         return Tfr::pChunk();
-
-    if (32768<n.height) // TODO can't handle this
-        n.height = 32768;
 
     Tfr::pChunk chunk( new Tfr::StftChunk(_window_size) );
 
@@ -470,10 +467,23 @@ Tfr::pChunk Stft::
 
     size_t free = availableMemoryForSingleAllocation();
 
-    if (slices * _window_size*2*sizeof(cufftComplex) > free)
+    unsigned multiple = 0;
+    multiple++; // input
+    multiple++; // output
+    multiple++; // overhead during computaion
+
+    if (slices * _window_size*multiple*sizeof(cufftComplex) > free)
     {
-        slices = free/(_window_size*2*sizeof(cufftComplex));
+        slices = free/(_window_size*multiple*sizeof(cufftComplex));
         slices = std::min(512u, std::min((unsigned)n.height, slices));
+
+        if (0 == slices) // happens when 'free' is low (migth even be 0)
+        {
+            // Try with one slice anyways and see take our chances. If it
+            // fails an exception will be thrown if either the cufft library
+            // or cuda memory allocation fails.
+            slices = 1;
+        }
     }
 
     TIME_STFT TaskTimer tt2("Stft::operator compute");
@@ -955,7 +965,23 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
     //_window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
     _window_size = oksz( preferred_size );
+
+    size_t free = availableMemoryForSingleAllocation();
+
+    unsigned multiple = 0;
+    multiple++; // input
+    multiple++; // output
+    multiple++; // overhead during computaion
+
+    unsigned slices = 1;
+    if (slices * _window_size*multiple*sizeof(cufftComplex) > free)
+    {
+        unsigned max_size = free / (slices*multiple*sizeof(cufftComplex));
+        _window_size = Fft::lChunkSizeS(max_size+1, 4);
+    }
+
     _window_size = std::max(4u, _window_size);
+
     return _window_size;
 
 //    if (_ok_chunk_sizes.empty())
