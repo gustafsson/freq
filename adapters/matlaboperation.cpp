@@ -261,7 +261,7 @@ string MatlabFunction::
 
 
 void MatlabFunction::
-		finished(int exitCode, QProcess::ExitStatus exitStatus)
+        finished(int exitCode, QProcess::ExitStatus /*exitStatus*/)
 {
     if (exitCode != 0)
     {

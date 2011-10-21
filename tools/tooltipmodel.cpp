@@ -101,7 +101,10 @@ void TooltipModel::
         this->pos_hz = render_view_->model->display_scale().getFrequency( p.scale );
     }
     else
+    {
         p = this->pos();
+        BOOST_ASSERT( this->markers );
+    }
 
     float FS = render_view_->model->project()->worker.source()->sample_rate();
     float f = this->pos_hz;
@@ -174,7 +177,12 @@ void TooltipModel::
     }
 
     bool first = 0 == this->comment;
+    BOOST_ASSERT(this->pos().time >= 0);
+    BOOST_ASSERT(this->pos().scale >= 0);
+    BOOST_ASSERT(this->pos().time <= FLT_MAX);
+    BOOST_ASSERT(this->pos().scale <= 1);
     comments_->setComment( this->pos(), ss.str(), &this->comment );
+    BOOST_ASSERT(this->comment);
     if (first)
     {
         this->comment->thumbnail( true );
@@ -317,21 +325,23 @@ public:
 
     FetchDataTransform( RenderModel* m, Tfr::Cwt* cwt, float t )
     {
+        BOOST_ASSERT( cwt == Tfr::Cwt::SingletonP().get() );
+
         Signal::pOperation o = m->renderSignalTarget->source();
         float fs = o->sample_rate();
-        Signal::IntervalType firstSample = std::max(0.f, t) * fs;
-        Signal::IntervalType numberOfSamples = cwt->next_good_size( 1, fs);
-        firstSample = firstSample/numberOfSamples*numberOfSamples;
-        unsigned support = cwt->wavelet_time_support_samples( fs );
-        Signal::Interval I = Signal::Intervals( firstSample, firstSample+numberOfSamples ).enlarge( support ).coveredInterval();
-        Tfr::pChunk chunk = (*cwt)( o->readFixedLength(I) );
 
-        Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunk.get() );
+        Tfr::DummyCwtFilter filter;
+        filter.source(o);
+        Signal::IntervalType sample = std::max(0.f, t) * fs;
+        const Signal::Interval I(sample, sample+1);
+        Tfr::ChunkAndInverse chunkAndInverse = filter.computeChunk( I );
+
+        Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunkAndInverse.chunk.get() );
         unsigned N = 0;
         for (unsigned i=0; i < cwtchunk->chunks.size(); ++i)
-        {
             N += cwtchunk->chunks[i]->nScales() - (i!=0);
-        }
+
+        BOOST_ASSERT( N == cwt->nScales( fs ) );
 
         abslog.reset( new GpuCpuData<float>(
                 0,
@@ -342,22 +352,38 @@ public:
         unsigned k = 0;
         for (unsigned j=0; j < cwtchunk->chunks.size(); ++j)
         {
-            float2* src = cwtchunk->chunks[j]->transform_data->getCpuMemory();
+            Tfr::CwtChunkPart* chunkpart = dynamic_cast<Tfr::CwtChunkPart*>(cwtchunk->chunks[j].get());
+            float2* src = chunkpart->transform_data->getCpuMemory();
 
-            unsigned stride = cwtchunk->chunks[j]->nSamples();
-            src += (unsigned)((t*o->sample_rate() - cwtchunk->chunk_offset)/o->sample_rate());
+            unsigned stride = chunkpart->nSamples();
+            unsigned scales = chunkpart->nScales();
+            double scale = chunkpart->original_sample_rate / chunkpart->sample_rate;
 
-            for (unsigned i=(j!=0); i<cwtchunk->chunks[j]->nScales(); ++i)
+            // see chunkpart->getInterval()
+            Signal::Interval chunkInterval(
+                    chunkpart->chunk_offset.asFloat()*scale + 0.5,
+                    (chunkpart->chunk_offset + stride).asFloat()*scale + 0.5);
+
+            Signal::IntervalType sample = t*fs;
+            if (chunkInterval.first > sample)
+                sample = chunkInterval.first;
+            if (chunkInterval.last <= sample)
+                sample = chunkInterval.last-1;
+
+            unsigned x = (sample - chunkInterval.first) / scale;
+            if (x >= stride)
+                x = stride - 1;
+
+            for (unsigned i=(j!=0); i<scales; ++i)
             {
-                float2& v = src[i*stride];
-                dst[i] = sqrt(v.x*v.x + v.y*v.y);
-                //dst[k] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
-                //dst[k] *= dst[k];
-                k++;
+                float2& v = src[i*stride + x];
+                dst[k++] = sqrt(v.x*v.x + v.y*v.y);
             }
         }
 
-        fa = chunk->freqAxis;
+        BOOST_ASSERT( k == cwt->nScales(fs) );
+
+        fa = chunkAndInverse.chunk->freqAxis;
     }
 
     virtual float operator()( float /*t*/, float hz, bool* is_valid_value )
@@ -442,8 +468,8 @@ unsigned TooltipModel::
 {
     TaskTimer tt("TooltipController::guessHarmonicNumber (%g, %g)", pos.time, pos.scale);
 
-    double max_s = 0;
-    unsigned max_i = 0;
+    double max_s = -1;
+    unsigned max_i = 1;
     fetched_heightmap_values = 0;
 
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
@@ -468,12 +494,10 @@ unsigned TooltipModel::
         }
     }
 
-    //if (max_i<=1)
-        //return 0;
-
     tt.info("%g Hz is harmonic number number %u, fundamental frequency is %g Hz. Did %u tests",
         F, max_i, F/max_i, n_tests);
     best_compliance = max_s;
+    BOOST_ASSERT( 0 < max_i );
     return max_i;
 }
 
@@ -481,6 +505,7 @@ unsigned TooltipModel::
 float TooltipModel::
       computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, FetchData* fetcher)
 {
+    BOOST_ASSERT( 0 < i );
     boost::shared_ptr<FetchData> myfetcher;
     if (0==fetcher)
     {

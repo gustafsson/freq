@@ -381,6 +381,7 @@ pChunk Cwt::
 
     TIME_CWT tt->getStream() << "Resulting interval = " << wt->getInterval().toString();
     TIME_CWT CudaException_ThreadSynchronize();
+    CudaException_CHECK_ERROR();
 
     return wt;
 

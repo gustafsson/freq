@@ -45,7 +45,7 @@ private:
     float   _previous_scales_per_octave;
     void    verify_scales_per_octave();
 };
-// TODO remove
+
 
 class DummyCwtFilter: public CwtFilter {
 public:
