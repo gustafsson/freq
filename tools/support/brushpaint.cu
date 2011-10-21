@@ -32,17 +32,54 @@ public:
 
     __device__ void operator()(float& e, float2 const& v)
     {
-        //e *= exp2f(g.gauss_value(v));
-        e *= exp2f(g.gauss_value(v)*0.2f); // "*0.2f" because of ConverterLogAmplitude
+        e *= exp2f(g.gauss_value(v));
     }
 private:
     Gauss g;
 };
 
 
-void multiplyGauss( float4 imageArea, cudaPitchedPtrType<float> image, Gauss g )
+class MultiplyGaussOperatorLog
 {
-    MultiplyGaussOperator gauss(g);
+public:
+    MultiplyGaussOperatorLog( Gauss const& g) :g(g) {}
 
-    element_operate<float, MultiplyGaussOperator>(image, imageArea, gauss);
+    __device__ void operator()(float& e, float2 const& v)
+    {
+        // same constant as in ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>
+        e += 0.02f * g.gauss_value(v);
+    }
+private:
+    Gauss g;
+};
+
+
+class MultiplyGaussOperator5th
+{
+public:
+    MultiplyGaussOperator5th( Gauss const& g) :g(g) {}
+
+    __device__ void operator()(float& e, float2 const& v)
+    {
+        e *= exp2f(g.gauss_value(v)*0.2f);
+    }
+private:
+    Gauss g;
+};
+
+
+void multiplyGauss( float4 imageArea, cudaPitchedPtrType<float> image, Gauss g, Heightmap::AmplitudeAxis amplitudeAxis )
+{
+    switch (amplitudeAxis)
+    {
+    case Heightmap::AmplitudeAxis_Linear:
+        element_operate<float, MultiplyGaussOperator>(image, imageArea, MultiplyGaussOperator(g));
+        break;
+    case Heightmap::AmplitudeAxis_Logarithmic:
+        element_operate<float, MultiplyGaussOperatorLog>(image, imageArea, MultiplyGaussOperatorLog(g));
+        break;
+    case Heightmap::AmplitudeAxis_5thRoot:
+        element_operate<float, MultiplyGaussOperator5th>(image, imageArea, MultiplyGaussOperator5th(g));
+        break;
+    }
 }

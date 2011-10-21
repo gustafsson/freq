@@ -84,9 +84,9 @@ void BrushController::
 
     model()->brush_factor = 0;
 #ifdef _MSC_VER
-    float A = .5f;
+    float A = .125f;
 #else
-    float A = .5f;
+    float A = .125f;
 #endif
     if (ui->actionAirbrush->isChecked())
         model()->brush_factor = -A;

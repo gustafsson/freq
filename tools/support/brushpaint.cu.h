@@ -1,5 +1,7 @@
 #pragma once
 
+#include "heightmap/block.cu.h"
+
 #include <cudaPitchedPtrType.h>
 #include <cuda_vector_types_op.h>
 
@@ -65,4 +67,4 @@ private:
 void addGauss(
         float4 imageArea, cudaPitchedPtrType<float> image, Gauss gauss );
 void multiplyGauss(
-        float4 imageArea, cudaPitchedPtrType<float> image, Gauss gauss );
+        float4 imageArea, cudaPitchedPtrType<float> image, Gauss gauss, Heightmap::AmplitudeAxis );

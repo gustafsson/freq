@@ -191,7 +191,7 @@ Signal::Interval BrushModel::
 
             ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
                            blockData->getCudaGlobal(),
-                           gauss );
+                           gauss, render_model_->amplitude_axis() );
             // collection->invalidate_samples is called by brushcontroller on mouse release
         }
     }
