@@ -33,6 +33,7 @@ public:
     bool isStopped();
     void setProjectName(std::string, int);
     bool canRecord();
+    long unsigned actual_number_of_samples();
 
     virtual std::string name();
     virtual Signal::pBuffer read( const Signal::Interval& I );

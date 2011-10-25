@@ -140,10 +140,12 @@ void MicrophoneRecorder::startRecording()
         return;
     }
 
+    // call length() and update _offset before starting recording because
+    // length() uses {number_of_samples - time() - _offset} while recording.
+    _offset = length();
     _stream_record->start();
 
     _start_recording = boost::posix_time::microsec_clock::local_time();
-    _offset = length();
 }
 
 void MicrophoneRecorder::stopRecording()
@@ -193,6 +195,15 @@ bool MicrophoneRecorder::
 }
 
 
+long unsigned MicrophoneRecorder::
+        actual_number_of_samples()
+{
+    QMutexLocker lock(&_data_lock);
+    long unsigned N = _data[_channel].number_of_samples();
+    return N;
+}
+
+
 std::string MicrophoneRecorder::
         name()
 {
@@ -216,9 +227,10 @@ float MicrophoneRecorder::
 long unsigned MicrophoneRecorder::
         number_of_samples()
 {
-    QMutexLocker lock(&_data_lock);
-    long unsigned N = _data[_channel].number_of_samples();
-    return N;
+    if (isStopped())
+        return actual_number_of_samples();
+    else
+        return time() * sample_rate();
 }
 
 unsigned MicrophoneRecorder::
@@ -279,7 +291,7 @@ int MicrophoneRecorder::
     TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
     const float **in = (const float **)inputBuffer;
 
-	long unsigned offset = number_of_samples();
+    long unsigned offset = actual_number_of_samples();
     QMutexLocker lock(&_data_lock);
     _last_update = boost::posix_time::microsec_clock::local_time();
 

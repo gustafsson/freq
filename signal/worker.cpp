@@ -166,7 +166,7 @@ bool Worker::
         }
 
         if (trySmallerChunk && min_samples_per_chunk<_samples_per_chunk) {
-            TaskInfo ti("Worker caught cudaErrorMemoryAllocation\n/s",  e.what());
+            TaskInfo ti("Worker caught cudaErrorMemoryAllocation\n%s",  e.what());
             cudaGetLastError(); // consume error
             TaskInfo("Samples per chunk was %u", _samples_per_chunk);
             TaskInfo("Max samples per chunk was %u", _max_samples_per_chunk);
