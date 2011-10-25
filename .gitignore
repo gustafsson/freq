@@ -38,4 +38,5 @@ project_header.h.cpp
 *.zip
 *.app
 *.a
-
+*setup.exe
+image_works
