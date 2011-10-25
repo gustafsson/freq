@@ -20,7 +20,7 @@ cd package-macos
 gcc -framework CoreFoundation -o launcher launcher.c
 
 echo "========================== Packaging =========================="
-filename="sonicawe_${packagename}_${versiontag}_macos_i386.zip"
+filename="${packagename}_${versiontag}_macos_i386.zip"
 echo "Creating Mac OS X application: $filename version ${version}"
 cd ..
 ruby package-macx.rb ${packagename}_${versiontag} macos_i386 ../${packagename}
