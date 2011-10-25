@@ -830,7 +830,7 @@ void RenderView::
 
 
 void RenderView::
-        userinput_update( bool request_high_fps, bool post_update )
+        userinput_update( bool request_high_fps, bool post_update, bool mouse_hoovering_only )
 {
     if (request_high_fps)
     {
@@ -843,7 +843,8 @@ void RenderView::
     if (request_high_fps && post_update)
         update();
 
-    model->project()->setModified();
+    if ( !mouse_hoovering_only )
+        model->project()->setModified();
 }
 
 
