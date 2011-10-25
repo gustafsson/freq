@@ -262,7 +262,7 @@ pChunk Cwt::
         else
             extra = Fft::sChunkSizeG(sub_length - 1, chunkpart_alignment( c )) - sub_length;
 
-        if (nScales_value == stop_j)
+        if (nScales_value == stop_j && 0 < offset)
             BOOST_ASSERT( 0 == extra );
 
         sub_std_samples += extra/2;

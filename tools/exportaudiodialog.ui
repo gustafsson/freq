@@ -74,6 +74,19 @@
     <number>0</number>
    </property>
   </widget>
+  <widget class="QCheckBox" name="checkBoxNormalize">
+   <property name="geometry">
+    <rect>
+     <x>18</x>
+     <y>116</y>
+     <width>101</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Normalize</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

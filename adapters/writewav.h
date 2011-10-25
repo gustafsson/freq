@@ -17,6 +17,10 @@ public:
     virtual void invalidate_samples( const Signal::Intervals& s );
     virtual void set_channel(unsigned c);
     virtual Signal::Intervals invalid_samples();
+    virtual bool deleteMe();
+
+    bool normalize() { return _normalize; }
+    void normalize(bool v);
 
     static void writeToDisk(std::string filename, Signal::pBuffer b, bool normalize = true);
 
@@ -27,6 +31,7 @@ public:
 private:
     Signal::SinkSourceChannels _data;
     std::string _filename;
+    bool _normalize;
 
     void writeToDisk();
 };

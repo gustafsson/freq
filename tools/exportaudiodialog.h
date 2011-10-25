@@ -30,6 +30,9 @@ public slots:
     void abortExport();
     void selectionChanged();
     void populateTodoList();
+    void checkboxToggled(bool);
+    void dialogFinished(int);
+    void callUpdate();
 
 private:
     Ui::ExportAudioDialog *ui;
@@ -42,6 +45,7 @@ private:
     QTimer update_timer;
     QString filemame;
     Signal::IntervalType total;
+    bool drawnFinished_;;
 
     // overloaded from QWidget
     virtual void paintEvent ( QPaintEvent * event );

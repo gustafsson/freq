@@ -25,7 +25,6 @@ WriteWav::
 WriteWav::
         ~WriteWav()
 {
-    reset();
 }
 
 
@@ -44,8 +43,8 @@ void WriteWav::
     //Statistics<float>(buffer->waveform_data());
     _data.putExpectedSamples( buffer );
 
-    if (_data.deleteMe())
-        reset(); // Write to file
+    if (!_data.invalid_samples())
+        writeToDisk();
 }
 
 
@@ -74,6 +73,27 @@ Signal::Intervals WriteWav::
 }
 
 
+bool WriteWav::
+        deleteMe()
+{
+    // don't delete, in case normalize is changed after the file has been written
+    return false;
+}
+
+
+void WriteWav::
+        normalize(bool v)
+{
+    if (_normalize == v)
+        return;
+
+    _normalize = v;
+
+    if (!_data.invalid_samples())
+        writeToDisk();
+}
+
+
 void WriteWav::
         writeToDisk()
 {
@@ -83,7 +103,7 @@ void WriteWav::
 
     TIME_WRITEWAV TaskTimer tt("Writing data %s", i.toString().c_str());
     Signal::pBuffer b = _data.readAllChannelsFixedLength( i );
-    writeToDisk( _filename, b );
+    writeToDisk( _filename, b, _normalize );
 }
 
 

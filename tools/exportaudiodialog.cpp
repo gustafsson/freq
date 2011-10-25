@@ -24,13 +24,14 @@ ExportAudioDialog::ExportAudioDialog(
     project(project),
     selection_model(selection_model),
     render_view(render_view),
-    total(0)
+    total(0),
+    drawnFinished_(false)
 {
     ui->setupUi(this);
 
     update_timer.setSingleShot( true );
     update_timer.setInterval( 100 );
-    connect( &update_timer, SIGNAL( timeout() ), SLOT( update() ) );
+    connect( &update_timer, SIGNAL( timeout() ), SLOT( callUpdate() ) );
 
     setupGui();
 }
@@ -92,6 +93,38 @@ void ExportAudioDialog::
 
 
 void ExportAudioDialog::
+        checkboxToggled(bool v)
+{
+    Signal::PostSink* postsink = exportTarget->post_sink();
+
+    std::vector<Signal::pOperation> sinks = postsink->sinks();
+    Adapters::WriteWav* wav = dynamic_cast<Adapters::WriteWav*>(sinks.back().get());
+    wav->normalize( v );
+}
+
+
+void ExportAudioDialog::
+        dialogFinished(int)
+{
+    exportTarget.reset();
+}
+
+
+void ExportAudioDialog::
+        callUpdate()
+{
+    if (!exportTarget)
+        return;
+
+    this->render_view->userinput_update(false, true);
+    update();
+
+    if (!drawnFinished_)
+        update_timer.start();
+}
+
+
+void ExportAudioDialog::
         paintEvent ( QPaintEvent * event )
 {
     QDialog::paintEvent(event);
@@ -119,7 +152,7 @@ void ExportAudioDialog::
 
         ui->buttonBoxAbort->setEnabled( !isFinished );
         ui->buttonBoxOk->setEnabled( isFinished );
-        exportTarget.reset();
+        drawnFinished_ = true;
     }
 
     ui->progressBar->setValue( percent );
@@ -145,6 +178,8 @@ void ExportAudioDialog::
     connect(this, SIGNAL(rejected()), SLOT(abortExport()));
     connect(ui->buttonBoxAbort, SIGNAL(rejected()), SLOT(abortExport()));
     connect(ui->buttonBoxOk, SIGNAL(accepted()), SLOT(close()));
+    connect(ui->checkBoxNormalize, SIGNAL(toggled(bool)), SLOT(checkboxToggled(bool)));
+    connect(this, SIGNAL(finished(int)), SLOT(dialogFinished(int)));
 
     selectionChanged();
 #endif
