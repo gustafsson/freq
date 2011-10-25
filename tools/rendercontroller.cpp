@@ -35,6 +35,7 @@
 #include <QResizeEvent>
 #include <QMetaClassInfo>
 #include <QGLContext>
+#include <QSettings>
 
 // todo remove
 #include "navigationcontroller.h"
@@ -191,10 +192,20 @@ RenderController::
 
 
 void RenderController::
+        stateChanged()
+{
+    // Don't lock the UI, instead wait a moment before any change is made
+    view->userinput_update();
+
+    model()->project()->setModified();
+}
+
+
+void RenderController::
         receiveSetRainbowColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -202,7 +213,7 @@ void RenderController::
         receiveSetGrayscaleColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -210,7 +221,7 @@ void RenderController::
         receiveSetColorscaleColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_FixedColor;
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -218,7 +229,7 @@ void RenderController::
         receiveToogleHeightlines(bool value)
 {
     model()->renderer->draw_height_lines = value;
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -231,7 +242,7 @@ void RenderController::
                                             ? QBoxLayout::RightToLeft
                                             : QBoxLayout::TopToBottom );
 
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -239,7 +250,7 @@ void RenderController::
         receiveTogglePiano(bool value)
 {
     model()->renderer->draw_piano = value;
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -247,7 +258,7 @@ void RenderController::
         receiveToggleHz(bool value)
 {
     model()->renderer->draw_hz = value;
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -297,8 +308,7 @@ void RenderController::
     float f = 2.f * value / yscale->maximum() - 1.f;
     model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
 
-    view->userinput_update();
-    //view->emitTransformChanged();
+    stateChanged();
 
     yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->y_scale));
 }
@@ -327,8 +337,7 @@ void RenderController::
 
     model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
-    // Don't lock the UI, instead wait a moment before any change is made
-    view->userinput_update();
+    stateChanged();
 
     view->emitTransformChanged();
 
@@ -360,8 +369,7 @@ Signal::PostSink* RenderController::
     bfs->validateSize();
     bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
-    // Don't lock the UI, instead wait a moment before any change is made
-    view->userinput_update();
+    stateChanged();
 
     view->emitTransformChanged();
 
@@ -488,7 +496,8 @@ void RenderController::
     }
 
     model()->display_scale( fa );
-    view->userinput_update();
+
+    stateChanged();
 }
 
 
@@ -511,7 +520,8 @@ void RenderController::
     }
 
     model()->display_scale( fa );
-    view->userinput_update();
+
+    stateChanged();
 }
 
 
@@ -531,7 +541,8 @@ void RenderController::
     }
 
     model()->display_scale( fa );
-    view->userinput_update();
+
+    stateChanged();
 }
 
 
@@ -539,7 +550,7 @@ void RenderController::
         receiveLinearAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -547,7 +558,7 @@ void RenderController::
         receiveLogAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -555,7 +566,7 @@ void RenderController::
         receiveFifthAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_5thRoot );
-    view->userinput_update();
+    stateChanged();
 }
 
 
@@ -673,6 +684,11 @@ void RenderController::
         logScale->setText("Logarithmic scale");
         cepstraScale->setText("Cepstra scale");
 
+        // for serialization
+        linearScale->setObjectName("linearScale");
+        logScale->setObjectName("logScale");
+        cepstraScale->setObjectName("cepstraScale");
+
         linearScale->setCheckable( true );
         logScale->setCheckable( true );
         cepstraScale->setCheckable( true );
@@ -706,6 +722,11 @@ void RenderController::
         linearAmplitude->setText("Linear amplitude");
         logAmpltidue->setText("Logarithmic amplitude");
         fifthAmpltidue->setText("|A|^(1/5) amplitude");
+
+        // for serialization
+        linearAmplitude->setObjectName("linearAmplitude");
+        logAmpltidue->setObjectName("logAmpltidue");
+        fifthAmpltidue->setObjectName("fifthAmpltidue");
 
         linearAmplitude->setCheckable( true );
         logAmpltidue->setCheckable( true );

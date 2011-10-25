@@ -96,8 +96,10 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     if (magic != magicConst)
         throw std::ios_base::failure("Not a Sonic AWE project");
 	
-        ar & boost::serialization::make_nvp("Sonic_AWE",project);
+
+    ar & boost::serialization::make_nvp("Sonic_AWE",project);
 	
+
     QDir::setCurrent( dir.absolutePath() );
     TaskInfo("Current path is '%s'", QDir::currentPath().toLocal8Bit().data());
 }

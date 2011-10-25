@@ -41,6 +41,8 @@ public:
     MainWindow* getItems() { return ui; }
 
     void disableFullscreen();
+    void restoreSettings(QByteArray);
+    QByteArray saveSettings() const;
 
 signals:
     void onMainWindowCloseEvent( QWidget* closed );
@@ -89,9 +91,14 @@ private:
     QAction* escape_action;
     QWidget* fullscreen_widget;
 
-    void writeSettings();
-    void readSettings();
+    QByteArray saveGeometry() const;
+    QByteArray saveState(int version = 0) const;
+    void restoreGeometry(const QByteArray &state);
+    void restoreState(const QByteArray &state, int version = 0);
     void add_widgets();
+
+    void getGuiState( const QObject* o, QMap<QString, QVariant>& state ) const;
+    void restoreGuiState( QObject* o, const QMap<QString, QVariant>& state );
 };
 
 

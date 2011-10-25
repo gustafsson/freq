@@ -274,6 +274,7 @@ void MatlabController::
     }
 
     render_view_->userinput_update();
+    project_->setModified();
 }
 
 
@@ -356,6 +357,7 @@ void MatlabController::
     }
 
     render_view_->userinput_update();
+    project_->setModified();
 }
 
 

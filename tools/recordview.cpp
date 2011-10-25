@@ -38,8 +38,6 @@ void RecordView::
 {
     if (enabled)
     {
-        model_->render_view->userinput_update(true, false);
-
         float fs = model_->project->worker.source()->sample_rate();
         double limit = std::max(0.f, model_->recording->time() - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
         limit = std::min(limit, (double)model_->project->worker.length());
@@ -70,6 +68,7 @@ void RecordView::
         prev_limit_ = limit;
 
         model_->render_view->userinput_update();
+        model_->project->setModified();
     }
 }
 

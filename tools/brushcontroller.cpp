@@ -154,7 +154,10 @@ void BrushController::
     }
 
     if (e->buttons())
+    {
+        render_view_->model->project()->setModified();
         render_view_->userinput_update();
+    }
     else
         render_view_->userinput_update( false );
 }

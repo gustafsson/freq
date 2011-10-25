@@ -97,7 +97,7 @@ namespace Tools
         void emitTransformChanged();
 
     public slots:
-        void userinput_update( bool request_high_fps = true, bool post_update = true, bool mouse_hoovering_only = false );
+        void userinput_update( bool request_high_fps = true, bool post_update = true );
 
     signals:
         /**

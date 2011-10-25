@@ -191,6 +191,8 @@ void CommentView::
             event->accept();
         }
         resizePosition = -QPoint(width(), height()) + QPoint(gp.x(), -gp.y());
+
+        view->model->project()->setModified();
     }
 
     if (visible)
@@ -364,6 +366,7 @@ void CommentView::
         updateText()
 {
     model()->html = html();
+    view->model->project()->setModified();
 }
 
 

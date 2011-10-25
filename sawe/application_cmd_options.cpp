@@ -268,8 +268,6 @@ void Application::
 
     this->openadd_project( p );
 
-    apply_command_line_options( p );
-
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     Signal::pOperation source = p->tools().render_model.renderSignalTarget->post_sink()->source();
     unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<_samples_per_chunk_hint, source->sample_rate() );
@@ -329,7 +327,6 @@ void Application::
 void Application::
         apply_command_line_options( pProject p )
 {
-
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     cwt.scales_per_octave( _scales_per_octave );
     cwt.wavelet_time_support( _wavelet_time_support );

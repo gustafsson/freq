@@ -93,6 +93,7 @@ void PlaybackMarkersController::
         {
             // No markers created, create one
             model()->addMarker( click.time );
+            r.model->project()->setModified();
         }
     }
     else

@@ -215,9 +215,9 @@ bool Project::
 
 
 void Project::
-        setModified()
+        setModified( bool is_modified )
 {
-    is_modified_ = true;
+    is_modified_ = is_modified;
 }
 
 
@@ -264,7 +264,8 @@ void Project::
     if (!project_title().empty())
         title = project_title() + " - " + title;
 
-    _mainWindow = new Ui::SaweMainWindow( title.c_str(), this );
+    Ui::SaweMainWindow* saweMain = 0;
+    _mainWindow = saweMain = new Ui::SaweMainWindow( title.c_str(), this );
 
     {
         TaskTimer tt("new Tools::ToolFactory");
@@ -272,20 +273,18 @@ void Project::
         tt.info("Created tools");
     }
 
-    defaultGeometry = _mainWindow->saveGeometry();
-    defaultState = _mainWindow->saveState();
-
-    QSettings settings;
-    _mainWindow->restoreGeometry(settings.value("geometry").toByteArray());
-    _mainWindow->restoreState(settings.value("windowState").toByteArray());
+    defaultGuiState = saweMain->saveSettings();
+    saweMain->restoreSettings( QSettings().value("GuiState").toByteArray() );
 
     // don't start in fullscreen mode
-    dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data())->disableFullscreen();
+    saweMain->disableFullscreen();
 
     _mainWindow->show();
 
     Sawe::Application::check_license();
     updateWindowTitle();
+
+    is_modified_ = false;
 }
 
 
@@ -298,17 +297,33 @@ void Project::
 }
 
 
+QByteArray Project::
+        getGuiState() const
+{
+    Ui::SaweMainWindow* saweMain = dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
+    return saweMain->saveSettings();
+}
+
+
+void Project::
+        setGuiState(QByteArray guiState)
+{
+    Ui::SaweMainWindow* saweMain = dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
+    saweMain->restoreSettings( guiState );
+}
+
+
 void Project::
         restoreDefaultLayout()
 {
     QSettings settings;
-    _mainWindow->restoreGeometry(defaultGeometry);
-    _mainWindow->restoreState(defaultState);
+
+    Ui::SaweMainWindow* saweMain = dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
+    saweMain->restoreSettings( defaultGuiState );
+
     QString value = settings.value("value").toString();
     settings.clear();
     settings.setValue("value", value);
-    settings.setValue("geometry", _mainWindow->saveGeometry());
-    settings.setValue("windowState", _mainWindow->saveState());
 }
 
 

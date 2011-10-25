@@ -80,6 +80,7 @@ namespace Tools
         void reroute();
 
     private:
+        void stateChanged();
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
         Tfr::Transform* currentTransform();
 

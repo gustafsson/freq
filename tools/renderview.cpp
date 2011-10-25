@@ -842,9 +842,12 @@ void RenderView::
 
     if (request_high_fps && post_update)
         update();
+<<<<<<< HEAD
 
     if ( !mouse_hoovering_only )
         model->project()->setModified();
+=======
+>>>>>>> Saves states of render options between sessions and in project files.
 }
 
 

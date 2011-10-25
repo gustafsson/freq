@@ -14,6 +14,7 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/vector.hpp> 
 #include <boost/serialization/binary_object.hpp> 
+#include <boost/serialization/version.hpp>
 
 // Qt
 #include <QMainWindow>
@@ -118,9 +119,9 @@ public:
 
     /**
       Sets the modified flag to true. Temporary, will be removed by list of
-      actions instead.
+      actions instead. To support undo history.
       */
-    void setModified();
+    void setModified( bool is_modified=true );
 
 
 #if !defined(TARGET_reader)
@@ -169,8 +170,9 @@ private:
     void createMainWindow();
     void updateWindowTitle();
 
-    QByteArray defaultGeometry;
-    QByteArray defaultState;
+    QByteArray getGuiState() const;
+    void setGuiState(QByteArray guiState);
+    QByteArray defaultGuiState;
 
     bool is_modified_;
 
@@ -187,14 +189,14 @@ private:
 #endif
 
     friend class boost::serialization::access;
-    template<class Archive> void save(Archive& ar, const unsigned int version) const {
+    template<class Archive> void save(Archive& ar, const unsigned int /*version*/) const {
         TaskInfo ti("Project::serialize");
 
         ar & BOOST_SERIALIZATION_NVP(layers);
         ar & BOOST_SERIALIZATION_NVP(head);
 
-        QByteArray mainwindowState = _mainWindow->saveState( version );
-		save_bytearray( ar, mainwindowState );
+        QByteArray guiState = getGuiState();
+        save_bytearray( ar, guiState );
 
         Tools::ToolFactory& tool_repo = *dynamic_cast<Tools::ToolFactory*>(_tools.get());
         ar & BOOST_SERIALIZATION_NVP(tool_repo);
@@ -207,9 +209,12 @@ private:
 
 		createMainWindow();
 
-        QByteArray mainwindowState;
-        load_bytearray( ar, mainwindowState );
-        _mainWindow->restoreState( mainwindowState, version);
+        QByteArray guiState;
+        load_bytearray( ar, guiState );
+        if (0 < version)
+            setGuiState( guiState );
+        else
+            _mainWindow->restoreState( guiState, version);
 
         // createMainWindow has already created all tools
         // this deserialization sets their settings
@@ -238,8 +243,8 @@ private:
 };
 typedef boost::shared_ptr<Project> pProject;
 
-// BOOST_CLASS_VERSION(Project, 1) TODO use
-
 } // namespace Sawe
+
+BOOST_CLASS_VERSION(Sawe::Project, 1)
 
 #endif // SAWEPROJECT_H

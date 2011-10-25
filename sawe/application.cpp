@@ -151,7 +151,7 @@ bool Application::
                     foreach (pProject p, _projects)
                     {
                         if (receiver == p->mainWindow())
-                            p->tools().render_view()->userinput_update( true, false, true );
+                            p->tools().render_view()->userinput_update( true, false );
                     }
                     break;
 
@@ -197,6 +197,8 @@ void Application::
         _projects.insert( p );
 
     apply_command_line_options( p );
+
+    p->setModified( false );
 }
 
 void Application::

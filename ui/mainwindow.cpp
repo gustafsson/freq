@@ -31,7 +31,6 @@ SaweMainWindow::
     QString qtitle = QString::fromLocal8Bit(title);
     this->setWindowTitle( qtitle );
 
-    readSettings();
     add_widgets();
 
     hide();
@@ -265,7 +264,7 @@ void SaweMainWindow::
 
     {
         TaskInfo ti("Saving settings");
-        writeSettings();
+        QSettings().setValue("GuiState", saveSettings());
     }
 
     {
@@ -424,20 +423,138 @@ void SaweMainWindow::
     ui->actionOperation_details->setChecked(visible);
 }
 
-void SaweMainWindow::readSettings() {
-    QSettings settings;
-    QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
-    QSize size = settings.value("size", QSize(400, 400)).toSize();
-    QByteArray state = settings.value("windowState", QByteArray()).toByteArray();
-    restoreState(state);
-    restoreGeometry(settings.value("geometry").toByteArray());
+
+void SaweMainWindow::
+        restoreSettings(QByteArray array)
+{
+    QMap<QString, QVariant> state;
+    QDataStream ds(&array, QIODevice::ReadOnly );
+    ds >> state;
+
+    {
+        TaskInfo("SaweMainWindow::readSettings - {%u actions and sliders}", state.size());
+        QMapIterator<QString, QVariant> i(state);
+        while (i.hasNext())
+        {
+            i.next();
+            if (i.value().type() == QVariant::ByteArray)
+                TaskInfo( "[%s] = {%u bytes}", i.key().toLatin1().data(), i.value().toByteArray().size() );
+            else
+                TaskInfo( "[%s] = %s", i.key().toLatin1().data(), i.value().toString().toLatin1().data() );
+        }
+    }
+
+    restoreState(state["MainWindow/windowState"].toByteArray());
+    restoreGuiState( this, state );
 }
 
-void SaweMainWindow::writeSettings() {
-    /* Save postion/size of main window */
-    QSettings settings;
-    settings.setValue("geometry", saveGeometry());
-    settings.setValue("windowState", saveState());
+
+QByteArray SaweMainWindow::
+        saveSettings() const
+{
+    QMap<QString, QVariant> state;
+    state["MainWindow/windowState"] = saveState();
+
+    getGuiState( this, state);
+
+    {
+        TaskInfo("SaweMainWindow::writeSettings - {%u actions and sliders}", state.size());
+        QMapIterator<QString, QVariant> i(state);
+        while (i.hasNext())
+        {
+            i.next();
+            if (i.value().type() == QVariant::ByteArray)
+                TaskInfo( "[%s] = {%u bytes}", i.key().toLatin1().data(), i.value().toByteArray().size() );
+            else
+                TaskInfo( "[%s] = %s", i.key().toLatin1().data(), i.value().toString().toLatin1().data() );
+        }
+    }
+
+
+    QByteArray array;
+    QDataStream ds(&array, QIODevice::WriteOnly);
+    ds << state;
+    return array;
+}
+
+
+QByteArray SaweMainWindow::
+        saveGeometry() const
+{
+    return QMainWindow::saveGeometry();
+}
+
+
+QByteArray SaweMainWindow::
+        saveState(int version) const
+{
+    return QMainWindow::saveState(version);
+}
+
+
+void SaweMainWindow::
+        restoreGeometry(const QByteArray &state)
+{
+    QMainWindow::restoreGeometry(state);
+}
+
+
+void SaweMainWindow::
+        restoreState(const QByteArray &state, int version)
+{
+    QMainWindow::restoreState(state, version);
+}
+
+
+void SaweMainWindow::
+        getGuiState( const QObject* object, QMap<QString, QVariant>& state ) const
+{
+    if (!object->objectName().isEmpty())
+        if (const QWidget* w = dynamic_cast<const QWidget*>(object))
+            state.insert(w->objectName()+"/geometry", w->saveGeometry());
+
+    foreach( const QObject* o, object->children())
+    {
+        if (o->objectName().isEmpty())
+            continue;
+
+        if (const QSlider* s = dynamic_cast<const QSlider*>(o))
+            state.insert(s->objectName(), s->value());
+
+        if (const QAction* a = dynamic_cast<const QAction*>(o))
+            state.insert(a->objectName(), a->isChecked());
+    }
+
+    foreach( const QObject* o, object->children() )
+        getGuiState( o, state );
+}
+
+
+void SaweMainWindow::
+        restoreGuiState( QObject* o, const QMap<QString, QVariant>& state )
+{
+    QMapIterator<QString, QVariant> i(state);
+    while (i.hasNext())
+    {
+        i.next();
+
+        if (QWidget* w = dynamic_cast<QWidget*>(o)) if(o->objectName() == i.key())
+            w->restoreGeometry( state[ w->objectName()+"/geometry" ].toByteArray() );
+
+        if (QSlider* s = o->findChild<QSlider*>( i.key() ))
+            s->setValue( i.value().toInt() );
+
+        if (QAction* a = o->findChild<QAction*>( i.key() ))
+        {
+            if (i.value().toBool() && !a->isChecked())
+                a->trigger();
+            else if (!i.value().toBool() && a->isChecked())
+                a->setChecked( false );
+        }
+    }
+
+    foreach( QObject* c , o->children())
+        restoreGuiState( c, state );
 }
 
 
