@@ -49,13 +49,7 @@ ChunkAndInverse CwtFilter::
 {
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
 
-    unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
-
     verify_scales_per_octave();
-    // hack to make it work without subsampling
-#ifdef CWT_NOBINS
-    numberOfSamples = cwt.next_good_size( 1, sample_rate() );
-#endif
 
     unsigned chunk_alignment = cwt.chunk_alignment( sample_rate() );
     Signal::IntervalType firstSample = I.first;
@@ -67,12 +61,19 @@ ChunkAndInverse CwtFilter::
     // into account and create an inverse that is of the desired size.
     unsigned redundant_samples = time_support;
     if (firstSample < time_support)
-    {
         redundant_samples = firstSample;
-    }
 
     //unsigned first_valid_sample = firstSample;
     firstSample -= redundant_samples;
+
+    unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
+    if (firstSample == 0)
+        numberOfSamples = cwt.next_good_size( 1, sample_rate() );
+
+    // hack to make it work without subsampling
+#ifdef CWT_NOBINS
+    numberOfSamples = cwt.next_good_size( 1, sample_rate() );
+#endif
 
     unsigned L = redundant_samples + numberOfSamples + time_support;
 
@@ -198,6 +199,7 @@ void CwtFilter::
         verify_scales_per_octave()
 {
     Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
+    cwt.scales_per_octave( cwt.scales_per_octave(), sample_rate() );
 
     if (_previous_scales_per_octave != cwt.scales_per_octave())
     {
