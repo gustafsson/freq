@@ -40,3 +40,4 @@ project_header.h.cpp
 *.a
 *setup.exe
 image_works
+*.nsi.backup
