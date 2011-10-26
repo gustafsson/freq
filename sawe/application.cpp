@@ -191,9 +191,6 @@ bool Application::
 void Application::
 		openadd_project( pProject p )
 {
-    if ("not"==Reader::reader_text().substr(0,3))
-        return;
-
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
     if (1 == _projects.size())
@@ -202,6 +199,9 @@ void Application::
         if (!q->isModified() && q->worker.number_of_samples() == 0)
             q->mainWindow()->close();
     }
+    if ("not"==Reader::reader_text().substr(0,3))
+        return;
+
     _projects.insert( p );
 
     apply_command_line_options( p );
