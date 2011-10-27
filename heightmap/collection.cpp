@@ -62,6 +62,7 @@ Collection::
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),
+    _prev_length(.0f),
     _amplitude_axis(AmplitudeAxis_5thRoot)
 {
     BOOST_ASSERT( target );

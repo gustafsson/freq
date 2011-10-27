@@ -16,6 +16,7 @@ namespace Tools { namespace Selections
 RectangleModel::
         RectangleModel( RenderModel* rendermodel, Sawe::Project* project )
             :
+            type((RectangleType)-1),
             rendermodel_(rendermodel),
             project_(project)
 {
