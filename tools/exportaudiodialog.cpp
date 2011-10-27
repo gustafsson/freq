@@ -117,7 +117,6 @@ void ExportAudioDialog::
         return;
 
     this->render_view->userinput_update(false, true);
-    update();
 
     if (!drawnFinished_)
         update_timer.start();
