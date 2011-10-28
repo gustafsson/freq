@@ -35,29 +35,7 @@ CommentController::
 void CommentController::
         createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ )
 {
-    CommentModel* cmodel = dynamic_cast<CommentModel*>(model.get());
-    if (0 == cmodel)
-        return;
-
-    // Create a new comment in the middle of the viewable area
-    CommentView* comment = new CommentView(model);
-
-    connect(repo->render_view(), SIGNAL(painting()), comment, SLOT(updatePosition()));
-
-    comment->view = repo->render_view();
-    comment->move(0, 0);
-    comment->resize( cmodel->window_size.x, cmodel->window_size.y );
-
-    QGraphicsProxyWidget* proxy = new QGraphicsProxyWidget(0, Qt::Window);
-    comment->proxy = proxy;
-    proxy->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
-    proxy->setWidget( comment );
-    proxy->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
-    proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
-    // ZValue is set in commentview
-    proxy->setVisible(true);
-
-    repo->render_view()->addItem( proxy );
+    CommentView* comment = new CommentView(model, repo->render_view());
 
     comments_.append( comment );
 }
@@ -161,7 +139,7 @@ void CommentController::
     {
         if (comment_ && comment_->model()->move_on_hover)
         {
-            comment_->proxy->deleteLater();
+            comment_->getProxy()->deleteLater();
             comment_ = 0;
             setVisible( false );
         }

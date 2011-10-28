@@ -18,18 +18,23 @@
 
 namespace Tools {
 
-CommentView::CommentView(ToolModelP modelp, QWidget *parent) :
+CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent) :
     QWidget(parent),
+    view( render_view ),
     modelp(modelp),
     ui(new Ui::CommentView),
+    proxy( 0 ),
     keep_pos(false),
     z_hidden(false),
     lastz(6)
 {
     //
     ui->setupUi(this);
+
     BOOST_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
+
     this->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
+
     QAction *closeAction = new QAction(tr("D&elete"), this);
     //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
@@ -47,6 +52,20 @@ CommentView::CommentView(ToolModelP modelp, QWidget *parent) :
     setHtml(model()->html);
     //ui->textEdit->setFocusProxy(this);
     connect(ui->textEdit, SIGNAL(selectionChanged()), SLOT(recreatePolygon()));
+
+    connect(render_view, SIGNAL(painting()), SLOT(updatePosition()));
+
+    proxy = new QGraphicsProxyWidget(0, Qt::Window);
+    proxy->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
+    proxy->setWidget( this );
+    proxy->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+    proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
+    // ZValue is set in commentview
+    proxy->setVisible(true);
+    render_view->addItem( proxy );
+
+    move(0, 0);
+    resize( model()->window_size.x, model()->window_size.y );
 }
 
 
@@ -210,6 +229,13 @@ void CommentView::
 {
     if (event->button() == Qt::LeftButton)
         model()->screen_pos.x = -2;
+}
+
+
+QGraphicsProxyWidget* CommentView::
+        getProxy()
+{
+    return proxy;
 }
 
 

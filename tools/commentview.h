@@ -16,14 +16,14 @@ class CommentView : public QWidget
     Q_OBJECT
 
 public:
-    explicit CommentView(ToolModelP modelp, QWidget *parent = 0);
+    CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent=0);
     ~CommentView();
 
     std::string html();
     void setHtml(std::string);
 
     RenderView* view;
-    QGraphicsProxyWidget* proxy;
+    QGraphicsProxyWidget* getProxy();
     CommentModel* model();
     ToolModelP modelp;
 
@@ -54,6 +54,7 @@ public slots:
 private:
     ::Ui::CommentView *ui;
 
+    QGraphicsProxyWidget* proxy;
     QPoint ref_point;
     QPolygonF poly;
     bool keep_pos;
