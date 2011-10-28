@@ -67,11 +67,14 @@ Collection::
 {
     BOOST_ASSERT( target );
     samples_per_block( 1<<9 );
-    scales_per_block( 1<<9 );
+    scales_per_block( 1<<9 ); // sets _max_sample_size.scale
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
     _display_scale.setLinear(target->sample_rate());
+
+    // set _max_sample_size.time
+    invalidate_samples(Signal::Intervals::Intervals_ALL);
 }
 
 
@@ -493,7 +496,7 @@ void Collection::
                                  sid.toString().c_str());
 
     float length = target->length();
-    _max_sample_size.time = std::max(_max_sample_size.time, 2.f*length/_samples_per_block);
+    _max_sample_size.time = 2.f*std::max(1.f, length)/_samples_per_block;
 
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
