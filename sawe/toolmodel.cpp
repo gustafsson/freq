@@ -7,9 +7,13 @@ namespace Tools
     void ToolModel::
             removeFromRepo()
     {
-        if (repo_)
-            repo_->removeToolModel( this );
+        ToolRepo* r = repo_;
         repo_ = 0;
+        if (r)
+        {
+            // deletes this
+            r->removeToolModel( this );
+        }
     }
 
 

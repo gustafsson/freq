@@ -35,6 +35,10 @@ CommentController::
 void CommentController::
         createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ )
 {
+    CommentModel* cmodel = dynamic_cast<CommentModel*>(model.get());
+    if (0 == cmodel)
+        return;
+
     CommentView* comment = new CommentView(model, repo->render_view());
 
     comments_.append( comment );
