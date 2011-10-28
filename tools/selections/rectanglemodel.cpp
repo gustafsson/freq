@@ -16,13 +16,10 @@ namespace Tools { namespace Selections
 RectangleModel::
         RectangleModel( RenderModel* rendermodel, Sawe::Project* project )
             :
-            type((RectangleType)-1),
+            type(RectangleType_RectangleSelection),
             rendermodel_(rendermodel),
             project_(project)
 {
-    // no selection
-    a.time = b.time = 0;
-    a.scale = b.scale = 0;
 }
 
 
