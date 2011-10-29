@@ -237,7 +237,21 @@ bool Playback::
 void Playback::
         invalidate_samples( const Signal::Intervals& s )
 {
-    _data.invalidate_samples( s );
+    // If the CwtFilter runs out of memory and changes the number of scales per
+    // octave it will invalidate all samples. Discard that and keep the samples
+    // we've received for playback so far.
+    bool invalidates_all = (s == getInterval());
+    bool has_been_initialized = _data.invalid_samples();
+
+    if (has_been_initialized && invalidates_all)
+        return;
+
+    // Don't bother recomputing stuff we've already played
+    Signal::Interval whatsLeft(
+                        _playback_itr,
+                        Signal::Interval::IntervalType_MAX);
+
+    _data.invalidate_samples( s & whatsLeft );
 
     if (0 == _data.num_channels())
         _data.setNumChannels( source()->num_channels() );

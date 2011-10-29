@@ -203,8 +203,12 @@ void CwtFilter::
 
     if (_previous_scales_per_octave != cwt.scales_per_octave())
     {
+        bool first_verification = (0 == _previous_scales_per_octave);
+
         _previous_scales_per_octave = cwt.scales_per_octave();
-        invalidate_samples(Signal::Intervals::Intervals_ALL);
+
+        if (!first_verification)
+            invalidate_samples(Signal::Intervals::Intervals_ALL);
     }
 }
 
