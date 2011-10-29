@@ -42,9 +42,9 @@ public:
     virtual unsigned num_channels();
     virtual void set_channel(unsigned c);
     virtual unsigned get_channel();
+    virtual float length();
 
     unsigned recording_itr() { return number_of_samples(); }
-    float time();
     float time_since_last_update();
 
     Signal::PostSink* getPostSink() { return &_postsink; }
@@ -58,10 +58,11 @@ private:
         _sample_rate(1)
     {} // for deserialization
 
+    float time();
     std::string deviceName();
-    int input_device_;
     void init();
 
+    int input_device_;
     boost::posix_time::ptime _start_recording, _last_update;
     float _offset;
     unsigned _channel;

@@ -59,6 +59,7 @@ public:
       */
     virtual float sample_rate() { return _source->sample_rate(); }
     virtual IntervalType number_of_samples(); /// @see read(const Interval&)
+    virtual float length();
 
     virtual unsigned num_channels() { return _source->num_channels(); }
     virtual void set_channel(unsigned c) { if(_source) _source->set_channel(c); }

@@ -82,7 +82,7 @@ namespace Tools
 
         unsigned last_width() { return _last_width; }
         unsigned last_height() { return _last_height; }
-        float last_length() { return _last_length; }
+        float last_length();
 
 		template<class Archive> void serialize_items(Archive& ar, const unsigned int version) {
 			QList<QGraphicsItem *> itms = items();
@@ -182,7 +182,6 @@ namespace Tools
         boost::posix_time::ptime _last_frame;
         float _target_fps;
 
-        float _last_length;
         double modelview_matrix[16], projection_matrix[16];
         int viewport_matrix[4];
 

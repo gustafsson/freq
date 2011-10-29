@@ -495,7 +495,7 @@ void Collection::
     INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    float length = target->length();
+    float length = target->number_of_samples()/target->sample_rate();
     _max_sample_size.time = 2.f*std::max(1.f, length)/_samples_per_block;
 
 #ifndef SAWE_NO_MUTEX

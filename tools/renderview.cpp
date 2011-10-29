@@ -69,9 +69,6 @@ RenderView::
             _try_gc(0),
             _target_fps(30.0f)
 {
-    float l = model->project()->worker.source()->length();
-    _last_length = l;
-
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
     if (model->_rx>=90) { model->_rx=90; orthoview.reset(1); } else orthoview.reset(0);
@@ -283,7 +280,7 @@ float RenderView::
     return 0; //Crash on mac os
 #endif
 
-    if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > _last_length)
+    if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > model->project()->worker.length())
         return 0;
 
     if (is_valid_value)
@@ -799,9 +796,10 @@ void RenderView::
 void RenderView::
         setPosition( Heightmap::Position pos )
 {
+    float l = model->project()->worker.length();
     model->_qx = pos.time;
     if (model->_qx<0) model->_qx=0;
-    if (model->_qx>_last_length) model->_qx=_last_length;
+    if (model->_qx>l) model->_qx=l;
 
     model->_qz = pos.scale;
     if (model->_qz<0) model->_qz=0;
@@ -818,6 +816,13 @@ Support::ToolSelector* RenderView::
 //        tool_selector_.reset( new Support::ToolSelector(glwidget));
 
     return tool_selector;
+}
+
+
+float RenderView::
+        last_length()
+{
+    return model->project()->worker.length();
 }
 
 
@@ -974,13 +979,12 @@ void RenderView::
     bool isWorking = false;
     bool isRecording = false;
 
-    _last_length = model->renderSignalTarget->source()->length();
-
     if (0 == "stop after 31 seconds")
     {
+        float length = model->project()->worker.length();
         static unsigned frame_counter = 0;
         TaskInfo("frame_counter = %u", ++frame_counter);
-        if (_last_length > 30) for (static bool once=true; once; once=false)
+        if (length > 30) for (static bool once=true; once; once=false)
             QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
     }
 
@@ -988,7 +992,6 @@ void RenderView::
     if(r != 0 && !(r->isStopped()))
     {
         isRecording = true;
-        _last_length = r->time();
     }
 
     // Set up camera position
@@ -1022,7 +1025,8 @@ void RenderView::
 			emit painting();
 		}
 
-        model->renderer->drawAxes( _last_length ); // 4.7 ms
+        float length = model->project()->worker.length();
+        model->renderer->drawAxes( length ); // 4.7 ms
     }
 
     {   // Find things to work on (ie playback and file output)

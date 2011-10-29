@@ -261,12 +261,20 @@ unsigned MicrophoneRecorder::
 
 
 float MicrophoneRecorder::
+        length()
+{
+    return isStopped() ? Signal::FinalSource::length() : time();
+}
+
+
+float MicrophoneRecorder::
         time()
 {
     boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _start_recording;
     float dt = d.total_milliseconds()*0.001f;
     return dt + _offset;
 }
+
 
 float MicrophoneRecorder::
         time_since_last_update()

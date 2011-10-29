@@ -119,6 +119,15 @@ IntervalType Operation::
 }
 
 
+float Operation::
+        length()
+{
+    float L = SourceBase::length();
+    float D = _source ? _source->length() - _source->SourceBase::length() : 0;
+    return std::max(0.f, L + D);
+}
+
+
 Operation* Operation::
         affecting_source( const Interval& I )
 {
