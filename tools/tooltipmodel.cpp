@@ -230,10 +230,8 @@ void TooltipModel::
     const char name[][3] = {
         "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
     };
-    stringstream a;
-    primaryName = ((stringstream&)(a << name[tone0%12] << octave0)).str();
-    a.clear();
-    secondaryName = ((stringstream&)(a << name[tone1%12] << octave1)).str();
+    primaryName = ((stringstream&)(stringstream() << name[tone0%12] << octave0)).str();
+    secondaryName = ((stringstream&)(stringstream() << name[tone1%12] << octave1)).str();
 }
 
 
