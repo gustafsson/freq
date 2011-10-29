@@ -29,6 +29,7 @@
 #include "fantrackermodel.h"
 #include "selectionviewinfo.h"
 #include "openandcomparecontroller.h"
+#include "settingscontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -118,6 +119,7 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new OpenAndCompareController( p ) ));
 
+    _objects.push_back( QPointer<QObject>( new SettingsController( p )));
 
     //
     // Insert new tools here, and delete things in the destructor in the

@@ -122,8 +122,8 @@ void MatlabController::
 
     if (!scripts_)
     {
-        scripts_ = new QMenu( "Matlab/Octave &scripts",  ui->menuWindows );
-        ui->menuWindows->insertMenu( ui->menuToolbars->menuAction(), scripts_ );
+        scripts_ = new QMenu( "Matlab/Octave &scripts",  ui->menuTools );
+        ui->menuTools->insertMenu( ui->menuToolbars->menuAction(), scripts_ );
     }
     scripts_->clear();
     scripts_->insertAction( 0, ui->actionMatlabOperation );

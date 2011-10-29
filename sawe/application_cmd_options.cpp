@@ -71,13 +71,6 @@ static const char _sawe_usage_string[] =
     "    --min_hz            Transform CWT with scales logarithmically distributed\n"
     "                        on (min_hz, fs/2]\n"
     "\n"
-    "Audio devices (see log file from previous start for list of available devices)\n"
-    "    --record            Starts Sonic AWE starts in record mode. [default]\n"
-    "    --record_device     Selects a specific device for recording. -1 specifices\n"
-    "                        the default input device/microphone.\n"
-    "    --playback_device   Selects a specific device for playback. -1 specifices\n"
-    "                        the default output device.\n"
-    "\n"
     "Rendering settings\n"
     "    --samples_per_block The transform chunks are downsampled to blocks for\n"
     "                        rendering, this gives the number of samples per block.\n"
@@ -101,9 +94,6 @@ static unsigned _get_hdf = (unsigned)-1;
 static unsigned _get_csv = (unsigned)-1;
 static bool _get_chunk_count = false;
 static std::string _selectionfile = "selection.wav";
-static bool _record = false;
-static int _record_device = -1;
-static int _playback_device = -1;
 static std::string _soundfile = "";
 #ifndef QT_NO_THREAD
 static bool _multithread = false;
@@ -180,9 +170,6 @@ static int handle_options(char ***argv, int *argc)
         else if (readarg(&cmd, samples_per_block));
         else if (readarg(&cmd, scales_per_block));
         else if (readarg(&cmd, get_chunk_count));
-        else if (readarg(&cmd, record_device));
-        else if (readarg(&cmd, record));
-        else if (readarg(&cmd, playback_device));
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
         else if (readarg(&cmd, get_csv));
@@ -258,15 +245,13 @@ void Application::
     Sawe::pProject p; // p will be owned by Application and released before a.exec()
 
     if (!_soundfile.empty())
-        p = Sawe::Project::open( _soundfile );
+        p = Sawe::Application::slotOpen_file( _soundfile );
 
     if (!p)
-        p = Sawe::Project::createRecording( _record_device );
+        p = Sawe::Application::slotNew_recording( -1 );
 
     if (!p)
         ::exit(-1);
-
-    this->openadd_project( p );
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     Signal::pOperation source = p->tools().render_model.renderSignalTarget->post_sink()->source();
@@ -340,7 +325,6 @@ void Application::
 
     Tools::ToolFactory &tools = p->tools();
 
-    tools.playback_model.playback_device = _playback_device;
     tools.playback_model.selection_filename  = _selectionfile;
 
     BOOST_FOREACH( const boost::shared_ptr<Heightmap::Collection>& c, tools.render_model.collections )

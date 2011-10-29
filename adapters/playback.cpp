@@ -94,6 +94,41 @@ Playback::
 }
 
 
+/*static*/ std::list<Playback::DeviceInfo> Playback::
+        get_devices()
+{
+    // initialize enumeration of devices if it hasn't been done already
+    portaudio::AutoSystem autoSys;
+
+    portaudio::System &sys = portaudio::System::instance();
+
+    std::list<DeviceInfo> devices;
+
+    for (portaudio::System::DeviceIterator i = sys.devicesBegin(); i != sys.devicesEnd(); ++i)
+    {
+        DeviceInfo d;
+        d.name = (*i).name();
+        d.name2 = (*i).hostApi().name();
+        d.inputChannels = (*i).maxInputChannels();
+        d.outputChannels = (*i).maxOutputChannels();
+        d.isDefaultIn = (*i).isSystemDefaultInputDevice();
+        d.isDefaultOut = (*i).isSystemDefaultOutputDevice();
+        d.index = (*i).index();
+
+        std::string strDetails = (*i).hostApi().name();
+        if ((*i).isSystemDefaultInputDevice())
+               strDetails += ", default input";
+        if ((*i).isSystemDefaultOutputDevice())
+               strDetails += ", default output";
+        d.name2 = strDetails;
+
+        devices.push_back( d );
+    }
+
+    return devices;
+}
+
+
 unsigned Playback::
         playback_itr()
 {

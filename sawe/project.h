@@ -145,6 +145,7 @@ public:
       Obtain the main window for this project.
       */
     Ui::SaweMainWindow* mainWindow();
+    QWidget* mainWindowWidget();
 
 
     /**

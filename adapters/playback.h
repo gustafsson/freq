@@ -30,6 +30,16 @@ public:
     void onFinished();
 
     static void list_devices();
+    struct DeviceInfo
+    {
+        int index;
+        std::string name;
+        int inputChannels, outputChannels;
+        std::string name2;
+        bool isDefaultIn, isDefaultOut;
+    };
+
+    static std::list<DeviceInfo> get_devices();
 
     void put( Signal::pBuffer );
     unsigned    playback_itr();

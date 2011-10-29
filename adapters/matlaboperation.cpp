@@ -29,6 +29,7 @@
 #include <QApplication>
 #include <QErrorMessage>
 #include <QDir>
+#include <QSettings>
 
 using namespace std;
 using namespace Signal;
@@ -99,7 +100,7 @@ MatlabFunction::
             "matlab",
 #if defined(_WIN32) || defined(__APPLE__)
             // windows and mac install path
-            QApplication::applicationDirPath().replace("\\", "\\\\").replace("\'", "\\'" ) + "/matlab",
+            QApplication::applicationDirPath().replace("\\", "\\\\").replace("'", "\\'" ) + "/matlab",
 #else
             // ubuntu
             "/usr/share/sonicawe",
@@ -177,29 +178,46 @@ MatlabFunction::
 
         _pid = new QProcess();
         connect( _pid, SIGNAL(finished( int , QProcess::ExitStatus )), SLOT(finished(int,QProcess::ExitStatus)));
-//        _pid->setProcessChannelMode( QProcess::ForwardedChannels );
         _pid->setProcessChannelMode( QProcess::MergedChannels );
         if (settings) settings->setProcess( _pid );
 
-        if (!f.empty())
-        {
-            if (startProcess(_pid, "matlab", matlab_args))
-                return;
+        QString defaultscript = QSettings().value("defaultscript", "matlab").toString();
+        QString octavepath = QSettings().value("octavepath", "").toString();
+        QString matlabpath = QSettings().value("matlabpath", "").toString();
 
-            TaskInfo("Couldn't start MATLAB, trying Octave instead");
+        for (int i=0; i<2; i++)
+        {
+            int j = (i + (defaultscript != "matlab"))%2;
+            if (0 == j)
+            {
+                if (!f.empty())
+                {
+                    QStringList matlab_names;
+                    matlab_names.push_back(matlabpath);
+                    matlab_names.push_back("matlab");
+                    if (startProcess(_pid, matlab_names, matlab_args))
+                        return;
+
+                    TaskInfo("Couldn't start MATLAB");
+                }
+            }
+
+            if (1 == j)
+            {
+                QStringList octave_names;
+                octave_names.push_back(octavepath);
+                octave_names.push_back("octave-3.2.3");
+                octave_names.push_back("octave");
+                if (startProcess(_pid, octave_names, octave_args))
+                    return;
+
+                TaskInfo("Couldn't start Octave");
+            }
         }
 
-        QStringList octave_names;
-        octave_names.push_back("octave-3.2.3");
-        octave_names.push_back("octave");
-        if (startProcess(_pid, octave_names, octave_args))
-            return;
-
-        TaskInfo("Couldn't start Octave");
-
+#ifdef _WIN32
         if (!f.empty())
         {
-#ifdef _WIN32
             TaskInfo("Trying common installation paths for MATLAB instead");
             QStringList matlab_paths;
             matlab_paths.push_back("C:\\Program Files\\MATLAB\\R2008b\\bin\\matlab.exe");
@@ -209,8 +227,8 @@ MatlabFunction::
                 return;
 
             TaskInfo("Couldn't start Matlab");
-#endif
         }
+#endif
 
 #if defined(_WIN32) || defined(__APPLE__)
         TaskInfo("Trying common installation paths for Octave instead");
@@ -229,20 +247,6 @@ MatlabFunction::
 #endif
         delete _pid;
         _pid = 0;
-        /*
-#if defined(WIN32)
-		_pid = (void*)_spawnlp(_P_NOWAIT, "matlab", 
-                        "matlab", "-noFigureWindows", "-nojvm", "-nodesktop", "-nosplash", "-r", matlab_command.str().c_str(), NULL );
-
-		if (0 == _pid)
-		{
-			// failed, try octave
-            _pid = (void*)_spawnlp(_P_NOWAIT, "octave","octave", "-qf", "--eval", octave_command.str().c_str(), NULL );
-	        // will eventually time out if this fails to
-		}
-#else
-#error No implementation to spawn processes implemented for this platform/compiler.
-#endif */
     }
 }
 

@@ -22,7 +22,6 @@ namespace Tools
 
         Signal::pTarget playbackTarget;
 
-        unsigned playback_device;
         std::string selection_filename;
 
         SelectionModel* selection;

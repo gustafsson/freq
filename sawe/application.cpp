@@ -18,6 +18,7 @@
 #include <QTime>
 #include <QtGui/QMessageBox>
 #include <QGLWidget>
+#include <QSettings>
 
 // cuda
 #include "cuda.h"
@@ -263,14 +264,12 @@ pProject Application::
         slotNew_recording( int record_device )
 {
     TaskTimer tt("New recording");
-	if (record_device<0)
-		record_device = default_record_device;
-	else
-		default_record_device = record_device;
+    if (record_device<0)
+        record_device = QSettings().value("inputdevice", -1).toInt();
 
     pProject p = Project::createRecording( record_device );
     if (p)
-		openadd_project(p);
+        openadd_project(p);
 
     return p;
 }

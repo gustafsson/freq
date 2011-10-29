@@ -11,7 +11,6 @@ namespace Tools
             PlaybackModel(Sawe::Project* project)
                 :
                 playbackTarget(new Signal::Target(&project->layers, "Playback", false, true)),
-                playback_device(-1),
                 selection(0),
                 markers(0)
     {

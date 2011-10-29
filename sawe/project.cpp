@@ -229,6 +229,13 @@ Ui::SaweMainWindow* Project::
 }
 
 
+QWidget* Project::
+        mainWindowWidget()
+{
+    return dynamic_cast<QWidget*>(mainWindow());
+}
+
+
 std::string Project::
         project_title()
 {

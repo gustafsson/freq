@@ -44,7 +44,7 @@
      <height>25</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuWindows">
+   <widget class="QMenu" name="menuTools">
     <property name="title">
      <string>&amp;Tools</string>
     </property>
@@ -104,7 +104,7 @@
     <addaction name="action_Enter_product_key"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuWindows"/>
+   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QDockWidget" name="toolPropertiesWindow">

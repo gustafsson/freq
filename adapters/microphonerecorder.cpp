@@ -204,6 +204,20 @@ long unsigned MicrophoneRecorder::
 }
 
 
+void MicrophoneRecorder::
+        changeInputDevice( int inputDevice )
+{
+    bool isRecording = !isStopped();
+    stopRecording();
+
+    input_device_ = inputDevice;
+    init();
+
+    if (isRecording)
+        startRecording();
+}
+
+
 std::string MicrophoneRecorder::
         name()
 {

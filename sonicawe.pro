@@ -115,7 +115,8 @@ FORMS += \
     tools/harmonicsinfoform.ui \
     tools/matlaboperationwidget.ui \
     tools/selections/rectangleform.ui \
-    sawe/enterlicense.ui
+    sawe/enterlicense.ui \
+    tools/settingsdialog.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

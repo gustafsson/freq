@@ -12,6 +12,8 @@ namespace Sawe {
 #include "renderview.h"
 #include "sawe/toolmodel.h"
 
+#include <boost/serialization/version.hpp>
+
 #include <typeinfo>
 #include <QScopedPointer>
 
@@ -37,11 +39,17 @@ namespace Tools
     private:
         friend class boost::serialization::access;
         ToolFactory(); // required by serialization, should never be called
-        template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("ToolFactory::serialize");
             ar
-                    & BOOST_SERIALIZATION_NVP(render_model)
-                    & BOOST_SERIALIZATION_NVP(playback_model.playback_device)
+                    & BOOST_SERIALIZATION_NVP(render_model);
+            if (version == 0)
+            {
+                int playback_device = -1;
+                ar
+                    & BOOST_SERIALIZATION_NVP(playback_device);
+            }
+            ar
                     & BOOST_SERIALIZATION_NVP(playback_model.selection_filename)
                     & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ToolRepo);
         }
@@ -109,5 +117,7 @@ namespace Tools
         QScopedPointer<class WorkerController> _worker_controller;
     };
 } // namespace Tools
+
+BOOST_CLASS_VERSION(Tools::ToolFactory, 1)
 
 #endif // TOOLFACTORY_H
