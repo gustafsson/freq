@@ -297,7 +297,7 @@ pChunk Cwt::
                 TIME_CWTPART TaskTimer("Adding silence %u", sub_silence ).suppressTiming();
                 Signal::Interval actualData = subinterval;
                 actualData.last -= sub_silence;
-                BOOST_ASSERT( (Signal::Intervals(actualData) - buffer->getInterval()).empty() );
+                BOOST_ASSERT( (Signal::Interval(actualData.first, actualData.last-sub_silence) - buffer->getInterval()).empty() );
                 Signal::BufferSource addSilence( bs.readFixedLength( actualData ) );
                 data = addSilence.readFixedLength( subinterval );
             } else {
@@ -741,18 +741,23 @@ void Cwt::
     float v = _scales_per_octave;
     float log2_a = 1.f / v;
 
-    //TaskInfo ti("Cwt::scales_per_octave( %g )", value);
+    DEBUG_CWT TaskInfo ti("Cwt::scales_per_octave( %g )", value);
     for (int j=0; j<2*_scales_per_octave; ++j)
     {
         float aj = exp2f(log2_a * j );
         float q = (-w*aj + M_PI)*sigma();
         float phi_star = expf( -q*q );
 
-        //TaskInfo("%d: %g", j, phi_star );
+        DEBUG_CWT TaskInfo("%d: %g", j, phi_star );
         phi_sum += phi_star;
     }
 
-    _jibberish_normalization = 0.2 / phi_sum;
+    float sigma_constant = sqrt( 4*M_PI*sigma() );
+    _jibberish_normalization = 1 / (phi_sum * sigma_constant);
+
+    DEBUG_CWT TaskInfo("phi_sum  = %g", phi_sum );
+    DEBUG_CWT TaskInfo("sigma_constant  = %g", sigma_constant );
+    DEBUG_CWT TaskInfo("_jibberish_normalization  = %g", _jibberish_normalization );
 }
 
 

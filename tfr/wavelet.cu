@@ -140,7 +140,8 @@ __global__ void kernel_compute_wavelet_coefficients(
     }
     else
     {
-        float cufft_normalize = 1.f/(float)(nFrequencyBins*half_sizes);
+        // discarding redundant part of spectra, take 2 here
+        float cufft_normalize = 2.f/(float)(nFrequencyBins*half_sizes);
         cufft_normalize *= normalization_factor;
         //float jibberish_normalization = 0.3;
         //jibberish_normalization *= sqrtf(sqrtf(sqrtf(sigma_t0)));
