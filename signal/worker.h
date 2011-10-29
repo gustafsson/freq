@@ -202,7 +202,7 @@ public:
       workOne().
       */
     Signal::IntervalType number_of_samples() const { return _number_of_samples; }
-    float length() const { return number_of_samples()/source()->sample_rate(); }
+    float length() const { return _length; }
 
         /**
 	  Throws an std::exception if one has been caught by run()
@@ -237,6 +237,14 @@ private:
       Number of samples, updated from source when calling workOne().
       */
     Signal::IntervalType _number_of_samples;
+
+
+    /**
+      Length, updated from source when calling workOne(). Might be less than
+      number of samples during recording.
+      */
+    float _length;
+
 
     /**
       Adjusting chunk size based on fps.

@@ -37,6 +37,7 @@ Worker::
     latest_request(0,0),
     latest_result(0,0),
     _number_of_samples(0),
+    _length(0.f),
     _last_work_one(boost::date_time::not_a_date_time),
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
@@ -86,6 +87,7 @@ bool Worker::
     }
 
     _number_of_samples = source()->number_of_samples();
+    _length = source()->length();
 
     if (skip_if_low_fps)
         if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps && _requested_fps>_min_fps)

@@ -39,7 +39,11 @@ void RecordView::
     if (enabled)
     {
         float fs = model_->project->worker.source()->sample_rate();
-        double limit = std::max(0.f, model_->recording->time() - 2*Tfr::Cwt::Singleton().wavelet_time_support_samples(fs)/fs);
+        Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
+        float time_support = cwt.wavelet_time_support();
+        cwt.wavelet_fast_time_support( cwt.wavelet_default_time_support() );
+        double limit = std::max(0.f, model_->recording->time() - 2*cwt.wavelet_time_support_samples(fs)/fs);
+        cwt.wavelet_fast_time_support( time_support );
         limit = std::min(limit, (double)model_->project->worker.length());
 
         if (model_->render_view->model->_qx >= prev_limit_) {
