@@ -136,6 +136,14 @@ OperationOtherSilent::
     reset(section, fs);
 }
 
+
+Signal::Intervals OperationOtherSilent::
+        zeroed_samples()
+{
+    return ~Signal::Intervals(section_);
+}
+
+
 void OperationOtherSilent::
         reset( const Signal::Interval& section, float fs )
 {

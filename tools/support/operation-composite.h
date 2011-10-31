@@ -103,6 +103,8 @@ public:
     OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
     OperationOtherSilent( float fs, const Signal::Interval& section );
 
+    virtual Signal::Intervals zeroed_samples();
+
     void reset( const Signal::Interval& section, float fs=0 );
 
     Signal::Interval section() { return section_; }
