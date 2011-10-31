@@ -35,7 +35,7 @@ GraphicsView::
 
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
-    QGraphicsProxyWidget* toolProxy = new QGraphicsProxyWidget();
+    tool_proxy_ = new QGraphicsProxyWidget();
     layout_widget_ = new QWidget();
 
     // Make all child widgets occupy the entire area
@@ -43,11 +43,14 @@ GraphicsView::
     layout_widget_->layout()->setMargin(0);
     layout_widget_->layout()->setSpacing(0);
 
-    toolProxy->setWidget( layout_widget_ );
-    toolProxy->setWindowFlags( Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
-    toolProxy->setZValue( -1e30 );
+    tool_proxy_ ->setWidget( layout_widget_ );
+    tool_proxy_ ->setWindowFlags( Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+    setToolFocus( false );
+
     layout_widget_->setWindowOpacity( 0 );
-    scene->addItem( toolProxy );
+
+    scene->addItem( tool_proxy_  );
+    tool_proxy_->setParent( scene );
 }
 
 
@@ -208,6 +211,13 @@ unsigned GraphicsView::
         toolWindows()
 {
     return layout_widget_->layout()->count();
+}
+
+
+void GraphicsView::
+        setToolFocus( bool focus )
+{
+    tool_proxy_->setZValue( (focus ? 1 : -1 ) * 1e30);
 }
 
 

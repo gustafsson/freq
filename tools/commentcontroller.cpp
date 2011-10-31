@@ -113,6 +113,8 @@ void CommentController::
 {
     if (event->type() & QEvent::EnabledChange)
     {
+        view_->graphicsview->setToolFocus( isEnabled() );
+
         view_->toolSelector()->setCurrentTool( this, isEnabled() );
 
         emit enabledChanged(isEnabled());
@@ -143,6 +145,7 @@ void CommentController::
     {
         if (comment_ && comment_->model()->move_on_hover)
         {
+            // didn't place new comment before tool was disabled
             comment_->getProxy()->deleteLater();
             comment_ = 0;
             setVisible( false );
@@ -185,12 +188,14 @@ void CommentController::
 void CommentController::
         mousePressEvent( QMouseEvent * e )
 {
-    setEnabled( false );
     if (comment_)
     {
         comment_->model()->screen_pos.x = -2;
         comment_->setEditFocus(true);
+        comment_ = 0;
     }
+
+    setEnabled( false );
 
     e->setAccepted(true);
     QWidget::mousePressEvent(e);

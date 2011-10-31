@@ -4,6 +4,8 @@
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "graphicsview.h"
+
 // boost
 #include <boost/foreach.hpp>
 
@@ -119,6 +121,7 @@ void TooltipController::
 
             model->automarking = TooltipModel::AutoMarkerWorking;
 
+            // calls createView
             render_view_->model->project()->tools().addModel( model );
 
             mouseMoveEvent( e );
@@ -130,6 +133,19 @@ void TooltipController::
 void TooltipController::
         mouseMoveEvent ( QMouseEvent * e )
 {
+    if (hover_info_model_)
+    {
+        bool success=false;
+        Heightmap::Position p = render_view_->getPlanePos( e->posF(), &success);
+        TaskTimer tt("TooltipController::mouseMoveEvent hover_info_model(%g, %g)", p.time, p.scale);
+        if (success)
+        {
+            hover_info_model_->showToolTip( p );
+            if (hover_info_model_->comment)
+                hover_info_model_->comment->setEnabled( false );
+        }
+    }
+
     if (!current_model())
         return;
 
@@ -149,8 +165,6 @@ void TooltipController::
 
             if (t)
                 emitTooltipChanged();
-
-            render_view_->userinput_update();
         }
     }
 
@@ -184,7 +198,10 @@ void TooltipController::
     if (event->type() & QEvent::EnabledChange)
     {
         if (!isEnabled())
+        {
+            hover_info_action_->setChecked( false );
             setCurrentView(0);
+        }
 
         emit enabledChanged(isEnabled());
     }
@@ -192,11 +209,45 @@ void TooltipController::
 
 
 void TooltipController::
+        hoverInfoToggled(bool enabled)
+{
+    if (enabled)
+    {
+        Ui::MainWindow* ui = render_view_->model->project()->mainWindow()->getItems();
+        ui->actionActivateInfoTool->setChecked( true );
+
+        hover_info_model_.reset( new TooltipModel() );
+        hover_info_model_->automarking = TooltipModel::NoMarkers;
+        hover_info_model_->setPtrs( render_view_, this->comments_ );
+        setMouseTracking( true );
+
+        this->render_view_->graphicsview->setToolFocus( true );
+    }
+    else if (hover_info_model_)
+    {
+        delete hover_info_model_->comment.data();
+        hover_info_model_.reset();
+        setMouseTracking( false );
+
+        this->render_view_->graphicsview->setToolFocus( false );
+    }
+}
+
+
+void TooltipController::
         setupGui()
 {
-    Ui::MainWindow* ui = render_view_->model->project()->mainWindow()->getItems();
+    Ui::SaweMainWindow* mainWindow = render_view_->model->project()->mainWindow();
+    Ui::MainWindow* ui = mainWindow->getItems();
     connect(ui->actionActivateInfoTool, SIGNAL(toggled(bool)), SLOT(receiveToggleInfoTool(bool)));
     connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateInfoTool, SLOT(setChecked(bool)));
+
+    hover_info_action_ = new QAction(mainWindow);
+    hover_info_action_->setCheckable( true );
+    hover_info_action_->setShortcutContext(Qt::WindowShortcut);
+    hover_info_action_->setShortcut(QString("j"));
+    mainWindow->addAction( hover_info_action_ );
+    connect(hover_info_action_.data(), SIGNAL(toggled(bool)), SLOT(hoverInfoToggled(bool)));
 
     // Close this widget before the OpenGL context is destroyed to perform
     // proper cleanup of resources

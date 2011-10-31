@@ -280,7 +280,7 @@ float RenderView::
     return 0; //Crash on mac os
 #endif
 
-    if (pos.time < 0 || pos.scale < 0 || pos.scale > 1 || pos.time > model->project()->worker.length())
+    if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->project()->worker.length())
         return 0;
 
     if (is_valid_value)

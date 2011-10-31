@@ -36,6 +36,7 @@ namespace Tools
     private slots:
         void receiveToggleInfoTool(bool);
         void emitTooltipChanged();
+        void hoverInfoToggled(bool enabled);
 
     private:
         // Event handlers
@@ -53,6 +54,8 @@ namespace Tools
 
         TooltipModel* current_model();
         QPointer<TooltipView> current_view_;
+        QPointer<QAction> hover_info_action_;
+        boost::shared_ptr<TooltipModel> hover_info_model_;
 
         // GUI
         void setupGui();

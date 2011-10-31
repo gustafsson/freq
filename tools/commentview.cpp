@@ -16,6 +16,10 @@
 #include <QPaintEvent>
 #include <QPainter>
 
+const float UpdatePositionFromScreen = -2e30f;
+const float PositionUpdatedFromScreen = -1e30f;
+const float CommentGetAllFocus = 1e29f;
+
 namespace Tools {
 
 CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent) :
@@ -60,8 +64,9 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     proxy->setWidget( this );
     proxy->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
     proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
-    // ZValue is set in commentview
+    // ZValue is set in CommentView::updatePosition()
     proxy->setVisible(true);
+    proxy->setZValue( -1 );
     render_view->addItem( proxy );
 
     move(0, 0);
@@ -113,14 +118,16 @@ void CommentView::
 void CommentView::
         mousePressEvent(QMouseEvent *event)
 {
+    // any click aborts a move
     if (model()->move_on_hover)
     {
         setMovable( false );
-        model()->screen_pos.x = -2;
-        event->setAccepted( false );
+        model()->screen_pos.x = UpdatePositionFromScreen;
+        event->setAccepted( true );
         return;
     }
 
+    // any click outside the mask is discarded
     if (!maskedRegion.contains( event->pos() ))
     {
         setEditFocus( false );
@@ -128,20 +135,20 @@ void CommentView::
         return;
     }
 
-    //TaskInfo("CommentView::mousePressEvent");
+    // any click sets edit focus to the text widget
     if (!testFocus())
     {
         setEditFocus(true);
     }
 
-
+    // click with the left mouse button initializes a move or resize
     if (event->buttons() & Qt::LeftButton)
     {
-        QPoint gp = proxy->sceneTransform().map(mapToParent(mapFromGlobal(event->globalPos())));
+        QPoint gp = proxy->sceneTransform().map(event->pos());
 
         if (event->modifiers() == 0)
         {
-            dragPosition = gp;
+            dragPosition = event->pos();
             event->accept();
         }
         else if (event->modifiers().testFlag(Qt::ControlModifier))
@@ -171,7 +178,7 @@ void CommentView::
 
 void CommentView::
         mouseMoveEvent(QMouseEvent *event)
-{    
+{
     bool visible = maskedRegion.contains( event->pos() );
     setContextMenuPolicy( visible ? Qt::ActionsContextMenu : Qt::NoContextMenu);
 
@@ -185,22 +192,19 @@ void CommentView::
     }
 
     moving |= model()->move_on_hover;
-    if (model()->move_on_hover)
-        dragPosition = proxy->sceneTransform().map(ref_point);
 
     if (moving || resizing)
     {
-        QPoint gp = proxy->sceneTransform().map(mapToParent(mapFromGlobal(event->globalPos())));
+        QPoint gp = proxy->sceneTransform().map(event->pos());
 
         if (moving)
         {
-            move(gp - dragPosition);
+            move(event->pos() - dragPosition);
             QPoint global_ref_pt = proxy->sceneTransform().map(ref_point);
 
             model()->screen_pos.x = global_ref_pt.x();
             model()->screen_pos.y = global_ref_pt.y();
 
-            dragPosition = gp;
             event->accept();
         }
         else if (resizing)
@@ -228,7 +232,7 @@ void CommentView::
         mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
-        model()->screen_pos.x = -2;
+        model()->screen_pos.x = UpdatePositionFromScreen;
 }
 
 
@@ -452,9 +456,9 @@ void CommentView::
     bool use_heightmap_value = true;
 
     // moveEvent can't be used when updating the reference position while moving
-    if (!proxy->pos().isNull() || model()->screen_pos.x == -2)
+    if (!proxy->pos().isNull() || model()->screen_pos.x == UpdatePositionFromScreen)
     {
-        if (!keep_pos && model()->screen_pos.x == -2)
+        if (!keep_pos && model()->screen_pos.x == UpdatePositionFromScreen)
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
@@ -465,7 +469,7 @@ void CommentView::
             else
                 model()->pos = view->getPlanePos( c );
 
-            model()->screen_pos.x = -1;
+            model()->screen_pos.x = PositionUpdatedFromScreen;
         }
 
         keep_pos = false;
@@ -478,7 +482,7 @@ void CommentView::
 
     double z;
     QPointF pt;
-    if (model()->screen_pos.x >= 0)
+    if (model()->screen_pos.x != PositionUpdatedFromScreen && model()->screen_pos.x != UpdatePositionFromScreen)
     {
         pt.setX( model()->screen_pos.x );
         pt.setY( model()->screen_pos.y );
@@ -493,7 +497,10 @@ void CommentView::
     //         model->pos.time, model->pos.scale,
     //         pt.x(), pt.y(), z);
 
-    proxy->setZValue(-z);
+    if (model()->move_on_hover)
+        proxy->setZValue( CommentGetAllFocus );
+    else
+        proxy->setZValue(-z);
 
     if (z>0)
     {

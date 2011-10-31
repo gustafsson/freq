@@ -42,7 +42,8 @@ public:
     {
         ManualMarkers,
         AutoMarkerWorking,
-        AutoMarkerFinished
+        AutoMarkerFinished,
+        NoMarkers
     } automarking;
     std::string automarkingStr();
 

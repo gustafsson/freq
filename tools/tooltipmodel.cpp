@@ -64,10 +64,24 @@ const Heightmap::Position& TooltipModel::
 void TooltipModel::
         showToolTip( Heightmap::Position p )
 {
-    if (TooltipModel::ManualMarkers != this->automarking)
+    BOOST_ASSERT( render_view_ );
+
+    switch(this->automarking)
     {
+    case TooltipModel::ManualMarkers:
+        break;
+
+    case TooltipModel::NoMarkers:
+        max_so_far = -1; // new positions are always accepted
+        break;
+
+    case TooltipModel::AutoMarkerFinished:
+        break;
+
+    case TooltipModel::AutoMarkerWorking:
         // computeMarkerMeasure and others will set automarking back to working if it is not finished
         this->automarking = AutoMarkerFinished;
+        break;
     }
 
     fetched_heightmap_values = 0;
@@ -109,11 +123,26 @@ void TooltipModel::
     float FS = render_view_->model->project()->worker.source()->sample_rate();
     float f = this->pos_hz;
 
-    float best_compliance;
-    if (found_better || TooltipModel::ManualMarkers != this->automarking )
+    float best_compliance = 0;
+
+    switch(this->automarking)
+    {
+    case TooltipModel::ManualMarkers:
+        if (found_better)
+            this->markers = this->markers_auto = guessHarmonicNumber( p, best_compliance );
+        else
+            best_compliance = computeMarkerMeasure( p, this->markers, 0);
+        break;
+
+    case TooltipModel::NoMarkers:
+        this->markers = 0;
+        break;
+
+    case TooltipModel::AutoMarkerFinished:
+    case TooltipModel::AutoMarkerWorking:
         this->markers = this->markers_auto = guessHarmonicNumber( p, best_compliance );
-    else
-        best_compliance = computeMarkerMeasure( p, this->markers, 0);
+        break;
+    }
 
     if (found_better)
         this->max_so_far = val;
@@ -177,10 +206,10 @@ void TooltipModel::
     }
 
     bool first = 0 == this->comment;
-    BOOST_ASSERT(this->pos().time >= 0);
-    BOOST_ASSERT(this->pos().scale >= 0);
-    BOOST_ASSERT(this->pos().time <= FLT_MAX);
-    BOOST_ASSERT(this->pos().scale <= 1);
+    //BOOST_ASSERT(this->pos().time >= 0);
+    //BOOST_ASSERT(this->pos().scale >= 0);
+    //BOOST_ASSERT(this->pos().time <= FLT_MAX);
+    //BOOST_ASSERT(this->pos().scale <= 1);
     comments_->setComment( this->pos(), ss.str(), &this->comment );
     BOOST_ASSERT(this->comment);
     if (first)
@@ -188,6 +217,9 @@ void TooltipModel::
         this->comment->thumbnail( true );
         this->comment_model = this->comment->modelp;
     }
+
+    if (TooltipModel::NoMarkers == this->automarking)
+        this->comment->thumbnail( false );
 
     this->comment->model()->pos = Heightmap::Position(
             p.time - 0.01/render_view_->model->xscale*render_view_->model->_pz,
@@ -198,7 +230,10 @@ void TooltipModel::
 
     if ( first )
     {
-        this->comment->resize( 440, 225 );
+        if ( 0 < this->markers )
+            this->comment->resize( 440, 225 );
+        else
+            this->comment->resize( 260, 80 );
     }
 
     if (found_better)

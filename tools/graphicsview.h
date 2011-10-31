@@ -40,6 +40,8 @@ public:
     unsigned toolWindows();
     Support::ToolSelector* toolSelector(int index);
 
+    void setToolFocus( bool focus );
+
     void setLayoutDirection( QBoxLayout::Direction direction );
     QBoxLayout::Direction layoutDirection();
 
@@ -53,6 +55,7 @@ public slots:
 private:
     bool pressed_control_;
     QWidget* layout_widget_;
+    QGraphicsProxyWidget* tool_proxy_;
 };
 
 } // namespace Tools
