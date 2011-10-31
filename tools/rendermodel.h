@@ -27,6 +27,8 @@ namespace Tools
         RenderModel(Sawe::Project* p);
         ~RenderModel();
 
+        void resetSettings();
+
         std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
 
         Tfr::FreqAxis display_scale();

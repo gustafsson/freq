@@ -199,6 +199,7 @@ void TooltipModel::
                 break;
             }
         case AutoMarkerFinished: break; // ss << ", fetched " << fetched_heightmap_values << " values"; break;
+        case NoMarkers: break;
         }
 
         ss << endl << "<br/>Fundamental frequency: " << setprecision(2) << (f/this->markers) << " Hz";

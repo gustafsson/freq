@@ -331,6 +331,8 @@ void Project::
     QString value = settings.value("value").toString();
     settings.clear();
     settings.setValue("value", value);
+
+    tools().render_view()->model->resetSettings();
 }
 
 

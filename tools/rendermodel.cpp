@@ -14,13 +14,15 @@ RenderModel::
         RenderModel(Sawe::Project* p)
         :
         renderSignalTarget(new Signal::Target(&p->layers, "Heightmap", true, true)),
-        _qx(0), _qy(0), _qz(.5f), // _qz(3.6f/5),
-        _px(0), _py(0), _pz(-6.5f),
-        _rx(91), _ry(180), _rz(0),
-        xscale(1),
-        zscale(5),
+        _qx(0), _qy(0), _qz(0),
+        _px(0), _py(0), _pz(0),
+        _rx(0), _ry(0), _rz(0),
+        xscale(0),
+        zscale(0),
         _project(p)
 {
+    resetSettings();
+
     p->worker.target( renderSignalTarget );
 
     Signal::PostSink* o = renderSignalTarget->post_sink();
@@ -56,6 +58,23 @@ RenderModel::
     renderer.reset();
     collections.clear();
     renderSignalTarget.reset();
+}
+
+
+void RenderModel::
+        resetSettings()
+{
+    _qx = 0;
+    _qy = 0;
+    _qz = .5f;  // _qz(3.6f/5),
+    _px = 0;
+    _py = 0;
+    _pz = -6.5f;
+    _rx = 91;
+    _ry = 180;
+    _rz = 0;
+    xscale = 1;
+    zscale = 5;
 }
 
 
