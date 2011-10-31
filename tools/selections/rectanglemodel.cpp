@@ -4,6 +4,7 @@
 #include "tools/support/operation-composite.h"
 #include "sawe/project.h"
 #include "tools/rendermodel.h"
+#include "signal/operation-basic.h"
 
 #ifdef max
 #undef max
@@ -27,6 +28,16 @@ RectangleModel::
         ~RectangleModel()
 {
     TaskTimer(__FUNCTION__).suppressTiming();
+}
+
+
+bool RectangleModel::
+        replaceFilter( Signal::pOperation filter )
+{
+    Signal::OperationSetSilent* oss = dynamic_cast<Signal::OperationSetSilent*>(filter.get());
+    if (oss)
+        return true;
+    return false;
 }
 
 
@@ -71,10 +82,12 @@ bool RectangleModel::
 {
     Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(filter.get());
     Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(filter.get());
-    Tools::Support::OperationOtherSilent* os = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());
+    Tools::Support::OperationOtherSilent* oos = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());
+    Signal::OperationSetSilent* oss = dynamic_cast<Signal::OperationSetSilent*>(filter.get());
     float FS = project_->head->head_source()->sample_rate();
     if (e)
     {
+        type = RectangleType_RectangleSelection;
         a.time = e->_t1;
         b.time = e->_t2;
         a.scale = freqAxis().getFrequencyScalar( e->_f1 );
@@ -84,6 +97,7 @@ bool RectangleModel::
     }
     else if(bp)
     {
+        type = RectangleType_FrequencySelection;
         a.time = 0;
         b.time = FLT_MAX;
         a.scale = freqAxis().getFrequencyScalar( bp->_f1 );
@@ -91,9 +105,20 @@ bool RectangleModel::
         validate();
         return true;
     }
-    else if(os)
+    else if(oos)
     {
-        Signal::Interval section = os->section();
+        type = RectangleType_TimeSelection;
+        Signal::Interval section = oos->section();
+        a.time = section.first/FS;
+        b.time = section.last/FS;
+        a.scale = 0;
+        b.scale = 1;
+        return true;
+    }
+    else if(oss)
+    {
+        type = RectangleType_TimeSelection;
+        Signal::Interval section = oss->section();
         a.time = section.first/FS;
         b.time = section.last/FS;
         a.scale = 0;

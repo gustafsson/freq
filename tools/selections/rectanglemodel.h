@@ -28,6 +28,7 @@ namespace Tools { namespace Selections
 
         Signal::pOperation updateFilter();
         bool tryFilter(Signal::pOperation o);
+        bool replaceFilter( Signal::pOperation filter );
 
         Heightmap::Position a, b;
         RectangleType type;

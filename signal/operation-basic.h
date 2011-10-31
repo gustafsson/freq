@@ -19,7 +19,9 @@ public:
     virtual std::string name();
 
     virtual Signal::Intervals zeroed_samples() { return affected_samples(); }
-    virtual Signal::Intervals affected_samples() { return section_; }
+    virtual Signal::Intervals affected_samples() { return section(); }
+
+    virtual Signal::Interval section() { return section_; }
 private:
     Signal::Interval section_;
 
