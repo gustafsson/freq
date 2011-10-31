@@ -48,7 +48,7 @@ namespace Heightmap {
 Block::
         ~Block()
 {
-    //TaskInfo("Deleting block %s", ref.toString().c_str());
+    TaskInfo("Deleting block %s", ref.toString().c_str());
 }
 
 
@@ -495,28 +495,30 @@ void Collection::
     INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    float length = target->number_of_samples()/target->sample_rate();
-    _max_sample_size.time = 2.f*std::max(1.f, length)/_samples_per_block;
-
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
     foreach ( const cache_t::value_type& c, _cache )
 		c.second->valid_samples -= sid;
 
+    // validate length
+    Interval wholeSignal = target->getInterval();
+    float length = wholeSignal.last / target->sample_rate();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/_samples_per_block;
+
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
     if (_prev_length > length)
     {
-        Interval I(target->number_of_samples(), Interval::IntervalType_MAX);
         for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
         {
             Signal::Interval blockInterval = itr->second->ref.getInterval();
-            if ( 0 < (I & blockInterval).count() )
+            if ( !(blockInterval & wholeSignal) )
             {
                 _recent.remove(itr->second);
                 itr = _cache.erase(itr);
             } else {
+                itr->second->valid_samples &= wholeSignal;
                 itr++;
             }
         }
