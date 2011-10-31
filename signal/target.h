@@ -68,6 +68,7 @@ private:
 class Target {
 public:
     Target(Layers* all_layers, std::string name, bool allow_cheat_resolution, bool autocreate_chainheads);
+    ~Target();
 
     /**
       //It is an error to add a layer that is not in 'all_layers_'

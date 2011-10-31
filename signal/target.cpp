@@ -218,6 +218,7 @@ Target::
             allow_cheat_resolution_(allow_cheat_resolution),
             all_layers_(all_layers)
 {
+    TaskInfo("Target name %s", name_.c_str());
     // all_layers_ might not actually be needed, but, project() is for update_view
     BOOST_ASSERT( all_layers_ );
 
@@ -237,6 +238,13 @@ Target::
                 addLayerHead( pChainHead(new ChainHead(c)));
         }
     }
+}
+
+
+Target::
+        ~Target()
+{
+    TaskInfo("~Target name %s", name_.c_str());
 }
 
 

@@ -19,12 +19,14 @@ WriteWav::
         WriteWav( std::string filename )
 :   _filename(filename)
 {
+    TaskInfo("WriteWav %s", _filename.c_str());
 }
 
 
 WriteWav::
         ~WriteWav()
 {
+    TaskInfo("~WriteWav %s", _filename.c_str());
 }
 
 

@@ -27,6 +27,7 @@ ExportAudioDialog::ExportAudioDialog(
     total(0),
     drawnFinished_(false)
 {
+    TaskInfo ti("ExportAudioDialog");
     ui->setupUi(this);
 
     update_timer.setSingleShot( true );
@@ -39,6 +40,7 @@ ExportAudioDialog::ExportAudioDialog(
 
 ExportAudioDialog::~ExportAudioDialog()
 {
+    TaskInfo("~ExportAudioDialog");
     delete ui;
 }
 
