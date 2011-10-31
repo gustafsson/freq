@@ -105,6 +105,13 @@ bool Worker::
     unsigned center_sample = source()->sample_rate() * center;
 
     Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
+    if (is_cheating() && interval.last > _number_of_samples)
+    {
+        interval.first = _number_of_samples < _samples_per_chunk ? 0 : _number_of_samples - _samples_per_chunk;
+        interval.last = _number_of_samples;
+        if ( 0 == interval.count())
+            interval.last = interval.first + 1;
+    }
     latest_request = interval;
 
     boost::scoped_ptr<TaskTimer> tt;
