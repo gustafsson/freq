@@ -101,7 +101,7 @@ void PlaybackView::
 
     _playbackMarker = model->playback()->time();
 
-    if (follow_play_marker)
+    if (follow_play_marker && 0<_playbackMarker)
     {
         Tools::RenderView& r = *_render_view;
         if (r.model->_qx != _playbackMarker)
