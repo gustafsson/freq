@@ -446,6 +446,12 @@ void SaweMainWindow::
 
     restoreState(state["MainWindow/windowState"].toByteArray());
     restoreGuiState( this, state );
+
+    // Always start with the navigation tool activated
+    ui->actionActivateNavigation->trigger();
+
+    // Always start stopped
+    ui->actionStopPlayBack->trigger();
 }
 
 
