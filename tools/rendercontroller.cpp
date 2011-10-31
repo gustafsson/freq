@@ -784,7 +784,7 @@ void RenderController::
         tf_resolution->setObjectName("tf_resolution");
         tf_resolution->setOrientation( Qt::Horizontal );
         tf_resolution->setMaximum( 10000 );
-        tf_resolution->setValue( 5000 );
+        tf_resolution->setValue( 3000 );
         tf_resolution->setToolTip( "Time/frequency resolution." );
         tf_resolution->setPageStep( 100 );
         toolbar_render->addWidget( tf_resolution );
