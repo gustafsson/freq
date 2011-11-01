@@ -223,7 +223,7 @@ void TooltipModel::
         this->comment->thumbnail( false );
 
     this->comment->model()->pos = Heightmap::Position(
-            p.time - 0.01/render_view_->model->xscale*render_view_->model->_pz,
+            p.time, // - 0.01/render_view_->model->xscale*render_view_->model->_pz,
             p.scale);
 
     //QToolTip::showText( screen_pos.toPoint(), QString(), this ); // Force tooltip to change position even if the text is the same as in the previous tooltip
@@ -266,8 +266,12 @@ void TooltipModel::
     const char name[][3] = {
         "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
     };
-    primaryName = ((stringstream&)(stringstream() << name[tone0%12] << octave0)).str();
-    secondaryName = ((stringstream&)(stringstream() << name[tone1%12] << octave1)).str();
+    stringstream s0, s1;
+    s0 << name[tone0%12] << octave0;
+    s1 << name[tone1%12] << octave1;
+
+    primaryName = s0.str();
+    secondaryName = s1.str();
 }
 
 
@@ -511,6 +515,7 @@ unsigned TooltipModel::
 
     double F = display_scale.getFrequency( pos.scale );
     double F2 = fetcher->nextFrequency( F );
+    F = std::min(F, F2);
     unsigned n_tests = F/(F2-F)/3;
 
     for (unsigned i=1; i<n_tests; ++i)

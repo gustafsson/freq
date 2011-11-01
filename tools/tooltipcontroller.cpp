@@ -135,8 +135,9 @@ void TooltipController::
 {
     if (hover_info_model_)
     {
-        bool success=false;
-        Heightmap::Position p = render_view_->getPlanePos( e->posF(), &success);
+        bool success = true;
+        Heightmap::Position p = render_view_->getHeightmapPos( e->posF());
+        //Heightmap::Position p = render_view_->getPlanePos( e->posF(), &success);
         TaskTimer tt("TooltipController::mouseMoveEvent hover_info_model(%g, %g)", p.time, p.scale);
         if (success)
         {
@@ -151,8 +152,9 @@ void TooltipController::
 
     if (infoToolButton.isDown())
     {
-        bool success=false;
-        Heightmap::Position p = render_view_->getPlanePos( e->posF(), &success);
+        bool success = true;
+        Heightmap::Position p = render_view_->getHeightmapPos( e->posF());
+        //Heightmap::Position p = render_view_->getPlanePos( e->posF(), &success);
         TaskTimer tt("TooltipController::mouseMoveEvent (%g, %g)", p.time, p.scale);
         if (success)
         {
