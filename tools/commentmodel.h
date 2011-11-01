@@ -13,6 +13,9 @@
 namespace Tools
 {
 
+const float UpdateModelPositionFromScreen = -2e30f;
+const float UpdateScreenPositionFromWorld = -1e30f;
+
 class CommentModel: public ToolModel
 {
 public:
@@ -24,7 +27,6 @@ public:
     bool thumbnail;
     uint2 window_size;
     bool freezed_position;
-    bool move_on_hover;
     float2 screen_pos;
 
 private:

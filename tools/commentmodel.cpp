@@ -10,8 +10,7 @@ CommentModel::CommentModel()
         thumbnail(false),
         window_size(make_uint2(200,100)),
         freezed_position(false),
-        move_on_hover(false),
-        screen_pos(make_float2(-1,-1))
+        screen_pos(make_float2(UpdateScreenPositionFromWorld,0))
 {
 }
 

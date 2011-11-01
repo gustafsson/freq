@@ -130,7 +130,6 @@ void CommentController::
     if (active)
     {
         comment_ = createNewComment();
-        comment_->setMovable( true );
         setVisible( true );
 
         setMouseTracking( true );
@@ -143,7 +142,7 @@ void CommentController::
     }
     else
     {
-        if (comment_ && comment_->model()->move_on_hover)
+        if (comment_)
         {
             // didn't place new comment before tool was disabled
             comment_->getProxy()->deleteLater();
@@ -166,6 +165,8 @@ void CommentController::
 void CommentController::
         mouseMoveEvent ( QMouseEvent * e )
 {
+    BOOST_ASSERT( comment_ );
+
     bool use_heightmap_value = true;
 
     if (use_heightmap_value)
@@ -175,8 +176,6 @@ void CommentController::
     QPointF window_coordinates = view_->window_coordinates( e->posF() );
     comment_->model()->screen_pos.x = window_coordinates.x();
     comment_->model()->screen_pos.y = window_coordinates.y();
-
-    comment_->setVisible(true);
 
     view_->userinput_update();
 
@@ -190,7 +189,7 @@ void CommentController::
 {
     if (comment_)
     {
-        comment_->model()->screen_pos.x = -2;
+        comment_->model()->screen_pos.x = UpdateModelPositionFromScreen;
         comment_->setEditFocus(true);
         comment_ = 0;
     }

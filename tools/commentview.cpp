@@ -16,10 +16,6 @@
 #include <QPaintEvent>
 #include <QPainter>
 
-const float UpdatePositionFromScreen = -2e30f;
-const float PositionUpdatedFromScreen = -1e30f;
-const float CommentGetAllFocus = 1e29f;
-
 namespace Tools {
 
 CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent) :
@@ -32,7 +28,6 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     z_hidden(false),
     lastz(6)
 {
-    //
     ui->setupUi(this);
 
     BOOST_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
@@ -40,11 +35,9 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     this->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
 
     QAction *closeAction = new QAction(tr("D&elete"), this);
-    //closeAction->setShortcut(tr("Ctrl+D"));
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
 
     QAction *hideAction = new QAction(tr("T&humbnail"), this);
-    //hideAction->setShortcut(tr("Ctrl+T"));
     hideAction->setCheckable(true);
     connect(hideAction, SIGNAL(toggled(bool)), SLOT(thumbnail(bool)));
     connect(this, SIGNAL(thumbnailChanged(bool)), hideAction, SLOT(setChecked(bool)));
@@ -54,7 +47,6 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     addAction(hideAction);
     setMouseTracking( true );
     setHtml(model()->html);
-    //ui->textEdit->setFocusProxy(this);
     connect(ui->textEdit, SIGNAL(selectionChanged()), SLOT(recreatePolygon()));
 
     connect(render_view, SIGNAL(painting()), SLOT(updatePosition()));
@@ -66,7 +58,6 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
     // ZValue is set in CommentView::updatePosition()
     proxy->setVisible(true);
-    proxy->setZValue( -1 );
     render_view->addItem( proxy );
 
     move(0, 0);
@@ -98,35 +89,9 @@ void CommentView::
 }
 
 
-/*bool CommentView::event ( QEvent * e )
-{
-    TaskTimer tt("CommentView event %s %d", vartype(*e).c_str(), e->isAccepted());
-    bool r = QWidget::event(e);
-    tt.info("CommentView event %s info %d %d", vartype(*e).c_str(), r, e->isAccepted());
-    return r;
-}*/
-
-
-void CommentView::
-        setMovable(bool move)
-{
-    model()->move_on_hover = move;
-    ui->textEdit->setEnabled(!move);
-    ui->textEdit->setAttribute(Qt::WA_TransparentForMouseEvents, move);
-}
-
 void CommentView::
         mousePressEvent(QMouseEvent *event)
 {
-    // any click aborts a move
-    if (model()->move_on_hover)
-    {
-        setMovable( false );
-        model()->screen_pos.x = UpdatePositionFromScreen;
-        event->setAccepted( true );
-        return;
-    }
-
     // any click outside the mask is discarded
     if (!maskedRegion.contains( event->pos() ))
     {
@@ -191,7 +156,6 @@ void CommentView::
         resizing |= event->modifiers().testFlag(Qt::ControlModifier);
     }
 
-    moving |= model()->move_on_hover;
 
     if (moving || resizing)
     {
@@ -232,7 +196,7 @@ void CommentView::
         mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
-        model()->screen_pos.x = UpdatePositionFromScreen;
+        model()->screen_pos.x = UpdateModelPositionFromScreen;
 }
 
 
@@ -456,9 +420,9 @@ void CommentView::
     bool use_heightmap_value = true;
 
     // moveEvent can't be used when updating the reference position while moving
-    if (!proxy->pos().isNull() || model()->screen_pos.x == UpdatePositionFromScreen)
+    if (!proxy->pos().isNull() || model()->screen_pos.x == UpdateModelPositionFromScreen)
     {
-        if (!keep_pos && model()->screen_pos.x == UpdatePositionFromScreen)
+        if (!keep_pos && model()->screen_pos.x == UpdateModelPositionFromScreen)
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
@@ -469,7 +433,7 @@ void CommentView::
             else
                 model()->pos = view->getPlanePos( c );
 
-            model()->screen_pos.x = PositionUpdatedFromScreen;
+            model()->screen_pos.x = UpdateScreenPositionFromWorld;
         }
 
         keep_pos = false;
@@ -482,7 +446,7 @@ void CommentView::
 
     double z;
     QPointF pt;
-    if (model()->screen_pos.x != PositionUpdatedFromScreen && model()->screen_pos.x != UpdatePositionFromScreen)
+    if (model()->screen_pos.x != UpdateScreenPositionFromWorld && model()->screen_pos.x != UpdateModelPositionFromScreen)
     {
         pt.setX( model()->screen_pos.x );
         pt.setY( model()->screen_pos.y );
@@ -497,10 +461,7 @@ void CommentView::
     //         model->pos.time, model->pos.scale,
     //         pt.x(), pt.y(), z);
 
-    if (model()->move_on_hover)
-        proxy->setZValue( CommentGetAllFocus );
-    else
-        proxy->setZValue(-z);
+    proxy->setZValue(-z);
 
     if (z>0)
     {
