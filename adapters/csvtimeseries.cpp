@@ -61,6 +61,8 @@ void CsvTimeseries::
     TaskTimer tt("Loading '%s' (this=%p)", filename.c_str(), this);
 
     std::ifstream ifs(filename.c_str(), ios_base::in);
+    if (!ifs.is_open())
+        throw std::ios_base::failure("Couldn't open file: " + filename);
 
     float sample_rate = 1;
     //ifs >> sample_rate >> std::endl;
@@ -120,6 +122,9 @@ void CsvTimeseries::
         }
 
     }
+
+    if (ssc.empty())
+        throw std::ios_base::failure("File '" + filename + "' didn't contain any data");
 
     _waveforms.resize( ssc.num_channels());
     for (unsigned c=0; c<ssc.num_channels(); c++)

@@ -140,26 +140,31 @@ pProject Project::
 
     string err;
     pProject p;
-    int availableFileTypes = 1;
-#if !defined(TARGET_reader)
-    availableFileTypes+=2;
-#endif
-    for (int i=0; i<availableFileTypes; i++) try
+    if (0!=stat( filename.c_str(),&dummy))
+        err = "File '" + filename + "' does not exist";
+    else
     {
-        switch(i) {
-            case 0: p = Project::openProject( filename ); break;
-#if !defined(TARGET_reader)
-            case 1: p = Project::openAudio( filename ); break;
-            case 2: p = Project::openCsvTimeseries( filename ); break;
-#endif
+        int availableFileTypes = 1;
+    #if !defined(TARGET_reader)
+        availableFileTypes+=2;
+    #endif
+        for (int i=0; i<availableFileTypes; i++) try
+        {
+            switch(i) {
+                case 0: p = Project::openProject( filename ); break;
+    #if !defined(TARGET_reader)
+                case 1: p = Project::openAudio( filename ); break;
+                case 2: p = Project::openCsvTimeseries( filename ); break;
+    #endif
+            }
+            break; // successful loading without thrown exception
         }
-        break; // successful loading without thrown exception
-    }
-    catch (const exception& x) {
-        if (!err.empty())
-            err += '\n';
-        err += "Error: " + vartype(x);
-        err += "\nDetails: " + (std::string)x.what();
+        catch (const exception& x) {
+            if (!err.empty())
+                err += '\n';
+            err += "Error: " + vartype(x);
+            err += "\nDetails: " + (std::string)x.what();
+        }
     }
 
     if (!p)
