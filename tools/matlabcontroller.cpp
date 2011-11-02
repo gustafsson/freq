@@ -261,9 +261,22 @@ void MatlabController::
         d.setWindowModality( Qt::WindowModal );
         if (QDialog::Accepted == d.exec())
         {
-            if (!settings->scriptname().empty() && !QFile::exists( settings->scriptname().c_str() ))
+            bool success = true;
+            if (!settings->scriptname().empty())
             {
-                QMessageBox::warning( project_->mainWindow(), "Opening file", QString("Cannot open file '%1'!").arg(settings->scriptname().c_str()) );
+                QFileInfo fi( settings->scriptname().c_str() );
+                if (!fi.exists())
+                {
+                    QMessageBox::warning( project_->mainWindow(), "Opening file", QString("Cannot open file '%1'!").arg(settings->scriptname().c_str()) );
+                    success = false;
+                }
+
+                QString pattern = "[a-z][a-z0-9]*\\.m";
+                if (!QRegExp(pattern, Qt::CaseInsensitive).exactMatch( fi.fileName()))
+                {
+                    QMessageBox::warning( project_->mainWindow(), "Starting script", "The filename '" + fi.fileName() + "' of a script must match " + pattern + ". Can't start script.");
+                    success = false;
+                }
             }
             else
             {
