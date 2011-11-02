@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "tfr/wavelet.cu.h"
 
+#include "cudaglobalstorage.h"
+
 __global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, unsigned half_sizes, float sigma_t0, float normalization_factor );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem );
 //__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
@@ -199,7 +201,7 @@ __global__ void kernel_compute_wavelet_coefficients(
     }
 }
 
-void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, cudaStream_t stream )
+void wtInverse( float2* in_wavelet, DataStorage<float, 3>::Ptr out_inverse_waveform, cudaExtent numElem, cudaStream_t stream )
 {
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
@@ -211,8 +213,12 @@ void wtInverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numE
     }
 
     // kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem );
-    kernel_inverse<<<grid, block>>>( in_wavelet, out_inverse_waveform, numElem );
+    kernel_inverse<<<grid, block>>>(
+            in_wavelet,
+            CudaGlobalStorage::WriteAll(out_inverse_waveform).device_ptr(),
+            numElem );
 }
+
 
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem )
 {
@@ -347,10 +353,12 @@ __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_of
 }
 
 void stftNormalizeInverse(
-        cudaPitchedPtrType<float> wave,
+        DataStorage<float, 3>::Ptr wavep,
         unsigned length, cudaStream_t stream)
 {
     // Multiply the coefficients together and normalize the result
+    cudaPitchedPtr cpp = CudaGlobalStorage::ReadWrite( wavep ).getCudaPitchedPtr();
+    cudaPitchedPtrType<float> wave(cpp, sizeof(float));
 
     dim3 grid, block;
     unsigned block_size = 256;

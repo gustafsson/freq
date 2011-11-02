@@ -1,6 +1,8 @@
 #ifndef TFR_COMPLEXBUFFER_H
 #define TFR_COMPLEXBUFFER_H
 
+#include <complex>
+
 #include "signal/source.h"
 
 #include <boost/scoped_ptr.hpp>
@@ -29,7 +31,7 @@ public:
         The pointer is valid for the lifetime of this class, or as long as the
         pBuffer returned from get_real() isn't deleted.
     */
-    GpuCpuData<float>* waveform_data();
+    DataStorage<float, 3>::Ptr waveform_data();
 
 
     /**
@@ -50,14 +52,16 @@ public:
     /**
         Access the complex waveform
     */
-    GpuCpuData<float2>* complex_waveform_data() const {
-        return _complex_waveform_data.get();
+    DataStorage<std::complex<float>, 3>::Ptr complex_waveform_data() const {
+//    GpuCpuData<float2>* complex_waveform_data() const {
+        return _complex_waveform_data;
     }
 
 protected:
     Signal::pBuffer _my_real;
 
-    boost::scoped_ptr<GpuCpuData<float2> > _complex_waveform_data;
+    //    boost::scoped_ptr<GpuCpuData<float2> > _complex_waveform_data;
+    DataStorage<std::complex<float>, 3>::Ptr _complex_waveform_data;
 };
 
 } // namespace Tfr

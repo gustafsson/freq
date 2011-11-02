@@ -527,10 +527,10 @@ bool MatlabOperation::
                 float start = ready_data->start();
                 float length = ready_data->length();
 
-                cudaExtent N = plot_pts->waveform_data()->getNumberOfElements();
+                DataStorageSize N = plot_pts->waveform_data()->size();
                 for (unsigned id=0; id<N.depth; ++id)
                 {
-                    float* p = plot_pts->waveform_data()->getCpuMemory() + id*N.width*N.height;
+                    float* p = CpuMemoryStorage::ReadOnly( plot_pts->waveform_data() ).ptr() + id*N.width*N.height;
 
                     if (3 <= N.height)
                         for (unsigned x=0; x<N.width; ++x)
@@ -703,7 +703,7 @@ pBuffer MatlabOperation::
             TaskInfo("MatlabOperation::read(%s) Returning ready data %s, %u channels",
                      I.toString().c_str(),
                      b->getInterval().toString().c_str(),
-                     b->waveform_data()->getNumberOfElements().height );
+                     b->waveform_data()->size().height );
             return b;
         }
 

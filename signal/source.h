@@ -4,7 +4,7 @@
 #include "intervals.h"
 
 // gpumisc
-#include <GpuCpuData.h>
+#include <datastorage.h>
 #include <unsignedf.h>
 
 // boost
@@ -33,10 +33,10 @@ public:
     Buffer(Signal::Interval subinterval, boost::shared_ptr<Buffer> other, unsigned channel=0);
     ~Buffer();
 
-    GpuCpuData<float>*  waveform_data() const;
+    DataStorage<float, 3>::Ptr  waveform_data() const;
     IntervalType        number_of_samples() const
     {
-        return waveform_data_->getNumberOfElements().width;
+        return waveform_data_->size().width;
     }
     void                release_extra_resources();
 
@@ -55,7 +55,7 @@ public:
     Buffer&         operator+=(const Buffer& b);
 
 protected:
-    GpuCpuData<float> *waveform_data_;
+    DataStorage<float, 3>::Ptr waveform_data_;
     boost::shared_ptr<Buffer> other_;
     unsigned bitor_channel_;
 };

@@ -1,6 +1,8 @@
 #include "drawnwaveform.cu.h"
 #include <stdio.h>
 
+#include "cudaglobalstorage.h"
+
 /**
  Plot the waveform on the matrix.
 
@@ -19,10 +21,12 @@ __global__ void kernel_draw_waveform_with_lines(
 
 
 void drawWaveform(
-        cudaPitchedPtrType<float> in_waveform,
+        DataStorage<float,3>::Ptr in_waveformp,
         cudaPitchedPtrType<float2> out_waveform_matrix,
         float blob, unsigned readstop, float maxValue )
 {
+    cudaPitchedPtr iwf = CudaGlobalStorage::ReadOnly( in_waveformp ).getCudaPitchedPtr();
+    cudaPitchedPtrType<float> in_waveform(iwf, sizeof(float));
 
     cudaMemset( out_waveform_matrix.ptr(), 0, out_waveform_matrix.getTotalBytes() );
 

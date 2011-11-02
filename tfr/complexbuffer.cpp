@@ -1,5 +1,7 @@
 #include "complexbuffer.h"
 
+#include "TaskTimer.h"
+
 #define TIME_COMPLEX_BUFFER if(0)
 //#define TIME_COMPLEX_BUFFER
 
@@ -11,7 +13,7 @@ ComplexBuffer::ComplexBuffer(UnsignedF first_sample, unsigned long numberOfSampl
     sample_rate(FS)
 {
     if (numberOfSamples)
-        _complex_waveform_data.reset( new GpuCpuData<float2>(0, make_cudaExtent( numberOfSamples, numberOfChannels, 1)));
+        _complex_waveform_data.reset( new DataStorage<std::complex<float>, 3>( DataStorageSize (numberOfSamples, numberOfChannels, 1)));
 }
 
 
@@ -21,13 +23,13 @@ ComplexBuffer::
             sample_offset(buffer.sample_offset),
             sample_rate(buffer.sample_rate)
 {
-    GpuCpuData<float>* real_waveform = buffer.waveform_data();
-    cudaExtent sz = real_waveform->getNumberOfElements();
+    DataStorage<float, 3>::Ptr real_waveform = buffer.waveform_data();
+    DataStorageSize sz = real_waveform->getNumberOfElements();
     TIME_COMPLEX_BUFFER TaskTimer tt("ComplexBuffer of %lu x %lu x %lu elements", sz.width, sz.height, sz.depth );
 
-    _complex_waveform_data.reset( new GpuCpuData<float2>( 0, sz ));
+    _complex_waveform_data.reset( new DataStorage<std::complex<float>, 3>( sz ));
 
-    float2 *complex = _complex_waveform_data->getCpuMemory();
+    std::complex<float>*complex = _complex_waveform_data->getCpuMemory();
     float *real = real_waveform->getCpuMemory();
 
     for (unsigned z=0; z<sz.depth; z++)
@@ -38,13 +40,13 @@ ComplexBuffer::
             for (unsigned x=0; x<sz.width; x++)
             {
                 // set .y component to 0
-                complex[ x + o ] = make_float2( real[ x + o ], 0 );
+                complex[ x + o ] = std::complex<float>( real[ x + o ], 0 );
             }
         }
 }
 
 
-GpuCpuData<float>* ComplexBuffer::
+DataStorage<float, 3>::Ptr ComplexBuffer::
         waveform_data()
 {
     _my_real.reset();
@@ -59,10 +61,10 @@ Signal::pBuffer ComplexBuffer::
     Signal::IntervalType length = number_of_samples();
     Signal::pBuffer buffer( new Signal::Buffer( sample_offset, length, sample_rate ));
 
-    GpuCpuData<float>* real_waveform = buffer->waveform_data();
+    DataStorage<float, 3>::Ptr real_waveform = buffer->waveform_data();
 
-    cudaExtent sz = real_waveform->getNumberOfElements();
-    float2 *complex = _complex_waveform_data->getCpuMemory();
+    DataStorageSize sz = real_waveform->getNumberOfElements();
+    std::complex<float> *complex = _complex_waveform_data->getCpuMemory();
     float *real = real_waveform->getCpuMemory();
 
     for (unsigned z=0; z<sz.depth; z++)
@@ -70,7 +72,7 @@ Signal::pBuffer ComplexBuffer::
             for (size_t x=0; x<sz.width; x++)
             {
                 Signal::IntervalType o = x + (y + z*sz.height)*sz.width;
-                real[ o ] = complex[ o ].x; // discard .y component
+                real[ o ] = complex[ o ].real(); // discard .y component
             }
 
     return buffer;

@@ -58,7 +58,7 @@ pChunk DrawnWaveform::
     }
 
     ::drawWaveform(
-            b->waveform_data()->getCudaGlobal(),
+            b->waveform_data(),
             c->transform_data->getCudaGlobal(),
             blobsize,
             readstop,

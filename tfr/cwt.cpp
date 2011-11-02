@@ -526,7 +526,7 @@ pChunk Cwt::
                         new GpuCpuData<float2>(p + n.width*h,
                                        make_cudaExtent(n.width,1,1),
                                        GpuCpuVoidData::CpuMemory, true));
-                GpuCpuData<float>* fb = _fft.backward( c )->waveform_data();
+                DataStorage<float,3>::Ptr fb = _fft.backward( c )->waveform_data();
                 memcpy( p + n.width*h, fb->getCpuMemory(), fb->getSizeInBytes1D() );
             }
 
@@ -663,7 +663,7 @@ Signal::pBuffer Cwt::
     }
 
     ::wtInverse( p,
-                 r->waveform_data()->getCudaGlobal().ptr(),
+                 r->waveform_data(),
                  x,
                  _stream );
 

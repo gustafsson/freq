@@ -23,7 +23,7 @@ void BufferSource::
         return;
     }
 
-    cudaExtent sz = waveform->waveform_data()->getNumberOfElements();
+    DataStorageSize sz = waveform->waveform_data()->size();
     unsigned number_of_samples = sz.width;
     unsigned channels = sz.height;
     _waveforms.resize(channels);

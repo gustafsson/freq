@@ -10,6 +10,8 @@ typedef __int64 __int64_t;
  
 #include <Statistics.h>
 
+#include "cpumemorystorage.h"
+
 #define TIME_WRITEWAV
 //#define TIME_WRITEWAV if(0)
 
@@ -118,14 +120,14 @@ void WriteWav::
     const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
     //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
-    int C = b->waveform_data()->getNumberOfElements().height;
+    int C = b->waveform_data()->size().height;
     SndfileHandle outfile(filename.c_str(), SFM_WRITE, format, C, b->sample_rate);
 
     if (!outfile) return;
 
     Signal::IntervalType Nsamples_per_channel = b->number_of_samples();
     Signal::IntervalType N = Nsamples_per_channel*C;
-    float* data = b->waveform_data()->getCpuMemory();
+    float* data = CpuMemoryStorage::ReadWrite( b->waveform_data() ).ptr();
 
     if (normalize) // Normalize
     {
@@ -180,10 +182,11 @@ Signal::pBuffer WriteWav::
         crop(Signal::pBuffer buffer)
 {
     /// Remove zeros from the beginning and end
-    GpuCpuData<float>* waveform_data = buffer->waveform_data();
-    unsigned num_frames = waveform_data->getNumberOfElements().width;
-    unsigned channel_count = waveform_data->getNumberOfElements().height;
-    float *fdata = waveform_data->getCpuMemory();
+    //GpuCpuData<float>* waveform_data = buffer->waveform_data();
+    DataStorage<float, 3>::Ptr waveform_data = buffer->waveform_data();
+    unsigned num_frames = waveform_data->size().width;
+    unsigned channel_count = waveform_data->size().height;
+    float *fdata = CpuMemoryStorage::ReadOnly( waveform_data ).ptr();
 
     long unsigned firstNonzero = 0;
     long unsigned lastNonzero = 0;

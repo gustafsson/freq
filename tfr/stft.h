@@ -3,6 +3,8 @@
 
 #include "transform.h"
 #include <vector>
+#include <complex>
+
 #include "HasSingleton.h"
 
 typedef unsigned int cufftHandle; /* from cufft.h */
@@ -77,11 +79,11 @@ private:
     std::vector<int> ip;
     std::vector<double> q;
 
-    void computeWithOoura( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
-    void computeWithCufft( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
+    void computeWithOoura( DataStorage<std::complex<float>, 3>::Ptr input, DataStorage<std::complex<float>, 3>::Ptr output, int direction );
+    void computeWithCufft( DataStorage<std::complex<float>, 3>::Ptr input, DataStorage<std::complex<float>, 3>::Ptr output, int direction );
 
-    void computeWithCufftR2C( GpuCpuData<float>& input, GpuCpuData<float2>& output );
-    void computeWithCufftC2R( GpuCpuData<float2>& input, GpuCpuData<float>& output );
+    void computeWithCufftR2C( DataStorage<float, 3>::Ptr input, GpuCpuData<float2>& output );
+    void computeWithCufftC2R( GpuCpuData<float2>& input, DataStorage<float, 3>::Ptr output );
 };
 
 /**
@@ -141,6 +143,11 @@ private:
     */
     unsigned _window_size;
     bool _compute_redundant;
+
+    Tfr::pChunk computeWithCufft(Signal::pBuffer);
+    Tfr::pChunk computeRedundantWithCufft(Signal::pBuffer);
+    Signal::pBuffer inverseWithCufft(Tfr::pChunk);
+    Signal::pBuffer inverseRedundantWithCufft(Tfr::pChunk);
 };
 
 class StftChunk: public Chunk
