@@ -241,6 +241,15 @@ int main(int argc, char *argv[])
     cout << "Saving log file at \"" << logpath << "\"" << endl;
 #endif
 
+    if (1)
+    {
+        std::complex<float> f(1.123456789876543, 2.9876545678903);
+        cufftComplex& b = *(cufftComplex*)&f;
+        cufftComplex c;
+        BOOST_ASSERT( b.x == f.real() && b.y == f.imag());
+        BOOST_ASSERT( sizeof(f) == sizeof(c) );
+    }
+
     if (0)
     {
         Intervals I(403456,403457);
