@@ -42,6 +42,8 @@ void wtCompute(
         float sigma_t0,
         float normalization_factor )
 {
+    CudaGlobalStorage::useCudaPitch( out_wavelet_ftp, false );
+
     Tfr::ChunkElement* in_waveform_ft = CudaGlobalStorage::ReadOnly<1>( in_waveform_ftp ).device_ptr();
     Tfr::ChunkElement* out_wavelet_ft = CudaGlobalStorage::WriteAll<2>( out_wavelet_ftp ).device_ptr();
 
@@ -362,8 +364,7 @@ void stftNormalizeInverse(
         unsigned length )
 {
     // Multiply the coefficients together and normalize the result
-    cudaPitchedPtr cpp = CudaGlobalStorage::ReadWrite<1>( wavep ).getCudaPitchedPtr();
-    cudaPitchedPtrType<float> wave(cpp, sizeof(float));
+    cudaPitchedPtrType<float> wave(CudaGlobalStorage::ReadWrite<1>( wavep ).getCudaPitchedPtr());
 
     dim3 grid, block;
     unsigned block_size = 256;

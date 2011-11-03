@@ -425,6 +425,7 @@ pChunk Cwt::
         intermediate_wt->transform_data.reset(new ChunkData( requiredWtSz ));
 
         TIME_CWTPART {
+            CudaGlobalStorage::useCudaPitch( intermediate_wt->transform_data, false );
             CudaGlobalStorage::ReadOnly<1>( ft->transform_data );
             CudaGlobalStorage::ReadOnly<1>( intermediate_wt->transform_data );
         }
