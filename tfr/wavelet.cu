@@ -43,9 +43,9 @@ void wtCompute(
         float normalization_factor )
 {
     Tfr::ChunkElement* in_waveform_ft = CudaGlobalStorage::ReadOnly<1>( in_waveform_ftp ).device_ptr();
-
     Tfr::ChunkElement* out_wavelet_ft = CudaGlobalStorage::WriteAll<2>( out_wavelet_ftp ).device_ptr();
-    cudaExtent numElem = out_wavelet_ftp->FindStorage<CudaGlobalStorage>()->getCudaExtent();
+
+    DataStorageSize size = out_wavelet_ftp->size();
 
 //    nyquist = FS/2
 //    a = 2 ^ (1/v)
@@ -68,7 +68,7 @@ void wtCompute(
     }
 
     dim3 block(256,1,1);
-    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.depth, 1);
+    dim3 grid( int_div_ceil(size.width, block.x), size.depth, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
@@ -78,7 +78,7 @@ void wtCompute(
     kernel_compute_wavelet_coefficients<<<grid, block, 0>>>(
             (float2*)in_waveform_ft,
             (float2*)out_wavelet_ft,
-            numElem.width, numElem.height,
+            size.width, size.height,
             first_scale,
             scales_per_octave,
             half_sizes,
@@ -206,12 +206,9 @@ __global__ void kernel_compute_wavelet_coefficients(
 
 void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inverse_waveform, DataStorageSize x )
 {
-    float2* in_wavelet = (float2*)CudaGlobalStorage::ReadOnly<2>(in_waveletp).device_ptr();
-    cudaExtent numElem = make_cudaExtent( x.width, x.height, x.depth );
-
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
-    dim3 grid( int_div_ceil(numElem.width, block.x), 1, 1);
+    dim3 grid( int_div_ceil(x.width, block.x), 1, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
@@ -220,9 +217,9 @@ void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inv
 
     // kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem );
     kernel_inverse<<<grid, block>>>(
-            in_wavelet,
+            (float2*)CudaGlobalStorage::ReadOnly<2>(in_waveletp).device_ptr(),
             CudaGlobalStorage::WriteAll<1>(out_inverse_waveform).device_ptr(),
-            numElem );
+            make_cudaExtent( x.width, x.height, x.depth ) );
 }
 
 

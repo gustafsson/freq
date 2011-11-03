@@ -416,14 +416,13 @@ pChunk Cwt::
     pChunk intermediate_wt( new CwtChunkPart() );
 
     {
-        cudaExtent requiredWtSz = make_cudaExtent( dynamic_cast<StftChunk*>(ft.get())->transformSize(), n_scales, 1 );
+        DataStorageSize requiredWtSz( dynamic_cast<StftChunk*>(ft.get())->transformSize(), n_scales, 1 );
         TIME_CWTPART TaskTimer tt("Allocating chunk part (%u, %u, %u), %g kB",
                               requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth,
                               requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(float2) / 1024.f);
 
         // allocate a new chunk
-        intermediate_wt->transform_data.reset(new ChunkData(
-                requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth));
+        intermediate_wt->transform_data.reset(new ChunkData( requiredWtSz ));
 
         TIME_CWTPART {
             CudaGlobalStorage::ReadOnly<1>( ft->transform_data );
@@ -647,7 +646,7 @@ Signal::pBuffer Cwt::
 {
     Chunk &chunk = *pchunk;
 
-    DataStorageSize x = chunk.transform_data->getNumberOfElements();
+    DataStorageSize x = chunk.transform_data->size();
 
     Signal::pBuffer r( new Signal::Buffer(
             chunk.chunk_offset,

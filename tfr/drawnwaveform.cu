@@ -26,8 +26,7 @@ void drawWaveform(
         float blob, unsigned readstop, float maxValue )
 {
     cudaPitchedPtrType<float> in_waveform(CudaGlobalStorage::ReadOnly<1>( in_waveformp ).getCudaPitchedPtr());
-
-    cudaPitchedPtrType<float2> out_waveform_matrix(CudaGlobalStorage::ReadWrite<2>( in_waveformp ).getCudaPitchedPtr());
+    cudaPitchedPtrType<float2> out_waveform_matrix(CudaGlobalStorage::ReadWrite<2>( out_waveform_matrixp ).getCudaPitchedPtr());
 
     cudaMemset( out_waveform_matrix.ptr(), 0, out_waveform_matrix.getTotalBytes() );
 

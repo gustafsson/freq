@@ -14,12 +14,13 @@ void removeDisc( Tfr::ChunkData::Ptr waveletp, Area a, bool save_inside, float f
 {
     float2* wavelet = (float2*)CudaGlobalStorage::ReadWrite<2>( waveletp ).device_ptr();
 
-    cudaExtent numElem = waveletp->FindStorage<CudaGlobalStorage>()->getCudaExtent();
+    DataStorageSize size = waveletp->size();
+    cudaExtent extent = make_cudaExtent(size.width, size.height, size.depth);
 
     float4 area = make_float4( a.x1, a.y1, a.x2, a.y2 );
 
     dim3 block(256,1,1);
-    dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height, 1);
+    dim3 grid( int_div_ceil(size.width, block.x), size.height, 1);
 
     if(grid.x>65535) {
         printf("Invalid argument, number of floats in complex signal must be less than 65535*256.");
@@ -27,7 +28,7 @@ void removeDisc( Tfr::ChunkData::Ptr waveletp, Area a, bool save_inside, float f
     }
 
     grid.x *= 2; // To coalesce better, one thread for each float (instead of each float2)
-    kernel_remove_disc<<<grid, block>>>( wavelet, numElem, area, save_inside, fs );
+    kernel_remove_disc<<<grid, block>>>( wavelet, extent, area, save_inside, fs );
 }
 
 __global__ void kernel_remove_disc(float2* wavelet, cudaExtent numElem, float4 area, bool save_inside, float fs )
