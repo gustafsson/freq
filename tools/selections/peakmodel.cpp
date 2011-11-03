@@ -12,6 +12,7 @@
 
 // gpumisc
 #include <CudaException.h>
+#include "cudaglobalstorage.h"
 
 // boost
  
@@ -81,7 +82,7 @@ float PeakModel::
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
     if (!block)
         return 0;
-    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
     return data[x+y*ref.samplesPerBlock()];
@@ -134,8 +135,8 @@ void PeakModel::
         Heightmap::pBlock block = ref.collection()->getBlock( v.first );
         if (block)
         {
-            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
-            blockData->getCudaGlobal( false );
+            DataStorage<float>::Ptr blockData = block->glblock->height()->data;
+            blockData->OnlyKeepOneStorage<CudaGlobalStorage>();
         }
     }
 
@@ -421,7 +422,7 @@ void PeakModel::
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
     if (!block)
         return;
-    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
     PeakAreaP area = getPeakArea(ref);
@@ -604,7 +605,7 @@ void PeakModel::
                 return;
             }
 
-            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+            DataStorage<float>::Ptr blockData = block->glblock->height()->data;
             data = blockData->getCpuMemory();
 
             PeakAreaP area = getPeakArea(ref);

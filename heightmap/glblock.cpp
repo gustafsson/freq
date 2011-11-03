@@ -10,6 +10,8 @@
 #include <demangle.h>
 #include <GlException.h>
 #include <CudaException.h>
+#include "cudaglobalstorage.h"
+#include "cpumemorystorage.h"
 
 // cuda
 #include <cuda_runtime.h>
@@ -112,8 +114,8 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 GlBlock::
 GlBlock( Collection* collection, float width, float height )
 :   _collection( collection ),
-    _read_only_array_resource( 0 ),
-    _read_only_array( 0 ),
+//    _read_only_array_resource( 0 ),
+//    _read_only_array( 0 ),
     _tex_height(0),
     _tex_slope(0),
     _world_width(width),
@@ -170,12 +172,12 @@ void GlBlock::
 }
 
 
-cudaExtent GlBlock::
+DataStorageSize GlBlock::
         heightSize() const
 {
-    return make_cudaExtent(
+    return DataStorageSize(
                 _collection->samples_per_block(),
-                _collection->scales_per_block(), 1);
+                _collection->scales_per_block());
 }
 
 
@@ -189,8 +191,7 @@ GlBlock::pHeightReadOnlyCpu GlBlock::
     glBindBuffer(_height->vbo_type(), *_height);
     float *cpu_height = (float *) glMapBuffer(_height->vbo_type(), GL_READ_ONLY);
 
-    _read_only_cpu.reset( new GpuCpuData<float>
-                          ( cpu_height, heightSize() ));
+    _read_only_cpu.reset( new DataStorage<float>( *CpuMemoryStorage::BorrowPtr( heightSize(), cpu_height ) ));
 
     glUnmapBuffer(_height->vbo_type());
     glBindBuffer(_height->vbo_type(), 0);
@@ -199,7 +200,7 @@ GlBlock::pHeightReadOnlyCpu GlBlock::
 }
 
 
-GlBlock::HeightReadOnlyArray GlBlock::
+/*GlBlock::HeightReadOnlyArray GlBlock::
         heightReadOnlyArray()
 {
     if (_read_only_array) return _read_only_array;
@@ -218,7 +219,7 @@ GlBlock::HeightReadOnlyArray GlBlock::
             0, 0));
 
     return _read_only_array;
-}
+}*/
 
 
 void GlBlock::
@@ -262,12 +263,12 @@ slope()
         TIME_GLBLOCK TaskTimer tt("Slope, creating vbo");
 
         unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
-        _slope.reset( new Vbo(elems*sizeof(float2), GL_PIXEL_UNPACK_BUFFER, GL_STATIC_DRAW) );
+        _slope.reset( new Vbo(elems*sizeof(std::complex<float>), GL_PIXEL_UNPACK_BUFFER, GL_STATIC_DRAW) );
     }
 
     TIME_GLBLOCK TaskTimer tt("Slope OpenGL->Cuda, vbo=%u", (unsigned)*_slope);
 
-    _mapped_slope.reset( new MappedVbo<float2>(_slope, heightSize() ));
+    _mapped_slope.reset( new MappedVbo<std::complex<float> >(_slope, heightSize() ));
 
     TIME_GLBLOCK CudaException_ThreadSynchronize();
 
@@ -450,13 +451,13 @@ void GlBlock::
     if (_read_only_cpu)
         _read_only_cpu.reset();
 
-    if (_read_only_array)
+    /*if (_read_only_array)
     {
         cudaGraphicsUnmapResources( 1, &_read_only_array_resource );
         _read_only_array = 0;
         cudaGraphicsUnregisterResource( _read_only_array_resource );
         _read_only_array_resource = 0;
-    }
+    }*/
 
     if (_mapped_height)
     {
@@ -645,11 +646,11 @@ void GlBlock::
     height();
     slope();
 
-    ::cudaCalculateSlopeKernel( height()->data->getCudaGlobal(),
-                                slope()->data->getCudaGlobal(),
+    ::cudaCalculateSlopeKernel( height()->data,
+                                slope()->data,
                                 _world_width, _world_height );
 //    ::cudaCalculateSlopeKernelArray( heightReadOnlyArray(), heightSize(),
-//                                slope()->data->getCudaGlobal(),
+//                                slope()->data,
 //                                _world_width, _world_height );
 
     TIME_GLBLOCK CudaException_ThreadSynchronize();

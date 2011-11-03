@@ -238,7 +238,8 @@ else:OBJECTS_DIR = tmp/release/
 # #######################################################################
 # CUDA
 # #######################################################################
-!nocuda {
+usecuda {
+DEFINES += USE_CUDA
 
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
@@ -324,5 +325,5 @@ macx {
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
 
-} #!nocuda
+} #usecuda
 # end of cuda section #######################################################################

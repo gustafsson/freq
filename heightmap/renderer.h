@@ -12,6 +12,9 @@
 // std
 #include <sstream>
 
+// OpenGL
+#include "gl.h"
+
 typedef tvector<3,GLdouble> GLvector;
 //typedef tvector<3,GLfloat> GLvector;
 typedef tvector<3,GLfloat> GLvectorF;
@@ -45,7 +48,7 @@ public:
 
     bool draw_height_lines;
     ColorMode color_mode;
-    float4 fixed_color;
+    tvector<4, float> fixed_color;
     float y_scale;
     float last_ysize;
     unsigned drawn_blocks;

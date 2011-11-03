@@ -21,7 +21,7 @@ void FanTrackerView::
     Tfr::FreqAxis const& fa = render_view_->model->display_scale();
     float FS = model_->selected_filter()->sample_rate();
 
-    const std::vector<float4>& colors = render_view_->channelColors();
+    const std::vector<tvector<4> >& colors = render_view_->channelColors();
 
     for (unsigned C = 0; C < model_->selected_filter()->num_channels(); ++C )
     {
@@ -41,7 +41,7 @@ void FanTrackerView::
                 pts[i++] = Heightmap::Position( time, fa.getFrequencyScalar( hz ));
             }
 
-        Support::PaintLine::drawSlice( pts.size(), &pts[0], colors[C].x, colors[C].y, colors[C].z );
+        Support::PaintLine::drawSlice( pts.size(), &pts[0], colors[C][0], colors[C][1], colors[C][2] );
     }
     }
 }

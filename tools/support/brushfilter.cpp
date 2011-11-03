@@ -4,6 +4,7 @@
 #include "brushfilter.cu.h"
 #include "tfr/cwt.h"
 #include "cudaglobalstorage.h"
+#include "cpumemorystorage.h"
 
 #include <CudaException.h>
 

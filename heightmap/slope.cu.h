@@ -1,16 +1,17 @@
 #ifndef HEIGHTMAPSLOPE_CU_H
 #define HEIGHTMAPSLOPE_CU_H
 
-#include <cudaPitchedPtrType.h>
+#include "datastorage.h"
+#include <complex>
 
 extern "C"
-void cudaCalculateSlopeKernel(  cudaPitchedPtrType<float> heightmapIn,
-                                cudaPitchedPtrType<float2> slopeOut,
+void cudaCalculateSlopeKernel(  DataStorage<float>::Ptr heightmapIn,
+                                DataStorage<std::complex<float> >::Ptr slopeOut,
                                 float xscale, float yscale );
 
-extern "C"
+/*extern "C"
 void cudaCalculateSlopeKernelArray( cudaArray* heightmapIn, cudaExtent sz_input,
-                                cudaPitchedPtrType<float2> slopeOut,
-                                float xscale, float yscale );
+                                DataStorage<std::complex<float> >::Ptr slopeOut,
+                                float xscale, float yscale );*/
 
 #endif // HEIGHTMAPSLOPE_CU_H

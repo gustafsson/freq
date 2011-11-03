@@ -320,7 +320,7 @@ float RenderView::
             return 0;
     }
 
-    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
     unsigned w = ref->samplesPerBlock();
@@ -1253,10 +1253,10 @@ void RenderView::
     for (unsigned i=0; i<N; ++i)
     {
         QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
-        channel_colors[i] = make_float4(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-        R += channel_colors[i].x;
-        G += channel_colors[i].y;
-        B += channel_colors[i].z;
+        channel_colors[i] = tvector<4>(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+        R += channel_colors[i][0];
+        G += channel_colors[i][1];
+        B += channel_colors[i][2];
     }
 
     // R, G and B sum up to the same constant = N/2 if N > 1
@@ -1266,7 +1266,7 @@ void RenderView::
     }
 
     if(0) if (1==N) // There is a grayscale mode to use for this
-        channel_colors[0] = make_float4(0,0,0,1);
+        channel_colors[0] = tvector<4>(0,0,0,1);
 }
 
 

@@ -173,9 +173,10 @@ void CommentController::
         comment_->model()->pos = view_->getHeightmapPos( e->posF() );
     else
         comment_->model()->pos = view_->getPlanePos( e->posF() );
+
     QPointF window_coordinates = view_->window_coordinates( e->posF() );
-    comment_->model()->screen_pos.x = window_coordinates.x();
-    comment_->model()->screen_pos.y = window_coordinates.y();
+    comment_->model()->screen_pos[0] = window_coordinates.x();
+    comment_->model()->screen_pos[1] = window_coordinates.y();
 
     view_->userinput_update();
 
@@ -189,7 +190,7 @@ void CommentController::
 {
     if (comment_)
     {
-        comment_->model()->screen_pos.x = UpdateModelPositionFromScreen;
+        comment_->model()->screen_pos[0] = UpdateModelPositionFromScreen;
         comment_->setEditFocus(true);
         comment_ = 0;
     }

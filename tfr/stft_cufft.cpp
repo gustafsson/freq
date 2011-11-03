@@ -105,7 +105,7 @@ Tfr::pChunk Stft::
 
     cufftReal* input;
     cufftComplex* output;
-    if (!b->waveform_data()->DoesStorageHaveValidContent<CudaGlobalStorage>())
+    if (!b->waveform_data()->HasValidContent<CudaGlobalStorage>())
     {
         TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", b->waveform_data()->getSizeInBytes1D()/1024.f/1024.f);
         input = CudaGlobalStorage::ReadOnly<1>( b->waveform_data() ).device_ptr();

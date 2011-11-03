@@ -8,14 +8,16 @@
 
 // Gpumisc
 #include <InvokeOnDestruction.hpp>
+
 #include <CudaException.h>
+#include <cudaUtil.h>
+#include "cudaglobalstorage.h"
+
 #include <GlException.h>
 #include <string>
 #include <neat_math.h>
 #include <debugmacros.h>
 #include <Statistics.h>
-#include <cudaUtil.h>
-#include "cudaglobalstorage.h"
 
 // MSVC-GCC-compatibility workarounds
 #include <msc_stdc.h>
@@ -764,7 +766,7 @@ pBlock Collection::
 
         // set to zero
         GlBlock::pHeight h = block->glblock->height();
-        cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
+        h->data->FindCreateStorage<CudaGlobalStorage>( false, true )->clear();
         // will be unmapped in next_frame() or right before it's drawn
 
         GlException_CHECK_ERROR();
@@ -1086,17 +1088,11 @@ bool Collection::
     BOOST_ASSERT( in_h.get() != out_h.get() );
     BOOST_ASSERT( outBlock.get() != inBlock.get() );
 
-    BlockData::Ptr inDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
-            in_h->data->getNumberOfElements(), in_h->data->getCudaGlobal().getCudaPitchedPtr());
+    ::blockMerge( in_h->data,
+                  out_h->data,
 
-    BlockData::Ptr outDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
-            out_h->data->getNumberOfElements(), out_h->data->getCudaGlobal().getCudaPitchedPtr());
-
-    ::blockMerge( inDatap,
-                  outDatap,
-
-                  make_float4( ia.time, ia.scale, ib.time, ib.scale ),
-                  make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
+                  BlockArea( ia.time, ia.scale, ib.time, ib.scale ),
+                  BlockArea( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
     if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&

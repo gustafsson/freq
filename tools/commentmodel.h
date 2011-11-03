@@ -9,6 +9,7 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/version.hpp>
+#include "tvector.h"
 
 namespace Tools
 {
@@ -25,9 +26,9 @@ public:
     std::string html;
     float scroll_scale;
     bool thumbnail;
-    uint2 window_size;
+    tvector<2, unsigned> window_size;
     bool freezed_position;
-    float2 screen_pos;
+    tvector<2, float> screen_pos;
 
 private:
     friend class boost::serialization::access;
@@ -40,8 +41,8 @@ private:
                 & BOOST_SERIALIZATION_NVP(html)
                 & BOOST_SERIALIZATION_NVP(scroll_scale)
                 & BOOST_SERIALIZATION_NVP(thumbnail)
-                & BOOST_SERIALIZATION_NVP(window_size.x)
-                & BOOST_SERIALIZATION_NVP(window_size.y)
+                & BOOST_SERIALIZATION_NVP(window_size[0])
+                & BOOST_SERIALIZATION_NVP(window_size[1])
                 & BOOST_SERIALIZATION_NVP(freezed_position);
     }
 };

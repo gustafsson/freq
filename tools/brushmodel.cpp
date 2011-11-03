@@ -189,12 +189,8 @@ Signal::Interval BrushModel::
         {
             Heightmap::Block::pData blockData = block->glblock->height()->data;
 
-            cudaPitchedPtrType<float> cppt = blockData->getCudaGlobal();
-            DataStorage<float>::Ptr blockDatap =
-                    CudaGlobalStorage::BorrowPitchedPtr<float>( cppt.getNumberOfElements(), cppt.getCudaPitchedPtr() );
-
             ::multiplyGauss( area,
-                           blockDatap,
+                           blockData,
                            gauss, render_model_->amplitude_axis() );
             // collection->invalidate_samples is called by brushcontroller on mouse release
         }

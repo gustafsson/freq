@@ -38,7 +38,7 @@ Renderer::Renderer( Collection* collection )
     camera(0,0,0),
     draw_height_lines(false),
     color_mode( ColorMode_Rainbow ),
-    fixed_color( make_float4(1,0,0,1) ),
+    fixed_color( 1,0,0,1 ),
     y_scale( 1 ),
     last_ysize( 1 ),
     drawn_blocks(0),
@@ -483,7 +483,7 @@ void Renderer::beginVboRendering()
         glUniform1i(uniColorMode, (int)color_mode);
 
         uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
-        glUniform4f(uniFixedColor, fixed_color.x, fixed_color.y, fixed_color.z, fixed_color.w);
+        glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
 
         uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
         glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);

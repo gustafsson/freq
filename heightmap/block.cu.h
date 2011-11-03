@@ -4,10 +4,27 @@
 #include "tfr/freqaxis.h"
 #include "tfr/chunkdata.h"
 
-// gpusmisc
-#include "cudaPitchedPtrType.h"
-
 typedef DataStorage<float> BlockData;
+
+struct BlockArea
+{
+    BlockArea(float x1, float y1, float x2, float y2)
+        : x1(x1), y1(y1), x2(x2), y2(y2)
+    {}
+
+    float x1, y1, x2, y2;
+};
+
+struct ValidInputs
+{
+    ValidInputs(unsigned width, unsigned height)
+        :
+        width(width),
+        height(height)
+    {}
+
+    unsigned width, height;
+};
 
 /**
   The namespace Tfr does not know about the namespace Heightmap
@@ -32,9 +49,9 @@ extern "C"
         void blockResampleChunk(
                 Tfr::ChunkData::Ptr input,
                 BlockData::Ptr output,
-                 uint2 validInputs,
-                 float4 inputRegion,
-                 float4 outputRegion,
+                 ValidInputs validInputs,
+                 BlockArea inputRegion,
+                 BlockArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
@@ -44,8 +61,8 @@ extern "C"
 extern "C"
 void blockMerge( BlockData::Ptr inBlock,
                  BlockData::Ptr outBlock,
-                 float4 in_area,
-                 float4 out_area );
+                 BlockArea in_area,
+                 BlockArea out_area );
 /*
 extern "C"
 void expandStft( cudaPitchedPtrType<float2> inStft,
@@ -72,8 +89,8 @@ extern "C"
 void resampleStft( Tfr::ChunkData::Ptr input,
                    size_t nScales, size_t nSamples,
                    BlockData::Ptr output,
-                   float4 inputRegion,
-                   float4 outputRegion,
+                   BlockArea inputRegion,
+                   BlockArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis );

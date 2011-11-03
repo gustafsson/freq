@@ -1,6 +1,7 @@
 #include <resample.cu.h>
 
 #include "slope.cu.h"
+#include "cudaglobalstorage.h"
 
 class SlopeFetcher
 {
@@ -46,10 +47,13 @@ private:
 
 
 extern "C"
-void cudaCalculateSlopeKernel(  cudaPitchedPtrType<float> heightmapIn,
-                                cudaPitchedPtrType<float2> slopeOut,
+void cudaCalculateSlopeKernel(  DataStorage<float>::Ptr heightmapInp,
+                                DataStorage<std::complex<float> >::Ptr slopeOutp,
                                 float xscale, float yscale )
 {
+    cudaPitchedPtrType<float2> slopeOut( CudaGlobalStorage::WriteAll<2>( slopeOutp ).getCudaPitchedPtr() );
+    cudaPitchedPtrType<float> heightmapIn( CudaGlobalStorage::ReadOnly<2>( heightmapInp ).getCudaPitchedPtr() );
+
     elemSize3_t sz_input = heightmapIn.getNumberOfElements();
     elemSize3_t sz_output = slopeOut.getNumberOfElements();
 
@@ -68,9 +72,11 @@ void cudaCalculateSlopeKernel(  cudaPitchedPtrType<float> heightmapIn,
 
 extern "C"
 void cudaCalculateSlopeKernelArray(  cudaArray* heightmapIn, cudaExtent sz_input,
-                                cudaPitchedPtrType<float2> slopeOut,
+                                DataStorage<std::complex<float> >::Ptr slopeOutp,
                                 float xscale, float yscale )
 {
+    cudaPitchedPtrType<float2> slopeOut( CudaGlobalStorage::WriteAll<2>( slopeOutp ).getCudaPitchedPtr() );
+
     elemSize3_t sz_output = slopeOut.getNumberOfElements();
 
     uint4 validInputs = make_uint4( 0, 0, sz_input.width, sz_input.height );

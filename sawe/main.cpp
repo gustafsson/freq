@@ -4,8 +4,6 @@
 #include "sawe/reader.h"
 
 // gpumisc
-#include <CudaProperties.h>
-#include <CudaException.h>
 #include <redirectstdout.h>
 
 // Qt
@@ -14,14 +12,26 @@
 #include <QDesktopServices>
 #include <QDir>
 
-// cuda
-#include <cuda_gl_interop.h>
-#include <cuda.h>
 
 using namespace std;
 using namespace boost;
 using namespace Ui;
 using namespace Signal;
+
+#ifndef USE_CUDA
+    static bool check_cuda( bool use_OpenGL_bindings ) {
+        return true;
+    }
+#else
+
+// gpumisc
+#include <CudaProperties.h>
+#include <CudaException.h>
+#include "GpuCpuData.h"
+
+// cuda
+#include <cuda_gl_interop.h>
+#include <cuda.h>
 
 static bool check_cuda( bool use_OpenGL_bindings ) {
     stringstream ss;
@@ -157,7 +167,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
     return false;
 }
-
+#endif // USE_CUDA
 
 
 #include "heightmap/resampletest.h"
@@ -243,11 +253,13 @@ int main(int argc, char *argv[])
 
     if (1)
     {
+#ifndef USE_CUDA
         std::complex<float> f(1.123456789876543, 2.9876545678903);
         cufftComplex& b = *(cufftComplex*)&f;
         cufftComplex c;
         BOOST_ASSERT( b.x == f.real() && b.y == f.imag());
         BOOST_ASSERT( sizeof(f) == sizeof(c) );
+#endif
     }
 
     if (0)
@@ -503,8 +515,9 @@ int main(int argc, char *argv[])
 
         a.parse_command_line_options(argc, argv);
 
+#ifdef USE_CUDA
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-
+#endif
         if(0) {
             TaskTimer tt("Cwt inverse");
             Adapters::Audiofile file("chirp.wav");
@@ -557,9 +570,11 @@ int main(int argc, char *argv[])
         if( 0 != QGLContext::currentContext() )
             TaskInfo("Error: OpenGL context was not destroyed prior to application exit");
 
+#ifdef USE_CUDA
         CUdevice current_device;
         if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( &current_device ))
             TaskInfo("Error: CUDA context was not destroyed prior to application exit");
+#endif
 
         return r;
     } catch (const std::exception &x) {

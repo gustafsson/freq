@@ -61,7 +61,7 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     render_view->addItem( proxy );
 
     move(0, 0);
-    resize( model()->window_size.x, model()->window_size.y );
+    resize( model()->window_size[0], model()->window_size[1] );
 }
 
 
@@ -166,8 +166,8 @@ void CommentView::
             move(event->pos() - dragPosition);
             QPoint global_ref_pt = proxy->sceneTransform().map(ref_point);
 
-            model()->screen_pos.x = global_ref_pt.x();
-            model()->screen_pos.y = global_ref_pt.y();
+            model()->screen_pos[0] = global_ref_pt.x();
+            model()->screen_pos[1] = global_ref_pt.y();
 
             event->accept();
         }
@@ -196,7 +196,7 @@ void CommentView::
         mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
-        model()->screen_pos.x = UpdateModelPositionFromScreen;
+        model()->screen_pos[0] = UpdateModelPositionFromScreen;
 }
 
 
@@ -242,7 +242,7 @@ void CommentView::
 void CommentView::
         resizeEvent(QResizeEvent *)
 {
-    model()->window_size = make_uint2( width(), height() );
+    model()->window_size = tvector<2, unsigned>( width(), height() );
     keep_pos = true;
 
     recreatePolygon();
@@ -420,9 +420,9 @@ void CommentView::
     bool use_heightmap_value = true;
 
     // moveEvent can't be used when updating the reference position while moving
-    if (!proxy->pos().isNull() || model()->screen_pos.x == UpdateModelPositionFromScreen)
+    if (!proxy->pos().isNull() || model()->screen_pos[0] == UpdateModelPositionFromScreen)
     {
-        if (!keep_pos && model()->screen_pos.x == UpdateModelPositionFromScreen)
+        if (!keep_pos && model()->screen_pos[0] == UpdateModelPositionFromScreen)
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
@@ -433,7 +433,7 @@ void CommentView::
             else
                 model()->pos = view->getPlanePos( c );
 
-            model()->screen_pos.x = UpdateScreenPositionFromWorld;
+            model()->screen_pos[0] = UpdateScreenPositionFromWorld;
         }
 
         keep_pos = false;
@@ -446,10 +446,10 @@ void CommentView::
 
     double z;
     QPointF pt;
-    if (model()->screen_pos.x != UpdateScreenPositionFromWorld && model()->screen_pos.x != UpdateModelPositionFromScreen)
+    if (model()->screen_pos[0] != UpdateScreenPositionFromWorld && model()->screen_pos[0] != UpdateModelPositionFromScreen)
     {
-        pt.setX( model()->screen_pos.x );
-        pt.setY( model()->screen_pos.y );
+        pt.setX( model()->screen_pos[0] );
+        pt.setY( model()->screen_pos[1] );
         z = 6;
     }
     else

@@ -408,9 +408,9 @@ void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
 
 void blockResampleChunk( Tfr::ChunkData::Ptr inputp,
                   BlockData::Ptr outputp,
-                 uint2 validInputs, // validInputs is the first and last-1 valid samples in x
-                 float4 inputRegion,
-                 float4 outputRegion,
+                 ValidInputs validInput, // validInputs is the first and last-1 valid samples in x
+                 BlockArea ia,
+                 BlockArea oa,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
@@ -419,6 +419,9 @@ void blockResampleChunk( Tfr::ChunkData::Ptr inputp,
 {
     cudaPitchedPtrType<float2> input( CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr());
     cudaPitchedPtrType<float> output( CudaGlobalStorage::ReadWrite<2>( outputp ).getCudaPitchedPtr());
+    float4 inputRegion = make_float4( ia.x1, ia.y1, ia.x2, ia.y2 );
+    float4 outputRegion = make_float4( oa.x1, oa.y1, oa.x2, oa.y2 );
+    uint2 validInputs = make_uint2(validInput.width, validInput.height);
 
     switch(amplitudeAxis)
     {
@@ -503,12 +506,15 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
 void resampleStft( Tfr::ChunkData::Ptr input,
                    size_t nScales, size_t nSamples,
                    BlockData::Ptr output,
-                   float4 inputRegion,
-                   float4 outputRegion,
+                   BlockArea ia,
+                   BlockArea oa,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis )
 {
+    float4 inputRegion = make_float4( ia.x1, ia.y1, ia.x2, ia.y2 );
+    float4 outputRegion = make_float4( oa.x1, oa.y1, oa.x2, oa.y2 );
+
     // fetcher.factor makes it roughly equal height to Cwt
     switch(amplitudeAxis)
     {
@@ -537,9 +543,12 @@ void resampleStft( Tfr::ChunkData::Ptr input,
 extern "C"
 void blockMerge( BlockData::Ptr inBlockp,
                  BlockData::Ptr outBlockp,
-                 float4 in_area,
-                 float4 out_area)
+                 BlockArea ia,
+                 BlockArea oa)
 {
+    float4 in_area = make_float4( ia.x1, ia.y1, ia.x2, ia.y2 );
+    float4 out_area = make_float4( oa.x1, oa.y1, oa.x2, oa.y2 );
+
     cudaPitchedPtrType<float> inBlock(CudaGlobalStorage::ReadOnly<2>( inBlockp ).getCudaPitchedPtr());
     cudaPitchedPtrType<float> outBlock(CudaGlobalStorage::ReadWrite<2>( outBlockp ).getCudaPitchedPtr());
 

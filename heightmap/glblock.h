@@ -2,11 +2,11 @@
 #define HEIGHTMAPVBO_H
 
 // gpumisc
-#include <GpuCpuData.h>
 #include <mappedvbo.h>
 
 // std
 #include <stdio.h>
+#include <complex>
 
 
 namespace Heightmap {
@@ -21,15 +21,15 @@ public:
     ~GlBlock();
 
     typedef boost::shared_ptr< MappedVbo<float> > pHeight;
-    typedef boost::shared_ptr< GpuCpuData<float> > pHeightReadOnlyCpu;
-    typedef cudaArray* HeightReadOnlyArray;
+    typedef DataStorage<float>::Ptr pHeightReadOnlyCpu;
+    //typedef cudaArray* HeightReadOnlyArray;
 
     void                reset( float width, float height );
 
     pHeight             height();
     pHeightReadOnlyCpu  heightReadOnlyCpu();
-    HeightReadOnlyArray heightReadOnlyArray();
-    cudaExtent          heightSize() const;
+    //HeightReadOnlyArray heightReadOnlyArray();
+    DataStorageSize     heightSize() const;
 
     /**
         'unmap' releases copies of pHeight and pSlope held by GlBlock and
@@ -52,7 +52,7 @@ public:
     unsigned allocated_bytes_per_element();
 
 private:
-    typedef boost::shared_ptr< MappedVbo<float2> > pSlope;
+    typedef boost::shared_ptr< MappedVbo<std::complex<float> > > pSlope;
     pSlope slope();
 
     void createHeightVbo();
@@ -68,8 +68,8 @@ private:
     Collection* _collection;
 
     pHeightReadOnlyCpu _read_only_cpu;
-    cudaGraphicsResource* _read_only_array_resource;
-    HeightReadOnlyArray _read_only_array;
+    //cudaGraphicsResource* _read_only_array_resource;
+    //HeightReadOnlyArray _read_only_array;
 
     pVbo _height;
     pVbo _slope;

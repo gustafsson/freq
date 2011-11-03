@@ -103,16 +103,13 @@ void BlockFilter::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-    BlockData::Ptr outDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
-            outData->getNumberOfElements(), outData->getCudaGlobal().getCudaPitchedPtr());
-
     ::resampleStft( chunk.transform_data,
                     chunk.nScales(),
                     chunk.nSamples(),
-                  outDatap,
-                  make_float4( chunk_a.time, chunk_a.scale,
+                  outData,
+                  BlockArea( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
-                  make_float4( a.time, a.scale,
+                  BlockArea( a.time, a.scale,
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale(),
@@ -238,21 +235,20 @@ void BlockFilter::
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
+
     //    cuda-memcheck complains even on this testkernel when using global memory
     //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
 
-    BlockData::Ptr outDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
-            outData->getNumberOfElements(), outData->getCudaGlobal().getCudaPitchedPtr());
 
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data,
-                     outDatap,
-                     make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
+                     outData,
+                     ValidInputs( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
-                     make_float4( chunk_a.time, chunk_a.scale,
+                     BlockArea( chunk_a.time, chunk_a.scale,
                                   //chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // numerical error workaround, only affects visual
                                  chunk_b.time, chunk_b.scale  ), // numerical error workaround, only affects visual
-                     make_float4( a.time, a.scale,
+                     BlockArea( a.time, a.scale,
                                   b.time, b.scale ),
                      complex_info,
                      chunk.freqAxis,

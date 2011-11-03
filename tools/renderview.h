@@ -92,7 +92,7 @@ namespace Tools
 			this->*/
 		}
 
-        const std::vector<float4>& channelColors() const { return channel_colors; }
+        const std::vector<tvector<4> >& channelColors() const { return channel_colors; }
 
         void emitTransformChanged();
 
@@ -185,7 +185,7 @@ namespace Tools
         double modelview_matrix[16], projection_matrix[16];
         int viewport_matrix[4];
 
-        std::vector<float4> channel_colors;
+        std::vector<tvector<4> > channel_colors;
     };
 } // namespace Tools
 

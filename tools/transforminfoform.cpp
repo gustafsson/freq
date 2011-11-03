@@ -14,6 +14,10 @@
 #include "tfr/drawnwaveform.h"
 #include "adapters/csvtimeseries.h"
 
+#ifdef USE_CUDA
+#include <cuda_runtime.h>
+#endif
+
 #include <QTimer>
 
 #define LOG_TRANSFORM_INFO
@@ -219,17 +223,19 @@ void TransformInfoForm::
         ui->binResolutionEdit->setVisible(false);
     }
 
+#ifdef USE_CUDA
     size_t free=0, total=0;
     cudaMemGetInfo(&free, &total);
-    addRow("Free GPU mem", GpuCpuVoidData::getMemorySizeText( free ).c_str());
-    addRow("Total GPU mem", GpuCpuVoidData::getMemorySizeText( total ).c_str());
+    addRow("Free GPU mem", DataStorageVoid::getMemorySizeText( free ).c_str());
+    addRow("Total GPU mem", DataStorageVoid::getMemorySizeText( total ).c_str());
+#endif
 
     size_t cacheByteSize=0;
     foreach( boost::shared_ptr<Heightmap::Collection> h, renderview->model->collections)
     {
         cacheByteSize += h->cacheByteSize();
     }
-    addRow("Sonic AWE caches", GpuCpuVoidData::getMemorySizeText( cacheByteSize ).c_str());
+    addRow("Sonic AWE caches", DataStorageVoid::getMemorySizeText( cacheByteSize ).c_str());
 
     if (project->areToolsInitialized())
     {

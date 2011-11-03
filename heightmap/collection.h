@@ -12,6 +12,9 @@
 #include "tfr/chunk.h"
 #include "tfr/transform.h"
 
+// gpumisc
+#include "ThreadChecker.h"
+
 // boost
 #include <boost/unordered_map.hpp>
 #include <boost/functional/hash.hpp>
@@ -118,7 +121,7 @@ public:
     Reference ref;
     pGlBlock glblock;
 
-    typedef boost::shared_ptr<GpuCpuData<float> > pData;
+    typedef DataStorage<float>::Ptr pData;
 
     /**
         TODO test this in a multi gpu environment
