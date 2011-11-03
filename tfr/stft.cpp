@@ -5,7 +5,6 @@
 #include <throwInvalidArgument.h>
 #include <neat_math.h>
 #include <cufft.h>
-#include <CudaException.h>
 #include <CudaProperties.h>
 #include "cudaglobalstorage.h"
 
@@ -22,125 +21,8 @@ using namespace boost;
 namespace Tfr {
 
 
-CufftHandleContext::
-        CufftHandleContext( cudaStream_t stream, unsigned type )
-:   _handle(0),
-    _stream(stream),
-    _type(type)
-{
-    if (_type == (unsigned)-1)
-        _type = CUFFT_C2C;
-}
-
-
-CufftHandleContext::
-        ~CufftHandleContext()
-{
-    destroy();
-    _creator_thread.reset();
-}
-
-
-CufftHandleContext::
-        CufftHandleContext( const CufftHandleContext& b )
-{
-    _handle = 0;
-    this->_stream = b._stream;
-    this->_type = b._type;
-}
-
-
-CufftHandleContext& CufftHandleContext::
-        operator=( const CufftHandleContext& b )
-{
-    destroy();
-    this->_stream = b._stream;
-    this->_type = b._type;
-    return *this;
-}
-
-
-cufftHandle CufftHandleContext::
-        operator()( unsigned elems, unsigned batch_size )
-{
-    if (0 == _handle || _elems != elems || _batch_size != batch_size) {
-        this->_elems = elems;
-        this->_batch_size = batch_size;
-        create();
-    } else {
-        _creator_thread.throwIfNotSame(__FUNCTION__);
-    }
-    return _handle;
-}
-
-
-void CufftHandleContext::
-        setType(unsigned type)
-{
-    if (this->_type != type)
-    {
-        destroy();
-        this->_type = type;
-    }
-}
-
-
-void CufftHandleContext::
-        create()
-{
-    destroy();
-
-    if (_elems == 0 || _batch_size==0)
-        return;
-
-    int n = _elems;
-    cufftResult r = cufftPlanMany(
-            &_handle,
-            1,
-            &n,
-            NULL, 1, 0,
-            NULL, 1, 0,
-            (cufftType_t)_type,
-            _batch_size);
-
-    if (CUFFT_SUCCESS != r)
-    {
-        TaskInfo ti("cufftPlanMany( n = %d, _batch_size = %u ) -> %s",
-                    n, _batch_size, CufftException::getErrorString(r));
-        size_t free=0, total=0;
-        cudaMemGetInfo(&free, &total);
-        ti.tt().info("Free mem = %g MB, total = %g MB", free/1024.f/1024.f, total/1024.f/1024.f);
-        CufftException_SAFE_CALL( r );
-    }
-
-    CufftException_SAFE_CALL(cufftSetStream(_handle, _stream ));
-    _creator_thread.reset();
-}
-
-
-void CufftHandleContext::
-        destroy()
-{
-    if (_handle!=0) {
-        _creator_thread.throwIfNotSame(__FUNCTION__);
-
-        if (_handle==(cufftHandle)-1)
-            TaskInfo("CufftHandleContext::destroy, _handle==(cufftHandle)-1");
-        else
-        {
-            cufftResult errorCode = cufftDestroy(_handle);
-            if (errorCode != CUFFT_SUCCESS)
-                TaskInfo("CufftHandleContext::destroy, %s", CufftException::getErrorString(errorCode) );
-        }
-
-        _handle = 0;
-    }
-}
-
-
 Fft::
-        Fft(/*cudaStream_t stream*/)
-//:   _fft_single( stream )
+        Fft()
 {
 }
 
@@ -158,7 +40,7 @@ pChunk Fft::
     // just as well offload it some and do it on the CPU instead
 
     DataStorageSize input_n = real_buffer->waveform_data()->getNumberOfElements();
-    cudaExtent output_n = make_cudaExtent( input_n.width, input_n.height, input_n.depth );
+    DataStorageSize output_n = input_n;
 
     // The in-signal is padded to a power of 2 (cufft manual suggest a "multiple
     // of 2, 3, 5 or 7" but a power of one is even better) for faster fft calculations
@@ -171,21 +53,13 @@ pChunk Fft::
     {
         ComplexBuffer b( *real_buffer );
 
-        DataStorage<std::complex<float>, 3>::Ptr input = b.complex_waveform_data();
+        DataStorage<std::complex<float> >::Ptr input = b.complex_waveform_data();
 
         chunk.reset( new StftChunk );
-        chunk->transform_data.reset( new GpuCpuData<float2>(
-                0,
-                output_n,
-                GpuCpuVoidData::CpuMemory ));
+        chunk->transform_data.reset( new ChunkData( output_n ));
 
-        uint3 size = chunk->transform_data->getCudaGlobal().getNumberOfElements();
-        cudaPitchedPtr cpp = chunk->transform_data->getCudaGlobal().getCudaPitchedPtr();
-        DataStorage<std::complex<float>, 3>::Ptr output =
-                CudaGlobalStorage::BorrowPitchedPtr<std::complex<float>, 3>( size, cpp );
-
-        computeWithCufft( input, output, -1);
-        //computeWithOoura( input, output, -1 );
+        computeWithCufft( input, chunk->transform_data, -1);
+        //computeWithOoura( input, chunk->transform_data, -1 );
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
     }
     else
@@ -197,12 +71,9 @@ pChunk Fft::
 
         chunk.reset( new StftChunk(output_n.width) );
         output_n.width = ((StftChunk*)chunk.get())->nScales();
-        chunk->transform_data.reset( new GpuCpuData<float2>(
-                0,
-                output_n,
-                GpuCpuVoidData::CpuMemory ));
+        chunk->transform_data.reset( new ChunkData( output_n ));
 
-        computeWithCufftR2C( real_buffer->waveform_data(), *chunk->transform_data );
+        computeWithCufftR2C( real_buffer->waveform_data(), chunk->transform_data );
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales() );
     }
 
@@ -243,13 +114,8 @@ Signal::pBuffer Fft::
         // original_sample_rate == fs * scales
         ComplexBuffer buffer( 0, scales, fs );
 
-        uint3 size = chunk->transform_data->getCudaGlobal().getNumberOfElements();
-        cudaPitchedPtr cpp = chunk->transform_data->getCudaGlobal().getCudaPitchedPtr();
-        DataStorage<std::complex<float>, 3>::Ptr input =
-                CudaGlobalStorage::BorrowPitchedPtr<std::complex<float>, 3>( size, cpp );
-
-        computeWithCufft(input, buffer.complex_waveform_data(), 1);
-        //computeWithOoura(input, buffer.complex_waveform_data(), 1);
+        computeWithCufft(chunk->transform_data, buffer.complex_waveform_data(), 1);
+        //computeWithOoura(chunk->transform_data, buffer.complex_waveform_data(), 1);
 
         r = buffer.get_real();
     }
@@ -259,7 +125,7 @@ Signal::pBuffer Fft::
 
         r.reset( new Signal::Buffer(0, scales, fs ));
 
-        computeWithCufftC2R(*chunk->transform_data, r->waveform_data());
+        computeWithCufftC2R(chunk->transform_data, r->waveform_data());
     }
 
     if ( r->number_of_samples() != chunk->n_valid_samples )
@@ -277,7 +143,7 @@ extern "C" { void cdft(int, int, double *, int *, double *); }
 // extern "C" { void cdft(int, int, float *, int *, float *); }
 
 void Fft::
-        computeWithOoura( DataStorage<std::complex<float>, 3>::Ptr input, DataStorage<std::complex<float>, 3>::Ptr output, int direction )
+        computeWithOoura( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction )
 {
     TIME_STFT TaskTimer tt("Fft Ooura");
 
@@ -347,14 +213,10 @@ void Fft::
 std::vector<unsigned> Stft::_ok_chunk_sizes;
 
 Stft::
-        Stft( cudaStream_t stream )
-:   _stream( stream ),
-//    _handle_ctx_c2c(stream, CUFFT_C2C),
-//    _handle_ctx_r2c(stream, CUFFT_R2C),
-//    _handle_ctx_c2r(stream, CUFFT_C2R),
+        Stft()
+:
     _window_size( 1<<11 ),
     _compute_redundant(false)
-//    _fft_many( -1 )
 {
     compute_redundant( _compute_redundant );
 }

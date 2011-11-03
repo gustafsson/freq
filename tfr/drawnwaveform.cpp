@@ -4,7 +4,9 @@
 
 #include "neat_math.h"
 
+// std
 #include <math.h>
+#include <stdexcept>
 
 namespace Tfr {
 
@@ -43,10 +45,7 @@ pChunk DrawnWaveform::
         w = wmax;
 
     pChunk c(new DrawnWaveformChunk(this->block_fs));
-    c->transform_data.reset( new GpuCpuData<float2>(
-            0,
-            make_uint3(w, drawWaveform_YRESOLUTION, 1),
-            GpuCpuVoidData::CudaGlobal));
+    c->transform_data.reset( new ChunkData(w, drawWaveform_YRESOLUTION, 1));
 
     unsigned readstop = b->number_of_samples();
     if (b->getInterval().last > signal_length)
@@ -59,7 +58,7 @@ pChunk DrawnWaveform::
 
     ::drawWaveform(
             b->waveform_data(),
-            c->transform_data->getCudaGlobal(),
+            c->transform_data,
             blobsize,
             readstop,
             maxValue);

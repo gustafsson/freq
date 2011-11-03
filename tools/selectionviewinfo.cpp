@@ -140,12 +140,12 @@ pBuffer SelectionViewInfoSink::
             all-=f;
             pBuffer a = Operation::source()->readFixedLength(f);
             Tfr::pChunk c = Tfr::Fft::Singleton().forward(a);
-            float2* p = c->transform_data->getCpuMemory();
+            Tfr::ChunkElement* p = c->transform_data->getCpuMemory();
             unsigned N = f.count()/2;
             std::vector<float> absValues(N);
             float* q = &absValues[0];
             for (unsigned i=0; i<N; ++i)
-                q[i] = p[i].x*p[i].x + p[i].y*p[i].y;
+                q[i] = norm(p[i]);
 
             unsigned max_i = 0;
             float max_v = 0;

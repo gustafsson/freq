@@ -26,7 +26,7 @@ Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, u
     BOOST_ASSERT( 0 < numberOfSamples );
     BOOST_ASSERT( 0 < numberOfChannels );
     BOOST_ASSERT( 0 < fs );
-    waveform_data_.reset( new DataStorage<float, 3>(DataStorageSize( numberOfSamples, numberOfChannels, numberOfSignals )));
+    waveform_data_.reset( new DataStorage<float>(DataStorageSize( numberOfSamples, numberOfChannels, numberOfSignals )));
 }
 
 
@@ -76,7 +76,7 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
         break;
     }*/
 
-    waveform_data_ .reset( new DataStorage<float, 3>(subinterval.count()));
+    waveform_data_ .reset( new DataStorage<float>(subinterval.count()));
     bitor_channel_ = channel;
     *this |= *other_;
     other_.reset();
@@ -89,7 +89,7 @@ Buffer::
 }
 
 
-DataStorage<float, 3>::Ptr Buffer::
+DataStorage<float>::Ptr Buffer::
         waveform_data() const
 {
     return waveform_data_;
@@ -151,8 +151,8 @@ Buffer& Buffer::
     float* write;
     float const* read;
 
-    write = &CpuMemoryStorage::ReadWrite( waveform_data_ ).ref( offs_write );
-    read = &CpuMemoryStorage::ReadOnly( b.waveform_data_ ).ref( offs_read );
+    write = &CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ref( offs_write );
+    read = &CpuMemoryStorage::ReadOnly<1>( b.waveform_data_ ).ref( offs_read );
 
     memcpy(write, read, i.count()*sizeof(float));
 

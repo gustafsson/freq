@@ -87,7 +87,7 @@ private:
         uint64_t X = 0;
         for (unsigned c=0; c<_waveforms.size(); ++c)
         {
-            unsigned char* p = (unsigned char*)CpuMemoryStorage::ReadOnly( _waveforms[c]->waveform_data() ).ptr();
+            unsigned char* p = (unsigned char*)CpuMemoryStorage::ReadOnly<1>( _waveforms[c]->waveform_data() ).ptr();
             unsigned N = _waveforms[c]->waveform_data()->numberOfBytes();
 
             for (unsigned i=0; i<N; ++i)

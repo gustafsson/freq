@@ -5,6 +5,8 @@
 
 #include "cudaglobalstorage.h"
 #include "complexbuffer.h"
+#include "TaskTimer.h"
+#include "cuffthandlecontext.h"
 
 #include "wavelet.cu.h"
 
@@ -13,17 +15,19 @@
 
 namespace Tfr {
 
+
+
 void Fft::
-        computeWithCufft( DataStorage<std::complex<float>, 3>::Ptr input, DataStorage<std::complex<float>, 3>::Ptr output, int direction )
+        computeWithCufft( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction )
 {
     TIME_STFT TaskTimer tt("FFt cufft");
 
-    cufftComplex* d = (cufftComplex*)CudaGlobalStorage::WriteAll( output ).device_ptr();
+    cufftComplex* d = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
     BOOST_ASSERT( sizeof(cufftComplex) == sizeof(std::complex<float>));
     BOOST_ASSERT( sizeof(cufftComplex) == sizeof(float2));
     cudaMemset( d, 0, output->numberOfBytes() );
     cudaMemcpy( d,
-                CudaGlobalStorage::ReadOnly( input ).device_ptr(),
+                CudaGlobalStorage::ReadOnly<1>( input ).device_ptr(),
                 input->sizeInBytes().width,
                 cudaMemcpyDeviceToDevice );
 
@@ -43,12 +47,12 @@ void Fft::
 
 
 void Fft::
-        computeWithCufftR2C( DataStorage<float, 3>::Ptr input, GpuCpuData<float2>& output )
+        computeWithCufftR2C( DataStorage<float>::Ptr input, DataStorage<std::complex<float> >::Ptr output )
 {
-    cufftReal* i = CudaGlobalStorage::ReadOnly( input ).device_ptr();
-    cufftComplex* o = output.getCudaGlobal().ptr();
+    cufftReal* i = CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
+    cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
 
-    BOOST_ASSERT( input->size().width/2 + 1 == output.getNumberOfElements().width);
+    BOOST_ASSERT( input->size().width/2 + 1 == output->size().width);
 
     CufftException_SAFE_CALL(cufftExecR2C(
         CufftHandleContext(0, CUFFT_R2C)(input->size().width, 1),
@@ -57,12 +61,12 @@ void Fft::
 
 
 void Fft::
-        computeWithCufftC2R( GpuCpuData<float2>& input, DataStorage<float, 3>::Ptr output )
+        computeWithCufftC2R( DataStorage<std::complex<float> >::Ptr input, DataStorage<float>::Ptr output )
 {
-    cufftComplex* i = input.getCudaGlobal().ptr();
-    cufftReal* o = CudaGlobalStorage::WriteAll( output ).device_ptr();
+    cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
+    cufftReal* o = CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
 
-    BOOST_ASSERT( output->size().width/2 + 1 == input.getNumberOfElements().width);
+    BOOST_ASSERT( output->size().width/2 + 1 == input->size().width);
 
     CufftException_SAFE_CALL(cufftExecC2R(
         CufftHandleContext(0, CUFFT_C2R)(output->size().width, 1),
@@ -77,17 +81,14 @@ Tfr::pChunk Stft::
             _window_size/2 + 1,
             b->number_of_samples()/_window_size );
 
-    cudaExtent n = make_cudaExtent( actualSize.x * actualSize.y, 1, 1 );
+    DataStorageSize n( actualSize.x * actualSize.y, 1, 1 );
 
     if (0==actualSize.y) // not enough data
         return Tfr::pChunk();
 
     Tfr::pChunk chunk( new Tfr::StftChunk(_window_size) );
 
-    chunk->transform_data.reset( new GpuCpuData<float2>(
-            0,
-            n,
-            GpuCpuVoidData::CudaGlobal ));
+    chunk->transform_data.reset( new Tfr::ChunkData( n ));
 
     chunk->freqAxis = freqAxis( b->sample_rate );
     chunk->chunk_offset = b->sample_offset + _window_size/2;
@@ -107,14 +108,14 @@ Tfr::pChunk Stft::
     if (!b->waveform_data()->DoesStorageHaveValidContent<CudaGlobalStorage>())
     {
         TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", b->waveform_data()->getSizeInBytes1D()/1024.f/1024.f);
-        input = CudaGlobalStorage::ReadOnly( b->waveform_data() ).device_ptr();
+        input = CudaGlobalStorage::ReadOnly<1>( b->waveform_data() ).device_ptr();
         TIME_STFT CudaException_ThreadSynchronize();
     }
     else
     {
-        input = CudaGlobalStorage::ReadOnly( b->waveform_data() ).device_ptr();
+        input = CudaGlobalStorage::ReadOnly<1>( b->waveform_data() ).device_ptr();
     }
-    output = chunk->transform_data->getCudaGlobal().ptr();
+    output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( chunk->transform_data ).device_ptr();
 
     // Transform signal
     unsigned count = actualSize.y;
@@ -149,7 +150,7 @@ Tfr::pChunk Stft::
     BOOST_ASSERT( slices > 0 );
 
     CufftHandleContext
-            _handle_ctx_r2c(_stream, CUFFT_R2C);
+            _handle_ctx_r2c(0, CUFFT_R2C);
 
     while(i < count)
     {
@@ -211,7 +212,7 @@ Tfr::pChunk Stft::
 
     BOOST_ASSERT( 0!=_window_size );
 
-    cudaExtent n = make_cudaExtent(
+    DataStorageSize n(
             _window_size,
             b.number_of_samples()/_window_size,
             1 );
@@ -224,14 +225,11 @@ Tfr::pChunk Stft::
 
     Tfr::pChunk chunk( new Tfr::StftChunk() );
 
-    chunk->transform_data.reset( new GpuCpuData<float2>(
-            0,
-            n,
-            GpuCpuVoidData::CudaGlobal ));
+    chunk->transform_data.reset( new ChunkData( n ));
 
 
-    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly(b.complex_waveform_data()).device_ptr();
-    cufftComplex* output = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
+    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>(b.complex_waveform_data()).device_ptr();
+    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>(chunk->transform_data).device_ptr();
 
     // Transform signal
     unsigned count = n.height;
@@ -254,7 +252,7 @@ Tfr::pChunk Stft::
     }
 
     CufftHandleContext
-            _handle_ctx_c2c(_stream, CUFFT_C2C);
+            _handle_ctx_c2c(0, CUFFT_C2C);
 
     while(i < count)
     {
@@ -327,7 +325,7 @@ Signal::pBuffer Stft::
     if (32768<nwindows) // TODO can't handle this
         nwindows = 32768;
 
-    const cudaExtent n = make_cudaExtent(
+    const DataStorageSize n(
             chunk_window_size,
             nwindows,
             1 );
@@ -335,8 +333,8 @@ Signal::pBuffer Stft::
     CudaException_ThreadSynchronize();
     CudaException_CHECK_ERROR();
 
-    cufftComplex* input = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
-    cufftReal* output = (cufftReal*)CudaGlobalStorage::WriteAll( b->waveform_data() ).device_ptr();
+    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( chunk->transform_data ).device_ptr();
+    cufftReal* output = (cufftReal*)CudaGlobalStorage::WriteAll<1>( b->waveform_data() ).device_ptr();
 
     CudaException_ThreadSynchronize();
     CudaException_CHECK_ERROR();
@@ -365,7 +363,7 @@ Signal::pBuffer Stft::
     CudaException_CHECK_ERROR();
 
     CufftHandleContext
-            _handle_ctx_c2r(_stream, CUFFT_C2R);
+            _handle_ctx_c2r(0, CUFFT_C2R);
 
     while(i < count)
     {
@@ -429,13 +427,13 @@ Signal::pBuffer Stft::
     if (32768<nwindows) // TODO can't handle this
         nwindows = 32768;
 
-    cudaExtent n = make_cudaExtent(
+    DataStorageSize n(
             chunk_window_size,
             nwindows,
             1 );
 
-    cufftComplex* input = (cufftComplex*)chunk->transform_data->getCudaGlobal().ptr();
-    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll( b.complex_waveform_data() ).device_ptr();
+    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( chunk->transform_data ).device_ptr();
+    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( b.complex_waveform_data() ).device_ptr();
 
     // Transform signal
     unsigned count = n.height;
@@ -458,7 +456,7 @@ Signal::pBuffer Stft::
     }
 
     CufftHandleContext
-            _handle_ctx_c2c(_stream, CUFFT_C2C);
+            _handle_ctx_c2c(0, CUFFT_C2C);
 
     while(i < count)
     {

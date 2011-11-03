@@ -162,7 +162,7 @@ void Audiofile::
         throw std::ios_base::failure(ss.str());
     }
 
-    DataStorage<float,3> completeFile(DataStorageSize( source.channels(), source.frames(), 1));
+    DataStorage<float> completeFile(DataStorageSize( source.channels(), source.frames(), 1));
     source.read(completeFile.getCpuMemory(), source.channels()*source.frames()); // yes float
     float* data = completeFile.getCpuMemory();
 

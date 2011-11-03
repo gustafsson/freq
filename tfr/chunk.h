@@ -1,12 +1,20 @@
 #ifndef TFRCHUNK_H
 #define TFRCHUNK_H
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include "GpuCpuData.h"
 #include "signal/intervals.h"
+#include "chunkdata.h"
+
+// gpusmisc
 #include "freqaxis.h"
 #include "unsignedf.h"
+#include "datastorage.h"
+
+// boost
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+
+// std
+#include <complex>
 
 namespace Tfr {
 
@@ -43,7 +51,7 @@ public:
       'offset' can be used to give coordinates that takes order into account
       for computing the offset into the array.
     */
-    boost::scoped_ptr<GpuCpuData<float2> > transform_data;
+    ChunkData::Ptr transform_data;
 
 
     unsigned offset(unsigned sample, unsigned f_index);
@@ -113,7 +121,7 @@ public:
                (order == Order_row_major || order == Order_column_major);
     }
 
-    float2 debug_getNearestCoeff( float t, float f );  /// For debugging
+    std::complex<float> debug_getNearestCoeff( float t, float f );  /// For debugging
 
 
     /**

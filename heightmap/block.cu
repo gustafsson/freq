@@ -1,7 +1,11 @@
 #include <stdio.h>
-#include "block.cu.h"
+
+#define FREQAXIS_CALL __device__ __host__
 #include "tfr/freqaxis.h"
+
+#include "block.cu.h"
 #include <resample.cu.h>
+#include "cudaglobalstorage.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -402,8 +406,8 @@ void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
 
 
 
-void blockResampleChunk( cudaPitchedPtrType<float2> input,
-                 cudaPitchedPtrType<float> output,
+void blockResampleChunk( Tfr::ChunkData::Ptr inputp,
+                  BlockData::Ptr outputp,
                  uint2 validInputs, // validInputs is the first and last-1 valid samples in x
                  float4 inputRegion,
                  float4 outputRegion,
@@ -413,6 +417,9 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  Heightmap::AmplitudeAxis amplitudeAxis
                  )
 {
+    cudaPitchedPtrType<float2> input( CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr());
+    cudaPitchedPtrType<float> output( CudaGlobalStorage::ReadWrite<2>( outputp ).getCudaPitchedPtr());
+
     switch(amplitudeAxis)
     {
     case Heightmap::AmplitudeAxis_Linear:
@@ -438,8 +445,9 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
 
 
 template<typename AxisConverter>
-void resampleStftAxis( cudaPitchedPtrType<float2> input,
-                   cudaPitchedPtrType<float> output,
+void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
+                   size_t nScales, size_t nSamples,
+                   BlockData::Ptr outputp,
                    float4 inputRegion,
                    float4 outputRegion,
                    Tfr::FreqAxis inputAxis,
@@ -447,6 +455,13 @@ void resampleStftAxis( cudaPitchedPtrType<float2> input,
                    Heightmap::AmplitudeAxis amplitudeAxis,
                    AxisConverter axisConverter )
 {
+    cudaPitchedPtr cpp = CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr();
+    cpp.xsize = cpp.pitch = nScales * sizeof(float2);
+    cpp.ysize = nSamples;
+
+    cudaPitchedPtrType<float2> input( cpp );
+    cudaPitchedPtrType<float> output( CudaGlobalStorage::ReadWrite<2>( outputp ).getCudaPitchedPtr());
+
     elemSize3_t sz_input = input.getNumberOfElements();
     elemSize3_t sz_output = output.getNumberOfElements();
 
@@ -485,8 +500,9 @@ void resampleStftAxis( cudaPitchedPtrType<float2> input,
 
 
 
-void resampleStft( cudaPitchedPtrType<float2> input,
-                   cudaPitchedPtrType<float> output,
+void resampleStft( Tfr::ChunkData::Ptr input,
+                   size_t nScales, size_t nSamples,
+                   BlockData::Ptr output,
                    float4 inputRegion,
                    float4 outputRegion,
                    Tfr::FreqAxis inputAxis,
@@ -498,19 +514,19 @@ void resampleStft( cudaPitchedPtrType<float2> input,
     {
     case Heightmap::AmplitudeAxis_Linear:
         resampleStftAxis(
-                input, output, inputRegion, outputRegion,
+                input, nScales, nSamples, output, inputRegion, outputRegion,
                 inputAxis, outputAxis, amplitudeAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>());
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         resampleStftAxis(
-                input, output, inputRegion, outputRegion,
+                input, nScales, nSamples, output, inputRegion, outputRegion,
                 inputAxis, outputAxis, amplitudeAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>());
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         resampleStftAxis(
-                input, output, inputRegion, outputRegion,
+                input, nScales, nSamples, output, inputRegion, outputRegion,
                 inputAxis, outputAxis, amplitudeAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>());
         break;
@@ -519,11 +535,14 @@ void resampleStft( cudaPitchedPtrType<float2> input,
 
 
 extern "C"
-void blockMerge( cudaPitchedPtrType<float> inBlock,
-                 cudaPitchedPtrType<float> outBlock,
+void blockMerge( BlockData::Ptr inBlockp,
+                 BlockData::Ptr outBlockp,
                  float4 in_area,
                  float4 out_area)
 {
+    cudaPitchedPtrType<float> inBlock(CudaGlobalStorage::ReadOnly<2>( inBlockp ).getCudaPitchedPtr());
+    cudaPitchedPtrType<float> outBlock(CudaGlobalStorage::ReadWrite<2>( outBlockp ).getCudaPitchedPtr());
+
     resample2d_plain<float, float, NoConverter<float,float> >
             (inBlock, outBlock, in_area, out_area);
 }

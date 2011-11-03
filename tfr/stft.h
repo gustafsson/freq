@@ -2,9 +2,12 @@
 #define TFRSTFT_H
 
 #include "transform.h"
+
+// std
 #include <vector>
 #include <complex>
 
+// gpumisc
 #include "HasSingleton.h"
 
 typedef unsigned int cufftHandle; /* from cufft.h */
@@ -12,34 +15,7 @@ typedef unsigned int cufftHandle; /* from cufft.h */
 namespace Tfr {
 
 
-/**
-  CufftHandleContext is used by Cwt but could also be used by Stft and Fft.
-  */
-class CufftHandleContext {
-public:
-    CufftHandleContext( cudaStream_t _stream=0, unsigned type=-1); // type defaults to CUFFT_C2C
-    ~CufftHandleContext();
 
-    CufftHandleContext( const CufftHandleContext& b );
-    CufftHandleContext& operator=( const CufftHandleContext& b );
-
-    cufftHandle operator()( unsigned elems, unsigned batch_size );
-
-    void setType(unsigned type);
-
-private:
-    ThreadChecker _creator_thread;
-    cufftHandle _handle;
-    cudaStream_t _stream;
-    unsigned _type;
-    unsigned _elems;
-    unsigned _batch_size;
-
-    void destroy();
-    void create();
-};
-
-// typedef boost::shared_ptr< GpuCpuData<float2> > pFftChunk;
 
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
@@ -73,17 +49,15 @@ public:
     static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
 
 private:
-//    CufftHandleContext _fft_single;
-    cudaStream_t _stream;
     std::vector<double> w; // used by Ooura
     std::vector<int> ip;
     std::vector<double> q;
 
-    void computeWithOoura( DataStorage<std::complex<float>, 3>::Ptr input, DataStorage<std::complex<float>, 3>::Ptr output, int direction );
-    void computeWithCufft( DataStorage<std::complex<float>, 3>::Ptr input, DataStorage<std::complex<float>, 3>::Ptr output, int direction );
+    void computeWithOoura( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction );
+    void computeWithCufft( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction );
 
-    void computeWithCufftR2C( DataStorage<float, 3>::Ptr input, GpuCpuData<float2>& output );
-    void computeWithCufftC2R( GpuCpuData<float2>& input, DataStorage<float, 3>::Ptr output );
+    void computeWithCufftR2C( DataStorage<float>::Ptr input, DataStorage<std::complex<float> >::Ptr output );
+    void computeWithCufftC2R( DataStorage<std::complex<float> >::Ptr input, DataStorage<float>::Ptr output );
 };
 
 /**
@@ -93,7 +67,7 @@ Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 class Stft: public Transform, public HasSingleton<Stft,Transform>
 {
 public:
-    Stft( cudaStream_t stream=0 );
+    Stft();
 
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
@@ -128,12 +102,6 @@ private:
       @see compute_redundant()
       */
     Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
-
-    cudaStream_t    _stream;
-//    CufftHandleContext
-//            _handle_ctx_c2c,
-//            _handle_ctx_r2c,
-//            _handle_ctx_c2r;
 
     static std::vector<unsigned> _ok_chunk_sizes;
 

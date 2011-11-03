@@ -32,18 +32,21 @@ void setError(const char* staticErrorMessage) {
 #endif
 
 void wtCompute(
-        float2* in_waveform_ft,
-        float2* out_wavelet_ft,
+        DataStorage<Tfr::ChunkElement>::Ptr in_waveform_ftp,
+        Tfr::ChunkData::Ptr out_wavelet_ftp,
         float fs,
         float /*minHz*/,
         float maxHz,
-        cudaExtent numElem,
         unsigned half_sizes,
         float scales_per_octave,
         float sigma_t0,
-        float normalization_factor,
-        cudaStream_t stream )
+        float normalization_factor )
 {
+    Tfr::ChunkElement* in_waveform_ft = CudaGlobalStorage::ReadOnly<1>( in_waveform_ftp ).device_ptr();
+
+    Tfr::ChunkElement* out_wavelet_ft = CudaGlobalStorage::WriteAll<2>( out_wavelet_ftp ).device_ptr();
+    cudaExtent numElem = out_wavelet_ftp->FindStorage<CudaGlobalStorage>()->getCudaExtent();
+
 //    nyquist = FS/2
 //    a = 2 ^ (1/v)
 //    aj = a^j
@@ -72,9 +75,9 @@ void wtCompute(
         return;
     }
 
-    kernel_compute_wavelet_coefficients<<<grid, block, 0, stream>>>(
-            in_waveform_ft,
-            out_wavelet_ft,
+    kernel_compute_wavelet_coefficients<<<grid, block, 0>>>(
+            (float2*)in_waveform_ft,
+            (float2*)out_wavelet_ft,
             numElem.width, numElem.height,
             first_scale,
             scales_per_octave,
@@ -201,8 +204,11 @@ __global__ void kernel_compute_wavelet_coefficients(
     }
 }
 
-void wtInverse( float2* in_wavelet, DataStorage<float, 3>::Ptr out_inverse_waveform, cudaExtent numElem, cudaStream_t stream )
+void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inverse_waveform, DataStorageSize x )
 {
+    float2* in_wavelet = (float2*)CudaGlobalStorage::ReadOnly<2>(in_waveletp).device_ptr();
+    cudaExtent numElem = make_cudaExtent( x.width, x.height, x.depth );
+
     // Multiply the coefficients together and normalize the result
     dim3 block(256,1,1);
     dim3 grid( int_div_ceil(numElem.width, block.x), 1, 1);
@@ -215,7 +221,7 @@ void wtInverse( float2* in_wavelet, DataStorage<float, 3>::Ptr out_inverse_wavef
     // kernel_inverse<<<grid, block, 0, stream>>>( in_wavelet, out_inverse_waveform, numElem );
     kernel_inverse<<<grid, block>>>(
             in_wavelet,
-            CudaGlobalStorage::WriteAll(out_inverse_waveform).device_ptr(),
+            CudaGlobalStorage::WriteAll<1>(out_inverse_waveform).device_ptr(),
             numElem );
 }
 
@@ -324,8 +330,10 @@ __global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_wavef
     out_inverse_waveform[x] = a;
 }
 */
-void wtClamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt, cudaStream_t stream  )
+void wtClamp( Tfr::ChunkData::Ptr in_wtp, size_t sample_offset, Tfr::ChunkData::Ptr out_clamped_wtp )
 {
+    cudaPitchedPtrType<float2> in_wt(CudaGlobalStorage::ReadOnly<2>( in_wtp ).getCudaPitchedPtr());
+    cudaPitchedPtrType<float2> out_clamped_wt(CudaGlobalStorage::WriteAll<2>( out_clamped_wtp ).getCudaPitchedPtr());
     // Multiply the coefficients together and normalize the result
 
     dim3 grid, block;
@@ -337,7 +345,7 @@ void wtClamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitche
         return;
     }
 
-    kernel_clamp<<<grid, block, 0, stream>>>( in_wt, sample_offset, out_clamped_wt );
+    kernel_clamp<<<grid, block, 0>>>( in_wt, sample_offset, out_clamped_wt );
 }
 
 __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt )
@@ -353,11 +361,11 @@ __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_of
 }
 
 void stftNormalizeInverse(
-        DataStorage<float, 3>::Ptr wavep,
-        unsigned length, cudaStream_t stream)
+        DataStorage<float>::Ptr wavep,
+        unsigned length )
 {
     // Multiply the coefficients together and normalize the result
-    cudaPitchedPtr cpp = CudaGlobalStorage::ReadWrite( wavep ).getCudaPitchedPtr();
+    cudaPitchedPtr cpp = CudaGlobalStorage::ReadWrite<1>( wavep ).getCudaPitchedPtr();
     cudaPitchedPtrType<float> wave(cpp, sizeof(float));
 
     dim3 grid, block;
@@ -369,7 +377,7 @@ void stftNormalizeInverse(
         return;
     }
 
-    kernel_stftNormalizeInverse<<<grid, block, 0, stream>>>( wave, 1.f/length );
+    kernel_stftNormalizeInverse<<<grid, block, 0>>>( wave, 1.f/length );
 }
 
 

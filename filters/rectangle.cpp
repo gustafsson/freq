@@ -55,14 +55,13 @@ std::string Rectangle::
 void Rectangle::operator()( Chunk& chunk) {
     TIME_FILTER TaskTimer tt("Rectangle");
 
-    float4 area = make_float4(
+    Area area = {
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
             chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ));
+            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ) };
 
-    ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
-                  chunk.transform_data->getNumberOfElements(),
+    ::removeRect( chunk.transform_data,
                   area,
                   _save_inside);
 

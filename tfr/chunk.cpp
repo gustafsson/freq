@@ -37,11 +37,11 @@ unsigned Chunk::
 }
 
 
-float2 Chunk::
+ChunkElement Chunk::
         debug_getNearestCoeff( float t, float f )
 {
     if (!valid())
-        return make_float2(-FLT_MAX, -FLT_MAX);
+        return ChunkElement(-FLT_MAX, -FLT_MAX);
 
     if ( t < 0 ) t = 0;
 
@@ -49,7 +49,7 @@ float2 Chunk::
 
     unsigned fi = freqAxis.getFrequencyIndex(f);
 
-    return transform_data->getCpuMemoryConst()[ offset(s, fi) ];
+    return transform_data->getCpuMemory()[ offset(s, fi) ];
 }
 
 

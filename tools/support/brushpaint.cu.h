@@ -64,7 +64,13 @@ private:
     }
 };
 
+
+struct ImageArea
+{
+    float t1, s1, t2, s2;
+};
+
 void addGauss(
-        float4 imageArea, cudaPitchedPtrType<float> image, Gauss gauss );
+        ImageArea imageArea, DataStorage<float>::Ptr image, Gauss gauss );
 void multiplyGauss(
-        float4 imageArea, cudaPitchedPtrType<float> image, Gauss gauss, Heightmap::AmplitudeAxis );
+        ImageArea imageArea, DataStorage<float>::Ptr image, Gauss gauss, Heightmap::AmplitudeAxis );

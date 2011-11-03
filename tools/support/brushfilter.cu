@@ -1,6 +1,6 @@
 #include "brushfilter.cu.h"
 #include <resample.cu.h>
-
+#include "cudaglobalstorage.h"
 
 /**
   resample2d reads one type and converts it to another type to write.
@@ -29,9 +29,16 @@ public:
 };
 
 
-void multiply( float4 cwtArea, cudaPitchedPtrType<float2> cwt,
-               float4 imageArea, cudaPitchedPtrType<float> image )
+
+void multiply( ImageArea cwtia, Tfr::ChunkData::Ptr cwtp,
+               ImageArea imageia, DataStorage<float>::Ptr imagep )
 {
+    float4 cwtArea = make_float4(cwtia.t1, cwtia.s1, cwtia.t2, cwtia.s2);
+    float4 imageArea = make_float4(imageia.t1, imageia.s1, imageia.t2, imageia.s2);
+
+    cudaPitchedPtrType<float2> cwt( CudaGlobalStorage::ReadWrite<2>(cwtp).getCudaPitchedPtr() );
+    cudaPitchedPtrType<float> image( CudaGlobalStorage::ReadOnly<2>(imagep).getCudaPitchedPtr() );
+
     resample2d_plain<float, float2, ConvertToFloat2, MultiplyOperator>(
             image,
             cwt,

@@ -33,7 +33,7 @@ public:
     Buffer(Signal::Interval subinterval, boost::shared_ptr<Buffer> other, unsigned channel=0);
     ~Buffer();
 
-    DataStorage<float, 3>::Ptr  waveform_data() const;
+    DataStorage<float>::Ptr  waveform_data() const;
     IntervalType        number_of_samples() const
     {
         return waveform_data_->size().width;
@@ -55,7 +55,7 @@ public:
     Buffer&         operator+=(const Buffer& b);
 
 protected:
-    DataStorage<float, 3>::Ptr waveform_data_;
+    DataStorage<float>::Ptr waveform_data_;
     boost::shared_ptr<Buffer> other_;
     unsigned bitor_channel_;
 };

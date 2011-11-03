@@ -1,5 +1,6 @@
 #include "brushpaint.cu.h"
 #include <operate.cu.h>
+#include "cudaglobalstorage.h"
 
 class AddGaussOperator
 {
@@ -17,8 +18,11 @@ private:
 };
 
 
-void addGauss( float4 imageArea, cudaPitchedPtrType<float> image, Gauss g )
+void addGauss( ImageArea a, DataStorage<float>::Ptr imagep, Gauss g )
 {
+    float4 imageArea = make_float4(a.t1, a.s1, a.t2, a.s2);
+    cudaPitchedPtrType<float> image( CudaGlobalStorage::ReadWrite<2>( imagep ).getCudaPitchedPtr());
+
     AddGaussOperator gauss(g);
 
     element_operate<float, AddGaussOperator>(image, imageArea, gauss);
@@ -68,8 +72,11 @@ private:
 };
 
 
-void multiplyGauss( float4 imageArea, cudaPitchedPtrType<float> image, Gauss g, Heightmap::AmplitudeAxis amplitudeAxis )
+void multiplyGauss( ImageArea a, DataStorage<float>::Ptr imagep, Gauss g, Heightmap::AmplitudeAxis amplitudeAxis )
 {
+    float4 imageArea = make_float4(a.t1, a.s1, a.t2, a.s2);
+    cudaPitchedPtrType<float> image( CudaGlobalStorage::ReadWrite<2>( imagep ).getCudaPitchedPtr());
+
     switch (amplitudeAxis)
     {
     case Heightmap::AmplitudeAxis_Linear:

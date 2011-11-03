@@ -9,6 +9,7 @@
 #include <CudaException.h>
 #include <GlException.h>
 #include <TaskTimer.h>
+#include "cudaglobalstorage.h"
 
 #include <boost/foreach.hpp>
 
@@ -102,14 +103,13 @@ void BlockFilter::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
+    BlockData::Ptr outDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
+            outData->getNumberOfElements(), outData->getCudaGlobal().getCudaPitchedPtr());
 
-    cpp.xsize = sizeof(float2)*chunk.nScales();
-    cpp.ysize = chunk.nSamples();
-    cpp.pitch = cpp.xsize;
-
-    ::resampleStft( cpp,
-                  outData->getCudaGlobal(),
+    ::resampleStft( chunk.transform_data,
+                    chunk.nScales(),
+                    chunk.nSamples(),
+                  outDatap,
                   make_float4( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
                   make_float4( a.time, a.scale,
@@ -241,9 +241,12 @@ void BlockFilter::
     //    cuda-memcheck complains even on this testkernel when using global memory
     //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
 
+    BlockData::Ptr outDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
+            outData->getNumberOfElements(), outData->getCudaGlobal().getCudaPitchedPtr());
+
     // Invoke CUDA kernel execution to merge blocks
-    ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
-                     outData->getCudaGlobal(),
+    ::blockResampleChunk( chunk.transform_data,
+                     outDatap,
                      make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
                      make_float4( chunk_a.time, chunk_a.scale,

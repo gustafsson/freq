@@ -127,7 +127,7 @@ void WriteWav::
 
     Signal::IntervalType Nsamples_per_channel = b->number_of_samples();
     Signal::IntervalType N = Nsamples_per_channel*C;
-    float* data = CpuMemoryStorage::ReadWrite( b->waveform_data() ).ptr();
+    float* data = CpuMemoryStorage::ReadWrite<2>( b->waveform_data() ).ptr();
 
     if (normalize) // Normalize
     {
@@ -183,10 +183,10 @@ Signal::pBuffer WriteWav::
 {
     /// Remove zeros from the beginning and end
     //GpuCpuData<float>* waveform_data = buffer->waveform_data();
-    DataStorage<float, 3>::Ptr waveform_data = buffer->waveform_data();
+    DataStorage<float>::Ptr waveform_data = buffer->waveform_data();
     unsigned num_frames = waveform_data->size().width;
     unsigned channel_count = waveform_data->size().height;
-    float *fdata = CpuMemoryStorage::ReadOnly( waveform_data ).ptr();
+    float *fdata = CpuMemoryStorage::ReadOnly<2>( waveform_data ).ptr();
 
     long unsigned firstNonzero = 0;
     long unsigned lastNonzero = 0;

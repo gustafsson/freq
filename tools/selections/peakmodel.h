@@ -28,12 +28,19 @@ public:
     void findAddPeak( Heightmap::Reference ref, Heightmap::Position pos );
 
 private:
-    typedef boost::shared_ptr< GpuCpuData<bool> > PeakAreaP;
+    struct BorderCoordinates
+    {
+        BorderCoordinates(unsigned x=0, unsigned y=0):x(x), y(y) {}
+        unsigned x, y;
+    };
+
+    typedef boost::shared_ptr< DataStorage<bool> > PeakAreaP;
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
+
     PeakAreas classifictions;
 
     void findBorder();
-    std::vector<uint2> border_nodes;
+    std::vector<BorderCoordinates> border_nodes;
     unsigned pixel_count;
 
     float found_max;
@@ -43,8 +50,8 @@ private:
     unsigned pixel_limit;
     bool use_min_limit;
 
-    bool anyBorderPixel( uint2&, unsigned w, unsigned h );
-    uint2 nextBorderPixel( uint2, unsigned w, unsigned h, unsigned& firstdir );
+    bool anyBorderPixel( BorderCoordinates&, unsigned w, unsigned h );
+    BorderCoordinates nextBorderPixel( BorderCoordinates, unsigned w, unsigned h, unsigned& firstdir );
 
     PeakAreaP getPeakArea(Heightmap::Reference);
     bool classifiedVal(unsigned x, unsigned y, unsigned w, unsigned h);

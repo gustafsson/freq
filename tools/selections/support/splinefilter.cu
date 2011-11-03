@@ -1,6 +1,7 @@
 #include "splinefilter.cu.h"
 #include <operate.cu.h>
 #include <resample.cu.h>
+#include "cudaglobalstorage.h"
 
 template<typename Reader>
 class Spliner
@@ -65,9 +66,12 @@ private:
 
 
 void applyspline(
-        cudaPitchedPtrType<float2> data,
-        cudaPitchedPtrType<float2> spline, bool save_inside )
+        Tfr::ChunkData::Ptr datap,
+        DataStorage<Tfr::ChunkElement>::Ptr splinep, bool save_inside )
 {
+    cudaPitchedPtrType<float2> data( CudaGlobalStorage::ReadWrite<2>(datap).getCudaPitchedPtr());
+    cudaPitchedPtrType<float2> spline( CudaGlobalStorage::ReadOnly<1>(splinep).getCudaPitchedPtr());
+
     Spliner< Read1D<float2> > spliner(
             Read1D_Create<float2>( spline ),
             spline.getNumberOfElements().x,

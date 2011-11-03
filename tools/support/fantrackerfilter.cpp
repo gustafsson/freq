@@ -32,15 +32,15 @@ namespace Support {
         float max = 0;
         unsigned peak = -1;
 
-        float2* p = c.transform_data->getCpuMemory() + i*window_size;
+        Tfr::ChunkElement* p = c.transform_data->getCpuMemory() + i*window_size;
 
         //unsigned start = c.freqAxis.getFrequencyScalar( 100 );
         //unsigned stop = c.freqAxis.getFrequencyScalar( 50 );
 
         for (unsigned m = 20 ; m < window_size/2 ; m++)
         {
-            float2 & v = p[m];
-            float A = v.x*v.x + v.y*v.y;
+            Tfr::ChunkElement & v = p[m];
+            float A = norm(v);
             if( A > max)
             {
                 max = A;

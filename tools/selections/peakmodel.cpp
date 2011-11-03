@@ -34,11 +34,8 @@ PeakModel::PeakAreaP PeakModel::
 
     if (!area)
     {
-        area.reset( new GpuCpuData<bool>(
-            0,
-            make_cudaExtent( ref.samplesPerBlock(), ref.scalesPerBlock(), 1),
-            GpuCpuVoidData::CpuMemory ) );
-        memset( area->getCpuMemory(), 0, area->getSizeInBytes1D() );
+        area.reset( new DataStorage<bool>(ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        memset( area->getCpuMemory(), 0, area->numberOfBytes() );
     }
 
     return area;
@@ -176,16 +173,16 @@ void PeakModel::
             w = ref.samplesPerBlock(),
             h = ref.scalesPerBlock();
 
-    uint2 start_point;
+    BorderCoordinates start_point;
     if (!anyBorderPixel(start_point, w, h))
         return;
 
     border_nodes.clear();
-    std::vector<uint2> border_pts;
+    std::vector<BorderCoordinates> border_pts;
 
     unsigned firstdir = 0;
     start_point = nextBorderPixel(start_point, w, h, firstdir);
-    uint2 pos = start_point;
+    BorderCoordinates pos = start_point;
     border_nodes.push_back( start_point );
     do
     {
@@ -195,7 +192,7 @@ void PeakModel::
         {
             // Define a line from 'lastnode' to 'pos' and check if all points in
             // 'border_pts' is less than or equal to 1 unit away from the line
-            uint2& lastnode = border_nodes.back();
+            BorderCoordinates& lastnode = border_nodes.back();
             float2 d = make_float2(pos.x - lastnode.x,
                                    pos.y - lastnode.y);
             float r = 1.f/sqrtf(d.x*d.x + d.y*d.y);
@@ -226,7 +223,7 @@ void PeakModel::
 
 
 bool PeakModel::
-        anyBorderPixel( uint2& pos, unsigned w, unsigned h )
+        anyBorderPixel( BorderCoordinates& pos, unsigned w, unsigned h )
 {
     foreach(PeakAreas::value_type v, classifictions)
     {
@@ -238,8 +235,9 @@ bool PeakModel::
             {
                 if (b[ x + y*w ])
                 {
-                    pos = make_uint2( x + v.first.block_index[0]*w,
-                                      y + v.first.block_index[1]*h);
+                    pos = BorderCoordinates(
+                            x + v.first.block_index[0]*w,
+                            y + v.first.block_index[1]*h);
                     return true;
                 }
             }
@@ -250,10 +248,10 @@ bool PeakModel::
 }
 
 
-uint2 PeakModel::
-        nextBorderPixel( uint2 v, unsigned w, unsigned h, unsigned& firstdir )
+PeakModel::BorderCoordinates PeakModel::
+        nextBorderPixel( BorderCoordinates v, unsigned w, unsigned h, unsigned& firstdir )
 {
-    int2 p[] =
+    int p[][2] =
     { // walk clockwise
         {+1, +0},
         {+1, +1},
@@ -271,7 +269,7 @@ uint2 PeakModel::
     for (unsigned i=firstdir; i<firstdir+N+1; ++i)
     {
         unsigned j=i%N;
-        uint2 r = make_uint2(v.x + p[j].x, v.y + p[j].y);
+        BorderCoordinates r(v.x + p[j][2], v.y + p[j][2]);
         bool b = classifiedVal(r.x, r.y, w, h);
         if (b && !prev)
         {

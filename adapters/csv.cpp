@@ -49,14 +49,14 @@ void Csv::
     else
         chunk = &c;
 
-    float2* p = chunk->transform_data->getCpuMemory();
-    cudaExtent s = chunk->transform_data->getNumberOfElements();
+    std::complex<float>* p = chunk->transform_data->getCpuMemory();
+    DataStorageSize s = chunk->transform_data->getNumberOfElements();
 
     for (unsigned y = 0; y<s.height; y++) {
         stringstream ss;
         for (unsigned x = 0; x<s.width; x++) {
-            float2& v = p[x + y*s.width];
-            ss << v.x << " " << v.y << " ";
+            std::complex<float>& v = p[x + y*s.width];
+            ss << v.real() << " " << v.imag() << " ";
         }
         csv << ss.str() << endl;
     }

@@ -15,6 +15,7 @@
 #include <debugmacros.h>
 #include <Statistics.h>
 #include <cudaUtil.h>
+#include "cudaglobalstorage.h"
 
 // MSVC-GCC-compatibility workarounds
 #include <msc_stdc.h>
@@ -1085,8 +1086,14 @@ bool Collection::
     BOOST_ASSERT( in_h.get() != out_h.get() );
     BOOST_ASSERT( outBlock.get() != inBlock.get() );
 
-    ::blockMerge( in_h->data->getCudaGlobal(),
-                  out_h->data->getCudaGlobal(),
+    BlockData::Ptr inDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
+            in_h->data->getNumberOfElements(), in_h->data->getCudaGlobal().getCudaPitchedPtr());
+
+    BlockData::Ptr outDatap = CudaGlobalStorage::BorrowPitchedPtr<float>(
+            out_h->data->getNumberOfElements(), out_h->data->getCudaGlobal().getCudaPitchedPtr());
+
+    ::blockMerge( inDatap,
+                  outDatap,
 
                   make_float4( ia.time, ia.scale, ib.time, ib.scale ),
                   make_float4( oa.time, oa.scale, ob.time, ob.scale ) );

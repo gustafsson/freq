@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cudaPitchedPtrType.h>
+#include "tfr/chunkdata.h"
 
 void applyspline(
-        cudaPitchedPtrType<float2> data,
-        cudaPitchedPtrType<float2> spline, bool save_inside );
+        Tfr::ChunkData::Ptr data,
+        DataStorage<Tfr::ChunkElement>::Ptr spline, bool save_inside );

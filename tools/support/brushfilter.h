@@ -5,7 +5,6 @@
 #include "heightmap/collection.h"
 
 // gpumisc
-#include <GpuCpuData.h>
 #include <vector_types.h>
 
 // boost
@@ -28,7 +27,7 @@ public:
     BrushFilter();
     ~BrushFilter();
 
-    typedef boost::shared_ptr< GpuCpuData<float> > BrushImageDataP;
+    typedef boost::shared_ptr< DataStorage<float> > BrushImageDataP;
     typedef boost::unordered_map<Heightmap::Reference, BrushImageDataP> BrushImages;
     typedef boost::shared_ptr<BrushImages> BrushImagesP;
 
@@ -66,7 +65,7 @@ private:
 			Heightmap::Reference rcopy = bv.first;
 			serialize_ref(ar, rcopy);
 
-            cudaExtent sz = bv.second->getNumberOfElements();
+            DataStorageSize sz = bv.second->size();
             ar & BOOST_SERIALIZATION_NVP(sz.width);
             ar & BOOST_SERIALIZATION_NVP(sz.height);
 
@@ -84,12 +83,12 @@ private:
             Heightmap::Reference ref(0);
 			serialize_ref(ar, ref);
 
-            cudaExtent sz;
+            DataStorageSize sz(0);
             ar & BOOST_SERIALIZATION_NVP(sz.width);
             ar & BOOST_SERIALIZATION_NVP(sz.height);
             sz.depth = 1;
 
-            BrushImageDataP img(new GpuCpuData<float>(0, sz));
+            BrushImageDataP img(new DataStorage<float>(sz));
             boost::serialization::binary_object Data( img->getCpuMemory(), img->getSizeInBytes1D() );
             ar & BOOST_SERIALIZATION_NVP(Data);
 

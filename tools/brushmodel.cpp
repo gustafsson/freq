@@ -2,6 +2,7 @@
 
 #include "sawe/project.h"
 #include "tfr/cwt.h"
+#include "cudaglobalstorage.h"
 
 #include <demangle.h>
 
@@ -171,15 +172,14 @@ Signal::Interval BrushModel::
 
     if (!img)
     {
-        img.reset( new GpuCpuData<float>(
-            0,
-            make_cudaExtent( ref.samplesPerBlock(), ref.scalesPerBlock(), 1),
-            GpuCpuVoidData::CudaGlobal ) );
-        cudaMemset( img->getCudaGlobal().ptr(), 0, img->getSizeInBytes1D() );
+        img.reset( new DataStorage<float>(
+                ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        cudaMemset( CudaGlobalStorage::WriteAll<1>(img).device_ptr(), 0, img->numberOfBytes() );
     }
 
-    ::addGauss( make_float4(a.time, a.scale, b.time, b.scale),
-                   img->getCudaGlobal(),
+    ImageArea area = {a.time, a.scale, b.time, b.scale};
+    ::addGauss( area,
+                   img,
                    gauss );
 
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections )
@@ -189,8 +189,12 @@ Signal::Interval BrushModel::
         {
             Heightmap::Block::pData blockData = block->glblock->height()->data;
 
-            ::multiplyGauss( make_float4(a.time, a.scale, b.time, b.scale),
-                           blockData->getCudaGlobal(),
+            cudaPitchedPtrType<float> cppt = blockData->getCudaGlobal();
+            DataStorage<float>::Ptr blockDatap =
+                    CudaGlobalStorage::BorrowPitchedPtr<float>( cppt.getNumberOfElements(), cppt.getCudaPitchedPtr() );
+
+            ::multiplyGauss( area,
+                           blockDatap,
                            gauss, render_model_->amplitude_axis() );
             // collection->invalidate_samples is called by brushcontroller on mouse release
         }

@@ -1,5 +1,6 @@
 #include "splinefilter.h"
 #include "splinefilter.cu.h"
+#include "cpumemorystorage.h"
 
 // gpumisc
 #include <CudaException.h>
@@ -40,7 +41,7 @@ void SplineFilter::operator()( Chunk& chunk)
 
     unsigned N = v.size();
 
-	std::vector<float2> p(N);
+    std::vector<ChunkElement> p(N);
 
 	unsigned j=0;
     float t1 = chunk.chunk_offset/chunk.sample_rate,
@@ -56,12 +57,12 @@ void SplineFilter::operator()( Chunk& chunk)
 			continue;
 		}
 
-        p[j] = make_float2(
+        p[j] = ChunkElement(
 				v[i].t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
                 chunk.freqAxis.getFrequencyScalarNotClamped( v[i].f ));
 
         DEBUG_SPLINEFILTER TaskTimer("(%g %g) -> p[%u] = (%g %g)",
-                  v[i].t, v[i].f, i, p[i].x, p[i].y).suppressTiming();
+                  v[i].t, v[i].f, i, p[i].real(), p[i].imag()).suppressTiming();
 
 		j++;
     }
@@ -70,11 +71,11 @@ void SplineFilter::operator()( Chunk& chunk)
     {
         TIME_SPLINEFILTER TaskTimer tt("SplineFilter applyspline (using subset with %u points out of %u total points)", j, N);
 
-        GpuCpuData<float2> pts(&p[0], make_uint3( j, 1, 1 ), GpuCpuVoidData::CpuMemory, true );
+        DataStorage<ChunkElement>::Ptr pts = CpuMemoryStorage::BorrowPtr( DataStorageSize(j), &p[0] );
 
         ::applyspline(
-                chunk.transform_data->getCudaGlobal(),
-                pts.getCudaGlobal(), _save_inside );
+                chunk.transform_data,
+                pts, _save_inside );
     }
 
     TIME_SPLINEFILTER CudaException_ThreadSynchronize();

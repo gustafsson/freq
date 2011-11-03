@@ -530,7 +530,7 @@ bool MatlabOperation::
                 DataStorageSize N = plot_pts->waveform_data()->size();
                 for (unsigned id=0; id<N.depth; ++id)
                 {
-                    float* p = CpuMemoryStorage::ReadOnly( plot_pts->waveform_data() ).ptr() + id*N.width*N.height;
+                    float* p = CpuMemoryStorage::ReadOnly<1>( plot_pts->waveform_data() ).ptr() + id*N.width*N.height;
 
                     if (3 <= N.height)
                         for (unsigned x=0; x<N.width; ++x)

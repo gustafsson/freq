@@ -2,5 +2,12 @@
 
 #include <cudaPitchedPtrType.h>
 
-void multiply( float4 cwtArea, cudaPitchedPtrType<float2> cwt,
-               float4 imageArea, cudaPitchedPtrType<float> image );
+#include "tfr/chunkdata.h"
+
+struct ImageArea
+{
+    float t1, s1, t2, s2;
+};
+
+void multiply( ImageArea cwtArea, Tfr::ChunkData::Ptr cwt,
+               ImageArea imageArea, DataStorage<float>::Ptr image );

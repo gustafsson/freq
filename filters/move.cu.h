@@ -1,9 +1,9 @@
 #ifndef MOVE_CU_H
 #define MOVE_CU_H
 
-#include <cudaPitchedPtrType.h>
+#include "tfr/chunkdata.h"
 
-void        moveFilter( cudaPitchedPtrType<float2> chunk,
+void        moveFilter( Tfr::ChunkData::Ptr chunk,
                         float df,
                         float min_hz,
                         float max_hz,

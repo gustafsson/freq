@@ -27,7 +27,7 @@ void Reassign::
         limitedCpu( Chunk& chunk )
 {
     TaskTimer tt("Limited reassign");
-    float2* p = chunk.transform_data->getCpuMemory();
+    std::complex<float>* p = chunk.transform_data->getCpuMemory();
 
     unsigned
             block_size_x = 32,
@@ -37,9 +37,9 @@ void Reassign::
             W = chunk.nSamples(),
             H = chunk.nScales();
 
-    std::vector<float2> q = std::vector<float2>(block_size_x*block_size_y);
-    std::vector<float2> r = std::vector<float2>(block_size_x);
-    std::vector<float2> r2 = std::vector<float2>(H);
+    std::vector<std::complex<float> > q = std::vector<std::complex<float> >(block_size_x*block_size_y);
+    std::vector<std::complex<float> > r = std::vector<std::complex<float> >(block_size_x);
+    std::vector<std::complex<float> > r2 = std::vector<std::complex<float> >(H);
 
     unsigned bytes_per_row = block_size_x*sizeof(float2);
 
@@ -63,7 +63,7 @@ void Reassign::
 
             for (unsigned x=0; x<block_size_x; x++)
             {
-                float2 a;
+                std::complex<float> a;
                 if (0==x && 0==bx)
                     continue;
                 else if (0==x)
@@ -71,9 +71,9 @@ void Reassign::
                 else
                     a = r[x - 1];
 
-                float2 b = r[x];
-                float pa = atan2(a.y, a.x);
-                float pb = atan2(b.y, b.x);
+                std::complex<float> b = r[x];
+                float pa = atan2(a.imag(), a.real());
+                float pb = atan2(b.imag(), b.real());
                 float FS = chunk.sample_rate;
                 float f = ((pb-pa)*FS)/(2*M_PI);
                 unsigned i = chunk.freqAxis.getFrequencyIndex( fabsf(f) );
@@ -100,8 +100,7 @@ void Reassign::
                 }
 
 
-                q[ (i % block_size_y) * block_size_x + x].x += a.x;
-                q[ (i % block_size_y) * block_size_x + x].y += a.y;
+                q[ (i % block_size_y) * block_size_x + x] += a;
             }
         }
 
@@ -121,20 +120,20 @@ void Reassign::
         naiveCpu( Chunk& chunk )
 {
     TaskTimer tt("Naive reassign");
-    float2* p = chunk.transform_data->getCpuMemory();
+    std::complex<float>* p = chunk.transform_data->getCpuMemory();
 
     unsigned
             W = chunk.nSamples(),
             H = chunk.nScales();
 
-    std::vector<float2> q[] = {
-        std::vector<float2>(H),
-        std::vector<float2>(H)};
+    std::vector<std::complex<float> > q[] = {
+        std::vector<std::complex<float> >(H),
+        std::vector<std::complex<float> >(H)};
 
     unsigned c = 0;
     unsigned long long d = 0;
 
-    float2
+    std::complex<float>
             *prev_q = &q[0][0],
             *this_q = &q[0][0];
 
@@ -143,7 +142,7 @@ void Reassign::
     for (unsigned x=1; x<W; x++)
     {
 
-        float2 *T = prev_q;
+        std::complex<float> *T = prev_q;
         prev_q = this_q;
         this_q = T;
 
@@ -151,16 +150,15 @@ void Reassign::
 
         for (unsigned y=0; y<H; y++)
         {
-            float2 a = p[y*W + x - 1];
-            float2 b = p[y*W + x];
-            float pa = atan2(a.y, a.x);
-            float pb = atan2(b.y, b.x);
+            std::complex<float> a = p[y*W + x - 1];
+            std::complex<float> b = p[y*W + x];
+            float pa = atan2(a.imag(), a.real());
+            float pb = atan2(b.imag(), b.real());
             float FS = chunk.sample_rate;
             float f = ((pb-pa)*FS)/(2*M_PI);
             unsigned i = chunk.freqAxis.getFrequencyIndex( fabsf(f) );
 
-            this_q[ i ].x += a.x;
-            this_q[ i ].y += a.y;
+            this_q[ i ] += a;
         }
 
         for (unsigned y=0; y<H; y++)
@@ -180,7 +178,7 @@ void Reassign::
 
     for (unsigned reassignLoop=0;reassignLoop<1;reassignLoop++)
     {
-        ::reassignFilter( chunk.transform_data->getCudaGlobal(),
+        ::reassignFilter( chunk.transform_data,
                       chunk.minHz(), chunk.maxHz(), chunk.sample_rate );
     }
 
@@ -202,7 +200,7 @@ void Tonalize::
 {
     TIME_FILTER TaskTimer tt("TonalizeFilter");
 
-    ::tonalizeFilter( chunk.transform_data->getCudaGlobal(),
+    ::tonalizeFilter( chunk.transform_data,
                   chunk.minHz(), chunk.maxHz(), chunk.sample_rate );
 
     TIME_FILTER CudaException_ThreadSynchronize();

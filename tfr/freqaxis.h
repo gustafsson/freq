@@ -1,7 +1,10 @@
 #ifndef TFRFREQAXIS_H
 #define TFRFREQAXIS_H
 
-#include <cuda_runtime.h> // defines __device__ and __host__
+#ifndef FREQAXIS_CALL
+#define FREQAXIS_CALL
+#endif
+
 #include <math.h>
 
 #include "msc_stdc.h"
@@ -101,7 +104,7 @@ public:
       a transform chunk.
       @see getFrequencyScalar
       */
-    __device__ __host__ float getFrequency( unsigned fi ) const
+    FREQAXIS_CALL float getFrequency( unsigned fi ) const
     {
         return getFrequency( (float)fi );
     }
@@ -111,7 +114,7 @@ public:
       Translates FreqAxis coordinates to 'Hz'.
       @see getFrequencyScalar
       */
-    __device__ __host__ float getFrequency( float fi ) const
+    FREQAXIS_CALL float getFrequency( float fi ) const
     {
         switch (axis_scale)
         {
@@ -145,7 +148,7 @@ public:
 
 
     /// @see getFrequencyScalar
-    __device__ __host__ unsigned getFrequencyIndex( float hz ) const
+    FREQAXIS_CALL unsigned getFrequencyIndex( float hz ) const
     {
         float scalar = getFrequencyScalar( hz );
         if (scalar < 0)
@@ -155,7 +158,7 @@ public:
 
 
     /// @see getFrequencyScalar
-    __device__ __host__ float getFrequencyScalarNotClamped( float hz ) const
+    FREQAXIS_CALL float getFrequencyScalarNotClamped( float hz ) const
     {
         float fi = 0;
 
@@ -203,7 +206,7 @@ public:
       normalized frequency coordinates in the heightmap or matrix indices in
       a transform chunk.
       */
-    __device__ __host__ float getFrequencyScalar( float hz ) const
+    FREQAXIS_CALL float getFrequencyScalar( float hz ) const
     {
         float fi = getFrequencyScalarNotClamped( hz );
         if (fi > max_frequency_scalar) fi = max_frequency_scalar;

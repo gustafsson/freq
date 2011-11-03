@@ -13,7 +13,7 @@ ComplexBuffer::ComplexBuffer(UnsignedF first_sample, unsigned long numberOfSampl
     sample_rate(FS)
 {
     if (numberOfSamples)
-        _complex_waveform_data.reset( new DataStorage<std::complex<float>, 3>( DataStorageSize (numberOfSamples, numberOfChannels, 1)));
+        _complex_waveform_data.reset( new DataStorage<std::complex<float> >( DataStorageSize (numberOfSamples, numberOfChannels, 1)));
 }
 
 
@@ -23,11 +23,11 @@ ComplexBuffer::
             sample_offset(buffer.sample_offset),
             sample_rate(buffer.sample_rate)
 {
-    DataStorage<float, 3>::Ptr real_waveform = buffer.waveform_data();
+    DataStorage<float>::Ptr real_waveform = buffer.waveform_data();
     DataStorageSize sz = real_waveform->getNumberOfElements();
     TIME_COMPLEX_BUFFER TaskTimer tt("ComplexBuffer of %lu x %lu x %lu elements", sz.width, sz.height, sz.depth );
 
-    _complex_waveform_data.reset( new DataStorage<std::complex<float>, 3>( sz ));
+    _complex_waveform_data.reset( new DataStorage<std::complex<float> >( sz ));
 
     std::complex<float>*complex = _complex_waveform_data->getCpuMemory();
     float *real = real_waveform->getCpuMemory();
@@ -46,7 +46,7 @@ ComplexBuffer::
 }
 
 
-DataStorage<float, 3>::Ptr ComplexBuffer::
+DataStorage<float>::Ptr ComplexBuffer::
         waveform_data()
 {
     _my_real.reset();
@@ -61,7 +61,7 @@ Signal::pBuffer ComplexBuffer::
     Signal::IntervalType length = number_of_samples();
     Signal::pBuffer buffer( new Signal::Buffer( sample_offset, length, sample_rate ));
 
-    DataStorage<float, 3>::Ptr real_waveform = buffer->waveform_data();
+    DataStorage<float>::Ptr real_waveform = buffer->waveform_data();
 
     DataStorageSize sz = real_waveform->getNumberOfElements();
     std::complex<float> *complex = _complex_waveform_data->getCpuMemory();

@@ -3,6 +3,7 @@
 
 #include "brushfilter.cu.h"
 #include "tfr/cwt.h"
+#include "cudaglobalstorage.h"
 
 #include <CudaException.h>
 
@@ -58,11 +59,8 @@ BrushFilter::BrushImageDataP BrushFilter::
 
     if (!img)
     {
-        img.reset( new GpuCpuData<float>(
-            0,
-            make_cudaExtent( ref.samplesPerBlock(), ref.scalesPerBlock(), 1),
-            GpuCpuVoidData::CudaGlobal ) );
-        cudaMemset( img->getCudaGlobal().ptr(), 0, img->getSizeInBytes1D() );
+        img.reset( new DataStorage<float>( ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        cudaMemset( CudaGlobalStorage::WriteAll<1>( img ).device_ptr(), 0, img->numberOfBytes() );
     }
 
     return img;
@@ -76,8 +74,7 @@ void BrushFilter::
 
     foreach(BrushImages::value_type const& v, imgs)
     {
-        v.second->getCpuMemory();
-        v.second->freeUnused();
+        v.second->OnlyKeepOneStorage<CpuMemoryStorage>();
     }
 }
 
@@ -130,18 +127,19 @@ void MultiplyBrush::
     float time1 = chunk.chunk_offset/chunk.sample_rate;
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 
+    ImageArea cwtArea = {time1, scale1, time2, scale2};
     foreach (BrushImages::value_type const& v, imgs)
     {
         Heightmap::Position a, b;
         v.first.getArea(a, b);
 
+        ImageArea imgarea = {a.time, a.scale, b.time, b.scale};
+
         ::multiply(
-                make_float4(time1, scale1,
-                            time2, scale2),
-                chunk.transform_data->getCudaGlobal(),
-                make_float4(a.time, a.scale, b.time, b.scale),
-                v.second->getCudaGlobal());
-        v.second->freeUnused();
+                cwtArea,
+                chunk.transform_data,
+                imgarea,
+                v.second);
     }
 
     CudaException_ThreadSynchronize();

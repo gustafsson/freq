@@ -21,12 +21,13 @@ __global__ void kernel_draw_waveform_with_lines(
 
 
 void drawWaveform(
-        DataStorage<float,3>::Ptr in_waveformp,
-        cudaPitchedPtrType<float2> out_waveform_matrix,
+        DataStorage<float>::Ptr in_waveformp,
+        Tfr::ChunkData::Ptr out_waveform_matrixp,
         float blob, unsigned readstop, float maxValue )
 {
-    cudaPitchedPtr iwf = CudaGlobalStorage::ReadOnly( in_waveformp ).getCudaPitchedPtr();
-    cudaPitchedPtrType<float> in_waveform(iwf, sizeof(float));
+    cudaPitchedPtrType<float> in_waveform(CudaGlobalStorage::ReadOnly<1>( in_waveformp ).getCudaPitchedPtr());
+
+    cudaPitchedPtrType<float2> out_waveform_matrix(CudaGlobalStorage::ReadWrite<2>( in_waveformp ).getCudaPitchedPtr());
 
     cudaMemset( out_waveform_matrix.ptr(), 0, out_waveform_matrix.getTotalBytes() );
 

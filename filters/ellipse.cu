@@ -1,14 +1,23 @@
 #include "ellipse.cu.h"
 
-// todo remove
+#include <cuda_runtime.h>
+
 #include "cudaUtil.h"
+
+#include "cudaglobalstorage.h"
 
 #include <stdio.h>
 
 __global__ void kernel_remove_disc(float2* in_wavelet, cudaExtent in_numElem, float4 area, bool save_inside, float fs );
 
-void removeDisc( float2* wavelet, cudaExtent numElem, float4 area, bool save_inside, float fs )
+void removeDisc( Tfr::ChunkData::Ptr waveletp, Area a, bool save_inside, float fs )
 {
+    float2* wavelet = (float2*)CudaGlobalStorage::ReadWrite<2>( waveletp ).device_ptr();
+
+    cudaExtent numElem = waveletp->FindStorage<CudaGlobalStorage>()->getCudaExtent();
+
+    float4 area = make_float4( a.x1, a.y1, a.x2, a.y2 );
+
     dim3 block(256,1,1);
     dim3 grid( int_div_ceil(numElem.width, block.x), numElem.height, 1);
 
