@@ -1,9 +1,6 @@
 #include "supersample.h"
 #include "stft.h"
 
-// gpumisc
-//#include <cuda_vector_types_op.h>
-
 // std
 #include <stdexcept>
 
@@ -25,8 +22,8 @@ Signal::pBuffer SuperSample::
         throw std::invalid_argument("requested_sample_rate must be an exact "
                                     "multiple of b->sample_rate");
 
-    Tfr::Fft ft;
-    Tfr::pChunk chunk = ft( b );
+    Tfr::pChunk chunk = Tfr::Fft()( b );
+
     unsigned src_window_size = ((Tfr::StftChunk*)chunk.get())->window_size;
     Tfr::pChunk biggerchunk( new Tfr::StftChunk( src_window_size << multiple ));
     biggerchunk->freqAxis = chunk->freqAxis;
@@ -44,6 +41,7 @@ Signal::pBuffer SuperSample::
     ChunkElement* src = chunk->transform_data->getCpuMemory();
     ChunkElement* dest = biggerchunk->transform_data->getCpuMemory();
 
+
     float normalize = 1.f/src_window_size;
     (dest[0] = src[0])*=(0.5*normalize);
     for (unsigned i=1; i<src_sz.width; ++i)
@@ -51,9 +49,11 @@ Signal::pBuffer SuperSample::
         (dest[i] = src[i])*=normalize;
     }
 
+
     memset( dest + src_sz.width, 0, (dest_sz.width - src_sz.width) * sizeof(ChunkElement) );
 
-    Signal::pBuffer r = ft.inverse( biggerchunk );
+
+    Signal::pBuffer r = Tfr::Fft().inverse( biggerchunk );
 
     BOOST_ASSERT( r->sample_rate == requested_sample_rate );
 

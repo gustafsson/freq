@@ -18,7 +18,7 @@ namespace Tfr {
 
 
 void Fft::
-        computeWithCufft( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction )
+        computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction )
 {
     TIME_STFT TaskTimer tt("FFt cufft");
 
@@ -47,7 +47,7 @@ void Fft::
 
 
 void Fft::
-        computeWithCufftR2C( DataStorage<float>::Ptr input, DataStorage<std::complex<float> >::Ptr output )
+        computeWithCufftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output )
 {
     cufftReal* i = CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
     cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
@@ -61,7 +61,7 @@ void Fft::
 
 
 void Fft::
-        computeWithCufftC2R( DataStorage<std::complex<float> >::Ptr input, DataStorage<float>::Ptr output )
+        computeWithCufftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output )
 {
     cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
     cufftReal* o = CudaGlobalStorage::WriteAll<1>( output ).device_ptr();

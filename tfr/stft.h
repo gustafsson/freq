@@ -53,11 +53,11 @@ private:
     std::vector<int> ip;
     std::vector<double> q;
 
-    void computeWithOoura( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction );
-    void computeWithCufft( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction );
+    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction );
+    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction );
 
-    void computeWithCufftR2C( DataStorage<float>::Ptr input, DataStorage<std::complex<float> >::Ptr output );
-    void computeWithCufftC2R( DataStorage<std::complex<float> >::Ptr input, DataStorage<float>::Ptr output );
+    void computeWithCufftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
+    void computeWithCufftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
 };
 
 /**
