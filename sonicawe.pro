@@ -126,9 +126,8 @@ CUDA_SOURCES += \
     heightmap/slope.cu \
     tfr/drawnwaveform.cu \
     tfr/wavelet.cu \
-    tools/support/brushfilter.cu \
-    tools/support/brushpaint.cu \
-    tools/selections/support/splinefilter.cu \
+    tools/support/*.cu \
+    tools/selections/support/*.cu \
 
 SHADER_SOURCES += \
     heightmap/heightmap.frag \

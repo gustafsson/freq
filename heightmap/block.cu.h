@@ -3,17 +3,9 @@
 
 #include "tfr/freqaxis.h"
 #include "tfr/chunkdata.h"
+#include "resampletypes.h"
 
 typedef DataStorage<float> BlockData;
-
-struct BlockArea
-{
-    BlockArea(float x1, float y1, float x2, float y2)
-        : x1(x1), y1(y1), x2(x2), y2(y2)
-    {}
-
-    float x1, y1, x2, y2;
-};
 
 struct ValidInputInterval
 {
@@ -50,8 +42,8 @@ extern "C"
                 Tfr::ChunkData::Ptr input,
                 BlockData::Ptr output,
                  ValidInputInterval validInputs,
-                 BlockArea inputRegion,
-                 BlockArea outputRegion,
+                 ResampleArea inputRegion,
+                 ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
@@ -61,8 +53,8 @@ extern "C"
 extern "C"
 void blockMerge( BlockData::Ptr inBlock,
                  BlockData::Ptr outBlock,
-                 BlockArea in_area,
-                 BlockArea out_area );
+                 ResampleArea in_area,
+                 ResampleArea out_area );
 /*
 extern "C"
 void expandStft( cudaPitchedPtrType<float2> inStft,
@@ -89,8 +81,8 @@ extern "C"
 void resampleStft( Tfr::ChunkData::Ptr input,
                    size_t nScales, size_t nSamples,
                    BlockData::Ptr output,
-                   BlockArea inputRegion,
-                   BlockArea outputRegion,
+                   ResampleArea inputRegion,
+                   ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis );

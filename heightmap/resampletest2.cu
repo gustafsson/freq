@@ -12,9 +12,12 @@ void simple_resample2d_2(
     myptr = &simple_resample2d_2;
     printf("&simple_resample2d_2 = %p\n", (void*)myptr);
 
+    DataStorage<float2>::Ptr inputp = CudaGlobalStorage::BorrowPitchedPtr<float2>( input.getNumberOfElements(), input.getCudaPitchedPtr() );
+    DataStorage<float>::Ptr outputp = CudaGlobalStorage::BorrowPitchedPtr<float>( output.getNumberOfElements(), output.getCudaPitchedPtr() );
+
     resample2d_plain<ConverterAmplitude >(
-            input,
-            output,
+            inputp,
+            outputp,
             ResampleArea(0.1, 0.1, 0.9, 0.9),
 //            make_float4(0.0,0.0,0.5,0.5),
 //            make_float4(0.0,0.0,0.5,0.5),

@@ -27,7 +27,7 @@ public:
     BrushFilter();
     ~BrushFilter();
 
-    typedef boost::shared_ptr< DataStorage<float> > BrushImageDataP;
+    typedef DataStorage<float>::Ptr BrushImageDataP;
     typedef boost::unordered_map<Heightmap::Reference, BrushImageDataP> BrushImages;
     typedef boost::shared_ptr<BrushImages> BrushImagesP;
 

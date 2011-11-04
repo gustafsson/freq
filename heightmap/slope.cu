@@ -6,9 +6,9 @@
 class SlopeFetcher
 {
 public:
-    typedef float2 T;
+    typedef std::complex<float> T;
 
-    SlopeFetcher( float xscale, float yscale, uint2 size )
+    SlopeFetcher( float xscale, float yscale, DataPos size )
         :   xscale( xscale ),
             yscale( yscale ),
             size( size )
@@ -18,7 +18,7 @@ public:
 
 
     template<typename Reader>
-    __device__ float2 operator()( ResamplePos const& q, Reader& reader )
+    __device__ std::complex<float> operator()( ResamplePos const& q, Reader& reader )
     {
         DataPos p(floor(q.x+.5f), floor(q.y+.5f));
 
@@ -34,7 +34,7 @@ public:
         if (p.y + 1 == size.y)
             up = 0;
 
-        float2 slope = make_float2(
+        std::complex<float> slope(
             (reader(DataPos(p.x + right, p.y)) - reader(DataPos(p.x + left, p.y)))*xscale/(right-left),
             (reader(DataPos(p.x, p.y+up)) - reader(DataPos(p.x, p.y+down)))*yscale/(up-down));
 
@@ -42,33 +42,30 @@ public:
     }
 
 private:
-    const uint2 size;
+    const DataPos size;
     const float xscale;
     const float yscale;
 };
 
 
 extern "C"
-void cudaCalculateSlopeKernel(  DataStorage<float>::Ptr heightmapInp,
-                                DataStorage<std::complex<float> >::Ptr slopeOutp,
+void cudaCalculateSlopeKernel(  DataStorage<float>::Ptr heightmapIn,
+                                DataStorage<std::complex<float> >::Ptr slopeOut,
                                 float xscale, float yscale )
 {
-    cudaPitchedPtrType<float2> slopeOut( CudaGlobalStorage::WriteAll<2>( slopeOutp ).getCudaPitchedPtr() );
-    cudaPitchedPtrType<float> heightmapIn( CudaGlobalStorage::ReadOnly<2>( heightmapInp ).getCudaPitchedPtr() );
+    DataStorageSize sz_input = heightmapIn->size();
+    DataStorageSize sz_output = slopeOut->size();
 
-    elemSize3_t sz_input = heightmapIn.getNumberOfElements();
-    elemSize3_t sz_output = slopeOut.getNumberOfElements();
-
-    ValidInputs validInputs( 0, 0, sz_input.x, sz_input.y );
-    ValidOutputs validOutputs( sz_output.x, sz_output.y );
+    ValidInputs validInputs( 0, 0, sz_input.width, sz_input.height );
+    ValidOutputs validOutputs( sz_output.width, sz_output.height );
 
     resample2d_fetcher(heightmapIn, slopeOut,
                                validInputs, validOutputs,
                                ResampleArea(0, 0, 1, 1),
                                ResampleArea(0, 0, 1, 1),
                                false,
-                               SlopeFetcher( 1000, 1000, make_uint2( sz_input.x, sz_input.y) ),
-                               AssignOperator<float2>() );
+                               SlopeFetcher( 1000, 1000, DataPos( sz_input.width, sz_input.height) ),
+                               AssignOperator<std::complex<float> >() );
 }
 
 /*

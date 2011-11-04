@@ -34,7 +34,7 @@ private:
         unsigned x, y;
     };
 
-    typedef boost::shared_ptr< DataStorage<bool> > PeakAreaP;
+    typedef DataStorage<bool>::Ptr PeakAreaP;
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
 
     PeakAreas classifictions;

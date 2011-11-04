@@ -13,9 +13,12 @@ void simple_resample2d(
     myptr = &simple_resample2d;
     printf("&simple_resample2d = %p\n", (void*)myptr);
 
+    DataStorage<float2>::Ptr inputp = CudaGlobalStorage::BorrowPitchedPtr<float2>( input.getNumberOfElements(), input.getCudaPitchedPtr() );
+    DataStorage<float>::Ptr outputp = CudaGlobalStorage::BorrowPitchedPtr<float>( output.getNumberOfElements(), output.getCudaPitchedPtr() );
+
     resample2d_plain<ConverterAmplitude>(
-            input,
-            output,
+            inputp,
+            outputp,
             //make_float4(0.1,0.1,0.9,0.893702),
   //          make_float4(0.1,0.1,0.9,0.9),
 //            make_float4(0.0,0.0,0.5,0.5),
@@ -86,9 +89,13 @@ void coordinatetest_resample2d(
     CoordinateTestFetcher coordinatetest;
     coordinatetest.inputRegion = inputRegion;
     coordinatetest.validInputs4 = validInputs4;
+
+    DataStorage<float2>::Ptr inputp = CudaGlobalStorage::BorrowPitchedPtr<float2>( input.getNumberOfElements(), input.getCudaPitchedPtr() );
+    DataStorage<float>::Ptr outputp = CudaGlobalStorage::BorrowPitchedPtr<float>( output.getNumberOfElements(), output.getCudaPitchedPtr() );
+
     resample2d_fetcher<CoordinateTestFetcher, AssignOperator<float> >(
-            input,
-            output,
+            inputp,
+            outputp,
             validInputs4,
             validOutputs,
             inputRegion,

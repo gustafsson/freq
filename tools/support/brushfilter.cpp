@@ -1,9 +1,8 @@
 #include "brushfilter.h"
 #include "brushfiltersupport.h"
 
-#include "brushfilter.cu.h"
+#include "brushfilterkernel.h"
 #include "tfr/cwt.h"
-#include "cudaglobalstorage.h"
 #include "cpumemorystorage.h"
 
 #include <CudaException.h>
@@ -61,7 +60,6 @@ BrushFilter::BrushImageDataP BrushFilter::
     if (!img)
     {
         img.reset( new DataStorage<float>( ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
-        cudaMemset( CudaGlobalStorage::WriteAll<1>( img ).device_ptr(), 0, img->numberOfBytes() );
     }
 
     return img;
@@ -128,13 +126,13 @@ void MultiplyBrush::
     float time1 = chunk.chunk_offset/chunk.sample_rate;
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 
-    ImageArea cwtArea = {time1, scale1, time2, scale2};
+    ResampleArea cwtArea( time1, scale1, time2, scale2 );
     foreach (BrushImages::value_type const& v, imgs)
     {
         Heightmap::Position a, b;
         v.first.getArea(a, b);
 
-        ImageArea imgarea = {a.time, a.scale, b.time, b.scale};
+        ResampleArea imgarea( a.time, a.scale, b.time, b.scale );
 
         ::multiply(
                 cwtArea,

@@ -1097,8 +1097,8 @@ bool Collection::
     ::blockMerge( in_h->data,
                   out_h->data,
 
-                  BlockArea( ia.time, ia.scale, ib.time, ib.scale ),
-                  BlockArea( oa.time, oa.scale, ob.time, ob.scale ) );
+                  ResampleArea( ia.time, ia.scale, ib.time, ib.scale ),
+                  ResampleArea( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
     if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
