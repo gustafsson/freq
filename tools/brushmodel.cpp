@@ -177,7 +177,7 @@ Signal::Interval BrushModel::
         cudaMemset( CudaGlobalStorage::WriteAll<1>(img).device_ptr(), 0, img->numberOfBytes() );
     }
 
-    ImageArea area = {a.time, a.scale, b.time, b.scale};
+    ResampleArea area( a.time, a.scale, b.time, b.scale );
     ::addGauss( area,
                    img,
                    gauss );

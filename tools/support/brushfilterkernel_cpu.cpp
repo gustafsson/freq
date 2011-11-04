@@ -2,4 +2,4 @@
 
 #include "brushfilterkerneldef.h"
 
-// that's it, brushfilterkernel contains the entry function
+// that's it, brushfilterkernel contains the definitions

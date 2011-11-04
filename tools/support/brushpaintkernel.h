@@ -68,12 +68,7 @@ private:
 };
 
 
-struct ImageArea
-{
-    float t1, s1, t2, s2;
-};
-
 void addGauss(
-        ImageArea imageArea, DataStorage<float>::Ptr image, Gauss gauss );
+        ResampleArea imageArea, DataStorage<float>::Ptr image, Gauss gauss );
 void multiplyGauss(
-        ImageArea imageArea, DataStorage<float>::Ptr image, Gauss gauss, Heightmap::AmplitudeAxis );
+        ResampleArea imageArea, DataStorage<float>::Ptr image, Gauss gauss, Heightmap::AmplitudeAxis );

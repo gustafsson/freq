@@ -171,13 +171,11 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
 
 #include "heightmap/resampletest.h"
-#include "tools/support/brushpaint.cu.h"
+#include "tools/support/brushpaintkernel.h" // test class Gauss
 #include "tfr/supersample.h"
 #include <Statistics.h>
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
-//#include <boost/archive/xml_oarchive.hpp>
-//#include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 

@@ -15,7 +15,7 @@
 #include <vector_types.h>
 
 #include "support/brushfilter.h"
-#include "support/brushpaint.cu.h"
+#include "support/brushpaintkernel.h"
 
 // Sonic AWE
 #include "tfr/filter.h"
