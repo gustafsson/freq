@@ -1,5 +1,6 @@
 #include "brushfilter.cu.h"
-#include <resample.cu.h>
+#include "cuda_vector_types_op.h"
+#include <resamplecuda.cu.h>
 #include "cudaglobalstorage.h"
 
 /**
@@ -10,7 +11,9 @@
 class ConvertToFloat2
 {
 public:
-    __device__ float2 operator()(float const& v, uint2 const& )
+    typedef float2 T;
+
+    __device__ float2 operator()(float const& v, DataPos const& )
     {
         return make_float2(v, 0);
     }
@@ -33,13 +36,13 @@ public:
 void multiply( ImageArea cwtia, Tfr::ChunkData::Ptr cwtp,
                ImageArea imageia, DataStorage<float>::Ptr imagep )
 {
-    float4 cwtArea = make_float4(cwtia.t1, cwtia.s1, cwtia.t2, cwtia.s2);
-    float4 imageArea = make_float4(imageia.t1, imageia.s1, imageia.t2, imageia.s2);
+    ResampleArea cwtArea(cwtia.t1, cwtia.s1, cwtia.t2, cwtia.s2);
+    ResampleArea imageArea(imageia.t1, imageia.s1, imageia.t2, imageia.s2);
 
     cudaPitchedPtrType<float2> cwt( CudaGlobalStorage::ReadWrite<2>(cwtp).getCudaPitchedPtr() );
     cudaPitchedPtrType<float> image( CudaGlobalStorage::ReadOnly<2>(imagep).getCudaPitchedPtr() );
 
-    resample2d_plain<float, float2, ConvertToFloat2, MultiplyOperator>(
+    resample2d_plain<ConvertToFloat2, MultiplyOperator>(
             image,
             cwt,
             imageArea,

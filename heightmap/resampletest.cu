@@ -1,7 +1,7 @@
 #include "resampletest.cu.h"
 #include <stdio.h>
 
-#include <resample.cu.h>
+#include <resamplecuda.cu.h>
 #include <operate.cu.h>
 
 void simple_resample2d(
@@ -13,7 +13,7 @@ void simple_resample2d(
     myptr = &simple_resample2d;
     printf("&simple_resample2d = %p\n", (void*)myptr);
 
-    resample2d_plain<float2, float,ConverterAmplitude >(
+    resample2d_plain<ConverterAmplitude>(
             input,
             output,
             //make_float4(0.1,0.1,0.9,0.893702),
@@ -22,8 +22,8 @@ void simple_resample2d(
 //            make_float4(0.0,0.0,0.5,0.5),
 //            make_float4(0.0,0.0,0.5,0.5),
 //            make_float4(0.1,0.1,0.9,0.9),
-            make_float4(0,0,1,1),
-            make_float4(0,0,1,1),
+            ResampleArea(0,0,1,1),
+            ResampleArea(0,0,1,1),
             false
     );
 }
@@ -32,7 +32,7 @@ void simple_resample2d(
 class Add2
 {
 public:
-    __device__ void operator()( float2& e, float2 p )
+    __device__ void operator()( float2& e, ResamplePos p )
     {
         e.x += 3+p.x;
         e.y += p.y;
@@ -50,23 +50,24 @@ void simple_operate(
 class CoordinateTestFetcher
 {
 public:
+    typedef float T;
+
     template<typename Reader>
-    __device__ float operator()( float2 const& p, Reader& reader )
+    __device__ float operator()( ResamplePos const& p, Reader& /*reader*/ )
     {
-        // Plot "how wrong" the phase is
-        float2 q = p;
-        q.x /= getWidth(validInputs4)-1;
-        q.y /= getHeight(validInputs4)-1;
-        q.x *= getWidth(inputRegion);
-        q.y *= getHeight(inputRegion);
-        q.x += getLeft(inputRegion);
-        q.y += getTop(inputRegion);
+        float2 q = make_float2(p.x, p.y);
+        q.x /= validInputs4.width()-1;
+        q.y /= validInputs4.height()-1;
+        q.x *= inputRegion.width();
+        q.y *= inputRegion.height();
+        q.x += inputRegion.left;
+        q.y += inputRegion.top;
 
         return q.y;
     }
 
-    float4 inputRegion;
-    uint4 validInputs4;
+    ResampleArea inputRegion;
+    ValidInputs validInputs4;
 };
 
 
@@ -77,15 +78,15 @@ void coordinatetest_resample2d(
 {
     elemSize3_t insz = input.getNumberOfElements();
     elemSize3_t outsz = output.getNumberOfElements();
-    float4 inputRegion = make_float4(0,0,1,1);
-    float4 outputRegion = make_float4(0,0,1,1);
-    uint4 validInputs4 = make_uint4(0,0,insz.x,insz.y);
-    uint2 validOutputs = make_uint2(outsz.x, outsz.y);
+    ResampleArea inputRegion(0,0,1,1);
+    ResampleArea outputRegion(0,0,1,1);
+    ValidInputs validInputs4(0,0,insz.x,insz.y);
+    ValidOutputs validOutputs(outsz.x, outsz.y);
 
     CoordinateTestFetcher coordinatetest;
     coordinatetest.inputRegion = inputRegion;
     coordinatetest.validInputs4 = validInputs4;
-    resample2d_fetcher<float, float2, float, CoordinateTestFetcher, AssignOperator<float> >(
+    resample2d_fetcher<CoordinateTestFetcher, AssignOperator<float> >(
             input,
             output,
             validInputs4,
@@ -98,9 +99,9 @@ void coordinatetest_resample2d(
 
     AffineTransform at(
             inputRegion,
-            make_float4(0,0.5,1,1),
+            ResampleArea(0,0.5,1,1),
             validInputs4,
-            make_uint2(outsz.x, outsz.y)
+            validOutputs
             );
     float2 a[] =
     {
@@ -114,12 +115,12 @@ void coordinatetest_resample2d(
         float2 t = at(a[i]);
 
         float2 q = t;
-        q.x /= getWidth(validInputs4)-1;
-        q.y /= getHeight(validInputs4)-1;
-        q.x *= getWidth(inputRegion);
-        q.y *= getHeight(inputRegion);
-        q.x += getLeft(inputRegion);
-        q.y += getTop(inputRegion);
+        q.x /= validInputs4.width()-1;
+        q.y /= validInputs4.height()-1;
+        q.x *= inputRegion.width();
+        q.y *= inputRegion.height();
+        q.x += inputRegion.left;
+        q.y += inputRegion.top;
 
         printf("%u: at(%g, %g) = (%g, %g), global (%g, %g)\n", i, a[i].x, a[i].y, t.x, t.y, q.x, q.y-0.5);
     }

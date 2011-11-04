@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
     }
 
     if(0) {
-        Gauss g(make_float2(-1.1, 20), make_float2(1.5, 1.5));
+        Gauss g(ResamplePos(-1.1, 20), ResamplePos(1.5, 1.5));
         double s = 0;
         double dx = .1, dy = .1;
 

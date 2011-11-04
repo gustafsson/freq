@@ -243,7 +243,7 @@ void BlockFilter::
     // Invoke CUDA kernel execution to merge blocks
     ::blockResampleChunk( chunk.transform_data,
                      outData,
-                     ValidInputs( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
+                     ValidInputInterval( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
                      BlockArea( chunk_a.time, chunk_a.scale,
                                   //chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // numerical error workaround, only affects visual

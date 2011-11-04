@@ -9,12 +9,8 @@
 #include <vbo.h>
 #include <demangle.h>
 #include <GlException.h>
-#include <CudaException.h>
-#include "cudaglobalstorage.h"
 #include "cpumemorystorage.h"
-
-// cuda
-#include <cuda_runtime.h>
+#include "computationkernel.h"
 
 // std
 #include <stdio.h>
@@ -28,6 +24,7 @@
 
 //#define TIME_GLBLOCK
 #define TIME_GLBLOCK if(0)
+
 
 namespace Heightmap {
 
@@ -248,7 +245,7 @@ height()
     // Transfer from Cuda instead of OpenGL if it can already be found in Cuda memory
     _read_only_cpu = _mapped_height->data;
 
-    TIME_GLBLOCK CudaException_ThreadSynchronize();
+    TIME_GLBLOCK ComputaionSynchronize();
 
     return _mapped_height;
 }
@@ -270,7 +267,7 @@ slope()
 
     _mapped_slope.reset( new MappedVbo<std::complex<float> >(_slope, heightSize() ));
 
-    TIME_GLBLOCK CudaException_ThreadSynchronize();
+    TIME_GLBLOCK ComputaionSynchronize();
 
     return _mapped_slope;
 }
@@ -379,12 +376,14 @@ void GlBlock::
 
             {
                 TIME_GLBLOCK TaskTimer tt("Slope Cuda->OpenGL, vbo=%u", (unsigned)*_slope);
-                TIME_GLBLOCK CudaException_CHECK_ERROR();
+
+                TIME_GLBLOCK ComputaionCheckError();
 
                 BOOST_ASSERT( _mapped_slope.unique() );
 
                 _mapped_slope.reset();
-                TIME_GLBLOCK CudaException_ThreadSynchronize();
+
+                TIME_GLBLOCK ComputaionSynchronize();
             }
 
             TIME_GLBLOCK TaskTimer tt("Updating slope texture=%u, vbo=%u", _tex_slope, (unsigned)*_slope);
@@ -405,14 +404,14 @@ void GlBlock::
             glBindTexture(GL_TEXTURE_2D, 0);
             glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
 
-            TIME_GLBLOCK CudaException_CHECK_ERROR();
+            TIME_GLBLOCK ComputaionCheckError();
 
             _slope.reset();
 
             if (!_got_new_height_data)
                 _mapped_height.reset();
 
-            TIME_GLBLOCK CudaException_ThreadSynchronize();
+            TIME_GLBLOCK ComputaionSynchronize();
         }
     }
 
@@ -438,7 +437,7 @@ void GlBlock::
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
 
-        TIME_GLBLOCK CudaException_ThreadSynchronize();
+        TIME_GLBLOCK ComputaionSynchronize();
 
         _got_new_height_data = false;
     }
@@ -462,13 +461,13 @@ void GlBlock::
     if (_mapped_height)
     {
         TIME_GLBLOCK TaskTimer tt("Heightmap Cuda->OpenGL, height=%u", (unsigned)*_height);
-        TIME_GLBLOCK CudaException_CHECK_ERROR();
+        TIME_GLBLOCK ComputaionCheckError();
 
         BOOST_ASSERT( _mapped_height.unique() );
 
         _mapped_height.reset();
 
-        TIME_GLBLOCK CudaException_ThreadSynchronize();
+        TIME_GLBLOCK ComputaionSynchronize();
 
         _got_new_height_data = true;
     }
@@ -476,8 +475,8 @@ void GlBlock::
 
 void GlBlock::
         draw( unsigned vbo_size )
-{    
-    TIME_GLBLOCK CudaException_CHECK_ERROR();
+{
+    TIME_GLBLOCK ComputaionCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
     update_texture( true );
@@ -505,7 +504,7 @@ void GlBlock::
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    TIME_GLBLOCK CudaException_CHECK_ERROR();
+    TIME_GLBLOCK ComputaionCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 }
 
@@ -630,7 +629,7 @@ unsigned GlBlock::
     if (_height) s += sizeof(float); // OpenGL VBO
     if (_mapped_height) s += sizeof(float); // Cuda device memory
     if (_tex_height) s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
-    if (_tex_slope) s += 2*sizeof(float2); // OpenGL texture, 2 times the size for mipmaps
+    if (_tex_slope) s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
 
     // _mapped_slope and _slope are temporary and only lives in the scope of update_texture
 
@@ -653,7 +652,7 @@ void GlBlock::
 //                                slope()->data,
 //                                _world_width, _world_height );
 
-    TIME_GLBLOCK CudaException_ThreadSynchronize();
+    TIME_GLBLOCK ComputaionSynchronize();
 }
 
 } // namespace Heightmap

@@ -2,8 +2,7 @@
 
 #include "heightmap/block.cu.h"
 
-#include <cudaPitchedPtrType.h>
-#include <cuda_vector_types_op.h>
+#include "resampletypes.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -13,51 +12,55 @@
 class Gauss
 {
 public:
-    Gauss(float2 pos, float2 sigma)
+    Gauss(ResamplePos pos, ResamplePos sigma)
         :   pos(pos)
     {
         normalized_scale(sigma);
-        k = M_LOG2E*0.5/(sigma*sigma);
+        k.x = M_LOG2E*0.5/(sigma.x*sigma.x);
+        k.y = M_LOG2E*0.5/(sigma.y*sigma.y);
     }
 
 
-    Gauss(float2 pos, float2 sigma, float scale)
+    Gauss(ResamplePos pos, ResamplePos sigma, float scale)
         :   pos(pos),
             scale(scale)
     {
-        k = M_LOG2E*0.5/(sigma*sigma);
+        k.x = M_LOG2E*0.5/(sigma.x*sigma.x);
+        k.y = M_LOG2E*0.5/(sigma.y*sigma.y);
     }
 
 
     float gauss_value(float x, float y)
     {
-        return gauss_value(make_float2(x,y));
+        return gauss_value(ResamplePos(x,y));
     }
 
 
-    __host__ __device__ float gauss_value(float2 const& v)
+    RESAMPLE_ANYCALL float gauss_value(ResamplePos const& v)
     {
-        float2 r = (v - pos);
-        r = r*r*k; // k = log2f(e)*0.5f/sigma/sigma
+        ResamplePos r(v.x - pos.x, v.y - pos.y);
+        // k = log2f(e)*0.5f/sigma/sigma
+        r.x = r.x*r.x*k.x;
+        r.y = r.y*r.y*k.y;
         return scale*exp2f(-r.x-r.y);
     }
 
 
-    float2 sigma()
+    ResamplePos sigma()
     {
         // k = log2f(e)*0.5f/sigma/sigma
-        return make_float2(
+        return ResamplePos(
                 sqrtf( M_LOG2E*0.5f/k.x ),
                 sqrtf( M_LOG2E*0.5f/k.y )
             );
     }
 
-    float2 pos; // mu
-    float2 k; // k = log2f(e)*0.5f/sigma/sigma
+    ResamplePos pos; // mu
+    ResamplePos k; // k = log2f(e)*0.5f/sigma/sigma
     float scale;
 
 private:
-    void normalized_scale(float2 sigma)
+    void normalized_scale(ResamplePos sigma)
     {
         // this normalizes the bivariate gaussian
         scale = 1.0/(2.0*M_PI*sigma.x*sigma.y);

@@ -94,8 +94,8 @@ Gauss BrushModel::
         deltascale = yscale*0.01;
 
     Gauss gauss(
-            make_float2( pos.time, pos.scale ),
-            make_float2( deltat, deltascale ),
+            ResamplePos( pos.time, pos.scale ),
+            ResamplePos( deltat, deltascale ),
             brush_factor);
 
     TIME_BRUSH TaskInfo("Created gauss mu=(%g, %g), sigma=(%g, %g), height=%g, xscale=%g",
@@ -122,25 +122,25 @@ Signal::Interval BrushModel::
     for (unsigned &x = left.block_index[0]; ; --x)
     {
         left.getArea(a, b);
-        if (0 == a.time || threshold > fabsf(gauss.gauss_value(make_float2( a.time, pos.scale ))))
+        if (0 == a.time || threshold > fabsf(gauss.gauss_value( a.time, pos.scale )))
             break;
     }
     for (unsigned &x = right.block_index[0]; ; ++x)
     {
         right.getArea(a, b);
-        if (threshold > fabsf(gauss.gauss_value(make_float2( b.time, pos.scale ))))
+        if (threshold > fabsf(gauss.gauss_value( b.time, pos.scale )))
             break;
     }
     for (unsigned &y = bottom.block_index[1]; ; --y)
     {
         bottom.getArea(a, b);
-        if (0 == a.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, a.scale ))))
+        if (0 == a.scale || threshold > fabsf(gauss.gauss_value( pos.time, a.scale )))
             break;
     }
     for (unsigned &y = top.block_index[1]; ; ++y)
     {
         top.getArea(a, b);
-        if (1 <= b.scale || threshold > fabsf(gauss.gauss_value(make_float2( pos.time, b.scale ))))
+        if (1 <= b.scale || threshold > fabsf(gauss.gauss_value( pos.time, b.scale )))
             break;
     }
 

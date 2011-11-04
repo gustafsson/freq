@@ -1,6 +1,6 @@
 #include "splinefilter.cu.h"
+#include <resamplecuda.cu.h>
 #include <operate.cu.h>
-#include <resample.cu.h>
 #include "cudaglobalstorage.h"
 
 template<typename Reader>
@@ -14,7 +14,7 @@ public:
     {}
 
 
-    __device__ void operator()(float2& e, float2 const& v)
+    __device__ void operator()(float2& e, ResamplePos const& v)
     {
         // Count the number of times a line from v to infinity crosses the spline
 
@@ -25,7 +25,7 @@ public:
         for (unsigned i=0; i<N; ++i)
         {
             unsigned j = (i+1)%N;
-            float2 p = reader(make_uint2(i,0)), q = reader(make_uint2(j,0));
+            float2 p = reader(i), q = reader(j);
             float r = (v.x - p.x)/(q.x - p.x);
             if (0 <= r && 1 > r)
             {

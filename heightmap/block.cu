@@ -4,7 +4,7 @@
 #include "tfr/freqaxis.h"
 
 #include "block.cu.h"
-#include <resample.cu.h>
+#include <resamplecuda.cu.h>
 #include "cudaglobalstorage.h"
 
 #ifdef _MSC_VER
@@ -17,7 +17,7 @@
 class ConverterPhase
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    __device__ float operator()( float2 v, DataPos const& /*dataPosition*/ )
     {
         return atan2(v.y, v.x);
     }
@@ -27,7 +27,7 @@ public:
 class ConverterLogAmplitude
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& dataPosition )
+    __device__ float operator()( float2 v, DataPos const& dataPosition )
     {
         return log2f(0.0001f + ConverterAmplitude()(v,dataPosition)) - log2f(0.0001f);
     }
@@ -37,7 +37,7 @@ public:
 class Converter5thRootAmplitude
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& /*dataPosition*/ )
+    __device__ float operator()( float2 v, DataPos const& /*dataPosition*/ )
     {
         return 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
     }
@@ -54,7 +54,7 @@ public:
 
     }
 */
-    __device__ float operator()( float2 v, uint2 const& dataPosition );
+    __device__ float operator()( float2 v, DataPos const& dataPosition );
 /*    {
         switch(_amplitudeAxis)
         {
@@ -78,7 +78,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& dataPosition )
+    __device__ float operator()( float2 v, DataPos const& dataPosition )
     {
         return 25.f * ConverterAmplitude()( v, dataPosition );
     }
@@ -88,7 +88,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& dataPosition )
+    __device__ float operator()( float2 v, DataPos const& dataPosition )
     {
         return 0.02f * ConverterLogAmplitude()( v, dataPosition );
     }
@@ -98,7 +98,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>
 {
 public:
-    __device__ float operator()( float2 v, uint2 const& dataPosition )
+    __device__ float operator()( float2 v, DataPos const& dataPosition )
     {
         return Converter5thRootAmplitude()( v, dataPosition );
     }
@@ -108,6 +108,8 @@ template<typename DefaultConverter>
 class AxisFetcher
 {
 public:
+    typedef float T;
+
     AxisFetcher(const DefaultConverter& default_converter)
         :   defaultConverter(default_converter)
     {
@@ -127,7 +129,7 @@ public:
 
 
     template<typename Reader>
-    __device__ float operator()( float2 const& p, Reader& reader )
+    __device__ float operator()( ResamplePos const& p, Reader& reader )
     {
         return (*this)(p, reader, defaultConverter);
     }
@@ -140,9 +142,9 @@ public:
 
 
     template<typename Reader, typename Converter>
-    __device__ float operator()( float2 const& p, Reader& reader, const Converter& c = Converter() )
+    __device__ float operator()( ResamplePos const& p, Reader& reader, const Converter& c = Converter() )
     {
-        float2 q;
+        ResamplePos q;
         // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
         // so these are fairly cheap operations. One reciprocal called in
         // 'getFrequencyScalar' is just as fast.
@@ -168,7 +170,8 @@ template<typename DefaultConverter>
 class AxisFetcherTranspose
 {
 public:
-public:
+    typedef float T;
+
     AxisFetcherTranspose(const DefaultConverter& default_converter)
         :   defaultConverter(default_converter)
     {
@@ -176,9 +179,9 @@ public:
     }
 
     template<typename Reader>
-    __device__ float operator()( float2 const& p, Reader& reader )
+    __device__ float operator()( ResamplePos const& p, Reader& reader )
     {
-        float2 q;
+        ResamplePos q;
         // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
         // so these are fairly cheap operations. One reciprocal called in
         // 'getFrequencyScalar' is just as fast.
@@ -204,6 +207,8 @@ template<typename DefaultConverter>
 class WeightFetcher
 {
 public:
+    typedef float T;
+
     WeightFetcher(const DefaultConverter& b)
         : axes(b)
     {
@@ -211,11 +216,11 @@ public:
     }
 
     template<typename Reader>
-    __device__ float operator()( float2 const& p, Reader& reader )
+    __device__ float operator()( ResamplePos const& p, Reader& reader )
     {
         float v = axes( p, reader );
         float phase1 = axes( p, reader, ConverterPhase() );
-        float phase2 = axes( make_float2(p.x, p.y+1), reader, ConverterPhase() );
+        float phase2 = axes( ResamplePos(p.x, p.y+1), reader, ConverterPhase() );
         float phasediff = phase2 - phase1;
         if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
         if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
@@ -233,13 +238,13 @@ class SpecialPhaseFetcher
 {
 public:
     template<typename Reader>
-    __device__ float operator()( float2 const& p, Reader& reader )
+    __device__ float operator()( ResamplePos const& p, Reader& reader )
     {
         // Plot "how wrong" the phase is
-        float2 q1 = p;
-        float2 p2 = p;
+        ResamplePos q1 = p;
+        ResamplePos p2 = p;
         p2.x++;
-        float2 q2 = p2;
+        ResamplePos q2 = p2;
         q1.x /= getWidth(validInputs4)-1;
         q1.y /= getHeight(validInputs4)-1;
         q1.x *= getWidth(inputRegion);
@@ -302,9 +307,9 @@ using namespace std;
 template<typename AxisConverter>
 void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
                  cudaPitchedPtrType<float> output,
-                 uint2 validInputs, // validInputs is the first and last-1 valid samples in x
-                 float4 inputRegion,
-                 float4 outputRegion,
+                 ValidInputInterval validInputs,
+                 ResampleArea inputRegion,
+                 ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
@@ -330,14 +335,14 @@ void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
     // 'resample2d_fetcher' to only translate to a normalized reading position
     // [0, height-1) along the input y-axis.
 //    uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
-    uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, 2 );
-    uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
+    ValidInputs validInputs4( validInputs.first, 0, validInputs.last, 2 );
+    ValidOutputs validOutputs( sz_output.x, sz_output.y );
 
     AxisFetcher<AxisConverter> axes = amplitudeAxis;
     axes.inputAxis = inputAxis;
     axes.outputAxis = outputAxis;
-    axes.offs = getTop(inputRegion);
-    axes.scale = getHeight(inputRegion);
+    axes.offs = inputRegion.top;
+    axes.scale = inputRegion.height();
 
     switch (transformMethod)
     {
@@ -346,7 +351,7 @@ void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
         WeightFetcher<AxisConverter> fetcher = WeightFetcher<AxisConverter>(amplitudeAxis);
         fetcher.axes = axes;
 
-        resample2d_fetcher<float, float2, float, WeightFetcher<AxisConverter>, AssignOperator<float> >(
+        resample2d_fetcher<WeightFetcher<AxisConverter>, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
@@ -359,7 +364,7 @@ void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
         break;
     }
     case Heightmap::ComplexInfo_Amplitude_Non_Weighted:
-        resample2d_fetcher<float, float2, float, AxisFetcher<AxisConverter>, AssignOperator<float> >(
+        resample2d_fetcher<AxisFetcher<AxisConverter>, AssignOperator<float> >(
                 input,
                 output,
                 validInputs4,
@@ -375,7 +380,7 @@ void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
         AxisFetcher<ConverterPhase> axesPhase = ConverterPhase();
         axesPhase = axes;
 
-        resample2d_fetcher<float, float2, float, AxisFetcher<ConverterPhase>, AssignOperator<float> >(
+        resample2d_fetcher<AxisFetcher<ConverterPhase>, AssignOperator<float> >(
                     input,
                     output,
                     validInputs4,
@@ -408,7 +413,7 @@ void blockResampleChunkAxis( cudaPitchedPtrType<float2> input,
 
 void blockResampleChunk( Tfr::ChunkData::Ptr inputp,
                   BlockData::Ptr outputp,
-                 ValidInputs validInput, // validInputs is the first and last-1 valid samples in x
+                 ValidInputInterval validInputs, // validInputs is the first and last-1 valid samples in x
                  BlockArea ia,
                  BlockArea oa,
                  Heightmap::ComplexInfo transformMethod,
@@ -419,9 +424,8 @@ void blockResampleChunk( Tfr::ChunkData::Ptr inputp,
 {
     cudaPitchedPtrType<float2> input( CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr());
     cudaPitchedPtrType<float> output( CudaGlobalStorage::ReadWrite<2>( outputp ).getCudaPitchedPtr());
-    float4 inputRegion = make_float4( ia.x1, ia.y1, ia.x2, ia.y2 );
-    float4 outputRegion = make_float4( oa.x1, oa.y1, oa.x2, oa.y2 );
-    uint2 validInputs = make_uint2(validInput.width, validInput.height);
+    ResampleArea inputRegion( ia.x1, ia.y1, ia.x2, ia.y2 );
+    ResampleArea outputRegion( oa.x1, oa.y1, oa.x2, oa.y2 );
 
     switch(amplitudeAxis)
     {
@@ -451,8 +455,8 @@ template<typename AxisConverter>
 void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
                    size_t nScales, size_t nSamples,
                    BlockData::Ptr outputp,
-                   float4 inputRegion,
-                   float4 outputRegion,
+                   ResampleArea inputRegion,
+                   ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis,
@@ -473,8 +477,8 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     // 'resample2d_fetcher' to only translate to a normalized reading position
     // [0, width-1) along the input x-axis. 'resample2d_fetcher' does the
     // transpose for us.
-    uint4 validInputs = make_uint4( 0, 0, 2, sz_input.y );
-    uint2 validOutputs = make_uint2( sz_output.x, sz_output.y );
+    ValidInputs validInputs( 0, 0, 2, sz_input.y );
+    ValidOutputs validOutputs( sz_output.x, sz_output.y );
 
     AxisFetcherTranspose<AxisConverter> fetcher = axisConverter;
     fetcher.inputAxis = inputAxis;
@@ -488,7 +492,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     case Heightmap::AmplitudeAxis_5thRoot:      fetcher.factor = 0.22f; break;
     }
 
-    resample2d_fetcher<float>(
+    resample2d_fetcher(
                 input,
                 output,
                 validInputs,
@@ -512,8 +516,8 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis )
 {
-    float4 inputRegion = make_float4( ia.x1, ia.y1, ia.x2, ia.y2 );
-    float4 outputRegion = make_float4( oa.x1, oa.y1, oa.x2, oa.y2 );
+    ResampleArea inputRegion( ia.x1, ia.y1, ia.x2, ia.y2 );
+    ResampleArea outputRegion( oa.x1, oa.y1, oa.x2, oa.y2 );
 
     // fetcher.factor makes it roughly equal height to Cwt
     switch(amplitudeAxis)
@@ -546,13 +550,13 @@ void blockMerge( BlockData::Ptr inBlockp,
                  BlockArea ia,
                  BlockArea oa)
 {
-    float4 in_area = make_float4( ia.x1, ia.y1, ia.x2, ia.y2 );
-    float4 out_area = make_float4( oa.x1, oa.y1, oa.x2, oa.y2 );
+    ResampleArea in_area( ia.x1, ia.y1, ia.x2, ia.y2 );
+    ResampleArea out_area( oa.x1, oa.y1, oa.x2, oa.y2 );
 
     cudaPitchedPtrType<float> inBlock(CudaGlobalStorage::ReadOnly<2>( inBlockp ).getCudaPitchedPtr());
     cudaPitchedPtrType<float> outBlock(CudaGlobalStorage::ReadWrite<2>( outBlockp ).getCudaPitchedPtr());
 
-    resample2d_plain<float, float, NoConverter<float,float> >
+    resample2d_plain<NoConverter<float,float> >
             (inBlock, outBlock, in_area, out_area);
 }
 

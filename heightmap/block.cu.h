@@ -15,15 +15,15 @@ struct BlockArea
     float x1, y1, x2, y2;
 };
 
-struct ValidInputs
+struct ValidInputInterval
 {
-    ValidInputs(unsigned width, unsigned height)
+    ValidInputInterval(unsigned first, unsigned last)
         :
-        width(width),
-        height(height)
+        first(first),
+        last(last)
     {}
 
-    unsigned width, height;
+    unsigned first, last;
 };
 
 /**
@@ -49,7 +49,7 @@ extern "C"
         void blockResampleChunk(
                 Tfr::ChunkData::Ptr input,
                 BlockData::Ptr output,
-                 ValidInputs validInputs,
+                 ValidInputInterval validInputs,
                  BlockArea inputRegion,
                  BlockArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,

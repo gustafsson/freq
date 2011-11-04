@@ -1,3 +1,5 @@
+#include <resamplecuda.cu.h>
+
 #include "brushpaint.cu.h"
 #include <operate.cu.h>
 #include "cudaglobalstorage.h"
@@ -7,7 +9,7 @@ class AddGaussOperator
 public:
     AddGaussOperator( Gauss const& g) :g(g) {}
 
-    __device__ void operator()(float& e, float2 const& v)
+    __device__ void operator()(float& e, ResamplePos const& v)
     {
         e += g.gauss_value(v);
         if (e>10) e = 10;
@@ -34,7 +36,7 @@ class MultiplyGaussOperator
 public:
     MultiplyGaussOperator( Gauss const& g) :g(g) {}
 
-    __device__ void operator()(float& e, float2 const& v)
+    __device__ void operator()(float& e, ResamplePos const& v)
     {
         e *= exp2f(g.gauss_value(v));
     }
@@ -48,10 +50,10 @@ class MultiplyGaussOperatorLog
 public:
     MultiplyGaussOperatorLog( Gauss const& g) :g(g) {}
 
-    __device__ void operator()(float& e, float2 const& v)
+    __device__ void operator()(float& e, ResamplePos const& v)
     {
-        // same constant as in ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>
-        e += 0.02f * g.gauss_value(v);
+        // Depends on constants in ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>
+        e += 0.02f * g.gauss_value(v) * 0.6f;
     }
 private:
     Gauss g;
@@ -63,9 +65,9 @@ class MultiplyGaussOperator5th
 public:
     MultiplyGaussOperator5th( Gauss const& g) :g(g) {}
 
-    __device__ void operator()(float& e, float2 const& v)
+    __device__ void operator()(float& e, ResamplePos const& v)
     {
-        e *= exp2f(g.gauss_value(v)*0.2f);
+        e *= exp2f(g.gauss_value(v)*0.22f);
     }
 private:
     Gauss g;
