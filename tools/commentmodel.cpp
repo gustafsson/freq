@@ -1,5 +1,4 @@
 #include "commentmodel.h"
-#include <vector_functions.h>
 
 namespace Tools
 {

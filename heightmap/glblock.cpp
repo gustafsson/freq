@@ -245,7 +245,7 @@ height()
     // Transfer from Cuda instead of OpenGL if it can already be found in Cuda memory
     _read_only_cpu = _mapped_height->data;
 
-    TIME_GLBLOCK ComputaionSynchronize();
+    TIME_GLBLOCK ComputationSynchronize();
 
     return _mapped_height;
 }
@@ -267,7 +267,7 @@ slope()
 
     _mapped_slope.reset( new MappedVbo<std::complex<float> >(_slope, heightSize() ));
 
-    TIME_GLBLOCK ComputaionSynchronize();
+    TIME_GLBLOCK ComputationSynchronize();
 
     return _mapped_slope;
 }
@@ -377,13 +377,13 @@ void GlBlock::
             {
                 TIME_GLBLOCK TaskTimer tt("Slope Cuda->OpenGL, vbo=%u", (unsigned)*_slope);
 
-                TIME_GLBLOCK ComputaionCheckError();
+                TIME_GLBLOCK ComputationCheckError();
 
                 BOOST_ASSERT( _mapped_slope.unique() );
 
                 _mapped_slope.reset();
 
-                TIME_GLBLOCK ComputaionSynchronize();
+                TIME_GLBLOCK ComputationSynchronize();
             }
 
             TIME_GLBLOCK TaskTimer tt("Updating slope texture=%u, vbo=%u", _tex_slope, (unsigned)*_slope);
@@ -404,14 +404,14 @@ void GlBlock::
             glBindTexture(GL_TEXTURE_2D, 0);
             glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
 
-            TIME_GLBLOCK ComputaionCheckError();
+            TIME_GLBLOCK ComputationCheckError();
 
             _slope.reset();
 
             if (!_got_new_height_data)
                 _mapped_height.reset();
 
-            TIME_GLBLOCK ComputaionSynchronize();
+            TIME_GLBLOCK ComputationSynchronize();
         }
     }
 
@@ -437,7 +437,7 @@ void GlBlock::
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
 
-        TIME_GLBLOCK ComputaionSynchronize();
+        TIME_GLBLOCK ComputationSynchronize();
 
         _got_new_height_data = false;
     }
@@ -461,13 +461,13 @@ void GlBlock::
     if (_mapped_height)
     {
         TIME_GLBLOCK TaskTimer tt("Heightmap Cuda->OpenGL, height=%u", (unsigned)*_height);
-        TIME_GLBLOCK ComputaionCheckError();
+        TIME_GLBLOCK ComputationCheckError();
 
         BOOST_ASSERT( _mapped_height.unique() );
 
         _mapped_height.reset();
 
-        TIME_GLBLOCK ComputaionSynchronize();
+        TIME_GLBLOCK ComputationSynchronize();
 
         _got_new_height_data = true;
     }
@@ -476,7 +476,7 @@ void GlBlock::
 void GlBlock::
         draw( unsigned vbo_size )
 {
-    TIME_GLBLOCK ComputaionCheckError();
+    TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
     update_texture( true );
@@ -504,7 +504,7 @@ void GlBlock::
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    TIME_GLBLOCK ComputaionCheckError();
+    TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 }
 
@@ -652,7 +652,7 @@ void GlBlock::
 //                                slope()->data,
 //                                _world_width, _world_height );
 
-    TIME_GLBLOCK ComputaionSynchronize();
+    TIME_GLBLOCK ComputationSynchronize();
 }
 
 } // namespace Heightmap

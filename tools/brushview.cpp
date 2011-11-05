@@ -10,10 +10,6 @@
 #include "tfr/cwtfilter.h"
 #include "heightmap/collection.h"
 
-// gpumisc
-#include <GpuCpuData.h>
-#include <vector_types.h>
-
 #include "support/brushfilter.h"
 #include "support/brushpaintkernel.h"
 

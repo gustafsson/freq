@@ -69,3 +69,41 @@ void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inv
                 size);
     }
 }
+
+
+void wtClamp( Tfr::ChunkData::Ptr in_wtp, size_t sample_offset, Tfr::ChunkData::Ptr out_clamped_wtp )
+{
+    CpuMemoryReadOnly<Tfr::ChunkElement, 2> in_wt = CpuMemoryStorage::ReadOnly<2>( in_wtp );
+    CpuMemoryWriteOnly<Tfr::ChunkElement, 2> out_clamped_wt = CpuMemoryStorage::WriteAll<2>( out_clamped_wtp );
+
+
+    for (unsigned y=0; y<out_clamped_wt.numberOfElements().height; ++y)
+    {
+        for (unsigned x=0; x<out_clamped_wt.numberOfElements().width; ++x)
+        {
+            CpuMemoryReadOnly<Tfr::ChunkElement, 2>::Position readp( x + sample_offset, y);
+            CpuMemoryWriteOnly<Tfr::ChunkElement, 2>::Position writep( x, y);
+
+            out_clamped_wt.write( writep, in_wt.read( readp ));
+        }
+    }
+}
+
+
+void stftNormalizeInverse(
+        DataStorage<float>::Ptr wavep,
+        unsigned length )
+{
+    CpuMemoryReadWrite<float, 2> in_wt = CpuMemoryStorage::ReadWrite<2>( wavep );
+
+    float v = 1.f/length;
+
+    CpuMemoryReadWrite<float, 2>::Position pos( 0, 0 );
+    for (pos.y=0; pos.y<in_wt.numberOfElements().height; ++pos.y)
+    {
+        for (pos.x=0; pos.x<in_wt.numberOfElements().width; ++pos.x)
+        {
+            in_wt.ref(pos) *= v;
+        }
+    }
+}

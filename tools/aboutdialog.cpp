@@ -4,8 +4,12 @@
 #include "sawe/application.h"
 #include "ui/mainwindow.h"
 
+#ifdef USE_CUDA
 // gpumisc
 #include <CudaProperties.h>
+#else
+#include <cpuproperties.h>
+#endif
 
 // license
 #include "sawe/reader.h"
@@ -47,6 +51,7 @@ void AboutDialog::
     if (Sawe::Reader::reader_title() == Sawe::Reader::reader_text() )
         ui->labelLicense->clear();
 
+#ifdef USE_CUDA
     size_t free=0, total=0;
     cudaMemGetInfo(&free, &total);
     cudaDeviceProp prop = CudaProperties::getCudaDeviceProp();
@@ -72,6 +77,12 @@ void AboutDialog::
                              .arg(CudaProperties::getCudaDriverVersion())
                              .arg(CudaProperties::getCudaRuntimeVersion())
                              );
+#else
+    ui->labelSystem->setText(QString(
+            "Gpu memory speed: %7 GB/s (estimated)\n")
+                             .arg(CpuProperties::cpu_memory_speed()*1e-9, 0, 'f', 1)
+                             );
+#endif
 }
 
 

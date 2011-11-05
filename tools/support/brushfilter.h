@@ -4,9 +4,6 @@
 #include "tfr/cwtfilter.h"
 #include "heightmap/collection.h"
 
-// gpumisc
-#include <vector_types.h>
-
 // boost
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/split_member.hpp>

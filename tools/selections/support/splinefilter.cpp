@@ -3,7 +3,7 @@
 #include "cpumemorystorage.h"
 
 // gpumisc
-#include <CudaException.h>
+#include <computationkernel.h>
 
 // boost
 #include <boost/foreach.hpp>
@@ -78,7 +78,7 @@ void SplineFilter::operator()( Chunk& chunk)
                 pts, _save_inside );
     }
 
-    TIME_SPLINEFILTER CudaException_ThreadSynchronize();
+    TIME_SPLINEFILTER ComputationSynchronize();
 }
 
 

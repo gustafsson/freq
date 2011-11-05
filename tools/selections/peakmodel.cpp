@@ -1,7 +1,6 @@
 #include "peakmodel.h"
 
 // tools
-#include "support/peakfilter.h"
 #include "tools/renderview.h"
 #include "tools/support/brushpaintkernel.h"
 #include "tools/support/operation-composite.h"
@@ -11,11 +10,11 @@
 #include "heightmap/collection.h"
 
 // gpumisc
-#include <CudaException.h>
-#include "cudaglobalstorage.h"
+#include <tvector.h>
+#ifdef USE_CUDA
+#include <cudaglobalstorage.h>
+#endif
 
-// boost
- 
 // std
 #include <queue>
 
@@ -129,6 +128,7 @@ void PeakModel::
 
     loopClassify(ref, x0, y0);
 
+#ifdef USE_CUDA
     // Discard image data from CPU
     foreach( PeakAreas::value_type const& v, classifictions )
     {
@@ -139,6 +139,7 @@ void PeakModel::
             blockData->OnlyKeepOneStorage<CudaGlobalStorage>();
         }
     }
+#endif
 
     findBorder();
 
@@ -194,19 +195,19 @@ void PeakModel::
             // Define a line from 'lastnode' to 'pos' and check if all points in
             // 'border_pts' is less than or equal to 1 unit away from the line
             BorderCoordinates& lastnode = border_nodes.back();
-            float2 d = make_float2(pos.x - lastnode.x,
-                                   pos.y - lastnode.y);
-            float r = 1.f/sqrtf(d.x*d.x + d.y*d.y);
-            d.x *= r;
-            d.y *= r;
+            tvector<2, float> d(pos.x - (float)lastnode.x,
+                                pos.y - (float)lastnode.y);
+
+            d.Normalize();
 
             unsigned i;
             for (i=0; i<border_pts.size(); ++i)
             {
-                float2 q = make_float2( border_pts[i].x - lastnode.x,
-                                        border_pts[i].y - lastnode.y );
+                tvector<2, float> q(border_pts[i].x - (float)lastnode.x,
+                                    border_pts[i].y - (float)lastnode.y );
 
-                float dot = q.x*d.y + q.y*d.x;
+                //float dot = q.x*d.y + q.y*d.x; what?
+                float dot = q%d;
                 if (dot*dot > 2)
                     break;
             }

@@ -5,8 +5,6 @@
 #include "tfr/cwt.h"
 #include "cpumemorystorage.h"
 
-#include <CudaException.h>
-
 
 namespace Tools {
 namespace Support {
@@ -113,8 +111,6 @@ std::string MultiplyBrush::
 void MultiplyBrush::
         operator()( Tfr::Chunk& chunk )
 {
-    CudaException_ThreadSynchronize();
-
     BrushImages const& imgs = *images.get();
 
     if (imgs.empty())
@@ -140,8 +136,6 @@ void MultiplyBrush::
                 imgarea,
                 v.second);
     }
-
-    CudaException_ThreadSynchronize();
 }
 
 

@@ -1,6 +1,7 @@
 #include "drawnwaveform.h"
 
-#include "drawnwaveform.cu.h"
+#include "drawnwaveformkernel.h"
+#include "computationkernel.h"
 
 #include "neat_math.h"
 
@@ -29,16 +30,16 @@ pChunk DrawnWaveform::
     if (0 == w)
         throw std::logic_error("DrawnWaveform::operator() Not enough data");
 
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
+    size_t free=availableMemoryForSingleAllocation();
+
     free /= 2; // Don't even try to get close to use all memory
     // never use more than 64 MB
     if (free > 64<<20)
         free = 64<<20;
 
-    unsigned wmax = free/(drawWaveform_YRESOLUTION*sizeof(float2)*drawWaveform_BLOCK_SIZE ) * drawWaveform_BLOCK_SIZE;
+    unsigned wmax = free/(drawWaveform_YRESOLUTION*sizeof(Tfr::ChunkElement)*drawWaveform_BLOCK_SIZE ) * drawWaveform_BLOCK_SIZE;
     if (0==wmax)
-        wmax = free/(drawWaveform_YRESOLUTION*sizeof(float2));
+        wmax = free/(drawWaveform_YRESOLUTION*sizeof(Tfr::ChunkElement));
     if (0==wmax)
         wmax = 1;
     if (wmax < w)

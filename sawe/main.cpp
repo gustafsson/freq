@@ -5,6 +5,7 @@
 
 // gpumisc
 #include <redirectstdout.h>
+#include <simple_math.h>
 
 // Qt
 #include <QtGui/QMessageBox>
@@ -19,7 +20,7 @@ using namespace Ui;
 using namespace Signal;
 
 #ifndef USE_CUDA
-    static bool check_cuda( bool use_OpenGL_bindings ) {
+    static bool check_cuda( bool /*use_OpenGL_bindings*/ ) {
         return true;
     }
 #else
@@ -169,8 +170,10 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 }
 #endif // USE_CUDA
 
-
+#ifdef USE_CUDA
 #include "heightmap/resampletest.h"
+#endif
+
 #include "tools/support/brushpaintkernel.h" // test class Gauss
 #include "tfr/supersample.h"
 #include <Statistics.h>
@@ -249,16 +252,16 @@ int main(int argc, char *argv[])
     cout << "Saving log file at \"" << logpath << "\"" << endl;
 #endif
 
+#ifdef USE_CUDA
     if (1)
     {
-#ifndef USE_CUDA
         std::complex<float> f(1.123456789876543, 2.9876545678903);
         cufftComplex& b = *(cufftComplex*)&f;
         cufftComplex c;
         BOOST_ASSERT( b.x == f.real() && b.y == f.imag());
         BOOST_ASSERT( sizeof(f) == sizeof(c) );
-#endif
     }
+#endif
 
     if (0)
     {
@@ -410,6 +413,7 @@ int main(int argc, char *argv[])
         std::cout << "tjo" << std::endl;
         return 0;*/
     }
+#ifdef USE_CUDA
     if (0) {
         ResampleTest rt;
         rt.test1();
@@ -419,7 +423,8 @@ int main(int argc, char *argv[])
         rt.test5();
         return 0;
     }
-	if (0) try {
+#endif
+    if (0) try {
                 /*{
 			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));
 

@@ -3,7 +3,6 @@
 
 // Sonic AWE tools
 #include "tools/selectioncontroller.h"
-#include "support/peakfilter.h"
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"

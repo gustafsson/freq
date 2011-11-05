@@ -1,3 +1,4 @@
+#ifdef USE_CUDA
 #include "stft.h"
 #include <cufft.h>
 #include <CudaException.h>
@@ -18,7 +19,7 @@ namespace Tfr {
 
 
 void Fft::
-        computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction )
+        computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
     TIME_STFT TaskTimer tt("FFt cufft");
 
@@ -71,6 +72,22 @@ void Fft::
     CufftException_SAFE_CALL(cufftExecC2R(
         CufftHandleContext(0, CUFFT_C2R)(output->size().width, 1),
         i, o));
+}
+
+
+void Stft::
+        computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+{
+    cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
+    cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
+
+    BOOST_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
+
+    unsigned count = input->numberOfElements()/_window_size;
+
+    CufftException_SAFE_CALL(cufftExecC2C(
+        CufftHandleContext(0, CUFFT_C2C)(_window_size, count),
+        i, o, direction));
 }
 
 
@@ -488,3 +505,4 @@ Signal::pBuffer Stft::
 }
 
 } // namespace Tfr
+#endif // USE_CUDA

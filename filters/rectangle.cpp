@@ -1,8 +1,8 @@
 #include "rectangle.h"
-#include "rectangle.cu.h"
+#include "rectanglekernel.h"
 
 // gpumisc
-#include <CudaException.h>
+#include <computationkernel.h>
 
 
 #include <float.h> // FLT_MAX
@@ -65,7 +65,7 @@ void Rectangle::operator()( Chunk& chunk) {
                   area,
                   _save_inside);
 
-    TIME_FILTER CudaException_ThreadSynchronize();
+    TIME_FILTER ComputationSynchronize();
 }
 
 

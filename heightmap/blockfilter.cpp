@@ -6,10 +6,9 @@
 #include "tfr/cwtchunk.h"
 #include "tfr/drawnwaveform.h"
 
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <GlException.h>
 #include <TaskTimer.h>
-#include "cudaglobalstorage.h"
 
 #include <boost/foreach.hpp>
 
@@ -60,7 +59,7 @@ void BlockFilter::
 #endif
             mergeChunk( block, chunk, block->glblock->height()->data );
 
-            TIME_BLOCKFILTER CudaException_CHECK_ERROR();
+            TIME_BLOCKFILTER ComputationCheckError();
 #ifndef SAWE_NO_MUTEX
         }
         else
@@ -81,14 +80,14 @@ void BlockFilter::
 #endif
     }
 
-    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
+    TIME_BLOCKFILTER ComputationSynchronize();
 }
 
 
 void BlockFilter::
         mergeColumnMajorChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
+    TIME_BLOCKFILTER ComputationSynchronize();
 
     Position a, b;
     block->ref.getArea(a,b);
@@ -118,7 +117,7 @@ void BlockFilter::
 
     block->valid_samples |= inInterval;
 
-    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
+    TIME_BLOCKFILTER ComputationSynchronize();
 }
 
 
@@ -126,7 +125,7 @@ void BlockFilter::
         mergeRowMajorChunk( pBlock block, Chunk& chunk, Block::pData outData,
                             bool full_resolution, ComplexInfo complex_info )
 {
-    CudaException_CHECK_ERROR();
+    ComputationCheckError();
 
     //unsigned cuda_stream = 0;
 
@@ -222,7 +221,7 @@ void BlockFilter::
         TaskTimer("chunk.n_valid_samples = %u", chunk.n_valid_samples).suppressTiming();
     }
 
-    CudaException_CHECK_ERROR();
+    ComputationCheckError();
 
     //CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
     TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
@@ -257,7 +256,7 @@ void BlockFilter::
                      );
 
     // TODO recompute transfer to the samples that have actual support
-    CudaException_CHECK_ERROR();
+    ComputationCheckError();
     GlException_CHECK_ERROR();
 
     if( full_resolution )
@@ -270,7 +269,7 @@ void BlockFilter::
         TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
 
-    TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
+    TIME_CWTTOBLOCK ComputationSynchronize();
 }
 
 

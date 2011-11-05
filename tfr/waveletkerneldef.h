@@ -1,4 +1,3 @@
-#include "cudaUtil.h"
 #include "waveletkernel.h"
 
 #include "resample.h"

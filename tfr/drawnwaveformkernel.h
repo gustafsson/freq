@@ -1,7 +1,6 @@
 #ifndef DRAWNWAVEFORM_CU_H
 #define DRAWNWAVEFORM_CU_H
 
-#include "cudaPitchedPtrType.h"
 #include "tfr/chunkdata.h"
 
 #define drawWaveform_BLOCK_SIZE (32)

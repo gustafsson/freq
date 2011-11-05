@@ -1,10 +1,11 @@
 #include "drawnwaveformfilter.h"
 
 #include "drawnwaveform.h"
-#include "drawnwaveform.cu.h"
+#include "drawnwaveformkernel.h"
 
 // GPUMISC
 #include "neat_math.h"
+#include "simple_math.h"
 
 namespace Tfr {
 

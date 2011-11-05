@@ -68,9 +68,9 @@ pChunk Fft::
         chunk->transform_data.reset( new ChunkData( output_n ));
 
 #ifdef USE_CUFFT
-        computeWithCufft( input, chunk->transform_data, -1);
+        computeWithCufft( input, chunk->transform_data, FftDirection_Forward );
 #else
-        computeWithOoura( input, chunk->transform_data, -1 );
+        computeWithOoura( input, chunk->transform_data, FftDirection_Forward );
 #endif
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
     }
@@ -131,9 +131,9 @@ Signal::pBuffer Fft::
         ComplexBuffer buffer( 0, scales, fs );
 
 #ifdef USE_CUFFT
-        computeWithCufft(chunk->transform_data, buffer.complex_waveform_data(), 1);
+        computeWithCufft( chunk->transform_data, buffer.complex_waveform_data(), FftDirection_Backward );
 #else
-        computeWithOoura(chunk->transform_data, buffer.complex_waveform_data(), 1);
+        computeWithOoura( chunk->transform_data, buffer.complex_waveform_data(), FftDirection_Backward );
 #endif
 
         r = buffer.get_real();
@@ -439,7 +439,19 @@ void Stft::
 }
 
 
-unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test_signal_in_seconds)
+void Stft::
+        compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+{
+#ifdef USE_CUFFT
+    computeWithCufft( input, output, direction );
+#else
+    computeWithOoura( input, output, direction );
+#endif
+}
+
+
+unsigned Stft::
+        build_performance_statistics(bool writeOutput, float size_of_test_signal_in_seconds)
 {
     _ok_chunk_sizes.clear();
     Tfr::Stft S;

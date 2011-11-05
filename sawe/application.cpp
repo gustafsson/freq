@@ -8,8 +8,7 @@
 
 // gpumisc
 #include <demangle.h>
-#include <CudaException.h>
-#include <gpucpudatacollection.h>
+#include <computationkernel.h>
 
 // std
 #include <sstream>
@@ -20,8 +19,13 @@
 #include <QGLWidget>
 #include <QSettings>
 
+#ifdef USE_CUDA
+// gpumisc
+#include <gpucpudatacollection.h>
+
 // cuda
 #include "cuda.h"
+#endif
 
 using namespace std;
 
@@ -214,14 +218,16 @@ void Application::
         clearCaches()
 {
     TaskTimer tt("Application::clearCaches");
+#ifdef USE_CUDA
     size_t free=0, total=0;
-
     cudaMemGetInfo(&free, &total);
     TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
              total/1024.f/1024, free/1024.f/1024);
-
+#endif
     emit clearCachesSignal();
+#ifdef USE_CUDA
     GpuCpuDataCollection::moveAllDataToCpuMemory();
+#endif
 
     TaskInfo("Reset CWT");
     Tfr::Cwt::Singleton().resetSingleton();
@@ -231,6 +237,7 @@ void Application::
         return;
 
 
+#ifdef USE_CUDA
     TaskInfo("cudaThreadExit()");
     cudaThreadExit();
 
@@ -254,9 +261,10 @@ void Application::
     TaskInfo("Total Cuda memory: %g MB (of which %g MB is available)",
              total/1024.f/1024, free/1024.f/1024);
 
-    CudaException_ThreadSynchronize();
+    ComputationSynchronize();
 
     cudaGetLastError();
+#endif
     glGetError();
 }
 

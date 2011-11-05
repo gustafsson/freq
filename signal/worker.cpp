@@ -10,7 +10,7 @@
 #ifndef SAWE_NO_MUTEX
 #include <QMutexLocker>
 #endif
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <demangle.h>
 #include <boost/foreach.hpp>
 
@@ -138,7 +138,7 @@ bool Worker::
 
     try
     {
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
 
         b = callCallbacks( interval );
 
@@ -159,7 +159,8 @@ bool Worker::
                 b->length()/tt->elapsedTime());
         }
 
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
+#ifdef USE_CUDA
     } catch (const CudaException& e ) {
         unsigned min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(1, source()->sample_rate());
 
@@ -202,6 +203,7 @@ bool Worker::
 //            TaskInfo("Worker caught CudaException:\n%s", e.what());
 //            throw;
 //        }
+#endif
     } catch (const exception& e) {
         TaskInfo("Worker caught exception type %s:\n%s",
                   vartype(e).c_str(), e.what());

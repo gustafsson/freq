@@ -24,8 +24,6 @@
 #include "signal/reroutechannels.h"
 
 // gpumisc
-#include <CudaException.h>
-#include <cuda.h>
 #include <demangle.h>
 
 // Qt
@@ -423,6 +421,7 @@ void RenderController::
 }
 
 
+#ifdef USE_CUDA
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
@@ -433,6 +432,7 @@ void RenderController::
 
     ps->filter( Signal::pOperation(new Filters::Reassign()));
 }
+#endif
 
 
 void RenderController::

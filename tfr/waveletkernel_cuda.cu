@@ -234,7 +234,6 @@ void wtClamp( Tfr::ChunkData::Ptr in_wtp, size_t sample_offset, Tfr::ChunkData::
 {
     cudaPitchedPtrType<float2> in_wt(CudaGlobalStorage::ReadOnly<2>( in_wtp ).getCudaPitchedPtr());
     cudaPitchedPtrType<float2> out_clamped_wt(CudaGlobalStorage::WriteAll<2>( out_clamped_wtp ).getCudaPitchedPtr());
-    // Multiply the coefficients together and normalize the result
 
     dim3 grid, block;
     unsigned block_size = 256;
@@ -264,7 +263,6 @@ void stftNormalizeInverse(
         DataStorage<float>::Ptr wavep,
         unsigned length )
 {
-    // Multiply the coefficients together and normalize the result
     cudaPitchedPtrType<float> wave(CudaGlobalStorage::ReadWrite<1>( wavep ).getCudaPitchedPtr());
 
     dim3 grid, block;

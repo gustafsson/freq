@@ -14,8 +14,11 @@ typedef unsigned int cufftHandle; /* from cufft.h */
 
 namespace Tfr {
 
-
-
+enum FftDirection
+{
+    FftDirection_Forward = -1,
+    FftDirection_Backward = 1
+};
 
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
@@ -57,8 +60,8 @@ private:
     std::vector<int> ip;
     std::vector<double> q;
 
-    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction );
-    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction );
+    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
 
     void computeWithOouraR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
     void computeWithCufftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
@@ -101,6 +104,9 @@ public:
     void compute_redundant(bool);
 
 
+    void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+
+
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
 private:
@@ -118,11 +124,13 @@ private:
     unsigned _window_size;
     bool _compute_redundant;
 
+    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
     Tfr::pChunk computeWithCufft(Signal::pBuffer);
     Tfr::pChunk computeRedundantWithCufft(Signal::pBuffer);
     Signal::pBuffer inverseWithCufft(Tfr::pChunk);
     Signal::pBuffer inverseRedundantWithCufft(Tfr::pChunk);
 
+    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
     Tfr::pChunk computeWithOoura(Signal::pBuffer);
     Tfr::pChunk computeRedundantWithOoura(Signal::pBuffer);
     Signal::pBuffer inverseWithOoura(Tfr::pChunk);

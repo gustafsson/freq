@@ -1,3 +1,4 @@
+#ifdef USE_CUDA
 #include "move.h"
 #include "move.cu.h"
 
@@ -25,3 +26,4 @@ void Move::
 }
 
 } // namespace Filters
+#endif

@@ -621,7 +621,7 @@ pBlock Collection::
         attempt->glblock->unmap();
 */
         GlException_CHECK_ERROR();
-        ComputaionCheckError();
+        ComputationCheckError();
 
         return attempt;
     }
@@ -770,7 +770,7 @@ pBlock Collection::
         // will be unmapped in next_frame() or right before it's drawn
 
         GlException_CHECK_ERROR();
-        ComputaionCheckError();
+        ComputationCheckError();
 
         bool stubWithStft = true;
         BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
@@ -933,7 +933,7 @@ pBlock Collection::
                 fillBlock( block, things_to_update );
                 things_to_update.clear();
 
-                ComputaionCheckError();
+                ComputationCheckError();
 #ifdef USE_CUDA
             }
             catch (const CudaException& x )
@@ -958,7 +958,7 @@ pBlock Collection::
         result = block;
 
         GlException_CHECK_ERROR();
-        ComputaionCheckError();
+        ComputationCheckError();
     }
 #ifdef USE_CUDA
     catch (const CudaException& x )
@@ -981,7 +981,7 @@ pBlock Collection::
     // result is non-zero
     _cache[ result->ref ] = result;
 
-    TIME_COLLECTION ComputaionSynchronize();
+    TIME_COLLECTION ComputationSynchronize();
 
     return result;
 }
@@ -1113,7 +1113,7 @@ bool Collection::
         }
     }
 
-    TIME_COLLECTION ComputaionSynchronize();
+    TIME_COLLECTION ComputationSynchronize();
 
     return true;
 }

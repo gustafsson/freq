@@ -1,8 +1,9 @@
+#ifdef USE_CUDA
 #include "reassign.h"
 #include "reassign.cu.h"
 
 // gpumisc
-#include <CudaException.h>
+#include <computationkernel.h>
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -182,7 +183,7 @@ void Reassign::
                       chunk.minHz(), chunk.maxHz(), chunk.sample_rate );
     }
 
-    TIME_FILTER CudaException_ThreadSynchronize();
+    TIME_FILTER ComputationSynchronize();
 }
 
 
@@ -203,7 +204,8 @@ void Tonalize::
     ::tonalizeFilter( chunk.transform_data,
                   chunk.minHz(), chunk.maxHz(), chunk.sample_rate );
 
-    TIME_FILTER CudaException_ThreadSynchronize();
+    TIME_FILTER ComputationSynchronize();
 }
 
 }
+#endif

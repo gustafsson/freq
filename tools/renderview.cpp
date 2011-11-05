@@ -17,16 +17,17 @@
 #include "sawe/application.h"
 
 // gpumisc
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <GlException.h>
 #include <glPushContext.h>
 #include <demangle.h>
-#include <cuda_vector_types_op.h>
 #include <glframebuffer.h>
 #include <neat_math.h>
 
+#ifdef USE_CUDA
 // cuda
-#include <cuda.h>
+#include <cuda.h> // threadexit
+#endif
 
 // Qt
 #include <QTimer>
@@ -129,8 +130,10 @@ RenderView::
 
     BOOST_ASSERT( QGLContext::currentContext() );
 
+#ifdef USE_CUDA
     // Destroy the cuda context for this thread
     CudaException_SAFE_CALL( cudaThreadExit() );
+#endif
 }
 
 
@@ -607,7 +610,7 @@ void RenderView::
 
     unsigned N = model->collections.size();
 
-    TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
+    TIME_PAINTGL_DETAILS ComputationCheckError();
 
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
@@ -680,7 +683,7 @@ void RenderView::
         }
     }
 
-    TIME_PAINTGL_DETAILS CudaException_CHECK_ERROR();
+    TIME_PAINTGL_DETAILS ComputationCheckError();
     TIME_PAINTGL_DETAILS GlException_CHECK_ERROR();
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -930,6 +933,7 @@ void RenderView::
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
     unsigned cacheCount = 0;
+
     TIME_PAINTGL_DETAILS
     {
         sumsize = model->collections[0]->cacheByteSize();
@@ -943,6 +947,7 @@ void RenderView::
 
     TIME_PAINTGL_DETAILS TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p) %s",
         N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source, first_source->name().c_str());
+
     if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
     {
         model->collections[i]->printCacheSize();
@@ -950,30 +955,31 @@ void RenderView::
 
 
     _try_gc = 0;
-    try {
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre check errors");
-			GlException_CHECK_ERROR();
-		}
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre sync");
-            CudaException_ThreadSynchronize();
-		}
+    try
+    {
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre check errors");
+        GlException_CHECK_ERROR();
+    }
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre sync");
+        ComputationSynchronize();
+    }
 
-        {
-            // Make sure our cuda context is still alive by invoking
-            // a tiny kernel. This will throw an CudaException otherwise,
-            // thus resulting in restarting the cuda context.
+    {
+        // Make sure our cuda context is still alive by invoking
+        // a tiny kernel. This will throw an CudaException otherwise,
+        // thus resulting in restarting the cuda context.
 
-            // If we don't ensure the context is alive before starting to
-            // use various GPU resources the application will crash, for
-            // instance when another RenderView is closed and releases
-            // the context.
-            Tfr::Stft a;
-            a.set_approximate_chunk_size(4);
-            Signal::pBuffer b(new Signal::Buffer(0,a.chunk_size(),1));
-            a(b);
-        }
+        // If we don't ensure the context is alive before starting to
+        // use various GPU resources the application will crash, for
+        // instance when another RenderView is closed and releases
+        // the context.
+        Tfr::Stft a;
+        a.set_approximate_chunk_size(4);
+        Signal::pBuffer b(new Signal::Buffer(0,a.chunk_size(),1));
+        a(b);
+    }
 
     // TODO move to rendercontroller
     bool isWorking = false;
@@ -1122,27 +1128,28 @@ void RenderView::
 #endif
 
     if (!onlyComputeBlocksForRenderView)
-	{
-		TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
-		foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
-		{
-	        // Start looking for which blocks that are requested for the next frame.
-			collection->next_frame();
-		}
-	}
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
+        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+        {
+            // Start looking for which blocks that are requested for the next frame.
+            collection->next_frame();
+        }
+    }
 
     worker.nextFrame();
 
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post check errors");
-    GlException_CHECK_ERROR();
-		}
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post sync");
-			CudaException_CHECK_ERROR();
-		}
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post check errors");
+        GlException_CHECK_ERROR();
+    }
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post sync");
+        ComputationCheckError();
+    }
 
     _try_gc = 0;
+#ifdef USE_CUDA
     } catch (const CudaException &x) {
         TaskInfo tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
 
@@ -1166,6 +1173,7 @@ void RenderView::
             _try_gc++;
         }
         else throw;
+#endif
     } catch (const GlException &x) {
         TaskTimer tt("RenderView::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
         if (2>_try_gc) {

@@ -3,7 +3,7 @@
 
 // gpumisc
 #include <TaskTimer.h>
-#include <CudaException.h>
+#include <computationkernel.h>
 
 
 //#define TIME_FILTER
@@ -53,7 +53,7 @@ void Ellipse::
     ::removeDisc( chunk.transform_data,
                   area, _save_inside, chunk.sample_rate );
 
-    TIME_FILTER CudaException_ThreadSynchronize();
+    TIME_FILTER ComputationSynchronize();
 }
 
 

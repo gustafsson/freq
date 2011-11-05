@@ -20,7 +20,7 @@ namespace Tfr {
 
 
 void Fft::
-        computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction )
+        computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
     TIME_STFT TaskTimer tt("Fft Ooura");
 
@@ -103,7 +103,7 @@ void Fft::
     Tfr::ChunkData::Ptr redundantOutput( new Tfr::ChunkData( redundantWidth ));
 
     // compute
-    computeWithOoura(complexbuffer.complex_waveform_data(), redundantOutput, -1);
+    computeWithOoura(complexbuffer.complex_waveform_data(), redundantOutput, FftDirection_Forward);
 
     // discard redundant output
     {
@@ -138,9 +138,34 @@ void Fft::
 
     ComplexBuffer buffer( 0, redundantWidth, 1 );
 
-    computeWithOoura(redundantInput, buffer.complex_waveform_data(), 1);
+    computeWithOoura(redundantInput, buffer.complex_waveform_data(), FftDirection_Backward);
 
     *output = *buffer.get_real()->waveform_data();
+}
+
+
+void Stft::
+        computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+{
+    Tfr::ChunkElement* i = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
+    Tfr::ChunkElement* o = CpuMemoryStorage::WriteAll<1>( output ).ptr();
+
+    BOOST_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
+
+    unsigned count = input->numberOfElements()/_window_size;
+
+    Fft ft( true );
+
+    for (unsigned n=0; n<count; ++n)
+    {
+        ft.computeWithOoura(
+                CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( _window_size,
+                                                                i + n*_window_size),
+                CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( _window_size,
+                                                                o + n*_window_size),
+                direction
+        );
+    }
 }
 
 
@@ -179,7 +204,7 @@ Tfr::pChunk Stft::
     {
         TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", b->waveform_data()->getSizeInBytes1D()/1024.f/1024.f);
         input = CpuMemoryStorage::ReadOnly<1>( b->waveform_data() ).ptr();
-        TIME_STFT ComputaionSynchronize();
+        TIME_STFT ComputationSynchronize();
     }
     else
     {
@@ -202,10 +227,10 @@ Tfr::pChunk Stft::
         );
     }
 
-    TIME_STFT ComputaionSynchronize();
+    TIME_STFT ComputationSynchronize();
 
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
 
     if (false)
     {
@@ -227,8 +252,8 @@ Tfr::pChunk Stft::
         TaskInfo("Difftest %s (value %g)", maxd<1e-8?"passed":"failed", maxd);
     }
 
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
 
     return chunk;
 }
@@ -270,7 +295,7 @@ Tfr::pChunk Stft::
                                                                 input + i*n.width),
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
                                                                 output + i*n.width),
-                -1
+                FftDirection_Forward
         );
     }
 
@@ -287,7 +312,7 @@ Tfr::pChunk Stft::
         chunk->chunk_offset = 0;
     }
 
-    TIME_STFT ComputaionSynchronize();
+    TIME_STFT ComputationSynchronize();
 
     return chunk;
 }
@@ -296,8 +321,8 @@ Tfr::pChunk Stft::
 Signal::pBuffer Stft::
         inverseWithOoura(Tfr::pChunk chunk)
 {
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
     BOOST_ASSERT( chunk->nChannels() == 1 );
 
     const int chunk_window_size = (int)(chunk->freqAxis.max_frequency_scalar*2 + 0.5f);
@@ -327,19 +352,19 @@ Signal::pBuffer Stft::
             chunk_window_size,
             nwindows );
 
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
 
     Tfr::ChunkElement* input = CpuMemoryStorage::ReadOnly<1>( chunk->transform_data ).ptr();
     float* output = CpuMemoryStorage::WriteAll<1>( b->waveform_data() ).ptr();
 
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
 
     // Transform signal
 
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
 
     Fft ft(false);
 
@@ -353,13 +378,13 @@ Signal::pBuffer Stft::
         );
     }
 
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
 
     stftNormalizeInverse( b->waveform_data(), n.width );
 
-    ComputaionSynchronize();
-    ComputaionCheckError();
+    ComputationSynchronize();
+    ComputationCheckError();
 
     return b;
 }
@@ -409,16 +434,16 @@ Signal::pBuffer Stft::
                                                                 input + i*n.width),
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
                                                                 output + i*n.width),
-                1
+                FftDirection_Backward
         );
     }
 
-    TIME_STFT ComputaionSynchronize();
+    TIME_STFT ComputationSynchronize();
 
     Signal::pBuffer realinv = b.get_real();
     stftNormalizeInverse( realinv->waveform_data(), n.width );
 
-    TIME_STFT ComputaionSynchronize();
+    TIME_STFT ComputationSynchronize();
 
     return realinv;
 }

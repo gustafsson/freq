@@ -1,3 +1,4 @@
+#ifdef USE_CUDA
 #include "resampletest.h"
 #include <TaskTimer.h>
 #include <demangle.h>
@@ -300,3 +301,4 @@ void ResampleTest::
         tt.getStream() << ss.str();
     }
 }
+#endif

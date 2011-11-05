@@ -2,7 +2,6 @@
 
 #include "sawe/project.h"
 #include "tfr/cwt.h"
-#include "cudaglobalstorage.h"
 
 #include <demangle.h>
 
@@ -174,7 +173,6 @@ Signal::Interval BrushModel::
     {
         img.reset( new DataStorage<float>(
                 ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
-        cudaMemset( CudaGlobalStorage::WriteAll<1>(img).device_ptr(), 0, img->numberOfBytes() );
     }
 
     ResampleArea area( a.time, a.scale, b.time, b.scale );
