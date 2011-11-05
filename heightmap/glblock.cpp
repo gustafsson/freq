@@ -3,7 +3,7 @@
 // Heightmap namespace
 #include "collection.h"
 #include "renderer.h"
-#include "slope.cu.h"
+#include "slopekernel.h"
 
 // gpumisc
 #include <vbo.h>
