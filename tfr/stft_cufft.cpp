@@ -8,7 +8,7 @@
 #include "TaskTimer.h"
 #include "cuffthandlecontext.h"
 
-#include "wavelet.cu.h"
+#include "waveletkernel.h"
 
 //#define TIME_STFT
 #define TIME_STFT if(0)

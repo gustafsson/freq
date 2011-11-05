@@ -1,5 +1,5 @@
 #include "cwtchunk.h"
-#include "tfr/wavelet.cu.h"
+#include "waveletkernel.h"
 
 namespace Tfr {
 

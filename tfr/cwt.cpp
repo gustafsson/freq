@@ -1,7 +1,7 @@
 #include "cwt.h"
 #include "cwtchunk.h"
 #include "stft.h"
-#include "wavelet.cu.h"
+#include "waveletkernel.h"
 #include "supersample.h"
 
 #include "signal/buffersource.h"

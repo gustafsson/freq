@@ -121,8 +121,7 @@ FORMS += \
 CUDA_SOURCES += \
     filters/*.cu \
     heightmap/*.cu \
-    tfr/drawnwaveform.cu \
-    tfr/wavelet.cu \
+    tfr/*.cu \
     tools/support/*.cu \
     tools/selections/support/*.cu \
 
