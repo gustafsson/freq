@@ -13,8 +13,8 @@
 //#define TIME_STFT
 #define TIME_STFT if(0)
 
-namespace Tfr {
 
+namespace Tfr {
 
 
 void Fft::
@@ -77,13 +77,13 @@ void Fft::
 Tfr::pChunk Stft::
         computeWithCufft(Signal::pBuffer b)
 {
-    uint2 actualSize = make_uint2(
+    DataStorageSize actualSize(
             _window_size/2 + 1,
             b->number_of_samples()/_window_size );
 
-    DataStorageSize n( actualSize.x * actualSize.y, 1, 1 );
+    DataStorageSize n = actualSize.width * actualSize.height;
 
-    if (0==actualSize.y) // not enough data
+    if (0==actualSize.height) // not enough data
         return Tfr::pChunk();
 
     Tfr::pChunk chunk( new Tfr::StftChunk(_window_size) );
@@ -118,7 +118,7 @@ Tfr::pChunk Stft::
     output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( chunk->transform_data ).device_ptr();
 
     // Transform signal
-    unsigned count = actualSize.y;
+    unsigned count = actualSize.height;
 
     unsigned
             slices = count,
@@ -161,7 +161,7 @@ Tfr::pChunk Stft::
             CufftException_SAFE_CALL(cufftExecR2C(
                     _handle_ctx_r2c(_window_size, slices),
                     input + i*_window_size,
-                    output + i*actualSize.x));
+                    output + i*actualSize.width));
 
             i += slices;
         } catch (const CufftException& /*x*/) {
@@ -214,8 +214,7 @@ Tfr::pChunk Stft::
 
     DataStorageSize n(
             _window_size,
-            b.number_of_samples()/_window_size,
-            1 );
+            b.number_of_samples()/_window_size );
 
     if (0==n.height) // not enough data
         return Tfr::pChunk();
@@ -327,8 +326,7 @@ Signal::pBuffer Stft::
 
     const DataStorageSize n(
             chunk_window_size,
-            nwindows,
-            1 );
+            nwindows );
 
     CudaException_ThreadSynchronize();
     CudaException_CHECK_ERROR();
@@ -429,8 +427,7 @@ Signal::pBuffer Stft::
 
     DataStorageSize n(
             chunk_window_size,
-            nwindows,
-            1 );
+            nwindows );
 
     cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( chunk->transform_data ).device_ptr();
     cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( b.complex_waveform_data() ).device_ptr();
@@ -489,6 +486,5 @@ Signal::pBuffer Stft::
 
     return realinv;
 }
-
 
 } // namespace Tfr

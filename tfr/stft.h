@@ -23,7 +23,7 @@ Computes the complex Fast Fourier Transform of a Signal::Buffer.
 class Fft: public Transform, public HasSingleton<Fft, Transform>
 {
 public:
-    Fft( /*cudaStream_t stream=0*/ );
+    Fft( bool computeRedundant=false );
     ~Fft();
 
     virtual pChunk operator()( Signal::pBuffer b ) { return forward(b); }
@@ -49,6 +49,10 @@ public:
     static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
 
 private:
+    friend class Stft;
+
+    bool _compute_redundant;
+
     std::vector<double> w; // used by Ooura
     std::vector<int> ip;
     std::vector<double> q;
@@ -56,7 +60,9 @@ private:
     void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction );
     void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, int direction );
 
+    void computeWithOouraR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
     void computeWithCufftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
+    void computeWithOouraC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
     void computeWithCufftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
 };
 
@@ -116,6 +122,11 @@ private:
     Tfr::pChunk computeRedundantWithCufft(Signal::pBuffer);
     Signal::pBuffer inverseWithCufft(Tfr::pChunk);
     Signal::pBuffer inverseRedundantWithCufft(Tfr::pChunk);
+
+    Tfr::pChunk computeWithOoura(Signal::pBuffer);
+    Tfr::pChunk computeRedundantWithOoura(Signal::pBuffer);
+    Signal::pBuffer inverseWithOoura(Tfr::pChunk);
+    Signal::pBuffer inverseRedundantWithOoura(Tfr::pChunk);
 };
 
 class StftChunk: public Chunk

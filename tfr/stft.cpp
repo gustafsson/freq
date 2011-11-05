@@ -4,9 +4,8 @@
 
 #include <throwInvalidArgument.h>
 #include <neat_math.h>
-#include <cufft.h>
-#include <CudaProperties.h>
-#include "cudaglobalstorage.h"
+#include <simple_math.h>
+#include <computationkernel.h>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -15,6 +14,14 @@
 //#define TIME_STFT
 #define TIME_STFT if(0)
 
+#if defined(USE_CUDA) && !defined(USE_CUFFT)
+//#define USE_CUFFT
+#endif
+
+#ifdef USE_CUFFT
+#include <CudaProperties.h>
+#endif
+
 using namespace boost::posix_time;
 using namespace boost;
 
@@ -22,7 +29,9 @@ namespace Tfr {
 
 
 Fft::
-        Fft()
+        Fft( bool computeRedundant )
+            :
+            _compute_redundant( computeRedundant )
 {
 }
 
@@ -49,7 +58,7 @@ pChunk Fft::
     pChunk chunk;
 
     // TODO choose method based on data size and locality
-    if (0 == "ooura")
+    if (_compute_redundant)
     {
         ComplexBuffer b( *real_buffer );
 
@@ -58,8 +67,11 @@ pChunk Fft::
         chunk.reset( new StftChunk );
         chunk->transform_data.reset( new ChunkData( output_n ));
 
+#ifdef USE_CUFFT
         computeWithCufft( input, chunk->transform_data, -1);
-        //computeWithOoura( input, chunk->transform_data, -1 );
+#else
+        computeWithOoura( input, chunk->transform_data, -1 );
+#endif
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
     }
     else
@@ -73,7 +85,11 @@ pChunk Fft::
         output_n.width = ((StftChunk*)chunk.get())->nScales();
         chunk->transform_data.reset( new ChunkData( output_n ));
 
+#ifdef USE_CUFFT
         computeWithCufftR2C( real_buffer->waveform_data(), chunk->transform_data );
+#else
+        computeWithOouraR2C( real_buffer->waveform_data(), chunk->transform_data );
+#endif
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales() );
     }
 
@@ -114,8 +130,11 @@ Signal::pBuffer Fft::
         // original_sample_rate == fs * scales
         ComplexBuffer buffer( 0, scales, fs );
 
+#ifdef USE_CUFFT
         computeWithCufft(chunk->transform_data, buffer.complex_waveform_data(), 1);
-        //computeWithOoura(chunk->transform_data, buffer.complex_waveform_data(), 1);
+#else
+        computeWithOoura(chunk->transform_data, buffer.complex_waveform_data(), 1);
+#endif
 
         r = buffer.get_real();
     }
@@ -125,7 +144,11 @@ Signal::pBuffer Fft::
 
         r.reset( new Signal::Buffer(0, scales, fs ));
 
+#ifdef USE_CUFFT
         computeWithCufftC2R(chunk->transform_data, r->waveform_data());
+#else
+        computeWithOouraC2R(chunk->transform_data, r->waveform_data());
+#endif
     }
 
     if ( r->number_of_samples() != chunk->n_valid_samples )
@@ -134,77 +157,6 @@ Signal::pBuffer Fft::
     r->sample_offset = chunk->chunk_offset;
 
     return r;
-}
-
-
-// TODO translate cdft to take floats instead of doubles
-//extern "C" { void cdft(int, int, double *); }
-extern "C" { void cdft(int, int, double *, int *, double *); }
-// extern "C" { void cdft(int, int, float *, int *, float *); }
-
-void Fft::
-        computeWithOoura( DataStorage<std::complex<float> >::Ptr input, DataStorage<std::complex<float> >::Ptr output, int direction )
-{
-    TIME_STFT TaskTimer tt("Fft Ooura");
-
-    unsigned n = input->getNumberOfElements().width;
-    unsigned N = output->getNumberOfElements().width;
-
-    if (-1 != direction)
-        BOOST_ASSERT( n == N );
-
-    int magic = 12345678;
-    bool vector_length_test = true;
-
-    if (q.size() != 2*N) {
-        TIME_STFT TaskTimer tt("Resizing buffers");
-        q.resize(2*N + vector_length_test);
-        w.resize(N/2 + vector_length_test);
-        ip.resize(2+(1<<(int)(log2f(N+0.5)-1)) + vector_length_test);
-
-        if (vector_length_test)
-        {
-            q.back() = magic;
-            w.back() = magic;
-            ip.back() = magic;
-        }
-        ip[0] = 0;
-    } else {
-        TIME_STFT TaskTimer("Reusing data").suppressTiming();
-    }
-
-    float* p = (float*)input->getCpuMemory();
-
-    {
-        TIME_STFT TaskTimer tt("Converting from float2 to double2" );
-
-        for (unsigned i=0; i<2*n; i++)
-            q[i] = p[i];
-
-        for (unsigned i=2*n; i<2*N; i++)
-            q[i] = 0;
-    }
-
-
-    {
-        TIME_STFT TaskTimer tt("Computing fft");
-        cdft(2*N, direction, &q[0], &ip[0], &w[0]);
-
-        if (vector_length_test)
-        {
-            BOOST_ASSERT(q.back() == magic);
-            BOOST_ASSERT(ip.back() == magic);
-            BOOST_ASSERT(w.back() == magic);
-        }
-    }
-
-    {
-        TIME_STFT TaskTimer tt("Converting from double2 to float2");
-
-        p = (float*)output->getCpuMemory();
-        for (unsigned i=0; i<2*N; i++)
-            p[i] = (float)q[i];
-    }
 }
 
 
@@ -232,7 +184,11 @@ Tfr::pChunk Stft::
     TIME_STFT TaskTimer ti("Stft::operator, _window_size = %d, b = %s", _window_size, b->getInterval().toString().c_str());
     BOOST_ASSERT( 0!=_window_size );
 
+#ifdef USE_CUFFT
     Tfr::pChunk chunk = computeWithCufft(b);
+#else
+    Tfr::pChunk chunk = computeWithOoura(b);
+#endif
 
     return chunk;
 }
@@ -243,7 +199,11 @@ Tfr::pChunk Stft::
 {
     TIME_STFT TaskTimer ti("Stft::ChunkWithRedundant, _window_size = %d, b = %s", _window_size, breal->getInterval().toString().c_str());
 
+#ifdef USE_CUFFT
     Tfr::pChunk chunk = computeRedundantWithCufft(breal);
+#else
+    Tfr::pChunk chunk = computeRedundantWithOoura(breal);
+#endif
 
     return chunk;
 }
@@ -256,7 +216,11 @@ Signal::pBuffer Stft::
     if (compute_redundant())
         return inverseWithRedundant( chunk );
 
+#ifdef USE_CUFFT
     Signal::pBuffer b = inverseWithCufft( chunk );
+#else
+    Signal::pBuffer b = inverseWithOoura( chunk );
+#endif
 
     return b;
 }
@@ -265,7 +229,11 @@ Signal::pBuffer Stft::
 Signal::pBuffer Stft::
         inverseWithRedundant( pChunk chunk )
 {
+#ifdef USE_CUFFT
     Signal::pBuffer realinv = inverseRedundantWithCufft(chunk);
+#else
+    Signal::pBuffer realinv = inverseRedundantWithOoura(chunk);
+#endif
 
     return realinv;
 }
@@ -348,6 +316,13 @@ unsigned findSmallestGreater(const unsigned* bases, unsigned* a, unsigned minv, 
     return minv;
 }
 
+#ifndef USE_CUFFT
+unsigned Fft::
+        lChunkSizeS(unsigned x, unsigned)
+{
+    return lpo2s(x);
+}
+#else
 unsigned Fft::
         lChunkSizeS(unsigned x, unsigned multiple)
 {
@@ -364,7 +339,15 @@ unsigned Fft::
     BOOST_ASSERT( x2 < x );
     return x2;
 }
+#endif
 
+#ifndef USE_CUFFT
+unsigned Fft::
+        sChunkSizeG(unsigned x, unsigned)
+{
+    return spo2g(x);
+}
+#else
 unsigned Fft::
         sChunkSizeG(unsigned x, unsigned multiple)
 {
@@ -381,6 +364,7 @@ unsigned Fft::
     BOOST_ASSERT( x2 > x );
     return x2;
 }
+#endif
 
 unsigned oksz(unsigned x)
 {
@@ -405,9 +389,9 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
     multiple++; // overhead during computaion
 
     unsigned slices = 1;
-    if (slices * _window_size*multiple*sizeof(cufftComplex) > free)
+    if (slices * _window_size*multiple*sizeof(Tfr::ChunkElement) > free)
     {
-        unsigned max_size = free / (slices*multiple*sizeof(cufftComplex));
+        unsigned max_size = free / (slices*multiple*sizeof(Tfr::ChunkElement));
         _window_size = Fft::lChunkSizeS(max_size+1, 4);
     }
 
@@ -460,7 +444,11 @@ unsigned Stft::build_performance_statistics(bool writeOutput, float size_of_test
     _ok_chunk_sizes.clear();
     Tfr::Stft S;
     scoped_ptr<TaskTimer> tt;
+#ifdef USE_CUFFT
     if(writeOutput) tt.reset( new TaskTimer("Building STFT performance statistics for %s", CudaProperties::getCudaDeviceProp().name));
+#else
+    if(writeOutput) tt.reset( new TaskTimer("Building STFT performance statistics for %s", "Cpu"));
+#endif
     Signal::pBuffer B = boost::shared_ptr<Signal::Buffer>( new Signal::Buffer( 0, 44100*size_of_test_signal_in_seconds, 44100 ) );
     {
         scoped_ptr<TaskTimer> tt;
