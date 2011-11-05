@@ -1,5 +1,5 @@
 #include "ellipse.h"
-#include "ellipse.cu.h"
+#include "ellipsekernel.h"
 
 // gpumisc
 #include <TaskTimer.h>
