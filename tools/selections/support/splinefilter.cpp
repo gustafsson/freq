@@ -1,5 +1,5 @@
 #include "splinefilter.h"
-#include "splinefilter.cu.h"
+#include "splinefilterkernel.h"
 #include "cpumemorystorage.h"
 
 // gpumisc

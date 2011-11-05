@@ -1,9 +1,10 @@
-#include "splinefilter.cu.h"
-#include <resamplecuda.cu.h>
-#include <operate.h>
-#include "cudaglobalstorage.h"
+#ifndef SPLINEFILTERKERNELDEF_H
+#define SPLINEFILTERKERNELDEF_H
 
-template<typename Reader>
+#include "splinefilterkernel.h"
+#include <operate.h>
+
+template<typename Reader, typename T>
 class Spliner
 {
 public:
@@ -14,7 +15,7 @@ public:
     {}
 
 
-    __device__ void operator()(float2& e, ResamplePos const& v)
+    RESAMPLE_CALL void operator()(T& e, ResamplePos const& v)
     {
         // Count the number of times a line from v to infinity crosses the spline
 
@@ -25,7 +26,12 @@ public:
         for (unsigned i=0; i<N; ++i)
         {
             unsigned j = (i+1)%N;
-            float2 p = reader(i), q = reader(j);
+            T pr = reader(i), qr = reader(j);
+#ifdef __CUDACC__
+            ResamplePos p(pr.x, pr.y), q(qr.x, qr.y);
+#else
+            ResamplePos p(pr.real(), pr.imag()), q(qr.real(), qr.imag());
+#endif
             float r = (v.x - p.x)/(q.x - p.x);
             if (0 <= r && 1 > r)
             {
@@ -52,8 +58,7 @@ public:
             if (d < 0)
                 d = 0;
 
-            float2 f = e;
-            e = make_float2( f.x*d, f.y*d );
+            e *= d;
         }
     }
 
@@ -65,24 +70,4 @@ private:
 };
 
 
-void applyspline(
-        Tfr::ChunkData::Ptr data,
-        DataStorage<Tfr::ChunkElement>::Ptr splinep, bool save_inside )
-{
-    cudaPitchedPtrType<float2> spline( CudaGlobalStorage::ReadOnly<1>(splinep).getCudaPitchedPtr());
-
-    DataStorage<float2>::Ptr data2 =
-            CudaGlobalStorage::BorrowPitchedPtr<float2>(
-                    data->size(),
-                    CudaGlobalStorage::ReadOnly<2>( data ).getCudaPitchedPtr()
-                    );
-
-    Spliner< Read1D<float2> > spliner(
-            Read1D_Create<float2>( spline ),
-            spline.getNumberOfElements().x,
-            save_inside );
-
-    element_operate<float2>( data2, ResampleArea(0, 0, data2->size().width, data2->size().height), spliner );
-
-    Read1D_UnbindTexture<float2>();
-}
+#endif // SPLINEFILTERKERNELDEF_H
