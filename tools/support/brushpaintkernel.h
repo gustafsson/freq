@@ -1,6 +1,6 @@
 #pragma once
 
-#include "heightmap/block.cu.h"
+#include "heightmap/blockkernel.h"
 
 #include "resampletypes.h"
 

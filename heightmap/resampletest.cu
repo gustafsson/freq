@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include <resamplecuda.cu.h>
-#include <operate.cu.h>
+#include <operate.h>
 
 void simple_resample2d(
         cudaPitchedPtrType<float2> input,
@@ -46,7 +46,8 @@ void simple_operate(
         cudaPitchedPtrType<float2> data
         )
 {
-    element_operate<float2, Add2>( data );
+    DataStorage<float2>::Ptr inputp = CudaGlobalStorage::BorrowPitchedPtr<float2>( data.getNumberOfElements(), data.getCudaPitchedPtr() );
+    element_operate<float2, Add2>( inputp );
 }
 
 

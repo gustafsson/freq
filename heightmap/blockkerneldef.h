@@ -1,13 +1,13 @@
-#include <resamplecuda.cu.h>
+#ifndef BLOCKKERNELDEF_H
+#define BLOCKKERNELDEF_H
 
-#define FREQAXIS_CALL __device__ __host__
+#include "resample.h"
+
+#define FREQAXIS_CALL RESAMPLE_ANYCALL
 #include "tfr/freqaxis.h"
 
 // order of included headers matters because of FREQAXIS_CALL and RESAMPLE_CALL
-#include "block.cu.h"
-
-
-#include <stdio.h>
+#include "blockkernel.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -19,9 +19,14 @@
 class ConverterPhase
 {
 public:
-    __device__ float operator()( float2 v, DataPos const& /*dataPosition*/ )
+    RESAMPLE_CALL float operator()( Tfr::ChunkElement w, DataPos const& /*dataPosition*/ )
     {
-        return atan2(v.y, v.x);
+#ifdef __CUDACC__
+        float2& v = (float2&)w;
+        return atan2(v.x, v.y);
+#else
+        return atan2(w.imag(), w.real());
+#endif
     }
 };
 
@@ -29,7 +34,7 @@ public:
 class ConverterLogAmplitude
 {
 public:
-    __device__ float operator()( float2 v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
     {
         return log2f(0.0001f + ConverterAmplitude()(v,dataPosition)) - log2f(0.0001f);
     }
@@ -39,9 +44,14 @@ public:
 class Converter5thRootAmplitude
 {
 public:
-    __device__ float operator()( float2 v, DataPos const& /*dataPosition*/ )
+    RESAMPLE_CALL float operator()( Tfr::ChunkElement w, DataPos const& /*dataPosition*/ )
     {
+#ifdef __CUDACC__
+        float2& v = (float2&)w;
         return 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+#else
+        return 0.4f*powf(norm(w), 0.1);
+#endif
     }
 };
 
@@ -56,7 +66,7 @@ public:
 
     }
 */
-    __device__ float operator()( float2 v, DataPos const& dataPosition );
+    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition );
 /*    {
         switch(_amplitudeAxis)
         {
@@ -80,7 +90,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>
 {
 public:
-    __device__ float operator()( float2 v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
     {
         return 25.f * ConverterAmplitude()( v, dataPosition );
     }
@@ -90,7 +100,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>
 {
 public:
-    __device__ float operator()( float2 v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
     {
         return 0.02f * ConverterLogAmplitude()( v, dataPosition );
     }
@@ -100,7 +110,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>
 {
 public:
-    __device__ float operator()( float2 v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
     {
         return Converter5thRootAmplitude()( v, dataPosition );
     }
@@ -131,20 +141,20 @@ public:
 
 
     template<typename Reader>
-    __device__ float operator()( ResamplePos const& p, Reader& reader )
+    RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
     {
         return (*this)(p, reader, defaultConverter);
     }
 
 
-    __device__ bool near(float a, float b)
+    RESAMPLE_CALL bool near(float a, float b)
     {
         return a > b*(1.f-1e-2f) && a < b*(1.f+1e-2f);
     }
 
 
     template<typename Reader, typename Converter>
-    __device__ float operator()( ResamplePos const& p, Reader& reader, const Converter& c = Converter() )
+    RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader, const Converter& c = Converter() )
     {
         ResamplePos q;
         // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
@@ -181,7 +191,7 @@ public:
     }
 
     template<typename Reader>
-    __device__ float operator()( ResamplePos const& p, Reader& reader )
+    RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
     {
         ResamplePos q;
         // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
@@ -218,7 +228,7 @@ public:
     }
 
     template<typename Reader>
-    __device__ float operator()( ResamplePos const& p, Reader& reader )
+    RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
     {
         float v = axes( p, reader );
         float phase1 = axes( p, reader, ConverterPhase() );
@@ -240,25 +250,25 @@ class SpecialPhaseFetcher
 {
 public:
     template<typename Reader>
-    __device__ float operator()( ResamplePos const& p, Reader& reader )
+    RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
     {
         // Plot "how wrong" the phase is
         ResamplePos q1 = p;
         ResamplePos p2 = p;
         p2.x++;
         ResamplePos q2 = p2;
-        q1.x /= getWidth(validInputs4)-1;
-        q1.y /= getHeight(validInputs4)-1;
-        q1.x *= getWidth(inputRegion);
-        q1.y *= getHeight(inputRegion);
-        q1.x += getLeft(inputRegion);
-        q1.y += getTop(inputRegion);
-        q2.x /= getWidth(validInputs4)-1;
-        q2.y /= getHeight(validInputs4)-1;
-        q2.x *= getWidth(inputRegion);
-        q2.y *= getHeight(inputRegion);
-        q2.x += getLeft(inputRegion);
-        q2.y += getTop(inputRegion);
+        q1.x /= validInputs4.width()-1;
+        q1.y /= validInputs4.height()-1;
+        q1.x *= inputRegion.width();
+        q1.y *= inputRegion.height();
+        q1.x += inputRegion.left;
+        q1.y += inputRegion.top;
+        q2.x /= validInputs4.width()-1;
+        q2.y /= validInputs4.height()-1;
+        q2.x *= inputRegion.width();
+        q2.y *= inputRegion.height();
+        q2.x += inputRegion.left;
+        q2.y += inputRegion.top;
 
         float phase = InterpolateFetcher<float, ConverterPhase>()( p, reader );
         float phase2 = InterpolateFetcher<float, ConverterPhase>()( p2, reader );
@@ -281,8 +291,8 @@ public:
     }
 
     Tfr::FreqAxis freqAxis;
-    float4 inputRegion;
-    uint4 validInputs4;
+    ResampleArea inputRegion;
+    ValidInputs validInputs4;
 };
 
 
@@ -307,7 +317,7 @@ using namespace std;
 
 
 template<typename AxisConverter>
-void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
+void blockResampleChunkAxis( Tfr::ChunkData::Ptr input,
                  DataStorage<float>::Ptr output,
                  ValidInputInterval validInputs,
                  ResampleArea inputRegion,
@@ -319,12 +329,12 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                  )
 {
     // translate type to be read as a cuda texture
-    DataStorage<float2>::Ptr input =
+/*    DataStorage<float2>::Ptr input =
             CudaGlobalStorage::BorrowPitchedPtr<float2>(
                     inputp->size(),
                     CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr()
                     );
-
+*/
     DataStorageSize sz_output = output->size();
 
 //    cuda-memcheck complains even on this testkernel when using global memory
@@ -465,12 +475,18 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
                    Heightmap::AmplitudeAxis amplitudeAxis,
                    AxisConverter axisConverter )
 {
+#ifdef __CUDACC__
     cudaPitchedPtr cpp = CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr();
     cpp.xsize = cpp.pitch = nScales * sizeof(float2);
     cpp.ysize = nSamples;
     DataStorage<float2>::Ptr input =
             CudaGlobalStorage::BorrowPitchedPtr<float2>( DataStorageSize( nScales, nSamples ), cpp );
-
+#else
+    Tfr::ChunkElement* p = CpuMemoryStorage::ReadOnly<2>( inputp ).ptr();
+    Tfr::ChunkData::Ptr input =
+            CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>(
+                    DataStorageSize( nScales, nSamples ), p );
+#endif
 
     DataStorageSize sz_input = input->size();
     DataStorageSize sz_output = output->size();
@@ -555,224 +571,4 @@ void blockMerge( BlockData::Ptr inBlock,
             (inBlock, outBlock, in_area, out_area);
 }
 
-__global__ void kernel_expand_stft(
-                cudaPitchedPtrType<float2> inStft,
-                cudaPitchedPtrType<float> outBlock,
-                float start,
-                float steplogsize,
-                float out_offset,
-                float out_length )
-{
-    // Element number
-    const unsigned
-            y = blockIdx.x*blockDim.x + threadIdx.x;
-
-    unsigned nFrequencies = outBlock.getNumberOfElements().y;
-    if( y >= nFrequencies )
-        return;
-
-    float ff = y/(float)nFrequencies;
-    float hz_out = start*exp(ff*steplogsize);
-
-    float max_stft_hz = 44100.f/2;
-    float min_stft_hz = 44100.f/(2*inStft.getNumberOfElements().x);
-    float read_f = max(0.f,min(1.f,(hz_out-min_stft_hz)/(max_stft_hz-min_stft_hz)));
-
-    float2 c;
-
-    float p = read_f*inStft.getNumberOfElements().x;
-    elemSize3_t readPos = make_elemSize3_t( p, 0, 0 );
-    inStft.clamp(readPos);
-    c = inStft.elem(readPos);
-    float val1 = sqrt(c.x*c.x + c.y*c.y);
-
-    readPos.x++;
-    inStft.clamp(readPos);
-    c = inStft.elem(readPos);
-    float val2 = sqrt(c.x*c.x + c.y*c.y);
-
-    p-=(unsigned)p;
-    float val = .02f*(val1*(1-p)+val2*p);
-    const float f0 = 2.0f + 35*ff*ff*ff;
-    val*=f0;
-
-    elemSize3_t writePos = make_elemSize3_t( 0, y, 0 );
-    for (writePos.x=out_offset; writePos.x<out_offset + out_length && writePos.x<outBlock.getNumberOfElements().x;writePos.x++)
-    {
-        outBlock.e( writePos ) = val;
-    }
-}
-
-
-extern "C"
-void expandStft( cudaPitchedPtrType<float2> inStft,
-                 cudaPitchedPtrType<float> outBlock,
-                 float min_hz,
-                 float max_hz,
-                 float out_offset,
-                 float out_length,
-                 unsigned cuda_stream)
-{
-    dim3 block(256,1,1);
-    dim3 grid( int_div_ceil(outBlock.getNumberOfElements().y, block.x), 1, 1);
-
-    if(grid.x>65535) {
-        printf("====================\nInvalid argument, number of floats in complex signal must be less than 65535*256.\n===================\n");
-        return;
-    }
-
-    float start = min_hz/2;
-    float steplogsize = log(max_hz)-log(min_hz);
-
-    kernel_expand_stft<<<grid, block, cuda_stream>>>(
-        inStft, outBlock,
-        start,
-        steplogsize,
-        out_offset,
-        out_length );
-}
-
-
-// TODO optimize this reading/writing pattern
-__global__ void kernel_expand_complete_stft(
-                cudaPitchedPtrType<float2> inStft,
-                cudaPitchedPtrType<float> outBlock,
-                float start,
-                float steplogsize,
-                float out_stft_size,
-                float out_offset,
-                float in_min_hz,
-                float in_max_hz,
-                unsigned in_stft_size)
-{
-    // Element number
-    const unsigned
-            x = blockIdx.x*blockDim.x + threadIdx.x,
-            y = blockIdx.y*blockDim.y + threadIdx.y;
-
-    float val;
-    /*if (1 || 0==threadIdx.x)*/ {
-        unsigned nFrequencies = outBlock.getNumberOfElements().y-1;
-
-        // abort if this thread would have written outside outBlock
-        if( y > nFrequencies )
-            return;
-
-        // which frequency should this thread write
-        float ff = y/(float)nFrequencies;
-        float hz_write = start*exp(ff*steplogsize);
-
-        // which timestep column should this thread write
-        float ts_write = x + out_offset;
-
-        // which normalized frequency should we start reading from
-        float hz_read_norm = 0.5f * saturate( (hz_write - in_min_hz)/(in_max_hz - in_min_hz) );
-
-        // which timestep column should we start reading from
-        float ts_read = ts_write / out_stft_size;
-
-        if ( 0 > ts_read )
-            // only happens if 0>out_offse (or if out_stft_size is negative which is an error)
-            return;
-
-        // Compute read coordinates
-        // q and p measures how bad read_start is an approximation to ts_read
-        // and hz_read_norm
-        float q = ts_read - 0.5f;
-        float p = max(0.f, min( hz_read_norm*in_stft_size + 0.5f, in_stft_size-1.f ));
-
-        unsigned ts_start = 0 > q ? (unsigned)-1 : (unsigned)q;
-        unsigned hz_start = (unsigned)p;
-        q -= floor(q);
-        p -= hz_start;
-
-        // if the next timestep column is required to compute this outBlock
-        // pixel don't compute it unless the next timestep column is provided
-        if (0 < q && ts_start+1>=inStft.getNumberOfElements().y)
-            return;
-
-        // if a previous timestep column is before the first column, use 0
-        // instead
-
-        // if the next or previous frequency row is needed, just clamp to the
-        // provided range. Not generic but wil have to work for now.
-
-        unsigned hz_secondline = min(hz_start+1, in_stft_size-1);
-
-        float2 c;
-        float val1, val2, val3, val4;
-        if (ts_start == (unsigned)-1)
-        {
-            val1 = 0;
-            val3 = 0;
-        }
-        else
-        {
-            c = inStft.elem(make_elemSize3_t( hz_start, ts_start, 0 ));
-            val1 = sqrt(c.x*c.x + c.y*c.y);
-
-            c = inStft.elem(make_elemSize3_t( hz_secondline, ts_start, 0 ));
-            val3 = sqrt(c.x*c.x + c.y*c.y);
-        }
-
-        c = inStft.elem(make_elemSize3_t( hz_start, ts_start+1, 0 ));
-        val2 = sqrt(c.x*c.x + c.y*c.y);
-
-        c = inStft.elem(make_elemSize3_t( hz_secondline, ts_start+1, 0 ));
-        val4 = sqrt(c.x*c.x + c.y*c.y);
-
-        // Perform a kind of bicubic interpolation
-        p = 3*p*p-2*p*p*p; // p and q are saturated, these equations compute
-        q = 3*q*q-2*q*q*q; // an 'S' curve from 0 to 1.
-        val = .07f*((val1*(1-q)+val2*q)*(1-p) + (val3*(1-q)+val4*q)*p);
-
-        //ff = (hz_write-20)/22050.f;
-        //const float f0 = 2.0f + 35*ff*ff*ff;
-        val*=0.03f*hz_write;
-    }
-
-    val /= in_stft_size;
-
-    elemSize3_t writePos = make_elemSize3_t( x, y, 0 );
-    outBlock.e( writePos ) = val;
-}
-
-
-extern "C"
-void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
-                 cudaPitchedPtrType<float> outBlock,
-                 float out_min_hz,
-                 float out_max_hz,
-                 float out_stft_size,
-                 float out_offset,
-                 float in_min_hz,
-                 float in_max_hz,
-                 unsigned in_stft_size,
-                 unsigned cuda_stream)
-{
-    dim3 block(32,1,1);
-    dim3 grid( outBlock.getNumberOfElements().x/block.x, outBlock.getNumberOfElements().y, 1);
-
-    if(grid.x>65535 || grid.y>65535 || 0!=(in_stft_size%32)) {
-        printf("====================\n"
-               "Invalid argument, expandCompleteStft.\n"
-               "grid.x=%u || grid.y=%u || in_stft_size=%u\n"
-               "===================\n",
-               grid.x, grid.y, in_stft_size
-               );
-        return;
-    }
-
-    float start = out_min_hz;
-    float steplogsize = log(out_max_hz)-log(out_min_hz);
-
-    kernel_expand_complete_stft<<<grid, block, cuda_stream>>>(
-        inStft, outBlock,
-        start,
-        steplogsize,
-        out_stft_size,
-        out_offset,
-        in_min_hz,
-        in_max_hz,
-        in_stft_size );
-}
+#endif // BLOCKKERNELDEF_H

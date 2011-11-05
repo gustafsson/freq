@@ -1,5 +1,5 @@
 #include "collection.h"
-#include "block.cu.h"
+#include "blockkernel.h"
 #include "blockfilter.h"
 
 #include "tfr/cwtfilter.h"

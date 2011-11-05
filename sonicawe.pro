@@ -120,10 +120,7 @@ FORMS += \
 
 CUDA_SOURCES += \
     filters/*.cu \
-    heightmap/block.cu \
-    heightmap/resampletest.cu \
-    heightmap/resampletest2.cu \
-    heightmap/slope.cu \
+    heightmap/*.cu \
     tfr/drawnwaveform.cu \
     tfr/wavelet.cu \
     tools/support/*.cu \

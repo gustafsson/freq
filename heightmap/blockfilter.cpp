@@ -1,6 +1,6 @@
 #include "blockfilter.h"
 
-#include "block.cu.h"
+#include "blockkernel.h"
 #include "collection.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"

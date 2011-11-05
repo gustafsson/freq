@@ -3,7 +3,7 @@
 // tools
 #include "support/peakfilter.h"
 #include "tools/renderview.h"
-#include "tools/support/brushpaint.cu.h"
+#include "tools/support/brushpaintkernel.h"
 #include "tools/support/operation-composite.h"
 
 // Sonic AWE

@@ -4,7 +4,7 @@
 // Heightmap namespace
 #include "reference.h"
 #include "glblock.h"
-#include "block.cu.h"
+#include "blockkernel.h"
 
 // Sonic AWE
 #include "signal/intervals.h"
