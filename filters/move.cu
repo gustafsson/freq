@@ -1,5 +1,5 @@
+#include "cudaglobalstorage.h"
 #include "move.cu.h"
-
 
 #include <stdio.h>
 
@@ -7,7 +7,6 @@
 #include "cudaUtil.h"
 #include "CudaException.h"
 #include "cudaPitchedPtrType.h"
-#include "cudaglobalstorage.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
