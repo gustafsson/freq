@@ -45,9 +45,9 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(render_model);
             if (version == 0)
             {
-                int playback_device = -1;
+                unsigned playback_device = -1;
                 ar
-                    & BOOST_SERIALIZATION_NVP(playback_device);
+                    & boost::serialization::make_nvp("playback_model.playback_device", playback_device);
             }
             ar
                     & BOOST_SERIALIZATION_NVP(playback_model.selection_filename)
