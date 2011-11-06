@@ -279,10 +279,6 @@ float RenderView::
     if (is_valid_value)
         *is_valid_value = true;
 
-#ifdef __APPLE__
-    return 0; //Crash on mac os
-#endif
-
     if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->project()->worker.length())
         return 0;
 
@@ -1117,11 +1113,11 @@ void RenderView::
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
 
-    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
-    {
-        model->renderer->setFractionSize( 1, 1 );
-        emit postUpdate();
-    }
+//    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
+//    {
+//        model->renderer->setFractionSize( 1, 1 );
+//        emit postUpdate();
+//    }
 
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
