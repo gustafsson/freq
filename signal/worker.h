@@ -281,7 +281,6 @@ private:
       */
     unsigned  _samples_per_chunk;
     unsigned  _max_samples_per_chunk;
-    unsigned  _min_samples_per_chunk;
 
     /**
       _samples_per_chunk is adjusted up and down to reach this given framerate. Default value: requested_fps=30.
