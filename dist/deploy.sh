@@ -21,13 +21,14 @@ fi
 qmaketarget="${qmaketarget} DEFINES+=\"SONICAWE_VERSION=${versiontag}\""
 
 if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
-	platform=windows
+    platform=windows
 elif [ "$(uname -s)" == "Linux" ]; then
     platform=debian
 elif [ "$(uname -s)" == "Darwin" ]; then
     platform=macx
 else
     echo "Don't know how to build Sonic AWE for this platform: $(uname -s).";
+    platform=unknown
 fi
 
 . ./make-${platform}.sh

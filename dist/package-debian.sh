@@ -78,9 +78,11 @@ mkdir -p $package/usr/bin
 cp ${packagename} $package/usr/bin/.
 mkdir -p $share
 if [ "`uname -m`" = "x86_64" ]; then
+	sed -i "s/Architecture: .*$/Architecture: amd64/g" $package/DEBIAN/control
 	cp -r /usr/local/cuda/lib64/libcudart.so* $share/.
 	cp -r /usr/local/cuda/lib64/libcufft.so* $share/.
 else
+	sed -i "s/Architecture: .*$/Architecture: i386/g" $package/DEBIAN/control
 	cp -r /usr/local/cuda/lib/libcudart.so* $share/.
 	cp -r /usr/local/cuda/lib/libcufft.so* $share/.
 fi
