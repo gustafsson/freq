@@ -33,3 +33,9 @@ fi
 . ./make-${platform}.sh
 . ./upload.sh
 
+qmaketarget="${qmaketarget} CONFIG+=usecuda"
+packagename="${packagename}-cuda"
+
+. ./make-${platform}.sh
+. ./upload.sh
+
