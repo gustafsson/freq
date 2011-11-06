@@ -1,20 +1,28 @@
 #include "cwt.h"
 #include "cwtchunk.h"
 #include "stft.h"
-#include "wavelet.cu.h"
-
-#include "signal/buffersource.h"
+#include "waveletkernel.h"
 #include "supersample.h"
 
-#include <cufft.h>
-#include <throwInvalidArgument.h>
-#include <CudaException.h>
-#include <neat_math.h>
+#include "signal/buffersource.h"
 
+// gpumisc
+//#include <cufft.h>
+#include <throwInvalidArgument.h>
+#include <computationkernel.h>
+#include <neat_math.h>
+#include <simple_math.h>
 #include <Statistics.h>
 
+#ifdef USE_CUDA
+#include "cudaglobalstorage.h"
+#endif
+
+// std
 #include <cmath>
 #include <float.h>
+
+// boost
 #include <boost/lambda/lambda.hpp>
 #include <boost/foreach.hpp>
 
@@ -51,14 +59,11 @@ using namespace boost::lambda;
 
 namespace Tfr {
 
-std::map<unsigned, CufftHandleContext> Cwt::_fft_many;
 pTransform Cwt::static_singleton;
 
 Cwt::
-        Cwt( float scales_per_octave, float wavelet_time_suppport, cudaStream_t stream )
-:   _fft( /*stream*/ ),
-    _stream( stream ),
-    _min_hz( 20 ),
+        Cwt( float scales_per_octave, float wavelet_time_suppport )
+:   _min_hz( 20 ),
     _scales_per_octave( 0 ),
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
     _least_meaningful_fraction_of_r( 0.01f ),
@@ -93,7 +98,9 @@ pTransform Cwt::
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {    
+#ifdef USE_CUDA
     try {
+#endif
     boost::scoped_ptr<TaskTimer> tt;
     TIME_CWT tt.reset( new TaskTimer (
             "Forward CWT( buffer interval=%s, [%g, %g)%g# s)",
@@ -305,7 +312,7 @@ pChunk Cwt::
                 data = bs.readFixedLength( subinterval );
             }
 
-            ft = _fft( data );
+            ft = Fft()( data );
         }
 
         // downsample the signal by shortening the fourier transform
@@ -352,7 +359,7 @@ pChunk Cwt::
         {
             size_t s = chunkpart->transform_data->getSizeInBytes1D();
             sum += s;
-            size_t tmp_stft_and_fft = s + sizeof(float2)*chunkpart->nSamples()*chunkpart->original_sample_rate/chunkpart->sample_rate;
+            size_t tmp_stft_and_fft = s + sizeof(Tfr::ChunkElement)*chunkpart->nSamples()*chunkpart->original_sample_rate/chunkpart->sample_rate;
             if (sum + tmp_stft_and_fft > alt)
                 alt = sum + tmp_stft_and_fft; // biggest stft
         }
@@ -367,20 +374,19 @@ pChunk Cwt::
     DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->maxHz(), wt->minHz()).suppressTiming();
 
     TIME_CWT tt->getStream() << "Resulting interval = " << wt->getInterval().toString();
-    TIME_CWT CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
+    TIME_CWT ComputationSynchronize();
+    ComputationCheckError();
 
     return wt;
-
+#ifdef USE_CUDA
     } catch (CufftException const& /*x*/) {
-        TaskInfo("Cwt::operator() caught CufftException, calling _fft_many.clear()");
-        _fft_many.clear();
+        TaskInfo("Cwt::operator() caught CufftException");
         throw;
     } catch (CudaException const& /*x*/) {
-        TaskInfo("Cwt::operator() caught CudaException, calling _fft_many.clear()");
-        _fft_many.clear();
+        TaskInfo("Cwt::operator() caught CudaException");
         throw;
     }
+#endif
 }
 
 
@@ -414,20 +420,23 @@ pChunk Cwt::
     pChunk intermediate_wt( new CwtChunkPart() );
 
     {
-        cudaExtent requiredWtSz = make_cudaExtent( dynamic_cast<StftChunk*>(ft.get())->transformSize(), n_scales, 1 );
+        DataStorageSize requiredWtSz( dynamic_cast<StftChunk*>(ft.get())->transformSize(), n_scales, 1 );
         TIME_CWTPART TaskTimer tt("Allocating chunk part (%u, %u, %u), %g kB",
                               requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth,
-                              requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(float2) / 1024.f);
+                              requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(Tfr::ChunkElement) / 1024.f);
 
         // allocate a new chunk
-        intermediate_wt->transform_data.reset(new GpuCpuData<float2>( 0, requiredWtSz, GpuCpuVoidData::CudaGlobal, false, false ));
+        intermediate_wt->transform_data.reset(new ChunkData( requiredWtSz ));
 
+#ifdef USE_CUDA
         TIME_CWTPART {
-            ft->transform_data->getCudaGlobal();
-            intermediate_wt->transform_data->getCudaGlobal();
+            CudaGlobalStorage::useCudaPitch( intermediate_wt->transform_data, false );
+            CudaGlobalStorage::ReadOnly<1>( ft->transform_data );
+            CudaGlobalStorage::ReadOnly<1>( intermediate_wt->transform_data );
         }
+#endif
 
-        TIME_CWTPART CudaException_ThreadSynchronize();
+        TIME_CWTPART ComputationSynchronize();
     }
 
     unsigned half_sizes;
@@ -473,24 +482,23 @@ pChunk Cwt::
             BOOST_ASSERT( intermediate_wt->maxHz() <= intermediate_wt->sample_rate/2 * (1.0+10*FLT_EPSILON) );
         }
 
-        ::wtCompute( ft->transform_data->getCudaGlobal().ptr(),
-                     intermediate_wt->transform_data->getCudaGlobal().ptr(),
+        ::wtCompute( ft->transform_data,
+                     intermediate_wt->transform_data,
                      intermediate_wt->sample_rate,
                      intermediate_wt->minHz(),
                      intermediate_wt->maxHz(),
-                     intermediate_wt->transform_data->getNumberOfElements(),
                      1<<half_sizes,
                      _scales_per_octave, sigma(),
                      _jibberish_normalization );
 
-        TIME_CWTPART CudaException_ThreadSynchronize();
+        TIME_CWTPART ComputationSynchronize();
     }
 
     {
         // Compute the inverse fourier transform to get the filter banks back
         // in time space
-        GpuCpuData<float2>* g = intermediate_wt->transform_data.get();
-        cudaExtent n = g->getNumberOfElements();
+        ChunkData::Ptr g = intermediate_wt->transform_data;
+        DataStorageSize n = g->size();
 
         intermediate_wt->chunk_offset = ft->chunk_offset;
 
@@ -511,60 +519,61 @@ pChunk Cwt::
 
         intermediate_wt->n_valid_samples = ft->n_valid_samples - time_support - intermediate_wt->first_valid_sample;
 
-        if (0 /* cpu version */ ) {
-            TIME_CWTPART TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
-                                  intermediate_wt->first_valid_sample,
-                                  intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
-                                  intermediate_wt->n_valid_samples);
+        Stft stft;
+        stft.set_exact_chunk_size(n.width);
+        stft.compute( g, g, Tfr::FftDirection_Backward );
 
-            // Move to CPU
-            float2* p = g->getCpuMemory();
+//        if (0 /* cpu version */ ) {
+//            TIME_CWTPART TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
+//                                  intermediate_wt->first_valid_sample,
+//                                  intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
+//                                  intermediate_wt->n_valid_samples);
 
-            pChunk c( new CwtChunk );
-            for (unsigned h=0; h<n.height; h++) {
-                c->transform_data.reset(
-                        new GpuCpuData<float2>(p + n.width*h,
-                                       make_cudaExtent(n.width,1,1),
-                                       GpuCpuVoidData::CpuMemory, true));
-                GpuCpuData<float>* fb = _fft.backward( c )->waveform_data();
-                memcpy( p + n.width*h, fb->getCpuMemory(), fb->getSizeInBytes1D() );
-            }
+//            // Move to CPU
+//            ChunkElement* p = g->getCpuMemory();
 
-            // Move back to GPU
-            g->getCudaGlobal( false );
-        }
-        if (1 /* gpu version */ ) {
-            TIME_CWTPART TaskTimer tt("inverse cufft, redundant=%u+%u valid=%u, size(%u, %u)",
-                                  intermediate_wt->first_valid_sample,
-                                  intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
-                                  intermediate_wt->n_valid_samples,
-                                  n.width, n.height);
+//            pChunk c( new CwtChunk );
+//            for (unsigned h=0; h<n.height; h++) {
+//                c->transform_data = CpuMemoryStorage::BorrowPtr<ChunkElement>(
+//                        DataStorageSize(n.width, 1, 1), p + n.width*h );
 
-            cufftComplex *d = g->getCudaGlobal().ptr();
+//                DataStorage<float>::Ptr fb = Fft().backward( c )->waveform_data();
+//                memcpy( p + n.width*h, fb->getCpuMemory(), fb->getSizeInBytes1D() );
+//            }
 
-            //Stft stft;
-            //stft.set_exact_chunk_size(n.width);
+//            // Move back to GPU
+//            CudaGlobalStorage::ReadWrite<1>( g );
+//        }
+//        if (1 /* gpu version */ ) {
+//            TIME_CWTPART TaskTimer tt("inverse cufft, redundant=%u+%u valid=%u, size(%u, %u)",
+//                                  intermediate_wt->first_valid_sample,
+//                                  intermediate_wt->nSamples() - intermediate_wt->n_valid_samples - intermediate_wt->first_valid_sample,
+//                                  intermediate_wt->n_valid_samples,
+//                                  n.width, n.height);
 
-            {
-                //CufftHandleContext& fftctx = _fft_many[ n.width*n.height ];
-                CufftHandleContext fftctx; // TODO time optimization of keeping CufftHandleContext, "seems" unstable
+//            cufftComplex *d = (cufftComplex *)CudaGlobalStorage::ReadWrite<1>( g ).device_ptr();
 
-                {
-                    //TIME_CWTPART TaskTimer tt("Allocating inverse fft");
-                    fftctx(n.width, n.height);
-                }
 
-                DEBUG_CWT {
-                    size_t free = availableMemoryForSingleAllocation();
-                    size_t required = n.width*n.height*sizeof(float2)*2;
-                    TaskInfo("free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
-                }
-                TIME_CWTPART TaskInfo("n = { %u, %u, %u }, d = %ul", n.width, n.height, n.depth, g->getNumberOfElements1D());
-                CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
-            }
+//            {
+//                //CufftHandleContext& fftctx = _fft_many[ n.width*n.height ];
+//                CufftHandleContext fftctx; // TODO time optimization of keeping CufftHandleContext, "seems" unstable
 
-            TIME_CWTPART CudaException_ThreadSynchronize();
-        }
+//                {
+//                    //TIME_CWTPART TaskTimer tt("Allocating inverse fft");
+//                    fftctx(n.width, n.height);
+//                }
+
+//                DEBUG_CWT {
+//                    size_t free = availableMemoryForSingleAllocation();
+//                    size_t required = n.width*n.height*sizeof(float2)*2;
+//                    TaskInfo("free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
+//                }
+//                TIME_CWTPART TaskInfo("n = { %u, %u, %u }, d = %ul", n.width, n.height, n.depth, g->numberOfElements());
+//                CufftException_SAFE_CALL(cufftExecC2C(fftctx(n.width, n.height), d, d, CUFFT_INVERSE));
+//            }
+
+//            TIME_CWTPART ComputationSynchronize();
+//        }
     }
 
     return intermediate_wt;
@@ -574,7 +583,7 @@ pChunk Cwt::
 Signal::pBuffer Cwt::
         inverse( pChunk pchunk )
 {
-    CudaException_CHECK_ERROR();
+    ComputationCheckError();
 
     Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>(pchunk.get());
     if (cwtchunk)
@@ -619,9 +628,9 @@ Signal::pBuffer Cwt::
                     << " by factor " << pchunk->sample_rate/inv->sample_rate
                     << " to " << super->getInterval().toString(); tt->flushStream();
 
-            GpuCpuData<float> mdata( part->transform_data->getCpuMemory(),
-                                 make_cudaExtent( part->transform_data->getNumberOfElements1D(), 1, 1),
-                                 GpuCpuVoidData::CpuMemory, true );
+//            GpuCpuData<float> mdata( part->transform_data->getCpuMemory(),
+//                                 make_cudaExtent( part->transform_data->getNumberOfElements1D(), 1, 1),
+//                                 GpuCpuVoidData::CpuMemory, true );
         }
 
         //TaskInfo("super->getInterval() = %s, first_valid_sample = %u",
@@ -635,7 +644,7 @@ Signal::pBuffer Cwt::
         STAT_CWT Statistics<float>( r->waveform_data() );
     }
 
-    TIME_ICWT CudaException_ThreadSynchronize();
+    TIME_ICWT ComputationSynchronize();
 
     return r;
 }
@@ -646,7 +655,7 @@ Signal::pBuffer Cwt::
 {
     Chunk &chunk = *pchunk;
 
-    cudaExtent x = chunk.transform_data->getNumberOfElements();
+    DataStorageSize x = chunk.transform_data->size();
 
     Signal::pBuffer r( new Signal::Buffer(
             chunk.chunk_offset,
@@ -654,20 +663,17 @@ Signal::pBuffer Cwt::
             chunk.sample_rate
             ));
 
-    float2* p = chunk.transform_data->getCudaGlobal().ptr();
-
     if (pchunk->original_sample_rate != pchunk->sample_rate)
     {
         // Skip last row
         x.height--;
     }
 
-    ::wtInverse( p,
-                 r->waveform_data()->getCudaGlobal().ptr(),
-                 x,
-                 _stream );
+    ::wtInverse( chunk.transform_data,
+                 r->waveform_data(),
+                 x );
 
-    TIME_ICWT CudaException_ThreadSynchronize();
+    TIME_ICWT ComputationSynchronize();
 
     return r;
 }
@@ -692,8 +698,6 @@ void Cwt::
         set_wanted_min_hz(float value)
 {
     if (value == _min_hz) return;
-
-    _fft_many.clear();
 
     _min_hz = value;
 }
@@ -722,6 +726,7 @@ void Cwt::
 
     if (fs != 0)
     {
+        // check available memory
         next_good_size(1, fs);
     }
 }
@@ -731,8 +736,6 @@ void Cwt::
         scales_per_octave_internal( float value )
 {
     if (value==_scales_per_octave) return;
-
-    _fft_many.clear();
 
     _scales_per_octave=value;
 
@@ -765,8 +768,6 @@ void Cwt::
         tf_resolution( float value )
 {
     if (value == _tf_resolution) return;
-
-    _fft_many.clear();
 
     _tf_resolution = value;
 }
@@ -846,11 +847,14 @@ unsigned Cwt::
     size_t free = availableMemoryForSingleAllocation();
 
     // check power of 2 if possible, multi-radix otherwise
-    unsigned smallest_L2 = spo2g(T0 + 2*r) - 2*r;
+    unsigned smallest_L2 = spo2g(T0-1) - 2*r;
     size_t smallest_required2 = required_gpu_bytes(smallest_L2, fs);
     bool testPo2  = smallest_required2 <= free;
 
     unsigned T = required_length( current_valid_samples_per_chunk, fs );
+    if (T - 2*r > current_valid_samples_per_chunk)
+        T--;
+
     unsigned nT;
     if (testPo2)
         nT = align_up( spo2g(T), chunk_alignment( fs ));
@@ -903,7 +907,7 @@ unsigned Cwt::
             "prev_good_size: smallest_L = %u, chunk_alignment( %g ) = %u. Free: %f MB, required memory: %f MB",
              smallest_L, fs, chunk_alignment( fs ), free/1024.f/1024.f, smallest_required/1024.f/1024.f);
 
-    BOOST_ASSERT( smallest_L + 2*r > chunk_alignment( fs ) );
+    BOOST_ASSERT( smallest_L + 2*r >= 2*chunk_alignment( fs ) );
 
     if (smallest_required <= free)
     {
@@ -916,7 +920,7 @@ unsigned Cwt::
         unsigned T = required_length(current_valid_samples_per_chunk, fs);
 
         // check power of 2 if possible, multi-radix otherwise
-        unsigned smallest_L2 = spo2g(smallest_L + 2*r) - 2*r;
+        unsigned smallest_L2 = spo2g(smallest_L-1 + 2*r) - 2*r;
         size_t smallest_required2 = required_gpu_bytes(smallest_L2, fs);
         if (smallest_required2 <= free)
             smallest_L = smallest_L2;
@@ -1079,10 +1083,10 @@ size_t Cwt::
         else
             sub_length = Fft::sChunkSizeG(sub_length - 1, chunk_alignment( sample_rate ));
 
-        size_t s = 2*sizeof(float2)*(sub_length >> c)*n_scales;
+        size_t s = 2*sizeof(Tfr::ChunkElement)*(sub_length >> c)*n_scales;
 
         sum += s;
-        size_t tmp_stft_and_fft = s + 2*sizeof(float2)*(sub_length);
+        size_t tmp_stft_and_fft = s + 2*sizeof(Tfr::ChunkElement)*(sub_length);
         if (sum + tmp_stft_and_fft > alt)
             alt = sum + tmp_stft_and_fft;
 
@@ -1143,7 +1147,6 @@ void Cwt::
         resetSingleton()
 {
     static_singleton.reset();
-    gc();
 }
 
 

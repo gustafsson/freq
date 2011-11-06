@@ -1,9 +1,9 @@
 #include "ellipse.h"
-#include "ellipse.cu.h"
+#include "ellipsekernel.h"
 
 // gpumisc
 #include <TaskTimer.h>
-#include <CudaException.h>
+#include <computationkernel.h>
 
 
 //#define TIME_FILTER
@@ -44,17 +44,16 @@ void Ellipse::
 {
     TIME_FILTER TaskTimer tt("Ellipse");
 
-    float4 area = make_float4(
+    Area area = {
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
             chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ));
+            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 )};
 
-    ::removeDisc( chunk.transform_data->getCudaGlobal().ptr(),
-                  chunk.transform_data->getNumberOfElements(),
+    ::removeDisc( chunk.transform_data,
                   area, _save_inside, chunk.sample_rate );
 
-    TIME_FILTER CudaException_ThreadSynchronize();
+    TIME_FILTER ComputationSynchronize();
 }
 
 

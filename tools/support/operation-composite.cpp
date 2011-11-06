@@ -246,6 +246,7 @@ void OperationShift::
 }
 
 
+#ifdef USE_CUDA
     // OperationMoveSelection  /////////////////////////////////////////////////////////////////
 
 OperationMoveSelection::
@@ -299,7 +300,7 @@ void OperationMoveSelection::
 
     Operation::source( mergeSelection );
 }
-
+#endif
 
 
 

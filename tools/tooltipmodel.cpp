@@ -316,18 +316,15 @@ public:
         Signal::Interval I( i, i+w );
         Tfr::pChunk chunk = (*stft)( o->readFixedLength(I) );
 
-        abslog.reset( new GpuCpuData<float>(
-                0,
-                chunk->transform_data->getNumberOfElements(),
-                GpuCpuVoidData::CudaGlobal));
+        abslog.reset( new DataStorage<float>( chunk->transform_data->size() ));
 
-        float2* src = chunk->transform_data->getCpuMemory();
+        Tfr::ChunkElement* src = chunk->transform_data->getCpuMemory();
         float* dst = abslog->getCpuMemory();
-        for (unsigned i=0; i<abslog->getNumberOfElements1D(); ++i)
+        for (unsigned i=0; i<abslog->numberOfElements(); ++i)
         {
-            float2& v = src[i];
-            dst[i] = sqrt(v.x*v.x + v.y*v.y);
-            //dst[i] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
+            Tfr::ChunkElement& v = src[i];
+            dst[i] = abs(v);
+            //dst[i] = 0.4f*powf(norm(v), 0.1);
             //dst[i] *= dst[i];
         }
 
@@ -343,17 +340,14 @@ public:
         Signal::Interval I( i, i+w );
         Tfr::pChunk chunk = (*cepstrum)( o->readFixedLength(I) );
 
-        abslog.reset( new GpuCpuData<float>(
-                0,
-                chunk->transform_data->getNumberOfElements(),
-                GpuCpuVoidData::CudaGlobal));
+        abslog.reset( new DataStorage<float>(chunk->transform_data->size()));
 
-        float2* src = chunk->transform_data->getCpuMemory();
+        Tfr::ChunkElement* src = chunk->transform_data->getCpuMemory();
         float* dst = abslog->getCpuMemory();
-        for (unsigned i=0; i<abslog->getNumberOfElements1D(); ++i)
+        for (unsigned i=0; i<abslog->numberOfElements(); ++i)
         {
-            float2& v = src[i];
-            dst[i] = sqrt(v.x*v.x + v.y*v.y);
+            Tfr::ChunkElement& v = src[i];
+            dst[i] = abs(v);
             //dst[i] = 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
             //dst[i] *= dst[i];
         }
@@ -381,17 +375,14 @@ public:
 
         BOOST_ASSERT( N == cwt->nScales( fs ) );
 
-        abslog.reset( new GpuCpuData<float>(
-                0,
-                make_cudaExtent( N, 1, 1),
-                GpuCpuVoidData::CudaGlobal));
+        abslog.reset( new DataStorage<float>(N));
 
         float* dst = abslog->getCpuMemory();
         unsigned k = 0;
         for (unsigned j=0; j < cwtchunk->chunks.size(); ++j)
         {
             Tfr::CwtChunkPart* chunkpart = dynamic_cast<Tfr::CwtChunkPart*>(cwtchunk->chunks[j].get());
-            float2* src = chunkpart->transform_data->getCpuMemory();
+            Tfr::ChunkElement* src = chunkpart->transform_data->getCpuMemory();
 
             unsigned stride = chunkpart->nSamples();
             unsigned scales = chunkpart->nScales();
@@ -414,8 +405,8 @@ public:
 
             for (unsigned i=(j!=0); i<scales; ++i)
             {
-                float2& v = src[i*stride + x];
-                dst[k++] = sqrt(v.x*v.x + v.y*v.y);
+                Tfr::ChunkElement& v = src[i*stride + x];
+                dst[k++] = abs(v);
             }
         }
 
@@ -429,7 +420,7 @@ public:
         float i = std::max( 0.f, fa.getFrequencyScalar( hz ) );
         float local_max;
         float v = quad_interpol(i, abslog->getCpuMemory(),
-                                abslog->getNumberOfElements1D(), 1, &local_max);
+                                abslog->numberOfElements(), 1, &local_max);
         if (is_valid_value)
             *is_valid_value = true;
         return v;
@@ -443,7 +434,7 @@ public:
 
 private:
     Tfr::FreqAxis fa;
-    boost::scoped_ptr<GpuCpuData<float> > abslog;
+    DataStorage<float>::Ptr abslog;
 };
 
 

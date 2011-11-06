@@ -1,0 +1,4 @@
+#ifndef BLOCKKERNEL_H
+#define BLOCKKERNEL_H
+
+#endif // BLOCKKERNEL_H

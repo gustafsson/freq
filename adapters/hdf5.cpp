@@ -180,8 +180,8 @@ void Hdf5Output::
 {
     VERBOSE_HDF5 TaskTimer tt("Adding chunk '%s'", name.c_str());
 
-    float2* p = chunk.transform_data->getCpuMemory();
-    cudaExtent s = chunk.transform_data->getNumberOfElements();
+    std::complex<float>* p = chunk.transform_data->getCpuMemory();
+    DataStorageSize s = chunk.transform_data->getNumberOfElements();
 
     const unsigned RANK=2;
     hsize_t     dims[RANK]={s.height,s.width};
@@ -190,8 +190,8 @@ void Hdf5Output::
 
     // By converting from float to double beforehand, execution time in octave dropped from 6 to 2 seconds.
     {
-        GpuCpuData<double2> dbl(0, chunk.transform_data->getNumberOfElements());
-        double2* dp = dbl.getCpuMemory();
+        DataStorage<std::complex<double> > dbl( chunk.transform_data->size() );
+        std::complex<double>* dp = dbl.getCpuMemory();
         int datatype = -1;
         datatype = H5Tcreate( H5T_COMPOUND, 16 );
         H5Tinsert( datatype, "real", 0, H5T_NATIVE_DOUBLE );
@@ -201,8 +201,7 @@ void Hdf5Output::
 
         for (unsigned n=0; n<N; n++)
         {
-            dp[n].x = p[n].x;
-            dp[n].y = p[n].y;
+            dp[n] = p[n];
         }
 
         status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,datatype,dp);
@@ -233,15 +232,15 @@ Tfr::pChunk Hdf5Input::
     chunk->sample_rate = 44100;
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = dims[1];
-    chunk->transform_data.reset( new GpuCpuData<float2>(0, make_cudaExtent( dims[1], dims[0], 1 )));
+    chunk->transform_data.reset( new Tfr::ChunkData( dims[1], dims[0], 1 ));
     chunk->freqAxis.setLogarithmic( 20, 22050, chunk->nScales() - 1 );
 
-    float2* p = chunk->transform_data->getCpuMemory();
+    Tfr::ChunkElement* p = chunk->transform_data->getCpuMemory();
 
     if (H5T_COMPOUND==class_id)
     {
-        GpuCpuData<double2> dbl(0, make_cudaExtent( dims[1], dims[0], 1 ));
-        double2* dp = dbl.getCpuMemory();
+        DataStorage<std::complex<double> > dbl( dims[1], dims[0], 1 );
+        std::complex<double>* dp = dbl.getCpuMemory();
         int datatype = -1;
         datatype = H5Tcreate( H5T_COMPOUND, 16 );
         H5Tinsert( datatype, "real", 0, H5T_NATIVE_DOUBLE );
@@ -254,15 +253,14 @@ Tfr::pChunk Hdf5Input::
 
         for (unsigned n=0; n<N; n++)
         {
-            p[n].x = dp[n].x;
-            p[n].y = dp[n].y;
+            p[n] = dp[n];
         }
 
         status = H5Tclose(datatype);
         if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "Could not close HDF5 datatype");
     } else if (H5T_FLOAT==class_id){
-        GpuCpuData<float1> dbl(0, make_cudaExtent( dims[1], dims[0], 1 ));
-        float1* dp = dbl.getCpuMemory();
+        DataStorage<float> dbl( dims[1], dims[0], 1 );
+        float* dp = dbl.getCpuMemory();
 
         status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_FLOAT,dp);
         if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_FLOAT type dataset named '" +name + "'", name);
@@ -270,8 +268,7 @@ Tfr::pChunk Hdf5Input::
         size_t N = dims[0]*dims[1];
         for (unsigned n=0; n<N; n++)
         {
-            p[n].x = dp[n].x;
-            p[n].y = 0;
+            p[n] = std::complex<float>( dp[n], 0 );
         }
     } else {
         throw Hdf5Error(Hdf5Error::Type_MissingDataset, ((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_COMPOUND.")).str(), name);

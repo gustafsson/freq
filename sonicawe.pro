@@ -27,6 +27,8 @@ QT += opengl
 macx:QMAKE_LFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
 macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
 macx:QMAKE_CFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
+unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
+unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
@@ -120,15 +122,10 @@ FORMS += \
 
 CUDA_SOURCES += \
     filters/*.cu \
-    heightmap/block.cu \
-    heightmap/resampletest.cu \
-    heightmap/resampletest2.cu \
-    heightmap/slope.cu \
-    tfr/drawnwaveform.cu \
-    tfr/wavelet.cu \
-    tools/support/brushfilter.cu \
-    tools/support/brushpaint.cu \
-    tools/selections/support/splinefilter.cu \
+    heightmap/*.cu \
+    tfr/*.cu \
+    tools/support/*.cu \
+    tools/selections/support/*.cu \
 
 SHADER_SOURCES += \
     heightmap/heightmap.frag \
@@ -238,7 +235,8 @@ else:OBJECTS_DIR = tmp/release/
 # #######################################################################
 # CUDA
 # #######################################################################
-!nocuda {
+usecuda {
+DEFINES += USE_CUDA
 
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
@@ -324,5 +322,5 @@ macx {
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
 
-} #!nocuda
+} #usecuda
 # end of cuda section #######################################################################

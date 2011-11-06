@@ -1,8 +1,8 @@
 #include "rectangle.h"
-#include "rectangle.cu.h"
+#include "rectanglekernel.h"
 
 // gpumisc
-#include <CudaException.h>
+#include <computationkernel.h>
 
 
 #include <float.h> // FLT_MAX
@@ -55,18 +55,17 @@ std::string Rectangle::
 void Rectangle::operator()( Chunk& chunk) {
     TIME_FILTER TaskTimer tt("Rectangle");
 
-    float4 area = make_float4(
+    Area area = {
             _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
             chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
             _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ));
+            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ) };
 
-    ::removeRect( chunk.transform_data->getCudaGlobal().ptr(),
-                  chunk.transform_data->getNumberOfElements(),
+    ::removeRect( chunk.transform_data,
                   area,
                   _save_inside);
 
-    TIME_FILTER CudaException_ThreadSynchronize();
+    TIME_FILTER ComputationSynchronize();
 }
 
 

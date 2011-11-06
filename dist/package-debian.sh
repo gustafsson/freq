@@ -56,7 +56,7 @@ if [ "sonicawe" != "${packagename}" ]; then
 
 	mv $package/usr/share/applications/sonicawe.desktop $package/usr/share/applications/${packagename}.desktop
 	sed -i "s/Exec=sonicawe/Exec=${packagename}/g" $package/usr/share/applications/${packagename}.desktop
-	prettyname=$(echo ${packagename} | sed "s/sonicawe-//")
+	prettyname=$(echo ${packagename} | sed "s/sonicawe-//" | sed "s/-/ /g")
 	prettyname=$(echo $prettyname | nawk -F: '{ print toupper(substr ($1,1,1)) substr ($1,2) }')
 	sed -i "s/Name=Sonic AWE/Name=Sonic AWE ${prettyname}/g" $package/usr/share/applications/${packagename}.desktop
 

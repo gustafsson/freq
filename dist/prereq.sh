@@ -9,7 +9,7 @@ if [ "$branch" == "master" ]; then
 elif [ "$branch" == "develop" ]; then
   snapshot="-snapshot"
 else
-  snapshot="-test-$sonicawe_branch"
+  snapshot="-test-$branch"
 fi
 
 echo "===================== Deploying Sonic AWE ====================="

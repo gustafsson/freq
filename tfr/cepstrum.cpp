@@ -1,6 +1,8 @@
 #include "cepstrum.h"
 #include "stft.h"
 
+#include "TaskTimer.h"
+
 using namespace Signal;
 namespace Tfr {
 
@@ -21,7 +23,7 @@ pChunk Cepstrum::
     unsigned window_size = chunk->nScales();
     pBuffer buffer( new Buffer(b->sample_offset, windows*window_size, b->sample_rate));
 
-    float2* input = chunk->transform_data->getCpuMemory();
+    ChunkElement* input = chunk->transform_data->getCpuMemory();
     float* output = buffer->waveform_data()->getCpuMemory();
 
     Signal::IntervalType N = buffer->number_of_samples();
@@ -31,8 +33,8 @@ pChunk Cepstrum::
 
     for(Signal::IntervalType i=0; i<N; ++i)
     {
-        float2& p = input[i];
-        output[i] = logf( 1 + fabsf(p.x*p.x + p.y*p.y) ) * normalization;
+        ChunkElement& p = input[i];
+        output[i] = logf( 1 + norm(p) ) * normalization;
     }
 
     pChunk cepstra = stft(buffer);

@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <QMessageBox>
 
+#include "cpumemorystorage.h"
+
 #define TIME_PLAYBACK
 //#define TIME_PLAYBACK if(0)
 
@@ -206,12 +208,11 @@ void Playback::
         }*/
 	}
 
-    // Make sure the buffer is moved over to CPU memory.
+    // Make sure the buffer is moved over to CPU memory and that GPU memory is released
     // (because the audio stream callback is executed from a different thread
     // it can't access the GPU memory)
-    GpuCpuData<float>* bdata = buffer->waveform_data();
-    bdata->getCpuMemory();
-    bdata->freeUnused(); // relase GPU memory as well...
+    buffer->waveform_data()->OnlyKeepOneStorage<CpuMemoryStorage>();
+
     _data.putExpectedSamples( buffer );
 
     if (streamPlayback)

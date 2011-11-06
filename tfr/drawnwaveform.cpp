@@ -1,10 +1,13 @@
 #include "drawnwaveform.h"
 
-#include "drawnwaveform.cu.h"
+#include "drawnwaveformkernel.h"
+#include "computationkernel.h"
 
 #include "neat_math.h"
 
+// std
 #include <math.h>
+#include <stdexcept>
 
 namespace Tfr {
 
@@ -27,26 +30,23 @@ pChunk DrawnWaveform::
     if (0 == w)
         throw std::logic_error("DrawnWaveform::operator() Not enough data");
 
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
+    size_t free=availableMemoryForSingleAllocation();
+
     free /= 2; // Don't even try to get close to use all memory
     // never use more than 64 MB
     if (free > 64<<20)
         free = 64<<20;
 
-    unsigned wmax = free/(drawWaveform_YRESOLUTION*sizeof(float2)*drawWaveform_BLOCK_SIZE ) * drawWaveform_BLOCK_SIZE;
+    unsigned wmax = free/(drawWaveform_YRESOLUTION*sizeof(Tfr::ChunkElement)*drawWaveform_BLOCK_SIZE ) * drawWaveform_BLOCK_SIZE;
     if (0==wmax)
-        wmax = free/(drawWaveform_YRESOLUTION*sizeof(float2));
+        wmax = free/(drawWaveform_YRESOLUTION*sizeof(Tfr::ChunkElement));
     if (0==wmax)
         wmax = 1;
     if (wmax < w)
         w = wmax;
 
     pChunk c(new DrawnWaveformChunk(this->block_fs));
-    c->transform_data.reset( new GpuCpuData<float2>(
-            0,
-            make_uint3(w, drawWaveform_YRESOLUTION, 1),
-            GpuCpuVoidData::CudaGlobal));
+    c->transform_data.reset( new ChunkData(w, drawWaveform_YRESOLUTION, 1));
 
     unsigned readstop = b->number_of_samples();
     if (b->getInterval().last > signal_length)
@@ -58,8 +58,8 @@ pChunk DrawnWaveform::
     }
 
     ::drawWaveform(
-            b->waveform_data()->getCudaGlobal(),
-            c->transform_data->getCudaGlobal(),
+            b->waveform_data(),
+            c->transform_data,
             blobsize,
             readstop,
             maxValue);

@@ -4,9 +4,8 @@
 #include "sawe/reader.h"
 
 // gpumisc
-#include <CudaProperties.h>
-#include <CudaException.h>
 #include <redirectstdout.h>
+#include <simple_math.h>
 
 // Qt
 #include <QtGui/QMessageBox>
@@ -14,14 +13,26 @@
 #include <QDesktopServices>
 #include <QDir>
 
-// cuda
-#include <cuda_gl_interop.h>
-#include <cuda.h>
 
 using namespace std;
 using namespace boost;
 using namespace Ui;
 using namespace Signal;
+
+#ifndef USE_CUDA
+    static bool check_cuda( bool /*use_OpenGL_bindings*/ ) {
+        return true;
+    }
+#else
+
+// gpumisc
+#include <CudaProperties.h>
+#include <CudaException.h>
+#include "GpuCpuData.h"
+
+// cuda
+#include <cuda_gl_interop.h>
+#include <cuda.h>
 
 static bool check_cuda( bool use_OpenGL_bindings ) {
     stringstream ss;
@@ -157,17 +168,17 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
     return false;
 }
+#endif // USE_CUDA
 
-
-
+#ifdef USE_CUDA
 #include "heightmap/resampletest.h"
-#include "tools/support/brushpaint.cu.h"
+#endif
+
+#include "tools/support/brushpaintkernel.h" // test class Gauss
 #include "tfr/supersample.h"
 #include <Statistics.h>
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
-//#include <boost/archive/xml_oarchive.hpp>
-//#include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 
@@ -239,6 +250,17 @@ int main(int argc, char *argv[])
 #ifndef _MSC_VER
     //The following line hinders the redirection from working in windows
     cout << "Saving log file at \"" << logpath << "\"" << endl;
+#endif
+
+#ifdef USE_CUDA
+    if (1)
+    {
+        std::complex<float> f(1.123456789876543, 2.9876545678903);
+        cufftComplex& b = (cufftComplex&)f;
+        cufftComplex c;
+        BOOST_ASSERT( b.x == f.real() && b.y == f.imag());
+        BOOST_ASSERT( sizeof(f) == sizeof(c) );
+    }
 #endif
 
     if (0)
@@ -391,6 +413,7 @@ int main(int argc, char *argv[])
         std::cout << "tjo" << std::endl;
         return 0;*/
     }
+#ifdef USE_CUDA
     if (0) {
         ResampleTest rt;
         rt.test1();
@@ -400,7 +423,8 @@ int main(int argc, char *argv[])
         rt.test5();
         return 0;
     }
-	if (0) try {
+#endif
+    if (0) try {
                 /*{
 			Signal::pOperation ljud(new Adapters::Audiofile("C:\\dev\\Musik\\music-1.ogg"));
 
@@ -439,7 +463,7 @@ int main(int argc, char *argv[])
     }
 
     if(0) {
-        Gauss g(make_float2(-1.1, 20), make_float2(1.5, 1.5));
+        Gauss g(ResamplePos(-1.1, 20), ResamplePos(1.5, 1.5));
         double s = 0;
         double dx = .1, dy = .1;
 
@@ -494,8 +518,9 @@ int main(int argc, char *argv[])
 
         a.parse_command_line_options(argc, argv);
 
+#ifdef USE_CUDA
         CudaProperties::printInfo(CudaProperties::getCudaDeviceProp());
-
+#endif
         if(0) {
             TaskTimer tt("Cwt inverse");
             Adapters::Audiofile file("chirp.wav");
@@ -548,9 +573,11 @@ int main(int argc, char *argv[])
         if( 0 != QGLContext::currentContext() )
             TaskInfo("Error: OpenGL context was not destroyed prior to application exit");
 
+#ifdef USE_CUDA
         CUdevice current_device;
         if( CUDA_ERROR_INVALID_CONTEXT != cuCtxGetDevice( &current_device ))
             TaskInfo("Error: CUDA context was not destroyed prior to application exit");
+#endif
 
         return r;
     } catch (const std::exception &x) {

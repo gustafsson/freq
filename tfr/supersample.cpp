@@ -1,7 +1,8 @@
 #include "supersample.h"
 #include "stft.h"
 
-#include <cuda_vector_types_op.h>
+// std
+#include <stdexcept>
 
 namespace Tfr {
 
@@ -21,8 +22,8 @@ Signal::pBuffer SuperSample::
         throw std::invalid_argument("requested_sample_rate must be an exact "
                                     "multiple of b->sample_rate");
 
-    Tfr::Fft ft;
-    Tfr::pChunk chunk = ft( b );
+    Tfr::pChunk chunk = Tfr::Fft()( b );
+
     unsigned src_window_size = ((Tfr::StftChunk*)chunk.get())->window_size;
     Tfr::pChunk biggerchunk( new Tfr::StftChunk( src_window_size << multiple ));
     biggerchunk->freqAxis = chunk->freqAxis;
@@ -30,26 +31,29 @@ Signal::pBuffer SuperSample::
     biggerchunk->first_valid_sample = chunk->first_valid_sample << multiple;
     biggerchunk->n_valid_samples = chunk->n_valid_samples << multiple;
 
-    cudaExtent src_sz = chunk->transform_data->getNumberOfElements();
-    cudaExtent dest_sz = make_cudaExtent( ((src_sz.width - 1) << multiple) + 1, 1, 1);
-    biggerchunk->transform_data.reset( new GpuCpuData<float2>(0, dest_sz) );
+    DataStorageSize src_sz = chunk->transform_data->getNumberOfElements();
+    DataStorageSize dest_sz( ((src_sz.width - 1) << multiple) + 1, 1, 1);
+    biggerchunk->transform_data.reset( new ChunkData(dest_sz) );
 
     biggerchunk->sample_rate = requested_sample_rate / src_window_size;
     biggerchunk->original_sample_rate = requested_sample_rate;
 
-    float2* src = chunk->transform_data->getCpuMemory();
-    float2* dest = biggerchunk->transform_data->getCpuMemory();
+    ChunkElement* src = chunk->transform_data->getCpuMemory();
+    ChunkElement* dest = biggerchunk->transform_data->getCpuMemory();
+
 
     float normalize = 1.f/src_window_size;
-    dest[0] = src[0]*0.5*normalize;
+    (dest[0] = src[0])*=(0.5*normalize);
     for (unsigned i=1; i<src_sz.width; ++i)
     {
-        dest[i] = src[i]*normalize;
+        (dest[i] = src[i])*=normalize;
     }
 
-    memset( dest + src_sz.width, 0, (dest_sz.width - src_sz.width) * sizeof(float2) );
 
-    Signal::pBuffer r = ft.inverse( biggerchunk );
+    memset( dest + src_sz.width, 0, (dest_sz.width - src_sz.width) * sizeof(ChunkElement) );
+
+
+    Signal::pBuffer r = Tfr::Fft().inverse( biggerchunk );
 
     BOOST_ASSERT( r->sample_rate == requested_sample_rate );
 

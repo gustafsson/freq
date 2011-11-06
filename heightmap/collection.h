@@ -4,13 +4,16 @@
 // Heightmap namespace
 #include "reference.h"
 #include "glblock.h"
-#include "block.cu.h"
+#include "blockkernel.h"
 
 // Sonic AWE
 #include "signal/intervals.h"
 #include "signal/operation.h"
 #include "tfr/chunk.h"
 #include "tfr/transform.h"
+
+// gpumisc
+#include "ThreadChecker.h"
 
 // boost
 #include <boost/unordered_map.hpp>
@@ -118,7 +121,7 @@ public:
     Reference ref;
     pGlBlock glblock;
 
-    typedef boost::shared_ptr<GpuCpuData<float> > pData;
+    typedef DataStorage<float>::Ptr pData;
 
     /**
         TODO test this in a multi gpu environment

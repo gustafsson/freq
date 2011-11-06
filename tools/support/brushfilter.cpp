@@ -1,10 +1,9 @@
 #include "brushfilter.h"
 #include "brushfiltersupport.h"
 
-#include "brushfilter.cu.h"
+#include "brushfilterkernel.h"
 #include "tfr/cwt.h"
-
-#include <CudaException.h>
+#include "cpumemorystorage.h"
 
 
 namespace Tools {
@@ -58,11 +57,7 @@ BrushFilter::BrushImageDataP BrushFilter::
 
     if (!img)
     {
-        img.reset( new GpuCpuData<float>(
-            0,
-            make_cudaExtent( ref.samplesPerBlock(), ref.scalesPerBlock(), 1),
-            GpuCpuVoidData::CudaGlobal ) );
-        cudaMemset( img->getCudaGlobal().ptr(), 0, img->getSizeInBytes1D() );
+        img.reset( new DataStorage<float>( ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
     }
 
     return img;
@@ -76,8 +71,7 @@ void BrushFilter::
 
     foreach(BrushImages::value_type const& v, imgs)
     {
-        v.second->getCpuMemory();
-        v.second->freeUnused();
+        v.second->OnlyKeepOneStorage<CpuMemoryStorage>();
     }
 }
 
@@ -117,8 +111,6 @@ std::string MultiplyBrush::
 void MultiplyBrush::
         operator()( Tfr::Chunk& chunk )
 {
-    CudaException_ThreadSynchronize();
-
     BrushImages const& imgs = *images.get();
 
     if (imgs.empty())
@@ -130,21 +122,20 @@ void MultiplyBrush::
     float time1 = chunk.chunk_offset/chunk.sample_rate;
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 
+    ResampleArea cwtArea( time1, scale1, time2, scale2 );
     foreach (BrushImages::value_type const& v, imgs)
     {
         Heightmap::Position a, b;
         v.first.getArea(a, b);
 
-        ::multiply(
-                make_float4(time1, scale1,
-                            time2, scale2),
-                chunk.transform_data->getCudaGlobal(),
-                make_float4(a.time, a.scale, b.time, b.scale),
-                v.second->getCudaGlobal());
-        v.second->freeUnused();
-    }
+        ResampleArea imgarea( a.time, a.scale, b.time, b.scale );
 
-    CudaException_ThreadSynchronize();
+        ::multiply(
+                cwtArea,
+                chunk.transform_data,
+                imgarea,
+                v.second);
+    }
 }
 
 

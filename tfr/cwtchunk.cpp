@@ -1,5 +1,5 @@
 #include "cwtchunk.h"
-#include "tfr/wavelet.cu.h"
+#include "waveletkernel.h"
 
 namespace Tfr {
 
@@ -9,9 +9,9 @@ pChunk CwtChunkPart::
     const Chunk* c = this;
 
     pChunk clamped( new CwtChunk );
-    clamped->transform_data.reset( new GpuCpuData<float2>(0, make_cudaExtent( c->n_valid_samples, c->nScales(), c->nChannels() )));
+    clamped->transform_data.reset( new ChunkData( c->n_valid_samples, c->nScales(), c->nChannels() ));
 
-    ::wtClamp( c->transform_data->getCudaGlobal(), c->first_valid_sample, clamped->transform_data->getCudaGlobal() );
+    ::wtClamp( c->transform_data, c->first_valid_sample, clamped->transform_data );
     clamped->freqAxis = c->freqAxis;
 
     clamped->chunk_offset = c->chunk_offset + c->first_valid_sample;

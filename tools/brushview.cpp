@@ -10,12 +10,8 @@
 #include "tfr/cwtfilter.h"
 #include "heightmap/collection.h"
 
-// gpumisc
-#include <GpuCpuData.h>
-#include <vector_types.h>
-
 #include "support/brushfilter.h"
-#include "support/brushpaint.cu.h"
+#include "support/brushpaintkernel.h"
 
 // Sonic AWE
 #include "tfr/filter.h"
@@ -36,7 +32,7 @@ BrushView::
         BrushView(BrushModel* model)
             :
             enabled( false ),
-            gauss( make_float2(0,0), make_float2(0,0) ),
+            gauss( ResamplePos(0,0), ResamplePos(0,0) ),
             model_( model )
 {
 }

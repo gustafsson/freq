@@ -2,42 +2,23 @@
 #define TFRSTFT_H
 
 #include "transform.h"
+
+// std
 #include <vector>
+#include <complex>
+
+// gpumisc
 #include "HasSingleton.h"
 
 typedef unsigned int cufftHandle; /* from cufft.h */
 
 namespace Tfr {
 
-
-/**
-  CufftHandleContext is used by Cwt but could also be used by Stft and Fft.
-  */
-class CufftHandleContext {
-public:
-    CufftHandleContext( cudaStream_t _stream=0, unsigned type=-1); // type defaults to CUFFT_C2C
-    ~CufftHandleContext();
-
-    CufftHandleContext( const CufftHandleContext& b );
-    CufftHandleContext& operator=( const CufftHandleContext& b );
-
-    cufftHandle operator()( unsigned elems, unsigned batch_size );
-
-    void setType(unsigned type);
-
-private:
-    ThreadChecker _creator_thread;
-    cufftHandle _handle;
-    cudaStream_t _stream;
-    unsigned _type;
-    unsigned _elems;
-    unsigned _batch_size;
-
-    void destroy();
-    void create();
+enum FftDirection
+{
+    FftDirection_Forward = -1,
+    FftDirection_Backward = 1
 };
-
-// typedef boost::shared_ptr< GpuCpuData<float2> > pFftChunk;
 
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
@@ -45,7 +26,7 @@ Computes the complex Fast Fourier Transform of a Signal::Buffer.
 class Fft: public Transform, public HasSingleton<Fft, Transform>
 {
 public:
-    Fft( /*cudaStream_t stream=0*/ );
+    Fft( bool computeRedundant=false );
     ~Fft();
 
     virtual pChunk operator()( Signal::pBuffer b ) { return forward(b); }
@@ -71,17 +52,17 @@ public:
     static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
 
 private:
-//    CufftHandleContext _fft_single;
-    cudaStream_t _stream;
-    std::vector<double> w; // used by Ooura
-    std::vector<int> ip;
-    std::vector<double> q;
+    friend class Stft;
 
-    void computeWithOoura( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
-    void computeWithCufft( GpuCpuData<float2>& input, GpuCpuData<float2>& output, int direction );
+    bool _compute_redundant;
 
-    void computeWithCufftR2C( GpuCpuData<float>& input, GpuCpuData<float2>& output );
-    void computeWithCufftC2R( GpuCpuData<float2>& input, GpuCpuData<float>& output );
+    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+
+    void computeWithOouraR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
+    void computeWithCufftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
+    void computeWithOouraC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
+    void computeWithCufftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
 };
 
 /**
@@ -91,7 +72,7 @@ Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 class Stft: public Transform, public HasSingleton<Stft,Transform>
 {
 public:
-    Stft( cudaStream_t stream=0 );
+    Stft();
 
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
@@ -119,6 +100,9 @@ public:
     void compute_redundant(bool);
 
 
+    void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+
+
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
 private:
@@ -126,12 +110,6 @@ private:
       @see compute_redundant()
       */
     Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
-
-    cudaStream_t    _stream;
-//    CufftHandleContext
-//            _handle_ctx_c2c,
-//            _handle_ctx_r2c,
-//            _handle_ctx_c2r;
 
     static std::vector<unsigned> _ok_chunk_sizes;
 
@@ -141,6 +119,18 @@ private:
     */
     unsigned _window_size;
     bool _compute_redundant;
+
+    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+    Tfr::pChunk computeWithCufft(Signal::pBuffer);
+    Tfr::pChunk computeRedundantWithCufft(Signal::pBuffer);
+    Signal::pBuffer inverseWithCufft(Tfr::pChunk);
+    Signal::pBuffer inverseRedundantWithCufft(Tfr::pChunk);
+
+    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+    Tfr::pChunk computeWithOoura(Signal::pBuffer);
+    Tfr::pChunk computeRedundantWithOoura(Signal::pBuffer);
+    Signal::pBuffer inverseWithOoura(Tfr::pChunk);
+    Signal::pBuffer inverseRedundantWithOoura(Tfr::pChunk);
 };
 
 class StftChunk: public Chunk

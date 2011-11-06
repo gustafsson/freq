@@ -9,9 +9,6 @@
 #include "timelineview.h"
 #include "renderview.h"
 
-// Gpumisc
-#include <cuda_vector_types_op.h>
-
 // Qt
 #include <QDockWidget>
 #include <QWheelEvent>
@@ -195,7 +192,7 @@ void TimelineController::
             //moveButton.spacePos(x, y, current[0], current[1]);
             current.time = (current.time - view->_xoffs) * view->_xscale;
 
-            float length = max1( 1.f, model->project()->worker.source()->length());
+            float length = std::max( 1.f, model->project()->worker.source()->length());
             view->_xoffs = current.time - 0.5f*length/view->_xscale;
 
             // Only update the timeline, leave the main render view unaffected

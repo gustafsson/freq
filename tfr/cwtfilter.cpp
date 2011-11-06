@@ -3,7 +3,7 @@
 #include "cwt.h"
 
 #include <stringprintf.h>
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <memory.h>
 #include <demangle.h>
 
@@ -96,7 +96,9 @@ ChunkAndInverse CwtFilter::
                                  vartype(*this).c_str());
 
     size_t free=0, total=0;
+#ifdef USE_CUDA
     DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
+#endif
     DEBUG_CwtFilter TaskInfo("free = %g, total = %g, inverse_size=%u, estimated = %g",
             free/1024./1024., total/1024./1024.,
             ci.inverse->number_of_samples(),
@@ -105,9 +107,11 @@ ChunkAndInverse CwtFilter::
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
 
+#ifdef USE_CUDA
     DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
     DEBUG_CwtFilter TaskInfo("free = %g, total = %g",
              free/1024./1024., total/1024./1024. );
+#endif
 
 #ifdef _DEBUG
     BOOST_FOREACH( const pChunk& chunk, dynamic_cast<Tfr::CwtChunk*>(ci.chunk.get())->chunks )
@@ -137,7 +141,7 @@ void CwtFilter::
         (*this)( *chunk );
     }
 
-    TIME_CwtFilter CudaException_ThreadSynchronize();
+    TIME_CwtFilter ComputationSynchronize();
 }
 
 

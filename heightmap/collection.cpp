@@ -1,5 +1,5 @@
 #include "collection.h"
-#include "block.cu.h"
+#include "blockkernel.h"
 #include "blockfilter.h"
 
 #include "tfr/cwtfilter.h"
@@ -7,17 +7,16 @@
 #include "signal/operationcache.h"
 
 // Gpumisc
-#include <InvokeOnDestruction.hpp>
-#include <CudaException.h>
 #include <GlException.h>
-#include <string>
 #include <neat_math.h>
-#include <debugmacros.h>
-#include <Statistics.h>
-#include <cudaUtil.h>
+#include <computationkernel.h>
+
+// std
+#include <string>
 
 // MSVC-GCC-compatibility workarounds
 #include <msc_stdc.h>
+
 
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
@@ -413,7 +412,9 @@ void Collection::
         printCacheSize()
 {
     size_t free=0, total=0;
+#ifdef USE_CUDA
     cudaMemGetInfo(&free, &total);
+#endif
     float MB = 1./1024/1024;
     TaskInfo("Currently has %u cached blocks (ca %g MB). There are %g MB graphics memory free of a total of %g MB",
              _cache.size(), cacheByteSize() * MB, free * MB, total * MB );
@@ -620,10 +621,11 @@ pBlock Collection::
         attempt->glblock->unmap();
 */
         GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
 
         return attempt;
     }
+#ifdef USE_CUDA
     catch (const CudaException& x)
     {
         /*
@@ -637,6 +639,7 @@ pBlock Collection::
         TaskInfo tt("Collection::attempt swallowed CudaException.\n%s", x.what());
         printCacheSize();
     }
+#endif
     catch (const GlException& x)
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
@@ -676,7 +679,7 @@ pBlock Collection::
             memForNewBlock += sizeof(float); // OpenGL VBO
             memForNewBlock += sizeof(float); // Cuda device memory
             memForNewBlock += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
-            memForNewBlock += 2*sizeof(float2); // OpenGL texture, 2 times the size for mipmaps
+            memForNewBlock += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
             memForNewBlock *= scales_per_block()*samples_per_block();
             size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
             size_t free = availableMemoryForSingleAllocation();
@@ -723,7 +726,7 @@ pBlock Collection::
         s += sizeof(float); // OpenGL VBO
         s += sizeof(float); // Cuda device memory
         s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
-        s += 2*sizeof(float2); // OpenGL texture, 2 times the size for mipmaps
+        s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
         s*=scales_per_block()*samples_per_block();
         s*=1.5f; // 50% arbitrary extra
 
@@ -763,11 +766,11 @@ pBlock Collection::
 
         // set to zero
         GlBlock::pHeight h = block->glblock->height();
-        cudaMemset( h->data->getCudaGlobal().ptr(), 0, h->data->getSizeInBytes1D() );
+        h->data->ClearContents();
         // will be unmapped in next_frame() or right before it's drawn
 
         GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
 
         bool stubWithStft = true;
         BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
@@ -921,14 +924,17 @@ pBlock Collection::
         if (10 > _frame_counter) {
             //size_t stub_size
             //if ((b.time - a.time)*fast_source( target)->sample_rate()*sizeof(float) )
+#ifdef USE_CUDA
             try
             {
+#endif
                 INFO_COLLECTION TaskTimer tt("stft %s", things_to_update.toString().c_str());
 
                 fillBlock( block, things_to_update );
                 things_to_update.clear();
 
-                CudaException_CHECK_ERROR();
+                ComputationCheckError();
+#ifdef USE_CUDA
             }
             catch (const CudaException& x )
             {
@@ -936,6 +942,7 @@ pBlock Collection::
                 TaskInfo tt("Collection::fillBlock swallowed CudaException.\n%s", x.what());
                 printCacheSize();
             }
+#endif
         }
 
         if ( 0 /* set dummy values */ ) {
@@ -951,8 +958,9 @@ pBlock Collection::
         result = block;
 
         GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
     }
+#ifdef USE_CUDA
     catch (const CudaException& x )
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
@@ -960,6 +968,7 @@ pBlock Collection::
         printCacheSize();
         return pBlock();
     }
+#endif
     catch (const GlException& x )
     {
         // Swallow silently and return null. Same reason as 'Collection::attempt::catch (const CudaException& x)'.
@@ -972,7 +981,7 @@ pBlock Collection::
     // result is non-zero
     _cache[ result->ref ] = result;
 
-    TIME_COLLECTION CudaException_ThreadSynchronize();
+    TIME_COLLECTION ComputationSynchronize();
 
     return result;
 }
@@ -1085,11 +1094,11 @@ bool Collection::
     BOOST_ASSERT( in_h.get() != out_h.get() );
     BOOST_ASSERT( outBlock.get() != inBlock.get() );
 
-    ::blockMerge( in_h->data->getCudaGlobal(),
-                  out_h->data->getCudaGlobal(),
+    ::blockMerge( in_h->data,
+                  out_h->data,
 
-                  make_float4( ia.time, ia.scale, ib.time, ib.scale ),
-                  make_float4( oa.time, oa.scale, ob.time, ob.scale ) );
+                  ResampleArea( ia.time, ia.scale, ib.time, ib.scale ),
+                  ResampleArea( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
     if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
@@ -1104,7 +1113,7 @@ bool Collection::
         }
     }
 
-    TIME_COLLECTION CudaException_ThreadSynchronize();
+    TIME_COLLECTION ComputationSynchronize();
 
     return true;
 }

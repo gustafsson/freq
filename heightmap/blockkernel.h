@@ -2,9 +2,21 @@
 #define HEIGHTMAPBLOCK_CU_H
 
 #include "tfr/freqaxis.h"
+#include "tfr/chunkdata.h"
+#include "resampletypes.h"
 
-// gpusmisc
-#include <cudaPitchedPtrType.h>
+typedef DataStorage<float> BlockData;
+
+struct ValidInputInterval
+{
+    ValidInputInterval(unsigned first, unsigned last)
+        :
+        first(first),
+        last(last)
+    {}
+
+    unsigned first, last;
+};
 
 /**
   The namespace Tfr does not know about the namespace Heightmap
@@ -26,11 +38,12 @@ namespace Heightmap {
 };
 
 extern "C"
-void blockResampleChunk( cudaPitchedPtrType<float2> input,
-                 cudaPitchedPtrType<float> output,
-                 uint2 validInputs,
-                 float4 inputRegion,
-                 float4 outputRegion,
+        void blockResampleChunk(
+                Tfr::ChunkData::Ptr input,
+                BlockData::Ptr output,
+                 ValidInputInterval validInputs,
+                 ResampleArea inputRegion,
+                 ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
@@ -38,10 +51,10 @@ void blockResampleChunk( cudaPitchedPtrType<float2> input,
                  );
 
 extern "C"
-void blockMerge( cudaPitchedPtrType<float> inBlock,
-                 cudaPitchedPtrType<float> outBlock,
-                 float4 in_area,
-                 float4 out_area );
+void blockMerge( BlockData::Ptr inBlock,
+                 BlockData::Ptr outBlock,
+                 ResampleArea in_area,
+                 ResampleArea out_area );
 /*
 extern "C"
 void expandStft( cudaPitchedPtrType<float2> inStft,
@@ -65,10 +78,11 @@ void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
                  unsigned cuda_stream);
 */
 extern "C"
-void resampleStft( cudaPitchedPtrType<float2> input,
-                   cudaPitchedPtrType<float> output,
-                   float4 inputRegion,
-                   float4 outputRegion,
+void resampleStft( Tfr::ChunkData::Ptr input,
+                   size_t nScales, size_t nSamples,
+                   BlockData::Ptr output,
+                   ResampleArea inputRegion,
+                   ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis );

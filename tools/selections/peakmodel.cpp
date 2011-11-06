@@ -1,9 +1,8 @@
 #include "peakmodel.h"
 
 // tools
-#include "support/peakfilter.h"
 #include "tools/renderview.h"
-#include "tools/support/brushpaint.cu.h"
+#include "tools/support/brushpaintkernel.h"
 #include "tools/support/operation-composite.h"
 
 // Sonic AWE
@@ -11,10 +10,11 @@
 #include "heightmap/collection.h"
 
 // gpumisc
-#include <CudaException.h>
+#include <tvector.h>
+#ifdef USE_CUDA
+#include <cudaglobalstorage.h>
+#endif
 
-// boost
- 
 // std
 #include <queue>
 
@@ -34,11 +34,8 @@ PeakModel::PeakAreaP PeakModel::
 
     if (!area)
     {
-        area.reset( new GpuCpuData<bool>(
-            0,
-            make_cudaExtent( ref.samplesPerBlock(), ref.scalesPerBlock(), 1),
-            GpuCpuVoidData::CpuMemory ) );
-        memset( area->getCpuMemory(), 0, area->getSizeInBytes1D() );
+        area.reset( new DataStorage<bool>(ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        memset( area->getCpuMemory(), 0, area->numberOfBytes() );
     }
 
     return area;
@@ -84,7 +81,7 @@ float PeakModel::
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
     if (!block)
         return 0;
-    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
     return data[x+y*ref.samplesPerBlock()];
@@ -131,16 +128,18 @@ void PeakModel::
 
     loopClassify(ref, x0, y0);
 
+#ifdef USE_CUDA
     // Discard image data from CPU
     foreach( PeakAreas::value_type const& v, classifictions )
     {
         Heightmap::pBlock block = ref.collection()->getBlock( v.first );
         if (block)
         {
-            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
-            blockData->getCudaGlobal( false );
+            DataStorage<float>::Ptr blockData = block->glblock->height()->data;
+            blockData->OnlyKeepOneStorage<CudaGlobalStorage>();
         }
     }
+#endif
 
     findBorder();
 
@@ -176,16 +175,16 @@ void PeakModel::
             w = ref.samplesPerBlock(),
             h = ref.scalesPerBlock();
 
-    uint2 start_point;
+    BorderCoordinates start_point;
     if (!anyBorderPixel(start_point, w, h))
         return;
 
     border_nodes.clear();
-    std::vector<uint2> border_pts;
+    std::vector<BorderCoordinates> border_pts;
 
     unsigned firstdir = 0;
     start_point = nextBorderPixel(start_point, w, h, firstdir);
-    uint2 pos = start_point;
+    BorderCoordinates pos = start_point;
     border_nodes.push_back( start_point );
     do
     {
@@ -195,20 +194,20 @@ void PeakModel::
         {
             // Define a line from 'lastnode' to 'pos' and check if all points in
             // 'border_pts' is less than or equal to 1 unit away from the line
-            uint2& lastnode = border_nodes.back();
-            float2 d = make_float2(pos.x - lastnode.x,
-                                   pos.y - lastnode.y);
-            float r = 1.f/sqrtf(d.x*d.x + d.y*d.y);
-            d.x *= r;
-            d.y *= r;
+            BorderCoordinates& lastnode = border_nodes.back();
+            tvector<2, float> d(pos.x - (float)lastnode.x,
+                                pos.y - (float)lastnode.y);
+
+            d.Normalize();
 
             unsigned i;
             for (i=0; i<border_pts.size(); ++i)
             {
-                float2 q = make_float2( border_pts[i].x - lastnode.x,
-                                        border_pts[i].y - lastnode.y );
+                tvector<2, float> q(border_pts[i].x - (float)lastnode.x,
+                                    border_pts[i].y - (float)lastnode.y );
 
-                float dot = q.x*d.y + q.y*d.x;
+                //float dot = q.x*d.y + q.y*d.x; what?
+                float dot = q%d;
                 if (dot*dot > 2)
                     break;
             }
@@ -226,7 +225,7 @@ void PeakModel::
 
 
 bool PeakModel::
-        anyBorderPixel( uint2& pos, unsigned w, unsigned h )
+        anyBorderPixel( BorderCoordinates& pos, unsigned w, unsigned h )
 {
     foreach(PeakAreas::value_type v, classifictions)
     {
@@ -238,8 +237,9 @@ bool PeakModel::
             {
                 if (b[ x + y*w ])
                 {
-                    pos = make_uint2( x + v.first.block_index[0]*w,
-                                      y + v.first.block_index[1]*h);
+                    pos = BorderCoordinates(
+                            x + v.first.block_index[0]*w,
+                            y + v.first.block_index[1]*h);
                     return true;
                 }
             }
@@ -250,10 +250,10 @@ bool PeakModel::
 }
 
 
-uint2 PeakModel::
-        nextBorderPixel( uint2 v, unsigned w, unsigned h, unsigned& firstdir )
+PeakModel::BorderCoordinates PeakModel::
+        nextBorderPixel( BorderCoordinates v, unsigned w, unsigned h, unsigned& firstdir )
 {
-    int2 p[] =
+    int p[][2] =
     { // walk clockwise
         {+1, +0},
         {+1, +1},
@@ -271,7 +271,7 @@ uint2 PeakModel::
     for (unsigned i=firstdir; i<firstdir+N+1; ++i)
     {
         unsigned j=i%N;
-        uint2 r = make_uint2(v.x + p[j].x, v.y + p[j].y);
+        BorderCoordinates r(v.x + p[j][2], v.y + p[j][2]);
         bool b = classifiedVal(r.x, r.y, w, h);
         if (b && !prev)
         {
@@ -423,7 +423,7 @@ void PeakModel::
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
     if (!block)
         return;
-    GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
     PeakAreaP area = getPeakArea(ref);
@@ -606,7 +606,7 @@ void PeakModel::
                 return;
             }
 
-            GpuCpuData<float>* blockData = block->glblock->height()->data.get();
+            DataStorage<float>::Ptr blockData = block->glblock->height()->data;
             data = blockData->getCpuMemory();
 
             PeakAreaP area = getPeakArea(ref);

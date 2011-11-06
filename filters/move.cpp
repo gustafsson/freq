@@ -1,8 +1,6 @@
+#ifdef USE_CUDA
 #include "move.h"
 #include "move.cu.h"
-
-// gpumisc
-#include <CudaException.h>
 
 //#define TIME_FILTER
 #define TIME_FILTER if(0)
@@ -23,10 +21,9 @@ void Move::
 
     float df = _df * chunk.nScales();
 
-    ::moveFilter( chunk.transform_data->getCudaGlobal(),
+    ::moveFilter( chunk.transform_data,
                   df, chunk.minHz(), chunk.maxHz(), chunk.sample_rate, (unsigned long)chunk.chunk_offset );
-
-    TIME_FILTER CudaException_ThreadSynchronize();
 }
 
 } // namespace Filters
+#endif

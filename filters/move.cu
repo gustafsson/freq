@@ -1,9 +1,13 @@
 #include "move.cu.h"
 
-// todo remove
-#include "cudaUtil.h"
 
 #include <stdio.h>
+
+// gpumisc
+#include "cudaUtil.h"
+#include "CudaException.h"
+#include "cudaPitchedPtrType.h"
+#include "cudaglobalstorage.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -14,8 +18,10 @@
 
 __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate, unsigned sample_offset );
 
-void moveFilter( cudaPitchedPtrType<float2> chunk, float df, float min_hz, float max_hz, float sample_rate, unsigned sample_offset )
+void moveFilter( Tfr::ChunkData::Ptr c, float df, float min_hz, float max_hz, float sample_rate, unsigned sample_offset )
 {
+    cudaPitchedPtrType<float2> chunk(CudaGlobalStorage::ReadWrite<2>( c ).getCudaPitchedPtr());
+
     elemSize3_t numElem = chunk.getNumberOfElements();
     dim3 block(256,1,1);
     dim3 grid( int_div_ceil(numElem.x, block.x), 1, 1);
@@ -30,6 +36,8 @@ void moveFilter( cudaPitchedPtrType<float2> chunk, float df, float min_hz, float
     float steplogsize = log(max_hz)-log(min_hz);
 
     kernel_move<<<grid, block>>>( chunk, df, start, steplogsize, sample_rate, sample_offset );
+
+    CudaException_ThreadSynchronize();
 }
 
 __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate, unsigned sample_offset )

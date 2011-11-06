@@ -1,12 +1,12 @@
 #include "blockfilter.h"
 
-#include "block.cu.h"
+#include "blockkernel.h"
 #include "collection.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/drawnwaveform.h"
 
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <GlException.h>
 #include <TaskTimer.h>
 
@@ -59,7 +59,7 @@ void BlockFilter::
 #endif
             mergeChunk( block, chunk, block->glblock->height()->data );
 
-            TIME_BLOCKFILTER CudaException_CHECK_ERROR();
+            TIME_BLOCKFILTER ComputationCheckError();
 #ifndef SAWE_NO_MUTEX
         }
         else
@@ -80,14 +80,14 @@ void BlockFilter::
 #endif
     }
 
-    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
+    TIME_BLOCKFILTER ComputationSynchronize();
 }
 
 
 void BlockFilter::
         mergeColumnMajorChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
+    TIME_BLOCKFILTER ComputationSynchronize();
 
     Position a, b;
     block->ref.getArea(a,b);
@@ -102,17 +102,13 @@ void BlockFilter::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-    cudaPitchedPtr cpp = chunk.transform_data->getCudaGlobal().getCudaPitchedPtr();
-
-    cpp.xsize = sizeof(float2)*chunk.nScales();
-    cpp.ysize = chunk.nSamples();
-    cpp.pitch = cpp.xsize;
-
-    ::resampleStft( cpp,
-                  outData->getCudaGlobal(),
-                  make_float4( chunk_a.time, chunk_a.scale,
+    ::resampleStft( chunk.transform_data,
+                    chunk.nScales(),
+                    chunk.nSamples(),
+                  outData,
+                  ResampleArea( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
-                  make_float4( a.time, a.scale,
+                  ResampleArea( a.time, a.scale,
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale(),
@@ -121,7 +117,7 @@ void BlockFilter::
 
     block->valid_samples |= inInterval;
 
-    TIME_BLOCKFILTER CudaException_ThreadSynchronize();
+    TIME_BLOCKFILTER ComputationSynchronize();
 }
 
 
@@ -129,7 +125,7 @@ void BlockFilter::
         mergeRowMajorChunk( pBlock block, Chunk& chunk, Block::pData outData,
                             bool full_resolution, ComplexInfo complex_info )
 {
-    CudaException_CHECK_ERROR();
+    ComputationCheckError();
 
     //unsigned cuda_stream = 0;
 
@@ -225,7 +221,7 @@ void BlockFilter::
         TaskTimer("chunk.n_valid_samples = %u", chunk.n_valid_samples).suppressTiming();
     }
 
-    CudaException_CHECK_ERROR();
+    ComputationCheckError();
 
     //CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
     TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
@@ -238,18 +234,20 @@ void BlockFilter::
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
+
     //    cuda-memcheck complains even on this testkernel when using global memory
     //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
 
+
     // Invoke CUDA kernel execution to merge blocks
-    ::blockResampleChunk( chunk.transform_data->getCudaGlobal(),
-                     outData->getCudaGlobal(),
-                     make_uint2( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
+    ::blockResampleChunk( chunk.transform_data,
+                     outData,
+                     ValidInputInterval( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
-                     make_float4( chunk_a.time, chunk_a.scale,
+                     ResampleArea( chunk_a.time, chunk_a.scale,
                                   //chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // numerical error workaround, only affects visual
                                  chunk_b.time, chunk_b.scale  ), // numerical error workaround, only affects visual
-                     make_float4( a.time, a.scale,
+                     ResampleArea( a.time, a.scale,
                                   b.time, b.scale ),
                      complex_info,
                      chunk.freqAxis,
@@ -258,7 +256,7 @@ void BlockFilter::
                      );
 
     // TODO recompute transfer to the samples that have actual support
-    CudaException_CHECK_ERROR();
+    ComputationCheckError();
     GlException_CHECK_ERROR();
 
     if( full_resolution )
@@ -271,7 +269,7 @@ void BlockFilter::
         TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
 
-    TIME_CWTTOBLOCK CudaException_ThreadSynchronize();
+    TIME_CWTTOBLOCK ComputationSynchronize();
 }
 
 

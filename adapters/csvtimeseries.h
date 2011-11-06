@@ -15,6 +15,8 @@ typedef unsigned __int32 uint32_t;
 #include <stdint.h>
 #endif
 
+#include "cpumemorystorage.h"
+
 namespace Adapters {
 
 class CsvTimeseries : public Signal::BufferSource
@@ -85,8 +87,8 @@ private:
         uint64_t X = 0;
         for (unsigned c=0; c<_waveforms.size(); ++c)
         {
-            unsigned char* p = (unsigned char*)_waveforms[c]->waveform_data()->getCpuMemoryVoidConst();
-            unsigned N = _waveforms[c]->waveform_data()->getSizeInBytes1D();
+            unsigned char* p = (unsigned char*)CpuMemoryStorage::ReadOnly<1>( _waveforms[c]->waveform_data() ).ptr();
+            unsigned N = _waveforms[c]->waveform_data()->numberOfBytes();
 
             for (unsigned i=0; i<N; ++i)
             {

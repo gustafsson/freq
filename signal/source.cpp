@@ -7,6 +7,9 @@
 
 #include <sstream>
 
+#include "cpumemorystorage.h"
+#include "TaskTimer.h"
+
 //#define TIME_READCHECKED
 #define TIME_READCHECKED if(0)
 
@@ -23,7 +26,7 @@ Buffer::Buffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs, u
     BOOST_ASSERT( 0 < numberOfSamples );
     BOOST_ASSERT( 0 < numberOfChannels );
     BOOST_ASSERT( 0 < fs );
-    waveform_data_ = new GpuCpuData<float>(0, make_cudaExtent( numberOfSamples, numberOfChannels, numberOfSignals));
+    waveform_data_.reset( new DataStorage<float>(DataStorageSize( numberOfSamples, numberOfChannels, numberOfSignals )));
 }
 
 
@@ -40,7 +43,7 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
     BOOST_ASSERT( other.get() != this );
     BOOST_ASSERT( channel < other->channels() );
 
-    GpuCpuData<float>& data = *other_->waveform_data();
+/*    DataStorage<float, 3>& data = *other_->waveform_data();
     
     IntervalType offs = channel*other_->number_of_samples() + subinterval.first - other->getInterval().first;
 
@@ -71,9 +74,9 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
 
     default:
         break;
-    }
+    }*/
 
-    waveform_data_ = new GpuCpuData<float>(0, make_uint3( subinterval.count(), 1, 1) );
+    waveform_data_ .reset( new DataStorage<float>(subinterval.count()));
     bitor_channel_ = channel;
     *this |= *other_;
     other_.reset();
@@ -83,11 +86,10 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
 Buffer::
         ~Buffer()
 {
-    delete waveform_data_;
 }
 
 
-GpuCpuData<float>* Buffer::
+DataStorage<float>::Ptr Buffer::
         waveform_data() const
 {
     return waveform_data_;
@@ -97,8 +99,7 @@ GpuCpuData<float>* Buffer::
 void Buffer::
         release_extra_resources()
 {
-    waveform_data_->getCpuMemory();
-    waveform_data_->freeUnused();
+    waveform_data_->OnlyKeepOneStorage<CpuMemoryStorage>();
 }
 
 
@@ -126,7 +127,7 @@ Interval Buffer::
 unsigned Buffer::
         channels() const
 {
-    return waveform_data()->getNumberOfElements().height;
+    return waveform_data()->size().height;
 }
 
 
@@ -150,6 +151,12 @@ Buffer& Buffer::
     float* write;
     float const* read;
 
+    write = &CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ref( offs_write );
+    read = &CpuMemoryStorage::ReadOnly<1>( b.waveform_data_ ).ref( offs_read );
+
+    memcpy(write, read, i.count()*sizeof(float));
+
+    /*
     bool toGpu   = waveform_data_->getMemoryLocation() == GpuCpuVoidData::CudaGlobal;
     bool fromGpu = b.waveform_data_->getMemoryLocation() == GpuCpuVoidData::CudaGlobal;
 
@@ -167,6 +174,7 @@ Buffer& Buffer::
         memcpy(write, read, i.count()*sizeof(float));
     else
         cudaMemcpy(write, read, i.count()*sizeof(float), kind );
+    */
 
     return *this;
 }
@@ -239,8 +247,8 @@ pBuffer SourceBase::
     // Doesn't span all of I, prepare new Buffer
     pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
 
-    if ( p->waveform_data()->getMemoryLocation() == GpuCpuVoidData::CudaGlobal )
-        r->waveform_data()->getCudaGlobal();
+//    if ( p->waveform_data()->getMemoryLocation() == GpuCpuVoidData::CudaGlobal )
+//        r->waveform_data()->getCudaGlobal();
 
     Intervals sid(I);
 

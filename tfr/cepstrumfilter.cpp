@@ -3,7 +3,6 @@
 
 #include <neat_math.h>
 #include <stringprintf.h>
-#include <CudaException.h>
 #include <memory.h>
 
 #define TIME_CepstrumFilter

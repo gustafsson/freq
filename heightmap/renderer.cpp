@@ -10,9 +10,8 @@
 
 #include <float.h>
 #include <GlException.h>
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <glPushContext.h>
-#include <cuda_vector_types_op.h>
 
 #include <boost/foreach.hpp>
 
@@ -38,7 +37,7 @@ Renderer::Renderer( Collection* collection )
     camera(0,0,0),
     draw_height_lines(false),
     color_mode( ColorMode_Rainbow ),
-    fixed_color( make_float4(1,0,0,1) ),
+    fixed_color( 1,0,0,1 ),
     y_scale( 1 ),
     last_ysize( 1 ),
     drawn_blocks(0),
@@ -248,13 +247,15 @@ void Renderer::init()
     // initialize necessary OpenGL extensions
     GlException_CHECK_ERROR();
 
-    int cudaDevices;
+#ifdef USE_CUDA
+    int cudaDevices=0;
     CudaException_SAFE_CALL( cudaGetDeviceCount( &cudaDevices) );
     if (0 == cudaDevices ) {
         fprintf(stderr, "ERROR: Couldn't find any \"cuda capable\" device.");
         fflush(stderr);
         exit(EXIT_FAILURE);
     }
+#endif
 
 #ifndef __APPLE__
     if (0 != glewInit() ) {
@@ -328,16 +329,21 @@ void Renderer::
 }
 
 
-float4 getWavelengthColorCompute( float wavelengthScalar ) {
-    float4 spectrum[7];
+tvector<4,float> mix(tvector<4,float> a, tvector<4,float> b, float f)
+{
+    return a*(1-f)+b;
+}
+
+tvector<4,float> getWavelengthColorCompute( float wavelengthScalar ) {
+    tvector<4,float> spectrum[7];
         /* white background */
-    spectrum[0] = make_float4( 1, 0, 0, 0 ),
-    spectrum[1] = make_float4( 0, 0, 1, 0 ),
-    spectrum[2] = make_float4( 0, 1, 1, 0 ),
-    spectrum[3] = make_float4( 0, 1, 0, 0 ),
-    spectrum[4] = make_float4( 1, 1, 0, 0 ),
-    spectrum[5] = make_float4( 1, 0, 1, 0 ),
-    spectrum[6] = make_float4( 1, 0, 0, 0 );
+    spectrum[0] = tvector<4,float>( 1, 0, 0, 0 ),
+    spectrum[1] = tvector<4,float>( 0, 0, 1, 0 ),
+    spectrum[2] = tvector<4,float>( 0, 1, 1, 0 ),
+    spectrum[3] = tvector<4,float>( 0, 1, 0, 0 ),
+    spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
+    spectrum[5] = tvector<4,float>( 1, 0, 1, 0 ),
+    spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
         /* black background
         { 0, 0, 0 },
         { 1, 0, 1 },
@@ -356,12 +362,12 @@ float4 getWavelengthColorCompute( float wavelengthScalar ) {
     float t = (f-float(i2))*0.5;
     float s = 0.5 + t;
 
-    float4 rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
+    tvector<4,float> rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
     return rgb*0.5;
 }
 
 void Renderer::createColorTexture(unsigned N) {
-    std::vector<float4> texture(N);
+    std::vector<tvector<4,float> > texture(N);
     for (unsigned i=0; i<N; ++i) {
         texture[i] = getWavelengthColorCompute( i/(float)(N-1) );
     }
@@ -483,7 +489,7 @@ void Renderer::beginVboRendering()
         glUniform1i(uniColorMode, (int)color_mode);
 
         uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
-        glUniform4f(uniFixedColor, fixed_color.x, fixed_color.y, fixed_color.z, fixed_color.w);
+        glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
 
         uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
         glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
@@ -531,7 +537,7 @@ void Renderer::endVboRendering() {
 
 void Renderer::renderSpectrogramRef( Reference ref )
 {
-    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     Position a, b;
@@ -587,7 +593,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
 
     drawn_blocks++;
 
-    TIME_RENDERER_BLOCKS CudaException_CHECK_ERROR();
+    TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 

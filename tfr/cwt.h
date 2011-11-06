@@ -93,10 +93,9 @@ public:
     size_t    required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
 
     unsigned        chunk_alignment(float fs) const;
-    static void     gc() { _fft_many.clear(); }
     static void     resetSingleton();
 private:
-    Cwt( float scales_per_octave=20, float wavelet_time_suppport=3, cudaStream_t stream=0 );
+    Cwt( float scales_per_octave=20, float wavelet_time_suppport=3 );
 
     unsigned        find_bin( unsigned j ) const;
     float           j_to_hz( float sample_rate, unsigned j ) const;
@@ -108,16 +107,12 @@ private:
     Signal::pBuffer inverse( Tfr::CwtChunk* );
     Signal::pBuffer inverse( Tfr::CwtChunkPart* );
 
-    Fft             _fft;
-    cudaStream_t    _stream;
     float           _min_hz;
     float           _scales_per_octave;
     float           _tf_resolution;
     float           _least_meaningful_fraction_of_r;
     unsigned        _least_meaningful_samples_per_chunk;
     static pTransform static_singleton;
-
-    static std::map<unsigned, CufftHandleContext> _fft_many;
 
     /**
       Default value: _wavelet_time_suppport=3.

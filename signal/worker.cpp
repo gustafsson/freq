@@ -10,7 +10,7 @@
 #ifndef SAWE_NO_MUTEX
 #include <QMutexLocker>
 #endif
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <demangle.h>
 #include <boost/foreach.hpp>
 
@@ -41,7 +41,6 @@ Worker::
     _last_work_one(boost::date_time::not_a_date_time),
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
-    _min_samples_per_chunk( 1 ),
     _requested_fps( 20 ),
     _min_fps( 1 ),  // Always request at least 1 fps. Otherwise there is a risk that CUDA
                     // will screw up playback by blocking the OS and causing audio
@@ -53,10 +52,8 @@ Worker::
 {
     _highest_fps = _min_fps;
 
-    if (t) target( t );
-    // Could create an first estimate of _samples_per_chunk based on available memory
-    // unsigned mem = CudaProperties::getCudaDeviceProp( CudaProperties::getCudaCurrentDevice() ).totalGlobalMem;
-    // but 1<< 12 works well on most GPUs
+    if (t)
+        target( t );
 }
 
 
@@ -138,7 +135,7 @@ bool Worker::
 
     try
     {
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
 
         b = callCallbacks( interval );
 
@@ -159,7 +156,8 @@ bool Worker::
                 b->length()/tt->elapsedTime());
         }
 
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
+#ifdef USE_CUDA
     } catch (const CudaException& e ) {
         unsigned min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(1, source()->sample_rate());
 
@@ -202,6 +200,7 @@ bool Worker::
 //            TaskInfo("Worker caught CudaException:\n%s", e.what());
 //            throw;
 //        }
+#endif
     } catch (const exception& e) {
         TaskInfo("Worker caught exception type %s:\n%s",
                   vartype(e).c_str(), e.what());
@@ -213,17 +212,13 @@ bool Worker::
 
     if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
 
-        if (current_fps < _requested_fps &&
-            _samples_per_chunk >= _min_samples_per_chunk)
+        if (current_fps < _requested_fps)
         {
             _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
                     _samples_per_chunk, _target->post_sink()->sample_rate());
             WORKER_INFO TaskInfo(
                     "Low framerate (%.1f fps). Decreased samples per chunk to %u",
                     current_fps, _samples_per_chunk);
-
-            if (_samples_per_chunk < _min_samples_per_chunk)
-                _min_samples_per_chunk = _samples_per_chunk;
         }
         else if (current_fps > 2.5f*_requested_fps)
         {
@@ -243,9 +238,7 @@ bool Worker::
             _highest_fps = current_fps;
     }
 
-    // Reset before next workOne
-    //TaskInfo("wavelet_default_time_support = %g", Tfr::Cwt::Singleton().wavelet_default_time_support());
-    Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+    current_fps = -1;
 
     return true;
 }
@@ -352,11 +345,6 @@ void Worker::
 
     _target = value;
 
-    if (_min_samples_per_chunk==1)
-    {
-        _min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
-        _max_samples_per_chunk = (unsigned)-1;
-    }
     _highest_fps = _min_fps;
     _number_of_samples = _target->post_sink()->number_of_samples();
 
@@ -377,7 +365,7 @@ unsigned Worker::
 void Worker::
 		samples_per_chunk_hint(unsigned value)
 {
-    _samples_per_chunk = max(_min_samples_per_chunk, value);
+    _samples_per_chunk = value;
 }
 
 
@@ -413,9 +401,14 @@ void Worker::
     if (!_last_work_one.is_not_a_date_time())
     {
         time_duration diff = now - _last_work_one;
-        current_fps = 1000000.0/diff.total_microseconds();
+        if (current_fps<0)
+            current_fps = 1000000.0/diff.total_microseconds();
+        else
+            current_fps = 0;
     }
     _last_work_one = now;
+
+    Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
 }
 
 
@@ -433,7 +426,7 @@ void Worker::
 
     if (value>_requested_fps) {
         _requested_fps = value;
-        samples_per_chunk_hint(1);
+        _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
         _max_samples_per_chunk = (unsigned)-1;
         if (_target->allow_cheat_resolution())
             Tfr::Cwt::Singleton().wavelet_fast_time_support( 0.5 );

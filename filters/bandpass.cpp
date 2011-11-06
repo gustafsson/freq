@@ -40,8 +40,8 @@ void Bandpass::
     float maxf = max(_f1, _f2);
     float a = c.freqAxis.getFrequencyScalar( minf );
     float b = c.freqAxis.getFrequencyScalar( maxf );
-    float2 *p = c.transform_data->getCpuMemory();
-    float2 zero = make_float2(0, 0);
+    std::complex<float> *p = c.transform_data->getCpuMemory();
+    std::complex<float> zero( 0, 0 );
 
     // assuming STFT is not redundant (meaning that R2C and C2R transforms are being used)
     unsigned window = (unsigned)(c.freqAxis.max_frequency_scalar*2 + 0.5f);

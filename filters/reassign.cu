@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include "reassign.cu.h"
 
+#include <cudaPitchedPtrType.h>
+#include "cudaglobalstorage.h"
+
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -13,8 +16,10 @@
 __global__ void kernel_reassign(cudaPitchedPtrType<float2> chunk, float start, float steplogsize, float sample_rate );
 __global__ void kernel_tonalize(cudaPitchedPtrType<float2> chunk, float start, float steplogsize, float sample_rate );
 
-void reassignFilter( cudaPitchedPtrType<float2> chunk, float min_hz, float max_hz, float sample_rate )
+void reassignFilter( Tfr::ChunkData::Ptr chunkp, float min_hz, float max_hz, float sample_rate )
 {
+    cudaPitchedPtrType<float2> chunk(CudaGlobalStorage::ReadWrite<2>( chunkp ).getCudaPitchedPtr());
+
     elemSize3_t numElem = chunk.getNumberOfElements();
     dim3 block(32,1,1);
     dim3 grid( int_div_ceil(numElem.x, block.x), 1, 1);
@@ -68,8 +73,10 @@ __global__ void kernel_reassign(cudaPitchedPtrType<float2> chunk, float start, f
     }
 }
 
-void tonalizeFilter( cudaPitchedPtrType<float2> chunk, float min_hz, float max_hz, float sample_rate )
+void tonalizeFilter( Tfr::ChunkData::Ptr chunkp, float min_hz, float max_hz, float sample_rate )
 {
+    cudaPitchedPtrType<float2> chunk(CudaGlobalStorage::ReadWrite<2>( chunkp ).getCudaPitchedPtr());
+
     elemSize3_t numElem = chunk.getNumberOfElements();
     dim3 block(32,1,1);
     dim3 grid( int_div_ceil(numElem.x, block.x), 1, 1);

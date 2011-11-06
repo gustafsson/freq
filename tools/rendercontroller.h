@@ -55,7 +55,9 @@ namespace Tools
         void receiveSetTransform_Cwt();
         void receiveSetTransform_Stft();
         void receiveSetTransform_Cwt_phase();
+#ifdef USE_CUDA
         void receiveSetTransform_Cwt_reassign();
+#endif
         void receiveSetTransform_Cwt_ridge();
         void receiveSetTransform_Cwt_weight();
         void receiveSetTransform_Cepstrum();

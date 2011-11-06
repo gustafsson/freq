@@ -3,7 +3,7 @@
 
 #include "tfr/freqaxis.h"
 #include "signal/target.h"
-#include "heightmap/block.cu.h"
+#include "heightmap/blockkernel.h" // Heightmap::AmplitudeAxis
 #include "heightmap/renderer.h"
 
 #include <boost/serialization/nvp.hpp>

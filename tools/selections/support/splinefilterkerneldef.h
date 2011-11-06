@@ -1,8 +1,10 @@
-#include "splinefilter.cu.h"
-#include <operate.cu.h>
-#include <resample.cu.h>
+#ifndef SPLINEFILTERKERNELDEF_H
+#define SPLINEFILTERKERNELDEF_H
 
-template<typename Reader>
+#include "splinefilterkernel.h"
+#include <operate.h>
+
+template<typename Reader, typename T>
 class Spliner
 {
 public:
@@ -13,7 +15,7 @@ public:
     {}
 
 
-    __device__ void operator()(float2& e, float2 const& v)
+    RESAMPLE_CALL void operator()(T& e, ResamplePos const& v)
     {
         // Count the number of times a line from v to infinity crosses the spline
 
@@ -24,7 +26,12 @@ public:
         for (unsigned i=0; i<N; ++i)
         {
             unsigned j = (i+1)%N;
-            float2 p = reader(make_uint2(i,0)), q = reader(make_uint2(j,0));
+            T pr = reader(i), qr = reader(j);
+#ifdef __CUDACC__
+            ResamplePos p(pr.x, pr.y), q(qr.x, qr.y);
+#else
+            ResamplePos p(pr.real(), pr.imag()), q(qr.real(), qr.imag());
+#endif
             float r = (v.x - p.x)/(q.x - p.x);
             if (0 <= r && 1 > r)
             {
@@ -51,8 +58,7 @@ public:
             if (d < 0)
                 d = 0;
 
-            float2 f = e;
-            e = make_float2( f.x*d, f.y*d );
+            e *= d;
         }
     }
 
@@ -64,17 +70,4 @@ private:
 };
 
 
-void applyspline(
-        cudaPitchedPtrType<float2> data,
-        cudaPitchedPtrType<float2> spline, bool save_inside )
-{
-    Spliner< Read1D<float2> > spliner(
-            Read1D_Create<float2>( spline ),
-            spline.getNumberOfElements().x,
-            save_inside );
-
-    elemSize3_t sz = data.getNumberOfElements();
-    element_operate<float2>( data, make_float4(0, 0, sz.x, sz.y), spliner );
-
-    Read1D_UnbindTexture<float2>();
-}
+#endif // SPLINEFILTERKERNELDEF_H

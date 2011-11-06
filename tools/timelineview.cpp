@@ -10,10 +10,9 @@
 #include "heightmap/renderer.h"
 
 // gpumisc
-#include <CudaException.h>
+#include <computationkernel.h>
 #include <GlException.h>
 #include <glPushContext.h>
-#include <cuda_vector_types_op.h>
 #include <glframebuffer.h>
 
 // boost
@@ -214,7 +213,7 @@ void TimelineView::
     _except_count = 0;
     try {
         GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
 
         if (!tool_selector)
         {
@@ -309,14 +308,16 @@ void TimelineView::
         }
 
         GlException_CHECK_ERROR();
-        CudaException_CHECK_ERROR();
+        ComputationCheckError();
 
         _except_count = 0;
+#ifdef USE_CUDA
     } catch (const CudaException &x) {
         if (1<++_except_count) throw;
 
         TaskTimer("TimelineView::paintGL SWALLOWED CUDAEXCEPTION\n%s", x.what()).suppressTiming();;
         Sawe::Application::global_ptr()->clearCaches();
+#endif
     } catch (const GlException &x) {
         if (1<++_except_count) throw;
 
