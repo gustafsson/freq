@@ -22,6 +22,8 @@ Operation::
 
 Operation::
         Operation( const Operation& o )
+            :
+            SourceBase( o )
 {
     *this = o;
 }

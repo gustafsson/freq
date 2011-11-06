@@ -310,12 +310,7 @@ void Application::
 void Application::
         build_version_string()
 {
-    _version_string = "Evaluation of Sonic AWE - development snapshot\n";
-
-    //QDateTime now = QDateTime::currentDateTime();
-    //now.date().year();
     stringstream ss;
-    //ss << "Evaluation of Sonic AWE - ";
     ss << Reader::reader_title() << " - ";
     #ifdef SONICAWE_VERSION
         ss << "v" << TOSTR(SONICAWE_VERSION);
