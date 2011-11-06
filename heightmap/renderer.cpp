@@ -47,7 +47,7 @@ Renderer::Renderer( Collection* collection )
     _mesh_height(0),
     _mesh_fraction_width(1),
     _mesh_fraction_height(1),
-    _initialized(false),
+    _initialized(NotInitialized),
     _draw_flat(false),
     _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
     _invalid_frustum(true)
@@ -239,8 +239,11 @@ static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvecto
 
 void Renderer::init()
 {
-    if (_initialized)
+    if (NotInitialized != _initialized)
         return;
+
+    // assume failure unless we reach the end of this method
+    _initialized = InitializationFailed;
 
     TaskTimer tt("Initializing OpenGL");
 
@@ -253,7 +256,7 @@ void Renderer::init()
     if (0 == cudaDevices ) {
         fprintf(stderr, "ERROR: Couldn't find any \"cuda capable\" device.");
         fflush(stderr);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Could not find any \"cuda capable\" device");
     }
 #endif
 
@@ -261,13 +264,13 @@ void Renderer::init()
     if (0 != glewInit() ) {
         fprintf(stderr, "ERROR: Couldn't initialize \"glew\".");
         fflush(stderr);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Could not initialize glew");
     }
 
     if (! glewIsSupported("GL_VERSION_2_0" )) {
-        fprintf(stderr, "ERROR: Support for necessary OpenGL extensions missing.");
+        fprintf(stderr, "ERROR: Support for necessary OpenGL extensions (GL_VERSION_2_0) missing.");
         fflush(stderr);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Sonic AWE requires a graphics card that supports OpenGL 2.0.\n\nNo such graphics card was found, Sonic AWE can not start.");
     }
 
     if (!glewIsSupported( "GL_VERSION_1_5 GL_ARB_vertex_buffer_object GL_ARB_pixel_buffer_object GL_ARB_texture_float" )) {
@@ -278,9 +281,13 @@ void Renderer::init()
         fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
         fprintf(stderr, "  GL_ARB_texture_float\n");
         fflush(stderr);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+                "Sonic AWE requires a graphics card that supports OpenGL 1.5 and the following OpenGL features\n"
+                "  GL_ARB_vertex_buffer_object\n"
+                "  GL_ARB_pixel_buffer_object\n"
+                "  GL_ARB_texture_float.\n\n"
+                "No such graphics card was found, Sonic AWE can not start.");
     }
-
 #endif
 
     // load shader
@@ -293,7 +300,7 @@ void Renderer::init()
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
 
-    _initialized=true;
+    _initialized=Initialized;
 
     GlException_CHECK_ERROR();
 }
@@ -427,7 +434,9 @@ void Renderer::draw( float scaley )
     GlException_CHECK_ERROR();
 
     TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
-    if (!_initialized) init();
+    if (NotInitialized == _initialized) init();
+    if (Initialized != _initialized) return;
+
     setSize( collection->samples_per_block()/_mesh_fraction_width, collection->scales_per_block()/_mesh_fraction_height );
 
     _invalid_frustum = true;
@@ -759,7 +768,7 @@ static void clipPlane( std::vector<GLvector>& p, const GLvector& p0, const GLvec
 }
 
 static void printl(const char* str, const std::vector<GLvector>& l) {
-    fprintf(stdout,"%s (%lu)\n",str,l.size());
+    fprintf(stdout,"%s (%lu)\n",str,(unsigned long)l.size());
     for (unsigned i=0; i<l.size(); i++) {
         fprintf(stdout,"  %g\t%g\t%g\n",l[i][0],l[i][1],l[i][2]);
     }

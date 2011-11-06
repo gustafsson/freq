@@ -73,6 +73,12 @@ private:
         Lod_Invalid
     };
 
+    enum InitializedLevel {
+        NotInitialized,
+        Initialized,
+        InitializationFailed
+    };
+
     std::vector<GLvector> clippedFrustum;
     GLuint _mesh_index_buffer;
     unsigned _mesh_width;
@@ -82,7 +88,7 @@ private:
     unsigned _vbo_size;
     pVbo _mesh_position;
     GLuint _shader_prog;
-    bool _initialized;
+    InitializedLevel _initialized;
     bool _draw_flat;
     float _redundancy;
     bool _invalid_frustum;
