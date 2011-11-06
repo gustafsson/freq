@@ -33,7 +33,7 @@
    <bool>false</bool>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_3"/>
+   <layout class="QVBoxLayout" name="verticalLayout_3"/>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -102,6 +102,7 @@
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
     <addaction name="action_Enter_product_key"/>
+    <addaction name="actionMuchdifferent_com"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -1517,6 +1518,11 @@
   <action name="actionOpen_and_compare">
    <property name="text">
     <string>Open and &amp;compare</string>
+   </property>
+  </action>
+  <action name="actionMuchdifferent_com">
+   <property name="text">
+    <string>Go to muchdifferent.com</string>
    </property>
   </action>
  </widget>

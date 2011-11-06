@@ -10,6 +10,8 @@
 #include <QCloseEvent>
 #include <QSettings>
 #include <QDir>
+#include <QDesktopServices>
+#include <QUrl>
 
 using namespace std;
 using namespace boost;
@@ -68,6 +70,7 @@ void SaweMainWindow::
 #else
     ui->action_Enter_product_key->setVisible( false );
 #endif
+    connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
 
     ui->actionOperation_details->setChecked( false );
 
@@ -412,6 +415,13 @@ void SaweMainWindow::
         QSettings settings;
         settings.remove("value");
     }
+}
+
+
+void SaweMainWindow::
+        gotomuchdifferent()
+{
+    QDesktopServices::openUrl(QUrl("http://muchdifferent.com/?page=signals"));
 }
 
 

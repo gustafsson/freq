@@ -119,6 +119,7 @@ FORMS += \
     tools/selections/rectangleform.ui \
     sawe/enterlicense.ui \
     tools/settingsdialog.ui \
+    tools/getcudaform.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

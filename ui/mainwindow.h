@@ -82,6 +82,7 @@ private slots:
     void toggleFullscreenNoMenus( bool fullscreen );
     void restoreLayout();
     void reenterProductKey();
+    void gotomuchdifferent();
 
     void checkVisibilityToolProperties(bool visible);
 private:
