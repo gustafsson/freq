@@ -152,10 +152,10 @@ void NavigationController::
     }*/
 
     if(isEnabled()) {
-        if( (e->button() & Qt::LeftButton) == Qt::LeftButton)
+        if (e->buttons().testFlag(Qt::LeftButton))
             moveButton.press( e->x(), e->y() );
 
-        if( (e->button() & Qt::RightButton) == Qt::RightButton)
+        if (e->buttons().testFlag(Qt::RightButton))
             rotateButton.press( e->x(), e->y() );
 
     }
@@ -170,23 +170,15 @@ void NavigationController::
         mouseReleaseEvent ( QMouseEvent * e )
 {
     //TaskTimer("NavigationController mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-    switch ( e->button() )
+    if ( !e->buttons().testFlag(Qt::LeftButton))
+        moveButton.release();
+
+    if ( !e->buttons().testFlag(Qt::RightButton))
     {
-        case Qt::LeftButton:
-            moveButton.release();
-            break;
-
-        case Qt::MidButton:
-            break;
-
-        case Qt::RightButton:
-            scaleButton.release();
-            rotateButton.release();
-            break;
-
-        default:
-            break;
+        scaleButton.release();
+        rotateButton.release();
     }
+
     _view->userinput_update();
 }
 
@@ -194,15 +186,37 @@ void NavigationController::
 void NavigationController::
         wheelEvent ( QWheelEvent *e )
 {
-    float rs = 0.08;
+    static bool canScrollHorizontal = false;
     if( e->orientation() == Qt::Horizontal )
-        _view->model->_ry -= rs * e->delta();
-    else if (e->modifiers().testFlag(Qt::ControlModifier))
+        canScrollHorizontal = true;
+
+    if (e->modifiers().testFlag(Qt::ControlModifier))
         zoom( e->delta(), ScaleX );
     else if (e->modifiers().testFlag(Qt::AltModifier))
         zoom( e->delta(), ScaleZ );
     else
-        zoom( e->delta(), Zoom );
+    {
+        if (!canScrollHorizontal)
+            zoom( e->delta(), Zoom );
+        else
+        {
+            bool success1, success2;
+
+            float s = -0.125f;
+            QPointF prev = e->pos();
+            if( e->orientation() == Qt::Horizontal )
+                prev.setX( prev.x() + s*e->delta() );
+            else
+                prev.setY( prev.y() + s*e->delta() );
+
+            Heightmap::Position last = _view->getPlanePos( prev, &success1);
+            Heightmap::Position current = _view->getPlanePos( e->pos(), &success2);
+            if (success1 && success2)
+            {
+                moveCamera( last.time - current.time, last.scale - current.scale);
+            }
+        }
+    }
 
     _view->userinput_update();
 }
