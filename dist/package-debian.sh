@@ -48,34 +48,34 @@ if [ -n "${versionnumber}" ]; then
 	sed -i "s/Version: .*$/Version: ${versionnumber}/g" $package/DEBIAN/control
 fi
 
-if [ "sonicawe" != "${packagename}" ]; then
-	sed -i "s/Package: .*$/Package: ${packagename}/g" $package/DEBIAN/control
+sed -i "s/Package: .*$/Package: ${packagename}/g" $package/DEBIAN/control
 
-	mv $package/usr/lib/mime/packages/sonicawe $package/usr/lib/mime/packages/${packagename}
-	sed -i "s/sonicawe /${packagename} /g" $package/usr/lib/mime/packages/${packagename}
+mv $package/usr/lib/mime/packages/sonicawe $package/usr/lib/mime/packages/${packagename}
+sed -i "s/sonicawe /${packagename} /g" $package/usr/lib/mime/packages/${packagename}
 
-	mv $package/usr/share/applications/sonicawe.desktop $package/usr/share/applications/${packagename}.desktop
-	sed -i "s/Exec=sonicawe/Exec=${packagename}/g" $package/usr/share/applications/${packagename}.desktop
-	prettyname=$(echo ${packagename} | sed "s/sonicawe-//" | sed "s/-/ /g")
-	prettyname=$(echo $prettyname | nawk -F: '{ print toupper(substr ($1,1,1)) substr ($1,2) }')
-	sed -i "s/Name=Sonic AWE/Name=Sonic AWE ${prettyname}/g" $package/usr/share/applications/${packagename}.desktop
+mv $package/usr/share/applications/sonicawe.desktop $package/usr/share/applications/${packagename}.desktop
+sed -i "s/Exec=sonicawe/Exec=${packagename}-launcher.sh/g" $package/usr/share/applications/${packagename}.desktop
+prettyname=$(echo ${packagename} | sed "s/sonicawe-//" | sed "s/-/ /g")
+prettyname=$(echo $prettyname | nawk -F: '{ print toupper(substr ($1,1,1)) substr ($1,2) }')
+sed -i "s/Name=Sonic AWE/Name=Sonic AWE ${prettyname}/g" $package/usr/share/applications/${packagename}.desktop
 
-	mv $package/usr/share/menu/sonicawe $package/usr/share/menu/${packagename}
-	sed -i "s/Sonic AWE/Sonic AWE ${prettyname}/g" $package/usr/share/menu/${packagename}
-	sed -i "s/sonicawe/${packagename}/g" $package/usr/share/menu/${packagename}
+mv $package/usr/share/menu/sonicawe $package/usr/share/menu/${packagename}
+sed -i "s/Sonic AWE/Sonic AWE ${prettyname}/g" $package/usr/share/menu/${packagename}
+sed -i "s/sonicawe/${packagename}-launcher.sh/g" $package/usr/share/menu/${packagename}
 
-	mv $package/usr/share/mime/packages/sonicawe.xml $package/usr/share/mime/packages/${packagename}.xml
+mv $package/usr/share/mime/packages/sonicawe.xml $package/usr/share/mime/packages/${packagename}.xml
 
-	mv $package/usr/share/mime-info/sonicawe.keys $package/usr/share/mime-info/${packagename}.keys
-	sed -i "s/short_list_application_ids_for_novice_user_level=sonicawe/short_list_application_ids_for_novice_user_level=${packagename}/g" $package/usr/share/mime-info/${packagename}.keys
-	mv $package/usr/share/mime-info/sonicawe.mime $package/usr/share/mime-info/${packagename}.mime
+mv $package/usr/share/mime-info/sonicawe.keys $package/usr/share/mime-info/${packagename}.keys
+sed -i "s/short_list_application_ids_for_novice_user_level=sonicawe/short_list_application_ids_for_novice_user_level=${packagename}/g" $package/usr/share/mime-info/${packagename}.keys
+mv $package/usr/share/mime-info/sonicawe.mime $package/usr/share/mime-info/${packagename}.mime
 
-	mv $package/usr/share/pixmaps/sonicawe16.xpm $package/usr/share/pixmaps/${packagename}16.xpm
-	mv $package/usr/share/pixmaps/sonicawe.xpm $package/usr/share/pixmaps/${packagename}.xpm
-fi
+mv $package/usr/share/pixmaps/sonicawe16.xpm $package/usr/share/pixmaps/${packagename}16.xpm
+mv $package/usr/share/pixmaps/sonicawe.xpm $package/usr/share/pixmaps/${packagename}.xpm
 
 mkdir -p $package/usr/bin
 cp ${packagename} $package/usr/bin/.
+cp ${packagename}-cuda $package/usr/bin/.
+cp ${packagename}-launcher.sh $package/usr/bin/.
 mkdir -p $share
 if [ "`uname -m`" = "x86_64" ]; then
 	sed -i "s/Architecture: .*$/Architecture: amd64/g" $package/DEBIAN/control

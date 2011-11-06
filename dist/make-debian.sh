@@ -21,6 +21,22 @@ fi
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`
 
+
+qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+  qmake $qmaketarget CONFIG+=gcc-4.3
+  make distclean
+  qmake $qmaketarget CONFIG+=gcc-4.3
+else
+  rm -f sonicawe/${packagename}-cuda
+  qmake
+  qmake $qmaketarget CONFIG+=gcc-4.3
+fi
+
+LD_RUN_PATH=/usr/share/${packagename}
+time make -j`cat /proc/cpuinfo | grep -c processor`
+
+
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_$(uname -m).deb"
 echo "Creating debian archive: $filename version ${version}"
