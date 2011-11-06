@@ -1,9 +1,8 @@
-#include "ellipsekernel.h"
 #include "resamplecuda.cu.h"
+
+#include "ellipsekernel.h"
 #include "ellipsekerneldef.h"
 #include "cudaUtil.h"
-
-#include "cudaglobalstorage.h"
 
 #include <stdio.h>
 
