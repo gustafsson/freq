@@ -1,3 +1,5 @@
+#ifndef USE_CUDA
+
 #include "resamplecpu.h"
 #include "drawnwaveformkerneldef.h"
 #include <stdio.h>
@@ -25,3 +27,4 @@ void drawWaveform(
             draw_waveform_with_lines_elem( writePos_x, in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue );
     }
 }
+#endif // USE_CUDA

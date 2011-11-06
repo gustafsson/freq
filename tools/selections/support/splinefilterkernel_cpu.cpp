@@ -1,3 +1,5 @@
+#ifndef USE_CUDA
+
 #include <resamplecpu.h>
 
 #include "splinefilterkerneldef.h"
@@ -14,3 +16,4 @@ void applyspline(
     element_operate<Tfr::ChunkElement>( data, ResampleArea(0, 0, data->size().width, data->size().height), spliner );
 }
 
+#endif // USE_CUDA

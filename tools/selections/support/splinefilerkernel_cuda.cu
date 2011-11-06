@@ -1,8 +1,10 @@
 #include <resamplecuda.cu.h>
 
+#include <cuda_vector_types_op.h>
+
 #include "splinefilterkerneldef.h"
 
-#if 0
+
 void applyspline(
         Tfr::ChunkData::Ptr data,
         DataStorage<Tfr::ChunkElement>::Ptr splinep, bool save_inside )
@@ -25,4 +27,3 @@ void applyspline(
 
     Read1D_UnbindTexture<float2>();
 }
-#endif

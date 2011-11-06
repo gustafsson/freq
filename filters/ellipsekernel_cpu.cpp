@@ -1,3 +1,4 @@
+#ifndef USE_CUDA
 #include "ellipsekernel.h"
 #include "ellipsekerneldef.h"
 
@@ -21,3 +22,4 @@ void removeDisc( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside, floa
         }
     }
 }
+#endif // USE_CUDA

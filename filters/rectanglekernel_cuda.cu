@@ -10,7 +10,7 @@
 
 __global__ void kernel_remove_rect(float2* in_wavelet, DataStorageSize in_numElem, Area area, float save_inside );
 
-#if 0
+
 void removeRect( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside )
 {
     float2* wavelet = (float2*)CudaGlobalStorage::ReadWrite<2>( waveletp ).device_ptr();
@@ -26,7 +26,7 @@ void removeRect( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside )
 
     kernel_remove_rect<<<grid, block>>>( wavelet, size, area, save_inside );
 }
-#endif
+
 
 __global__ void kernel_remove_rect(float2* wavelet, DataStorageSize numElem, Area area, float save_inside )
 {

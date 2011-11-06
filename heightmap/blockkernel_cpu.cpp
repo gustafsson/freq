@@ -1,3 +1,4 @@
+#ifndef USE_CUDA
 #include <resamplecpu.h>
 
 #include <complex>
@@ -16,3 +17,4 @@ operator()( std::complex<float> w, DataPos const& /*dataPosition*/ )
 #include "blockkerneldef.h"
 
 // that's it, blockkerneldef contains the definitions
+#endif // USE_CUDA

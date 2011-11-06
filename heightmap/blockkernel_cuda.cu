@@ -14,7 +14,7 @@ operator()( std::complex<float> w, DataPos const& /*dataPosition*/ )
 }
 
 
-//#include "blockkerneldef.h"
+#include "blockkerneldef.h"
 
 #include <stdio.h>
 

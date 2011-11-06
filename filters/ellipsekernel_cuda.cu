@@ -9,7 +9,7 @@
 
 __global__ void kernel_remove_disc(float2* wavelet, DataStorageSize numElem, Area area, bool save_inside, float fs );
 
-#if 0
+
 void removeDisc( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside, float fs )
 {
     float2* wavelet = (float2*)CudaGlobalStorage::ReadWrite<2>( waveletp ).device_ptr();
@@ -27,7 +27,7 @@ void removeDisc( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside, floa
     grid.x *= 2; // To coalesce better, one thread for each float (instead of each float2)
     kernel_remove_disc<<<grid, block>>>( wavelet, size, area, save_inside, fs );
 }
-#endif
+
 
 __global__ void kernel_remove_disc(float2* wavelet, DataStorageSize size, Area area, bool save_inside, float fs )
 {

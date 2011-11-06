@@ -1,3 +1,4 @@
+#ifndef USE_CUDA
 #include <resamplecpu.h>
 
 #include "waveletkerneldef.h"
@@ -144,3 +145,4 @@ void stftNormalizeInverse(
         }
     }
 }
+#endif // USE_CUDA

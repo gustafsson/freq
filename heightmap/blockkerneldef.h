@@ -16,16 +16,21 @@
 
 #define M_PIf ((float)M_PI)
 
+#ifdef __CUDACC__
+typedef float2 BlockElemType;
+#else
+typedef Tfr::ChunkElement BlockElemType;
+#endif
+
 class ConverterPhase
 {
 public:
-    RESAMPLE_CALL float operator()( Tfr::ChunkElement w, DataPos const& /*dataPosition*/ )
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& /*dataPosition*/ )
     {
 #ifdef __CUDACC__
-        float2& v = (float2&)w;
         return atan2(v.x, v.y);
 #else
-        return atan2(w.imag(), w.real());
+        return atan2(v.imag(), v.real());
 #endif
     }
 };
@@ -38,13 +43,19 @@ public:
     {
         return log2f(0.0001f + ConverterAmplitude()(v,dataPosition)) - log2f(0.0001f);
     }
+#ifdef __CUDACC__
+    RESAMPLE_CALL float operator()( float2 v, DataPos const& dataPosition )
+    {
+        return log2f(0.0001f + ConverterAmplitude()(v,dataPosition)) - log2f(0.0001f);
+    }
+#endif
 };
 
 
 class Converter5thRootAmplitude
 {
 public:
-    RESAMPLE_CALL float operator()( Tfr::ChunkElement w, DataPos const& /*dataPosition*/ )
+    RESAMPLE_CALL float operator()( BlockElemType w, DataPos const& /*dataPosition*/ )
     {
 #ifdef __CUDACC__
         float2& v = (float2&)w;
@@ -66,7 +77,7 @@ public:
 
     }
 */
-    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition );
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition );
 /*    {
         switch(_amplitudeAxis)
         {
@@ -90,7 +101,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>
 {
 public:
-    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
     {
         return 25.f * ConverterAmplitude()( v, dataPosition );
     }
@@ -100,7 +111,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>
 {
 public:
-    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
     {
         return 0.02f * ConverterLogAmplitude()( v, dataPosition );
     }
@@ -110,7 +121,7 @@ template<>
 class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>
 {
 public:
-    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
     {
         return Converter5thRootAmplitude()( v, dataPosition );
     }
@@ -317,7 +328,7 @@ using namespace std;
 
 
 template<typename AxisConverter>
-void blockResampleChunkAxis( Tfr::ChunkData::Ptr input,
+void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                  DataStorage<float>::Ptr output,
                  ValidInputInterval validInputs,
                  ResampleArea inputRegion,
@@ -329,12 +340,16 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr input,
                  )
 {
     // translate type to be read as a cuda texture
-/*    DataStorage<float2>::Ptr input =
+#ifdef __CUDACC__
+    DataStorage<float2>::Ptr input =
             CudaGlobalStorage::BorrowPitchedPtr<float2>(
                     inputp->size(),
                     CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr()
                     );
-*/
+#else
+    Tfr::ChunkData::Ptr input = inputp;
+#endif
+
     DataStorageSize sz_output = output->size();
 
 //    cuda-memcheck complains even on this testkernel when using global memory

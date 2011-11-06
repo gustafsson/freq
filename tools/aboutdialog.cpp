@@ -79,7 +79,7 @@ void AboutDialog::
                              );
 #else
     ui->labelSystem->setText(QString(
-            "Gpu memory speed: %7 GB/s (estimated)\n")
+            "Cpu memory speed: %1 GB/s (estimated)\n")
                              .arg(CpuProperties::cpu_memory_speed()*1e-9, 0, 'f', 1)
                              );
 #endif

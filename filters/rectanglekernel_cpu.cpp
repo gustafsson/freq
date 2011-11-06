@@ -1,3 +1,4 @@
+#ifndef USE_CUDA
 #include "resamplecpu.h"
 #include "rectanglekerneldef.h"
 
@@ -16,3 +17,4 @@ void removeRect( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside )
     }
 }
 
+#endif // USE_CUDA

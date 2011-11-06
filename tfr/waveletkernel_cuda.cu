@@ -7,8 +7,8 @@
 #include "cuda_vector_types_op.h"
 #include "waveletkerneldef.h"
 
-__global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, unsigned half_sizes, float sigma_t0, float normalization_factor );
-__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem );
+__global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, float sigma_t0, float normalization_factor );
+__global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, DataStorageSize numElem );
 //__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 //__global__ void kernel_inverse_box( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
 __global__ void kernel_clamp( cudaPitchedPtrType<float2> in_wt, size_t sample_offset, cudaPitchedPtrType<float2> out_clamped_wt );
@@ -34,7 +34,7 @@ void setError(const char* staticErrorMessage) {
     #define setError(x) setError(__FUNCTION__ ": " x)
 #endif
 
-#if 0
+
 void wtCompute(
         DataStorage<Tfr::ChunkElement>::Ptr in_waveform_ftp,
         Tfr::ChunkData::Ptr out_wavelet_ftp,
@@ -51,7 +51,7 @@ void wtCompute(
     Tfr::ChunkElement* in_waveform_ft = CudaGlobalStorage::ReadOnly<1>( in_waveform_ftp ).device_ptr();
     Tfr::ChunkElement* out_wavelet_ft = CudaGlobalStorage::WriteAll<2>( out_wavelet_ftp ).device_ptr();
 
-    DataStorageSize size = out_wavelet_ft->size();
+    DataStorageSize size = out_wavelet_ftp->size();
 
 //    nyquist = FS/2
 //    a = 2 ^ (1/v)
@@ -98,7 +98,7 @@ void wtCompute(
             sigma_t0,
             normalization_factor );
 }
-#endif
+
 
 __global__ void kernel_compute_wavelet_coefficients(
         float2* in_waveform_ft,
@@ -126,7 +126,7 @@ __global__ void kernel_compute_wavelet_coefficients(
             normalization_factor);
 }
 
-#if 0
+
 void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inverse_waveform, DataStorageSize x )
 {
     // Multiply the coefficients together and normalize the result
@@ -144,7 +144,7 @@ void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inv
             CudaGlobalStorage::WriteAll<1>(out_inverse_waveform).device_ptr(),
             x );
 }
-#endif
+
 
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, DataStorageSize numElem )
 {

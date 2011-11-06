@@ -16,7 +16,6 @@ __global__ void kernel_draw_waveform_with_lines(
         Writer out_waveform_matrix, float blob, unsigned readstop, float scaling );
 
 
-#if 0
 void drawWaveform(
         DataStorage<float>::Ptr in_waveformp,
         Tfr::ChunkData::Ptr out_waveform_matrixp,
@@ -45,7 +44,6 @@ void drawWaveform(
         kernel_draw_waveform_with_lines<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue );
     }
 }
-#endif
 
 
 template<typename Reader, typename Writer>
