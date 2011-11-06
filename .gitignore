@@ -10,8 +10,10 @@ ui_mainwindow.h
 *.ogg
 *.orig
 *.remote
-sonicawe
-sonicawe-reader
+/sonicawe
+/sonicawe-cuda
+/sonicawe-reader
+/sonicawe-reader-cuda
 *.user
 Makefile
 Makefile.Debug

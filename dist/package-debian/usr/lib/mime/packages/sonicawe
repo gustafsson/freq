@@ -1,0 +1,8 @@
+application/sonicawe-project; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+application/ogg; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+audio/basic; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+audio/x-aiff; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+audio/x-wav; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+application/x-flac; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+audio/x-flac; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+
