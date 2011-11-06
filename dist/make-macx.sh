@@ -24,6 +24,3 @@ filename="${packagename}_${versiontag}_macos_i386.zip"
 echo "Creating Mac OS X application: $filename version ${version}"
 cd ..
 ruby package-macx.rb ${packagename}_${versiontag} macos_i386 ../${packagename}
-
-
-passiveftp=passive
