@@ -505,4 +505,4 @@ Signal::pBuffer Stft::
 }
 
 } // namespace Tfr
-#endif // USE_CUDA
+#endif // #ifdef USE_CUDA

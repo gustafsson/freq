@@ -1,3 +1,4 @@
+#ifndef USE_CUDA
 #include "stft.h"
 
 #include "cpumemorystorage.h"
@@ -452,3 +453,4 @@ Signal::pBuffer Stft::
 
 
 } // namespace Tfr
+#endif // #ifndef USE_CUDA

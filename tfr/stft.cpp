@@ -15,7 +15,7 @@
 #define TIME_STFT if(0)
 
 #if defined(USE_CUDA) && !defined(USE_CUFFT)
-//#define USE_CUFFT
+#define USE_CUFFT
 #endif
 
 #ifdef USE_CUFFT
