@@ -1,9 +1,10 @@
+#include "cudaglobalstorage.h"
+
 #include "cudaUtil.h"
 #include <stdio.h>
 #include "reassign.cu.h"
 
 #include <cudaPitchedPtrType.h>
-#include "cudaglobalstorage.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
