@@ -21,6 +21,7 @@ fi
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`
 
+cp sonicawe/${packagename} sonicawe/${packagename}org
 
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
@@ -36,6 +37,7 @@ fi
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`
 
+cp sonicawe/${packagename}org sonicawe/${packagename}
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_$(uname -m).deb"
