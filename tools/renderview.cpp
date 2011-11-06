@@ -128,9 +128,9 @@ RenderView::
     // called above in this method).
     glwidget->makeCurrent();
 
+#ifdef USE_CUDA
     BOOST_ASSERT( QGLContext::currentContext() );
 
-#ifdef USE_CUDA
     // Destroy the cuda context for this thread
     CudaException_SAFE_CALL( cudaThreadExit() );
 #endif
@@ -1197,12 +1197,17 @@ void RenderView::
         c->reset(); // note, not c.reset()
     }
 
-    Heightmap::Renderer::ColorMode old_color_mode = model->renderer->color_mode;
-    model->renderer.reset();
-    model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
-    model->renderer->color_mode = old_color_mode;
+    if (model->renderer)
+    {
+        // model->renderer might be 0 if we're about to close the application
 
-    userinput_update();
+        Heightmap::Renderer::ColorMode old_color_mode = model->renderer->color_mode;
+        model->renderer.reset();
+        model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
+        model->renderer->color_mode = old_color_mode;
+
+        userinput_update();
+    }
 }
 
 

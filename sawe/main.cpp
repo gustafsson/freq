@@ -133,7 +133,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 #if 3000 < CUDART_VERSION
     case cudaErrorDevicesUnavailable:
         title << "Graphics adapter (GPU) occupied";
-        msg << "The NVIDIA CUDA driver couldn't start because the GPU is occupied. "
+        msg << "The NVIDIA CUDA driver could not start because the GPU is occupied. "
                 << "Are you currently using the GPU in any other application? "
                 << "If you're not intentionally using the GPU right now the driver might have been left in an inconsistent state after a previous crash. Rebooting your computer could work around this for now. "
                 << "Also make sure that you have installed the latest graphics drivers." << endl
@@ -147,7 +147,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
         cerr << ss.str();
         cerr.flush();
 
-        title << "Couldn't find CUDA, cannot start Sonic AWE";
+        title << "Could not find CUDA, cannot start Sonic AWE";
         msg   << "Sonic AWE requires you to have installed recent display drivers from NVIDIA, and no such driver was found." << endl
                 << endl
                 << "Hardware requirements: You need to have one of these graphics cards from NVIDIA:" << endl
@@ -516,6 +516,16 @@ int main(int argc, char *argv[])
         if (!check_cuda( false ))
             return -1;
 
+        // Recreate the cuda context and use OpenGL bindings
+        if( 0 == QGLContext::currentContext())
+        {
+            QMessageBox::critical(0,
+                                  "Sorry, Sonic AWE could not start",
+                                  "Failed to initialize OpenGL. You could try updating the drivers for your graphics card."
+                                  );
+            return -1;
+        }
+
         a.parse_command_line_options(argc, argv);
 
 #ifdef USE_CUDA
@@ -557,9 +567,9 @@ int main(int argc, char *argv[])
         }
 
         // Recreate the cuda context and use OpenGL bindings
-        if( 0 != QGLContext::currentContext() )
-            if (!check_cuda( true ))
-                return -1;
+        if (!check_cuda( true ))
+            // check_cuda displays error messages
+            return -1;
 
         int r = -1;
         if (0 < a.count_projects())
