@@ -38,12 +38,9 @@ inline RESAMPLE_CALL void compute_wavelet_coefficients_elem(
         unsigned w_bin,
         T* in_waveform_ft,
         T* out_wavelet_ft,
-        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, unsigned half_sizes, float sigma_t0,
-        float normalization_factor )
+        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, float sigma_t0,
+        const float& normalization_factor )
 {
-    if (w_bin>=nFrequencyBins)
-        return;
-
     const float pi = 3.141592654f;
     const float
             //w = 2.6515*log2f(w_bin*2*pi/nFrequencyBins); // quasi loglets
@@ -63,29 +60,15 @@ inline RESAMPLE_CALL void compute_wavelet_coefficients_elem(
     }
     else
     {
-        // discarding redundant part of spectra, take 2 here
-        float cufft_normalize = 2.f/(float)(nFrequencyBins*half_sizes);
-        cufft_normalize *= normalization_factor;
-        //float jibberish_normalization = 0.3;
-        //jibberish_normalization *= sqrtf(sqrtf(sqrtf(sigma_t0)));
-        //jibberish_normalization *= 1.275f / logf(sigma_t0*10.f);
-        //jibberish_normalization /= sqrtf(sqrtf(sigma_t0));
-        //cufft_normalize *= jibberish_normalization;
-
-        if (0==w_bin)
-            cufft_normalize *= 0.5f;
-
         waveform_ft = in_waveform_ft[w_bin];
-        waveform_ft *= cufft_normalize;
+        waveform_ft *= normalization_factor;
+        if (0==w_bin)
+            waveform_ft *= 0.5f;
     }
 
     // Find period for this thread
     const float log2_a = 1.f / v; // a = 2^(1/v)
 
-    float sigma_t0j = sigma_t0; // TODO vary with 'j'
-    float sigma_constant = sqrt( 4*pi*sigma_t0j );
-
-    waveform_ft *= sigma_constant;
     for( unsigned j=0; j<nScales; j++)
     {
         // Compute the child wavelet
@@ -104,11 +87,11 @@ inline RESAMPLE_CALL void compute_wavelet_coefficients_elem(
 
             {
                 // Different scales may have different mother wavelets, kind of
-                // That is, different sigma_t0j for different j
+                // That is, different sigma_t0 for different j
                 // ff = j / (float)total_nScales
                 // float f0 = 2.0f + 35*ff*ff*ff
             }
-            float q = (-w*aj + pi)*sigma_t0j;
+            float q = (-w*aj + pi)*sigma_t0;
             float phi_star = expf( -q*q );
 
             output = waveform_ft * phi_star;

@@ -726,6 +726,7 @@ void Cwt::
 
     if (fs != 0)
     {
+        // check available memory
         next_good_size(1, fs);
     }
 }
@@ -846,11 +847,14 @@ unsigned Cwt::
     size_t free = availableMemoryForSingleAllocation();
 
     // check power of 2 if possible, multi-radix otherwise
-    unsigned smallest_L2 = spo2g(T0 + 2*r) - 2*r;
+    unsigned smallest_L2 = spo2g(T0-1) - 2*r;
     size_t smallest_required2 = required_gpu_bytes(smallest_L2, fs);
     bool testPo2  = smallest_required2 <= free;
 
     unsigned T = required_length( current_valid_samples_per_chunk, fs );
+    if (T - 2*r > current_valid_samples_per_chunk)
+        T--;
+
     unsigned nT;
     if (testPo2)
         nT = align_up( spo2g(T), chunk_alignment( fs ));
@@ -903,7 +907,7 @@ unsigned Cwt::
             "prev_good_size: smallest_L = %u, chunk_alignment( %g ) = %u. Free: %f MB, required memory: %f MB",
              smallest_L, fs, chunk_alignment( fs ), free/1024.f/1024.f, smallest_required/1024.f/1024.f);
 
-    BOOST_ASSERT( smallest_L + 2*r > chunk_alignment( fs ) );
+    BOOST_ASSERT( smallest_L + 2*r >= 2*chunk_alignment( fs ) );
 
     if (smallest_required <= free)
     {
@@ -916,7 +920,7 @@ unsigned Cwt::
         unsigned T = required_length(current_valid_samples_per_chunk, fs);
 
         // check power of 2 if possible, multi-radix otherwise
-        unsigned smallest_L2 = spo2g(smallest_L + 2*r) - 2*r;
+        unsigned smallest_L2 = spo2g(smallest_L-1 + 2*r) - 2*r;
         size_t smallest_required2 = required_gpu_bytes(smallest_L2, fs);
         if (smallest_required2 <= free)
             smallest_L = smallest_L2;

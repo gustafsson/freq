@@ -27,6 +27,8 @@ QT += opengl
 macx:QMAKE_LFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
 macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
 macx:QMAKE_CFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
+unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
+unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3

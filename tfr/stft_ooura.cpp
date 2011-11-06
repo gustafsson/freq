@@ -33,28 +33,24 @@ void Fft::
     int magic = 12345678;
     bool vector_length_test = true;
 
-    if (q.size() != 2*N + vector_length_test) {
-        TIME_STFT TaskTimer tt("Resizing buffers");
-        q.resize(2*N + vector_length_test);
-        w.resize(N/2 + vector_length_test);
-        ip.resize(2+(1<<(int)(log2f(N+0.5)-1)) + vector_length_test);
+    std::vector<double> w(N/2 + vector_length_test);
+    std::vector<int> ip(2+(1<<(int)(log2f(N+0.5)-1)) + vector_length_test);
+    std::vector<double> q(2*N + vector_length_test);
 
-        if (vector_length_test)
-        {
-            q.back() = magic;
-            w.back() = magic;
-            ip.back() = magic;
-        }
-        ip[0] = 0;
-    } else {
-        TIME_STFT TaskTimer("Reusing data").suppressTiming();
+    ip[0] = 0;
+
+    if (vector_length_test)
+    {
+        q.back() = magic;
+        w.back() = magic;
+        ip.back() = magic;
     }
 
-    float* p = (float*)input->getCpuMemory();
 
     {
         TIME_STFT TaskTimer tt("Converting from float2 to double2" );
 
+        float* p = (float*)input->getCpuMemory();
         for (unsigned i=0; i<2*n; i++)
             q[i] = p[i];
 
@@ -64,7 +60,7 @@ void Fft::
 
 
     {
-        TIME_STFT TaskTimer tt("Computing fft");
+        TIME_STFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
         cdft(2*N, direction, &q[0], &ip[0], &w[0]);
 
         if (vector_length_test)
@@ -78,7 +74,7 @@ void Fft::
     {
         TIME_STFT TaskTimer tt("Converting from double2 to float2");
 
-        p = (float*)output->getCpuMemory();
+        float* p = (float*)output->getCpuMemory();
         for (unsigned i=0; i<2*N; i++)
             p[i] = (float)q[i];
     }
@@ -147,16 +143,22 @@ void Fft::
 void Stft::
         computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
+    TaskTimer tt("Stft::computeWithOoura( matrix[%d, %d], %s )",
+                 input->size().width,
+                 input->size().height,
+                 direction==FftDirection_Forward?"forward":"backward");
+
     Tfr::ChunkElement* i = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
     Tfr::ChunkElement* o = CpuMemoryStorage::WriteAll<1>( output ).ptr();
 
     BOOST_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
 
-    unsigned count = input->numberOfElements()/_window_size;
+    const int count = input->numberOfElements()/_window_size;
 
     Fft ft( true );
 
-    for (unsigned n=0; n<count; ++n)
+#pragma omp parallel for
+    for (int n=0; n<count; ++n)
     {
         ft.computeWithOoura(
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( _window_size,

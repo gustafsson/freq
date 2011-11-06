@@ -1,8 +1,11 @@
-
 #include <resamplecpu.h>
 
 #include "waveletkerneldef.h"
 
+#include <TaskTimer.h>
+
+#define SQRTLOG2E        1.201122409f
+#define PI               3.141592654f
 
 void wtCompute(
         DataStorage<Tfr::ChunkElement>::Ptr in_waveform_ftp,
@@ -15,6 +18,8 @@ void wtCompute(
         float sigma_t0,
         float normalization_factor )
 {
+    TaskTimer tt("wtCompute");
+
     Tfr::ChunkElement* in_waveform_ft = CpuMemoryStorage::ReadOnly<1>( in_waveform_ftp ).ptr();
     Tfr::ChunkElement* out_wavelet_ft = CpuMemoryStorage::WriteAll<2>( out_wavelet_ftp ).ptr();
 
@@ -40,18 +45,50 @@ void wtCompute(
         return;
     }
 
-    for (unsigned w_bin=0; w_bin<size.width; w_bin++)
+    const float log2_a = 1.f / scales_per_octave; // a = 2^(1/v)
+
+    int nFrequencyBins = size.width, nScales = size.height;
+    const int N = nFrequencyBins/2;
+    memset( out_wavelet_ft, 0, out_wavelet_ftp->numberOfBytes() );
+
+    normalization_factor *= sqrt( 4*PI*sigma_t0 );
+    normalization_factor *= 2.f/(float)(nFrequencyBins*half_sizes);
+
+    float wscale = 2*PI/nFrequencyBins;
+    sigma_t0 *= SQRTLOG2E;
+
+#pragma omp parallel for
+    for( int j=0; j<nScales; j++)
     {
-        compute_wavelet_coefficients_elem(
-                w_bin,
-                in_waveform_ft,
-                out_wavelet_ft,
-                size.width, size.height,
-                first_scale,
-                scales_per_octave,
-                half_sizes,
-                sigma_t0,
-                normalization_factor );
+//        compute_wavelet_coefficients_elem(
+//                w_bin,
+//                in_waveform_ft,
+//                out_wavelet_ft,
+//                size.width, size.height,
+//                first_scale,
+//                scales_per_octave,
+//                sigma_t0,
+//                normalization_factor );
+
+        Tfr::ChunkElement waveform_ft;
+
+
+        // Find period for this thread
+
+        unsigned offset = (nScales-1-j)*nFrequencyBins;
+        float aj = exp2f(log2_a * (j + first_scale) ) * wscale;
+        for (int w_bin=0; w_bin<N; ++w_bin)
+        {
+            waveform_ft = in_waveform_ft[w_bin];
+            waveform_ft *= normalization_factor;
+            if (0==w_bin)
+                waveform_ft *= 0.5f;
+
+            float q = (-w_bin*aj + PI)*sigma_t0;
+
+            // Write wavelet coefficient in output matrix
+            out_wavelet_ft[offset + w_bin] = waveform_ft * exp2f( -q*q );
+        }
     }
 }
 

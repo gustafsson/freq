@@ -73,13 +73,21 @@ void wtCompute(
         return;
     }
 
+    int nFrequencyBins = size.width;
+    const int N = nFrequencyBins/2;
+    cudaMemset( out_wavelet_ft, 0, out_wavelet_ftp->numberOfBytes() );
+
     dim3 block(256,1,1);
-    dim3 grid( int_div_ceil(size.width, block.x), 1, 1);
+    dim3 grid( int_div_ceil(N, block.x), 1, 1);
 
     if(grid.x>65535) {
         setError("Invalid argument, number of floats in complex signal must be less than 65535*256.");
         return;
     }
+
+    const float pi = 3.141592654f;
+    normalization_factor *= sqrt( 4*pi*sigma_t0 );
+    normalization_factor *= 2.f/(float)(nFrequencyBins*half_sizes);
 
     kernel_compute_wavelet_coefficients<<<grid, block, 0>>>(
             (float2*)in_waveform_ft,
@@ -87,7 +95,6 @@ void wtCompute(
             size.width, size.height,
             first_scale,
             scales_per_octave,
-            half_sizes,
             sigma_t0,
             normalization_factor );
 }
@@ -96,13 +103,16 @@ void wtCompute(
 __global__ void kernel_compute_wavelet_coefficients(
         float2* in_waveform_ft,
         float2* out_wavelet_ft,
-        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, unsigned half_sizes, float sigma_t0,
+        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, float sigma_t0,
         float normalization_factor )
 {
     // Which frequency bin in the discrete fourier transform this thread
     // should work with
     const unsigned
             w_bin = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
+
+    if (w_bin>=nFrequencyBins)
+        return;
 
     compute_wavelet_coefficients_elem(
             w_bin,
@@ -112,7 +122,6 @@ __global__ void kernel_compute_wavelet_coefficients(
             nScales,
             first_scale,
             v,
-            half_sizes,
             sigma_t0,
             normalization_factor);
 }

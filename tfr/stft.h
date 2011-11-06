@@ -56,10 +56,6 @@ private:
 
     bool _compute_redundant;
 
-    std::vector<double> w; // used by Ooura
-    std::vector<int> ip;
-    std::vector<double> q;
-
     void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
     void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
 
