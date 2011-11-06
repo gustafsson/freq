@@ -77,8 +77,13 @@ fi
 mkdir -p $package/usr/bin
 cp ${packagename} $package/usr/bin/.
 mkdir -p $share
-cp -r /usr/local/cuda/lib64/libcudart.so* $share/.
-cp -r /usr/local/cuda/lib64/libcufft.so* $share/.
+if [ "`uname -m`" = "x86_64" ]; then
+	cp -r /usr/local/cuda/lib64/libcudart.so* $share/.
+	cp -r /usr/local/cuda/lib64/libcufft.so* $share/.
+else
+	cp -r /usr/local/cuda/lib/libcudart.so* $share/.
+	cp -r /usr/local/cuda/lib/libcufft.so* $share/.
+fi
 bury_copy sonicawe.1 $package/usr/local/share/man/man1/${packagename}.1
 mkdir -p $share/examples
 cp matlab/sawe_compute_cwt.m $share
