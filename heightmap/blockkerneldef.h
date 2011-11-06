@@ -510,6 +510,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     case Heightmap::AmplitudeAxis_Linear:       fetcher.factor = 0.00052f; break;
     case Heightmap::AmplitudeAxis_Logarithmic:  fetcher.factor = 0.3f; break;
     case Heightmap::AmplitudeAxis_5thRoot:      fetcher.factor = 0.22f; break;
+    default: fetcher.factor = 1.f; break;
     }
 
     resample2d_fetcher(
