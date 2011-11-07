@@ -7,11 +7,16 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
+qmake $qmaketarget -spec macx-g++ CONFIG+=release
+
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
   make distclean
+#else
+  rm -f sonicawe/${packagename}
 fi
-qmake $qmaketarget -spec macx-g++ CONFIG-=debug CONFIG+=release
-make
+
+qmake $qmaketarget -spec macx-g++ CONFIG+=release
+make -j`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE Launcher"
