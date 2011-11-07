@@ -175,7 +175,8 @@ Section "Application Files (required)"
 			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
 		${endif}
 
-		${if} 1 ;$R0 <= 1
+		${if} 1 == 1 
+		;$R0 <= 1
 		
 			;Write the installation path into the registry
 			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "Install Directory" "$INSTDIR"
