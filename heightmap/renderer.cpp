@@ -237,6 +237,13 @@ static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvecto
 }
 
 
+bool Renderer::
+        isInitialized()
+{
+    return Initialized == _initialized;
+}
+
+
 void Renderer::init()
 {
     if (NotInitialized != _initialized)

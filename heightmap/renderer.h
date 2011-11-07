@@ -56,6 +56,7 @@ public:
 
     void setFractionSize( unsigned divW=1, unsigned divH=1);
     bool fullMeshResolution();
+    bool isInitialized();
     void init();
 
     GLdouble modelview_matrix[16], projection_matrix[16];

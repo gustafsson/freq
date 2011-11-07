@@ -910,7 +910,7 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    if (!model->renderSignalTarget)
+    if (!model->renderSignalTarget || !model->renderer->isInitialized())
         return;
 
     float elapsed_ms = -1;
@@ -1030,6 +1030,7 @@ void RenderView::
         float length = model->project()->worker.length();
         model->renderer->drawAxes( length ); // 4.7 ms
     }
+
 
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
