@@ -228,17 +228,6 @@ void tstc(C*c)
 
 int main(int argc, char *argv[])
 {
-    QString localAppDir = Sawe::Application::log_directory();
-    if (QDir(localAppDir).exists()==false)
-        QDir().mkpath(localAppDir);
-
-    std::string logdir = localAppDir.toLocal8Bit().data();
-    std::string logpath = logdir+"sonicawe.log";
-#ifndef _MSC_VER
-    //The following line hinders the redirection from working in windows
-    cout << "Saving log file at \"" << logpath << "\"" << endl;
-#endif
-
 #ifdef USE_CUDA
     if (1)
     {
@@ -286,7 +275,7 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        RedirectStdout rs(logpath.c_str());
+        RedirectStdout rs("sonicawetest.log");
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I ^= Signal::Interval(150,150);
@@ -300,7 +289,7 @@ int main(int argc, char *argv[])
 
     if (0)
     {
-        RedirectStdout rs(logpath.c_str());
+        RedirectStdout rs("sonicawetest.log");
         Signal::Intervals I(100, 300);
         cout << I.toString() << endl;
         I -= Signal::Interval(150,150);
@@ -313,7 +302,7 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        RedirectStdout rs(logpath.c_str());
+        RedirectStdout rs("sonicawetest.log");
         Intervals I(100, 300);
         vector<Intervals> T;
         T.push_back( Intervals(50,80) );
@@ -464,25 +453,45 @@ int main(int argc, char *argv[])
 
 	
 
-    // Save previous log files
-    remove((logdir + "sonicawe~5.log").c_str());
-    rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
-    rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
-    rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
-    rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
-    rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
-
-    // Write all stdout and stderr to sonicawe.log instead
-    boost::shared_ptr<RedirectStdout> rs(new RedirectStdout(logpath.c_str()));
-
-    TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
-
-    TaskInfo("Starting Sonic AWE");
 
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
+    std::string logpath;
+
     try {
         Sawe::Application a(argc, argv, true);
+
+        {
+            // init logfile
+
+            QString localAppDir = Sawe::Application::log_directory();
+            if (QDir(localAppDir).exists()==false)
+                QDir().mkpath(localAppDir);
+
+            std::string logdir = localAppDir.toLocal8Bit().data();
+            logpath = logdir+"sonicawe.log";
+        #ifndef _MSC_VER
+            //The following line hinders the redirection from working in windows
+            cout << "Saving log file at \"" << logpath << "\"" << endl;
+        #endif
+
+            // Save previous log files
+            remove((logdir + "sonicawe~5.log").c_str());
+            rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
+            rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
+            rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
+            rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
+            rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
+
+            // Write all stdout and stderr to sonicawe.log instead
+            boost::shared_ptr<RedirectStdout> rs(new RedirectStdout(logpath.c_str()));
+
+            TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
+        }
+
+        TaskInfo("Starting Sonic AWE");
+
+
         a.rs = rs;
         rs.reset();
 
@@ -586,11 +595,11 @@ int main(int argc, char *argv[])
 
         return r;
     } catch (const std::exception &x) {
-        if (!rs) rs.reset(new RedirectStdout(logpath.c_str()));
+        if (!rs && !logpath.empty()) rs.reset(new RedirectStdout(logpath.c_str()));
         Sawe::Application::display_fatal_exception(x);
         return -2;
     } catch (...) {
-        if (!rs) rs.reset(new RedirectStdout(logpath.c_str()));
+        if (!rs && !logpath.empty()) rs.reset(new RedirectStdout(logpath.c_str()));
         Sawe::Application::display_fatal_exception();
         return -3;
     }

@@ -121,19 +121,6 @@ QString Application::
         log_directory()
 {
     QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-#ifdef _MSC_VER
-    #if defined(TARGET_reader)
-        localAppDir += "\\MuchDifferent\\Sonic AWE Reader\\";
-    #else
-        localAppDir += "\\MuchDifferent\\Sonic AWE\\";
-    #endif
-#else
-    #if defined(TARGET_reader)
-        localAppDir += "/MuchDifferent/Sonic AWE Reader/";
-    #else
-        localAppDir += "/MuchDifferent/Sonic AWE/";
-    #endif
-#endif
     return localAppDir;
 }
 
