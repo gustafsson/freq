@@ -910,7 +910,11 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    if (!model->renderSignalTarget || !model->renderer->isInitialized())
+    if (!model->renderSignalTarget)
+        return;
+
+    model->renderer->init();
+    if (!model->renderer->isInitialized())
         return;
 
     float elapsed_ms = -1;
