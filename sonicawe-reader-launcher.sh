@@ -1,1 +1,1 @@
-sonicawe-reader-cuda %1 || sonicawe-reader %1
+sonicawe-reader-cuda $* || sonicawe-reader $*

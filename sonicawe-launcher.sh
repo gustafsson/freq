@@ -1,1 +1,1 @@
-sonicawe-cuda %1 || sonicawe %1
+sonicawe-cuda $* || sonicawe $*
