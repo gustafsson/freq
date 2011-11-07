@@ -547,23 +547,25 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        if( 0 == QGLContext::currentContext())
-        {
-            QMessageBox::critical(0,
-                                  "Sorry, Sonic AWE could not start",
-                                  "OpenGL was only partly initialized. You could try updating the drivers for your graphics card."
-                                  );
-            return -1;
-        }
-
-        // Recreate the cuda context and use OpenGL bindings
-        if (!check_cuda( true ))
-            // check_cuda displays error messages
-            return -1;
-
-        int r = -1;
+        int r = 0;
         if (0 < a.count_projects())
+        {
+            if( 0 == QGLContext::currentContext())
+            {
+                QMessageBox::critical(0,
+                                      "Sorry, Sonic AWE could not start",
+                                      "OpenGL was only partly initialized. You could try updating the drivers for your graphics card."
+                                      );
+                return -1;
+            }
+
+            // Recreate the cuda context and use OpenGL bindings
+            if (!check_cuda( true ))
+                // check_cuda displays error messages
+                return -1;
+
             r = a.exec();
+        }
 
         // When the OpenGL context is destroyed, the Cuda context becomes
         // invalid. Check that some kind of cleanup took place and that the
