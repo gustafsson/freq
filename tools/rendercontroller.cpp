@@ -672,6 +672,11 @@ void RenderController::
         {
             a->setShortcut('1' + k++);
         }
+#ifdef TARGET_reader
+        ui->actionTransform_Stft->trigger();
+#else
+        ui->actionTransform_Cwt->trigger();
+#endif
     }
 
 
@@ -710,7 +715,11 @@ void RenderController::
         {
             a->setShortcut(QString("Ctrl+") + ('1' + k++));
         }
+#ifdef TARGET_reader
+        linearScale->trigger();
+#else
         logScale->trigger();
+#endif
     }
 
 
