@@ -177,6 +177,14 @@ RenderController::
         transform->actions().at(1)->trigger();
 #endif
         ui->actionSet_colorscale->trigger();
+
+#ifdef TARGET_reader
+        ui->actionTransform_Stft->trigger();
+        linearScale->trigger();
+#else
+        ui->actionTransform_Cwt->trigger();
+        logScale->trigger();
+#endif
     }
 }
 
@@ -672,11 +680,6 @@ void RenderController::
         {
             a->setShortcut('1' + k++);
         }
-#ifdef TARGET_reader
-        ui->actionTransform_Stft->trigger();
-#else
-        ui->actionTransform_Cwt->trigger();
-#endif
     }
 
 
@@ -715,11 +718,7 @@ void RenderController::
         {
             a->setShortcut(QString("Ctrl+") + ('1' + k++));
         }
-#ifdef TARGET_reader
-        linearScale->trigger();
-#else
         logScale->trigger();
-#endif
     }
 
 
