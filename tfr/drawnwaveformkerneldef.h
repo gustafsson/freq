@@ -32,7 +32,11 @@ RESAMPLE_CALL void draw_waveform_elem(
     {
         float v = in_waveform.read( read_x );
         v *= scaling;
+#if defined(_WIN32) && !defined(USE_CUDA)
+        v = max(-1.f, min(1.f, v));
+#else
         v = fmaxf(-1.f, fminf(1.f, v));
+#endif
         float y = (v+1.f)*.5f*(matrix_sz.height-1.f);
         unsigned y1 = (unsigned)y;
         unsigned y2 = y1+1;
@@ -86,7 +90,11 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     float v2 = in_waveform.read( readPos+1 );
     float v = v1*(1-px) + v2*px;
     v *= scaling;
-    v = fmaxf(-1.f, fminf(1.f, v));
+#if defined(_WIN32) && !defined(USE_CUDA)
+        v = max(-1.f, min(1.f, v));
+#else
+        v = fmaxf(-1.f, fminf(1.f, v));
+#endif
     float y = (v+1.f)*.5f*(matrix_sz.height-1.f);
     unsigned y1 = (unsigned)y;
     unsigned y2 = y1+1;
