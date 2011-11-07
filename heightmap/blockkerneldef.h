@@ -158,7 +158,7 @@ public:
     }
 
 
-    RESAMPLE_CALL bool near(float a, float b)
+    RESAMPLE_CALL bool isnear(float a, float b)
     {
         return a > b*(1.f-1e-2f) && a < b*(1.f+1e-2f);
     }
