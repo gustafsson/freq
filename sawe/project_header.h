@@ -23,7 +23,9 @@
 
 // gpumisc
 #include <TaskTimer.h>
+#ifdef USE_CUDA
 #include <cuda_vector_types_op.h>
+#endif
 
 // Qt
 #include <QDockWidget>
