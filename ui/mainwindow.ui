@@ -100,9 +100,13 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="separator"/>
-    <addaction name="actionAbout"/>
+    <addaction name="actionAsk_for_help"/>
+    <addaction name="actionReport_a_bug"/>
+    <addaction name="separator"/>
     <addaction name="action_Enter_product_key"/>
+    <addaction name="separator"/>
     <addaction name="actionMuchdifferent_com"/>
+    <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -1357,7 +1361,7 @@
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>&amp;About</string>
+    <string>&amp;About Sonic AWE</string>
    </property>
   </action>
   <action name="actionPlaySection">
@@ -1498,7 +1502,7 @@
   </action>
   <action name="action_Enter_product_key">
    <property name="text">
-    <string>Update license key</string>
+    <string>Update &amp;license key</string>
    </property>
    <property name="iconText">
     <string>Update license key</string>
@@ -1522,7 +1526,17 @@
   </action>
   <action name="actionMuchdifferent_com">
    <property name="text">
-    <string>Go to muchdifferent.com</string>
+    <string>About &amp;MuchDifferent</string>
+   </property>
+  </action>
+  <action name="actionReport_a_bug">
+   <property name="text">
+    <string>Report a &amp;bug</string>
+   </property>
+  </action>
+  <action name="actionAsk_for_help">
+   <property name="text">
+    <string>Ask for &amp;help</string>
    </property>
   </action>
  </widget>

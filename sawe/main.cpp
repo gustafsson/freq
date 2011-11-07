@@ -228,20 +228,7 @@ void tstc(C*c)
 
 int main(int argc, char *argv[])
 {
-    QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-#ifdef _MSC_VER
-    #if defined(TARGET_reader)
-        localAppDir += "\\MuchDifferent\\Sonic AWE Reader\\";
-    #else
-        localAppDir += "\\MuchDifferent\\Sonic AWE\\";
-    #endif
-#else
-    #if defined(TARGET_reader)
-        localAppDir += "/MuchDifferent/Sonic AWE Reader/";
-    #else
-        localAppDir += "/MuchDifferent/Sonic AWE/";
-    #endif
-#endif
+    QString localAppDir = Sawe::Application::log_directory();
     if (QDir(localAppDir).exists()==false)
         QDir().mkpath(localAppDir);
 

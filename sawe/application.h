@@ -23,6 +23,7 @@ public:
     Application( int& argc, char **argv, bool dont_parse_sawe_argument = false);
     ~Application();
 
+    static QString      log_directory();
     static QGLWidget*   shared_glwidget();
     static std::string  version_string() { return global_ptr()->_version_string; }
     static void         display_fatal_exception();

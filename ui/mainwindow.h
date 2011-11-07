@@ -83,6 +83,8 @@ private slots:
     void restoreLayout();
     void reenterProductKey();
     void gotomuchdifferent();
+    void gotobugsmuchdifferent();
+    void gotosonicaweforum();
 
     void checkVisibilityToolProperties(bool visible);
 private:

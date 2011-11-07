@@ -18,6 +18,7 @@
 #include <QtGui/QMessageBox>
 #include <QGLWidget>
 #include <QSettings>
+#include <QDesktopServices>
 
 #ifdef USE_CUDA
 // gpumisc
@@ -113,6 +114,27 @@ Application* Application::
     Application* app = dynamic_cast<Application*>(QApplication::instance());
     BOOST_ASSERT( app );
     return app;
+}
+
+
+QString Application::
+        log_directory()
+{
+    QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#ifdef _MSC_VER
+    #if defined(TARGET_reader)
+        localAppDir += "\\MuchDifferent\\Sonic AWE Reader\\";
+    #else
+        localAppDir += "\\MuchDifferent\\Sonic AWE\\";
+    #endif
+#else
+    #if defined(TARGET_reader)
+        localAppDir += "/MuchDifferent/Sonic AWE Reader/";
+    #else
+        localAppDir += "/MuchDifferent/Sonic AWE/";
+    #endif
+#endif
+    return localAppDir;
 }
 
 

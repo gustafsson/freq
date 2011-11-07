@@ -71,6 +71,8 @@ void SaweMainWindow::
     ui->action_Enter_product_key->setVisible( false );
 #endif
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
+    connect(ui->actionReport_a_bug, SIGNAL(triggered()), SLOT(gotobugsmuchdifferent()));
+    connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
 
     ui->actionOperation_details->setChecked( false );
 
@@ -422,6 +424,37 @@ void SaweMainWindow::
         gotomuchdifferent()
 {
     QDesktopServices::openUrl(QUrl("http://muchdifferent.com/?page=signals"));
+}
+
+
+void SaweMainWindow::
+        gotobugsmuchdifferent()
+{
+    QMessageBox message(
+            QMessageBox::Information,
+            "bugs.muchdifferent.com",
+            "You are very welcome to report any bugs to us. To help us help you, please include the log files. See logfile location in details below:");
+
+    QString localAppDir = Sawe::Application::log_directory();
+    message.setDetailedText( localAppDir );
+
+    message.exec();
+
+    QDesktopServices::openUrl(QUrl("http://bugs.muchdifferent.com"));
+}
+
+
+void SaweMainWindow::
+        gotosonicaweforum()
+{
+    QMessageBox message(
+            QMessageBox::Information,
+            "sonicawe.muchdifferent.com",
+            "You are very welcome to ask questions about Sonic AWE in our forum!");
+
+    message.exec();
+
+    QDesktopServices::openUrl(QUrl("http://sonicawe.muchdifferent.com"));
 }
 
 
