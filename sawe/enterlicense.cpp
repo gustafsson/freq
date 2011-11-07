@@ -16,7 +16,6 @@ EnterLicense::
     QObject::disconnect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
 
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(validate()));
-    connect(ui->lineEdit, SIGNAL(textChanged(QString)), SLOT(textChanged()));
 }
 
 EnterLicense::
