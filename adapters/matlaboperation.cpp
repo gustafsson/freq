@@ -15,9 +15,9 @@
 #if defined(__GNUC__)
     #include <unistd.h>
     #include <sys/time.h>
-#elif defined(WIN32)
-    #include <windows.h>
-    #include <process.h>
+//#elif defined(_WIN32)
+//    #include <windows.h>
+//    #include <process.h>
 #endif
 
 #include <boost/timer.hpp>
@@ -330,7 +330,7 @@ std::string MatlabFunction::
     {
 #ifdef __GNUC__
         usleep(10 * 1000); // Sleep in microseconds
-#elif defined(WIN32)
+#elif defined(_WIN32)
         Sleep(10); // Sleep in ms
 #else
 #error Does not support this platform
