@@ -1,4 +1,4 @@
-application/sonicawe-project; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
+application/sonicawe-project; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=1
 application/ogg; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
 audio/basic; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
 audio/x-aiff; sonicawe '%s'; edit=sonicawe '%s'; test=test "$DISPLAY" != ""; priority=2
