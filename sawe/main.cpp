@@ -228,17 +228,6 @@ void tstc(C*c)
 
 int main(int argc, char *argv[])
 {
-#ifdef USE_CUDA
-    if (1)
-    {
-        std::complex<float> f(1.123456789876543, 2.9876545678903);
-        cufftComplex& b = (cufftComplex&)f;
-        cufftComplex c;
-        BOOST_ASSERT( b.x == f.real() && b.y == f.imag());
-        BOOST_ASSERT( sizeof(f) == sizeof(c) );
-    }
-#endif
-
     if (0)
     {
         Intervals I(403456,403457);
@@ -456,38 +445,35 @@ int main(int argc, char *argv[])
 
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
+    boost::shared_ptr<RedirectStdout> rs;
     std::string logpath;
 
     try {
         Sawe::Application a(argc, argv, true);
 
-        {
-            // init logfile
+        QString localAppDir = Sawe::Application::log_directory();
+        if (QDir(localAppDir).exists()==false)
+            QDir().mkpath(localAppDir);
 
-            QString localAppDir = Sawe::Application::log_directory();
-            if (QDir(localAppDir).exists()==false)
-                QDir().mkpath(localAppDir);
+        std::string logdir = localAppDir.toLocal8Bit().data();
+        logpath = logdir+"sonicawe.log";
+    #ifndef _MSC_VER
+        //The following line hinders the redirection from working in windows
+        cout << "Saving log file at \"" << logpath << "\"" << endl;
+    #endif
 
-            std::string logdir = localAppDir.toLocal8Bit().data();
-            logpath = logdir+"sonicawe.log";
-        #ifndef _MSC_VER
-            //The following line hinders the redirection from working in windows
-            cout << "Saving log file at \"" << logpath << "\"" << endl;
-        #endif
+        // Save previous log files
+        remove((logdir + "sonicawe~5.log").c_str());
+        rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
+        rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
+        rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
+        rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
+        rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
 
-            // Save previous log files
-            remove((logdir + "sonicawe~5.log").c_str());
-            rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
-            rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
-            rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
-            rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
-            rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
+        // Write all stdout and stderr to sonicawe.log instead
+        rs.reset(new RedirectStdout(logpath.c_str()));
 
-            // Write all stdout and stderr to sonicawe.log instead
-            boost::shared_ptr<RedirectStdout> rs(new RedirectStdout(logpath.c_str()));
-
-            TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
-        }
+        TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 
         TaskInfo("Starting Sonic AWE");
 
