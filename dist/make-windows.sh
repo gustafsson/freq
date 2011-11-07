@@ -35,7 +35,7 @@ cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagename
 if [ -z "${target}" ]; then 
 	cp sonic/sonicawe/release/sonicawe.exe $packagename
 else
-	cp sonic/sonicawe/release/sonicawe.exe $packagename/"sonicawe_${target}.exe"
+	cp sonic/sonicawe/release/sonicawe.exe $packagename/$packagename".exe"
 fi
 cp -r sonic/sonicawe/matlab $packagename/matlab
 cp sonic/sonicawe/license/$licensefile $packagename
