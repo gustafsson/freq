@@ -423,7 +423,7 @@ void SaweMainWindow::
 void SaweMainWindow::
         gotomuchdifferent()
 {
-    QDesktopServices::openUrl(QUrl("http://muchdifferent.com/?page=signals"));
+    QDesktopServices::openUrl(QUrl("http://muchdifferent.com"));
 }
 
 

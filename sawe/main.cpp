@@ -503,8 +503,7 @@ int main(int argc, char *argv[])
         if (!check_cuda( false ))
             return -1;
 
-        // Recreate the cuda context and use OpenGL bindings
-        if( 0 == QGLContext::currentContext())
+        if( 0 == a.shared_glwidget()->context())
         {
             QMessageBox::critical(0,
                                   "Sorry, Sonic AWE could not start",
@@ -551,6 +550,15 @@ int main(int argc, char *argv[])
             tt.info("time_support = %u", time_support);
             Adapters::WriteWav::writeToDisk("invtest.wav", inv, false);
             return 0;
+        }
+
+        if( 0 == QGLContext::currentContext())
+        {
+            QMessageBox::critical(0,
+                                  "Sorry, Sonic AWE could not start",
+                                  "OpenGL was only partly initialized. You could try updating the drivers for your graphics card."
+                                  );
+            return -1;
         }
 
         // Recreate the cuda context and use OpenGL bindings
