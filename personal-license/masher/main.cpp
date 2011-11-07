@@ -4,6 +4,7 @@
 #include <vector>
 #include <iomanip>
 #include <stdlib.h>
+#include <cstring>
 
 #ifdef _MSC_VER
 #include <time.h>
@@ -196,11 +197,18 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    if (argc<3)
+    if (argc==3 && 0 == strcmp(argv[1], "-i"))
+    {
+        cout << backward(textradix(argv[2]));
+        return 0;
+    }
+
+    if (argc!=3)
     {
         cout << "Synopsis: " << endl;
         cout << "    mash text-to-mash" << endl;
         cout << "    mash inputfile outputfile" << endl;
+        cout << "    mash -i text-to-invert" << endl;
         return -1;
     }
 
