@@ -164,8 +164,18 @@ Section "Application Files (required)"
 		Strcpy $INSTALLATION_DONE "0"
 		Goto done
 	${elseif} $USR_DRIVER_VERSION != ""
+		; TODO this comparsion doesn't work for Quadro GPUs if you're building with a Geforce GPU as the driver versions differ. But they both support CUDA 3.0.
 		${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
-		${if} $R0 <= 1  	
+
+		; don't abort installation, but warn user
+		${if} $R0 == 2
+			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia drivers, version $USR_DRIVER_VERSION, are too old and you might encounter issues running Sonic AWE. \ 
+			$\nChoose OK to download newer drivers now. You will have to restart the installation afterwards." IDOK downloadDrivers 
+		${elseif} $R0 > 1
+			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
+		${endif}
+
+		${if} 1 ;$R0 <= 1
 		
 			;Write the installation path into the registry
 			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "Install Directory" "$INSTDIR"
@@ -211,15 +221,6 @@ Section "Application Files (required)"
 			;Insert files here
 			
 			Strcpy $INSTALLATION_DONE "1"
-			Goto done
-		${elseif} $R0 == 2 
-			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia drivers, version $USR_DRIVER_VERSION, are too old and you might encounter issues running Sonic AWE. \ 
-			$\nChoose cancel to abort the installation or OK to download newer drivers." IDOK downloadDrivers 
-			Strcpy $INSTALLATION_DONE "0"
-			Goto done
-		${else}
-			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
-			Strcpy $INSTALLATION_DONE "0"
 			Goto done
 		${endif}
 	${else}
