@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
             QDir().mkpath(localAppDir);
 
         std::string logdir = localAppDir.toLocal8Bit().data();
-        logpath = logdir+"sonicawe.log";
+        logpath = logdir + QDir::separator().toLatin1() + "sonicawe.log";
     #ifndef _MSC_VER
         //The following line hinders the redirection from working in windows
         cout << "Saving log file at \"" << logpath << "\"" << endl;
