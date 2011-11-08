@@ -7,7 +7,11 @@
 class SlopeFetcher
 {
 public:
-    typedef std::complex<float> T;
+#ifndef __CUDACC__
+    typedef Tfr::ChunkElement T;
+#else
+    typedef float2 T;
+#endif
 
     SlopeFetcher( float xscale, float yscale, DataPos size )
         :   xscale( xscale ),
@@ -19,7 +23,7 @@ public:
 
 
     template<typename Reader>
-    RESAMPLE_CALL std::complex<float> operator()( ResamplePos const& q, Reader& reader )
+    RESAMPLE_CALL T operator()( ResamplePos const& q, Reader& reader )
     {
         DataPos p(floor(q.x+.5f), floor(q.y+.5f));
 
@@ -35,7 +39,11 @@ public:
         if (p.y + 1 == size.y)
             up = 0;
 
-        std::complex<float> slope(
+#ifndef __CUDACC__
+        Tfr::ChunkElement slope(
+#else
+        float2 slope = make_float2(
+#endif
             (reader(DataPos(p.x + right, p.y)) - reader(DataPos(p.x + left, p.y)))*xscale/(right-left),
             (reader(DataPos(p.x, p.y+up)) - reader(DataPos(p.x, p.y+down)))*yscale/(up-down));
 
@@ -51,9 +59,20 @@ private:
 
 extern "C"
 void cudaCalculateSlopeKernel(  DataStorage<float>::Ptr heightmapIn,
-                                DataStorage<std::complex<float> >::Ptr slopeOut,
+                                Tfr::ChunkData::Ptr slopeOutp,
                                 float /*xscale*/, float /*yscale*/ )
 {
+    // translate type to be read as a cuda texture
+#ifdef __CUDACC__
+    DataStorage<float2>::Ptr slopeOut =
+            CudaGlobalStorage::BorrowPitchedPtr<float2>(
+                    slopeOutp->size(),
+                    CudaGlobalStorage::WriteAll<2>( slopeOutp ).getCudaPitchedPtr()
+                    );
+#else
+    Tfr::ChunkData::Ptr slopeOut = slopeOutp;
+#endif
+
     DataStorageSize sz_input = heightmapIn->size();
     DataStorageSize sz_output = slopeOut->size();
 
@@ -66,7 +85,7 @@ void cudaCalculateSlopeKernel(  DataStorage<float>::Ptr heightmapIn,
                                ResampleArea(0, 0, 1, 1),
                                false,
                                SlopeFetcher( 1000, 1000, DataPos( sz_input.width, sz_input.height) ),
-                               AssignOperator<std::complex<float> >() );
+                               AssignOperator<SlopeFetcher::T>() );
 }
 
 #endif // SLOPEKERNELDEF_H

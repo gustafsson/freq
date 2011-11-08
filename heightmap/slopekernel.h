@@ -1,12 +1,11 @@
 #ifndef HEIGHTMAPSLOPE_CU_H
 #define HEIGHTMAPSLOPE_CU_H
 
-#include "datastorage.h"
-#include <complex>
+#include "tfr/chunkdata.h"
 
 extern "C"
 void cudaCalculateSlopeKernel(  DataStorage<float>::Ptr heightmapIn,
-                                DataStorage<std::complex<float> >::Ptr slopeOut,
+                                Tfr::ChunkData::Ptr slopeOut,
                                 float xscale, float yscale );
 
 /*extern "C"
