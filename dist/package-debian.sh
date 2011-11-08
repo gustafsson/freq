@@ -48,9 +48,9 @@ if [ -n "${versionnumber}" ]; then
 	sed -i "s/Version: .*$/Version: ${versionnumber}/g" $package/DEBIAN/control
 fi
 
-sed -i "s/Package: .*$/Package: ${packagename}/g" $package/DEBIAN/control
 
 if [ "sonicawe" != "${packagename}" ]; then
+  sed -i "s/Package: .*$/Package: ${packagename}/g" $package/DEBIAN/control
   mv $package/usr/lib/mime/packages/sonicawe $package/usr/lib/mime/packages/${packagename}
   mv $package/usr/share/applications/sonicawe.desktop $package/usr/share/applications/${packagename}.desktop
   mv $package/usr/share/menu/sonicawe $package/usr/share/menu/${packagename}
@@ -59,23 +59,20 @@ if [ "sonicawe" != "${packagename}" ]; then
   mv $package/usr/share/mime-info/sonicawe.mime $package/usr/share/mime-info/${packagename}.mime
   mv $package/usr/share/pixmaps/sonicawe16.xpm $package/usr/share/pixmaps/${packagename}16.xpm
   mv $package/usr/share/pixmaps/sonicawe.xpm $package/usr/share/pixmaps/${packagename}.xpm
-fi
 
-sed -i "s/sonicawe /${packagename} /g" $package/usr/lib/mime/packages/${packagename}
+  sed -i "s/sonicawe /${packagename} /g" $package/usr/lib/mime/packages/${packagename}
 
-sed -i "s/Exec=sonicawe/Exec=${packagename}-launcher.sh/g" $package/usr/share/applications/${packagename}.desktop
+  sed -i "s/Exec=sonicawe/Exec=${packagename}/g" $package/usr/share/applications/${packagename}.desktop
 
-if [ "sonicawe" != "${packagename}" ]; then
   prettyname=$(echo ${packagename} | sed "s/sonicawe-//" | sed "s/-/ /g")
   prettyname=$(echo $prettyname | nawk -F: '{ print toupper(substr ($1,1,1)) substr ($1,2) }')
   sed -i "s/Name=Sonic AWE/Name=Sonic AWE ${prettyname}/g" $package/usr/share/applications/${packagename}.desktop
 
   sed -i "s/Sonic AWE/Sonic AWE ${prettyname}/g" $package/usr/share/menu/${packagename}
+  sed -i "s/sonicawe/${packagename}/g" $package/usr/share/menu/${packagename}
+  sed -i "s/level=sonicawe/level=${packagename}/g" $package/usr/share/mime-info/${packagename}.keys
 fi
 
-sed -i "s/sonicawe/${packagename}-launcher.sh/g" $package/usr/share/menu/${packagename}
-
-sed -i "s/short_list_application_ids_for_novice_user_level=sonicawe/short_list_application_ids_for_novice_user_level=${packagename}/g" $package/usr/share/mime-info/${packagename}.keys
 
 mkdir -p $package/usr/bin
 cp ${packagename} $package/usr/bin/.
@@ -118,6 +115,9 @@ for i in `find -name *~`; do rm $i; done
 for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done
 popd
+installedsize=`du -l | grep "[0-9]*.*\\.$" | sed "s/\t.*//g"`
+sed -i "s/Installed-Size: .*$/Installed-Size: ${installedsize}/g" $package/DEBIAN/control
+
 output_deb="${packagename}_"$versionname"_`uname -m`.deb"
 #http://www.debian.org/doc/debian-policy/ch-controlfields.html
 dpkg -b $package dist/$output_deb
