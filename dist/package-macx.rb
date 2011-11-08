@@ -63,6 +63,7 @@ def package_macos(app_name, version, zip = false)
     
     if ($custom_exec == /.*cuda.*/)
         executables = [[$custom_exec, "sonicawe"],
+                       [$custom_exec + "-cuda", "sonicawe-cuda"],
                        ["package-macos~/launcher", "launcher"]]
     else
         executables = [[$custom_exec, "sonicawe"]]

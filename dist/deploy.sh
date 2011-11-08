@@ -34,7 +34,7 @@ fi
 . ./make-${platform}.sh
 . ./upload.sh
 
-if [ "$(uname -s)" != "Linux" ]; then
+if [ $platform == "windows" ]; then
 	packagename="${packagename}-cuda"
 	qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=$packagename"
 

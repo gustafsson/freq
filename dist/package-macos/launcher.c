@@ -29,8 +29,10 @@ int main(int argc, char *argv[])
 {
     char path[2048];
     char app_path[2048];
+    char app_path_cpu[2048];
     
     // Get the sonicawe application path.
+    sprintf(app_path, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(path));
     sprintf(app_path, "%s/Contents/MacOS/sonicawe", bundlePath(path));
     printf("%s\n", app_path);
 
@@ -47,7 +49,7 @@ int main(int argc, char *argv[])
     {
         
         // Notify the user that CUDA drivers could not be found.
-        CFUserNotificationDisplayAlert(0, options, NULL, NULL, NULL,
+        /*CFUserNotificationDisplayAlert(0, options, NULL, NULL, NULL,
             CFStringCreateWithCString(NULL, get_error_title(), kCFStringEncodingASCII),
             CFStringCreateWithCString(NULL, get_error_message(), kCFStringEncodingASCII),
             CFStringCreateWithCString(NULL, get_quit(), kCFStringEncodingASCII),
@@ -82,7 +84,9 @@ int main(int argc, char *argv[])
     
             printf("Checking requirements.\n");
             execv(a[0], a);
-        }
+        }*/
+        execv(app_path_cpu, argv);
+        
     }
     
     dlclose(test);
