@@ -13,6 +13,7 @@ cd ../..
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename}"  
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 	cd gpumisc
 	qmake $qmaketarget
 	cd ../sonicawe
