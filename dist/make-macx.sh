@@ -21,8 +21,13 @@ make -j`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "N
 echo "========================== Building ==========================="
 echo "Building Sonic AWE Launcher"
 cd sonicawe/dist
-cd package-macos
-gcc -framework CoreFoundation -o launcher launcher.c
+cp -r package-macos package-macos~
+cd package-macos~
+if [[ $packagename == *cuda* ]]; then
+  gcc -framework CoreFoundation -o launcher launcher.c
+else
+  sed -i "" s/launcher/sonicawe/g Info.plist
+fi
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_macos_i386.zip"
