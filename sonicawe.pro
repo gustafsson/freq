@@ -243,6 +243,9 @@ LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
 
+CUDA_CXXFLAGS = QMAKE_CXXFLAGS
+CONFIG(debug, debug|release):CUDA_CXXFLAGS += QMAKE_CXXFLAGS_DEBUG
+else:CUDA_CXXFLAGS += QMAKE_CXXFLAGS_RELEASE
 
 win32 { 
     INCLUDEPATH += "$(CUDA_INC_PATH)"
@@ -254,7 +257,7 @@ win32 {
 		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
-        \"$$join(QMAKE_CXXFLAGS," ")\" \
+        \"$$join(CUDA_CXXFLAGS," ")\" \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         "${QMAKE_FILE_NAME}" \
@@ -272,7 +275,7 @@ unix:!macx {
 		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
+        $$join(CUDA_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "../../sonic/sonicawe/','-I "../../sonic/sonicawe/','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
@@ -282,7 +285,7 @@ unix:!macx {
     cuda.depend_command_dosntwork = nvcc \
         -M \
         -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
+        $$join(CUDA_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         ${QMAKE_FILE_NAME} \
         | \
@@ -311,7 +314,7 @@ macx {
 		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
+        $$join(CUDA_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
