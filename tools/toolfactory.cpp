@@ -85,7 +85,7 @@ ToolFactory::
     tool_controllers_.push_back( _comment_controller );
 
 #if !defined(TARGET_sd)
-    // no matlab for sound design version, or any apple version
+    // no matlab for sound design version
     _matlab_controller = new MatlabController( p, _render_view );
 #endif
 

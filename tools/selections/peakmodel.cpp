@@ -35,6 +35,7 @@ PeakModel::PeakAreaP PeakModel::
     if (!area)
     {
         area.reset( new DataStorage<bool>(ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        BOOST_ASSERT( area->numberOfBytes() == area->numberOfElements());
         memset( area->getCpuMemory(), 0, area->numberOfBytes() );
     }
 
@@ -207,7 +208,7 @@ void PeakModel::
                                     border_pts[i].y - (float)lastnode.y );
 
                 //float dot = q.x*d.y + q.y*d.x; what?
-                float dot = q%d;
+                float dot = q[0]*d[1] + q[1]*d[0]; // todo explain
                 if (dot*dot > 2)
                     break;
             }
@@ -271,7 +272,7 @@ PeakModel::BorderCoordinates PeakModel::
     for (unsigned i=firstdir; i<firstdir+N+1; ++i)
     {
         unsigned j=i%N;
-        BorderCoordinates r(v.x + p[j][2], v.y + p[j][2]);
+        BorderCoordinates r(v.x + p[j][0], v.y + p[j][1]);
         bool b = classifiedVal(r.x, r.y, w, h);
         if (b && !prev)
         {
