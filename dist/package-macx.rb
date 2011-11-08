@@ -84,7 +84,7 @@ def package_macos(app_name, version, zip = false)
         install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
                          [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
                          [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
-                         ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"]
+                         ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"]]
     end
     
     use_bin = Array.new()
