@@ -51,7 +51,7 @@ echo Nvidia driver version could not be read because dxdiag xml file was not fou
 nvid_version="1.0.0.0"
 fi
 
-#execute NsiWriter.exe to create and fill the Sonicawe.nsi script
+echo " - execute NsiWriter.exe to create and fill the Sonicawe.nsi script"
 nsistemplate=`pwd`\/$nsistemplate
 nsistemplate=`echo $nsistemplate | sed 's@\\/c\\/@C:\\\\\\\@'`
 nsistemplate=`echo $nsistemplate | sed 's@\\/@\\\\\\\@g'`
@@ -65,33 +65,37 @@ instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
 $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
 
+#sed="sed -i.backup -e"
+sed="sed -i.backup"
+#sed="sed -i"" --regexp-extended"
+
 if [ -z "${target}" ]; then 
-sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE\"/" $nsisscript 
-sed -i.backup -e "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"Side\_Banner\.bmp\"/" $nsisscript 
-sed -i.backup -e "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe.exe\"/" $nsisscript 
-elif ["${target}" == "reader"]; then
-sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE Reader\"/" $nsisscript 
-sed -i.backup -e "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"reader\-Side\_Banner\.bmp\"/" $nsisscript 
-sed -i.backup -e "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_reader.exe\"/" $nsisscript 
+$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE\"/" $nsisscript 
+$sed "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"Side\_Banner\.bmp\"/" $nsisscript 
+$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe.exe\"/" $nsisscript 
+elif [ "${target}" == "reader" ]; then
+$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE Reader\"/" $nsisscript 
+$sed "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"reader\-Side\_Banner\.bmp\"/" $nsisscript 
+$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_reader.exe\"/" $nsisscript 
 else
-sed -i.backup -e "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE ${target}\"/" $nsisscript 
-sed -i.backup -e "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"${target}\-Side\_Banner\.bmp\"/" $nsisscript
-sed -i.backup -e "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_${target}.exe\"/" $nsisscript 
+$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE ${target}\"/" $nsisscript 
+$sed "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"${target}\-Side\_Banner\.bmp\"/" $nsisscript
+$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_${target}.exe\"/" $nsisscript 
 fi
 
-#inserting filename, version and nvidia version number in NSIS script 
-sed -i.backup -e "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"${versiontag}\"/" $nsisscript 
-sed -i.backup -e "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
-sed -i.backup -e "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"$instfilepath\"/" $nsisscript 
-sed -i.backup -e "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"$filename\"/" $nsisscript 
+echo " - inserting filename, version and nvidia version number in NSIS script"
+$sed "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"${versiontag}\"/" $nsisscript 
+$sed "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
+$sed "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"$instfilepath\"/" $nsisscript 
+$sed "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"$filename\"/" $nsisscript 
 licensepath=`pwd`\/$packagename\/license.txt
 licensepath=`echo $licensepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 licensepath=`echo $licensepath | sed 's@\\/@\\\\\\\@g'`
-sed -i.backup -e "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
+$sed "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
 
-
+echo " - compiling installer"
 #Check for NSIS
-type -P makensis &>/dev/null || { echo "NSIS is not installed.  Aborting installer compilation. Please install Nsis to avoid this error" >&2; exit 1; }
+type -P makensis >& /dev/null || { echo "NSIS is not installed.  Aborting installer compilation. Please install Nsis to avoid this error" >&2; exit 1; }
 
 #compile & move installer
 makensis $nsisscript
@@ -99,6 +103,8 @@ mv sonic/sonicawe/dist/package-win/$filename sonic/sonicawe/dist/$filename
 
 #clean sonicawe.nsi for git consistency
 rm $nsisscript
+
+echo "installer compiled"
 
 cd sonic/sonicawe/dist
 
