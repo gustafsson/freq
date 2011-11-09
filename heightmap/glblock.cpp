@@ -360,6 +360,8 @@ void GlBlock::
 void GlBlock::
         update_texture( bool create_slope )
 {
+    create_slope = false;
+
     bool got_new_slope_data = create_slope && 0==_tex_slope;
     create_texture( create_slope );
 
@@ -481,8 +483,8 @@ void GlBlock::
 
     update_texture( true );
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, _tex_slope);
+//    glActiveTexture(GL_TEXTURE1);
+//    glBindTexture(GL_TEXTURE_2D, _tex_slope);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
 
@@ -499,8 +501,8 @@ void GlBlock::
     } else {
         glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_INT, 0);
     }
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 0);
+//    glActiveTexture(GL_TEXTURE1);
+//    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
