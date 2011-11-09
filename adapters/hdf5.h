@@ -86,7 +86,7 @@ public:
 
         for (int i=0; i<2; i++) try
         {
-            switch(i ^ looked_like_matlab) {
+            switch(i ^ (int)looked_like_matlab) {
                 // Octave style
                 case 0: return read_exact<T>( "/" + datasetname + "/value" );
 
