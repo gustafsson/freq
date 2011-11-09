@@ -41,11 +41,7 @@ echo "Building Sonic AWE Launcher"
 cd sonicawe/dist
 cp -r package-macos package-macos~
 cd package-macos~
-if [[ $packagename == *cuda* ]]; then
-  gcc -framework CoreFoundation -o launcher launcher.c
-else
-  sed -i "" s/launcher/sonicawe/g Info.plist
-fi
+gcc -framework CoreFoundation -o launcher launcher.c
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_macos_i386.zip"
