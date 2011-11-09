@@ -173,6 +173,14 @@ GlBlock::pHeightReadOnlyCpu GlBlock::
 {
     if (_read_only_cpu) return _read_only_cpu;
 
+    if (_mapped_height)
+    {
+        // Transfer from Cuda instead of OpenGL if it can already be found in Cuda memory
+        _read_only_cpu.reset(new DataStorage<float>( _mapped_height->data->size() ));
+        *_read_only_cpu = *_mapped_height->data;
+        return _read_only_cpu;
+    }
+
     createHeightVbo();
 
     glBindBuffer(_height->vbo_type(), *_height);
@@ -231,9 +239,6 @@ height()
     TIME_GLBLOCK TaskTimer tt("Heightmap OpenGL->Cuda, vbo=%u", (unsigned)*_height);
 
     _mapped_height.reset( new MappedVbo<float>(_height, heightSize() ));
-
-    // Transfer from Cuda instead of OpenGL if it can already be found in Cuda memory
-    _read_only_cpu = _mapped_height->data;
 
     TIME_GLBLOCK ComputationSynchronize();
 
@@ -399,6 +404,7 @@ void GlBlock::
         TIME_GLBLOCK ComputationCheckError();
 
         BOOST_ASSERT( _mapped_height.unique() );
+        BOOST_ASSERT( _mapped_height->data.unique() );
 
         _mapped_height.reset();
 
