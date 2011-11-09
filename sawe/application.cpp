@@ -91,8 +91,6 @@ Application::
     #endif
 
 
-    build_version_string();
-
     if (!dont_parse_sawe_argument)
         parse_command_line_options(argc, argv); // will call 'exit(0)' on invalid arguments
 }
@@ -318,9 +316,12 @@ void Application::
 }
 
 
-void Application::
+std::string Application::
         build_version_string()
 {
+    if (!_version_string.empty())
+        return _version_string;
+
     stringstream ss;
     ss << Reader::reader_title() << " - ";
     #ifdef SONICAWE_VERSION
@@ -338,6 +339,7 @@ void Application::
     #endif
 
     _version_string = ss.str();
+    return _version_string;
 }
 
 void Application::
@@ -345,6 +347,7 @@ void Application::
 {
     Reader::reader_text(true);
 
+    global_ptr()->_version_string.clear();
     global_ptr()->build_version_string();
 }
 
