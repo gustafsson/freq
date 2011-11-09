@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-packagename="${packagename}_${versiontag}_win32"
+packagefullname="${packagename}_${versiontag}_win32"
 filename="${packagename}_setup.exe"
 nsistemplate="sonic/sonicawe/dist/package-win/Sonicawe_template.nsi"
 nsisscript="sonic/sonicawe/dist/package-win/Sonicawe.nsi"
@@ -12,6 +12,8 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename}"  
+echo qmaketarget: $qmaketarget
+
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
 	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 	cd gpumisc
@@ -27,20 +29,20 @@ fi
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
 	
 echo "========================== Installer =========================="
-echo "Creating Windows installer file: $(pwd)/$filename for package $packagename"
+echo "Creating Windows installer file: $(pwd)/$filename for package $packagefullname"
 cd ..
 rm -rf $filename
-rm -rf $packagename
-cp -r sonicawe_snapshot_win32_base $packagename
-cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagename
+rm -rf $packagefullname
+cp -r sonicawe_snapshot_win32_base $packagefullname
+cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagefullname
 if [ -z "${target}" ]; then 
-	cp sonic/sonicawe/release/sonicawe.exe $packagename
+	cp sonic/sonicawe/release/sonicawe.exe $packagefullname
 else
-	cp sonic/sonicawe/release/sonicawe.exe $packagename/$packagename".exe"
+	cp sonic/sonicawe/release/sonicawe.exe $packagefullname/$packagefullname".exe"
 fi
-cp -r sonic/sonicawe/matlab $packagename/matlab
-cp sonic/sonicawe/license/$licensefile $packagename
-cp sonic/sonicawe/dist/package-win/awe_256.ico $packagename
+cp -r sonic/sonicawe/matlab $packagefullname/matlab
+cp sonic/sonicawe/license/$licensefile $packagefullname
+cp sonic/sonicawe/dist/package-win/awe_256.ico $packagefullname
 
 #Executing dxdiag for Nvidia driver version minimum requirement
 CMD //C dxdiag //x %CD%\\dxdiag.xml
@@ -58,7 +60,7 @@ nsistemplate=`echo $nsistemplate | sed 's@\\/@\\\\\\\@g'`
 nsisscriptwin=`pwd`\/$nsisscript
 nsisscriptwin=`echo $nsisscriptwin | sed 's@\\/c\\/@C:\\\\\\\@'`
 nsisscriptwin=`echo $nsisscriptwin | sed 's@\\/@\\\\\\\@g'`
-instfilepath=`pwd`\/$packagename
+instfilepath=`pwd`\/$packagefullname
 instfilepathwin=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\@'`
 instfilepathwin=`echo $instfilepathwin | sed 's@\\/@\\\\@g'`
 instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
@@ -88,7 +90,7 @@ $sed "s/\!define SA\_VERSION \".*\"/\!define SA\_VERSION \"${versiontag}\"/" $ns
 $sed "s/\!define NVID\_VERSION \".*\"/\!define NVID\_VERSION \"$nvid_version\"/" $nsisscript 
 $sed "s/\!define INST\_FILES \".*\"/\!define INST\_FILES \"$instfilepath\"/" $nsisscript 
 $sed "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"$filename\"/" $nsisscript 
-licensepath=`pwd`\/$packagename\/license.txt
+licensepath=`pwd`\/$packagefullname\/license.txt
 licensepath=`echo $licensepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 licensepath=`echo $licensepath | sed 's@\\/@\\\\\\\@g'`
 $sed "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
