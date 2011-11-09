@@ -1,7 +1,6 @@
 #ifndef WAVELET_CU_H
 #define WAVELET_CU_H
 
-#include "datastorage.h"
 #include "chunkdata.h"
 
 void        wtInverse( Tfr::ChunkData::Ptr in_wavelet, DataStorage<float>::Ptr out_inverse_waveform, DataStorageSize x );

@@ -246,12 +246,12 @@ CUDA_FLAGS += --use_fast_math
 CUDA_CXXFLAGS = $$QMAKE_CXXFLAGS
 CONFIG(debug, debug|release):CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_DEBUG
 else:CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_RELEASE
-
 win32 { 
     INCLUDEPATH += "$(CUDA_INC_PATH)"
     LIBS += -L"$(CUDA_LIB_PATH)"
-	QMAKE_CXXFLAGS -= -Zc:wchar_t-
-    QMAKE_CXXFLAGS += -Zc:wchar_t
+    CUDA_CXXFLAGS -= -Zc:wchar_t-
+    CUDA_CXXFLAGS += -Zc:wchar_t
+    CUDA_CXXFLAGS += /EHsc
     cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
     cuda.commands = \"$(CUDA_BIN_PATH)/nvcc.exe\" \
 		-ccbin $${QMAKE_CC} \
