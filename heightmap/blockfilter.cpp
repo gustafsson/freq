@@ -9,6 +9,7 @@
 #include <computationkernel.h>
 #include <GlException.h>
 #include <TaskTimer.h>
+#include <Statistics.h>
 
 #include <boost/foreach.hpp>
 
@@ -269,6 +270,13 @@ void BlockFilter::
         TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
 
+    DEBUG_CWTTOBLOCK {
+        TaskInfo ti("Block filter input and output %s", block->ref.toString().c_str());
+        DataStorageSize sz = chunk.transform_data->size();
+        sz.width *= 2;
+        Statistics<float> o1( CpuMemoryStorage::BorrowPtr<float>( sz, (float*)CpuMemoryStorage::ReadOnly<2>(chunk.transform_data).ptr() ));
+        Statistics<float> o2( outData );
+    }
     TIME_CWTTOBLOCK ComputationSynchronize();
 }
 

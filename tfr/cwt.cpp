@@ -381,6 +381,17 @@ pChunk Cwt::
     TIME_CWT ComputationSynchronize();
     ComputationCheckError();
 
+    TIME_CWT STAT_CWT
+    {
+        TaskInfo ti("stat cwt");
+        BOOST_FOREACH( const pChunk& chunkpart, ((CwtChunk*)wt.get())->chunks )
+        {
+            DataStorageSize sz = chunkpart->transform_data->size();
+            sz.width *= 2;
+            Statistics<float> s( CpuMemoryStorage::BorrowPtr<float>( sz, (float*)CpuMemoryStorage::ReadOnly<2>(chunkpart->transform_data).ptr() ));
+        }
+    }
+
     return wt;
 #ifdef USE_CUDA
     } catch (CufftException const& /*x*/) {
