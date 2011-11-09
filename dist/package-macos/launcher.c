@@ -33,8 +33,7 @@ int main(int argc, char *argv[])
     
     // Get the sonicawe application path.
     sprintf(app_path, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(path));
-    sprintf(app_path, "%s/Contents/MacOS/sonicawe", bundlePath(path));
-    printf("%s\n", app_path);
+    sprintf(app_path_cpu, "%s/Contents/MacOS/sonicawe", bundlePath(path));
 
     // Option flags for notification
     CFOptionFlags options = kCFUserNotificationStopAlertLevel | kCFUserNotificationNoDefaultButtonFlag;
