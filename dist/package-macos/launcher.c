@@ -28,11 +28,11 @@ const char *bundlePath(char *path)
 int main(int argc, char *argv[])
 {
     char path[2048];
-    char app_path[2048];
+    char app_path_cuda[2048];
     char app_path_cpu[2048];
     
     // Get the sonicawe application path.
-    sprintf(app_path, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(path));
+    sprintf(app_path_cuda, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(path));
     sprintf(app_path_cpu, "%s/Contents/MacOS/sonicawe", bundlePath(path));
 
     // Option flags for notification
@@ -84,13 +84,14 @@ int main(int argc, char *argv[])
             printf("Checking requirements.\n");
             execv(a[0], a);
         }*/
+        printf("Starting %s\n", app_path_cpu);
         execv(app_path_cpu, argv);
         
     }
     
     dlclose(test);
-    printf("Starting Sonic AWE\n");
-    execv(app_path, argv);
+    printf("Starting %s\n", app_path_cuda);
+    execv(app_path_cuda, argv);
     
     return 0;
 }
