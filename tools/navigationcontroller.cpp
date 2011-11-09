@@ -302,15 +302,13 @@ void NavigationController::
         }
         else if (zoom_only_ || e->modifiers().testFlag(Qt::ControlModifier))
         {
-            if (r.model->renderer->left_handed_axes)
+            bool success1, success2;
+            Heightmap::Position last = r.getPlanePos( QPointF(rotateButton.getLastx(), rotateButton.getLasty()), &success1);
+            Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+            if (success1 && success2)
             {
-                zoom( -10*rotateButton.deltaX( x ), ScaleX );
-                zoom( 30*rotateButton.deltaY( y ), ScaleZ );
-            }
-            else
-            {
-                zoom( 30*rotateButton.deltaY( y ), ScaleX );
-                zoom( -10*rotateButton.deltaX( x ), ScaleZ );
+                zoom( 1500*(last.time - current.time)*r.model->xscale, ScaleX );
+                zoom( 1500*(last.scale - current.scale)*r.model->zscale, ScaleZ );
             }
         }
         else
