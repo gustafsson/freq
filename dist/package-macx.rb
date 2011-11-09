@@ -32,61 +32,38 @@ def custom_lib_path(name, path = nil)
 end
 
 def package_macos(app_name, version, zip = false)
-    if ($custom_exec == /.*cuda.*/)
-        libraries = [qt_lib_path("QtGui"),
-                     qt_lib_path("QtOpenGL"),
-                     qt_lib_path("QtCore"),
-                     cuda_lib_path("cufft"),
-                     cuda_lib_path("cudart"),
-                     cuda_lib_path("tlshook"),
-                     custom_lib_path("portaudio"),
-                     custom_lib_path("portaudiocpp"),
-                     custom_lib_path("sndfile"),
-                     custom_lib_path("hdf5", "hdf5/bin"),
-                     custom_lib_path("hdf5_hl", "hdf5/bin")]
-    else
-        libraries = [qt_lib_path("QtGui"),
-                     qt_lib_path("QtOpenGL"),
-                     qt_lib_path("QtCore"),
-                     cuda_lib_path("tlshook"),
-                     custom_lib_path("portaudio"),
-                     custom_lib_path("portaudiocpp"),
-                     custom_lib_path("sndfile"),
-                     custom_lib_path("hdf5", "hdf5/bin"),
-                     custom_lib_path("hdf5_hl", "hdf5/bin")]
-    end
+    libraries = [qt_lib_path("QtGui"),
+                 qt_lib_path("QtOpenGL"),
+                 qt_lib_path("QtCore"),
+                 cuda_lib_path("cufft"),
+                 cuda_lib_path("cudart"),
+                 cuda_lib_path("tlshook"),
+                 custom_lib_path("portaudio"),
+                 custom_lib_path("portaudiocpp"),
+                 custom_lib_path("sndfile"),
+                 custom_lib_path("hdf5", "hdf5/bin"),
+                 custom_lib_path("hdf5_hl", "hdf5/bin")]
     
     directories = ["Contents/Frameworks",
                    "Contents/MacOS",
                    "Contents/Resources",
                    "Contents/plugins"]
     
-    if ($custom_exec == /.*cuda.*/)
-        executables = [[$custom_exec, "sonicawe"],
-                       [$custom_exec + "-cuda", "sonicawe-cuda"],
-                       ["package-macos~/launcher", "launcher"]]
-    else
-        executables = [[$custom_exec, "sonicawe"]]
-    end
+    executables = [[$custom_exec, "sonicawe"],
+                   [$custom_exec + "-cuda", "sonicawe-cuda"],
+                   ["package-macos~/launcher", "launcher"]]
     
     resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
                  "package-macos~/aweicon-project.icns",
                  "package-macos~/aweicon.icns",
                  "package-macos~/qt.conf"]
     
-    if ($custom_exec == /.*cuda.*/)
-        install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
-                         [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
-                         [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
-                         ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"],
-                         ["@rpath/libcufft.dylib", "@executable_path/../Frameworks/libcufft.dylib"],
-                         ["@rpath/libcudart.dylib", "@executable_path/../Frameworks/libcudart.dylib"]]
-    else
-        install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
-                         [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
-                         [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
-                         ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"]]
-    end
+    install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
+                     [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
+                     [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
+                     ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"],
+                     ["@rpath/libcufft.dylib", "@executable_path/../Frameworks/libcufft.dylib"],
+                     ["@rpath/libcudart.dylib", "@executable_path/../Frameworks/libcudart.dylib"]]
     
     use_bin = Array.new()
     
