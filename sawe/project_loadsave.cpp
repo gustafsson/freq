@@ -1,9 +1,3 @@
-// settings
-#define SAWE_USE_XML
-#ifdef _DEBUG
-#define SAWE_USE_XML
-#endif
-
 // class header
 #include "project.h"
 
@@ -32,13 +26,8 @@
 #include <fstream>
 
 // Boost
-#ifdef SAWE_USE_XML
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
-#else
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#endif
 #include <boost/algorithm/string.hpp>
 
 // Qt
@@ -133,13 +122,9 @@ bool Project::
     {
         TaskTimer tt("Saving project to '%s'", project_filename_.c_str());
 
-#ifdef SAWE_USE_XML
         std::ofstream ofs(project_filename_.c_str(), ios_base::out | ios_base::trunc);
         boost::archive::xml_oarchive xml(ofs);
-#else
-        std::ofstream ofs(project_filename_.c_str(), ios_base::out | ios_base::trunc | ios_base::binary);
-        boost::archive::binary_oarchive xml(ofs);
-#endif
+
         Project* p = this;
         runSerialization(xml, p, project_filename_.c_str());
 
@@ -161,26 +146,21 @@ bool Project::
 pProject Project::
         openProject(std::string project_file)
 {
-#ifdef SAWE_USE_XML
-        std::ifstream ifs(project_file.c_str(), ios_base::in);
+    std::ifstream ifs(project_file.c_str(), ios_base::in);
 
-        {
-            string xmltest;
-            xmltest.resize(5);
+    {
+        string xmltest;
+        xmltest.resize(5);
 
-            ifs.read( &xmltest[0], 5 );
-            if( !boost::iequals( xmltest, "<?xml") )
-                throw std::invalid_argument("Project file '" + project_file + "' is not an xml file");
+        ifs.read( &xmltest[0], 5 );
+        if( !boost::iequals( xmltest, "<?xml") )
+            throw std::invalid_argument("Project file '" + project_file + "' is not an xml file");
 
-            for (int i=xmltest.size()-1; i>=0; i--)
-                ifs.putback( xmltest[i] );
-        }
+        for (int i=xmltest.size()-1; i>=0; i--)
+            ifs.putback( xmltest[i] );
+    }
 
-        boost::archive::xml_iarchive xml(ifs);
-#else
-        std::ifstream ifs(project_file.c_str(), ios_base::in | ios_base::binary);
-        boost::archive::binary_iarchive xml(ifs);
-#endif
+    boost::archive::xml_iarchive xml(ifs);
 
     Project* new_project = 0;
 	runSerialization(xml, new_project, project_file.c_str());
