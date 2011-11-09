@@ -3,6 +3,7 @@
 
 // std
 #include <stdexcept>
+#include <string.h> //memset
 
 namespace Tfr {
 
