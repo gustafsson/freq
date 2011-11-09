@@ -49,7 +49,7 @@ Renderer::Renderer( Collection* collection )
     _mesh_fraction_height(1),
     _initialized(NotInitialized),
     _draw_flat(false),
-    _redundancy(0.8), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
+    _redundancy(1.0), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
     _invalid_frustum(true)
 
 {
@@ -495,7 +495,7 @@ void Renderer::beginVboRendering()
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
 
-        uniVertText1 = glGetUniformLocation(_shader_prog, "tex_slope");
+        uniVertText1 = glGetUniformLocation(_shader_prog, "tex_nearest");
         glUniform1i(uniVertText1, 1); // GL_TEXTURE1
 
         uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
@@ -522,6 +522,9 @@ void Renderer::beginVboRendering()
 
         uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
         glUniform2f(uniOffsTex, .5f/w, .5f/h);
+
+        uniScaleTex = glGetUniformLocation(_shader_prog, "sizeinv");
+        glUniform2f(uniScaleTex, 1.f/w, 1.f/h);
     }
 
     glActiveTexture(GL_TEXTURE2);
@@ -906,8 +909,9 @@ std::vector<GLvector> Renderer::
 }
 
 /**
-  @arg timePixels Estimated longest line of pixels along t-axis within ref measured in pixels
-  @arg scalePixels Estimated longest line of pixels along t-axis within ref measured in pixels
+  @arg ref See timePixels and scalePixels
+  @arg timePixels Estimated longest line of pixels along time axis within ref measured in pixels
+  @arg scalePixels Estimated longest line of pixels along scale axis within ref measured in pixels
   */
 bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
@@ -996,6 +1000,10 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     if (0==freqPerPixel) freqPerPixel=timePerPixel;
     if (0==timePerPixel) timePerPixel=freqPerPixel;
 
+    // time/freqPerPixel is how much difference in time/freq there can be when moving one pixel away from the
+    // pixel that represents the closest point in ref
+
+    // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
     timePixels = (p[1].time - p[0].time)/timePerPixel;
     scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
 

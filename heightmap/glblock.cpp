@@ -3,7 +3,6 @@
 // Heightmap namespace
 #include "collection.h"
 #include "renderer.h"
-#include "slopekernel.h"
 
 // gpumisc
 #include <vbo.h>
@@ -114,7 +113,7 @@ GlBlock( Collection* collection, float width, float height )
 //    _read_only_array_resource( 0 ),
 //    _read_only_array( 0 ),
     _tex_height(0),
-    _tex_slope(0),
+    _tex_height_nearest(0),
     _world_width(width),
     _world_height(height),
     _got_new_height_data(false)
@@ -128,7 +127,7 @@ GlBlock::
 ~GlBlock()
 {
     boost::scoped_ptr<TaskTimer> tt;
-    TIME_GLBLOCK tt.reset( new TaskTimer ("~GlBlock() _height=%u, _slope=%u", _height?*_height:0u, _slope?*_slope:0u));
+    TIME_GLBLOCK tt.reset( new TaskTimer ("~GlBlock() _height=%u", _height?*_height:0u ));
 
     // no point in doing a proper unmapping when it might fail and the textures
     // that would recieve the updates are deleted right after anyways
@@ -139,19 +138,10 @@ GlBlock::
         _mapped_height.reset();
         TIME_GLBLOCK TaskInfo("_mapped_height.reset()");
     }
-    if (_mapped_slope)
-    {
-        BOOST_ASSERT( _mapped_slope.unique() );
-        _mapped_slope.reset();
-        TIME_GLBLOCK TaskInfo("_mapped_slope.reset()");
-    }
 
     if (tt) tt->partlyDone();
 
     _height.reset();
-    if (tt) tt->partlyDone();
-
-    _slope.reset();
     if (tt) tt->partlyDone();
 
     unmap();
@@ -250,33 +240,11 @@ height()
     return _mapped_height;
 }
 
-GlBlock::pSlope GlBlock::
-slope()
-{
-    if (_mapped_slope) return _mapped_slope;
-
-    if (!_slope)
-    {
-        TIME_GLBLOCK TaskTimer tt("Slope, creating vbo");
-
-        unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
-        _slope.reset( new Vbo(elems*sizeof(std::complex<float>), GL_PIXEL_UNPACK_BUFFER, GL_STATIC_DRAW) );
-    }
-
-    TIME_GLBLOCK TaskTimer tt("Slope OpenGL->Cuda, vbo=%u", (unsigned)*_slope);
-
-    _mapped_slope.reset( new MappedVbo<std::complex<float> >(_slope, heightSize() ));
-
-    TIME_GLBLOCK ComputationSynchronize();
-
-    return _mapped_slope;
-}
-
 
 bool GlBlock::
         has_texture()
 {
-    if (_tex_slope)
+    if (_tex_height_nearest)
         BOOST_ASSERT(_tex_height);
 
     return _tex_height;
@@ -292,17 +260,17 @@ void GlBlock::
         glDeleteTextures(1, &_tex_height);
         _tex_height = 0;
     }
-    if (_tex_slope)
+    if (_tex_height_nearest)
     {
-        TIME_GLBLOCK TaskInfo("Deleting _tex_slope=%u", _tex_slope);
-        glDeleteTextures(1, &_tex_slope);
-        _tex_slope = 0;
+        TIME_GLBLOCK TaskInfo("Deleting _tex_height_nearest=%u", _tex_height_nearest);
+        glDeleteTextures(1, &_tex_height_nearest);
+        _tex_height_nearest = 0;
     }
 }
 
 
 void GlBlock::
-        create_texture(bool create_slope)
+        create_texture(bool create_nearest)
 {
     if (0==_tex_height)
     {
@@ -321,7 +289,9 @@ void GlBlock::
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); // no mipmaps
 
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+//        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
+//        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA_FLOAT32_ATI,w, h,0, GL_RED, GL_FLOAT, 0);
         //glGenerateMipmap(GL_TEXTURE_2D);
 
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -331,93 +301,42 @@ void GlBlock::
         TIME_GLBLOCK TaskInfo("Created tex_height=%u", _tex_height);
     }
 
-    if (create_slope && 0==_tex_slope)
+    if (create_nearest && 0==_tex_height_nearest)
     {
-        glGenTextures(1, &_tex_slope);
-        glBindTexture(GL_TEXTURE_2D, _tex_slope);
+        glGenTextures(1, &_tex_height_nearest);
+        glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
         unsigned w = _collection->samples_per_block();
         unsigned h = _collection->scales_per_block();
 
-        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); // no mipmaps
 
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_ALPHA32F_ARB,w, h,0, GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        TIME_GLBLOCK TaskInfo("Created tex_slope=%d", _tex_slope);
+        TIME_GLBLOCK TaskInfo("Created tex_height_nearest=%d", _tex_height_nearest);
     }
 
 }
 
 
 void GlBlock::
-        update_texture( bool create_slope )
+        update_texture( bool create_nearest )
 {
-    create_slope = false;
-
-    bool got_new_slope_data = create_slope && 0==_tex_slope;
-    create_texture( create_slope );
+    bool got_new_height_nearest_data = create_nearest && 0==_tex_height_nearest;
+    create_texture( create_nearest );
 
     _got_new_height_data |= (bool)_mapped_height;
-    got_new_slope_data |= _got_new_height_data;
+    got_new_height_nearest_data |= _got_new_height_data && 0!=_tex_height_nearest;
 
-    if (create_slope)
-    {
-        // Need a slope
-        if (got_new_slope_data)
-        {
-            // Slope needs to be updated (before unmap())
-            computeSlope(0);
-
-            {
-                TIME_GLBLOCK TaskTimer tt("Slope Cuda->OpenGL, vbo=%u", (unsigned)*_slope);
-
-                TIME_GLBLOCK ComputationCheckError();
-
-                BOOST_ASSERT( _mapped_slope.unique() );
-
-                _mapped_slope.reset();
-
-                TIME_GLBLOCK ComputationSynchronize();
-            }
-
-            TIME_GLBLOCK TaskTimer tt("Updating slope texture=%u, vbo=%u", _tex_slope, (unsigned)*_slope);
-
-            unsigned texture_width = _collection->samples_per_block();
-            unsigned texture_height = _collection->scales_per_block();
-
-            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_slope );
-            glBindTexture(GL_TEXTURE_2D, _tex_slope);
-
-            GlException_CHECK_ERROR();
-
-            glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_LUMINANCE_ALPHA, GL_FLOAT, 0);
-            glGenerateMipmap(GL_TEXTURE_2D);
-
-            GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
-
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
-
-            TIME_GLBLOCK ComputationCheckError();
-
-            _slope.reset();
-
-            if (!_got_new_height_data)
-                _mapped_height.reset();
-
-            TIME_GLBLOCK ComputationSynchronize();
-        }
-    }
-
-    if (_got_new_height_data)
+    if (_got_new_height_data || got_new_height_nearest_data)
     {
         unmap();
 
@@ -438,6 +357,20 @@ void GlBlock::
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+
+        if (got_new_height_nearest_data)
+        {
+            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
+            glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
+
+            GlException_CHECK_ERROR();
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_RED, GL_FLOAT, 0);
+            GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+        }
+
 
         TIME_GLBLOCK ComputationSynchronize();
 
@@ -475,6 +408,7 @@ void GlBlock::
     }
 }
 
+
 void GlBlock::
         draw( unsigned vbo_size )
 {
@@ -483,8 +417,8 @@ void GlBlock::
 
     update_texture( true );
 
-//    glActiveTexture(GL_TEXTURE1);
-//    glBindTexture(GL_TEXTURE_2D, _tex_slope);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
 
@@ -501,8 +435,8 @@ void GlBlock::
     } else {
         glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_INT, 0);
     }
-//    glActiveTexture(GL_TEXTURE1);
-//    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -630,31 +564,13 @@ unsigned GlBlock::
     unsigned s = 0;
     if (_height) s += sizeof(float); // OpenGL VBO
     if (_mapped_height) s += sizeof(float); // Cuda device memory
-    if (_tex_height) s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
-    if (_tex_slope) s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
+    if (_tex_height) s += sizeof(float); // OpenGL texture
+    if (_tex_height_nearest) s += sizeof(float); // OpenGL texture
 
     // _mapped_slope and _slope are temporary and only lives in the scope of update_texture
 
     return s;
 }
 
-
-void GlBlock::
-        computeSlope( unsigned /*cuda_stream */)
-{
-    TIME_GLBLOCK TaskTimer tt("Slope computeSlope");
-
-    height();
-    slope();
-
-    ::cudaCalculateSlopeKernel( height()->data,
-                                slope()->data,
-                                _world_width, _world_height );
-//    ::cudaCalculateSlopeKernelArray( heightReadOnlyArray(), heightSize(),
-//                                slope()->data,
-//                                _world_width, _world_height );
-
-    TIME_GLBLOCK ComputationSynchronize();
-}
 
 } // namespace Heightmap

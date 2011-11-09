@@ -52,18 +52,10 @@ public:
     unsigned allocated_bytes_per_element();
 
 private:
-    typedef boost::shared_ptr< MappedVbo<std::complex<float> > > pSlope;
-    pSlope slope();
-
     void createHeightVbo();
 
     void create_texture( bool create_slope );
     void update_texture( bool create_slope );
-    /**
-      Update the slope texture used by the vertex shader. Called when height
-      data has been updated.
-      */
-    void computeSlope( unsigned /*cuda_stream */);
 
     Collection* _collection;
 
@@ -72,13 +64,11 @@ private:
     //HeightReadOnlyArray _read_only_array;
 
     pVbo _height;
-    pVbo _slope;
 
     pHeight _mapped_height;
-    pSlope _mapped_slope;
 
     unsigned _tex_height;
-    unsigned _tex_slope;
+    unsigned _tex_height_nearest;
 
     float _world_width, _world_height;
     bool _got_new_height_data;
