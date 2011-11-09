@@ -455,7 +455,7 @@ int main(int argc, char *argv[])
         if (QDir(localAppDir).exists()==false)
             QDir().mkpath(localAppDir);
 
-        std::string logdir = (localAppDir + QDir::separator()).toLatin1();
+        std::string logdir = (localAppDir + QDir::separator()).toLatin1().data();
         logpath = logdir + "sonicawe.log";
     #ifndef _MSC_VER
         //The following line hinders the redirection from working in windows
