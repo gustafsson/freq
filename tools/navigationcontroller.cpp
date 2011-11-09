@@ -284,6 +284,9 @@ void NavigationController::
 void NavigationController::
         mouseMoveEvent ( QMouseEvent * e )
 {
+    // update currently not pressed mouse buttons
+    mouseReleaseEvent(e);
+
     //TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
 
