@@ -23,6 +23,8 @@ DrawnWaveformFilter::
 
         _transform = t;
     }
+    else
+        _transform.reset( new DrawnWaveform() );
 }
 
 
@@ -36,7 +38,7 @@ Signal::Interval DrawnWaveformFilter::
     unsigned blobsize = std::max(1.f, w->blob( this->sample_rate() ));
     w->signal_length = this->number_of_samples();
 
-    Signal::Interval J = Signal::Intervals(I).enlarge(1).coveredInterval();
+    Signal::Interval J = Signal::Intervals(I).enlarge(blobsize).coveredInterval();
     J.last = J.first + align_up( J.count(), blobsize*drawWaveform_BLOCK_SIZE );
 
     return J;
@@ -82,7 +84,7 @@ ChunkAndInverse DrawnWaveformFilter::
 pTransform DrawnWaveformFilter::
         transform() const
 {
-    return _transform ? _transform : DrawnWaveform::SingletonP();
+    return _transform;
 }
 
 

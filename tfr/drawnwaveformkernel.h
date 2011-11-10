@@ -11,6 +11,6 @@
  */
 void drawWaveform( DataStorage<float>::Ptr in_waveform,
                    Tfr::ChunkData::Ptr out_waveform_matrix,
-                   float blob, unsigned readstop, float maxValue );
+                   float blob, unsigned readstop, float maxValue, float writeposoffs );
 
 #endif // DRAWNWAVEFORM_CU_H

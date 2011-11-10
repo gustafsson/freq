@@ -6,7 +6,7 @@
 
 namespace Tfr {
 
-class DrawnWaveform : public Transform, public HasSingleton<DrawnWaveform,Transform>
+class DrawnWaveform : public Transform
 {
 public:
     DrawnWaveform();

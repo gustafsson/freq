@@ -16,6 +16,7 @@ DrawnWaveform::
         DrawnWaveform()
             :
             block_fs(0),
+            signal_length(0),
             maxValue(0.0001f)
 {}
 
@@ -57,16 +58,18 @@ pChunk DrawnWaveform::
             readstop = signal_length - b->getInterval().first;
     }
 
+    float writeposoffs = b->sample_offset / blobsize - ((unsigned)(b->sample_offset / blobsize));
     ::drawWaveform(
             b->waveform_data(),
             c->transform_data,
             blobsize,
             readstop,
-            maxValue);
+            maxValue,
+            writeposoffs);
 
     this->block_fs = 0;
 
-    c->chunk_offset = b->sample_offset / blobsize;
+    c->chunk_offset = b->sample_offset / blobsize + writeposoffs;
     c->freqAxis = freqAxis( b->sample_rate );
 
     c->first_valid_sample = 0;
