@@ -5,7 +5,8 @@
 #include "drawnwaveformkernel.h"
 
 #if defined(_WIN32) && !defined(USE_CUDA)
-#include <math.h>
+#define fmaxf std::max
+#define fminf std::min
 #endif
 
 #ifdef __CUDACC__
