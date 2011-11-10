@@ -53,6 +53,9 @@ ToolFactory::
     selection_model( p ),
     playback_model( p )
 {
+    try
+    {
+
     _render_view = new RenderView(&render_model);
     _render_controller.reset( new RenderController(_render_view) );
 
@@ -138,6 +141,11 @@ ToolFactory::
 
     _worker_view.reset( new WorkerView(p));
     _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view ) );
+
+    } catch (const std::exception& x) {
+        TaskInfo("ToolFactory() caught exception: %s", x.what());
+        QMessageBox::critical(0, "Couldn't open Sonic AWE", QString("Crash during initialization: %1").arg(x.what()));
+    }
 }
 
 
