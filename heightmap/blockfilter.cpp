@@ -201,7 +201,7 @@ void BlockFilter::
     chunk_a.scale = chunk_first_scale;
     chunk_b.scale = chunk_last_scale;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = (inInterval.last-1)/chunk.original_sample_rate;
+    chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
     DEBUG_CWTTOBLOCK TaskInfo("a.scale = %g", a.scale);
     DEBUG_CWTTOBLOCK TaskInfo("b.scale = %g", b.scale);
