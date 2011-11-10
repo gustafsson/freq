@@ -2,7 +2,7 @@
 set -e
 
 packagefullname="${packagename}_${versiontag}_win32"
-filename="${packagename}_setup.exe"
+filename="${packagefullname}_setup.exe"
 nsistemplate="sonic/sonicawe/dist/package-win/Sonicawe_template.nsi"
 nsisscript="sonic/sonicawe/dist/package-win/Sonicawe.nsi"
 nsiswriter="sonic/sonicawe/dist/package-win/Nsi_Writer.exe"
