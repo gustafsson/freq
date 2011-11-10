@@ -780,6 +780,7 @@ pBlock Collection::
         VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
 
         Intervals things_to_update = ref.getInterval();
+
         if ( 1 /* create from others */ )
         {
             {
@@ -915,8 +916,12 @@ pBlock Collection::
                     }
                 }
             }
-
         }
+
+
+        if (!blockFilter->createFromOthers())
+            block->valid_samples.clear();
+
 
         // fill block by STFT during the very first frames
         if (stubWithStft) // don't stubb if they will be filled by stft shortly hereafter

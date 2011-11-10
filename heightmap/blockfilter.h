@@ -23,6 +23,7 @@ public:
     /// @overload Tfr::Filter::applyFilter(Tfr::pChunk)
     virtual void applyFilter(Tfr::pChunk pchunk );
     virtual bool stubWithStft() { return true; }
+    virtual bool createFromOthers() { return true; }
 
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
@@ -154,6 +155,7 @@ public:
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
     virtual bool stubWithStft() { return false; }
+    virtual bool createFromOthers() { return false; }
 };
 
 } // namespace Heightmap
