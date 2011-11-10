@@ -60,14 +60,14 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
 
     timer.setSingleShot( true );
     timer.setInterval( 500 );
-    connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()));
+    connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
 
     connect(ui->minHzEdit, SIGNAL(textChanged(QString)), SLOT(minHzChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
     connect(ui->sampleRateEdit, SIGNAL(textEdited(QString)), SLOT(sampleRateChanged()));
 
-    transformChanged();
+    timer.start(); // call transformChanged once
 }
 
 
@@ -237,15 +237,14 @@ void TransformInfoForm::
     }
     addRow("Sonic AWE caches", DataStorageVoid::getMemorySizeText( cacheByteSize ).c_str());
 
-    if (project->areToolsInitialized())
-    {
-        Signal::Intervals I = project->worker.todo_list();
+    BOOST_ASSERT(project->areToolsInitialized());
 
-        if (I.count())
-        {
-            addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs, 0, 'f', 1));
-            timer.start();
-        }
+    Signal::Intervals I = project->worker.todo_list();
+
+    if (I.count())
+    {
+        addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs, 0, 'f', 1));
+        timer.start();
     }
 }
 
