@@ -11,6 +11,7 @@ TARGET = sonicawe
     TARGET = $$CUSTOMTARGET
 }
 
+
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release
@@ -232,6 +233,19 @@ UI_DIR = tmp
 
 CONFIG(debug, debug|release):OBJECTS_DIR = tmp/debug/
 else:OBJECTS_DIR = tmp/release/
+
+# #######################################################################
+# OpenCL
+# #######################################################################
+useopencl {
+macx: LIBS += -framework OpenCL
+
+SOURCES += \
+    tfr/clfft/*.cpp
+
+HEADERS += \
+    tfr/clfft/*.h
+}
 
 # #######################################################################
 # CUDA

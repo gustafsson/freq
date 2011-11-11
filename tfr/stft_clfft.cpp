@@ -1,20 +1,19 @@
-#if !defined(USE_CUDA) && !defined(USE_OPENCL) && false
+#ifndef USE_OPENCL
+#include <stdexcept>
 #include "stft.h"
+#include "OpenCLContext.h"
 
 #include "cpumemorystorage.h"
 #include "complexbuffer.h"
 #include "TaskTimer.h"
 #include "computationkernel.h"
 
+#include "clfft/clFFT.h"
+
 #include "waveletkernel.h"
 
 //#define TIME_STFT
 #define TIME_STFT if(0)
-
-// TODO translate cdft to take floats instead of doubles
-//extern "C" { void cdft(int, int, double *); }
-extern "C" { void cdft(int, int, double *, int *, double *); }
-// extern "C" { void cdft(int, int, float *, int *, float *); }
 
 
 namespace Tfr {
@@ -40,6 +39,7 @@ void Fft::
 
     ip[0] = 0;
 
+
     if (vector_length_test)
     {
         q.back() = magic;
@@ -47,22 +47,35 @@ void Fft::
         ip.back() = magic;
     }
 
-
-    {
-        TIME_STFT TaskTimer tt("Converting from float2 to double2" );
-
-        float* p = (float*)input->getCpuMemory();
-        for (unsigned i=0; i<2*n; i++)
-            q[i] = p[i];
-
-        for (unsigned i=2*n; i<2*N; i++)
-            q[i] = 0;
-    }
-
-
     {
         TIME_STFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
-        cdft(2*N, direction, &q[0], &ip[0], &w[0]);
+        clFFT_Dim3 ndim = { n, 1, 1 };
+        int batchSize = 1;
+        OpenCLContext *opencl = OpenCLContext::initialize();
+        cl_context context = opencl->getContext();
+        cl_command_queue queue = opencl->getCommandQueue();
+        cl_int fft_error;
+
+        clFFT_Plan plan = clFFT_CreatePlan(context, ndim, clFFT_1D, clFFT_InterleavedComplexFormat, &fft_error );
+        if(fft_error != 0)
+            throw std::runtime_error("Could not create clFFT compute plan.");
+
+        std::complex<float> *data_i = input->getCpuMemory();
+        std::complex<float> *data_o = output->getCpuMemory();
+
+        // Allocate memory for in data
+        cl_mem data_in = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_i, &fft_error);
+        cl_mem data_out = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_o, &fft_error);
+
+        // Run the fft in OpenCL :)
+        fft_error |= clFFT_ExecuteInterleaved(queue, plan, batchSize, (clFFT_Direction)direction, data_in, data_out, 0, NULL, NULL );
+        if(fft_error != 0)
+            throw std::runtime_error("Bad stuff happened during FFT computation.");
+
+        // Read the memory from OpenCL
+        fft_error |= clEnqueueReadBuffer(queue, data_out, CL_TRUE, 0, n*batchSize*sizeof(std::complex<float>), data_o, 0, NULL, NULL);
+        if(fft_error != 0)
+            throw std::runtime_error("Could not read from OpenCL memory");
 
         if (vector_length_test)
         {
@@ -70,14 +83,6 @@ void Fft::
             BOOST_ASSERT(ip.back() == magic);
             BOOST_ASSERT(w.back() == magic);
         }
-    }
-
-    {
-        TIME_STFT TaskTimer tt("Converting from double2 to float2");
-
-        float* p = (float*)output->getCpuMemory();
-        for (unsigned i=0; i<2*N; i++)
-            p[i] = (float)q[i];
     }
 }
 
@@ -453,4 +458,4 @@ Signal::pBuffer Stft::
 
 
 } // namespace Tfr
-#endif // #if !defined(USE_CUDA) && !defined(USE_OPENCL)
+#endif // #ifdef USE_OPENCL
