@@ -379,6 +379,14 @@ Signal::PostSink* RenderController::
 
     view->emitTransformChanged();
 
+    if (!hz_scale->isEnabled())
+    {
+        Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+        Ui::MainWindow* ui = main->getItems();
+        ui->actionToggle_hz_grid->setChecked(false);
+        ui->actionToggle_hz_grid->trigger();
+        hzmarker->setEnabled( true );
+    }
     hz_scale->setEnabled( true );
 
     return ps;
@@ -414,8 +422,6 @@ void RenderController::
     Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(&model()->collections);
 
     setBlockFilter( stftblock );
-
-    hz_scale->setEnabled( true );
 }
 
 
@@ -484,7 +490,11 @@ void RenderController::
     model()->renderer->draw_piano = false;
 
     linearScale->trigger();
-    hz_scale->setDefaultAction( 0 );
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+    ui->actionToggle_hz_grid->setChecked(true);
+    ui->actionToggle_hz_grid->trigger();
+    hzmarker->setEnabled( false );
     hz_scale->setEnabled( false );
 }
 
