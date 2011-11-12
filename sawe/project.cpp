@@ -44,6 +44,9 @@ Project::
 {
     TaskTimer tt("~Project");
 
+    TaskInfo("project_title = %s", project_title().c_str());
+    TaskInfo("project_filename = %s", project_filename().c_str());
+
     _tools.reset();
 
     if (_mainWindow)
