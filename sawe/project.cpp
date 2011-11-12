@@ -10,6 +10,7 @@
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
 #include "ui/mainwindow.h"
+#include "ui_mainwindow.h"
 
 // Qt
 #include <QtGui/QFileDialog>
@@ -385,7 +386,9 @@ pProject Project::
 {
     Adapters::CsvTimeseries*a;
     Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
-    return pProject( new Project( s, a->name() ));
+    pProject p( new Project( s, a->name() ));
+    p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
+    return p;
 }
 #endif
 

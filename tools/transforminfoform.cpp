@@ -62,10 +62,12 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
 
-    connect(ui->minHzEdit, SIGNAL(textChanged(QString)), SLOT(minHzChanged()));
+    connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
+    connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
+    connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
-    connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
-    connect(ui->sampleRateEdit, SIGNAL(textEdited(QString)), SLOT(sampleRateChanged()));
+    //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
+    //connect(ui->sampleRateEdit, SIGNAL(textEdited(QString)), SLOT(sampleRateChanged()));
 
     timer.start(); // call transformChanged once
 }
