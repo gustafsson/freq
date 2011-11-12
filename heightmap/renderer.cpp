@@ -913,7 +913,8 @@ std::vector<GLvector> Renderer::
   @arg timePixels Estimated longest line of pixels along time axis within ref measured in pixels
   @arg scalePixels Estimated longest line of pixels along scale axis within ref measured in pixels
   */
-bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
+bool Renderer::
+        computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
     Position p[2];
     ref.getArea( p[0], p[1] );
@@ -936,8 +937,25 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
     if (0==clippedCorners.size())
         return false;
 
-    // Find units per pixel at point closest_i with glUnProject
-    GLvector screen = gluProject( closest_i );
+    GLvector::T
+            timePerPixel = 0,
+            freqPerPixel = 0;
+    if (!computeUnitsPerPixel( closest_i, timePerPixel, freqPerPixel ))
+        return false;
+
+    // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
+    timePixels = (p[1].time - p[0].time)/timePerPixel;
+    scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
+
+    return true;
+}
+
+
+bool Renderer::
+        computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel )
+{
+    // Find units per pixel at point 'p' with glUnProject
+    GLvector screen = gluProject( p );
     GLvector screenX=screen, screenY=screen;
     if (screen[0] > viewport_matrix[0] + viewport_matrix[2]/2)
         screenX[0]--;
@@ -969,43 +987,30 @@ bool Renderer::computePixelsPerUnit( Reference ref, float& timePixels, float& sc
             xzBase = wBase - dirBase*(wBase[1]/dirBase[1]),
             xz1 = w1 - dir1*(w1[1]/dir1[1]),
             xz2 = w2 - dir2*(w2[1]/dir2[1]);
-    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
-    {
-    printf("xzBase %g\t%g\t%g\n", xzBase[0], xzBase[1], xzBase[2]);
-    printf("xz1 %g\t%g\t%g\n", xz1[0], xz1[1], xz1[2]);
-    printf("xz2 %g\t%g\t%g\n", xz2[0], xz2[1], xz2[2]);
-    printf("xz1-xzBase %g\t%g\t%g\n", (xz1-xzBase)[0], (xz1-xzBase)[1], (xz1-xzBase)[2]);
-    printf("xz2-xzBase %g\t%g\t%g\n", (xz2-xzBase)[0], (xz2-xzBase)[1], (xz2-xzBase)[2]);
-    }
 
     // compute {units in xz-plane} per {screen pixel}, that determines the required resolution
-    GLvector::T
-            timePerPixel = 0,
-            freqPerPixel = 0;
+    timePerPixel = 0;
+    scalePerPixel = 0;
 
     if (dir1[1] != 0 && dirBase[1] != 0) {
         timePerPixel = max(timePerPixel, fabs(xz1[0]-xzBase[0]));
-        freqPerPixel = max(freqPerPixel, fabs(xz1[2]-xzBase[2]));
+        scalePerPixel = max(scalePerPixel, fabs(xz1[2]-xzBase[2]));
     }
     if (dir2[1] != 0 && dirBase[1] != 0) {
         timePerPixel = max(timePerPixel, fabs(xz2[0]-xzBase[0]));
-        freqPerPixel = max(freqPerPixel, fabs(xz2[2]-xzBase[2]));
+        scalePerPixel = max(scalePerPixel, fabs(xz2[2]-xzBase[2]));
     }
 
     if (0 == timePerPixel)
         timePerPixel = max(fabs(w1[0]-wBase[0]), fabs(w2[0]-wBase[0]));
-    if (0 == freqPerPixel)
-        freqPerPixel = max(fabs(w1[2]-wBase[2]), fabs(w2[2]-wBase[2]));
+    if (0 == scalePerPixel)
+        scalePerPixel = max(fabs(w1[2]-wBase[2]), fabs(w2[2]-wBase[2]));
 
-    if (0==freqPerPixel) freqPerPixel=timePerPixel;
-    if (0==timePerPixel) timePerPixel=freqPerPixel;
+    if (0==scalePerPixel) scalePerPixel=timePerPixel;
+    if (0==timePerPixel) timePerPixel=scalePerPixel;
 
     // time/freqPerPixel is how much difference in time/freq there can be when moving one pixel away from the
     // pixel that represents the closest point in ref
-
-    // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-    timePixels = (p[1].time - p[0].time)/timePerPixel;
-    scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
 
     return true;
 }
@@ -1030,7 +1035,7 @@ void Renderer::drawAxes( float T )
     unsigned screen_width = viewport_matrix[2];
     unsigned screen_height = viewport_matrix[3];
 
-    float borderw = 50*1.1;
+    float borderw = 12.5*1.1;
     float borderh = 12.5*1.1;
 
     float w = borderw/screen_width, h=borderh/screen_height;
@@ -1097,61 +1102,19 @@ void Renderer::drawAxes( float T )
         clippedFrustum = clipFrustum(corner, closest_i, w, h);
     }
 
-    // 3 decide upon scale
-    float circumference = 0;
-    float DT=0, DF=0, ST=0, SF=0;
-    int st = 0, sf = 0;
-    GLvector inside;
-    {   float mint=FLT_MAX, maxt=0, minf=1, maxf=0;
-        for (unsigned i=0; i<clippedFrustum.size(); i++)
-        {
-            unsigned j=(i+1)%clippedFrustum.size();
 
-            GLvector a = clippedFrustum[j]-clippedFrustum[i];
+    // 3 find inside
+    GLvector inside;
+    {
+        for (unsigned i=0; i<clippedFrustum.size(); i++)
             inside = inside + clippedFrustum[i];
 
-            if (a[0] < mint) mint = a[0];
-            if (a[0] > maxt) maxt = a[0];
-            if (a[2] < minf) minf = a[2];
-            if (a[2] > maxf) maxf = a[2];
-            circumference += a.length();
-        }
         // as clippedFrustum is a convex polygon, the mean position of its vertices will be inside
         inside = inside * (1.f/clippedFrustum.size());
-
-        ST = maxt-mint;
-        SF = maxf-minf;
-
-        ST *= 8/1.1*borderw/(screen_width-2*borderw);
-        SF *= 20/1.1*borderh/(screen_height-2*borderh);
-
-        if (clippedFrustum.size())
-        {
-            st = 0, sf = 0;
-            while( powf(10, st) < ST*.53f ) st++;
-            while( powf(10, st) > ST*.53f ) st--;
-            while( powf(10, sf) < SF*.5f ) sf++;
-            while( powf(10, sf) > SF*.5f ) sf--;
-
-            st-=1;
-            sf-=1;
-
-            DT = powf(10, st);
-            DF = powf(10, sf);
-
-            if (st>1)
-            {
-                st = 1;
-                DT = 10;
-                if( 10* 60 < ST*.53f ) DT *= 6, st++;
-                if( 10* 60*10 < ST*.53f ) DT *= 10, st++;
-                if( 10* 60*10*6 < ST*.53f ) DT *= 6, st++;
-                if( 10* 60*10*6*24 < ST*.53f ) DT *= 24, st++;
-            }
-        }
     }
 
-    // 4 render
+
+    // 4 render and decide upon scale
     GLvector x(1,0,0), z(0,0,1);
 
     //glEnable(GL_BLEND);
@@ -1171,159 +1134,243 @@ void Renderer::drawAxes( float T )
         if (!v[0] && !v[2]) // skip if |v| = 0
             continue;
 
-        // compute index of next marker along t and f
-        unsigned t = p[0]/DT; // t marker index along t
-        if (v[0] > 0) t++;
-
-        unsigned fc, f = fa.getFrequency( (float)p[2] ); // t marker index along f
-        for(fc = 1; fc*10 < f; fc*=10) {}
-
-        f = f/fc*fc;
-        if (10*fc==f) { fc*=10; }
-        // unsigned p[2]/DF; // t marker index along f
-        if (v[2] > 0) f+=fc;
-
+        TaskInfo ("p(%g,%g)", p[0],p[2]);
+        TaskInfo ("v(%g,%g)", v[0],v[2]);
         // decide if this side is a t or f axis
-        bool taxis = fabsf(v[0]*SF) > fabsf(v[2]*ST);
+        GLvector::T timePerPixel, scalePerPixel;
+        computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
+
+        bool taxis = fabsf(v[0]*scalePerPixel) > fabsf(v[2]*timePerPixel);
+
+        double f = fa.getFrequencyT( p[2] );
 
         if (taxis || draw_hz)
-        for (float u=0; true; )
+        for (double u=-1; true; )
         {
+            GLvector::T timePerPixel, scalePerPixel;
+            computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+
+            double ST = timePerPixel * 750;
+            double SF = scalePerPixel * 750;
+
+            float time_axis_density = 18;
+            if (20.f+2.f*log10(timePerPixel) < 18.f)
+                time_axis_density = std::max(1., 20.f+2.f*log10(timePerPixel));
+
+            float scale_axis_density = 3;
+
+            int st = floor(log10( ST / time_axis_density ));
+            int sf = floor(log10( SF / scale_axis_density ));
+
+            double DT = powf(10, st);
+            double DF = powf(10, sf);
+
+            // compute index of next marker along t and f
+            int tmultiple = 10, tsubmultiple = 5;
+
+            if (st>0)
+            {
+                st = 0;
+                if( 60 < ST ) DT = 10, st++, tmultiple = 6, tsubmultiple = 3;
+                if( 60*10 < ST ) DT *= 6, st++, tmultiple = 10, tsubmultiple = 5;
+                if( 60*10*6 < ST ) DT *= 10, st++, tmultiple = 6, tsubmultiple = 3;
+                if( 60*10*6*24 < ST ) DT *= 6, st++, tmultiple = 24, tsubmultiple = 6;
+                if( 60*10*6*24*5 < ST ) DT *= 24, st++, tmultiple = 5, tsubmultiple = 5;
+            }
+
+            bool tmarkanyways = fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0) && ((unsigned)(p[0]/DT)%tmultiple!=0);
+            if (tmarkanyways)
+                st--;
+
+            int tupdatedetail = 20;
+            DT /= tupdatedetail;
+            unsigned t = p[0]/DT; // t marker index along t
+            if (v[0] > 0 && p[0] > t*DT) t++;
+
+
+            // compute index of next marker along t and f
+            double epsilon = 1.f/50;
+            double hz1 = fa.getFrequencyT( p[2] - DF/2 * epsilon );
+            double hz2 = fa.getFrequencyT( p[2] + DF/2 * epsilon );
+            double fc0 = (hz2 - hz1)/epsilon;
+            double fc = powf(10, floor(log10( fc0 )));
+            int fmultiple = 10;
+            double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
+            double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
+            bool fmarkanyways = fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0) && ((unsigned)(f / fc + .5)%fmultiple!=0);
+            fmarkanyways |= 7*fabsf(np1 - p[2]) > (SF / scale_axis_density) && 7*fabsf(np2 - p[2]) > (SF / scale_axis_density);
+            if (fmarkanyways)
+                sf--;
+
+            int fupdatedetail = 20;
+            fc /= fupdatedetail;
+            unsigned mif = floor(f / fc + .5); // f marker index along f
+            f = mif * fc;
+
+            if (v[2] > 0 && p[2]>fa.getFrequencyScalarNotClampedT(f)) f+=fc;
+
+
             // find next intersection along v
-            float nu;
-            if (taxis)  nu = (t*DT - clippedFrustum[i][0])/v[0];
-            else        nu = (fa.getFrequencyScalar(f) - clippedFrustum[i][2])/v[2];
+            double nu;
+            if (taxis)  nu = (p[0] - clippedFrustum[i][0])/v[0];
+            else        nu = (p[2] - clippedFrustum[i][2])/v[2];
 
             // if valid intersection
-            if ( nu > u && nu<1 ) { u = nu; }
+            if ( nu > u && nu<=1 ) { u = nu; }
             else break;
 
             // compute intersection
-            p = clippedFrustum[i]+v*u;
+            p = clippedFrustum[i] + v*u;
 
             // draw marker
             if (taxis) {
-                float size;
-                if (st<=0)
-                    size = 1+ (0 == (t%10));
-                else if (st == 1)
-                    size = 1+ (0 == (t%6));
-                else if (st == 2)
-                    size = 1+ (0 == (t%10));
-                else if (st == 3)
-                    size = 1+ (0 == (t%6));
-                else
-                    size = 1+ (0 == (t%24));
+                if (0 == t%tupdatedetail)
+                {
+                    float size = 1+ (0 == (t%(tupdatedetail*tmultiple)));
+                    if (tmarkanyways)
+                        size = 2;
 
-                glLineWidth(size);
+                    glLineWidth(size);
 
-                float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
-                float o = size*SF*h*.1f*sign;
+                    float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
+                    float o = size*SF*h*.3f*sign;
 
-                glBegin(GL_LINES);
-                    glVertex3f( p[0], 0, p[2] );
-                    glVertex3f( p[0], 0, p[2] - o);
-                glEnd();
-
-                if (size>1) {
-                    glLineWidth(1);
-
-                    glPushMatrixContext push_model( GL_MODELVIEW );
-
-                    glTranslatef(p[0], 0, p[2]);
-//                        glRotatef(90,0,1,0);
-                    glRotatef(90,1,0,0);
-                    glScalef(0.00012f*ST,0.00012f*SF,1.f);
-                    char a[100];
-                    char b[100];
-                    sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
-                    int minutes = (int)(t*DT/60);
-                    sprintf(a, b, minutes,t*DT-60*minutes);
-                    float w=0;
-                    float letter_spacing=15;
-
-                    for (char*c=a;*c!=0; c++) {
-                        if (c!=a)
-                            w+=letter_spacing;
-                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                    }
-
-                    if (!left_handed_axes)
-                        glScalef(-1,1,1);
-                    glTranslatef(-.5f*w,sign*120-50.f,0);
-                    glColor4f(1,1,1,0.5);
-                    float z = 10;
-                    float q = 20;
-                    glBegin(GL_TRIANGLE_STRIP);
-                    glVertex2f(0 - z, 0 - q);
-                    glVertex2f(w + z, 0 - q);
-                    glVertex2f(0 - z, 100 + q);
-                    glVertex2f(w + z, 100 + q);
+                    glBegin(GL_LINES);
+                        glVertex3f( p[0], 0, p[2] );
+                        glVertex3f( p[0], 0, p[2] - o);
                     glEnd();
-                    glColor4f(0,0,0,0.8);
-                    for (char*c=a;*c!=0; c++) {
-                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                        glTranslatef(letter_spacing,0,0);
+
+                    if (size>1) {
+                        glLineWidth(1);
+
+                        glPushMatrixContext push_model( GL_MODELVIEW );
+
+                        glTranslatef(p[0], 0, p[2]);
+                        glRotatef(90,1,0,0);
+                        glScalef(0.00013f*ST,0.00013f*SF,1.f);
+                        float angle = atan2(v[2]/SF, v[0]/ST) * (180*M_1_PI);
+                        glRotatef(angle,0,0,1);
+                        char a[100];
+                        char b[100];
+                        sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
+                        int minutes = (int)(t*DT/60);
+                        sprintf(a, b, minutes,t*DT-60*minutes);
+                        float w=0;
+                        float letter_spacing=15;
+
+                        for (char*c=a;*c!=0; c++) {
+                            if (c!=a)
+                                w+=letter_spacing;
+                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                        }
+
+                        if (!left_handed_axes)
+                            glScalef(-1,1,1);
+                        glTranslatef(0,70.f,0);
+                        if (sign<0)
+                            glRotatef(180,0,0,1);
+                        glTranslatef(-.5f*w,-50.f,0);
+                        glColor4f(1,1,1,0.5);
+                        float z = 10;
+                        float q = 20;
+                        glBegin(GL_TRIANGLE_STRIP);
+                        glVertex2f(0 - z, 0 - q);
+                        glVertex2f(w + z, 0 - q);
+                        glVertex2f(0 - z, 100 + q);
+                        glVertex2f(w + z, 100 + q);
+                        glEnd();
+                        glColor4f(0,0,0,0.8);
+                        for (char*c=a;*c!=0; c++) {
+                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                            glTranslatef(letter_spacing,0,0);
+                        }
                     }
                 }
-
                 if (v[0] > 0) t++;
                 if (v[0] < 0) t--;
+                p[0] = t*DT;
             } else {
-                float size = 1+ (1 == (f/fc));
-                glLineWidth(size);
-
-                float sign = (v^x)%(v^( p - inside))>0 ? 1.f : -1.f;
-                float o = size*ST*w*.1f*sign;
-                if (!left_handed_axes)
-                    sign *= -1;
-                glBegin(GL_LINES);
-                    glVertex3f( p[0], 0, p[2] );
-                    glVertex3f( p[0] - o, 0, p[2] );
-                glEnd();
-
-                if (size>1 || SF<.8f)
+                if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail)
                 {
-                    glLineWidth(1);
+                    float size = 1;
+                    if (0 == ((unsigned)floor(f/fc + .5))%(fupdatedetail*fmultiple))
+                        size = 2;
+                    if (fmarkanyways)
+                        size = 2;
 
-                    glPushMatrixContext push_model( GL_MODELVIEW );
 
-                    glTranslatef(p[0],0,p[2]);
-                    glRotatef(90,1,0,0);
-                    glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                    char a[100];
-                    sprintf(a,"%d", f);
-                    unsigned w=20;
-                    for (char*c=a;*c!=0; c++)
-                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                    glLineWidth(size);
+
+                    float sign = (v^x)%(v^( p - inside))>0 ? 1.f : -1.f;
+                    float o = size*ST*w*.3f*sign;
                     if (!left_handed_axes)
-                        glScalef(-1,1,1);
-                    glTranslatef(sign>=0?20:sign*w,-50.f,0);
-                    glColor4f(1,1,1,0.5);
-                    float z = 10;
-                    float q = 20;
-                    glBegin(GL_TRIANGLE_STRIP);
-                    glVertex2f(0 - z, 0 - q);
-                    glVertex2f(w + z, 0 - q);
-                    glVertex2f(0 - z, 100 + q);
-                    glVertex2f(w + z, 100 + q);
+                        sign *= -1;
+                    glBegin(GL_LINES);
+                        glVertex3f( p[0], 0, p[2] );
+                        glVertex3f( p[0] - o, 0, p[2] );
                     glEnd();
-                    glColor4f(0,0,0,0.8);
-                    for (char*c=a;*c!=0; c++)
-                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+
+
+                    if (size>1)
+                    {
+                        glLineWidth(1);
+
+                        glPushMatrixContext push_model( GL_MODELVIEW );
+
+                        glTranslatef(p[0],0,p[2]);
+                        glRotatef(90,1,0,0);
+                        glScalef(0.00013f*ST,0.00013f*SF,1.f);
+                        float angle = atan2(v[2]/SF, v[0]/ST) * (180*M_1_PI);
+                        glRotatef(angle,0,0,1);
+                        char a[100];
+                        sprintf(a,"%g", f);
+                        unsigned w=20;
+                        float letter_spacing=5;
+
+                        for (char*c=a;*c!=0; c++)
+                        {
+                            if (c!=a)
+                                w+=letter_spacing;
+                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+                        }
+                        if (!left_handed_axes)
+                            glScalef(-1,1,1);
+                        glTranslatef(0,70.f,0);
+                        if (sign<0)
+                            glRotatef(180,0,0,1);
+                        glTranslatef(-.5f*w,-50.f,0);
+                        glColor4f(1,1,1,0.5);
+                        float z = 10;
+                        float q = 20;
+                        glBegin(GL_TRIANGLE_STRIP);
+                        glVertex2f(0 - z, 0 - q);
+                        glVertex2f(w + z, 0 - q);
+                        glVertex2f(0 - z, 100 + q);
+                        glVertex2f(w + z, 100 + q);
+                        glEnd();
+                        glColor4f(0,0,0,0.8);
+                        for (char*c=a;*c!=0; c++)
+                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    }
                 }
 
-                if (v[2] > 0) {
-                    if (10*fc==f) { fc*=10; }
+                if (v[2] > 0)
                     f+=fc;
-                    if (10*fc==f) { fc*=10; }
-                }
-                if (v[2] < 0) { if (fc==f) { fc/=10; } f-=fc; }
+                if (v[2] < 0)
+                    f-=fc;
+                f = floor(f/fc + .5)*fc;
+                p[2] = fa.getFrequencyScalarNotClampedT(f);
             }
         }
 
         if (!taxis && draw_piano)
         {
+            GLvector::T timePerPixel, scalePerPixel;
+            computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
+
+            double ST = timePerPixel * 750;
+            double SF = scalePerPixel * 750;
+
             // from http://en.wikipedia.org/wiki/Piano_key_frequencies
             // F(n) = 440 * pow(pow(2, 1/12),n-49)
             // log(F(n)/440) = log(pow(2, 1/12),n-49)

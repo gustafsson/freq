@@ -110,11 +110,18 @@ public:
     }
 
 
+    FREQAXIS_CALL float getFrequency( float fi ) const
+    {
+        return getFrequencyT( fi );
+    }
+
+
     /**
       Translates FreqAxis coordinates to 'Hz'.
       @see getFrequencyScalar
       */
-    FREQAXIS_CALL float getFrequency( float fi ) const
+    template<typename T>
+    FREQAXIS_CALL T getFrequencyT( T fi ) const
     {
         switch (axis_scale)
         {
@@ -128,16 +135,16 @@ public:
             {
                 if (f_step>0) // normalized
                 {
-                    float fs = max_frequency_scalar*min_hz*f_step;
-                    float binmin = fs/min_hz;
-                    float binmax = 2;
-                    float numbin = binmax-binmin;
-                    float bin = binmin + numbin*fi;
+                    T fs = max_frequency_scalar*min_hz*f_step;
+                    T binmin = fs/min_hz;
+                    T binmax = 2;
+                    T numbin = binmax-binmin;
+                    T bin = binmin + numbin*fi;
                     return fs/bin;
                 }
                 else
                 {
-                    float fs = max_frequency_scalar*min_hz;
+                    T fs = max_frequency_scalar*min_hz;
                     return fs/fi;
                 }
             }
@@ -157,10 +164,17 @@ public:
     }
 
 
-    /// @see getFrequencyScalar
     FREQAXIS_CALL float getFrequencyScalarNotClamped( float hz ) const
     {
-        float fi = 0;
+        return getFrequencyScalarNotClampedT( hz );
+    }
+
+
+    /// @see getFrequencyScalar
+    template<typename T>
+    FREQAXIS_CALL float getFrequencyScalarNotClampedT( T hz ) const
+    {
+        T fi = 0;
 
         switch(axis_scale)
         {
@@ -170,7 +184,7 @@ public:
 
         case AxisScale_Logarithmic:
             {
-                float log2_f = log2f(hz/min_hz);
+                T log2_f = log2f(hz/min_hz);
 
                 fi = log2_f/f_step;
             }
@@ -180,15 +194,15 @@ public:
             {
                 if (f_step>0)
                 {
-                    float fs = max_frequency_scalar*min_hz*f_step;
-                    float binmin = fs/min_hz;
-                    float binmax = 2;
-                    float numbin = binmax-binmin;
+                    T fs = max_frequency_scalar*min_hz*f_step;
+                    T binmin = fs/min_hz;
+                    T binmax = 2;
+                    T numbin = binmax-binmin;
                     fi = (fs/hz - binmin)/numbin;
                 }
                 else
                 {
-                    float fs = max_frequency_scalar*min_hz;
+                    T fs = max_frequency_scalar*min_hz;
                     fi = fs/hz;
                 }
             }
