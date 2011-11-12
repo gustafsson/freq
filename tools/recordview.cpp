@@ -42,7 +42,7 @@ void RecordView::
         Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
         float time_support = cwt.wavelet_time_support();
         cwt.wavelet_fast_time_support( cwt.wavelet_default_time_support() );
-        double limit = std::max(0.f, model_->project->worker.length() - 2*cwt.wavelet_time_support_samples(fs)/fs);
+        float limit = std::max(0.f, model_->project->worker.length() - 2*cwt.wavelet_time_support_samples(fs)/fs);
         cwt.wavelet_fast_time_support( time_support );
 
         if (model_->render_view->model->_qx >= prev_limit_) {

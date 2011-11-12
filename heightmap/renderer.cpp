@@ -175,14 +175,14 @@ typedef tmatrix<4,GLdouble> GLmatrix;
 // static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
 // static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
 
-GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
+GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
     GLdouble win0=0, win1=0, win2=0;
     bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win0, &win1, &win2));
     if(r) *r=s;
     return GLvector(win0, win1, win2);
 }
 
-GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
+GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
     GLdouble obj0=0, obj1=0, obj2=0;
     bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj0, &obj1, &obj2));
     if(r) *r=s;
@@ -314,14 +314,14 @@ void Renderer::init()
 
 
 GLvector Renderer::
-        gluProject(GLvectorF obj, bool *r)
+        gluProject(GLvector obj, bool *r)
 {
     return Heightmap::gluProject(obj, modelview_matrix, projection_matrix, viewport_matrix, r);
 }
 
 
 GLvector Renderer::
-        gluUnProject(GLvectorF win, bool *r)
+        gluUnProject(GLvector win, bool *r)
 {
     return Heightmap::gluUnProject(win, modelview_matrix, projection_matrix, viewport_matrix, r);
 }
@@ -837,7 +837,7 @@ std::vector<GLvector> Renderer::
         // this takes about 5 us
         GLint const* const& view = viewport_matrix;
 
-        float z0=.1, z1=.2;
+        double z0=.1, z1=.2;
         if (0==w && 0==h)
             _invalid_frustum = false;
 

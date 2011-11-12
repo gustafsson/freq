@@ -16,13 +16,11 @@
 #include "gl.h"
 
 typedef tvector<3,GLdouble> GLvector;
-//typedef tvector<3,GLfloat> GLvector;
-typedef tvector<3,GLfloat> GLvectorF;
 
 namespace Heightmap {
 
-    GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
-    GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+    GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+    GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
 
 class Renderer
 {
@@ -62,8 +60,8 @@ public:
     GLdouble modelview_matrix[16], projection_matrix[16];
     GLint viewport_matrix[4];
 
-    GLvector gluProject(GLvectorF obj, bool *r=0);
-    GLvector gluUnProject(GLvectorF win, bool *r=0);
+    GLvector gluProject(GLvector obj, bool *r=0);
+    GLvector gluUnProject(GLvector win, bool *r=0);
 
     void frustumMinMaxT( float& min_t, float& max_t);
 private:

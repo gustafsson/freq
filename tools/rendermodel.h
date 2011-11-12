@@ -45,7 +45,7 @@ namespace Tools
         Sawe::Project* project() { return _project; }
 
         // TODO remove position and use renderer->camera instead
-        double _qx, _qy, _qz; // camera focus point, i.e (10, 0, 0.5)
+        float _qx, _qy, _qz; // camera focus point, i.e (10, 0, 0.5)
         float _px, _py, _pz, // camera position relative center, i.e (0, 0, -6)
             _rx, _ry, _rz; // rotation around center
         float xscale;

@@ -73,7 +73,7 @@ Heightmap::Position TimelineView::
 {
     pos.setY( tool_selector->parentTool()->geometry().height() - 1 - pos.y() );
 
-    GLvectorF win_coord( pos.x(), pos.y(), 0.1);
+    GLvector win_coord( pos.x(), pos.y(), 0.1);
 
     GLvector world_coord = Heightmap::gluUnProject(
             win_coord,
