@@ -185,6 +185,7 @@ RenderController::
         ui->actionTransform_Cwt->trigger();
         logScale->trigger();
 #endif
+        main->getItems()->actionToggleTransformToolBox->setChecked( true );
     }
 }
 
@@ -602,6 +603,7 @@ void RenderController::
     Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
     toolbar_render = new Support::ToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
+    toolbar_render->setWindowTitle(QApplication::translate("MainWindow", "toolBar", 0, QApplication::UnicodeUTF8));
     toolbar_render->setEnabled(true);
     toolbar_render->setContextMenuPolicy(Qt::NoContextMenu);
     toolbar_render->setToolButtonStyle(Qt::ToolButtonIconOnly);
