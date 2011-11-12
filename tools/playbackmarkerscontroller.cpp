@@ -86,6 +86,13 @@ void PlaybackMarkersController::
         // Meaningless click, ignore
         return;
 
+    // clamp
+    if (click.time < 0)
+        click.time = 0;
+    if (click.time > r.last_length())
+        click.time = r.last_length();
+
+
     PlaybackMarkersModel::Markers::iterator itr = model()->findMaker( click.time );
     if (itr == model()->markers().end())
     {
