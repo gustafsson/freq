@@ -222,16 +222,49 @@ void NavigationController::
 }
 
 
-void NavigationController::
+bool NavigationController::
         zoom(int delta, ZoomMode mode)
 {
     Tools::RenderView &r = *_view;
     float L = r.last_length();
-    float min_xscale = 0.01f/L;
-    float max_xscale = 0.5*r.model->project()->head->head_source()->sample_rate();
+    float fs = r.model->project()->head->head_source()->sample_rate();
+    float min_xscale = 4.f/L;
+    float max_xscale = 0.5f*fs;
 
-    float min_yscale = FLT_MIN;
-    float max_yscale = FLT_MAX;
+
+    const Tfr::FreqAxis& tfa = r.model->collections[0]->transform()->freqAxis(fs);
+    unsigned maxi = tfa.getFrequencyScalar(fs/2);
+
+    float hza = tfa.getFrequency(0u);
+    float hza2 = tfa.getFrequency(1u);
+    float hzb = tfa.getFrequency(maxi - 1);
+    float hzb2 = tfa.getFrequency(maxi - 2);
+
+    const Tfr::FreqAxis& ds = r.model->display_scale();
+    float scalara = ds.getFrequencyScalar( hza );
+    float scalara2 = ds.getFrequencyScalar( hza2 );
+    float scalarb = ds.getFrequencyScalar( hzb );
+    float scalarb2 = ds.getFrequencyScalar( hzb2 );
+
+    float minydist = std::min(fabsf(scalara2 - scalara), fabsf(scalarb2 - scalarb));
+
+    float min_yscale = 4.f;
+    float max_yscale = 1.f/minydist;
+
+    if (delta > 0)
+    {
+        switch(mode)
+        {
+        case ScaleX: if (r.model->xscale == min_xscale)
+                return false;
+            break;
+        case ScaleZ: if (r.model->zscale == min_yscale)
+                return false;
+            break;
+        default:
+            break;
+        }
+    }
 
     switch(mode)
     {
@@ -239,6 +272,8 @@ void NavigationController::
     case ScaleX: doZoom( delta, &r.model->xscale, &min_xscale, &max_xscale); break;
     case ScaleZ: doZoom( delta, &r.model->zscale, &min_yscale, &max_yscale ); break;
     }
+
+    return true;
 }
 
 
@@ -310,8 +345,18 @@ void NavigationController::
             Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
             if (success1 && success2)
             {
-                zoom( 1500*(last.time - current.time)*r.model->xscale, ScaleX );
-                zoom( 1500*(last.scale - current.scale)*r.model->zscale, ScaleZ );
+                if (!zoom( 1500*(last.time - current.time)*r.model->xscale, ScaleX ))
+                {
+                    float L = _view->model->project()->worker.source()->length();
+                    float d = std::min( 0.5f * fabsf(last.time - current.time), fabsf(r.model->_qx - L/2));
+                    r.model->_qx += r.model->_qx>L*.5f ? -d : d;
+                }
+
+                if (!zoom( 1500*(last.scale - current.scale)*r.model->zscale, ScaleZ ))
+                {
+                    float d = std::min( 0.5f * fabsf(last.scale - current.scale), fabsf(r.model->_qz - .5f));
+                    r.model->_qz += r.model->_qz>.5f ? -d : d;
+                }
             }
         }
         else
