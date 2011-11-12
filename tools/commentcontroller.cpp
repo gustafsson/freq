@@ -72,6 +72,7 @@ void CommentController::
     }
 
     view->model()->pos = p;
+    view->resize( 1, 1); // grow with setHtml instead
     view->setHtml( text );
     view->show();
 }

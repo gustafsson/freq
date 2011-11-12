@@ -207,10 +207,7 @@ void TooltipModel::
     }
 
     bool first = 0 == this->comment;
-    //BOOST_ASSERT(this->pos().time >= 0);
-    //BOOST_ASSERT(this->pos().scale >= 0);
-    //BOOST_ASSERT(this->pos().time <= FLT_MAX);
-    //BOOST_ASSERT(this->pos().scale <= 1);
+
     comments_->setComment( this->pos(), ss.str(), &this->comment );
     BOOST_ASSERT(this->comment);
     if (first)
@@ -223,19 +220,8 @@ void TooltipModel::
         this->comment->thumbnail( false );
 
     this->comment->model()->pos = Heightmap::Position(
-            p.time, // - 0.01/render_view_->model->xscale*render_view_->model->_pz,
+            p.time,
             p.scale);
-
-    //QToolTip::showText( screen_pos.toPoint(), QString(), this ); // Force tooltip to change position even if the text is the same as in the previous tooltip
-    //QToolTip::showText( screen_pos.toPoint(), QString::fromLocal8Bit(ss.str().c_str()), this );
-
-    if ( first )
-    {
-        if ( 0 < this->markers )
-            this->comment->resize( 440, 225 );
-        else
-            this->comment->resize( 260, 80 );
-    }
 
     if (found_better)
     {

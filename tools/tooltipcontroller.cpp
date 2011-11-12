@@ -11,6 +11,7 @@
 
 // Qt
 #include <QMouseEvent>
+#include <QGLWidget>
 
 namespace Tools
 {
@@ -143,7 +144,9 @@ void TooltipController::
         {
             hover_info_model_->showToolTip( p );
             if (hover_info_model_->comment)
+            {
                 hover_info_model_->comment->setEnabled( false );
+            }
         }
     }
 
@@ -223,7 +226,11 @@ void TooltipController::
         hover_info_model_->setPtrs( render_view_, this->comments_ );
         setMouseTracking( true );
 
+        QMouseEvent event(QEvent::MouseMove, render_view_->glwidget->mapFromGlobal( QCursor::pos() ),  Qt::NoButton, Qt::NoButton, Qt::NoModifier );
+        mouseMoveEvent(&event);
+
         this->render_view_->graphicsview->setToolFocus( true );
+        this->render_view_->userinput_update( true );
     }
     else if (hover_info_model_)
     {
