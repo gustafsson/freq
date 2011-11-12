@@ -164,7 +164,8 @@ public:
       The default settings are stored when the project is created and can
       be restored layer through this method.
       */
-    void restoreDefaultLayout();
+    void resetLayout();
+    void resetView();
 
 private:
     Project(); // used by deserialization

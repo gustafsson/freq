@@ -80,7 +80,9 @@ private slots:
 #endif
     void toggleFullscreen( bool );
     void toggleFullscreenNoMenus( bool fullscreen );
-    void restoreLayout();
+    void resetLayout();
+    void resetView();
+    void clearSettings();
     void reenterProductKey();
     void gotomuchdifferent();
     void gotobugsmuchdifferent();

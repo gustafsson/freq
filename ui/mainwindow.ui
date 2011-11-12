@@ -69,9 +69,13 @@
     <addaction name="menu_Windows"/>
     <addaction name="menuToolbars"/>
     <addaction name="separator"/>
-    <addaction name="actionRestore_layout"/>
     <addaction name="actionToggleFullscreenNoMenus"/>
     <addaction name="actionToggleFullscreen"/>
+    <addaction name="separator"/>
+    <addaction name="actionReset_view"/>
+    <addaction name="actionReset_layout"/>
+    <addaction name="actionClear_settings"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -1455,9 +1459,9 @@
     <string>&amp;Brushes</string>
    </property>
   </action>
-  <action name="actionRestore_layout">
+  <action name="actionReset_layout">
    <property name="text">
-    <string>&amp;Restore layout</string>
+    <string>Reset &amp;layout</string>
    </property>
   </action>
   <action name="actionOperation_details">
@@ -1537,6 +1541,16 @@
   <action name="actionAsk_for_help">
    <property name="text">
     <string>Ask for &amp;help</string>
+   </property>
+  </action>
+  <action name="actionReset_view">
+   <property name="text">
+    <string>Reset &amp;view</string>
+   </property>
+  </action>
+  <action name="actionClear_settings">
+   <property name="text">
+    <string>Clear settings</string>
    </property>
   </action>
  </widget>

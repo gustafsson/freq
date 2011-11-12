@@ -326,18 +326,18 @@ void Project::
 
 
 void Project::
-        restoreDefaultLayout()
+        resetLayout()
 {
-    QSettings settings;
+    setGuiState( defaultGuiState );
+}
 
-    Ui::SaweMainWindow* saweMain = dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
-    saweMain->restoreSettings( defaultGuiState );
 
-    QString value = settings.value("value").toString();
-    settings.clear();
-    settings.setValue("value", value);
-
+void Project::
+        resetView()
+{
     tools().render_view()->model->resetSettings();
+    Application::global_ptr()->clearCaches();
+    tools().render_view()->userinput_update( false );
 }
 
 

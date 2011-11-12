@@ -61,7 +61,9 @@ void SaweMainWindow::
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));
-    connect(ui->actionRestore_layout, SIGNAL(triggered()), SLOT(restoreLayout()));
+    connect(ui->actionReset_layout, SIGNAL(triggered()), SLOT(resetLayout()));
+    connect(ui->actionReset_view, SIGNAL(triggered()), SLOT(resetView()));
+    connect(ui->actionClear_settings, SIGNAL(triggered()), SLOT(clearSettings()));
     connect(ui->actionOperation_details, SIGNAL(toggled(bool)), ui->toolPropertiesWindow, SLOT(setVisible(bool)));
     connect(ui->actionOperation_details, SIGNAL(triggered()), ui->toolPropertiesWindow, SLOT(raise()));
     connect(ui->toolPropertiesWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityToolProperties(bool)));
@@ -402,9 +404,32 @@ void SaweMainWindow::
 
 
 void SaweMainWindow::
-        restoreLayout()
+        resetLayout()
 {
-    project->restoreDefaultLayout();
+    project->resetLayout();
+}
+
+
+void SaweMainWindow::
+        resetView()
+{
+    project->resetView();
+}
+
+
+void SaweMainWindow::
+        clearSettings()
+{
+    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear all user defined settings?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+    {
+        QSettings settings;
+        QString value = settings.value("value").toString();
+        settings.clear();
+        settings.setValue("value", value);
+
+        resetLayout();
+        resetView();
+    }
 }
 
 
@@ -560,7 +585,10 @@ void SaweMainWindow::
 {
     if (!object->objectName().isEmpty())
         if (const QWidget* w = dynamic_cast<const QWidget*>(object))
+        {
             state.insert(w->objectName()+"/geometry", w->saveGeometry());
+            state.insert(w->objectName()+"/visible", w->isVisible());
+        }
 
     foreach( const QObject* o, object->children())
     {
@@ -588,7 +616,10 @@ void SaweMainWindow::
         i.next();
 
         if (QWidget* w = dynamic_cast<QWidget*>(o)) if(o->objectName() == i.key())
+        {
             w->restoreGeometry( state[ w->objectName()+"/geometry" ].toByteArray() );
+            w->setVisible( state[ w->objectName()+"/visible" ].toBool() );
+        }
 
         if (QSlider* s = o->findChild<QSlider*>( i.key() ))
             s->setValue( i.value().toInt() );
