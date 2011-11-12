@@ -166,17 +166,20 @@ void TooltipModel::
     }
 
     ss << setiosflags(ios::fixed);
+    int timeprecision = std::max(0, (int)floor(-log10(std_t)) + 2); // display 2 significant digits in std_t (same decimal precision in p.time)
+    int freqprecision = std::max(0, (int)floor(-log10(std_f)) + 2); // display 2 significant digits in std_f (same decimal precision in f)
     if (std_t != 0)
-        ss << "Time: " << setprecision(3) << p.time << " \u00B1 " << " " << setprecision(3) << std_t << " s<br/>";
+        ss << "Time: " << setprecision(timeprecision) << p.time << " \u00B1 " << " " << setprecision(timeprecision) << std_t << " s<br/>";
     else
-        ss << "Time: " << setprecision(3) << p.time << " s<br/>";
+        ss << "Time: " << setprecision(timeprecision) << p.time << " s<br/>";
 
     if (std_f != 0)
-        ss << "Frequency: " << setprecision(1) << f << " \u00B1 " << setprecision(1) << std_f << " Hz<br/>";
+        ss << "Frequency: " << setprecision(freqprecision) << f << " \u00B1 " << setprecision(freqprecision) << std_f << " Hz<br/>";
     else
-        ss << "Frequency: " << setprecision(1) << f << " Hz<br/>";
+        ss << "Frequency: " << setprecision(freqprecision) << f << " Hz<br/>";
 
-    ss << "Value here: " << setprecision(10) << this->max_so_far << setprecision(1);
+    int valueprecision = std::max(0, (int)floor(-log10(max_so_far)) + 3); // display 3 significant digits in value
+    ss << "Value here: " << setprecision(valueprecision) << this->max_so_far << setprecision(1);
 
     this->compliance = 0;
 
