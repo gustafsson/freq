@@ -1233,7 +1233,7 @@ void Renderer::drawAxes( float T )
                     glLineWidth(size);
 
                     float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*SF*h*.3f*sign;
+                    float o = size*SF*.003f*sign;
 
                     glBegin(GL_LINES);
                         glVertex3f( p[0], 0, p[2] );
@@ -1302,7 +1302,7 @@ void Renderer::drawAxes( float T )
                     glLineWidth(size);
 
                     float sign = (v^x)%(v^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*ST*w*.3f*sign;
+                    float o = size*ST*.003f*sign;
                     if (!left_handed_axes)
                         sign *= -1;
                     glBegin(GL_LINES);
