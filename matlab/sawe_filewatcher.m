@@ -22,7 +22,14 @@ if nargin<4
   dt=0.025;
 end
 
-if 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
+secondaryfunction = false;
+try
+% this will fail for secondary function (that doesn't have the same name as the basename of the file)
+secondaryfunction = 0==nargin(func2str(func));
+catch
+secondaryfunction=true
+end
+if ~secondaryfunction && 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
   disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
 end
 
@@ -38,6 +45,7 @@ tic
 logginfo=false;
 start_waiting_time = clock;
 
+
 while 1
 
   if etime(clock,start_waiting_time) > time_out
@@ -50,48 +58,67 @@ while 1
     datafile_exists = exist(datafile,'file'); % matlab and octave
   end
 
-  if datafile_exists
+  if datafile_exists || secondaryfunction
     start_waiting_time = clock;
-    if logginfo
-      disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
-    end
 
-    try	
-      if ~isoctave
-        info=hdf5info(datafile);
-        [dset1]=info.GroupHierarchy.Datasets.Name;
-        if strcmp(dset1,'/buffer')
-            data = sawe_loadbuffer(datafile);
-        else
-            data = sawe_loadchunk(datafile);
-        end
-      else
-        %octave
-        data = load(datafile);
+	if secondaryfunction
+      data = struct();
+    else
+      if logginfo
+        disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
       end
-	catch me
-	  disp(me)
-	  continue
-    end
-	
-	sawe_plot_data = [];
 
+      try	
+        if ~isoctave
+          info=hdf5info(datafile);
+          [dset1]=info.GroupHierarchy.Datasets.Name;
+          if strcmp(dset1,'/buffer')
+            data = sawe_loadbuffer(datafile);
+          else
+            data = sawe_loadchunk(datafile);
+          end
+        else
+          %octave
+          data = load(datafile);
+        end
+      catch
+        disp(lasterr)
+        continue
+      end
+    end
+
+	sawe_plot_data = [];
+	
     % 'Supposed to be scalars' are exported from Sonic AWE as 1x1 matrice, not scalars.
     % Hence we need to take the value by "data.samplerate(1)" instead of "data.samplerate".
     % This reduces 1x1 matrices to scalars
     n = fieldnames(data);
     for k=1:numel(n)
-        if numel(data.(n{k})) == 1
-            v = data.(n{k});
-            data.(n{k}) = v(1);
-        end
+      if numel(data.(n{k})) == 1
+        v = data.(n{k});
+        data.(n{k}) = v(1);
+      end
     end
 
     if logginfo
       disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
     end
 
-    if 0 == nargout(func2str(func))
+    if secondaryfunction
+      data = struct();
+      try
+        if 0 ~= numel(arguments)
+          data = func(arguments);
+        else
+          data = func();
+        end
+      catch
+        disp(lasterr);
+      end
+      if ismatrix(data)
+        data = struct();
+      end
+    elseif 0 == nargout(func2str(func))
       if 1 == nargin(func2str(func))
         func(data);
       else
@@ -106,12 +133,7 @@ while 1
       end
     end
 
-    % could perhaps use fieldnames(data) somehow to export this data
-    if isfield(data,'buffer')
-      sawe_savebuffer(tempfile, data.buffer, data.offset, data.samplerate, data.redundancy, sawe_plot_data );
-    elseif isfield(data,'chunk')
-      sawe_savechunk(tempfile, data.chunk, data.offset, data.samplerate, data.redundancy, sawe_plot_data );
-    end
+	sawe_savestruct(tempfile, data);
     
     if isoctave
       rename(tempfile,resultfile);   % octave
@@ -123,6 +145,9 @@ while 1
       disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' saved results']);
     end
     
+    if secondaryfunction
+      exit;
+    end
   else
     if isoctave
       sleep(dt); % octave
