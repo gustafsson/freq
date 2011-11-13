@@ -1,6 +1,7 @@
 #ifndef MATLABCONTROLLER_H
 #define MATLABCONTROLLER_H
 
+#include "adapters/readmatlabsettings.h"
 #include "sawe/toolmodel.h"
 
 #include <signal/operation.h>
@@ -13,6 +14,7 @@ namespace Signal { class Worker; }
 namespace Adapters { class MatlabOperation; }
 
 class QMenu;
+class QToolBar;
 
 namespace Tools
 {
@@ -30,14 +32,24 @@ namespace Tools
         void receiveMatlabFilter();
         void tryHeadAsMatlabOperation();
         void createFromAction();
+        void settingsRead( Adapters::DefaultMatlabFunctionSettings settings );
+        void createFromScriptPath();
+        void createFromDefaultSettings( Adapters::DefaultMatlabFunctionSettings settings );
+        void scriptIsSource();
+        void scriptIsNotSource();
+        void createFromSettingsFailed( QString filename, QString info );
 
     private:
+        void showNewMatlabOperationDialog( Adapters::MatlabFunctionSettings* psettings );
+        void createFromSettings( Adapters::MatlabFunctionSettings& settings );
+
         void createView();
         void createView(Signal::Operation* o);
 
         void updateScriptsMenu();
         void createOperation(MatlabOperationWidget* settings);
         void connectOperation(MatlabOperationWidget* settings, Signal::pOperation matlaboperation);
+        void updateStoredSettings(Adapters::MatlabFunctionSettings* settings);
 
         // Model
         // Model that is controlled, this controller doesn't have a view
@@ -46,6 +58,7 @@ namespace Tools
 
         RenderView* render_view_;
         QPointer<QMenu> scripts_;
+        QPointer<QToolBar> scriptsToolbar_;
 
         // GUI
         // The fact that this controller doesn't have a view doesn't mean

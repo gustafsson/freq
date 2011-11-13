@@ -29,7 +29,7 @@ class MatlabOperationWidget : public QWidget, public Adapters::MatlabFunctionSet
     Q_OBJECT
 
 public:
-    explicit MatlabOperationWidget(Sawe::Project* project, QWidget *parent = 0);
+    explicit MatlabOperationWidget(Adapters::MatlabFunctionSettings* settings, Sawe::Project* project, QWidget *parent = 0);
     ~MatlabOperationWidget();
 
     std::string scriptname();
@@ -63,9 +63,12 @@ private slots:
     void announceInvalidSamples();
     void invalidateAllSamples();
     void restartScript();
+    void reloadAutoSettings();
+    void settingsRead( Adapters::DefaultMatlabFunctionSettings settings );
     void postRestartScript();
     void chunkSizeChanged();
     void restoreChanges();
+    void settingsVisibleToggled(bool);
 
     void sendCommand();
 

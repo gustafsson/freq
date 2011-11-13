@@ -27,7 +27,6 @@
 #include <demangle.h>
 
 // Qt
-#include <QToolBar>
 #include <QSlider>
 #include <QGraphicsView>
 #include <QResizeEvent>

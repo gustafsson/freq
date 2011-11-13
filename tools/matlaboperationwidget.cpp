@@ -1,6 +1,7 @@
 #include "matlaboperationwidget.h"
 #include "ui_matlaboperationwidget.h"
 #include "support/commandedit.h"
+#include "adapters/readmatlabsettings.h"
 
 #include "sawe/project.h"
 #include "ui/mainwindow.h"
@@ -16,7 +17,7 @@
 
 namespace Tools {
 
-MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *parent) :
+MatlabOperationWidget::MatlabOperationWidget(Adapters::MatlabFunctionSettings* psettings, Sawe::Project* project, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MatlabOperationWidget),
     project(project),
@@ -26,19 +27,17 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     edit(0)
 {
     ui->setupUi(this);
-    ui->samplerateLabel->setText( QString("%1 samples/s in the current signal.").arg(project->head->head_source()->sample_rate()) );
     ui->pushButtonRestartScript->setVisible(false);
     ui->pushButtonRestoreChanges->setVisible(false);
     ui->pushButtonShowOutput->setVisible(false);
 
     connect(ui->browseButton, SIGNAL(clicked()), SLOT(browse()));
 
-    setMaximumSize( width(), height() );
-    setMinimumSize( width(), height() );
     announceInvalidSamplesTimer.setSingleShot( true );
     announceInvalidSamplesTimer.setInterval( 20 );
     connect( &announceInvalidSamplesTimer, SIGNAL(timeout()), SLOT(announceInvalidSamples()));
 
+    connect( ui->scriptname, SIGNAL(textChanged(QString)), SLOT(reloadAutoSettings()));
     connect( ui->scriptname, SIGNAL(textChanged(QString)), SLOT(postRestartScript()));
     connect( ui->scriptname, SIGNAL(returnPressed()), SLOT(restartScript()));
     connect( ui->computeInOrder, SIGNAL(toggled(bool)), SLOT(postRestartScript()));
@@ -48,6 +47,10 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     connect( ui->chunksize, SIGNAL(valueChanged(int)), SLOT(chunkSizeChanged()));
     connect( ui->pushButtonRestartScript, SIGNAL(clicked()), SLOT(restartScript()) );
     connect( ui->pushButtonRestoreChanges, SIGNAL(clicked()), SLOT(restoreChanges()) );
+    ui->settingsBox->setChecked( true );
+    connect( ui->settingsBox, SIGNAL(toggled(bool)), SLOT(settingsVisibleToggled(bool)) );
+
+    ui->settingsBox->setChecked( false );
 
     QSettings settings;
     settings.beginGroup("MatlabOperationWidget");
@@ -56,6 +59,34 @@ MatlabOperationWidget::MatlabOperationWidget(Sawe::Project* project, QWidget *pa
     ui->chunksize->setValue(        settings.value("chunksize" ).toInt());
     ui->redundant->setValue(        settings.value("redundant" ).toInt());
     settings.endGroup();
+
+    if (psettings)
+    {
+        ui->labelEmptyForTerminal->setVisible( false );
+
+        ui->scriptname->setText(        psettings->scriptname().c_str() );
+        ui->computeInOrder->setChecked( psettings->computeInOrder() );
+        ui->chunksize->setValue(        psettings->chunksize() );
+        ui->redundant->setValue(        psettings->redundant() );
+        ui->arguments->setText(         psettings->arguments().c_str() );
+        ui->scriptname->setEnabled( false );
+        ui->settingsBox->setChecked( true );
+        ui->settingsBox->setCheckable( false );
+
+        if (psettings->chunksize() == -2)
+        {
+            // source
+            ui->computeInOrder->hide();
+            ui->chunksize->hide();
+            ui->redundant->hide();
+            ui->labelChunkSize->hide();
+            ui->labelChunkSizeInfo->hide();
+            ui->labelInOrderInfo->hide();
+            ui->labelRedundantSamples->hide();
+            ui->labelRedundantSamplesInfo->hide();
+            window()->resize( 452, 170 );
+        }
+    }
 }
 
 
@@ -63,11 +94,8 @@ MatlabOperationWidget::
         ~MatlabOperationWidget()
 {
     TaskInfo ti("~MatlabOperationWidget");
-    TaskInfo(".");
 
-    {
-        hideEvent(0);
-    }
+    hideEvent(0);
 
     if (octaveWindow)
         delete octaveWindow.data();
@@ -216,9 +244,15 @@ bool MatlabOperationWidget::
 
     if (matlabTarget)
     {
-        unsigned outputs = matlabChain->root_source()->outputs().size();
+        bool isreferenced = false;
+        foreach (Signal::pChain c, project->layers.layers())
+        {
+            if (c!=matlabChain)
+                isreferenced |= c->isInChain( matlabChain->root_source() );
+        }
+
         // If the matlab operation is only needed by the MatlabOperationWidget it has been removed, delete this
-        if (outputs == 1)
+        if (!isreferenced)
         {
             delete this;
             return false;
@@ -389,6 +423,31 @@ void MatlabOperationWidget::
 
 
 void MatlabOperationWidget::
+        reloadAutoSettings()
+{
+    Adapters::ReadMatlabSettings::readSettingsAsync( ui->scriptname->text(), this, SLOT(settingsRead(Adapters::DefaultMatlabFunctionSettings)));
+}
+
+
+
+void MatlabOperationWidget::
+        settingsRead( Adapters::DefaultMatlabFunctionSettings settings )
+{
+    TaskInfo ti("MatlabOperationWidget: settings");
+    TaskInfo("arguments = %s", settings.arguments_.c_str());
+    TaskInfo("chunksize = %d", settings.chunksize_);
+    TaskInfo("computeInOrder = %d", settings.computeInOrder_);
+    TaskInfo("redundant = %d", settings.redundant_);
+    TaskInfo("scriptname = %s", settings.scriptname_.c_str());
+
+    arguments(settings.arguments());
+    chunksize(settings.chunksize());
+    computeInOrder(settings.computeInOrder());
+    redundant(settings.redundant());
+}
+
+
+void MatlabOperationWidget::
         postRestartScript()
 {
     if (operation)
@@ -420,6 +479,20 @@ void MatlabOperationWidget::
     currentFocus->setFocus();
 
     ui->pushButtonRestoreChanges->setEnabled(false);
+}
+
+
+void MatlabOperationWidget::
+        settingsVisibleToggled(bool v)
+{
+    ui->settingsBox->setMaximumHeight(v ? 524287 : 20);
+    int h = ui->labelEmptyForTerminal->isVisible() ? 0 : ui->labelEmptyForTerminal->height();
+
+    // xkcd.com/974/
+    if (v)
+        this->window()->resize( 452, 478-h );
+    else
+        this->window()->resize( 452, 170-h );
 }
 
 
