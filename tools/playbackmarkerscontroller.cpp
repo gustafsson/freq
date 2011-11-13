@@ -31,6 +31,12 @@ void PlaybackMarkersController::
 
     setMouseTracking(active);
 
+    if (active)
+        // Paint when render view paints
+        connect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
+    else
+        disconnect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
+
     render_view_->userinput_update();
 }
 
@@ -192,8 +198,6 @@ void PlaybackMarkersController::
     connect(ui->actionJumpBackward, SIGNAL(triggered()), SLOT(receivePreviousMarker()));
 
 
-    // Paint when render view paints
-    connect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
     // Close this widget before the OpenGL context is destroyed to perform
     // proper cleanup of resources
     connect(render_view_, SIGNAL(destroying()), SLOT(close()));
