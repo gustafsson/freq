@@ -155,7 +155,7 @@ void MatlabFunction::
         init(string fullpath, MatlabFunctionSettings* settings)
 {
     { // Set filenames
-        QTemporaryFile tempFile("saweinterop.XXXXXXX");
+        QTemporaryFile tempFile(QDir::tempPath() + QDir::separator() + "saweinterop.XXXXXX");
         _interopName = tempFile.fileName();
         tempFile.open(); // create file and block other instances from picking the same name
         tempFile.setAutoRemove( false );
