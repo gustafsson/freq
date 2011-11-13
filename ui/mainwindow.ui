@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTools">
@@ -105,6 +105,7 @@
     </property>
     <addaction name="separator"/>
     <addaction name="actionAsk_for_help"/>
+    <addaction name="actionFind_plugins"/>
     <addaction name="actionReport_a_bug"/>
     <addaction name="separator"/>
     <addaction name="action_Enter_product_key"/>
@@ -1551,6 +1552,11 @@
   <action name="actionClear_settings">
    <property name="text">
     <string>Clear settings</string>
+   </property>
+  </action>
+  <action name="actionFind_plugins">
+   <property name="text">
+    <string>Find &amp;plugins</string>
    </property>
   </action>
  </widget>

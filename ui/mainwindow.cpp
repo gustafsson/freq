@@ -75,6 +75,7 @@ void SaweMainWindow::
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
     connect(ui->actionReport_a_bug, SIGNAL(triggered()), SLOT(gotobugsmuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
+    connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));
 
     ui->actionOperation_details->setChecked( false );
 
@@ -476,6 +477,20 @@ void SaweMainWindow::
             QMessageBox::Information,
             "sonicawe.muchdifferent.com",
             "You are very welcome to ask questions about Sonic AWE in our forum!");
+
+    message.exec();
+
+    QDesktopServices::openUrl(QUrl("http://sonicawe.muchdifferent.com"));
+}
+
+
+void SaweMainWindow::
+        findplugins()
+{
+    QMessageBox message(
+            QMessageBox::Information,
+            "sonicawe.muchdifferent.com",
+            "If you want to browse plugins developed by others (or have a plugin to share yourself), please see our forum and search for scripts.");
 
     message.exec();
 
