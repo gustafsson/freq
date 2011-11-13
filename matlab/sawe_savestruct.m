@@ -3,11 +3,14 @@
 function sawe_savestruct(filename, data)
 if exist('OCTAVE_VERSION','builtin')
     %octave
-	N=fieldnames(data);
-	for n=1:numel(N)
-		eval([N{n} '= data.(N{n});']);
+    % try to avoid name collissions by prefixing local variables with _
+    _filename = filename;
+    _data = data;
+	_N=fieldnames(_data);
+	for _n=1:numel(_N)
+		eval([_N{_n} '= _data.(_N{_n});']);
 	end
-    save('-hdf5', filename, N{:});
+    save('-hdf5', _filename, _N{:});
 else
     % matlab
 	N=fieldnames(data);

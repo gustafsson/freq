@@ -25,9 +25,9 @@ end
 secondaryfunction = false;
 try
 % this will fail for secondary function (that doesn't have the same name as the basename of the file)
-secondaryfunction = 0==nargin(func2str(func));
+secondaryfunction = ~exist( [func2str(func) '.m'] );
 catch
-secondaryfunction=true
+secondaryfunction = true;
 end
 if ~secondaryfunction && 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
   disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
@@ -105,7 +105,7 @@ while 1
     end
 
     if secondaryfunction
-      data = struct();
+      data = [];
       try
         if 0 ~= numel(arguments)
           data = func(arguments);
@@ -115,8 +115,9 @@ while 1
       catch
         disp(lasterr);
       end
-      if ismatrix(data)
+      if ~isstruct(data)
         data = struct();
+        data.dummy = [];
       end
     elseif 0 == nargout(func2str(func))
       if 1 == nargin(func2str(func))

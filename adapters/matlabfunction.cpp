@@ -213,16 +213,19 @@ void MatlabFunction::
                     << "addpath('" << path << "');"
                     << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function;
             octave_command
-                    << "source('" << filename << "');"
+                    << "try;source('" << filename << "');"
                     << "addpath('" << path << "');"
-                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function;
+                    << "f=@" << _matlab_function << ";"
+                    << "catch;exit;end;"
+                    << "sawe_filewatcher('" << _dataFile << "',f";
 
             string arguments = settings ? settings->arguments() : "";
 
             trim( arguments );
             trim_if( arguments, is_any_of(";") );
 
-            if (arguments.size())
+            arguments = arguments.c_str();
+            if (arguments.size() )
             {
                 TaskInfo ti("arguments(%d) = %s", arguments.size(), arguments.c_str());
                 for (unsigned i=0; i<arguments.size(); ++i)
