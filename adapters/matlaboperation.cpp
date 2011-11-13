@@ -125,7 +125,7 @@ bool MatlabOperation::
             redundancy = 0;
 
         IntervalType support = (IntervalType)std::floor(redundancy + 0.5);
-        _settings->redundant(support);
+        _settings->overlap(support);
 
         if (!ready_data)
         {
@@ -252,7 +252,7 @@ Interval MatlabOperation::
             J.last = J.first + _settings->chunksize();
     }
 
-    IntervalType support = _settings->redundant();
+    IntervalType support = _settings->overlap();
     Interval signal = getInterval();
     J &= signal;
     Interval K = Intervals(J).enlarge( support ).coveredInterval();
@@ -349,8 +349,8 @@ pBuffer MatlabOperation::
 
             string file = _matlab->getTempName();
 
-            IntervalType support = _settings->redundant();
-            Hdf5Buffer::saveBuffer( file, *sent_data, support );
+            IntervalType overlap = _settings->overlap();
+            Hdf5Buffer::saveBuffer( file, *sent_data, overlap );
 
             TaskInfo("Sending %s to Matlab/Octave", sent_data->getInterval().toString().c_str() );
             _matlab->invoke( file );

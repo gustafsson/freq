@@ -12,6 +12,9 @@
 
 //typedef int hid_t; // from H5Ipublic
 
+//#define VERBOSE_HDF5_HEADER
+#define VERBOSE_HDF5_HEADER if(0)
+
 namespace Adapters {
 
 class Hdf5Error: public std::runtime_error
@@ -106,8 +109,8 @@ public:
         try {
             return read<T>(datasetname);
         } catch (const std::runtime_error& x) {
-            TaskInfo ti("Hdf5Input couldn't read '%s' from '%s'\n%s", datasetname.c_str(), _filename.c_str(), x.what());
-            TaskInfo("Tip: Use tools like \"h5ls -fr\" to investigate the dataset.");
+            VERBOSE_HDF5_HEADER TaskInfo ti("Hdf5Input couldn't read '%s' from '%s'\n%s", datasetname.c_str(), _filename.c_str(), x.what());
+            VERBOSE_HDF5_HEADER TaskInfo("Tip: Use tools like \"h5ls -fr\" to investigate the dataset.");
             return defaultValue;
         }
     }
@@ -159,8 +162,8 @@ public:
 
     virtual void put(Signal::pBuffer);
 
-    static void             saveBuffer( std::string filename, const Signal::Buffer&, double redundancy );
-    static Signal::pBuffer  loadBuffer( std::string filename, double* redundancy, Signal::pBuffer* plot );
+    static void             saveBuffer( std::string filename, const Signal::Buffer&, double overlapping );
+    static Signal::pBuffer  loadBuffer( std::string filename, double* overlapping, Signal::pBuffer* plot );
 
 private:
     std::string _filename;

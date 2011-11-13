@@ -150,7 +150,7 @@ void MatlabOperationWidget::
 std::string MatlabOperationWidget::
         arguments() const
 {
-    return operation ? prevsettings.arguments() : ui->arguments->text().toStdString();
+    return operation ? prevsettings.arguments() : ui->arguments->text().trimmed().toStdString();
 }
 
 
@@ -165,17 +165,17 @@ void MatlabOperationWidget::
 
 
 std::string MatlabOperationWidget::
-        argumentdescription() const
+        argument_description() const
 {
-    return operation ? prevsettings.argumentdescription() : ui->labelArgumentDescription->text().toStdString();
+    return operation ? prevsettings.argument_description() : ui->labelArgumentDescription->text().toStdString();
 }
 
 
 void MatlabOperationWidget::
-        argumentdescription(const std::string& t)
+        argument_description(const std::string& t)
 {
     ui->labelArgumentDescription->setText( t.c_str() );
-    prevsettings.argumentdescription( t );
+    prevsettings.argument_description( t );
 }
 
 
@@ -214,18 +214,18 @@ void MatlabOperationWidget::
 
 
 int MatlabOperationWidget::
-        redundant() const
+        overlap() const
 {
-    return operation ? prevsettings.redundant() :  ui->redundant->value();
+    return operation ? prevsettings.overlap() :  ui->redundant->value();
 }
 
 
 void MatlabOperationWidget::
-        redundant(int v)
+        overlap(int v)
 {
     bool restore = ui->pushButtonRestoreChanges->isEnabled();
     ui->redundant->setValue( v );
-    prevsettings.redundant( v );
+    prevsettings.overlap( v );
     ui->pushButtonRestoreChanges->setEnabled(restore);
 }
 

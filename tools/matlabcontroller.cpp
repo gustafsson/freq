@@ -218,7 +218,7 @@ void MatlabController::
     settings.chunksize( state.value("chunksize").toInt() );
     settings.computeInOrder( state.value("computeInOrder").toBool() );
     settings.operation = 0;
-    settings.redundant( state.value("redundant").toInt() );
+    settings.overlap( state.value("redundant").toInt() );
     settings.scriptname( state.value("path").toString().toStdString() );
 
     createFromSettings( settings );

@@ -38,8 +38,8 @@ public:
     virtual std::string arguments() const;
     void arguments(const std::string&);
 
-    virtual std::string argumentdescription() const;
-    virtual void argumentdescription(const std::string&);
+    virtual std::string argument_description() const;
+    virtual void argument_description(const std::string&);
 
     virtual int chunksize() const;
     void chunksize(int);
@@ -47,8 +47,8 @@ public:
     virtual bool computeInOrder() const;
     void computeInOrder(bool);
 
-    virtual int redundant() const;
-    virtual void redundant(int);
+    virtual int overlap() const;
+    virtual void overlap(int);
 
     Signal::pOperation ownOperation;
 

@@ -2,10 +2,18 @@
 
 #include "hdf5.h"
 
+// gpumisc
 #include "demangle.h"
 
+// boost
+#include <boost/algorithm/string.hpp>
+
+// qt
 #include <QTimer>
 #include <QFileInfo>
+
+using namespace std;
+using namespace boost;
 
 namespace Adapters {
 
@@ -60,7 +68,7 @@ Signal::pBuffer ReadMatlabSettings::
 }
 
 
-std::string ReadMatlabSettings::
+string ReadMatlabSettings::
         iconpath()
 {
     return iconpath_;
@@ -72,7 +80,7 @@ void ReadMatlabSettings::
 {
     bool finished = function_->hasProcessCrashed() || function_->hasProcessEnded();
 
-    std::string file = function_->isReady();
+    string file = function_->isReady();
     if (file.empty() && !finished)
     {
         QTimer::singleShot(100, this, SLOT(checkIfReady()));
@@ -82,7 +90,10 @@ void ReadMatlabSettings::
     QByteArray ba = function_->getProcess()->readAllStandardOutput();
     QString s( ba );
     s = s.trimmed();
-    TaskInfo("ReadMatlabSettings: output: %s", s.toLatin1().data());
+    if (s.isEmpty())
+        TaskInfo("ReadMatlabSettings %s: no output", function_->matlabFunction().c_str());
+    else
+        TaskInfo("ReadMatlabSettings %s: output: %s", function_->matlabFunction().c_str(), s.toLatin1().data());
 
     bool success = false;
 
@@ -102,7 +113,7 @@ void ReadMatlabSettings::
         }
         success = true;
     }
-    catch (const std::runtime_error& x)
+    catch (const runtime_error& x)
     {
         TaskInfo("ReadMatlabSettings::%s %s", vartype(x).c_str(), x.what());
         s += "\n";
@@ -120,40 +131,37 @@ void ReadMatlabSettings::
 
 
 void ReadMatlabSettings::
-        readSettings(std::string file)
+        readSettings(string file)
 {
     Hdf5Input h5(file);
 
-    settings.arguments( h5.tryread<std::string>("arguments", settings.arguments()) );
+    settings.arguments( h5.tryread<string>("arguments", settings.arguments()) );
     settings.chunksize( h5.tryread<double>("chunk_size", settings.chunksize() ));
     settings.computeInOrder( h5.tryread<double>("compute_chunks_in_order", settings.computeInOrder()));
     settings.operation = 0;
-    settings.redundant( h5.tryread<double>("overlapping", settings.redundant()));
-    iconpath_ = h5.tryread<std::string>("icon", "");
-    settings.argumentdescription( h5.tryread<std::string>("argumentdescription", settings.argumentdescription()));
+    settings.overlap( h5.tryread<double>("overlapping", settings.overlap()));
+    iconpath_ = h5.tryread<string>("icon", "");
+    settings.argument_description( h5.tryread<string>("argument_description", settings.argument_description()));
+    bool is_source = 0.0 != h5.tryread<double>("is_source", 0.0);
+    if (is_source)
+        settings.setAsSource();
 
-    TaskInfo ti("ReadMatlabSettings: settings");
-    TaskInfo("arguments = %s", settings.arguments().c_str());
-    TaskInfo("chunksize = %d", settings.chunksize());
-    TaskInfo("computeInOrder = %d", settings.computeInOrder());
-    TaskInfo("redundant = %d", settings.redundant());
-    TaskInfo("scriptname = %s", settings.scriptname().c_str());
-    TaskInfo("argumentdescription = %s", settings.argumentdescription().c_str());
+    settings.print("ReadMatlabSettings settings");
 
     emit settingsRead( settings );
 }
 
 
 void ReadMatlabSettings::
-        readSource(std::string file)
+        readSource(string file)
 {
     Hdf5Input h5(file);
 
-    source_buffer_ = h5.tryread<Signal::pBuffer>("data", Signal::pBuffer());
+    source_buffer_ = h5.tryread<Signal::pBuffer>("samples", Signal::pBuffer());
     if (source_buffer_)
         source_buffer_->sample_rate = h5.tryread<double>("samplerate", 1);
     else
-        settings.argumentdescription( h5.tryread<std::string>("argumentdescription", settings.argumentdescription()));
+        settings.argument_description( h5.tryread<string>("argument_description", settings.argument_description()));
 
     emit sourceRead();
 }

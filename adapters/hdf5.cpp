@@ -365,11 +365,11 @@ std::string Hdf5Input::
 }
 
 
-static const char* dsetBuffer="buffer";
+static const char* dsetBuffer="samples";
 static const char* dsetChunk="chunk";
 static const char* dsetOffset="offset";
-static const char* dsetSamplerate="samplerate";
-static const char* dsetRedundancy="redundancy";
+static const char* dsetSamplerate="fs";
+static const char* dsetOverlap="overlap";
 static const char* dsetPlot="plot";
 
 Hdf5Chunk::Hdf5Chunk( std::string filename)
@@ -408,14 +408,14 @@ void Hdf5Buffer::
 // TODO save and load all properties of chunks and buffers, not only raw data.
 // The Hdf5 file is well suited for storing such data as well.
 void Hdf5Buffer::
-        saveBuffer( string filename, const Signal::Buffer& cb, double redundancy)
+        saveBuffer( string filename, const Signal::Buffer& cb, double overlap)
 {
     Hdf5Output h5(filename);
 
     h5.add<Signal::Buffer>( dsetBuffer, cb );
     h5.add<double>( dsetOffset, cb.sample_offset );
     h5.add<double>( dsetSamplerate, cb.sample_rate );
-    h5.add<double>( dsetRedundancy, redundancy );
+    h5.add<double>( dsetOverlap, overlap );
 }
 
 
@@ -430,7 +430,7 @@ void Hdf5Chunk::
 
 
 Signal::pBuffer Hdf5Buffer::
-        loadBuffer( string filename, double* redundancy, Signal::pBuffer* plot )
+        loadBuffer( string filename, double* overlap, Signal::pBuffer* plot )
 {
     Hdf5Input h5(filename);
 
@@ -443,7 +443,7 @@ Signal::pBuffer Hdf5Buffer::
     try {
     *plot = h5.read<Signal::pBuffer>( dsetPlot );
     } catch (const std::runtime_error& ) {} // ok, never mind then
-    *redundancy = h5.read<double>( dsetRedundancy );
+    *overlap = h5.read<double>( dsetOverlap );
 
     return b;
 }

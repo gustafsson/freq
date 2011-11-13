@@ -25,14 +25,14 @@ public:
     virtual void chunksize(int) = 0;
     virtual bool computeInOrder() const = 0;
     virtual void computeInOrder(bool) = 0;
-    virtual int redundant() const = 0;
-    virtual void redundant(int) = 0;
+    virtual int overlap() const = 0;
+    virtual void overlap(int) = 0;
     virtual std::string scriptname() const = 0;
     virtual void scriptname(const std::string&) = 0;
     virtual std::string arguments() const = 0;
     virtual void arguments(const std::string&) = 0;
-    virtual std::string argumentdescription() const = 0;
-    virtual void argumentdescription(const std::string&) = 0;
+    virtual std::string argument_description() const = 0;
+    virtual void argument_description(const std::string&) = 0;
 
     virtual void setProcess(QProcess*) = 0;
     MatlabOperation* operation;
@@ -53,14 +53,14 @@ public:
     void chunksize(int v) { chunksize_ = v; }
     bool computeInOrder() const { return computeInOrder_; }
     void computeInOrder(bool v) { computeInOrder_ = v; }
-    int redundant() const { return redundant_; }
-    void redundant(int v) { redundant_ = v; }
+    int overlap() const { return redundant_; }
+    void overlap(int v) { redundant_ = v; }
     std::string scriptname() const { return scriptname_; }
     void scriptname(const std::string& v) { scriptname_ = v; }
     std::string arguments() const { return arguments_; }
     void arguments(const std::string& v) { arguments_ = v; }
-    std::string argumentdescription() const { return argumentdescription_; }
-    void argumentdescription(const std::string& v) { argumentdescription_ = v; }
+    std::string argument_description() const { return argument_description_; }
+    void argument_description(const std::string& v) { argument_description_ = v; }
 
     void setProcess(QProcess*);
 
@@ -72,7 +72,7 @@ private:
     int redundant_;
     std::string scriptname_;
     std::string arguments_;
-    std::string argumentdescription_;
+    std::string argument_description_;
 };
 
 /**

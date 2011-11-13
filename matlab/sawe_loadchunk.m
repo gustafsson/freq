@@ -5,7 +5,7 @@ if exist('OCTAVE_VERSION','builtin')
 else
   % matlab, todo use generic h5info (and h5read) instead
   data.chunk=hdf5read(filename,'chunk');
-  data.samplerate=hdf5read(filename,'samplerate');
+  data.fs=hdf5read(filename,'fs');
   data.offset=hdf5read(filename,'offset');
 end
 

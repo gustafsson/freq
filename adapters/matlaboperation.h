@@ -56,7 +56,7 @@ private:
 
         DefaultMatlabFunctionSettings settings;
         settings.scriptname_ =  _settings->scriptname();
-        settings.redundant_ = _settings->redundant();
+        settings.redundant_ = _settings->overlap();
         settings.computeInOrder_ = _settings->computeInOrder();
         settings.chunksize_ = _settings->chunksize();
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);

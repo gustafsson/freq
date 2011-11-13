@@ -37,9 +37,9 @@ MatlabFunctionSettings& MatlabFunctionSettings::
     chunksize(b.chunksize());
     computeInOrder(b.computeInOrder());
     operation = b.operation;
-    redundant(b.redundant());
+    overlap(b.overlap());
     scriptname(b.scriptname());
-    argumentdescription(b.argumentdescription());
+    argument_description(b.argument_description());
 
     return *this;
 }
@@ -72,7 +72,7 @@ DefaultMatlabFunctionSettings::
             chunksize_(0),
             computeInOrder_(0),
             redundant_(0),
-            argumentdescription_("Arguments")
+            argument_description_("Arguments")
 {}
 
 
