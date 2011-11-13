@@ -18,38 +18,61 @@ class MatlabFunctionSettings
 {
 public:
     MatlabFunctionSettings():operation(0) {}
+    MatlabFunctionSettings& operator=(const MatlabFunctionSettings& b);
     virtual ~MatlabFunctionSettings() { operation = 0; }
 
-    virtual int chunksize() = 0;
-    virtual bool computeInOrder() = 0;
-    virtual int redundant() = 0;
+    virtual int chunksize() const = 0;
+    virtual void chunksize(int) = 0;
+    virtual bool computeInOrder() const = 0;
+    virtual void computeInOrder(bool) = 0;
+    virtual int redundant() const = 0;
     virtual void redundant(int) = 0;
-    virtual void setProcess(QProcess*) = 0;
-    virtual std::string scriptname() = 0;
-    virtual std::string arguments() = 0;
+    virtual std::string scriptname() const = 0;
+    virtual void scriptname(const std::string&) = 0;
+    virtual std::string arguments() const = 0;
+    virtual void arguments(const std::string&) = 0;
+    virtual std::string argumentdescription() const = 0;
+    virtual void argumentdescription(const std::string&) = 0;
 
+    virtual void setProcess(QProcess*) = 0;
     MatlabOperation* operation;
+
+    bool isTerminal();
+    bool isSource();
+    void setAsSource();
 };
 
 class DefaultMatlabFunctionSettings: public MatlabFunctionSettings
 {
 public:
-    DefaultMatlabFunctionSettings() : chunksize_(0),computeInOrder_(0),redundant_(0),pid_(0) {}
+    DefaultMatlabFunctionSettings();
+    DefaultMatlabFunctionSettings(const MatlabFunctionSettings& b);
+    DefaultMatlabFunctionSettings& operator=(const MatlabFunctionSettings& b);
 
-    int chunksize() { return chunksize_; }
-    bool computeInOrder() { return computeInOrder_; }
-    int redundant() { return redundant_; }
+    int chunksize() const { return chunksize_; }
+    void chunksize(int v) { chunksize_ = v; }
+    bool computeInOrder() const { return computeInOrder_; }
+    void computeInOrder(bool v) { computeInOrder_ = v; }
+    int redundant() const { return redundant_; }
     void redundant(int v) { redundant_ = v; }
-    void setProcess(QProcess* pid_) { pid_ = pid_; }
-    std::string scriptname() { return scriptname_; }
-    std::string arguments() { return arguments_; }
+    std::string scriptname() const { return scriptname_; }
+    void scriptname(const std::string& v) { scriptname_ = v; }
+    std::string arguments() const { return arguments_; }
+    void arguments(const std::string& v) { arguments_ = v; }
+    std::string argumentdescription() const { return argumentdescription_; }
+    void argumentdescription(const std::string& v) { argumentdescription_ = v; }
+
+    void setProcess(QProcess*);
+
+private:
+    friend class MatlabOperation;
 
     int chunksize_;
     bool computeInOrder_;
     int redundant_;
-    QProcess* pid_;
     std::string scriptname_;
     std::string arguments_;
+    std::string argumentdescription_;
 };
 
 /**
@@ -127,6 +150,7 @@ private:
     bool _hasCrashed;
 
     float _timeout;
+    QString _interopName;
 };
 
 } // namespace Adapters

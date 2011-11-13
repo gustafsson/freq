@@ -32,19 +32,22 @@ public:
     explicit MatlabOperationWidget(Adapters::MatlabFunctionSettings* settings, Sawe::Project* project, QWidget *parent = 0);
     ~MatlabOperationWidget();
 
-    std::string scriptname();
-    void scriptname(std::string);
+    virtual std::string scriptname() const;
+    void scriptname(const std::string&);
 
-    std::string arguments();
-    void arguments(std::string);
+    virtual std::string arguments() const;
+    void arguments(const std::string&);
 
-    virtual int chunksize();
+    virtual std::string argumentdescription() const;
+    virtual void argumentdescription(const std::string&);
+
+    virtual int chunksize() const;
     void chunksize(int);
 
-    virtual bool computeInOrder();
+    virtual bool computeInOrder() const;
     void computeInOrder(bool);
 
-    virtual int redundant();
+    virtual int redundant() const;
     virtual void redundant(int);
 
     Signal::pOperation ownOperation;

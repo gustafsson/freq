@@ -30,6 +30,73 @@ using namespace boost::posix_time;
 namespace Adapters {
 
 
+MatlabFunctionSettings& MatlabFunctionSettings::
+        operator=(const MatlabFunctionSettings& b)
+{
+    arguments(b.arguments());
+    chunksize(b.chunksize());
+    computeInOrder(b.computeInOrder());
+    operation = b.operation;
+    redundant(b.redundant());
+    scriptname(b.scriptname());
+    argumentdescription(b.argumentdescription());
+
+    return *this;
+}
+
+
+bool MatlabFunctionSettings::
+        isTerminal()
+{
+    return scriptname().empty();
+}
+
+
+bool MatlabFunctionSettings::
+        isSource()
+{
+    return chunksize()==-2;
+}
+
+
+void MatlabFunctionSettings::
+        setAsSource()
+{
+    chunksize(-2);
+}
+
+
+DefaultMatlabFunctionSettings::
+        DefaultMatlabFunctionSettings()
+            :
+            chunksize_(0),
+            computeInOrder_(0),
+            redundant_(0),
+            argumentdescription_("Arguments")
+{}
+
+
+DefaultMatlabFunctionSettings::
+        DefaultMatlabFunctionSettings(const MatlabFunctionSettings& b)
+{
+    *this = b;
+}
+
+
+DefaultMatlabFunctionSettings& DefaultMatlabFunctionSettings::
+        operator=(const MatlabFunctionSettings& b)
+{
+    MatlabFunctionSettings::operator =(b);
+    return *this;
+}
+
+
+void DefaultMatlabFunctionSettings::
+        setProcess(QProcess*)
+{
+}
+
+
 bool startProcess(QProcess* pid, const QString& name, const QStringList& args)
 {
     pid->start(name, args);

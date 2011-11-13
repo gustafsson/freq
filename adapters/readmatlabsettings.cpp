@@ -31,7 +31,7 @@ ReadMatlabSettings::
             type_( type ),
             deletethis_( true ) // ReadMatlabSettings deletes itself when finished
 {
-    settings.scriptname_ = filename.toStdString();
+    settings.scriptname( filename.toStdString() );
 }
 
 
@@ -81,6 +81,7 @@ void ReadMatlabSettings::
 
     QByteArray ba = function_->getProcess()->readAllStandardOutput();
     QString s( ba );
+    s = s.trimmed();
     TaskInfo("ReadMatlabSettings: output: %s", s.toLatin1().data());
 
     bool success = false;
@@ -123,20 +124,21 @@ void ReadMatlabSettings::
 {
     Hdf5Input h5(file);
 
-    settings.arguments_ = h5.tryread<std::string>("arguments", settings.arguments_);
-    settings.chunksize_ = h5.tryread<double>("chunk_size", settings.chunksize_);
-    settings.computeInOrder_ = h5.tryread<double>("compute_chunks_in_order", settings.computeInOrder_);
+    settings.arguments( h5.tryread<std::string>("arguments", settings.arguments()) );
+    settings.chunksize( h5.tryread<double>("chunk_size", settings.chunksize() ));
+    settings.computeInOrder( h5.tryread<double>("compute_chunks_in_order", settings.computeInOrder()));
     settings.operation = 0;
-    settings.pid_ = 0;
-    settings.redundant_ = h5.tryread<double>("overlapping", settings.computeInOrder_);
+    settings.redundant( h5.tryread<double>("overlapping", settings.redundant()));
     iconpath_ = h5.tryread<std::string>("icon", "");
+    settings.argumentdescription( h5.tryread<std::string>("argumentdescription", settings.argumentdescription()));
 
     TaskInfo ti("ReadMatlabSettings: settings");
-    TaskInfo("arguments = %s", settings.arguments_.c_str());
-    TaskInfo("chunksize = %d", settings.chunksize_);
-    TaskInfo("computeInOrder = %d", settings.computeInOrder_);
-    TaskInfo("redundant = %d", settings.redundant_);
-    TaskInfo("scriptname = %s", settings.scriptname_.c_str());
+    TaskInfo("arguments = %s", settings.arguments().c_str());
+    TaskInfo("chunksize = %d", settings.chunksize());
+    TaskInfo("computeInOrder = %d", settings.computeInOrder());
+    TaskInfo("redundant = %d", settings.redundant());
+    TaskInfo("scriptname = %s", settings.scriptname().c_str());
+    TaskInfo("argumentdescription = %s", settings.argumentdescription().c_str());
 
     emit settingsRead( settings );
 }
@@ -147,9 +149,11 @@ void ReadMatlabSettings::
 {
     Hdf5Input h5(file);
 
-    source_buffer_ = h5.read<Signal::pBuffer>("data");
+    source_buffer_ = h5.tryread<Signal::pBuffer>("data", Signal::pBuffer());
     if (source_buffer_)
         source_buffer_->sample_rate = h5.tryread<double>("samplerate", 1);
+    else
+        settings.argumentdescription( h5.tryread<std::string>("argumentdescription", settings.argumentdescription()));
 
     emit sourceRead();
 }

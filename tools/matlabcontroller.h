@@ -36,7 +36,7 @@ namespace Tools
         void createFromScriptPath();
         void createFromDefaultSettings( Adapters::DefaultMatlabFunctionSettings settings );
         void scriptIsSource();
-        void scriptIsNotSource();
+        void scriptIsNotSource(QString filename, QString info);
         void createFromSettingsFailed( QString filename, QString info );
 
     private:

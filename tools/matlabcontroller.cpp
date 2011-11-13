@@ -110,11 +110,7 @@ void MatlabController::
 void MatlabController::
         prepareLogView( Adapters::MatlabOperation*m )
 {
-    MatlabOperationWidget* settings = new MatlabOperationWidget( 0, project_ );
-    settings->scriptname( m->settings()->scriptname() );
-    settings->redundant( m->settings()->redundant() );
-    settings->computeInOrder( m->settings()->computeInOrder() );
-    settings->chunksize( m->settings()->chunksize() );
+    MatlabOperationWidget* settings = new MatlabOperationWidget( m->settings(), project_ );
     settings->operation = m;
     m->settings( settings );
 
@@ -215,13 +211,12 @@ void MatlabController::
     TaskInfo ti("createFromAction %s", a->data().toString().toStdString().c_str() );
 
     Adapters::DefaultMatlabFunctionSettings settings;
-    settings.arguments_ = state.value("arguments").toString().toStdString();
-    settings.chunksize_ = state.value("chunksize").toInt();
-    settings.computeInOrder_ = state.value("computeInOrder").toBool();
+    settings.arguments( state.value("arguments").toString().toStdString() );
+    settings.chunksize( state.value("chunksize").toInt() );
+    settings.computeInOrder( state.value("computeInOrder").toBool() );
     settings.operation = 0;
-    settings.pid_ = 0;
-    settings.redundant_ = state.value("redundant").toInt();
-    settings.scriptname_ = state.value("path").toString().toStdString();
+    settings.redundant( state.value("redundant").toInt() );
+    settings.scriptname( state.value("path").toString().toStdString() );
 
     createFromSettings( settings );
 }
@@ -315,15 +310,9 @@ void MatlabController::
     TaskInfo ti("createFromSettings %s", settings.scriptname().c_str() );
     // find out if this is a source or not
     Adapters::ReadMatlabSettings* testSource = new Adapters::ReadMatlabSettings( settings.scriptname().c_str(), Adapters::ReadMatlabSettings::MetaData_Source );
-    testSource->settings.arguments_ = settings.arguments();
-    testSource->settings.chunksize_ = settings.chunksize();
-    testSource->settings.computeInOrder_ = settings.computeInOrder();
-    testSource->settings.operation = 0;
-    testSource->settings.pid_ = 0;
-    testSource->settings.redundant_ = settings.redundant();
-    testSource->settings.scriptname_ = settings.scriptname();
+    testSource->settings = settings;
     connect( testSource, SIGNAL(sourceRead()), SLOT(scriptIsSource()), Qt::DirectConnection);
-    connect( testSource, SIGNAL(failed(QString,QString)), SLOT(scriptIsNotSource()), Qt::DirectConnection);
+    connect( testSource, SIGNAL(failed(QString,QString)), SLOT(scriptIsNotSource(QString, QString)), Qt::DirectConnection);
     testSource->readAsyncAndDeleteSelfWhenDone();
 }
 
@@ -348,19 +337,36 @@ void MatlabController::
     }
     else
     {
-        read->settings.chunksize_ = -2; // is a source
+        read->settings.setAsSource();
         showNewMatlabOperationDialog( &read->settings );
     }
 }
 
 
 void MatlabController::
-        scriptIsNotSource()
+        scriptIsNotSource(QString filename, QString info)
 {
+    if (!info.isEmpty())
+    {
+        TaskInfo ti("Couldn't determine if script is a source script: %s\n%s", filename.toStdString().c_str(), info.toStdString().c_str() );
+
+        QMessageBox message(
+                QMessageBox::Information,
+                "Couldn't run script",
+                QString("Couldn't run script \"%1\". See details on error below.").arg(filename));
+
+        message.setDetailedText( info );
+
+        message.exec();
+        return;
+    }
+
     Adapters::ReadMatlabSettings* read = dynamic_cast<Adapters::ReadMatlabSettings*>(sender());
     BOOST_ASSERT( read );
 
     TaskInfo ti("scriptIsNotSource %s", read->settings.scriptname().c_str() );
+    TaskInfo("Filename: %s", filename.toStdString().c_str());
+    TaskInfo("Info: %s", info.toStdString().c_str());
     Adapters::DefaultMatlabFunctionSettings* settings = &read->settings;
 
     MatlabOperationWidget* settingswidget = new MatlabOperationWidget( settings, project_ );
