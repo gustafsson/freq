@@ -361,7 +361,7 @@ std::string Hdf5Input::
 
     VERBOSE_HDF5 TaskInfo("value = '%s'", v.c_str());
 
-    return v;
+    return v.c_str();
 }
 
 
