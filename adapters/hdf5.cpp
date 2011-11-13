@@ -103,14 +103,14 @@ vector<hsize_t> Hdf5Input::
 
     int RANK=0;
     herr_t status = H5LTget_dataset_ndims ( _file_id, name.c_str(), &RANK );
-    if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_ndims failed");
+    if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_ndims("+name+") failed");
 
     vector<hsize_t> dims(RANK);
 	if (0 < RANK) 
 	{
 		// only non-scalars have dimensions
 		status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
-		if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_info failed");
+        if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_info("+name+") failed");
 	}
 
     return dims;
@@ -317,7 +317,7 @@ double Hdf5Input::
     herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_DOUBLE,&v);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_DOUBLE type dataset named '" + name + "'", name);
 
-    VERBOSE_HDF5 TaskInfo("valud = %g", v);
+    VERBOSE_HDF5 TaskInfo("value = %g", v);
 
     return v;
 }
@@ -349,12 +349,17 @@ std::string Hdf5Input::
 
     H5T_class_t class_id=H5T_NO_CLASS;
     vector<hsize_t> dims = getInfo(name, &class_id);
-    std::string v; v.resize( dims[0]*dims[1] );
+    hsize_t z = 1;
+    for (unsigned i=0; i<dims.size(); ++i)
+        z *= dims[i];
+    std::string v; v.resize( z+1 );
 
     herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_SCHAR,&v[0]);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_C_S1 type dataset named '" + name + "'", name);
 
-    VERBOSE_HDF5 TaskInfo("value = %s", v.c_str());
+    v[z] = 0;
+
+    VERBOSE_HDF5 TaskInfo("value = '%s'", v.c_str());
 
     return v;
 }
