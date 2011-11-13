@@ -244,7 +244,7 @@ public:
 
 private:
     virtual pOperation source() const { return pOperation(); }
-    virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
+    virtual void source(pOperation)   { throw std::logic_error("FinalSource: Invalid call"); }
 };
 
 } // namespace Signal
