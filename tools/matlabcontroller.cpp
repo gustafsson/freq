@@ -130,6 +130,7 @@ void MatlabController::
         ui->menuTools->insertMenu( ui->menuToolbars->menuAction(), scripts_ );
     }
     scripts_->clear();
+    if (scriptsToolbar_) scriptsToolbar_->clear();
     scripts_->insertAction( 0, ui->actionMatlabOperation );
 
     int i = 0;
@@ -146,6 +147,7 @@ void MatlabController::
         {
             state.beginGroup(g);
             QString path = state.value("path").toString();
+            QString argument = state.value("arguments").toString();
             state.endGroup();
             if (!QFile::exists(path))
             {
@@ -157,7 +159,7 @@ void MatlabController::
             }
 
             i++;
-            QAction* action = new QAction(QString("%1%2. %3").arg(i<10?"&":"").arg(i).arg(g), scripts_ );
+            QAction* action = new QAction(QString("%1%2. %3( %4 )").arg(i<10?"&":"").arg(i).arg(g).arg(argument), scripts_ );
             action->setData(g);
             scripts_->addAction( action );
             connect( action, SIGNAL(triggered()), SLOT(createFromAction()));
@@ -168,9 +170,10 @@ void MatlabController::
 
     QString scriptDirs[] =
     {
-        "/usr/share/sonicawe/scripts",
-        Sawe::Application::log_directory() + QDir::separator() + "scripts",
-        QDir::currentPath() + QDir::separator() + "scripts"
+        "/usr/share/sonicawe/plugins",
+        Sawe::Application::log_directory() + QDir::separator() + "plugins",
+        QDir::currentPath() + QDir::separator() + "plugins",
+        QDir::currentPath() + QDir::separator() + "sonicawe-plugins"
     };
 
 
@@ -232,11 +235,6 @@ void MatlabController::
 
     QFileInfo info(settings.scriptname().c_str());
 
-    QAction* action = 0;
-
-    unsigned i = scripts_->actions().count()-2; // 2 separators and 1 action to create new operations, makes 'i' the next script number
-    QString actionText = QString("%1%2. %3").arg(i<10?"&":"").arg(i).arg(info.baseName());
-
     if (!read->iconpath().empty())
     {
         if (!scriptsToolbar_)
@@ -269,16 +267,21 @@ void MatlabController::
                 iconpath = info.path() + QDir::separator() + iconpath;
         }
 
-        TaskInfo("Creating action %s with icon %s", actionText.toLatin1().data(), iconpath.toLatin1().data());
+        TaskInfo("Creating action %s with icon %s", info.fileName().toLatin1().data(), iconpath.toLatin1().data());
 
-        action = scriptsToolbar_->addAction( QIcon(iconpath), actionText );
+        QAction* action;  // different actionText from the action that is added scripts_ below
+        if (QFile(iconpath).exists())
+            action = scriptsToolbar_->addAction( QIcon(iconpath), info.fileName() );
+        else
+            action = scriptsToolbar_->addAction( info.fileName() );
+        action->setData( info.absoluteFilePath());
+        connect( action, SIGNAL(triggered()), SLOT(createFromScriptPath()));
     }
 
-    if (!action)
-    {
-        TaskInfo("Creating action %s", actionText.toLatin1().data());
-        action = new QAction(actionText, scripts_ );
-    }
+    unsigned i = scripts_->actions().count()-2; // 2 separators and 1 action to create new operations, makes 'i' the next script number
+    QString actionText = QString("%1%2. %3").arg(i<10?"&":"").arg(i).arg(info.fileName());
+    TaskInfo("Creating action %s", actionText.toLatin1().data());
+    QAction* action = new QAction(actionText, scripts_ );
 
     action->setData( info.absoluteFilePath());
     scripts_->addAction( action );
@@ -334,6 +337,7 @@ void MatlabController::
         s->invalidate_samples(Signal::Interval::Interval_ALL);
 
         updateStoredSettings( &read->settings );
+        updateScriptsMenu();
     }
     else
     {
