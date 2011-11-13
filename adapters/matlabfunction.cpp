@@ -155,15 +155,13 @@ void MatlabFunction::
         init(string fullpath, MatlabFunctionSettings* settings)
 {
     { // Set filenames
-        stringstream ss;
+        QTemporaryFile tempFile("saweinterop.XXXXXXX");
+        _interopName = tempFile.fileName();
+        tempFile.open(); // create file and block other instances from picking the same name
+        tempFile.setAutoRemove( false );
+        _interopName = tempFile.fileName();
 
-        {
-            QTemporaryFile tempFile;
-            tempFile.open();
-            ss << tempFile.fileName().toStdString();
-        }
-
-        _dataFile = ss.str() + ".h5";
+        _dataFile = _interopName.toStdString() + ".h5";
         _resultFile = _dataFile + ".result.h5";
     }
 
@@ -336,6 +334,8 @@ MatlabFunction::
         ~MatlabFunction()
 {
     endProcess();
+
+    QFile::remove(_interopName);
 }
 
 
