@@ -101,9 +101,21 @@ public:
         throw std::runtime_error(err.c_str());
     }
 
+    template<typename T> T tryread( std::string datasetname, T defaultValue )
+    {
+        try {
+            return read<T>(datasetname);
+        } catch (const std::runtime_error& x) {
+            TaskInfo ti("Hdf5Input couldn't read '%s' from '%s'\n%s", datasetname.c_str(), _filename.c_str(), x.what());
+            TaskInfo("Tip: Use tools like \"h5ls -fr\" to investigate the dataset.");
+            return defaultValue;
+        }
+    }
+
 private:
     hid_t _file_id;
     boost::scoped_ptr<TaskTimer> _timer;
+    std::string _filename;
 
     /**
       Reads a dataset named 'datasetname'. To be called through 'read'.

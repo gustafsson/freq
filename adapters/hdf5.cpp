@@ -43,6 +43,7 @@ Hdf5Error::
 
 Hdf5Input::
         Hdf5Input(std::string filename)
+            : _filename( filename )
 {
     TIME_HDF5 _timer.reset(new TaskTimer("Reading HDF5-file '%s'", filename.c_str()));
 
@@ -164,11 +165,21 @@ Signal::pBuffer Hdf5Input::
 
     if (H5T_FLOAT!=class_id) throw Hdf5Error(Hdf5Error::Type_MissingDataset, ((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_FLOAT.")).str(), name);
 
-    Signal::pBuffer buffer( new Signal::Buffer(0, dims[2], 44100, dims[1], dims[0] ) );
-    float* p = buffer->waveform_data()->getCpuMemory();
+    Signal::pBuffer buffer;
+    if (dims[0]>0 && dims[1]>0 && dims[2]>0)
+    {
+        buffer.reset( new Signal::Buffer(0, dims[2], 44100, dims[1], dims[0] ) );
+        float* p = buffer->waveform_data()->getCpuMemory();
 
-    status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
-    if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'", name);
+        status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
+        if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'", name);
+
+        VERBOSE_HDF5 TaskInfo("number_of_samples=%u, channels=%u, numberOfSignals=%u",
+                              buffer->waveform_data()->size().width,
+                              buffer->waveform_data()->size().height,
+                              buffer->waveform_data()->size().depth
+                              );
+    }
 
     return buffer;
 }
@@ -306,6 +317,8 @@ double Hdf5Input::
     herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_DOUBLE,&v);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_DOUBLE type dataset named '" + name + "'", name);
 
+    VERBOSE_HDF5 TaskInfo("valud = %g", v);
+
     return v;
 }
 
@@ -318,10 +331,10 @@ void Hdf5Output::
 
     const char* p = s.c_str();
 
-    const unsigned RANK=1;
-    hsize_t     dims[RANK]={s.size()};
+    const unsigned RANK=2;
+    hsize_t     dims[RANK]={0,s.size()};
 
-    herr_t status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_C_S1,p);
+    herr_t status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_SCHAR,p);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "Could not create and write a H5T_C_S1 type dataset named '" + name + "'", name);
 }
 
@@ -336,10 +349,12 @@ std::string Hdf5Input::
 
     H5T_class_t class_id=H5T_NO_CLASS;
     vector<hsize_t> dims = getInfo(name, &class_id);
-    std::string v; v.reserve( dims[0]+1 );
+    std::string v; v.resize( dims[0]*dims[1] );
 
-    herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_C_S1,&v[0]);
+    herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_SCHAR,&v[0]);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_C_S1 type dataset named '" + name + "'", name);
+
+    VERBOSE_HDF5 TaskInfo("value = %s", v.c_str());
 
     return v;
 }
