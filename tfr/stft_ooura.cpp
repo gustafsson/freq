@@ -130,7 +130,7 @@ void Fft::
         for (x=0; x<denseWidth; ++x)
             out[x] = in[x];
         for (; x<redundantWidth; ++x)
-            out[x] = in[redundantWidth - x];
+            out[x] = conj(in[redundantWidth - x]);
     }
 
     ComplexBuffer buffer( 0, redundantWidth, 1 );
