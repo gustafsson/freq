@@ -30,23 +30,6 @@ void Fft::
     if (-1 != direction)
         BOOST_ASSERT( n == N );
 
-    int magic = 12345678;
-    bool vector_length_test = true;
-
-    std::vector<double> w(N/2 + vector_length_test);
-    std::vector<int> ip(2+(1<<(int)(log2f(N+0.5)-1)) + vector_length_test);
-    std::vector<double> q(2*N + vector_length_test);
-
-    ip[0] = 0;
-
-
-    if (vector_length_test)
-    {
-        q.back() = magic;
-        w.back() = magic;
-        ip.back() = magic;
-    }
-
     {
         TIME_STFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
         clFFT_Dim3 ndim = { n, 1, 1 };
@@ -60,8 +43,8 @@ void Fft::
         if(fft_error != 0)
             throw std::runtime_error("Could not create clFFT compute plan.");
 
-        std::complex<float> *data_i = input->getCpuMemory();
-        std::complex<float> *data_o = output->getCpuMemory();
+        Tfr::ChunkElement* data_i = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
+        Tfr::ChunkElement* data_o = CpuMemoryStorage::WriteAll<1>( output ).ptr();
 
         // Allocate memory for in data
         cl_mem data_in = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_i, &fft_error);
@@ -77,12 +60,9 @@ void Fft::
         if(fft_error != 0)
             throw std::runtime_error("Could not read from OpenCL memory");
 
-        if (vector_length_test)
-        {
-            BOOST_ASSERT(q.back() == magic);
-            BOOST_ASSERT(ip.back() == magic);
-            BOOST_ASSERT(w.back() == magic);
-        }
+        clReleaseMemObject(data_in);
+        clReleaseMemObject(data_out);
+        clFFT_DestroyPlan(plan);
     }
 }
 
@@ -154,25 +134,48 @@ void Stft::
                  input->size().height,
                  direction==FftDirection_Forward?"forward":"backward");
 
-    Tfr::ChunkElement* i = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
-    Tfr::ChunkElement* o = CpuMemoryStorage::WriteAll<1>( output ).ptr();
+    Tfr::ChunkElement* data_i = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
+    Tfr::ChunkElement* data_o = CpuMemoryStorage::WriteAll<1>( output ).ptr();
 
     BOOST_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
 
     const int count = input->numberOfElements()/_window_size;
 
-    Fft ft( true );
+    cl_int n = _window_size;
+    clFFT_Dim3 ndim = { n, 1, 1 };
+    int batchSize = count;
+    OpenCLContext *opencl = OpenCLContext::initialize();
+    cl_context context = opencl->getContext();
+    cl_command_queue queue = opencl->getCommandQueue();
+    cl_int fft_error;
 
-#pragma omp parallel for
-    for (int n=0; n<count; ++n)
+    clFFT_Plan plan;
     {
-        ft.computeWithOoura(
-                CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( _window_size,
-                                                                i + n*_window_size),
-                CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( _window_size,
-                                                                o + n*_window_size),
-                direction
-        );
+        TaskTimer tt("Creating a OpenCL FFT compute plan!");
+        plan = clFFT_CreatePlan(context, ndim, clFFT_1D, clFFT_InterleavedComplexFormat, &fft_error );
+    }
+    {
+        TaskTimer tt("Calculating batches");
+        if(fft_error != 0)
+            throw std::runtime_error("Could not create clFFT compute plan.");
+
+        // Allocate memory for in data
+        cl_mem data_in = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_i, &fft_error);
+        cl_mem data_out = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_o, &fft_error);
+
+        // Run the fft in OpenCL :)
+        fft_error |= clFFT_ExecuteInterleaved(queue, plan, batchSize, (clFFT_Direction)direction, data_in, data_out, 0, NULL, NULL );
+        if(fft_error != 0)
+            throw std::runtime_error("Bad stuff happened during FFT computation.");
+
+        // Read the memory from OpenCL
+        fft_error |= clEnqueueReadBuffer(queue, data_out, CL_TRUE, 0, n*batchSize*sizeof(std::complex<float>), data_o, 0, NULL, NULL);
+        if(fft_error != 0)
+            throw std::runtime_error("Could not read from OpenCL memory");
+
+        clReleaseMemObject(data_in);
+        clReleaseMemObject(data_out);
+        clFFT_DestroyPlan(plan);
     }
 }
 
@@ -181,7 +184,7 @@ Tfr::pChunk Stft::
         computeWithOoura(Signal::pBuffer b)
 {
     DataStorageSize actualSize(
-            _window_size/2 + 1,
+            _window_size,
             b->number_of_samples()/_window_size );
 
     DataStorageSize n = actualSize.width * actualSize.height;
@@ -206,34 +209,8 @@ Tfr::pChunk Stft::
         chunk->chunk_offset = 0;
     }
 
-    float* input;
-    Tfr::ChunkElement* output;
-    if (!b->waveform_data()->HasValidContent<CpuMemoryStorage>())
-    {
-        TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", b->waveform_data()->getSizeInBytes1D()/1024.f/1024.f);
-        input = CpuMemoryStorage::ReadOnly<1>( b->waveform_data() ).ptr();
-        TIME_STFT ComputationSynchronize();
-    }
-    else
-    {
-        input = CpuMemoryStorage::ReadOnly<1>( b->waveform_data() ).ptr();
-    }
-    output = CpuMemoryStorage::WriteAll<1>( chunk->transform_data ).ptr();
-
-    // Transform signal
-
-    TIME_STFT TaskTimer tt2("Stft::operator compute");
-
-    Fft ft( false );
-    for (unsigned i=0; i < actualSize.height; ++i)
-    {
-        ft.computeWithOouraR2C(
-                CpuMemoryStorage::BorrowPtr<float>( _window_size,
-                                                    input + i*_window_size),
-                CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( actualSize.width,
-                                                                output + i*actualSize.width)
-        );
-    }
+    ComplexBuffer complex(*b);
+    computeWithOoura(complex.complex_waveform_data(), chunk->transform_data, Tfr::FftDirection_Forward);
 
     TIME_STFT ComputationSynchronize();
 
