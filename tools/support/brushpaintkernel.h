@@ -1,13 +1,13 @@
 #pragma once
 
-#include "heightmap/blockkernel.h"
+#include "heightmap/amplitudeaxis.h"
 
 #include "resampletypes.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
-#include <math.h>
 #endif
+#include <math.h>
 
 class Gauss
 {

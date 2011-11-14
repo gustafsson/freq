@@ -36,96 +36,21 @@ public:
 };
 
 
-class ConverterLogAmplitude
-{
-public:
-    RESAMPLE_CALL float operator()( Tfr::ChunkElement v, DataPos const& dataPosition )
-    {
-        return log2f(0.0001f + ConverterAmplitude()(v,dataPosition)) - log2f(0.0001f);
-    }
-#ifdef __CUDACC__
-    RESAMPLE_CALL float operator()( float2 v, DataPos const& dataPosition )
-    {
-        return log2f(0.0001f + ConverterAmplitude()(v,dataPosition)) - log2f(0.0001f);
-    }
-#endif
-};
 
-
-class Converter5thRootAmplitude
-{
-public:
-    RESAMPLE_CALL float operator()( BlockElemType w, DataPos const& /*dataPosition*/ )
-    {
-#ifdef __CUDACC__
-        float2& v = (float2&)w;
-        return 0.4f*powf(v.x*v.x + v.y*v.y, 0.1);
-#else
-        return 0.4f*powf(norm(w), 0.1);
-#endif
-    }
-};
-
-
-template<unsigned>
+template<Heightmap::AmplitudeAxis Axis>
 class ConverterAmplitudeAxis
 {
 public:
-/*    ConverterAmplitudeAxis(Heightmap::AmplitudeAxis amplitudeAxis)
-        : _amplitudeAxis(amplitudeAxis)
+    ConverterAmplitudeAxis(float normalization_factor):normalization_factor(normalization_factor) {}
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
     {
+        return Heightmap::AmplitudeValue<Axis>()( normalization_factor*ConverterAmplitude()( v, dataPosition ) );
+    }
 
-    }
-*/
-    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition );
-/*    {
-        switch(_amplitudeAxis)
-        {
-        case Heightmap::AmplitudeAxis_Linear:
-            return 25.f * ConverterAmplitude()( v, dataPosition );
-        case Heightmap::AmplitudeAxis_Logarithmic:
-            return 0.02f * ConverterLogAmplitude()( v, dataPosition );
-        case Heightmap::AmplitudeAxis_5thRoot:
-            return Converter5thRootAmplitude()( v, dataPosition );
-        default:
-            return -1.f;
-        }
-    }
-    */
 private:
-    //Heightmap::AmplitudeAxis _amplitudeAxis;
+    float normalization_factor;
 };
 
-
-template<>
-class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>
-{
-public:
-    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
-    {
-        return 25.f * ConverterAmplitude()( v, dataPosition );
-    }
-};
-
-template<>
-class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>
-{
-public:
-    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
-    {
-        return 0.02f * ConverterLogAmplitude()( v, dataPosition );
-    }
-};
-
-template<>
-class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>
-{
-public:
-    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
-    {
-        return Converter5thRootAmplitude()( v, dataPosition );
-    }
-};
 
 template<typename DefaultConverter>
 class AxisFetcher
@@ -154,7 +79,7 @@ public:
     template<typename Reader>
     RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
     {
-        return (*this)(p, reader, defaultConverter);
+        return this->operator ()(p, reader, defaultConverter);
     }
 
 
@@ -205,7 +130,7 @@ public:
     RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
     {
         ResamplePos q;
-        // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
+        // exp2f (called in 'getFrequency') takes time equal to 4 multiplies for cuda arch 1.x
         // so these are fairly cheap operations. One reciprocal called in
         // 'getFrequencyScalar' is just as fast.
         // Tests have shown that this doen't affect the total execution time,
@@ -216,13 +141,12 @@ public:
         q.y = p.y;
 
         float r = InterpolateFetcher<float, DefaultConverter>(defaultConverter)( q, reader );
-        return r*factor;
+        return r;
     }
 
     DefaultConverter defaultConverter;
     Tfr::FreqAxis inputAxis;
     Tfr::FreqAxis outputAxis;
-    float factor;
 };
 
 
@@ -283,7 +207,7 @@ public:
 
         float phase = InterpolateFetcher<float, ConverterPhase>()( p, reader );
         float phase2 = InterpolateFetcher<float, ConverterPhase>()( p2, reader );
-        float v = InterpolateFetcher<float, ConverterLogAmplitude>()( p, reader );
+        float v = InterpolateFetcher<float, ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic> >()( p, reader );
         float phasediff = phase2 - phase;
         if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
         if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
@@ -452,7 +376,8 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
-                 Heightmap::AmplitudeAxis amplitudeAxis
+                 Heightmap::AmplitudeAxis amplitudeAxis,
+                 float normalization_factor
                  )
 {
     switch(amplitudeAxis)
@@ -461,19 +386,19 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>());
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor));
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>());
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor));
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>());
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor));
         break;
     }
 }
@@ -487,8 +412,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
-                   Heightmap::AmplitudeAxis amplitudeAxis,
-                   AxisConverter axisConverter )
+                   AxisConverter axisConverter)
 {
 #ifdef __CUDACC__
     cudaPitchedPtr cpp = CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr();
@@ -519,14 +443,6 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     fetcher.inputAxis = inputAxis;
     fetcher.outputAxis = outputAxis;
 
-    // makes it roughly equal height to Cwt
-    switch(amplitudeAxis)
-    {
-    case Heightmap::AmplitudeAxis_Linear:       fetcher.factor = 0.00052f; break;
-    case Heightmap::AmplitudeAxis_Logarithmic:  fetcher.factor = 0.3f; break;
-    case Heightmap::AmplitudeAxis_5thRoot:      fetcher.factor = 0.22f; break;
-    default: fetcher.factor = 1.f; break;
-    }
 
     resample2d_fetcher(
                 input,
@@ -550,7 +466,8 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
-                   Heightmap::AmplitudeAxis amplitudeAxis )
+                   Heightmap::AmplitudeAxis amplitudeAxis,
+                   float normalization_factor)
 {
     // fetcher.factor makes it roughly equal height to Cwt
     switch(amplitudeAxis)
@@ -558,20 +475,20 @@ void resampleStft( Tfr::ChunkData::Ptr input,
     case Heightmap::AmplitudeAxis_Linear:
         resampleStftAxis(
                 input, nScales, nSamples, output, inputRegion, outputRegion,
-                inputAxis, outputAxis, amplitudeAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>());
+                inputAxis, outputAxis,
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor));
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         resampleStftAxis(
                 input, nScales, nSamples, output, inputRegion, outputRegion,
-                inputAxis, outputAxis, amplitudeAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>());
+                inputAxis, outputAxis,
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor));
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         resampleStftAxis(
                 input, nScales, nSamples, output, inputRegion, outputRegion,
-                inputAxis, outputAxis, amplitudeAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>());
+                inputAxis, outputAxis,
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor));
         break;
     }
 }

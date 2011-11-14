@@ -352,13 +352,10 @@ void GlBlock::
 
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height);
-        glPixelTransferf(GL_RED_SCALE, 4.f);
 
         GlException_CHECK_ERROR();
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_RED, GL_FLOAT, 0);
         GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
-
-        glPixelTransferf(GL_RED_SCALE, 1.0f);
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);

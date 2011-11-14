@@ -1134,8 +1134,6 @@ void Renderer::drawAxes( float T )
         if (!v[0] && !v[2]) // skip if |v| = 0
             continue;
 
-        TaskInfo ("p(%g,%g)", p[0],p[2]);
-        TaskInfo ("v(%g,%g)", v[0],v[2]);
         // decide if this side is a t or f axis
         GLvector::T timePerPixel, scalePerPixel;
         computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
@@ -1324,7 +1322,7 @@ void Renderer::drawAxes( float T )
                         glRotatef(angle,0,0,1);
                         char a[100];
                         sprintf(a,"%g", f);
-                        unsigned w=20;
+                        unsigned w=0;
                         float letter_spacing=5;
 
                         for (char*c=a;*c!=0; c++)

@@ -86,7 +86,7 @@ void BlockFilter::
 
 
 void BlockFilter::
-        mergeColumnMajorChunk( pBlock block, Chunk& chunk, Block::pData outData )
+        mergeColumnMajorChunk( pBlock block, Chunk& chunk, Block::pData outData, float normalization_factor )
 {
     TIME_BLOCKFILTER ComputationSynchronize();
 
@@ -113,7 +113,8 @@ void BlockFilter::
                                b.time, b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale(),
-                  _collection->amplitude_axis()
+                  _collection->amplitude_axis(),
+                  normalization_factor
                   );
 
     block->valid_samples |= inInterval;
@@ -124,7 +125,8 @@ void BlockFilter::
 
 void BlockFilter::
         mergeRowMajorChunk( pBlock block, Chunk& chunk, Block::pData outData,
-                            bool full_resolution, ComplexInfo complex_info )
+                            bool full_resolution, ComplexInfo complex_info,
+                            float normalization_factor)
 {
     ComputationCheckError();
 
@@ -253,10 +255,10 @@ void BlockFilter::
                      complex_info,
                      chunk.freqAxis,
                      _collection->display_scale(),
-                     _collection->amplitude_axis()
+                     _collection->amplitude_axis(),
+                     normalization_factor
                      );
 
-    // TODO recompute transfer to the samples that have actual support
     ComputationCheckError();
     GlException_CHECK_ERROR();
 
@@ -303,15 +305,17 @@ CwtToBlock::
 void CwtToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    Cwt* cwt = dynamic_cast<Cwt*>(transform().get());
+    BOOST_ASSERT( cwt );
     bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
+    float normalization_factor = cwt->nScales( chunk.original_sample_rate )/cwt->sigma();
 
-    Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( &chunk );
+    CwtChunk& chunks = *dynamic_cast<CwtChunk*>( &chunk );
 
     BOOST_FOREACH( const pChunk& chunkpart, chunks.chunks )
     {
         mergeRowMajorChunk( block, *chunkpart, outData,
-                            full_resolution, complex_info );
+                            full_resolution, complex_info, normalization_factor );
     }
 }
 
@@ -337,7 +341,10 @@ StftToBlock::
 void StftToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    mergeColumnMajorChunk(block, chunk, outData);
+    StftChunk* stftchunk = dynamic_cast<StftChunk*>(&chunk);
+    BOOST_ASSERT( stftchunk );
+    float normalization_factor = 1.f/sqrtf(stftchunk->window_size);
+    mergeColumnMajorChunk(block, chunk, outData, normalization_factor);
 }
 
 
@@ -364,7 +371,8 @@ CepstrumToBlock::
 void CepstrumToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
-    mergeColumnMajorChunk(block, chunk, outData);
+    float normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
+    mergeColumnMajorChunk(block, chunk, outData, normalization_factor);
 }
 
 
@@ -436,7 +444,7 @@ void DrawnWaveformToBlock::
     if (dwc->block_fs != block_fs)
         return;
 
-    mergeRowMajorChunk(block, chunk, outData, true, ComplexInfo_Amplitude_Non_Weighted);
+    mergeRowMajorChunk(block, chunk, outData, true, ComplexInfo_Amplitude_Non_Weighted, 1.f);
 }
 
 } // namespace Heightmap

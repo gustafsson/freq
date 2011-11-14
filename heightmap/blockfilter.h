@@ -28,9 +28,9 @@ public:
 protected:
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
 
-    virtual void mergeColumnMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual void mergeColumnMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData, float normalization_factor );
     virtual void mergeRowMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData,
-                                     bool full_resolution, ComplexInfo complex_info );
+                                     bool full_resolution, ComplexInfo complex_info, float normalization_factor );
 
     Collection* _collection;
 };
