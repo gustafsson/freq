@@ -230,6 +230,36 @@ int main(int argc, char *argv[])
 {
     if (0)
     {
+        for (int redundant=0; redundant<2; ++redundant)
+        {
+            Tfr::Fft ft;
+            unsigned N = 16;
+            Signal::pBuffer b(new Signal::Buffer(0, N, 1));
+            float* p = b->waveform_data()->getCpuMemory();
+            srand(0);
+            for (int i=0; i<16; ++i)
+                p[i] = 2.f*rand()/RAND_MAX - 1.f;
+
+            Tfr::pChunk c = ft(b);
+            Signal::pBuffer b2 = ft.inverse(c);
+            float* p2 = b2->waveform_data()->getCpuMemory();
+            std::complex<float>* cp = c->transform_data->getCpuMemory();
+            float norm = 1.f/16;
+            for (int i=0; i<c->transform_data->size().width; ++i)
+                cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
+            for (int i=0; i<16; ++i)
+            {
+                cout << i << ", " << p[i] << ", " << p2[i]*norm <<  ";";
+                float diff = p[i] - p2[i]*norm;
+                if (fabsf(diff) > 1e-7)
+                    cout << " Failed: " << diff;
+                cout << endl;
+            }
+        }
+        return 0;
+    }
+    if (0)
+    {
         Intervals I(403456,403457);
         Intervals J(0,403456);
         cout << ((I-J) & J) << endl;
