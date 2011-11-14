@@ -1118,10 +1118,9 @@ void Renderer::drawAxes( float T )
     // 4 render and decide upon scale
     GLvector x(1,0,0), z(0,0,1);
 
-    //glEnable(GL_BLEND);
     glDepthMask(false);
     glDisable(GL_DEPTH_TEST);
-    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     Tfr::FreqAxis fa = collection->display_scale();
     // loop along all sides
@@ -1439,7 +1438,7 @@ void Renderer::drawAxes( float T )
 
 
             int startTone = log(F1/440.f)/log(tva12) + 45;
-            int endTone = log(F2/440.f)/log(tva12) + 44;
+            int endTone = ceil(log(F2/440.f)/log(tva12)) + 45;
             float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
             if (!left_handed_axes)
                 sign *= -1;
@@ -1479,22 +1478,71 @@ void Renderer::drawAxes( float T )
 
                 glPushMatrixContext push_model( GL_MODELVIEW );
 
-                if (sign>0)
-                    glTranslatef( sign*ST*0.14f, 0.f, 0.f );
-                else
-                    glTranslatef( -sign*ST*0.08f, 0.f, 0.f );
+                float xscale = 0.016000f;
+                float blackw = 0.4f;
 
-                glColor4f(0,0,0,.4);
+                if (sign>0)
+                    glTranslatef( xscale*ST, 0.f, 0.f );
+
+                tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
+                float w = (cursor[2] - ff)/(ffN - ff);
+                w = fabsf(w/1.5f);
+                if (w < 1)
+                {
+                    keyColor[1] = 1-w;
+                    if (!blackKey)
+                        keyColor[3] = keyColor[1];
+                }
+
+                if (keyColor[3] != 0)
+                {
+                    glColor4fv(keyColor.v);
+                    if (blackKey)
+                    {
+                        glBegin(GL_TRIANGLE_STRIP);
+                            glVertex3f(pp[0] - xscale*ST*(1.f), 0, pp[2]);
+                            glVertex3f(pp[0] - xscale*ST*(blackw), 0, pp[2]);
+                            glVertex3f(pn[0] - xscale*ST*(1.f), 0, pn[2]);
+                            glVertex3f(pn[0] - xscale*ST*(blackw), 0, pn[2]);
+                        glEnd();
+                    }
+                    else
+                    {
+                        glBegin(GL_TRIANGLE_FAN);
+                            if (blackKeyP)
+                            {
+                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
+                            }
+                            glVertex3f(pp[0] - xscale*ST*(0.f), 0, pp[2]);
+                            glVertex3f(pn[0] - xscale*ST*(0.f), 0, pn[2]);
+                            glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
+                            if (blackKeyN)
+                            {
+                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                            }
+                            if (blackKeyP)
+                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                            else
+                                glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
+                        glEnd();
+                    }
+                }
+
+                // outline
+                glColor4f(0,0,0,0.8);
                     glBegin(GL_LINES );
-                        glVertex3f(pn[0] - ST*0.14f, 0, pn[2]);
-                        glVertex3f(pp[0] - ST*0.14f, 0, pp[2]);
+                        glVertex3f(pn[0] - xscale*ST, 0, pn[2]);
+                        glVertex3f(pp[0] - xscale*ST, 0, pp[2]);
                     glEnd();
-                    glBegin(blackKey ? GL_QUADS:GL_LINE_STRIP );
-                        glVertex3f(pp[0] - ST*(.14f - .036f*blackKeyP), 0, pp[2]);
-                        glVertex3f(pp[0] - ST*(.08f + .024f*blackKey), 0, pp[2]);
-                        glVertex3f(pn[0] - ST*(.08f + .024f*blackKey), 0, pn[2]);
-                        glVertex3f(pn[0] - ST*(.14f - .036f*blackKeyN), 0, pn[2]);
+                    glBegin(GL_LINE_STRIP);
+                        glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
+                        glVertex3f(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]);
+                        glVertex3f(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]);
+                        glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
                     glEnd();
+
                 glColor4f(0,0,0,0.8);
 
                 if (tone%12 == 0)
@@ -1502,32 +1550,30 @@ void Renderer::drawAxes( float T )
                     glLineWidth(1);
 
                     glPushMatrixContext push_model( GL_MODELVIEW );
-                    glTranslatef(.5f*pn[0]+.5f*pp[0],0,.5f*pn[2]+.5f*pp[2]);
+                    glTranslatef(pp[0], 0, pp[2]);
                     glRotatef(90,1,0,0);
 
-                    glScalef(0.00014f*ST,0.00014f*SF,1.f);
+                    //glScalef(0.00014f*ST,0.00014f*SF,1.f);
+                    glScalef(0.005 * xscale*ST,0.005 * xscale,1.f);
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
-                    unsigned w=20;
-                    if (sign<0) {
-                        for (char*c=a;*c!=0; c++)
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                    }
+                    float w=10;
+                    for (char*c=a;*c!=0; c++)
+                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                     if (!left_handed_axes)
                         glScalef(-1,1,1);
-                    glTranslatef(sign*w,-50.f,0);
-                    //glScalef( scalew / 0.1, scaleh / 0.05, 1 );
+                    glTranslatef(-w,0,0);
                     glColor4f(1,1,1,0.5);
                     float z = 10;
                     float q = 20;
                     glBegin(GL_TRIANGLE_STRIP);
-                    glVertex2f(0 - z, 0 - q);
-                    glVertex2f(w + z, 0 - q);
-                    glVertex2f(0 - z, 100 + q);
-                    glVertex2f(w + z, 100 + q);
+                        glVertex2f(0 - z, 0 - q);
+                        glVertex2f(w + z, 0 - q);
+                        glVertex2f(0 - z, 100 + q);
+                        glVertex2f(w + z, 100 + q);
                     glEnd();
-                    glColor4f(0,0,0,0.8);
+                    glColor4f(0,0,0,0.9);
                     for (char*c=a;*c!=0; c++)
                         glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                 }
@@ -1537,7 +1583,6 @@ void Renderer::drawAxes( float T )
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
-    //glDisable(GL_BLEND);
 }
 
 template<typename T> void glVertex3v( const T* );
