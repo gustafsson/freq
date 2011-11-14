@@ -80,8 +80,8 @@ Signal::Intervals Ellipse::
     r += 0.06f;
 
     long double
-        start_time_d = std::max(0.f, (_t1 - r))*FS,
-        end_time_d = std::max(0.f, (_t2 + r))*FS;
+        start_time_d = std::max(0.f, (std::min(_t1,_t2) - r))*FS,
+        end_time_d = std::max(0.f, (std::max(_t1,_t2) + r))*FS;
 
     Signal::IntervalType
         start_time = std::min((long double)Signal::Interval::IntervalType_MAX, start_time_d),
