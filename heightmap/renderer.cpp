@@ -1176,13 +1176,13 @@ void Renderer::drawAxes( float T )
                 if( 60*10*6*24*5 < ST ) DT *= 24, st++, tmultiple = 5, tsubmultiple = 5;
             }
 
-            bool tmarkanyways = fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0) && ((unsigned)(p[0]/DT)%tmultiple!=0);
+            int tmarkanyways = (bool)(fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0) && ((unsigned)(p[0]/DT)%tmultiple!=0));
             if (tmarkanyways)
                 st--;
 
             int tupdatedetail = 20;
             DT /= tupdatedetail;
-            unsigned t = p[0]/DT; // t marker index along t
+            int t = p[0]/DT; // t marker index along t
             if (v[0] > 0 && p[0] > t*DT) t++;
 
 
@@ -1195,14 +1195,14 @@ void Renderer::drawAxes( float T )
             int fmultiple = 10;
             double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
             double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
-            bool fmarkanyways = fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0) && ((unsigned)(f / fc + .5)%fmultiple!=0);
+            int fmarkanyways = (bool)(fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0) && ((unsigned)(f / fc + .5)%fmultiple!=0));
             fmarkanyways |= 7*fabsf(np1 - p[2]) > (SF / scale_axis_density) && 7*fabsf(np2 - p[2]) > (SF / scale_axis_density);
             if (fmarkanyways)
                 sf--;
 
-            int fupdatedetail = 20;
+            int fupdatedetail = 10;
             fc /= fupdatedetail;
-            unsigned mif = floor(f / fc + .5); // f marker index along f
+            int mif = floor(f / fc + .5); // f marker index along f
             f = mif * fc;
 
             if (v[2] > 0 && p[2]>fa.getFrequencyScalarNotClampedT(f)) f+=fc;
@@ -1220,13 +1220,72 @@ void Renderer::drawAxes( float T )
             // compute intersection
             p = clippedFrustum[i] + v*u;
 
+
+            GLvector np = p;
+            float nf = f;
+            int nt = t;
+
+            if (taxis)
+            {
+                if (v[0] > 0) nt++;
+                if (v[0] < 0) nt--;
+                TaskInfo("t = %u, nt = %u", t, nt);
+                np[0] = nt*DT;
+            }
+            else
+            {
+                if (v[2] > 0) nf+=fc;
+                if (v[2] < 0) nf-=fc;
+                nf = floor(nf/fc + .5)*fc;
+                TaskInfo("f = %g, nf = %g", f, nf);
+                np[2] = fa.getFrequencyScalarNotClampedT(nf);
+            }
+
+            if (taxis)
+            {
+                float w = (cursor[0] - p[0])/(np[0] - p[0]);
+                if (fabsf(w) < tupdatedetail*tmultiple/2)
+                {
+                    tmarkanyways = -1;
+                }
+                if (0 <= w && w <= 1)
+                {
+                    tmarkanyways = 2;
+                    p[0] = cursor[0];
+                    DT /= 10;
+                    t = p[0]/DT; // t marker index along t
+                    --st;
+                    np = np + (np-p); // skip next p
+                }
+            }
+            else
+            {
+                float w = (cursor[2] - p[2])/(np[2] - p[2]);
+                if (fabsf(w) < fupdatedetail*fmultiple/2)
+                {
+                    fmarkanyways = -1;
+                }
+                if (0 <= w && w <= 1)
+                {
+                    fmarkanyways = 2;
+                    p[2] = cursor[2];
+                    f = fa.getFrequencyT( p[2] );
+                    fc /= 10;
+                    mif = floor(f / fc + .5); // f marker index along f
+                    f = mif * fc;
+                    np = np + (np-p); // skip next p
+                }
+            }
+
             // draw marker
             if (taxis) {
-                if (0 == t%tupdatedetail)
+                if (0 == t%tupdatedetail || tmarkanyways==2)
                 {
                     float size = 1+ (0 == (t%(tupdatedetail*tmultiple)));
                     if (tmarkanyways)
                         size = 2;
+                    if (-1 == tmarkanyways)
+                        size = 1;
 
                     glLineWidth(size);
 
@@ -1284,17 +1343,16 @@ void Renderer::drawAxes( float T )
                         }
                     }
                 }
-                if (v[0] > 0) t++;
-                if (v[0] < 0) t--;
-                p[0] = t*DT;
             } else {
-                if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail)
+                if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail || fmarkanyways==2)
                 {
                     float size = 1;
                     if (0 == ((unsigned)floor(f/fc + .5))%(fupdatedetail*fmultiple))
                         size = 2;
                     if (fmarkanyways)
                         size = 2;
+                    if (-1 == fmarkanyways)
+                        size = 1;
 
 
                     glLineWidth(size);
@@ -1351,14 +1409,11 @@ void Renderer::drawAxes( float T )
                             glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
                     }
                 }
-
-                if (v[2] > 0)
-                    f+=fc;
-                if (v[2] < 0)
-                    f-=fc;
-                f = floor(f/fc + .5)*fc;
-                p[2] = fa.getFrequencyScalarNotClampedT(f);
             }
+
+            p = np; // q.e.d.
+            f = nf;
+            t = nt;
         }
 
         if (!taxis && draw_piano)

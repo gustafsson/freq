@@ -43,6 +43,7 @@ public:
     bool draw_piano;
     bool draw_hz;
     GLvector camera;
+    GLvector cursor;
 
     bool draw_height_lines;
     ColorMode color_mode;

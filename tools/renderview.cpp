@@ -166,6 +166,8 @@ void RenderView::
 void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
+    userinput_update( false );
+
     DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
     DEBUG_EVENTS TaskTimer("RenderView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
@@ -610,6 +612,9 @@ void RenderView::
 
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
+
+    Heightmap::Position cursorPos = getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
+    model->renderer->cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
 
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
