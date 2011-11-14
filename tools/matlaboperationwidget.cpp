@@ -56,14 +56,6 @@ MatlabOperationWidget::MatlabOperationWidget(Adapters::MatlabFunctionSettings* p
 
     ui->settingsBox->setChecked( false );
 
-    QSettings settings;
-    settings.beginGroup("MatlabOperationWidget");
-    ui->scriptname->setText(        settings.value("scriptname").toString() );
-    ui->computeInOrder->setChecked( settings.value("computeInOrder" ).toBool());
-    ui->chunksize->setValue(        settings.value("chunksize" ).toInt());
-    ui->redundant->setValue(        settings.value("redundant" ).toInt());
-    settings.endGroup();
-
     if (psettings)
     {
         ui->labelEmptyForTerminal->setVisible( false );
@@ -580,14 +572,6 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         hideEvent ( QHideEvent * /*event*/ )
 {
-    QSettings settings;
-    // this->saveGeometry() doesn't save child widget states
-    settings.beginGroup("MatlabOperationWidget");
-    settings.setValue("scriptname", ui->scriptname->text() );
-    settings.setValue("computeInOrder", ui->computeInOrder->isChecked() );
-    settings.setValue("chunksize", ui->chunksize->value() );
-    settings.setValue("redundant", ui->redundant->value() );
-    settings.endGroup();
 }
 
 
