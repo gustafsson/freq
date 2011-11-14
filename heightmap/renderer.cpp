@@ -1441,6 +1441,8 @@ void Renderer::drawAxes( float T )
             float tva12 = powf(2.f, 1.f/12);
 
 
+            if (0 == F1)
+                F1 = 1;
             int startTone = log(F1/440.f)/log(tva12) + 45;
             int endTone = ceil(log(F2/440.f)/log(tva12)) + 45;
             float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
@@ -1560,7 +1562,7 @@ void Renderer::drawAxes( float T )
                     glRotatef(90,1,0,0);
 
                     //glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                    glScalef(0.005 * xscale*ST,0.005 * xscale,1.f);
+                    glScalef(0.005 * xscale*ST,0.35 * xscale*(pn[2]-pp[2]),1.f);
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
