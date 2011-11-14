@@ -77,7 +77,7 @@ fi
 mkdir -p $package/usr/bin
 cp ${packagename} $package/usr/bin/${packagename}-cpu
 cp ${packagename}-cuda $package/usr/bin/${packagename}-cuda
-cp ${packagename}-launcher.sh $package/usr/bin/${packagename}
+cp sonicawe-launcher.sh $package/usr/bin/${packagename}
 sed -i "s/sonicawe/${packagename}/g" $package/usr/bin/${packagename}
 
 mkdir -p $share
