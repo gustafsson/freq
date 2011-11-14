@@ -23,8 +23,8 @@ PlotLines::
 {
     rand_color_offs_ = 0;
     connect(render_view, SIGNAL(transformChanged()), SLOT(resetDisplayList()) );
-    connect(render_view, SIGNAL(ampltidueAxisChanged()), SLOT(resetDisplayList()) );
-    connect(render_view_, SIGNAL(painting()), SLOT(draw()) );
+    connect(render_view, SIGNAL(axisChanged()), SLOT(resetDisplayList()) );
+    connect(render_view, SIGNAL(painting()), SLOT(draw()) );
 }
 
 
