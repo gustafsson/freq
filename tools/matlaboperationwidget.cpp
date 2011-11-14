@@ -191,6 +191,9 @@ void MatlabOperationWidget::
         argument_description(const std::string& t)
 {
     ui->labelArgumentDescription->setText( t.c_str() );
+    ui->labelArgumentDescription->setVisible( !t.empty() );
+    ui->arguments->setVisible( !t.empty() );
+
     prevsettings.argument_description( t );
 }
 

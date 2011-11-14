@@ -313,7 +313,11 @@ void MatlabController::
         showDialogFromSettings(Adapters::DefaultMatlabFunctionSettings settings)
 {
     TaskInfo ti("showDialogFromSettings %s", settings.scriptname().c_str() );
-    showNewMatlabOperationDialog( &settings );
+
+    if (settings.argument_description().empty() && (settings.chunksize() == -1 || settings.isSource()))
+        createFromSettings( settings );
+    else
+        showNewMatlabOperationDialog( &settings );
 }
 
 
