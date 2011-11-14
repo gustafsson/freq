@@ -1180,7 +1180,7 @@ void Renderer::drawAxes( float T )
             if (tmarkanyways)
                 st--;
 
-            int tupdatedetail = 20;
+            int tupdatedetail = 2;
             DT /= tupdatedetail;
             int t = p[0]/DT; // t marker index along t
             if (v[0] > 0 && p[0] > t*DT) t++;
@@ -1200,7 +1200,7 @@ void Renderer::drawAxes( float T )
             if (fmarkanyways)
                 sf--;
 
-            int fupdatedetail = 10;
+            int fupdatedetail = 2;
             fc /= fupdatedetail;
             int mif = floor(f / fc + .5); // f marker index along f
             f = mif * fc;
