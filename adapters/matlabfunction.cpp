@@ -9,6 +9,7 @@
 #include <QDir>
 #include <QErrorMessage>
 #include <QSettings>
+#include <QApplication>
 
 // boost
 #include <boost/scoped_ptr.hpp>
