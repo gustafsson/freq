@@ -42,6 +42,7 @@
         <file alias="muchdifferent.png">icons/muchdifferent.png</file>
         <file>icons/icon-amplitude.png</file>
         <file>icons/plugin.png</file>
+        <file>icons/icon-toggle-taxis.png</file>
     </qresource>
     <qresource prefix="/shaders">
         <file alias="heightmap.frag">../heightmap/heightmap.frag</file>

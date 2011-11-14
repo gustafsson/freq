@@ -34,6 +34,7 @@ Renderer::Renderer( Collection* collection )
 :   collection(collection),
     draw_piano(false),
     draw_hz(true),
+    draw_t(true),
     camera(0,0,0),
     draw_height_lines(false),
     color_mode( ColorMode_Rainbow ),
@@ -1142,7 +1143,7 @@ void Renderer::drawAxes( float T )
 
         double f = fa.getFrequencyT( p[2] );
 
-        if (taxis || draw_hz)
+        if ((taxis && draw_t) || (!taxis && draw_hz))
         for (double u=-1; true; )
         {
             GLvector::T timePerPixel, scalePerPixel;

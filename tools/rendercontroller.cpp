@@ -269,6 +269,14 @@ void RenderController::
 
 
 void RenderController::
+        receiveToggleTAxis(bool value)
+{
+    model()->renderer->draw_t = value;
+    stateChanged();
+}
+
+
+void RenderController::
         transformChanged()
 {
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
@@ -629,9 +637,11 @@ void RenderController::
         hzmarker->addActionItem( ui->actionToggle_hz_grid );
         hzmarker->addActionItem( ui->actionToggle_piano_grid );
         toolbar_render->addWidget( hzmarker );
+        toolbar_render->addAction( ui->actionToggle_t_grid );
 
         connect(ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), SLOT(receiveTogglePiano(bool)));
         connect(ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleHz(bool)));
+        connect(ui->actionToggle_t_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleTAxis(bool)));
     }
 
     connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
@@ -844,7 +854,6 @@ void RenderController::
     // the widget
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->makeCurrent();
-    //view->glwidget->setMouseTracking(true);
 
     view->graphicsview = new GraphicsView(view);
     view->graphicsview->setViewport(view->glwidget);

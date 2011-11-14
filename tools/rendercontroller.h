@@ -42,6 +42,7 @@ namespace Tools
         // ComboBoxAction hzmarker
         void receiveTogglePiano(bool);
         void receiveToggleHz(bool);
+        void receiveToggleTAxis(bool);
 
         // Sliders
         void receiveSetYScale(int);

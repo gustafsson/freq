@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>27</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTools">
@@ -1557,6 +1557,27 @@
   <action name="actionFind_plugins">
    <property name="text">
     <string>Find &amp;plugins</string>
+   </property>
+  </action>
+  <action name="actionToggle_t_grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-toggle-taxis.png</normaloff>:/icons/icons/icon-toggle-taxis.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle time axis markers</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle time axis markers</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
  </widget>
