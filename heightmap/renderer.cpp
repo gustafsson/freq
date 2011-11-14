@@ -1249,14 +1249,13 @@ void Renderer::drawAxes( float T )
                 {
                     tmarkanyways = -1;
                 }
-                if (0 <= w && w <= 1)
+                if (0 <= w && w < 1)
                 {
                     tmarkanyways = 2;
                     p[0] = cursor[0];
                     DT /= 10;
                     t = p[0]/DT; // t marker index along t
                     --st;
-                    np = np + (np-p); // skip next p
                 }
             }
             else
@@ -1266,7 +1265,7 @@ void Renderer::drawAxes( float T )
                 {
                     fmarkanyways = -1;
                 }
-                if (0 <= w && w <= 1)
+                if (0 <= w && w < 1)
                 {
                     fmarkanyways = 2;
                     p[2] = cursor[2];
@@ -1274,7 +1273,6 @@ void Renderer::drawAxes( float T )
                     fc /= 10;
                     mif = floor(f / fc + .5); // f marker index along f
                     f = mif * fc;
-                    np = np + (np-p); // skip next p
                 }
             }
 
