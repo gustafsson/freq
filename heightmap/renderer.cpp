@@ -1026,6 +1026,7 @@ void swap( T& x, T& y) {
 
 void Renderer::drawAxes( float T )
 {
+    TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
 
@@ -1420,7 +1421,7 @@ void Renderer::drawAxes( float T )
             computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
 
             double ST = timePerPixel * 750;
-            double SF = scalePerPixel * 750;
+            // double SF = scalePerPixel * 750;
 
             // from http://en.wikipedia.org/wiki/Piano_key_frequencies
             // F(n) = 440 * pow(pow(2, 1/12),n-49)
