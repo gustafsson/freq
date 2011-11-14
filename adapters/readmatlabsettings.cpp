@@ -24,7 +24,8 @@ void ReadMatlabSettings::
         return;
 
     ReadMatlabSettings* settings = new ReadMatlabSettings( filename, MetaData_Settings );
-    settings->connect( settings, SIGNAL(settingsRead(Adapters::DefaultMatlabFunctionSettings)), receiver, member );
+    if (member)
+        settings->connect( settings, SIGNAL(settingsRead(Adapters::DefaultMatlabFunctionSettings)), receiver, member );
     if (failedmember)
         settings->connect( settings, SIGNAL(failed(QString, QString)), receiver, failedmember );
     settings->setParent( receiver );
@@ -36,8 +37,10 @@ void ReadMatlabSettings::
 ReadMatlabSettings::
         ReadMatlabSettings( QString filename, MetaData type )
             :
+            justtest( false ),
             type_( type ),
             deletethis_( true ) // ReadMatlabSettings deletes itself when finished
+
 {
     settings.scriptname( filename.toStdString() );
 }
@@ -56,7 +59,7 @@ void ReadMatlabSettings::
         return;
     }
 
-    function_.reset( new MatlabFunction( settings.scriptname().c_str(), type_ == MetaData_Settings ? "settings" : "source", 4, type_ == MetaData_Settings ? 0 : &settings ) );
+    function_.reset( new MatlabFunction( settings.scriptname().c_str(), type_ == MetaData_Settings ? "settings" : "", 4, type_ == MetaData_Settings ? 0 : &settings, justtest ) );
     QTimer::singleShot(100, this, SLOT(checkIfReady()));
 }
 

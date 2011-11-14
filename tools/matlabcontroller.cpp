@@ -130,7 +130,6 @@ void MatlabController::
         ui->menuTools->insertMenu( ui->menuToolbars->menuAction(), scripts_ );
     }
     scripts_->clear();
-    if (scriptsToolbar_) scriptsToolbar_->clear();
     scripts_->insertAction( 0, ui->actionMatlabOperation );
 
     int i = 0;
@@ -196,7 +195,7 @@ void MatlabController::
     foreach(QString info, scriptfiles)
     {
         TaskInfo("%s", info.toLatin1().data());
-        Adapters::ReadMatlabSettings::readSettingsAsync(info, this, SLOT(settingsRead(Adapters::DefaultMatlabFunctionSettings)));
+        Adapters::ReadMatlabSettings::readSettingsAsync(info, this, SLOT(foundNewScript(Adapters::DefaultMatlabFunctionSettings)));
     }
 }
 
@@ -221,21 +220,28 @@ void MatlabController::
     settings.overlap( state.value("redundant").toInt() );
     settings.scriptname( state.value("path").toString().toStdString() );
 
-    createFromSettings( settings );
+    showDialogFromSettings( settings );
 }
 
 
 void MatlabController::
-        settingsRead( Adapters::DefaultMatlabFunctionSettings settings )
+        foundNewScript( Adapters::DefaultMatlabFunctionSettings settings )
 {
-    TaskInfo ti("settingsRead %s", settings.scriptname().c_str() );
+    TaskInfo ti("foundNewScript %s", settings.scriptname().c_str() );
 
     Adapters::ReadMatlabSettings* read = dynamic_cast<Adapters::ReadMatlabSettings*>(sender());
     BOOST_ASSERT( read );
 
     QFileInfo info(settings.scriptname().c_str());
 
-    if (!read->iconpath().empty())
+    bool alreadyHasIcon = false;
+    if (scriptsToolbar_) foreach(QAction*a, scriptsToolbar_->actions())
+    {
+        if (a->data().toString() == info.absoluteFilePath())
+            alreadyHasIcon = true;
+    }
+
+    if (!read->iconpath().empty() && !alreadyHasIcon)
     {
         if (!scriptsToolbar_)
         {
@@ -273,7 +279,10 @@ void MatlabController::
         if (QFile(iconpath).exists())
             action = scriptsToolbar_->addAction( QIcon(iconpath), info.fileName() );
         else
-            action = scriptsToolbar_->addAction( info.fileName() );
+        {
+            QString buttontext = read->iconpath().c_str();
+            action = scriptsToolbar_->addAction( buttontext.left(30) );
+        }
         action->setData( info.absoluteFilePath());
         connect( action, SIGNAL(triggered()), SLOT(createFromScriptPath()));
     }
@@ -296,37 +305,46 @@ void MatlabController::
     BOOST_ASSERT( a );
 
     TaskInfo ti("createFromScriptPath %s", a->data().toString().toStdString().c_str() );
-    Adapters::ReadMatlabSettings::readSettingsAsync( a->data().toString(), this, SLOT(createFromDefaultSettings(Adapters::DefaultMatlabFunctionSettings)));
+    Adapters::ReadMatlabSettings::readSettingsAsync( a->data().toString(), this, SLOT(showDialogFromSettings(Adapters::DefaultMatlabFunctionSettings)), SLOT(createFromSettingsFailed(QString, QString)));
 }
 
 
 void MatlabController::
-        createFromDefaultSettings( Adapters::DefaultMatlabFunctionSettings settings )
+        showDialogFromSettings(Adapters::DefaultMatlabFunctionSettings settings)
 {
-    createFromSettings( settings );
+    TaskInfo ti("showDialogFromSettings %s", settings.scriptname().c_str() );
+    showNewMatlabOperationDialog( &settings );
 }
 
 
 void MatlabController::
         createFromSettings( Adapters::MatlabFunctionSettings& settings )
 {
-    TaskInfo ti("createFromSettings %s", settings.scriptname().c_str() );
-    // find out if this is a source or not
-    Adapters::ReadMatlabSettings* testSource = new Adapters::ReadMatlabSettings( settings.scriptname().c_str(), Adapters::ReadMatlabSettings::MetaData_Source );
-    testSource->settings = settings;
-    connect( testSource, SIGNAL(sourceRead()), SLOT(scriptIsSource()), Qt::DirectConnection);
-    connect( testSource, SIGNAL(failed(QString,QString)), SLOT(scriptIsNotSource(QString, QString)), Qt::DirectConnection);
-    testSource->readAsyncAndDeleteSelfWhenDone();
+    TaskInfo ti("createFromSettings %s, isSource = %d", settings.scriptname().c_str(), settings.isSource() );
+
+    if (settings.isSource())
+    {
+        Adapters::ReadMatlabSettings* readSource = new Adapters::ReadMatlabSettings( settings.scriptname().c_str(), Adapters::ReadMatlabSettings::MetaData_Source );
+        readSource->settings = settings;
+        connect( readSource, SIGNAL(sourceRead()), SLOT(sourceRead()), Qt::DirectConnection);
+        connect( readSource, SIGNAL(failed(QString,QString)), SLOT(createFromSettingsFailed(QString, QString)), Qt::DirectConnection);
+        readSource->readAsyncAndDeleteSelfWhenDone();
+    }
+    else
+    {
+        MatlabOperationWidget* settingswidget = new MatlabOperationWidget( &settings, project_ );
+        createOperation( settingswidget );
+    }
 }
 
 
 void MatlabController::
-        scriptIsSource()
+        sourceRead()
 {
     Adapters::ReadMatlabSettings* read = dynamic_cast<Adapters::ReadMatlabSettings*>(sender());
     BOOST_ASSERT( read );
 
-    TaskInfo ti("scriptIsSource %s", read->settings.scriptname().c_str() );
+    TaskInfo ti("sourceRead %s, isSource = %d", read->settings.scriptname().c_str(), read->settings.isSource() );
     if (read->sourceBuffer())
     {
         Signal::pOperation o( new Signal::BufferSource(read->sourceBuffer()));
@@ -337,7 +355,6 @@ void MatlabController::
         s->invalidate_samples(Signal::Interval::Interval_ALL);
 
         updateStoredSettings( &read->settings );
-        updateScriptsMenu();
     }
     else
     {
@@ -348,40 +365,9 @@ void MatlabController::
 
 
 void MatlabController::
-        scriptIsNotSource(QString filename, QString info)
-{
-    if (!info.isEmpty())
-    {
-        TaskInfo ti("Couldn't determine if script is a source script: %s\n%s", filename.toStdString().c_str(), info.toStdString().c_str() );
-
-        QMessageBox message(
-                QMessageBox::Information,
-                "Couldn't run script",
-                QString("Couldn't run script \"%1\". See details on error below.").arg(filename));
-
-        message.setDetailedText( info );
-
-        message.exec();
-        return;
-    }
-
-    Adapters::ReadMatlabSettings* read = dynamic_cast<Adapters::ReadMatlabSettings*>(sender());
-    BOOST_ASSERT( read );
-
-    TaskInfo ti("scriptIsNotSource %s", read->settings.scriptname().c_str() );
-    TaskInfo("Filename: %s", filename.toStdString().c_str());
-    TaskInfo("Info: %s", info.toStdString().c_str());
-    Adapters::DefaultMatlabFunctionSettings* settings = &read->settings;
-
-    MatlabOperationWidget* settingswidget = new MatlabOperationWidget( settings, project_ );
-    createOperation( settingswidget );
-}
-
-
-void MatlabController::
         createFromSettingsFailed( QString filename, QString info )
 {
-    TaskInfo ti("createFromSettingsFailed %s\n%s", filename.toStdString().c_str(), info.toStdString().c_str() );
+    TaskInfo ti("Error while parsing script: %s\n%s", filename.toStdString().c_str(), info.toStdString().c_str() );
 
     QMessageBox message(
             QMessageBox::Information,
@@ -479,7 +465,6 @@ void MatlabController::
             {
                 // Open terminal
                 createOperation( settings );
-                updateScriptsMenu();
             }
             else
             {
@@ -499,10 +484,7 @@ void MatlabController::
                 }
 
                 if (success)
-                {
                     createFromSettings( *settings );
-                    updateScriptsMenu();
-                }
             }
         }
     }
@@ -564,6 +546,8 @@ void MatlabController::
 void MatlabController::
         updateStoredSettings(Adapters::MatlabFunctionSettings* settings)
 {
+    settings->print("updateStoredSettings");
+
     QString basename = QFileInfo(settings->scriptname().c_str()).baseName();
     QSettings state;
     state.beginGroup("MatlabOperation");
@@ -571,10 +555,35 @@ void MatlabController::
     state.setValue("path", QString::fromStdString( settings->scriptname()) );
     state.setValue("chunksize", settings->chunksize() );
     state.setValue("computeInOrder", settings->computeInOrder() );
-    state.setValue("redundant", settings->redundant() );
+    state.setValue("redundant", settings->overlap() );
     state.setValue("arguments", QString::fromStdString( settings->arguments()) );
     state.endGroup();
     state.endGroup();
+
+    bool redoMenu = true;
+    foreach(QAction* a, scripts_->actions())
+    {
+        if (a->data().toString() == basename)
+        {
+            QString atext = a->text();
+            if (atext.size() > 0 && atext[0] == '&')
+                atext = atext.mid(1);
+            QStringList parts = atext.split(". ");
+            if (0 < parts.size())
+            {
+                int i = parts.first().toInt();
+                if (0<i)
+                {
+                    atext = QString("%1%2. %3( %4 )").arg(i<10?"&":"").arg(i).arg(basename).arg(settings->arguments().c_str());
+                    a->setText( atext );
+                    redoMenu = false;
+                }
+            }
+        }
+    }
+
+    if (redoMenu)
+        updateScriptsMenu();
 }
 
 

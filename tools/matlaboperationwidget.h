@@ -99,6 +99,7 @@ private:
     QVBoxLayout* verticalLayout;
     QLineEdit* edit;
     QTimer announceInvalidSamplesTimer;
+    bool hasCrashed;
 };
 
 

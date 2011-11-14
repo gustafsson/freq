@@ -66,6 +66,23 @@ void MatlabFunctionSettings::
 }
 
 
+void MatlabFunctionSettings::
+        print(const char*str)
+{
+    TaskInfo ti("%s", str);
+    TaskInfo("chunksize = %d", chunksize());
+    TaskInfo("computeInOrder = %s", computeInOrder()?"true":"false");
+    TaskInfo("overlap = %d", overlap());
+    TaskInfo("scriptname = %s", scriptname().c_str());
+    TaskInfo("arguments = %s", arguments().c_str());
+    TaskInfo("argument_description = %s", argument_description().c_str());
+    TaskInfo("operation = %p", operation);
+    TaskInfo("isTerminal = %s", isTerminal()?"true":"false");
+    TaskInfo("isSource = %s", isSource()?"true":"false");
+}
+
+
+
 DefaultMatlabFunctionSettings::
         DefaultMatlabFunctionSettings()
             :
@@ -139,30 +156,35 @@ MatlabFunction::
 
 
 MatlabFunction::
-        MatlabFunction( QString f, QString subname, float timeout, MatlabFunctionSettings* settings )
+        MatlabFunction( QString f, QString subname, float timeout, MatlabFunctionSettings* settings, bool justtest )
 :   _pid(0),
     _hasCrashed(false),
     _timeout( timeout )
 {
     _matlab_filename = QFileInfo(f).fileName().toStdString();
-    _matlab_function = (QFileInfo(f).baseName() + "_" + subname).toStdString();
+    if (!subname.isEmpty())
+        subname = "_" + subname;
+    _matlab_function = (QFileInfo(f).baseName() + subname).toStdString();
 
-    init(f.toStdString(), settings);
+    init(f.toStdString(), settings, justtest, false);
 }
 
 
 void MatlabFunction::
-        init(string fullpath, MatlabFunctionSettings* settings)
+        init(string fullpath, MatlabFunctionSettings* settings, bool justtest, bool sendoutput)
 {
     { // Set filenames
         QTemporaryFile tempFile(QDir::tempPath() + QDir::separator() + "saweinterop.XXXXXX");
-        _interopName = tempFile.fileName();
+        tempFile.setAutoRemove(false);
         tempFile.open(); // create file and block other instances from picking the same name
-        tempFile.setAutoRemove( false );
         _interopName = tempFile.fileName();
 
+        TaskInfo("MatlabFunction: Reserved %s for %s", _interopName.toStdString().c_str(), _matlab_function.c_str());
         _dataFile = _interopName.toStdString() + ".h5";
         _resultFile = _dataFile + ".result.h5";
+
+        if (!sendoutput)
+            _dataFile = _resultFile;
     }
 
     { // Start matlab/octave
@@ -204,16 +226,36 @@ void MatlabFunction::
         {
 
         }
-        else
+        else if(justtest)
         {
             string path = QFileInfo(fullpath.c_str()).path().replace("'", "\\'") .toStdString();
             string filename = QString(fullpath.c_str()).replace("'", "\\'") .toStdString();
             matlab_command
                     << "source('" << filename << "');"
                     << "addpath('" << path << "');"
-                    << "sawe_filewatcher('" << _dataFile << "',@" << _matlab_function;
+                    << "f=@" << _matlab_function << ";";
             octave_command
-                    << "try;source('" << filename << "');"
+                    << "source('" << filename << "');"
+                    << "addpath('" << path << "');"
+                    << "f=@" << _matlab_function << ";";
+
+            matlab_command << ");";
+            octave_command << ");";
+        }
+        else
+        {
+            string path = QFileInfo(fullpath.c_str()).path().replace("'", "\\'") .toStdString();
+            string filename = QString(fullpath.c_str()).replace("'", "\\'") .toStdString();
+            matlab_command
+                    << "try;"
+                    << "source('" << filename << "');"
+                    << "addpath('" << path << "');"
+                    << "f=@" << _matlab_function << ";"
+                    << "catch;exit;end;"
+                    << "sawe_filewatcher('" << _dataFile << "',f";
+            octave_command
+                    << "try;"
+                    << "source('" << filename << "');"
                     << "addpath('" << path << "');"
                     << "f=@" << _matlab_function << ";"
                     << "catch;exit;end;"
@@ -221,18 +263,10 @@ void MatlabFunction::
 
             string arguments = settings ? settings->arguments() : "";
 
-            trim( arguments );
-            trim_if( arguments, is_any_of(";") );
-
-            arguments = arguments.c_str();
             if (arguments.size() )
             {
-                TaskInfo ti("arguments(%d) = %s", arguments.size(), arguments.c_str());
-                for (unsigned i=0; i<arguments.size(); ++i)
-                    TaskInfo("%d", arguments[i]);
-
-                matlab_command << ", " << arguments.c_str();
-                octave_command << ", " << arguments.c_str();
+                matlab_command << ", {" << arguments.c_str() << "}";
+                octave_command << ", {" << arguments.c_str() << "}";
             }
 
             matlab_command << ");";
@@ -338,7 +372,12 @@ MatlabFunction::
 {
     endProcess();
 
+    TaskInfo("MatlabFunction: Releasing %s from %s", _interopName.toStdString().c_str(), _matlab_function.c_str());
+
     QFile::remove(_interopName);
+    QFile::remove(_dataFile.c_str());
+    QFile::remove(getTempName().c_str());
+    QFile::remove(_resultFile.c_str());
 }
 
 
@@ -354,11 +393,11 @@ void MatlabFunction::
 {
     if (exitCode != 0)
     {
-        _hasCrashed = TRUE;
+        _hasCrashed = true;
     }
     else
     {
-        _hasCrashed = FALSE;
+        _hasCrashed = false;
     }
 }
 

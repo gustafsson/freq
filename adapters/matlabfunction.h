@@ -9,6 +9,7 @@
 
 // qt
 #include <QProcess>
+#include <QScopedPointer>
 
 namespace Adapters {
 
@@ -40,6 +41,7 @@ public:
     bool isTerminal();
     bool isSource();
     void setAsSource();
+    void print(const char*str);
 };
 
 class DefaultMatlabFunctionSettings: public MatlabFunctionSettings
@@ -102,7 +104,7 @@ public:
       Name of a matlab function and timeout measuerd in seconds.
       */
     MatlabFunction( std::string matlabFunction, float timeout, MatlabFunctionSettings* settings );
-    MatlabFunction( QString f, QString subname, float timeout, MatlabFunctionSettings* settings );
+    MatlabFunction( QString f, QString subname, float timeout, MatlabFunctionSettings* settings, bool justtest );
     ~MatlabFunction();
 
     std::string getTempName();
@@ -138,7 +140,7 @@ private slots:
     void finished ( int exitCode, QProcess::ExitStatus exitStatus );
 
 private:
-    void init(std::string path, MatlabFunctionSettings* settings);
+    void init(std::string path, MatlabFunctionSettings* settings, bool justtest = false, bool sendoutput = true);
     //void kill();
     void abort();
 

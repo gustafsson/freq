@@ -29,6 +29,8 @@ public:
     DefaultMatlabFunctionSettings settings;
     std::string iconpath();
 
+    bool justtest;
+
 signals:
     void sourceRead();
     void settingsRead( Adapters::DefaultMatlabFunctionSettings settings );

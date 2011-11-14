@@ -24,7 +24,8 @@ MatlabOperationWidget::MatlabOperationWidget(Adapters::MatlabFunctionSettings* p
     octaveWindow(0),
     text(0),
     verticalLayout(0),
-    edit(0)
+    edit(0),
+    hasCrashed(false)
 {
     ui->setupUi(this);
     ui->pushButtonRestartScript->setVisible(false);
@@ -69,13 +70,28 @@ MatlabOperationWidget::MatlabOperationWidget(Adapters::MatlabFunctionSettings* p
 
         *(MatlabFunctionSettings*)this = *psettings;
 
-        ui->scriptname->setEnabled( false );
+        ui->scriptname->setReadOnly( true );
         ui->settingsBox->setChecked( true );
         ui->settingsBox->setCheckable( false );
+        ui->browseButton->hide();
 
         if (psettings->isSource())
         {
             // source
+            ui->computeInOrder->hide();
+            ui->chunksize->hide();
+            ui->redundant->hide();
+            ui->labelChunkSize->hide();
+            ui->labelChunkSizeInfo->hide();
+            ui->labelInOrderInfo->hide();
+            ui->labelRedundantSamples->hide();
+            ui->labelRedundantSamplesInfo->hide();
+            window()->resize( 452, 170 );
+        }
+
+        if (0 > psettings->chunksize())
+        {
+            // these doesn't make sense if the script requires the entire signal to be processed in one chunk
             ui->computeInOrder->hide();
             ui->chunksize->hide();
             ui->redundant->hide();
@@ -182,7 +198,7 @@ void MatlabOperationWidget::
 int MatlabOperationWidget::
         chunksize() const
 {
-    return operation ? prevsettings.chunksize() : ui->chunksize->value();
+    return operation || !ui->chunksize->isVisible() ? prevsettings.chunksize() : ui->chunksize->value();
 }
 
 
@@ -473,7 +489,10 @@ void MatlabOperationWidget::
 {
     QWidget* currentFocus = focusWidget();
 
+    Adapters::MatlabOperation* o = this->operation;
     *(MatlabFunctionSettings*)this = prevsettings;
+    this->operation = o;
+
     currentFocus->setFocus();
 
     ui->pushButtonRestoreChanges->setEnabled(false);
@@ -520,6 +539,16 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         finished ( int exitCode, QProcess::ExitStatus /*exitStatus*/ )
 {
+    if (exitCode != 0)
+    {
+        hasCrashed = true;
+    }
+    else
+    {
+        hasCrashed = false;
+    }
+
+
     if (!octaveWindow)
         return;
 
@@ -608,7 +637,8 @@ void MatlabOperationWidget::
         ui->pushButtonShowOutput->setEnabled( true );
     }
 
-    octaveWindow->show();
+    if (hasCrashed)
+        octaveWindow->show();
 
     QByteArray ba = pid->readAllStandardOutput();
     QString s( ba );

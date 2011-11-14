@@ -32,11 +32,10 @@ namespace Tools
         void receiveMatlabFilter();
         void tryHeadAsMatlabOperation();
         void createFromAction();
-        void settingsRead( Adapters::DefaultMatlabFunctionSettings settings );
+        void foundNewScript( Adapters::DefaultMatlabFunctionSettings settings );
         void createFromScriptPath();
-        void createFromDefaultSettings( Adapters::DefaultMatlabFunctionSettings settings );
-        void scriptIsSource();
-        void scriptIsNotSource(QString filename, QString info);
+        void showDialogFromSettings(Adapters::DefaultMatlabFunctionSettings settings);
+        void sourceRead();
         void createFromSettingsFailed( QString filename, QString info );
 
     private:
