@@ -225,13 +225,20 @@ win32:QMAKE_LFLAGS_DEBUG += \
 ####################
 # Temporary output
 
-win32:RCC_DIR = tmp
-MOC_DIR = tmp
-OBJECTS_DIR = tmp/
-UI_DIR = tmp
+usecuda {
+  TMPDIR = tmp/cuda
+} else {
+  TMPDIR = tmp
+}
 
-CONFIG(debug, debug|release):OBJECTS_DIR = tmp/debug/
-else:OBJECTS_DIR = tmp/release/
+win32:RCC_DIR = $${TMPDIR}
+MOC_DIR = $${TMPDIR}
+OBJECTS_DIR = $${TMPDIR}/
+UI_DIR = $${TMPDIR}
+
+
+CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
+else:OBJECTS_DIR = $${OBJECTS_DIR}release/
 
 # #######################################################################
 # CUDA
@@ -327,4 +334,3 @@ cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
 
 } #usecuda
-# end of cuda section #######################################################################
