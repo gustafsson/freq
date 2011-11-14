@@ -1254,8 +1254,10 @@ void Renderer::drawAxes( float T )
                     tmarkanyways = 2;
                     p[0] = cursor[0];
                     DT /= 10;
-                    t = p[0]/DT; // t marker index along t
+                    t = cursor[0]/DT; // t marker index along t
                     --st;
+
+                    p = clippedFrustum[i] + v*((cursor[0] - clippedFrustum[i][0])/v[0]);
                 }
             }
             else
@@ -1268,11 +1270,12 @@ void Renderer::drawAxes( float T )
                 if (0 <= w && w < 1)
                 {
                     fmarkanyways = 2;
-                    p[2] = cursor[2];
-                    f = fa.getFrequencyT( p[2] );
+                    f = fa.getFrequencyT( cursor[2] );
                     fc /= 10;
                     mif = floor(f / fc + .5); // f marker index along f
                     f = mif * fc;
+
+                    p = clippedFrustum[i] + v*((cursor[2] - clippedFrustum[i][2])/v[2]);
                 }
             }
 
