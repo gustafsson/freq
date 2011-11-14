@@ -1486,12 +1486,14 @@ void Renderer::drawAxes( float T )
 
                 tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
                 float w = (cursor[2] - ff)/(ffN - ff);
-                w = fabsf(w/1.5f);
+                w = fabsf(w/1.6f);
                 if (w < 1)
                 {
-                    keyColor[1] = 1-w;
-                    if (!blackKey)
-                        keyColor[3] = keyColor[1];
+                    keyColor[1] = (1-w)*(1-w);
+                    if (blackKey)
+                        keyColor[3] = keyColor[3]*w + .9f*(1-w);
+                    else
+                        keyColor[3] = keyColor[1] * .7f;
                 }
 
                 if (keyColor[3] != 0)
