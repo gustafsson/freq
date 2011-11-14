@@ -834,6 +834,13 @@ void RenderView::
 
 
 void RenderView::
+        emitAxisChanged()
+{
+    emit axisChanged();
+}
+
+
+void RenderView::
         userinput_update( bool request_high_fps, bool post_update )
 {
     if (request_high_fps)

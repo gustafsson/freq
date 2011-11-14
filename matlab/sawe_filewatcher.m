@@ -22,20 +22,31 @@ if nargin<4
   dt=0.025;
 end
 
-secondaryfunction = false;
-try
-% this will fail for secondary function (that doesn't have the same name as the basename of the file)
-secondaryfunction = ~exist( [func2str(func) '.m'] );
-catch
-secondaryfunction = true;
-end
-if ~secondaryfunction && 1 == nargin(func2str(func)) && 0 ~= numel(arguments)
-  disp(['Function ' func2str(func) ' only takes 1 argument, ignoring arguments ''' num2str(arguments) '''']);
+noinputdata = ~isempty(strfind(datafile, '.result.h5'));
+if noinputdata
+  fargin = numel(arguments);
+  try
+    fargin = nargin(func2str(func));
+  catch
+    % never mind, if 'nargin' can't find the function
+  end
+  if fargin < numel(arguments)
+    error(['Function ' func2str(func) ' takes ' num2str(fargin) ' arguments but ' num2str(numel(arguments)) ' arguments was provided']);
+  end
+else
+  if nargin(func2str(func))-1 < numel(arguments)
+    error(['Function ' func2str(func) ' takes ' num2str(nargin(func2str(func))-1) ' extra arguments but ' num2str(numel(arguments)) ' arguments was provided']);
+  end
 end
 
 global sawe_plot_data; %matrix for all lines to be plotted.
 
-resultfile=[datafile '.result.h5'];
+if noinputdata
+  resultfile = datafile;
+  datafile = [resultfile '.tmp'];
+else
+  resultfile = [datafile '.result.h5'];
+end
 tempfile=datafile;
 isoctave=0~=exist('OCTAVE_VERSION','builtin');
 
@@ -58,10 +69,10 @@ while 1
     datafile_exists = exist(datafile,'file'); % matlab and octave
   end
 
-  if datafile_exists || secondaryfunction
+  if datafile_exists || noinputdata
     start_waiting_time = clock;
 
-	if secondaryfunction
+	if noinputdata
       data = struct();
     else
       if logginfo
@@ -104,11 +115,11 @@ while 1
       disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) '''']);
     end
 
-    if secondaryfunction
+    if noinputdata
       data = [];
       try
         if 0 ~= numel(arguments)
-          data = func(arguments);
+          data = func(arguments{:});
         else
           data = func();
         end
@@ -123,17 +134,18 @@ while 1
       if 1 == nargin(func2str(func))
         func(data);
       else
-        func(data, arguments);
+        func(data, arguments{:});
       end
       data = sawe_discard(data);
     else
       if 1 == nargin(func2str(func))
         data = func(data);
       else
-        data = func(data, arguments);
+        data = func(data, arguments{:});
       end
     end
 
+	data.plot = sawe_plot_data;
 	sawe_savestruct(tempfile, data);
     
     if isoctave
@@ -146,7 +158,7 @@ while 1
       disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' saved results']);
     end
     
-    if secondaryfunction
+    if noinputdata
       exit;
     end
   else

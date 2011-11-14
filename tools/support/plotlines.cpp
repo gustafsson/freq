@@ -1,22 +1,29 @@
 #include "plotlines.h"
 #include "paintline.h"
 
-#include "tools/rendermodel.h"
+#include "tools/renderview.h"
 
 #include <glPushContext.h>
 #include <GlException.h>
 
 #include <QColor>
 
+using namespace std;
+
 namespace Tools {
 namespace Support {
 
 PlotLines::
-        PlotLines(RenderModel* render_model)
+        PlotLines(RenderView* render_view)
     :
-    render_model_(render_model),
-    rand_color_offs_( rand()/(float)RAND_MAX )
+    render_view_(render_view),
+    rand_color_offs_( rand()/(float)RAND_MAX ),
+    display_list_( 0 )
 {
+    rand_color_offs_ = 0;
+    connect(render_view, SIGNAL(transformChanged()), SLOT(resetDisplayList()) );
+    connect(render_view, SIGNAL(ampltidueAxisChanged()), SLOT(resetDisplayList()) );
+    connect(render_view_, SIGNAL(painting()), SLOT(draw()) );
 }
 
 
@@ -87,30 +94,61 @@ PlotLines::Line& PlotLines::
 void PlotLines::
         draw()
 {
-    for (Lines::iterator itr = lines_.begin(); itr != lines_.end(); itr++ )
+    if (lines_.empty())
+        return;
+
+    glPushMatrixContext push_model( GL_MODELVIEW );
+
+    glScalef(1, render_view_->model->renderer->y_scale, 1);
+
+    if (0 == display_list_)
     {
-        draw(itr->second);
+        display_list_ = glGenLists( 1 );
+        glNewList( display_list_, GL_COMPILE_AND_EXECUTE );
+
+        for (Lines::iterator itr = lines_.begin(); itr != lines_.end(); itr++ )
+        {
+            draw(itr->second);
+        }
+
+        glEndList();
     }
+    else
+    {
+        glCallList( display_list_ );
+    }
+}
+
+
+void PlotLines::
+        resetDisplayList()
+{
+    if ( 0 != display_list_)
+        glDeleteLists(display_list_, 1);
+    display_list_ = 0;
 }
 
 
 void PlotLines::
         draw(Line& l)
 {
+    const Tfr::FreqAxis& fa = render_view_->model->display_scale();
+
     GlException_CHECK_ERROR();
 
     glPushAttribContext ac;
     glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
-    glColor4f( l.R, l.G, l.B, l.A);
 
     glBegin(GL_TRIANGLE_STRIP);
     for (Line::Data::iterator d = l.data.begin(); d != l.data.end(); ++d )
     {
-        float scale = render_model_->display_scale().getFrequencyScalar( d->second.hz );
+        float scale = fa.getFrequencyScalar( d->second.hz );
+        glColor4f( l.R, l.G, l.B, 0.5*l.A);
         glVertex3f( d->first, 0, scale );
         glVertex3f( d->first, d->second.a, scale );
+        glColor4f( l.R, l.G, l.B, l.A );
     }
     glEnd();
 
@@ -118,7 +156,7 @@ void PlotLines::
     glBegin(GL_LINE_STRIP);
     for (Line::Data::iterator d = l.data.begin(); d != l.data.end(); ++d )
     {
-        float scale = render_model_->display_scale().getFrequencyScalar( d->second.hz );
+        float scale = fa.getFrequencyScalar( d->second.hz );
         glColor4f( l.R, l.G, l.B, l.A*d->second.a);
         glVertex3f( d->first, d->second.a, scale );
     }
@@ -129,9 +167,9 @@ void PlotLines::
     glBegin(GL_POINTS);
     for (Line::Data::iterator d = l.data.begin(); d != l.data.end(); ++d )
     {
-        float scale = render_model_->display_scale().getFrequencyScalar( d->second.hz );
-        glColor4f( l.R, l.G, l.B, scale*l.A*d->second.a);
+        float scale = fa.getFrequencyScalar( d->second.hz );
         glVertex3f( d->first, d->second.a, scale );
+        glColor4f( l.R, l.G, l.B, min(1.f, l.A*d->second.a*5));
     }
     glEnd();
     glPointSize( 1.f );
@@ -144,19 +182,20 @@ void PlotLines::
 void PlotLines::
         recomputeColors()
 {
-    float N = lines_.size();
+    unsigned N = lines_.size();
 
     // Set colors
     float i = 0, d;
     for (Lines::iterator itr = lines_.begin(); itr != lines_.end(); itr++)
     {
-        QColor c = QColor::fromHsvF( std::modf(rand_color_offs_ + i++/N, &d), 1, 1 );
+        QColor c = QColor::fromHsvF( modf(rand_color_offs_ + i++/(float)N, &d), 1, 0.3, 0.5 );
         itr->second.R = c.redF();
         itr->second.G = c.greenF();
         itr->second.B = c.blueF();
-        //itr->second.A = c.alphaF()*0.5;
-        itr->second.A = 0.5;
+        itr->second.A = c.alphaF();
     }
+
+    resetDisplayList();
 }
 
 } // namespace Support

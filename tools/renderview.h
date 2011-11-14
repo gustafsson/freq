@@ -95,6 +95,7 @@ namespace Tools
         const std::vector<tvector<4> >& channelColors() const { return channel_colors; }
 
         void emitTransformChanged();
+        void emitAxisChanged();
 
     public slots:
         void userinput_update( bool request_high_fps = true, bool post_update = true );
@@ -140,6 +141,7 @@ namespace Tools
 
 
         void transformChanged();
+        void axisChanged();
 
     private slots:
         void clearCaches();

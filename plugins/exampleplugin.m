@@ -1,17 +1,51 @@
 function data=exampleplugin(data, p)
 
-disp(['exampleplugin ' sawe_getdatainfo(data)]);
+  disp(['exampleplugin ' sawe_getdatainfo(data)]);
 
-data.buffer = data.buffer * p;
+  data.samples = data.samples * p;
+
 end
 
+
 function settings=exampleplugin_settings()
-%settings.chunk_size = -1; % entire signal in one pass
-%settings.chunk_size = 2^14; % specific number of samples per pass
-settings.chunk_size = 0; % arbitrary, Sonic AWE can choose depedning on what's needed for the moment. The default i 0.
-settings.compute_chunks_in_order = 0; % this script doesn't require chunks to be passed in consecutive order. The default i false.
-settings.arguments = '4'; % k=4 as default argument.
-settings.overlapping = 0; % this script doesn't require any overlap between chunks. If a script does, it's up to the script do discard any redundant data before returning data to Sonic AWE. The default i 0.
+%
+% settings.chunk_size
+%   -1                       Entire signal in one pass.
+%   0 (default)              Let Sonic AWE choose depedning on what's needed for the moment.
+%   (any other number > 0)   Specific number of samples per pass.
+%
+%
+% settings.compute_chunks_in_order
+%   false (default)          Let Sonic AWE choose depedning on what's needed for the moment.
+%   true                     Compute chunks in consecutive order from beginning to end.
+%
+%
+% settings.arguments
+%   '' (default)             Any text string that is passed as argument to the script. 
+%                            The value will be used equivalent to: eval(['scriptname(data,' settings.arguments ');']);
+%
+%
+% settings.argument_description
+%   'Arguments' (default)    This text will show up if the user is chooses to enter arguments to the script.
+%
+%
+% settings.overlap
+%   (any number >= 0)        Number of overlapping samples per chunk. This number of samples is included on both sides of each chunk.
+%                            Tip: Use data=sawe_discard(data) to discard overlapping samples before returning to Sonic AWE.
+%
+%
+% settings.icon
+%   '' (default)             When 'settings.icon' is empty or not set this script will show up in the menu but not as a button.
+%   (source to image file)   When 'settings.icon' is set this script will show up as a button with this icon in a toolbar in Sonic AWE.
+%   (other text)             If no image was found this value is used as a text on a button in a toolbar in Sonic AWE.
+%
+%
+settings.chunk_size = 0;
+settings.compute_chunks_in_order = false;
+settings.arguments = '4';
+settings.argument_description = 'Amplitude factor';
+settings.overlap = 0;
 settings.icon = 'examplepluginicon.png';
+
 end
 

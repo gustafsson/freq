@@ -515,6 +515,7 @@ void RenderController::
 
     model()->display_scale( fa );
 
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -539,6 +540,7 @@ void RenderController::
 
     model()->display_scale( fa );
 
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -560,6 +562,7 @@ void RenderController::
 
     model()->display_scale( fa );
 
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -568,6 +571,7 @@ void RenderController::
         receiveLinearAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -576,6 +580,7 @@ void RenderController::
         receiveLogAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -584,6 +589,7 @@ void RenderController::
         receiveFifthAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_5thRoot );
+    view->emitAxisChanged();
     stateChanged();
 }
 

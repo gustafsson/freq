@@ -535,8 +535,7 @@ void MatlabController::
     else
     {
         m->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        m->plotlines.reset( new Tools::Support::PlotLines( render_view_->model ));
-        connect( render_view_, SIGNAL(painting()), m->plotlines.get(), SLOT(draw()) );
+        m->plotlines.reset( new Tools::Support::PlotLines( render_view_ ) );
 
         updateStoredSettings( settings );
     }

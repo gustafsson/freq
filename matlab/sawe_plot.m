@@ -1,3 +1,19 @@
+%
+% sawe_plot, plots lines in Sonic AWE
+%
+%   sawe_plot(t, hz)
+%
+% 't' is a vector with coordinates along the time axis.
+% 'hz' is either a vector of the same length as 't' or a scalar.
+%
+%
+% To plot multiple lines with different coordinates along the time axis, call sawe_plot multiple times or group parameters in pairs:
+%
+%   sawe_plot(t1, hz1, t2, hz2, ... tn, hzn)
+%
+%
+% See also sawe_plot2 which can plot lines with varying amplitude.
+%
 function sawe_plot(varargin);
 
     if (3==nargin)

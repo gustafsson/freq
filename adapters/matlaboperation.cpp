@@ -155,6 +155,8 @@ bool MatlabOperation::
                     else if (1 == N.height)
                         for (unsigned x=0; x<N.width; ++x)
                             plotlines.set( id, start + (x+0.5)*length/N.width, p[ x ] );
+
+                    TaskInfo("Line plot %u now has %u points", id, plotlines.line( id ).data.size());
                 }
             }
         }
