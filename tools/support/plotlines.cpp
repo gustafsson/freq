@@ -68,6 +68,7 @@ void PlotLines::
         set( Time t, float hz, float a )
 {
     line(0).data[t] = Value( hz, a );
+    resetDisplayList();
 }
 
 
@@ -75,6 +76,7 @@ void PlotLines::
         set( LineIdentifier id, Time t, float hz, float a )
 {
     line(id).data[t] = Value( hz, a );
+    resetDisplayList();
 }
 
 
