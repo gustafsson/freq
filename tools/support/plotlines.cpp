@@ -1,5 +1,6 @@
 #include "plotlines.h"
 #include "paintline.h"
+#include "heightmap/blockkernel.h" // amplitudevalueruntime
 
 #include "tools/renderview.h"
 
@@ -133,6 +134,7 @@ void PlotLines::
         draw(Line& l)
 {
     const Tfr::FreqAxis& fa = render_view_->model->display_scale();
+    Heightmap::AmplitudeValueRuntime height = render_view_->model->amplitude_axis();
 
     GlException_CHECK_ERROR();
 
@@ -147,8 +149,8 @@ void PlotLines::
         float scale = fa.getFrequencyScalar( d->second.hz );
         glColor4f( l.R, l.G, l.B, 0.5*l.A);
         glVertex3f( d->first, 0, scale );
-        glVertex3f( d->first, d->second.a, scale );
         glColor4f( l.R, l.G, l.B, l.A );
+        glVertex3f( d->first, height(d->second.a), scale );
     }
     glEnd();
 
@@ -158,7 +160,7 @@ void PlotLines::
     {
         float scale = fa.getFrequencyScalar( d->second.hz );
         glColor4f( l.R, l.G, l.B, l.A*d->second.a);
-        glVertex3f( d->first, d->second.a, scale );
+        glVertex3f( d->first, height(d->second.a), scale );
     }
     glEnd();
     glLineWidth(0.5f);
@@ -170,6 +172,7 @@ void PlotLines::
         float scale = fa.getFrequencyScalar( d->second.hz );
         glVertex3f( d->first, d->second.a, scale );
         glColor4f( l.R, l.G, l.B, min(1.f, l.A*d->second.a*5));
+        glVertex3f( d->first, height(d->second.a), scale );
     }
     glEnd();
     glPointSize( 1.f );
