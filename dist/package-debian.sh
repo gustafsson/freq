@@ -110,6 +110,7 @@ cp matlab/examples/plotwaveform.m $share/examples
 cp matlab/sawe_loadbuffer.m $share
 cp matlab/sawe_loadchunk.m $share
 cp matlab/sawe_savestruct.m $share
+cp matlab/sawe_makestruct.m $share
 cp matlab/sawe_discard.m $share
 cp matlab/sawe_plot.m $share
 cp matlab/sawe_plot2.m $share
