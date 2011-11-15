@@ -16,7 +16,7 @@
 
 // Qt
 #include <QResource>
-
+#include <QMessageBox>
 
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)
@@ -56,23 +56,34 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
         if (fp) free(src);
 
-        char log[2048];
+        char shaderInfoLog[2048];
         int len;
 
-        glGetShaderInfoLog(shader, 2048, (GLsizei*)&len, log);
+        glGetShaderInfoLog(shader, sizeof(shaderInfoLog), (GLsizei*)&len, shaderInfoLog);
 
-        if (!compiled) {
-            glDeleteShader(shader);
+        if (strlen(shaderInfoLog)>0) {
+            TaskInfo ti("Failed to compile shader %s", name );
+            TaskInfo("%s", shaderInfoLog);
 
-            throw std::runtime_error(std::string("Couldn't compile shader ") + name + ". Shader log: \n" + log);
+            QMessageBox message(
+                    QMessageBox::Critical,
+                    "Couldn't properly setup graphics",
+                    "Sonic AWE couldn't properly setup required graphics (shader compile error). "
+                    "Please file this as a bug report to help us fix this. "
+                    "See more info in 'Help->Report a bug'");
+
+            message.setDetailedText( shaderInfoLog );
+
+            message.exec();
         }
 
-        if (0<len) {
-            TIME_COMPILESHADER TaskInfo("Shader log:\n%s", log);
+        if (compiled)
+        {
+            glAttachShader(prg, shader);
         }
 
-        glAttachShader(prg, shader);
-        glDeleteShader(shader); // TODO why delete shader?
+        glDeleteShader(shader);
+
     } catch (const std::exception &x) {
         TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
         throw;
@@ -92,12 +103,26 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &linked);
-        if (!linked) {
-            char temp[256];
-            glGetProgramInfoLog(program, 256, 0, temp);
-            throw std::runtime_error(std::string("Failed to link shader program with vertex shader ")
-                                     + vertFileName + " and fragment shader " + fragFileName
-                                     + ". Program log:\n" + temp);
+
+        char programInfoLog[2048] = "";
+        glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
+        programInfoLog[sizeof(programInfoLog)-1] = 0;
+
+        if (!linked || strlen(programInfoLog)>0) {
+            TaskInfo ti("Failed to link fragment shader (%s) with vertex shader (%s)",
+                     fragFileName, vertFileName );
+            TaskInfo("%s", programInfoLog);
+
+            QMessageBox message(
+                    QMessageBox::Critical,
+                    "Couldn't properly setup graphics",
+                    "Sonic AWE couldn't properly setup required graphics (shader link error). "
+                    "Please file this as a bug report to help us fix this. "
+                    "See more info in 'Help->Report a bug'");
+
+            message.setDetailedText( programInfoLog );
+
+            message.exec();
         }
 
     } catch (...) {
