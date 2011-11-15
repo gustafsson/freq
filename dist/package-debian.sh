@@ -98,11 +98,11 @@ cp matlab/sawe_extract_cwt_time.m $share
 cp matlab/sawe_filewatcher.m $share
 cp matlab/sawe_getdatainfo.m $share
 cp matlab/sawe_datestr.m $share
-cp matlab/plugins/exampleplugin.m $share/examples
-cp matlab/plugins/examplepluginicon.png $share/examples
-cp matlab/plugins/examplesource.m $share/examples
-cp matlab/plugins/exportpeakfrequencies.m $share/examples
-cp matlab/plugins/reversesignal.m $share/examples
+cp plugins/exampleplugin.m $share/examples
+cp plugins/examplepluginicon.png $share/examples
+cp plugins/examplesource.m $share/examples
+cp plugins/exportpeakfrequencies.m $share/examples
+cp plugins/reversesignal.m $share/examples
 cp matlab/examples/amplify.m $share/examples
 cp matlab/examples/convolve.m $share/examples
 cp matlab/examples/lowpass.m $share/examples
