@@ -334,7 +334,7 @@ void MatlabFunction::
         }
 
 #ifdef _WIN32
-        if (!f.empty())
+        if (!fullpath.empty())
         {
             TaskInfo("Trying common installation paths for MATLAB instead");
             QStringList matlab_paths;
