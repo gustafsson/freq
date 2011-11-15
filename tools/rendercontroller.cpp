@@ -387,14 +387,10 @@ Signal::PostSink* RenderController::
 
     view->emitTransformChanged();
 
-    if (!hz_scale->isEnabled())
-    {
-        Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-        Ui::MainWindow* ui = main->getItems();
-        ui->actionToggle_hz_grid->setChecked(false);
-        ui->actionToggle_hz_grid->trigger();
-        hzmarker->setEnabled( true );
-    }
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_piano_grid->setVisible( true );
     hz_scale->setEnabled( true );
 
     return ps;
@@ -494,16 +490,17 @@ void RenderController::
     Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(&model()->collections);
 
     setBlockFilter( drawnwaveformblock );
-    model()->renderer->draw_hz = false;
-    model()->renderer->draw_piano = false;
 
-    linearScale->trigger();
     Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
     Ui::MainWindow* ui = main->getItems();
-    ui->actionToggle_hz_grid->setChecked(true);
-    ui->actionToggle_hz_grid->trigger();
-    hzmarker->setEnabled( false );
+
     hz_scale->setEnabled( false );
+    if (ui->actionToggle_piano_grid->isChecked())
+        hzmarker->setChecked( false );
+    ui->actionToggle_piano_grid->setVisible( false );
+
+    // blockfilter sets the proper "frequency" axis
+    linearScale->trigger();
 }
 
 
@@ -518,7 +515,7 @@ void RenderController::
     if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
     {
         fa.min_hz = currentTransform()->freqAxis(fs).min_hz;
-        fa.f_step = (1/fa.max_frequency_scalar) * (fs/2 - fa.min_hz);
+        fa.f_step = fs/2 - fa.min_hz;
     }
 
     model()->display_scale( fa );

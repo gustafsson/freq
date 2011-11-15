@@ -97,19 +97,17 @@ float DrawnWaveform::
 
 
 FreqAxis DrawnWaveform::
-        freqAxis( float FS )
+        freqAxis( float /*FS*/ )
 {
     FreqAxis a;
-    a.setLinear(FS, drawWaveform_YRESOLUTION - 1);
-    //a.setLogarithmic(20, FS/2, drawWaveform_YRESOLUTION - 1);
+    a.axis_scale = AxisScale_Linear;
 
-    //a.setLinear(44100, drawWaveform_YRESOLUTION - 1);
-    /*a.axis_scale = AxisScale_Linear;
     a.max_frequency_scalar = drawWaveform_YRESOLUTION - 1;
-    float max_hz = 1000;
-    a.min_hz = 0;
-    a.f_step = (1/a.max_frequency_scalar) * (max_hz - a.min_hz);
-*/
+    a.min_hz = -maxValue;
+    a.f_step = (1/a.max_frequency_scalar) * 2*maxValue;
+
+    //a.setLinear(FS, drawWaveform_YRESOLUTION - 1);
+
     return a;
 }
 

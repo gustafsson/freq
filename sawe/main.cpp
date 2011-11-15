@@ -230,6 +230,29 @@ int main(int argc, char *argv[])
 {
     if (0)
     {
+        Tfr::FreqAxis fa;
+        fa.setLinear(1);
+        fa.max_frequency_scalar = 1;
+        fa.min_hz = -20;
+        fa.f_step = -2*fa.min_hz;
+
+        for (float f=0; f<=fa.max_frequency_scalar; f+=0.1)
+            cout << f << " " << fa.getFrequency(f) << " Hz" << endl;
+
+        cout << endl;
+
+        float maxValue = 20;
+        fa.max_frequency_scalar = 20 - 1;
+        fa.min_hz = -maxValue;
+        fa.f_step = (1/fa.max_frequency_scalar) * 2*maxValue;
+
+        for (int f=0; f<=fa.max_frequency_scalar; f++)
+            cout << f << " " << fa.getFrequency((float)f) << " Hz" << endl;
+
+        return 0;
+    }
+    if (0)
+    {
         for (int redundant=0; redundant<2; ++redundant)
         {
             Tfr::Fft ft;

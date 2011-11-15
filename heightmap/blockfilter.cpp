@@ -437,6 +437,20 @@ ChunkAndInverse DrawnWaveformToBlock::
 void DrawnWaveformToBlock::
         mergeChunk( pBlock block, Chunk& chunk, Block::pData outData )
 {
+    BOOST_FOREACH( boost::shared_ptr<Collection> c, *_collections )
+    {
+        Tfr::FreqAxis fa = c->display_scale();
+        if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)
+        {
+            BOOST_ASSERT( fa.max_frequency_scalar == 1.f );
+            fa.axis_scale = Tfr::AxisScale_Linear;
+            fa.min_hz = chunk.freqAxis.min_hz;
+            fa.f_step = -2*fa.min_hz;
+            c->display_scale( fa );
+        }
+    }
+
+
     DrawnWaveformChunk* dwc = dynamic_cast<DrawnWaveformChunk*>(&chunk);
 
     float block_fs = block->ref.sample_rate();

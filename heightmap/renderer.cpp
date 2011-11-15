@@ -1189,7 +1189,8 @@ void Renderer::drawAxes( float T )
             double hz1 = fa.getFrequencyT( p[2] - DF/2 * epsilon );
             double hz2 = fa.getFrequencyT( p[2] + DF/2 * epsilon );
             double fc0 = (hz2 - hz1)/epsilon;
-            double fc = powf(10, floor(log10( fc0 )));
+            sf = floor(log10( fc0 ));
+            double fc = powf(10, sf);
             int fmultiple = 10;
             double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
             double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
@@ -1240,37 +1241,49 @@ void Renderer::drawAxes( float T )
             if (taxis)
             {
                 float w = (cursor[0] - p[0])/(np[0] - p[0]);
+
+                if (0 <= w && w < 1)
+                    if (!tmarkanyways)
+                        st--;
+
                 if (fabsf(w) < tupdatedetail*tmultiple/2)
-                {
                     tmarkanyways = -1;
-                }
+
                 if (0 <= w && w < 1)
                 {
-                    tmarkanyways = 2;
                     p[0] = cursor[0];
                     DT /= 10;
                     t = cursor[0]/DT; // t marker index along t
-                    --st;
 
                     p = clippedFrustum[i] + v*((cursor[0] - clippedFrustum[i][0])/v[0]);
+
+                    if (!tmarkanyways)
+                        st--;
+
+                    tmarkanyways = 2;
                 }
             }
             else
             {
                 float w = (cursor[2] - p[2])/(np[2] - p[2]);
+
+                if (0 <= w && w < 1)
+                    if (!fmarkanyways)
+                        sf--;
+
                 if (fabsf(w) < fupdatedetail*fmultiple/2)
-                {
                     fmarkanyways = -1;
-                }
+
                 if (0 <= w && w < 1)
                 {
-                    fmarkanyways = 2;
                     f = fa.getFrequencyT( cursor[2] );
                     fc /= 10;
                     mif = floor(f / fc + .5); // f marker index along f
                     f = mif * fc;
 
                     p = clippedFrustum[i] + v*((cursor[2] - clippedFrustum[i][2])/v[2]);
+
+                    fmarkanyways = 2;
                 }
             }
 
@@ -1376,7 +1389,10 @@ void Renderer::drawAxes( float T )
                         float angle = atan2(v[2]/SF, v[0]/ST) * (180*M_1_PI);
                         glRotatef(angle,0,0,1);
                         char a[100];
-                        sprintf(a,"%g", f);
+                        char b[100];
+                        sprintf(b,"%%.%df", sf<0?-1-sf:0);
+                        sprintf(a, b, f);
+                        //sprintf(a,"%g", f);
                         unsigned w=0;
                         float letter_spacing=5;
 
