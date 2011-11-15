@@ -51,7 +51,7 @@ protected:
 private:
     friend class boost::serialization::access;
     MatlabOperation();
-    template<class Archive> void save(Archive& ar, const unsigned int version) const {
+    template<class Archive> void save(Archive& ar, const unsigned int /*version*/) const {
         using boost::serialization::make_nvp;
 
         DefaultMatlabFunctionSettings settings;
