@@ -114,6 +114,10 @@ def package_macos(app_name, version, zip = false)
         puts "Error: Could not copy resource, matlab directory"
         exit(1)
     end
+    unless system("cp -r ../plugins/* #{app_name}.app/Contents/MacOS/matlab/examples/")
+        puts "Error: Could not copy resource, plugins directory"
+        exit(1)
+    end
     
     # Add application information
     puts " Adding application information ".center($command_line_width, "=")
