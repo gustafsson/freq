@@ -64,6 +64,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
 
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
+    connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
     connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
@@ -155,6 +156,8 @@ void TransformInfoForm::
         ui->maxHzEdit->setVisible(false);
         ui->binResolutionLabel->setVisible(false);
         ui->binResolutionEdit->setVisible(false);
+        ui->windowSizeEdit->setVisible(false);
+        ui->windowSizeLabel->setVisible(false);
         QString minHzText = QString("%1").arg(cwt->wanted_min_hz());
         if (ui->minHzEdit->text() != minHzText)
             ui->minHzEdit->setText(minHzText);
@@ -168,7 +171,6 @@ void TransformInfoForm::
         if (renderview->model->renderSignalTarget->post_sink()->filter())
             addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
         addRow("Window type", "Regular");
-        addRow("Window size", QString("%1").arg(stft->chunk_size()));
         addRow("Overlap", "0");
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
@@ -182,9 +184,14 @@ void TransformInfoForm::
         ui->maxHzEdit->setVisible(false);
         ui->binResolutionLabel->setVisible(true);
         ui->binResolutionEdit->setVisible(true);
+        ui->windowSizeEdit->setVisible(true);
+        ui->windowSizeLabel->setVisible(true);
         QString binResolutionText = QString("%1").arg(fs/stft->chunk_size(),0,'f',2);
         if (ui->binResolutionEdit->text() != binResolutionText)
             ui->binResolutionEdit->setText(binResolutionText);
+        QString windowSizeText = QString("%1").arg(stft->chunk_size());
+        if (ui->windowSizeEdit->text() != windowSizeText)
+            ui->windowSizeEdit->setText(windowSizeText);
     }
     else if (cepstrum)
     {
@@ -202,6 +209,8 @@ void TransformInfoForm::
         ui->maxHzEdit->setVisible(false);
         ui->binResolutionLabel->setVisible(false);
         ui->binResolutionEdit->setVisible(false);
+        ui->windowSizeEdit->setVisible(false);
+        ui->windowSizeLabel->setVisible(false);
     }
     else if (waveform)
     {
@@ -212,6 +221,8 @@ void TransformInfoForm::
         ui->maxHzEdit->setVisible(false);
         ui->binResolutionLabel->setVisible(false);
         ui->binResolutionEdit->setVisible(false);
+        ui->windowSizeEdit->setVisible(false);
+        ui->windowSizeLabel->setVisible(false);
     }
     else
     {
@@ -223,6 +234,8 @@ void TransformInfoForm::
         ui->maxHzEdit->setVisible(false);
         ui->binResolutionLabel->setVisible(false);
         ui->binResolutionEdit->setVisible(false);
+        ui->windowSizeEdit->setVisible(false);
+        ui->windowSizeLabel->setVisible(false);
     }
 
 #ifdef USE_CUDA
@@ -283,8 +296,30 @@ void TransformInfoForm::
         newValue=fs/4;
 
     Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    Signal::IntervalType new_chunk_size = fs/newValue;
 
-    unsigned new_chunk_size = fs/newValue;
+    if (new_chunk_size != stft->chunk_size())
+    {
+        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        stft->set_exact_chunk_size( new_chunk_size );
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        windowSizeChanged()
+{
+    int newValue = ui->windowSizeEdit->text().toInt();
+    Signal::IntervalType N = project->head->head_source()->number_of_samples();
+    if (newValue<1)
+        newValue=1;
+    if (newValue>N*2)
+        newValue=N*2;
+
+    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    unsigned new_chunk_size = newValue;
+
     if (new_chunk_size != stft->chunk_size())
     {
         project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
