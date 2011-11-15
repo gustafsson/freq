@@ -16,7 +16,7 @@ if nargin<2
   error('syntax: filewatcher(datafile, function, arguments, dt). ''arguments'' defaults to [], ''dt'' defaults to 0.05')
 end
 if nargin<3
-  arguments=[];
+  arguments=cell();
 end
 if nargin<4
   dt=0.025;
@@ -34,7 +34,7 @@ if noinputdata
     error(['Function ' func2str(func) ' takes ' num2str(fargin) ' arguments but ' num2str(numel(arguments)) ' arguments was provided']);
   end
 else
-  if nargin(func2str(func))-1 < numel(arguments)
+  if nargin(func2str(func))-1 ~= numel(arguments)
     error(['Function ' func2str(func) ' takes ' num2str(nargin(func2str(func))-1) ' extra arguments but ' num2str(numel(arguments)) ' arguments was provided']);
   end
 end
