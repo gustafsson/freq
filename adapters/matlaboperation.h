@@ -51,7 +51,7 @@ protected:
 private:
     friend class boost::serialization::access;
     MatlabOperation();
-    template<class Archive> void save(Archive& ar, const unsigned int /*version*/) const {
+    template<class Archive> void save(Archive& ar, const unsigned int version) const {
         using boost::serialization::make_nvp;
 
         DefaultMatlabFunctionSettings settings;
@@ -59,13 +59,17 @@ private:
         settings.redundant_ = _settings->overlap();
         settings.computeInOrder_ = _settings->computeInOrder();
         settings.chunksize_ = _settings->chunksize();
+        settings.arguments_ = _settings->arguments();
+        settings.argument_description_ = _settings->argument_description();
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & BOOST_SERIALIZATION_NVP(settings.scriptname_);
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);
         ar & BOOST_SERIALIZATION_NVP(settings.redundant_);
+        ar & BOOST_SERIALIZATION_NVP(settings.arguments_);
+        ar & BOOST_SERIALIZATION_NVP(settings.argument_description_);
     }
-    template<class Archive> void load(Archive& ar, const unsigned int /*version*/) {
+    template<class Archive> void load(Archive& ar, const unsigned int version) {
         using boost::serialization::make_nvp;
 
         DefaultMatlabFunctionSettings* settingsp = new DefaultMatlabFunctionSettings();
@@ -75,6 +79,11 @@ private:
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);
         ar & BOOST_SERIALIZATION_NVP(settings.redundant_);
+        if (0<version)
+        {
+            ar & BOOST_SERIALIZATION_NVP(settings.arguments_);
+            ar & BOOST_SERIALIZATION_NVP(settings.argument_description_);
+        }
         settings.operation = this;
 
         this->settings(settingsp);
@@ -84,5 +93,7 @@ private:
 };
 
 } // namespace Adapters
+
+BOOST_CLASS_VERSION(Adapters::MatlabOperation, 1)
 
 #endif // ADAPTERS_MATLABOPERATION_H
