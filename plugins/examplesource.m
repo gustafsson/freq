@@ -1,6 +1,6 @@
 function data=examplesource(p)
 %
-% data.samplerate
+% data.fs
 %                            The samplerate of the outgoing data.
 %
 %
@@ -23,8 +23,8 @@ function data=examplesource(p)
   end
 
 
-  data.samplerate = 44100;
-  data.samples = rand(data.samplerate*p, 1);
+  data.fs = 44100;
+  data.samples = rand(data.fs*p, 1);
 end
 
 

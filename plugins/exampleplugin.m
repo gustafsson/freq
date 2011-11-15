@@ -1,3 +1,32 @@
+%
+% Sonic AWE communicates with this script through a special data structure 
+% with these members:
+%
+% data.fs
+%                            The samplerate of the outgoing data.
+%
+%
+% data.samples
+%                            The bulk of the data. Each column is represented 
+%                            as one channel. So rand(100,2) creates a stereo 
+%                            signal.
+%
+%
+% data.offset
+%                            The start of the bulk data.samples.
+%
+%
+% data.overlap
+%                            How many samples that are overlapping into the 
+%                            next bulk. These should be discarded before
+%                            returning. Sonic AWE will then send this number
+%                            of extra samples into the next invokation of this
+%                            script.
+%
+% This data structure is used by Sonic AWE both to send data to the script and 
+% to read results from the script once it's finished. The script may be called
+% multiple times by Sonic AWE if the function exampleplugin_settings below
+% permits it.
 function data=exampleplugin(data, p)
 
   disp(['exampleplugin ' sawe_getdatainfo(data)]);
@@ -10,34 +39,48 @@ end
 function settings=exampleplugin_settings()
 %
 % settings.chunk_size
-%   -1                       Entire signal in one pass.
-%   0 (default)              Let Sonic AWE choose depedning on what's needed for the moment.
-%   (any other number > 0)   Specific number of samples per pass.
+%   -1                      Entire signal in one pass.
+%   0 (default)             Let Sonic AWE choose depedning on what's needed 
+%                           for the moment.
+%   (any other number > 0)  Specific number of samples per pass.
 %
 %
 % settings.compute_chunks_in_order
-%   false (default)          Let Sonic AWE choose depedning on what's needed for the moment.
-%   true                     Compute chunks in consecutive order from beginning to end.
+%   false (default)         Let Sonic AWE choose depedning on what's needed 
+%                           for the moment.
+%   true                    Compute chunks in consecutive order from 
+%                           beginning to end.
 %
 %
 % settings.arguments
-%   '' (default)             Any text string that is passed as argument to the script. 
-%                            The value will be used equivalent to: eval(['scriptname(data,' settings.arguments ');']);
+%   '' (default)            Any text string that is passed as argument to the
+%                           script. 
+%                           The value will be used equivalent to: 
+%                           eval(['scriptname(data,' settings.arguments ');']);
 %
 %
 % settings.argument_description
-%   'Arguments' (default)    This text will show up if the user is chooses to enter arguments to the script.
+%   'Arguments' (default)   This text will show up if the user is chooses to 
+%                           enter arguments to the script.
 %
 %
 % settings.overlap
-%   (any number >= 0)        Number of overlapping samples per chunk. This number of samples is included on both sides of each chunk.
-%                            Tip: Use data=sawe_discard(data) to discard overlapping samples before returning to Sonic AWE.
+%   (any number >= 0)       Number of overlapping samples per chunk. This 
+%                           number of samples is included on both sides of each
+%                           chunk.
+%                           Tip: Use data=sawe_discard(data) to discard 
+%                           overlapping samples before returning to Sonic AWE.
 %
 %
 % settings.icon
-%   '' (default)             When 'settings.icon' is empty or not set this script will show up in the menu but not as a button.
-%   (source to image file)   When 'settings.icon' is set this script will show up as a button with this icon in a toolbar in Sonic AWE.
-%   (other text)             If no image was found this value is used as a text on a button in a toolbar in Sonic AWE.
+%   '' (default)            When 'settings.icon' is empty or not set this
+%                           script will show up in the menu but not as a
+%                           button.
+%   (source to image file)  When 'settings.icon' is set this script will show
+%                           up as a button with this icon in a toolbar in 
+%                           Sonic AWE.
+%   (other text)            If no image was found this value is used as a text
+%                           on a button in a toolbar in Sonic AWE.
 %
 %
 settings.chunk_size = 0;
