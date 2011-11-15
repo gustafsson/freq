@@ -27,6 +27,7 @@
 #include <QSettings>
 #include <QErrorMessage>
 #include <QToolBar>
+#include <QDesktopServices>
 
 namespace Tools {
 
@@ -172,7 +173,8 @@ void MatlabController::
         "/usr/share/sonicawe/plugins",
         Sawe::Application::log_directory() + QDir::separator() + "plugins",
         QDir::currentPath() + QDir::separator() + "plugins",
-        QDir::currentPath() + QDir::separator() + "sonicawe-plugins"
+        QDir::currentPath() + QDir::separator() + "sonicawe-plugins",
+        QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation) + QDir::separator() + "sonicawe-plugins"
     };
 
 
@@ -186,6 +188,7 @@ void MatlabController::
         scriptfiles.append( info.absoluteFilePath() );
 
     std::sort( scriptfiles.begin(), scriptfiles.end() );
+    std::unique( scriptfiles.begin(), scriptfiles.end() );
 
     TaskInfo ti("Found %d candidates for plugins", scriptfiles.size());
 
