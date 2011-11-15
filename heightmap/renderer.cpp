@@ -523,9 +523,6 @@ void Renderer::beginVboRendering()
 
         uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
         glUniform2f(uniOffsTex, .5f/w, .5f/h);
-
-        uniScaleTex = glGetUniformLocation(_shader_prog, "sizeinv");
-        glUniform2f(uniScaleTex, 1.f/w, 1.f/h);
     }
 
     glActiveTexture(GL_TEXTURE2);
@@ -1230,7 +1227,6 @@ void Renderer::drawAxes( float T )
             {
                 if (v[0] > 0) nt++;
                 if (v[0] < 0) nt--;
-                TaskInfo("t = %u, nt = %u", t, nt);
                 np[0] = nt*DT;
             }
             else
@@ -1238,7 +1234,6 @@ void Renderer::drawAxes( float T )
                 if (v[2] > 0) nf+=fc;
                 if (v[2] < 0) nf-=fc;
                 nf = floor(nf/fc + .5)*fc;
-                TaskInfo("f = %g, nf = %g", f, nf);
                 np[2] = fa.getFrequencyScalarNotClampedT(nf);
             }
 
