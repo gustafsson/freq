@@ -347,7 +347,12 @@ void GlBlock::
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); // no mipmaps
 
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+        // Some GPUs are supposeddly really slow to use GL_LUMINANCE_FLOAT32_ATI
+        // in vertex shaders, so we're trying with GL_RGBA_FLOAT32_ATI instead
+        // update allocated_bytes_per_element when this type is changed
+
+        //glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA_FLOAT32_ATI,w, h,0, GL_RED, GL_FLOAT, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -593,7 +598,7 @@ unsigned GlBlock::
     if (_height) s += sizeof(float); // OpenGL VBO
     if (_mapped_height) s += sizeof(float); // Cuda device memory
     if (_tex_height) s += sizeof(float); // OpenGL texture
-    if (_tex_height_nearest) s += sizeof(float); // OpenGL texture
+    if (_tex_height_nearest) s += 4*sizeof(float); // OpenGL texture
 
     // _mapped_slope and _slope are temporary and only lives in the scope of update_texture
 
