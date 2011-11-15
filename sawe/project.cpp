@@ -276,7 +276,7 @@ void Project::
         return;
 
     TaskTimer tt("Project::createMainWindow");
-    string title = Sawe::Application::version_string();
+    string title = Sawe::Application::title_string();
     if (!project_title().empty())
         title = project_title() + " - " + title;
 
@@ -309,7 +309,7 @@ void Project::
 {
     if (!project_filename_.empty())
         project_title_ = QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
-    _mainWindow->setWindowTitle( QString::fromLocal8Bit( (project_title() + " - " + Sawe::Application::version_string()).c_str() ));
+    _mainWindow->setWindowTitle( QString::fromLocal8Bit( (project_title() + " - " + Sawe::Application::title_string()).c_str() ));
 }
 
 

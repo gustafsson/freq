@@ -105,8 +105,10 @@
     </property>
     <addaction name="separator"/>
     <addaction name="actionAsk_for_help"/>
-    <addaction name="actionFind_plugins"/>
     <addaction name="actionReport_a_bug"/>
+    <addaction name="separator"/>
+    <addaction name="actionFind_updates"/>
+    <addaction name="actionFind_plugins"/>
     <addaction name="separator"/>
     <addaction name="action_Enter_product_key"/>
     <addaction name="separator"/>
@@ -1578,6 +1580,11 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFind_updates">
+   <property name="text">
+    <string>Find &amp;updates</string>
    </property>
   </action>
  </widget>

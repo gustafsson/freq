@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
             float* p2 = b2->waveform_data()->getCpuMemory();
             std::complex<float>* cp = c->transform_data->getCpuMemory();
             float norm = 1.f/16;
-            for (int i=0; i<c->transform_data->size().width; ++i)
+            for (unsigned i=0; i<c->transform_data->size().width; ++i)
                 cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
             for (int i=0; i<16; ++i)
             {

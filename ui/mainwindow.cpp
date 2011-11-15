@@ -76,6 +76,7 @@ void SaweMainWindow::
     connect(ui->actionReport_a_bug, SIGNAL(triggered()), SLOT(gotobugsmuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
     connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));
+    connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(findupdates()));
 
     ui->actionOperation_details->setChecked( false );
 
@@ -459,7 +460,7 @@ void SaweMainWindow::
     QMessageBox message(
             QMessageBox::Information,
             "bugs.muchdifferent.com",
-            "You are very welcome to report any bugs to us. To help us help you, please include the log files. See logfile location in details below:");
+            "You are very welcome to report any bugs to us at bugs.muchdifferent.com. To help us help you, please include the log files. See logfile location in details below:");
 
     QString localAppDir = Sawe::Application::log_directory();
     message.setDetailedText( localAppDir );
@@ -476,7 +477,7 @@ void SaweMainWindow::
     QMessageBox message(
             QMessageBox::Information,
             "sonicawe.muchdifferent.com",
-            "You are very welcome to ask questions about Sonic AWE in our forum!");
+            "You are very welcome to ask questions about Sonic AWE in our forum at sonicawe.muchdifferent.com!");
 
     message.exec();
 
@@ -490,11 +491,25 @@ void SaweMainWindow::
     QMessageBox message(
             QMessageBox::Information,
             "sonicawe.muchdifferent.com",
-            "If you want to browse plugins developed by others (or have a plugin to share yourself), please see our forum and search for scripts.");
+            "If you want to browse plugins developed by others (or have a plugin to share yourself), please see our forum and search for scripts at sonicawe.muchdifferent.com.");
 
     message.exec();
 
     QDesktopServices::openUrl(QUrl("http://sonicawe.muchdifferent.com"));
+}
+
+
+void SaweMainWindow::
+        findupdates()
+{
+    QMessageBox message(
+            QMessageBox::Information,
+            "www.muchdifferent.com",
+            QString("Your version of Sonic AWE is '%1'. The latest version of Sonic AWE can be found at muchdifferent.com.").arg(Sawe::Application::version_string().c_str()));
+
+    message.exec();
+
+    QDesktopServices::openUrl(QUrl("http://muchdifferent.com/?page=signals-download"));
 }
 
 
