@@ -1164,8 +1164,6 @@ void Renderer::drawAxes( float T )
         // need initial f value
         double f = fa.getFrequencyT( p[2] );
 
-        TaskInfo ti("p = %g, %g -> v = %g, %g", p[0], p[2], v[0], v[2]);
-
         if ((taxis && draw_t) || (!taxis && draw_hz))
         for (double u=-1; true; )
         {
@@ -1213,21 +1211,15 @@ void Renderer::drawAxes( float T )
             int t = p[0]/DT; // t marker index along t
             if (v[0] > 0 && p[0] > t*DT) t++;
 
-            TaskInfo("p[2] = %g, f = %g, DF = %g, floor(-4.4) = %g", p[2], f, DF, floor(-4.4));
-
             // compute index of next marker along t and f
             double epsilon = 1.f/10;
             double hz1 = fa.getFrequencyT( p[2] - DF * epsilon );
             double hz2 = fa.getFrequencyT( p[2] + DF * epsilon );
-            TaskInfo("hz1 = %g (%g), hz2 = %g (%g)", hz1, p[2] - DF/2 * epsilon, hz2, p[2] + DF/2 * epsilon);
-            if (hz2-f < f-hz1)
-                hz1 = f;
-            else
-                hz2 = f;
+            if (hz2-f < f-hz1)  hz1 = f;
+            else                hz2 = f;
             double fc0 = (hz2 - hz1)/epsilon;
             int sf = floor(log10( fc0 ));
             double fc = powf(10, sf);
-            TaskInfo("fc0 = %g, sf = %d, fc = %g", fc0, sf, fc);
             int fmultiple = 10;
 
             int fupdatedetail = 1;
@@ -1239,14 +1231,11 @@ void Renderer::drawAxes( float T )
             f = nf;
             p[2] = fa.getFrequencyScalarNotClampedT(f);
 
-            TaskInfo("f = %g, mif = %d, fc = %g", f, mif, fc);
             double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
             double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
-//            int fmarkanyways = (bool)(fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0) && ((unsigned)(f / fc + .5)%fmultiple!=0));
-            int fmarkanyways = false; // (bool)(fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0));
+            int fmarkanyways = false;
             fmarkanyways |= 0.9*fabsf(np1 - p[2]) > DF && 0.9*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%1==0);
             fmarkanyways |= 4.5*fabsf(np1 - p[2]) > DF && 4.5*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%5==0);
-            TaskInfo("DF = %g, 5*(np1 - p[2]) = %g, 5*(np2 - p[2])", DF, 5*(np1 - p[2]), 5*(np2 - p[2]));
             if (fmarkanyways)
                 sf--;
 
@@ -1407,7 +1396,6 @@ void Renderer::drawAxes( float T )
                         size = 2;
                     if (-1 == fmarkanyways)
                         size = 1;
-                    TaskInfo("faxis: f = %g, fc = %g, f/fc + .5 = %g, fupdatedetail*fmultiple = %g, size = %g, fmarkanyways = %d", f, fc, f/fc + .5, (double)fupdatedetail*fmultiple, size, fmarkanyways);
 
 
                     glLineWidth(size);
