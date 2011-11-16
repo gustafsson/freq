@@ -1184,7 +1184,7 @@ void Renderer::drawAxes( float T )
             int st = floor(log10( ST / time_axis_density ));
             //int sf = floor(log10( SF / scale_axis_density ));
 
-            double DT = pow(10, st);
+            double DT = pow(10.0, st);
             //double DF = pow(10, sf);
             double DF = min(0.2, SF / scale_axis_density);
 
