@@ -51,7 +51,7 @@ Renderer::Renderer( Collection* collection )
     _mesh_fraction_height(1),
     _initialized(NotInitialized),
     _draw_flat(false),
-    _redundancy(1.0), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
+    _redundancy(3.0), // 1 means every pixel gets its own vertex, 10 means every 10th pixel gets its own vertex, default=2
     _invalid_frustum(true)
 
 {
