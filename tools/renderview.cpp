@@ -689,10 +689,11 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s",
+    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s (%u triangles)",
         N,
         model->renderer->drawn_blocks, 
-        model->renderer->drawn_blocks==1?"":"s");
+        model->renderer->drawn_blocks==1?"":"s",
+        N*model->renderer->drawn_blocks*(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2);
 }
 
 
