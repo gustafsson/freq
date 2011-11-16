@@ -92,17 +92,98 @@ public:
     template<typename Reader, typename Converter>
     RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader, const Converter& c = Converter() )
     {
-        ResamplePos q;
+        ResamplePos q2;
         // exp2f (called in 'getFrequency') is only 4 multiplies for arch 1.x
         // so these are fairly cheap operations. One reciprocal called in
         // 'getFrequencyScalar' is just as fast.
-        q.x = p.x;
-        q.y = p.y*scale+offs;
-        float hz = outputAxis.getFrequency( q.y );
-        q.y = inputAxis.getFrequencyScalar( hz );
+        q2.x = p.x;
+        q2.y = p.y*scale+offs;
+        float hz = outputAxis.getFrequency( q2.y );
+        q2.y = inputAxis.getFrequencyScalar( hz );
 
-        float r = InterpolateFetcher<float, Converter>(c)( q, reader );
-        return r;
+        DataPos q(floor(q2.x), floor(q2.y));
+        ResamplePos k( q2.x - floor(q2.x), q2.y - floor(q2.y) );
+
+        float v = 0.f;
+
+        if (xstep <= 1.f)
+        {
+            v = interpolate(
+                    interpolate(
+                            get( q, reader ),
+                            get( DataPos(q.x+1.f, q.y), reader ),
+                            k.x),
+                    interpolate(
+                            get( DataPos(q.x, q.y+1.f), reader ),
+                            get( DataPos(q.x+1.f, q.y+1.f), reader ),
+                            k.x),
+                    k.y );
+        }
+        else
+        {
+            for (float x=q.x; x<q.x+xstep; ++x)
+            {
+                v = max(v, interpolate(
+                        get( DataPos(x, q.y), reader ),
+                        get( DataPos(x, q.y+1), reader ),
+                        k.y));
+            }
+        }
+
+/*        if (xstep <= 1.0)
+        {
+            if (ystep <= 1.0)
+            {
+                v = interpolate(
+                        interpolate(
+                                get( q, reader ),
+                                get( DataPos(q.x+1, q.y), reader ),
+                                k.x),
+                        interpolate(
+                                get( DataPos(q.x, q.y+1), reader ),
+                                get( DataPos(q.x+1, q.y+1), reader ),
+                                k.x),
+                        k.y );
+            }
+            else for (float y=q.y; y<q.y+xstep; ++y)
+            {
+                v = max(v, interpolate(
+                        get( DataPos(q.x, y), reader ),
+                        get( DataPos(q.x+1, y), reader ),
+                        k.x));
+            }
+        }
+        else
+        {
+            if (ystep <= 1.0)
+            {
+                for (float x=q.x; x<q.x+xstep; ++x)
+                {
+                    v = max(v, interpolate(
+                            get( DataPos(x, q.y), reader ),
+                            get( DataPos(x, q.y+1), reader ),
+                            k.y));
+                }
+            }
+            else
+            {
+                for (float x=q.x; x<q.x+xstep; ++x)
+                {
+                    for (float y=q.y; y<q.y+ystep; ++y)
+                    {
+                        v = max(v, get( DataPos(x, y), reader ));
+                    }
+                }
+            }
+        }
+*/
+        return v;
+    }
+
+    template<typename Reader>
+    RESAMPLE_CALL float get( DataPos const& q, Reader& reader )
+    {
+        return defaultConverter( reader( q ), q );
     }
 
     Tfr::FreqAxis inputAxis;
@@ -111,6 +192,9 @@ public:
 
     float scale;
     float offs;
+
+    float xstep;
+//    float ystep;
 };
 
 
@@ -300,6 +384,8 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.outputAxis = outputAxis;
     axes.offs = inputRegion.top;
     axes.scale = inputRegion.height();
+
+    axes.xstep = (validInputs.last - validInputs.first)*outputRegion.width() / (float)(sz_output.width * inputRegion.width());
 
     switch (transformMethod)
     {
