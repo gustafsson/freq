@@ -323,7 +323,7 @@ void TransformInfoForm::
     if (new_chunk_size != stft->chunk_size())
     {
         project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
-        stft->set_exact_chunk_size( new_chunk_size );
+        stft->set_approximate_chunk_size( new_chunk_size );
         renderview->emitTransformChanged();
     }
 }
