@@ -314,7 +314,7 @@ void TransformInfoForm::
     Signal::IntervalType N = project->head->head_source()->number_of_samples();
     if (newValue<1)
         newValue=1;
-    if (newValue>N*2)
+    if ((unsigned)newValue>N*2)
         newValue=N*2;
 
     Tfr::Stft* stft = &Tfr::Stft::Singleton();

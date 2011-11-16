@@ -43,6 +43,7 @@ public:
     bool draw_piano;
     bool draw_hz;
     bool draw_t;
+    bool draw_cursor_marker;
     GLvector camera;
     GLvector cursor;
 

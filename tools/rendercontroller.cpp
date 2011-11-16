@@ -256,6 +256,12 @@ void RenderController::
         receiveTogglePiano(bool value)
 {
     model()->renderer->draw_piano = value;
+
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
+
     stateChanged();
 }
 
@@ -264,6 +270,12 @@ void RenderController::
         receiveToggleHz(bool value)
 {
     model()->renderer->draw_hz = value;
+
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
+
     stateChanged();
 }
 
@@ -272,6 +284,20 @@ void RenderController::
         receiveToggleTAxis(bool value)
 {
     model()->renderer->draw_t = value;
+
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
+
+    stateChanged();
+}
+
+
+void RenderController::
+    receiveToggleCursorMarker(bool value)
+{
+    model()->renderer->draw_cursor_marker = value;
     stateChanged();
 }
 
@@ -635,10 +661,12 @@ void RenderController::
         hzmarker->addActionItem( ui->actionToggle_piano_grid );
         toolbar_render->addWidget( hzmarker );
         toolbar_render->addAction( ui->actionToggle_t_grid );
+        toolbar_render->addAction( ui->actionToggle_cursor_marker );
 
         connect(ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), SLOT(receiveTogglePiano(bool)));
         connect(ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleHz(bool)));
         connect(ui->actionToggle_t_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleTAxis(bool)));
+        connect(ui->actionToggle_cursor_marker, SIGNAL(toggled(bool)), SLOT(receiveToggleCursorMarker(bool)));
     }
 
     connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));

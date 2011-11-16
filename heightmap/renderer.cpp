@@ -35,6 +35,7 @@ Renderer::Renderer( Collection* collection )
     draw_piano(false),
     draw_hz(true),
     draw_t(true),
+    draw_cursor_marker(false),
     camera(0,0,0),
     draw_height_lines(false),
     color_mode( ColorMode_Rainbow ),
@@ -1238,7 +1239,7 @@ void Renderer::drawAxes( float T )
                 np[2] = fa.getFrequencyScalarNotClampedT(nf);
             }
 
-            if (taxis)
+            if (taxis && draw_cursor_marker)
             {
                 float w = (cursor[0] - p[0])/(np[0] - p[0]);
 
@@ -1263,7 +1264,7 @@ void Renderer::drawAxes( float T )
                     tmarkanyways = 2;
                 }
             }
-            else
+            else if(draw_cursor_marker)
             {
                 float w = (cursor[2] - p[2])/(np[2] - p[2]);
 

@@ -43,6 +43,7 @@
         <file>icons/icon-amplitude.png</file>
         <file>icons/plugin.png</file>
         <file>icons/icon-toggle-taxis.png</file>
+        <file>icons/icon-toggle-cursor.png</file>
     </qresource>
     <qresource prefix="/shaders">
         <file alias="heightmap.frag">../heightmap/heightmap.frag</file>
