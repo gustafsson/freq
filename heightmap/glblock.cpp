@@ -61,7 +61,15 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
         glGetShaderInfoLog(shader, sizeof(shaderInfoLog), (GLsizei*)&len, shaderInfoLog);
 
-        if (strlen(shaderInfoLog)>0) {
+        bool showShaderLog = !compiled;
+        showShaderLog |= 0 != QString(shaderInfoLog).contains("warning", Qt::CaseInsensitive);
+        showShaderLog |= 0 != QString(shaderInfoLog).contains("error", Qt::CaseInsensitive);
+#if DEBUG_
+        showShaderLog |= strlen(shaderInfoLog)>0;
+#endif
+
+        if (showShaderLog)
+        {
             TaskInfo ti("Failed to compile shader %s", name );
             TaskInfo("%s", shaderInfoLog);
 
@@ -108,7 +116,15 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
         glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
         programInfoLog[sizeof(programInfoLog)-1] = 0;
 
-        if (!linked || strlen(programInfoLog)>0) {
+        bool showProgramLog = !linked;
+        showProgramLog |= 0 != QString(programInfoLog).contains("warning", Qt::CaseInsensitive);
+        showProgramLog |= 0 != QString(programInfoLog).contains("error", Qt::CaseInsensitive);
+#if DEBUG_
+        showProgramLog |= strlen(programInfoLog)>0;
+#endif
+
+        if (showProgramLog)
+        {
             TaskInfo ti("Failed to link fragment shader (%s) with vertex shader (%s)",
                      fragFileName, vertFileName );
             TaskInfo("%s", programInfoLog);
