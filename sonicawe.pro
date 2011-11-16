@@ -178,20 +178,20 @@ QMAKE_LFLAGS += -Wl,-rpath=/usr/share/sonicawe/
 
 macx {
 INCLUDEPATH += \
-    ../../libs/include \
-    ../../libs/boost_1_45_0 \
-    ../../libs/hdf5/include \
-    ../../libs/zlib/include \
-    ../../libs/include/sndfile
+    ../../maclib/include \
+    ../../maclib/boost_1_45_0 \
+    ../../maclib/hdf5/include \
+    ../../maclib/zlib/include \
+    ../../maclib/include/sndfile
 LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -framework GLUT \
     -framework OpenGL \
-    -L../../libs -lportaudiocpp -lportaudio \
-    -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/zlib/lib -lz \
+    -L../../maclib -lportaudiocpp -lportaudio \
+    -L../../maclib/hdf5/bin -lhdf5 -lhdf5_hl \
+    -L../../maclib/zlib/lib -lz \
     -L../gpumisc -lgpumisc \
-    -L../../libs/boost_1_45_0/stage/lib \
+    -L../../maclib/boost_1_45_0/stage/lib \
     -lboost_serialization
 }
 
