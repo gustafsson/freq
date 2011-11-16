@@ -1127,19 +1127,44 @@ void Renderer::drawAxes( float T )
     {
         glColor4f(0,0,0,0.8);
         unsigned j=(i+1)%clippedFrustum.size();
-        GLvector p = clippedFrustum[i]; // starting point of side
-        GLvector v = clippedFrustum[j]-p; // vector pointing from p to the next vertex
-
-        if (!v[0] && !v[2]) // skip if |v| = 0
-            continue;
+        GLvector p1 = clippedFrustum[i]; // starting point of side
+        GLvector p2 = clippedFrustum[j]; // end point of side
+        GLvector v0 = p2-p1;
 
         // decide if this side is a t or f axis
         GLvector::T timePerPixel, scalePerPixel;
         computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
 
-        bool taxis = fabsf(v[0]*scalePerPixel) > fabsf(v[2]*timePerPixel);
+        bool taxis = fabsf(v0[0]*scalePerPixel) > fabsf(v0[2]*timePerPixel);
 
+
+        // decide in which direction to traverse this edge
+        GLvector::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
+        computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
+        computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
+
+        double dscale = 0.001;
+        double hzDelta1= fabs(fa.getFrequencyT( p1[2] + v0[2]*dscale ) - fa.getFrequencyT( p1[2] ));
+        double hzDelta2 = fabs(fa.getFrequencyT( p2[2] - v0[2]*dscale ) - fa.getFrequencyT( p2[2] ));
+
+        if ((taxis && timePerPixel1 > timePerPixel2) || (!taxis && hzDelta1 > hzDelta2))
+        {
+            GLvector flip = p1;
+            p1 = p2;
+            p2 = flip;
+        }
+
+        GLvector p = p1; // starting point
+        GLvector v = p2-p1;
+
+        if (!v[0] && !v[2]) // skip if |v| = 0
+            continue;
+
+
+        // need initial f value
         double f = fa.getFrequencyT( p[2] );
+
+        TaskInfo ti("p = %g, %g -> v = %g, %g", p[0], p[2], v[0], v[2]);
 
         if ((taxis && draw_t) || (!taxis && draw_hz))
         for (double u=-1; true; )
@@ -1147,20 +1172,23 @@ void Renderer::drawAxes( float T )
             GLvector::T timePerPixel, scalePerPixel;
             computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
 
-            double ST = timePerPixel * 750;
+            double ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
             double SF = scalePerPixel * 750;
 
-            float time_axis_density = 18;
-            if (20.f+2.f*log10(timePerPixel) < 18.f)
-                time_axis_density = std::max(1., 20.f+2.f*log10(timePerPixel));
+            double time_axis_density = 18;
+            if (20.+2.*log10(timePerPixel) < 18.)
+                time_axis_density = max(1., 20.+2.*log10(timePerPixel));
 
-            float scale_axis_density = 3;
+            double scale_axis_density = max(10., 22. - ceil(fabs(log10(f))));
+            if (f == 0)
+                scale_axis_density = 21;
 
             int st = floor(log10( ST / time_axis_density ));
-            int sf = floor(log10( SF / scale_axis_density ));
+            //int sf = floor(log10( SF / scale_axis_density ));
 
-            double DT = powf(10, st);
-            double DF = powf(10, sf);
+            double DT = pow(10, st);
+            //double DF = pow(10, sf);
+            double DF = min(0.2, SF / scale_axis_density);
 
             // compute index of next marker along t and f
             int tmultiple = 10, tsubmultiple = 5;
@@ -1175,54 +1203,69 @@ void Renderer::drawAxes( float T )
                 if( 60*10*6*24*5 < ST ) DT *= 24, st++, tmultiple = 5, tsubmultiple = 5;
             }
 
-            int tmarkanyways = (bool)(fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0) && ((unsigned)(p[0]/DT)%tmultiple!=0));
+            //int tmarkanyways = (bool)(fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0) && ((unsigned)(p[0]/DT)%tmultiple!=0));
+            int tmarkanyways = (bool)(fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0));
             if (tmarkanyways)
                 st--;
 
-            int tupdatedetail = 2;
+            int tupdatedetail = 1;
             DT /= tupdatedetail;
             int t = p[0]/DT; // t marker index along t
             if (v[0] > 0 && p[0] > t*DT) t++;
 
+            TaskInfo("p[2] = %g, f = %g, DF = %g, floor(-4.4) = %g", p[2], f, DF, floor(-4.4));
 
             // compute index of next marker along t and f
-            double epsilon = 1.f/50;
-            double hz1 = fa.getFrequencyT( p[2] - DF/2 * epsilon );
-            double hz2 = fa.getFrequencyT( p[2] + DF/2 * epsilon );
+            double epsilon = 1.f/10;
+            double hz1 = fa.getFrequencyT( p[2] - DF * epsilon );
+            double hz2 = fa.getFrequencyT( p[2] + DF * epsilon );
+            TaskInfo("hz1 = %g (%g), hz2 = %g (%g)", hz1, p[2] - DF/2 * epsilon, hz2, p[2] + DF/2 * epsilon);
+            if (hz2-f < f-hz1)
+                hz1 = f;
+            else
+                hz2 = f;
             double fc0 = (hz2 - hz1)/epsilon;
-            sf = floor(log10( fc0 ));
+            int sf = floor(log10( fc0 ));
             double fc = powf(10, sf);
+            TaskInfo("fc0 = %g, sf = %d, fc = %g", fc0, sf, fc);
             int fmultiple = 10;
-            double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
-            double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
-            int fmarkanyways = (bool)(fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0) && ((unsigned)(f / fc + .5)%fmultiple!=0));
-            fmarkanyways |= 7*fabsf(np1 - p[2]) > (SF / scale_axis_density) && 7*fabsf(np2 - p[2]) > (SF / scale_axis_density);
-            if (fmarkanyways)
-                sf--;
 
-            int fupdatedetail = 2;
+            int fupdatedetail = 1;
             fc /= fupdatedetail;
             int mif = floor(f / fc + .5); // f marker index along f
-            f = mif * fc;
+            double nf = mif * fc;
+            if (nf < f)
+                nf += fc;
+            f = nf;
+            p[2] = fa.getFrequencyScalarNotClampedT(f);
 
-            if (v[2] > 0 && p[2]>fa.getFrequencyScalarNotClampedT(f)) f+=fc;
+            TaskInfo("f = %g, mif = %d, fc = %g", f, mif, fc);
+            double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
+            double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
+//            int fmarkanyways = (bool)(fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0) && ((unsigned)(f / fc + .5)%fmultiple!=0));
+            int fmarkanyways = false; // (bool)(fabsf(5*DF) > (SF / scale_axis_density) && ((unsigned)(f / fc + .5)%5==0));
+            fmarkanyways |= 0.9*fabsf(np1 - p[2]) > DF && 0.9*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%1==0);
+            fmarkanyways |= 4.5*fabsf(np1 - p[2]) > DF && 4.5*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%5==0);
+            TaskInfo("DF = %g, 5*(np1 - p[2]) = %g, 5*(np2 - p[2])", DF, 5*(np1 - p[2]), 5*(np2 - p[2]));
+            if (fmarkanyways)
+                sf--;
 
 
             // find next intersection along v
             double nu;
-            if (taxis)  nu = (p[0] - clippedFrustum[i][0])/v[0];
-            else        nu = (p[2] - clippedFrustum[i][2])/v[2];
+            if (taxis)  nu = (p[0] - p1[0])/v[0];
+            else        nu = (p[2] - p1[2])/v[2];
 
             // if valid intersection
             if ( nu > u && nu<=1 ) { u = nu; }
             else break;
 
             // compute intersection
-            p = clippedFrustum[i] + v*u;
+            p = p1 + v*u;
 
 
             GLvector np = p;
-            float nf = f;
+            nf = f;
             int nt = t;
 
             if (taxis)
@@ -1256,7 +1299,7 @@ void Renderer::drawAxes( float T )
                     DT /= 10;
                     t = cursor[0]/DT; // t marker index along t
 
-                    p = clippedFrustum[i] + v*((cursor[0] - clippedFrustum[i][0])/v[0]);
+                    p = p1 + v*((cursor[0] - p1[0])/v[0]);
 
                     if (!tmarkanyways)
                         st--;
@@ -1282,7 +1325,7 @@ void Renderer::drawAxes( float T )
                     mif = floor(f / fc + .5); // f marker index along f
                     f = mif * fc;
 
-                    p = clippedFrustum[i] + v*((cursor[2] - clippedFrustum[i][2])/v[2]);
+                    p = p1 + v*((cursor[2] - p1[2])/v[2]);
 
                     fmarkanyways = 2;
                 }
@@ -1300,7 +1343,7 @@ void Renderer::drawAxes( float T )
 
                     glLineWidth(size);
 
-                    float sign = (v^z)%(v^( p - inside))>0 ? 1.f : -1.f;
+                    float sign = (v0^z)%(v0^( p - inside))>0 ? 1.f : -1.f;
                     float o = size*SF*.003f*sign;
 
                     glBegin(GL_LINES);
@@ -1316,7 +1359,7 @@ void Renderer::drawAxes( float T )
                         glTranslatef(p[0], 0, p[2]);
                         glRotatef(90,1,0,0);
                         glScalef(0.00013f*ST,0.00013f*SF,1.f);
-                        float angle = atan2(v[2]/SF, v[0]/ST) * (180*M_1_PI);
+                        float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
                         glRotatef(angle,0,0,1);
                         char a[100];
                         char b[100];
@@ -1364,11 +1407,12 @@ void Renderer::drawAxes( float T )
                         size = 2;
                     if (-1 == fmarkanyways)
                         size = 1;
+                    TaskInfo("faxis: f = %g, fc = %g, f/fc + .5 = %g, fupdatedetail*fmultiple = %g, size = %g, fmarkanyways = %d", f, fc, f/fc + .5, (double)fupdatedetail*fmultiple, size, fmarkanyways);
 
 
                     glLineWidth(size);
 
-                    float sign = (v^x)%(v^( p - inside))>0 ? 1.f : -1.f;
+                    float sign = (v0^x)%(v0^( p - inside))>0 ? 1.f : -1.f;
                     float o = size*ST*.003f*sign;
                     if (!left_handed_axes)
                         sign *= -1;
@@ -1387,7 +1431,7 @@ void Renderer::drawAxes( float T )
                         glTranslatef(p[0],0,p[2]);
                         glRotatef(90,1,0,0);
                         glScalef(0.00013f*ST,0.00013f*SF,1.f);
-                        float angle = atan2(v[2]/SF, v[0]/ST) * (180*M_1_PI);
+                        float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
                         glRotatef(angle,0,0,1);
                         char a[100];
                         char b[100];

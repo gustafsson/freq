@@ -67,7 +67,7 @@ public:
 
         this->max_frequency_scalar = max_frequency_scalar;
         this->min_hz = min_hz_inclusive;
-        this->f_step = log2f( max_hz_inclusive ) - log2f( min_hz_inclusive );
+        this->f_step = log2( max_hz_inclusive ) - log2( min_hz_inclusive );
         this->f_step /= max_frequency_scalar;
     }
 
@@ -129,7 +129,7 @@ public:
             return min_hz + fi*f_step;
 
         case AxisScale_Logarithmic:
-            return min_hz*exp2f( fi*f_step );
+            return min_hz*exp2( fi*f_step );
 
         case AxisScale_Quefrency:
             {
@@ -184,7 +184,7 @@ public:
 
         case AxisScale_Logarithmic:
             {
-                T log2_f = log2f(hz/min_hz);
+                T log2_f = log2(hz/min_hz);
 
                 fi = log2_f/f_step;
             }
@@ -240,9 +240,9 @@ public:
             return getFrequency(max_frequency_scalar);
         case AxisScale_Quefrency:
             if (0<f_step)
-                return max_frequency_scalar*min_hz*f_step/2;
+                return max_frequency_scalar*min_hz*f_step/2.0;
             else
-                return max_frequency_scalar*min_hz/2;
+                return max_frequency_scalar*min_hz/2.0;
         default:
             return 0;
         }
