@@ -1,6 +1,6 @@
 $framework_path = "/Library/Frameworks"
 $cuda_library_path = "/usr/local/cuda/lib"
-$custom_library_path = "../../../libs"
+$custom_library_path = "../../../maclib"
 $command_line_width = 80
 
 # Configuration
