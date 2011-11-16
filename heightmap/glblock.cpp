@@ -326,18 +326,13 @@ void GlBlock::
         unsigned h = _collection->scales_per_block();
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); // no mipmaps
 
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
-//        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
-//        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA_FLOAT32_ATI,w, h,0, GL_RED, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+//        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
         //glGenerateMipmap(GL_TEXTURE_2D);
 
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -354,21 +349,15 @@ void GlBlock::
         unsigned w = _collection->samples_per_block();
         unsigned h = _collection->scales_per_block();
 
-        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); // no mipmaps
 
         // Some GPUs are supposeddly really slow to use GL_LUMINANCE_FLOAT32_ATI
         // in vertex shaders, so we're trying with GL_RGBA_FLOAT32_ATI instead
         // update allocated_bytes_per_element when this type is changed
 
-        //glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
-        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA_FLOAT32_ATI,w, h,0, GL_RED, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+        //glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
