@@ -109,7 +109,7 @@ vector<hsize_t> Hdf5Input::
 	if (0 < RANK) 
 	{
 		// only non-scalars have dimensions
-		status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
+        status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
         if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_info("+name+") failed");
 	}
 
@@ -348,16 +348,30 @@ std::string Hdf5Input::
     findDataset(name);
 
     H5T_class_t class_id=H5T_NO_CLASS;
+    size_t size = 0;
     vector<hsize_t> dims = getInfo(name, &class_id);
+    herr_t status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], &class_id, &size );
+
     hsize_t z = 1;
-    for (unsigned i=0; i<dims.size(); ++i)
-        z *= dims[i];
-    std::string v; v.resize( z+1 );
 
-    herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_SCHAR,&v[0]);
-    if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_C_S1 type dataset named '" + name + "'", name);
+    if (H5T_STRING == class_id)
+    {
+        z = size;
+    }
+    else
+    { 
+        for (unsigned i=0; i<dims.size(); ++i)
+            z *= dims[i];
+    }
 
-    v[z] = 0;
+    std::string v; v.resize( z );
+
+    if (H5T_STRING == class_id)
+        status = H5LTread_dataset_string(_file_id,name.c_str(), &v[0]);
+    else
+        status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_SCHAR,&v[0]);
+
+    if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read string dataset '" + name + "'", name);
 
     VERBOSE_HDF5 TaskInfo("value = '%s'", v.c_str());
 
