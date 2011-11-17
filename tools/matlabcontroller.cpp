@@ -195,9 +195,18 @@ void MatlabController::
     if (!scriptfiles.empty())
         scripts_->addSeparator();
 
+    Qt::CaseSensitivity sensitivity = Qt::CaseSensitive;
+#ifdef WIN32_
+    sensitivity = Qt::CaseInsensitive;
+#endif
+
     foreach(QString info, scriptfiles)
     {
         TaskInfo("%s", info.toLatin1().data());
+
+        if (scriptfiles.contains(info.left(info.size()-2) + "_settings.m", sensitivity))
+            continue;
+
         Adapters::ReadMatlabSettings::readSettingsAsync(info, this, SLOT(foundNewScript(Adapters::DefaultMatlabFunctionSettings)));
     }
 }

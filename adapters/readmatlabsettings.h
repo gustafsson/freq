@@ -20,6 +20,7 @@ public:
 
     static void readSettingsAsync(QString filename, QObject *receiver, const char *member, const char *failedmember=0);
     static Signal::pBuffer TryReadBuffer(QString filename);
+    static QString basescriptname(QString settingsfilename);
 
     ReadMatlabSettings( QString filename, MetaData );
 

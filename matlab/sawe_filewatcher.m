@@ -16,7 +16,7 @@ if nargin<2
   error('syntax: filewatcher(datafile, function, arguments, dt). ''arguments'' defaults to [], ''dt'' defaults to 0.05')
 end
 if nargin<3
-  arguments=cell();
+  arguments=cell(0);
 end
 if nargin<4
   dt=0.025;
@@ -53,7 +53,7 @@ isoctave=0~=exist('OCTAVE_VERSION','builtin');
 disp([ sawe_datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) ''' (datafile ''' datafile ''')']);
 disp(['Working dir: ' pwd]);
 tic
-logginfo=false;
+logginfo=true;
 start_waiting_time = clock;
 
 
@@ -79,23 +79,7 @@ while 1
         disp([ sawe_datestr(now, 'HH:MM:SS.FFF') ' Processing input']);
       end
 
-      try	
-        if ~isoctave
-          info=hdf5info(datafile);
-          [dset1]=info.GroupHierarchy.Datasets.Name;
-          if strcmp(dset1,'/buffer')
-            data = sawe_loadbuffer(datafile);
-          else
-            data = sawe_loadchunk(datafile);
-          end
-        else
-          %octave
-          data = load(datafile);
-        end
-      catch
-        disp(lasterr)
-        continue
-      end
+      data = sawe_loadstruct(datafile);
     end
 
 	sawe_plot_data = [];

@@ -232,7 +232,6 @@ void MatlabFunction::
             string path = QFileInfo(fullpath.c_str()).path().replace("'", "\\'") .toStdString();
             string filename = QString(fullpath.c_str()).replace("'", "\\'") .toStdString();
             matlab_command
-                    << "source('" << filename << "');"
                     << "addpath('" << path << "');"
                     << "f=@" << _matlab_function << ";";
             octave_command
@@ -249,7 +248,6 @@ void MatlabFunction::
             string filename = QString(fullpath.c_str()).replace("'", "\\'") .toStdString();
             matlab_command
                     << "try;"
-                    << "source('" << filename << "');"
                     << "addpath('" << path << "');"
                     << "f=@" << _matlab_function << ";"
                     << "catch;exit;end;"
@@ -278,7 +276,7 @@ void MatlabFunction::
         //matlab_args.push_back("-noFigureWindows");
         //matlab_args.push_back("-nojvm");
         matlab_args.push_back("-nodesktop");
-        //matlab_args.push_back("-nosplash");
+        matlab_args.push_back("-nosplash");
         QStringList octave_args;
         octave_args.push_back("-qf");
 
@@ -303,10 +301,12 @@ void MatlabFunction::
         QString octavepath = QSettings().value("octavepath", "").toString();
         QString matlabpath = QSettings().value("matlabpath", "").toString();
 
+        bool tryMatlab = _matlab_function == QFileInfo(_matlab_filename.c_str()).baseName().toStdString();
+
         for (int i=0; i<2; i++)
         {
             int j = (i + (defaultscript != "matlab"))%2;
-            if (0 == j)
+            if (0 == j && tryMatlab)
             {
                 if (!fullpath.empty())
                 {
@@ -334,7 +334,7 @@ void MatlabFunction::
         }
 
 #ifdef _WIN32
-        if (!fullpath.empty())
+        if (!fullpath.empty() && tryMatlab)
         {
             TaskInfo("Trying common installation paths for MATLAB instead");
             QStringList matlab_paths;

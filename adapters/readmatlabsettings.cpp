@@ -34,6 +34,25 @@ void ReadMatlabSettings::
 }
 
 
+QString ReadMatlabSettings::
+        basescriptname(QString settingsfilename)
+{
+    Qt::CaseSensitivity sensitivity = Qt::CaseSensitive;
+#ifdef WIN32_
+    sensitivity = Qt::CaseInsensitive;
+#endif
+
+    QString basename = settingsfilename;
+    QRegExp pattern("_settings(\\.m)$", sensitivity);
+    if (settingsfilename.contains(pattern))
+    {
+        basename = settingsfilename.replace(pattern, "\\1");
+    }
+
+    return basename;
+}
+
+
 ReadMatlabSettings::
         ReadMatlabSettings( QString filename, MetaData type )
             :
@@ -59,7 +78,20 @@ void ReadMatlabSettings::
         return;
     }
 
-    function_.reset( new MatlabFunction( settings.scriptname().c_str(), type_ == MetaData_Settings ? "settings" : "", 4, type_ == MetaData_Settings ? 0 : &settings, justtest ) );
+    QString subname = type_ == MetaData_Settings ? "settings" : "";
+    QString functionname = settings.scriptname().c_str();
+
+    if (type_ == MetaData_Settings)
+    {
+        string basename = basescriptname(settings.scriptname().c_str()).toStdString();
+        if (basename != settings.scriptname())
+        {
+            subname = "";
+            settings.scriptname(basename);
+        }
+    }
+
+    function_.reset( new MatlabFunction( functionname, subname, 4, type_ == MetaData_Settings ? 0 : &settings, justtest ) );
     QTimer::singleShot(100, this, SLOT(checkIfReady()));
 }
 
