@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     char app_path_cpu[] = TOSTRING(PACKAGE) "-cpu.exe";
     char* app_path = app_path_cuda;
     // Try to load the CUDA library (Checking for CUDA enabled drivers)
-	HMODULE test = LoadLibrary(L"cudart32_32_16.dll");
+	HMODULE test = LoadLibrary(L"nvcuda.dll");
     
     if ( test == NULL ) 
     {
