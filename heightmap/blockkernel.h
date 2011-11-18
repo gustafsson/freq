@@ -92,7 +92,8 @@ extern "C"
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
                  Heightmap::AmplitudeAxis amplitudeAxis,
-                 float normalization_factor
+                 float normalization_factor,
+                 bool full_resolution
                  );
 
 extern "C"

@@ -122,12 +122,7 @@ public:
         else
         {
             for (float x=q.x; x<q.x+xstep; ++x)
-            {
-                v = max(v, interpolate(
-                        get( DataPos(x, q.y), reader ),
-                        get( DataPos(x, q.y+1), reader ),
-                        k.y));
-            }
+                v = max(v, get( DataPos(x, q.y), reader ));
         }
 
 /*        if (xstep <= 1.0)
@@ -344,7 +339,8 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
-                 AxisConverter amplitudeAxis
+                 AxisConverter amplitudeAxis,
+                 bool full_resolution
                  )
 {
     // translate type to be read as a cuda texture
@@ -386,6 +382,8 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.scale = inputRegion.height();
 
     axes.xstep = (validInputs.last - validInputs.first)*outputRegion.width() / (float)(sz_output.width * inputRegion.width());
+    if (!full_resolution)
+        axes.xstep = 1;
 
     switch (transformMethod)
     {
@@ -463,7 +461,8 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
                  Heightmap::AmplitudeAxis amplitudeAxis,
-                 float normalization_factor
+                 float normalization_factor,
+                 bool full_resolution
                  )
 {
     switch(amplitudeAxis)
@@ -472,19 +471,22 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor));
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor),
+                full_resolution);
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor));
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor),
+                full_resolution);
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor));
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
+                full_resolution);
         break;
     }
 }

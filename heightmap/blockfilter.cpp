@@ -256,7 +256,8 @@ void BlockFilter::
                      chunk.freqAxis,
                      _collection->display_scale(),
                      _collection->amplitude_axis(),
-                     normalization_factor
+                     normalization_factor,
+                     full_resolution
                      );
 
     ComputationCheckError();
