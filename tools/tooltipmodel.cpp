@@ -475,8 +475,8 @@ boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
         r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
     else
     {
-        BOOST_ASSERT( false );
-        r.reset( new FetchDataHeightmap( view ) );
+        return r;
+        //r.reset( new FetchDataHeightmap( view ) );
     }
 
     return r;
@@ -494,6 +494,8 @@ unsigned TooltipModel::
 
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
     boost::shared_ptr<FetchData> fetcher = FetchData::createFetchData( render_view_, pos.time );
+    if (!fetcher)
+        return 0;
 
     double F = display_scale.getFrequency( pos.scale );
     double F2 = fetcher->nextFrequency( F );
