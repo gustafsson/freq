@@ -1236,6 +1236,57 @@ void Renderer::drawAxes( float T )
                 sf--;
 
 
+            if (taxis && draw_cursor_marker)
+            {
+                float w = (cursor[0] - pp[0])/(p[0] - pp[0]);
+
+                if (0 < w && w <= 1)
+                    if (!tmarkanyways)
+                        st--;
+
+                if (fabsf(w) < tupdatedetail*tmultiple/2)
+                    tmarkanyways = -1;
+
+                if (0 < w && w <= 1)
+                {
+                    DT /= 10;
+                    t = floor(cursor[0]/DT + 0.5); // t marker index along t
+
+                    p = p1 + v*((cursor[0] - p1[0])/v[0]);
+                    p[0] = cursor[0]; // exact float value so that "cursor[0] - pp[0]" == 0
+
+                    if (!tmarkanyways)
+                        st--;
+
+                    tmarkanyways = 2;
+                }
+            }
+            else if(draw_cursor_marker)
+            {
+                float w = (cursor[2] - pp[2])/(p[2] - pp[2]);
+
+                if (0 < w && w <= 1)
+                    if (!fmarkanyways)
+                        sf--;
+
+                if (fabsf(w) < fupdatedetail*fmultiple/2)
+                    fmarkanyways = -1;
+
+                if (0 < w && w <= 1)
+                {
+                    f = fa.getFrequencyT( cursor[2] );
+                    fc /= 10;
+                    mif = floor(f / fc + .5); // f marker index along f
+                    f = mif * fc;
+
+                    p = p1 + v*((cursor[2] - p1[2])/v[2]);
+                    p[2] = cursor[2]; // exact float value so that "cursor[2] - pp[2]" == 0
+
+                    fmarkanyways = 2;
+                }
+            }
+
+
             // find next intersection along v
             double nu;
             if (taxis)  nu = (p[0] - p1[0])/v[0];
@@ -1265,56 +1316,6 @@ void Renderer::drawAxes( float T )
                 if (v[2] < 0) nf-=fc;
                 nf = floor(nf/fc + .5)*fc;
                 np[2] = fa.getFrequencyScalarNotClampedT(nf);
-            }
-
-            if (taxis && draw_cursor_marker)
-            {
-                float w = (cursor[0] - pp[0])/(np[0] - pp[0]);
-
-                if (0 < w && w <= 1)
-                    if (!tmarkanyways)
-                        st--;
-
-                if (fabsf(w) < tupdatedetail*tmultiple/2)
-                    tmarkanyways = -1;
-
-                if (0 < w && w <= 1)
-                {
-                    DT /= 10;
-                    t = floor(cursor[0]/DT + 0.5); // t marker index along t
-
-                    p = p1 + v*((cursor[0] - p1[0])/v[0]);
-                    p[0] = cursor[0]; // exact float value so that "cursor[0] - pp[0]" == 0
-
-                    if (!tmarkanyways)
-                        st--;
-
-                    tmarkanyways = 2;
-                }
-            }
-            else if(draw_cursor_marker)
-            {
-                float w = (cursor[2] - pp[2])/(np[2] - pp[2]);
-
-                if (0 < w && w <= 1)
-                    if (!fmarkanyways)
-                        sf--;
-
-                if (fabsf(w) < fupdatedetail*fmultiple/2)
-                    fmarkanyways = -1;
-
-                if (0 < w && w <= 1)
-                {
-                    f = fa.getFrequencyT( cursor[2] );
-                    fc /= 10;
-                    mif = floor(f / fc + .5); // f marker index along f
-                    f = mif * fc;
-
-                    p = p1 + v*((cursor[2] - p1[2])/v[2]);
-                    p[2] = cursor[2]; // exact float value so that "cursor[2] - pp[2]" == 0
-
-                    fmarkanyways = 2;
-                }
             }
 
             // draw marker
