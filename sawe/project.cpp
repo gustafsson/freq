@@ -1,6 +1,7 @@
 #include "sawe/project.h"
 
 #include "sawe/application.h"
+#include "sawe/openfileerror.h"
 #if !defined(TARGET_reader)
 #include "adapters/audiofile.h"
 #include "adapters/csvtimeseries.h"
@@ -143,6 +144,7 @@ pProject Project::
     }
 
     string err;
+    string openfile_err;
     pProject p;
     if (0!=stat( filename.c_str(),&dummy))
         err = "File '" + filename + "' does not exist";
@@ -163,6 +165,11 @@ pProject Project::
             }
             break; // successful loading without thrown exception
         }
+        catch (const OpenFileError& x) {
+            if (!openfile_err.empty())
+                openfile_err += '\n';
+            openfile_err += x.what();
+        }
         catch (const exception& x) {
             if (!err.empty())
                 err += '\n';
@@ -173,6 +180,9 @@ pProject Project::
 
     if (!p)
     {
+        if (!openfile_err.empty())
+            err = openfile_err;
+
         QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
         TaskInfo("======================\n"
                  "Can't open file '%s' as project nor audio file\n"

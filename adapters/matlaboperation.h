@@ -1,6 +1,7 @@
 #ifndef ADAPTERS_MATLABOPERATION_H
 #define ADAPTERS_MATLABOPERATION_H
 
+#include "sawe/openfileerror.h"
 #include "signal/operationcache.h"
 #include "matlabfunction.h"
 
@@ -70,6 +71,9 @@ private:
         ar & BOOST_SERIALIZATION_NVP(settings.argument_description_);
     }
     template<class Archive> void load(Archive& ar, const unsigned int version) {
+#if defined(TARGET_reader)
+        throw Sawe::OpenFileError("Sonic AWE Reader does not support Matlab/Octave interoperability");
+#else
         using boost::serialization::make_nvp;
 
         DefaultMatlabFunctionSettings* settingsp = new DefaultMatlabFunctionSettings();
@@ -88,6 +92,7 @@ private:
 
         this->settings(settingsp);
         invalidate_cached_samples(Signal::Intervals());
+#endif
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };

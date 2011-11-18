@@ -23,6 +23,7 @@ namespace Tools
 
     class MatlabController: public QObject {
         Q_OBJECT
+#if !defined(TARGET_reader)
     public:
         MatlabController( Sawe::Project* project, RenderView* render_view );
         ~MatlabController();
@@ -66,6 +67,8 @@ namespace Tools
         // TODO Could also add this functionality to a menu.
         void setupGui();
         void prepareLogView( Adapters::MatlabOperation*m );
+#endif // TARGET_reader
     };
 } // namespace Tools
+
 #endif // MATLABCONTROLLER_H

@@ -1,3 +1,4 @@
+#if !defined(TARGET_reader)
 #include "matlabcontroller.h"
 #include "matlaboperationwidget.h"
 
@@ -662,3 +663,4 @@ void MatlabController::
 
 
 } // namespace Tools
+#endif // TARGET_reader
