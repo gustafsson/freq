@@ -28,8 +28,39 @@ else
 fi
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
 
-	
+echo "========================== Building ==========================="
+echo "Building Sonic AWE ${packagename} Cuda"
+echo qmaketarget: $qmaketarget
+
+qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+	cd gpumisc
+	qmake $qmaketarget
+	cd ../sonicawe
+	qmake $qmaketarget
+	cd ..
+	qmake $qmaketarget
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+else
+  rm -f sonicawe/release/sonicawe.exe
+fi
+
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cuda.exe
+
+
+echo "========================== Building ==========================="
+echo "Building Sonic AWE ${packagename} Launcher"
+
+cd sonicawe/dist/package-win/launcher
+qmake "DEFINES+=PACKAGE=\"${packagename}\""
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release launcher.sln
+cd ../../../..
+
+
 echo "========================== Installer =========================="
 echo "Creating Windows installer file: $(pwd)/$filename for package $packagefullname"
 cd ..
@@ -37,7 +68,9 @@ rm -rf $filename
 rm -rf $packagefullname
 cp -r sonicawe_snapshot_win32_base $packagefullname
 cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagefullname
-cp sonic/sonicawe/release/sonicawe.exe "$packagefullname/${packagename}.exe"
+cp sonic/sonicawe/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
+cp sonic/sonicawe/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
+cp sonic/sonicawe/dist/package-win/launcher/release/launcher.exe "$packagefullname/${packagename}.exe"
 cp -r sonic/sonicawe/matlab $packagefullname/matlab
 cp sonic/sonicawe/license/$licensefile $packagefullname
 cp sonic/sonicawe/dist/package-win/awe_256.ico $packagefullname
