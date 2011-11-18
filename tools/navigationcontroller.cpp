@@ -229,7 +229,7 @@ bool NavigationController::
     float L = r.last_length();
     float fs = r.model->project()->head->head_source()->sample_rate();
     float min_xscale = 4.f/std::max(L,10/fs);
-    float max_xscale = 0.5f*fs;
+    float max_xscale = 0.05f*fs;
 
 
     const Tfr::FreqAxis& tfa = r.model->collections[0]->transform()->freqAxis(fs);
