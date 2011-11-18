@@ -53,7 +53,7 @@ isoctave=0~=exist('OCTAVE_VERSION','builtin');
 disp([ sawe_datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF') ' Sonic AWE running script ''' func2str(func) ''' (datafile ''' datafile ''')']);
 disp(['Working dir: ' pwd]);
 tic
-logginfo=true;
+logginfo=false;
 start_waiting_time = clock;
 
 
