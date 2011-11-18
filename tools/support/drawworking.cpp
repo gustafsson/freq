@@ -92,24 +92,18 @@ void DrawWorking::
     glLoadIdentity();
     glOrtho( viewport_width, 0, viewport_height, 0, -1, 1);
 
-    glTranslatef( 30, 30, 0 );  // ? translate GL_PROJECTION
-
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D,0);
+    // translates GL_PROJECTION to so that (0,0) is (30, 30) from the top right
+    glTranslatef( 30, 30, 0 );
 
     glPushMatrixContext push_model( GL_MODELVIEW );
 
     glLoadIdentity();
     glScalef(60, 60, 1);
 
-    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
     glEnable(GL_BLEND);
-    glEnable(GL_COLOR_MATERIAL); // need this to use lighting with primitives without texture
-    glEnable(GL_LIGHTING);
+
     glColor4f(1, 1, 1, 0.3);
     {
         glPushMatrixContext mc(GL_MODELVIEW);
@@ -125,11 +119,6 @@ void DrawWorking::
     drawRoundRect(0.5, 0.5, 0.5);
     glColor4f(1, 1, 1, 0.3);
     drawRoundRect(0.55, 0.55, 0.55);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_COLOR_MATERIAL);
-
-    //glDisable(GL_BLEND);
-    //glDisable(GL_DEPTH_TEST);
 
     glDepthFunc(GL_LEQUAL);
 }
