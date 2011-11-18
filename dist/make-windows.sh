@@ -57,6 +57,7 @@ echo "Building Sonic AWE ${packagename} Launcher"
 
 cd sonicawe/dist/package-win/launcher
 qmake "DEFINES+=PACKAGE=\"${packagename}\""
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release launcher.sln
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release launcher.sln
 cd ../../../..
 
