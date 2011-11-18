@@ -25,10 +25,10 @@
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
 
+using namespace std;
+
 namespace Heightmap {
 
-
-using namespace std;
 
 Renderer::Renderer( Collection* collection )
 :   collection(collection),
@@ -174,14 +174,24 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 typedef tvector<4,GLdouble> GLvector4;
 typedef tmatrix<4,GLdouble> GLmatrix;
 
-// static GLvector4 to4(const GLvector& a) { return GLvector4(a[0], a[1], a[2], 1);}
-// static GLvector to3(const GLvector4& a) { return GLvector(a[0], a[1], a[2]);}
-
 GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
-    GLdouble win0=0, win1=0, win2=0;
-    bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win0, &win1, &win2));
-    if(r) *r=s;
-    return GLvector(win0, win1, win2);
+//    //gluProject does this, (win - screenspace).dot() < 1e18
+//    tmatrix<4, double> modelmatrix(model);
+//    tmatrix<4, double> projmatrix(proj);
+//    tvector<4, double> obj4(obj[0], obj[1], obj[2], 1);
+//    tvector<4, double> proj4 = projmatrix*modelmatrix*obj4;
+//    tvector<3, double> screennorm(proj4[0]/proj4[3], proj4[1]/proj4[3], proj4[2]/proj4[3]);
+//    GLvector screenspace(view[0] + (screennorm[0] + 1.0)*0.5*view[2],
+//                                   view[1] + (screennorm[1] + 1.0)*0.5*view[3],
+//                                   0.5 + 0.5*screennorm[2]);
+//    if (r)
+//        *r = 0 != proj4[3];
+//    return screenspace;
+
+    GLvector win;
+    bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
+    if (r)
+        *r = s;
 }
 
 GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
@@ -191,47 +201,6 @@ GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj,
     return GLvector(obj0, obj1, obj2);
 }
 
-/*
-template<typename f>
-GLvector gluProject2(tvector<3,f> obj, bool *r) {
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-    GLvector4 eye = applyProjectionMatrix(applyModelMatrix(to4(obj)));
-    eye[0]/=eye[3];
-    eye[1]/=eye[3];
-    eye[2]/=eye[3];
-
-    GLvector screen(view[0] + (eye[0]+1)*view[2]/2, view[1] + (eye[1]+1)*view[3]/2, eye[2]);
-    float dummy=43*23;
-    return screen;
-}*/
-
-
-/* static bool validWindowPos(GLvector win) {
-    GLint view[4];
-    glGetIntegerv(GL_VIEWPORT, view);
-
-    return win[0]>view[0] && win[1]>view[1]
-            && win[0]<view[0]+view[2]
-            && win[1]<view[1]+view[3]
-            && win[2]>=0.1 && win[2]<=100;
-}*/
-
-/*static GLvector4 applyModelMatrix(GLvector4 obj) {
-    GLdouble m[16];
-    glGetDoublev(GL_MODELVIEW_MATRIX, m);
-
-    GLvector4 eye = GLmatrix(m) * obj;
-    return eye;
-}*/
-
-/*static GLvector4 applyProjectionMatrix(GLvector4 eye) {
-    GLdouble p[16];
-    glGetDoublev(GL_PROJECTION_MATRIX, p);
-
-    GLvector4 clip = GLmatrix(p) * eye;
-    return clip;
-}*/
 
 /* distance along normal, a negative distance means obj is in front of plane */
 static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
@@ -803,8 +772,11 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         GLvector d = (l[(i+1)%l.size()] - l[i]),
                  v = target - l[i];
 
-        if (d%v<0) allNeg=false;
-        if (d%v>0) allPos=false;
+        if (0==d.dot())
+            continue;
+
+        if (d%v < 0) allNeg=false;
+        if (d%v > 0) allPos=false;
         float k = d%v / (d.dot());
         if (0<k && k<1) {
             f = (l[i] + d*k-target).dot();
@@ -819,8 +791,10 @@ static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvect
         // point lies within convex polygon, create normal and project to surface
         if (l.size()>2) {
             GLvector n = (l[0]-l[1])^(l[0]-l[2]);
-            n = n.Normalize();
-            r = target + n*distanceToPlane( target, l[0], n );
+            if (0 != n.dot()) {
+                n = n.Normalized();
+                r = target + n*distanceToPlane( target, l[0], n );
+            }
         }
     }
     return r;
@@ -841,29 +815,29 @@ std::vector<GLvector> Renderer::
             _invalid_frustum = false;
 
         projectionPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z0) );
-        projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalize();
+        projectionNormal = (gluUnProject( GLvector( view[0] + view[2]/2, view[1] + view[3]/2, z1) ) - projectionPlane).Normalized();
 
         rightPlane = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z0) );
         GLvector rightZ = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2, z1) );
         GLvector rightY = gluUnProject( GLvector( view[0] + (1-w)*view[2], view[1] + view[3]/2+1, z0) );
         rightZ = rightZ - rightPlane;
         rightY = rightY - rightPlane;
-        rightNormal = ((rightY)^(rightZ)).Normalize();
+        rightNormal = ((rightY)^(rightZ)).Normalized();
 
         leftPlane = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2, z0) );
         GLvector leftZ = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2, z1) );
         GLvector leftY = gluUnProject( GLvector( view[0]+w*view[2], view[1] + view[3]/2+1, z0) );
-        leftNormal = ((leftZ-leftPlane)^(leftY-leftPlane)).Normalize();
+        leftNormal = ((leftZ-leftPlane)^(leftY-leftPlane)).Normalized();
 
         topPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + (1-h)*view[3], z0) );
         GLvector topZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1] + (1-h)*view[3], z1) );
         GLvector topX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1] + (1-h)*view[3], z0) );
-        topNormal = ((topZ-topPlane)^(topX-topPlane)).Normalize();
+        topNormal = ((topZ-topPlane)^(topX-topPlane)).Normalized();
 
         bottomPlane = gluUnProject( GLvector( view[0] + view[2]/2, view[1]+h*view[3], z0) );
         GLvector bottomZ = gluUnProject( GLvector( view[0] + view[2]/2, view[1]+h*view[3], z1) );
         GLvector bottomX = gluUnProject( GLvector( view[0] + view[2]/2+1, view[1]+h*view[3], z0) );
-        bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalize();
+        bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalized();
 
         // must make all normals negative because one of the axes is flipped (glScale with a minus sign on the x-axis)
         if (left_handed_axes)
@@ -903,7 +877,13 @@ std::vector<GLvector> Renderer::
     std::vector<GLvector> l;
     l.reserve(4);
     for (unsigned i=0; i<4; i++)
+    {
+        if (!l.empty() && l.back() == corner[i])
+            continue;
+
         l.push_back( corner[i] );
+    }
+
     return clipFrustum(l, closest_i, w, h);
 }
 
@@ -1089,8 +1069,8 @@ void Renderer::drawAxes( float T )
     // 2 clip entire sound to frustum
     clippedFrustum.clear();
 
+    GLvector closest_i;
     {   //float T = collection->worker->source()->length();
-        GLvector closest_i;
         GLvector corner[4]=
         {
             GLvector( 0, 0, 0),
@@ -1164,14 +1144,23 @@ void Renderer::drawAxes( float T )
         // need initial f value
         double f = fa.getFrequencyT( p[2] );
 
+        GLvector::T timePerPixel_closest, scalePerPixel_closest;
+        computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
+        GLvector pp = p;
+
         if ((taxis && draw_t) || (!taxis && draw_hz))
         for (double u=-1; true; )
         {
             GLvector::T timePerPixel, scalePerPixel;
             computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+            double ppp=0.4;
+            timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
+            scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
 
             double ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
             double SF = scalePerPixel * 750;
+            double drawScaleT = min(ST, 50*timePerPixel_closest*750);
+            double drawScaleF = min(SF, 50*scalePerPixel_closest*750);
 
             double time_axis_density = 18;
             if (20.+2.*log10(timePerPixel) < 18.)
@@ -1201,15 +1190,20 @@ void Renderer::drawAxes( float T )
                 if( 60*10*6*24*5 < ST ) DT *= 24, st++, tmultiple = 5, tsubmultiple = 5;
             }
 
-            //int tmarkanyways = (bool)(fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0) && ((unsigned)(p[0]/DT)%tmultiple!=0));
-            int tmarkanyways = (bool)(fabsf(5*DT) > (ST / time_axis_density) && ((unsigned)(p[0]/DT)%tsubmultiple==0));
-            if (tmarkanyways)
-                st--;
-
             int tupdatedetail = 1;
             DT /= tupdatedetail;
-            int t = p[0]/DT; // t marker index along t
-            if (v[0] > 0 && p[0] > t*DT) t++;
+            int t = floor(p[0]/DT + .5); // t marker index along t
+            double t2 = t*DT;
+            if (t2 < p[0] && v[0] > 0)
+                t++;
+            if (t2 > p[0] && v[0] < 0)
+                t--;
+            p[0] = t*DT;
+
+            //int tmarkanyways = (bool)(fabsf(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0) && ((unsigned)(p[0]/DT +.5)%(tmultiple*tupdatedetail)!=0));
+            int tmarkanyways = (bool)(fabsf(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0));
+            if (tmarkanyways)
+                st--;
 
             // compute index of next marker along t and f
             double epsilon = 1.f/10;
@@ -1226,8 +1220,8 @@ void Renderer::drawAxes( float T )
             fc /= fupdatedetail;
             int mif = floor(f / fc + .5); // f marker index along f
             double nf = mif * fc;
-            if (nf < f)
-                nf += fc;
+            if (!(f - fc*0.05 < nf && nf < f + fc*0.05))
+                nf += v[2] > 0 ? fc : -fc;
             f = nf;
             p[2] = fa.getFrequencyScalarNotClampedT(f);
 
@@ -1273,22 +1267,22 @@ void Renderer::drawAxes( float T )
 
             if (taxis && draw_cursor_marker)
             {
-                float w = (cursor[0] - p[0])/(np[0] - p[0]);
+                float w = (cursor[0] - pp[0])/(np[0] - pp[0]);
 
-                if (0 <= w && w < 1)
+                if (0 < w && w <= 1)
                     if (!tmarkanyways)
                         st--;
 
                 if (fabsf(w) < tupdatedetail*tmultiple/2)
                     tmarkanyways = -1;
 
-                if (0 <= w && w < 1)
+                if (0 < w && w <= 1)
                 {
-                    p[0] = cursor[0];
                     DT /= 10;
-                    t = cursor[0]/DT; // t marker index along t
+                    t = floor(cursor[0]/DT + 0.5); // t marker index along t
 
                     p = p1 + v*((cursor[0] - p1[0])/v[0]);
+                    p[0] = cursor[0]; // exact float value so that "cursor[0] - pp[0]" == 0
 
                     if (!tmarkanyways)
                         st--;
@@ -1298,16 +1292,16 @@ void Renderer::drawAxes( float T )
             }
             else if(draw_cursor_marker)
             {
-                float w = (cursor[2] - p[2])/(np[2] - p[2]);
+                float w = (cursor[2] - pp[2])/(np[2] - pp[2]);
 
-                if (0 <= w && w < 1)
+                if (0 < w && w <= 1)
                     if (!fmarkanyways)
                         sf--;
 
                 if (fabsf(w) < fupdatedetail*fmultiple/2)
                     fmarkanyways = -1;
 
-                if (0 <= w && w < 1)
+                if (0 < w && w <= 1)
                 {
                     f = fa.getFrequencyT( cursor[2] );
                     fc /= 10;
@@ -1315,6 +1309,7 @@ void Renderer::drawAxes( float T )
                     f = mif * fc;
 
                     p = p1 + v*((cursor[2] - p1[2])/v[2]);
+                    p[2] = cursor[2]; // exact float value so that "cursor[2] - pp[2]" == 0
 
                     fmarkanyways = 2;
                 }
@@ -1347,7 +1342,7 @@ void Renderer::drawAxes( float T )
 
                         glTranslatef(p[0], 0, p[2]);
                         glRotatef(90,1,0,0);
-                        glScalef(0.00013f*ST,0.00013f*SF,1.f);
+                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
                         glRotatef(angle,0,0,1);
                         char a[100];
@@ -1418,7 +1413,7 @@ void Renderer::drawAxes( float T )
 
                         glTranslatef(p[0],0,p[2]);
                         glRotatef(90,1,0,0);
-                        glScalef(0.00013f*ST,0.00013f*SF,1.f);
+                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
                         glRotatef(angle,0,0,1);
                         char a[100];
@@ -1457,6 +1452,7 @@ void Renderer::drawAxes( float T )
                 }
             }
 
+            pp = p;
             p = np; // q.e.d.
             f = nf;
             t = nt;

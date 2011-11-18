@@ -199,7 +199,7 @@ void PeakModel::
             tvector<2, float> d(pos.x - (float)lastnode.x,
                                 pos.y - (float)lastnode.y);
 
-            d.Normalize();
+            d = d.Normalized();
 
             unsigned i;
             for (i=0; i<border_pts.size(); ++i)

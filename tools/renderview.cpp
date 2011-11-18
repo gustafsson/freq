@@ -402,7 +402,8 @@ QPointF RenderView::
         d[0] *= model->xscale;
         d[2] *= last_ysize;
 
-        projectionNormal.Normalize();
+        projectionNormal = projectionNormal.Normalized();
+
         *dist = d%projectionNormal;
     }
 
@@ -1216,23 +1217,23 @@ void RenderView::
         userinput_update();
 
     glLoadIdentity();
-    glTranslatef( model->_px, model->_py, model->_pz );
+    glTranslated( model->_px, model->_py, model->_pz );
 
-    glRotatef( model->_rx, 1, 0, 0 );
-    glRotatef( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
-    glRotatef( model->_rz, 0, 0, 1 );
+    glRotated( model->_rx, 1, 0, 0 );
+    glRotated( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
+    glRotated( model->_rz, 0, 0, 1 );
 
     if (model->renderer->left_handed_axes)
-        glScalef(-1, 1, 1);
+        glScaled(-1, 1, 1);
     else
     {
-        glRotatef(-90,0,1,0);
-        glScalef(0.35, 1, 2.6);
+        glRotated(-90,0,1,0);
+        glScaled(0.35, 1, 2.6);
     }
 
-    glScalef(model->xscale, 1, model->zscale);
+    glScaled(model->xscale, 1, model->zscale);
 
-    glTranslatef( -model->_qx, -model->_qy, -model->_qz );
+    glTranslated( -model->_qx, -model->_qy, -model->_qz );
 
     orthoview.TimeStep(.08);
 }
