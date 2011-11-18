@@ -31,7 +31,7 @@ function settings=exampleplugin_settings()
 %
 %
 % settings.argument_description
-%   'Arguments' (default)   This text will show up if the user is chooses to 
+%   'Arguments' (default)   This text will show up if the user chooses to 
 %                           enter arguments to the script.
 %
 %

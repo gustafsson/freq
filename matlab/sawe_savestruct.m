@@ -8,7 +8,7 @@ if exist('OCTAVE_VERSION','builtin')
     t_data = data;
 	t_N=fieldnames(t_data);
 	for t_n=1:numel(t_N)
-		eval([t_N{t_n} '= _data.(t_N{t_n});']);
+		eval([t_N{t_n} '= t_data.(t_N{t_n});']);
 	end
     save('-hdf5', t_filename, t_N{:});
 else
