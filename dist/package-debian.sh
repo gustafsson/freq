@@ -107,8 +107,7 @@ cp matlab/examples/amplify.m $share/examples
 cp matlab/examples/convolve.m $share/examples
 cp matlab/examples/lowpass.m $share/examples
 cp matlab/examples/plotwaveform.m $share/examples
-cp matlab/sawe_loadbuffer.m $share
-cp matlab/sawe_loadchunk.m $share
+cp matlab/sawe_loadstruct.m $share
 cp matlab/sawe_savestruct.m $share
 cp matlab/sawe_makestruct.m $share
 cp matlab/sawe_discard.m $share
