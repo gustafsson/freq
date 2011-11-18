@@ -192,6 +192,8 @@ GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, c
     bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
     if (r)
         *r = s;
+
+    return win;
 }
 
 GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r) {
