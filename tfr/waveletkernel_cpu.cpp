@@ -128,21 +128,4 @@ void wtClamp( Tfr::ChunkData::Ptr in_wtp, size_t sample_offset, Tfr::ChunkData::
 }
 
 
-void stftNormalizeInverse(
-        DataStorage<float>::Ptr wavep,
-        unsigned length )
-{
-    CpuMemoryReadWrite<float, 2> in_wt = CpuMemoryStorage::ReadWrite<2>( wavep );
-
-    float v = 1.f/length;
-
-    CpuMemoryReadWrite<float, 2>::Position pos( 0, 0 );
-    for (pos.y=0; pos.y<in_wt.numberOfElements().height; ++pos.y)
-    {
-        for (pos.x=0; pos.x<in_wt.numberOfElements().width; ++pos.x)
-        {
-            in_wt.ref(pos) *= v;
-        }
-    }
-}
 #endif // USE_CUDA

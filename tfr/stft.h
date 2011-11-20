@@ -10,8 +10,6 @@
 // gpumisc
 #include "HasSingleton.h"
 
-typedef unsigned int cufftHandle; /* from cufft.h */
-
 namespace Tfr {
 
 enum FftDirection
@@ -30,6 +28,8 @@ public:
     ~Fft();
 
     virtual pChunk operator()( Signal::pBuffer b ) { return forward(b); }
+
+    /// Fft::inverse does not normalize the result. To normalize it you have to divide each element with the length of the buffer.
     virtual Signal::pBuffer inverse( pChunk c ) { return backward(c); }
     virtual FreqAxis freqAxis( float FS );
     virtual float displayedTimeResolution( float FS, float hz );
@@ -78,8 +78,8 @@ public:
       The contents of the input Signal::pBuffer is converted to complex values.
       */
     virtual pChunk operator()( Signal::pBuffer );
+    /// Stft::inverse does normalize the result (to the contrary of Fft::inverse)
     virtual Signal::pBuffer inverse( pChunk );
-    virtual Signal::pBuffer inverseWithRedundant( pChunk );
     virtual FreqAxis freqAxis( float FS );
     virtual float displayedTimeResolution( float FS, float hz );
 
@@ -106,10 +106,14 @@ public:
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
 private:
+    Tfr::pChunk ComputeChunk(Signal::pBuffer b);
+
     /**
       @see compute_redundant()
       */
     Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
+    virtual Signal::pBuffer inverseWithRedundant( pChunk );
+
 
     static std::vector<unsigned> _ok_chunk_sizes;
 
@@ -121,22 +125,22 @@ private:
     bool _compute_redundant;
 
     void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
-    Tfr::pChunk computeWithCufft(Signal::pBuffer);
-    Tfr::pChunk computeRedundantWithCufft(Signal::pBuffer);
-    Signal::pBuffer inverseWithCufft(Tfr::pChunk);
-    Signal::pBuffer inverseRedundantWithCufft(Tfr::pChunk);
+    void computeWithCufft( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize );
+    void computeRedundantWithCufft( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n );
+    void inverseWithCufft( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n );
+    void inverseRedundantWithCufft( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n );
 
     void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
-    Tfr::pChunk computeWithOoura(Signal::pBuffer);
-    Tfr::pChunk computeRedundantWithOoura(Signal::pBuffer);
-    Signal::pBuffer inverseWithOoura(Tfr::pChunk);
-    Signal::pBuffer inverseRedundantWithOoura(Tfr::pChunk);
+    void computeWithOoura( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize );
+    void computeRedundantWithOoura( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n );
+    void inverseWithOoura( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n );
+    void inverseRedundantWithOoura( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n );
 };
 
 class StftChunk: public Chunk
 {
 public:
-    StftChunk(unsigned window_size = -1);
+    StftChunk(unsigned window_size, bool redundant);
     void setHalfs( unsigned n );
     unsigned halfs( );
     unsigned nActualScales() const;
@@ -146,14 +150,22 @@ public:
 
     virtual Signal::Interval getInterval() const { return getInversedInterval(); }
 
-    // If 'window_size != (unsigned)-1' then this chunks represents a real signal
-    // and doesn't contain redundant coefficients.
-    // window_size is transform size (including counting redundant coefficients)
-    unsigned window_size;
-
+    /// transformSize = window_size >> halfs_n
     unsigned transformSize() const;
+    bool redundant() const { return _redundant; }
+    unsigned window_size() const { return _window_size; }
+
 private:
-    unsigned halfs_n;
+    unsigned _halfs_n;
+
+    /**
+      window_size is transform size (including counting redundant coefficients
+      whether they are actually present in the data or not)
+      */
+    unsigned _window_size;
+
+    /// Does this chunk contain redundant data
+    bool _redundant;
 };
 
 } // namespace Tfr

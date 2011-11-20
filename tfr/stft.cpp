@@ -1,4 +1,5 @@
 #include "stft.h"
+#include "stftkernel.h"
 #include "complexbuffer.h"
 #include "signal/buffersource.h"
 
@@ -64,7 +65,7 @@ pChunk Fft::
 
         DataStorage<std::complex<float> >::Ptr input = b.complex_waveform_data();
 
-        chunk.reset( new StftChunk );
+        chunk.reset( new StftChunk( output_n.width, true ) );
         chunk->transform_data.reset( new ChunkData( output_n ));
 
 #ifdef USE_CUFFT
@@ -81,7 +82,7 @@ pChunk Fft::
         if (output_n.width != input_n.width)
             real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( Signal::Interval( real_buffer->sample_offset, real_buffer->sample_offset + output_n.width));
 
-        chunk.reset( new StftChunk(output_n.width) );
+        chunk.reset( new StftChunk(output_n.width, false) );
         output_n.width = ((StftChunk*)chunk.get())->nScales();
         chunk->transform_data.reset( new ChunkData( output_n ));
 
@@ -123,7 +124,7 @@ Signal::pBuffer Fft::
 {
     Signal::pBuffer r;
     float fs = chunk->original_sample_rate;
-    if (((StftChunk*)chunk.get())->window_size == (unsigned)-1)
+    if (((StftChunk*)chunk.get())->redundant())
     {
         unsigned scales = chunk->nScales();
 
@@ -140,7 +141,7 @@ Signal::pBuffer Fft::
     }
     else
     {
-        unsigned scales = ((StftChunk*)chunk.get())->window_size;
+        unsigned scales = ((StftChunk*)chunk.get())->window_size();
 
         r.reset( new Signal::Buffer(0, scales, fs ));
 
@@ -168,7 +169,9 @@ Stft::
         Stft()
 :
     _window_size( 1<<11 ),
-    _compute_redundant(false)
+    _compute_redundant(false),
+    _overlap(0.f),
+    _window_type(WindowType_Rectangular)
 {
     compute_redundant( _compute_redundant );
 }
@@ -178,17 +181,75 @@ Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
     // @see compute_redundant()
+    Tfr::pChunk chunk;
     if (compute_redundant())
-        return ChunkWithRedundant(b);
+        chunk = ChunkWithRedundant(b);
+    else
+        chunk = ComputeChunk(b);
 
+    chunk->freqAxis = freqAxis( b->sample_rate );
+    chunk->chunk_offset = b->sample_offset + _window_size/2;
+    chunk->first_valid_sample = 0;
+    chunk->sample_rate = b->sample_rate / _window_size;
+    ((StftChunk*)chunk.get())->original_sample_rate = b->sample_rate;
+
+    if (0 == b->sample_offset)
+    {
+        chunk->n_valid_samples += chunk->chunk_offset;
+        chunk->chunk_offset = 0;
+    }
+
+    if (false)
+    {
+        Signal::pBuffer breal = b;
+        Signal::pBuffer binv = inverse( chunk );
+        float* binv_p = binv->waveform_data()->getCpuMemory();
+        float* breal_p = breal->waveform_data()->getCpuMemory();
+        Signal::IntervalType breal_length = breal->number_of_samples();
+        Signal::IntervalType binv_length = binv->number_of_samples();
+        BOOST_ASSERT( breal_length = binv_length );
+        float maxd = 0;
+        for(Signal::IntervalType i =0; i<breal_length; i++)
+        {
+            float d = breal_p[i]-binv_p[i];
+            if (d*d > maxd)
+                maxd = d*d;
+        }
+
+        TaskInfo("Difftest %s (value %g)", maxd<1e-8?"passed":"failed", maxd);
+    }
+
+    return chunk;
+}
+
+
+Tfr::pChunk Stft::
+        ComputeChunk(Signal::pBuffer b)
+{
     TIME_STFT TaskTimer ti("Stft::operator, _window_size = %d, b = %s", _window_size, b->getInterval().toString().c_str());
     BOOST_ASSERT( 0!=_window_size );
 
+    DataStorageSize actualSize(
+            _window_size/2 + 1,
+            b->number_of_samples()/_window_size );
+
+    DataStorageSize n = actualSize.width * actualSize.height;
+
+    if (0==actualSize.height) // not enough data
+        return Tfr::pChunk();
+
+    Tfr::pChunk chunk( new Tfr::StftChunk(_window_size, false) );
+    chunk->transform_data.reset( new Tfr::ChunkData( n ));
+
 #ifdef USE_CUFFT
-    Tfr::pChunk chunk = computeWithCufft(b);
+    computeWithCufft(b->waveform_data(), chunk->transform_data, actualSize);
 #else
-    Tfr::pChunk chunk = computeWithOoura(b);
+    computeWithOoura(b->waveform_data(), chunk->transform_data, actualSize);
 #endif
+
+    chunk->n_valid_samples = (chunk->nSamples()-1) * _window_size + 1;
+
+    TIME_STFT ComputationSynchronize();
 
     return chunk;
 }
@@ -199,11 +260,33 @@ Tfr::pChunk Stft::
 {
     TIME_STFT TaskTimer ti("Stft::ChunkWithRedundant, _window_size = %d, b = %s", _window_size, breal->getInterval().toString().c_str());
 
+    ComplexBuffer b(*breal);
+
+    BOOST_ASSERT( 0!=_window_size );
+
+    DataStorageSize n(
+            _window_size,
+            b.number_of_samples()/_window_size );
+
+    if (0==n.height) // not enough data
+        return Tfr::pChunk();
+
+    if (32768<n.height) // TODO can't handle this
+        n.height = 32768;
+
+    Tfr::pChunk chunk( new Tfr::StftChunk(_window_size, true) );
+
+    chunk->transform_data.reset( new ChunkData( n.width*n.height ));
+
 #ifdef USE_CUFFT
-    Tfr::pChunk chunk = computeRedundantWithCufft(breal);
+    computeRedundantWithCufft(b.complex_waveform_data(), chunk->transform_data, n);
 #else
-    Tfr::pChunk chunk = computeRedundantWithOoura(breal);
+    computeRedundantWithOoura(b.complex_waveform_data(), chunk->transform_data, n);
 #endif
+    chunk->n_valid_samples = (chunk->nSamples()-1) * _window_size + 1;
+
+
+    TIME_STFT ComputationSynchronize();
 
     return chunk;
 }
@@ -212,15 +295,54 @@ Tfr::pChunk Stft::
 Signal::pBuffer Stft::
         inverse( pChunk chunk )
 {
-
-    if (compute_redundant())
+    StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
+    BOOST_ASSERT(stftchunk);
+    if (stftchunk->redundant())
         return inverseWithRedundant( chunk );
 
+    ComputationSynchronize();
+    ComputationCheckError();
+    BOOST_ASSERT( chunk->nChannels() == 1 );
+
+    const int chunk_window_size = stftchunk->window_size();
+    const int actualSize = stftchunk->nActualScales();
+    int nwindows = chunk->transform_data->size().width / actualSize;
+
+    TIME_STFT
+            TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s, nwindows=%d",
+                         chunk_window_size, chunk->getInterval().toString().c_str(), nwindows);
+
+    int
+            firstSample = 0;
+
+    if (chunk->chunk_offset != 0)
+        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
+
+    Signal::pBuffer b(new Signal::Buffer(firstSample, nwindows*chunk_window_size, chunk->original_sample_rate));
+
+    BOOST_ASSERT( 0!= chunk_window_size );
+
+    if (0==nwindows) // not enough data
+        return Signal::pBuffer();
+
+    if (32768<nwindows) // TODO can't handle this
+        nwindows = 32768;
+
+    const DataStorageSize n(
+            chunk_window_size,
+            nwindows );
+
+    ComputationSynchronize();
+
 #ifdef USE_CUFFT
-    Signal::pBuffer b = inverseWithCufft( chunk );
+    inverseWithCufft( chunk->transform_data, b->waveform_data(), n );
 #else
-    Signal::pBuffer b = inverseWithOoura( chunk );
+    inverseWithOoura( chunk->transform_data, b->waveform_data(), n );
 #endif
+
+    stftNormalizeInverse( b->waveform_data(), n.width );
+
+    ComputationSynchronize();
 
     return b;
 }
@@ -229,11 +351,45 @@ Signal::pBuffer Stft::
 Signal::pBuffer Stft::
         inverseWithRedundant( pChunk chunk )
 {
+    BOOST_ASSERT( chunk->nChannels() == 1 );
+    int
+            chunk_window_size = chunk->nScales(),
+            nwindows = chunk->nSamples();
+
+    TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
+
+    int
+            firstSample = 0;
+
+    if (chunk->chunk_offset != 0)
+        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
+
+    ComplexBuffer b(firstSample, nwindows*chunk_window_size, chunk->original_sample_rate);
+
+    BOOST_ASSERT( 0!= chunk_window_size );
+
+    if (0==nwindows) // not enough data
+        return Signal::pBuffer();
+
+    if (32768<nwindows) // TODO can't handle this
+        nwindows = 32768;
+
+    DataStorageSize n(
+            chunk_window_size,
+            nwindows );
+
 #ifdef USE_CUFFT
-    Signal::pBuffer realinv = inverseRedundantWithCufft(chunk);
+    inverseRedundantWithCufft(chunk->transform_data, b.complex_waveform_data(), n);
 #else
-    Signal::pBuffer realinv = inverseRedundantWithOoura(chunk);
+    inverseRedundantWithOoura(chunk->transform_data, b.complex_waveform_data(), n);
 #endif
+
+    TIME_STFT ComputationSynchronize();
+
+    Signal::pBuffer realinv( new Signal::Buffer(b.sample_offset, b.number_of_samples(), b.sample_rate));
+    stftNormalizeInverse( b.complex_waveform_data(), realinv->waveform_data(), n.width );
+
+    TIME_STFT ComputationSynchronize();
 
     return realinv;
 }
@@ -549,49 +705,48 @@ unsigned Stft::
 
 
 StftChunk::
-        StftChunk(unsigned window_size)
+        StftChunk(unsigned window_size, bool redundant)
             :
             Chunk( Order_column_major ),
-            window_size(window_size),
-            halfs_n(0)
+            _halfs_n( 0 ),
+            _window_size( window_size ),
+            _redundant( redundant )
 {}
 
 
 void StftChunk::
         setHalfs( unsigned n )
 {
-    chunk_offset <<= halfs_n;
-    n_valid_samples <<= halfs_n;
+    chunk_offset <<= _halfs_n;
+    n_valid_samples <<= _halfs_n;
 
-    halfs_n = n;
+    _halfs_n = n;
 
-    chunk_offset >>= halfs_n;
-    n_valid_samples >>= halfs_n;
+    chunk_offset >>= _halfs_n;
+    n_valid_samples >>= _halfs_n;
 }
 
 
 unsigned StftChunk::
         halfs( )
 {
-    return halfs_n;
+    return _halfs_n;
 }
 
 
 unsigned StftChunk::
         nActualScales() const
 {
-    if (window_size == (unsigned)-1)
-        return Chunk::nScales();
-    return window_size/2 + 1;
+    if (_redundant)
+        return _window_size;
+    return _window_size/2 + 1;
 }
 
 
 unsigned StftChunk::
         nSamples() const
 {
-    if (window_size == (unsigned)-1)
-        return Chunk::nSamples();
-    return transform_data->getNumberOfElements().width / nActualScales();
+    return transform_data->size().width / nActualScales();
 }
 
 
@@ -599,7 +754,7 @@ unsigned StftChunk::
         nScales() const
 {
     unsigned s = transformSize();
-    if (window_size == (unsigned)-1)
+    if (_redundant)
         return s;
     else
         return s/2 + 1;
@@ -609,10 +764,7 @@ unsigned StftChunk::
 unsigned StftChunk::
         transformSize() const
 {
-    if (window_size == (unsigned)-1)
-        return Chunk::nScales() >> halfs_n;
-    else
-        return window_size >> halfs_n;
+    return _window_size >> _halfs_n;
 }
 
 

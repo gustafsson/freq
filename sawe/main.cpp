@@ -253,32 +253,41 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
+        float biggest_diff = 0.f;
         for (int redundant=0; redundant<2; ++redundant)
         {
-            Tfr::Fft ft;
-            unsigned N = 16;
+            //Tfr::Fft ft(redundant);
+            Tfr::Stft ft;
+            ft.set_approximate_chunk_size(4);
+            ft.compute_redundant(redundant);
+            int N = 16;
             Signal::pBuffer b(new Signal::Buffer(0, N, 1));
             float* p = b->waveform_data()->getCpuMemory();
             srand(0);
-            for (int i=0; i<16; ++i)
+            for (int i=0; i<N; ++i)
                 p[i] = 2.f*rand()/RAND_MAX - 1.f;
 
             Tfr::pChunk c = ft(b);
             Signal::pBuffer b2 = ft.inverse(c);
             float* p2 = b2->waveform_data()->getCpuMemory();
             std::complex<float>* cp = c->transform_data->getCpuMemory();
-            float norm = 1.f/16;
-            for (unsigned i=0; i<c->transform_data->size().width; ++i)
+            float norm = 1.f/N;
+            norm = 1.f;
+            for (unsigned i=0; i<c->transform_data->numberOfElements(); ++i)
                 cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
-            for (int i=0; i<16; ++i)
+            for (int i=0; i<N; ++i)
             {
                 cout << i << ", " << p[i] << ", " << p2[i]*norm <<  ";";
                 float diff = p[i] - p2[i]*norm;
                 if (fabsf(diff) > 1e-7)
                     cout << " Failed: " << diff;
+                if (biggest_diff < fabsf(diff))
+                    biggest_diff = fabsf(diff);
                 cout << endl;
             }
         }
+        cout << endl << "Stft/fft test " << (biggest_diff > 1e-7 ? "failed" : "succeeded") << endl
+                << "Biggest diff: " << biggest_diff << endl;
         return 0;
     }
     if (0)
