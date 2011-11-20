@@ -31,6 +31,8 @@ public slots:
     void binResolutionChanged();
     void windowSizeChanged();
     void sampleRateChanged();
+    void windowTypeChanged();
+    void overlapChanged();
 
 private:
     Ui::TransformInfoForm *ui;

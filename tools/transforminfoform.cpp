@@ -62,10 +62,29 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
 
+
+    ui->windowTypeComboBox->addItem("Rectangular", Tfr::Stft::WindowType_Rectangular);
+    ui->windowTypeComboBox->addItem("Hann", Tfr::Stft::WindowType_Hann);
+    ui->windowTypeComboBox->addItem("Hamming", Tfr::Stft::WindowType_Hamming);
+    ui->windowTypeComboBox->addItem("Tukey", Tfr::Stft::WindowType_Tukey);
+    ui->windowTypeComboBox->addItem("Cosine", Tfr::Stft::WindowType_Cosine);
+    ui->windowTypeComboBox->addItem("Lanczos", Tfr::Stft::WindowType_Lanczos);
+    ui->windowTypeComboBox->addItem("Triangular", Tfr::Stft::WindowType_Triangular);
+    ui->windowTypeComboBox->addItem("Gaussian", Tfr::Stft::WindowType_Gaussian);
+    ui->windowTypeComboBox->addItem("Barlett-Hann", Tfr::Stft::WindowType_BarlettHann);
+    ui->windowTypeComboBox->addItem("Blackman", Tfr::Stft::WindowType_Blackman);
+    ui->windowTypeComboBox->addItem("Nuttail", Tfr::Stft::WindowType_Nuttail);
+    ui->windowTypeComboBox->addItem("Blackman-Harris", Tfr::Stft::WindowType_BlackmanHarris);
+    ui->windowTypeComboBox->addItem("Blackman-Nuttail", Tfr::Stft::WindowType_BlackmanNuttail);
+    ui->windowTypeComboBox->addItem("Flat top", Tfr::Stft::WindowType_FlatTop);
+
+
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
     connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
     connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
+    connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
+    connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
     //connect(ui->sampleRateEdit, SIGNAL(textEdited(QString)), SLOT(sampleRateChanged()));
@@ -158,6 +177,8 @@ void TransformInfoForm::
         ui->binResolutionEdit->setVisible(false);
         ui->windowSizeEdit->setVisible(false);
         ui->windowSizeLabel->setVisible(false);
+        ui->windowTypeComboBox->setVisible(false);
+        ui->overlapEdit->setVisible(false);
         QString minHzText = QString("%1").arg(cwt->wanted_min_hz());
         if (ui->minHzEdit->text() != minHzText)
             ui->minHzEdit->setText(minHzText);
@@ -186,12 +207,20 @@ void TransformInfoForm::
         ui->binResolutionEdit->setVisible(true);
         ui->windowSizeEdit->setVisible(true);
         ui->windowSizeLabel->setVisible(true);
+        ui->windowTypeComboBox->setVisible(true);
+        ui->overlapEdit->setVisible(true);
         QString binResolutionText = QString("%1").arg(fs/stft->chunk_size(),0,'f',2);
         if (ui->binResolutionEdit->text() != binResolutionText)
             ui->binResolutionEdit->setText(binResolutionText);
         QString windowSizeText = QString("%1").arg(stft->chunk_size());
         if (ui->windowSizeEdit->text() != windowSizeText)
             ui->windowSizeEdit->setText(windowSizeText);
+        QString overlapText = QString("%1").arg(stft->overlap());
+        if (ui->overlapEdit->text() != overlapText)
+            ui->overlapEdit->setText(overlapText);
+        Tfr::Stft::WindowType windowtype = stft->windowType();
+        if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt())
+            ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
     else if (cepstrum)
     {
@@ -211,6 +240,8 @@ void TransformInfoForm::
         ui->binResolutionEdit->setVisible(false);
         ui->windowSizeEdit->setVisible(false);
         ui->windowSizeLabel->setVisible(false);
+        ui->windowTypeComboBox->setVisible(false);
+        ui->overlapEdit->setVisible(false);
     }
     else if (waveform)
     {
@@ -223,6 +254,8 @@ void TransformInfoForm::
         ui->binResolutionEdit->setVisible(false);
         ui->windowSizeEdit->setVisible(false);
         ui->windowSizeLabel->setVisible(false);
+        ui->windowTypeComboBox->setVisible(false);
+        ui->overlapEdit->setVisible(false);
     }
     else
     {
@@ -236,6 +269,8 @@ void TransformInfoForm::
         ui->binResolutionEdit->setVisible(false);
         ui->windowSizeEdit->setVisible(false);
         ui->windowSizeLabel->setVisible(false);
+        ui->windowTypeComboBox->setVisible(false);
+        ui->overlapEdit->setVisible(false);
     }
 
 #ifdef USE_CUDA
@@ -348,6 +383,45 @@ void TransformInfoForm::
     if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
     {
         bs->set_sample_rate( newValue );
+
+        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        windowTypeChanged()
+{
+    int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
+
+    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    if (stft->windowType() != windowtype)
+    {
+        float overlap = stft->overlap();
+        if (stft->windowType() == Tfr::Stft::WindowType_Rectangular && overlap == 0.f)
+            overlap = 0.5f;
+
+        stft->setWindow( (Tfr::Stft::WindowType)windowtype, overlap );
+
+        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        overlapChanged()
+{
+    float newValue = ui->overlapEdit->text().toFloat();
+
+    // Tfr::Stft::setWindow validates value range
+
+    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    if (stft->overlap() != newValue)
+    {
+        Tfr::Stft::WindowType windowtype = stft->windowType();
+        stft->setWindow( windowtype, newValue );
 
         project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
         renderview->emitTransformChanged();

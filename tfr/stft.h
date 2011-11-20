@@ -72,6 +72,24 @@ Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 class Stft: public Transform, public HasSingleton<Stft,Transform>
 {
 public:
+    enum WindowType
+    {
+        WindowType_Rectangular,
+        WindowType_Hann,
+        WindowType_Hamming,
+        WindowType_Tukey,
+        WindowType_Cosine,
+        WindowType_Lanczos,
+        WindowType_Triangular,
+        WindowType_Gaussian,
+        WindowType_BarlettHann,
+        WindowType_Blackman,
+        WindowType_Nuttail,
+        WindowType_BlackmanHarris,
+        WindowType_BlackmanNuttail,
+        WindowType_FlatTop
+    };
+
     Stft();
 
     /**
@@ -83,6 +101,7 @@ public:
     virtual FreqAxis freqAxis( float FS );
     virtual float displayedTimeResolution( float FS, float hz );
 
+    unsigned increment();
     unsigned chunk_size() { return _window_size; }
     unsigned set_approximate_chunk_size( unsigned preferred_size );
 
@@ -100,18 +119,23 @@ public:
     void compute_redundant(bool);
 
 
+    float overlap() { return _overlap; }
+    WindowType windowType() { return _window_type; }
+    void setWindow(WindowType type, float overlap);
+
+
     void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
 
 
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
 private:
-    Tfr::pChunk ComputeChunk(Signal::pBuffer b);
+    Tfr::pChunk ComputeChunk(DataStorage<float>::Ptr inputbuffer);
 
     /**
       @see compute_redundant()
       */
-    Tfr::pChunk ChunkWithRedundant(Signal::pBuffer breal);
+    Tfr::pChunk ChunkWithRedundant(DataStorage<float>::Ptr inputbuffer);
     virtual Signal::pBuffer inverseWithRedundant( pChunk );
 
 
@@ -123,6 +147,21 @@ private:
     */
     unsigned _window_size;
     bool _compute_redundant;
+    float _overlap;
+    WindowType _window_type;
+
+    /**
+      prepareWindow applies the window function to some data, using '_window_type' and '_overlap'.
+      Will not pad the data with zeros and thus all input data will only be used if it fits
+      the overlap function exactly on the sample.
+      */
+    DataStorage<float>::Ptr prepareWindow( DataStorage<float>::Ptr );
+
+    template<WindowType>
+    void prepareWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out );
+
+    template<WindowType>
+    float computeWindowValue( float p );
 
     void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
     void computeWithCufft( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize );
@@ -147,8 +186,6 @@ public:
 
     virtual unsigned nSamples() const;
     virtual unsigned nScales() const;
-
-    virtual Signal::Interval getInterval() const { return getInversedInterval(); }
 
     /// transformSize = window_size >> halfs_n
     unsigned transformSize() const;

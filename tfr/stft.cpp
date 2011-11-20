@@ -2,6 +2,7 @@
 #include "stftkernel.h"
 #include "complexbuffer.h"
 #include "signal/buffersource.h"
+#include "cpumemorystorage.h"
 
 #include <throwInvalidArgument.h>
 #include <neat_math.h>
@@ -180,17 +181,22 @@ Stft::
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
+    TaskTimer ti("Stft::operator, _window_size = %d, b = %s, computeredundant = %s",
+                           _window_size, b->getInterval().toString().c_str(), compute_redundant()?"true":"false");
+    DataStorage<float>::Ptr windowedInput = prepareWindow( b->waveform_data() );
+
     // @see compute_redundant()
     Tfr::pChunk chunk;
     if (compute_redundant())
-        chunk = ChunkWithRedundant(b);
+        chunk = ChunkWithRedundant(windowedInput);
     else
-        chunk = ComputeChunk(b);
+        chunk = ComputeChunk(windowedInput);
 
     chunk->freqAxis = freqAxis( b->sample_rate );
-    chunk->chunk_offset = b->sample_offset + _window_size/2;
+    chunk->chunk_offset = b->sample_offset/(float)increment() + .5f;
     chunk->first_valid_sample = 0;
-    chunk->sample_rate = b->sample_rate / _window_size;
+    chunk->n_valid_samples = chunk->nSamples()-1;
+    chunk->sample_rate = b->sample_rate / increment();
     ((StftChunk*)chunk.get())->original_sample_rate = b->sample_rate;
 
     if (0 == b->sample_offset)
@@ -219,19 +225,20 @@ Tfr::pChunk Stft::
         TaskInfo("Difftest %s (value %g)", maxd<1e-8?"passed":"failed", maxd);
     }
 
+    TaskInfo("Stft chunk %s, %s", chunk->getInterval().toString().c_str(), chunk->getInversedInterval().toString().c_str());
+
     return chunk;
 }
 
 
 Tfr::pChunk Stft::
-        ComputeChunk(Signal::pBuffer b)
+        ComputeChunk(DataStorage<float>::Ptr inputbuffer)
 {
-    TIME_STFT TaskTimer ti("Stft::operator, _window_size = %d, b = %s", _window_size, b->getInterval().toString().c_str());
     BOOST_ASSERT( 0!=_window_size );
 
     DataStorageSize actualSize(
             _window_size/2 + 1,
-            b->number_of_samples()/_window_size );
+            inputbuffer->size().width/_window_size );
 
     DataStorageSize n = actualSize.width * actualSize.height;
 
@@ -242,12 +249,10 @@ Tfr::pChunk Stft::
     chunk->transform_data.reset( new Tfr::ChunkData( n ));
 
 #ifdef USE_CUFFT
-    computeWithCufft(b->waveform_data(), chunk->transform_data, actualSize);
+    computeWithCufft(inputbuffer, chunk->transform_data, actualSize);
 #else
-    computeWithOoura(b->waveform_data(), chunk->transform_data, actualSize);
+    computeWithOoura(inputbuffer, chunk->transform_data, actualSize);
 #endif
-
-    chunk->n_valid_samples = (chunk->nSamples()-1) * _window_size + 1;
 
     TIME_STFT ComputationSynchronize();
 
@@ -256,11 +261,9 @@ Tfr::pChunk Stft::
 
 
 Tfr::pChunk Stft::
-        ChunkWithRedundant(Signal::pBuffer breal)
+        ChunkWithRedundant(DataStorage<float>::Ptr inputbuffer)
 {
-    TIME_STFT TaskTimer ti("Stft::ChunkWithRedundant, _window_size = %d, b = %s", _window_size, breal->getInterval().toString().c_str());
-
-    ComplexBuffer b(*breal);
+    ComplexBuffer b(inputbuffer);
 
     BOOST_ASSERT( 0!=_window_size );
 
@@ -283,8 +286,6 @@ Tfr::pChunk Stft::
 #else
     computeRedundantWithOoura(b.complex_waveform_data(), chunk->transform_data, n);
 #endif
-    chunk->n_valid_samples = (chunk->nSamples()-1) * _window_size + 1;
-
 
     TIME_STFT ComputationSynchronize();
 
@@ -596,6 +597,14 @@ void Stft::
 
 
 void Stft::
+        setWindow(WindowType type, float overlap)
+{
+    _window_type = type;
+    _overlap = std::max(0.f, std::min(0.98f, overlap));
+}
+
+
+void Stft::
         compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
 #ifdef USE_CUFFT
@@ -603,6 +612,133 @@ void Stft::
 #else
     computeWithOoura( input, output, direction );
 #endif
+}
+
+
+unsigned Stft::
+        increment()
+{
+    return std::max( 1.f, std::floor(_window_size*(1.f-_overlap) + 0.5f) );
+}
+
+
+
+template<> float Stft::computeWindowValue<Stft::WindowType_Hann>( float p )         { return (1.f / 0.5f) * (0.5f  + 0.5f*cos(M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Hamming>( float p )      { return (1.f / 0.54f) * (0.54f  + 0.46f*cos(M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Tukey>( float p )        { return std::fabs(p) < 0.5 ? 1.f : (1.f / 0.5f) * (0.5f  + 0.5f*cos(M_PI*(std::fabs(p)*2.f-1.f))); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Cosine>( float p )       { return 1.5708f * cos(M_PI*p*0.5f); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Lanczos>( float p )      { return 4.4305f * sin(M_PI*p)/(M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Triangular>( float p )   { return 2.f * (1.f - fabs(p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Gaussian>( float p )     { return 2.42375107349f*exp2f(-6.492127684f*p*p); } // sigma = 1/3
+template<> float Stft::computeWindowValue<Stft::WindowType_BarlettHann>( float p )  { return 2.f*(0.62f-0.24f*fabs(p)+0.38f*cos(M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Blackman>( float p )     { return 2.3809f * (0.42f + 0.5f*cos(M_PI*p) + 0.08f*cos(2.f*M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Nuttail>( float p )      { return 2.8108f * (0.355768f + 0.487396f*cos(M_PI*p) + 0.144232f*cos(2.f*M_PI*p) + 0.012604f*cos(3.f*M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_BlackmanHarris>( float p )  { return 2.7875f * (0.35875f + 0.48829*cos(M_PI*p) + 0.14128f*cos(2.f*M_PI*p) + 0.01168f*cos(3.f*M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_BlackmanNuttail>( float p ) { return 2.7504f * (0.3635819f + 0.4891775*cos(M_PI*p) + 0.1365995f*cos(2.f*M_PI*p) + 0.0106411f*cos(3.f*M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_FlatTop>( float p ) { return 1.0f * (1.f + 1.93f*cos(M_PI*p) + 1.29f*cos(2.f*M_PI*p) + 0.388f*cos(3.f*M_PI*p) + 0.032f*cos(4.f*M_PI*p)); }
+template<Stft::WindowType> float Stft::computeWindowValue( float )                  { return 1.f; }
+
+
+template<Stft::WindowType Type>
+void Stft::
+        prepareWindowKernel( DataStorage<float>::Ptr source, DataStorage<float>::Ptr windowedData )
+{
+    unsigned increment = this->increment();
+    unsigned windowCount = windowedData->size().width/_window_size;
+
+    CpuMemoryReadOnly<float, 3> in = CpuMemoryStorage::ReadOnly<3>(source);
+    CpuMemoryWriteOnly<float, 3> out = CpuMemoryStorage::WriteAll<3>(windowedData);
+
+    CpuMemoryWriteOnly<float, 3>::Position pos(0,0,0);
+
+    std::vector<float> windowfunction(_window_size);
+    float* window = &windowfunction[0];
+    for (unsigned x=0;x<_window_size; ++x)
+    {
+        float p = 2.f*(x+1)/(_window_size+1) - 1.f;
+        window[x] = computeWindowValue<Type>(p);
+    }
+
+    for (pos.z=0; pos.z<source->size().depth; ++pos.z)
+    {
+        for (pos.y=0; pos.y<source->size().height; ++pos.y)
+        {
+            CpuMemoryReadOnly<float, 3>::Position readPos = pos;
+            for (unsigned w=0; w<windowCount; ++w)
+            {
+                float *o = &out.ref(pos) + w*_window_size;
+                float *i = &in.ref(pos) + w*increment;
+
+                for (unsigned x=0; x<_window_size; ++x)
+                    o[x] = window[x] * i[x];
+            }
+        }
+    }
+}
+
+
+DataStorage<float>::Ptr Stft::
+        prepareWindow( DataStorage<float>::Ptr source )
+{
+    if (_window_type == WindowType_Rectangular && _overlap == 0.f )
+        return source;
+
+    unsigned increment = this->increment();
+    unsigned windowCount = 1 + (source->size().width-_window_size) / increment; // round down
+    if (source->size().width < _window_size)
+        throw std::runtime_error("Stft not enough data for window function");
+
+
+    DataStorage<float>::Ptr windowedData(new DataStorage<float>(windowCount*_window_size, source->size().height, source->size().depth ));
+
+    switch(_window_type)
+    {
+    case WindowType_Hann:
+        prepareWindowKernel<WindowType_Hann>(source, windowedData);
+        break;
+    case WindowType_Hamming:
+        prepareWindowKernel<WindowType_Hamming>(source, windowedData);
+        break;
+    case WindowType_Tukey:
+        prepareWindowKernel<WindowType_Tukey>(source, windowedData);
+        break;
+    case WindowType_Cosine:
+        prepareWindowKernel<WindowType_Cosine>(source, windowedData);
+        break;
+    case WindowType_Lanczos:
+        prepareWindowKernel<WindowType_Lanczos>(source, windowedData);
+        break;
+    case WindowType_Triangular:
+        prepareWindowKernel<WindowType_Triangular>(source, windowedData);
+        break;
+    case WindowType_Gaussian:
+        prepareWindowKernel<WindowType_Gaussian>(source, windowedData);
+        break;
+    case WindowType_BarlettHann:
+        prepareWindowKernel<WindowType_BarlettHann>(source, windowedData);
+        break;
+    case WindowType_Blackman:
+        prepareWindowKernel<WindowType_Blackman>(source, windowedData);
+        break;
+    case WindowType_Nuttail:
+        prepareWindowKernel<WindowType_Nuttail>(source, windowedData);
+        break;
+    case WindowType_BlackmanHarris:
+        prepareWindowKernel<WindowType_BlackmanHarris>(source, windowedData);
+        break;
+    case WindowType_BlackmanNuttail:
+        prepareWindowKernel<WindowType_BlackmanNuttail>(source, windowedData);
+        break;
+    case WindowType_FlatTop:
+        prepareWindowKernel<WindowType_FlatTop>(source, windowedData);
+        break;
+    default:
+        prepareWindowKernel<WindowType_Rectangular>(source, windowedData);
+        break;
+    }
+
+
+    return windowedData;
 }
 
 
