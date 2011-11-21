@@ -2,6 +2,7 @@
 #include "ui_settingsdialog.h"
 
 #include "sawe/project.h"
+#include "sawe/application.h"
 #include "adapters/playback.h"
 #include "adapters/microphonerecorder.h"
 
@@ -80,6 +81,8 @@ void SettingsDialog::
 
     connect(ui->radioButtonMatlab, SIGNAL(toggled(bool)), SLOT(radioButtonMatlab(bool)));
     connect(ui->radioButtonOctave, SIGNAL(toggled(bool)), SLOT(radioButtonOctave(bool)));
+
+    ui->lineEditLogFiles->setText(Sawe::Application::log_directory());
 
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(accept()));
     connect(ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
