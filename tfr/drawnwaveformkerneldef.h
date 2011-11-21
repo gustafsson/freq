@@ -5,7 +5,16 @@
 #include "drawnwaveformkernel.h"
 
 #if defined(_WIN32) && !defined(USE_CUDA)
+#include <windows.h>
 #include <math.h>
+float fmaxf (float _x, float _y)
+{
+  return (( _x > _y ) ?  _x : _y );
+}
+float fminf (float _x, float _y)
+{
+  return (( _x < _y ) ?  _x : _y );
+}
 #endif
 
 #ifdef __CUDACC__

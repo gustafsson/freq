@@ -53,7 +53,11 @@
 extern "C" {
 #endif
 
-#include <OpenCL/opencl.h>
+#ifdef __APPLE__
+#	include <OpenCL/opencl.h>
+#else
+#	include <CL/opencl.h>
+#endif
 #include <stdio.h>
 
 // XForm type

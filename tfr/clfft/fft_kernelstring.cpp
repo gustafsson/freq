@@ -225,7 +225,7 @@ formattedStore(string &kernelString, int aIndex, int gIndex, clFFT_DataFormat da
 static int
 insertGlobalLoadsAndTranspose(string &kernelString, int N, int numWorkItemsPerXForm, int numXFormsPerWG, int R0, int mem_coalesce_width, clFFT_DataFormat dataFormat)
 {
-	int log2NumWorkItemsPerXForm = (int) log2(numWorkItemsPerXForm);
+	int log2NumWorkItemsPerXForm = (int) log2<float>(numWorkItemsPerXForm);
 	int groupSize = numWorkItemsPerXForm * numXFormsPerWG;
 	int i, j;
 	int lMemSize = 0;
@@ -284,7 +284,7 @@ insertGlobalLoadsAndTranspose(string &kernelString, int N, int numWorkItemsPerXF
         int numOuterIter = numXFormsPerWG / ( groupSize / mem_coalesce_width );
 		
         kernelString += string("    ii = lId & ") + num2str(mem_coalesce_width - 1) + string(";\n");
-        kernelString += string("    jj = lId >> ") + num2str((int)log2(mem_coalesce_width)) + string(";\n");
+        kernelString += string("    jj = lId >> ") + num2str((int)log2<float>(mem_coalesce_width)) + string(";\n");
         kernelString += string("    lMemStore = sMem + mad24( jj, ") + num2str(N + numWorkItemsPerXForm) + string(", ii );\n");
         kernelString += string("    offset = mad24( groupId, ") + num2str(numXFormsPerWG) + string(", jj);\n");
         kernelString += string("    offset = mad24( offset, ") + num2str(N) + string(", ii );\n");
@@ -371,7 +371,7 @@ insertGlobalLoadsAndTranspose(string &kernelString, int N, int numWorkItemsPerXF
 		}
         
         kernelString += string("    ii = lId & ") + num2str(N-1) + string(";\n");
-        kernelString += string("    jj = lId >> ") + num2str((int)log2(N)) + string(";\n");
+        kernelString += string("    jj = lId >> ") + num2str((int)log2<float>(N)) + string(";\n");
         kernelString += string("    lMemStore = sMem + mad24( jj, ") + num2str(N + numWorkItemsPerXForm) + string(", ii );\n");
         
 		kernelString += string("if((groupId == get_num_groups(0)-1) && s) {\n");
@@ -459,7 +459,7 @@ insertGlobalStoresAndTranspose(string &kernelString, int N, int maxRadix, int Nr
 		
         kernelString += string("    lMemLoad  = sMem + mad24( jj, ") + num2str(N + numWorkItemsPerXForm) + string(", ii );\n");  
         kernelString += string("    ii = lId & ") + num2str(mem_coalesce_width - 1) + string(";\n");
-        kernelString += string("    jj = lId >> ") + num2str((int)log2(mem_coalesce_width)) + string(";\n");
+        kernelString += string("    jj = lId >> ") + num2str((int)log2<float>(mem_coalesce_width)) + string(";\n");
         kernelString += string("    lMemStore = sMem + mad24( jj,") + num2str(N + numWorkItemsPerXForm) + string(", ii );\n");
 		
         for( i = 0; i < maxRadix; i++ )
@@ -516,7 +516,7 @@ insertGlobalStoresAndTranspose(string &kernelString, int N, int maxRadix, int Nr
         kernelString += string("    lMemLoad  = sMem + mad24( jj,") + num2str(N + numWorkItemsPerXForm) + string(", ii );\n");  
         
 		kernelString += string("    ii = lId & ") + num2str(N - 1) + string(";\n");
-        kernelString += string("    jj = lId >> ") + num2str((int) log2(N)) + string(";\n");
+        kernelString += string("    jj = lId >> ") + num2str((int) log2<float>(N)) + string(";\n");
         kernelString += string("    lMemStore = sMem + mad24( jj,") + num2str(N + numWorkItemsPerXForm) + string(", ii );\n");
         
         for( i = 0; i < maxRadix; i++ )
@@ -582,7 +582,7 @@ static void
 insertTwiddleKernel(string &kernelString, int Nr, int numIter, int Nprev, int len, int numWorkItemsPerXForm)
 {
 	int z, k;
-	int logNPrev = log2(Nprev);
+	int logNPrev = log2<float>(Nprev);
 	
 	for(z = 0; z < numIter; z++) 
 	{
@@ -688,8 +688,8 @@ static void
 insertLocalLoadIndexArithmatic(string &kernelString, int Nprev, int Nr, int numWorkItemsReq, int numWorkItemsPerXForm, int numXFormsPerWG, int offset, int midPad)
 {	
 	int Ncurr = Nprev * Nr;
-	int logNcurr = log2(Ncurr);
-	int logNprev = log2(Nprev);
+	int logNcurr = log2<float>(Ncurr);
+	int logNprev = log2<float>(Nprev);
 	int incr = (numWorkItemsReq + offset) * Nr + midPad;
 	
 	if(Ncurr < numWorkItemsPerXForm) 
@@ -942,7 +942,7 @@ createGlobalFFTKernelString(cl_fft_plan *plan, int n, int BS, cl_fft_kernel_dir 
 	}
 	
 	int N = n;
-	int m = (int)log2(n);
+	int m = (int)log2<float>(n);
 	int Rinit = vertical ? BS : 1;
 	batchSize = vertical ? min(BS, batchSize) : batchSize;
 	int passNum;
@@ -981,7 +981,7 @@ createGlobalFFTKernelString(cl_fft_plan *plan, int n, int BS, cl_fft_kernel_dir 
 		int gInInc = threadsPerBlock / batchSize;
 		
 		
-		int lgStrideO = log2(strideO);
+		int lgStrideO = log2<float>(strideO);
 		int numBlocksPerXForm = strideI / batchSize;
 		int numBlocks = numBlocksPerXForm;
 		if(!vertical)
@@ -1017,21 +1017,21 @@ createGlobalFFTKernelString(cl_fft_plan *plan, int n, int BS, cl_fft_kernel_dir 
 						
 		if(vertical) 
 		{
-			localString += string("xNum = groupId >> ") + num2str((int)log2(numBlocksPerXForm)) + string(";\n");
+			localString += string("xNum = groupId >> ") + num2str((int)log2<float>(numBlocksPerXForm)) + string(";\n");
 			localString += string("groupId = groupId & ") + num2str(numBlocksPerXForm - 1) + string(";\n");
-			localString += string("indexIn = mad24(groupId, ") + num2str(batchSize) + string(", xNum << ") + num2str((int)log2(n*BS)) + string(");\n");
+			localString += string("indexIn = mad24(groupId, ") + num2str(batchSize) + string(", xNum << ") + num2str((int)log2<float>(n*BS)) + string(");\n");
 			localString += string("tid = mul24(groupId, ") + num2str(batchSize) + string(");\n");
 			localString += string("i = tid >> ") + num2str(lgStrideO) + string(";\n");
 			localString += string("j = tid & ") + num2str(strideO - 1) + string(";\n");
 			int stride = radix*Rinit;
 			for(i = 0; i < passNum; i++)
 				stride *= radixArr[i];
-			localString += string("indexOut = mad24(i, ") + num2str(stride) + string(", j + ") + string("(xNum << ") + num2str((int) log2(n*BS)) + string("));\n");
+			localString += string("indexOut = mad24(i, ") + num2str(stride) + string(", j + ") + string("(xNum << ") + num2str((int) log2<float>(n*BS)) + string("));\n");
 			localString += string("bNum = groupId;\n");
 		}
 		else 
 		{
-			int lgNumBlocksPerXForm = log2(numBlocksPerXForm);
+			int lgNumBlocksPerXForm = log2<float>(numBlocksPerXForm);
 			localString += string("bNum = groupId & ") + num2str(numBlocksPerXForm - 1) + string(";\n");
 			localString += string("xNum = groupId >> ") + num2str(lgNumBlocksPerXForm) + string(";\n");
 			localString += string("indexIn = mul24(bNum, ") + num2str(batchSize) + string(");\n");
@@ -1047,7 +1047,7 @@ createGlobalFFTKernelString(cl_fft_plan *plan, int n, int BS, cl_fft_kernel_dir 
 		}
 		
 		// Load Data
-		int lgBatchSize = log2(batchSize);
+		int lgBatchSize = log2<float>(batchSize);
 		localString += string("tid = lId;\n");
 		localString += string("i = tid & ") + num2str(batchSize - 1) + string(";\n");
 		localString += string("j = tid >> ") + num2str(lgBatchSize) + string(";\n"); 
@@ -1109,7 +1109,7 @@ createGlobalFFTKernelString(cl_fft_plan *plan, int n, int BS, cl_fft_kernel_dir 
 		if(passNum < (numPasses - 1)) 
 		{
 			localString += string("l = ((bNum << ") + num2str(lgBatchSize) + string(") + i) >> ") + num2str(lgStrideO) + string(";\n");
-			localString += string("k = j << ") + num2str((int)log2(R1/R2)) + string(";\n"); 
+			localString += string("k = j << ") + num2str((int)log2<float>(R1/R2)) + string(";\n"); 
 			localString += string("ang1 = dir*(2.0f*M_PI/") + num2str(N) + string(")*l;\n");
 			for(t = 0; t < R1; t++) 
 			{
@@ -1123,8 +1123,8 @@ createGlobalFFTKernelString(cl_fft_plan *plan, int n, int BS, cl_fft_kernel_dir 
 		if(strideO == 1) 
 		{
 			
-			localString += string("lMemStore = sMem + mad24(i, ") + num2str(radix + 1) + string(", j << ") + num2str((int)log2(R1/R2)) + string(");\n");
-			localString += string("lMemLoad = sMem + mad24(tid >> ") + num2str((int)log2(radix)) + string(", ") + num2str(radix+1) + string(", tid & ") + num2str(radix-1) + string(");\n");
+			localString += string("lMemStore = sMem + mad24(i, ") + num2str(radix + 1) + string(", j << ") + num2str((int)log2<float>(R1/R2)) + string(");\n");
+			localString += string("lMemLoad = sMem + mad24(tid >> ") + num2str((int)log2<float>(radix)) + string(", ") + num2str(radix+1) + string(", tid & ") + num2str(radix-1) + string(");\n");
 			
 			for(int i = 0; i < R1/R2; i++)
 				for(int j = 0; j < R2; j++)

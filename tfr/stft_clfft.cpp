@@ -7,6 +7,7 @@
 #include "complexbuffer.h"
 #include "TaskTimer.h"
 #include "computationkernel.h"
+#include "clfftkernelbuffer.h"
 
 #include "clfft/clFFT.h"
 
@@ -39,7 +40,8 @@ void Fft::
         cl_command_queue queue = opencl->getCommandQueue();
         cl_int fft_error;
 
-        clFFT_Plan plan = clFFT_CreatePlan(context, ndim, clFFT_1D, clFFT_InterleavedComplexFormat, &fft_error );
+		//clFFT_Plan plan = clFFT_CreatePlan(context, ndim, clFFT_1D, clFFT_InterleavedComplexFormat, &fft_error);
+        clFFT_Plan plan = CLFFTKernelBuffer::initialize()->getPlan(context, n, &fft_error);
         if(fft_error != 0)
             throw std::runtime_error("Could not create clFFT compute plan.");
 
@@ -47,8 +49,8 @@ void Fft::
         Tfr::ChunkElement* data_o = CpuMemoryStorage::WriteAll<1>( output ).ptr();
 
         // Allocate memory for in data
-        cl_mem data_in = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_i, &fft_error);
-        cl_mem data_out = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_o, &fft_error);
+        cl_mem data_in = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_i, &fft_error);
+        cl_mem data_out = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_o, &fft_error);
 
         // Run the fft in OpenCL :)
         fft_error |= clFFT_ExecuteInterleaved(queue, plan, batchSize, (clFFT_Direction)direction, data_in, data_out, 0, NULL, NULL );
@@ -62,7 +64,6 @@ void Fft::
 
         clReleaseMemObject(data_in);
         clReleaseMemObject(data_out);
-        clFFT_DestroyPlan(plan);
     }
 }
 
@@ -152,30 +153,30 @@ void Stft::
     clFFT_Plan plan;
     {
         TaskTimer tt("Creating a OpenCL FFT compute plan!");
-        plan = clFFT_CreatePlan(context, ndim, clFFT_1D, clFFT_InterleavedComplexFormat, &fft_error );
+		//plan = clFFT_CreatePlan(context, ndim, clFFT_1D, clFFT_InterleavedComplexFormat, &fft_error);
+        plan = CLFFTKernelBuffer::initialize()->getPlan(context, n, &fft_error);
     }
     {
         TaskTimer tt("Calculating batches");
-        if(fft_error != 0)
+        if(fft_error != CL_SUCCESS)
             throw std::runtime_error("Could not create clFFT compute plan.");
 
         // Allocate memory for in data
-        cl_mem data_in = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_i, &fft_error);
-        cl_mem data_out = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_o, &fft_error);
+        cl_mem data_in = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_i, &fft_error);
+        cl_mem data_out = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, n*batchSize*sizeof(std::complex<float>), data_o, &fft_error);
 
         // Run the fft in OpenCL :)
         fft_error |= clFFT_ExecuteInterleaved(queue, plan, batchSize, (clFFT_Direction)direction, data_in, data_out, 0, NULL, NULL );
-        if(fft_error != 0)
+        if(fft_error != CL_SUCCESS)
             throw std::runtime_error("Bad stuff happened during FFT computation.");
 
         // Read the memory from OpenCL
         fft_error |= clEnqueueReadBuffer(queue, data_out, CL_TRUE, 0, n*batchSize*sizeof(std::complex<float>), data_o, 0, NULL, NULL);
-        if(fft_error != 0)
+        if(fft_error != CL_SUCCESS)
             throw std::runtime_error("Could not read from OpenCL memory");
 
         clReleaseMemObject(data_in);
         clReleaseMemObject(data_out);
-        clFFT_DestroyPlan(plan);
     }
 }
 

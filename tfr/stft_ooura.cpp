@@ -1,4 +1,5 @@
-#if !defined(USE_CUDA) && !defined(USE_OPENCL) && false
+//#if !defined(USE_CUDA) && !defined(USE_OPENCL) && false
+#ifdef ksisis
 #include "stft.h"
 
 #include "cpumemorystorage.h"
