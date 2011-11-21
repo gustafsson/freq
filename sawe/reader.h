@@ -16,6 +16,8 @@ public:
 
     static std::vector<unsigned char> mash(const std::string& row);
     static std::string unmash(const std::vector<unsigned char>& mash);
+
+    static std::string name;
 };
 
 } // namespace Sawe

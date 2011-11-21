@@ -21,6 +21,8 @@ using namespace std;
 namespace Sawe
 {
 
+std::string Reader::name;
+
 unsigned radix = 52;
 
 #define cton_helper(low, high) \
@@ -184,6 +186,7 @@ string Reader::
 
         QString type = parts[0];
         QString licensee = parts[1];
+        Reader::name = licensee.toStdString();
         QString expires = parts[2];
         QTextStream qts(&expires);
         int year=-1, month=-1, day=-1;

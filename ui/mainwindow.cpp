@@ -73,7 +73,6 @@ void SaweMainWindow::
     ui->action_Enter_product_key->setVisible( false );
 #endif
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
-    connect(ui->actionReport_a_bug, SIGNAL(triggered()), SLOT(gotobugsmuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
     connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));
     connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(findupdates()));
@@ -451,23 +450,6 @@ void SaweMainWindow::
         gotomuchdifferent()
 {
     QDesktopServices::openUrl(QUrl("http://muchdifferent.com"));
-}
-
-
-void SaweMainWindow::
-        gotobugsmuchdifferent()
-{
-    QMessageBox message(
-            QMessageBox::Information,
-            "bugs.muchdifferent.com",
-            "You are very welcome to report any bugs to us at bugs.muchdifferent.com. To help us help you, please include the log files. See logfile location in details below:");
-
-    QString localAppDir = Sawe::Application::log_directory();
-    message.setDetailedText( localAppDir );
-
-    message.exec();
-
-    QDesktopServices::openUrl(QUrl("http://bugs.muchdifferent.com"));
 }
 
 

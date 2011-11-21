@@ -85,7 +85,6 @@ private slots:
     void clearSettings();
     void reenterProductKey();
     void gotomuchdifferent();
-    void gotobugsmuchdifferent();
     void gotosonicaweforum();
     void findplugins();
     void findupdates();
