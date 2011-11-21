@@ -122,7 +122,11 @@ public:
         else
         {
             for (float x=q.x; x<q.x+xstep; ++x)
-                v = max(v, get( DataPos(x, q.y), reader, c ));
+                v = max(v,
+                        interpolate(
+                                get( DataPos(x, q.y), reader, c ),
+                                get( DataPos(x, q.y+1.f), reader, c ),
+                                k.y));
         }
 
 /*        if (xstep <= 1.0)
