@@ -73,7 +73,7 @@ Collection::
     _display_scale.setLinear(target->sample_rate());
 
     // set _max_sample_size.time
-    invalidate_samples(Signal::Intervals::Intervals_ALL);
+    reset();
 }
 
 
@@ -93,7 +93,7 @@ void Collection::
 #endif
     INFO_COLLECTION
     {
-        TaskInfo ti("Reset, cache count = %u, size = %g MB", _cache.size(), cacheByteSize()/1024.f/1024.f);
+        TaskInfo ti("Collection::Reset, cache count = %u, size = %g MB", _cache.size(), cacheByteSize()/1024.f/1024.f);
         foreach(const cache_t::value_type& b, _cache)
         {
             TaskInfo("%s", b.first.toString().c_str());
@@ -107,6 +107,8 @@ void Collection::
     }
     _cache.clear();
     _recent.clear();
+
+    invalidate_samples(Signal::Intervals::Intervals_ALL);
 }
 
 
@@ -123,23 +125,29 @@ bool Collection::
 void Collection::
         scales_per_block(unsigned v)
 {
-    reset();
+    {
 #ifndef SAWE_NO_MUTEX
-	QMutexLocker l(&_cache_mutex);
+        QMutexLocker l(&_cache_mutex);
 #endif
-    _scales_per_block=v;
-    _max_sample_size.scale = 1.f/_scales_per_block;
+        _scales_per_block=v;
+        _max_sample_size.scale = 1.f/_scales_per_block;
+    }
+
+    reset();
 }
 
 
 void Collection::
         samples_per_block(unsigned v)
 {
-    reset();
+    {
 #ifndef SAWE_NO_MUTEX
-	QMutexLocker l(&_cache_mutex);
+        QMutexLocker l(&_cache_mutex);
 #endif
-    _samples_per_block=v;
+        _samples_per_block=v;
+    }
+
+    reset();
 }
 
 

@@ -25,7 +25,8 @@ public:
 
     static QString      log_directory();
     static QGLWidget*   shared_glwidget();
-    static std::string  version_string() { return global_ptr()->build_version_string(); }
+    static std::string  version_string();
+    static std::string  title_string();
     static void         display_fatal_exception();
     static void         display_fatal_exception(const std::exception& );
     static Application* global_ptr();
@@ -55,11 +56,11 @@ public slots:
 private:
     void apply_command_line_options( pProject p );
     static void show_fatal_exception( const std::string& str );
-    std::string build_version_string();
+    void build_version_string();
 
     QPointer<QGLWidget> shared_glwidget_;
     static std::string _fatal_error;
-    std::string _version_string;
+    std::string _version_string, _title_string;
     std::set<pProject> _projects;
 };
 

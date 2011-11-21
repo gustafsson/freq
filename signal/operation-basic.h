@@ -93,8 +93,16 @@ class OperationSuperposition: public Operation
 public:
     OperationSuperposition( pOperation source, pOperation source2 );
 
+    virtual std::string name();
+    void name(std::string);
+
     virtual pBuffer read( const Interval& I );
+
+    virtual IntervalType number_of_samples();
+
+    virtual unsigned num_channels();
     virtual void set_channel(unsigned c);
+    virtual unsigned get_channel();
 
     virtual Intervals zeroed_samples();
     virtual Intervals affected_samples();
@@ -105,7 +113,7 @@ public:
     static pBuffer superPosition( pBuffer a, pBuffer b );
 private:
     pOperation _source2;
-
+    std::string _name;
 
     friend class boost::serialization::access;
     OperationSuperposition():Operation(pOperation()) {} // only used by deserialization

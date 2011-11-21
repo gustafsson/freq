@@ -80,11 +80,15 @@ private slots:
 #endif
     void toggleFullscreen( bool );
     void toggleFullscreenNoMenus( bool fullscreen );
-    void restoreLayout();
+    void resetLayout();
+    void resetView();
+    void clearSettings();
     void reenterProductKey();
     void gotomuchdifferent();
     void gotobugsmuchdifferent();
     void gotosonicaweforum();
+    void findplugins();
+    void findupdates();
 
     void checkVisibilityToolProperties(bool visible);
 private:

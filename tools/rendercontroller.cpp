@@ -27,7 +27,6 @@
 #include <demangle.h>
 
 // Qt
-#include <QToolBar>
 #include <QSlider>
 #include <QGraphicsView>
 #include <QResizeEvent>
@@ -185,6 +184,7 @@ RenderController::
         ui->actionTransform_Cwt->trigger();
         logScale->trigger();
 #endif
+        main->getItems()->actionToggleTransformToolBox->setChecked( true );
     }
 }
 
@@ -256,6 +256,12 @@ void RenderController::
         receiveTogglePiano(bool value)
 {
     model()->renderer->draw_piano = value;
+
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
+
     stateChanged();
 }
 
@@ -264,6 +270,34 @@ void RenderController::
         receiveToggleHz(bool value)
 {
     model()->renderer->draw_hz = value;
+
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
+
+    stateChanged();
+}
+
+
+void RenderController::
+        receiveToggleTAxis(bool value)
+{
+    model()->renderer->draw_t = value;
+
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
+
+    stateChanged();
+}
+
+
+void RenderController::
+    receiveToggleCursorMarker(bool value)
+{
+    model()->renderer->draw_cursor_marker = value;
     stateChanged();
 }
 
@@ -379,6 +413,10 @@ Signal::PostSink* RenderController::
 
     view->emitTransformChanged();
 
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
+    ui->actionToggle_piano_grid->setVisible( true );
     hz_scale->setEnabled( true );
 
     return ps;
@@ -414,8 +452,6 @@ void RenderController::
     Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(&model()->collections);
 
     setBlockFilter( stftblock );
-
-    hz_scale->setEnabled( true );
 }
 
 
@@ -480,12 +516,17 @@ void RenderController::
     Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(&model()->collections);
 
     setBlockFilter( drawnwaveformblock );
-    model()->renderer->draw_hz = false;
-    model()->renderer->draw_piano = false;
 
-    linearScale->trigger();
-    hz_scale->setDefaultAction( 0 );
+    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    Ui::MainWindow* ui = main->getItems();
+
     hz_scale->setEnabled( false );
+    if (ui->actionToggle_piano_grid->isChecked())
+        hzmarker->setChecked( false );
+    ui->actionToggle_piano_grid->setVisible( false );
+
+    // blockfilter sets the proper "frequency" axis
+    linearScale->trigger();
 }
 
 
@@ -500,11 +541,12 @@ void RenderController::
     if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
     {
         fa.min_hz = currentTransform()->freqAxis(fs).min_hz;
-        fa.f_step = (1/fa.max_frequency_scalar) * (fs/2 - fa.min_hz);
+        fa.f_step = fs/2 - fa.min_hz;
     }
 
     model()->display_scale( fa );
 
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -529,6 +571,7 @@ void RenderController::
 
     model()->display_scale( fa );
 
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -550,6 +593,7 @@ void RenderController::
 
     model()->display_scale( fa );
 
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -558,6 +602,7 @@ void RenderController::
         receiveLinearAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -566,6 +611,7 @@ void RenderController::
         receiveLogAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -574,6 +620,7 @@ void RenderController::
         receiveFifthAmplitude()
 {
     model()->amplitude_axis( Heightmap::AmplitudeAxis_5thRoot );
+    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -592,6 +639,7 @@ void RenderController::
     Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
     toolbar_render = new Support::ToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
+    toolbar_render->setWindowTitle(QApplication::translate("MainWindow", "toolBar", 0, QApplication::UnicodeUTF8));
     toolbar_render->setEnabled(true);
     toolbar_render->setContextMenuPolicy(Qt::NoContextMenu);
     toolbar_render->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -612,9 +660,13 @@ void RenderController::
         hzmarker->addActionItem( ui->actionToggle_hz_grid );
         hzmarker->addActionItem( ui->actionToggle_piano_grid );
         toolbar_render->addWidget( hzmarker );
+        toolbar_render->addAction( ui->actionToggle_t_grid );
+        toolbar_render->addAction( ui->actionToggle_cursor_marker );
 
         connect(ui->actionToggle_piano_grid, SIGNAL(toggled(bool)), SLOT(receiveTogglePiano(bool)));
         connect(ui->actionToggle_hz_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleHz(bool)));
+        connect(ui->actionToggle_t_grid, SIGNAL(toggled(bool)), SLOT(receiveToggleTAxis(bool)));
+        connect(ui->actionToggle_cursor_marker, SIGNAL(toggled(bool)), SLOT(receiveToggleCursorMarker(bool)));
     }
 
     connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
@@ -827,7 +879,6 @@ void RenderController::
     // the widget
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->makeCurrent();
-    //view->glwidget->setMouseTracking(true);
 
     view->graphicsview = new GraphicsView(view);
     view->graphicsview->setViewport(view->glwidget);

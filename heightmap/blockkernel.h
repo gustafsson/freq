@@ -4,6 +4,7 @@
 #include "tfr/freqaxis.h"
 #include "tfr/chunkdata.h"
 #include "resampletypes.h"
+#include "amplitudeaxis.h"
 
 typedef DataStorage<float> BlockData;
 
@@ -23,17 +24,60 @@ struct ValidInputInterval
   */
 namespace Heightmap {
 
-    // TODO find a better name
-    enum ComplexInfo {
-        ComplexInfo_Amplitude_Weighted,
-        ComplexInfo_Amplitude_Non_Weighted,
-        ComplexInfo_Phase
+    template<AmplitudeAxis>
+    class AmplitudeValue;
+
+
+    template<>
+    class AmplitudeValue<AmplitudeAxis_Linear>
+    {
+    public:
+        RESAMPLE_CALL float operator()( float v )
+        {
+            return 25.f * v;
+        }
     };
 
-    enum AmplitudeAxis {
-        AmplitudeAxis_Linear,
-        AmplitudeAxis_Logarithmic,
-        AmplitudeAxis_5thRoot
+    template<>
+    class AmplitudeValue<AmplitudeAxis_Logarithmic>
+    {
+    public:
+        RESAMPLE_CALL float operator()( float v )
+        {
+            return 0.02f * (log2f(0.0001f + v) - log2f(0.0001f));
+        }
+    };
+
+    template<>
+    class AmplitudeValue<AmplitudeAxis_5thRoot>
+    {
+    public:
+        RESAMPLE_CALL float operator()( float v )
+        {
+            return 0.4f*powf(v, 0.2);
+        }
+    };
+
+
+    class AmplitudeValueRuntime
+    {
+    public:
+        AmplitudeValueRuntime(AmplitudeAxis x):x(x) {}
+        RESAMPLE_CALL float operator()( float v )
+        {
+            switch(x) {
+            case AmplitudeAxis_Linear:
+                return AmplitudeValue<AmplitudeAxis_Linear>()( v );
+            case AmplitudeAxis_Logarithmic:
+                return AmplitudeValue<AmplitudeAxis_Logarithmic>()( v );
+            case AmplitudeAxis_5thRoot:
+                return AmplitudeValue<AmplitudeAxis_5thRoot>()( v );
+            }
+            return 0.f;
+        }
+
+    private:
+        AmplitudeAxis x;
     };
 };
 
@@ -47,7 +91,9 @@ extern "C"
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
-                 Heightmap::AmplitudeAxis amplitudeAxis
+                 Heightmap::AmplitudeAxis amplitudeAxis,
+                 float normalization_factor,
+                 bool full_resolution
                  );
 
 extern "C"
@@ -85,6 +131,7 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
-                   Heightmap::AmplitudeAxis amplitudeAxis );
+                   Heightmap::AmplitudeAxis amplitudeAxis,
+                   float normalization_factor);
 
 #endif // HEIGHTMAPBLOCK_CU_H

@@ -6,305 +6,261 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>399</height>
+    <width>452</width>
+    <height>488</height>
    </rect>
   </property>
-  <property name="minimumSize">
-   <size>
-    <width>400</width>
-    <height>399</height>
-   </size>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QLineEdit" name="scriptname">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>12</y>
-     <width>181</width>
-     <height>25</height>
-    </rect>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="margin">
+    <number>0</number>
    </property>
-  </widget>
-  <widget class="QPushButton" name="browseButton">
-   <property name="geometry">
-    <rect>
-     <x>290</x>
-     <y>10</y>
-     <width>85</width>
-     <height>27</height>
-    </rect>
+   <property name="spacing">
+    <number>0</number>
    </property>
-   <property name="text">
-    <string>Browse</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>14</y>
-     <width>62</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Script</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>81</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Chunk size</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>105</y>
-     <width>281</width>
-     <height>51</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Number of samples per chunk. If set to '0' Sonic AWE will decide. Set it to '-1' to filter the entire signal in one big chunk.</string>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="chunksize">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>80</y>
-     <width>181</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="minimum">
-    <number>-1</number>
-   </property>
-   <property name="maximum">
-    <number>10000000</number>
-   </property>
-   <property name="singleStep">
-    <number>1000</number>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="computeInOrder">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>163</y>
-     <width>211</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Compute chunks in order</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>183</y>
-     <width>261</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>If unset Sonic AWE will decide in which order to compute chunks.</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="redundant">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>250</y>
-     <width>181</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <number>10000000</number>
-   </property>
-   <property name="singleStep">
-    <number>1000</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>251</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Redundant samples</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>280</y>
-     <width>281</width>
-     <height>71</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Number of redundant samples per chunk. Edge effects from many filters can be reduced or removed by settings this value high enough.</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_7">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>372</y>
-     <width>81</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Sample rate</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="samplerateLabel">
-   <property name="geometry">
-    <rect>
-     <x>101</x>
-     <y>370</y>
-     <width>281</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>1 second is 44100 samples.</string>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="labelEmptyForTerminal">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>37</y>
-     <width>281</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Leave empty to open a terminal instead of running a script.</string>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButtonRestartScript">
-   <property name="geometry">
-    <rect>
-     <x>270</x>
-     <y>349</y>
-     <width>121</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Changes has been made, click here to reload the script with these settings.</string>
-   </property>
-   <property name="text">
-    <string>Restart script</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButtonRestoreChanges">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>349</y>
-     <width>121</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Changes has been made, click here to restore the changes.</string>
-   </property>
-   <property name="text">
-    <string>Restore changes</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_9">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>227</y>
-     <width>91</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Arguments</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="arguments">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>221</y>
-     <width>291</width>
-     <height>27</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButtonShowOutput">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>349</y>
-     <width>121</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Changes has been made, click here to restore the changes.</string>
-   </property>
-   <property name="text">
-    <string>Show output</string>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-  </widget>
+   <item row="0" column="0">
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>429</width>
+        <height>564</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="3" column="0" colspan="5">
+        <widget class="QGroupBox" name="settingsBox">
+         <property name="title">
+          <string>Script settings</string>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="labelChunkSize">
+            <property name="text">
+             <string>Chunk size</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="labelArgumentDescription">
+            <property name="text">
+             <string>Arguments</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="labelRedundantSamples">
+            <property name="text">
+             <string>Overlap</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QSpinBox" name="redundant">
+            <property name="maximum">
+             <number>10000000</number>
+            </property>
+            <property name="singleStep">
+             <number>1000</number>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QPushButton" name="pushButtonRestoreChanges">
+            <property name="toolTip">
+             <string>Changes has been made, click here to restore the changes.</string>
+            </property>
+            <property name="text">
+             <string>Restore changes</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="chunksize">
+            <property name="minimum">
+             <number>-1</number>
+            </property>
+            <property name="maximum">
+             <number>10000000</number>
+            </property>
+            <property name="singleStep">
+             <number>1000</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="labelChunkSizeInfo">
+            <property name="text">
+             <string>Number of samples per chunk. If set to '0' Sonic AWE will decide. Set it to '-1' to filter the entire signal in one big chunk.</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="computeInOrder">
+            <property name="text">
+             <string>Compute chunks in order</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="arguments"/>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLabel" name="labelRedundantSamplesInfo">
+            <property name="text">
+             <string>Number of overlapping samples per chunk. This number of samples is included on both sides of each chunk.</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="labelInOrderInfo">
+            <property name="text">
+             <string>If unset Sonic AWE will decide in which order to compute chunks.</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Script</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLabel" name="labelEmptyForTerminal">
+           <property name="text">
+            <string>Leave empty to open a terminal instead of running a script.</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QLineEdit" name="scriptname"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="browseButton">
+             <property name="text">
+              <string>Browse</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="6" column="1">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>351</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="7" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::MinimumExpanding</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonRestartScript">
+           <property name="toolTip">
+            <string>Changes has been made, click here to reload the script with these settings.</string>
+           </property>
+           <property name="text">
+            <string>Restart script</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonShowOutput">
+           <property name="toolTip">
+            <string>Changes has been made, click here to restore the changes.</string>
+           </property>
+           <property name="text">
+            <string>Show output</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

@@ -1,3 +1,20 @@
+%
+% sawe_plot2, plots lines with varying amplitude in Sonic AWE
+%
+%   sawe_plot2(t, hz, a)
+%
+% 't' is a vector with coordinates along the time axis.
+% 'hz' is either a vector of the same length as 't' or a scalar.
+% 'a' is either a vector of the same length as 't' or a scalar.
+%
+%
+% To plot multiple lines with different coordinates along the time axis, call sawe_plot multiple times or group parameters in pairs:
+%
+%   sawe_plot(t1, hz1, a1, t2, hz2, a2, ... tn, hzn, an)
+%
+%
+% See also sawe_plot which doesn't require the amplitude argument.
+%
 function sawe_plot2(varargin);
 
 global sawe_hold_plot;
@@ -62,16 +79,20 @@ for n=1:nargin/3
     end %if
 
     max_length = max(max_length, length_);
-
     if (length_ < max_length)
       t = [t; t(end)*ones( max_length - length_, 1)];
       f = [f; f(end)*ones( max_length - length_, 1)];
       a = [a; a(end)*ones( max_length - length_, 1)];
 
     end %if
-    
-    sawe_plot_data(:,:,end+1) = [t f a];
 
+    if 0~=numel(sawe_plot_data)
+      zdim = size(sawe_plot_data,3) + 1;
+    else
+      zdim = 1;
+    end
+
+    sawe_plot_data(:,:,zdim) = [t f a];
 end %for
 
 end %function

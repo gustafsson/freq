@@ -36,9 +36,9 @@ using namespace std;
 namespace Sawe {
 
 // static members
-std::string     Application::_fatal_error;
+string     Application::_fatal_error;
 
-static void show_fatal_exception_cerr( const std::string& str )
+static void show_fatal_exception_cerr( const string& str )
 {
     cerr << endl << endl
          << "======================" << endl
@@ -47,7 +47,7 @@ static void show_fatal_exception_cerr( const std::string& str )
     cerr.flush();
 }
 
-static void show_fatal_exception_qt( const std::string& str )
+static void show_fatal_exception_qt( const string& str )
 {
     QMessageBox::critical( 0,
                  QString("Error, closing application"),
@@ -55,16 +55,16 @@ static void show_fatal_exception_qt( const std::string& str )
 }
 
 void Application::
-        show_fatal_exception( const std::string& str )
+        show_fatal_exception( const string& str )
 {
     show_fatal_exception_cerr(str);
     if (QApplication::instance())
         show_fatal_exception_qt(str);
 }
 
-static string fatal_exception_string( const std::exception &x )
+static string fatal_exception_string( const exception &x )
 {
-    std::stringstream ss;
+    stringstream ss;
     ss   << "Error: " << vartype(x) << endl
          << "Message: " << x.what();
     return ss.str();
@@ -130,6 +130,22 @@ QGLWidget* Application::
 }
 
 
+string Application::
+        version_string()
+{
+    global_ptr()->build_version_string();
+    return global_ptr()->_version_string;
+}
+
+
+string Application::
+        title_string()
+{
+    global_ptr()->build_version_string();
+    return global_ptr()->_title_string;
+}
+
+
 void Application::
         display_fatal_exception()
 {
@@ -138,7 +154,7 @@ void Application::
 
 
 void Application::
-        display_fatal_exception(const std::exception& x)
+        display_fatal_exception(const exception& x)
 {
     show_fatal_exception(fatal_exception_string(x));
 }
@@ -148,7 +164,7 @@ bool Application::
         notify(QObject * receiver, QEvent * e)
 {
     bool v = false;
-    std::string err;
+    string err;
 
     try {
         if (e)
@@ -174,7 +190,7 @@ bool Application::
 
         v = QApplication::notify(receiver,e);
     //} catch (const exception &x) {
-    } catch (const std::invalid_argument &x) {
+    } catch (const invalid_argument &x) {
         const char* what = x.what();
         if (1 == QMessageBox::warning( 0,
                                        QString("Couldn't complete the requested action"),
@@ -292,7 +308,7 @@ pProject Application::
 }
 
 pProject Application::
-        slotOpen_file( std::string project_file_or_audio_file )
+        slotOpen_file( string project_file_or_audio_file )
 {
     pProject p = Project::open( project_file_or_audio_file );
     if (p)
@@ -303,7 +319,7 @@ pProject Application::
 void Application::
     slotClosed_window( QWidget* w )
 {
-    for (std::set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
+    for (set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
     {
         if (w == dynamic_cast<QWidget*>((*i)->mainWindow()))
         {
@@ -316,14 +332,13 @@ void Application::
 }
 
 
-std::string Application::
+void Application::
         build_version_string()
 {
     if (!_version_string.empty())
-        return _version_string;
+        return;
 
     stringstream ss;
-    ss << Reader::reader_title() << " - ";
     #ifdef SONICAWE_VERSION
         ss << "v" << TOSTR(SONICAWE_VERSION);
     #else
@@ -339,7 +354,7 @@ std::string Application::
     #endif
 
     _version_string = ss.str();
-    return _version_string;
+    _title_string = Reader::reader_title() + " - " + _version_string;
 }
 
 void Application::

@@ -429,7 +429,14 @@ void Worker::
         _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
         _max_samples_per_chunk = (unsigned)-1;
         if (_target->allow_cheat_resolution())
-            Tfr::Cwt::Singleton().wavelet_fast_time_support( 0.5 );
+        {
+            Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
+            float fs = target()->source()->sample_rate();
+            float fast_support_samples = 0.01f *fs;
+            float fast_support = fast_support_samples / cwt.morlet_sigma_samples( fs, cwt.wanted_min_hz() );
+            if (fast_support < cwt.wavelet_time_support())
+                cwt.wavelet_fast_time_support( fast_support );
+        }
     }
 }
 

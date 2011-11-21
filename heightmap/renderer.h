@@ -16,13 +16,11 @@
 #include "gl.h"
 
 typedef tvector<3,GLdouble> GLvector;
-//typedef tvector<3,GLfloat> GLvector;
-typedef tvector<3,GLfloat> GLvectorF;
 
 namespace Heightmap {
 
-    GLvector gluProject(GLvectorF obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
-    GLvector gluUnProject(GLvectorF win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+    GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+    GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
 
 class Renderer
 {
@@ -44,7 +42,10 @@ public:
 
     bool draw_piano;
     bool draw_hz;
+    bool draw_t;
+    bool draw_cursor_marker;
     GLvector camera;
+    GLvector cursor;
 
     bool draw_height_lines;
     ColorMode color_mode;
@@ -62,8 +63,8 @@ public:
     GLdouble modelview_matrix[16], projection_matrix[16];
     GLint viewport_matrix[4];
 
-    GLvector gluProject(GLvectorF obj, bool *r=0);
-    GLvector gluUnProject(GLvectorF win, bool *r=0);
+    GLvector gluProject(GLvector obj, bool *r=0);
+    GLvector gluUnProject(GLvector win, bool *r=0);
 
     void frustumMinMaxT( float& min_t, float& max_t);
 private:
@@ -116,6 +117,7 @@ private:
     bool renderChildrenSpectrogramRef( Reference ref );
     void renderParentSpectrogramRef( Reference ref );
     bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );
+    bool computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
 
     std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i, float w=0, float h=0 );
     std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w=0, float h=0 );

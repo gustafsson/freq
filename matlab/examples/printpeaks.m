@@ -1,6 +1,6 @@
 function [data]=printpeaks(data)
 
-F = fft(sum(data.buffer,2));
+F = fft(sum(data.samples,2));
 F(1) = 0; % skip DC component
 F = F(1:end/2); % skip redundant part of spectrum
 [val, j] = max(abs(F)); 
@@ -17,11 +17,11 @@ if j~=1 && j~=length(F)
 	j = j + x0;
 end
 
-hz = (j-1) * data.samplerate/size(data.buffer,1);
-dhz = data.samplerate/size(data.buffer,1);
+hz = (j-1) * data.fs/size(data.samples,1);
+dhz = data.fs/size(data.samples,1);
 dhz = sqrt(1/12)*dhz;
 
 plusminus = char([0xB1]);
-disp(['[' sprintf('%.2f', data.offset/data.samplerate) ', ' sprintf('%.2f', (data.offset+size(data.buffer,1))/data.samplerate) ')' ...
+disp(['[' sprintf('%.2f', data.offset/data.fs) ', ' sprintf('%.2f', (data.offset+size(data.samples,1))/data.fs) ')' ...
 	  ' s, peak ' sprintf('%.2f', hz) ' ' plusminus ' ' sprintf('%.2f', dhz) ' Hz']);
 

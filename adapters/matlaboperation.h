@@ -1,138 +1,21 @@
 #ifndef ADAPTERS_MATLABOPERATION_H
 #define ADAPTERS_MATLABOPERATION_H
 
+#include "sawe/openfileerror.h"
 #include "signal/operationcache.h"
-#include "tools/support/plotlines.h"
+#include "matlabfunction.h"
 
 // boost
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/serialization/split_member.hpp>
 
-#include <QTemporaryFile>
-#include <QProcess>
-
-class QProcess;
+namespace Tools {
+    namespace Support {
+        class PlotLines;
+    }
+}
 
 namespace Adapters {
-
-class MatlabOperation;
-
-class MatlabFunctionSettings
-{
-public:
-    MatlabFunctionSettings():operation(0) {}
-    virtual ~MatlabFunctionSettings() { operation = 0; }
-
-    virtual int chunksize() = 0;
-    virtual bool computeInOrder() = 0;
-    virtual int redundant() = 0;
-    virtual void redundant(int) = 0;
-    virtual void setProcess(QProcess*) = 0;
-    virtual std::string scriptname() = 0;
-    virtual std::string arguments() = 0;
-
-    MatlabOperation* operation;
-};
-
-class DefaultMatlabFunctionSettings: public MatlabFunctionSettings
-{
-public:
-    DefaultMatlabFunctionSettings() : chunksize_(0),computeInOrder_(0),redundant_(0),pid_(0) {}
-
-    int chunksize() { return chunksize_; }
-    bool computeInOrder() { return computeInOrder_; }
-    int redundant() { return redundant_; }
-    void redundant(int v) { redundant_ = v; }
-    void setProcess(QProcess* pid_) { pid_ = pid_; }
-    std::string scriptname() { return scriptname_; }
-    std::string arguments() { return arguments_; }
-
-    int chunksize_;
-    bool computeInOrder_;
-    int redundant_;
-    QProcess* pid_;
-    std::string scriptname_;
-    std::string arguments_;
-};
-
-/**
-  Several files are used to cooperate with matlab functions:
-
-  filewatcher.m is used to call the client specified 'matlabFunction'.
-  dataFile will have the form of 'matlabFunction'.f68e7b8a.h5
-           it is written by MatlabFunction and read by filewatcher.
-           When a client calls invokeAndWait(source) the file 'source'
-           is renamed to 'dataFile'.
-  resultFile will have the form of 'matlabFunction'.f68e7b8a.h5.result.h5
-           it is read by MatlabFunction and written by filewatcher.
-           When a client calls invokeAndWait(source) the returned filename
-           is 'resultFile'.
-  source should preferably be unique, getTempName can be called if the
-           client want a suggestion for a temp name. getTempName returns
-           'dataFile'~.
-
-  One instance of octave or matlab will be created for each instance of
-  MatlabFunction. Each instance is then killed in each destructor.
-  */
-class MatlabFunction: QObject, boost::noncopyable
-{
-    Q_OBJECT
-public:
-    /**
-      Name of a matlab function and timeout measuerd in seconds.
-      */
-    MatlabFunction( std::string matlabFunction, float timeout, MatlabFunctionSettings* settings );
-    ~MatlabFunction();
-
-    std::string getTempName();
-
-    /**
-      'source' should be the filename of a data file containing data that
-      octave and matlab can read with the command a=load('source');
-      */
-    void invoke( std::string source );
-    bool isWaiting();
-
-    /**
-      Returns an empty string if not ready.
-      */
-    std::string isReady();
-
-    /**
-      the return string contains the filename of a data file with the
-      result of the function call.
-      */
-    std::string waitForReady();
-
-    bool hasProcessEnded();
-    bool hasProcessCrashed();
-    void endProcess();
-
-    std::string matlabFunction();
-    std::string matlabFunctionFilename();
-    float timeout();
-
-private slots:
-    void finished ( int exitCode, QProcess::ExitStatus exitStatus );
-
-private:
-    // Not copyable
-    MatlabFunction( const MatlabFunction& );
-    MatlabFunction& operator=(const MatlabFunction&);
-
-    //void kill();
-	void abort();
-
-    QProcess* _pid;
-    std::string _dataFile;
-    std::string _resultFile;
-    std::string _matlab_function;
-    std::string _matlab_filename;
-    bool _hasCrashed;
-
-    float _timeout;
-};
 
 
 class MatlabOperation: public Signal::OperationCache
@@ -174,16 +57,23 @@ private:
 
         DefaultMatlabFunctionSettings settings;
         settings.scriptname_ =  _settings->scriptname();
-        settings.redundant_ = _settings->redundant();
+        settings.redundant_ = _settings->overlap();
         settings.computeInOrder_ = _settings->computeInOrder();
         settings.chunksize_ = _settings->chunksize();
+        settings.arguments_ = _settings->arguments();
+        settings.argument_description_ = _settings->argument_description();
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & BOOST_SERIALIZATION_NVP(settings.scriptname_);
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);
         ar & BOOST_SERIALIZATION_NVP(settings.redundant_);
+        ar & BOOST_SERIALIZATION_NVP(settings.arguments_);
+        ar & BOOST_SERIALIZATION_NVP(settings.argument_description_);
     }
-    template<class Archive> void load(Archive& ar, const unsigned int /*version*/) {
+    template<class Archive> void load(Archive& ar, const unsigned int version) {
+#if defined(TARGET_reader)
+        throw Sawe::OpenFileError("Sonic AWE Reader does not support Matlab/Octave interoperability");
+#else
         using boost::serialization::make_nvp;
 
         DefaultMatlabFunctionSettings* settingsp = new DefaultMatlabFunctionSettings();
@@ -193,14 +83,22 @@ private:
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);
         ar & BOOST_SERIALIZATION_NVP(settings.redundant_);
+        if (0<version)
+        {
+            ar & BOOST_SERIALIZATION_NVP(settings.arguments_);
+            ar & BOOST_SERIALIZATION_NVP(settings.argument_description_);
+        }
         settings.operation = this;
 
         this->settings(settingsp);
         invalidate_cached_samples(Signal::Intervals());
+#endif
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 } // namespace Adapters
+
+BOOST_CLASS_VERSION(Adapters::MatlabOperation, 1)
 
 #endif // ADAPTERS_MATLABOPERATION_H

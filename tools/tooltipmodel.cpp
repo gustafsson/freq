@@ -34,7 +34,9 @@ TooltipModel::TooltipModel()
         pos_time(0),
         pos_hz(-1),
         max_so_far(-1),
+        compliance(-1),
         markers(0),
+        markers_auto(0),
         comment(0),
         automarking(TooltipModel::ManualMarkers),
         comments_(0),
@@ -166,17 +168,20 @@ void TooltipModel::
     }
 
     ss << setiosflags(ios::fixed);
+    int timeprecision = std::max(0, (int)floor(-log10(std_t)) + 2); // display 2 significant digits in std_t (same decimal precision in p.time)
+    int freqprecision = std::max(0, (int)floor(-log10(std_f)) + 2); // display 2 significant digits in std_f (same decimal precision in f)
     if (std_t != 0)
-        ss << "Time: " << setprecision(3) << p.time << " \u00B1 " << " " << setprecision(3) << std_t << " s<br/>";
+        ss << "Time: " << setprecision(timeprecision) << p.time << " \u00B1 " << " " << setprecision(timeprecision) << std_t << " s<br/>";
     else
-        ss << "Time: " << setprecision(3) << p.time << " s<br/>";
+        ss << "Time: " << setprecision(timeprecision) << p.time << " s<br/>";
 
     if (std_f != 0)
-        ss << "Frequency: " << setprecision(1) << f << " \u00B1 " << setprecision(1) << std_f << " Hz<br/>";
+        ss << "Frequency: " << setprecision(freqprecision) << f << " \u00B1 " << setprecision(freqprecision) << std_f << " Hz<br/>";
     else
-        ss << "Frequency: " << setprecision(1) << f << " Hz<br/>";
+        ss << "Frequency: " << setprecision(freqprecision) << f << " Hz<br/>";
 
-    ss << "Value here: " << setprecision(10) << this->max_so_far << setprecision(1);
+    int valueprecision = std::max(0, (int)floor(-log10(max_so_far)) + 3); // display 3 significant digits in value
+    ss << "Value here: " << setprecision(valueprecision) << this->max_so_far << setprecision(1);
 
     this->compliance = 0;
 
@@ -207,10 +212,7 @@ void TooltipModel::
     }
 
     bool first = 0 == this->comment;
-    //BOOST_ASSERT(this->pos().time >= 0);
-    //BOOST_ASSERT(this->pos().scale >= 0);
-    //BOOST_ASSERT(this->pos().time <= FLT_MAX);
-    //BOOST_ASSERT(this->pos().scale <= 1);
+
     comments_->setComment( this->pos(), ss.str(), &this->comment );
     BOOST_ASSERT(this->comment);
     if (first)
@@ -223,19 +225,8 @@ void TooltipModel::
         this->comment->thumbnail( false );
 
     this->comment->model()->pos = Heightmap::Position(
-            p.time, // - 0.01/render_view_->model->xscale*render_view_->model->_pz,
+            p.time,
             p.scale);
-
-    //QToolTip::showText( screen_pos.toPoint(), QString(), this ); // Force tooltip to change position even if the text is the same as in the previous tooltip
-    //QToolTip::showText( screen_pos.toPoint(), QString::fromLocal8Bit(ss.str().c_str()), this );
-
-    if ( first )
-    {
-        if ( 0 < this->markers )
-            this->comment->resize( 440, 225 );
-        else
-            this->comment->resize( 260, 80 );
-    }
 
     if (found_better)
     {
@@ -484,8 +475,8 @@ boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
         r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
     else
     {
-        BOOST_ASSERT( false );
-        r.reset( new FetchDataHeightmap( view ) );
+        return r;
+        //r.reset( new FetchDataHeightmap( view ) );
     }
 
     return r;
@@ -503,6 +494,8 @@ unsigned TooltipModel::
 
     const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
     boost::shared_ptr<FetchData> fetcher = FetchData::createFetchData( render_view_, pos.time );
+    if (!fetcher)
+        return 0;
 
     double F = display_scale.getFrequency( pos.scale );
     double F2 = fetcher->nextFrequency( F );

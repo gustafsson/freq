@@ -2,14 +2,14 @@
 set -e
 
 packagefullname="${packagename}_${versiontag}_win32"
-filename="${packagename}_setup.exe"
+filename="${packagefullname}_setup.exe"
 nsistemplate="sonic/sonicawe/dist/package-win/Sonicawe_template.nsi"
 nsisscript="sonic/sonicawe/dist/package-win/Sonicawe.nsi"
 nsiswriter="sonic/sonicawe/dist/package-win/Nsi_Writer.exe"
 licensefile="license.txt"
 
-cd ../..
 
+cd ../..
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename}"  
 echo qmaketarget: $qmaketarget
@@ -26,8 +26,42 @@ if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y
 else
   rm -f sonicawe/release/sonicawe.exe
 fi
+
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
-	
+cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
+
+echo "========================== Building ==========================="
+echo "Building Sonic AWE ${packagename} Cuda"
+echo qmaketarget: $qmaketarget
+
+qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+	cd gpumisc
+	qmake $qmaketarget
+	cd ../sonicawe
+	qmake $qmaketarget
+	cd ..
+	qmake $qmaketarget
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+else
+  rm -f sonicawe/release/sonicawe.exe
+fi
+
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cuda.exe
+
+
+echo "========================== Building ==========================="
+echo "Building Sonic AWE ${packagename} Launcher"
+
+cd sonicawe/dist/package-win/launcher
+qmake "DEFINES+=PACKAGE=\"${packagename}\""
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release launcher.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release launcher.sln
+cd ../../../..
+
+
 echo "========================== Installer =========================="
 echo "Creating Windows installer file: $(pwd)/$filename for package $packagefullname"
 cd ..
@@ -35,11 +69,9 @@ rm -rf $filename
 rm -rf $packagefullname
 cp -r sonicawe_snapshot_win32_base $packagefullname
 cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagefullname
-if [ -z "${target}" ]; then 
-	cp sonic/sonicawe/release/sonicawe.exe $packagefullname
-else
-	cp sonic/sonicawe/release/sonicawe.exe $packagefullname/$packagefullname".exe"
-fi
+cp sonic/sonicawe/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
+cp sonic/sonicawe/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
+cp sonic/sonicawe/dist/package-win/launcher/release/launcher.exe "$packagefullname/${packagename}.exe"
 cp -r sonic/sonicawe/matlab $packagefullname/matlab
 cp sonic/sonicawe/license/$licensefile $packagefullname
 cp sonic/sonicawe/dist/package-win/awe_256.ico $packagefullname
@@ -52,6 +84,7 @@ else
 echo Nvidia driver version could not be read because dxdiag xml file was not found. WARNING, version value is set to \"1.0.0.0\" any version of Nvidia drivers will be recognized as compatible.
 nvid_version="1.0.0.0"
 fi
+
 
 echo " - execute NsiWriter.exe to create and fill the Sonicawe.nsi script"
 nsistemplate=`pwd`\/$nsistemplate
@@ -71,18 +104,22 @@ $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
 sed="sed -i.backup"
 #sed="sed -i"" --regexp-extended"
 
+prettyname=
+for word in $(echo ${packagename} | sed "s/-/ /g"); do
+	prettyname="${prettyname} $(echo $word | awk -F: '{ print toupper(substr ($1,1,1)) substr ($1,2) }')"
+done;
+
+prettyname=$(echo ${prettyname} | sed "s/Sonicawe/Sonic AWE/g");
+echo $prettyname
+
 if [ -z "${target}" ]; then 
-$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE\"/" $nsisscript 
-$sed "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"Side\_Banner\.bmp\"/" $nsisscript 
-$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe.exe\"/" $nsisscript 
-elif [ "${target}" == "reader" ]; then
-$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE Reader\"/" $nsisscript 
-$sed "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"reader\-Side\_Banner\.bmp\"/" $nsisscript 
-$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_reader.exe\"/" $nsisscript 
+$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"${prettyname}\"/" $nsisscript
+$sed "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"Side\_Banner\.bmp\"/" $nsisscript
+$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"${packagename}.exe\"/" $nsisscript
 else
-$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"Sonic AWE ${target}\"/" $nsisscript 
+$sed "s/\!define APP\_NAME \".*\"/\!define APP\_NAME \"${prettyname}\"/" $nsisscript
 $sed "s/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \".*\"/\!define MUI\_WELCOMEFINISHPAGE\_BITMAP \"${target}\-Side\_Banner\.bmp\"/" $nsisscript
-$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"sonicawe_${target}.exe\"/" $nsisscript 
+$sed "s/\!define EXE\_NAME \".*\"/\!define EXE\_NAME \"${packagename}.exe\"/" $nsisscript
 fi
 
 echo " - inserting filename, version and nvidia version number in NSIS script"
@@ -95,6 +132,7 @@ licensepath=`echo $licensepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 licensepath=`echo $licensepath | sed 's@\\/@\\\\\\\@g'`
 $sed "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
 
+
 echo " - compiling installer"
 #Check for NSIS
 type -P makensis >& /dev/null || { echo "NSIS is not installed.  Aborting installer compilation. Please install Nsis to avoid this error" >&2; exit 1; }
@@ -105,6 +143,7 @@ mv sonic/sonicawe/dist/package-win/$filename sonic/sonicawe/dist/$filename
 
 #clean sonicawe.nsi for git consistency
 rm $nsisscript
+
 
 echo "installer compiled"
 

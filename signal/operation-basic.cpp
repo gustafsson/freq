@@ -196,12 +196,38 @@ OperationSuperposition::
 }
 
 
+std::string OperationSuperposition::
+        name()
+{
+    return _name.empty() ? Operation::name() : _name;
+}
+
+
+void OperationSuperposition::
+        name(std::string n)
+{
+    _name = n;
+}
+
+
 pBuffer OperationSuperposition::
         read( const Interval& I )
-{
-    pBuffer a = source()->read( I );
-    pBuffer b = _source2->read( I );
-    return superPosition(a, b);
+{   
+    pBuffer a, b;
+
+    if ( Operation::get_channel() == get_channel() )
+        a = source()->read( I );
+    if ( _source2->get_channel() == get_channel() )
+        b = _source2->read( I );
+
+    if ( a && b )
+        return superPosition(a, b);
+    else if (a)
+        return a;
+    else if (b)
+        return b;
+    else
+        return Operation::zeros( I );
 }
 
 
@@ -231,12 +257,35 @@ pBuffer OperationSuperposition::
 }
 
 
+IntervalType OperationSuperposition::
+        number_of_samples()
+{
+    return std::max( Operation::number_of_samples(), _source2->number_of_samples() );
+}
+
+
+unsigned OperationSuperposition::
+        num_channels()
+{
+    return std::max( Operation::num_channels(), _source2->num_channels() );
+}
+
+
 void OperationSuperposition::
         set_channel(unsigned c)
 {
-    _source2->set_channel(c);
+    if (c < _source2->num_channels())
+        _source2->set_channel(c);
 
-    Operation::set_channel(c);
+    if (c < Operation::num_channels())
+        Operation::set_channel(c);
+}
+
+
+unsigned OperationSuperposition::
+        get_channel()
+{
+    return std::max( Operation::get_channel(), _source2->get_channel() );
 }
 
 

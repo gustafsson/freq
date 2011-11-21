@@ -10,10 +10,11 @@ QT       -= gui
 
 TARGET = masher
 CONFIG   += console
-CONFIG   -= app_bundle
+macx:CONFIG   -= app_bundle
 
 TEMPLATE = app
-
+win32:TEMPLATE = vcapp
+win32:CONFIG += debug_and_release
 
 SOURCES += main.cpp
 

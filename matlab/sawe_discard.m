@@ -8,16 +8,16 @@ function data=sawe_discard(data, discardFront, discardBack)
 if nargin<1
     error('Error');
 elseif nargin<2
-    discardBack = discardFront = data.redundancy;
+    discardBack = discardFront = data.overlap;
 elseif nargin<3
     discardBack = discardFront;
 end
 
 
 if 0==data.offset
-    data.buffer = data.buffer(1:end-discardBack,:);
+    data.samples = data.samples(1:end-discardBack,:);
 else
     data.offset = data.offset + discardFront;
-    data.buffer = data.buffer(1+discardFront:end-discardBack,:);
+    data.samples = data.samples(1+discardFront:end-discardBack,:);
 end
 

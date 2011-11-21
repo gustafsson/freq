@@ -61,7 +61,9 @@ void SaweMainWindow::
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));
-    connect(ui->actionRestore_layout, SIGNAL(triggered()), SLOT(restoreLayout()));
+    connect(ui->actionReset_layout, SIGNAL(triggered()), SLOT(resetLayout()));
+    connect(ui->actionReset_view, SIGNAL(triggered()), SLOT(resetView()));
+    connect(ui->actionClear_settings, SIGNAL(triggered()), SLOT(clearSettings()));
     connect(ui->actionOperation_details, SIGNAL(toggled(bool)), ui->toolPropertiesWindow, SLOT(setVisible(bool)));
     connect(ui->actionOperation_details, SIGNAL(triggered()), ui->toolPropertiesWindow, SLOT(raise()));
     connect(ui->toolPropertiesWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityToolProperties(bool)));
@@ -73,6 +75,8 @@ void SaweMainWindow::
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
     connect(ui->actionReport_a_bug, SIGNAL(triggered()), SLOT(gotobugsmuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
+    connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));
+    connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(findupdates()));
 
     ui->actionOperation_details->setChecked( false );
 
@@ -402,9 +406,32 @@ void SaweMainWindow::
 
 
 void SaweMainWindow::
-        restoreLayout()
+        resetLayout()
 {
-    project->restoreDefaultLayout();
+    project->resetLayout();
+}
+
+
+void SaweMainWindow::
+        resetView()
+{
+    project->resetView();
+}
+
+
+void SaweMainWindow::
+        clearSettings()
+{
+    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear all user defined settings?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+    {
+        QSettings settings;
+        QString value = settings.value("value").toString();
+        settings.clear();
+        settings.setValue("value", value);
+
+        resetLayout();
+        resetView();
+    }
 }
 
 
@@ -433,7 +460,7 @@ void SaweMainWindow::
     QMessageBox message(
             QMessageBox::Information,
             "bugs.muchdifferent.com",
-            "You are very welcome to report any bugs to us. To help us help you, please include the log files. See logfile location in details below:");
+            "You are very welcome to report any bugs to us at bugs.muchdifferent.com. To help us help you, please include the log files. See logfile location in details below:");
 
     QString localAppDir = Sawe::Application::log_directory();
     message.setDetailedText( localAppDir );
@@ -450,11 +477,39 @@ void SaweMainWindow::
     QMessageBox message(
             QMessageBox::Information,
             "sonicawe.muchdifferent.com",
-            "You are very welcome to ask questions about Sonic AWE in our forum!");
+            "You are very welcome to ask questions about Sonic AWE in our forum at sonicawe.muchdifferent.com!");
 
     message.exec();
 
     QDesktopServices::openUrl(QUrl("http://sonicawe.muchdifferent.com"));
+}
+
+
+void SaweMainWindow::
+        findplugins()
+{
+    QMessageBox message(
+            QMessageBox::Information,
+            "sonicawe.muchdifferent.com",
+            "If you want to browse plugins developed by others (or have a plugin to share yourself), please see our forum and search for scripts at sonicawe.muchdifferent.com.");
+
+    message.exec();
+
+    QDesktopServices::openUrl(QUrl("http://sonicawe.muchdifferent.com"));
+}
+
+
+void SaweMainWindow::
+        findupdates()
+{
+    QMessageBox message(
+            QMessageBox::Information,
+            "www.muchdifferent.com",
+            QString("Your version of Sonic AWE is '%1'. The latest version of Sonic AWE can be found at muchdifferent.com.").arg(Sawe::Application::version_string().c_str()));
+
+    message.exec();
+
+    QDesktopServices::openUrl(QUrl("http://muchdifferent.com/?page=signals-download"));
 }
 
 
@@ -560,7 +615,10 @@ void SaweMainWindow::
 {
     if (!object->objectName().isEmpty())
         if (const QWidget* w = dynamic_cast<const QWidget*>(object))
+        {
             state.insert(w->objectName()+"/geometry", w->saveGeometry());
+            state.insert(w->objectName()+"/visible", w->isVisible());
+        }
 
     foreach( const QObject* o, object->children())
     {
@@ -588,7 +646,10 @@ void SaweMainWindow::
         i.next();
 
         if (QWidget* w = dynamic_cast<QWidget*>(o)) if(o->objectName() == i.key())
+        {
             w->restoreGeometry( state[ w->objectName()+"/geometry" ].toByteArray() );
+            w->setVisible( state[ w->objectName()+"/visible" ].toBool() );
+        }
 
         if (QSlider* s = o->findChild<QSlider*>( i.key() ))
             s->setValue( i.value().toInt() );

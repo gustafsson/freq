@@ -9,7 +9,7 @@
 #include "signal/intervals.h"
 
 namespace Tools {
-    class RenderModel;
+    class RenderView;
 
 namespace Support {
 
@@ -17,7 +17,7 @@ class PlotLines : public QObject
 {
     Q_OBJECT
 public:
-    explicit PlotLines(RenderModel* render_model);
+    explicit PlotLines(RenderView* render_model);
 
     struct Value {
         Value():hz(0), a(0) {}
@@ -53,14 +53,16 @@ signals:
 
 public slots:
     void draw();
+    void resetDisplayList();
 
 private:
     Lines lines_;
-    RenderModel* render_model_;
+    RenderView* render_view_;
     float rand_color_offs_;
 
     void draw(Line& l);
     void recomputeColors();
+    unsigned display_list_;
 };
 
 } // namespace Support

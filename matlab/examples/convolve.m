@@ -2,11 +2,16 @@ function [data]=convolve(data)
 
 disp(['convolve ' sawe_getdatainfo(data)]);
 
-filter=[1 -1 1];
+filter=[1 -1 1]';
 %filter=filter/abs(sum(filter));
-data.buffer = conv(data.buffer, filter);
-data.buffer = data.buffer + rand(size(data.buffer));
+for channel=1:size(data.samples,2)
+  convdata(:,channel) = conv(data.samples(:,channel), filter);
+end
 
-data.redundancy = 5;
+data.samples = convdata;
+% play around
+data.samples = data.samples + rand(size(data.samples));
+
+data.overlap = 5;
 data = sawe_discard(data);
 

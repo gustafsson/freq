@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
     // Get the sonicawe application path.
     sprintf(app_path_cuda, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(path));
     sprintf(app_path_cpu, "%s/Contents/MacOS/sonicawe", bundlePath(path));
+	char* app_path = app_path_cuda;
 
     // Option flags for notification
     CFOptionFlags options = kCFUserNotificationStopAlertLevel | kCFUserNotificationNoDefaultButtonFlag;
@@ -84,14 +85,16 @@ int main(int argc, char *argv[])
             printf("Checking requirements.\n");
             execv(a[0], a);
         }*/
-        printf("Starting %s\n", app_path_cpu);
-        execv(app_path_cpu, argv);
-        
+		app_path = app_path_cpu;
     }
-    
-    dlclose(test);
-    printf("Starting %s\n", app_path_cuda);
-    execv(app_path_cuda, argv);
+    else
+	{
+		dlclose(test);
+	}
+
+    printf("Starting %s\n", app_path);
+    argv[0] = app_path;
+	_execv(app_path, argv);
     
     return 0;
 }

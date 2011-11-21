@@ -87,8 +87,8 @@ ToolFactory::
     _comment_controller = new CommentController( _render_view );
     tool_controllers_.push_back( _comment_controller );
 
-#if !defined(TARGET_sd)
-    // no matlab for sound design version
+#if !defined(TARGET_sd) && !defined(TARGET_reader)
+    // no matlab for sound design version, nor reader
     _matlab_controller = new MatlabController( p, _render_view );
 #endif
 

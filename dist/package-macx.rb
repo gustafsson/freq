@@ -1,6 +1,6 @@
 $framework_path = "/Library/Frameworks"
 $cuda_library_path = "/usr/local/cuda/lib"
-$custom_library_path = "../../../libs"
+$custom_library_path = "../../../maclib"
 $command_line_width = 80
 
 # Configuration
@@ -112,6 +112,10 @@ def package_macos(app_name, version, zip = false)
     end
     unless system("cp -r ../matlab #{app_name}.app/Contents/MacOS/matlab")
         puts "Error: Could not copy resource, matlab directory"
+        exit(1)
+    end
+    unless system("cp -r ../plugins/* #{app_name}.app/Contents/MacOS/matlab/examples/")
+        puts "Error: Could not copy resource, plugins directory"
         exit(1)
     end
     

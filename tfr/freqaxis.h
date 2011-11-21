@@ -67,7 +67,7 @@ public:
 
         this->max_frequency_scalar = max_frequency_scalar;
         this->min_hz = min_hz_inclusive;
-        this->f_step = log2f( max_hz_inclusive ) - log2f( min_hz_inclusive );
+        this->f_step = log2( max_hz_inclusive ) - log2( min_hz_inclusive );
         this->f_step /= max_frequency_scalar;
     }
 
@@ -110,11 +110,18 @@ public:
     }
 
 
+    FREQAXIS_CALL float getFrequency( float fi ) const
+    {
+        return getFrequencyT( fi );
+    }
+
+
     /**
       Translates FreqAxis coordinates to 'Hz'.
       @see getFrequencyScalar
       */
-    FREQAXIS_CALL float getFrequency( float fi ) const
+    template<typename T>
+    FREQAXIS_CALL T getFrequencyT( T fi ) const
     {
         switch (axis_scale)
         {
@@ -122,22 +129,22 @@ public:
             return min_hz + fi*f_step;
 
         case AxisScale_Logarithmic:
-            return min_hz*exp2f( fi*f_step );
+            return min_hz*exp2( fi*f_step );
 
         case AxisScale_Quefrency:
             {
                 if (f_step>0) // normalized
                 {
-                    float fs = max_frequency_scalar*min_hz*f_step;
-                    float binmin = fs/min_hz;
-                    float binmax = 2;
-                    float numbin = binmax-binmin;
-                    float bin = binmin + numbin*fi;
+                    T fs = max_frequency_scalar*min_hz*f_step;
+                    T binmin = fs/min_hz;
+                    T binmax = 2;
+                    T numbin = binmax-binmin;
+                    T bin = binmin + numbin*fi;
                     return fs/bin;
                 }
                 else
                 {
-                    float fs = max_frequency_scalar*min_hz;
+                    T fs = max_frequency_scalar*min_hz;
                     return fs/fi;
                 }
             }
@@ -157,10 +164,17 @@ public:
     }
 
 
-    /// @see getFrequencyScalar
     FREQAXIS_CALL float getFrequencyScalarNotClamped( float hz ) const
     {
-        float fi = 0;
+        return getFrequencyScalarNotClampedT( hz );
+    }
+
+
+    /// @see getFrequencyScalar
+    template<typename T>
+    FREQAXIS_CALL float getFrequencyScalarNotClampedT( T hz ) const
+    {
+        T fi = 0;
 
         switch(axis_scale)
         {
@@ -170,7 +184,7 @@ public:
 
         case AxisScale_Logarithmic:
             {
-                float log2_f = log2f(hz/min_hz);
+                T log2_f = log2(hz/min_hz);
 
                 fi = log2_f/f_step;
             }
@@ -180,15 +194,15 @@ public:
             {
                 if (f_step>0)
                 {
-                    float fs = max_frequency_scalar*min_hz*f_step;
-                    float binmin = fs/min_hz;
-                    float binmax = 2;
-                    float numbin = binmax-binmin;
+                    T fs = max_frequency_scalar*min_hz*f_step;
+                    T binmin = fs/min_hz;
+                    T binmax = 2;
+                    T numbin = binmax-binmin;
                     fi = (fs/hz - binmin)/numbin;
                 }
                 else
                 {
-                    float fs = max_frequency_scalar*min_hz;
+                    T fs = max_frequency_scalar*min_hz;
                     fi = fs/hz;
                 }
             }
@@ -226,9 +240,9 @@ public:
             return getFrequency(max_frequency_scalar);
         case AxisScale_Quefrency:
             if (0<f_step)
-                return max_frequency_scalar*min_hz*f_step/2;
+                return max_frequency_scalar*min_hz*f_step/2.0;
             else
-                return max_frequency_scalar*min_hz/2;
+                return max_frequency_scalar*min_hz/2.0;
         default:
             return 0;
         }

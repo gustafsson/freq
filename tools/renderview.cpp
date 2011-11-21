@@ -166,6 +166,8 @@ void RenderView::
 void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
+    userinput_update( false );
+
     DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
     DEBUG_EVENTS TaskTimer("RenderView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
@@ -220,38 +222,6 @@ void RenderView::
         resizeGL(_last_width, _last_height );
 
         paintGL();
-
-        {
-            glScalef(1,1,0.1f);
-            glRotatef(90,1,0,0);
-            GLdouble m[16];//, proj[16];
-            GLint vp[4];
-            glGetDoublev(GL_MODELVIEW_MATRIX, m);
-//            glGetDoublev(GL_PROJECTION_MATRIX, proj);
-            glGetIntegerv(GL_VIEWPORT, vp);
-
-
-
-//            projectionTransform.setMatrix( proj[0], proj[1], proj[2],
-//                                           proj[4], proj[5], proj[6],
-//                                           proj[8], proj[9], proj[10]);
-            /*
-             This would make a mapping from 3D to the 2D plane.
-            if (qFuzzyCompare(m[3] + 1, 1) && qFuzzyCompare(m[7] + 1, 1))
-            {
-                modelviewTransform = QTransform(m[0]/m[15], m[1]/m[15], m[4]/m[15],
-                                                m[5]/m[15], m[12]/m[15], m[13]/m[15]);
-            }
-            else
-                modelviewTransform = QTransform(m[0], m[1], m[3],
-                                                m[4], m[5], m[7],
-                                                m[12], m[13], m[15]);
-
-            viewTransform = QTransform(vp[2]*0.5, 0,
-                                       0, -vp[3]*0.5,
-                                      vp[0]+vp[2]*0.5, vp[1]+vp[3]*0.5);
-            */
-        }
 
         defaultStates();
     }
@@ -432,7 +402,8 @@ QPointF RenderView::
         d[0] *= model->xscale;
         d[2] *= last_ysize;
 
-        projectionNormal.Normalize();
+        projectionNormal = projectionNormal.Normalized();
+
         *dist = d%projectionNormal;
     }
 
@@ -611,6 +582,9 @@ void RenderView::
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
 
+    Heightmap::Position cursorPos = getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
+    model->renderer->cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
     GLint current_viewport[4];
@@ -684,10 +658,11 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s",
+    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s (%u triangles)",
         N,
         model->renderer->drawn_blocks, 
-        model->renderer->drawn_blocks==1?"":"s");
+        model->renderer->drawn_blocks==1?"":"s",
+        N*model->renderer->drawn_blocks*(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2);
 }
 
 
@@ -758,9 +733,10 @@ void RenderView::
 void RenderView::
         setLights()
 {
+    glDisable(GL_LIGHTING);
     //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
-    GLfloat LightAmbient[]= { 0.5f, 0.5f, 0.5f, 1.0f };
+/*    GLfloat LightAmbient[]= { 0.5f, 0.5f, 0.5f, 1.0f };
     GLfloat LightDiffuse[]= { 1.0f, 1.0f, 1.0f, 1.0f };
     GLfloat LightPosition[]= { 0.0f, 0.0f, 2.0f, 1.0f };
     //GLfloat LightDirection[]= { 0.0f, 0.0f, 1.0f, 0.0f };
@@ -769,7 +745,7 @@ void RenderView::
     //glLightfv(GL_LIGHT0, GL_SPECULAR, LightDiffuse);
     glLightfv(GL_LIGHT0, GL_POSITION, LightPosition);
     //glLightfv(GL_LIGHT0, GL_POSITION, LightDirection);
-    glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT0);*/
 }
 
 
@@ -780,7 +756,7 @@ void RenderView::
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
-    //glDisable(GL_COLOR_MATERIAL);
+    glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHT0);
     glDisable(GL_NORMALIZE);
@@ -834,6 +810,13 @@ void RenderView::
 
 
 void RenderView::
+        emitAxisChanged()
+{
+    emit axisChanged();
+}
+
+
+void RenderView::
         userinput_update( bool request_high_fps, bool post_update )
 {
     if (request_high_fps)
@@ -864,11 +847,11 @@ void RenderView::
             wait = dt;
 
         unsigned ms = (wait-dt)*1e3; // round down
-#ifdef _MSC_VER
-        // windows message loop, allow others to jump in before the next update if ms=0
+
+        // allow others to jump in before the next update if ms=0
+        // most visible in windows message loop
         ms = std::max(1u, ms);
-#endif
-        TaskInfo("Waiting %u ms to update", ms);
+
         _update_timer->start(ms);
     }
 }
@@ -1234,23 +1217,23 @@ void RenderView::
         userinput_update();
 
     glLoadIdentity();
-    glTranslatef( model->_px, model->_py, model->_pz );
+    glTranslated( model->_px, model->_py, model->_pz );
 
-    glRotatef( model->_rx, 1, 0, 0 );
-    glRotatef( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
-    glRotatef( model->_rz, 0, 0, 1 );
+    glRotated( model->_rx, 1, 0, 0 );
+    glRotated( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
+    glRotated( model->_rz, 0, 0, 1 );
 
     if (model->renderer->left_handed_axes)
-        glScalef(-1, 1, 1);
+        glScaled(-1, 1, 1);
     else
     {
-        glRotatef(-90,0,1,0);
-        glScalef(0.35, 1, 2.6);
+        glRotated(-90,0,1,0);
+        glScaled(0.35, 1, 2.6);
     }
 
-    glScalef(model->xscale, 1, model->zscale);
+    glScaled(model->xscale, 1, model->zscale);
 
-    glTranslatef( -model->_qx, -model->_qy, -model->_qz );
+    glTranslated( -model->_qx, -model->_qy, -model->_qz );
 
     orthoview.TimeStep(.08);
 }

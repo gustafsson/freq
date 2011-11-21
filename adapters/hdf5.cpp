@@ -43,6 +43,7 @@ Hdf5Error::
 
 Hdf5Input::
         Hdf5Input(std::string filename)
+            : _filename( filename )
 {
     TIME_HDF5 _timer.reset(new TaskTimer("Reading HDF5-file '%s'", filename.c_str()));
 
@@ -102,14 +103,14 @@ vector<hsize_t> Hdf5Input::
 
     int RANK=0;
     herr_t status = H5LTget_dataset_ndims ( _file_id, name.c_str(), &RANK );
-    if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_ndims failed");
+    if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_ndims("+name+") failed");
 
     vector<hsize_t> dims(RANK);
 	if (0 < RANK) 
 	{
 		// only non-scalars have dimensions
-		status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
-		if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_info failed");
+        status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], class_id, 0 );
+        if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "get_dataset_info("+name+") failed");
 	}
 
     return dims;
@@ -164,11 +165,21 @@ Signal::pBuffer Hdf5Input::
 
     if (H5T_FLOAT!=class_id) throw Hdf5Error(Hdf5Error::Type_MissingDataset, ((stringstream&)(ss << "Class id for '" << name << "' is '" << class_id << "' instead of H5T_FLOAT.")).str(), name);
 
-    Signal::pBuffer buffer( new Signal::Buffer(0, dims[2], 44100, dims[1], dims[0] ) );
-    float* p = buffer->waveform_data()->getCpuMemory();
+    Signal::pBuffer buffer;
+    if (dims[0]>0 && dims[1]>0 && dims[2]>0)
+    {
+        buffer.reset( new Signal::Buffer(0, dims[2], 44100, dims[1], dims[0] ) );
+        float* p = buffer->waveform_data()->getCpuMemory();
 
-    status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
-    if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'", name);
+        status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
+        if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'", name);
+
+        VERBOSE_HDF5 TaskInfo("number_of_samples=%u, channels=%u, numberOfSignals=%u",
+                              buffer->waveform_data()->size().width,
+                              buffer->waveform_data()->size().height,
+                              buffer->waveform_data()->size().depth
+                              );
+    }
 
     return buffer;
 }
@@ -306,6 +317,8 @@ double Hdf5Input::
     herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_DOUBLE,&v);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_DOUBLE type dataset named '" + name + "'", name);
 
+    VERBOSE_HDF5 TaskInfo("value = %g", v);
+
     return v;
 }
 
@@ -318,10 +331,10 @@ void Hdf5Output::
 
     const char* p = s.c_str();
 
-    const unsigned RANK=1;
-    hsize_t     dims[RANK]={s.size()};
+    const unsigned RANK=2;
+    hsize_t     dims[RANK]={0,s.size()};
 
-    herr_t status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_C_S1,p);
+    herr_t status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_SCHAR,p);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "Could not create and write a H5T_C_S1 type dataset named '" + name + "'", name);
 }
 
@@ -335,21 +348,42 @@ std::string Hdf5Input::
     findDataset(name);
 
     H5T_class_t class_id=H5T_NO_CLASS;
+    size_t size = 0;
     vector<hsize_t> dims = getInfo(name, &class_id);
-    std::string v; v.reserve( dims[0]+1 );
+    herr_t status = H5LTget_dataset_info ( _file_id, name.c_str(), &dims[0], &class_id, &size );
 
-    herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_C_S1,&v[0]);
-    if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_C_S1 type dataset named '" + name + "'", name);
+    hsize_t z = 1;
 
-    return v;
+    if (H5T_STRING == class_id)
+    {
+        z = size;
+    }
+    else
+    { 
+        for (unsigned i=0; i<dims.size(); ++i)
+            z *= dims[i];
+    }
+
+    std::string v; v.resize( z );
+
+    if (H5T_STRING == class_id)
+        status = H5LTread_dataset_string(_file_id,name.c_str(), &v[0]);
+    else
+        status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_SCHAR,&v[0]);
+
+    if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read string dataset '" + name + "'", name);
+
+    VERBOSE_HDF5 TaskInfo("value = '%s'", v.c_str());
+
+    return v.c_str();
 }
 
 
-static const char* dsetBuffer="buffer";
+static const char* dsetBuffer="samples";
 static const char* dsetChunk="chunk";
 static const char* dsetOffset="offset";
-static const char* dsetSamplerate="samplerate";
-static const char* dsetRedundancy="redundancy";
+static const char* dsetSamplerate="fs";
+static const char* dsetOverlap="overlap";
 static const char* dsetPlot="plot";
 
 Hdf5Chunk::Hdf5Chunk( std::string filename)
@@ -388,14 +422,14 @@ void Hdf5Buffer::
 // TODO save and load all properties of chunks and buffers, not only raw data.
 // The Hdf5 file is well suited for storing such data as well.
 void Hdf5Buffer::
-        saveBuffer( string filename, const Signal::Buffer& cb, double redundancy)
+        saveBuffer( string filename, const Signal::Buffer& cb, double overlap)
 {
     Hdf5Output h5(filename);
 
     h5.add<Signal::Buffer>( dsetBuffer, cb );
     h5.add<double>( dsetOffset, cb.sample_offset );
     h5.add<double>( dsetSamplerate, cb.sample_rate );
-    h5.add<double>( dsetRedundancy, redundancy );
+    h5.add<double>( dsetOverlap, overlap );
 }
 
 
@@ -410,7 +444,7 @@ void Hdf5Chunk::
 
 
 Signal::pBuffer Hdf5Buffer::
-        loadBuffer( string filename, double* redundancy, Signal::pBuffer* plot )
+        loadBuffer( string filename, double* overlap, Signal::pBuffer* plot )
 {
     Hdf5Input h5(filename);
 
@@ -423,7 +457,7 @@ Signal::pBuffer Hdf5Buffer::
     try {
     *plot = h5.read<Signal::pBuffer>( dsetPlot );
     } catch (const std::runtime_error& ) {} // ok, never mind then
-    *redundancy = h5.read<double>( dsetRedundancy );
+    *overlap = h5.read<double>( dsetOverlap );
 
     return b;
 }

@@ -15,6 +15,7 @@
 #include <QWheelEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QScrollBar>
 
 namespace Tools {
 
@@ -86,6 +87,39 @@ void CommentView::
 {
     ui->textEdit->setHtml( QString::fromLocal8Bit( text.c_str() ) );
     model()->html = text;
+
+    // grow if needed to display all contents, but only grow as long as this widget is smaller than maxGrowSize
+    {
+        QSize maxGrowSize(500, 200);
+
+        // disable word wrap to grow horizontally as far as needed, trying to avoid word wrap
+        QTextOption::WrapMode prevWrapMode = ui->textEdit->wordWrapMode();
+        ui->textEdit->setWordWrapMode( QTextOption::NoWrap );
+
+        // disable any vertical scrollbar while growing horizontally
+        ui->textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+        // grow horizontally
+        for (QScrollBar* hori = ui->textEdit->horizontalScrollBar(); hori && hori->isVisible() && width() < maxGrowSize.width(); resize( width() + 1, height() )) {}
+
+        if (maxGrowSize.width() <= width())
+        {
+            // we might need word wrap, and/or a horizontal scrollbar
+            ui->textEdit->setWordWrapMode( prevWrapMode );
+        }
+        else
+        {
+            // disable any horizontal scrollbar while growing vertically if it should be wide enough if it wasn't for the vertical scrollbar
+            ui->textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        }
+
+        // grow veritcally
+        ui->textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        for (QScrollBar* vert = ui->textEdit->verticalScrollBar(); vert && vert->isVisible() && height() < maxGrowSize.height(); resize( width(), height() + 1 )) {}
+
+        // we still want scrollbars if they are needed despite growing the size
+        ui->textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    }
 }
 
 

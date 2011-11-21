@@ -16,7 +16,7 @@
 
 // Qt
 #include <QResource>
-
+#include <QMessageBox>
 
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)
@@ -56,23 +56,42 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
         if (fp) free(src);
 
-        char log[2048];
+        char shaderInfoLog[2048];
         int len;
 
-        glGetShaderInfoLog(shader, 2048, (GLsizei*)&len, log);
+        glGetShaderInfoLog(shader, sizeof(shaderInfoLog), (GLsizei*)&len, shaderInfoLog);
 
-        if (!compiled) {
-            glDeleteShader(shader);
+        bool showShaderLog = !compiled;
+        showShaderLog |= 0 != QString(shaderInfoLog).contains("warning", Qt::CaseInsensitive);
+        showShaderLog |= 0 != QString(shaderInfoLog).contains("error", Qt::CaseInsensitive);
+#if DEBUG_
+        showShaderLog |= strlen(shaderInfoLog)>0;
+#endif
 
-            throw std::runtime_error(std::string("Couldn't compile shader ") + name + ". Shader log: \n" + log);
+        if (showShaderLog)
+        {
+            TaskInfo ti("Failed to compile shader %s", name );
+            TaskInfo("%s", shaderInfoLog);
+
+            QMessageBox message(
+                    QMessageBox::Critical,
+                    "Couldn't properly setup graphics",
+                    "Sonic AWE couldn't properly setup required graphics (shader compile error). "
+                    "Please file this as a bug report to help us fix this. "
+                    "See more info in 'Help->Report a bug'");
+
+            message.setDetailedText( shaderInfoLog );
+
+            message.exec();
         }
 
-        if (0<len) {
-            TIME_COMPILESHADER TaskInfo("Shader log:\n%s", log);
+        if (compiled)
+        {
+            glAttachShader(prg, shader);
         }
 
-        glAttachShader(prg, shader);
-        glDeleteShader(shader); // TODO why delete shader?
+        glDeleteShader(shader);
+
     } catch (const std::exception &x) {
         TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
         throw;
@@ -92,12 +111,34 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &linked);
-        if (!linked) {
-            char temp[256];
-            glGetProgramInfoLog(program, 256, 0, temp);
-            throw std::runtime_error(std::string("Failed to link shader program with vertex shader ")
-                                     + vertFileName + " and fragment shader " + fragFileName
-                                     + ". Program log:\n" + temp);
+
+        char programInfoLog[2048] = "";
+        glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
+        programInfoLog[sizeof(programInfoLog)-1] = 0;
+
+        bool showProgramLog = !linked;
+        showProgramLog |= 0 != QString(programInfoLog).contains("warning", Qt::CaseInsensitive);
+        showProgramLog |= 0 != QString(programInfoLog).contains("error", Qt::CaseInsensitive);
+#if DEBUG_
+        showProgramLog |= strlen(programInfoLog)>0;
+#endif
+
+        if (showProgramLog)
+        {
+            TaskInfo ti("Failed to link fragment shader (%s) with vertex shader (%s)",
+                     fragFileName, vertFileName );
+            TaskInfo("%s", programInfoLog);
+
+            QMessageBox message(
+                    QMessageBox::Critical,
+                    "Couldn't properly setup graphics",
+                    "Sonic AWE couldn't properly setup required graphics (shader link error). "
+                    "Please file this as a bug report to help us fix this. "
+                    "See more info in 'Help->Report a bug'");
+
+            message.setDetailedText( programInfoLog );
+
+            message.exec();
         }
 
     } catch (...) {
@@ -285,18 +326,13 @@ void GlBlock::
         unsigned h = _collection->scales_per_block();
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); // no mipmaps
 
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
-//        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
-//        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA_FLOAT32_ATI,w, h,0, GL_RED, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+//        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
         //glGenerateMipmap(GL_TEXTURE_2D);
 
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -313,16 +349,15 @@ void GlBlock::
         unsigned w = _collection->samples_per_block();
         unsigned h = _collection->scales_per_block();
 
-        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-        //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); // no mipmaps
 
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_FLOAT32_ATI,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+        // Some GPUs are supposeddly really slow to use GL_LUMINANCE_FLOAT32_ATI
+        // in vertex shaders, so we're trying with GL_RGBA_FLOAT32_ATI instead
+        // update allocated_bytes_per_element when this type is changed
+
+        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
+        //glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -352,13 +387,10 @@ void GlBlock::
 
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height);
-        glPixelTransferf(GL_RED_SCALE, 4.f);
 
         GlException_CHECK_ERROR();
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_RED, GL_FLOAT, 0);
         GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
-
-        glPixelTransferf(GL_RED_SCALE, 1.0f);
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
@@ -571,7 +603,7 @@ unsigned GlBlock::
     if (_height) s += sizeof(float); // OpenGL VBO
     if (_mapped_height) s += sizeof(float); // Cuda device memory
     if (_tex_height) s += sizeof(float); // OpenGL texture
-    if (_tex_height_nearest) s += sizeof(float); // OpenGL texture
+    if (_tex_height_nearest) s += 4*sizeof(float); // OpenGL texture
 
     // _mapped_slope and _slope are temporary and only lives in the scope of update_texture
 

@@ -75,9 +75,11 @@ fi
 
 
 mkdir -p $package/usr/bin
-cp ${packagename} $package/usr/bin/.
-cp ${packagename}-cuda $package/usr/bin/.
-cp ${packagename}-launcher.sh $package/usr/bin/.
+cp ${packagename} $package/usr/bin/${packagename}-cpu
+cp ${packagename}-cuda $package/usr/bin/${packagename}-cuda
+cp sonicawe-launcher.sh $package/usr/bin/${packagename}
+sed -i "s/sonicawe/${packagename}/g" $package/usr/bin/${packagename}
+
 mkdir -p $share
 if [ "`uname -m`" = "x86_64" ]; then
 	sed -i "s/Architecture: .*$/Architecture: amd64/g" $package/DEBIAN/control
@@ -96,14 +98,19 @@ cp matlab/sawe_extract_cwt_time.m $share
 cp matlab/sawe_filewatcher.m $share
 cp matlab/sawe_getdatainfo.m $share
 cp matlab/sawe_datestr.m $share
+cp plugins/exampleplugin.m $share/examples
+cp plugins/examplepluginicon.png $share/examples
+cp plugins/examplesource.m $share/examples
+cp plugins/exportpeakfrequencies.m $share/examples
+cp plugins/reversesignal.m $share/examples
 cp matlab/examples/amplify.m $share/examples
 cp matlab/examples/convolve.m $share/examples
 cp matlab/examples/lowpass.m $share/examples
 cp matlab/examples/plotwaveform.m $share/examples
 cp matlab/sawe_loadbuffer.m $share
 cp matlab/sawe_loadchunk.m $share
-cp matlab/sawe_savebuffer.m $share
-cp matlab/sawe_savechunk.m $share
+cp matlab/sawe_savestruct.m $share
+cp matlab/sawe_makestruct.m $share
 cp matlab/sawe_discard.m $share
 cp matlab/sawe_plot.m $share
 cp matlab/sawe_plot2.m $share

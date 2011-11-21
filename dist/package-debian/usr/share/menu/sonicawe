@@ -1,5 +1,5 @@
 ?package(sonicawe):needs="X11" section="Applications/Sound" \
-  title="Sonic AWE" command="/usr/bin/sonicawe-launcher.sh" \
+  title="Sonic AWE" command="/usr/bin/sonicawe" \
   icon="/usr/share/pixmaps/sonicawe.xpm" \
   icon32x32="/usr/share/pixmaps/sonicawe.xpm" \
   icon16x16="/usr/share/pixmaps/sonicawe16.xpm"

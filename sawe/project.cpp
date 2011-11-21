@@ -1,6 +1,7 @@
 #include "sawe/project.h"
 
 #include "sawe/application.h"
+#include "sawe/openfileerror.h"
 #if !defined(TARGET_reader)
 #include "adapters/audiofile.h"
 #include "adapters/csvtimeseries.h"
@@ -10,6 +11,7 @@
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
 #include "ui/mainwindow.h"
+#include "ui_mainwindow.h"
 
 // Qt
 #include <QtGui/QFileDialog>
@@ -42,6 +44,9 @@ Project::
         ~Project()
 {
     TaskTimer tt("~Project");
+
+    TaskInfo("project_title = %s", project_title().c_str());
+    TaskInfo("project_filename = %s", project_filename().c_str());
 
     _tools.reset();
 
@@ -139,6 +144,7 @@ pProject Project::
     }
 
     string err;
+    string openfile_err;
     pProject p;
     if (0!=stat( filename.c_str(),&dummy))
         err = "File '" + filename + "' does not exist";
@@ -159,6 +165,11 @@ pProject Project::
             }
             break; // successful loading without thrown exception
         }
+        catch (const OpenFileError& x) {
+            if (!openfile_err.empty())
+                openfile_err += '\n';
+            openfile_err += x.what();
+        }
         catch (const exception& x) {
             if (!err.empty())
                 err += '\n';
@@ -169,6 +180,9 @@ pProject Project::
 
     if (!p)
     {
+        if (!openfile_err.empty())
+            err = openfile_err;
+
         QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
         TaskInfo("======================\n"
                  "Can't open file '%s' as project nor audio file\n"
@@ -272,7 +286,7 @@ void Project::
         return;
 
     TaskTimer tt("Project::createMainWindow");
-    string title = Sawe::Application::version_string();
+    string title = Sawe::Application::title_string();
     if (!project_title().empty())
         title = project_title() + " - " + title;
 
@@ -305,7 +319,7 @@ void Project::
 {
     if (!project_filename_.empty())
         project_title_ = QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
-    _mainWindow->setWindowTitle( QString::fromLocal8Bit( (project_title() + " - " + Sawe::Application::version_string()).c_str() ));
+    _mainWindow->setWindowTitle( QString::fromLocal8Bit( (project_title() + " - " + Sawe::Application::title_string()).c_str() ));
 }
 
 
@@ -326,18 +340,18 @@ void Project::
 
 
 void Project::
-        restoreDefaultLayout()
+        resetLayout()
 {
-    QSettings settings;
+    setGuiState( defaultGuiState );
+}
 
-    Ui::SaweMainWindow* saweMain = dynamic_cast<Ui::SaweMainWindow*>(_mainWindow.data());
-    saweMain->restoreSettings( defaultGuiState );
 
-    QString value = settings.value("value").toString();
-    settings.clear();
-    settings.setValue("value", value);
-
+void Project::
+        resetView()
+{
     tools().render_view()->model->resetSettings();
+    Application::global_ptr()->clearCaches();
+    tools().render_view()->userinput_update( false );
 }
 
 
@@ -385,7 +399,9 @@ pProject Project::
 {
     Adapters::CsvTimeseries*a;
     Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
-    return pProject( new Project( s, a->name() ));
+    pProject p( new Project( s, a->name() ));
+    p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
+    return p;
 }
 #endif
 

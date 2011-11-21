@@ -1,6 +1,7 @@
 #ifndef MATLABCONTROLLER_H
 #define MATLABCONTROLLER_H
 
+#include "adapters/readmatlabsettings.h"
 #include "sawe/toolmodel.h"
 
 #include <signal/operation.h>
@@ -13,6 +14,7 @@ namespace Signal { class Worker; }
 namespace Adapters { class MatlabOperation; }
 
 class QMenu;
+class QToolBar;
 
 namespace Tools
 {
@@ -21,6 +23,7 @@ namespace Tools
 
     class MatlabController: public QObject {
         Q_OBJECT
+#if !defined(TARGET_reader)
     public:
         MatlabController( Sawe::Project* project, RenderView* render_view );
         ~MatlabController();
@@ -30,14 +33,23 @@ namespace Tools
         void receiveMatlabFilter();
         void tryHeadAsMatlabOperation();
         void createFromAction();
+        void foundNewScript( Adapters::DefaultMatlabFunctionSettings settings );
+        void createFromScriptPath();
+        void showDialogFromSettings(Adapters::DefaultMatlabFunctionSettings settings);
+        void sourceRead();
+        void createFromSettingsFailed( QString filename, QString info );
 
     private:
+        void showNewMatlabOperationDialog( Adapters::MatlabFunctionSettings* psettings );
+        void createFromSettings( Adapters::MatlabFunctionSettings& settings );
+
         void createView();
         void createView(Signal::Operation* o);
 
         void updateScriptsMenu();
         void createOperation(MatlabOperationWidget* settings);
         void connectOperation(MatlabOperationWidget* settings, Signal::pOperation matlaboperation);
+        void updateStoredSettings(Adapters::MatlabFunctionSettings* settings);
 
         // Model
         // Model that is controlled, this controller doesn't have a view
@@ -46,6 +58,7 @@ namespace Tools
 
         RenderView* render_view_;
         QPointer<QMenu> scripts_;
+        QPointer<QToolBar> scriptsToolbar_;
 
         // GUI
         // The fact that this controller doesn't have a view doesn't mean
@@ -54,6 +67,8 @@ namespace Tools
         // TODO Could also add this functionality to a menu.
         void setupGui();
         void prepareLogView( Adapters::MatlabOperation*m );
+#endif // TARGET_reader
     };
 } // namespace Tools
+
 #endif // MATLABCONTROLLER_H

@@ -53,8 +53,17 @@ echo "License text: \"$LicenseText\""
 #fi
 
 echo "LicenseText (copy and send in email):"
-masher/masher "${LicenseText}"
+
+if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
+  masher=masher/release/masher.exe
+else
+  masher=masher/masher
+fi
+
+$masher "${LicenseText}"
+
 echo
+
 #echo "ApplicationTitle:"
 #masher/masher "${ApplicationTitle}"
 #echo

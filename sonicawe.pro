@@ -179,20 +179,20 @@ QMAKE_LFLAGS += -Wl,-rpath=/usr/share/sonicawe/
 
 macx {
 INCLUDEPATH += \
-    ../../libs/include \
-    ../../libs/boost_1_45_0 \
-    ../../libs/hdf5/include \
-    ../../libs/zlib/include \
-    ../../libs/include/sndfile
+    ../../maclib/include \
+    ../../maclib/boost_1_45_0 \
+    ../../maclib/hdf5/include \
+    ../../maclib/zlib/include \
+    ../../maclib/include/sndfile
 LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -framework GLUT \
     -framework OpenGL \
-    -L../../libs -lportaudiocpp -lportaudio \
-    -L../../libs/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../libs/zlib/lib -lz \
+    -L../../maclib -lportaudiocpp -lportaudio \
+    -L../../maclib/hdf5/bin -lhdf5 -lhdf5_hl \
+    -L../../maclib/zlib/lib -lz \
     -L../gpumisc -lgpumisc \
-    -L../../libs/boost_1_45_0/stage/lib \
+    -L../../maclib/boost_1_45_0/stage/lib \
     -lboost_serialization
 }
 
@@ -226,13 +226,20 @@ win32:QMAKE_LFLAGS_DEBUG += \
 ####################
 # Temporary output
 
-win32:RCC_DIR = tmp
-MOC_DIR = tmp
-OBJECTS_DIR = tmp/
-UI_DIR = tmp
+usecuda {
+  TMPDIR = tmp/cuda
+} else {
+  TMPDIR = tmp
+}
 
-CONFIG(debug, debug|release):OBJECTS_DIR = tmp/debug/
-else:OBJECTS_DIR = tmp/release/
+win32:RCC_DIR = $${TMPDIR}
+MOC_DIR = $${TMPDIR}
+OBJECTS_DIR = $${TMPDIR}/
+UI_DIR = $${TMPDIR}
+
+
+CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
+else:OBJECTS_DIR = $${OBJECTS_DIR}release/
 
 # #######################################################################
 # OpenCL
@@ -341,4 +348,3 @@ cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
 
 } #usecuda
-# end of cuda section #######################################################################

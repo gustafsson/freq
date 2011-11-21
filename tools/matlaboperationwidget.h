@@ -29,23 +29,26 @@ class MatlabOperationWidget : public QWidget, public Adapters::MatlabFunctionSet
     Q_OBJECT
 
 public:
-    explicit MatlabOperationWidget(Sawe::Project* project, QWidget *parent = 0);
+    explicit MatlabOperationWidget(Adapters::MatlabFunctionSettings* settings, Sawe::Project* project, QWidget *parent = 0);
     ~MatlabOperationWidget();
 
-    std::string scriptname();
-    void scriptname(std::string);
+    virtual std::string scriptname() const;
+    void scriptname(const std::string&);
 
-    std::string arguments();
-    void arguments(std::string);
+    virtual std::string arguments() const;
+    void arguments(const std::string&);
 
-    virtual int chunksize();
+    virtual std::string argument_description() const;
+    virtual void argument_description(const std::string&);
+
+    virtual int chunksize() const;
     void chunksize(int);
 
-    virtual bool computeInOrder();
+    virtual bool computeInOrder() const;
     void computeInOrder(bool);
 
-    virtual int redundant();
-    virtual void redundant(int);
+    virtual int overlap() const;
+    virtual void overlap(int);
 
     Signal::pOperation ownOperation;
 
@@ -63,9 +66,12 @@ private slots:
     void announceInvalidSamples();
     void invalidateAllSamples();
     void restartScript();
+    void reloadAutoSettings();
+    void settingsRead( Adapters::DefaultMatlabFunctionSettings settings );
     void postRestartScript();
     void chunkSizeChanged();
     void restoreChanges();
+    void settingsVisibleToggled(bool);
 
     void sendCommand();
 
@@ -93,6 +99,7 @@ private:
     QVBoxLayout* verticalLayout;
     QLineEdit* edit;
     QTimer announceInvalidSamplesTimer;
+    bool hasCrashed;
 };
 
 

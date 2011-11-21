@@ -54,8 +54,8 @@ void SettingsDialog::
 
     int currentInput =          QSettings().value("inputdevice", -1).toInt();
     int currentOutput =         QSettings().value("outputdevice", -1).toInt();
-    if (0 <= currentInput)      currentInput = default_input;
-    if (0 <= currentOutput)     currentOutput = default_output;
+    if (0 > currentInput)       currentInput = default_input;
+    if (0 > currentOutput)      currentOutput = default_output;
     currentInput =              ui->comboBoxAudioIn->findData( currentInput );
     currentOutput =             ui->comboBoxAudioOut->findData( currentOutput );
     if (0 <= currentInput)      ui->comboBoxAudioIn->setCurrentIndex( currentInput );
