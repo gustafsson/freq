@@ -181,7 +181,7 @@ Stft::
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
-    TaskTimer ti("Stft::operator, _window_size = %d, b = %s, computeredundant = %s",
+    TIME_STFT TaskTimer ti("Stft::operator, _window_size = %d, b = %s, computeredundant = %s",
                            _window_size, b->getInterval().toString().c_str(), compute_redundant()?"true":"false");
     DataStorage<float>::Ptr windowedInput = prepareWindow( b->waveform_data() );
 
@@ -222,10 +222,10 @@ Tfr::pChunk Stft::
                 maxd = d*d;
         }
 
-        TaskInfo("Difftest %s (value %g)", maxd<1e-8?"passed":"failed", maxd);
+        TaskInfo("Difftest %s (value %g)", maxd<1e-9*_window_size?"passed":"failed", maxd);
     }
 
-    TaskInfo("Stft chunk %s, %s", chunk->getInterval().toString().c_str(), chunk->getInversedInterval().toString().c_str());
+    TIME_STFT TaskInfo("Stft chunk %s, %s", chunk->getInterval().toString().c_str(), chunk->getInversedInterval().toString().c_str());
 
     return chunk;
 }
@@ -653,6 +653,7 @@ void Stft::
 
     std::vector<float> windowfunction(_window_size);
     float* window = &windowfunction[0];
+#pragma omp parallel for
     for (unsigned x=0;x<_window_size; ++x)
     {
         float p = 2.f*(x+1)/(_window_size+1) - 1.f;
@@ -664,6 +665,7 @@ void Stft::
         for (pos.y=0; pos.y<source->size().height; ++pos.y)
         {
             CpuMemoryReadOnly<float, 3>::Position readPos = pos;
+#pragma omp parallel for
             for (unsigned w=0; w<windowCount; ++w)
             {
                 float *o = &out.ref(pos) + w*_window_size;
