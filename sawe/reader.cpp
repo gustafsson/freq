@@ -213,6 +213,9 @@ string Reader::
             if (qd.addMonths(1) < QDate::currentDate())
                 return "";
 
+            if (qd.addMonths(1) < QDate::fromString(QString(__DATE__).replace("  ", " "), "MMM d yyyy"))
+                return "";
+
             QString licenseText;
 
             if (type!="-")
