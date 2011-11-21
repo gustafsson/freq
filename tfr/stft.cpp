@@ -11,8 +11,8 @@
 #include <msc_stdc.h>
 #endif
 
-//#define TIME_STFT
-#define TIME_STFT if(0)
+#define TIME_STFT
+//#define TIME_STFT if(0)
 
 #if defined(USE_CUDA) && !defined(USE_CUFFT)
 #define USE_CUFFT
