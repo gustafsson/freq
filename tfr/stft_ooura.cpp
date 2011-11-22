@@ -182,6 +182,8 @@ void Stft::
     TIME_STFT TaskTimer tt2("Stft::operator compute");
 
     Fft ft( false );
+
+#pragma omp parallel for
     for (unsigned i=0; i < actualSize.height; ++i)
     {
         ft.computeWithOouraR2C(
@@ -209,6 +211,7 @@ void Stft::
 
     Fft ft( true );
 
+#pragma omp parallel for
     for (unsigned i=0; i < n.height; ++i)
     {
         ft.computeWithOoura(
@@ -233,6 +236,7 @@ void Stft::
 
     Fft ft(false);
 
+#pragma omp parallel for
     for (unsigned i=0; i < n.height; ++i)
     {
         ft.computeWithOouraC2R(
@@ -257,6 +261,7 @@ void Stft::
 
     Fft ft(true);
 
+#pragma omp parallel for
     for (unsigned i=0; i < n.height; ++i)
     {
         ft.computeWithOoura(

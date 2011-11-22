@@ -18,7 +18,7 @@
 #ifdef SONICAWE_UNAME
 #define UNAME TOSTR(SONICAWE_UNAME)
 #else
-#define UNAME "Linux johan-laptop 2.6.32-35-generic #78-Ubuntu SMP Tue Oct 11 16:11:24 UTC 2011 x86_64 GNU/Linux"
+#define UNAME "Linux #78-Ubuntu SMP Tue Oct 11 16:11:24 UTC 2011 x86_64"
 #endif
 
 namespace Tools {
