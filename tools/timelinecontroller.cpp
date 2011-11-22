@@ -42,8 +42,7 @@ TimelineController::
     TaskInfo("%s", __FUNCTION__);
     if (!dock)
     {
-    QSettings settings;
-        settings.setValue("TimelineController visible", view->tool_selector->parentTool()->isVisible());
+        QSettings().setValue("TimelineController visible", view->tool_selector->parentTool()->isVisible());
     }
 }
 

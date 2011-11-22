@@ -10,8 +10,10 @@
 #include "signal/operationcache.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
+#include "tools/commands/projectstate.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
+#include "tools/commands/appendoperationcommand.h"
 
 // Qt
 #include <QtGui/QFileDialog>
@@ -31,6 +33,7 @@ Project::
 :   worker(Signal::pTarget()),
     layers(this),
     is_modified_(false),
+    project_state_( new Tools::Commands::ProjectState(this) ),
     project_title_(layer_title)
 {
     Signal::pChain chain(new Signal::Chain(root));
@@ -58,6 +61,15 @@ Project::
 void Project::
         appendOperation(Signal::pOperation s)
 {
+    Tools::Commands::CommandP c( new Tools::Commands::AppendOperationCommand(this, s));
+    projectState()->executeCommand(c);
+}
+
+
+/*
+void Project::
+        appendOperation(Signal::pOperation s)
+{
     Tools::SelectionModel& m = tools().selection_model;
 
     if (m.current_selection() && m.current_selection()!=s)
@@ -81,6 +93,7 @@ void Project::
 
     setModified();
 }
+*/
 
 
 Tools::ToolRepo& Project::
@@ -237,6 +250,13 @@ void Project::
         setModified( bool is_modified )
 {
     is_modified_ = is_modified;
+}
+
+
+Tools::Commands::ProjectState* Project::
+        projectState()
+{
+    return project_state_.get();
 }
 
 

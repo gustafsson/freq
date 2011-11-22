@@ -34,6 +34,8 @@
 #include "getcudaform.h"
 #include "sendfeedback.h"
 #include "checkupdates.h"
+#include "undoredo.h"
+#include "commands/commandhistory.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -139,6 +141,9 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new CheckUpdates( p->mainWindow() )));
 
+    _objects.push_back( QPointer<QObject>( new UndoRedo( p )));
+
+    _objects.push_back( QPointer<QObject>( new Commands::CommandHistory( p->projectState() )));
 
     //
     // Insert new tools here, and delete things in the destructor in the

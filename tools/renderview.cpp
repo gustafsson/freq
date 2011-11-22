@@ -80,6 +80,7 @@ RenderView::
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
+    connect( model->project()->projectState(), SIGNAL(projectChanged(const Command*)), SLOT(userinput_update()));
 
     _update_timer = new QTimer;
     _update_timer->setSingleShot( true );

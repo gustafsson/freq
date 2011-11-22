@@ -82,6 +82,7 @@ SOURCES += \
     tfr/fft4g.c \
     tfr/*.cpp \
     tools/*.cpp \
+    tools/commands/*.cpp \
     tools/support/*.cpp \
     tools/selections/*.cpp \
     tools/selections/support/*.cpp \
@@ -98,6 +99,7 @@ HEADERS += \
     signal/*.h \
     tfr/*.h \
     tools/*.h \
+    tools/commands/*.h \
     tools/support/*.h \
     tools/selections/*.h \
     tools/selections/support/*.h \
@@ -122,6 +124,7 @@ FORMS += \
     tools/settingsdialog.ui \
     tools/getcudaform.ui \
     tools/sendfeedback.ui \
+    tools/commands/commandhistory.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

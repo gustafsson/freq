@@ -17,7 +17,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="icon-resources.qrc">
     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
   </property>
   <property name="documentMode">
@@ -65,6 +65,9 @@
      <addaction name="actionTransform_info"/>
      <addaction name="actionOperation_details"/>
     </widget>
+    <addaction name="separator"/>
+    <addaction name="action_Undo"/>
+    <addaction name="action_Redo"/>
     <addaction name="separator"/>
     <addaction name="menu_Windows"/>
     <addaction name="menuToolbars"/>
@@ -252,7 +255,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>:/icons/icons/icon-circle-selection.png</iconset>
    </property>
    <property name="text">
@@ -276,7 +279,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-navigation.png</normaloff>:/icons/icons/icon-navigation.png</iconset>
    </property>
    <property name="text">
@@ -314,7 +317,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-toggle-piano.png</normaloff>:/icons/icons/icon-toggle-piano.png</iconset>
    </property>
    <property name="text">
@@ -335,7 +338,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-play-sel.png</normaloff>:/icons/icons/icon-play-sel.png</iconset>
    </property>
    <property name="text">
@@ -370,7 +373,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-toggle-hz.png</normaloff>:/icons/icons/icon-toggle-hz.png</iconset>
    </property>
    <property name="text">
@@ -385,7 +388,7 @@
   </action>
   <action name="actionActionAdd_selection">
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-save-selection.png</normaloff>:/icons/icons/icon-save-selection.png</iconset>
    </property>
    <property name="text">
@@ -400,7 +403,7 @@
   </action>
   <action name="actionActionRemove_selection">
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-silence-selection.png</normaloff>:/icons/icons/icon-silence-selection.png</iconset>
    </property>
    <property name="text">
@@ -424,7 +427,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-crop.png</normaloff>:/icons/icons/icon-crop.png</iconset>
    </property>
    <property name="text">
@@ -451,7 +454,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-move.png</normaloff>:/icons/icons/icon-move.png</iconset>
    </property>
    <property name="text">
@@ -478,7 +481,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-move-time.png</normaloff>:/icons/icons/icon-move-time.png</iconset>
    </property>
    <property name="text">
@@ -502,7 +505,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>:/icons/icons/icon-matlabfilter.png</iconset>
    </property>
    <property name="text">
@@ -520,7 +523,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>:/icons/icons/icon-matlaboperation.png</iconset>
    </property>
    <property name="text">
@@ -547,7 +550,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-record.png</normaloff>:/icons/icons/icon-record.png</iconset>
    </property>
    <property name="text">
@@ -568,7 +571,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-lockplayback.png</normaloff>:/icons/icons/icon-lockplayback.png</iconset>
    </property>
    <property name="text">
@@ -706,7 +709,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-cutoff-selection.png</normaloff>:/icons/icons/icon-cutoff-selection.png</iconset>
    </property>
    <property name="text">
@@ -721,7 +724,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-peak-selection.png</normaloff>:/icons/icons/icon-peak-selection.png</iconset>
    </property>
    <property name="text">
@@ -742,7 +745,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
    </property>
    <property name="text">
@@ -763,7 +766,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-quad-selection.png</normaloff>:/icons/icons/icon-quad-selection.png</iconset>
    </property>
    <property name="text">
@@ -784,7 +787,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-spline-selection.png</normaloff>:/icons/icons/icon-spline-selection.png</iconset>
    </property>
    <property name="text">
@@ -805,7 +808,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-amplitude-brush.png</normaloff>:/icons/icons/icon-amplitude-brush.png</iconset>
    </property>
    <property name="text">
@@ -826,7 +829,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-airbrush.png</normaloff>:/icons/icons/icon-airbrush.png</iconset>
    </property>
    <property name="text">
@@ -847,7 +850,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-smooth-brush.png</normaloff>:/icons/icons/icon-smooth-brush.png</iconset>
    </property>
    <property name="text">
@@ -868,7 +871,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-zoom.png</normaloff>:/icons/icons/icon-zoom.png</iconset>
    </property>
    <property name="text">
@@ -889,7 +892,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-set-mark.png</normaloff>:/icons/icons/icon-set-mark.png</iconset>
    </property>
    <property name="text">
@@ -904,7 +907,7 @@
   </action>
   <action name="actionStopPlayBack">
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-stop.png</normaloff>:/icons/icons/icon-stop.png</iconset>
    </property>
    <property name="text">
@@ -925,7 +928,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-paus.png</normaloff>:/icons/icons/icon-paus.png</iconset>
    </property>
    <property name="text">
@@ -940,7 +943,7 @@
   </action>
   <action name="actionJumpForward">
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-next-mark.png</normaloff>:/icons/icons/icon-next-mark.png</iconset>
    </property>
    <property name="text">
@@ -955,7 +958,7 @@
   </action>
   <action name="actionJumpBackward">
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-prev-mark.png</normaloff>:/icons/icons/icon-prev-mark.png</iconset>
    </property>
    <property name="text">
@@ -976,7 +979,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
@@ -1062,7 +1065,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
@@ -1080,7 +1083,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
@@ -1101,7 +1104,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
@@ -1122,7 +1125,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-show-gray.png</normaloff>:/icons/icons/icon-show-gray.png</iconset>
    </property>
    <property name="text">
@@ -1143,7 +1146,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-show-heightlines.png</normaloff>:/icons/icons/icon-show-heightlines.png</iconset>
    </property>
    <property name="text">
@@ -1164,7 +1167,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-show-info.png</normaloff>:/icons/icons/icon-show-info.png</iconset>
    </property>
    <property name="text">
@@ -1222,7 +1225,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-place-comment.png</normaloff>:/icons/icons/icon-place-comment.png</iconset>
    </property>
    <property name="text">
@@ -1243,7 +1246,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-show-comment.png</normaloff>:/icons/icons/icon-show-comment.png</iconset>
    </property>
    <property name="text">
@@ -1275,7 +1278,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
@@ -1293,7 +1296,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
    </property>
    <property name="text">
@@ -1314,7 +1317,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
    </property>
    <property name="text">
@@ -1332,7 +1335,7 @@
   </action>
   <action name="actionResetGraphics">
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
@@ -1350,7 +1353,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/fscn-down.png</normaloff>:/icons/icons/fscn-down.png</iconset>
    </property>
    <property name="text">
@@ -1376,7 +1379,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-play-sec.png</normaloff>:/icons/icons/icon-play-sec.png</iconset>
    </property>
    <property name="text">
@@ -1394,7 +1397,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-play.png</normaloff>:/icons/icons/icon-play.png</iconset>
    </property>
    <property name="text">
@@ -1412,7 +1415,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/fscn-up.png</normaloff>:/icons/icons/fscn-up.png</iconset>
    </property>
    <property name="text">
@@ -1433,7 +1436,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
@@ -1497,7 +1500,7 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
    </property>
    <property name="text">
@@ -1569,7 +1572,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-toggle-taxis.png</normaloff>:/icons/icons/icon-toggle-taxis.png</iconset>
    </property>
    <property name="text">
@@ -1592,7 +1595,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="icon-resources.qrc">
      <normaloff>:/icons/icons/icon-toggle-cursor.png</normaloff>:/icons/icons/icon-toggle-cursor.png</iconset>
    </property>
    <property name="text">
@@ -1605,6 +1608,28 @@
     <bool>true</bool>
    </property>
   </action>
+  <action name="action_Undo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Undo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="action_Redo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Redo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -1614,6 +1639,8 @@
    <header>tools/support/toolbar.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="icon-resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
