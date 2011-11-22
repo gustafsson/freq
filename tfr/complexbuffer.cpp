@@ -23,7 +23,23 @@ ComplexBuffer::
             sample_offset(buffer.sample_offset),
             sample_rate(buffer.sample_rate)
 {
-    DataStorage<float>::Ptr real_waveform = buffer.waveform_data();
+    setData(buffer.waveform_data());
+}
+
+
+ComplexBuffer::
+        ComplexBuffer(DataStorage<float>::Ptr real_waveform)
+            :
+            sample_offset(0),
+            sample_rate(1)
+{
+    setData(real_waveform);
+}
+
+
+void ComplexBuffer::
+        setData(DataStorage<float>::Ptr real_waveform)
+{
     DataStorageSize sz = real_waveform->getNumberOfElements();
     TIME_COMPLEX_BUFFER TaskTimer tt("ComplexBuffer of %lu x %lu x %lu elements", sz.width, sz.height, sz.depth );
 

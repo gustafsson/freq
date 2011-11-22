@@ -24,6 +24,7 @@ CONFIG += warn_on
 DEFINES += SAWE_NO_MUTEX
 #DEFINES += CUDA_MEMCHECK_TEST
 QT += opengl
+QT += network
 
 macx:QMAKE_LFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
 macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
@@ -121,6 +122,7 @@ FORMS += \
     sawe/enterlicense.ui \
     tools/settingsdialog.ui \
     tools/getcudaform.ui \
+    tools/sendfeedback.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

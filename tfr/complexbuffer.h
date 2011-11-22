@@ -22,6 +22,8 @@ public:
     */
     ComplexBuffer(const Signal::Buffer& b);
 
+    ComplexBuffer(DataStorage<float>::Ptr inputbuffer);
+
 
     /**
         Really inefficient, don't do this. Will recompute get_real for each
@@ -60,6 +62,7 @@ public:
 protected:
     Signal::pBuffer _my_real;
 
+    void setData(DataStorage<float>::Ptr inputbuffer);
     //    boost::scoped_ptr<GpuCpuData<float2> > _complex_waveform_data;
     DataStorage<std::complex<float> >::Ptr _complex_waveform_data;
 };

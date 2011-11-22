@@ -222,15 +222,15 @@ void Application::
     setActiveWindow( 0 );
     setActiveWindow( p->mainWindow() );
 
-    if ("not"==Reader::reader_text().substr(0,3))
-        return;
-
     if (1 == _projects.size())
     {
         pProject q = *_projects.begin();
         if (!q->isModified() && q->worker.number_of_samples() == 0)
             q->mainWindow()->close();
     }
+
+    if ("not"==Reader::reader_text().substr(0,3))
+        return;
 
     _projects.insert( p );
 
@@ -357,6 +357,7 @@ void Application::
     _title_string = Reader::reader_title() + " - " + _version_string;
 }
 
+
 void Application::
         check_license()
 {
@@ -365,5 +366,6 @@ void Application::
     global_ptr()->_version_string.clear();
     global_ptr()->build_version_string();
 }
+
 
 } // namespace Sawe

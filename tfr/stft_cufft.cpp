@@ -91,48 +91,23 @@ void Stft::
 }
 
 
-Tfr::pChunk Stft::
-        computeWithCufft(Signal::pBuffer b)
+void Stft::
+        computeWithCufft(DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize)
 {
-    DataStorageSize actualSize(
-            _window_size/2 + 1,
-            b->number_of_samples()/_window_size );
-
-    DataStorageSize n = actualSize.width * actualSize.height;
-
-    if (0==actualSize.height) // not enough data
-        return Tfr::pChunk();
-
-    Tfr::pChunk chunk( new Tfr::StftChunk(_window_size) );
-
-    chunk->transform_data.reset( new Tfr::ChunkData( n ));
-
-    chunk->freqAxis = freqAxis( b->sample_rate );
-    chunk->chunk_offset = b->sample_offset + _window_size/2;
-    chunk->first_valid_sample = 0;
-    chunk->sample_rate = b->sample_rate / _window_size;
-    ((StftChunk*)chunk.get())->original_sample_rate = b->sample_rate;
-    chunk->n_valid_samples = (chunk->nSamples()-1) * _window_size + 1;
-
-    if (0 == b->sample_offset)
-    {
-        chunk->n_valid_samples += chunk->chunk_offset;
-        chunk->chunk_offset = 0;
-    }
-
     cufftReal* input;
     cufftComplex* output;
-    if (!b->waveform_data()->HasValidContent<CudaGlobalStorage>())
+
+    if (!inputbuffer->HasValidContent<CudaGlobalStorage>())
     {
-        TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", b->waveform_data()->getSizeInBytes1D()/1024.f/1024.f);
-        input = CudaGlobalStorage::ReadOnly<1>( b->waveform_data() ).device_ptr();
+        TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", inputbuffer->getSizeInBytes1D()/1024.f/1024.f);
+        input = CudaGlobalStorage::ReadOnly<1>( inputbuffer ).device_ptr();
         TIME_STFT CudaException_ThreadSynchronize();
     }
     else
     {
-        input = CudaGlobalStorage::ReadOnly<1>( b->waveform_data() ).device_ptr();
+        input = CudaGlobalStorage::ReadOnly<1>( inputbuffer ).device_ptr();
     }
-    output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( chunk->transform_data ).device_ptr();
+    output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( transform_data ).device_ptr();
 
     // Transform signal
     unsigned count = actualSize.height;
@@ -151,7 +126,7 @@ Tfr::pChunk Stft::
     if (slices * _window_size*multiple*sizeof(cufftComplex) > free)
     {
         slices = free/(_window_size*multiple*sizeof(cufftComplex));
-        slices = std::min(512u, std::min((unsigned)n.height, slices));
+        slices = std::min(512u, std::min((unsigned)actualSize.height, slices));
 
         if (0 == slices) // happens when 'free' is low (migth even be 0)
         {
@@ -191,61 +166,14 @@ Tfr::pChunk Stft::
     }
 
     TIME_STFT CudaException_ThreadSynchronize();
-
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
-
-    if (false)
-    {
-        Signal::pBuffer breal = b;
-        Signal::pBuffer binv = inverse( chunk );
-        float* binv_p = binv->waveform_data()->getCpuMemory();
-        float* breal_p = breal->waveform_data()->getCpuMemory();
-        Signal::IntervalType breal_length = breal->number_of_samples();
-        Signal::IntervalType binv_length = binv->number_of_samples();
-        BOOST_ASSERT( breal_length = binv_length );
-        float maxd = 0;
-        for(Signal::IntervalType i =0; i<breal_length; i++)
-        {
-            float d = breal_p[i]-binv_p[i];
-            if (d*d > maxd)
-                maxd = d*d;
-        }
-
-        TaskInfo("Difftest %s (value %g)", maxd<1e-8?"passed":"failed", maxd);
-    }
-
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
-
-    return chunk;
 }
 
 
-Tfr::pChunk Stft::
-        computeRedundantWithCufft(Signal::pBuffer breal)
+void Stft::
+        computeRedundantWithCufft(Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n)
 {
-    ComplexBuffer b(*breal);
-
-    BOOST_ASSERT( 0!=_window_size );
-
-    DataStorageSize n(
-            _window_size,
-            b.number_of_samples()/_window_size );
-
-    if (0==n.height) // not enough data
-        return Tfr::pChunk();
-
-    if (32768<n.height) // TODO can't handle this
-        n.height = 32768;
-
-    Tfr::pChunk chunk( new Tfr::StftChunk() );
-
-    chunk->transform_data.reset( new ChunkData( n ));
-
-
-    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>(b.complex_waveform_data()).device_ptr();
-    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>(chunk->transform_data).device_ptr();
+    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>(inputdata).device_ptr();
+    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>(outputdata).device_ptr();
 
     // Transform signal
     unsigned count = n.height;
@@ -292,67 +220,18 @@ Tfr::pChunk Stft::
         }
     }
 
-    chunk->freqAxis = freqAxis( breal->sample_rate );
-    chunk->chunk_offset = b.sample_offset + _window_size/2;
-    chunk->first_valid_sample = 0;
-    chunk->n_valid_samples = (chunk->nSamples()-1) * _window_size + 1;
-    chunk->sample_rate = b.sample_rate / chunk->nScales();
-    ((StftChunk*)chunk.get())->original_sample_rate = breal->sample_rate;
-
-    if (0 == b.sample_offset)
-    {
-        chunk->n_valid_samples += chunk->chunk_offset;
-        chunk->chunk_offset = 0;
-    }
-
     TIME_STFT CudaException_ThreadSynchronize();
-
-    return chunk;
 }
 
 
-Signal::pBuffer Stft::
-        inverseWithCufft(Tfr::pChunk chunk)
+void Stft::
+        inverseWithCufft( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n )
 {
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
-    BOOST_ASSERT( chunk->nChannels() == 1 );
+    const int actualSize = n.width/2 + 1;
+    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( inputdata ).device_ptr();
+    cufftReal* output = (cufftReal*)CudaGlobalStorage::WriteAll<1>( outputdata ).device_ptr();
 
-    const int chunk_window_size = (int)(chunk->freqAxis.max_frequency_scalar*2 + 0.5f);
-    const int actualSize = chunk_window_size/2 + 1;
-    int nwindows = chunk->transform_data->getNumberOfElements().width / actualSize;
-
-    //TIME_STFT
-            TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
-
-    int
-            firstSample = 0;
-
-    if (chunk->chunk_offset != 0)
-        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
-
-    Signal::pBuffer b(new Signal::Buffer(firstSample, nwindows*chunk_window_size, chunk->original_sample_rate));
-
-    BOOST_ASSERT( 0!= chunk_window_size );
-
-    if (0==nwindows) // not enough data
-        return Signal::pBuffer();
-
-    if (32768<nwindows) // TODO can't handle this
-        nwindows = 32768;
-
-    const DataStorageSize n(
-            chunk_window_size,
-            nwindows );
-
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
-
-    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( chunk->transform_data ).device_ptr();
-    cufftReal* output = (cufftReal*)CudaGlobalStorage::WriteAll<1>( b->waveform_data() ).device_ptr();
-
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
+    TIME_STFT CudaException_ThreadSynchronize();
 
     // Transform signal
     const unsigned count = n.height;
@@ -374,8 +253,7 @@ Signal::pBuffer Stft::
         slices = std::min(512u, std::min((unsigned)n.height, slices));
     }
 
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
+    TIME_STFT CudaException_ThreadSynchronize();
 
     CufftHandleContext
             _handle_ctx_c2r(0, CUFFT_C2R);
@@ -404,50 +282,17 @@ Signal::pBuffer Stft::
         }
     }
 
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
-
-    stftNormalizeInverse( b->waveform_data(), n.width );
-
-    CudaException_ThreadSynchronize();
-    CudaException_CHECK_ERROR();
-
-    return b;
+    TIME_STFT CudaException_ThreadSynchronize();
 }
 
 
-Signal::pBuffer Stft::
-        inverseRedundantWithCufft(Tfr::pChunk chunk)
+void Stft::
+        inverseRedundantWithCufft( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n )
 {
-    BOOST_ASSERT( chunk->nChannels() == 1 );
-    int
-            chunk_window_size = chunk->nScales(),
-            nwindows = chunk->nSamples();
+    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( inputdata ).device_ptr();
+    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( outputdata ).device_ptr();
 
-    TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
-
-    int
-            firstSample = 0;
-
-    if (chunk->chunk_offset != 0)
-        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
-
-    ComplexBuffer b(firstSample, nwindows*chunk_window_size, chunk->original_sample_rate);
-
-    BOOST_ASSERT( 0!= chunk_window_size );
-
-    if (0==nwindows) // not enough data
-        return Signal::pBuffer();
-
-    if (32768<nwindows) // TODO can't handle this
-        nwindows = 32768;
-
-    DataStorageSize n(
-            chunk_window_size,
-            nwindows );
-
-    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( chunk->transform_data ).device_ptr();
-    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( b.complex_waveform_data() ).device_ptr();
+    TIME_STFT CudaException_ThreadSynchronize();
 
     // Transform signal
     unsigned count = n.height;
@@ -495,13 +340,6 @@ Signal::pBuffer Stft::
     }
 
     TIME_STFT CudaException_ThreadSynchronize();
-
-    Signal::pBuffer realinv = b.get_real();
-    stftNormalizeInverse( realinv->waveform_data(), n.width );
-
-    TIME_STFT CudaException_ThreadSynchronize();
-
-    return realinv;
 }
 
 } // namespace Tfr

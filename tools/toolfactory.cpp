@@ -32,6 +32,8 @@
 #include "settingscontroller.h"
 #include "clickableimageview.h"
 #include "getcudaform.h"
+#include "sendfeedback.h"
+#include "checkupdates.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -132,6 +134,11 @@ ToolFactory::
 #ifndef USE_CUDA
     _objects.push_back( QPointer<QObject>( new GetCudaForm( p->mainWindow()->centralWidget() )));
 #endif
+
+    _objects.push_back( QPointer<QObject>( new SendFeedback( p->mainWindow() )));
+
+    _objects.push_back( QPointer<QObject>( new CheckUpdates( p->mainWindow() )));
+
 
     //
     // Insert new tools here, and delete things in the destructor in the

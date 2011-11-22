@@ -21,6 +21,8 @@ using namespace std;
 namespace Sawe
 {
 
+std::string Reader::name = "undefined name";
+
 unsigned radix = 52;
 
 #define cton_helper(low, high) \
@@ -184,6 +186,7 @@ string Reader::
 
         QString type = parts[0];
         QString licensee = parts[1];
+        Reader::name = licensee.toStdString();
         QString expires = parts[2];
         QTextStream qts(&expires);
         int year=-1, month=-1, day=-1;
@@ -210,6 +213,9 @@ string Reader::
             if (qd.addMonths(1) < QDate::currentDate())
                 return "";
 
+            if (qd.addMonths(1) < QDate::fromString(QString(__DATE__).replace("  ", " "), "MMM d yyyy"))
+                return "";
+
             QString licenseText;
 
             if (type!="-")
@@ -232,6 +238,7 @@ string Reader::
         reader_text(bool annoy)
 {
 #if defined(TARGET_reader)
+    name = "Sonic AWE Reader";
     return "Sonic AWE Reader";
 #else
     while (true)

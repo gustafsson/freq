@@ -673,11 +673,9 @@ void RenderView::
     model->renderer->collection = model->collections[i].get();
     model->renderer->fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
-    glEnable(GL_LIGHTING);
     glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     model->renderer->draw( yscale ); // 0.6 ms
     glDisable( GL_CULL_FACE );
-    glDisable(GL_LIGHTING);
     glEnable(GL_BLEND);
 }
 

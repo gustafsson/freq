@@ -25,7 +25,7 @@ typedef Tfr::ChunkElement BlockElemType;
 class ConverterPhase
 {
 public:
-    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& /*dataPosition*/ )
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& /*dataPosition*/ ) const
     {
 #ifdef __CUDACC__
         return atan2(v.x, v.y);
@@ -42,7 +42,7 @@ class ConverterAmplitudeAxis
 {
 public:
     ConverterAmplitudeAxis(float normalization_factor):normalization_factor(normalization_factor) {}
-    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition )
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition ) const
     {
         return Heightmap::AmplitudeValue<Axis>()( normalization_factor*ConverterAmplitude()( v, dataPosition ) );
     }
@@ -110,19 +110,23 @@ public:
         {
             v = interpolate(
                     interpolate(
-                            get( q, reader ),
-                            get( DataPos(q.x+1.f, q.y), reader ),
+                            get( q, reader, c ),
+                            get( DataPos(q.x+1.f, q.y), reader, c ),
                             k.x),
                     interpolate(
-                            get( DataPos(q.x, q.y+1.f), reader ),
-                            get( DataPos(q.x+1.f, q.y+1.f), reader ),
+                            get( DataPos(q.x, q.y+1.f), reader, c ),
+                            get( DataPos(q.x+1.f, q.y+1.f), reader, c ),
                             k.x),
                     k.y );
         }
         else
         {
             for (float x=q.x; x<q.x+xstep; ++x)
-                v = max(v, get( DataPos(x, q.y), reader ));
+                v = max(v,
+                        interpolate(
+                                get( DataPos(x, q.y), reader, c ),
+                                get( DataPos(x, q.y+1.f), reader, c ),
+                                k.y));
         }
 
 /*        if (xstep <= 1.0)
@@ -175,10 +179,10 @@ public:
         return v;
     }
 
-    template<typename Reader>
-    RESAMPLE_CALL float get( DataPos const& q, Reader& reader )
+    template<typename Reader, typename Converter>
+    RESAMPLE_CALL float get( DataPos const& q, Reader& reader, Converter& c )
     {
-        return defaultConverter( reader( q ), q );
+        return c( reader( q ), q );
     }
 
     Tfr::FreqAxis inputAxis;

@@ -25,8 +25,8 @@ Signal::pBuffer SuperSample::
 
     Tfr::pChunk chunk = Tfr::Fft()( b );
 
-    unsigned src_window_size = ((Tfr::StftChunk*)chunk.get())->window_size;
-    Tfr::pChunk biggerchunk( new Tfr::StftChunk( src_window_size << multiple ));
+    unsigned src_window_size = ((Tfr::StftChunk*)chunk.get())->window_size();
+    Tfr::pChunk biggerchunk( new Tfr::StftChunk( src_window_size << multiple, false ));
     biggerchunk->freqAxis = chunk->freqAxis;
     biggerchunk->chunk_offset = chunk->chunk_offset << multiple;
     biggerchunk->first_valid_sample = chunk->first_valid_sample << multiple;

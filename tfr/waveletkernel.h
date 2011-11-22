@@ -11,6 +11,5 @@ void        wtCompute( DataStorage<Tfr::ChunkElement>::Ptr in_waveform_ft, Tfr::
 //void        wtInverseEllipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream=0 );
 //void        wtInverseBox( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples, cudaStream_t stream=0 );
 void        wtClamp( Tfr::ChunkData::Ptr in_wt, size_t sample_offset, Tfr::ChunkData::Ptr out_clamped_wt );
-void        stftNormalizeInverse( DataStorage<float>::Ptr wave, unsigned length );
 
 #endif // WAVELET_CU_H

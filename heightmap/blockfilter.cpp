@@ -344,7 +344,7 @@ void StftToBlock::
 {
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(&chunk);
     BOOST_ASSERT( stftchunk );
-    float normalization_factor = 1.f/sqrtf(stftchunk->window_size);
+    float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
     mergeColumnMajorChunk(block, chunk, outData, normalization_factor);
 }
 
