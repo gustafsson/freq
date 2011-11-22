@@ -87,7 +87,6 @@ private slots:
     void gotomuchdifferent();
     void gotosonicaweforum();
     void findplugins();
-    void findupdates();
 
     void checkVisibilityToolProperties(bool visible);
 private:

@@ -75,7 +75,6 @@ void SaweMainWindow::
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
     connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));
-    connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(findupdates()));
 
     ui->actionOperation_details->setChecked( false );
 
@@ -478,20 +477,6 @@ void SaweMainWindow::
     message.exec();
 
     QDesktopServices::openUrl(QUrl("http://sonicawe.muchdifferent.com"));
-}
-
-
-void SaweMainWindow::
-        findupdates()
-{
-    QMessageBox message(
-            QMessageBox::Information,
-            "www.muchdifferent.com",
-            QString("Your version of Sonic AWE is '%1'. The latest version of Sonic AWE can be found at muchdifferent.com.").arg(Sawe::Application::version_string().c_str()));
-
-    message.exec();
-
-    QDesktopServices::openUrl(QUrl("http://muchdifferent.com/?page=signals-download"));
 }
 
 

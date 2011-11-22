@@ -33,6 +33,7 @@
 #include "clickableimageview.h"
 #include "getcudaform.h"
 #include "sendfeedback.h"
+#include "checkupdates.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -135,6 +136,8 @@ ToolFactory::
 #endif
 
     _objects.push_back( QPointer<QObject>( new SendFeedback( p->mainWindow() )));
+
+    _objects.push_back( QPointer<QObject>( new CheckUpdates( p->mainWindow() )));
 
 
     //

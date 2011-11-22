@@ -21,7 +21,7 @@ using namespace std;
 namespace Sawe
 {
 
-std::string Reader::name;
+std::string Reader::name = "undefined name";
 
 unsigned radix = 52;
 
@@ -238,6 +238,7 @@ string Reader::
         reader_text(bool annoy)
 {
 #if defined(TARGET_reader)
+    name = "Sonic AWE Reader";
     return "Sonic AWE Reader";
 #else
     while (true)
