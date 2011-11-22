@@ -12,8 +12,22 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
-#ifndef SONICAWE_UNAME
-#define SONICAWE_UNAME "Linux #78-Ubuntu SMP Tue Oct 11 16:11:24 UTC 2011 x86_64"
+#define STRINGIFY(x) #x
+#define TOSTR(x) STRINGIFY(x)
+
+#ifdef SONICAWE_UNAME
+    #ifdef SONICAWE_UNAMEm
+        #define UNAME2 TOSTR(SONICAWE_UNAME) TOSTR(SONICAWE_UNAMEm)
+    #else
+        #define UNAME2 TOSTR(SONICAWE_UNAME)
+    #endif
+    #ifdef SONICAWE_DISTCODENAME
+        #define UNAME UNAME2 TOSTR(SONICAWE_DISTCODENAME)
+    #else
+        #define UNAME UNAME2
+    #endif
+#else
+    #define UNAME "Linux x86_64 lucid"
 #endif
 
 namespace Tools {
@@ -72,7 +86,7 @@ void CheckUpdates::
     Support::BuildHttpPost postdata;
 
     postdata.addKeyValue( "kind", manualUpdate?"manual":"auto" );
-    postdata.addKeyValue( "uname", SONICAWE_UNAME );
+    postdata.addKeyValue( "uname", UNAME );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
     postdata.addKeyValue( "version", Sawe::Application::version_string().c_str() );
