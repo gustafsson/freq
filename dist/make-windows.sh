@@ -17,11 +17,11 @@ echo qmaketarget: $qmaketarget
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
 	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 	cd gpumisc
-	qmake $qmaketarget
+	qmake "$qmaketarget"
 	cd ../sonicawe
-	qmake $qmaketarget
+	qmake "$qmaketarget"
 	cd ..
-	qmake $qmaketarget
+	qmake "$qmaketarget"
 	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
   rm -f sonicawe/release/sonicawe.exe
@@ -38,11 +38,11 @@ qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
 	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 	cd gpumisc
-	qmake $qmaketarget
+	qmake "$qmaketarget"
 	cd ../sonicawe
-	qmake $qmaketarget
+	qmake "$qmaketarget"
 	cd ..
-	qmake $qmaketarget
+	qmake "$qmaketarget"
 	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
   rm -f sonicawe/release/sonicawe.exe
