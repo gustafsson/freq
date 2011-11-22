@@ -32,7 +32,7 @@ private slots:
 
 private:
     bool manualUpdate;
-    QString targetUrl, checkUpdatesTag, downloadUrl;
+    QString targetUrl, checkUpdatesTag;
     QScopedPointer<QNetworkAccessManager> manager;
 };
 

@@ -12,6 +12,15 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
+#define STRINGIFY(x) #x
+#define TOSTR(x) STRINGIFY(x)
+
+#ifdef SONICAWE_UNAME
+#define UNAME TOSTR(SONICAWE_UNAME)
+#else
+#define UNAME "Linux johan-laptop 2.6.32-35-generic #78-Ubuntu SMP Tue Oct 11 16:11:24 UTC 2011 x86_64 GNU/Linux"
+#endif
+
 namespace Tools {
 
 CheckUpdates::
@@ -24,10 +33,6 @@ CheckUpdates::
     ::Ui::MainWindow* ui = parent->getItems();
     connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(checkForUpdates()));
 
-
-    downloadUrl = "http://muchdifferent.com/?page=signals-download"
-                  "&licence=" + QSettings().value("value").toString() +
-                  "#download";
 
     if ("not"==Sawe::Reader::reader_text().substr(0,3))
         return;
@@ -72,6 +77,7 @@ void CheckUpdates::
     Support::BuildHttpPost postdata;
 
     postdata.addKeyValue( "kind", manualUpdate?"manual":"auto" );
+    postdata.addKeyValue( "uname", UNAME );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
     postdata.addKeyValue( "version", Sawe::Application::version_string().c_str() );
@@ -118,9 +124,24 @@ void CheckUpdates::
         }
         else
         {
-            int q = QMessageBox::question(dynamic_cast<QWidget*>(parent()), "Sonic AWE updates", s, QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            int i = s.indexOf("\nurl=",0, Qt::CaseInsensitive);
+            QString message, url;
+            if (i == -1)
+            {
+                message = s;
+                url = "http://muchdifferent.com/?page=signals-download"
+                      "&licence=" + QSettings().value("value").toString() +
+                      "#download";
+            }
+            else
+            {
+                message = s.mid(0, i);
+                url = s.mid(i+5);
+            }
+
+            int q = QMessageBox::question(dynamic_cast<QWidget*>(parent()), "Sonic AWE updates", message, QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
             if (q == QMessageBox::Yes)
-                QDesktopServices::openUrl(downloadUrl);
+                QDesktopServices::openUrl(url);
         }
     }
 }
