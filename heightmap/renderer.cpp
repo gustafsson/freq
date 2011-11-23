@@ -1289,15 +1289,16 @@ void Renderer::drawAxes( float T )
 
             // find next intersection along v
             double nu;
-            if (taxis)  nu = (p[0] - p1[0])/v[0];
-            else        nu = (p[2] - p1[2])/v[2];
+            int c1 = taxis ? 0 : 2;
+            int c2 = !taxis ? 0 : 2;
+            nu = (p[c1] - p1[c1])/v[c1];
 
             // if valid intersection
             if ( nu > u && nu<=1 ) { u = nu; }
             else break;
 
             // compute intersection
-            p = p1 + v*u;
+            p[c2] = p1[c2] + v[c2]*u;
 
 
             GLvector np = p;
