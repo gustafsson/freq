@@ -103,14 +103,18 @@ void CheckUpdates::
         replyFinished(QNetworkReply* reply)
 {
     QString s = reply->readAll();
-    TaskInfo("CheckUpdates reply error=%s\n%s",
+    TaskInfo("CheckUpdates reply error=%s (code %d)\n%s",
              QNetworkReply::NoError == reply->error()?"no error":reply->errorString().toStdString().c_str(),
+             (int)reply->error(),
              s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
 
     if (QNetworkReply::NoError != reply->error())
     {
-        QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
-        QSettings().remove(checkUpdatesTag);
+        if (QNetworkReply::HostNotFoundError != reply->error())
+        {
+            QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
+            QSettings().remove(checkUpdatesTag);
+        }
     }
     else if (s.contains("sorry", Qt::CaseInsensitive) ||
              s.contains("error", Qt::CaseInsensitive) ||
