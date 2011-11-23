@@ -5,7 +5,7 @@ namespace Tools {
 namespace Commands {
 
 ViewState::
-        ViewState(ProjectState* state)
+        ViewState(CommandInvoker* state)
             :
     QObject(state)
 {

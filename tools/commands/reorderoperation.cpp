@@ -7,9 +7,10 @@ namespace Tools {
 namespace Commands {
 
 ReorderOperation::
-        ReorderOperation(Signal::pOperation operation, Signal::pOperation newSource)
+        ReorderOperation(Signal::pOperation operation, Signal::pOperation operationTail, Signal::pOperation newSource)
             :
             operation(operation),
+            operationTail(operationTail),
             newSource(newSource)
 {
 }
@@ -18,7 +19,9 @@ ReorderOperation::
 void ReorderOperation::
         execute()
 {
-    oldSource = operation->source();
+    oldSource = operationTail->source();
+    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, oldSource ));
+
     BOOST_FOREACH( Signal::Operation*o, operation->outputs())
     {
         o->source( oldSource );
@@ -30,13 +33,17 @@ void ReorderOperation::
         o->source( operation );
     }
 
-    operation->source( newSource );
+    operationTail->source( newSource );
+
+    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, newSource ));
 }
 
 
 void ReorderOperation::
         undo()
 {
+    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, newSource ));
+
     BOOST_FOREACH( Signal::Operation*o, operation->outputs())
     {
         o->source( newSource );
@@ -48,7 +55,9 @@ void ReorderOperation::
         o->source( operation );
     }
 
-    operation->source( oldSource );
+    operationTail->source( oldSource );
+
+    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, oldSource ));
 }
 
 
@@ -56,7 +65,7 @@ std::string ReorderOperation::
         toString()
 {
     std::stringstream ss;
-    ss << "Reorder " << operation->toString();
+    ss << "Reorder " << operationTail->name();
     return ss.str();
 }
 

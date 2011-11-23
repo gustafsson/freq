@@ -883,7 +883,7 @@ void RenderController::
     view->graphicsview = new GraphicsView(view);
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
-    view->tool_selector = view->graphicsview->toolSelector(0);
+    view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);

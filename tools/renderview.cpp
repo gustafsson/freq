@@ -57,7 +57,7 @@ RenderView::
         RenderView(RenderModel* model)
             :
             last_ysize(1),
-            orthoview(1),
+            viewstate(model->project()->commandInvoker()),
             model(model),
             glwidget(0),
             graphicsview(0),
@@ -72,15 +72,15 @@ RenderView::
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
-    if (model->_rx>=90) { model->_rx=90; orthoview.reset(1); } else orthoview.reset(0);
-    //if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
+    if (model->_rx>=90) { model->_rx=90; model->orthoview.reset(1); } else model->orthoview.reset(0);
 
     computeChannelColors();
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
-    connect( model->project()->projectState(), SIGNAL(projectChanged(const Command*)), SLOT(userinput_update()));
+    connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(userinput_update()));
+    connect( &viewstate, SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
 
     _update_timer = new QTimer;
     _update_timer->setSingleShot( true );
@@ -377,7 +377,7 @@ QPointF RenderView::
         getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     GLdouble objY = 0;
-    if (1 != orthoview && use_heightmap_value)
+    if (1 != model->orthoview && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->renderer->y_scale * 4 * last_ysize;
 
     GLdouble winX, winY, winZ;
@@ -424,7 +424,7 @@ QPointF RenderView::
 Heightmap::Position RenderView::
         getHeightmapPos( QPointF widget_pos, bool useRenderViewContext )
 {
-    if (1 == orthoview)
+    if (1 == model->orthoview)
         return getPlanePos(widget_pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderView::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
@@ -1003,7 +1003,7 @@ void RenderView::
             collection->next_frame(); // Discard needed blocks before this row
         }
 
-        drawCollections( _renderview_fbo.get(), 1 - orthoview );
+        drawCollections( _renderview_fbo.get(), 1 - model->orthoview );
 
         last_ysize = model->renderer->last_ysize;
         glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
@@ -1211,15 +1211,15 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
-    if (model->_rx<90) orthoview = 0;
-    if (orthoview != 1 && orthoview != 0)
+    if (model->_rx<90) model->orthoview = 0;
+    if (model->orthoview != 1 && model->orthoview != 0)
         userinput_update();
 
     glLoadIdentity();
     glTranslated( model->_px, model->_py, model->_pz );
 
     glRotated( model->_rx, 1, 0, 0 );
-    glRotated( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
+    glRotated( fmod(fmod(model->_ry,360)+360, 360) * (1-model->orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*model->orthoview, 0, 1, 0 );
     glRotated( model->_rz, 0, 0, 1 );
 
     if (model->renderer->left_handed_axes)
@@ -1234,7 +1234,7 @@ void RenderView::
 
     glTranslated( -model->_qx, -model->_qy, -model->_qz );
 
-    orthoview.TimeStep(.08);
+    model->orthoview.TimeStep(.08);
 }
 
 

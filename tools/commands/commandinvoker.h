@@ -1,5 +1,5 @@
-#ifndef PROJECTSTATE_H
-#define PROJECTSTATE_H
+#ifndef COMMANDINVOKER_H
+#define COMMANDINVOKER_H
 
 #include <QObject>
 #include <boost/shared_ptr.hpp>
@@ -11,14 +11,14 @@ namespace Sawe { class Project; }
 namespace Tools {
 namespace Commands {
 
-class ProjectState: public QObject
+class CommandInvoker: public QObject
 {
     Q_OBJECT
 public:
-    ProjectState(Sawe::Project * project);
-    virtual ~ProjectState();
+    CommandInvoker(Sawe::Project * project);
+    virtual ~CommandInvoker();
 
-    void executeCommand(CommandP cmd);
+    void invokeCommand(CommandP cmd);
     void redo();
     void undo();
 
@@ -36,4 +36,4 @@ private:
 } // namespace Commands
 } // namespace Tools
 
-#endif // PROJECTSTATE_H
+#endif // COMMANDINVOKER_H

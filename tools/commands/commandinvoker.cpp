@@ -1,33 +1,33 @@
-#include "projectstate.h"
+#include "commandinvoker.h"
 
 #include <boost/foreach.hpp>
 
 namespace Tools {
 namespace Commands {
 
-ProjectState::
-        ProjectState(Sawe::Project * project)
+CommandInvoker::
+        CommandInvoker(Sawe::Project * project)
             :
             project_(project)
 {
 }
 
 
-ProjectState::
-        ~ProjectState()
+CommandInvoker::
+        ~CommandInvoker()
 {
 }
 
 
-void ProjectState::
-        executeCommand(CommandP cmd)
+void CommandInvoker::
+        invokeCommand(CommandP cmd)
 {
-    commandList_.execute(cmd);
+    commandList_.invoke(cmd);
     emit projectChanged(commandList_.present());
 }
 
 
-void ProjectState::
+void CommandInvoker::
         redo()
 {
     commandList_.redo();
@@ -35,7 +35,7 @@ void ProjectState::
 }
 
 
-void ProjectState::
+void CommandInvoker::
         undo()
 {
     commandList_.undo();
@@ -43,14 +43,14 @@ void ProjectState::
 }
 
 
-const CommandList& ProjectState::
+const CommandList& CommandInvoker::
         commandList() const
 {
     return commandList_;
 }
 
 
-Sawe::Project * ProjectState::
+Sawe::Project * CommandInvoker::
         project() const
 {
     return project_;

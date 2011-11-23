@@ -1,7 +1,7 @@
 #ifndef VIEWSTATE_H
 #define VIEWSTATE_H
 
-#include "projectstate.h"
+#include "commandinvoker.h"
 
 namespace Tools {
 namespace Commands {
@@ -12,7 +12,7 @@ class ViewState : public QObject
 {
     Q_OBJECT
 public:
-    explicit ViewState(ProjectState* state);
+    explicit ViewState(CommandInvoker* state);
 
 signals:
     void viewChanged(const ViewCommand*);

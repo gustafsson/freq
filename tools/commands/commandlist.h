@@ -16,7 +16,7 @@ public:
 
     void undo();
     void redo();
-    void execute( CommandP );
+    void invoke( CommandP );
     std::string toString() const;
 
     std::string canUndo() const;
@@ -30,7 +30,10 @@ private:
       presentCommand points to the index in commands where the next operation will be executed.
       */
     unsigned presentCommand;
+    unsigned lastCommandTimeStamp;
     std::vector<CommandP> commands;
+
+    void tryMeld();
 };
 
 } // namespace Commands

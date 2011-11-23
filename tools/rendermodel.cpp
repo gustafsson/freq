@@ -19,6 +19,7 @@ RenderModel::
         _rx(0), _ry(0), _rz(0),
         xscale(0),
         zscale(0),
+        orthoview(1),
         _project(p)
 {
     resetSettings();

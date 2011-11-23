@@ -10,7 +10,7 @@ class QAction;
 namespace Tools {
 namespace Commands {
 
-    class ProjectState;
+    class CommandInvoker;
 namespace Ui {
     class CommandHistory;
 }
@@ -20,7 +20,7 @@ class CommandHistory : public QWidget
     Q_OBJECT
 
 public:
-    explicit CommandHistory(ProjectState* project_state);
+    explicit CommandHistory(CommandInvoker* command_invoker);
     ~CommandHistory();
 
 private slots:
@@ -28,7 +28,7 @@ private slots:
 
 private:
     Ui::CommandHistory *ui;
-    ProjectState* project_state_;
+    CommandInvoker* command_invoker_;
     QDockWidget* dock;
     QAction* actionCommandHistory;
 };

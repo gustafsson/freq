@@ -4,10 +4,9 @@
 #include "command.h"
 #include "signal/operation.h"
 
-class QWidget;
-
 namespace Tools {
     class SelectionController;
+
 namespace Commands {
 
 class ChangeSelectionCommand : public Tools::Commands::Command

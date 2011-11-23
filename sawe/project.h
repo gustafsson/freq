@@ -6,7 +6,7 @@
 #include "signal/worker.h"
 #include "signal/target.h"
 #include "tools/toolfactory.h"
-#include "tools/commands/projectstate.h"
+#include "tools/commands/commandinvoker.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -23,7 +23,7 @@
 
 namespace Tools {
     namespace Commands {
-        class ProjectState;
+        class CommandInvoker;
     }
 }
 
@@ -127,7 +127,7 @@ public:
     void setModified( bool is_modified=true );
 
 
-    Tools::Commands::ProjectState* projectState();
+    Tools::Commands::CommandInvoker* commandInvoker();
 
 #if !defined(TARGET_reader)
     /**
@@ -182,7 +182,7 @@ private:
     QByteArray defaultGuiState;
 
     bool is_modified_;
-    boost::scoped_ptr<Tools::Commands::ProjectState> project_state_;
+    boost::scoped_ptr<Tools::Commands::CommandInvoker> command_invoker_;
 
     std::string project_filename_, project_title_;
 

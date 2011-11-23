@@ -3,7 +3,7 @@
 
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
-#include "projectstate.h"
+#include "commandinvoker.h"
 #include "sawe/project.h"
 
 #include <boost/foreach.hpp>
@@ -14,18 +14,18 @@ namespace Tools {
 namespace Commands {
 
 CommandHistory::
-        CommandHistory(ProjectState* project_state)
+        CommandHistory(CommandInvoker* command_invoker)
             :
     QWidget(),
     ui(new Ui::CommandHistory),
-    project_state_(project_state)
+    command_invoker_(command_invoker)
 {
     ui->setupUi(this);
 
-    connect(project_state, SIGNAL(projectChanged(const Command*)), SLOT(redrawHistory()));
+    connect(command_invoker, SIGNAL(projectChanged(const Command*)), SLOT(redrawHistory()));
 
 
-    ::Ui::SaweMainWindow* MainWindow = project_state->project()->mainWindow();
+    ::Ui::SaweMainWindow* MainWindow = command_invoker->project()->mainWindow();
     dock = new QDockWidget(MainWindow);
     dock->setObjectName(QString::fromUtf8("dockWidgetCommandHistory"));
     dock->setMinimumSize(QSize(42, 79));
@@ -52,6 +52,8 @@ CommandHistory::
 
     dock->setVisible( false );
     actionCommandHistory->setChecked( false );
+
+    redrawHistory();
 }
 
 
@@ -66,8 +68,8 @@ void CommandHistory::
         redrawHistory()
 {
     ui->listWidget->clear();
-    const std::vector<CommandP>& list = project_state_->commandList().getCommandList();
-    const Command* present = project_state_->commandList().present();
+    const std::vector<CommandP>& list = command_invoker_->commandList().getCommandList();
+    const Command* present = command_invoker_->commandList().present();
 
     BOOST_FOREACH(CommandP p, list)
     {

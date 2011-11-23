@@ -10,7 +10,7 @@
 #include "signal/operationcache.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
-#include "tools/commands/projectstate.h"
+#include "tools/commands/commandinvoker.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tools/commands/appendoperationcommand.h"
@@ -33,7 +33,7 @@ Project::
 :   worker(Signal::pTarget()),
     layers(this),
     is_modified_(false),
-    project_state_( new Tools::Commands::ProjectState(this) ),
+    command_invoker_( new Tools::Commands::CommandInvoker(this) ),
     project_title_(layer_title)
 {
     Signal::pChain chain(new Signal::Chain(root));
@@ -62,7 +62,7 @@ void Project::
         appendOperation(Signal::pOperation s)
 {
     Tools::Commands::CommandP c( new Tools::Commands::AppendOperationCommand(this, s));
-    projectState()->executeCommand(c);
+    commandInvoker()->invokeCommand(c);
 }
 
 
@@ -253,10 +253,10 @@ void Project::
 }
 
 
-Tools::Commands::ProjectState* Project::
-        projectState()
+Tools::Commands::CommandInvoker* Project::
+        commandInvoker()
 {
-    return project_state_.get();
+    return command_invoker_.get();
 }
 
 

@@ -5,6 +5,9 @@
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "heightmap/renderer.h"
+#include "tools/commands/movecameracommand.h"
+#include "tools/commands/zoomcameracommand.h"
+#include "tools/commands/rotatecameracommand.h"
 
 // Qt
 #include <QMouseEvent>
@@ -233,97 +236,18 @@ void NavigationController::
 }
 
 
-bool NavigationController::
+void NavigationController::
         zoom(int delta, ZoomMode mode)
 {
-    Tools::RenderView &r = *_view;
-    float L = r.last_length();
-    float fs = r.model->project()->head->head_source()->sample_rate();
-    float min_xscale = 4.f/std::max(L,10/fs);
-    float max_xscale = 0.05f*fs;
-
-
-    const Tfr::FreqAxis& tfa = r.model->collections[0]->transform()->freqAxis(fs);
-    unsigned maxi = tfa.getFrequencyScalar(fs/2);
-
-    float hza = tfa.getFrequency(0u);
-    float hza2 = tfa.getFrequency(1u);
-    float hzb = tfa.getFrequency(maxi - 1);
-    float hzb2 = tfa.getFrequency(maxi - 2);
-
-    const Tfr::FreqAxis& ds = r.model->display_scale();
-    float scalara = ds.getFrequencyScalar( hza );
-    float scalara2 = ds.getFrequencyScalar( hza2 );
-    float scalarb = ds.getFrequencyScalar( hzb );
-    float scalarb2 = ds.getFrequencyScalar( hzb2 );
-
-    float minydist = std::min(fabsf(scalara2 - scalara), fabsf(scalarb2 - scalarb));
-
-    float min_yscale = 4.f;
-    float max_yscale = 1.f/minydist;
-
-    if (delta > 0)
-    {
-        switch(mode)
-        {
-        case ScaleX: if (r.model->xscale == min_xscale)
-                return false;
-            break;
-        case ScaleZ: if (r.model->zscale == min_yscale)
-                return false;
-            break;
-        default:
-            break;
-        }
-    }
-
+    float ds = 0, dt = 0, dz = 0;
     switch(mode)
     {
-    case Zoom: doZoom(delta); break;
-    case ScaleX: doZoom( delta, &r.model->xscale, &min_xscale, &max_xscale); break;
-    case ScaleZ: doZoom( delta, &r.model->zscale, &min_yscale, &max_yscale ); break;
+    case Zoom: dz = delta; break;
+    case ScaleX: dt = delta; break;
+    case ScaleZ: ds = delta; break;
     }
 
-    return true;
-}
-
-
-void NavigationController::
-        doZoom(int delta, float* scale, float* min_scale, float* max_scale)
-{
-    //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-    Tools::RenderView &r = *_view;
-    float ps = 0.0005;
-    if(scale)
-    {
-        float d = ps * delta;
-        if (d>0.1)
-            d=0.1;
-        if (d<-0.1)
-            d=-0.1;
-
-        *scale *= (1-d);
-
-        if (d > 0 )
-        {
-            if (min_scale && *scale<*min_scale)
-                *scale = *min_scale;
-        }
-        else
-        {
-            if (max_scale && *scale>*max_scale)
-                *scale = *max_scale;
-        }
-    }
-    else
-    {
-        r.model->_pz *= (1+ps * delta);
-
-        if (r.model->_pz<-40) r.model->_pz = -40;
-        if (r.model->_pz>-.1) r.model->_pz = -.1;
-    }
-
-    _view->userinput_update();
+    zoomCamera( dt, ds, dz);
 }
 
 
@@ -336,8 +260,6 @@ void NavigationController::
     //TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
 
-    float rs = 0.2;
-
     int x = e->x(), y = e->y();
 //    TaskTimer tt("moving");
 
@@ -347,7 +269,7 @@ void NavigationController::
     if( rotateButton.isDown() ) {
         if (e->modifiers().testFlag(Qt::AltModifier))
         {
-            zoom( 10* (rotateButton.deltaX( x ) + rotateButton.deltaY( y )), Zoom );
+            zoomCamera( 0, 0, 10* (rotateButton.deltaX( x ) + rotateButton.deltaY( y )) );
         }
         else if (zoom_only_ || e->modifiers().testFlag(Qt::ControlModifier))
         {
@@ -356,30 +278,16 @@ void NavigationController::
             Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
             if (success1 && success2)
             {
-                if (!zoom( 1500*(last.time - current.time)*r.model->xscale, ScaleX ))
-                {
-                    float L = _view->model->project()->worker.source()->length();
-                    float d = std::min( 0.5f * fabsf(last.time - current.time), fabsf(r.model->_qx - L/2));
-                    r.model->_qx += r.model->_qx>L*.5f ? -d : d;
-                }
-
-                if (!zoom( 1500*(last.scale - current.scale)*r.model->zscale, ScaleZ ))
-                {
-                    float d = std::min( 0.5f * fabsf(last.scale - current.scale), fabsf(r.model->_qz - .5f));
-                    r.model->_qz += r.model->_qz>.5f ? -d : d;
-                }
+                zoomCamera( last.time - current.time,
+                            last.scale - current.scale,
+                            0 );
             }
         }
         else
         {
             //Controlling the rotation with the right button.
-            r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
-            r.model->_rx += rs * rotateButton.deltaY( y );
-            if (r.model->_rx<10) r.model->_rx=10;
-            if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
-            if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
+            rotateCamera( rotateButton.deltaX( x ), rotateButton.deltaY( y ) );
         }
-
     }
 
     if( moveButton.isDown() )
@@ -453,6 +361,7 @@ void NavigationController::
     shortcuts.push_back( Qt::Key_Escape );
     ui->actionActivateNavigation->setShortcuts( shortcuts );
 
+    _view->toolSelector()->setCurrentToolCommand( this );
     ui->actionActivateNavigation->setChecked(true);
 
     bindKeyToSlot( main, "Up", this, SLOT(moveUp()) );
@@ -478,16 +387,25 @@ void NavigationController::bindKeyToSlot( QWidget* owner, const char* keySequenc
 void NavigationController::
         moveCamera( float dt, float ds )
 {
-    float l = _view->model->project()->worker.source()->length();
-
-    Tools::RenderView& r = *_view;
-    r.model->_qx += dt;
-    r.model->_qz += ds;
-
-    if (r.model->_qx<0) r.model->_qx=0;
-    if (r.model->_qz<0) r.model->_qz=0;
-    if (r.model->_qz>1) r.model->_qz=1;
-    if (r.model->_qx>l) r.model->_qx=l;
+    Tools::Commands::CommandP cmd( new Tools::Commands::MoveCameraCommand(_view->model, dt, ds ));
+    _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
+
+
+void NavigationController::
+        zoomCamera( float dt, float ds, float dz )
+{
+    Tools::Commands::CommandP cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz ));
+    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+}
+
+
+void NavigationController::
+        rotateCamera( float dx, float dy )
+{
+    Tools::Commands::CommandP cmd( new Tools::Commands::RotateCameraCommand(_view->model, dx, dy ));
+    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+}
+
 
 } // namespace Tools

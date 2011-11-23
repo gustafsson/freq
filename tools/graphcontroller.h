@@ -5,14 +5,15 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QTreeWidget>
 
 class QDockWidget;
 class QWidget;
 class QVBoxLayout;
-class QTreeWidget;
 class QTreeWidgetItem;
 class QAction;
 class QPushButton;
+class QDropEvent;
 
 namespace Sawe
 {
@@ -23,6 +24,22 @@ namespace Tools
 {
 
 class RenderView;
+
+class GraphTreeWidget: public QTreeWidget
+{
+    Q_OBJECT
+public:
+    GraphTreeWidget(QWidget*parent, Sawe::Project* project);
+
+public slots:
+    void currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*);
+
+private:
+    Sawe::Project* project_;
+    QTreeWidgetItem* current_;
+
+    virtual void dropEvent ( QDropEvent * event );
+};
 
 class GraphController: public QObject
 {

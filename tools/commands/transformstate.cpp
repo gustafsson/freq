@@ -5,7 +5,7 @@ namespace Tools {
 namespace Commands {
 
 TransformState::
-        TransformState(ProjectState* state)
+        TransformState(CommandInvoker* state)
             :
     QObject(state)
 {

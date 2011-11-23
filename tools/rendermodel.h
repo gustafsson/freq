@@ -6,6 +6,10 @@
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/renderer.h"
 
+// gpumisc
+#include <TAni.h>
+
+// boost
 #include <boost/serialization/nvp.hpp>
 
 namespace Sawe {
@@ -50,6 +54,7 @@ namespace Tools
             _rx, _ry, _rz; // rotation around center
         float xscale;
         float zscale;
+        floatAni orthoview;
 
     private:
         friend class RenderView; // todo remove

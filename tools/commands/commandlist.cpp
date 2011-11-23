@@ -1,6 +1,10 @@
 #include "commandlist.h"
 
 #include <boost/foreach.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+using namespace boost::gregorian;
+using namespace boost::posix_time;
 
 namespace Tools {
 namespace Commands {
@@ -8,7 +12,8 @@ namespace Commands {
 CommandList::
         CommandList()
             :
-            presentCommand(0)
+            presentCommand(0),
+            lastCommandTimeStamp(0)
 {
 }
 
@@ -80,28 +85,43 @@ const std::vector<CommandP>& CommandList::
 
 
 void CommandList::
-        execute( CommandP p)
+        invoke( CommandP p)
 {
-    bool melded = false;
-    if ( 0 < presentCommand )
-        melded = p->meldPrevCommand( commands[ presentCommand-1 ].get() );
-
-    // discard any posibilities to 'redo'
+    // discard any posibilities to 'redo' after 'presentCommand'
     commands.resize( presentCommand );
 
-    if (melded)
+    // append a new command and increase 'presentCommand'
+    commands.push_back( p );
+    presentCommand++;
+
+    // execute command
+    commands[presentCommand-1]->execute();
+
+    // check if the two most recent commands can be melded into one
+    tryMeld();
+}
+
+
+void CommandList::
+        tryMeld()
+{
+    ptime epoch(date(2011,boost::date_time::Jan,1));
+    ptime local_time(microsec_clock::local_time());
+    unsigned now = (local_time - epoch).ticks();
+
+    time_duration duration(0,0,0,now-lastCommandTimeStamp);
+    if ( 1 < presentCommand && duration.total_milliseconds() < 1000 )
     {
-        // replace previous command
-        commands[ presentCommand-1 ] = p;
-    }
-    else
-    {
-        // append a new command and increase 'presentCommand'
-        commands.push_back( p );
-        presentCommand++;
+        if (commands[presentCommand-1]->meldPrevCommand( commands[ presentCommand-2 ].get() ))
+        {
+            // replace previous command
+            presentCommand--;
+            commands[presentCommand-1] = commands[ presentCommand ];
+            commands.resize(presentCommand);
+        }
     }
 
-    commands[presentCommand-1]->execute();
+    lastCommandTimeStamp = now;
 }
 
 

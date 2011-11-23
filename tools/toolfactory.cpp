@@ -143,7 +143,7 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new UndoRedo( p )));
 
-    _objects.push_back( QPointer<QObject>( new Commands::CommandHistory( p->projectState() )));
+    _objects.push_back( QPointer<QObject>( new Commands::CommandHistory( p->commandInvoker() )));
 
     //
     // Insert new tools here, and delete things in the destructor in the

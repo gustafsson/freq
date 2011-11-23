@@ -112,7 +112,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event) {
     unsigned u = toolWindows();
     for (unsigned i=0; i<u; ++i)
     {
-        Support::ToolSelector* ts = toolSelector(i);
+        Support::ToolSelector* ts = toolSelector(i, 0);
         ts->temp_tool = ts->currentTool();
         ts->setCurrentTool( ts->default_tool, true );
     }
@@ -133,7 +133,7 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
     unsigned u = toolWindows();
     for (unsigned i=0; i<u; ++i)
     {
-        Support::ToolSelector* ts = toolSelector(i);
+        Support::ToolSelector* ts = toolSelector(i, 0);
         ts->setCurrentTool( ts->temp_tool, true );
         ts->temp_tool = 0;
     }
@@ -180,16 +180,18 @@ void GraphicsView::resizeEvent(QResizeEvent *event) {
 
 
 Support::ToolSelector* GraphicsView::
-        toolSelector(int index)
+        toolSelector(int index, Tools::Commands::CommandInvoker* state)
 {
     while (index >= layout_widget_->layout()->count())
     {
+        BOOST_ASSERT( state );
+
         QWidget* parent = new QWidget();
         parent->setLayout(new QVBoxLayout());
         parent->layout()->setMargin(0);
         parent->setWindowOpacity( 0 );
 
-        Support::ToolSelector* tool_selector = new Support::ToolSelector( parent );
+        Support::ToolSelector* tool_selector = new Support::ToolSelector( state, parent );
         tool_selector->setParent( parent );
 
         layout_widget_->layout()->addWidget( parent );

@@ -1,7 +1,7 @@
 #ifndef TRANSFORMSTATE_H
 #define TRANSFORMSTATE_H
 
-#include "projectstate.h"
+#include "commandinvoker.h"
 
 namespace Tools {
 namespace Commands {
@@ -12,7 +12,7 @@ class TransformState : public QObject
 {
     Q_OBJECT
 public:
-    explicit TransformState(ProjectState* state);
+    explicit TransformState(CommandInvoker* state);
 
 signals:
     void transformChanged(const TransformCommand*);

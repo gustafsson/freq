@@ -36,7 +36,7 @@ namespace Tools
                 _render_view(render_view),
                 _worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
-                tool_selector_( new Support::ToolSelector(this))
+                tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this))
     {
         setupGui();
 
@@ -169,7 +169,7 @@ namespace Tools
         if (_model->current_selection() != selection)
         {
             Commands::CommandP p( new Commands::ChangeSelectionCommand(this, selection));
-            this->model()->project()->projectState()->executeCommand( p );
+            this->model()->project()->commandInvoker()->invokeCommand( p );
         }
     }
 
@@ -218,7 +218,11 @@ namespace Tools
     {
         if (!active)
             setCurrentSelection( Signal::pOperation() );
-        _render_view->toolSelector()->setCurrentTool( this, active );
+
+        if (active)
+            _render_view->toolSelector()->setCurrentToolCommand( this );
+        else
+            _render_view->toolSelector()->setCurrentTool( this, active );
     }
 
 
