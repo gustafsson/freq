@@ -849,7 +849,7 @@ unsigned Cwt::
     unsigned c = find_bin( hz_to_j( fs, hz ));
     // Make 2*support_samples align to chunk_alignment for the lowest frequency
     unsigned half_chunkpart_alignment = chunkpart_alignment( c )/2;
-    support_samples = int_div_ceil( support_samples, half_chunkpart_alignment ) * half_chunkpart_alignment;
+    support_samples = align_up( support_samples, half_chunkpart_alignment );
     return support_samples;
 }
 
@@ -863,7 +863,7 @@ unsigned Cwt::
     r = time_support_bin0( fs );
     current_valid_samples_per_chunk = std::max((unsigned)(_least_meaningful_fraction_of_r*r), current_valid_samples_per_chunk);
     current_valid_samples_per_chunk = std::max(_least_meaningful_samples_per_chunk, current_valid_samples_per_chunk);
-    current_valid_samples_per_chunk = int_div_ceil(current_valid_samples_per_chunk, alignment) * alignment;
+    current_valid_samples_per_chunk = align_up(current_valid_samples_per_chunk, alignment);
     unsigned T = r + current_valid_samples_per_chunk + r;
     T = Fft::sChunkSizeG(T-1, chunkpart_alignment( 0 ));
     return T;
@@ -889,14 +889,30 @@ unsigned Cwt::
 
     unsigned nT;
     if (testPo2)
-        nT = align_up( spo2g(T), 2);
+        nT = align_up( spo2g(T), chunkpart_alignment( 0 ));
     else
-        nT = Fft::sChunkSizeG(T, 2);
+        nT = Fft::sChunkSizeG(T, chunkpart_alignment( 0 ));
     BOOST_ASSERT(nT != T);
 
-    unsigned L = nT - 2*r;
+    unsigned nL = nT - 2*r;
     unsigned alignment = chunk_alignment( fs );
-    L = std::max((size_t)alignment, align_down(L, alignment));
+    unsigned L = align_down(nL, alignment);
+    if (current_valid_samples_per_chunk >= L || alignment > L)
+    {
+        L = std::max((size_t)alignment, align_up(nL, alignment));
+        T = L + 2*r;
+        if (testPo2)
+            nT = align_up( spo2g(T), chunkpart_alignment( 0 ));
+        else
+            nT = Fft::sChunkSizeG(T, chunkpart_alignment( 0 ));
+        BOOST_ASSERT(nT != T);
+        nL = nT - 2*r;
+        L = align_down(nL, alignment);
+    }
+    else
+    {
+        int ok = 1;
+    }
 
     size_t required = required_gpu_bytes(L, fs );
 
@@ -933,15 +949,16 @@ unsigned Cwt::
     // Check if the smallest possible size is ok memory-wise
     unsigned r, smallest_T = required_length( 1, fs, r );
     unsigned smallest_L = smallest_T - 2*r;
+    unsigned alignment = chunk_alignment( fs );
 
     size_t free = availableMemoryForSingleAllocation();
     size_t smallest_required = required_gpu_bytes(smallest_L, fs);
 
     DEBUG_CWT TaskInfo(
             "prev_good_size: smallest_L = %u, chunk_alignment( %g ) = %u. Free: %f MB, required memory: %f MB",
-             smallest_L, fs, chunk_alignment( fs ), free/1024.f/1024.f, smallest_required/1024.f/1024.f);
+             smallest_L, fs, alignment, free/1024.f/1024.f, smallest_required/1024.f/1024.f);
 
-    BOOST_ASSERT( smallest_L + 2*r >= 2*chunk_alignment( fs ) );
+    BOOST_ASSERT( smallest_L + 2*r >= alignment );
 
     if (smallest_required <= free)
     {
@@ -960,8 +977,6 @@ unsigned Cwt::
             smallest_L = smallest_L2;
 
         bool testPo2 = smallest_L == smallest_L2;
-
-        unsigned alignment = chunk_alignment( fs );
 
         while (true)
         {
