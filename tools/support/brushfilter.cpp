@@ -3,8 +3,9 @@
 
 #include "brushfilterkernel.h"
 #include "tfr/cwt.h"
-#include "cpumemorystorage.h"
+#include "heightmap/collection.h"
 
+#include "cpumemorystorage.h"
 
 namespace Tools {
 namespace Support {
