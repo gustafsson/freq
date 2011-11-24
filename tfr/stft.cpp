@@ -654,7 +654,7 @@ void Stft::
     std::vector<float> windowfunction(_window_size);
     float* window = &windowfunction[0];
 #pragma omp parallel for
-    for (unsigned x=0;x<_window_size; ++x)
+    for (int x=0;x<(int)_window_size; ++x)
     {
         float p = 2.f*(x+1)/(_window_size+1) - 1.f;
         window[x] = computeWindowValue<Type>(p);
@@ -666,7 +666,7 @@ void Stft::
         {
             CpuMemoryReadOnly<float, 3>::Position readPos = pos;
 #pragma omp parallel for
-            for (unsigned w=0; w<windowCount; ++w)
+            for (int w=0; w<(int)windowCount; ++w)
             {
                 float *o = &out.ref(pos) + w*_window_size;
                 float *i = &in.ref(pos) + w*increment;
