@@ -4,10 +4,10 @@
 //signal
 #include "source.h"
 #include "intervals.h"
+#include "poperation.h"
 
 // boost
 #include <boost/serialization/nvp.hpp>
-#include <boost/serialization/shared_ptr.hpp>
 
 // gpumisc
 // For debug info while serializing
@@ -18,8 +18,6 @@
 #include <set>
 
 namespace Signal {
-
-typedef boost::shared_ptr<class Operation> pOperation;
 
 /**
 A Signal::Operation is a Signal::Source which reads data from another 

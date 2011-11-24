@@ -1,7 +1,7 @@
 #ifndef SELECTIONMODEL_H
 #define SELECTIONMODEL_H
 
-#include "signal/operation.h"
+#include "signal/poperation.h"
 #include <vector>
 
 #include <QObject>
