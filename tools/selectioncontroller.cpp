@@ -168,7 +168,7 @@ namespace Tools
     {
         if (_model->current_selection() != selection)
         {
-            Commands::CommandP p( new Commands::ChangeSelectionCommand(this, selection));
+            Commands::pCommand p( new Commands::ChangeSelectionCommand(this, selection));
             this->model()->project()->commandInvoker()->invokeCommand( p );
         }
     }

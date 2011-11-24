@@ -68,10 +68,10 @@ void CommandHistory::
         redrawHistory()
 {
     ui->listWidget->clear();
-    const std::vector<CommandP>& list = command_invoker_->commandList().getCommandList();
+    const std::vector<pCommand>& list = command_invoker_->commandList().getCommandList();
     const Command* present = command_invoker_->commandList().present();
 
-    BOOST_FOREACH(CommandP p, list)
+    BOOST_FOREACH(pCommand p, list)
     {
         if (p.get() == present)
             ui->listWidget->addItem(("-> " + p->toString()).c_str());

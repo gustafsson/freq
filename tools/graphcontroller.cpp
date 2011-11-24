@@ -116,7 +116,7 @@ namespace Tools
             Signal::pOperation movedOperationTail = dynamic_cast<TreeItem*>(layer->child(moved))->tail;
             Signal::pOperation newSource = dynamic_cast<TreeItem*>(layer->child(moved+1))->operation;
 
-            Tools::Commands::CommandP cmd( new Tools::Commands::ReorderOperation(movedOperation, movedOperationTail, newSource ) );
+            Tools::Commands::pCommand cmd( new Tools::Commands::ReorderOperation(movedOperation, movedOperationTail, newSource ) );
             project_->commandInvoker()->invokeCommand( cmd );
         }
 

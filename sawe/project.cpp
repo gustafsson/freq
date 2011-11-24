@@ -61,7 +61,7 @@ Project::
 void Project::
         appendOperation(Signal::pOperation s)
 {
-    Tools::Commands::CommandP c( new Tools::Commands::AppendOperationCommand(this, s));
+    Tools::Commands::pCommand c( new Tools::Commands::AppendOperationCommand(this, s));
     commandInvoker()->invokeCommand(c);
 }
 

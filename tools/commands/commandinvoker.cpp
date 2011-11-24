@@ -20,7 +20,7 @@ CommandInvoker::
 
 
 void CommandInvoker::
-        invokeCommand(CommandP cmd)
+        invokeCommand(pCommand cmd)
 {
     commandList_.invoke(cmd);
     emit projectChanged(commandList_.present());

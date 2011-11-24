@@ -18,7 +18,7 @@ public:
     CommandInvoker(Sawe::Project * project);
     virtual ~CommandInvoker();
 
-    void invokeCommand(CommandP cmd);
+    void invokeCommand(pCommand cmd);
     void redo();
     void undo();
 

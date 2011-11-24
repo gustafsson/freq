@@ -16,14 +16,14 @@ public:
 
     void undo();
     void redo();
-    void invoke( CommandP );
+    void invoke( pCommand );
     std::string toString() const;
 
     std::string canUndo() const;
     std::string canRedo() const;
 
     const Command* present() const;
-    const std::vector<CommandP>& getCommandList() const;
+    const std::vector<pCommand>& getCommandList() const;
 
 private:
     /**
@@ -31,7 +31,7 @@ private:
       */
     unsigned presentCommand;
     unsigned lastCommandTimeStamp;
-    std::vector<CommandP> commands;
+    std::vector<pCommand> commands;
 
     void tryMeld();
 };

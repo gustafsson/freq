@@ -36,7 +36,7 @@ private:
     virtual void undo() = 0;
 };
 
-typedef boost::shared_ptr<Command> CommandP;
+typedef boost::shared_ptr<Command> pCommand;
 
 } // namespace Commands
 } // namespace Tools

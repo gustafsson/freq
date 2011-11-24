@@ -92,7 +92,7 @@ void ToolSelector::
 
     if (tool!=_current_tool)
     {
-        Tools::Commands::CommandP cmd( new Tools::Commands::ChangeToolCommand(tool, this));
+        Tools::Commands::pCommand cmd( new Tools::Commands::ChangeToolCommand(tool, this));
         this->_command_invoker->invokeCommand( cmd );
     }
 }

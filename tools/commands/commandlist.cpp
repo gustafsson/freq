@@ -77,7 +77,7 @@ const Command* CommandList::
 }
 
 
-const std::vector<CommandP>& CommandList::
+const std::vector<pCommand>& CommandList::
         getCommandList() const
 {
     return commands;
@@ -85,7 +85,7 @@ const std::vector<CommandP>& CommandList::
 
 
 void CommandList::
-        invoke( CommandP p)
+        invoke( pCommand p)
 {
     // discard any posibilities to 'redo' after 'presentCommand'
     commands.resize( presentCommand );
@@ -129,7 +129,7 @@ std::string CommandList::
         toString() const
 {
     std::string description;
-    BOOST_FOREACH( CommandP p, commands )
+    BOOST_FOREACH( pCommand p, commands )
     {
         if (!description.empty())
             description += "\n";

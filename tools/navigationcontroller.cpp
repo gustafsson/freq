@@ -387,7 +387,7 @@ void NavigationController::bindKeyToSlot( QWidget* owner, const char* keySequenc
 void NavigationController::
         moveCamera( float dt, float ds )
 {
-    Tools::Commands::CommandP cmd( new Tools::Commands::MoveCameraCommand(_view->model, dt, ds ));
+    Tools::Commands::pCommand cmd( new Tools::Commands::MoveCameraCommand(_view->model, dt, ds ));
     _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
 
@@ -395,7 +395,7 @@ void NavigationController::
 void NavigationController::
         zoomCamera( float dt, float ds, float dz )
 {
-    Tools::Commands::CommandP cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz ));
+    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz ));
     _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
 
@@ -403,7 +403,7 @@ void NavigationController::
 void NavigationController::
         rotateCamera( float dx, float dy )
 {
-    Tools::Commands::CommandP cmd( new Tools::Commands::RotateCameraCommand(_view->model, dx, dy ));
+    Tools::Commands::pCommand cmd( new Tools::Commands::RotateCameraCommand(_view->model, dx, dy ));
     _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
 
