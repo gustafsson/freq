@@ -145,7 +145,7 @@ public:
       the first block in the heightmap. The samplerate is the sample rate of the full
       resolution signal.
       */
-    Signal::Intervals valid_samples;
+    Signal::Intervals valid_samples, non_zero;
 };
 typedef boost::shared_ptr<Block> pBlock;
 

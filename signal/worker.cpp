@@ -83,8 +83,7 @@ bool Worker::
         return false;
     }
 
-    _number_of_samples = source()->number_of_samples();
-    _length = source()->length();
+    updateLength();
 
     if (skip_if_low_fps)
         if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps && _requested_fps>_min_fps)
@@ -346,7 +345,7 @@ void Worker::
     _target = value;
 
     _highest_fps = _min_fps;
-    _number_of_samples = _target->post_sink()->number_of_samples();
+    updateLength();
 
     if (!_target->allow_cheat_resolution())
         Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
@@ -445,6 +444,15 @@ bool Worker::
         is_cheating()
 {
     return Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
+}
+
+
+
+void Worker::
+        updateLength()
+{
+    _number_of_samples = source()->number_of_samples();
+    _length = source()->length();
 }
 
 

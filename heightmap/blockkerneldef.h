@@ -2,6 +2,7 @@
 #define BLOCKKERNELDEF_H
 
 #include "resample.h"
+#include "operate.h"
 
 #define FREQAXIS_CALL RESAMPLE_ANYCALL
 #include "tfr/freqaxis.h"
@@ -595,5 +596,30 @@ void blockMerge( BlockData::Ptr inBlock,
     resample2d_plain<NoConverter<float> >
             (inBlock, outBlock, in_area, out_area);
 }
+
+
+class SetZero
+{
+public:
+    SetZero(float limit):limit(limit) {}
+
+    template<typename T>
+    RESAMPLE_CALL void operator()(T& e, ResamplePos const& v)
+    {
+        if (v.x >= limit)
+            e = 0;
+    }
+private:
+    float limit;
+};
+
+
+extern "C"
+void blockClearPart( BlockData::Ptr block,
+                 unsigned start_t )
+{
+    element_operate(block, ResampleArea(0,0, block->size().width, 1), SetZero(start_t));
+}
+
 
 #endif // BLOCKKERNELDEF_H

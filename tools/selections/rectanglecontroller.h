@@ -2,6 +2,7 @@
 #define RECTANGLECONTROLLER_H
 
 #include "rectangleview.h"
+#include "rectanglemodel.h"
 #include "tools/selectioncontroller.h"
 #include "heightmap/position.h"
 

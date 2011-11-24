@@ -4,7 +4,7 @@
 #include "writewav.h"
 #include "audiofile.h"
 
-#include "signal/sinksource.h"
+#include "signal/sinksourcechannels.h"
 #include "signal/postsink.h"
 
 #include <vector>
@@ -50,12 +50,13 @@ public:
 
     Signal::PostSink* getPostSink() { return &_postsink; }
 
+    Signal::SinkSourceChannels& data() { return _data; }
+
 private:
     MicrophoneRecorder()
         :
         input_device_(-1),
         _offset(0),
-        _channel(0),
         _sample_rate(1)
     {} // for deserialization
 
@@ -66,11 +67,10 @@ private:
     int input_device_;
     boost::posix_time::ptime _start_recording, _last_update;
     float _offset;
-    unsigned _channel;
     float _sample_rate;
     bool _has_input_device;
     QMutex _data_lock;
-    std::vector<Signal::SinkSource> _data;
+    Signal::SinkSourceChannels _data;
     std::vector<float> _rolling_mean;
     Signal::PostSink _postsink;
 
@@ -128,14 +128,7 @@ private:
 
         init();
 
-        Signal::Interval I(0, wavfile->number_of_samples());
-        for (unsigned c=0; c<num_channels(); ++c)
-        {
-            wavfile->set_channel( c % wavfile->num_channels() );
-            _data[c].put(wavfile->read( I ));
-        }
-
-        //init(-1);
+        _data.put(wavfile->readFixedLengthAllChannels( wavfile->getInterval() ));
     }
 };
 

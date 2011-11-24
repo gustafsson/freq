@@ -1,6 +1,8 @@
 #include "rectangleview.h"
 #include "rectanglemodel.h"
 
+#include "signal/worker.h"
+
 #include <gl.h>
 #include <TaskTimer.h>
 #include <glPushContext.h>

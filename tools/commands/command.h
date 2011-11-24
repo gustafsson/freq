@@ -30,6 +30,7 @@ private:
       When a command is being redone, meldPrevCommand is not called.
       */
     virtual bool meldPrevCommand(Command*) { return false; }
+    virtual bool addToList() { return true; }
 
 
     virtual void execute() = 0;

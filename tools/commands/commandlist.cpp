@@ -87,6 +87,12 @@ const std::vector<pCommand>& CommandList::
 void CommandList::
         invoke( pCommand p)
 {
+    if (!p->addToList())
+    {
+        p->execute();
+        return;
+    }
+
     // discard any posibilities to 'redo' after 'presentCommand'
     commands.resize( presentCommand );
 

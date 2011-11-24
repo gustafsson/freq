@@ -464,14 +464,38 @@ void Collection::
 {
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        Signal::Interval blockInterval = itr->second->ref.getInterval();
+        Signal::Interval blockInterval = itr->first.getInterval();
         if ( 0 == (I & blockInterval).count() )
         {
             _recent.remove(itr->second);
             itr = _cache.erase(itr);
-        } else {
-            itr++;
+            continue;
         }
+        else if ( blockInterval == (I & blockInterval))
+        {
+        }
+        else
+        {
+            if( I.first <= blockInterval.first && I.last < blockInterval.last )
+            {
+                bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
+                if (hasValidOutside)
+                {
+                    Position ia, ib;
+                    itr->first.getArea(ia, ib);
+                    float t = I.last / target->sample_rate() - ia.time;
+
+                    GlBlock::pHeight block = itr->second->glblock->height();
+
+                    ::blockClearPart( block->data,
+                                  ceil(t * itr->first.sample_rate()) );
+
+                    itr->second->valid_samples &= I;
+                    itr->second->non_zero &= I;
+                }
+            }
+        }
+        itr++;
     }
 }
 

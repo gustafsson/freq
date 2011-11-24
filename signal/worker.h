@@ -204,13 +204,15 @@ public:
     Signal::IntervalType number_of_samples() const { return _number_of_samples; }
     float length() const { return _length; }
 
-        /**
+    /**
 	  Throws an std::exception if one has been caught by run()
 	  */
 	void				checkForErrors();
 
 
 private:
+    void updateLength();
+
     /**
       The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
       is rebuilt each time a new region is requested. It is worked off in a outward direction

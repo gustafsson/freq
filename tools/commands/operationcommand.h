@@ -8,8 +8,6 @@ namespace Commands {
 
 class OperationCommand : public Tools::Commands::Command
 {
-public:
-    OperationCommand();
 };
 
 } // namespace Commands

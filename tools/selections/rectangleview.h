@@ -2,11 +2,15 @@
 #define RECTANGLEVIEW_H
 
 #include <QObject>
-#include "signal/worker.h"
-#include "rectanglemodel.h"
+
+namespace Signal
+{
+    class Worker;
+}
 
 namespace Tools { namespace Selections
 {
+class RectangleModel;
 
 class RectangleView: public QObject
 {

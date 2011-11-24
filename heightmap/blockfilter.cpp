@@ -118,6 +118,7 @@ void BlockFilter::
                   );
 
     block->valid_samples |= inInterval;
+    block->non_zero |= inInterval;
 
     TIME_BLOCKFILTER ComputationSynchronize();
 }
@@ -272,6 +273,7 @@ void BlockFilter::
         block->valid_samples -= transfer;
         TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
+    block->non_zero |= transfer;
 
     DEBUG_CWTTOBLOCK {
         TaskInfo ti("Block filter input and output %s", block->ref.toString().c_str());

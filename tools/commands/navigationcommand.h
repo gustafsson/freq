@@ -44,6 +44,7 @@ protected:
 
 private:
     virtual bool meldPrevCommand(Command*);
+    virtual bool addToList() { return false; }
     virtual void execute();
     virtual void undo();
 

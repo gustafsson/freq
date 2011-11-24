@@ -121,19 +121,26 @@ public:
             view_->emitTransformChanged();
         }
 
-        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             c->block_filter( Operation::source() );
         }
 
-        if (prevSignal != getInterval())
+        Signal::Interval currentInterval = getInterval();
+        if (prevSignal != currentInterval)
         {
-            Signal::Interval I = getInterval();
-            foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+            foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections)
             {
-                c->discardOutside( I );
+                c->discardOutside( currentInterval );
+            }
+
+            if (currentInterval.last < prevSignal.last)
+            {
+                if (view_->model->_qx > currentInterval.last/sample_rate())
+                    view_->model->_qx = currentInterval.last/sample_rate();
             }
         }
+        prevSignal = currentInterval;
     }
 
 
