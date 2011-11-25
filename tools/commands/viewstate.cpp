@@ -9,7 +9,7 @@ ViewState::
             :
     QObject(state)
 {
-    connect(state,SIGNAL(projectChanged(const Command*)), SLOT(emitviewChanged(const Command*)));
+    connect(state,SIGNAL(projectChanged(const Command*)), SLOT(emitViewChanged(const Command*)));
 }
 
 

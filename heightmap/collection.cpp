@@ -94,7 +94,7 @@ void Collection::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
-    INFO_COLLECTION
+
     {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %g MB", _cache.size(), cacheByteSize()/1024.f/1024.f);
         foreach(const cache_t::value_type& b, _cache)
@@ -108,6 +108,7 @@ void Collection::
             TaskInfo("%s", b->ref.toString().c_str());
         }
     }
+
     _cache.clear();
     _recent.clear();
 
