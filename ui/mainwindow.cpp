@@ -489,6 +489,9 @@ void SaweMainWindow::
 }
 
 
+//#define VERBOSE_SETTINGS
+#define VERBOSE_SETTINGS if(0)
+
 void SaweMainWindow::
         restoreSettings(QByteArray array)
 {
@@ -502,9 +505,9 @@ void SaweMainWindow::
         while (i.hasNext())
         {
             i.next();
-            if (i.value().type() == QVariant::ByteArray)
-                TaskInfo( "[%s] = {%u bytes}", i.key().toLatin1().data(), i.value().toByteArray().size() );
-            else
+            if (i.value().type() == QVariant::ByteArray) {
+                VERBOSE_SETTINGS TaskInfo( "[%s] = {%u bytes}", i.key().toLatin1().data(), i.value().toByteArray().size() );
+            } else
                 TaskInfo( "[%s] = %s", i.key().toLatin1().data(), i.value().toString().toLatin1().data() );
         }
     }
@@ -534,9 +537,9 @@ QByteArray SaweMainWindow::
         while (i.hasNext())
         {
             i.next();
-            if (i.value().type() == QVariant::ByteArray)
-                TaskInfo( "[%s] = {%u bytes}", i.key().toLatin1().data(), i.value().toByteArray().size() );
-            else
+            if (i.value().type() == QVariant::ByteArray) {
+                VERBOSE_SETTINGS TaskInfo( "[%s] = {%u bytes}", i.key().toLatin1().data(), i.value().toByteArray().size() );
+            } else
                 TaskInfo( "[%s] = %s", i.key().toLatin1().data(), i.value().toString().toLatin1().data() );
         }
     }
