@@ -88,6 +88,15 @@ void CommentView::
     ui->textEdit->setHtml( QString::fromLocal8Bit( text.c_str() ) );
     model()->html = text;
 
+    if (isThumbnail())
+        return;
+
+    QSize minsize(ref_point.x() + ui->verticalSpacer->minimumSize().height(), ui->verticalSpacer->minimumSize().height());
+    if (minsize.width() < width())        minsize.setWidth (width());
+    if (minsize.height() < height())      minsize.setHeight(height());
+    if (minsize != size())
+        resize(minsize);
+
     // grow if needed to display all contents, but only grow as long as this widget is smaller than maxGrowSize
     {
         QSize maxGrowSize(500, 200);
@@ -100,7 +109,20 @@ void CommentView::
         ui->textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
         // grow horizontally
-        for (QScrollBar* hori = ui->textEdit->horizontalScrollBar(); hori && hori->isVisible() && width() < maxGrowSize.width(); resize( width() + 1, height() )) {}
+        { // binary search for good size
+            QScrollBar* hori = ui->textEdit->horizontalScrollBar();
+            int w = -1;
+            if (hori && hori->isVisible() && width() < maxGrowSize.width()) for (int step = maxGrowSize.width()-width(); step != 0; resize( width() + step, height() ))
+            {
+                if (!hori->isVisible())
+                    w = width();
+                if (hori->isVisible() == (step<0))
+                    step *= -1;
+                step /= 2;
+            }
+            if (hori->isVisible() && 0<w)
+                resize( w, height() );
+        }
 
         if (maxGrowSize.width() <= width())
         {
@@ -115,7 +137,20 @@ void CommentView::
 
         // grow veritcally
         ui->textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        for (QScrollBar* vert = ui->textEdit->verticalScrollBar(); vert && vert->isVisible() && height() < maxGrowSize.height(); resize( width(), height() + 1 )) {}
+        { // binary search for good size
+            QScrollBar* vert = ui->textEdit->verticalScrollBar();
+            int h = -1;
+            if (vert && vert->isVisible() && height() < maxGrowSize.height()) for (int step = maxGrowSize.height()-height(); step != 0; resize( width(), height() + step ))
+            {
+                if (!vert->isVisible())
+                    h = height();
+                if (vert->isVisible() == (step<0))
+                    step *= -1;
+                step /= 2;
+            }
+            if (vert->isVisible() && 0<h)
+                resize( width(), h );
+        }
 
         // we still want scrollbars if they are needed despite growing the size
         ui->textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
