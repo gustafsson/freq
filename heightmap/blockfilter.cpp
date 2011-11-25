@@ -186,6 +186,7 @@ void BlockFilter::
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
+
     if (merge_first_scale >= merge_last_scale)
     {
         DEBUG_CWTTOBLOCK TaskTimer("CwtToBlock::mergeChunk. quiting early\n"
@@ -228,22 +229,40 @@ void BlockFilter::
     ComputationCheckError();
 
     //CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
-    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
-            a.time, a.scale,
-            b.time, b.scale,
-            chunk_a.time, chunk_a.scale,
-            chunk_b.time, chunk_b.scale,
-            transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
+    Position s, sblock, schunk;
+    TIME_CWTTOBLOCK
+    {
+        Position ia, ib; // intersect
+        ia.time = std::max(a.time, chunk_a.time);
+        ia.scale = std::max(a.scale, chunk_a.scale);
+        ib.time = std::min(b.time, chunk_b.time);
+        ib.scale = std::min(b.scale, chunk_b.scale);
+        s = Position ( ib.time - ia.time, ib.scale - ia.scale);
+        sblock = Position( b.time - a.time, b.scale - a.scale);
+        schunk = Position( chunk_b.time - chunk_a.time, chunk_b.scale - chunk_a.scale);
+    }
+
+    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %.2f), (%.2f %.2f)] |%.2f %.2f, %.2f %.2f| %ux%u=%u <- %ux%u=%u",
+            a.time, b.time,
+            a.scale, b.scale,
+            chunk_a.time, chunk_b.time,
+            chunk_a.scale, chunk_b.scale,
+            transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate,
+            merge_first_scale, merge_last_scale,
+            (unsigned)(s.time / sblock.time * block->ref.samplesPerBlock() + .5f),
+            (unsigned)(s.scale / sblock.scale * block->ref.scalesPerBlock() + .5f),
+            (unsigned)(s.time / sblock.time * block->ref.samplesPerBlock() *
+            s.scale / sblock.scale * block->ref.scalesPerBlock() + .5f),
+            (unsigned)(s.time / schunk.time * chunk.n_valid_samples + .5f),
+            (unsigned)(s.scale / schunk.scale * chunk.nScales() + .5f),
+            (unsigned)(s.time / schunk.time * chunk.n_valid_samples *
+            s.scale / schunk.scale * chunk.nScales() + .5f)
         );
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
 
-    //    cuda-memcheck complains even on this testkernel when using global memory
-    //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
-
-
-    // Invoke CUDA kernel execution to merge blocks
+    // Invoke kernel execution to merge chunk into block
     ::blockResampleChunk( chunk.transform_data,
                      outData,
                      ValidInputInterval( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
@@ -260,6 +279,7 @@ void BlockFilter::
                      normalization_factor,
                      full_resolution
                      );
+
 
     ComputationCheckError();
     GlException_CHECK_ERROR();
