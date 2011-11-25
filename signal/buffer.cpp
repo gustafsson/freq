@@ -3,6 +3,10 @@
 #include <string.h> //memcpy
 #include "cpumemorystorage.h"
 
+#ifdef USE_CUDA
+#include "cudaglobalstorage.h"
+#endif
+
 namespace Signal {
 
 
@@ -67,7 +71,7 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
     waveform_data_ .reset( new DataStorage<float>(subinterval.count()));
     bitor_channel_ = channel;
     *this |= *other_;
-    other_.reset();
+    other_.reset(); // TODO what is the point of other_?
 }
 
 
@@ -136,33 +140,73 @@ Buffer& Buffer::
         bitor_channel_ = 0;
     }
 
-    float* write;
-    float const* read;
+    DataStorage<float>::Ptr write, read;
 
-    write = &CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ref( offs_write );
-    read = &CpuMemoryStorage::ReadOnly<1>( b.waveform_data_ ).ref( offs_read );
+#ifdef USE_CUDA
+    bool toGpu = 0 != waveform_data_->FindStorage<CudaGlobalStorage>();
+    bool toCpu = 0 != waveform_data_->FindStorage<CpuMemoryStorage>();
+    bool fromCpu = 0 != b.waveform_data_->FindStorage<CpuMemoryStorage>();
+    bool fromGpu = 0 != b.waveform_data_->FindStorage<CudaGlobalStorage>();
 
-    memcpy(write, read, i.count()*sizeof(float));
+    if (!toCpu && !toGpu && !fromCpu && !fromGpu)
+    {
+        // no data was read (all 0) and no data to overwrite with 0
+        return *this;
+    }
 
-    /*
-    bool toGpu   = waveform_data_->getMemoryLocation() == GpuCpuVoidData::CudaGlobal;
-    bool fromGpu = b.waveform_data_->getMemoryLocation() == GpuCpuVoidData::CudaGlobal;
+    // if no data is allocated in *this, take the gpu if 'b' has gpu storage
+    if (!toCpu && !toGpu)
+    {
+        toGpu = fromGpu;
+        if (fromGpu)
+            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                DataStorageSize(i.count()),
+                make_cudaPitchedPtr(
+                                CudaGlobalStorage::WriteAll<1>( waveform_data_ ).device_ptr() + offs_write,
+                                i.count()*sizeof(float),
+                                i.count()*sizeof(float), 1), false);
+        else
+            write = CpuMemoryStorage::BorrowPtr(
+                DataStorageSize(i.count()),
+                CpuMemoryStorage::WriteAll<1>( waveform_data_ ).ptr() + offs_write, false);
+    }
 
-    if ( toGpu )    write = waveform_data_->getCudaGlobal().ptr();
-    else            write = waveform_data_->getCpuMemory();
+    if (!fromCpu && !fromGpu)
+        fromGpu = toGpu;
 
-    if ( fromGpu )  read = b.waveform_data_->getCudaGlobal().ptr();
-    else            read = b.waveform_data_->getCpuMemory();
+    if (toGpu || fromGpu)
+    {
+        if (toGpu && !write)
+            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                DataStorageSize(i.count()),
+                make_cudaPitchedPtr(
+                                CudaGlobalStorage::ReadWrite<1>( waveform_data_ ).device_ptr() + offs_write,
+                                i.count()*sizeof(float),
+                                i.count()*sizeof(float), 1), false);
 
-    write += offs_write;
-    read += offs_read;
 
-    cudaMemcpyKind kind = (cudaMemcpyKind)(1*toGpu | 2*fromGpu);
-    if (!toGpu && !fromGpu)
-        memcpy(write, read, i.count()*sizeof(float));
-    else
-        cudaMemcpy(write, read, i.count()*sizeof(float), kind );
-    */
+        if (fromGpu)
+            read = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                DataStorageSize(i.count()),
+                make_cudaPitchedPtr(
+                        CudaGlobalStorage::ReadOnly<1>( b.waveform_data_ ).device_ptr() + offs_read,
+                        i.count()*sizeof(float),
+                        i.count()*sizeof(float), 1), false);
+    }
+#endif
+
+    if (!write)
+        write = CpuMemoryStorage::BorrowPtr(
+            DataStorageSize(i.count()),
+            CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ptr() + offs_write, false);
+
+    if (!read)
+        read = CpuMemoryStorage::BorrowPtr(
+            DataStorageSize(i.count()),
+            CpuMemoryStorage::ReadOnly<1>( b.waveform_data_ ).ptr() + offs_read, false);
+
+    // Let DataStorage manage all memcpying
+    *write = *read;
 
     return *this;
 }

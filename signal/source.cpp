@@ -118,7 +118,8 @@ pBuffer SourceBase::
                   I.toString().c_str() );
 
     pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
-    memset(r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D());
+    // doesn't need to memset 0, will be set by the first initialization of a dataset
+    //memset(r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D());
     return r;
 }
 
