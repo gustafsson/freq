@@ -39,6 +39,8 @@ void RecordView::
     if (enabled)
     {
         float limit = model_->project->worker.length();
+        limit -= 1/model_->render_view->model->xscale;
+        if (limit<0) limit = 0;
 
         if (model_->render_view->model->_qx >= prev_limit_) {
             // -- Following Record Marker --
