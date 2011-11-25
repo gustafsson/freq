@@ -21,11 +21,9 @@
 // Std
 #include <sstream>
 #include <fstream>
-using namespace std;
+#include <iomanip>
 
-#ifdef min
-#undef min
-#endif
+using namespace std;
 
 namespace Tools {
 

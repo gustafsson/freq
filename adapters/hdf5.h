@@ -6,11 +6,14 @@
 
 #include "signal/sink.h"
 #include "tfr/cwtfilter.h"
-#include <H5Ipublic.h>
-#include <H5Tpublic.h>
+
 #include <TaskTimer.h>
 
+#include <H5Ipublic.h>
+#include <H5Tpublic.h>
 //typedef int hid_t; // from H5Ipublic
+
+#include <string.h>
 
 //#define VERBOSE_HDF5_HEADER
 #define VERBOSE_HDF5_HEADER if(0)

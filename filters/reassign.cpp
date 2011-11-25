@@ -5,6 +5,9 @@
 // gpumisc
 #include <computationkernel.h>
 
+#include <vector>
+#include <string.h>
+
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
 #include <math.h>

@@ -9,6 +9,8 @@
 #include <simple_math.h>
 #include <computationkernel.h>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #ifdef _MSC_VER
 #include <msc_stdc.h>
 #endif

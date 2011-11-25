@@ -11,6 +11,9 @@
 #include <neat_math.h>
 #include <computationkernel.h>
 
+// boost
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 // std
 #include <string>
 

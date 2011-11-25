@@ -1,18 +1,27 @@
 #include "worker.h"
+
+// signal
 #include "intervals.h"
 #include "postsink.h"
 #include "operationcache.h"
 
-#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory
+// Sonic AWE
+#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory, should use transform instead
 #include "sawe/application.h"
 
+// gpumisc
+#include <computationkernel.h>
+#include <demangle.h>
+
+// qt
 #include <QTime>
 #ifndef SAWE_NO_MUTEX
 #include <QMutexLocker>
 #endif
-#include <computationkernel.h>
-#include <demangle.h>
+
+// boost
 #include <boost/foreach.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #define TIME_WORKER
 //#define TIME_WORKER if(0)

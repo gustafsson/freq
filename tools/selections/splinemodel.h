@@ -5,6 +5,7 @@
 #include "signal/operation.h"
 #include "heightmap/position.h"
 
+#include <vector>
 
 namespace Tools { namespace Selections
 {
