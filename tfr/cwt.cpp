@@ -16,6 +16,7 @@
 
 #ifdef USE_CUDA
 #include "cudaglobalstorage.h"
+#include "cudaMemsetFix.cu.h"
 #endif
 
 // std
@@ -77,6 +78,9 @@ Cwt::
     _wavelet_scale_suppport( 6 ),
     _jibberish_normalization( 1 )
 {
+#ifdef USE_CUDA
+    storageCudaMemsetFix = &cudaMemsetFix;
+#endif
     this->scales_per_octave( scales_per_octave );
 }
 
