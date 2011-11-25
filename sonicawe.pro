@@ -254,6 +254,8 @@ DEFINES += USE_CUDA
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
+#CUDA_FLAGS += --ptxas-options=-v
+
 
 CUDA_CXXFLAGS = $$QMAKE_CXXFLAGS
 CONFIG(debug, debug|release):CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_DEBUG
