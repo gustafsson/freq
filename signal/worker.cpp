@@ -26,8 +26,8 @@
 #define TIME_WORKER
 //#define TIME_WORKER if(0)
 
-//#define WORKER_INFO
-#define WORKER_INFO if(0)
+#define WORKER_INFO
+//#define WORKER_INFO if(0)
 
 #define TESTING_PERFORMANCE false
 
@@ -157,10 +157,10 @@ bool Worker::
             _samples_per_chunk = b->number_of_samples();
 
         WORKER_INFO {
-            tt->info("Worker got %s, [%g, %g) s. %g x realtime",
-                b->getInterval().toString().c_str(),
+            tt->info("Worker got %s x %d, [%g, %g) s. %g or %g x realtime",
+                b->getInterval().toString().c_str(), b->channels(),
                 b->start(), b->start()+b->length(),
-                //(b->length()-r)/tt->elapsedTime());
+                interval.count()/tt->elapsedTime()/b->sample_rate,
                 b->length()/tt->elapsedTime());
         }
 
