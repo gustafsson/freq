@@ -7,6 +7,7 @@
 #include "cuda_vector_types_op.h"
 #include "waveletkerneldef.h"
 
+
 __global__ void kernel_compute_wavelet_coefficients( float2* in_waveform_ft, float2* out_wavelet_ft, unsigned nFrequencyBins, unsigned nScales, float first_j, float v, float sigma_t0, float normalization_factor );
 __global__ void kernel_inverse( float2* in_wavelet, float* out_inverse_waveform, DataStorageSize numElem );
 //__global__ void kernel_inverse_ellipse( float2* in_wavelet, float* out_inverse_waveform, cudaExtent numElem, float4 area, unsigned n_valid_samples );
@@ -73,10 +74,9 @@ void wtCompute(
     }
 
     int nFrequencyBins = size.width;
-    const int N = nFrequencyBins/2;
-    cudaMemset( out_wavelet_ft, 0, out_wavelet_ftp->numberOfBytes() );
+    const int N = nFrequencyBins;
 
-    dim3 block(256,1,1);
+    dim3 block(64,1,1);
     dim3 grid( int_div_ceil(N, block.x), 1, 1);
 
     if(grid.x>65535) {
@@ -110,19 +110,28 @@ __global__ void kernel_compute_wavelet_coefficients(
     const unsigned
             w_bin = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
 
-    if (w_bin>=nFrequencyBins)
-        return;
-
-    compute_wavelet_coefficients_elem(
-            w_bin,
-            in_waveform_ft,
-            out_wavelet_ft,
-            nFrequencyBins,
-            nScales,
-            first_scale,
-            v,
-            sigma_t0,
-            normalization_factor);
+    // Negative frequencies are defined as 0 and are not stored in in_waveform_ft
+    if (w_bin<nFrequencyBins/2)
+    {
+        compute_wavelet_coefficients_elem(
+                w_bin,
+                in_waveform_ft,
+                out_wavelet_ft,
+                nFrequencyBins,
+                nScales,
+                first_scale,
+                v,
+                sigma_t0,
+                normalization_factor);
+    }
+    else if (w_bin<nFrequencyBins)
+    {
+        for( unsigned j=0; j<nScales; j++)
+        {
+            unsigned offset = (nScales-1-j)*nFrequencyBins;
+            out_wavelet_ft[offset + w_bin] = make_float2(0,0);
+        }
+    }
 }
 
 

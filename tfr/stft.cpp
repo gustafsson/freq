@@ -97,10 +97,10 @@ pChunk Fft::
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales() );
     }
 
-    chunk->chunk_offset = real_buffer->sample_offset;
+    chunk->chunk_offset = real_buffer->sample_offset/(float)input_n.width;
     chunk->first_valid_sample = 0;
-    chunk->n_valid_samples = input_n.width;
-    chunk->sample_rate = real_buffer->sample_rate / ((StftChunk*)chunk.get())->transformSize();
+    chunk->n_valid_samples = 1;
+    chunk->sample_rate = real_buffer->sample_rate/(float)input_n.width;
     chunk->original_sample_rate = real_buffer->sample_rate;
     return chunk;
 }
@@ -158,7 +158,7 @@ Signal::pBuffer Fft::
     if ( r->number_of_samples() != chunk->n_valid_samples )
         r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, chunk->n_valid_samples ));
 
-    r->sample_offset = chunk->chunk_offset;
+    r->sample_offset = chunk->getInterval().first;
 
     return r;
 }
@@ -199,7 +199,7 @@ Tfr::pChunk Stft::
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = chunk->nSamples()-1;
     chunk->sample_rate = b->sample_rate / increment();
-    ((StftChunk*)chunk.get())->original_sample_rate = b->sample_rate;
+    chunk->original_sample_rate = b->sample_rate;
 
     if (0 == b->sample_offset)
     {
@@ -402,7 +402,12 @@ FreqAxis Stft::
         freqAxis( float FS )
 {
     FreqAxis fa;
-    fa.setLinear( FS, _window_size/2 );
+
+    if (compute_redundant())
+        fa.setLinear( FS, _window_size-1 );
+    else
+        fa.setLinear( FS, _window_size/2 );
+
     return fa;
 }
 
@@ -857,13 +862,11 @@ StftChunk::
 void StftChunk::
         setHalfs( unsigned n )
 {
-    chunk_offset <<= _halfs_n;
-    n_valid_samples <<= _halfs_n;
+    sample_rate /= 1<<_halfs_n;
 
     _halfs_n = n;
 
-    chunk_offset >>= _halfs_n;
-    n_valid_samples >>= _halfs_n;
+    sample_rate *= 1<<_halfs_n;
 }
 
 
