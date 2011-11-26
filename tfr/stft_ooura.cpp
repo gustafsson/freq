@@ -184,7 +184,7 @@ void Stft::
     Fft ft( false );
 
 #pragma omp parallel for
-    for (unsigned i=0; i < actualSize.height; ++i)
+    for (int i=0; i < (int)actualSize.height; ++i)
     {
         ft.computeWithOouraR2C(
                 CpuMemoryStorage::BorrowPtr<float>( _window_size,
@@ -212,7 +212,7 @@ void Stft::
     Fft ft( true );
 
 #pragma omp parallel for
-    for (unsigned i=0; i < n.height; ++i)
+    for (int i=0; i < (int)n.height; ++i)
     {
         ft.computeWithOoura(
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
@@ -237,7 +237,7 @@ void Stft::
     Fft ft(false);
 
 #pragma omp parallel for
-    for (unsigned i=0; i < n.height; ++i)
+    for (int i=0; i < (int)n.height; ++i)
     {
         ft.computeWithOouraC2R(
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( actualSize,
@@ -262,7 +262,7 @@ void Stft::
     Fft ft(true);
 
 #pragma omp parallel for
-    for (unsigned i=0; i < n.height; ++i)
+    for (int i=0; i < (int)n.height; ++i)
     {
         ft.computeWithOoura(
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,

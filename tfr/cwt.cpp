@@ -302,10 +302,12 @@ pChunk Cwt::
         //if (nScales_value == stop_j && 0 < offset)
         //    BOOST_ASSERT( 0 == extra );
 
+#ifdef _DEBUG
         unsigned sub_start_org = sub_start;
         unsigned sub_std_samples_org = sub_std_samples;
         unsigned sub_silence_org = sub_silence;
         unsigned sub_length_org = sub_length;
+#endif
 
         sub_std_samples += extra/2;
 
