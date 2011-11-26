@@ -27,7 +27,8 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     proxy( 0 ),
     keep_pos(false),
     z_hidden(false),
-    lastz(6)
+    lastz(6),
+    validateSizeLater(false)
 {
     ui->setupUi(this);
 
@@ -89,8 +90,15 @@ void CommentView::
     model()->html = text;
 
     if (isThumbnail())
-        return;
+        validateSizeLater = true;
+    else
+        validateSize();
+}
 
+
+void CommentView::
+        validateSize()
+{
     QSize minsize(ref_point.x() + ui->verticalSpacer->minimumSize().height(), ui->verticalSpacer->minimumSize().height());
     if (minsize.width() < width())        minsize.setWidth (width());
     if (minsize.height() < height())      minsize.setHeight(height());
@@ -419,6 +427,12 @@ void CommentView::
         recreatePolygon();
 
         setEditFocus(!v);
+
+        if (!v && validateSizeLater)
+        {
+            validateSize();
+            validateSizeLater = false;
+        }
 
         emit thumbnailChanged( model()->thumbnail );
     }

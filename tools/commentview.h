@@ -51,6 +51,8 @@ public slots:
     void thumbnail(bool);
 
 private:
+    void validateSize();
+
     ::Ui::CommentView *ui;
 
     QGraphicsProxyWidget* proxy;
@@ -62,6 +64,7 @@ private:
     QPoint resizePosition;
     double lastz;
     QRegion maskedRegion;
+    bool validateSizeLater;
 
     bool testFocus();
 };
