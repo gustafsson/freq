@@ -28,7 +28,7 @@ public:
 
     const Heightmap::Position& comment_pos();
 
-    void showToolTip( Heightmap::Position p );
+    void showToolTip( Heightmap::Position p, bool adjustScaleToLocalPeak=true );
 
     float pos_time;
     float pos_hz;

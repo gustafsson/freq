@@ -528,8 +528,8 @@ Heightmap::Position RenderView::
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);
 
-    float ylevel = 0;
-    float s = (ylevel-objY1)/(objY2-objY1);
+    double ylevel = 0;
+    double s = (ylevel-objY1)/(objY2-objY1);
 
     if (0==objY2-objY1)
         s = 0;

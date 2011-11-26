@@ -142,7 +142,7 @@ void TooltipController::
         TaskTimer tt("TooltipController::mouseMoveEvent hover_info_model(%g, %g)", p.time, p.scale);
         if (success)
         {
-            hover_info_model_->showToolTip( p );
+            hover_info_model_->showToolTip( p, false );
             if (hover_info_model_->comment)
             {
                 hover_info_model_->comment->setEnabled( false );
