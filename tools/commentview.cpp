@@ -358,7 +358,7 @@ void CommentView::
         //poly.push_back(ref_point);
         //poly.push_back(b + 0.1f*y + 0.15f*x);
         poly.push_back(b + 0.1f*y + ( ref_point.x() - 0.9f*y.y()) *x0);
-        poly.push_back(ref_point);
+        poly.push_back(ref_point - 2*h0);
         poly.push_back(b + 0.1f*y + ( ref_point.x() + 0.9f*y.y())*x0);
         poly.push_back(b + x - x0);
         poly.push_back(b + x - h0);
@@ -380,9 +380,9 @@ void CommentView::
         poly.clear();
         r = QRect();
         float s = std::min(ref_point.x(), 15);
-        poly.push_back(ref_point);
-        poly.push_back(ref_point - s*h0 - s*x0);
-        poly.push_back(ref_point - s*h0 + s*x0);
+        poly.push_back(ref_point - 2*h0);
+        poly.push_back(ref_point - s*h0 - s*x0 - 2*h0);
+        poly.push_back(ref_point - s*h0 + s*x0 - 2*h0);
     }
 
 
