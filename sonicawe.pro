@@ -14,8 +14,8 @@ TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release
-#win32:CONFIG += embed_manifest_exe
-#win32:QMAKE_LFLAGS += /MANIFESTUAC:\"level=\'requireAdministrator\' uiAccess=\'false\'\"
+win32:CONFIG -= embed_manifest_dll
+win32:CONFIG += embed_manifest_exe
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
@@ -42,6 +42,8 @@ win32:QMAKE_LFLAGS_DEBUG += \
 win32:QMAKE_LFLAGS_RELEASE += \
     /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
     /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
+
+win32:QMAKE_LFLAGS_DEBUG += /OPT:NOICF /OPT:NOREF
 
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
