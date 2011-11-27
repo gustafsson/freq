@@ -81,5 +81,14 @@ void CommandHistory::
 }
 
 
+void CommandHistory::
+        checkVisibility(bool visible)
+{
+    ::Ui::SaweMainWindow* MainWindow = command_invoker_->project()->mainWindow();
+    visible |= !MainWindow->tabifiedDockWidgets( dock ).empty();
+    visible |= dock->isVisibleTo( dock->parentWidget() );
+    actionCommandHistory->setChecked(visible);
+}
+
 } // namespace Commands
 } // namespace Tools

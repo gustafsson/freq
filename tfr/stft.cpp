@@ -215,7 +215,7 @@ Tfr::pChunk Stft::
         float* breal_p = breal->waveform_data()->getCpuMemory();
         Signal::IntervalType breal_length = breal->number_of_samples();
         Signal::IntervalType binv_length = binv->number_of_samples();
-        BOOST_ASSERT( breal_length = binv_length );
+        BOOST_ASSERT( breal_length == binv_length );
         float maxd = 0;
         for(Signal::IntervalType i =0; i<breal_length; i++)
         {
@@ -299,7 +299,7 @@ Signal::pBuffer Stft::
         inverse( pChunk chunk )
 {
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
-    BOOST_ASSERT(stftchunk);
+    BOOST_ASSERT( stftchunk );
     if (stftchunk->redundant())
         return inverseWithRedundant( chunk );
 

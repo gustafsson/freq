@@ -25,6 +25,7 @@ public:
 
 private slots:
     void redrawHistory();
+    void checkVisibility(bool visible);
 
 private:
     Ui::CommandHistory *ui;

@@ -88,7 +88,7 @@ void SendFeedback::
     QByteArray feedbackdata = postdata;
 
     unsigned N = feedbackdata.size();
-    TaskInfo("SendFeedback sends %s in %u files",
+    TaskInfo ti("SendFeedback sends %s in %u files",
              DataStorageVoid::getMemorySizeText(N).c_str(),
              count);
 

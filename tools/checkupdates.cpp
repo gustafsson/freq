@@ -77,11 +77,17 @@ void CheckUpdates::
                               "Do you want Sonic AWE to check for available updates automatically?",
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         settings.setValue(checkUpdatesTag, q == QMessageBox::Yes);
+
+        if (q == QMessageBox::Yes)
+            manualUpdate = true; // treat this as a manual update and notify user if Sonic AWE is uptodate
     }
 
-    if (!manualUpdate && !settings.value(checkUpdatesTag).toBool())
+    bool checkAuto = settings.value(checkUpdatesTag).toBool();
+    if (!manualUpdate && !checkAuto)
         return;
 
+    TaskInfo ti("Checking for updates %s", manualUpdate?"manually":"automatically");
+    settings.setValue(checkUpdatesTag, false); // disable if this causes the application to crash
 
     Support::BuildHttpPost postdata;
 
@@ -96,6 +102,8 @@ void CheckUpdates::
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),
             this, SLOT(replyFinished(QNetworkReply*)));
     postdata.send( manager.data(), targetUrl );
+
+    settings.setValue(checkUpdatesTag, checkAuto); // restore value before attempting update
 }
 
 
