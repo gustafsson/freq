@@ -54,8 +54,10 @@ void main()
 
     if (0!=heightLines)
     {
-        float heightLine1 = getHeightLineColor( abs(vertex_height) * 20.0);
-        float heightLine2 = getHeightLineColor( abs(vertex_height) * 5.0);
+        if (vertex_height != 0.0)
+            v = vertex_height;
+        float heightLine1 = getHeightLineColor( abs(v) * 20.0);
+        float heightLine2 = getHeightLineColor( abs(v) * 5.0);
         curveColor = heightLine1 *heightLine2*heightLine2* curveColor;
     }
 

@@ -480,7 +480,7 @@ void Renderer::beginVboRendering()
         glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
 
         uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
-        glUniform1i(uniHeightLines, draw_height_lines && !_draw_flat);
+        glUniform1i(uniHeightLines, draw_height_lines);
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
