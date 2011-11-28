@@ -242,7 +242,7 @@ void Collection::
 }
 
 
-Signal::Intervals Collection::
+Signal::Intervals inline Collection::
         getInvalid(const Reference& r)
 {
     cache_t::iterator itr = _cache.find( r );
@@ -600,8 +600,9 @@ Intervals Collection::
     //TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
 
     // If all recently used block are up-to-date then also update all their children, if any children are allocated
-    if (!r)
+    if (false) if (!r)
     {
+        //TIME_COLLECTION TaskTimer tt("Collection::invalid_samples recent_t, %u, %p", _recent.size(), this);
         foreach(const recent_t::value_type& a, _recent)
         {
             Block const& b = *a;
