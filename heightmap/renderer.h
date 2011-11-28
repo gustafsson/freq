@@ -47,7 +47,7 @@ public:
     GLvector camera;
     GLvector cursor;
 
-    bool draw_height_lines;
+    bool draw_contour_plot;
     ColorMode color_mode;
     tvector<4, float> fixed_color;
     float y_scale;

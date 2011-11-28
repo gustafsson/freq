@@ -37,7 +37,7 @@ Renderer::Renderer( Collection* collection )
     draw_t(true),
     draw_cursor_marker(false),
     camera(0,0,0),
-    draw_height_lines(false),
+    draw_contour_plot(false),
     color_mode( ColorMode_Rainbow ),
     fixed_color( 1,0,0,1 ),
     y_scale( 1 ),
@@ -455,7 +455,7 @@ void Renderer::beginVboRendering()
 
     // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniHeightLines, uniYScale, uniScaleTex, uniOffsTex;
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniContourPlot, uniYScale, uniScaleTex, uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -472,8 +472,8 @@ void Renderer::beginVboRendering()
         uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
         glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
 
-        uniHeightLines = glGetUniformLocation(_shader_prog, "heightLines");
-        glUniform1i(uniHeightLines, draw_height_lines);
+        uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
+        glUniform1i(uniContourPlot, draw_contour_plot);
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);

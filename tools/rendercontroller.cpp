@@ -241,7 +241,7 @@ void RenderController::
 void RenderController::
         receiveToogleHeightlines(bool value)
 {
-    model()->renderer->draw_height_lines = value;
+    model()->renderer->draw_contour_plot = value;
     stateChanged();
 }
 
@@ -340,7 +340,7 @@ void RenderController::
     case Heightmap::Renderer::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
     case Heightmap::Renderer::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
     }
-    ui->actionSet_heightlines->setChecked(model()->renderer->draw_height_lines);
+    ui->actionSet_contour_plot->setChecked(model()->renderer->draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
 
     // clear worker assumptions of target
@@ -705,8 +705,8 @@ void RenderController::
     }
 
     // QAction *actionSet_heightlines
-    toolbar_render->addAction(ui->actionSet_heightlines);
-    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
+    toolbar_render->addAction(ui->actionSet_contour_plot);
+    connect(ui->actionSet_contour_plot, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
     toolbar_render->addAction(ui->actionToggleOrientation);
     connect(ui->actionToggleOrientation, SIGNAL(toggled(bool)), SLOT(receiveToggleOrientation(bool)));

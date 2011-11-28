@@ -11,6 +11,7 @@
 
 // boost
 #include <boost/serialization/nvp.hpp>
+#include <boost/serialization/version.hpp>
 
 namespace Sawe {
     class Project;
@@ -64,7 +65,7 @@ namespace Tools
 
         friend class boost::serialization::access;
         RenderModel() { BOOST_ASSERT( false ); } // required for serialization to compile, is never called
-        template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
             ar
                     & BOOST_SERIALIZATION_NVP(_qx)
@@ -79,13 +80,22 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(xscale)
                     & BOOST_SERIALIZATION_NVP(zscale)
                     & boost::serialization::make_nvp("color_mode", renderer->color_mode)
-                    & boost::serialization::make_nvp("y_scale", renderer->y_scale)
-                    & boost::serialization::make_nvp("draw_height_lines", renderer->draw_height_lines)
+                    & boost::serialization::make_nvp("y_scale", renderer->y_scale);
+            if (version < 1)
+                ar
+                        & boost::serialization::make_nvp("draw_height_lines", renderer->draw_contour_plot);
+            else
+                ar
+                        & boost::serialization::make_nvp("draw_contour_plot", renderer->draw_contour_plot);
+
+            ar
                     & boost::serialization::make_nvp("draw_piano", renderer->draw_piano)
                     & boost::serialization::make_nvp("draw_hz", renderer->draw_hz)
                     & boost::serialization::make_nvp("left_handed_axes", renderer->left_handed_axes);
         }
     };
 } // namespace Tools
+
+BOOST_CLASS_VERSION(Tools::RenderModel, 1)
 
 #endif // RENDERMODEL_H

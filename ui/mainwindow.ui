@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTools">
@@ -1138,7 +1138,7 @@
     <bool>true</bool>
    </property>
   </action>
-  <action name="actionSet_heightlines">
+  <action name="actionSet_contour_plot">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1150,10 +1150,10 @@
      <normaloff>:/icons/icons/icon-show-heightlines.png</normaloff>:/icons/icons/icon-show-heightlines.png</iconset>
    </property>
    <property name="text">
-    <string>Heightlines (only visible in 3D)</string>
+    <string>Contour plot</string>
    </property>
    <property name="toolTip">
-    <string>Heightlines (only visible in 3D)</string>
+    <string>Contour plot</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
