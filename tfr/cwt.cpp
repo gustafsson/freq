@@ -470,6 +470,13 @@ float Cwt::
 }
 
 
+Signal::Interval Cwt::
+        validLength(Signal::pBuffer buffer)
+{
+    return Signal::Intervals(buffer->getInterval()).shrink( wavelet_time_support_samples(buffer->sample_rate) ).coveredInterval();
+}
+
+
 pChunk Cwt::
         computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales )
 {

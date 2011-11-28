@@ -129,8 +129,10 @@ ChunkAndInverse CwtFilter::
 
 
 void CwtFilter::
-        applyFilter( Tfr::pChunk pchunk )
+        applyFilter( ChunkAndInverse& chunkInv )
 {
+    Tfr::pChunk pchunk = chunkInv.chunk;
+
     TIME_CwtFilter TaskTimer tt("CwtFilter applying '%s' on chunk %s",
                                 vartype(*this).c_str(),
                              pchunk->getInterval().toString().c_str());

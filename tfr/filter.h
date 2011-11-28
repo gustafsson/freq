@@ -97,7 +97,7 @@ protected:
       The default implementation of applyFilter is to call operator()( Chunk& )
       @see computeChunk
       */
-    virtual void applyFilter( Tfr::pChunk chunk );
+    virtual void applyFilter( ChunkAndInverse& chunk );
 
 
     /**

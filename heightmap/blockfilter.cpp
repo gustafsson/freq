@@ -41,9 +41,9 @@ BlockFilter::
 
 
 void BlockFilter::
-        applyFilter(Tfr::pChunk pchunk )
+        applyFilter(ChunkAndInverse& pchunk )
 {
-    Tfr::Chunk& chunk = *pchunk;
+    Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, false );
     TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks",
