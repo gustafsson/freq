@@ -1,4 +1,4 @@
-#include "simple_math.h"
+#include "neat_math.h"
 
 __global__ void kernel_memset_fix(
         float2* p,

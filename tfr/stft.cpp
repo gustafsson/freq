@@ -6,7 +6,6 @@
 
 #include <throwInvalidArgument.h>
 #include <neat_math.h>
-#include <simple_math.h>
 #include <computationkernel.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -119,6 +118,20 @@ float Fft::
         displayedTimeResolution( float FS, float /*hz*/ )
 {
     return 1/FS;
+}
+
+
+unsigned Fft::
+        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    return Fft::sChunkSizeG(current_valid_samples_per_chunk);
+}
+
+
+unsigned Fft::
+        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    return Fft::lChunkSizeS(current_valid_samples_per_chunk);
 }
 
 
@@ -415,7 +428,27 @@ FreqAxis Stft::
 float Stft::
         displayedTimeResolution( float FS, float /*hz*/ )
 {
-    return _window_size / FS;
+    return 0.125f*_window_size / FS;
+}
+
+
+unsigned Stft::
+        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<_window_size)
+        return _window_size;
+
+    return spo2g(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size;
+}
+
+
+unsigned Stft::
+        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<2*_window_size)
+        return _window_size;
+
+    return lpo2s(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size;
 }
 
 

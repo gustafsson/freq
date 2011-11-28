@@ -816,11 +816,11 @@ void RenderView::
 
 
 void RenderView::
-        userinput_update( bool request_high_fps, bool post_update )
+        userinput_update( bool request_high_fps, bool post_update, bool cheat_also_high )
 {
     if (request_high_fps)
     {
-        model->project()->worker.requested_fps(60);
+        model->project()->worker.requested_fps(30, cheat_also_high?15:-1);
     }
 
     if (post_update)

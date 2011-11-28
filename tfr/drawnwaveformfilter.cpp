@@ -3,9 +3,8 @@
 #include "drawnwaveform.h"
 #include "drawnwaveformkernel.h"
 
-// GPUMISC
+// gpumisc
 #include "neat_math.h"
-#include "simple_math.h"
 
 namespace Tfr {
 

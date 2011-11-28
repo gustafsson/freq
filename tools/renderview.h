@@ -97,7 +97,7 @@ namespace Tools
         void emitAxisChanged();
 
     public slots:
-        void userinput_update( bool request_high_fps = true, bool post_update = true );
+        void userinput_update( bool request_high_fps = true, bool post_update = true, bool cheat_also_high=true );
 
     signals:
         /**

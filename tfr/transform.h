@@ -64,6 +64,21 @@ public:
       */
     virtual Signal::Interval validLength(Signal::pBuffer buffer) { return buffer->getInterval(); }
 
+
+    /**
+      Returns the next good chunk size for this type of transform (or the
+      largest if there is no good chunk size larger than
+      'current_valid_samples_per_chunk').
+      */
+    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) = 0;
+
+
+    /**
+      Returns the previously good chunk size for this type of transform (or the
+      smallest if there is no good chunk size larger than
+      'current_valid_samples_per_chunk').
+      */
+    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) = 0;
 };
 typedef boost::shared_ptr<Transform> pTransform;
 

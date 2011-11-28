@@ -192,7 +192,7 @@ public:
       Get/set requested number of frames per second.
       */
     float               requested_fps() const;
-    void                requested_fps(float);
+    void                requested_fps(float, float cheat=-1);
 
     static bool         is_cheating();
 
@@ -287,7 +287,7 @@ private:
     /**
       _samples_per_chunk is adjusted up and down to reach this given framerate. Default value: requested_fps=30.
       */
-    float _requested_fps;
+    float _requested_fps, _requested_cheat_fps;
 
     /**
       lowest fps allowed, defaults to 0.5

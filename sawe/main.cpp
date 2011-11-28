@@ -5,7 +5,7 @@
 
 // gpumisc
 #include <redirectstdout.h>
-#include <simple_math.h>
+#include <neat_math.h>
 
 // Qt
 #include <QtGui/QMessageBox>

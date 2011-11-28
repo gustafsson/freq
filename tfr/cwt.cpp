@@ -11,7 +11,6 @@
 #include <throwInvalidArgument.h>
 #include <computationkernel.h>
 #include <neat_math.h>
-#include <simple_math.h>
 #include <Statistics.h>
 
 #ifdef USE_CUDA

@@ -122,6 +122,14 @@ public:
       */
     bool allow_cheat_resolution() const;
 
+    /**
+      */
+    unsigned next_good_size( unsigned current_valid_samples_per_chunk );
+
+    /**
+      */
+    unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
+
 private:
     void rebuildSource();
 

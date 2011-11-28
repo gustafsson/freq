@@ -5,6 +5,8 @@
 #include "sawe/project.h"
 #include "tools/renderview.h"
 
+#include "neat_math.h"
+
 #include <boost/foreach.hpp>
 #include <boost/noncopyable.hpp>
 
@@ -352,6 +354,59 @@ bool Target::
         allow_cheat_resolution() const
 {
     return allow_cheat_resolution_;
+}
+
+
+template<typename T>
+T* findType(Signal::pOperation p)
+{
+    for(Signal::pOperation r = p; r!=0; r = r->source())
+    {
+        if (T* t = dynamic_cast<T*>(r.get()))
+            return t;
+
+        std::string n = r->name();
+        PostSink* ps = dynamic_cast<PostSink*>(r.get());
+        if (ps) foreach(Signal::pOperation o, ps->sinks())
+        {
+            std::string m = o->name();
+            if (T* t = findType<T>(o))
+                return t;
+        }
+    }
+
+    return 0;
+}
+
+unsigned Target::
+        next_good_size( unsigned current_valid_samples_per_chunk )
+{
+    if (Tfr::Filter* f = findType<Tfr::Filter>(source()))
+        return f->transform()->next_good_size(current_valid_samples_per_chunk, source()->sample_rate());
+
+    unsigned minsize = 64;
+    if (current_valid_samples_per_chunk<minsize)
+        return minsize;
+
+    return spo2g(align_up(current_valid_samples_per_chunk, minsize)/minsize)*minsize;
+}
+
+
+unsigned Target::
+        prev_good_size( unsigned current_valid_samples_per_chunk )
+{
+    Tfr::Filter* f = 0;
+    for(Signal::pOperation r = source(); !f && r!=0; r = r->source())
+        f = dynamic_cast<Tfr::Filter*>(r.get());
+
+    if (f)
+        return f->transform()->prev_good_size(current_valid_samples_per_chunk, source()->sample_rate());
+
+    unsigned minsize = 64;
+    if (current_valid_samples_per_chunk<2*minsize)
+        return minsize;
+
+    return lpo2s(align_up(current_valid_samples_per_chunk, minsize)/minsize)*minsize;
 }
 
 

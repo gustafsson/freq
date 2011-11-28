@@ -67,7 +67,7 @@ void RecordView::
         }
         prev_limit_ = limit;
 
-        model_->render_view->userinput_update( !model_->recording->isStopped() );
+        model_->render_view->userinput_update( !model_->recording->isStopped(), true, false );
         model_->project->setModified();
     }
 }

@@ -2,6 +2,7 @@
 #include "stft.h"
 
 #include "TaskTimer.h"
+#include "neat_math.h"
 
 using namespace Signal;
 namespace Tfr {
@@ -62,6 +63,26 @@ float Cepstrum::
         displayedTimeResolution( float FS, float hz )
 {
     return Stft::Singleton().displayedTimeResolution( FS, hz );
+}
+
+
+unsigned Cepstrum::
+        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<chunk_size())
+        return chunk_size();
+
+    return spo2g(align_up(current_valid_samples_per_chunk, chunk_size())/chunk_size())*chunk_size();
+}
+
+
+unsigned Cepstrum::
+        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<2*chunk_size())
+        return chunk_size();
+
+    return lpo2s(align_up(current_valid_samples_per_chunk, chunk_size())/chunk_size())*chunk_size();
 }
 
 
