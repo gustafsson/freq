@@ -202,33 +202,35 @@ void NavigationController::
         else
             zoom( e->delta(), Zoom );
     }
-    else if (e->modifiers().testFlag(Qt::ControlModifier))
-    {
-        if( e->orientation() == Qt::Horizontal )
-            zoom( e->delta(), ScaleZ );
-        else
-            zoom( e->delta(), ScaleX );
-    }
-    else if (e->modifiers().testFlag(Qt::AltModifier))
-    {
-        zoom( e->delta(), Zoom );
-    }
     else
     {
-        bool success1, success2;
-
         float s = -0.125f;
-        QPointF prev = e->pos();
-        if( e->orientation() == Qt::Horizontal )
-            prev.setX( prev.x() + s*e->delta() );
-        else
-            prev.setY( prev.y() + s*e->delta() );
 
-        Heightmap::Position last = _view->getPlanePos( prev, &success1);
-        Heightmap::Position current = _view->getPlanePos( e->pos(), &success2);
-        if (success1 && success2)
+        if (e->modifiers().testFlag(Qt::AltModifier))
         {
-            moveCamera( last.time - current.time, last.scale - current.scale);
+            zoom( e->delta(), Zoom );
+        }
+        else
+        {
+            bool success1, success2;
+
+            QPointF prev = e->pos();
+            if( e->orientation() == Qt::Horizontal )
+                prev.setX( prev.x() + s*e->delta() );
+            else
+                prev.setY( prev.y() + s*e->delta() );
+
+            Heightmap::Position last = _view->getPlanePos( prev, &success1);
+            Heightmap::Position current = _view->getPlanePos( e->pos(), &success2);
+            if (success1 && success2)
+            {
+                if (e->modifiers().testFlag(Qt::ControlModifier))
+                    zoomCamera( last.time - current.time,
+                                last.scale - current.scale,
+                                0 );
+                else
+                    moveCamera( last.time - current.time, last.scale - current.scale);
+            }
         }
     }
 
