@@ -35,6 +35,7 @@ win32:QMAKE_CXXFLAGS += /MP
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
 win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
+win32:QMAKE_CXXFLAGS_DEBUG += /ZI
 win32:QMAKE_LFLAGS_DEBUG += /OPT:NOICF /OPT:NOREF
 win32:QMAKE_LFLAGS_DEBUG += \
     /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
