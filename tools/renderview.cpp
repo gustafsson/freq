@@ -40,6 +40,9 @@
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
 
+#define TIME_PAINTGL_DRAW
+//#define TIME_PAINTGL_DRAW if(0)
+
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
 
@@ -48,6 +51,10 @@
 
 #ifdef max
 #undef max
+#endif
+
+#ifdef min
+#undef min
 #endif
 
 namespace Tools
@@ -574,6 +581,7 @@ QPointF RenderView::
 void RenderView::
         drawCollections(GlFrameBuffer* fbo, float yscale)
 {
+    TIME_PAINTGL_DRAW TaskTimer tt2("Drawing...");
     GlException_CHECK_ERROR();
 
     unsigned N = model->collections.size();
@@ -659,11 +667,12 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s (%u triangles)",
+    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%d, %d)",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s",
-        N*model->renderer->drawn_blocks*(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2);
+        N*model->renderer->drawn_blocks*(yscale==0?2:(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2),
+        width(), height());
 }
 
 
@@ -875,6 +884,7 @@ void RenderView::
 void RenderView::
         resizeGL( int width, int height )
 {
+    TIME_PAINTGL_DETAILS TaskInfo("RenderView width=%d, height=%d", width, height);
     height = height?height:1;
 
     QRect rect = tool_selector->parentTool()->geometry();
@@ -1018,8 +1028,11 @@ void RenderView::
 			emit painting();
 		}
 
-        float length = model->project()->worker.length();
-        model->renderer->drawAxes( length ); // 4.7 ms
+        {
+            float length = model->project()->worker.length();
+            TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
+            model->renderer->drawAxes( length ); // 4.7 ms
+        }
     }
 
 
