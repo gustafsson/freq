@@ -4,6 +4,7 @@
 
 #include "sawe/project.h"
 #include "tools/renderview.h"
+#include "tfr/filter.h"
 
 #include "neat_math.h"
 
