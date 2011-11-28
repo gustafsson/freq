@@ -847,9 +847,13 @@ void RenderView::
 
         unsigned ms = (wait-dt)*1e3; // round down
 
+        // wait longer between frames if the requested framerate is low
+        float reqdt = 1.f/model->project()->worker.requested_fps();
+        reqdt = std::min(1.f, std::max(1.f, .1f * reqdt * reqdt));
+
         // allow others to jump in before the next update if ms=0
         // most visible in windows message loop
-        ms = std::max(1u, ms);
+        ms = std::max((unsigned)reqdt, ms);
 
         _update_timer->start(ms);
     }
