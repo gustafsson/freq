@@ -17,12 +17,12 @@
 
 #ifdef SONICAWE_UNAME
     #ifdef SONICAWE_UNAMEm
-        #define UNAME2 TOSTR(SONICAWE_UNAME) TOSTR(SONICAWE_UNAMEm)
+        #define UNAME2 TOSTR(SONICAWE_UNAME) " " TOSTR(SONICAWE_UNAMEm)
     #else
         #define UNAME2 TOSTR(SONICAWE_UNAME)
     #endif
     #ifdef SONICAWE_DISTCODENAME
-        #define UNAME UNAME2 TOSTR(SONICAWE_DISTCODENAME)
+        #define UNAME UNAME2 " " TOSTR(SONICAWE_DISTCODENAME)
     #else
         #define UNAME UNAME2
     #endif
