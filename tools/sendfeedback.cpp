@@ -68,22 +68,37 @@ void SendFeedback::
 {
     Support::BuildHttpPost postdata;
 
-    postdata.addKeyValue( "email", email );
-    postdata.addKeyValue( "message", message );
-    postdata.addKeyValue( "value", QSettings().value("value").toString() );
-
     QString logdir = Sawe::Application::log_directory();
     unsigned count = 0;
     QFileInfoList filesToSend = QDir(logdir).entryInfoList();
     if (QFile::exists(extraFile))
         filesToSend.append(extraFile);
 
+    QString omittedMessage;
+    size_t uploadLimit = 7 << 20;
     foreach(QFileInfo f, filesToSend)
     {
+        if (f.size() > uploadLimit)
+        {
+            omittedMessage += QString("File %1 (%2) was omitted\n")
+                              .arg(f.fileName())
+                              .arg(DataStorageVoid::getMemorySizeText(f.size()).c_str());
+            continue;
+        }
         if (postdata.addFile(f))
             count++;
     }
 
+    if (!omittedMessage.isEmpty())
+    {
+        message = omittedMessage + "\n" + message;
+        QMessageBox::information(
+                dynamic_cast<QWidget*>(parent()), "Some files were to large", omittedMessage);
+    }
+
+    postdata.addKeyValue( "email", email );
+    postdata.addKeyValue( "message", message );
+    postdata.addKeyValue( "value", QSettings().value("value").toString() );
 
     QByteArray feedbackdata = postdata;
 
