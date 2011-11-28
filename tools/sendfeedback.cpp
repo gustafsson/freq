@@ -75,7 +75,7 @@ void SendFeedback::
         filesToSend.append(extraFile);
 
     QString omittedMessage;
-    size_t uploadLimit = 7 << 20;
+    qint64 uploadLimit = 7 << 20;
     foreach(QFileInfo f, filesToSend)
     {
         if (f.size() > uploadLimit)
