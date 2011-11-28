@@ -208,7 +208,7 @@ Tfr::pChunk Stft::
         chunk = ComputeChunk(windowedInput);
 
     chunk->freqAxis = freqAxis( b->sample_rate );
-    chunk->chunk_offset = b->sample_offset/(float)increment() + .5f;
+    chunk->chunk_offset = (b->sample_offset/(float)_window_size + .5f)*_window_size/increment();
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = chunk->nSamples()-1;
     chunk->sample_rate = b->sample_rate / increment();
