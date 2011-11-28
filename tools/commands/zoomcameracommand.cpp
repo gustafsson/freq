@@ -29,20 +29,20 @@ std::string ZoomCameraCommand::
 void ZoomCameraCommand::
         executeFirst()
 {
-    if (dt) if (!zoom( 1500*dt*model->xscale, ScaleX ))
+    if (dt) if (!zoom( 1000*dt*model->xscale, ScaleX ))
     {
         float L = model->project()->worker.source()->length();
         float d = std::min( 0.5f * fabsf(dt), fabsf(model->_qx - L/2));
         model->_qx += model->_qx>L*.5f ? -d : d;
     }
 
-    if (ds) if (!zoom( 1500*ds*model->zscale, ScaleZ ))
+    if (ds) if (!zoom( 1000*ds*model->zscale, ScaleZ ))
     {
         float d = std::min( 0.5f * fabsf(ds), fabsf(model->_qz - .5f));
         model->_qz += model->_qz>.5f ? -d : d;
     }
 
-    if (dz) zoom(dz, Zoom );
+    if (dz) zoom( dz, Zoom );
 }
 
 

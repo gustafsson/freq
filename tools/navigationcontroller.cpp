@@ -266,49 +266,60 @@ void NavigationController::
     if (scaleButton.isDown()) {
         // TODO scale selection
     }
-    if( rotateButton.isDown() ) {
-        if (e->modifiers().testFlag(Qt::AltModifier))
-        {
-            zoomCamera( 0, 0, 10* (rotateButton.deltaX( x ) + rotateButton.deltaY( y )) );
-        }
-        else if (zoom_only_ || e->modifiers().testFlag(Qt::ControlModifier))
-        {
-            bool success1, success2;
-            Heightmap::Position last = r.getPlanePos( QPointF(rotateButton.getLastx(), rotateButton.getLasty()), &success1);
-            Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
-            if (success1 && success2)
-            {
-                zoomCamera( last.time - current.time,
-                            last.scale - current.scale,
-                            0 );
-            }
-        }
-        else
-        {
-            //Controlling the rotation with the right button.
-            rotateCamera( rotateButton.deltaX( x ), rotateButton.deltaY( y ) );
-        }
-    }
 
-    if( moveButton.isDown() )
+    Ui::MouseControl *zoomCommand = 0, *rescaleCommand = 0, *rotateCommand = 0, *navigateCommand = 0;
+
+    bool zoomAnyways = e->modifiers().testFlag(Qt::AltModifier) || e->modifiers().testFlag(Qt::ControlModifier);
+    if (zoom_only_ || zoomAnyways)
     {
-        if (zoom_only_)
+        if( rotateButton.isDown() )
+            zoomCommand = &rotateButton;
+
+        if( moveButton.isDown() )
+            rescaleCommand = &moveButton;
+    }
+    else
+    {
+        if( rotateButton.isDown() )
+            rotateCommand = &rotateButton;
+
+        if( moveButton.isDown() )
+            navigateCommand = &moveButton;
+    }
+
+    if (zoomCommand)
+        zoomCamera( 0, 0, 10*(-zoomCommand->deltaX( x ) + zoomCommand->deltaY( y )) );
+
+    if (rescaleCommand)
+    {
+        bool success1, success2;
+        Heightmap::Position last = r.getPlanePos( QPointF(rescaleCommand->getLastx(), rescaleCommand->getLasty()), &success1);
+        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        if (success1 && success2)
         {
-            zoom( 10* (moveButton.deltaX( x ) + moveButton.deltaY( y )), Zoom );
-        }
-        else
-        {
-            //Controlling the position with the left button.
-            bool success1, success2;
-            Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
-            Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
-            if (success1 && success2)
-            {
-                moveCamera( last.time - current.time, last.scale - current.scale);
-            }
+            zoomCamera( last.time - current.time,
+                        last.scale - current.scale,
+                        0 );
         }
     }
 
+    if (navigateCommand)
+    {
+        //Controlling the position with the left button.
+        bool success1, success2;
+        Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
+        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        if (success1 && success2)
+        {
+            moveCamera( last.time - current.time, last.scale - current.scale);
+        }
+    }
+
+    if (rotateCommand)
+    {
+        //Controlling the rotation with the right button.
+        rotateCamera( rotateCommand->deltaX( x ), rotateCommand->deltaY( y ) );
+    }
 
 
     //Updating the buttons
