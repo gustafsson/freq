@@ -667,7 +667,7 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%d, %d)",
+    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%g, %g)",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s",

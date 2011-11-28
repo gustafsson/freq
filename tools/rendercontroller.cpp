@@ -322,7 +322,7 @@ void RenderController::
 
 
     // keep in sync with receiveSetYScale
-    f = log(model()->renderer->y_scale)/4.f;
+    f = log(model()->renderer->y_scale)/8.f;
     f = (f > 0 ? 1 : -1) * sqrtf( f > 0 ? f : -f );
     value = (f + 1)/2 * yscale->maximum() + .5;
 
@@ -353,7 +353,7 @@ void RenderController::
 {
     // Keep in sync with transformChanged()
     float f = 2.f * value / yscale->maximum() - 1.f;
-    model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
+    model()->renderer->y_scale = exp( 8.f*f*f * (f>0?1:-1));
 
     stateChanged();
 
