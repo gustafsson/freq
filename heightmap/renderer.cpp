@@ -111,10 +111,10 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     _vbo_size = ((w*2)+4)*(h-1);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(GLuint), 0, GL_STATIC_DRAW);
+    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(GLushort), 0, GL_STATIC_DRAW);
 
     // fill with indices for rendering mesh as triangle strips
-    GLuint *indices = (GLuint *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    GLushort *indices = (GLushort*) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
     if (!indices) {
         return;
     }
@@ -157,6 +157,7 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
         }
     }
 
+    // enmake sure v==1
     for(unsigned x=0; x<w; x++) {
         float u = x / (float) (w-1);
         float v = 1;
@@ -271,11 +272,6 @@ void Renderer::init()
 
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
-
-    //setSize( collection->samples_per_block(), collection->scales_per_block() );
-    setSize( collection->samples_per_block()/4, collection->scales_per_block() );
-
-    //setSize(2,2);
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
 
@@ -416,16 +412,13 @@ void Renderer::draw( float scaley )
     if (NotInitialized == _initialized) init();
     if (Initialized != _initialized) return;
 
-    setSize( collection->samples_per_block()/_mesh_fraction_width, collection->scales_per_block()/_mesh_fraction_height );
-
     _invalid_frustum = true;
 
-    if (.001 > scaley)
-//        setSize(2,2),
-        scaley = 0.001,
-        _draw_flat = true;
+    if ((_draw_flat = .001 > scaley))
+        setSize(2,2),
+        scaley = 0.001;
     else
-        _draw_flat = false;
+        setSize( collection->samples_per_block()/_mesh_fraction_width, collection->scales_per_block()/_mesh_fraction_height );
 
     last_ysize = scaley;
     drawn_blocks = 0;
@@ -500,14 +493,11 @@ void Renderer::beginVboRendering()
     colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
-    if (!_draw_flat)
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-        glVertexPointer(4, GL_FLOAT, 0, 0);
-        glEnableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
+    glVertexPointer(4, GL_FLOAT, 0, 0);
+    glEnableClientState(GL_VERTEX_ARRAY);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
 
     GlException_CHECK_ERROR();
 }
@@ -540,12 +530,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ )
-        {
-            if (_draw_flat)
-                block->glblock->draw_flat();
-            else
-                block->glblock->draw( _vbo_size );
-        }
+            block->glblock->draw( _vbo_size, !_draw_flat );
 
     } else if ( 0 == "render red warning cross") {
         endVboRendering();
@@ -1005,7 +990,7 @@ void swap( T& x, T& y) {
 
 void Renderer::drawAxes( float T )
 {
-    TaskTimer tt("drawAxes(length = %g)", T);
+    TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
 
@@ -1104,6 +1089,12 @@ void Renderer::drawAxes( float T )
 
     Tfr::FreqAxis fa = collection->display_scale();
     // loop along all sides
+    typedef tvector<4,GLfloat> GLvectorF;
+    typedef tvector<2,GLfloat> GLvector2F;
+    std::vector<GLvectorF> ticks;
+    std::vector<GLvectorF> phatTicks;
+    std::vector<GLvector2F> quad(4);
+
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
         glColor4f(0,0,0,0.8);
@@ -1328,19 +1319,13 @@ void Renderer::drawAxes( float T )
                     if (-1 == tmarkanyways)
                         size = 1;
 
-                    glLineWidth(size);
-
                     float sign = (v0^z)%(v0^( p - inside))>0 ? 1.f : -1.f;
                     float o = size*SF*.003f*sign;
 
-                    glBegin(GL_LINES);
-                        glVertex3f( p[0], 0, p[2] );
-                        glVertex3f( p[0], 0, p[2] - o);
-                    glEnd();
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2]-o, 1.f));
 
                     if (size>1) {
-                        glLineWidth(1);
-
                         glPushMatrixContext push_model( GL_MODELVIEW );
 
                         glTranslatef(p[0], 0, p[2]);
@@ -1371,12 +1356,14 @@ void Renderer::drawAxes( float T )
                         glColor4f(1,1,1,0.5);
                         float z = 10;
                         float q = 20;
-                        glBegin(GL_TRIANGLE_STRIP);
-                        glVertex2f(0 - z, 0 - q);
-                        glVertex2f(w + z, 0 - q);
-                        glVertex2f(0 - z, 100 + q);
-                        glVertex2f(w + z, 100 + q);
-                        glEnd();
+                        glEnableClientState(GL_VERTEX_ARRAY);
+                        quad[0] = GLvector2F(0 - z, 0 - q);
+                        quad[1] = GLvector2F(w + z, 0 - q);
+                        quad[2] = GLvector2F(0 - z, 100 + q);
+                        quad[3] = GLvector2F(w + z, 100 + q);
+                        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
+                        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
+                        glDisableClientState(GL_VERTEX_ARRAY);
                         glColor4f(0,0,0,0.8);
                         for (char*c=a;*c!=0; c++) {
                             glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
@@ -1387,7 +1374,7 @@ void Renderer::drawAxes( float T )
             } else {
                 if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail || fmarkanyways==2)
                 {
-                    float size = 1;
+                    int size = 1;
                     if (0 == ((unsigned)floor(f/fc + .5))%(fupdatedetail*fmultiple))
                         size = 2;
                     if (fmarkanyways)
@@ -1396,22 +1383,17 @@ void Renderer::drawAxes( float T )
                         size = 1;
 
 
-                    glLineWidth(size);
-
                     float sign = (v0^x)%(v0^( p - inside))>0 ? 1.f : -1.f;
                     float o = size*ST*.003f*sign;
                     if (!left_handed_axes)
                         sign *= -1;
-                    glBegin(GL_LINES);
-                        glVertex3f( p[0], 0, p[2] );
-                        glVertex3f( p[0] - o, 0, p[2] );
-                    glEnd();
+
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0]-o, 0.f, p[2], 1.f));
 
 
                     if (size>1)
                     {
-                        glLineWidth(1);
-
                         glPushMatrixContext push_model( GL_MODELVIEW );
 
                         glTranslatef(p[0],0,p[2]);
@@ -1442,12 +1424,14 @@ void Renderer::drawAxes( float T )
                         glColor4f(1,1,1,0.5);
                         float z = 10;
                         float q = 20;
-                        glBegin(GL_TRIANGLE_STRIP);
-                        glVertex2f(0 - z, 0 - q);
-                        glVertex2f(w + z, 0 - q);
-                        glVertex2f(0 - z, 100 + q);
-                        glVertex2f(w + z, 100 + q);
-                        glEnd();
+                        glEnableClientState(GL_VERTEX_ARRAY);
+                        quad[0] = GLvector2F(0 - z, 0 - q);
+                        quad[1] = GLvector2F(w + z, 0 - q);
+                        quad[2] = GLvector2F(0 - z, 100 + q);
+                        quad[3] = GLvector2F(w + z, 100 + q);
+                        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
+                        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
+                        glDisableClientState(GL_VERTEX_ARRAY);
                         glColor4f(0,0,0,0.8);
                         for (char*c=a;*c!=0; c++)
                             glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
@@ -1634,6 +1618,15 @@ void Renderer::drawAxes( float T )
             }
         }
     }
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glLineWidth(2);
+    glVertexPointer(4, GL_FLOAT, 0, &phatTicks[0]);
+    glDrawArrays(GL_LINES, 0, phatTicks.size());
+    glLineWidth(1);
+    glVertexPointer(4, GL_FLOAT, 0, &ticks[0]);
+    glDrawArrays(GL_LINES, 0, ticks.size());
+    glDisableClientState(GL_VERTEX_ARRAY);
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);

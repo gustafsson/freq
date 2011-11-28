@@ -448,33 +448,38 @@ void GlBlock::
 
 
 void GlBlock::
-        draw( unsigned vbo_size )
+        draw( unsigned vbo_size, bool withHeightMap )
 {
     TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
-    update_texture( true );
+    update_texture( withHeightMap );
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
+    if (withHeightMap)
+    {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, _tex_height_nearest );
+    }
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
 
     const bool wireFrame = false;
     const bool drawPoints = false;
 
-    glColor4f(1.0, 1.0, 1.0, 1.0);
     if (drawPoints) {
         glDrawArrays(GL_POINTS, 0, vbo_size);
     } else if (wireFrame) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_SHORT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_SHORT, 0);
     }
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    if (withHeightMap)
+    {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -482,37 +487,6 @@ void GlBlock::
     TIME_GLBLOCK GlException_CHECK_ERROR();
 }
 
-void GlBlock::
-        draw_flat( )
-{
-    update_texture( false );
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 0); // no slope texture for drawing a flat rectangle
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
-
-    glDisable(GL_BLEND);
-    glDisable(GL_COLOR_MATERIAL);
-    glDisable(GL_LIGHTING);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glDisable(GL_CULL_FACE);
-    glColor4f(1.0, 1.0, 1.0, 1.0);
-    const bool wireFrame = false;
-    if (wireFrame)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-    glBegin( GL_TRIANGLE_STRIP );
-        glTexCoord2f(0,0);    glVertex3f(0,0,0);
-        glTexCoord2f(0,1);    glVertex3f(1,0,0);
-        glTexCoord2f(1,0);    glVertex3f(0,0,1);
-        glTexCoord2f(1,1);    glVertex3f(1,0,1);
-    glEnd();
-    if (wireFrame)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
 
 //static int clamp(int val, int max) {
 //    if (val<0) return 0;
