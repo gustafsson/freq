@@ -63,9 +63,10 @@ namespace Tools
             ScaleX,
             ScaleZ
         };
-        bool zoom(int delta, ZoomMode mode);
-        void doZoom(int delta, float* scale=0, float* min_scale=0, float* max_scale=0);
+        void zoom(int delta, ZoomMode mode);
         void moveCamera( float dt, float ds );
+        void zoomCamera( float dt, float ds, float dz );
+        void rotateCamera( float dt, float ds );
         void bindKeyToSlot( QWidget* owner, const char* keySequence, const QObject* receiver, const char* slot );
 
 	};

@@ -2,7 +2,7 @@
 #define HEIGHTMAPCOLLECTION_H
 
 // Heightmap namespace
-#include "reference.h"
+#include "reference_hash.h"
 #include "glblock.h"
 #include "amplitudeaxis.h"
 
@@ -17,7 +17,6 @@
 
 // boost
 #include <boost/unordered_map.hpp>
-#include <boost/functional/hash.hpp>
 
 // Qt
 #ifndef SAWE_NO_MUTEX
@@ -146,20 +145,9 @@ public:
       the first block in the heightmap. The samplerate is the sample rate of the full
       resolution signal.
       */
-    Signal::Intervals valid_samples;
+    Signal::Intervals valid_samples, non_zero;
 };
 typedef boost::shared_ptr<Block> pBlock;
-
-
-inline std::size_t hash_value(Reference const& ref)
-{
-    std::size_t seed = 0;
-    boost::hash_combine(seed, ref.log2_samples_size[0]);
-    boost::hash_combine(seed, ref.log2_samples_size[1]);
-    boost::hash_combine(seed, ref.block_index[0]);
-    boost::hash_combine(seed, ref.block_index[1]);
-    return seed;
-}
 
 
 /**

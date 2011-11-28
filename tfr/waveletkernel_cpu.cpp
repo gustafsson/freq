@@ -50,7 +50,6 @@ void wtCompute(
 
     int nFrequencyBins = size.width, nScales = size.height;
     const int N = nFrequencyBins/2;
-    memset( out_wavelet_ft, 0, out_wavelet_ftp->numberOfBytes() );
 
     normalization_factor *= sqrt( 4*PI*sigma_t0 );
     normalization_factor *= 2.f/(float)(nFrequencyBins*half_sizes);
@@ -58,19 +57,20 @@ void wtCompute(
     float wscale = 2*PI/nFrequencyBins;
     sigma_t0 *= SQRTLOG2E;
 
+    //for (int w_bin=0; w_bin<N; ++w_bin)
+    //        compute_wavelet_coefficients_elem(
+    //                w_bin,
+    //                in_waveform_ft,
+    //                out_wavelet_ft,
+    //                size.width, size.height,
+    //                first_scale,
+    //                scales_per_octave,
+    //                sigma_t0,
+    //                normalization_factor );
+
 #pragma omp parallel for
     for( int j=0; j<nScales; j++)
     {
-//        compute_wavelet_coefficients_elem(
-//                w_bin,
-//                in_waveform_ft,
-//                out_wavelet_ft,
-//                size.width, size.height,
-//                first_scale,
-//                scales_per_octave,
-//                sigma_t0,
-//                normalization_factor );
-
         Tfr::ChunkElement waveform_ft;
 
 
@@ -90,6 +90,8 @@ void wtCompute(
             // Write wavelet coefficient in output matrix
             out_wavelet_ft[offset + w_bin] = waveform_ft * exp2f( -q*q );
         }
+        for (int w_bin=N; w_bin<nFrequencyBins; ++w_bin)
+            out_wavelet_ft[offset + w_bin] = Tfr::ChunkElement(0,0);
     }
 }
 

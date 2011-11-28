@@ -9,7 +9,7 @@ varying float shadow;
 uniform sampler2D tex;
 uniform sampler2D tex_color;
 uniform int colorMode;
-uniform int heightLines;
+uniform int contourPlot;
 uniform float yScale;
 uniform vec4 fixedColor;
 
@@ -17,10 +17,10 @@ vec4 getWavelengthColor( float wavelengthScalar ) {
     return texture2D(tex_color, vec2(wavelengthScalar,0));
 }
 
-float getHeightLineColor(float height)
+float getIsarithmColor(float height)
 {
    float value = height - floor(height);
-   return value > 0.1 ? 1.0 : 0.75;
+   return value < 0.93 ? 1.0 : 0.9;
 }
 
 void main()
@@ -52,11 +52,13 @@ void main()
     curveColor = curveColor*shadow; // + vec4(fresnel);
     curveColor = mix(vec4(1.0), curveColor, f);
 
-    if (0!=heightLines)
+    if (0!=contourPlot)
     {
-        float heightLine1 = getHeightLineColor( abs(vertex_height) * 20.0);
-        float heightLine2 = getHeightLineColor( abs(vertex_height) * 5.0);
-        curveColor = heightLine1 *heightLine2*heightLine2* curveColor;
+        if (vertex_height != 0.0)
+            v = vertex_height;
+        float isarithm1 = getIsarithmColor( abs(v) * 25.0);
+        float isarithm2 = getIsarithmColor( abs(v) * 5.0);
+        curveColor = isarithm1 *isarithm2*isarithm2* curveColor;
     }
 
     curveColor.w = 1.0; //-saturate(fresnel);

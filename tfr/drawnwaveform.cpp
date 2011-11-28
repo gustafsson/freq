@@ -112,6 +112,29 @@ FreqAxis DrawnWaveform::
 }
 
 
+static const unsigned DrawnWaveform_step_constant = 1024;
+
+
+unsigned DrawnWaveform::
+        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<drawWaveform_BLOCK_SIZE)
+        return drawWaveform_BLOCK_SIZE;
+
+    return spo2g(align_up(current_valid_samples_per_chunk, drawWaveform_BLOCK_SIZE)/drawWaveform_BLOCK_SIZE)*drawWaveform_BLOCK_SIZE;
+}
+
+
+unsigned DrawnWaveform::
+        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<2*drawWaveform_BLOCK_SIZE)
+        return drawWaveform_BLOCK_SIZE;
+
+    return lpo2s(align_up(current_valid_samples_per_chunk, drawWaveform_BLOCK_SIZE)/drawWaveform_BLOCK_SIZE)*drawWaveform_BLOCK_SIZE;
+}
+
+
 float DrawnWaveform::
         blob(float FS)
 {

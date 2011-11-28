@@ -1,5 +1,7 @@
 #include "sinksourcechannels.h"
 
+#include <string.h>
+
 namespace Signal {
 
 SinkSourceChannels::

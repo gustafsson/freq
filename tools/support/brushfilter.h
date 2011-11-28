@@ -2,17 +2,12 @@
 #define BRUSHFILTER_H
 
 #include "tfr/cwtfilter.h"
-#include "heightmap/collection.h"
+#include "heightmap/reference_hash.h"
 
 // boost
-#include <boost/serialization/version.hpp>
-#include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/binary_object.hpp>
-#include <boost/foreach.hpp>
-
-// std
-#include <vector>
+#include <boost/unordered_map.hpp>
 
 namespace Tools {
 namespace Support {
@@ -34,7 +29,6 @@ public:
     BrushImagesP images;
 
     void release_extra_resources();
-    //void validateRefs(Heightmap::Collection* collection);
     BrushImageDataP getImage(Heightmap::Reference const& ref);
 
 private:
@@ -57,8 +51,10 @@ private:
 
 		size_t N = images->size();
         ar & BOOST_SERIALIZATION_NVP(N);
-        BOOST_FOREACH(BrushImages::value_type bv, *images)
+        for (BrushImages::iterator i=images->begin(); i!=images->end(); ++i)
         {
+            BrushImages::value_type& bv = *i;
+
 			Heightmap::Reference rcopy = bv.first;
 			serialize_ref(ar, rcopy);
 

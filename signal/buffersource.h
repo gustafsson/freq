@@ -2,6 +2,7 @@
 #define SIGNALBUFFERSOURCE_H
 
 #include "operation.h"
+#include <vector>
 
 namespace Signal
 {

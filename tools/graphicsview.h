@@ -38,7 +38,7 @@ public:
     void resizeEvent(QResizeEvent *event);
 
     unsigned toolWindows();
-    Support::ToolSelector* toolSelector(int index);
+    Support::ToolSelector* toolSelector(int index, Tools::Commands::CommandInvoker* state);
 
     void setToolFocus( bool focus );
 

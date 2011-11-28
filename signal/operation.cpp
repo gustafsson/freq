@@ -143,14 +143,12 @@ Operation* Operation::
 void Operation::
         invalidate_samples(const Intervals& I)
 {
-    Intervals J = I & getInterval();
-
-    if (!J)
+    if (!I)
         return;
 
     BOOST_FOREACH( Operation* p, _outputs )
     {
-        p->invalidate_samples( p->translate_interval( J ));
+        p->invalidate_samples( p->translate_interval( I ));
     }
 }
 

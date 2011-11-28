@@ -21,11 +21,9 @@
 // Std
 #include <sstream>
 #include <fstream>
-using namespace std;
+#include <iomanip>
 
-#ifdef min
-#undef min
-#endif
+using namespace std;
 
 namespace Tools {
 
@@ -64,7 +62,7 @@ const Heightmap::Position& TooltipModel::
 
 
 void TooltipModel::
-        showToolTip( Heightmap::Position p )
+        showToolTip( Heightmap::Position p, bool adjustScaleToLocalPeak )
 {
     BOOST_ASSERT( render_view_ );
 
@@ -100,7 +98,7 @@ void TooltipModel::
     bool is_valid_value;
     float val = 0;
     if (last_fetched_scale_is_valid )
-        val = render_view_->getHeightmapValue( p, 0, &p.scale,
+        val = render_view_->getHeightmapValue( p, 0, adjustScaleToLocalPeak?&p.scale:0,
                                                false, &is_valid_value );
 	// elseor
     if (!is_valid_value || !last_fetched_scale_is_valid)
@@ -224,9 +222,7 @@ void TooltipModel::
     if (TooltipModel::NoMarkers == this->automarking)
         this->comment->thumbnail( false );
 
-    this->comment->model()->pos = Heightmap::Position(
-            p.time,
-            p.scale);
+    this->comment->model()->pos = p;
 
     if (found_better)
     {

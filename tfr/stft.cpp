@@ -6,8 +6,9 @@
 
 #include <throwInvalidArgument.h>
 #include <neat_math.h>
-#include <simple_math.h>
 #include <computationkernel.h>
+
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #ifdef _MSC_VER
 #include <msc_stdc.h>
@@ -95,10 +96,10 @@ pChunk Fft::
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales() );
     }
 
-    chunk->chunk_offset = real_buffer->sample_offset;
+    chunk->chunk_offset = real_buffer->sample_offset/(float)input_n.width;
     chunk->first_valid_sample = 0;
-    chunk->n_valid_samples = input_n.width;
-    chunk->sample_rate = real_buffer->sample_rate / ((StftChunk*)chunk.get())->transformSize();
+    chunk->n_valid_samples = 1;
+    chunk->sample_rate = real_buffer->sample_rate/(float)input_n.width;
     chunk->original_sample_rate = real_buffer->sample_rate;
     return chunk;
 }
@@ -117,6 +118,20 @@ float Fft::
         displayedTimeResolution( float FS, float /*hz*/ )
 {
     return 1/FS;
+}
+
+
+unsigned Fft::
+        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    return Fft::sChunkSizeG(current_valid_samples_per_chunk);
+}
+
+
+unsigned Fft::
+        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    return Fft::lChunkSizeS(current_valid_samples_per_chunk);
 }
 
 
@@ -156,7 +171,7 @@ Signal::pBuffer Fft::
     if ( r->number_of_samples() != chunk->n_valid_samples )
         r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, chunk->n_valid_samples ));
 
-    r->sample_offset = chunk->chunk_offset;
+    r->sample_offset = chunk->getInterval().first;
 
     return r;
 }
@@ -193,11 +208,11 @@ Tfr::pChunk Stft::
         chunk = ComputeChunk(windowedInput);
 
     chunk->freqAxis = freqAxis( b->sample_rate );
-    chunk->chunk_offset = b->sample_offset/(float)increment() + .5f;
+    chunk->chunk_offset = (b->sample_offset/(float)_window_size + .5f)*_window_size/increment();
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = chunk->nSamples()-1;
     chunk->sample_rate = b->sample_rate / increment();
-    ((StftChunk*)chunk.get())->original_sample_rate = b->sample_rate;
+    chunk->original_sample_rate = b->sample_rate;
 
     if (0 == b->sample_offset)
     {
@@ -213,7 +228,7 @@ Tfr::pChunk Stft::
         float* breal_p = breal->waveform_data()->getCpuMemory();
         Signal::IntervalType breal_length = breal->number_of_samples();
         Signal::IntervalType binv_length = binv->number_of_samples();
-        BOOST_ASSERT( breal_length = binv_length );
+        BOOST_ASSERT( breal_length == binv_length );
         float maxd = 0;
         for(Signal::IntervalType i =0; i<breal_length; i++)
         {
@@ -297,7 +312,7 @@ Signal::pBuffer Stft::
         inverse( pChunk chunk )
 {
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
-    BOOST_ASSERT(stftchunk);
+    BOOST_ASSERT( stftchunk );
     if (stftchunk->redundant())
         return inverseWithRedundant( chunk );
 
@@ -400,7 +415,12 @@ FreqAxis Stft::
         freqAxis( float FS )
 {
     FreqAxis fa;
-    fa.setLinear( FS, _window_size/2 );
+
+    if (compute_redundant())
+        fa.setLinear( FS, _window_size-1 );
+    else
+        fa.setLinear( FS, _window_size/2 );
+
     return fa;
 }
 
@@ -408,7 +428,27 @@ FreqAxis Stft::
 float Stft::
         displayedTimeResolution( float FS, float /*hz*/ )
 {
-    return _window_size / FS;
+    return 0.125f*_window_size / FS;
+}
+
+
+unsigned Stft::
+        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<_window_size)
+        return _window_size;
+
+    return spo2g(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size;
+}
+
+
+unsigned Stft::
+        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+{
+    if (current_valid_samples_per_chunk<2*_window_size)
+        return _window_size;
+
+    return lpo2s(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size;
 }
 
 
@@ -654,7 +694,7 @@ void Stft::
     std::vector<float> windowfunction(_window_size);
     float* window = &windowfunction[0];
 #pragma omp parallel for
-    for (unsigned x=0;x<_window_size; ++x)
+    for (int x=0;x<(int)_window_size; ++x)
     {
         float p = 2.f*(x+1)/(_window_size+1) - 1.f;
         window[x] = computeWindowValue<Type>(p);
@@ -666,7 +706,7 @@ void Stft::
         {
             CpuMemoryReadOnly<float, 3>::Position readPos = pos;
 #pragma omp parallel for
-            for (unsigned w=0; w<windowCount; ++w)
+            for (int w=0; w<(int)windowCount; ++w)
             {
                 float *o = &out.ref(pos) + w*_window_size;
                 float *i = &in.ref(pos) + w*increment;
@@ -855,13 +895,11 @@ StftChunk::
 void StftChunk::
         setHalfs( unsigned n )
 {
-    chunk_offset <<= _halfs_n;
-    n_valid_samples <<= _halfs_n;
+    sample_rate /= 1<<_halfs_n;
 
     _halfs_n = n;
 
-    chunk_offset >>= _halfs_n;
-    n_valid_samples >>= _halfs_n;
+    sample_rate *= 1<<_halfs_n;
 }
 
 

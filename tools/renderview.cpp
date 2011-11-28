@@ -40,6 +40,9 @@
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
 
+#define TIME_PAINTGL_DRAW
+//#define TIME_PAINTGL_DRAW if(0)
+
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
 
@@ -50,6 +53,10 @@
 #undef max
 #endif
 
+#ifdef min
+#undef min
+#endif
+
 namespace Tools
 {
 
@@ -57,7 +64,7 @@ RenderView::
         RenderView(RenderModel* model)
             :
             last_ysize(1),
-            orthoview(1),
+            viewstate(model->project()->commandInvoker()),
             model(model),
             glwidget(0),
             graphicsview(0),
@@ -72,14 +79,15 @@ RenderView::
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
-    if (model->_rx>=90) { model->_rx=90; orthoview.reset(1); } else orthoview.reset(0);
-    //if (0<orthoview && model->_rx<90) { model->_rx=90; orthoview=0; }
+    if (model->_rx>=90) { model->_rx=90; model->orthoview.reset(1); } else model->orthoview.reset(0);
 
     computeChannelColors();
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
+    connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(userinput_update()));
+    connect( &viewstate, SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
 
     _update_timer = new QTimer;
     _update_timer->setSingleShot( true );
@@ -376,7 +384,7 @@ QPointF RenderView::
         getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     GLdouble objY = 0;
-    if (1 != orthoview && use_heightmap_value)
+    if (1 != model->orthoview && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->renderer->y_scale * 4 * last_ysize;
 
     GLdouble winX, winY, winZ;
@@ -423,7 +431,7 @@ QPointF RenderView::
 Heightmap::Position RenderView::
         getHeightmapPos( QPointF widget_pos, bool useRenderViewContext )
 {
-    if (1 == orthoview)
+    if (1 == model->orthoview)
         return getPlanePos(widget_pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderView::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
@@ -527,8 +535,8 @@ Heightmap::Position RenderView::
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);
 
-    float ylevel = 0;
-    float s = (ylevel-objY1)/(objY2-objY1);
+    double ylevel = 0;
+    double s = (ylevel-objY1)/(objY2-objY1);
 
     if (0==objY2-objY1)
         s = 0;
@@ -573,6 +581,7 @@ QPointF RenderView::
 void RenderView::
         drawCollections(GlFrameBuffer* fbo, float yscale)
 {
+    TIME_PAINTGL_DRAW TaskTimer tt2("Drawing...");
     GlException_CHECK_ERROR();
 
     unsigned N = model->collections.size();
@@ -658,11 +667,12 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DETAILS TaskInfo("Drew %u*%u block%s (%u triangles)",
+    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%g, %g)",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s",
-        N*model->renderer->drawn_blocks*(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2);
+        N*model->renderer->drawn_blocks*(yscale==0?2:(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2),
+        width(), height());
 }
 
 
@@ -815,11 +825,11 @@ void RenderView::
 
 
 void RenderView::
-        userinput_update( bool request_high_fps, bool post_update )
+        userinput_update( bool request_high_fps, bool post_update, bool cheat_also_high )
 {
     if (request_high_fps)
     {
-        model->project()->worker.requested_fps(60);
+        model->project()->worker.requested_fps(30, cheat_also_high?15:-1);
     }
 
     if (post_update)
@@ -846,9 +856,13 @@ void RenderView::
 
         unsigned ms = (wait-dt)*1e3; // round down
 
+        // wait longer between frames if the requested framerate is low
+        float reqdt = 1.f/model->project()->worker.requested_fps();
+        reqdt = std::min(1.f, std::max(1.f, .1f * reqdt * reqdt));
+
         // allow others to jump in before the next update if ms=0
         // most visible in windows message loop
-        ms = std::max(1u, ms);
+        ms = std::max((unsigned)reqdt, ms);
 
         _update_timer->start(ms);
     }
@@ -870,6 +884,7 @@ void RenderView::
 void RenderView::
         resizeGL( int width, int height )
 {
+    TIME_PAINTGL_DETAILS TaskInfo("RenderView width=%d, height=%d", width, height);
     height = height?height:1;
 
     QRect rect = tool_selector->parentTool()->geometry();
@@ -947,7 +962,8 @@ void RenderView::
         ComputationSynchronize();
     }
 
-    {
+    if (0) {
+        TIME_PAINTGL_DETAILS TaskTimer tt("Validating computation context with stft");
         // Make sure our cuda context is still alive by invoking
         // a tiny kernel. This will throw an CudaException otherwise,
         // thus resulting in restarting the cuda context.
@@ -1002,7 +1018,7 @@ void RenderView::
             collection->next_frame(); // Discard needed blocks before this row
         }
 
-        drawCollections( _renderview_fbo.get(), 1 - orthoview );
+        drawCollections( _renderview_fbo.get(), 1 - model->orthoview );
 
         last_ysize = model->renderer->last_ysize;
         glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
@@ -1012,8 +1028,11 @@ void RenderView::
 			emit painting();
 		}
 
-        float length = model->project()->worker.length();
-        model->renderer->drawAxes( length ); // 4.7 ms
+        {
+            float length = model->project()->worker.length();
+            TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
+            model->renderer->drawAxes( length ); // 4.7 ms
+        }
     }
 
 
@@ -1210,15 +1229,15 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
-    if (model->_rx<90) orthoview = 0;
-    if (orthoview != 1 && orthoview != 0)
+    if (model->_rx<90) model->orthoview = 0;
+    if (model->orthoview != 1 && model->orthoview != 0)
         userinput_update();
 
     glLoadIdentity();
     glTranslated( model->_px, model->_py, model->_pz );
 
     glRotated( model->_rx, 1, 0, 0 );
-    glRotated( fmod(fmod(model->_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*orthoview, 0, 1, 0 );
+    glRotated( fmod(fmod(model->_ry,360)+360, 360) * (1-model->orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*model->orthoview, 0, 1, 0 );
     glRotated( model->_rz, 0, 0, 1 );
 
     if (model->renderer->left_handed_axes)
@@ -1233,7 +1252,7 @@ void RenderView::
 
     glTranslated( -model->_qx, -model->_qy, -model->_qz );
 
-    orthoview.TimeStep(.08);
+    model->orthoview.TimeStep(.08);
 }
 
 

@@ -1,5 +1,9 @@
 #include "ridge.h"
+
 #include <complex>
+#include <vector>
+#include <string.h>
+
 namespace Filters
 {
 

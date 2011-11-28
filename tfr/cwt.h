@@ -40,6 +40,7 @@ public:
     virtual Signal::pBuffer inverse( pChunk );
     virtual FreqAxis freqAxis( float FS );
     virtual float displayedTimeResolution( float FS, float hz );
+    virtual Signal::Interval validLength(Signal::pBuffer buffer);
 
     float     get_min_hz(float fs) const;
     float     wanted_min_hz() const;
@@ -98,9 +99,10 @@ private:
     Cwt( float scales_per_octave=20, float wavelet_time_suppport=3 );
 
     unsigned        find_bin( unsigned j ) const;
+    unsigned        time_support_bin0( float fs ) const;
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
-    unsigned        required_length( unsigned current_valid_samples_per_chunk, float fs );
+    unsigned        required_length( unsigned current_valid_samples_per_chunk, float fs, unsigned&r );
     void            scales_per_octave_internal( float );
     unsigned        chunkpart_alignment(unsigned c) const;
 

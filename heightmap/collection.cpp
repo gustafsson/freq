@@ -11,6 +11,9 @@
 #include <neat_math.h>
 #include <computationkernel.h>
 
+// boost
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 // std
 #include <string>
 
@@ -91,7 +94,7 @@ void Collection::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
-    INFO_COLLECTION
+
     {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %g MB", _cache.size(), cacheByteSize()/1024.f/1024.f);
         foreach(const cache_t::value_type& b, _cache)
@@ -105,6 +108,7 @@ void Collection::
             TaskInfo("%s", b->ref.toString().c_str());
         }
     }
+
     _cache.clear();
     _recent.clear();
 
@@ -238,7 +242,7 @@ void Collection::
 }
 
 
-Signal::Intervals Collection::
+Signal::Intervals inline Collection::
         getInvalid(const Reference& r)
 {
     cache_t::iterator itr = _cache.find( r );
@@ -464,14 +468,38 @@ void Collection::
 {
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
-        Signal::Interval blockInterval = itr->second->ref.getInterval();
+        Signal::Interval blockInterval = itr->first.getInterval();
         if ( 0 == (I & blockInterval).count() )
         {
             _recent.remove(itr->second);
             itr = _cache.erase(itr);
-        } else {
-            itr++;
+            continue;
         }
+        else if ( blockInterval == (I & blockInterval))
+        {
+        }
+        else
+        {
+            if( I.first <= blockInterval.first && I.last < blockInterval.last )
+            {
+                bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
+                if (hasValidOutside)
+                {
+                    Position ia, ib;
+                    itr->first.getArea(ia, ib);
+                    float t = I.last / target->sample_rate() - ia.time;
+
+                    GlBlock::pHeight block = itr->second->glblock->height();
+
+                    ::blockClearPart( block->data,
+                                  ceil(t * itr->first.sample_rate()) );
+
+                    itr->second->valid_samples &= I;
+                    itr->second->non_zero &= I;
+                }
+            }
+        }
+        itr++;
     }
 }
 
@@ -572,8 +600,9 @@ Intervals Collection::
     //TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
 
     // If all recently used block are up-to-date then also update all their children, if any children are allocated
-    if (!r)
+    if (false) if (!r)
     {
+        //TIME_COLLECTION TaskTimer tt("Collection::invalid_samples recent_t, %u, %p", _recent.size(), this);
         foreach(const recent_t::value_type& a, _recent)
         {
             Block const& b = *a;

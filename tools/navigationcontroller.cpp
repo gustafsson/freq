@@ -5,6 +5,9 @@
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "heightmap/renderer.h"
+#include "tools/commands/movecameracommand.h"
+#include "tools/commands/zoomcameracommand.h"
+#include "tools/commands/rotatecameracommand.h"
 
 // Qt
 #include <QMouseEvent>
@@ -199,131 +202,54 @@ void NavigationController::
         else
             zoom( e->delta(), Zoom );
     }
-    else if (e->modifiers().testFlag(Qt::ControlModifier))
-    {
-        if( e->orientation() == Qt::Horizontal )
-            zoom( e->delta(), ScaleZ );
-        else
-            zoom( e->delta(), ScaleX );
-    }
-    else if (e->modifiers().testFlag(Qt::AltModifier))
-    {
-        zoom( e->delta(), Zoom );
-    }
     else
     {
-        bool success1, success2;
-
         float s = -0.125f;
-        QPointF prev = e->pos();
-        if( e->orientation() == Qt::Horizontal )
-            prev.setX( prev.x() + s*e->delta() );
-        else
-            prev.setY( prev.y() + s*e->delta() );
 
-        Heightmap::Position last = _view->getPlanePos( prev, &success1);
-        Heightmap::Position current = _view->getPlanePos( e->pos(), &success2);
-        if (success1 && success2)
+        if (e->modifiers().testFlag(Qt::AltModifier))
         {
-            moveCamera( last.time - current.time, last.scale - current.scale);
+            zoom( e->delta(), Zoom );
+        }
+        else
+        {
+            bool success1, success2;
+
+            QPointF prev = e->pos();
+            if( e->orientation() == Qt::Horizontal )
+                prev.setX( prev.x() + s*e->delta() );
+            else
+                prev.setY( prev.y() + s*e->delta() );
+
+            Heightmap::Position last = _view->getPlanePos( prev, &success1);
+            Heightmap::Position current = _view->getPlanePos( e->pos(), &success2);
+            if (success1 && success2)
+            {
+                if (e->modifiers().testFlag(Qt::ControlModifier))
+                    zoomCamera( last.time - current.time,
+                                last.scale - current.scale,
+                                0 );
+                else
+                    moveCamera( last.time - current.time, last.scale - current.scale);
+            }
         }
     }
 
     _view->userinput_update();
-}
-
-
-bool NavigationController::
-        zoom(int delta, ZoomMode mode)
-{
-    Tools::RenderView &r = *_view;
-    float L = r.last_length();
-    float fs = r.model->project()->head->head_source()->sample_rate();
-    float min_xscale = 4.f/std::max(L,10/fs);
-    float max_xscale = 0.05f*fs;
-
-
-    const Tfr::FreqAxis& tfa = r.model->collections[0]->transform()->freqAxis(fs);
-    unsigned maxi = tfa.getFrequencyScalar(fs/2);
-
-    float hza = tfa.getFrequency(0u);
-    float hza2 = tfa.getFrequency(1u);
-    float hzb = tfa.getFrequency(maxi - 1);
-    float hzb2 = tfa.getFrequency(maxi - 2);
-
-    const Tfr::FreqAxis& ds = r.model->display_scale();
-    float scalara = ds.getFrequencyScalar( hza );
-    float scalara2 = ds.getFrequencyScalar( hza2 );
-    float scalarb = ds.getFrequencyScalar( hzb );
-    float scalarb2 = ds.getFrequencyScalar( hzb2 );
-
-    float minydist = std::min(fabsf(scalara2 - scalara), fabsf(scalarb2 - scalarb));
-
-    float min_yscale = 4.f;
-    float max_yscale = 1.f/minydist;
-
-    if (delta > 0)
-    {
-        switch(mode)
-        {
-        case ScaleX: if (r.model->xscale == min_xscale)
-                return false;
-            break;
-        case ScaleZ: if (r.model->zscale == min_yscale)
-                return false;
-            break;
-        default:
-            break;
-        }
-    }
-
-    switch(mode)
-    {
-    case Zoom: doZoom(delta); break;
-    case ScaleX: doZoom( delta, &r.model->xscale, &min_xscale, &max_xscale); break;
-    case ScaleZ: doZoom( delta, &r.model->zscale, &min_yscale, &max_yscale ); break;
-    }
-
-    return true;
 }
 
 
 void NavigationController::
-        doZoom(int delta, float* scale, float* min_scale, float* max_scale)
+        zoom(int delta, ZoomMode mode)
 {
-    //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-    Tools::RenderView &r = *_view;
-    float ps = 0.0005;
-    if(scale)
+    float ds = 0, dt = 0, dz = 0;
+    switch(mode)
     {
-        float d = ps * delta;
-        if (d>0.1)
-            d=0.1;
-        if (d<-0.1)
-            d=-0.1;
-
-        *scale *= (1-d);
-
-        if (d > 0 )
-        {
-            if (min_scale && *scale<*min_scale)
-                *scale = *min_scale;
-        }
-        else
-        {
-            if (max_scale && *scale>*max_scale)
-                *scale = *max_scale;
-        }
-    }
-    else
-    {
-        r.model->_pz *= (1+ps * delta);
-
-        if (r.model->_pz<-40) r.model->_pz = -40;
-        if (r.model->_pz>-.1) r.model->_pz = -.1;
+    case Zoom: dz = delta; break;
+    case ScaleX: dt = delta; break;
+    case ScaleZ: ds = delta; break;
     }
 
-    _view->userinput_update();
+    zoomCamera( dt, ds, dz);
 }
 
 
@@ -336,71 +262,66 @@ void NavigationController::
     //TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     Tools::RenderView &r = *_view;
 
-    float rs = 0.2;
-
     int x = e->x(), y = e->y();
 //    TaskTimer tt("moving");
 
     if (scaleButton.isDown()) {
         // TODO scale selection
     }
-    if( rotateButton.isDown() ) {
-        if (e->modifiers().testFlag(Qt::AltModifier))
-        {
-            zoom( 10* (rotateButton.deltaX( x ) + rotateButton.deltaY( y )), Zoom );
-        }
-        else if (zoom_only_ || e->modifiers().testFlag(Qt::ControlModifier))
-        {
-            bool success1, success2;
-            Heightmap::Position last = r.getPlanePos( QPointF(rotateButton.getLastx(), rotateButton.getLasty()), &success1);
-            Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
-            if (success1 && success2)
-            {
-                if (!zoom( 1500*(last.time - current.time)*r.model->xscale, ScaleX ))
-                {
-                    float L = _view->model->project()->worker.source()->length();
-                    float d = std::min( 0.5f * fabsf(last.time - current.time), fabsf(r.model->_qx - L/2));
-                    r.model->_qx += r.model->_qx>L*.5f ? -d : d;
-                }
 
-                if (!zoom( 1500*(last.scale - current.scale)*r.model->zscale, ScaleZ ))
-                {
-                    float d = std::min( 0.5f * fabsf(last.scale - current.scale), fabsf(r.model->_qz - .5f));
-                    r.model->_qz += r.model->_qz>.5f ? -d : d;
-                }
-            }
-        }
-        else
-        {
-            //Controlling the rotation with the right button.
-            r.model->_ry += (1-_view->orthoview)*rs * rotateButton.deltaX( x );
-            r.model->_rx += rs * rotateButton.deltaY( y );
-            if (r.model->_rx<10) r.model->_rx=10;
-            if (r.model->_rx>90) { r.model->_rx=90; _view->orthoview=1; }
-            if (0<_view->orthoview && r.model->_rx<90) { r.model->_rx=90; _view->orthoview=0; }
-        }
+    Ui::MouseControl *zoomCommand = 0, *rescaleCommand = 0, *rotateCommand = 0, *navigateCommand = 0;
 
-    }
-
-    if( moveButton.isDown() )
+    bool zoomAnyways = e->modifiers().testFlag(Qt::AltModifier) || e->modifiers().testFlag(Qt::ControlModifier);
+    if (zoom_only_ || zoomAnyways)
     {
-        if (zoom_only_)
+        if( rotateButton.isDown() )
+            zoomCommand = &rotateButton;
+
+        if( moveButton.isDown() )
+            rescaleCommand = &moveButton;
+    }
+    else
+    {
+        if( rotateButton.isDown() )
+            rotateCommand = &rotateButton;
+
+        if( moveButton.isDown() )
+            navigateCommand = &moveButton;
+    }
+
+    if (zoomCommand)
+        zoomCamera( 0, 0, 10*(-zoomCommand->deltaX( x ) + zoomCommand->deltaY( y )) );
+
+    if (rescaleCommand)
+    {
+        bool success1, success2;
+        Heightmap::Position last = r.getPlanePos( QPointF(rescaleCommand->getLastx(), rescaleCommand->getLasty()), &success1);
+        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        if (success1 && success2)
         {
-            zoom( 10* (moveButton.deltaX( x ) + moveButton.deltaY( y )), Zoom );
-        }
-        else
-        {
-            //Controlling the position with the left button.
-            bool success1, success2;
-            Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
-            Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
-            if (success1 && success2)
-            {
-                moveCamera( last.time - current.time, last.scale - current.scale);
-            }
+            zoomCamera( last.time - current.time,
+                        last.scale - current.scale,
+                        0 );
         }
     }
 
+    if (navigateCommand)
+    {
+        //Controlling the position with the left button.
+        bool success1, success2;
+        Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
+        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        if (success1 && success2)
+        {
+            moveCamera( last.time - current.time, last.scale - current.scale);
+        }
+    }
+
+    if (rotateCommand)
+    {
+        //Controlling the rotation with the right button.
+        rotateCamera( rotateCommand->deltaX( x ), rotateCommand->deltaY( y ) );
+    }
 
 
     //Updating the buttons
@@ -453,6 +374,7 @@ void NavigationController::
     shortcuts.push_back( Qt::Key_Escape );
     ui->actionActivateNavigation->setShortcuts( shortcuts );
 
+    _view->toolSelector()->setCurrentToolCommand( this );
     ui->actionActivateNavigation->setChecked(true);
 
     bindKeyToSlot( main, "Up", this, SLOT(moveUp()) );
@@ -478,16 +400,25 @@ void NavigationController::bindKeyToSlot( QWidget* owner, const char* keySequenc
 void NavigationController::
         moveCamera( float dt, float ds )
 {
-    float l = _view->model->project()->worker.source()->length();
-
-    Tools::RenderView& r = *_view;
-    r.model->_qx += dt;
-    r.model->_qz += ds;
-
-    if (r.model->_qx<0) r.model->_qx=0;
-    if (r.model->_qz<0) r.model->_qz=0;
-    if (r.model->_qz>1) r.model->_qz=1;
-    if (r.model->_qx>l) r.model->_qx=l;
+    Tools::Commands::pCommand cmd( new Tools::Commands::MoveCameraCommand(_view->model, dt, ds ));
+    _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
+
+
+void NavigationController::
+        zoomCamera( float dt, float ds, float dz )
+{
+    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz ));
+    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+}
+
+
+void NavigationController::
+        rotateCamera( float dx, float dy )
+{
+    Tools::Commands::pCommand cmd( new Tools::Commands::RotateCameraCommand(_view->model, dx, dy ));
+    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+}
+
 
 } // namespace Tools

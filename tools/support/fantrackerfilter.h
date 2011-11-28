@@ -3,6 +3,8 @@
 
 #include "tfr/cepstrumfilter.h"
 
+#include <vector>
+
 namespace Tools {
 namespace Support {
 

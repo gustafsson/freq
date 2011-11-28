@@ -1,5 +1,6 @@
 #include "graphcontroller.h"
 
+#include "tools/commands/reorderoperation.h"
 #include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
@@ -39,87 +40,151 @@ namespace Tools
     };
 
 
-    class TreeWidget: public QTreeWidget
+    GraphTreeWidget::
+            GraphTreeWidget(QWidget*parent, Sawe::Project* project)
+        :
+        QTreeWidget(parent),
+        project_(project),
+        current_(0)
     {
-        Sawe::Project* project_;
-    public:
-        TreeWidget(QWidget*parent, Sawe::Project* project)
-            :
-            QTreeWidget(parent),
-            project_(project)
-        {}
+    }
 
-        virtual void dropEvent ( QDropEvent * event ) {
-            QTreeWidget::dropEvent ( event );
 
-            DEBUG_GRAPH TaskInfo ti("operation_tree dropEvent");
-            DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
-            DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+    void GraphTreeWidget::
+            currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*)
+    {
+        current_ = current;
+    }
 
-            for (int l = 0; l<invisibleRootItem()->childCount(); ++l)
+
+    void GraphTreeWidget::
+            dropEvent ( QDropEvent * event )
+    {
+        QTreeWidget::dropEvent ( event );
+
+        DEBUG_GRAPH TaskInfo ti("operation_tree dropEvent");
+        DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+        DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+
+        for (int l = 0; l<invisibleRootItem()->childCount(); ++l)
+        {
+            QTreeWidgetItem* layer = invisibleRootItem()->child(l);
+
+            // Deselect all
+            for (int i=0; i<layer->childCount(); ++i)
+                layer->child(i)->setSelected( false );
+
+            int moved = layer->childCount();
+
+            // The item that was moved doesn't have the correct previous nor next item
+            for (int i=0; i+1<layer->childCount(); ++i)
             {
-                QTreeWidgetItem* layer = invisibleRootItem()->child(l);
+                TreeItem* prevItm = i==0 ? 0 : dynamic_cast<TreeItem*>(layer->child(i-1));
+                TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i));
+                TreeItem* nextItm = dynamic_cast<TreeItem*>(layer->child(i+1));
 
-                // Deselect all
-                for (int i=0; i<layer->childCount(); ++i)
-                    layer->child(i)->setSelected( false );
-
-                Signal::pOperation
-                        // The operation closest to root that was changed by the move operation
-                        firstmoved,
-
-                        // The operation furthest away from root that was changed by the move operation
-                        lastmoved;
-
-                // Make sure the root element is at the bottom
-                for (int i=0; i<layer->childCount(); ++i)
+                if (itm == current_)
                 {
-                    TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i));
-                    if (0 == itm->tail->source() && i != layer->childCount()-1)
-                    {
-                        firstmoved = itm->tail;
-                        layer->takeChild( i );
-                        layer->addChild( itm );
-                        setCurrentItem( itm );
-                        break;
-                    }
+                    // the item that is moved is not selected when it is dropped
+                    continue;
                 }
 
-                // rebuild the chain bottom up
-                Signal::pOperation src;
-                Signal::pChain chain;
-                for (unsigned i=layer->childCount(); i>0; i--)
+                if (itm->tail->source() == nextItm->operation)
                 {
-                    TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i-1));
-                    if (src)
-                    {
-                        if (itm->tail->source() != src)
-                        {
-                            if (!firstmoved)
-                                firstmoved = itm->tail;
-                            lastmoved = itm->tail;
-                            itm->tail->source( src );
-                            setCurrentItem( itm );
-                        }
-                    }
-                    else
-                        chain = itm->chain;
-
-                    src = itm->operation;
+                    // looks ok
+                    continue;
                 }
 
-                // Set the tip
-                if (chain && src)
-                    chain->tip_source( src );
-                if (firstmoved)
-                    firstmoved->source()->invalidate_samples(Signal::Operation::affectedDiff( firstmoved, lastmoved ));
+                if (0 == prevItm)
+                {
+                    moved = i;
+                }
+                else
+                {
+                    if (prevItm->tail->source() != itm->operation)
+                        moved = i;
+                }
             }
 
-            DEBUG_GRAPH TaskInfo("results");
-            DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
-            DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+            if (moved+1>=layer->childCount())
+            {
+                // can't move the last item
+                continue;
+            }
+
+            Signal::pOperation movedOperation = dynamic_cast<TreeItem*>(layer->child(moved))->operation;
+            Signal::pOperation movedOperationTail = dynamic_cast<TreeItem*>(layer->child(moved))->tail;
+            Signal::pOperation newSource = dynamic_cast<TreeItem*>(layer->child(moved+1))->operation;
+
+            Tools::Commands::pCommand cmd( new Tools::Commands::ReorderOperation(movedOperation, movedOperationTail, newSource ) );
+            project_->commandInvoker()->invokeCommand( cmd );
         }
-    };
+
+/*
+        for (int l = 0; l<invisibleRootItem()->childCount(); ++l)
+        {
+            QTreeWidgetItem* layer = invisibleRootItem()->child(l);
+
+            // Deselect all
+            for (int i=0; i<layer->childCount(); ++i)
+                layer->child(i)->setSelected( false );
+
+            Signal::pOperation
+                    // The operation closest to root that was changed by the move operation
+                    firstmoved,
+
+                    // The operation furthest away from root that was changed by the move operation
+                    lastmoved;
+
+            // Make sure the root element is at the bottom
+            for (int i=0; i<layer->childCount(); ++i)
+            {
+                TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i));
+                if (0 == itm->tail->source() && i != layer->childCount()-1)
+                {
+                    firstmoved = itm->tail;
+                    layer->takeChild( i );
+                    layer->addChild( itm );
+                    setCurrentItem( itm );
+                    break;
+                }
+            }
+
+            // rebuild the chain bottom up
+            Signal::pOperation src;
+            Signal::pChain chain;
+            for (unsigned i=layer->childCount(); i>0; i--)
+            {
+                TreeItem* itm = dynamic_cast<TreeItem*>(layer->child(i-1));
+                if (src)
+                {
+                    if (itm->tail->source() != src)
+                    {
+                        if (!firstmoved)
+                            firstmoved = itm->tail;
+                        lastmoved = itm->tail;
+                        itm->tail->source( src );
+                        setCurrentItem( itm );
+                    }
+                }
+                else
+                    chain = itm->chain;
+
+                src = itm->operation;
+            }
+
+            // Set the tip
+            if (chain && src)
+                chain->tip_source( src );
+            if (firstmoved)
+                firstmoved->source()->invalidate_samples(Signal::Operation::affectedDiff( firstmoved, lastmoved ));
+        }
+*/
+        DEBUG_GRAPH TaskInfo("results");
+        DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
+        DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
+    }
+
 
     GraphController::
             GraphController( RenderView* render_view )
@@ -394,7 +459,7 @@ namespace Tools
         verticalLayout->setSpacing(6);
         verticalLayout->setContentsMargins(0, 0, 0, 0);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
-        operationsTree = new TreeWidget(dockWidgetContents, project_);
+        operationsTree = new GraphTreeWidget(dockWidgetContents, project_);
         operationsTree->setDragDropMode( QAbstractItemView::InternalMove );
         operationsTree->setAcceptDrops( true );
         // setDragEnabled( false );
@@ -447,6 +512,8 @@ namespace Tools
 
         connect(operationsTree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
                 SLOT(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
+        connect(operationsTree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+                operationsTree, SLOT(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
         //connect(operationsTree, SIGNAL(itemSelectionChanged()), SLOT(selectionChanged()));
 
         timerUpdateContextMenu.setSingleShot( true );

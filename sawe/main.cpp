@@ -5,7 +5,7 @@
 
 // gpumisc
 #include <redirectstdout.h>
-#include <simple_math.h>
+#include <neat_math.h>
 
 // Qt
 #include <QtGui/QMessageBox>
@@ -13,6 +13,8 @@
 #include <QDesktopServices>
 #include <QDir>
 
+// boost
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace std;
 using namespace boost;

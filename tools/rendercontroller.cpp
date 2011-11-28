@@ -121,19 +121,26 @@ public:
             view_->emitTransformChanged();
         }
 
-        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
             c->block_filter( Operation::source() );
         }
 
-        if (prevSignal != getInterval())
+        Signal::Interval currentInterval = getInterval();
+        if (prevSignal != currentInterval)
         {
-            Signal::Interval I = getInterval();
-            foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+            foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections)
             {
-                c->discardOutside( I );
+                c->discardOutside( currentInterval );
+            }
+
+            if (currentInterval.last < prevSignal.last)
+            {
+                if (view_->model->_qx > currentInterval.last/sample_rate())
+                    view_->model->_qx = currentInterval.last/sample_rate();
             }
         }
+        prevSignal = currentInterval;
     }
 
 
@@ -234,7 +241,7 @@ void RenderController::
 void RenderController::
         receiveToogleHeightlines(bool value)
 {
-    model()->renderer->draw_height_lines = value;
+    model()->renderer->draw_contour_plot = value;
     stateChanged();
 }
 
@@ -315,7 +322,7 @@ void RenderController::
 
 
     // keep in sync with receiveSetYScale
-    f = log(model()->renderer->y_scale)/4.f;
+    f = log(model()->renderer->y_scale)/8.f;
     f = (f > 0 ? 1 : -1) * sqrtf( f > 0 ? f : -f );
     value = (f + 1)/2 * yscale->maximum() + .5;
 
@@ -333,7 +340,7 @@ void RenderController::
     case Heightmap::Renderer::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
     case Heightmap::Renderer::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
     }
-    ui->actionSet_heightlines->setChecked(model()->renderer->draw_height_lines);
+    ui->actionSet_contour_plot->setChecked(model()->renderer->draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
 
     // clear worker assumptions of target
@@ -346,7 +353,7 @@ void RenderController::
 {
     // Keep in sync with transformChanged()
     float f = 2.f * value / yscale->maximum() - 1.f;
-    model()->renderer->y_scale = exp( 4.f*f*f * (f>0?1:-1));
+    model()->renderer->y_scale = exp( 8.f*f*f * (f>0?1:-1));
 
     stateChanged();
 
@@ -698,8 +705,8 @@ void RenderController::
     }
 
     // QAction *actionSet_heightlines
-    toolbar_render->addAction(ui->actionSet_heightlines);
-    connect(ui->actionSet_heightlines, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
+    toolbar_render->addAction(ui->actionSet_contour_plot);
+    connect(ui->actionSet_contour_plot, SIGNAL(toggled(bool)), SLOT(receiveToogleHeightlines(bool)));
 
     toolbar_render->addAction(ui->actionToggleOrientation);
     connect(ui->actionToggleOrientation, SIGNAL(toggled(bool)), SLOT(receiveToggleOrientation(bool)));
@@ -883,7 +890,7 @@ void RenderController::
     view->graphicsview = new GraphicsView(view);
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
-    view->tool_selector = view->graphicsview->toolSelector(0);
+    view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);

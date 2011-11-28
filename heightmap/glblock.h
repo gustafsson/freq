@@ -45,8 +45,7 @@ public:
     bool has_texture();
     void delete_texture();
 
-    void draw( unsigned vbo_size );
-    void draw_flat( );
+    void draw( unsigned vbo_size, bool withHeightMap=true );
     //void draw_directMode( );
 
     unsigned allocated_bytes_per_element();

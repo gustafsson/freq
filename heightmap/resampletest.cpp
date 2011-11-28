@@ -1,11 +1,14 @@
 #ifdef USE_CUDA
 #include "resampletest.h"
+#include "resampletest.cu.h"
+
 #include <TaskTimer.h>
 #include <demangle.h>
-#include <sstream>
 #include <CudaException.h>
 
-#include "resampletest.cu.h"
+#include <string.h>
+#include <sstream>
+#include <iomanip>
 
 ResampleTest::
         ResampleTest()

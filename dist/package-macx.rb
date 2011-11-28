@@ -35,6 +35,7 @@ def package_macos(app_name, version, zip = false)
     libraries = [qt_lib_path("QtGui"),
                  qt_lib_path("QtOpenGL"),
                  qt_lib_path("QtCore"),
+                 qt_lib_path("QtNetwork"),
                  cuda_lib_path("cufft"),
                  cuda_lib_path("cudart"),
                  cuda_lib_path("tlshook"),
@@ -61,6 +62,7 @@ def package_macos(app_name, version, zip = false)
     install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
                      [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
                      [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
+                     [qt_install_name("QtNetwork"), "@executable_path/../Frameworks/QtNetwork"],
                      ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"],
                      ["@rpath/libcufft.dylib", "@executable_path/../Frameworks/libcufft.dylib"],
                      ["@rpath/libcudart.dylib", "@executable_path/../Frameworks/libcudart.dylib"]]

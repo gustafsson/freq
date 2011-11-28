@@ -19,6 +19,10 @@ public:
 
     virtual FreqAxis freqAxis( float FS );
 
+    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+
+    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+
     float blob(float FS);
 
     float block_fs;

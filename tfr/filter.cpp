@@ -153,7 +153,7 @@ ChunkAndInverse Filter::
     {
         TIME_Filter TaskTimer tt("%s filter applying operation, %s",
                               vartype(*this).c_str(), ci.chunk->getInterval().toString().c_str());
-        applyFilter( ci.chunk );
+        applyFilter( ci );
         TIME_FilterReturn TaskInfo("%s filter after operation",
                               vartype(*this).c_str());
     }
@@ -163,9 +163,9 @@ ChunkAndInverse Filter::
 
 
 void Filter::
-        applyFilter( Tfr::pChunk chunk )
+        applyFilter( ChunkAndInverse& chunk )
 {
-    (*this)( *chunk );
+    (*this)( *chunk.chunk );
 }
 
 } // namespace Tfr

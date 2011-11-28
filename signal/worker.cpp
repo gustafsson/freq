@@ -1,18 +1,27 @@
 #include "worker.h"
+
+// signal
 #include "intervals.h"
 #include "postsink.h"
 #include "operationcache.h"
 
-#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory
+// Sonic AWE
+#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory, should use transform instead
 #include "sawe/application.h"
 
+// gpumisc
+#include <computationkernel.h>
+#include <demangle.h>
+
+// qt
 #include <QTime>
 #ifndef SAWE_NO_MUTEX
 #include <QMutexLocker>
 #endif
-#include <computationkernel.h>
-#include <demangle.h>
+
+// boost
 #include <boost/foreach.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #define TIME_WORKER
 //#define TIME_WORKER if(0)
@@ -42,6 +51,7 @@ Worker::
     _samples_per_chunk( 1 ),
     _max_samples_per_chunk( (unsigned)-1 ),
     _requested_fps( 20 ),
+    _requested_cheat_fps( 20 ),
     _min_fps( 1 ),  // Always request at least 1 fps. Otherwise there is a risk that CUDA
                     // will screw up playback by blocking the OS and causing audio
                     // starvation and kernel timeouts.
@@ -83,23 +93,32 @@ bool Worker::
         return false;
     }
 
-    _number_of_samples = source()->number_of_samples();
-    _length = source()->length();
+    updateLength();
+
+    TaskInfo("Worker workOne %g, %g, %g", _requested_fps, _highest_fps, _min_fps);
+
+    //Signal::Intervals todo_list = this->fetch_todo_list();
+    Signal::Intervals todo_list = _todo_list;// this->fetch_todo_list();
+    unsigned center_sample = source()->sample_rate() * center;
+
+    Signal::Intervals centerinterval(center_sample, center_sample+1);
+    centerinterval = centerinterval.enlarge(_samples_per_chunk*4);
+
+    if (is_cheating() && (todo_list & centerinterval).count()>2*_samples_per_chunk)
+        _requested_fps = _requested_cheat_fps;
+
+    if (_target->post_sink()->isUnderfed())
+        _requested_fps = _min_fps;
 
     if (skip_if_low_fps)
-        if (!_target->post_sink()->isUnderfed() && _requested_fps>_highest_fps && _requested_fps>_min_fps)
+        if (_requested_fps>_highest_fps)
             return false;
-
-    Signal::Intervals todo_list = this->fetch_todo_list();
-    //Signal::Intervals todo_list = this->todo_list();
 
     if (todo_list.empty())
         return false;
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
-
-    unsigned center_sample = source()->sample_rate() * center;
 
     Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
     if (is_cheating() && interval.last > _number_of_samples)
@@ -139,27 +158,23 @@ bool Worker::
 
         b = callCallbacks( interval );
 
-        //float r = 2*Tfr::Cwt::Singleton().wavelet_time_support_samples( b->sample_rate )/b->sample_rate;
         latest_result = b->getInterval();
         worked_samples |= latest_result;
-        //work_time += b->length();
-        //work_time -= r;
 
-        if (_samples_per_chunk > b->number_of_samples())
-            _samples_per_chunk = b->number_of_samples();
+        _samples_per_chunk = b->number_of_samples();
 
         WORKER_INFO {
-            tt->info("Worker got %s, [%g, %g) s. %g x realtime",
-                b->getInterval().toString().c_str(),
+            tt->info("Worker got %s x %d, [%g, %g) s. %g or %g x realtime",
+                b->getInterval().toString().c_str(), b->channels(),
                 b->start(), b->start()+b->length(),
-                //(b->length()-r)/tt->elapsedTime());
+                interval.count()/tt->elapsedTime()/b->sample_rate,
                 b->length()/tt->elapsedTime());
         }
 
         ComputationCheckError();
 #ifdef USE_CUDA
     } catch (const CudaException& e ) {
-        unsigned min_samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(1, source()->sample_rate());
+        unsigned min_samples_per_chunk = _target->next_good_size( 1 );
 
         bool trySmallerChunk = false;
         if (const CufftException* cuffte = dynamic_cast<const CufftException*>(&e))
@@ -179,8 +194,7 @@ bool Worker::
             TaskInfo("Max samples per chunk was %u", _max_samples_per_chunk);
             TaskInfo("Scales per octave is %g", Tfr::Cwt::Singleton().scales_per_octave() );
 
-            _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
-                    _samples_per_chunk, _target->post_sink()->sample_rate());
+            _samples_per_chunk = _target->prev_good_size( _samples_per_chunk );
 
             if (_max_samples_per_chunk == _samples_per_chunk)
                 throw;
@@ -211,25 +225,31 @@ bool Worker::
     }
 
     if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
-
+        unsigned prev_samples_per_chunk = _samples_per_chunk;
         if (current_fps < _requested_fps)
         {
-            _samples_per_chunk = Tfr::Cwt::Singleton().prev_good_size(
-                    _samples_per_chunk, _target->post_sink()->sample_rate());
+            _samples_per_chunk = _target->prev_good_size( _samples_per_chunk );
+            if (_samples_per_chunk == prev_samples_per_chunk)
+                _highest_fps = current_fps;
+
             WORKER_INFO TaskInfo(
                     "Low framerate (%.1f fps). Decreased samples per chunk to %u",
                     current_fps, _samples_per_chunk);
         }
-        else if (current_fps > 2.5f*_requested_fps)
+        else if (current_fps > 1.2f*_requested_fps)
         {
-            _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size(
-                    _samples_per_chunk, _target->post_sink()->sample_rate());
-            if (_samples_per_chunk>_max_samples_per_chunk)
-                _samples_per_chunk=_max_samples_per_chunk;
-            else
-                WORKER_INFO TaskInfo(
-                        "High framerate (%.1f fps). Increased samples per chunk to %u",
-                        current_fps, _samples_per_chunk);
+            unsigned new_samples_per_chunk = _target->next_good_size( _samples_per_chunk );
+            float p = new_samples_per_chunk / (float)prev_samples_per_chunk;
+            if ( current_fps/p >= _requested_fps )
+            {
+                _samples_per_chunk = new_samples_per_chunk;
+                if (_samples_per_chunk>_max_samples_per_chunk)
+                    _samples_per_chunk=_max_samples_per_chunk;
+                else
+                    WORKER_INFO TaskInfo(
+                            "High framerate (%.1f fps). Increased samples per chunk to %u",
+                            current_fps, _samples_per_chunk);
+            }
 		} else {
 			TIME_WORKER TaskTimer("Current framerate = %.1f fps", current_fps).suppressTiming();
 		}
@@ -343,10 +363,12 @@ void Worker::
         return;
     }
 
+    if (_target != value)
+        _highest_fps = _min_fps;
+
     _target = value;
 
-    _highest_fps = _min_fps;
-    _number_of_samples = _target->post_sink()->number_of_samples();
+    updateLength();
 
     if (!_target->allow_cheat_resolution())
         Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
@@ -420,13 +442,15 @@ float Worker::
 
 
 void Worker::
-        requested_fps(float value)
+        requested_fps(float value, float cheat_value)
 {
     if (_min_fps>value) value=_min_fps;
+    if (_min_fps>cheat_value) cheat_value=_min_fps;
+
+    _requested_cheat_fps=cheat_value;
 
     if (value>_requested_fps) {
         _requested_fps = value;
-        _samples_per_chunk = Tfr::Cwt::Singleton().next_good_size( 1, _target->post_sink()->sample_rate());
         _max_samples_per_chunk = (unsigned)-1;
         if (_target->allow_cheat_resolution())
         {
@@ -445,6 +469,14 @@ bool Worker::
         is_cheating()
 {
     return Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
+}
+
+
+void Worker::
+        updateLength()
+{
+    _number_of_samples = source()->number_of_samples();
+    _length = source()->length();
 }
 
 

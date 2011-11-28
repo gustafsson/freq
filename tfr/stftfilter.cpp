@@ -18,12 +18,15 @@ StftFilter::
 :   Filter(source),
     exclude_end_block(false)
 {
-//    if (!t)
-//        t = Stft::SingletonP();
+    if (!t)
+        t = Stft::SingletonP();
 
     if (t)
     {
-        BOOST_ASSERT( dynamic_cast<Stft*>(t.get()));
+        Stft* s = dynamic_cast<Stft*>(t.get());
+        BOOST_ASSERT( s );
+
+        s->setWindow(Stft::WindowType_Hann, 0.75f);
 
         _transform = t;
     }

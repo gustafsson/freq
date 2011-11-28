@@ -67,8 +67,7 @@ echo "Creating Windows installer file: $(pwd)/$filename for package $packagefull
 cd ..
 rm -rf $filename
 rm -rf $packagefullname
-cp -r sonicawe_snapshot_win32_base $packagefullname
-cp sonic/sonicawe/dist/package-win/sonicawe.exe.manifest $packagefullname
+cp -r winlib/sonicawe_snapshot_win32_base $packagefullname
 cp sonic/sonicawe/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
 cp sonic/sonicawe/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
 cp sonic/sonicawe/dist/package-win/launcher/release/launcher.exe "$packagefullname/${packagename}.exe"

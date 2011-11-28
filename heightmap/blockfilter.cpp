@@ -15,8 +15,8 @@
 
 #include <float.h>
 
-//#define TIME_BLOCKFILTER
-#define TIME_BLOCKFILTER if(0)
+#define TIME_BLOCKFILTER
+//#define TIME_BLOCKFILTER if(0)
 
 //#define TIME_CWTTOBLOCK
 #define TIME_CWTTOBLOCK if(0)
@@ -41,9 +41,9 @@ BlockFilter::
 
 
 void BlockFilter::
-        applyFilter(Tfr::pChunk pchunk )
+        applyFilter(ChunkAndInverse& pchunk )
 {
-    Tfr::Chunk& chunk = *pchunk;
+    Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getInterval();
     std::vector<pBlock> intersecting_blocks = _collection->getIntersectingBlocks( chunk_interval, false );
     TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks",
@@ -118,6 +118,7 @@ void BlockFilter::
                   );
 
     block->valid_samples |= inInterval;
+    block->non_zero |= inInterval;
 
     TIME_BLOCKFILTER ComputationSynchronize();
 }
@@ -185,6 +186,7 @@ void BlockFilter::
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
+
     if (merge_first_scale >= merge_last_scale)
     {
         DEBUG_CWTTOBLOCK TaskTimer("CwtToBlock::mergeChunk. quiting early\n"
@@ -227,22 +229,40 @@ void BlockFilter::
     ComputationCheckError();
 
     //CWTTOBLOCK_INFO TaskTimer("CwtToBlock [(%g %g), (%g %g)] <- [(%g %g), (%g %g)] |%g %g|",
-    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %g), (%.2f %g)] |%.2f %.2f|",
-            a.time, a.scale,
-            b.time, b.scale,
-            chunk_a.time, chunk_a.scale,
-            chunk_b.time, chunk_b.scale,
-            transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate
+    Position s, sblock, schunk;
+    TIME_CWTTOBLOCK
+    {
+        Position ia, ib; // intersect
+        ia.time = std::max(a.time, chunk_a.time);
+        ia.scale = std::max(a.scale, chunk_a.scale);
+        ib.time = std::min(b.time, chunk_b.time);
+        ib.scale = std::min(b.scale, chunk_b.scale);
+        s = Position ( ib.time - ia.time, ib.scale - ia.scale);
+        sblock = Position( b.time - a.time, b.scale - a.scale);
+        schunk = Position( chunk_b.time - chunk_a.time, chunk_b.scale - chunk_a.scale);
+    }
+
+    TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %.2f), (%.2f %.2f)] |%.2f %.2f, %.2f %.2f| %ux%u=%u <- %ux%u=%u",
+            a.time, b.time,
+            a.scale, b.scale,
+            chunk_a.time, chunk_b.time,
+            chunk_a.scale, chunk_b.scale,
+            transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate,
+            merge_first_scale, merge_last_scale,
+            (unsigned)(s.time / sblock.time * block->ref.samplesPerBlock() + .5f),
+            (unsigned)(s.scale / sblock.scale * block->ref.scalesPerBlock() + .5f),
+            (unsigned)(s.time / sblock.time * block->ref.samplesPerBlock() *
+            s.scale / sblock.scale * block->ref.scalesPerBlock() + .5f),
+            (unsigned)(s.time / schunk.time * chunk.n_valid_samples + .5f),
+            (unsigned)(s.scale / schunk.scale * chunk.nScales() + .5f),
+            (unsigned)(s.time / schunk.time * chunk.n_valid_samples *
+            s.scale / schunk.scale * chunk.nScales() + .5f)
         );
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
 
-    //    cuda-memcheck complains even on this testkernel when using global memory
-    //    from OpenGL but not on cudaMalloc'd memory. See MappedVbo test.
-
-
-    // Invoke CUDA kernel execution to merge blocks
+    // Invoke kernel execution to merge chunk into block
     ::blockResampleChunk( chunk.transform_data,
                      outData,
                      ValidInputInterval( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
@@ -260,6 +280,7 @@ void BlockFilter::
                      full_resolution
                      );
 
+
     ComputationCheckError();
     GlException_CHECK_ERROR();
 
@@ -272,6 +293,7 @@ void BlockFilter::
         block->valid_samples -= transfer;
         TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
     }
+    block->non_zero |= transfer;
 
     DEBUG_CWTTOBLOCK {
         TaskInfo ti("Block filter input and output %s", block->ref.toString().c_str());

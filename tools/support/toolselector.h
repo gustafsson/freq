@@ -7,6 +7,12 @@
 class QWidget;
 
 namespace Tools {
+    namespace Commands
+    {
+        class CommandInvoker;
+        class ChangeToolCommand;
+    }
+
     class RenderView;
 
     namespace Support {
@@ -27,7 +33,7 @@ namespace Tools {
     {
     public:
         /// Sets what RenderView that is controlled by this ToolSelector.
-        ToolSelector(QWidget* parent_tool);
+        ToolSelector(Tools::Commands::CommandInvoker* state, QWidget* parent_tool);
 
 
         /// @see setCurrentTool
@@ -53,8 +59,11 @@ namespace Tools {
           connect to the appropriate signals in RenderView.
           */
         void setCurrentTool(QWidget* tool, bool active );
+        void setCurrentToolCommand( QWidget* tool );
 
     private:
+        Tools::Commands::CommandInvoker* _command_invoker;
+
         QWidget* _parent_tool;
         QWidget* _current_tool;
         bool _must_have_one_tool;

@@ -31,6 +31,9 @@ EllipseModel::
 Signal::pOperation EllipseModel::
         updateFilter()
 {
+    if (a.time == b.time || a.scale == b.scale)
+        return Signal::pOperation();
+
     Signal::pOperation filter( new Filters::Ellipse( 0,0,0,0, true ) );
 
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(filter.get());

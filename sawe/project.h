@@ -6,6 +6,7 @@
 #include "signal/worker.h"
 #include "signal/target.h"
 #include "tools/toolfactory.h"
+#include "tools/commands/commandinvoker.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -20,8 +21,10 @@
 #include <QMainWindow>
 #include <QScopedPointer>
 
-namespace Sawe {
-    class Project;
+namespace Tools {
+    namespace Commands {
+        class CommandInvoker;
+    }
 }
 
 namespace Ui {
@@ -124,6 +127,8 @@ public:
     void setModified( bool is_modified=true );
 
 
+    Tools::Commands::CommandInvoker* commandInvoker();
+
 #if !defined(TARGET_reader)
     /**
       If 'project_file_name' is empty, calls saveAs.
@@ -177,6 +182,7 @@ private:
     QByteArray defaultGuiState;
 
     bool is_modified_;
+    boost::scoped_ptr<Tools::Commands::CommandInvoker> command_invoker_;
 
     std::string project_filename_, project_title_;
 

@@ -27,7 +27,8 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     proxy( 0 ),
     keep_pos(false),
     z_hidden(false),
-    lastz(6)
+    lastz(6),
+    validateSizeLater(false)
 {
     ui->setupUi(this);
 
@@ -88,6 +89,22 @@ void CommentView::
     ui->textEdit->setHtml( QString::fromLocal8Bit( text.c_str() ) );
     model()->html = text;
 
+    if (isThumbnail())
+        validateSizeLater = true;
+    else
+        validateSize();
+}
+
+
+void CommentView::
+        validateSize()
+{
+    QSize minsize(ref_point.x() + ui->verticalSpacer->minimumSize().height(), ui->verticalSpacer->minimumSize().height());
+    if (minsize.width() < width())        minsize.setWidth (width());
+    if (minsize.height() < height())      minsize.setHeight(height());
+    if (minsize != size())
+        resize(minsize);
+
     // grow if needed to display all contents, but only grow as long as this widget is smaller than maxGrowSize
     {
         QSize maxGrowSize(500, 200);
@@ -100,7 +117,20 @@ void CommentView::
         ui->textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
         // grow horizontally
-        for (QScrollBar* hori = ui->textEdit->horizontalScrollBar(); hori && hori->isVisible() && width() < maxGrowSize.width(); resize( width() + 1, height() )) {}
+        { // binary search for good size
+            QScrollBar* hori = ui->textEdit->horizontalScrollBar();
+            int w = -1;
+            if (hori && hori->isVisible() && width() < maxGrowSize.width()) for (int step = maxGrowSize.width()-width(); step != 0; resize( width() + step, height() ))
+            {
+                if (!hori->isVisible())
+                    w = width();
+                if (hori->isVisible() == (step<0))
+                    step *= -1;
+                step /= 2;
+            }
+            if (hori->isVisible() && 0<w)
+                resize( w, height() );
+        }
 
         if (maxGrowSize.width() <= width())
         {
@@ -115,7 +145,20 @@ void CommentView::
 
         // grow veritcally
         ui->textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        for (QScrollBar* vert = ui->textEdit->verticalScrollBar(); vert && vert->isVisible() && height() < maxGrowSize.height(); resize( width(), height() + 1 )) {}
+        { // binary search for good size
+            QScrollBar* vert = ui->textEdit->verticalScrollBar();
+            int h = -1;
+            if (vert && vert->isVisible() && height() < maxGrowSize.height()) for (int step = maxGrowSize.height()-height(); step != 0; resize( width(), height() + step ))
+            {
+                if (!vert->isVisible())
+                    h = height();
+                if (vert->isVisible() == (step<0))
+                    step *= -1;
+                step /= 2;
+            }
+            if (vert->isVisible() && 0<h)
+                resize( width(), h );
+        }
 
         // we still want scrollbars if they are needed despite growing the size
         ui->textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -323,7 +366,7 @@ void CommentView::
         //poly.push_back(ref_point);
         //poly.push_back(b + 0.1f*y + 0.15f*x);
         poly.push_back(b + 0.1f*y + ( ref_point.x() - 0.9f*y.y()) *x0);
-        poly.push_back(ref_point);
+        poly.push_back(ref_point - 2*h0);
         poly.push_back(b + 0.1f*y + ( ref_point.x() + 0.9f*y.y())*x0);
         poly.push_back(b + x - x0);
         poly.push_back(b + x - h0);
@@ -345,9 +388,9 @@ void CommentView::
         poly.clear();
         r = QRect();
         float s = std::min(ref_point.x(), 15);
-        poly.push_back(ref_point);
-        poly.push_back(ref_point - s*h0 - s*x0);
-        poly.push_back(ref_point - s*h0 + s*x0);
+        poly.push_back(ref_point - 2*h0);
+        poly.push_back(ref_point - s*h0 - s*x0 - 2*h0);
+        poly.push_back(ref_point - s*h0 + s*x0 - 2*h0);
     }
 
 
@@ -384,6 +427,12 @@ void CommentView::
         recreatePolygon();
 
         setEditFocus(!v);
+
+        if (!v && validateSizeLater)
+        {
+            validateSize();
+            validateSizeLater = false;
+        }
 
         emit thumbnailChanged( model()->thumbnail );
     }

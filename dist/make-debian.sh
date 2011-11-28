@@ -5,6 +5,8 @@ if [ -z "${version}" ]; then echo "Missing version, can't upload."; exit 1; fi
 
 cd ../..
 
+qmaketarget="${qmaketarget} DEFINES+=SONICAWE_UNAMEm=`uname -m` DEFINES+=SONICAWE_DISTCODENAME=`lsb_release -c | sed "s/.*:\t//g"`"
+
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
 

@@ -4,7 +4,8 @@
 // gpumisc
 #include <computationkernel.h>
 
-
+// std
+#include <iomanip>
 #include <float.h> // FLT_MAX
 
 using namespace Tfr;

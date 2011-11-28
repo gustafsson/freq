@@ -16,9 +16,18 @@
 #define TOSTR(x) STRINGIFY(x)
 
 #ifdef SONICAWE_UNAME
-#define UNAME TOSTR(SONICAWE_UNAME)
+    #ifdef SONICAWE_UNAMEm
+        #define UNAME2 TOSTR(SONICAWE_UNAME) " " TOSTR(SONICAWE_UNAMEm)
+    #else
+        #define UNAME2 TOSTR(SONICAWE_UNAME)
+    #endif
+    #ifdef SONICAWE_DISTCODENAME
+        #define UNAME UNAME2 " " TOSTR(SONICAWE_DISTCODENAME)
+    #else
+        #define UNAME UNAME2
+    #endif
 #else
-#define UNAME "Linux johan-laptop 2.6.32-35-generic #78-Ubuntu SMP Tue Oct 11 16:11:24 UTC 2011 x86_64 GNU/Linux"
+    #define UNAME "Linux x86_64 lucid"
 #endif
 
 namespace Tools {
@@ -68,11 +77,17 @@ void CheckUpdates::
                               "Do you want Sonic AWE to check for available updates automatically?",
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         settings.setValue(checkUpdatesTag, q == QMessageBox::Yes);
+
+        if (q == QMessageBox::Yes)
+            manualUpdate = true; // treat this as a manual update and notify user if Sonic AWE is uptodate
     }
 
-    if (!manualUpdate && !settings.value(checkUpdatesTag).toBool())
+    bool checkAuto = settings.value(checkUpdatesTag).toBool();
+    if (!manualUpdate && !checkAuto)
         return;
 
+    TaskInfo ti("Checking for updates %s", manualUpdate?"manually":"automatically");
+    settings.setValue(checkUpdatesTag, false); // disable if this causes the application to crash
 
     Support::BuildHttpPost postdata;
 
@@ -87,6 +102,8 @@ void CheckUpdates::
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),
             this, SLOT(replyFinished(QNetworkReply*)));
     postdata.send( manager.data(), targetUrl );
+
+    settings.setValue(checkUpdatesTag, checkAuto); // restore value before attempting update
 }
 
 
@@ -94,14 +111,18 @@ void CheckUpdates::
         replyFinished(QNetworkReply* reply)
 {
     QString s = reply->readAll();
-    TaskInfo("CheckUpdates reply error=%s\n%s",
+    TaskInfo("CheckUpdates reply error=%s (code %d)\n%s",
              QNetworkReply::NoError == reply->error()?"no error":reply->errorString().toStdString().c_str(),
+             (int)reply->error(),
              s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
 
     if (QNetworkReply::NoError != reply->error())
     {
-        QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
-        QSettings().remove(checkUpdatesTag);
+        if (QNetworkReply::HostNotFoundError != reply->error())
+        {
+            QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
+            QSettings().remove(checkUpdatesTag);
+        }
     }
     else if (s.contains("sorry", Qt::CaseInsensitive) ||
              s.contains("error", Qt::CaseInsensitive) ||

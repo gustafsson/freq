@@ -2,6 +2,7 @@
 #define BLOCKKERNELDEF_H
 
 #include "resample.h"
+#include "operate.h"
 
 #define FREQAXIS_CALL RESAMPLE_ANYCALL
 #include "tfr/freqaxis.h"
@@ -106,7 +107,19 @@ public:
 
         float v = 0.f;
 
-        if (xstep <= 1.f)
+        //v = get( q, reader, c );
+/*        v = interpolate(
+                interpolate(
+                        get( q, reader, c ),
+                        get( DataPos(q.x+1.f, q.y), reader, c ),
+                        k.x),
+                interpolate(
+                        get( DataPos(q.x, q.y+1.f), reader, c ),
+                        get( DataPos(q.x+1.f, q.y+1.f), reader, c ),
+                        k.x),
+                k.y );
+*/
+/*        if (xstep <= 1.f)
         {
             v = interpolate(
                     interpolate(
@@ -128,39 +141,39 @@ public:
                                 get( DataPos(x, q.y+1.f), reader, c ),
                                 k.y));
         }
-
-/*        if (xstep <= 1.0)
+*/
+        if (xstep <= 1.f)
         {
-            if (ystep <= 1.0)
+            if (ystep <= 1.f)
             {
                 v = interpolate(
                         interpolate(
-                                get( q, reader ),
-                                get( DataPos(q.x+1, q.y), reader ),
+                                get( q, reader, c ),
+                                get( DataPos(q.x+1.f, q.y), reader, c ),
                                 k.x),
                         interpolate(
-                                get( DataPos(q.x, q.y+1), reader ),
-                                get( DataPos(q.x+1, q.y+1), reader ),
+                                get( DataPos(q.x, q.y+1.f), reader, c ),
+                                get( DataPos(q.x+1.f, q.y+1.f), reader, c ),
                                 k.x),
                         k.y );
             }
             else for (float y=q.y; y<q.y+xstep; ++y)
             {
                 v = max(v, interpolate(
-                        get( DataPos(q.x, y), reader ),
-                        get( DataPos(q.x+1, y), reader ),
+                        get( DataPos(q.x, y), reader, c ),
+                        get( DataPos(q.x+1.f, y), reader, c ),
                         k.x));
             }
         }
         else
         {
-            if (ystep <= 1.0)
+            if (ystep <= 1.f)
             {
                 for (float x=q.x; x<q.x+xstep; ++x)
                 {
                     v = max(v, interpolate(
-                            get( DataPos(x, q.y), reader ),
-                            get( DataPos(x, q.y+1), reader ),
+                            get( DataPos(x, q.y), reader, c ),
+                            get( DataPos(x, q.y+1.f), reader, c ),
                             k.y));
                 }
             }
@@ -170,12 +183,12 @@ public:
                 {
                     for (float y=q.y; y<q.y+ystep; ++y)
                     {
-                        v = max(v, get( DataPos(x, y), reader ));
+                        v = max(v, get( DataPos(x, y), reader, c ));
                     }
                 }
             }
         }
-*/
+
         return v;
     }
 
@@ -193,7 +206,7 @@ public:
     float offs;
 
     float xstep;
-//    float ystep;
+    float ystep;
 };
 
 
@@ -386,8 +399,16 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.scale = inputRegion.height();
 
     axes.xstep = (validInputs.last - validInputs.first)*outputRegion.width() / (float)(sz_output.width * inputRegion.width());
+    axes.ystep = input->size().height / (float)(sz_output.height);
+    if (axes.xstep<0.25f || axes.ystep<0.25f)
+    {
+        printf(", axes.xstep = %g, axes.ystep = %g", axes.xstep, axes.ystep);
+    }
     if (!full_resolution)
+    {
         axes.xstep = 1;
+        axes.ystep = 1;
+    }
 
     switch (transformMethod)
     {
@@ -595,5 +616,30 @@ void blockMerge( BlockData::Ptr inBlock,
     resample2d_plain<NoConverter<float> >
             (inBlock, outBlock, in_area, out_area);
 }
+
+
+class SetZero
+{
+public:
+    SetZero(float limit):limit(limit) {}
+
+    template<typename T>
+    RESAMPLE_CALL void operator()(T& e, ResamplePos const& v)
+    {
+        if (v.x >= limit)
+            e = 0;
+    }
+private:
+    float limit;
+};
+
+
+extern "C"
+void blockClearPart( BlockData::Ptr block,
+                 unsigned start_t )
+{
+    element_operate(block, ResampleArea(0,0, block->size().width, 1), SetZero(start_t));
+}
+
 
 #endif // BLOCKKERNELDEF_H

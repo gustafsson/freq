@@ -30,6 +30,7 @@ namespace Tools
         RecordView* view_;
         RecordModel* model() { return view_->model_; }
         bool destroyed_;
+        Signal::IntervalType prev_length_;
 
         void setupGui();
     };

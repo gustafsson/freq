@@ -17,6 +17,12 @@ namespace Tfr
 class Transform {
 public:
     /**
+      Virtual housekeeping.
+      */
+    virtual ~Transform() {}
+
+
+    /**
       A Time-Frequency-Representation (Tfr) Transform takes a part of a signal
       (a Signal::Buffer) and transforms it into a part of a
       Time-Frequency-Representation (a Tfr::Chunk).
@@ -54,9 +60,25 @@ public:
 
 
     /**
-      Virtual housekeeping.
+      Returns the interval that could be validated using a buffer of a given length.
       */
-    virtual ~Transform() {}
+    virtual Signal::Interval validLength(Signal::pBuffer buffer) { return buffer->getInterval(); }
+
+
+    /**
+      Returns the next good chunk size for this type of transform (or the
+      largest if there is no good chunk size larger than
+      'current_valid_samples_per_chunk').
+      */
+    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) = 0;
+
+
+    /**
+      Returns the previously good chunk size for this type of transform (or the
+      smallest if there is no good chunk size larger than
+      'current_valid_samples_per_chunk').
+      */
+    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) = 0;
 };
 typedef boost::shared_ptr<Transform> pTransform;
 

@@ -39,7 +39,7 @@ public:
     virtual void invalidate_samples(const Signal::Intervals& I);
 
 protected:
-    void applyFilter( Tfr::pChunk chunk );
+    void applyFilter( ChunkAndInverse& chunk );
 
 private:
     float   _previous_scales_per_octave;

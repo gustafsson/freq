@@ -42,8 +42,7 @@ TimelineController::
     TaskInfo("%s", __FUNCTION__);
     if (!dock)
     {
-    QSettings settings;
-        settings.setValue("TimelineController visible", view->tool_selector->parentTool()->isVisible());
+        QSettings().setValue("TimelineController visible", view->tool_selector->parentTool()->isVisible());
     }
 }
 
@@ -85,8 +84,8 @@ void TimelineController::
         connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
         connect(dock, SIGNAL(visibilityChanged(bool)), MainWindow->getItems()->actionToggleTimelineWindow, SLOT(setChecked(bool)));
     } else {
-        view->tool_selector = view->_render_view->graphicsview->toolSelector( 1 );
-        view->tool_selector->setCurrentTool( this, true );
+        view->tool_selector = view->_render_view->graphicsview->toolSelector( 1, model->project()->commandInvoker() );
+        view->tool_selector->setCurrentToolCommand( this );
 
         view->layoutChanged( view->_render_view->graphicsview->layoutDirection());
         connect(view->_render_view->graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),

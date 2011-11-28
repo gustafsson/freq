@@ -15,8 +15,8 @@ TARGET = sonicawe
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 win32:CONFIG += debug_and_release
-#win32:CONFIG += embed_manifest_exe
-#win32:QMAKE_LFLAGS += /MANIFESTUAC:\"level=\'requireAdministrator\' uiAccess=\'false\'\"
+win32:CONFIG -= embed_manifest_dll
+win32:CONFIG += embed_manifest_exe
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
@@ -32,9 +32,12 @@ macx:QMAKE_CFLAGS += -mmacosx-version-min=10.5 -m32 -arch i386
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
 unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
+win32:QMAKE_CXXFLAGS += /MP
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
 win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
+win32:QMAKE_CXXFLAGS_DEBUG += /ZI
+win32:QMAKE_LFLAGS_DEBUG += /OPT:NOICF /OPT:NOREF
 win32:QMAKE_LFLAGS_DEBUG += \
     /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
     /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
@@ -83,6 +86,7 @@ SOURCES += \
     tfr/fft4g.c \
     tfr/*.cpp \
     tools/*.cpp \
+    tools/commands/*.cpp \
     tools/support/*.cpp \
     tools/selections/*.cpp \
     tools/selections/support/*.cpp \
@@ -99,6 +103,7 @@ HEADERS += \
     signal/*.h \
     tfr/*.h \
     tools/*.h \
+    tools/commands/*.h \
     tools/support/*.h \
     tools/selections/*.h \
     tools/selections/support/*.h \
@@ -123,6 +128,7 @@ FORMS += \
     tools/settingsdialog.ui \
     tools/getcudaform.ui \
     tools/sendfeedback.ui \
+    tools/commands/commandhistory.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \
@@ -265,6 +271,8 @@ DEFINES += USE_CUDA
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
+#CUDA_FLAGS += --ptxas-options=-v
+
 
 CUDA_CXXFLAGS = $$QMAKE_CXXFLAGS
 CONFIG(debug, debug|release):CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_DEBUG

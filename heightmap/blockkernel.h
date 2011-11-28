@@ -101,6 +101,11 @@ void blockMerge( BlockData::Ptr inBlock,
                  BlockData::Ptr outBlock,
                  ResampleArea in_area,
                  ResampleArea out_area );
+
+extern "C"
+void blockClearPart( BlockData::Ptr block,
+                 unsigned start_t );
+
 /*
 extern "C"
 void expandStft( cudaPitchedPtrType<float2> inStft,

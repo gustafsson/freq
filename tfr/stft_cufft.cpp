@@ -10,6 +10,7 @@
 #include "cuffthandlecontext.h"
 
 #include "waveletkernel.h"
+#include "cudaMemsetFix.cu.h"
 
 //#define TIME_STFT
 #define TIME_STFT if(0)
@@ -26,10 +27,13 @@ void Fft::
     cufftComplex* d = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
     BOOST_ASSERT( sizeof(cufftComplex) == sizeof(std::complex<float>));
     BOOST_ASSERT( sizeof(cufftComplex) == sizeof(float2));
-    cudaMemset( d, 0, output->numberOfBytes() );
+    unsigned inN = input->sizeInBytes().width,
+             outN = output->numberOfBytes();
+    if (inN<outN)
+        cudaMemsetFix( (char*)d, outN-inN );
     cudaMemcpy( d,
                 CudaGlobalStorage::ReadOnly<1>( input ).device_ptr(),
-                input->sizeInBytes().width,
+                inN,
                 cudaMemcpyDeviceToDevice );
 
     // TODO require that input and output is of the exact same size. Do padding

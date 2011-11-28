@@ -17,8 +17,6 @@ public:
 
     bool operator==(const Reference &b) const;
     void getArea( Position &a, Position &b) const;
-    unsigned sampleOffset() const;
-    unsigned scaleOffset() const;
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
     Collection* collection() const;

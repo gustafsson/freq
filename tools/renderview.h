@@ -7,9 +7,7 @@
 #include "support/toolselector.h"
 #include "commentview.h"
 #include "sawe/toolmainloop.h"
-
-// gpumisc
-#include <TAni.h>
+#include "tools/commands/viewstate.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -61,7 +59,8 @@ namespace Tools
         void setPosition( Heightmap::Position pos );
 
         float last_ysize;
-        floatAni orthoview;
+        Tools::Commands::ViewState viewstate;
+
         //QTransform projectionTransform;
         //QTransform modelviewTransform;
         //QTransform viewTransform;
@@ -98,7 +97,7 @@ namespace Tools
         void emitAxisChanged();
 
     public slots:
-        void userinput_update( bool request_high_fps = true, bool post_update = true );
+        void userinput_update( bool request_high_fps = true, bool post_update = true, bool cheat_also_high=true );
 
     signals:
         /**

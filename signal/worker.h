@@ -192,7 +192,7 @@ public:
       Get/set requested number of frames per second.
       */
     float               requested_fps() const;
-    void                requested_fps(float);
+    void                requested_fps(float, float cheat=-1);
 
     static bool         is_cheating();
 
@@ -204,13 +204,15 @@ public:
     Signal::IntervalType number_of_samples() const { return _number_of_samples; }
     float length() const { return _length; }
 
-        /**
+    /**
 	  Throws an std::exception if one has been caught by run()
 	  */
 	void				checkForErrors();
 
 
 private:
+    void updateLength();
+
     /**
       The InvalidSamplesDescriptors describe the regions that need to be recomputed. The todo_list
       is rebuilt each time a new region is requested. It is worked off in a outward direction
@@ -285,7 +287,7 @@ private:
     /**
       _samples_per_chunk is adjusted up and down to reach this given framerate. Default value: requested_fps=30.
       */
-    float _requested_fps;
+    float _requested_fps, _requested_cheat_fps;
 
     /**
       lowest fps allowed, defaults to 0.5

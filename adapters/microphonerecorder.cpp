@@ -36,7 +36,6 @@ void MicrophoneRecorder::
         init()
 {
     _offset = 0;
-    _channel = 0;
     _sample_rate = 1;
 
     static bool first = true;
@@ -80,7 +79,7 @@ void MicrophoneRecorder::
                    << " and input latency " << device.defaultHighInputLatency() << " s";
 
     QMutexLocker lock(&_data_lock);
-    _data.resize(channel_count);
+    _data.setNumChannels(channel_count);
     _rolling_mean.resize(channel_count);
     for (unsigned i=0; i<channel_count; ++i)
         _rolling_mean[i] = 0;
@@ -120,13 +119,12 @@ MicrophoneRecorder::~MicrophoneRecorder()
     stopRecording();
 
     QMutexLocker lock(&_data_lock);
-    for (unsigned i=0; i<_data.size(); ++i)
-	{
-		if (0<_data[i].length()) {
-			TaskTimer tt("Releasing recorded data channel %u", i);
-            _data[i].clear();
-		}
-	}
+    if (0<_data.length()) {
+        TaskTimer tt("Releasing %s recorded data in %u channels",
+                     _data.lengthLongFormat().c_str(),
+                     _data.num_channels());
+        _data.clear();
+    }
 }
 
 void MicrophoneRecorder::startRecording()
@@ -199,7 +197,7 @@ long unsigned MicrophoneRecorder::
         actual_number_of_samples()
 {
     QMutexLocker lock(&_data_lock);
-    long unsigned N = _data[_channel].number_of_samples();
+    long unsigned N = _data.number_of_samples();
     return N;
 }
 
@@ -229,7 +227,7 @@ Signal::pBuffer MicrophoneRecorder::
 {
     QMutexLocker lock(&_data_lock);
     // TODO why? return _data[channel].readFixedLength( I );
-    return _data[_channel].read( I );
+    return _data.read( I );
 }
 
 float MicrophoneRecorder::
@@ -252,25 +250,25 @@ unsigned MicrophoneRecorder::
 {
     QMutexLocker lock(&_data_lock);
 #ifdef SAWE_MONO
-    return _data.size()?1:0;
+    return _data.num_channels()?1:0;
 #else
-    return _data.size();
+    return _data.num_channels();
 #endif
 }
 
 void MicrophoneRecorder::
         set_channel(unsigned channel)
 {
+    QMutexLocker lock(&_data_lock);
     //TIME_MICROPHONERECORDER TaskTimer("MicrophoneRecorder::set_channel(%u)", channel).suppressTiming();
-    BOOST_ASSERT( channel < num_channels() );
-    this->_channel = channel;
+    _data.set_channel(channel);
 }
 
 
 unsigned MicrophoneRecorder::
         get_channel()
 {
-    return _channel;
+    return _data.get_channel();
 }
 
 
@@ -316,8 +314,9 @@ int MicrophoneRecorder::
     long unsigned offset = actual_number_of_samples();
     QMutexLocker lock(&_data_lock);
     _last_update = boost::posix_time::microsec_clock::local_time();
+    unsigned prev_channel = _data.get_channel();
 
-    for (unsigned i=0; i<_data.size(); ++i)
+    for (unsigned i=0; i<_data.num_channels(); ++i)
     {
         const float *buffer = in[i];
         Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
@@ -341,9 +340,11 @@ int MicrophoneRecorder::
                                             b->getInterval().first / b->sample_rate,
                                             b->getInterval().last / b->sample_rate );
 
-        _data[i].put( b );
+        _data.set_channel(i);
+        _data.put( b );
     }
 
+    _data.set_channel(prev_channel);
     lock.unlock();
 
     _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));

@@ -10,6 +10,7 @@
 #include "support/sinksignalproxy.h"
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"
+#include "tools/commands/recordedcommand.h"
 
 #include <TaskTimer.h>
 #include <demangle.h>
@@ -21,7 +22,8 @@ namespace Tools
 RecordController::
         RecordController( RecordView* view )
             :   view_ ( view ),
-                destroyed_ ( false )
+                destroyed_ ( false ),
+                prev_length_( 0 )
 {
     setupGui();
 }
@@ -64,12 +66,21 @@ void RecordController::
                 SLOT(recievedInvalidSamples( Signal::Intervals )),
                 Qt::QueuedConnection );
 
+        prev_length_ = r->number_of_samples();
         r->startRecording();
     }
     else
     {
         if (!r->isStopped())
+        {
             r->stopRecording();
+
+            if (model()->recording->number_of_samples() > prev_length_)
+            {
+                Tools::Commands::pCommand cmd( new Tools::Commands::RecordedCommand( model()->recording, prev_length_, model()->render_view->model ));
+                model()->project->commandInvoker()->invokeCommand(  cmd );
+            }
+        }
     }
 
     view_->enabled = active;

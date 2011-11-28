@@ -17,11 +17,7 @@ class BlockFilter
 public:
     BlockFilter( Collection* collection );
 
-    /// @overload Tfr::Filter::operator ()(Tfr::Chunk&)
-    //virtual void operator()( Tfr::Chunk& chunk );
-
-    /// @overload Tfr::Filter::applyFilter(Tfr::pChunk)
-    virtual void applyFilter(Tfr::pChunk pchunk );
+    virtual void applyFilter(Tfr::ChunkAndInverse& pchunk );
     virtual bool stubWithStft() { return true; }
     virtual bool createFromOthers() { return true; }
 
@@ -84,9 +80,12 @@ public:
         _collection = (*_collections)[c].get();
     }
 
-    void applyFilter( Tfr::pChunk pchunk )
+    void applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
         BlockFilter::applyFilter( pchunk );
+
+        Signal::Interval I = FilterKind::transform()->validLength(pchunk.inverse);
+        pchunk.inverse.reset( new Signal::Buffer(I.first, I.count(), pchunk.inverse->sample_rate) );
     }
 
 

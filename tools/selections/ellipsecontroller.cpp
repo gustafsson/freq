@@ -162,8 +162,7 @@ namespace Tools { namespace Selections
             selectionChanged()
     {
         Signal::pOperation o = selection_controller_->model()->current_selection();
-        if (o)
-            model()->tryFilter( o );
+        model()->tryFilter( o );
     }
 
 }} // namespace Tools::Selections

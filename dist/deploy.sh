@@ -18,7 +18,7 @@ else
   qmaketarget="CONFIG+=TARGET_${target} DEFINES+=TARGET_${target} CONFIG+=customtarget CUSTOMTARGET=$packagename"
 fi
 
-qmaketarget="${qmaketarget} DEFINES+=\"SONICAWE_VERSION=${versiontag}\" DEFINES+=\"SONICAWE_UNAME=`uname -svm`\""
+qmaketarget="${qmaketarget} DEFINES+=SONICAWE_VERSION=${versiontag} DEFINES+=SONICAWE_UNAME=`uname -s`"
 
 if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
     platform=windows

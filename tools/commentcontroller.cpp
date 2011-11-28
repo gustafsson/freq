@@ -69,10 +69,10 @@ void CommentController::
         view = createNewComment();
 
         view->model()->freezed_position = true;
+        view->resize( 1, 1 ); // grow with setHtml instead
     }
 
     view->model()->pos = p;
-    view->resize( 1, 1); // grow with setHtml instead
     view->setHtml( text );
     view->show();
 }
