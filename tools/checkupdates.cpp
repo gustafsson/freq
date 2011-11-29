@@ -70,16 +70,21 @@ void CheckUpdates::
         autoCheckForUpdates()
 {
     QSettings settings;
+    if (!settings.contains(checkUpdatesTag) && !manualUpdate)
+        settings.setValue(checkUpdatesTag, true);
+
     if (!settings.contains(checkUpdatesTag))
     {
+        // treat this as a manual update and notify user if Sonic AWE is
+        // up-to-date the first time the program is started. And to notify
+        // MuchDifferent about the installation.
+        //manualUpdate = true;
+
         int q = QMessageBox::question(dynamic_cast<QWidget*>(parent()),
                               "Check for updates",
                               "Do you want Sonic AWE to check for available updates automatically?",
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         settings.setValue(checkUpdatesTag, q == QMessageBox::Yes);
-
-        if (q == QMessageBox::Yes)
-            manualUpdate = true; // treat this as a manual update and notify user if Sonic AWE is uptodate
     }
 
     bool checkAuto = settings.value(checkUpdatesTag).toBool();
@@ -97,6 +102,7 @@ void CheckUpdates::
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
     postdata.addKeyValue( "version", Sawe::Application::version_string().c_str() );
     postdata.addKeyValue( "title", Sawe::Application::title_string().c_str() );
+    postdata.addKeyValue( "autocheckupdates", settings.value(checkUpdatesTag).toBool()?"true":"false" );
 
     manager.reset( new QNetworkAccessManager(this) );
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),

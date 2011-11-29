@@ -1,6 +1,7 @@
 #include "complexbuffer.h"
 
 #include "TaskTimer.h"
+#include "cpumemorystorage.h"
 
 #define TIME_COMPLEX_BUFFER if(0)
 //#define TIME_COMPLEX_BUFFER
@@ -80,8 +81,8 @@ Signal::pBuffer ComplexBuffer::
     DataStorage<float>::Ptr real_waveform = buffer->waveform_data();
 
     DataStorageSize sz = real_waveform->getNumberOfElements();
-    std::complex<float> *complex = _complex_waveform_data->getCpuMemory();
-    float *real = real_waveform->getCpuMemory();
+    std::complex<float> *complex = CpuMemoryStorage::ReadOnly<1>( _complex_waveform_data ).ptr();
+    float *real = CpuMemoryStorage::WriteAll<1>( real_waveform ).ptr();
 
     for (unsigned z=0; z<sz.depth; z++)
         for (unsigned y=0; y<sz.height; y++)

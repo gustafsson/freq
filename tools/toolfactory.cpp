@@ -133,7 +133,7 @@ ToolFactory::
     // Promotion
     // _objects.push_back( QPointer<QObject>( new ClickableImageView( _render_view )));
 
-#ifndef USE_CUDA
+#if !defined(USE_CUDA) && !defined(USE_OPENCL)
     _objects.push_back( QPointer<QObject>( new GetCudaForm( p->mainWindow()->centralWidget() )));
 #endif
 
