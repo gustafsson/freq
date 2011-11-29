@@ -54,6 +54,8 @@ public:
     static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
 
 private:
+    std::vector<float> w;
+    std::vector<int> ip;
     friend class Stft;
 
     bool _compute_redundant;

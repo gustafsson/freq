@@ -12,8 +12,8 @@
 
 // TODO translate cdft to take floats instead of doubles
 //extern "C" { void cdft(int, int, double *); }
-extern "C" { void cdft(int, int, double *, int *, double *); }
-// extern "C" { void cdft(int, int, float *, int *, float *); }
+//extern "C" { void cdft(int, int, double *, int *, double *); }
+extern "C" { void cdft(int, int, float *, int *, float *); }
 
 
 namespace Tfr {
@@ -27,56 +27,23 @@ void Fft::
     unsigned n = input->getNumberOfElements().width;
     unsigned N = output->getNumberOfElements().width;
 
-    if (-1 != direction)
-        BOOST_ASSERT( n == N );
+    BOOST_ASSERT( n == N );
 
-    int magic = 12345678;
-    bool vector_length_test = true;
-
-    std::vector<double> w(N/2 + vector_length_test);
-    std::vector<int> ip(2+(1<<(int)(log2f(N+0.5)-1)) + vector_length_test);
-    std::vector<double> q(2*N + vector_length_test);
-
-    ip[0] = 0;
-
-    if (vector_length_test)
+    if (w.size() != N/2)
     {
-        q.back() = magic;
-        w.back() = magic;
-        ip.back() = magic;
+        w.resize(N/2);
+        ip.resize(2+(1<<(int)(log2f(N+0.5)-1)));
+        ip[0] = 0;
     }
 
 
-    {
-        TIME_STFT TaskTimer tt("Converting from float2 to double2" );
-
-        float* p = (float*)input->getCpuMemory();
-        for (unsigned i=0; i<2*n; i++)
-            q[i] = p[i];
-
-        for (unsigned i=2*n; i<2*N; i++)
-            q[i] = 0;
-    }
+    *output = *input;
+    float* q = (float*)CpuMemoryStorage::ReadWrite<1>( output ).ptr();
 
 
     {
         TIME_STFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
         cdft(2*N, direction, &q[0], &ip[0], &w[0]);
-
-        if (vector_length_test)
-        {
-            BOOST_ASSERT(q.back() == magic);
-            BOOST_ASSERT(ip.back() == magic);
-            BOOST_ASSERT(w.back() == magic);
-        }
-    }
-
-    {
-        TIME_STFT TaskTimer tt("Converting from double2 to float2");
-
-        float* p = (float*)output->getCpuMemory();
-        for (unsigned i=0; i<2*N; i++)
-            p[i] = (float)q[i];
     }
 }
 
