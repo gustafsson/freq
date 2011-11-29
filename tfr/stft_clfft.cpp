@@ -37,7 +37,7 @@ void Fft::
         OpenCLContext *opencl = &OpenCLContext::Singleton();
         cl_int fft_error;
 
-        clFFT_Plan plan = CLFFTKernelBuffer::initialize()->getPlan(opencl->getContext(), n, &fft_error);
+        clFFT_Plan plan = CLFFTKernelBuffer::Singleton().getPlan(opencl->getContext(), n, fft_error);
         if (fft_error != CL_SUCCESS)
             throw std::runtime_error("Could not create clFFT compute plan.");
 
@@ -128,7 +128,7 @@ void Stft::
     OpenCLContext *opencl = &OpenCLContext::Singleton();
     cl_int fft_error;
 
-    clFFT_Plan plan = CLFFTKernelBuffer::initialize()->getPlan(opencl->getContext(), n.width, &fft_error);
+    clFFT_Plan plan = CLFFTKernelBuffer::Singleton().getPlan(opencl->getContext(), n.width, fft_error);
     if(fft_error != CL_SUCCESS)
         throw std::runtime_error("Could not create clFFT compute plan.");
 

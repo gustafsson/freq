@@ -3,19 +3,18 @@
 #include "openclcontext.h"
 #include "HasSingleton.h"
 #include <utility>
-#include <vector>
+#include <map>
 
 class CLFFTKernelBuffer: public HasSingleton<CLFFTKernelBuffer>
 {
 public:
     ~CLFFTKernelBuffer();
 
-	clFFT_Plan getPlan(cl_context c, unsigned int n, cl_int *error);
-	static CLFFTKernelBuffer *initialize();
+    clFFT_Plan getPlan(cl_context c, unsigned int n, cl_int& error);
 
 protected:
-	typedef std::pair<unsigned int, clFFT_Plan> int_pair__;
-	std::vector<int_pair__> kernels;
+    typedef std::map<unsigned int, clFFT_Plan> PlanMap;
+    PlanMap kernels;
 
 private:
     friend class HasSingleton<CLFFTKernelBuffer>;
