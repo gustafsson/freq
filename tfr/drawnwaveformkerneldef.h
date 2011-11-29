@@ -4,6 +4,10 @@
 #include "resample.h"
 #include "drawnwaveformkernel.h"
 
+#if defined(_WIN32) && !defined(USE_CUDA)
+#include <math.h>
+#endif
+
 #ifdef __CUDACC__
 #define MakeWriteType make_float2
 #else
@@ -38,11 +42,8 @@ RESAMPLE_CALL void draw_waveform_pts_elem(
     {
         float v = in_waveform.read( read_x );
         v *= scaling;
-#if defined(_WIN32)
-        v = max(-1.f, min(1.f, v));
-#else
         v = fmaxf(-1.f, fminf(1.f, v));
-#endif
+
         float y = (v+1.f)*.5f*(matrix_sz.height-1.f);
         unsigned y1 = (unsigned)y;
         unsigned y2 = y1+1;
@@ -102,11 +103,7 @@ RESAMPLE_CALL void draw_waveform_elem(
         float v = in_waveform.read( read_x );
 
         v *= scaling;
-#if defined(_WIN32)
-        v = max(-1.f, min(1.f, v));
-#else
         v = fmaxf(-1.f, fminf(1.f, v));
-#endif
 
         float y = (v+1.f)*.5f*(matrix_sz.height-1.f);
         if (y>maxy) maxy = y;
@@ -187,13 +184,8 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     float w2 = v1*(1-px2) + v2*px2;
     w1 *= scaling;
     w2 *= scaling;
-#if defined(_WIN32)
-    w1 = max(-1.f, min(1.f, w1));
-    w2 = max(-1.f, min(1.f, w2));
-#else
     w1 = fmaxf(-1.f, fminf(1.f, w1));
     w2 = fmaxf(-1.f, fminf(1.f, w2));
-#endif
     float fy1 = (w1+1.f)*.5f*(matrix_sz.height-1.f);
     float fy2 = (w2+1.f)*.5f*(matrix_sz.height-1.f);
 
@@ -237,11 +229,7 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     for (unsigned y=y1; y<=y2; ++y)
     {
         float py = y;
-#if defined(_WIN32)
-        py = max(0.f, 1.f - fabsf(my - y)*invdy);
-#else
         py = fmaxf(0.f, 1.f - fabsf(my - y)*invdy);
-#endif
         out_waveform_matrix.ref( WritePos( writePos_x, y ) ) = MakeWriteType(0.02f*py, 0);
     }
 }

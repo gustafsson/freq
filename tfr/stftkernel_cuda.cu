@@ -2,10 +2,14 @@
 
 #include "stftkernel.h"
 
+#include "stringprintf.h"
+
 #include <stdexcept>
 
 __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float> wave, float v );
 __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float2> inwave, cudaPitchedPtrType<float> outwave, float v );
+__global__ void kernel_stftToComplex( cudaPitchedPtrType<float> inwave, cudaPitchedPtrType<float2> outwave );
+__global__ void kernel_stftDiscardImag( cudaPitchedPtrType<float2> inwave, cudaPitchedPtrType<float> outwave );
 
 void stftNormalizeInverse(
         DataStorage<float>::Ptr wavep,
@@ -13,13 +17,8 @@ void stftNormalizeInverse(
 {
     cudaPitchedPtrType<float> wave(CudaGlobalStorage::ReadWrite<1>( wavep ).getCudaPitchedPtr());
 
-    dim3 grid, block;
-    unsigned block_size = 256;
-    wave.wrapCudaGrid2D( block_size, grid, block );
-
-    if(grid.x>65535) {
-        throw std::runtime_error("stftNormalizeInverse: Invalid argument, number of floats in complex signal must be less than 65535*256.");
-    }
+    dim3 block(128);
+    dim3 grid = wrapCudaMaxGrid( wave.getNumberOfElements(), block);
 
     kernel_stftNormalizeInverse<<<grid, block, 0>>>( wave, 1.f/length );
 }
@@ -27,11 +26,11 @@ void stftNormalizeInverse(
 
 __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float> wave, float v )
 {
-    elemSize3_t writePos;
-    if( !wave.unwrapCudaGrid( writePos ))
+    unsigned n;
+    if( !wave.unwrapGlobalThreadNumber3D(n))
         return;
 
-    wave.e( writePos ) *= v;
+    wave.ptr()[n] *= v;
 }
 
 void stftNormalizeInverse(
@@ -42,12 +41,15 @@ void stftNormalizeInverse(
     cudaPitchedPtrType<float2> inwave(CudaGlobalStorage::ReadOnly<1>( inwavep ).getCudaPitchedPtr());
     cudaPitchedPtrType<float> outwave(CudaGlobalStorage::WriteAll<1>( outwavep ).getCudaPitchedPtr());
 
-    dim3 grid, block;
-    unsigned block_size = 256;
-    inwave.wrapCudaGrid2D( block_size, grid, block );
+    dim3 block(128);
+    dim3 grid = wrapCudaMaxGrid( outwave.getNumberOfElements(), block);
 
-    if(grid.x>65535) {
-        throw std::runtime_error("stftNormalizeInverse: Invalid argument, number of floats in complex signal must be less than 65535*256.");
+    if(inwave.getTotalBytes()!=2*outwave.getTotalBytes()) {
+        throw std::runtime_error(printfstring(
+                "stftNormalizeInverse: inwave.getTotalBytes() != 2*outwave.getTotalBytes(), (%u, %u, %u) != (%u, %u, %u)",
+                inwave.getNumberOfElements().x, inwave.getNumberOfElements().y, inwave.getNumberOfElements().z,
+                outwave.getNumberOfElements().x, outwave.getNumberOfElements().y, outwave.getNumberOfElements().z
+                ));
     }
 
     kernel_stftNormalizeInverse<<<grid, block, 0>>>( inwave, outwave, 1.f/length );
@@ -56,9 +58,33 @@ void stftNormalizeInverse(
 
 __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float2> inwave, cudaPitchedPtrType<float> outwave, float v )
 {
-    elemSize3_t writePos;
-    if( !inwave.unwrapCudaGrid( writePos ))
+    unsigned n;
+    if( !outwave.unwrapGlobalThreadNumber3D(n))
         return;
 
-    outwave.e( writePos ) = inwave.e(writePos).x * v;
+    outwave.ptr()[n] = inwave.ptr()[n].x * v;
+}
+
+
+void stftToComplex(
+        DataStorage<float>::Ptr inwavep,
+        Tfr::ChunkData::Ptr outwavep )
+{
+    cudaPitchedPtrType<float> inwave(CudaGlobalStorage::ReadOnly<1>( inwavep ).getCudaPitchedPtr());
+    cudaPitchedPtrType<float2> outwave(CudaGlobalStorage::WriteAll<1>( outwavep ).getCudaPitchedPtr());
+
+    dim3 block(128);
+    dim3 grid = wrapCudaMaxGrid( outwave.getNumberOfElements(), block);
+
+    kernel_stftToComplex<<<grid, block, 0>>>( inwave, outwave );
+}
+
+
+__global__ void kernel_stftToComplex( cudaPitchedPtrType<float> inwave, cudaPitchedPtrType<float2> outwave )
+{
+    unsigned n;
+    if( !outwave.unwrapGlobalThreadNumber3D(n))
+        return;
+
+    outwave.ptr()[n] = make_float2(inwave.ptr()[n], 0);
 }

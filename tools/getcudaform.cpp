@@ -24,10 +24,18 @@ GetCudaForm::
 #ifdef USE_CUDA
     ui->labelInfoText->setText("Cool, CUDA works!");
 #elif defined(USE_OPENCL)
-    ui->labelInfoText->setText("Cool, OpenCL works!");
+    QSettings settings;
+    QString botherAboutOpenCLtag = "botheraboutopencl";
+    if (settings.contains(botherAboutOpenCLtag))
+    {
+        close();
+        return;
+    }
+    settings.setValue(botherAboutOpenCLtag, false);
+    ui->labelInfoText->setText("Cool, OpenCL works! But Sonic AWE is faster with CUDA");
 #else
     // TODO figure out if the current computer has a CUDA capable GPU or not
-    ui->labelInfoText->setText("Sonic AWE is faster with CUDA or OpenCL");
+    ui->labelInfoText->setText("Sonic AWE is faster with CUDA (or OpenCL)");
 #endif
 
     connect(ui->pushButtonClose, SIGNAL(clicked()), SLOT(close()));
