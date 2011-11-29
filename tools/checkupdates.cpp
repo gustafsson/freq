@@ -96,13 +96,12 @@ void CheckUpdates::
 
     Support::BuildHttpPost postdata;
 
-    postdata.addKeyValue( "kind", manualUpdate?"manual":"auto" );
+    postdata.addKeyValue( "kind", manualUpdate?checkAuto?"manual-auto":"manual":"auto" );
     postdata.addKeyValue( "uname", UNAME );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
     postdata.addKeyValue( "version", Sawe::Application::version_string().c_str() );
     postdata.addKeyValue( "title", Sawe::Application::title_string().c_str() );
-    postdata.addKeyValue( "autocheckupdates", settings.value(checkUpdatesTag).toBool()?"true":"false" );
 
     manager.reset( new QNetworkAccessManager(this) );
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),
