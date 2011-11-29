@@ -255,44 +255,98 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        float biggest_diff = 0.f;
-        int N = 16;
-        float epsilon = 2e-9*N;
+        //int N = 1<<23, windowsize=1<<16;
+        int N = 1<<22, windowsize=1<<10;
+        float epsilon[2] = {2e-7 * log(N), 2e-7 * log(windowsize)};
+        bool coutinfo = false;
+
+
+        Signal::pBuffer b(new Signal::Buffer(0, N, 1));
+        float* p = b->waveform_data()->getCpuMemory();
+        srand(0);
+        for (int i=0; i<N; ++i)
+            p[i] = 2.f*rand()/RAND_MAX - 1.f;
+
+        if (coutinfo) cout << "buffer" << endl;
+        if (coutinfo) for (int i=0; i<N; ++i)
+        {
+            cout << i << ", " << p[i] << ";" << endl;
+        }
+        if (coutinfo) cout << endl;
+
+        {
+            TaskTimer tt("Warming up...");
+
+            Tfr::Stft a;
+            a.set_approximate_chunk_size(windowsize);
+            a(b);
+
+            Tfr::Fft f;
+            f(b);
+        }
+
+        float diffs[4], forwardtime[4], inversetime[4];
+        for (int stft=0; stft<2; ++stft)
         for (int redundant=0; redundant<2; ++redundant)
         {
-            //Tfr::Fft ft(redundant);
-            Tfr::Stft ft;
-            ft.set_approximate_chunk_size(4);
-            ft.compute_redundant(redundant);
-            Signal::pBuffer b(new Signal::Buffer(0, N, 1));
-            float* p = b->waveform_data()->getCpuMemory();
-            srand(0);
-            for (int i=0; i<N; ++i)
-                p[i] = 2.f*rand()/RAND_MAX - 1.f;
+            TaskTimer tt("%s %s", stft?"Stft":"Fft", redundant?"C2C":"R2C");
 
-            Tfr::pChunk c = ft(b);
+            float norm = 1.f/N;
+            Tfr::pTransform ft;
+            if (stft)
+            {
+                norm = 1.f;
+                Tfr::Stft* stft;
+                ft.reset(stft = new Tfr::Stft);
+                stft->set_approximate_chunk_size(windowsize);
+                stft->compute_redundant(redundant);
+            }
+            else
+            {
+                ft.reset( new Tfr::Fft(redundant) );
+            }
+
+            Tfr::pChunk c;
+            b->waveform_data()->getCpuMemory();
+            {
+                TaskTimer tt("%s %s forward", stft?"Stft":"Fft", redundant?"C2C":"R2C");
+                c = (*ft)(b);
+                forwardtime[stft*2+redundant]=tt.elapsedTime();
+            }
+
+            Signal::pBuffer b2;
+            {
+                TaskTimer tt("%s %s backward", stft?"Stft":"Fft", redundant?"C2C":"R2C");
+                b2 = ft->inverse(c);
+                inversetime[stft*2+redundant]=tt.elapsedTime();
+            }
 
             std::complex<float>* cp = c->transform_data->getCpuMemory();
-            for (unsigned i=0; i<c->transform_data->numberOfElements(); ++i)
+            if (coutinfo) cout << vartype(*ft).c_str() << " " << (redundant?"C2C":"R2C") << endl;
+
+            if (coutinfo) for (unsigned i=0; i<c->transform_data->numberOfElements(); ++i)
                 cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
 
-            Signal::pBuffer b2 = ft.inverse(c);
             float* p2 = b2->waveform_data()->getCpuMemory();
-            float norm = 1.f/N;
-            norm = 1.f;
+
+            if (coutinfo) cout << "inverse" << endl;
+            float ft_diff = 0;
             for (int i=0; i<N; ++i)
             {
-                cout << i << ", " << p[i] << ", " << p2[i]*norm <<  ";";
+                if (coutinfo) cout << i << ", " << p[i] << ", " << p2[i]*norm <<  ";";
                 float diff = p[i] - p2[i]*norm;
-                if (fabsf(diff) > epsilon)
+                if (coutinfo) if (fabsf(diff) > epsilon[stft])
                     cout << " Failed: " << diff;
-                if (biggest_diff < fabsf(diff))
-                    biggest_diff = fabsf(diff);
-                cout << endl;
+                if (ft_diff < fabsf(diff))
+                    ft_diff = fabsf(diff);
+                if (coutinfo) cout << endl;
             }
+            diffs[stft*2+redundant] = ft_diff;
+            if (coutinfo) cout << endl;
         }
-        cout << endl << "Stft/fft test " << (biggest_diff > epsilon ? "failed" : "succeeded") << endl
-                << "Biggest diff: " << biggest_diff << endl;
+        if (coutinfo) cout << endl;
+        for (int i=0; i<4; ++i)
+            cout << (i/2?"Stft":"Fft") << " " << (i%2?"C2C":"R2C") << " " << diffs[i] << " < " << epsilon[i/2] << " " << (diffs[i]<epsilon[i/2]?"ok":"failed") << ". Time: " << forwardtime[i] << " s and " << inversetime[i] << " s. Sum " << forwardtime[i]+inversetime[i] << " s" << endl;
         return 0;
     }
     if (0)
