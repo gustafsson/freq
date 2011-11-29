@@ -1,5 +1,7 @@
 #include "clfftkernelbuffer.h"
 
+#include "TaskTimer.h"
+
 CLFFTKernelBuffer::CLFFTKernelBuffer()
 {
 
@@ -24,7 +26,10 @@ clFFT_Plan CLFFTKernelBuffer::getPlan(cl_context c, unsigned int n, cl_int *erro
 			return kernels[i].second;
 		}
 	}
-	clFFT_Dim3 ndim = { n, 1, 1 };
+
+    TaskTimer tt("Creating a OpenCL FFT compute plan!");
+
+    clFFT_Dim3 ndim = { n, 1, 1 };
 	clFFT_Plan plan = clFFT_CreatePlan(c, ndim, clFFT_1D, clFFT_InterleavedComplexFormat, error);
 	kernels.push_back(std::make_pair(n, plan));
 

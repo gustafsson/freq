@@ -1,16 +1,15 @@
 #ifdef USE_CUDA
 #include "stft.h"
+
 #include <cufft.h>
+#include "cudaMemsetFix.cu.h"
+
 #include <CudaException.h>
 #include <CudaProperties.h>
-
 #include "cudaglobalstorage.h"
 #include "complexbuffer.h"
 #include "TaskTimer.h"
 #include "cuffthandlecontext.h"
-
-#include "waveletkernel.h"
-#include "cudaMemsetFix.cu.h"
 
 //#define TIME_STFT
 #define TIME_STFT if(0)
@@ -79,19 +78,73 @@ void Fft::
 }
 
 
+//void Stft::
+//        canonicalComputeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction )
+//{
+//    cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
+//    cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
+
+//    BOOST_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
+
+//    CufftException_SAFE_CALL(cufftExecC2C(
+//        CufftHandleContext(0, CUFFT_C2C)(n.width, n.height),
+//        i, o, direction==FftDirection_Forward?CUFFT_FORWARD:CUFFT_BACKWARD));
+//}
+
+
+
 void Stft::
-        computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+        computeWithCufft(Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n, FftDirection direction)
 {
-    cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
-    cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
+    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>(inputdata).device_ptr();
+    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>(outputdata).device_ptr();
 
-    BOOST_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
+    // Transform signal
+    const unsigned count = n.height;
 
-    unsigned count = input->numberOfElements()/_window_size;
+    unsigned
+            slices = n.height,
+            i = 0;
 
-    CufftException_SAFE_CALL(cufftExecC2C(
-        CufftHandleContext(0, CUFFT_C2C)(_window_size, count),
-        i, o, direction));
+    // check for available memory
+    size_t free=0, total=0;
+    cudaMemGetInfo(&free, &total);
+    free /= 2; // Don't even try to get close to use all memory
+    // never use more than 64 MB
+    if (free > 64<<20)
+        free = 64<<20;
+    if (slices * _window_size*2*sizeof(cufftComplex) > free)
+    {
+        slices = free/(_window_size*2*sizeof(cufftComplex));
+        slices = std::min(512u, std::min((unsigned)n.height, slices));
+    }
+
+    CufftHandleContext
+            _handle_ctx_c2c(0, CUFFT_C2C);
+
+    while(i < count)
+    {
+        slices = std::min(slices, count-i);
+
+        try
+        {
+            CufftException_SAFE_CALL(cufftExecC2C(
+                    _handle_ctx_c2c(_window_size, slices),
+                    input + i*n.width,
+                    output + i*n.width,
+                    direction==FftDirection_Forward?CUFFT_FORWARD:CUFFT_INVERSE));
+
+            i += slices;
+        } catch (const CufftException& /*x*/) {
+            _handle_ctx_c2c(0,0);
+            if (slices>1)
+                slices/=2;
+            else
+                throw;
+        }
+    }
+
+    TIME_STFT CudaException_ThreadSynchronize();
 }
 
 
@@ -114,7 +167,7 @@ void Stft::
     output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( transform_data ).device_ptr();
 
     // Transform signal
-    unsigned count = actualSize.height;
+    const unsigned count = actualSize.height;
 
     unsigned
             slices = count,
@@ -162,61 +215,6 @@ void Stft::
             i += slices;
         } catch (const CufftException& /*x*/) {
             _handle_ctx_r2c(0,0);
-            if (slices>1)
-                slices/=2;
-            else
-                throw;
-        }
-    }
-
-    TIME_STFT CudaException_ThreadSynchronize();
-}
-
-
-void Stft::
-        computeRedundantWithCufft(Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n)
-{
-    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>(inputdata).device_ptr();
-    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>(outputdata).device_ptr();
-
-    // Transform signal
-    unsigned count = n.height;
-
-    unsigned
-            slices = n.height,
-            i = 0;
-
-    // check for available memory
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
-    free /= 2; // Don't even try to get close to use all memory
-    // never use more than 64 MB
-    if (free > 64<<20)
-        free = 64<<20;
-    if (slices * _window_size*2*sizeof(cufftComplex) > free)
-    {
-        slices = free/(_window_size*2*sizeof(cufftComplex));
-        slices = std::min(512u, std::min((unsigned)n.height, slices));
-    }
-
-    CufftHandleContext
-            _handle_ctx_c2c(0, CUFFT_C2C);
-
-    while(i < count)
-    {
-        slices = std::min(slices, count-i);
-
-        try
-        {
-            CufftException_SAFE_CALL(cufftExecC2C(
-                    _handle_ctx_c2c(_window_size, slices),
-                    input + i*n.width,
-                    output + i*n.width,
-                    CUFFT_FORWARD));
-
-            i += slices;
-        } catch (const CufftException& /*x*/) {
-            _handle_ctx_c2c(0,0);
             if (slices>1)
                 slices/=2;
             else
@@ -289,62 +287,6 @@ void Stft::
     TIME_STFT CudaException_ThreadSynchronize();
 }
 
-
-void Stft::
-        inverseRedundantWithCufft( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n )
-{
-    cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( inputdata ).device_ptr();
-    cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( outputdata ).device_ptr();
-
-    TIME_STFT CudaException_ThreadSynchronize();
-
-    // Transform signal
-    unsigned count = n.height;
-
-    unsigned
-            slices = n.height,
-            i = 0;
-
-    // check for available memory
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
-    free /= 2; // Don't even try to get close to use all memory
-    // and never use more than 64 MB
-    if (free > 64<<20)
-        free = 64<<20;
-    if (slices * _window_size*2*sizeof(cufftComplex) > free)
-    {
-        slices = free/(_window_size*2*sizeof(cufftComplex));
-        slices = std::min(512u, std::min((unsigned)n.height, slices));
-    }
-
-    CufftHandleContext
-            _handle_ctx_c2c(0, CUFFT_C2C);
-
-    while(i < count)
-    {
-        slices = std::min(slices, count-i);
-
-        try
-        {
-            CufftException_SAFE_CALL(cufftExecC2C(
-                    _handle_ctx_c2c(_window_size, slices),
-                    input + i*n.width,
-                    output + i*n.width,
-                    CUFFT_INVERSE));
-
-            i += slices;
-        } catch (const CufftException& /*x*/) {
-            _handle_ctx_c2c(0,0);
-            if (slices>1)
-                slices/=2;
-            else
-                throw;
-        }
-    }
-
-    TIME_STFT CudaException_ThreadSynchronize();
-}
 
 } // namespace Tfr
 #endif // #ifdef USE_CUDA

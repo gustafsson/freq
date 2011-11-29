@@ -53,6 +53,7 @@
 #include <sstream>
 #include <string>
 #include <assert.h>
+#include <string.h>
 #include "msc_stdc.h"
 #include "fft_internal.h"
 #include "clFFT.h"

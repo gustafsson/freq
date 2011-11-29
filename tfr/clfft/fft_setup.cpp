@@ -55,6 +55,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <limits.h>
 
 using namespace std;
 

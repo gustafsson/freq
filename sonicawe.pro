@@ -236,8 +236,10 @@ win32:QMAKE_LFLAGS_DEBUG += \
 
 usecuda {
   TMPDIR = tmp/cuda
+} else:useopencl {
+  TMPDIR = tmp/opencl
 } else {
-  TMPDIR = tmp
+  TMPDIR = tmp/cpu
 }
 
 win32:RCC_DIR = $${TMPDIR}
@@ -253,13 +255,32 @@ else:OBJECTS_DIR = $${OBJECTS_DIR}release/
 # OpenCL
 # #######################################################################
 useopencl {
-macx: LIBS += -framework OpenCL
+DEFINES += USE_OPENCL
 
 SOURCES += \
     tfr/clfft/*.cpp
 
 HEADERS += \
     tfr/clfft/*.h
+
+macx: LIBS += -framework OpenCL
+!macx: LIBS += -lOpenCL
+
+win32 {
+    # use OpenCL headers from Cuda Gpu Computing SDK
+    INCLUDEPATH += "$(CUDA_INC_PATH)"
+    LIBS += -L"$(CUDA_LIB_PATH)"
+}
+
+unix:!macx {
+    OPENCL_DIR = /usr/local/cuda
+    INCLUDEPATH += $$OPENCL_DIR/include
+}
+
+macx {
+    OPENCL_DIR = /usr/local/cuda
+    INCLUDEPATH += $$OPENCL_DIR/include
+}
 }
 
 # #######################################################################

@@ -17,6 +17,9 @@
 #define TIME_STFT
 //#define TIME_STFT if(0)
 
+//#define TEST_FT_INVERSE
+#define TEST_FT_INVERSE if(0)
+
 #if defined(USE_CUDA) && !defined(USE_CUFFT)
 #define USE_CUFFT
 #endif
@@ -48,6 +51,8 @@ Fft::
 pChunk Fft::
         forward( Signal::pBuffer real_buffer)
 {
+    TIME_STFT TaskTimer tt("Fft::forward %s", real_buffer->getInterval().toString().c_str());
+
     // cufft is faster for larger ffts, but as the GPU is the bottleneck we can
     // just as well offload it some and do it on the CPU instead
 
@@ -63,15 +68,16 @@ pChunk Fft::
     // TODO choose method based on data size and locality
     if (_compute_redundant)
     {
-        ComplexBuffer b( *real_buffer );
-
-        DataStorage<std::complex<float> >::Ptr input = b.complex_waveform_data();
+        Tfr::ChunkData::Ptr input( new Tfr::ChunkData( real_buffer->waveform_data()->size()));
+        ::stftToComplex( real_buffer->waveform_data(), input );
 
         chunk.reset( new StftChunk( output_n.width, true ) );
         chunk->transform_data.reset( new ChunkData( output_n ));
 
 #ifdef USE_CUFFT
         computeWithCufft( input, chunk->transform_data, FftDirection_Forward );
+#elif defined(USE_OPENCL)
+        computeWithClFft( input, chunk->transform_data, FftDirection_Forward );
 #else
         computeWithOoura( input, chunk->transform_data, FftDirection_Forward );
 #endif
@@ -90,6 +96,8 @@ pChunk Fft::
 
 #ifdef USE_CUFFT
         computeWithCufftR2C( real_buffer->waveform_data(), chunk->transform_data );
+#elif defined(USE_OPENCL)
+        computeWithClFftR2C( real_buffer->waveform_data(), chunk->transform_data );
 #else
         computeWithOouraR2C( real_buffer->waveform_data(), chunk->transform_data );
 #endif
@@ -101,6 +109,9 @@ pChunk Fft::
     chunk->n_valid_samples = 1;
     chunk->sample_rate = real_buffer->sample_rate/(float)input_n.width;
     chunk->original_sample_rate = real_buffer->sample_rate;
+
+    TIME_STFT ComputationSynchronize();
+
     return chunk;
 }
 
@@ -138,6 +149,8 @@ unsigned Fft::
 Signal::pBuffer Fft::
         backward( pChunk chunk)
 {
+    TIME_STFT TaskTimer tt("Fft::backward %s", chunk->getInterval().toString().c_str());
+
     Signal::pBuffer r;
     float fs = chunk->original_sample_rate;
     if (((StftChunk*)chunk.get())->redundant())
@@ -145,15 +158,18 @@ Signal::pBuffer Fft::
         unsigned scales = chunk->nScales();
 
         // original_sample_rate == fs * scales
-        ComplexBuffer buffer( 0, scales, fs );
+        Tfr::ChunkData::Ptr output( new Tfr::ChunkData( scales ));
 
 #ifdef USE_CUFFT
-        computeWithCufft( chunk->transform_data, buffer.complex_waveform_data(), FftDirection_Backward );
+        computeWithCufft( chunk->transform_data, output, FftDirection_Inverse );
+#elif defined(USE_OPENCL)
+        computeWithClFft( chunk->transform_data, output, FftDirection_Inverse );
 #else
-        computeWithOoura( chunk->transform_data, buffer.complex_waveform_data(), FftDirection_Backward );
+        computeWithOoura( chunk->transform_data, output, FftDirection_Inverse );
 #endif
 
-        r = buffer.get_real();
+        r.reset( new Signal::Buffer(0, scales, fs ));
+        ::stftDiscardImag( output, r->waveform_data() );
     }
     else
     {
@@ -163,15 +179,20 @@ Signal::pBuffer Fft::
 
 #ifdef USE_CUFFT
         computeWithCufftC2R(chunk->transform_data, r->waveform_data());
+#elif defined(USE_OPENCL)
+        computeWithClFftC2R(chunk->transform_data, r->waveform_data());
 #else
         computeWithOouraC2R(chunk->transform_data, r->waveform_data());
 #endif
     }
 
-    if ( r->number_of_samples() != chunk->n_valid_samples )
-        r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, chunk->n_valid_samples ));
+    unsigned original_sample_count = chunk->original_sample_rate/chunk->sample_rate + .5f;
+    if ( r->number_of_samples() != original_sample_count )
+        r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, original_sample_count ));
 
     r->sample_offset = chunk->getInterval().first;
+
+    TIME_STFT ComputationSynchronize();
 
     return r;
 }
@@ -220,7 +241,7 @@ Tfr::pChunk Stft::
         chunk->chunk_offset = 0;
     }
 
-    if (false)
+    TEST_FT_INVERSE
     {
         Signal::pBuffer breal = b;
         Signal::pBuffer binv = inverse( chunk );
@@ -265,6 +286,8 @@ Tfr::pChunk Stft::
 
 #ifdef USE_CUFFT
     computeWithCufft(inputbuffer, chunk->transform_data, actualSize);
+#elif defined(USE_OPENCL)
+    computeWithClFft(inputbuffer, chunk->transform_data, actualSize);
 #else
     computeWithOoura(inputbuffer, chunk->transform_data, actualSize);
 #endif
@@ -278,13 +301,14 @@ Tfr::pChunk Stft::
 Tfr::pChunk Stft::
         ChunkWithRedundant(DataStorage<float>::Ptr inputbuffer)
 {
-    ComplexBuffer b(inputbuffer);
+    Tfr::ChunkData::Ptr input( new Tfr::ChunkData( inputbuffer->size()));
+    ::stftToComplex( inputbuffer, input );
 
     BOOST_ASSERT( 0!=_window_size );
 
     DataStorageSize n(
             _window_size,
-            b.number_of_samples()/_window_size );
+            inputbuffer->size().width/_window_size );
 
     if (0==n.height) // not enough data
         return Tfr::pChunk();
@@ -297,9 +321,11 @@ Tfr::pChunk Stft::
     chunk->transform_data.reset( new ChunkData( n.width*n.height ));
 
 #ifdef USE_CUFFT
-    computeRedundantWithCufft(b.complex_waveform_data(), chunk->transform_data, n);
+    computeWithCufft(input, chunk->transform_data, n, FftDirection_Forward);
+#elif defined(USE_OPENCL)
+    computeWithClFft(input, chunk->transform_data, n, FftDirection_Forward);
 #else
-    computeRedundantWithOoura(b.complex_waveform_data(), chunk->transform_data, n);
+    computeWithOoura(input, chunk->transform_data, n, FftDirection_Forward);
 #endif
 
     TIME_STFT ComputationSynchronize();
@@ -316,13 +342,14 @@ Signal::pBuffer Stft::
     if (stftchunk->redundant())
         return inverseWithRedundant( chunk );
 
-    ComputationSynchronize();
     ComputationCheckError();
     BOOST_ASSERT( chunk->nChannels() == 1 );
 
     const int chunk_window_size = stftchunk->window_size();
     const int actualSize = stftchunk->nActualScales();
-    int nwindows = chunk->transform_data->size().width / actualSize;
+    int nwindows = chunk->transform_data->numberOfElements() / actualSize;
+
+    TIME_STFT ComputationSynchronize();
 
     TIME_STFT
             TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s, nwindows=%d",
@@ -348,17 +375,21 @@ Signal::pBuffer Stft::
             chunk_window_size,
             nwindows );
 
-    ComputationSynchronize();
-
 #ifdef USE_CUFFT
     inverseWithCufft( chunk->transform_data, b->waveform_data(), n );
+#elif defined(USE_OPENCL)
+    inverseWithClFft( chunk->transform_data, b->waveform_data(), n );
 #else
     inverseWithOoura( chunk->transform_data, b->waveform_data(), n );
 #endif
 
-    stftNormalizeInverse( b->waveform_data(), n.width );
+    TIME_STFT ComputationSynchronize();
 
-    ComputationSynchronize();
+    {
+        TIME_STFT TaskTimer ti("normalizing %u elements", n.width);
+        stftNormalizeInverse( b->waveform_data(), n.width );
+        TIME_STFT ComputationSynchronize();
+    }
 
     return b;
 }
@@ -372,6 +403,7 @@ Signal::pBuffer Stft::
             chunk_window_size = chunk->nScales(),
             nwindows = chunk->nSamples();
 
+    TIME_STFT ComputationSynchronize();
     TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
 
     int
@@ -395,17 +427,22 @@ Signal::pBuffer Stft::
             nwindows );
 
 #ifdef USE_CUFFT
-    inverseRedundantWithCufft(chunk->transform_data, b.complex_waveform_data(), n);
+    computeWithCufft(chunk->transform_data, b.complex_waveform_data(), n, FftDirection_Inverse);
+#elif defined(USE_OPENCL)
+    computeWithClFft(chunk->transform_data, b.complex_waveform_data(), n, FftDirection_Inverse);
 #else
-    inverseRedundantWithOoura(chunk->transform_data, b.complex_waveform_data(), n);
+    computeWithOoura(chunk->transform_data, b.complex_waveform_data(), n, FftDirection_Inverse);
 #endif
 
     TIME_STFT ComputationSynchronize();
 
     Signal::pBuffer realinv( new Signal::Buffer(b.sample_offset, b.number_of_samples(), b.sample_rate));
-    stftNormalizeInverse( b.complex_waveform_data(), realinv->waveform_data(), n.width );
 
-    TIME_STFT ComputationSynchronize();
+    {
+        TIME_STFT TaskTimer ti("normalizing %u elements", n.width);
+        stftNormalizeInverse( b.complex_waveform_data(), realinv->waveform_data(), n.width );
+        TIME_STFT ComputationSynchronize();
+    }
 
     return realinv;
 }
@@ -647,10 +684,13 @@ void Stft::
 void Stft::
         compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
+    DataStorageSize size( _window_size, input->numberOfElements()/_window_size);
 #ifdef USE_CUFFT
-    computeWithCufft( input, output, direction );
+    computeWithCufft( input, output, size, direction );
+#elif defined(USE_OPENCL)
+    computeWithClFft( input, output, size, direction );
 #else
-    computeWithOoura( input, output, direction );
+    computeWithOoura( input, output, size, direction );
 #endif
 }
 

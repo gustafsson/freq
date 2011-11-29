@@ -1,6 +1,6 @@
 #ifndef CLFFTKERNELBUFFER_H
 #include "clFFT.h"
-#include "OpenCLContext.h"
+#include "openclcontext.h"
 #include "HasSingleton.h"
 #include <utility>
 #include <vector>

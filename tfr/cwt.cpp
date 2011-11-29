@@ -585,7 +585,7 @@ pChunk Cwt::
 
         Stft stft;
         stft.set_exact_chunk_size(n.width);
-        stft.compute( g, g, Tfr::FftDirection_Backward );
+        stft.compute( g, g, Tfr::FftDirection_Inverse );
 
 //        if (0 /* cpu version */ ) {
 //            TIME_CWTPART TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
