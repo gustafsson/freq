@@ -261,6 +261,7 @@ int main(int argc, char *argv[])
         bool coutinfo = false;
 
 
+        TaskTimer tt("Running Stft/fft tests");
         Signal::pBuffer b(new Signal::Buffer(0, N, 1));
         float* p = b->waveform_data()->getCpuMemory();
         srand(0);
