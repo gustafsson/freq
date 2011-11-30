@@ -1,10 +1,16 @@
 #include "getcudaform.h"
 #include "ui_getcudaform.h"
+
+
+#include "renderview.h"
+
+
 #include <TAni.h>
 #include <boost/assert.hpp>
 
 #include <QDesktopServices>
 #include <QVBoxLayout>
+#include <QSettings>
 
 namespace Tools {
 
@@ -14,10 +20,12 @@ QUrl GetCudaForm::url("http://muchdifferent.com/?page=signals-cuda");
 
 
 GetCudaForm::
-        GetCudaForm(QWidget *parent)
+        GetCudaForm(QWidget *parent, RenderView* render_view)
             :
     QWidget(parent),
-    ui(new Ui::GetCudaForm)
+    ui(new Ui::GetCudaForm),
+    render_view(render_view),
+    dt(0.01)
 {
     ui->setupUi(this);
 
@@ -35,7 +43,8 @@ GetCudaForm::
     ui->labelInfoText->setText("Cool, OpenCL works! But Sonic AWE is faster with CUDA");
 #else
     // TODO figure out if the current computer has a CUDA capable GPU or not
-    ui->labelInfoText->setText("Sonic AWE is faster with CUDA (or OpenCL)");
+    // TODO change to "Sonic AWE is faster with CUDA (or OpenCL)" when OpenCL is faster than the CPU version.
+    ui->labelInfoText->setText("Sonic AWE is faster with CUDA");
 #endif
 
     connect(ui->pushButtonClose, SIGNAL(clicked()), SLOT(close()));
@@ -82,10 +91,13 @@ void GetCudaForm::
     else
         this->setMaximumHeight( h-spacing );
 
-    formHeight.TimeStep( 0.04f );
+    formHeight.TimeStep( 2*dt );
 
     if (formHeight != &formHeight)
-        animate.start( 20 );
+    {
+        animate.start( std::max(10, (int)(dt*1000)) );
+        render_view->userinput_update();
+    }
 }
 
 

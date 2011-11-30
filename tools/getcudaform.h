@@ -13,12 +13,14 @@ namespace Ui {
     class GetCudaForm;
 }
 
+class RenderView;
+
 class GetCudaForm : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit GetCudaForm(QWidget *parent = 0);
+    explicit GetCudaForm(QWidget *parent, RenderView* render_view);
     ~GetCudaForm();
 
 public slots:
@@ -27,9 +29,12 @@ public slots:
 
 private:
     Ui::GetCudaForm *ui;
+    RenderView* render_view;
     QTimer animate;
     QVBoxLayout* parentLayout;
     int spacing;
+
+    float dt;
 
     static QUrl url;
 };
