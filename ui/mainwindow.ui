@@ -118,9 +118,18 @@
     <addaction name="actionMuchdifferent_com"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuDevicename">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Devicename</string>
+    </property>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuDevicename"/>
   </widget>
   <widget class="QDockWidget" name="toolPropertiesWindow">
    <property name="windowTitle">

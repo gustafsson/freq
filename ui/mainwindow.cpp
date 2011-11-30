@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 
+#include "computationkernel.h"
+
 // Ui
 #include "ui_mainwindow.h"
 
@@ -172,6 +174,10 @@ void SaweMainWindow::
             ui->menu_Recent_files->addAction( a );
         }
     }
+
+
+    ui->menuDevicename->setTitle( ("Using " + computationDeviceName()).c_str() );
+
 
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
         Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
