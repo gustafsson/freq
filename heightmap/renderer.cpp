@@ -526,13 +526,18 @@ void Renderer::renderSpectrogramRef( Reference ref )
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
     pBlock block = collection->getBlock( ref );
-    if (0!=block.get()) {
+    bool drawcrosseswhen0 = false;
+#ifdef _DEBUG
+    drawcrosseswhen0 = true;
+#endif
+    float yscalelimit = drawcrosseswhen0 ? 0.0004f : 0.f;
+    if (0!=block.get() && y_scale > yscalelimit) {
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ )
             block->glblock->draw( _vbo_size, !_draw_flat );
 
-    } else if ( 0 == "render red warning cross") {
+    } else if ( 0 == "render red warning cross" || y_scale < yscalelimit) {
         endVboRendering();
         // getBlock would try to find something else if the requested block
         // wasn't readily available.
