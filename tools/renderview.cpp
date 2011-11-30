@@ -667,12 +667,12 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%g, %g)",
+    TIME_PAINTGL_DRAW TaskInfo("Drew %u*%u block%s (%u triangles) in viewport(%d, %d)",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s",
         N*model->renderer->drawn_blocks*(yscale==0?2:(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2),
-        width(), height());
+        current_viewport[2], current_viewport[3]);
 }
 
 
@@ -829,7 +829,7 @@ void RenderView::
 {
     if (request_high_fps)
     {
-        model->project()->worker.requested_fps(30, cheat_also_high?15:-1);
+        model->project()->worker.requested_fps(30, cheat_also_high?30:-1);
     }
 
     if (post_update)
