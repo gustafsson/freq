@@ -52,9 +52,13 @@ Worker::
     _max_samples_per_chunk( (unsigned)-1 ),
     _requested_fps( 20 ),
     _requested_cheat_fps( 20 ),
-    _min_fps( 1 ),  // Always request at least 1 fps. Otherwise there is a risk that CUDA
+    _min_fps( 2 ),  // Always request at least 2 fps.
+                    // At least 1 is required to minimize the risk that CUDA
                     // will screw up playback by blocking the OS and causing audio
                     // starvation and kernel timeouts.
+                    // But a framerate of 1 makes it barely usable. 2 is also
+                    // questionable, but ok since we get so much gain from
+                    // large chunks.
     current_fps( 1 ),
     _disabled( false ),
     _caught_exception( "" ),
@@ -256,6 +260,8 @@ bool Worker::
 
         if (_highest_fps < current_fps)
             _highest_fps = current_fps;
+        if (_highest_fps < _min_fps)
+            _highest_fps = _min_fps;
     }
 
     current_fps = -1;
@@ -409,6 +415,9 @@ void Worker::
         min_fps(float f)
 {
     _min_fps = f;
+
+    if (_highest_fps < _min_fps)
+        _highest_fps = _min_fps;
 }
 
 
@@ -416,7 +425,9 @@ void Worker::
         nextFrame()
 {
     _requested_fps *= 0.8f;
-    if (_requested_fps<_min_fps)
+    if (is_cheating() && _requested_fps < _requested_cheat_fps)
+        _requested_fps = _requested_cheat_fps;
+    if (_requested_fps < _min_fps)
         _requested_fps = _min_fps;
 
     ptime now = microsec_clock::local_time();
