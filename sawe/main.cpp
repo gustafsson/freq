@@ -2,16 +2,19 @@
 #include "sawe/application.h"
 #include "tfr/cwt.h"
 #include "sawe/reader.h"
+#include "sawe/uname.h"
 
 // gpumisc
 #include <redirectstdout.h>
 #include <neat_math.h>
+#include <computationkernel.h>
 
 // Qt
 #include <QtGui/QMessageBox>
 #include <qgl.h>
 #include <QDesktopServices>
 #include <QDir>
+#include <QHostInfo>
 
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -20,6 +23,7 @@ using namespace std;
 using namespace boost;
 using namespace Ui;
 using namespace Signal;
+
 
 #ifndef USE_CUDA
     static bool check_cuda( bool /*use_OpenGL_bindings*/ ) {
@@ -605,7 +609,10 @@ int main(int argc, char *argv[])
 
         {
             TaskInfo ti("Version: %s", a.version_string().c_str());
-            TaskInfo("Build timestamp: %s, %s. Revision %s", __DATE__, __TIME__, SONICAWE_REVISION);
+            TaskInfo("OS: %s", operatingSystemName().c_str());
+            TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
+            TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
+            TaskInfo("Build timestamp for %s: %s, %s. Revision %s", UNAME, __DATE__, __TIME__, SONICAWE_REVISION);
 
             boost::gregorian::date today = boost::gregorian::day_clock::local_day();
             boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
@@ -619,6 +626,8 @@ int main(int argc, char *argv[])
         // Check if a cuda context can be created, but don't require OpenGL bindings just yet
         if (!check_cuda( false ))
             return -1;
+
+        TaskInfo("computation device: %s", computationDeviceName().c_str());
 
         if( 0 == a.shared_glwidget()->context())
         {
