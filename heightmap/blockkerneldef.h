@@ -222,10 +222,28 @@ public:
 
     }
 
+//    template<typename Reader>
+//    RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
+//    {
+//        ResamplePos q;
+//        // exp2f (called in 'getFrequency') takes time equal to 4 multiplies for cuda arch 1.x
+//        // so these are fairly cheap operations. One reciprocal called in
+//        // 'getFrequencyScalar' is just as fast.
+//        // Tests have shown that this doen't affect the total execution time,
+//        // when outputAxis and inputAxis are affine transformations of eachother.
+//        // Hence the kernel is memory bound.
+//        float hz = outputAxis.getFrequency( p.x );
+//        q.x = inputAxis.getFrequencyScalar( hz );
+//        q.y = p.y;
+
+//        float r = InterpolateFetcher<float, DefaultConverter>(defaultConverter)( q, reader );
+//        return r;
+//    }
+
     template<typename Reader>
     RESAMPLE_CALL float operator()( ResamplePos const& p, Reader& reader )
     {
-        ResamplePos q;
+        ResamplePos q2;
         // exp2f (called in 'getFrequency') takes time equal to 4 multiplies for cuda arch 1.x
         // so these are fairly cheap operations. One reciprocal called in
         // 'getFrequencyScalar' is just as fast.
@@ -233,16 +251,79 @@ public:
         // when outputAxis and inputAxis are affine transformations of eachother.
         // Hence the kernel is memory bound.
         float hz = outputAxis.getFrequency( p.x );
-        q.x = inputAxis.getFrequencyScalar( hz );
-        q.y = p.y;
+        q2.x = inputAxis.getFrequencyScalar( hz );
+        q2.y = p.y;
 
-        float r = InterpolateFetcher<float, DefaultConverter>(defaultConverter)( q, reader );
-        return r;
+        //float r = InterpolateFetcher<float, DefaultConverter>(defaultConverter)( q, reader );
+        //return r;
+
+        DataPos q(floor(q2.x), floor(q2.y));
+        ResamplePos k( q2.x - floor(q2.x), q2.y - floor(q2.y) );
+
+        float v = 0.f;
+
+        if (xstep <= 1.f)
+        {
+            if (ystep <= 1.f)
+            {
+                v = interpolate(
+                        interpolate(
+                                get( q, reader ),
+                                get( DataPos(q.x+1.f, q.y), reader ),
+                                k.x),
+                        interpolate(
+                                get( DataPos(q.x, q.y+1.f), reader ),
+                                get( DataPos(q.x+1.f, q.y+1.f), reader ),
+                                k.x),
+                        k.y );
+            }
+            else for (float y=q.y; y<q.y+xstep; ++y)
+            {
+                v = max(v, interpolate(
+                        get( DataPos(q.x, y), reader),
+                        get( DataPos(q.x+1.f, y), reader),
+                        k.x));
+            }
+        }
+        else
+        {
+            if (ystep <= 1.f)
+            {
+                for (float x=q.x; x<q.x+xstep; ++x)
+                {
+                    v = max(v, interpolate(
+                            get( DataPos(x, q.y), reader),
+                            get( DataPos(x, q.y+1.f), reader),
+                            k.y));
+                }
+            }
+            else
+            {
+                for (float x=q.x; x<q.x+xstep; ++x)
+                {
+                    for (float y=q.y; y<q.y+ystep; ++y)
+                    {
+                        v = max(v, get( DataPos(x, y), reader));
+                    }
+                }
+            }
+        }
+
+        return v;
+    }
+
+    template<typename Reader>
+    RESAMPLE_CALL float get( DataPos const& q, Reader& reader )
+    {
+        return defaultConverter( reader( q ), q );
     }
 
     DefaultConverter defaultConverter;
     Tfr::FreqAxis inputAxis;
     Tfr::FreqAxis outputAxis;
+
+    float xstep;
+    float ystep;
 };
 
 
@@ -398,8 +479,8 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.offs = inputRegion.top;
     axes.scale = inputRegion.height();
 
-    axes.xstep = (validInputs.last - validInputs.first)*outputRegion.width() / (float)(sz_output.width * inputRegion.width());
-    axes.ystep = input->size().height / (float)(sz_output.height);
+    axes.xstep = (validInputs.last - validInputs.first) / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
+    axes.ystep = input->size().height / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
     if (axes.xstep<0.25f || axes.ystep<0.25f)
     {
         printf(", axes.xstep = %g, axes.ystep = %g", axes.xstep, axes.ystep);
@@ -556,6 +637,14 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     fetcher.inputAxis = inputAxis;
     fetcher.outputAxis = outputAxis;
 
+    // xstep and ystep are used after transposing to input coordinates
+    fetcher.xstep = input->size().width / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
+    fetcher.ystep = input->size().height / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
+
+    if (fetcher.xstep<0.25f || fetcher.ystep<0.25f)
+    {
+        printf(", fetcher.xstep = %g, fetcher.ystep = %g", fetcher.xstep, fetcher.ystep);
+    }
 
     resample2d_fetcher(
                 input,
