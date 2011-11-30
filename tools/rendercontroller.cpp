@@ -379,7 +379,10 @@ void RenderController::
 
     // Keep in sync with transformChanged()
     float f = value / (float)tf_resolution->maximum();
-    c.scales_per_octave( 2*exp( 8.L*f ), FS ); // scales_per_octave >= 2
+
+    bool isCwt = dynamic_cast<Tfr::Cwt*>(model()->collections[0]->transform().get());
+    // Validate scales per octave if transform is Cwt. CwtFilter will validate scales per octave when Cwt is used again.
+    c.scales_per_octave( 2*exp( 8.L*f ), isCwt?FS:0 ); // scales_per_octave >= 2
 
     float wavelet_default_time_support = c.wavelet_default_time_support();
     float wavelet_fast_time_support = c.wavelet_time_support();
