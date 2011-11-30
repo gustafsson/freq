@@ -447,10 +447,8 @@ void Worker::
     if (_min_fps>value) value=_min_fps;
     if (_min_fps>cheat_value) cheat_value=_min_fps;
 
-    _requested_cheat_fps=cheat_value;
 
     if (value>_requested_fps) {
-        _requested_fps = value;
         _max_samples_per_chunk = (unsigned)-1;
         if (_target->allow_cheat_resolution())
         {
@@ -462,6 +460,15 @@ void Worker::
                 cwt.wavelet_fast_time_support( fast_support );
         }
     }
+
+
+    _requested_cheat_fps = cheat_value;
+    if (_requested_cheat_fps > _requested_fps)
+        _samples_per_chunk = _target->next_good_size(1);
+
+
+    if (value>_requested_fps)
+        _requested_fps = value;
 }
 
 
