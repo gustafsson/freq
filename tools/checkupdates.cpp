@@ -1,6 +1,7 @@
 #include "checkupdates.h"
 #include "sawe/reader.h"
 #include "sawe/application.h"
+#include "sawe/uname.h"
 #include "support/buildhttppost.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
@@ -11,24 +12,6 @@
 #include <QDesktopServices>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-
-#define STRINGIFY(x) #x
-#define TOSTR(x) STRINGIFY(x)
-
-#ifdef SONICAWE_UNAME
-    #ifdef SONICAWE_UNAMEm
-        #define UNAME2 TOSTR(SONICAWE_UNAME) " " TOSTR(SONICAWE_UNAMEm)
-    #else
-        #define UNAME2 TOSTR(SONICAWE_UNAME)
-    #endif
-    #ifdef SONICAWE_DISTCODENAME
-        #define UNAME UNAME2 " " TOSTR(SONICAWE_DISTCODENAME)
-    #else
-        #define UNAME UNAME2
-    #endif
-#else
-    #define UNAME "Linux x86_64 lucid"
-#endif
 
 namespace Tools {
 
