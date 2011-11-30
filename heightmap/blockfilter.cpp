@@ -95,6 +95,12 @@ void BlockFilter::
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
+    Signal::Interval blockInterval = block->ref.getInterval();
+    Signal::Interval transfer = inInterval&blockInterval;
+
+    if (!transfer)
+        return;
+
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -117,8 +123,8 @@ void BlockFilter::
                   normalization_factor
                   );
 
-    block->valid_samples |= inInterval;
-    block->non_zero |= inInterval;
+    block->valid_samples |= transfer;
+    block->non_zero |= transfer;
 
     TIME_BLOCKFILTER ComputationSynchronize();
 }
