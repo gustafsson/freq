@@ -27,6 +27,7 @@ signals:
 
 private slots:
     void checkForUpdates();
+    void autoCheckForUpdatesSoon();
     void autoCheckForUpdates();
     void replyFinished(QNetworkReply*);
 

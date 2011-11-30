@@ -29,9 +29,12 @@ CheckUpdates::
 
 
     if ("not"==Sawe::Reader::reader_text().substr(0,3))
-        return;
+    {
+        // wait for reader to finish
+        connect( Sawe::Application::global_ptr(), SIGNAL(titleChanged()), SLOT(autoCheckForUpdatesSoon()) );
+    }
 
-    QTimer::singleShot(500, this, SLOT(autoCheckForUpdates()));
+    autoCheckForUpdatesSoon();
 }
 
 
@@ -52,8 +55,18 @@ void CheckUpdates::
 
 
 void CheckUpdates::
+        autoCheckForUpdatesSoon()
+{
+    QTimer::singleShot(500, this, SLOT(autoCheckForUpdates()));
+}
+
+
+void CheckUpdates::
         autoCheckForUpdates()
 {
+    if ("not"!=Sawe::Reader::reader_text().substr(0,3))
+        disconnect(this, SLOT(autoCheckForUpdatesSoon()));
+
     QSettings settings;
     if (!settings.contains(checkUpdatesTag) && !manualUpdate)
         settings.setValue(checkUpdatesTag, true);
@@ -108,6 +121,11 @@ void CheckUpdates::
              QNetworkReply::NoError == reply->error()?"no error":reply->errorString().toStdString().c_str(),
              (int)reply->error(),
              s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
+
+    if ("not"==Sawe::Reader::reader_text().substr(0,3))
+        return;
+    else
+        disconnect(this, SLOT(autoCheckForUpdatesSoon()));
 
     if (QNetworkReply::NoError != reply->error())
     {

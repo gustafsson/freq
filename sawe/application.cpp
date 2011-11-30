@@ -365,6 +365,8 @@ void Application::
 
     global_ptr()->_version_string.clear();
     global_ptr()->build_version_string();
+
+    emit global_ptr()->titleChanged();
 }
 
 

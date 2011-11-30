@@ -47,6 +47,7 @@ public:
 
 signals:
     void clearCachesSignal();
+    void titleChanged();
 
 public slots:
     pProject slotNew_recording( int record_device = -1 );
