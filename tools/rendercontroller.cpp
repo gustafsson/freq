@@ -25,6 +25,7 @@
 
 // gpumisc
 #include <demangle.h>
+#include <computationkernel.h>
 
 // Qt
 #include <QSlider>
@@ -342,6 +343,14 @@ void RenderController::
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
+
+
+    // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
+    if (dynamic_cast<Tfr::Cwt*>(model()->collections[0]->transform().get()))
+        model()->project()->worker.min_fps( 2 );
+    else
+        model()->project()->worker.min_fps( 15 );
+
 
     // clear worker assumptions of target
     model()->project()->worker.target(model()->renderSignalTarget);
