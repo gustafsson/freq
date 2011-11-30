@@ -233,10 +233,13 @@
 #include "signal/buffersource.h"
 #include "sawe/reader.h"
 
+// boost
 #include <boost/serialization/string.hpp>
+#include <boost/serialization/version.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>
 
+// std
 #ifdef _MSC_VER
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
@@ -246,6 +249,10 @@ typedef unsigned __int32 uint32_t;
 
 // gpumisc
 #include "cpumemorystorage.h"
+
+// Qt
+#include <QByteArray>
+
 
 namespace Adapters
 {
@@ -278,6 +285,37 @@ private:
         }
     };
 
+    template<class Archive>
+    struct compress_binary_type {
+        static void invoke(
+            Archive & ar,
+            const std::vector<char> & data
+        ){
+            QByteArray zlibUncompressed(&data[0], data.size());
+            QByteArray zlibCompressed = qCompress(zlibUncompressed);
+            unsigned N = zlibCompressed.size();
+            ar & boost::serialization::make_nvp( "N", N );
+            ar.save_binary( zlibCompressed.constData(), N );
+        }
+    };
+
+    template<class Archive>
+    struct uncompress_binary_type {
+        static void invoke(
+            Archive & ar,
+            std::vector<char> & data
+        ){
+            unsigned N = 0;
+            ar & boost::serialization::make_nvp( "N", N );
+            QByteArray zlibCompressed;
+            zlibCompressed.resize(N);
+            ar.load_binary( zlibCompressed.data(), N );
+            QByteArray zlibUncompressed = qUncompress(zlibCompressed);
+            data.resize(zlibUncompressed.size());
+            memcpy(&data[0], zlibUncompressed.constData(), data.size());
+        }
+    };
+
 public:
     static std::string getFileFormatsQtFilter( bool split );
 
@@ -297,19 +335,31 @@ private:
     void load(std::vector<char> rawFileData);
 
     friend class boost::serialization::access;
-    template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
+    template<class archive> void serialize(archive& ar, const unsigned int version) {
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
 
         ar & make_nvp("Original_filename", _original_relative_filename);
 
-        typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
-            BOOST_DEDUCED_TYPENAME archive::is_saving,
-            boost::mpl::identity<save_binary_type<archive> >,
-            boost::mpl::identity<load_binary_type<archive> >
-        >::type typex;
-        typex::invoke(ar, rawdata);
+        if (version <= 0)
+        {
+            typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
+                BOOST_DEDUCED_TYPENAME archive::is_saving,
+                boost::mpl::identity<save_binary_type<archive> >,
+                boost::mpl::identity<load_binary_type<archive> >
+            >::type typex;
+            typex::invoke(ar, rawdata);
+        }
+        else
+        {
+            typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
+                BOOST_DEDUCED_TYPENAME archive::is_saving,
+                boost::mpl::identity<compress_binary_type<archive> >,
+                boost::mpl::identity<uncompress_binary_type<archive> >
+            >::type typex;
+            typex::invoke(ar, rawdata);
+        }
         //ar & make_nvp("Rawdata", rawdata);
 
         if (typename archive::is_loading())
@@ -342,5 +392,7 @@ private:
 };
 
 } // namespace Adapters
+
+BOOST_CLASS_VERSION(Adapters::Audiofile, 1)
 
 #endif // ADAPTERS_AUDIOFILE_H
