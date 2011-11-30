@@ -1143,10 +1143,11 @@ bool Collection::
                   ResampleArea( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
-    if (inBlock->ref.log2_samples_size[0] <= outBlock->ref.log2_samples_size[0] &&
-        inBlock->ref.log2_samples_size[1] <= outBlock->ref.log2_samples_size[1])
+    if (false) // blockMerge doesn't use subpixel information, until then the following is incorrect
+    if (inBlock->ref.log2_samples_size[0] < outBlock->ref.log2_samples_size[0] &&
+        inBlock->ref.log2_samples_size[1] == outBlock->ref.log2_samples_size[1])
     {
-        if (ib.scale>=ob.scale && ia.scale <=oa.scale)
+        if (ib.scale==ob.scale && ia.scale ==oa.scale)
         {
             outBlock->valid_samples -= inBlock->ref.getInterval();
             outBlock->valid_samples |= inBlock->valid_samples;
