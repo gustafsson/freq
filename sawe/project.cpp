@@ -33,9 +33,10 @@ Project::
 :   worker(Signal::pTarget()),
     layers(this),
     is_modified_(false),
-    command_invoker_( new Tools::Commands::CommandInvoker(this) ),
     project_title_(layer_title)
 {
+    // class Project has two constructors. Initialize common stuff in createMainWindow instead of here.
+
     Signal::pChain chain(new Signal::Chain(root));
     chain->name = layer_title;
     layers.addLayer( chain );
@@ -306,6 +307,9 @@ void Project::
         return;
 
     TaskTimer tt("Project::createMainWindow");
+
+    command_invoker_.reset( new Tools::Commands::CommandInvoker(this) );
+
     string title = Sawe::Application::title_string();
     if (!project_title().empty())
         title = project_title() + " - " + title;
