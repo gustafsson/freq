@@ -5,6 +5,7 @@
 #include "support/buildhttppost.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
+#include "computationkernel.h"
 
 #include <QSettings>
 #include <QTimer>
@@ -12,6 +13,7 @@
 #include <QDesktopServices>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QHostInfo>
 
 namespace Tools {
 
@@ -80,8 +82,11 @@ void CheckUpdates::
     Support::BuildHttpPost postdata;
 
     postdata.addKeyValue( "kind", manualUpdate?checkAuto?"manual-auto":"manual":"auto" );
-    postdata.addKeyValue( "uname", UNAME );
+    postdata.addKeyValue( "uname", operatingSystemName().c_str() );
+    postdata.addKeyValue( "device", computationDeviceName().c_str() );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
+    postdata.addKeyValue( "hostname", QHostInfo::localHostName() );
+    postdata.addKeyValue( "domainname", QHostInfo::localDomainName() );
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
     postdata.addKeyValue( "version", Sawe::Application::version_string().c_str() );
     postdata.addKeyValue( "title", Sawe::Application::title_string().c_str() );
