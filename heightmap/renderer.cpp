@@ -272,6 +272,7 @@ void Renderer::init()
 
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
+    //_shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
 
@@ -527,9 +528,10 @@ void Renderer::renderSpectrogramRef( Reference ref )
 
     pBlock block = collection->getBlock( ref );
     bool drawcrosseswhen0 = false;
-#ifdef _DEBUG
+#ifndef SONICAWE_VERSION
     drawcrosseswhen0 = true;
 #endif
+
     float yscalelimit = drawcrosseswhen0 ? 0.0004f : 0.f;
     if (0!=block.get() && y_scale > yscalelimit) {
         if (0 /* direct rendering */ )

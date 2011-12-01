@@ -48,5 +48,6 @@
     <qresource prefix="/shaders">
         <file alias="heightmap.frag">../heightmap/heightmap.frag</file>
         <file alias="heightmap.vert">../heightmap/heightmap.vert</file>
+        <file alias="heightmap_noshadow.vert">../heightmap/heightmap_noshadow.vert</file>
     </qresource>
 </RCC>

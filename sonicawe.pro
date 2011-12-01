@@ -140,12 +140,13 @@ CUDA_SOURCES += \
 SHADER_SOURCES += \
     heightmap/heightmap.frag \
     heightmap/heightmap.vert \
+    heightmap/heightmap_noshadow.vert \
 
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
     $$SHADER_SOURCES \
-    sonicawe.rc
+    sonicawe.rc \
 
 # "Other files" for Visual Studio
 OTHER_SOURCES += \
