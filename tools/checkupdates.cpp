@@ -131,8 +131,11 @@ void CheckUpdates::
     {
         if (QNetworkReply::HostNotFoundError != reply->error())
         {
-            QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
-            QSettings().remove(checkUpdatesTag);
+            if (manualUpdate)
+            {
+                QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
+                //QSettings().remove(checkUpdatesTag);
+            }
         }
     }
     else if (s.contains("sorry", Qt::CaseInsensitive) ||
@@ -141,8 +144,11 @@ void CheckUpdates::
              s.contains("fail", Qt::CaseInsensitive) ||
              s.contains("html", Qt::CaseInsensitive))
     {
-        QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", s);
-        QSettings().remove(checkUpdatesTag);
+        if (manualUpdate)
+        {
+            QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", s);
+            //QSettings().remove(checkUpdatesTag);
+        }
     }
     else
     {
