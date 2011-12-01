@@ -681,6 +681,31 @@ void Stft::
 }
 
 
+
+std::string Stft::
+        windowTypeName(WindowType type)
+{
+    switch(type)
+    {
+    case WindowType_Rectangular: return "Rectangular";
+    case WindowType_Hann: return "Hann";
+    case WindowType_Hamming: return "Hamming";
+    case WindowType_Tukey: return "Tukey";
+    case WindowType_Cosine: return "Cosine";
+    case WindowType_Lanczos: return "Lanczos";
+    case WindowType_Triangular: return "Triangular";
+    case WindowType_Gaussian: return "Gaussian";
+    case WindowType_BarlettHann: return "Barlett-Hann";
+    case WindowType_Blackman: return "Blackman";
+    case WindowType_Nuttail: return "Nuttail";
+    case WindowType_BlackmanHarris: return "Blackman-Harris";
+    case WindowType_BlackmanNuttail: return "Blackman-Nuttail";
+    case WindowType_FlatTop: return "Flat top";
+    default: return "Unknown window type";
+    }
+}
+
+
 void Stft::
         compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {

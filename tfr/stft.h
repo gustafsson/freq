@@ -94,7 +94,8 @@ public:
         WindowType_Nuttail,
         WindowType_BlackmanHarris,
         WindowType_BlackmanNuttail,
-        WindowType_FlatTop
+        WindowType_FlatTop,
+        WindowType_NumberOfWindowTypes
     };
 
     Stft();
@@ -131,6 +132,8 @@ public:
     float overlap() { return _overlap; }
     WindowType windowType() { return _window_type; }
     void setWindow(WindowType type, float overlap);
+    std::string windowTypeName() { return windowTypeName(_window_type); }
+    static std::string windowTypeName(WindowType);
 
 
     void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );

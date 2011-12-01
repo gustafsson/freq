@@ -62,22 +62,10 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
 
-
-    ui->windowTypeComboBox->addItem("Rectangular", Tfr::Stft::WindowType_Rectangular);
-    ui->windowTypeComboBox->addItem("Hann", Tfr::Stft::WindowType_Hann);
-    ui->windowTypeComboBox->addItem("Hamming", Tfr::Stft::WindowType_Hamming);
-    ui->windowTypeComboBox->addItem("Tukey", Tfr::Stft::WindowType_Tukey);
-    ui->windowTypeComboBox->addItem("Cosine", Tfr::Stft::WindowType_Cosine);
-    ui->windowTypeComboBox->addItem("Lanczos", Tfr::Stft::WindowType_Lanczos);
-    ui->windowTypeComboBox->addItem("Triangular", Tfr::Stft::WindowType_Triangular);
-    ui->windowTypeComboBox->addItem("Gaussian", Tfr::Stft::WindowType_Gaussian);
-    ui->windowTypeComboBox->addItem("Barlett-Hann", Tfr::Stft::WindowType_BarlettHann);
-    ui->windowTypeComboBox->addItem("Blackman", Tfr::Stft::WindowType_Blackman);
-    ui->windowTypeComboBox->addItem("Nuttail", Tfr::Stft::WindowType_Nuttail);
-    ui->windowTypeComboBox->addItem("Blackman-Harris", Tfr::Stft::WindowType_BlackmanHarris);
-    ui->windowTypeComboBox->addItem("Blackman-Nuttail", Tfr::Stft::WindowType_BlackmanNuttail);
-    ui->windowTypeComboBox->addItem("Flat top", Tfr::Stft::WindowType_FlatTop);
-
+    for (int i=0;i<Tfr::Stft::WindowType_NumberOfWindowTypes; ++i)
+    {
+        ui->windowTypeComboBox->addItem(Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)i).c_str(), i);
+    }
 
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
