@@ -107,44 +107,9 @@ public:
 
         float v = 0.f;
 
-        //v = get( q, reader, c );
-/*        v = interpolate(
-                interpolate(
-                        get( q, reader, c ),
-                        get( DataPos(q.x+1.f, q.y), reader, c ),
-                        k.x),
-                interpolate(
-                        get( DataPos(q.x, q.y+1.f), reader, c ),
-                        get( DataPos(q.x+1.f, q.y+1.f), reader, c ),
-                        k.x),
-                k.y );
-*/
-/*        if (xstep <= 1.f)
-        {
-            v = interpolate(
-                    interpolate(
-                            get( q, reader, c ),
-                            get( DataPos(q.x+1.f, q.y), reader, c ),
-                            k.x),
-                    interpolate(
-                            get( DataPos(q.x, q.y+1.f), reader, c ),
-                            get( DataPos(q.x+1.f, q.y+1.f), reader, c ),
-                            k.x),
-                    k.y );
-        }
-        else
-        {
-            for (float x=q.x; x<q.x+xstep; ++x)
-                v = max(v,
-                        interpolate(
-                                get( DataPos(x, q.y), reader, c ),
-                                get( DataPos(x, q.y+1.f), reader, c ),
-                                k.y));
-        }
-*/
-        if (xstep <= 1.f)
-        {
-            if (ystep <= 1.f)
+//        if (ystep <= 1.f)
+//        {
+            if (xstep <= 1.f)
             {
                 v = interpolate(
                         interpolate(
@@ -157,37 +122,37 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float y=q.y; y<q.y+xstep; ++y)
+            else for (float x=q.x; x<q.x+xstep; ++x)
             {
                 v = max(v, interpolate(
-                        get( DataPos(q.x, y), reader, c ),
-                        get( DataPos(q.x+1.f, y), reader, c ),
-                        k.x));
+                        get( DataPos(x, q.y), reader, c ),
+                        get( DataPos(x, q.y+1.f), reader, c ),
+                        k.y));
             }
-        }
-        else
-        {
-            if (ystep <= 1.f)
-            {
-                for (float x=q.x; x<q.x+xstep; ++x)
-                {
-                    v = max(v, interpolate(
-                            get( DataPos(x, q.y), reader, c ),
-                            get( DataPos(x, q.y+1.f), reader, c ),
-                            k.y));
-                }
-            }
-            else
-            {
-                for (float x=q.x; x<q.x+xstep; ++x)
-                {
-                    for (float y=q.y; y<q.y+ystep; ++y)
-                    {
-                        v = max(v, get( DataPos(x, y), reader, c ));
-                    }
-                }
-            }
-        }
+//        }
+//        else
+//        {
+//            if (xstep <= 1.f)
+//            {
+//                for (float y=q.y; y<q.y+ystep; ++y)
+//                {
+//                    v = max(v, interpolate(
+//                            get( DataPos(q.x, y), reader, c ),
+//                            get( DataPos(q.x+1.f, y), reader, c ),
+//                            k.x));
+//                }
+//            }
+//            else
+//            {
+//                for (float x=q.x; x<q.x+xstep; ++x)
+//                {
+//                    for (float y=q.y; y<q.y+ystep; ++y)
+//                    {
+//                        v = max(v, get( DataPos(x, y), reader, c ));
+//                    }
+//                }
+//            }
+//        }
 
         return v;
     }
@@ -206,7 +171,7 @@ public:
     float offs;
 
     float xstep;
-    float ystep;
+//    float ystep;
 };
 
 
@@ -262,8 +227,8 @@ public:
 
         float v = 0.f;
 
-        if (xstep <= 1.f)
-        {
+//        if (xstep <= 1.f)
+//        {
             if (ystep <= 1.f)
             {
                 v = interpolate(
@@ -277,38 +242,37 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float y=q.y; y<q.y+xstep; ++y)
+            else for (float y=q.y; y<q.y+ystep; ++y)
             {
                 v = max(v, interpolate(
                         get( DataPos(q.x, y), reader),
                         get( DataPos(q.x+1.f, y), reader),
                         k.x));
             }
-        }
-        else
-        {
-            if (ystep <= 1.f)
-            {
-                for (float x=q.x; x<q.x+xstep; ++x)
-                {
-                    v = max(v, interpolate(
-                            get( DataPos(x, q.y), reader),
-                            get( DataPos(x, q.y+1.f), reader),
-                            k.y));
-                }
-            }
-            else
-            {
-                for (float x=q.x; x<q.x+xstep; ++x)
-                {
-                    for (float y=q.y; y<q.y+ystep; ++y)
-                    {
-                        v = max(v, get( DataPos(x, y), reader));
-                    }
-                }
-            }
-        }
-
+//        }
+//        else
+//        {
+//            if (ystep <= 1.f)
+//            {
+//                for (float x=q.x; x<q.x+xstep; ++x)
+//                {
+//                    v = max(v, interpolate(
+//                            get( DataPos(x, q.y), reader),
+//                            get( DataPos(x, q.y+1.f), reader),
+//                            k.y));
+//                }
+//            }
+//            else
+//            {
+//                for (float x=q.x; x<q.x+xstep; ++x)
+//                {
+//                    for (float y=q.y; y<q.y+ystep; ++y)
+//                    {
+//                        v = max(v, get( DataPos(x, y), reader));
+//                    }
+//                }
+//            }
+//        }
         return v;
     }
 
@@ -322,7 +286,7 @@ public:
     Tfr::FreqAxis inputAxis;
     Tfr::FreqAxis outputAxis;
 
-    float xstep;
+//    float xstep;
     float ystep;
 };
 
@@ -480,15 +444,13 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.scale = inputRegion.height();
 
     axes.xstep = (validInputs.last - validInputs.first) / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
-    axes.ystep = input->size().height / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
-    if (axes.xstep<0.25f || axes.ystep<0.25f)
-    {
-        printf(", axes.xstep = %g, axes.ystep = %g", axes.xstep, axes.ystep);
-    }
+    // axes.ystep = 1; // because of varying frequency density ystep should be computed in the kernel together with the FreqAxes
+    // axes.ystep = input->size().height / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
+
     if (!full_resolution)
     {
         axes.xstep = 1;
-        axes.ystep = 1;
+        // axes.ystep = 1;
     }
 
     switch (transformMethod)
@@ -638,13 +600,8 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     fetcher.outputAxis = outputAxis;
 
     // xstep and ystep are used after transposing to input coordinates
-    fetcher.xstep = input->size().width / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
     fetcher.ystep = input->size().height / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
-
-    if (fetcher.xstep<0.25f || fetcher.ystep<0.25f)
-    {
-        printf(", fetcher.xstep = %g, fetcher.ystep = %g", fetcher.xstep, fetcher.ystep);
-    }
+    // fetcher.xstep = 1; // because of varying frequency density xstep should be computed in the kernel with the FreqAxes
 
     resample2d_fetcher(
                 input,
