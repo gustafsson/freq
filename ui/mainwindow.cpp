@@ -63,6 +63,8 @@ void SaweMainWindow::
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));
+    connect(ui->actionToggleFullscreen, SIGNAL(triggered(bool)), SLOT(toggleFullscreen(bool)));
+    connect(ui->actionToggleFullscreenNoMenus, SIGNAL(triggered(bool)), SLOT(toggleFullscreenNoMenus(bool)));
     connect(ui->actionReset_layout, SIGNAL(triggered()), SLOT(resetLayout()));
     connect(ui->actionReset_view, SIGNAL(triggered()), SLOT(resetView()));
     connect(ui->actionClear_settings, SIGNAL(triggered()), SLOT(clearSettings()));
@@ -376,10 +378,10 @@ void SaweMainWindow::
 
     if (fullscreen)
     {
+        hide();
         fullscreen_widget->setParent(0);
         fullscreen_widget->setWindowState( Qt::WindowFullScreen );
         fullscreen_widget->show();
-        hide();
 
         QList<QKeySequence> shortcuts;
         //shortcuts.push_back( Qt::ALT | Qt::Key_Return ); using ui->actionToggleFullscreenNoMenus instead
