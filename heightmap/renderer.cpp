@@ -565,7 +565,18 @@ void Renderer::renderSpectrogramRef( Reference ref )
             glVertex3f( 1, 0, 1 );
             glVertex3f( 0, 0, 1 );
         glEnd();
-
+        float y = projectionPlane[1]*.5;
+        glColor4f( 0.2f, 0.8f, 0.8f, 0.5f );
+        glBegin(GL_LINE_STRIP);
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 1, y, 1 );
+            glVertex3f( 1, y, 0 );
+            glVertex3f( 0, y, 1 );
+            glVertex3f( 0, y, 0 );
+            glVertex3f( 1, y, 0 );
+            glVertex3f( 1, y, 1 );
+            glVertex3f( 0, y, 1 );
+        glEnd();
         beginVboRendering();
     }
 
@@ -889,39 +900,45 @@ bool Renderer::
     Position p[2];
     ref.getArea( p[0], p[1] );
 
-    GLvector corner[4]=
+    float y[]={0, projectionPlane[1]*.5};
+    for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
     {
-        GLvector( p[0].time, 0, p[0].scale),
-        GLvector( p[0].time, 0, p[1].scale),
-        GLvector( p[1].time, 0, p[1].scale),
-        GLvector( p[1].time, 0, p[0].scale)
-    };
+        GLvector corner[]=
+        {
+            GLvector( p[0].time, y[i], p[0].scale),
+            GLvector( p[0].time, y[i], p[1].scale),
+            GLvector( p[1].time, y[i], p[1].scale),
+            GLvector( p[1].time, y[i], p[0].scale)
+        };
 
-    GLvector closest_i;
-    std::vector<GLvector> clippedCorners = clipFrustum(corner, closest_i);
-    if (0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
-    {
-        printl("Clipped corners",clippedCorners);
-        printf("closest_i %g\t%g\t%g\n", closest_i[0], closest_i[1], closest_i[2]);
+        GLvector closest_i;
+        std::vector<GLvector> clippedCorners = clipFrustum(corner, closest_i);
+        if (0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1])
+        {
+            printl("Clipped corners",clippedCorners);
+            printf("closest_i %g\t%g\t%g\n", closest_i[0], closest_i[1], closest_i[2]);
+        }
+        if (0==clippedCorners.size())
+            continue;
+
+        GLvector::T
+                timePerPixel = 0,
+                freqPerPixel = 0;
+
+        computeUnitsPerPixel( closest_i, timePerPixel, freqPerPixel );
+
+        // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
+        timePixels = (p[1].time - p[0].time)/timePerPixel;
+        scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
+
+        return true;
     }
-    if (0==clippedCorners.size())
-        return false;
 
-    GLvector::T
-            timePerPixel = 0,
-            freqPerPixel = 0;
-    if (!computeUnitsPerPixel( closest_i, timePerPixel, freqPerPixel ))
-        return false;
-
-    // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-    timePixels = (p[1].time - p[0].time)/timePerPixel;
-    scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
-
-    return true;
+    return false;
 }
 
 
-bool Renderer::
+void Renderer::
         computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel )
 {
     // Find units per pixel at point 'p' with glUnProject
@@ -981,8 +998,6 @@ bool Renderer::
 
     // time/freqPerPixel is how much difference in time/freq there can be when moving one pixel away from the
     // pixel that represents the closest point in ref
-
-    return true;
 }
 
 template<typename T>
