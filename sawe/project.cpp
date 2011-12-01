@@ -33,6 +33,7 @@ Project::
 :   worker(Signal::pTarget()),
     layers(this),
     is_modified_(false),
+    is_sawe_project_(false),
     project_title_(layer_title)
 {
     // class Project has two constructors. Initialize common stuff in createMainWindow instead of here.
@@ -296,7 +297,8 @@ Project::
             :
             worker(Signal::pTarget()),
             layers(this),
-            is_modified_(false)
+            is_modified_(false),
+            is_sawe_project_(true)
 {}
 
 

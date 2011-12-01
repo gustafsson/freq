@@ -81,21 +81,27 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(zscale)
                     & boost::serialization::make_nvp("color_mode", renderer->color_mode)
                     & boost::serialization::make_nvp("y_scale", renderer->y_scale);
-            if (version < 1)
-                ar
-                        & boost::serialization::make_nvp("draw_height_lines", renderer->draw_contour_plot);
+
+            if (version <= 0)
+                ar & boost::serialization::make_nvp("draw_height_lines", renderer->draw_contour_plot);
             else
-                ar
-                        & boost::serialization::make_nvp("draw_contour_plot", renderer->draw_contour_plot);
+                ar & boost::serialization::make_nvp("draw_contour_plot", renderer->draw_contour_plot);
 
             ar
                     & boost::serialization::make_nvp("draw_piano", renderer->draw_piano)
                     & boost::serialization::make_nvp("draw_hz", renderer->draw_hz)
                     & boost::serialization::make_nvp("left_handed_axes", renderer->left_handed_axes);
+
+            if (version >= 2)
+            {
+                float redundancy = renderer->redundancy();
+                ar & BOOST_SERIALIZATION_NVP(redundancy);
+                renderer->redundancy(redundancy);
+            }
         }
     };
 } // namespace Tools
 
-BOOST_CLASS_VERSION(Tools::RenderModel, 1)
+BOOST_CLASS_VERSION(Tools::RenderModel, 2)
 
 #endif // RENDERMODEL_H

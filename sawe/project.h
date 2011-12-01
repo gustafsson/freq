@@ -172,6 +172,12 @@ public:
     void resetLayout();
     void resetView();
 
+
+    /**
+      Returns true if 'this' was deserialized from a project file.
+      */
+    bool isSaweProject();
+
 private:
     Project(); // used by deserialization
     void createMainWindow();
@@ -181,7 +187,7 @@ private:
     void setGuiState(QByteArray guiState);
     QByteArray defaultGuiState;
 
-    bool is_modified_;
+    bool is_modified_, is_sawe_project_;
     boost::scoped_ptr<Tools::Commands::CommandInvoker> command_invoker_;
 
     std::string project_filename_, project_title_;

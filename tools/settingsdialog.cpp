@@ -184,6 +184,8 @@ void SettingsDialog::
     // keep in sync with updateResolutionSlider
     float resolution = 1 + p*5;
 
+    QSettings().setValue("resolution", resolution);
+
     project->tools().render_view()->model->renderer->redundancy(resolution);
     project->tools().render_view()->userinput_update();
 }
@@ -193,6 +195,9 @@ void SettingsDialog::
         updateResolutionSlider()
 {
     float resolution = project->tools().render_view()->model->renderer->redundancy();
+    if (!project->isSaweProject())
+        resolution = QSettings().value("resolution", resolution).toFloat();
+
     // keep in sync with resolutionChanged
     float p = (resolution - 1)/5;
     int value = (1 - p)*(ui->horizontalSliderResolution->maximum()-ui->horizontalSliderResolution->minimum()) + ui->horizontalSliderResolution->minimum();
