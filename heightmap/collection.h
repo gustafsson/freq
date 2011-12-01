@@ -243,11 +243,18 @@ public:
 
     const ThreadChecker& constructor_thread() const { return _constructor_thread; }
 
+    bool isVisible();
+    void setVisible(bool v);
+
+
 private:
     // TODO remove friends
     //friend class BlockFilter;
     friend class CwtToBlock;
     friend class StftToBlock;
+
+    bool
+        _is_visible;
 
     unsigned
         _samples_per_block,

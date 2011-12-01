@@ -59,6 +59,7 @@ Block::
 Collection::
         Collection( pOperation target )
 :   target( target ),
+    _is_visible( true ),
     _samples_per_block( -1 ), // Created for each
     _scales_per_block( -1 ),
     _unfinished_count(0),
@@ -526,6 +527,20 @@ void Collection::
 }
 
 
+bool Collection::
+        isVisible()
+{
+    return _is_visible;
+}
+
+
+void Collection::
+        setVisible(bool v)
+{
+    _is_visible = v;
+}
+
+
 void Collection::
         invalidate_samples( const Intervals& sid )
 {
@@ -568,6 +583,9 @@ Intervals Collection::
         invalid_samples()
 {
     Intervals r;
+
+    if (!_is_visible)
+        return r;
 
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);

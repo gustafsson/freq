@@ -964,9 +964,8 @@ void RenderController::
     unsigned N = channels->source()->num_channels();
     for (unsigned i=0; i<N; ++i)
     {
-        foreach (QAction* o, channelselector->actions())
+        foreach (QAction* a, channelselector->actions())
         {
-            QAction* a = dynamic_cast<QAction*>(o);
             if (!a)
                 continue;
             if (a->data().toUInt() >= N)
@@ -992,11 +991,16 @@ void RenderController::
 void RenderController::
         reroute()
 {
-    Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
+    //Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
     foreach (QAction* o, channelselector->actions())
     {
         unsigned c = o->data().toUInt();
-        channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
+        //channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
+        if (model()->collections[c]->isVisible() != o->isChecked())
+        {
+            model()->collections[c]->setVisible( o->isChecked() );
+            stateChanged();
+        }
     }
 }
 
