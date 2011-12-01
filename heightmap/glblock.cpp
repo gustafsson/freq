@@ -577,7 +577,7 @@ unsigned GlBlock::
     if (_height) s += sizeof(float); // OpenGL VBO
     if (_mapped_height) s += sizeof(float); // Cuda device memory
     if (_tex_height) s += sizeof(float); // OpenGL texture
-    if (_tex_height_nearest) s += 4*sizeof(float); // OpenGL texture
+    if (_tex_height_nearest) s += sizeof(float); // OpenGL texture
 
     // _mapped_slope and _slope are temporary and only lives in the scope of update_texture
 

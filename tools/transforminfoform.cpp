@@ -57,6 +57,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     dock->setVisible(false);
 
     connect(renderview, SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
+    connect(renderview, SIGNAL(finishedWorkSection()), SLOT(transformChanged()), Qt::QueuedConnection);
 
     timer.setSingleShot( true );
     timer.setInterval( 500 );
@@ -207,7 +208,7 @@ void TransformInfoForm::
         if (ui->overlapEdit->text() != overlapText && !ui->overlapEdit->hasFocus())
             ui->overlapEdit->setText(overlapText);
         Tfr::Stft::WindowType windowtype = stft->windowType();
-        if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && ui->windowTypeComboBox->hasFocus())
+        if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
     else if (cepstrum)

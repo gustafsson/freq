@@ -183,47 +183,53 @@ unsigned Collection::
             break;
         b->glblock->unmap();
     }*/
-    foreach(const recent_t::value_type& a, _recent)
-    {
-        Block const& b = *a;
-        if (b.frame_number_last_used == _frame_counter)
-        {
-            const Reference &r = b.ref;
-            // poke children
-            poke(r.left());
-            poke(r.right());
-            poke(r.top());
-            poke(r.bottom());
 
-            // poke parent
-            poke(r.parent());
-
-            // poke surrounding sibblings
-            Reference q = r;
-            for (q.block_index[0] = std::max(1u, r.block_index[0]) - 1;
-                 q.block_index[0] <= r.block_index[0] + 1;
-                 q.block_index[0]++)
-            {
-                for (q.block_index[1] = std::max(1u, r.block_index[1]) - 1;
-                     q.block_index[1] <= r.block_index[1] + 1;
-                     q.block_index[1]++)
-                {
-                    poke(q);
-                }
-            }
-        }
-    }
+    std::vector<pBlock> blocksToPoke;
 
     foreach(const cache_t::value_type& b, _cache)
     {
         b.second->glblock->unmap();
 
-        if (b.second->frame_number_last_used != _frame_counter)
+        if (b.second->frame_number_last_used == _frame_counter)
+        {
+            blocksToPoke.push_back(b.second);
+        }
+        else
         {
             if (b.second->glblock->has_texture())
             {
                 TaskTimer tt("Deleting texture");
                 b.second->glblock->delete_texture();
+            }
+        }
+    }
+
+
+    foreach(const pBlock& b, blocksToPoke)
+    {
+        // poke blocks that are likely to be needed soon
+
+        const Reference &r = b->ref;
+        // poke children
+        poke(r.left());
+        poke(r.right());
+        poke(r.top());
+        poke(r.bottom());
+
+        // poke parent
+        poke(r.parent());
+
+        // poke surrounding sibblings, and this
+        Reference q = r;
+        for (q.block_index[0] = std::max(1u, r.block_index[0]) - 1;
+             q.block_index[0] <= r.block_index[0] + 1;
+             q.block_index[0]++)
+        {
+            for (q.block_index[1] = std::max(1u, r.block_index[1]) - 1;
+                 q.block_index[1] <= r.block_index[1] + 1;
+                 q.block_index[1]++)
+            {
+                poke(q);
             }
         }
     }
@@ -239,7 +245,11 @@ void Collection::
 {
     cache_t::iterator itr = _cache.find( r );
     if (itr != _cache.end())
+    {
         itr->second->frame_number_last_used = _frame_counter;
+        _recent.remove( itr->second );
+        _recent.push_front( itr->second );
+    }
 }
 
 
@@ -315,10 +325,9 @@ pBlock Collection::
         QMutexLocker l(&_cache_mutex);
 		#endif
 
+        block->frame_number_last_used = _frame_counter;
         _recent.remove( block );
         _recent.push_front( block );
-
-        block->frame_number_last_used = _frame_counter;
     }
 
     return block;
@@ -598,7 +607,8 @@ Intervals Collection::
     foreach ( const recent_t::value_type& a, _recent )
     {
         Block const& b = *a;
-        if (_frame_counter == b.frame_number_last_used)
+        unsigned framediff = _frame_counter - b.frame_number_last_used;
+        if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
         {
             counter++;
             Intervals i = b.ref.getInterval();
@@ -733,13 +743,13 @@ pBlock Collection::
             size_t memForNewBlock = 0;
             memForNewBlock += sizeof(float); // OpenGL VBO
             memForNewBlock += sizeof(float); // Cuda device memory
-            memForNewBlock += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
-            memForNewBlock += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
+            memForNewBlock += sizeof(float); // OpenGL texture
+            memForNewBlock += sizeof(float); // OpenGL neareset texture
             memForNewBlock *= scales_per_block()*samples_per_block();
             size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
             size_t free = availableMemoryForSingleAllocation();
 
-            size_t margin = memForNewBlock;
+            size_t margin = memForNewBlock>>1;
             // prefer to use block rather than discard an old block and then reallocate it
             if (youngest_count < _recent.size() && allocatedMemory+memForNewBlock+margin> free*MAX_FRACTION_FOR_CACHES)
             {
@@ -747,8 +757,12 @@ pBlock Collection::
                 Position a,b;
                 block->ref.getArea(a,b);
 
-                TaskTimer tt("Stealing block [%g:%g, %g:%g]. %u blocks, recent %u blocks.",
-                             a.time, b.time, a.scale, b.scale, _cache.size(), _recent.size());
+                TaskTimer tt("Stealing block [%g:%g, %g:%g] last used %u frames ago. Total free %s, total cache %s, %u blocks",
+                             a.time, b.time, a.scale, b.scale, _frame_counter - block->frame_number_last_used,
+                             DataStorageVoid::getMemorySizeText( free ).c_str(),
+                             DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
+                              _cache.size()
+                             );
 
                 _recent.remove( block );
                 _cache.erase( block->ref );
@@ -769,12 +783,14 @@ pBlock Collection::
                 allocatedMemory -= std::min(allocatedMemory,blockMemory);
                 free = free > blockMemory ? free + blockMemory : 0;
 
-                TaskTimer tt("Removing block [%g:%g, %g:%g] (freeing %s, total free %s, total cache %s ). %u remaining blocks, recent %u blocks.",
+                TaskTimer tt("Removing block [%g:%g, %g:%g] last used %u frames ago. Freeing %s, total free %s, cache %s, %u blocks",
                              a.time, b.time, a.scale, b.scale,
+                             _frame_counter - block->frame_number_last_used,
                              DataStorageVoid::getMemorySizeText( blockMemory ).c_str(),
                              DataStorageVoid::getMemorySizeText( free ).c_str(),
                              DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
-                             _cache.size(), _recent.size());
+                             _cache.size()
+                             );
 
                 _cache.erase(_recent.back()->ref);
                 _recent.pop_back();

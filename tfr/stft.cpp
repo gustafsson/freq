@@ -14,8 +14,8 @@
 #include <msc_stdc.h>
 #endif
 
-#define TIME_STFT
-//#define TIME_STFT if(0)
+//#define TIME_STFT
+#define TIME_STFT if(0)
 
 //#define TEST_FT_INVERSE
 #define TEST_FT_INVERSE if(0)
