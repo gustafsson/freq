@@ -389,16 +389,20 @@ void RenderController::
     c.wavelet_time_support(wavelet_default_time_support);
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
-    s.set_approximate_chunk_size( 0.25f*c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+    unsigned prev_chunk_size = s.chunk_size();
+    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
 
     c.wavelet_fast_time_support( wavelet_fast_time_support );
 
 
-    model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    if (isCwt || prev_chunk_size!=s.chunk_size())
+    {
+        model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
 
-    stateChanged();
+        stateChanged();
 
-    view->emitTransformChanged();
+        view->emitTransformChanged();
+    }
 
     tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1 (%2 scales/octave)\nSTFT window: %3 samples").arg(c.sigma(), 0, 'f', 1).arg(c.scales_per_octave(), 0, 'f', 1).arg(s.chunk_size()));
 }
