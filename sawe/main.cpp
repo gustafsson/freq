@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
     {
         //int N = 1<<23, windowsize=1<<16;
         int N = 1<<22, windowsize=1<<10;
-        float epsilon[2] = {2e-7 * log(N), 2e-7 * log(windowsize)};
+        float epsilon[2] = {2e-7 * log((double)N), 2e-7 * log((double)windowsize)};
         bool coutinfo = false;
 
 
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
         for (int stft=0; stft<2; ++stft)
         for (int redundant=0; redundant<2; ++redundant)
         {
-            TaskTimer tt("%s %s", stft?"Stft":"Fft", redundant?"C2C":"R2C");
+            TaskTimer tt("%s %s", stft?"Stft":"Fft", redundant?"C2C":"R2C", 0);
 
             float norm = 1.f/N;
             Tfr::pTransform ft;
@@ -314,14 +314,14 @@ int main(int argc, char *argv[])
             Tfr::pChunk c;
             b->waveform_data()->getCpuMemory();
             {
-                TaskTimer tt("%s %s forward", stft?"Stft":"Fft", redundant?"C2C":"R2C");
+                TaskTimer tt("%s %s forward", stft?"Stft":"Fft", redundant?"C2C":"R2C", 0);
                 c = (*ft)(b);
                 forwardtime[stft*2+redundant]=tt.elapsedTime();
             }
 
             Signal::pBuffer b2;
             {
-                TaskTimer tt("%s %s backward", stft?"Stft":"Fft", redundant?"C2C":"R2C");
+                TaskTimer tt("%s %s backward", stft?"Stft":"Fft", redundant?"C2C":"R2C", 0);
                 b2 = ft->inverse(c);
                 inversetime[stft*2+redundant]=tt.elapsedTime();
             }
