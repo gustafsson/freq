@@ -37,7 +37,7 @@
 #define TIME_GETBLOCK if(0)
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
-#define MAX_FRACTION_FOR_CACHES (1.f/5.f)
+#define MAX_FRACTION_FOR_CACHES (1.f/2.f)
 #define MAX_CREATED_BLOCKS_PER_FRAME 8
 
 using namespace Signal;
@@ -730,7 +730,7 @@ pBlock Collection::
                 block->ref.getArea(a,b);
 
                 TaskTimer tt("Stealing block [%g:%g, %g:%g]. %u blocks, recent %u blocks.",
-                             a.time, a.scale, b.time, b.scale, _cache.size(), _recent.size());
+                             a.time, b.time, a.scale, b.scale, _cache.size(), _recent.size());
 
                 _recent.remove( block );
                 _cache.erase( block->ref );
@@ -742,16 +742,21 @@ pBlock Collection::
             }
 
             // Need to release even more blocks?
-            while (youngest_count < _recent.size() && allocatedMemory+memForNewBlock> free*MAX_FRACTION_FOR_CACHES)
+            while (youngest_count < _recent.size() && allocatedMemory > free*MAX_FRACTION_FOR_CACHES)
             {
                 Position a,b;
                 _recent.back()->ref.getArea(a,b);
 
                 size_t blockMemory = _recent.back()->glblock->allocated_bytes_per_element()*scales_per_block()*samples_per_block();
                 allocatedMemory -= std::min(allocatedMemory,blockMemory);
+                free = free > blockMemory ? free + blockMemory : 0;
 
-                TaskTimer tt("Removing block [%g:%g, %g:%g] (freeing %g KB). %u remaining blocks, recent %u blocks.",
-                             a.time, a.scale, b.time, b.scale, blockMemory/1024.f/1024.f, _cache.size(), _recent.size());
+                TaskTimer tt("Removing block [%g:%g, %g:%g] (freeing %s, total free %s, total cache %s ). %u remaining blocks, recent %u blocks.",
+                             a.time, b.time, a.scale, b.scale,
+                             DataStorageVoid::getMemorySizeText( blockMemory ).c_str(),
+                             DataStorageVoid::getMemorySizeText( free ).c_str(),
+                             DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
+                             _cache.size(), _recent.size());
 
                 _cache.erase(_recent.back()->ref);
                 _recent.pop_back();
