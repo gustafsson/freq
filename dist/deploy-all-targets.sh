@@ -17,6 +17,21 @@ for target in "${targets[@]}"; do
 	urls="${urls}\n$url"
 done
 
+echo
+
+tagname=$versiontag-$platform
+if [ "$(uname -s)" == "Linux" ]; then tagname=${tagname}_`uname -m`; fi
+
+if [ -n "`git tag | grep $tagname`" ]; then
+	echo "Tag '$tagname' already exists at `git show-ref -s --abbrev $tagname`. Removing old tag and creating a new one"
+	git tag -d $tagname
+fi
+
+git tag $tagname
+echo "Created tag '$tagname' (at `git show-ref -s --abbrev $tagname`)"
+
+echo
+
 echo "========================== All urls ==========================="
 echo -e $urls
 
