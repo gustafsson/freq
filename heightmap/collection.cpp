@@ -759,8 +759,8 @@ pBlock Collection::
                 block->glblock->reset( b.time-a.time, b.scale-a.scale );
             }
 
-            // Need to release even more blocks?
-            while (youngest_count < _recent.size() && allocatedMemory > free*MAX_FRACTION_FOR_CACHES)
+            // Need to release even more blocks? Release one at a time for each call to createBlock
+            if (youngest_count < _recent.size() && allocatedMemory > free*MAX_FRACTION_FOR_CACHES)
             {
                 Position a,b;
                 _recent.back()->ref.getArea(a,b);
