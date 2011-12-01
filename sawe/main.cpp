@@ -260,13 +260,14 @@ int main(int argc, char *argv[])
     if (0)
     {
         //int N = 1<<23, windowsize=1<<16;
-        int N = 1<<22, windowsize=1<<10;
+        //int N = 1<<22, windowsize=1<<10;
+        int N = 16, windowsize=4;
         float epsilon[2] = {2e-7 * log(N), 2e-7 * log(windowsize)};
-        bool coutinfo = false;
+        bool coutinfo = true;
 
 
         TaskTimer tt("Running Stft/fft tests");
-        Signal::pBuffer b(new Signal::Buffer(0, N, 1));
+        Signal::pBuffer b(new Signal::Buffer(windowsize, N, 1));
         float* p = b->waveform_data()->getCpuMemory();
         srand(0);
         for (int i=0; i<N; ++i)
@@ -290,8 +291,10 @@ int main(int argc, char *argv[])
             f(b);
         }
 
-        float diffs[4], forwardtime[4], inversetime[4];
-        for (int stft=0; stft<2; ++stft)
+        float overlap = 0.98f;
+        const unsigned ftruns = 2+1;//Tfr::Stft::WindowType_FlatTop;
+        float diffs[2*ftruns], forwardtime[2*ftruns], inversetime[2*ftruns];
+        for (unsigned stft=0; stft<ftruns; ++stft)
         for (int redundant=0; redundant<2; ++redundant)
         {
             TaskTimer tt("%s %s", stft?"Stft":"Fft", redundant?"C2C":"R2C");
@@ -301,10 +304,11 @@ int main(int argc, char *argv[])
             if (stft)
             {
                 norm = 1.f;
-                Tfr::Stft* stft;
-                ft.reset(stft = new Tfr::Stft);
-                stft->set_approximate_chunk_size(windowsize);
-                stft->compute_redundant(redundant);
+                Tfr::Stft* t;
+                ft.reset(t = new Tfr::Stft);
+                t->setWindow( (Tfr::Stft::WindowType)(stft-1), overlap );
+                t->set_approximate_chunk_size(windowsize);
+                t->compute_redundant(redundant);
             }
             else
             {
@@ -336,10 +340,13 @@ int main(int argc, char *argv[])
 
             if (coutinfo) cout << "inverse" << endl;
             float ft_diff = 0;
-            for (int i=0; i<N; ++i)
+            Signal::pBuffer expected = BufferSource(b).readFixedLength(b2->getInterval());
+            float *expectedp = expected->waveform_data()->getCpuMemory();
+
+            for (unsigned i=0; i<b2->number_of_samples(); ++i)
             {
-                if (coutinfo) cout << i << ", " << p[i] << ", " << p2[i]*norm <<  ";";
-                float diff = p[i] - p2[i]*norm;
+                if (coutinfo) cout << b2->sample_offset+i << ", " << expectedp[i] << ", " << p2[i]*norm <<  ";";
+                float diff = expectedp[i] - p2[i]*norm;
                 if (coutinfo) if (fabsf(diff) > epsilon[stft])
                     cout << " Failed: " << diff;
                 if (ft_diff < fabsf(diff))
@@ -350,8 +357,13 @@ int main(int argc, char *argv[])
             if (coutinfo) cout << endl;
         }
         if (coutinfo) cout << endl;
-        for (int i=0; i<4; ++i)
-            cout << (i/2?"Stft":"Fft") << " " << (i%2?"C2C":"R2C") << " " << diffs[i] << " < " << epsilon[i/2] << " " << (diffs[i]<epsilon[i/2]?"ok":"failed") << ". Time: " << forwardtime[i] << " s and " << inversetime[i] << " s. Sum " << forwardtime[i]+inversetime[i] << " s" << endl;
+        for (unsigned i=0; i<2*ftruns; ++i)
+            cout << i << " " << (i==0||i==1?"Fft":("Stft " + Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)(i/2-1))).c_str())
+                 << " " << (i%2?"C2C":"R2C")
+                 << " " << diffs[i] << " < " << epsilon[i/2]
+                 << " " << (diffs[i]<epsilon[i/2]?"ok":"failed")
+                 << ". Time: " << forwardtime[i] << " s and " << inversetime[i]
+                 << " s. Sum " << forwardtime[i]+inversetime[i] << " s" << endl;
         return 0;
     }
     if (0)

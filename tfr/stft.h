@@ -12,11 +12,16 @@
 
 namespace Tfr {
 
+
 enum FftDirection
 {
     FftDirection_Forward = -1,
     FftDirection_Inverse = 1
 };
+
+
+class StftChunk;
+
 
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
@@ -94,7 +99,8 @@ public:
         WindowType_Nuttail,
         WindowType_BlackmanHarris,
         WindowType_BlackmanNuttail,
-        WindowType_FlatTop
+        WindowType_FlatTop,
+        WindowType_NumberOfWindowTypes
     };
 
     Stft();
@@ -130,6 +136,8 @@ public:
 
     float overlap() { return _overlap; }
     WindowType windowType() { return _window_type; }
+    std::string windowTypeName() { return windowTypeName(_window_type); }
+    static std::string windowTypeName(WindowType);
     void setWindow(WindowType type, float overlap);
 
 
@@ -165,9 +173,13 @@ private:
       the overlap function exactly on the sample.
       */
     DataStorage<float>::Ptr prepareWindow( DataStorage<float>::Ptr );
+    DataStorage<float>::Ptr reduceWindow( DataStorage<float>::Ptr windowedSignal, const StftChunk* c );
 
     template<WindowType>
     void prepareWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out );
+
+    template<WindowType>
+    void reduceWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out, const StftChunk* c );
 
     template<WindowType>
     float computeWindowValue( float p );
@@ -188,7 +200,7 @@ private:
 class StftChunk: public Chunk
 {
 public:
-    StftChunk(unsigned window_size, bool redundant);
+    StftChunk(unsigned window_size, Stft::WindowType window_type, unsigned increment, bool redundant);
     void setHalfs( unsigned n );
     unsigned halfs( );
     unsigned nActualScales() const;
@@ -200,8 +212,13 @@ public:
     unsigned transformSize() const;
     bool redundant() const { return _redundant; }
     unsigned window_size() const { return _window_size; }
+    Stft::WindowType window_type() const { return _window_type; }
+    unsigned increment() const { return _increment; }
 
 private:
+    Stft::WindowType _window_type;
+    unsigned _increment;
+
     unsigned _halfs_n;
 
     /**
