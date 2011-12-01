@@ -96,7 +96,16 @@ void BlockFilter::
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getInterval();
     Signal::Interval blockInterval = block->ref.getInterval();
-    Signal::Interval transfer = inInterval&blockInterval;
+    // don't validate more texels than we have actual support for
+    Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval);
+    Signal::Interval transfer = usableInInterval&blockInterval;
+
+#ifdef DEBUG_
+    Signal::Interval usableBlockInterval = block->ref.spannedElementsInterval(blockInterval);
+    Signal::Intervals invalidBlockInterval = blockInterval - block->valid_samples;
+    BOOST_ASSERT(usableBlockInterval == blockInterval);
+    BOOST_ASSERT(usableInInterval.first < inInterval.first || usableInInterval.last > inInterval.last);
+#endif
 
     if (!transfer)
         return;
@@ -143,8 +152,11 @@ void BlockFilter::
     Signal::Interval outInterval = block->ref.getInterval();
     Signal::Interval inInterval = chunk.getInterval();
 
-    Signal::Intervals transferDesc = inInterval;
-    transferDesc &= outInterval;
+    // don't validate more texels than we have actual support for
+    //Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval);
+    Signal::Interval usableInInterval = inInterval;
+
+    Signal::Interval transfer = usableInInterval & outInterval;
 
     DEBUG_CWTTOBLOCK TaskTimer tt3("CwtToBlock::mergeChunk");
     DEBUG_CWTTOBLOCK TaskTimer("outInterval=[%g, %g)",
@@ -153,25 +165,25 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskTimer("inInterval=[%g, %g)",
             inInterval.first / chunk.original_sample_rate,
             inInterval.last / chunk.original_sample_rate ).suppressTiming();
-    DEBUG_CWTTOBLOCK TaskTimer("transferDesc=[%g, %g)",
-            transferDesc.spannedInterval().first / chunk.original_sample_rate,
-            transferDesc.spannedInterval().last / chunk.original_sample_rate ).suppressTiming();
+    DEBUG_CWTTOBLOCK TaskTimer("transfer=[%g, %g)",
+            transfer.first / chunk.original_sample_rate,
+            transfer.last / chunk.original_sample_rate ).suppressTiming();
 
     // Remove already computed intervals
     if (!full_resolution)
     {
-        if (!(transferDesc - block->valid_samples))
+        if (!(transfer - block->valid_samples))
         {
-            TIME_CWTTOBLOCK TaskInfo("%s not accepting %s, early termination", vartype(*this).c_str(), transferDesc.toString().c_str());
-            transferDesc.clear();
+            TIME_CWTTOBLOCK TaskInfo("%s not accepting %s, early termination", vartype(*this).c_str(), transfer.toString().c_str());
+            transfer.last=transfer.first;
         }
     }
     // transferDesc -= block->valid_samples;
 
     // If block is already up to date, abort merge
-    if (transferDesc.empty())
+    if (!transfer)
     {
-        TIME_CWTTOBLOCK TaskInfo tt("CwtToBlock::mergeChunk, transferDesc empty");
+        TIME_CWTTOBLOCK TaskInfo tt("CwtToBlock::mergeChunk, transfer empty");
         TIME_CWTTOBLOCK TaskInfo("outInterval = %s", outInterval.toString().c_str());
         TIME_CWTTOBLOCK TaskInfo("inInterval = %s", inInterval.toString().c_str());
 
@@ -222,8 +234,6 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo("chunk.nScales() = %u", chunk.nScales());
     DEBUG_CWTTOBLOCK TaskInfo("_collection->scales_per_block() = %u", _collection->scales_per_block());
 
-
-    Signal::Interval transfer = transferDesc.spannedInterval();
 
     DEBUG_CWTTOBLOCK {
         TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();

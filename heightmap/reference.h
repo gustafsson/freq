@@ -65,6 +65,8 @@ public:
       invalid samples.
       */
     Signal::Interval getInterval() const;
+    Signal::Interval spannedElementsInterval(const Signal::Interval& I) const;
+
     Reference( Collection* parent );
 private:
     friend class Collection;

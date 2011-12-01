@@ -255,19 +255,62 @@ Signal::Interval Reference::
     // this block overlap slightly into the samples that are needed for the
     // next block.
     float blockSize = _collection->samples_per_block() * ldexpf(1.f,log2_samples_size[0]);
-    float blockLocalSize = (_collection->samples_per_block()-1) / sample_rate();
+    float elementSize = 1.f / sample_rate();
+    float blockLocalSize = _collection->samples_per_block() * elementSize;
 
-    float startTime = blockSize * block_index[0];
+    // where the first element starts
+    float startTime = blockSize * block_index[0] - elementSize*.5f;
+
+    // where the last element ends
     float endTime = startTime + blockLocalSize;
 
     float FS = _collection->target->sample_rate();
-    Signal::Interval i( startTime * FS, endTime * FS+1 );
+    Signal::Interval i( std::max(0.f, floorf(startTime * FS)), ceilf(endTime * FS) );
 
     //Position a, b;
     //getArea( a, b );
     //Signal::SamplesIntervalDescriptor::Interval i = { a.time * FS, b.time * FS };
     return i;
 }
+
+
+Signal::Interval Reference::
+        spannedElementsInterval(const Signal::Interval& I) const
+{
+    float blockSize = _collection->samples_per_block() * ldexpf(1.f,log2_samples_size[0]);
+    float FS = _collection->target->sample_rate();
+
+    unsigned stepsPerBlock = _collection->samples_per_block() - 1;
+    double p = FS*blockSize/stepsPerBlock;
+    double localStartTime = I.first/p;
+    double localEndTime = I.last/p;
+
+    if (localEndTime-localStartTime<2.f)
+    {
+        // didn't even span two elements, expand to span the elements it intersects with
+        localStartTime = floorf(localStartTime) - .5;
+        localEndTime = ceilf(localEndTime) + .5;
+    }
+    else
+    {
+        // round off to spanned elements
+        if (0 != localStartTime)
+            localStartTime = ceilf(localStartTime) - .5;
+        localEndTime = floorf(localEndTime) + .5;
+    }
+
+    double c = localStartTime*p;
+    double
+        a = std::floor(c),
+        b = std::ceil(localEndTime*p);
+
+    Signal::Interval r(
+            std::max(0., a),
+            std::max(0., b));
+
+    return r&I;
+}
+
 
 float Reference::
         sample_rate() const
