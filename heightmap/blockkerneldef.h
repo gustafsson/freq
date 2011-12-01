@@ -122,7 +122,7 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float x=q.x; x<q.x+xstep; ++x)
+            else for (float x=q2.x; x<floor(q2.x+xstep); ++x)
             {
                 v = max(v, interpolate(
                         get( DataPos(x, q.y), reader, c ),
@@ -134,7 +134,7 @@ public:
 //        {
 //            if (xstep <= 1.f)
 //            {
-//                for (float y=q.y; y<q.y+ystep; ++y)
+//                for (float y=q2.y; y<floor(q2.y+ystep); ++y)
 //                {
 //                    v = max(v, interpolate(
 //                            get( DataPos(q.x, y), reader, c ),
@@ -144,9 +144,9 @@ public:
 //            }
 //            else
 //            {
-//                for (float x=q.x; x<q.x+xstep; ++x)
+//                for (float x=q2.x; floor(x<q2.x+xstep); ++x)
 //                {
-//                    for (float y=q.y; y<q.y+ystep; ++y)
+//                    for (float y=q2.y; floor(y<q2.y+ystep); ++y)
 //                    {
 //                        v = max(v, get( DataPos(x, y), reader, c ));
 //                    }
@@ -242,7 +242,7 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float y=q.y; y<q.y+ystep; ++y)
+            else for (float y=q2.y; y<floor(q2.y+ystep); ++y)
             {
                 v = max(v, interpolate(
                         get( DataPos(q.x, y), reader),
@@ -254,7 +254,7 @@ public:
 //        {
 //            if (ystep <= 1.f)
 //            {
-//                for (float x=q.x; x<q.x+xstep; ++x)
+//                for (float x=q2.x; x<floor(q2.x+xstep); ++x)
 //                {
 //                    v = max(v, interpolate(
 //                            get( DataPos(x, q.y), reader),
@@ -264,9 +264,9 @@ public:
 //            }
 //            else
 //            {
-//                for (float x=q.x; x<q.x+xstep; ++x)
+//                for (float x=q2.x; x<floor(q2.x+xstep); ++x)
 //                {
-//                    for (float y=q.y; y<q.y+ystep; ++y)
+//                    for (float y=q2.y; y<floor(q2.y+ystep); ++y)
 //                    {
 //                        v = max(v, get( DataPos(x, y), reader));
 //                    }
