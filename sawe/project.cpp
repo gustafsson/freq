@@ -381,6 +381,13 @@ void Project::
 }
 
 
+bool Project::
+        isSaweProject()
+{
+    return is_sawe_project_;
+}
+
+
 #if !defined(TARGET_reader)
 bool Project::
         saveAs()
