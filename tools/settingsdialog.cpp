@@ -84,6 +84,9 @@ void SettingsDialog::
 
     ui->lineEditLogFiles->setText(Sawe::Application::log_directory());
 
+    updateResolutionSlider();
+    connect(ui->horizontalSliderResolution, SIGNAL(valueChanged(int)), SLOT(resolutionChanged(int)));
+
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(accept()));
     connect(ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
 }
@@ -173,5 +176,27 @@ void SettingsDialog::
     ui->radioButtonMatlab->setChecked(true);
 }
 
+
+void SettingsDialog::
+        resolutionChanged(int v)
+{
+    float p = 1 - (v-ui->horizontalSliderResolution->minimum())/(float)(ui->horizontalSliderResolution->maximum()-ui->horizontalSliderResolution->minimum());
+    // keep in sync with updateResolutionSlider
+    float resolution = 1 + p*5;
+
+    project->tools().render_view()->model->renderer->redundancy(resolution);
+    project->tools().render_view()->userinput_update();
+}
+
+
+void SettingsDialog::
+        updateResolutionSlider()
+{
+    float resolution = project->tools().render_view()->model->renderer->redundancy();
+    // keep in sync with resolutionChanged
+    float p = (resolution - 1)/5;
+    int value = (1 - p)*(ui->horizontalSliderResolution->maximum()-ui->horizontalSliderResolution->minimum()) + ui->horizontalSliderResolution->minimum();
+    ui->horizontalSliderResolution->setValue( value );
+}
 
 } // namespace Tools

@@ -15,7 +15,6 @@ SettingsController::
 {
     showSettingsAction = new QAction( "&Settings", project->mainWindowWidget() );
     showSettingsAction->setObjectName( "showSettingsAction" );
-    showSettingsAction->setCheckable( true );
     showSettingsAction->setShortcut( QString("Alt+S") );
 
     project->mainWindow()->getItems()->menuTools->addAction( showSettingsAction );
