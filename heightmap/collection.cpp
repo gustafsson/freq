@@ -826,7 +826,7 @@ pBlock Collection::
 #ifndef SAWE_NO_MUTEX
                         l.unlock();
 #endif
-                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.coveredInterval(), false );
+                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.spannedInterval(), false );
 #ifndef SAWE_NO_MUTEX
                         l.relock();
 #endif

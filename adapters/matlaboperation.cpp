@@ -257,7 +257,7 @@ Interval MatlabOperation::
     IntervalType support = _settings->overlap();
     Interval signal = getInterval();
     J &= signal;
-    Interval K = Intervals(J).enlarge( support ).coveredInterval();
+    Interval K = Intervals(J).enlarge( support ).spannedInterval();
 
     bool need_data_after_end = K.last > signal.last;
     if (0<_settings->chunksize() && (int)J.count() != _settings->chunksize())

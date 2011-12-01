@@ -353,7 +353,7 @@ void MatlabOperationWidget::
     if (hasValidTarget())
     {
         Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
-        Signal::Interval i = needupdate.coveredInterval();
+        Signal::Interval i = needupdate.spannedInterval();
         if (operation->intervalToCompute( i ).count())
         if (pid && pid->state() != QProcess::NotRunning)
         {
@@ -395,7 +395,7 @@ void MatlabOperationWidget::
         project->tools().render_view()->userinput_update( false );
     }
 
-    Signal::Interval i = needupdate.coveredInterval();
+    Signal::Interval i = needupdate.spannedInterval();
     if (operation->intervalToCompute( i ).count())
     {
         // restart the timer

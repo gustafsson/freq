@@ -272,7 +272,7 @@ namespace Tools
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
         o->source( _worker->source() );
 
-        Signal::Intervals I = o->affected_samples().coveredInterval();
+        Signal::Intervals I = o->affected_samples().spannedInterval();
         I -= o->zeroed_samples();
 
         if (0==I.count())
@@ -280,7 +280,7 @@ namespace Tools
 
         // Create OperationRemoveSection to remove everything else from the stream
         Signal::pOperation remove(new Tools::Support::OperationCrop(
-                o, I.coveredInterval() ));
+                o, I.spannedInterval() ));
 
         if (0 == dynamic_cast<Tools::Support::OperationOtherSilent*>(o.get()))
         {

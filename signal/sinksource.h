@@ -79,13 +79,13 @@ public:
 
     /**
       Total number of sampels in cached interval, equal to
-        'samplesDesc().coveredInterval().count'.
+        'samplesDesc().spannedInterval().count'.
       */
     virtual long unsigned number_of_samples();
 
 
     /**
-      First and last sample in the covered interval, or [0,0).
+      First and last sample in the spanned interval, or [0,0).
       */
     virtual Interval getInterval();
 

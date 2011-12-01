@@ -24,13 +24,6 @@ Interval::
 }
 
 
-bool Interval::
-        valid() const
-{
-    return first <= last;
-}
-
-
 Interval& Interval::
         operator|=(const Interval& r)
 {
@@ -420,7 +413,7 @@ Intervals Intervals::
 
 
 Interval Intervals::
-        coveredInterval() const
+        spannedInterval() const
 {
     if (empty()) {
         return Interval( 0, 0 );

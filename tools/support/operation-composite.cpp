@@ -186,7 +186,7 @@ void OperationMove::
     else
         newSection <<= (newFirstSample-section.first);
 
-    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection.coveredInterval() ));
+    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection.spannedInterval() ));
     pOperation silence( new OperationSetSilent(silenceTarget, section ));
 
     pOperation crop( new OperationCrop( source_sub_operation_, section ));

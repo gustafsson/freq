@@ -297,9 +297,10 @@ pChunk Cwt::
         else
             extra = Fft::sChunkSizeG(sub_length - 1, chunkpart_alignment( c )) - sub_length;
 
-        //if good sizes are choosed based on the widest chunk
-        //if (nScales_value == stop_j && 0 < offset)
-        //    BOOST_ASSERT( 0 == extra );
+        //this can be asserted if we compute valid interval based on the widest chunk
+        if (!AdjustToBin0)
+            if (nScales_value == stop_j && 0 < offset)
+                BOOST_ASSERT( 0 == extra );
 
 #ifdef _DEBUG
         unsigned sub_start_org = sub_start;
@@ -472,7 +473,7 @@ float Cwt::
 Signal::Interval Cwt::
         validLength(Signal::pBuffer buffer)
 {
-    return Signal::Intervals(buffer->getInterval()).shrink( wavelet_time_support_samples(buffer->sample_rate) ).coveredInterval();
+    return Signal::Intervals(buffer->getInterval()).shrink( wavelet_time_support_samples(buffer->sample_rate) ).spannedInterval();
 }
 
 

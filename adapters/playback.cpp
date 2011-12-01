@@ -452,7 +452,7 @@ bool Playback::
     if (0==marker)
         marker = _data.getInterval().first;
 
-    Signal::Interval cov = _data.invalid_samples().coveredInterval();
+    Signal::Interval cov = _data.invalid_samples().spannedInterval();
     float time_left =
             (cov.last - marker) / _data.sample_rate();
 

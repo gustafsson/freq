@@ -124,7 +124,7 @@ Signal::pOperation SelectionModel::
     } else {
         return Signal::pOperation( new Tools::Support::OperationOtherSilent(
                 Signal::pOperation(),
-                src->affected_samples().coveredInterval() )
+                src->affected_samples().spannedInterval() )
         );
     }
 }

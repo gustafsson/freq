@@ -58,7 +58,7 @@ pBuffer OperationRemoveSection::
         return zeros(I);
     }
 
-    pBuffer b = source()->readFixedLength( (Intervals(I) << section_.count() ).coveredInterval() );
+    pBuffer b = source()->readFixedLength( (Intervals(I) << section_.count() ).spannedInterval() );
     b->sample_offset -= section_.count();
 
     return b;
@@ -127,7 +127,7 @@ pBuffer OperationInsertSilence::
 
     if (I.first >= section_.last) {
         pBuffer b = source()->readFixedLength(
-                (Intervals( I ) >> section_.count()).coveredInterval());
+                (Intervals( I ) >> section_.count()).spannedInterval());
         b->sample_offset += section_.count();
         return b;
     }

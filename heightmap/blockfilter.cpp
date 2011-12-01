@@ -154,8 +154,8 @@ void BlockFilter::
             inInterval.first / chunk.original_sample_rate,
             inInterval.last / chunk.original_sample_rate ).suppressTiming();
     DEBUG_CWTTOBLOCK TaskTimer("transferDesc=[%g, %g)",
-            transferDesc.coveredInterval().first / chunk.original_sample_rate,
-            transferDesc.coveredInterval().last / chunk.original_sample_rate ).suppressTiming();
+            transferDesc.spannedInterval().first / chunk.original_sample_rate,
+            transferDesc.spannedInterval().last / chunk.original_sample_rate ).suppressTiming();
 
     // Remove already computed intervals
     if (!full_resolution)
@@ -223,7 +223,7 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo("_collection->scales_per_block() = %u", _collection->scales_per_block());
 
 
-    Signal::Interval transfer = transferDesc.coveredInterval();
+    Signal::Interval transfer = transferDesc.spannedInterval();
 
     DEBUG_CWTTOBLOCK {
         TaskTimer("inInterval [%u,%u)", inInterval.first, inInterval.last).suppressTiming();
@@ -443,7 +443,7 @@ ChunkAndInverse DrawnWaveformToBlock::
     if (missingSamples)
     {
         Signal::Interval first(0, 0);
-        first.first = missingSamples.coveredInterval().first;
+        first.first = missingSamples.spannedInterval().first;
         first.last = first.first + 1;
 
         BOOST_FOREACH( pBlock block, intersecting_blocks)

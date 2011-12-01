@@ -281,14 +281,14 @@ float SinkSource::
 long unsigned SinkSource::
         number_of_samples()
 {
-    return samplesDesc().coveredInterval().count();
+    return samplesDesc().spannedInterval().count();
 }
 
 
 Interval SinkSource::
         getInterval()
 {
-    return samplesDesc().coveredInterval();
+    return samplesDesc().spannedInterval();
 }
 
 

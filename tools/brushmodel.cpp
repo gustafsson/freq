@@ -152,7 +152,7 @@ Signal::Interval BrushModel::
         for (y = bottom.block_index[1]; y<=top.block_index[1]; ++y )
             r |= addGauss(ref, gauss);
 
-    return r.coveredInterval();
+    return r.spannedInterval();
 }
 
 

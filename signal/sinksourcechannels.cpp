@@ -134,7 +134,7 @@ float SinkSourceChannels::
 IntervalType SinkSourceChannels::
         number_of_samples()
 {
-    return samplesDesc().coveredInterval().count();
+    return samplesDesc().spannedInterval().count();
 }
 
 
@@ -148,7 +148,7 @@ Interval SinkSourceChannels::
         I |= sinksources_[ i ].getInterval();
     }
 
-    return I.coveredInterval();
+    return I.spannedInterval();
 }
 
 

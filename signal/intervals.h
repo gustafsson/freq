@@ -37,7 +37,7 @@ public:
     IntervalType first, last;
     IntervalType count() const { return valid() ? last - first : 0; }
 
-    bool valid() const;
+    bool valid() const { return first <= last; }
     Interval operator|(const Interval& r) { Interval I(*this); return I|=r; }
     Interval& operator|=(const Interval& r);
     Interval operator&(const Interval& r) { Interval I(*this); return I&=r; }
@@ -89,7 +89,7 @@ public:
     Intervals               inverse() const;
     Interval                fetchFirstInterval() const;
     Interval                fetchInterval( IntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;
-    Interval                coveredInterval() const;
+    Interval                spannedInterval() const;
     Intervals               enlarge( IntervalType dt ) const;
     Intervals               shrink( IntervalType dt ) const;
     IntervalType            count() const;

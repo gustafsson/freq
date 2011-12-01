@@ -101,7 +101,7 @@ void WriteWav::
 void WriteWav::
         writeToDisk()
 {
-    Signal::Interval i = _data.samplesDesc().coveredInterval();
+    Signal::Interval i = _data.samplesDesc().spannedInterval();
 
     BOOST_ASSERT(i.count());
 
