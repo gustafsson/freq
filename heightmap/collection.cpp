@@ -856,45 +856,55 @@ pBlock Collection::
 
                         Position a,b;
                         ref.getArea(a,b);
-                        foreach( const pBlock& bl, gib )
+
+                        for (int merge_level=1; merge_level<4; ++merge_level)
                         {
-                            // The switch from high resolution blocks to low resolution blocks (or
-                            // the other way around) should be as invisible as possible. Therefor
-                            // the contents should be stubbed from whatever contents the previous
-                            // blocks already have, even if the contents are out-of-date.
-                            //
-                            // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
-                            Interval v = bl->ref.getInterval();
-
-                            // Check if these samples are still considered for update
-                            if ( (things_to_update & v ).count() <= 1)
-                                continue;
-
-                            int d = bl->ref.log2_samples_size[0];
-                            d -= ref.log2_samples_size[0];
-                            d += bl->ref.log2_samples_size[1];
-                            d -= ref.log2_samples_size[1];
-
-                            if (d>=-2 && d<=2)
+                            std::vector<pBlock> next;
+                            foreach( const pBlock& bl, gib )
                             {
-                                Position a2,b2;
-                                bl->ref.getArea(a2,b2);
-                                if (a2.scale <= a.scale && b2.scale >= b.scale )
+                                // The switch from high resolution blocks to low resolution blocks (or
+                                // the other way around) should be as invisible as possible. Therefor
+                                // the contents should be stubbed from whatever contents the previous
+                                // blocks already have, even if the contents are out-of-date.
+                                //
+                                // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
+                                Interval v = bl->ref.getInterval();
+
+                                // Check if these samples are still considered for update
+                                if ( (things_to_update & v ).count() <= 1)
+                                    continue;
+
+                                int d = bl->ref.log2_samples_size[0];
+                                d -= ref.log2_samples_size[0];
+                                d += bl->ref.log2_samples_size[1];
+                                d -= ref.log2_samples_size[1];
+
+                                if (d==merge_level || -d==merge_level)
                                 {
-                                    // 'bl' covers all scales in 'block' (not necessarily all time samples though)
-                                    things_to_update -= v;
-                                    mergeBlock( block, bl, 0 );
-                                }
-                                else if (bl->ref.log2_samples_size[1] + 1 == ref.log2_samples_size[1])
-                                {
-                                    // mergeBlock makes sure that their scales overlap more or less
-                                    mergeBlock( block, bl, 0 );
+                                    Position a2,b2;
+                                    bl->ref.getArea(a2,b2);
+                                    if (a2.scale <= a.scale && b2.scale >= b.scale )
+                                    {
+                                        // 'bl' covers all scales in 'block' (not necessarily all time samples though)
+                                        things_to_update -= v;
+                                        mergeBlock( block, bl, 0 );
+                                    }
+                                    else if (bl->ref.log2_samples_size[1] + 1 == ref.log2_samples_size[1])
+                                    {
+                                        // mergeBlock makes sure that their scales overlap more or less
+                                        //mergeBlock( block, bl, 0 ); takes time
+                                    }
+                                    else
+                                    {
+                                        // don't bother with things that doesn't match very well
+                                    }
                                 }
                                 else
                                 {
-                                    // don't bother with things that doesn't match very well
+                                    next.push_back( bl );
                                 }
                             }
+                            gib = next;
                         }
                     }
                 }
