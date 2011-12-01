@@ -38,7 +38,7 @@
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
 #define MAX_FRACTION_FOR_CACHES (1.f/2.f)
-#define MAX_CREATED_BLOCKS_PER_FRAME 8
+#define MAX_CREATED_BLOCKS_PER_FRAME 32
 
 using namespace Signal;
 
