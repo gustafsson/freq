@@ -390,7 +390,7 @@ void RenderController::
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     unsigned prev_chunk_size = s.chunk_size();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+    s.set_approximate_chunk_size( 0.25f*c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
 
     c.wavelet_fast_time_support( wavelet_fast_time_support );
 

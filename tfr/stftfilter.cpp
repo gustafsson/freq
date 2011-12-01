@@ -21,15 +21,12 @@ StftFilter::
     if (!t)
         t = Stft::SingletonP();
 
-    if (t)
-    {
-        Stft* s = dynamic_cast<Stft*>(t.get());
-        BOOST_ASSERT( s );
+    Stft* s = dynamic_cast<Stft*>(t.get());
+    BOOST_ASSERT( s );
 
-        s->setWindow(Stft::WindowType_Hann, 0.75f);
+    s->setWindow(Stft::WindowType_Hann, 0.75f);
 
-        _transform = t;
-    }
+    _transform = t;
 }
 
 
