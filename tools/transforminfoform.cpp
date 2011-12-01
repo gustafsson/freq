@@ -180,7 +180,7 @@ void TransformInfoForm::
         ui->windowTypeComboBox->setVisible(false);
         ui->overlapEdit->setVisible(false);
         QString minHzText = QString("%1").arg(cwt->wanted_min_hz());
-        if (ui->minHzEdit->text() != minHzText)
+        if (ui->minHzEdit->text() != minHzText && !ui->minHzEdit->hasFocus())
             ui->minHzEdit->setText(minHzText);
         //QString maxHzText = QString("%1").arg(cwt->get_max_hz(fs));
         //if (ui->maxHzEdit->text() != maxHzText)
@@ -210,16 +210,16 @@ void TransformInfoForm::
         ui->windowTypeComboBox->setVisible(true);
         ui->overlapEdit->setVisible(true);
         QString binResolutionText = QString("%1").arg(fs/stft->chunk_size(),0,'f',2);
-        if (ui->binResolutionEdit->text() != binResolutionText)
+        if (ui->binResolutionEdit->text() != binResolutionText && !ui->binResolutionEdit->hasFocus())
             ui->binResolutionEdit->setText(binResolutionText);
         QString windowSizeText = QString("%1").arg(stft->chunk_size());
-        if (ui->windowSizeEdit->text() != windowSizeText)
+        if (ui->windowSizeEdit->text() != windowSizeText && !ui->windowSizeEdit->hasFocus())
             ui->windowSizeEdit->setText(windowSizeText);
         QString overlapText = QString("%1").arg(stft->overlap());
-        if (ui->overlapEdit->text() != overlapText)
+        if (ui->overlapEdit->text() != overlapText && !ui->overlapEdit->hasFocus())
             ui->overlapEdit->setText(overlapText);
         Tfr::Stft::WindowType windowtype = stft->windowType();
-        if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt())
+        if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
     else if (cepstrum)
