@@ -28,13 +28,16 @@ MicrophoneRecorder::
     ss << "recording_" << s << ".wav";
 
     init(); // fetch _sample_rate
-    stopRecording();
+    stopRecording(); // delete _stream_record
 }
 
 
 void MicrophoneRecorder::
         init()
 {
+    try
+    {
+
     _offset = 0;
     _sample_rate = 1;
 
@@ -109,6 +112,20 @@ void MicrophoneRecorder::
             &MicrophoneRecorder::writeBuffer));
 
     lock.unlock();
+
+    }
+    catch (const portaudio::PaException& x)
+    {
+        TaskInfo("MicrophoneRecorder init error: %s %s (%d)\nMessage: %s",
+                 vartype(x), x.paErrorText(), x.paError(), x.what());
+        _has_input_device = false;
+    }
+    catch (const portaudio::PaCppException& x)
+    {
+        TaskInfo("MicrophoneRecorder init error: %s (%d)\nMessage: %s",
+                 vartype(x), x.specifier(), x.what());
+        _has_input_device = false;
+    }
 }
 
 
@@ -141,7 +158,25 @@ void MicrophoneRecorder::startRecording()
     // call length() and update _offset before starting recording because
     // length() uses {number_of_samples - time() - _offset} while recording.
     _offset = length();
-    _stream_record->start();
+
+    try
+    {
+        _stream_record->start();
+    }
+    catch (const portaudio::PaException& x)
+    {
+        TaskInfo("startRecording error: %s %s (%d)\nMessage: %s",
+                 vartype(x), x.paErrorText(), x.paError(), x.what());
+        _has_input_device = false;
+        return;
+    }
+    catch (const portaudio::PaCppException& x)
+    {
+        TaskInfo("startRecording error: %s (%d)\nMessage: %s",
+                 vartype(x), x.specifier(), x.what());
+        _has_input_device = false;
+        return;
+    }
 
     _start_recording = boost::posix_time::microsec_clock::local_time();
 }
@@ -150,12 +185,27 @@ void MicrophoneRecorder::stopRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
     if (_stream_record) {
+        try
+        {
         TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
         //stop could hang the ui (codaset #24)
         //_stream_record->isStopped()? void(): _stream_record->stop();
         _stream_record->isStopped()? void(): _stream_record->abort();
         _stream_record->close();
         _stream_record.reset();
+        }
+        catch (const portaudio::PaException& x)
+        {
+            TaskInfo("stopRecording error: %s %s (%d)\nMessage: %s",
+                     vartype(x), x.paErrorText(), x.paError(), x.what());
+            _has_input_device = false;
+        }
+        catch (const portaudio::PaCppException& x)
+        {
+            TaskInfo("stopRecording error: %s (%d)\nMessage: %s",
+                     vartype(x), x.specifier(), x.what());
+            _has_input_device = false;
+        }
     }
 }
 
