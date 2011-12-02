@@ -1656,12 +1656,18 @@ void Renderer::drawAxes( float T )
     }
 
     glEnableClientState(GL_VERTEX_ARRAY);
-    glLineWidth(2);
-    glVertexPointer(4, GL_FLOAT, 0, &phatTicks[0]);
-    glDrawArrays(GL_LINES, 0, phatTicks.size());
-    glLineWidth(1);
-    glVertexPointer(4, GL_FLOAT, 0, &ticks[0]);
-    glDrawArrays(GL_LINES, 0, ticks.size());
+    if (!phatTicks.empty())
+    {
+        glLineWidth(2);
+        glVertexPointer(4, GL_FLOAT, 0, &phatTicks[0]);
+        glDrawArrays(GL_LINES, 0, phatTicks.size());
+        glLineWidth(1);
+    }
+    if (!ticks.empty())
+    {
+        glVertexPointer(4, GL_FLOAT, 0, &ticks[0]);
+        glDrawArrays(GL_LINES, 0, ticks.size());
+    }
     glDisableClientState(GL_VERTEX_ARRAY);
 
     glEnable(GL_DEPTH_TEST);
