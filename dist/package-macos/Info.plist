@@ -5,7 +5,7 @@
 	<key>CFBundleExecutable</key>
 	<string>launcher</string>
 	<key>CFBundleName</key>
-	<string>Sonicawe</string>
+	<string>Sonic AWE</string>
 	<key>CFBundleGetInfoString</key>
 	<string>(LONG_VERSION_TAG)</string>
 	<key>CFBundleIdentifier</key>
@@ -42,7 +42,7 @@
 	</dict>
 	
 	<key>NOTE</key>
-	<string>SonicAwe</string>
+	<string>Sonic AWE</string>
 	
 	<key>LSMinimumSystemVersion</key>
 	<string>10.6</string>
