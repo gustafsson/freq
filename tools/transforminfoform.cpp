@@ -20,8 +20,8 @@
 
 #include <QTimer>
 
-#define LOG_TRANSFORM_INFO
-//#define LOG_TRANSFORM_INFO if(0)
+//#define LOG_TRANSFORM_INFO
+#define LOG_TRANSFORM_INFO if(0)
 
 namespace Tools
 {

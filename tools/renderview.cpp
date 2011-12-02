@@ -40,8 +40,12 @@
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
 
+#ifdef SONICAWE_VERSION
+#define TIME_PAINTGL_DRAW if(0)
+#else
 #define TIME_PAINTGL_DRAW
 //#define TIME_PAINTGL_DRAW if(0)
+#endif
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -667,7 +671,7 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DRAW TaskInfo("Drew %u*%u block%s (%u triangles) in viewport(%d, %d)",
+    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%d, %d).",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s",
