@@ -40,8 +40,8 @@ private:
                 & BOOST_SERIALIZATION_NVP(html)
                 & BOOST_SERIALIZATION_NVP(scroll_scale)
                 & BOOST_SERIALIZATION_NVP(thumbnail)
-                & BOOST_SERIALIZATION_NVP(window_size[0])
-                & BOOST_SERIALIZATION_NVP(window_size[1])
+                & boost::serialization::make_nvp("window_size.x", window_size[0])
+                & boost::serialization::make_nvp("window_size.y", window_size[1])
                 & BOOST_SERIALIZATION_NVP(freezed_position);
     }
 };
