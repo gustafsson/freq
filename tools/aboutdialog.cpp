@@ -37,6 +37,8 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(hide()));
     connect(ui->buttonBox, SIGNAL(rejected()), SLOT(hide()));
 
+    main_ui->actionAbout->setMenuRole(QAction::AboutRole);
+
     showEvent(0);
 }
 
