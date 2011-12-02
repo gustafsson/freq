@@ -126,7 +126,7 @@ def package_macos(app_name, version, zip = false)
     puts " writing: Info.plist"
     info = File.read("package-macos~/Info.plist")
     info.gsub!("(VERSION_TAG)", "#{version}")
-    info.gsub!("(LONG_VERSION_TAG)", "SonicAwe #{version}")
+    info.gsub!("(LONG_VERSION_TAG)", "Sonic AWE #{version}")
     File.open("#{app_name}.app/Contents/Info.plist", "w") do |file|
         file.write(info)
     end
