@@ -236,12 +236,15 @@ win32:QMAKE_LFLAGS_DEBUG += \
 ####################
 # Temporary output
 
+TMPBASEDIR = sonicawe
+customtarget: TMPBASEDIR = $$CUSTOMTARGET
+
 usecuda {
-  TMPDIR = tmp/cuda
+  TMPDIR = tmp/$${TMPBASEDIR}/cuda
 } else:useopencl {
-  TMPDIR = tmp/opencl
+  TMPDIR = tmp/$${TMPBASEDIR}/opencl
 } else {
-  TMPDIR = tmp/cpu
+  TMPDIR = tmp/$${TMPBASEDIR}/cpu
 }
 
 win32:RCC_DIR = $${TMPDIR}
