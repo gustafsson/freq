@@ -4,12 +4,11 @@
 #include "sawe/application.h"
 #include "ui/mainwindow.h"
 
-#ifdef USE_CUDA
 // gpumisc
+#ifdef USE_CUDA
 #include <CudaProperties.h>
-#else
-#include <cpuproperties.h>
 #endif
+#include <cpuproperties.h>
 
 // license
 #include "sawe/reader.h"
@@ -72,7 +71,7 @@ void AboutDialog::
                              .arg(total/1024.f/1024.f, 0, 'f', 1)
                              .arg(CudaProperties::flops(prop)*1e-9, 0, 'f', 0)
                              .arg(CudaProperties::gpu_memory_speed()*1e-9, 0, 'f', 1)
-                             .arg(CudaProperties::cpu_memory_speed()*1e-9, 0, 'f', 1)
+                             .arg(CpuProperties::cpu_memory_speed()*1e-9, 0, 'f', 1)
                              .arg(prop.major).arg(prop.minor)
                              .arg(CudaProperties::getCudaDriverVersion())
                              .arg(CudaProperties::getCudaRuntimeVersion())
