@@ -15,8 +15,12 @@
 
 #include <float.h>
 
+#ifdef SONICAWE_VERSION
+#define TIME_BLOCKFILTER if(0)
+#else
 #define TIME_BLOCKFILTER
 //#define TIME_BLOCKFILTER if(0)
+#endif
 
 //#define TIME_CWTTOBLOCK
 #define TIME_CWTTOBLOCK if(0)
