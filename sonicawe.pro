@@ -238,7 +238,7 @@ win32:QMAKE_LFLAGS_DEBUG += \
 # Temporary output
 
 TMPBASEDIR=
-customtarget: TMPBASEDIR=$${TARGETNAME}
+customtarget: TMPBASEDIR=target/$${TARGETNAME}
 
 usecuda {
   TMPDIR = tmp/$${TMPBASEDIR}/cuda
