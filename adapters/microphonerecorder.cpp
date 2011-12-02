@@ -117,13 +117,13 @@ void MicrophoneRecorder::
     catch (const portaudio::PaException& x)
     {
         TaskInfo("MicrophoneRecorder init error: %s %s (%d)\nMessage: %s",
-                 vartype(x), x.paErrorText(), x.paError(), x.what());
+                 vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
         _has_input_device = false;
     }
     catch (const portaudio::PaCppException& x)
     {
         TaskInfo("MicrophoneRecorder init error: %s (%d)\nMessage: %s",
-                 vartype(x), x.specifier(), x.what());
+                 vartype(x).c_str(), x.specifier(), x.what());
         _has_input_device = false;
     }
 }
@@ -166,14 +166,14 @@ void MicrophoneRecorder::startRecording()
     catch (const portaudio::PaException& x)
     {
         TaskInfo("startRecording error: %s %s (%d)\nMessage: %s",
-                 vartype(x), x.paErrorText(), x.paError(), x.what());
+                 vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
         _has_input_device = false;
         return;
     }
     catch (const portaudio::PaCppException& x)
     {
         TaskInfo("startRecording error: %s (%d)\nMessage: %s",
-                 vartype(x), x.specifier(), x.what());
+                 vartype(x).c_str(), x.specifier(), x.what());
         _has_input_device = false;
         return;
     }
@@ -197,13 +197,13 @@ void MicrophoneRecorder::stopRecording()
         catch (const portaudio::PaException& x)
         {
             TaskInfo("stopRecording error: %s %s (%d)\nMessage: %s",
-                     vartype(x), x.paErrorText(), x.paError(), x.what());
+                     vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
             _has_input_device = false;
         }
         catch (const portaudio::PaCppException& x)
         {
             TaskInfo("stopRecording error: %s (%d)\nMessage: %s",
-                     vartype(x), x.specifier(), x.what());
+                     vartype(x).c_str(), x.specifier(), x.what());
             _has_input_device = false;
         }
     }
