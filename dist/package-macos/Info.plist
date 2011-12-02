@@ -45,7 +45,7 @@
 	<string>Sonic AWE</string>
 	
 	<key>LSMinimumSystemVersion</key>
-	<string>10.6</string>
+	<string>10.5</string>
 	
 	<key>CFBundleIconFile</key>
 	<string>aweicon.icns</string>
