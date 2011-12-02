@@ -1547,6 +1547,9 @@
    <property name="text">
     <string>About &amp;MuchDifferent</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
   </action>
   <action name="actionReport_a_bug">
    <property name="text">
