@@ -68,6 +68,9 @@ void RecordController::
 
         prev_length_ = r->number_of_samples();
         r->startRecording();
+
+        if (!r->canRecord())
+            model()->project->mainWindow()->getItems()->actionRecord->setChecked( false );
     }
     else
     {
