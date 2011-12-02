@@ -15,7 +15,7 @@ if [ -z "${target}" ]; then
 else
   packagename=sonicawe-${target}
   versiontag="${version}${snapshot}"
-  qmaketarget="CONFIG+=TARGET_${target} DEFINES+=TARGET_${target} CONFIG+=customtarget CUSTOMTARGET=$packagename"
+  qmaketarget="CONFIG+=TARGET_${target} DEFINES+=TARGET_${target} CONFIG+=customtarget CUSTOMTARGET=$packagename TARGETNAME+=$target"
 fi
 
 qmaketarget="${qmaketarget} DEFINES+=SONICAWE_VERSION=${versiontag} DEFINES+=SONICAWE_UNAME=`uname -s`"
