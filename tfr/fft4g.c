@@ -344,7 +344,7 @@ void rdft(int n, int isgn, float *a, int *ip, float *w)
         a[0] += a[1];
         a[1] = xi;
     } else {
-        a[1] = 0.5 * (a[0] - a[1]);
+        a[1] = 0.5f * (a[0] - a[1]);
         a[0] -= a[1];
         if (n > 4) {
             rftbsub(n, a, nc, w + nw);
@@ -703,10 +703,10 @@ void makect(int nc, int *ip, float *c)
         nch = nc >> 1;
         delta = atanf(1.f) / nch;
         c[0] = cosf(delta * nch);
-        c[nch] = 0.5 * c[0];
+        c[nch] = 0.5f * c[0];
         for (j = 1; j < nch; j++) {
-            c[j] = 0.5 * cosf(delta * j);
-            c[nc - j] = 0.5 * sinf(delta * j);
+            c[j] = 0.5f * cosf(delta * j);
+            c[nc - j] = 0.5f * sinf(delta * j);
         }
     }
 }
@@ -1271,7 +1271,7 @@ void rftfsub(int n, float *a, int nc, float *c)
     for (j = 2; j < m; j += 2) {
         k = n - j;
         kk += ks;
-        wkr = 0.5 - c[nc - kk];
+        wkr = 0.5f - c[nc - kk];
         wki = c[kk];
         xr = a[j] - a[k];
         xi = a[j + 1] + a[k + 1];
@@ -1297,7 +1297,7 @@ void rftbsub(int n, float *a, int nc, float *c)
     for (j = 2; j < m; j += 2) {
         k = n - j;
         kk += ks;
-        wkr = 0.5 - c[nc - kk];
+        wkr = 0.5f - c[nc - kk];
         wki = c[kk];
         xr = a[j] - a[k];
         xi = a[j + 1] + a[k + 1];
