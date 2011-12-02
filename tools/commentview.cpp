@@ -53,6 +53,9 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
 
     connect(render_view, SIGNAL(painting()), SLOT(updatePosition()));
 
+    move(0, 0);
+    resize( model()->window_size[0], model()->window_size[1] );
+
     proxy = new QGraphicsProxyWidget(0, Qt::Window);
     proxy->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
     proxy->setWidget( this );
@@ -61,9 +64,6 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     // ZValue is set in CommentView::updatePosition()
     proxy->setVisible(true);
     render_view->addItem( proxy );
-
-    move(0, 0);
-    resize( model()->window_size[0], model()->window_size[1] );
 }
 
 

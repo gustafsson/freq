@@ -389,7 +389,7 @@ QPointF RenderView::
 {
     GLdouble objY = 0;
     if (1 != model->orthoview && use_heightmap_value)
-        objY = getHeightmapValue(pos) * model->renderer->y_scale * 4 * last_ysize;
+        objY = getHeightmapValue(pos) * model->renderer->y_scale * last_ysize;
 
     GLdouble winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
