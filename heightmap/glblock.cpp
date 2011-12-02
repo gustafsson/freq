@@ -470,10 +470,10 @@ void GlBlock::
         glDrawArrays(GL_POINTS, 0, vbo_size);
     } else if (wireFrame) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_SHORT, 0);
+            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
     }
     if (withHeightMap)
     {

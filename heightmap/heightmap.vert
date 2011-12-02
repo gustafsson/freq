@@ -13,15 +13,12 @@ uniform vec2 offset_tex;
 void main()
 {
     // We want linear interpolation all the way out to the edge
-    gl_TexCoord[0].xy = gl_Vertex.xz*scale_tex + offset_tex;
+    vec2 vertex = clamp(gl_Vertex.xz, 0.0, 1.0);
+    gl_TexCoord[0].xy = vertex*scale_tex + offset_tex;
 
     vec2 tex = gl_TexCoord[0].xy;
-    vec2 tex1 = tex - offset_tex*2.0;
-    vec2 tex2 = tex + offset_tex*2.0;
-    if (tex1.x < 0.0) tex1.x = tex.x;
-    if (tex1.y < 0.0) tex1.y = tex.y;
-    if (tex2.x > 1.0) tex2.x = tex.x;
-    if (tex2.y > 1.0) tex2.y = tex.y;
+    vec2 tex1 = max(tex - offset_tex*2.0, offset_tex);
+    vec2 tex2 = min(tex + offset_tex*2.0, 1.0-offset_tex);
 
     float height       = texture2D(tex_nearest, tex).x;
     float heightx1     = texture2D(tex_nearest, vec2(tex1.x, tex.y)).x;
@@ -36,8 +33,11 @@ void main()
     vec3 worldSpaceNormal = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
                                    vec3(tex2.x-tex1.x,  slope.x, 0.0));
 
+    if (vertex != gl_Vertex.xz)
+        height *= 0.5;
+
     // calculate position and transform to homogeneous clip space
-    vec4 pos         = vec4(gl_Vertex.x, height, gl_Vertex.z, 1.0);
+    vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
     gl_Position      = gl_ModelViewProjectionMatrix * pos;
 
     vec3 eyeSpacePos      = (gl_ModelViewMatrix * pos).xyz;

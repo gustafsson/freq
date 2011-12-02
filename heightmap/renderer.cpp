@@ -105,21 +105,21 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     if (_mesh_index_buffer)
         glDeleteBuffersARB(1, &_mesh_index_buffer);
 
+    w+=2;
+    h+=2;
+
     _mesh_width = w;
     _mesh_height = h;
 
     _vbo_size = ((w*2)+4)*(h-1);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(GLushort), 0, GL_STATIC_DRAW);
+    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(BLOCKindexType), 0, GL_STATIC_DRAW);
 
     // fill with indices for rendering mesh as triangle strips
-    GLushort *indices = (GLushort*) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-    if (!indices) {
-        return;
-    }
+    BLOCKindexType *indices = (BLOCKindexType*) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 
-    for(unsigned y=0; y<h-1; y++) {
+    if (indices) for(unsigned y=0; y<h-1; y++) {
         *indices++ = y*w;
         for(unsigned x=0; x<w; x++) {
             *indices++ = y*w+x;
@@ -138,16 +138,13 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( w*h*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
+    _mesh_position.reset( new Vbo( (w+2)*(h+2)*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
 
     glBindBuffer(_mesh_position->vbo_type(), *_mesh_position);
     float *pos = (float *) glMapBuffer(_mesh_position->vbo_type(), GL_WRITE_ONLY);
-    if (!pos) {
-        return;
-    }
 
-    for(unsigned y=0; y<h-1; y++) {
-        for(unsigned x=0; x<w; x++) {
+    if (pos) for(int y=-1; y<=(int)h; y++) {
+        for(int x=-1; x<=(int)w; x++) {
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
             *pos++ = u;
@@ -155,16 +152,6 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
             *pos++ = v;
             *pos++ = 1.0f;
         }
-    }
-
-    // enmake sure v==1
-    for(unsigned x=0; x<w; x++) {
-        float u = x / (float) (w-1);
-        float v = 1;
-        *pos++ = u;
-        *pos++ = 0.0f;
-        *pos++ = v;
-        *pos++ = 1.0f;
     }
 
     glUnmapBuffer(_mesh_position->vbo_type());
