@@ -10,6 +10,7 @@ __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float> wave, flo
 __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float2> inwave, cudaPitchedPtrType<float> outwave, float v );
 __global__ void kernel_stftToComplex( cudaPitchedPtrType<float> inwave, cudaPitchedPtrType<float2> outwave );
 __global__ void kernel_stftDiscardImag( cudaPitchedPtrType<float2> inwave, cudaPitchedPtrType<float> outwave );
+__global__ void kernel_cepstrumPrepareCepstra( cudaPitchedPtrType<float2> cepstra, float normalization );
 
 void stftNormalizeInverse(
         DataStorage<float>::Ptr wavep,
@@ -87,4 +88,28 @@ __global__ void kernel_stftToComplex( cudaPitchedPtrType<float> inwave, cudaPitc
         return;
 
     outwave.ptr()[n] = make_float2(inwave.ptr()[n], 0);
+}
+
+
+void cepstrumPrepareCepstra(
+        Tfr::ChunkData::Ptr chunk,
+        float normalization )
+{
+    cudaPitchedPtrType<float2> cepstra(CudaGlobalStorage::ReadWrite<1>( chunk ).getCudaPitchedPtr());
+
+    dim3 block(128);
+    dim3 grid = wrapCudaMaxGrid( cepstra.getNumberOfElements(), block);
+
+    kernel_cepstrumPrepareCepstra<<<grid, block, 0>>>( cepstra, normalization );
+}
+
+
+__global__ void kernel_cepstrumPrepareCepstra( cudaPitchedPtrType<float2> cepstra, float normalization )
+{
+    unsigned n;
+    if( !cepstra.unwrapGlobalThreadNumber3D(n))
+        return;
+
+    float2& d = cepstra.ptr()[n];
+    d = make_float2(logf( 0.001f + sqrt(d.x*d.x + d.y*d.y))*normalization, 0);
 }

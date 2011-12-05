@@ -33,7 +33,7 @@ ChunkAndInverse CepstrumFilter::
 {
     TIME_CepstrumFilter TaskTimer tt("Cepstrum filter");
 
-    unsigned chunk_size = ((Cepstrum*)transform().get())->chunk_size();
+    unsigned chunk_size = dynamic_cast<Cepstrum*>(transform().get())->chunk_size();
     // Add a margin to make sure that the STFT is computed for one block before
     // and one block after the signal. This makes it possible to do proper
     // interpolations so that there won't be any edges between blocks

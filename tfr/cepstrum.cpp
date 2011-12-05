@@ -1,5 +1,6 @@
 #include "cepstrum.h"
 #include "stft.h"
+#include "stftkernel.h"
 
 #include "TaskTimer.h"
 #include "neat_math.h"
@@ -7,8 +8,10 @@
 using namespace Signal;
 namespace Tfr {
 
-Cepstrum::Cepstrum()
+Cepstrum::
+        Cepstrum()
 {
+    stft_ = Stft::SingletonP();
 }
 
 
@@ -16,34 +19,18 @@ pChunk Cepstrum::
         operator()( pBuffer b )
 {
     TaskTimer tt("Cepstrum");
-    Stft stft = Stft::Singleton();
-    stft.compute_redundant( true );
-    pChunk chunk = stft(b);
+    Stft ft = *stft();
+    ft.compute_redundant( true );
+    pChunk cepstra = ft(b);
 
-    unsigned windows = chunk->nSamples();
-    unsigned window_size = chunk->nScales();
-    pBuffer buffer( new Buffer(b->sample_offset, windows*window_size, b->sample_rate));
+    ::cepstrumPrepareCepstra( cepstra->transform_data, 1.f/ft.chunk_size() );
 
-    ChunkElement* input = chunk->transform_data->getCpuMemory();
-    float* output = buffer->waveform_data()->getCpuMemory();
-
-    Signal::IntervalType N = buffer->number_of_samples();
-    
-    float arbitrary_normalization = 1;
-    float normalization = arbitrary_normalization * 1.f/chunk_size();
-
-    for(Signal::IntervalType i=0; i<N; ++i)
-    {
-        ChunkElement& p = input[i];
-        output[i] = logf( 1 + norm(p) ) * normalization;
-    }
-
-    pChunk cepstra = stft(buffer);
-    TaskInfo("Cepstrum debug. Was %s , returned %s ", 
-        b->getInterval().toString().c_str(), 
-        cepstra->getInterval().toString().c_str());
-
+    ft.compute( cepstra->transform_data, cepstra->transform_data, FftDirection_Forward );
     cepstra->freqAxis = freqAxis( cepstra->original_sample_rate );
+
+    TaskInfo("Cepstrum debug. Was %s , returned %s ",
+        b->getInterval().toString().c_str(),
+        cepstra->getInterval().toString().c_str());
 
     return cepstra;
 
@@ -67,22 +54,23 @@ float Cepstrum::
 
 
 unsigned Cepstrum::
-        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+        next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate )
 {
-    if (current_valid_samples_per_chunk<chunk_size())
-        return chunk_size();
-
-    return spo2g(align_up(current_valid_samples_per_chunk, chunk_size())/chunk_size())*chunk_size();
+    return stft()->next_good_size(current_valid_samples_per_chunk, sample_rate);
 }
 
 
 unsigned Cepstrum::
-        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+        prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate )
 {
-    if (current_valid_samples_per_chunk<2*chunk_size())
-        return chunk_size();
+    return stft()->prev_good_size(current_valid_samples_per_chunk, sample_rate);
+}
 
-    return lpo2s(align_up(current_valid_samples_per_chunk, chunk_size())/chunk_size())*chunk_size();
+
+unsigned Cepstrum::
+        chunk_size()
+{
+    return stft()->chunk_size();
 }
 
 
@@ -93,9 +81,9 @@ Signal::pBuffer Cepstrum::
 }
 
 
-unsigned Cepstrum::chunk_size()
+Stft* Cepstrum::stft()
 {
-    return Stft::Singleton().chunk_size();
+    return dynamic_cast<Stft*>(stft_.get());
 }
 
 

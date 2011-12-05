@@ -6,6 +6,8 @@
 
 namespace Tfr {
 
+class Stft;
+
 // TODO remove HasSingleton
 class Cepstrum : public Tfr::Transform, public HasSingleton<Cepstrum,Transform>
 {
@@ -21,6 +23,12 @@ public:
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
 
     unsigned chunk_size();
+
+    Stft* stft();
+
+private:
+
+    Tfr::pTransform stft_;
 };
 
 } // namespace Tfr

@@ -150,12 +150,12 @@ void TransformInfoForm::
     ui->maxHzEdit->setVisible(false);
     ui->binResolutionLabel->setVisible(stft);
     ui->binResolutionEdit->setVisible(stft);
-    ui->windowSizeLabel->setVisible(stft);
-    ui->windowSizeEdit->setVisible(stft);
-    ui->windowTypeLabel->setVisible(stft);
-    ui->windowTypeComboBox->setVisible(stft);
-    ui->overlapLabel->setVisible(stft);
-    ui->overlapEdit->setVisible(stft);
+    ui->windowSizeLabel->setVisible(stft || cepstrum);
+    ui->windowSizeEdit->setVisible(stft || cepstrum);
+    ui->windowTypeLabel->setVisible(stft || cepstrum);
+    ui->windowTypeComboBox->setVisible(stft || cepstrum);
+    ui->overlapLabel->setVisible(stft || cepstrum);
+    ui->overlapEdit->setVisible(stft || cepstrum);
 
     if (cwt)
     {
@@ -204,6 +204,13 @@ void TransformInfoForm::
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
+
+        setEditText( ui->binResolutionEdit, QString("%1").arg(fs/cepstrum->chunk_size(),0,'f',2) );
+        setEditText( ui->windowSizeEdit, QString("%1").arg(cepstrum->chunk_size()) );
+        setEditText( ui->overlapEdit, QString("%1").arg(cepstrum->stft()->overlap()) );
+        Tfr::Stft::WindowType windowtype = cepstrum->stft()->windowType();
+        if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
+            ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
     else if (waveform)
     {
