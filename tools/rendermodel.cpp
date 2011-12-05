@@ -70,12 +70,12 @@ void RenderModel::
     _qz = .5f;  // _qz(3.6f/5),
     _px = 0;
     _py = 0;
-    _pz = -6.5f;
+    _pz = -40.f;
     _rx = 91;
     _ry = 180;
     _rz = 0;
-    xscale = 1;
-    zscale = 5;
+    xscale = 3;
+    zscale = -_pz*0.75f;
 }
 
 

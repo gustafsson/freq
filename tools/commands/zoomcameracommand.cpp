@@ -130,7 +130,7 @@ void ZoomCameraCommand::
     {
         model->_pz *= (1+ps * delta);
 
-        if (model->_pz<-40) model->_pz = -40;
+        if (model->_pz<-100) model->_pz = -100;
         if (model->_pz>-.1) model->_pz = -.1;
     }
 }
