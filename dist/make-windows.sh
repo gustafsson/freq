@@ -100,6 +100,9 @@ instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
 $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
 
+# append \ to paths for ${File}
+sed -i.backup -r "s/(^\\$\{File\}.*) (.*$)/\1\\\\ \2/g" $nsisscript
+
 #sed="sed -i.backup -e"
 sed="sed -i.backup"
 #sed="sed -i"" --regexp-extended"

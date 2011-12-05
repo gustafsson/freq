@@ -352,9 +352,9 @@ FunctionEnd
 
 Function onGUIInit
 	;Aero::Apply
-	BrandingURL::Set /NOUNLOAD "0" "0" "200" "http://www.MuchDifferent.com"
+	;BrandingURL::Set /NOUNLOAD "0" "0" "200" "http://www.MuchDifferent.com"
 FunctionEnd
 
 Function .onGUIEnd
-	BrandingURL::Unload
+	;BrandingURL::Unload
 FunctionEnd
