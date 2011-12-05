@@ -123,6 +123,35 @@ void NavigationController::
     _view->userinput_update();
 }
 
+
+void NavigationController::
+        rotateUp()
+{
+    rotateCamera( 0, 10 );
+}
+
+
+void NavigationController::
+        rotateDown()
+{
+    rotateCamera( 0, -10 );
+}
+
+
+void NavigationController::
+        rotateLeft()
+{
+    rotateCamera( 10, 0 );
+}
+
+
+void NavigationController::
+        rotateRight()
+{
+    rotateCamera( -10, 0 );
+}
+
+
 void NavigationController::
         mousePressEvent ( QMouseEvent * e )
 {
@@ -381,10 +410,14 @@ void NavigationController::
     bindKeyToSlot( main, "Down", this, SLOT(moveDown()) );
     bindKeyToSlot( main, "Left", this, SLOT(moveLeft()) );
     bindKeyToSlot( main, "Right", this, SLOT(moveRight()) );
-    bindKeyToSlot( main, "Shift+Up", this, SLOT(scaleUp()) );
-    bindKeyToSlot( main, "Shift+Down", this, SLOT(scaleDown()) );
-    bindKeyToSlot( main, "Shift+Left", this, SLOT(scaleLeft()) );
-    bindKeyToSlot( main, "Shift+Right", this, SLOT(scaleRight()) );
+    bindKeyToSlot( main, "Ctrl+Up", this, SLOT(scaleUp()) );
+    bindKeyToSlot( main, "Ctrl+Down", this, SLOT(scaleDown()) );
+    bindKeyToSlot( main, "Ctrl+Left", this, SLOT(scaleLeft()) );
+    bindKeyToSlot( main, "Ctrl+Right", this, SLOT(scaleRight()) );
+    bindKeyToSlot( main, "Shift+Up", this, SLOT(rotateUp()) );
+    bindKeyToSlot( main, "Shift+Down", this, SLOT(rotateDown()) );
+    bindKeyToSlot( main, "Shift+Left", this, SLOT(rotateLeft()) );
+    bindKeyToSlot( main, "Shift+Right", this, SLOT(rotateRight()) );
 }
 
 

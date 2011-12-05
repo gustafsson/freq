@@ -33,6 +33,10 @@ namespace Tools
         void scaleDown();
         void scaleLeft();
         void scaleRight();
+        void rotateUp();
+        void rotateDown();
+        void rotateLeft();
+        void rotateRight();
 
 
     private:

@@ -74,7 +74,7 @@ void RenderModel::
     _rx = 91;
     _ry = 180;
     _rz = 0;
-    xscale = 3;
+    xscale = 5;
     zscale = -_pz*0.75f;
 }
 
