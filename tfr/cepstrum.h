@@ -6,6 +6,7 @@
 
 namespace Tfr {
 
+// TODO remove HasSingleton
 class Cepstrum : public Tfr::Transform, public HasSingleton<Cepstrum,Transform>
 {
 public:

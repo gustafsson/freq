@@ -20,6 +20,9 @@ enum FftDirection
 
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
+
+TODO remove HasSingleton
+
 */
 class Fft: public Transform, public HasSingleton<Fft, Transform>
 {
@@ -74,6 +77,9 @@ private:
 
 /**
 Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
+
+TODO remove HasSingleton
+
 @see Stft::operator()
 */
 class Stft: public Transform, public HasSingleton<Stft,Transform>

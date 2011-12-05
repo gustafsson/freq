@@ -6,6 +6,7 @@
 
 namespace Tfr {
 
+//    TODO remove HasSingleton
 class DrawnWaveform : public Transform
 {
 public:
