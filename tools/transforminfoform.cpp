@@ -144,6 +144,19 @@ void TransformInfoForm::
     }
     addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
 
+    ui->minHzLabel->setVisible(cwt);
+    ui->minHzEdit->setVisible(cwt);
+    ui->maxHzLabel->setVisible(false);
+    ui->maxHzEdit->setVisible(false);
+    ui->binResolutionLabel->setVisible(stft);
+    ui->binResolutionEdit->setVisible(stft);
+    ui->windowSizeLabel->setVisible(stft);
+    ui->windowSizeEdit->setVisible(stft);
+    ui->windowTypeLabel->setVisible(stft);
+    ui->windowTypeComboBox->setVisible(stft);
+    ui->overlapLabel->setVisible(stft);
+    ui->overlapEdit->setVisible(stft);
+
     if (cwt)
     {
         addRow("Type", "Gabor wavelet");
@@ -158,22 +171,8 @@ void TransformInfoForm::
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
-        ui->minHzLabel->setVisible(true);
-        ui->minHzEdit->setVisible(true);
-        ui->maxHzLabel->setVisible(false);
-        ui->maxHzEdit->setVisible(false);
-        ui->binResolutionLabel->setVisible(false);
-        ui->binResolutionEdit->setVisible(false);
-        ui->windowSizeEdit->setVisible(false);
-        ui->windowSizeLabel->setVisible(false);
-        ui->windowTypeComboBox->setVisible(false);
-        ui->overlapEdit->setVisible(false);
-        QString minHzText = QString("%1").arg(cwt->wanted_min_hz());
-        if (ui->minHzEdit->text() != minHzText && !ui->minHzEdit->hasFocus())
-            ui->minHzEdit->setText(minHzText);
-        //QString maxHzText = QString("%1").arg(cwt->get_max_hz(fs));
-        //if (ui->maxHzEdit->text() != maxHzText)
-        //    ui->maxHzEdit->setText(maxHzText);
+        setEditText( ui->minHzEdit, QString("%1").arg(cwt->wanted_min_hz()) );
+        //setEditText( ui->maxHzEdit, QString("%1").arg(cwt->get_max_hz(fs)) );
     }
     else if (stft)
     {
@@ -188,25 +187,9 @@ void TransformInfoForm::
         addRow("Rendered height", QString("%1 px").arg(renderview->height()));
         addRow("Rendered width", QString("%1 px").arg(renderview->width()));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
-        ui->minHzLabel->setVisible(false);
-        ui->minHzEdit->setVisible(false);
-        ui->maxHzLabel->setVisible(false);
-        ui->maxHzEdit->setVisible(false);
-        ui->binResolutionLabel->setVisible(true);
-        ui->binResolutionEdit->setVisible(true);
-        ui->windowSizeEdit->setVisible(true);
-        ui->windowSizeLabel->setVisible(true);
-        ui->windowTypeComboBox->setVisible(true);
-        ui->overlapEdit->setVisible(true);
-        QString binResolutionText = QString("%1").arg(fs/stft->chunk_size(),0,'f',2);
-        if (ui->binResolutionEdit->text() != binResolutionText && !ui->binResolutionEdit->hasFocus())
-            ui->binResolutionEdit->setText(binResolutionText);
-        QString windowSizeText = QString("%1").arg(stft->chunk_size());
-        if (ui->windowSizeEdit->text() != windowSizeText && !ui->windowSizeEdit->hasFocus())
-            ui->windowSizeEdit->setText(windowSizeText);
-        QString overlapText = QString("%1").arg(stft->overlap());
-        if (ui->overlapEdit->text() != overlapText && !ui->overlapEdit->hasFocus())
-            ui->overlapEdit->setText(overlapText);
+        setEditText( ui->binResolutionEdit, QString("%1").arg(fs/stft->chunk_size(),0,'f',2) );
+        setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
+        setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
         Tfr::Stft::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
@@ -221,45 +204,15 @@ void TransformInfoForm::
         addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
-        ui->minHzLabel->setVisible(false);
-        ui->minHzEdit->setVisible(false);
-        ui->maxHzLabel->setVisible(false);
-        ui->maxHzEdit->setVisible(false);
-        ui->binResolutionLabel->setVisible(false);
-        ui->binResolutionEdit->setVisible(false);
-        ui->windowSizeEdit->setVisible(false);
-        ui->windowSizeLabel->setVisible(false);
-        ui->windowTypeComboBox->setVisible(false);
-        ui->overlapEdit->setVisible(false);
     }
     else if (waveform)
     {
         addRow("Type", "Waveform");
-        ui->minHzLabel->setVisible(false);
-        ui->minHzEdit->setVisible(false);
-        ui->maxHzLabel->setVisible(false);
-        ui->maxHzEdit->setVisible(false);
-        ui->binResolutionLabel->setVisible(false);
-        ui->binResolutionEdit->setVisible(false);
-        ui->windowSizeEdit->setVisible(false);
-        ui->windowSizeLabel->setVisible(false);
-        ui->windowTypeComboBox->setVisible(false);
-        ui->overlapEdit->setVisible(false);
     }
     else
     {
         addRow("Type", "Unknown");
         addRow("Error", "Doesn't recognize transform");
-        ui->minHzLabel->setVisible(false);
-        ui->minHzEdit->setVisible(false);
-        ui->maxHzLabel->setVisible(false);
-        ui->maxHzEdit->setVisible(false);
-        ui->binResolutionLabel->setVisible(false);
-        ui->binResolutionEdit->setVisible(false);
-        ui->windowSizeEdit->setVisible(false);
-        ui->windowSizeLabel->setVisible(false);
-        ui->windowTypeComboBox->setVisible(false);
-        ui->overlapEdit->setVisible(false);
     }
 
 #ifdef USE_CUDA
@@ -436,6 +389,14 @@ void TransformInfoForm::
     ui->tableWidget->setItem(ui->tableWidget->rowCount()-1, 1, new QTableReadOnlyText (value));
 
     LOG_TRANSFORM_INFO TaskInfo("%s = %s", name.toStdString().c_str(), value.toStdString().c_str() );
+}
+
+
+void TransformInfoForm::
+        setEditText(QLineEdit* edit, QString value)
+{
+    if (edit->text() != value && !edit->hasFocus())
+        edit->setText(value);
 }
 
 } // namespace Tools

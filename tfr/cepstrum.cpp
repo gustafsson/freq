@@ -29,7 +29,7 @@ pChunk Cepstrum::
 
     Signal::IntervalType N = buffer->number_of_samples();
     
-    float arbitrary_normalization = 1000;
+    float arbitrary_normalization = 1;
     float normalization = arbitrary_normalization * 1.f/chunk_size();
 
     for(Signal::IntervalType i=0; i<N; ++i)
