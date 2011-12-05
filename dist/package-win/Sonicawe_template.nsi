@@ -135,46 +135,49 @@ Section "Application Files (required)"
 	Strcpy $INSTALLATION_DONE "0"
 
 	;Retrieving user's driver version
-	${CreateDirectory} "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}"
-	DetailPrint "Launching dxdiag for NVIDIA driver compatibility check"
-	${DxDiag}
-	exec 'dxdiag /x $LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml'
-	Strcpy $done "0"
-	Strcpy $8 "0"
-	${While} $done == "0"
-		Sleep 5000	
-		IntOp $8 $8 + 1
-		IfFileExists "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml" 0 +7
-			nsisXML::Create
-			nsisXML::Load "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml"
-			nsisXML::select '/DxDiag/DisplayDevices/DisplayDevice/DriverVersion'
-			nsisXML::getText
-			Strcpy $USR_DRIVER_VERSION "$3" 
-			Strcpy $done "1"
-		${if} $8 == "30" 
-			DetailPrint "DxDiag -- Time Out"
-			Strcpy $done "1"
-		${EndIf}	
-	${Endwhile}
+;	${CreateDirectory} "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}"
+;	DetailPrint "Launching dxdiag for NVIDIA driver compatibility check"
+;	${DxDiag}
+;	exec 'dxdiag /x $LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml'
+;	Strcpy $done "0"
+;	Strcpy $8 "0"
+;	${While} $done == "0"
+;		Sleep 5000	
+;		IntOp $8 $8 + 1
+;		IfFileExists "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml" 0 +7
+;			nsisXML::Create
+;			nsisXML::Load "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml"
+;			nsisXML::select '/DxDiag/DisplayDevices/DisplayDevice/DriverVersion'
+;			nsisXML::getText
+;			Strcpy $USR_DRIVER_VERSION "$3" 
+;			Strcpy $done "1"
+;		${if} $8 == "30" 
+;			DetailPrint "DxDiag -- Time Out"
+;			Strcpy $done "1"
+;		${EndIf}	
+;	${Endwhile}
+	
+	Strcpy $USR_DRIVER_VERSION "${NVID_VERSION}"
 	
 	;Comparing driver version
-	${if} $USR_DRIVER_VERSION == ""
-		messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure your hardware meets the requirements to run Sonic AWE and install the latest Nvidia drivers. \
-		                 $\n$\nPlease visit www.MuchDifferent.com for more information \
-						 $\n$\nThe installer will now quit"
-		Strcpy $INSTALLATION_DONE "0"
-		Goto done
-	${elseif} $USR_DRIVER_VERSION != ""
+;	${if} $USR_DRIVER_VERSION == ""
+;		messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure your hardware meets the requirements to run Sonic AWE and install the latest Nvidia drivers. \
+;		                 $\n$\nPlease visit www.MuchDifferent.com for more information \
+;						 $\n$\nThe installer will now quit"
+;		Strcpy $INSTALLATION_DONE "0"
+;		Goto done
+;	${elseif} $USR_DRIVER_VERSION != ""
+	${if} 1 == 1 
 		; TODO this comparsion doesn't work for Quadro GPUs if you're building with a Geforce GPU as the driver versions differ. But they both support CUDA 3.0.
-		${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
+		;${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
 
 		; don't abort installation, but warn user
-		${if} $R0 == 2
-			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia drivers, version $USR_DRIVER_VERSION, are too old and you might encounter issues running Sonic AWE. \ 
-			$\nChoose OK to download newer drivers now. You will have to restart the installation afterwards." IDOK downloadDrivers 
-		${elseif} $R0 > 1
-			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
-		${endif}
+;		${if} $R0 == 2
+;			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia drivers, version $USR_DRIVER_VERSION, are too old and you might encounter issues running Sonic AWE. \ 
+;			$\nChoose OK to download newer drivers now. You will have to restart the installation afterwards." IDOK downloadDrivers 
+;		${elseif} $R0 > 1
+;			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
+;		${endif}
 
 		${if} 1 == 1 
 		;$R0 <= 1

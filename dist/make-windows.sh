@@ -75,14 +75,15 @@ cp -r sonic/sonicawe/matlab $packagefullname/matlab
 cp sonic/sonicawe/license/$licensefile $packagefullname
 cp sonic/sonicawe/dist/package-win/awe_256.ico $packagefullname
 
-#Executing dxdiag for Nvidia driver version minimum requirement
-CMD //C dxdiag //x %CD%\\dxdiag.xml
-if [ -f dxdiag.xml ]; then
-nvid_version=`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
-else
-echo Nvidia driver version could not be read because dxdiag xml file was not found. WARNING, version value is set to \"1.0.0.0\" any version of Nvidia drivers will be recognized as compatible.
-nvid_version="1.0.0.0"
-fi
+
+#echo " - Executing dxdiag for Nvidia driver version minimum requirement"
+#CMD //C dxdiag //x %CD%\\dxdiag.xml
+#if [ -f dxdiag.xml ]; then
+#nvid_version=`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
+#else
+#echo Nvidia driver version could not be read because dxdiag xml file was not found. WARNING, version value is set to \"1.0.0.0\" any version of Nvidia drivers will be recognized as compatible.
+#nvid_version="1.0.0.0"
+#fi
 
 
 echo " - execute NsiWriter.exe to create and fill the Sonicawe.nsi script"
