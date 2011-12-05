@@ -41,7 +41,7 @@ echo "Building Sonic AWE Launcher"
 cd sonicawe/dist
 cp -r package-macos package-macos~
 cd package-macos~
-gcc -framework CoreFoundation -o launcher launcher.c
+gcc -framework CoreFoundation -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -o launcher launcher.c
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_macos_i386.zip"
