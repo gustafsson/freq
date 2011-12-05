@@ -267,7 +267,7 @@ private:
             const std::vector<char> & data
         ){
             unsigned N = data.size();
-            ar & boost::serialization::make_nvp( "N", N );
+            ar & BOOST_SERIALIZATION_NVP( N );
             ar.save_binary( &data[0], N );
         }
     };
@@ -279,7 +279,7 @@ private:
             std::vector<char> & data
         ){
             unsigned N = 0;
-            ar & boost::serialization::make_nvp( "N", N );
+            ar & BOOST_SERIALIZATION_NVP( N );
             data.resize(N);
             ar.load_binary( &data[0], N );
         }
@@ -291,10 +291,10 @@ private:
             Archive & ar,
             const std::vector<char> & data
         ){
-            QByteArray zlibUncompressed(&data[0], data.size());
+            QByteArray zlibUncompressed = QByteArray::fromRawData(&data[0], data.size());
             QByteArray zlibCompressed = qCompress(zlibUncompressed);
             unsigned N = zlibCompressed.size();
-            ar & boost::serialization::make_nvp( "N", N );
+            ar & BOOST_SERIALIZATION_NVP( N );
             ar.save_binary( zlibCompressed.constData(), N );
         }
     };
@@ -306,7 +306,7 @@ private:
             std::vector<char> & data
         ){
             unsigned N = 0;
-            ar & boost::serialization::make_nvp( "N", N );
+            ar & BOOST_SERIALIZATION_NVP( N );
             QByteArray zlibCompressed;
             zlibCompressed.resize(N);
             ar.load_binary( zlibCompressed.data(), N );
