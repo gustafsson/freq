@@ -73,16 +73,16 @@ void attachShader(GLuint prg, GLenum type, const char *name)
             TaskInfo ti("Failed to compile shader %s", name );
             TaskInfo("%s", shaderInfoLog);
 
-            QMessageBox message(
+            QMessageBox* message = new QMessageBox(
                     QMessageBox::Critical,
                     "Couldn't properly setup graphics",
                     "Sonic AWE couldn't properly setup required graphics (shader compile error). "
                     "Please file this as a bug report to help us fix this. "
                     "See more info in 'Help->Report a bug'");
 
-            message.setDetailedText( shaderInfoLog );
-
-            message.exec();
+            message->setDetailedText( shaderInfoLog );
+            message->show();
+            message->setAttribute( Qt::WA_DeleteOnClose );
         }
 
         if (compiled)
@@ -129,16 +129,16 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
                      fragFileName, vertFileName );
             TaskInfo("%s", programInfoLog);
 
-            QMessageBox message(
+            QMessageBox* message = new QMessageBox(
                     QMessageBox::Critical,
                     "Couldn't properly setup graphics",
                     "Sonic AWE couldn't properly setup required graphics (shader link error). "
                     "Please file this as a bug report to help us fix this. "
                     "See more info in 'Help->Report a bug'");
 
-            message.setDetailedText( programInfoLog );
-
-            message.exec();
+            message->setDetailedText( programInfoLog );
+            message->show();
+            message->setAttribute( Qt::WA_DeleteOnClose );
         }
 
     } catch (...) {
