@@ -7,32 +7,34 @@ cd ../..
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
+echo "qmaketarget: $qmaketarget"
 
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  qmake $qmaketarget
   make distclean
 else
   rm -f sonicawe/${packagename}
-  qmake
+  rm -f gpumisc/libgpumisc.a
+  rm {sonicawe,gpumisc}/Makefile
 fi
 
 qmake $qmaketarget -spec macx-g++ CONFIG+=release
-make -j`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
+no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
+make -j${no_cores}
 cp sonicawe/${packagename} sonicawe/${packagename}org
 
 
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+echo "qmaketarget: $qmaketarget"
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  qmake $qmaketarget CONFIG+=gcc-4.3
   make distclean
 else
   rm -f sonicawe/${packagename}-cuda
-  qmake
+  rm -f gpumisc/libgpumisc.a
+  rm {sonicawe,gpumisc}/Makefile
 fi
 
 qmake $qmaketarget -spec macx-g++ CONFIG+=release
-make -j`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
+make -j${no_cores}
 
 cp sonicawe/${packagename}org sonicawe/${packagename}
 
