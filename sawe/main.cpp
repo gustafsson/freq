@@ -613,6 +613,7 @@ int main(int argc, char *argv[])
             TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
             TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
             TaskInfo("Build timestamp for %s: %s, %s. Revision %s", UNAME, __DATE__, __TIME__, SONICAWE_REVISION);
+            TaskInfo("number of CPU cores: %d", cpuCores());
             {
                 TaskInfo ti("OpenGL information");
                 TaskInfo("vendor: %s", glGetString(GL_VENDOR));
