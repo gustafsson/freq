@@ -59,14 +59,6 @@ def package_macos(app_name, version, zip = false)
                  "package-macos~/aweicon.icns",
                  "package-macos~/qt.conf"]
     
-    install_names = [[qt_install_name("QtOpenGL"), "@executable_path/../Frameworks/QtOpenGL"],
-                     [qt_install_name("QtGui"), "@executable_path/../Frameworks/QtGui"],
-                     [qt_install_name("QtCore"), "@executable_path/../Frameworks/QtCore"],
-                     [qt_install_name("QtNetwork"), "@executable_path/../Frameworks/QtNetwork"],
-                     ["@rpath/libtlshook.dylib", "@executable_path/../Frameworks/libtlshook.dylib"],
-                     ["@rpath/libcufft.dylib", "@executable_path/../Frameworks/libcufft.dylib"],
-                     ["@rpath/libcudart.dylib", "@executable_path/../Frameworks/libcudart.dylib"]]
-    
     use_bin = Array.new()
     
     # Creating directories
@@ -135,12 +127,28 @@ def package_macos(app_name, version, zip = false)
     
     # Setting install names
     puts " Fixing install names ".center($command_line_width, "=")
-    use_bin.each do |path|
-        puts " binary: #{path}"
-        install_names.each do |install_name|
-            puts "  changing: #{install_name[0]}"
-            unless system("install_name_tool -change #{install_name[0]} #{install_name[1]} #{path}")
-                puts "Error: Could not change install name, #{install_name[0]}, for executable, #{path}"
+    libraries.each do |library|
+        libname = "#{File.basename(library)}"
+        puts " library: #{libname}"
+
+        libpath = "#{app_name}.app/Contents/Frameworks"
+        newlibpath = "@executable_path/../Frameworks"
+        libfile = "#{libpath}/#{libname}"
+        targetid = `otool -DX #{libfile}`.strip
+        newtargetid = "#{newlibpath}/#{libname}"
+
+        unless system("install_name_tool -id #{newtargetid} #{libfile}")
+            puts "Error: Could not set id #{newtargetid} in binary #{libfile}"
+            exit(1)
+        end
+        
+        use_bin.each do |path|
+            binary_uses_this_lib = !`otool -L #{path} | grep #{targetid}`.empty?
+            next unless binary_uses_this_lib
+            
+            puts "  in binary: #{File.basename(path)}"
+            unless system("install_name_tool -change #{targetid} #{newtargetid} #{path}")
+                puts "Error: Could not change install name for #{libpath}/#{libname} from #{targetid} to #{newtargetid} in binary #{path}"
                 exit(1)
             end
         end
