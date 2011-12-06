@@ -16,7 +16,7 @@ if [ "Y" == "${rebuildall}" ]; then
 else
   rm -f sonicawe/${packagename}
   rm -f gpumisc/libgpumisc.a
-  rm {sonicawe,gpumisc}/Makefile
+  rm -f {sonicawe,gpumisc}/Makefile
 fi
 
 no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
@@ -36,7 +36,7 @@ if [ "Y" == "${rebuildall}" ]; then
 else
   rm -f sonicawe/${packagename}-cuda
   rm -f gpumisc/libgpumisc.a
-  rm {sonicawe,gpumisc}/Makefile
+  rm -f {sonicawe,gpumisc}/Makefile
 fi
 
 make -j${no_cores}

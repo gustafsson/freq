@@ -40,7 +40,7 @@ fi
 
 
 read -s -p "Enter password for ftp.sonicawe.com: " pass; echo
-if [ -z "$pass" ]; then echo "Missing password for ftp.sonicawe.com, can't deploy."; exit 1; fi
+if [ -z "$pass" ]; then echo "Missing password for ftp.sonicawe.com. Won't upload any data."; fi
 
 if [ "Y" == "${verifyRepos}" ]; then
 	echo "==================== Updating local repos ====================="

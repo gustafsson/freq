@@ -18,7 +18,7 @@ if [ "Y" == "${rebuildall}" ]; then
 else
   rm -f sonicawe/${packagename}
   rm -f gpumisc/libgpumisc.a
-  rm {sonicawe,gpumisc}/Makefile
+  rm -f {sonicawe,gpumisc}/Makefile
 fi
 
 # We need to create multiple packages that can't depend on packages outside the ubuntu repos. So shared things between our packages need to be duplicated.
@@ -40,7 +40,7 @@ if [ "Y" == "${rebuildall}" ]; then
 else
   rm -f sonicawe/${packagename}-cuda
   rm -f gpumisc/libgpumisc.a
-  rm {sonicawe,gpumisc}/Makefile
+  rm -f {sonicawe,gpumisc}/Makefile
 fi
 
 LD_RUN_PATH=/usr/share/${packagename}
