@@ -98,6 +98,7 @@ void CheckUpdates::
     postdata.addKeyValue( "uname", operatingSystemName().c_str() );
     postdata.addKeyValue( "device", computationDeviceName().c_str() );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
+    postdata.addKeyValue( "text", Sawe::Reader::reader_text().c_str() );
     postdata.addKeyValue( "hostname", QHostInfo::localHostName() );
     postdata.addKeyValue( "domainname", QHostInfo::localDomainName() );
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
