@@ -63,7 +63,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
         bool showShaderLog = !compiled;
         showShaderLog |= 0 != QString(shaderInfoLog).contains("warning", Qt::CaseInsensitive);
-        showShaderLog |= 0 != QString(shaderInfoLog).contains("error", Qt::CaseInsensitive);
+        showShaderLog |= 0 != QString(shaderInfoLog).contains("error", Qt::CaseInsensitive) && 0 == QString(shaderInfoLog).contains("No errors", Qt::CaseInsensitive);
 #if DEBUG_
         showShaderLog |= strlen(shaderInfoLog)>0;
 #endif
@@ -118,7 +118,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
         bool showProgramLog = !linked;
         showProgramLog |= 0 != QString(programInfoLog).contains("warning", Qt::CaseInsensitive);
-        showProgramLog |= 0 != QString(programInfoLog).contains("error", Qt::CaseInsensitive);
+        showProgramLog |= 0 != QString(programInfoLog).contains("error", Qt::CaseInsensitive) && 0 == QString(programInfoLog).contains("No errors", Qt::CaseInsensitive);
 #if DEBUG_
         showProgramLog |= strlen(programInfoLog)>0;
 #endif
