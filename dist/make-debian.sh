@@ -8,19 +8,18 @@ cd ../..
 qmaketarget="${qmaketarget} DEFINES+=SONICAWE_UNAMEm=`uname -m` DEFINES+=SONICAWE_DISTCODENAME=`lsb_release -c | sed "s/.*:\t//g"`"
 
 echo "========================== Building ==========================="
-echo "Building Sonic AWE ${versiontag}"
-echo "qmaketarget: $qmaketarget"
+echo "Building ${packagename} ${versiontag}"
 
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  qmake $qmaketarget CONFIG+=gcc-4.3
-  make distclean
+echo "qmaketarget: $qmaketarget"
+qmake $qmaketarget CONFIG+=gcc-4.3
+
+if [ "Y" == "${rebuildall}" ]; then
+  make clean
 else
   rm -f sonicawe/${packagename}
   rm -f gpumisc/libgpumisc.a
   rm {sonicawe,gpumisc}/Makefile
 fi
-
-qmake $qmaketarget CONFIG+=gcc-4.3
 
 # We need to create multiple packages that can't depend on packages outside the ubuntu repos. So shared things between our packages need to be duplicated.
 LD_RUN_PATH=/usr/share/${packagename}
@@ -28,18 +27,21 @@ time make -j`cat /proc/cpuinfo | grep -c processor`
 
 cp sonicawe/${packagename} sonicawe/${packagename}org
 
+
+echo "========================== Building ==========================="
+echo "Building ${packagename} cuda ${versiontag}"
+
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
 echo "qmaketarget: $qmaketarget"
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  qmake $qmaketarget CONFIG+=gcc-4.3
-  make distclean
+qmake $qmaketarget CONFIG+=gcc-4.3
+
+if [ "Y" == "${rebuildall}" ]; then
+  make clean
 else
   rm -f sonicawe/${packagename}-cuda
   rm -f gpumisc/libgpumisc.a
   rm {sonicawe,gpumisc}/Makefile
 fi
-
-qmake $qmaketarget CONFIG+=gcc-4.3
 
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`

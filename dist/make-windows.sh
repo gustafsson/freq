@@ -11,44 +11,41 @@ licensefile="license.txt"
 
 cd ../..
 echo "========================== Building ==========================="
-echo "Building Sonic AWE ${packagename}"  
-echo qmaketarget: $qmaketarget
+echo "Building ${packagename} ${versiontag}"
 
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
-	cd gpumisc
-	qmake $qmaketarget
-	cd ../sonicawe
-	qmake $qmaketarget
-	cd ..
-	qmake $qmaketarget
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+echo qmaketarget: $qmaketarget
+(cd gpumisc && qmake $qmaketarget)
+(cd sonicawe && qmake $qmaketarget)
+qmake $qmaketarget
+
+if [ "Y" == "${rebuildall}" ]; then
+  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
+  rm -f gpumisc/release/gpumisc.lib
   rm -f sonicawe/release/sonicawe.exe
 fi
 
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
 
-echo "========================== Building ==========================="
-echo "Building Sonic AWE ${packagename} Cuda"
-echo qmaketarget: $qmaketarget
 
+echo "========================== Building ==========================="
+echo "Building ${packagename} cuda ${versiontag}"
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
-	cd gpumisc
-	qmake $qmaketarget
-	cd ../sonicawe
-	qmake $qmaketarget
-	cd ..
-	qmake $qmaketarget
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+
+echo qmaketarget: $qmaketarget
+(cd gpumisc && qmake $qmaketarget)
+(cd sonicawe && qmake $qmaketarget)
+qmake $qmaketarget
+
+if [ "Y" == "${rebuildall}" ]; then
+  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
+  rm -f gpumisc/release/gpumisc.lib
   rm -f sonicawe/release/sonicawe.exe
 fi
 
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cuda.exe
 
 

@@ -6,34 +6,39 @@ if [ -z "${version}" ]; then echo "Missing version, can't upload."; exit 1; fi
 cd ../..
 
 echo "========================== Building ==========================="
-echo "Building Sonic AWE ${versiontag}"
-echo "qmaketarget: $qmaketarget"
+echo "Building ${packagename} ${versiontag}"
 
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  make distclean
+echo "qmaketarget: $qmaketarget"
+qmake $qmaketarget -spec macx-g++ CONFIG+=release
+
+if [ "Y" == "${rebuildall}" ]; then
+  make clean
 else
   rm -f sonicawe/${packagename}
   rm -f gpumisc/libgpumisc.a
   rm {sonicawe,gpumisc}/Makefile
 fi
 
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
 no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
 make -j${no_cores}
 cp sonicawe/${packagename} sonicawe/${packagename}org
 
 
+echo "========================== Building ==========================="
+echo "Building ${packagename} cuda ${versiontag}"
+
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
 echo "qmaketarget: $qmaketarget"
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  make distclean
+qmake $qmaketarget -spec macx-g++ CONFIG+=release
+
+if [ "Y" == "${rebuildall}" ]; then
+  make clean
 else
   rm -f sonicawe/${packagename}-cuda
   rm -f gpumisc/libgpumisc.a
   rm {sonicawe,gpumisc}/Makefile
 fi
 
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
 make -j${no_cores}
 
 cp sonicawe/${packagename}org sonicawe/${packagename}
