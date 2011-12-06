@@ -9,13 +9,15 @@ qmaketarget="${qmaketarget} DEFINES+=SONICAWE_UNAMEm=`uname -m` DEFINES+=SONICAW
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${versiontag}"
+echo "qmaketarget: $qmaketarget"
 
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
   qmake $qmaketarget CONFIG+=gcc-4.3
   make distclean
 else
   rm -f sonicawe/${packagename}
-  qmake
+  rm -f gpumisc/libgpumisc.a
+  rm {sonicawe,gpumisc}/Makefile
 fi
 
 qmake $qmaketarget CONFIG+=gcc-4.3
@@ -27,12 +29,14 @@ time make -j`cat /proc/cpuinfo | grep -c processor`
 cp sonicawe/${packagename} sonicawe/${packagename}org
 
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+echo "qmaketarget: $qmaketarget"
 if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
   qmake $qmaketarget CONFIG+=gcc-4.3
   make distclean
 else
   rm -f sonicawe/${packagename}-cuda
-  qmake
+  rm -f gpumisc/libgpumisc.a
+  rm {sonicawe,gpumisc}/Makefile
 fi
 
 qmake $qmaketarget CONFIG+=gcc-4.3
