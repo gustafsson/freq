@@ -167,6 +167,9 @@ def package_macos(app_name, version, zip = false)
             exit(1)
         end
     end
+    
+    # TODO create nice looking dmg
+    # http://stackoverflow.com/questions/96882/how-do-i-create-a-nice-looking-dmg-for-mac-os-x-using-command-line-tools
 end
 
 package_macos($build_name, $version, $zip)
