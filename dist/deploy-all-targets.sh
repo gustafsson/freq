@@ -20,10 +20,10 @@ done
 
 echo
 
-if [ -z "`echo -e $a`" ] && [ -z "$pass" ]; then
+if [ -z "`echo -e $urls`" ] && [ -z "$pass" ]; then
 	echo "Didn't upload anything (no ftp password was given)"
 
-elif [ -z "`echo -e $a`" ]; then
+elif [ -z "`echo -e $urls`" ]; then
 	echo "Didn't upload anything (unavailable internet connection? wrong ftp password?)"
 
 else

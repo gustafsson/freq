@@ -13,7 +13,7 @@ mkdir $version
 cd $version
 binary
 $passiveftp
-put $filename" | ftp -n -v ftp.sonicawe.com || return 1 ) || return
+put $filename" | ftp -n -v ftp.sonicawe.com) || return
 echo "Uploaded file to:"
 url="http://data.sonicawe.com/${version}/${filename}"
 echo $url
