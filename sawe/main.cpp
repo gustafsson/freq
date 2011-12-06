@@ -613,6 +613,14 @@ int main(int argc, char *argv[])
             TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
             TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
             TaskInfo("Build timestamp for %s: %s, %s. Revision %s", UNAME, __DATE__, __TIME__, SONICAWE_REVISION);
+            {
+                TaskInfo ti("OpenGL information");
+                TaskInfo("vendor: %s", glGetString(GL_VENDOR));
+                TaskInfo("renderer: %s", glGetString(GL_RENDERER));
+                TaskInfo("version: %s", glGetString(GL_VERSION));
+                TaskInfo("shading language: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+                TaskInfo("exstensions: %s", glGetString(GL_EXTENSIONS));
+            }
 
             boost::gregorian::date today = boost::gregorian::day_clock::local_day();
             boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));

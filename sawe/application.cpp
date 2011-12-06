@@ -80,6 +80,7 @@ Application::
     default_record_device(-1)
 {
     shared_glwidget_ = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+    shared_glwidget_->makeCurrent();
 
     setOrganizationName("MuchDifferent");
     setOrganizationDomain("muchdifferent.com");
