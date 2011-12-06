@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ -z "$pass" ]; then
+if [ -z "$verifyRepos" ]; then
   . ./prereq.sh
 fi
 
