@@ -26,11 +26,11 @@ if [ "$(uname -s)" == "Linux" ]; then tagname=${tagname}_`uname -m`; fi
 if [ -n "`git tag | grep $tagname`" ]; then
 	echo "Tag '$tagname' already exists at `git show-ref -s --abbrev $tagname`. Removing old tag and creating a new one"
 	git tag -d $tagname
-	git push origin :$tagname
+	git push origin :$tagname || :
 fi
 
 git tag $tagname
-git push origin $tagname
+git push origin $tagname || :
 echo "Created tag '$tagname' (at `git show-ref -s --abbrev $tagname`)"
 
 echo
