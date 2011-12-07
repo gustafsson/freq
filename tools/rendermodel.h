@@ -53,6 +53,7 @@ namespace Tools
         float _qx, _qy, _qz; // camera focus point, i.e (10, 0, 0.5)
         float _px, _py, _pz, // camera position relative center, i.e (0, 0, -6)
             _rx, _ry, _rz; // rotation around center
+        float effective_ry(); // take orthoview into account
         float xscale;
         float zscale;
         floatAni orthoview;

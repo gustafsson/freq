@@ -44,7 +44,8 @@ public:
     bool draw_hz;
     bool draw_t;
     bool draw_cursor_marker;
-    GLvector camera;
+    int draw_axis_at0;
+    GLvector camera, cameraRotation;
     GLvector cursor;
 
     bool draw_contour_plot;

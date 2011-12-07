@@ -36,6 +36,7 @@ Renderer::Renderer( Collection* collection )
     draw_hz(true),
     draw_t(true),
     draw_cursor_marker(false),
+    draw_axis_at0(0),
     camera(0,0,0),
     draw_contour_plot(false),
     color_mode( ColorMode_Rainbow ),
@@ -1156,14 +1157,21 @@ void Renderer::drawAxes( float T )
             continue;
 
 
-        // need initial f value
-        double f = fa.getFrequencyT( p[2] );
-
         GLvector::T timePerPixel_closest, scalePerPixel_closest;
         computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
-        GLvector pp = p;
 
-        if ((taxis && draw_t) || (!taxis && draw_hz))
+        if (draw_axis_at0==-1)
+        {
+            (taxis?p[2]:p[0]) = ((taxis?p[2]:p[0])==0) ? 1 : 0;
+            (taxis?p1[2]:p1[0]) = ((taxis?p1[2]:p1[0])==0) ? 1 : 0;
+        }
+
+        // need initial f value
+        GLvector pp = p;
+        double f = fa.getFrequencyT( p[2] );
+
+        if (((taxis && draw_t) || (!taxis && draw_hz)) &&
+            (draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
         for (double u=-1; true; )
         {
             GLvector::T timePerPixel, scalePerPixel;
@@ -1468,7 +1476,7 @@ void Renderer::drawAxes( float T )
             t = nt;
         }
 
-        if (!taxis && draw_piano)
+        if (!taxis && draw_piano && (draw_axis_at0?p[0]==0:true))
         {
             GLvector::T timePerPixel, scalePerPixel;
             computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
@@ -1483,8 +1491,8 @@ void Renderer::drawAxes( float T )
             // log(F(n)/440)/log(pow(2, 1/12)) = log(n-49)
             // n = exp(log(F(n)/440)/log(pow(2, 1/12))) + 49
 
-            unsigned F1 = fa.getFrequency( (float)clippedFrustum[i][2] );
-            unsigned F2 = fa.getFrequency( (float)clippedFrustum[j][2] );
+            unsigned F1 = fa.getFrequency( (float)p1[2] );
+            unsigned F2 = fa.getFrequency( (float)(p1+v)[2] );
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
             if (!(F1>fa.min_hz)) F1=fa.min_hz;
             if (!(F2<fa.max_hz())) F2=fa.max_hz();
@@ -1525,12 +1533,12 @@ void Renderer::drawAxes( float T )
                         wP *= .5;
                 }
 
-                float u = (ff - clippedFrustum[i][2])/v[2];
-                float un = (ff+wN - clippedFrustum[i][2])/v[2];
-                float up = (ff-wP - clippedFrustum[i][2])/v[2];
-                GLvector pt = clippedFrustum[i]+v*u;
-                GLvector pn = clippedFrustum[i]+v*un;
-                GLvector pp = clippedFrustum[i]+v*up;
+                float u = (ff - p1[2])/v[2];
+                float un = (ff+wN - p1[2])/v[2];
+                float up = (ff-wP - p1[2])/v[2];
+                GLvector pt = p1+v*u;
+                GLvector pn = p1+v*un;
+                GLvector pp = p1+v*up;
 
                 glPushMatrixContext push_model( GL_MODELVIEW );
 

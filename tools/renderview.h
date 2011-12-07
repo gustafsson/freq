@@ -163,6 +163,7 @@ namespace Tools
         void setLights();
         void defaultStates();
         void setupCamera();
+        void setRotationForAxes(bool);
         void computeChannelColors();
 
         boost::scoped_ptr<TaskTimer> _work_timer;

@@ -115,4 +115,12 @@ Tfr::Filter* RenderModel::
     return dynamic_cast<Tfr::Filter*>(collections[0]->block_filter().get());
 }
 
+
+float RenderModel::
+        effective_ry()
+{
+    return fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview;
+}
+
+
 } // namespace Tools
