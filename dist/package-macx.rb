@@ -42,6 +42,9 @@ def package_macos(app_name, version, zip = false)
                  custom_lib_path("portaudio"),
                  custom_lib_path("portaudiocpp"),
                  custom_lib_path("sndfile"),
+                 custom_lib_path("FLAC"),
+                 custom_lib_path("ogg"),
+                 custom_lib_path("vorbis"),
                  custom_lib_path("hdf5", "hdf5/bin"),
                  custom_lib_path("hdf5_hl", "hdf5/bin")]
     
