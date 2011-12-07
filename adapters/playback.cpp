@@ -369,7 +369,7 @@ void Playback::
                     //sys.deviceByIndex(_output_device).defaultHighOutputLatency(),
                     NULL);
 
-            PaError err = Pa_IsFormatSupported(outParamsPlayback.paStreamParameters(), 0, sample_rate());
+            PaError err = Pa_IsFormatSupported(0, outParamsPlayback.paStreamParameters(), sample_rate());
             bool fmtok = err==paFormatIsSupported;
             if (!fmtok)
                 continue;
