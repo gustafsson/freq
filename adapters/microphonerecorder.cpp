@@ -19,7 +19,8 @@ namespace Adapters {
 MicrophoneRecorder::
         MicrophoneRecorder(int inputDevice)
             :
-            input_device_(inputDevice)
+            input_device_(inputDevice),
+            _is_interleaved(false)
 {
     std::stringstream ss;
     ::srand(::time(0));
@@ -37,92 +38,99 @@ void MicrophoneRecorder::
 {
     try
     {
+        _offset = 0;
+        _sample_rate = 1;
 
-    _offset = 0;
-    _sample_rate = 1;
+        static bool first = true;
+        if (first) Playback::list_devices();
 
-    static bool first = true;
-    if (first) Playback::list_devices();
+        TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
+        portaudio::System &sys = portaudio::System::instance();
 
-    TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
-    portaudio::System &sys = portaudio::System::instance();
+        _has_input_device = false;
+        for (int i=0; i < sys.deviceCount(); ++i)
+        {
+            if (!sys.deviceByIndex(i).isOutputOnlyDevice())
+                _has_input_device = true;
+        }
 
-    _has_input_device = false;
-    for (int i=0; i < sys.deviceCount(); ++i)
-    {
-        if (!sys.deviceByIndex(i).isOutputOnlyDevice())
-            _has_input_device = true;
-    }
+        if (!_has_input_device)
+        {
+            TaskInfo("System didn't report any recording devices. Can't record.");
+            return;
+        }
 
-    if (!_has_input_device)
-    {
-        TaskInfo("System didn't report any recording devices. Can't record.");
-        return;
-    }
+        if (0>input_device_ || input_device_>sys.deviceCount()) {
+            input_device_ = sys.defaultInputDevice().index();
+        } else if ( sys.deviceByIndex(input_device_).isOutputOnlyDevice() ) {
+            tt.getStream() << "Requested device '" << sys.deviceByIndex(input_device_).name() << "' can only be used for output";
+            input_device_ = sys.defaultInputDevice().index();
+        } else {
+            ;
+        }
 
-    if (0>input_device_ || input_device_>sys.deviceCount()) {
-        input_device_ = sys.defaultInputDevice().index();
-    } else if ( sys.deviceByIndex(input_device_).isOutputOnlyDevice() ) {
-        tt.getStream() << "Requested device '" << sys.deviceByIndex(input_device_).name() << "' can only be used for output";
-        input_device_ = sys.defaultInputDevice().index();
-    } else {
-        ;
-    }
+        tt.getStream() << "Using device '" << sys.deviceByIndex(input_device_).name() << "' for audio input";
 
-    tt.getStream() << "Using device '" << sys.deviceByIndex(input_device_).name() << "' for audio input";
+        portaudio::Device& device = sys.deviceByIndex(input_device_);
+        _sample_rate = device.defaultSampleRate();
 
-    portaudio::Device& device = sys.deviceByIndex(input_device_);
-    _sample_rate = device.defaultSampleRate();
+        unsigned channel_count = device.maxInputChannels();
+        if (channel_count>2)
+            channel_count = 2;
+        tt.getStream() << "Opening recording input stream on '" << device.name() << "' with " << channel_count
+                       << " channels, " << device.defaultSampleRate() << " samples/second"
+                       << " and input latency " << device.defaultHighInputLatency() << " s";
 
-    unsigned channel_count = device.maxInputChannels();
-    if (channel_count>2)
-        channel_count = 2;
-    tt.getStream() << "Opening recording input stream on '" << device.name() << "' with " << channel_count
-                   << " channels, " << device.defaultSampleRate() << " samples/second"
-                   << " and input latency " << device.defaultHighInputLatency() << " s";
+        QMutexLocker lock(&_data_lock);
+        _data.setNumChannels(channel_count);
+        _rolling_mean.resize(channel_count);
+        for (unsigned i=0; i<channel_count; ++i)
+            _rolling_mean[i] = 0;
 
-    QMutexLocker lock(&_data_lock);
-    _data.setNumChannels(channel_count);
-    _rolling_mean.resize(channel_count);
-    for (unsigned i=0; i<channel_count; ++i)
-        _rolling_mean[i] = 0;
+        for (int interleaved=0; interleaved<2; ++interleaved)
+        {
+            _is_interleaved = interleaved!=0;
 
-    portaudio::DirectionSpecificStreamParameters inParamsRecord(
-            device,
-            channel_count, // channels
-            portaudio::FLOAT32,
-            false, // interleaved
-//#ifdef __APPLE__ // TODO document why
-            device.defaultHighInputLatency(),
-//#else
-//            device.defaultLowInputLatency(),
-//#endif
-            NULL);
+            portaudio::DirectionSpecificStreamParameters inParamsRecord(
+                    device,
+                    channel_count, // channels
+                    portaudio::FLOAT32,
+                    interleaved, // interleaved
+        //#ifdef __APPLE__ // TODO document why
+                    device.defaultHighInputLatency(),
+        //#else
+        //            device.defaultLowInputLatency(),
+        //#endif
+                    NULL);
 
-    portaudio::StreamParameters paramsRecord(
-            inParamsRecord,
-            portaudio::DirectionSpecificStreamParameters::null(),
-            device.defaultSampleRate(),
-            paFramesPerBufferUnspecified,
-            paNoFlag);
+            portaudio::StreamParameters paramsRecord(
+                    inParamsRecord,
+                    portaudio::DirectionSpecificStreamParameters::null(),
+                    device.defaultSampleRate(),
+                    paFramesPerBufferUnspecified,
+                    paNoFlag);
 
-    _stream_record.reset( new portaudio::MemFunCallbackStream<MicrophoneRecorder>(
-            paramsRecord,
-            *this,
-            &MicrophoneRecorder::writeBuffer));
+            PaError err = Pa_IsFormatSupported(paramsRecord.inputParameters().paStreamParameters(), 0, device.defaultSampleRate());
+            bool fmtok = err==paFormatIsSupported;
 
-    lock.unlock();
+            if (!fmtok)
+                continue;
 
+            _stream_record.reset( new portaudio::MemFunCallbackStream<MicrophoneRecorder>(
+                    paramsRecord,
+                    *this,
+                    &MicrophoneRecorder::writeBuffer));
+        }
     }
     catch (const portaudio::PaException& x)
     {
-        TaskInfo("MicrophoneRecorder init error: %s %s (%d)\nMessage: %s",
+        TaskInfo("a2 MicrophoneRecorder init error: %s %s (%d)\nMessage: %s",
                  vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
         _has_input_device = false;
     }
     catch (const portaudio::PaCppException& x)
     {
-        TaskInfo("MicrophoneRecorder init error: %s (%d)\nMessage: %s",
+        TaskInfo("b2 MicrophoneRecorder init error: %s (%d)\nMessage: %s",
                  vartype(x).c_str(), x.specifier(), x.what());
         _has_input_device = false;
     }
@@ -359,23 +367,38 @@ int MicrophoneRecorder::
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
-    const float **in = (const float **)inputBuffer;
 
     long unsigned offset = actual_number_of_samples();
     QMutexLocker lock(&_data_lock);
     _last_update = boost::posix_time::microsec_clock::local_time();
     unsigned prev_channel = _data.get_channel();
+    unsigned num_channels = _data.num_channels();
 
-    for (unsigned i=0; i<_data.num_channels(); ++i)
+    for (unsigned i=0; i<num_channels; ++i)
     {
-        const float *buffer = in[i];
         Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
         float* p = b->waveform_data()->getCpuMemory();
+
+        if (_is_interleaved)
+        {
+            const float *in = (const float *)inputBuffer;
+            for (unsigned j=0; j<framesPerBuffer; ++j)
+                p[j] = in[j*num_channels + i];
+        }
+        else
+        {
+            const float **in = (const float **)inputBuffer;
+            const float *buffer = in[i];
+            for (unsigned j=0; j<framesPerBuffer; ++j)
+                p[j] = buffer[j];
+        }
+
         float& mean = _rolling_mean[i];
         for (unsigned j=0; j<framesPerBuffer; ++j)
         {
-            p[j] = buffer[j] - mean;
-            mean = mean*0.99999f + buffer[j]*0.00001f;
+            float v = p[j];
+            p[j] = v - mean;
+            mean = mean*0.99999f + v*0.00001f;
         }
 
 //        memcpy ( b->waveform_data()->getCpuMemory(),
