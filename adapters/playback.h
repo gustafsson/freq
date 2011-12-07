@@ -77,6 +77,7 @@ private:
 
     long unsigned _playback_itr;
     int _output_device;
+    bool _is_interleaved;
 };
 
 } // namespace Adapters

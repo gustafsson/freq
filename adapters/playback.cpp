@@ -17,7 +17,8 @@ namespace Adapters {
 Playback::
         Playback( int outputDevice )
 :   _first_buffer_size(0),
-    _output_device(0)
+    _output_device(0),
+    _is_interleaved(false)
 {
     _data.setNumChannels(0);
 
@@ -333,51 +334,65 @@ void Playback::
     try
     {
 
-    // Be nice, don't just destroy the previous one but ask it to stop first
-    if (streamPlayback && !streamPlayback->isStopped())
-    {
-        streamPlayback->stop();
-    }
-    streamPlayback.reset();
+        // Be nice, don't just destroy the previous one but ask it to stop first
+        if (streamPlayback && !streamPlayback->isStopped())
+        {
+            streamPlayback->stop();
+        }
+        streamPlayback.reset();
 
-    portaudio::System &sys = portaudio::System::instance();
+        portaudio::System &sys = portaudio::System::instance();
 
-    TIME_PLAYBACK TaskTimer("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
+        TIME_PLAYBACK TaskTimer("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
-    unsigned requested_number_of_channels = num_channels();
-    unsigned available_channels = sys.deviceByIndex(_output_device).maxOutputChannels();
+        unsigned requested_number_of_channels = num_channels();
+        unsigned available_channels = sys.deviceByIndex(_output_device).maxOutputChannels();
 
-    if (available_channels<requested_number_of_channels)
-    {
-        requested_number_of_channels = available_channels;
-        _data.setNumChannels( requested_number_of_channels );
-    }
+        if (available_channels<requested_number_of_channels)
+        {
+            requested_number_of_channels = available_channels;
+            _data.setNumChannels( requested_number_of_channels );
+        }
 
-    // Set up the parameters required to open a (Callback)Stream:
-    portaudio::DirectionSpecificStreamParameters outParamsPlayback(
-            sys.deviceByIndex(_output_device),
-            requested_number_of_channels,
-            portaudio::FLOAT32,
-            false,
-            sys.deviceByIndex(_output_device).defaultLowOutputLatency(),
-            //sys.deviceByIndex(_output_device).defaultHighOutputLatency(),
-            NULL);
-    portaudio::StreamParameters paramsPlayback(
-            portaudio::DirectionSpecificStreamParameters::null(),
-            outParamsPlayback,
-            sample_rate(),
-            0,
-            paNoFlag);//paClipOff);
+        portaudio::Device& device = sys.deviceByIndex(_output_device);
+        for (int interleaved=0; interleaved<2; ++interleaved)
+        {
+            _is_interleaved = interleaved!=0;
 
-    // Create (and (re)open) a new Stream:
-    streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
-            paramsPlayback,
-            *this,
-            &Playback::readBuffer) );
+            // Set up the parameters required to open a (Callback)Stream:
+            portaudio::DirectionSpecificStreamParameters outParamsPlayback(
+                    device,
+                    requested_number_of_channels,
+                    portaudio::FLOAT32,
+                    _is_interleaved,
+                    device.defaultLowOutputLatency(),
+                    //sys.deviceByIndex(_output_device).defaultHighOutputLatency(),
+                    NULL);
 
-    _playback_itr = _data.getInterval().first;
+            PaError err = Pa_IsFormatSupported(outParamsPlayback.paStreamParameters(), 0, sample_rate());
+            bool fmtok = err==paFormatIsSupported;
+            if (!fmtok)
+                continue;
 
-    streamPlayback->start();
+            portaudio::StreamParameters paramsPlayback(
+                    portaudio::DirectionSpecificStreamParameters::null(),
+                    outParamsPlayback,
+                    sample_rate(),
+                    0,
+                    paNoFlag);//paClipOff);
+
+
+            // Create (and (re)open) a new Stream:
+            streamPlayback.reset( new portaudio::MemFunCallbackStream<Playback>(
+                    paramsPlayback,
+                    *this,
+                    &Playback::readBuffer) );
+
+            _playback_itr = _data.getInterval().first;
+
+            streamPlayback->start();
+            break;
+        }
 
     } catch (const portaudio::PaException& x) {
         QMessageBox::warning( 0,
@@ -542,15 +557,29 @@ int Playback::
         _startPlay_timestamp = microsec_clock::local_time();
     }
 
-    float **out = static_cast<float **>(outputBuffer);
-    for (unsigned c=0; c<num_channels(); ++c)
+    unsigned nchannels = num_channels();
+    for (unsigned c=0; c<nchannels; ++c)
     {
-        float *buffer = out[c];
-
         Signal::pBuffer b = _data.channel(c).readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
-        ::memcpy( buffer, b->waveform_data()->getCpuMemory(), framesPerBuffer*sizeof(float) );
-        normalize( buffer, framesPerBuffer );
+        float *p = CpuMemoryStorage::ReadOnly<1>( b->waveform_data() ).ptr();
+        if (_is_interleaved)
+        {
+            float *out = (float *)outputBuffer;
+            float *buffer = out;
+            for (unsigned j=0; j<framesPerBuffer; ++j)
+                buffer[j*nchannels + c] = p[j];
+        }
+        else
+        {
+            float **out = static_cast<float **>(outputBuffer);
+            float *buffer = out[c];
+            ::memcpy( buffer, p, framesPerBuffer*sizeof(float) );
+            normalize( buffer, framesPerBuffer );
+        }
     }
+
+    if (_is_interleaved)
+        normalize( (float *)outputBuffer, framesPerBuffer*nchannels );
 
     _playback_itr += framesPerBuffer;
 

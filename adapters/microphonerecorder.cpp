@@ -103,6 +103,11 @@ void MicrophoneRecorder::
         //#endif
                     NULL);
 
+            PaError err = Pa_IsFormatSupported(inParamsRecord.paStreamParameters(), 0, device.defaultSampleRate());
+            bool fmtok = err==paFormatIsSupported;
+            if (!fmtok)
+                continue;
+
             portaudio::StreamParameters paramsRecord(
                     inParamsRecord,
                     portaudio::DirectionSpecificStreamParameters::null(),
@@ -110,17 +115,15 @@ void MicrophoneRecorder::
                     paFramesPerBufferUnspecified,
                     paNoFlag);
 
-            PaError err = Pa_IsFormatSupported(paramsRecord.inputParameters().paStreamParameters(), 0, device.defaultSampleRate());
-            bool fmtok = err==paFormatIsSupported;
-
-            if (!fmtok)
-                continue;
-
             _stream_record.reset( new portaudio::MemFunCallbackStream<MicrophoneRecorder>(
                     paramsRecord,
                     *this,
                     &MicrophoneRecorder::writeBuffer));
+            break;
         }
+
+        if (!_stream_record)
+            _has_input_device = false;
     }
     catch (const portaudio::PaException& x)
     {
