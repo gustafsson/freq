@@ -233,8 +233,6 @@ void NavigationController::
     }
     else
     {
-        float s = -0.125f;
-
         if (e->modifiers().testFlag(Qt::AltModifier))
         {
             zoom( e->delta(), Zoom );
@@ -242,6 +240,7 @@ void NavigationController::
         else
         {
             bool success1, success2;
+            float s = -0.125f;
 
             QPointF prev = e->pos();
             if( e->orientation() == Qt::Horizontal )
@@ -319,7 +318,7 @@ void NavigationController::
     }
 
     if (zoomCommand)
-        zoomCamera( 0, 0, 10*(-zoomCommand->deltaX( x ) + zoomCommand->deltaY( y )) );
+        zoomCamera( 0, 0, -zoomCommand->deltaX( x ) + zoomCommand->deltaY( y ) );
 
     if (rescaleCommand)
     {
@@ -441,7 +440,7 @@ void NavigationController::
 void NavigationController::
         zoomCamera( float dt, float ds, float dz )
 {
-    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz ));
+    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt*0.05, ds*0.05, dz*0.005 ));
     _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
 
