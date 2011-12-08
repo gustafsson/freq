@@ -11,10 +11,10 @@ int main(int argc, char *argv[])
 {
     char app_path_cuda[] = TOSTRING(PACKAGE) "-cuda.exe";
     char app_path_cpu[] = TOSTRING(PACKAGE) "-cpu.exe";
-    char* app_path = app_path_cuda;
+    char* app_path = app_path_cpu;
 
     HMODULE nvcuda = LoadLibrary(L"nvcuda.dll");
-    /*
+
     if (nvcuda) {
         typedef int (WINAPI *cuInitFunction)(int*);
         
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
             app_path = app_path_cuda;
         
         FreeLibrary(nvcuda);
-    }*/
+    }
 
     printf("Starting %s\n", app_path);
     argv[0] = app_path;
