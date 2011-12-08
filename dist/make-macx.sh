@@ -14,7 +14,7 @@ qmake $qmaketarget -spec macx-g++ CONFIG+=release
 if [ "Y" == "${rebuildall}" ]; then
   make clean
 else
-  touch sonicawe/sawe/configuration.cpp
+  touch sonicawe/sawe/configuration/configuration.cpp
   rm -f gpumisc/libgpumisc.a
   rm -f {sonicawe,gpumisc}/Makefile
 fi
@@ -34,7 +34,7 @@ qmake $qmaketarget -spec macx-g++ CONFIG+=release
 if [ "Y" == "${rebuildall}" ]; then
   make clean
 else
-  touch sonicawe/sawe/configuration.cpp
+  touch sonicawe/sawe/configuration/configuration.cpp
   rm -f gpumisc/libgpumisc.a
   rm -f {sonicawe,gpumisc}/Makefile
 fi
