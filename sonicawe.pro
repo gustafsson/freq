@@ -27,8 +27,8 @@ QT += opengl
 QT += network
 
 macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
-macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
-macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
+macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
+macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
 unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 win32:QMAKE_CXXFLAGS_RELEASE += /openmp
@@ -36,6 +36,8 @@ unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
 win32:QMAKE_CXXFLAGS += /MP
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
+!win32:QMAKE_CFLAGS_RELEASE -= -O2
+!win32:QMAKE_CFLAGS_RELEASE += -O3
 win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
 win32:QMAKE_CXXFLAGS_DEBUG -= /Zi
 win32:QMAKE_CXXFLAGS_DEBUG += /ZI
