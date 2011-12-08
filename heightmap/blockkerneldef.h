@@ -73,6 +73,8 @@ public:
         outputAxis = b.outputAxis;
         scale = b.scale;
         offs = b.offs;
+        xstep = b.xstep;
+        xmax = b.xmax;
         return *this;
     }
 
@@ -122,7 +124,7 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float x=q2.x; x<floor(q2.x+xstep); ++x)
+            else for (float x=q2.x; x<floor(q2.x+xstep) && x<xmax; ++x)
             {
                 v = max(v, interpolate(
                         get( DataPos(x, q.y), reader, c ),
@@ -171,6 +173,7 @@ public:
     float offs;
 
     float xstep;
+    float xmax;
 //    float ystep;
 };
 
@@ -442,6 +445,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.outputAxis = outputAxis;
     axes.offs = inputRegion.top;
     axes.scale = inputRegion.height();
+    axes.xmax = validInputs.last;
 
     axes.xstep = (validInputs.last - validInputs.first) / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
     // axes.ystep = 1; // because of varying frequency density ystep should be computed in the kernel together with the FreqAxes
