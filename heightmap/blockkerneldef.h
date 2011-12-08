@@ -405,7 +405,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
                  AxisConverter amplitudeAxis,
-                 bool full_resolution
+                 bool enable_subtexel_aggregation
                  )
 {
     // translate type to be read as a cuda texture
@@ -451,7 +451,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     // axes.ystep = 1; // because of varying frequency density ystep should be computed in the kernel together with the FreqAxes
     // axes.ystep = input->size().height / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
 
-    if (!full_resolution)
+    if (!enable_subtexel_aggregation)
     {
         axes.xstep = 1;
         // axes.ystep = 1;
@@ -534,7 +534,7 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                  Tfr::FreqAxis outputAxis,
                  Heightmap::AmplitudeAxis amplitudeAxis,
                  float normalization_factor,
-                 bool full_resolution
+                 bool enable_subtexel_aggregation
                  )
 {
     switch(amplitudeAxis)
@@ -544,21 +544,21 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor),
-                full_resolution);
+                enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor),
-                full_resolution);
+                enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
-                full_resolution);
+                enable_subtexel_aggregation);
         break;
     }
 }

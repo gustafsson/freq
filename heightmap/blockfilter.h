@@ -11,6 +11,8 @@
 namespace Heightmap
 {
 
+class Renderer;
+
 
 class BlockFilter
 {
@@ -26,7 +28,7 @@ protected:
 
     virtual void mergeColumnMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData, float normalization_factor );
     virtual void mergeRowMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData,
-                                     bool full_resolution, ComplexInfo complex_info, float normalization_factor );
+                                     bool full_resolution, ComplexInfo complex_info, float normalization_factor, bool enable_subtexel_aggregation );
 
     Collection* _collection;
 };
@@ -103,8 +105,7 @@ protected:
 class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:
-    CwtToBlock( Collection* collection );
-    CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
+    CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections, Renderer* renderer );
 
     /**
       Tells the "chunk-to-block" what information to extract from the complex
@@ -118,6 +119,9 @@ public:
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
     void mergeChunkpart( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+
+private:
+    Renderer* renderer;
 };
 
 
@@ -135,7 +139,6 @@ public:
 class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
 {
 public:
-    CepstrumToBlock( Collection* collection );
     CepstrumToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
@@ -146,7 +149,6 @@ public:
 class DrawnWaveformToBlock: public BlockFilterImpl<Tfr::DrawnWaveformFilter>
 {
 public:
-    DrawnWaveformToBlock( Collection* collection );
     DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     // @overloads Tfr::DrawnWaveformFilter::computeChunk

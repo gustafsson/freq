@@ -462,7 +462,7 @@ Tfr::Transform* RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     setBlockFilter( cwtblock );
@@ -481,7 +481,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
     setBlockFilter( cwtblock );
@@ -492,7 +492,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -505,7 +505,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -517,7 +517,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     setBlockFilter( cwtblock );

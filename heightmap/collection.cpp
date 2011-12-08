@@ -1,6 +1,7 @@
 #include "collection.h"
 #include "blockkernel.h"
 #include "blockfilter.h"
+#include "renderer.h"
 
 #include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
@@ -59,6 +60,7 @@ Block::
 Collection::
         Collection( pOperation target )
 :   target( target ),
+    renderer( 0 ),
     _is_visible( true ),
     _samples_per_block( -1 ), // Created for each
     _scales_per_block( -1 ),
@@ -1192,7 +1194,8 @@ bool Collection::
                   ResampleArea( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
-    if (false) // blockMerge doesn't use subpixel information, until then the following is incorrect
+    bool enable_subtexel_aggregation = renderer ? renderer->redundancy()<=1 : false;
+    if (!enable_subtexel_aggregation) // blockMerge doesn't support subtexel aggregation
     if (inBlock->ref.log2_samples_size[0] < outBlock->ref.log2_samples_size[0] &&
         inBlock->ref.log2_samples_size[1] == outBlock->ref.log2_samples_size[1])
     {

@@ -36,6 +36,9 @@ RenderModel::
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
 
+    for (unsigned c=0; c<o->num_channels(); ++c)
+        collections[c]->renderer = renderer.get();
+
 #ifdef TARGET_sss
     _pz = -6;
     xscale = 0.1f;

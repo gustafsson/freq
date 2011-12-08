@@ -92,6 +92,7 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 
 namespace Heightmap {
 
+class Renderer;
 
 // TODO it would probably look awesome if new blocks weren't displayed
 // instantaneously but rather faded in from 0 or from their previous value.
@@ -246,6 +247,7 @@ public:
     bool isVisible();
     void setVisible(bool v);
 
+    Renderer* renderer;
 
 private:
     // TODO remove friends
