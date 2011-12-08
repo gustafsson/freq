@@ -35,9 +35,13 @@ Configuration::
             :
             channel_( 0 ),
             scales_per_octave_( 20 ),
-            wavelet_time_support_( 5 ),
-            wavelet_scale_support_( 4 ),
-            min_hz_( 20 ),
+            wavelet_time_support_( 3 ),
+            wavelet_scale_support_( 2 ),
+#ifdef USE_CUDA
+            min_hz_( 60 ),
+#else
+            min_hz_( 80 ), // the CPU version is so much slower, so ease it up a bit as default
+#endif
             samples_per_chunk_hint_( 1 ),
             samples_per_block_( 1<<8 ),
             scales_per_block_( 1<<8 ),

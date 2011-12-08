@@ -65,11 +65,7 @@ pTransform Cwt::static_singleton;
 
 Cwt::
         Cwt( float scales_per_octave, float wavelet_time_suppport )
-#ifdef USE_CUDA
 :   _min_hz( 20 ),
-#else
-:   _min_hz( 80 ), // the CPU version is so much slower, so ease it up a bit as default
-#endif
     _scales_per_octave( 0 ),
     _tf_resolution( 2.5 ), // 2.5 is Ulfs magic constant
     _least_meaningful_fraction_of_r( 0.01f ),
