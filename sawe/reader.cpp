@@ -216,10 +216,32 @@ string Reader::
 
             QDate built = QDate::fromString(QString(__DATE__).replace("  ", " "), "MMM d yyyy");
             if (warningDate < QDate::currentDate() || warningDate < built)
-                QMessageBox::information(0, "Licence will expire soon", "Your licence of Sonic AWE will expire on " + expires);
+            {
+                for (static bool shown=false; !shown; shown=true)
+                {
+                    QMessageBox* message = new QMessageBox(
+                            QMessageBox::Information,
+                            "Licence will expire soon", "Your licence of Sonic AWE will expire on " + expires);
+
+                    message->setAttribute( Qt::WA_DeleteOnClose );
+                    message->show();
+                }
+            }
+
 
             if (expiredDate < QDate::currentDate() || expiredDate < built)
-                QMessageBox::warning(0, "Expired licence", "Your licence of Sonic AWE has expired since " + expires);
+            {
+                for (static bool shown=false; !shown; shown=true)
+                {
+                    QMessageBox* message = new QMessageBox(
+                            QMessageBox::Warning,
+                            "Expired licence", "Your licence of Sonic AWE has expired since " + expires);
+
+                    message->setAttribute( Qt::WA_DeleteOnClose );
+                    message->show();
+                }
+            }
+
 
             if (stopDate < QDate::currentDate() || stopDate < built)
                 return "";
