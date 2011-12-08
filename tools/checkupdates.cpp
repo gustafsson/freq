@@ -28,6 +28,13 @@ CheckUpdates::
     connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(checkForUpdates()));
 
 
+    // Only check for updates once per process
+    static bool hasChecked = false;
+    if (hasChecked)
+        return;
+    hasChecked = true;
+
+
     if ("not"==Sawe::Reader::reader_text().substr(0,3))
     {
         // wait for reader to finish
