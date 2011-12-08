@@ -634,7 +634,7 @@ int main(int argc, char *argv[])
 
         // Check if a cuda context can be created, but don't require OpenGL bindings just yet
         if (!check_cuda( false ))
-            return -1;
+            return 1337;
 
         TaskInfo("computation device: %s", computationDeviceName().c_str());
 

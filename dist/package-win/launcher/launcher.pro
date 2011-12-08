@@ -13,7 +13,7 @@ TEMPLATE = vcapp
 CONFIG += debug_and_release
 
 SOURCES += \
-    launcher.c \
+    launcher.cpp \
     sonicawe.rc
 
 OBJECTS_DIR = tmp/
