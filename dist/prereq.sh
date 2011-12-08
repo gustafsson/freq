@@ -40,12 +40,16 @@ fi
 
 
 read -s -p "Enter password for ftp.sonicawe.com: " pass; echo
+expectedpass=d0f085d2cfdee0b2128bf80226f6bee5
 if [ -z "$pass" ]; then
     echo "Missing password for ftp.sonicawe.com. Won't upload any data."
-elif [ "`which md5`" != "" ] && [ "d0f085d2cfdee0b2128bf80226f6bee5" != "`echo $pass | md5`" ]; then
+elif ( [ "`which md5`" != "" ] && [ $expectedpass != "`echo $pass | md5`" ] ) ||
+     ( [ "`which md5sum`" != "" ] && [ $expectedpass != "`echo $pass | md5sum | sed 's/ .*//'`" ] )
+then
     echo "Wrong password (leave empty to skip upload)."
     exit
 fi
+
 
 if [ "Y" == "${verifyRepos}" ]; then
 	echo "==================== Updating local repos ====================="
