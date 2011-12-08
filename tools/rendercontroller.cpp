@@ -185,7 +185,7 @@ RenderController::
 #endif
         ui->actionSet_colorscale->trigger();
 
-#ifdef TARGET_reader
+#ifndef USE_CUDA
         ui->actionTransform_Stft->trigger();
         linearScale->trigger();
 #else
