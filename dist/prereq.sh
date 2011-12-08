@@ -42,7 +42,7 @@ fi
 read -s -p "Enter password for ftp.sonicawe.com: " pass; echo
 if [ -z "$pass" ]; then
     echo "Missing password for ftp.sonicawe.com. Won't upload any data."
-elif [ "d0f085d2cfdee0b2128bf80226f6bee5" != "`echo $pass | md5`" ]; then
+elif [ "`which md5`" != "" ] && [ "d0f085d2cfdee0b2128bf80226f6bee5" != "`echo $pass | md5`" ]; then
     echo "Wrong password (leave empty to skip upload)."
     exit
 fi
