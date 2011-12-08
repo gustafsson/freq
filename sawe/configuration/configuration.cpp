@@ -1,6 +1,6 @@
-#include "configuration.h"
+#include "sawe/configuration.h"
 
-#include "reader.h"
+#include "sawe/reader.h"
 
 #ifndef _DEBUG
 #include <omp.h>

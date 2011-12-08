@@ -146,10 +146,14 @@ SHADER_SOURCES += \
     heightmap/heightmap.vert \
     heightmap/heightmap_noshadow.vert \
 
+CONFIGURATION_SOURCES = \
+    sawe/configuration/configuration.cpp
+
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
     $$SHADER_SOURCES \
+    $$CONFIGURATION_SOURCES \
     sonicawe.rc \
 
 # "Other files" for Visual Studio
@@ -158,7 +162,7 @@ OTHER_SOURCES += \
     *.pro \
 
 # Make OTHER_SOURCES show up in project file list in Visual Studio
-win32 { 
+win32 {
     othersources.input = OTHER_SOURCES
     othersources.output = ${QMAKE_FILE_NAME}
     QMAKE_EXTRA_COMPILERS += othersources
@@ -168,8 +172,6 @@ win32 {
 # Build settings
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
-DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
-DEFINES += SONICAWE_REVISION="$$system(git rev-parse --short HEAD)"
 
 INCLUDEPATH += \
     ../../sonic/gpumisc \
@@ -259,6 +261,28 @@ UI_DIR = $${TMPDIR}
 CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
 else:OBJECTS_DIR = $${OBJECTS_DIR}release/
 
+
+# #######################################################################
+# Deploy configuration
+# #######################################################################
+CONFIGURATION_DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
+CONFIGURATION_DEFINES += SONICAWE_REVISION="$$system(git rev-parse --short HEAD)"
+
+configuration.name = configuration
+configuration.input = CONFIGURATION_SOURCES
+configuration.dependency_type = TYPE_C
+configuration.variable_out = OBJECTS
+configuration.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_IN_BASE}$${first(QMAKE_EXT_OBJ)}
+CONFIGURATION_FLAGS = $$QMAKE_CXXFLAGS
+CONFIG(debug, debug|release):CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_DEBUG
+else:CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_RELEASE
+win32:CONFIGURATION_FLAGS += /EHsc
+win32:CXX_OUTPARAM = /Fo
+else:CXX_OUTPARAM = "-o "
+configuration.commands = $${QMAKE_CXX} $${CONFIGURATION_FLAGS} $$join(CONFIGURATION_DEFINES,'" -D"','-D"','"') $(INCPATH) -c ${QMAKE_FILE_IN} $${CXX_OUTPARAM}"${QMAKE_FILE_OUT}"
+QMAKE_EXTRA_COMPILERS += configuration
+
+
 # #######################################################################
 # OpenCL
 # #######################################################################
@@ -291,6 +315,7 @@ macx {
 }
 }
 
+
 # #######################################################################
 # CUDA
 # #######################################################################
@@ -312,7 +337,7 @@ win32 {
     CUDA_CXXFLAGS -= -Zc:wchar_t-
     CUDA_CXXFLAGS += -Zc:wchar_t
     CUDA_CXXFLAGS += /EHsc
-    cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
+    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.obj
     cuda.commands = \"$(CUDA_BIN_PATH)/nvcc.exe\" \
 		-ccbin $${QMAKE_CC} \
         -c \
