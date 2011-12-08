@@ -608,10 +608,19 @@ void RenderView::
         current_viewport[0], current_viewport[1],
         current_viewport[2], current_viewport[3]);
 
-    for (unsigned i=0; i < 1; ++i)
-        drawCollection(i, yscale);
+    unsigned i=0;
 
-    if (1<N)
+    // draw the first without fbo
+    for (i; i < N; ++i)
+    {
+        if (!model->collections[i]->isVisible())
+            continue;
+
+        drawCollection(i, yscale);
+        break;
+    }
+
+    if (i<N)
     {
         // drawCollections is called for 3 different viewports each frame.
         // GlFrameBuffer will query the current viewport to determine the size
@@ -625,46 +634,49 @@ void RenderView::
         //     my_fbo.reset( new GlFrameBuffer );
         //     fbo = my_fbo.get();
         // }
+    }
 
-        for (unsigned i=1; i < N; ++i)
+    for (; i<N; ++i)
+    {
+        if (!model->collections[i]->isVisible())
+            continue;
+
+        GlException_CHECK_ERROR();
+
         {
-            GlException_CHECK_ERROR();
+            GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            glViewport(0, 0,
+                       fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
 
-            {
-                GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
-                glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                glViewport(0, 0,
-                           fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
-
-                drawCollection(i, yscale);
-            }
-
-            glViewport(current_viewport[0], current_viewport[1],
-                       current_viewport[2], current_viewport[3]);
-
-            glPushMatrixContext mpc( GL_PROJECTION );
-            glLoadIdentity();
-            glOrtho(0,1,0,1,-10,10);
-            glPushMatrixContext mc( GL_MODELVIEW );
-            glLoadIdentity();
-
-            glBlendFunc( GL_DST_COLOR, GL_ZERO );
-
-            glDisable(GL_DEPTH_TEST);
-
-            glColor4f(1,1,1,1);
-            GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
-            glBegin(GL_TRIANGLE_STRIP);
-                glTexCoord2f(0,0); glVertex2f(0,0);
-                glTexCoord2f(1,0); glVertex2f(1,0);
-                glTexCoord2f(0,1); glVertex2f(0,1);
-                glTexCoord2f(1,1); glVertex2f(1,1);
-            glEnd();
-
-            glEnable(GL_DEPTH_TEST);
-
-            GlException_CHECK_ERROR();
+            drawCollection(i, yscale);
         }
+
+        glViewport(current_viewport[0], current_viewport[1],
+                   current_viewport[2], current_viewport[3]);
+
+        glPushMatrixContext mpc( GL_PROJECTION );
+        glLoadIdentity();
+        glOrtho(0,1,0,1,-10,10);
+        glPushMatrixContext mc( GL_MODELVIEW );
+        glLoadIdentity();
+
+        glBlendFunc( GL_DST_COLOR, GL_ZERO );
+
+        glDisable(GL_DEPTH_TEST);
+
+        glColor4f(1,1,1,1);
+        GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
+        glBegin(GL_TRIANGLE_STRIP);
+            glTexCoord2f(0,0); glVertex2f(0,0);
+            glTexCoord2f(1,0); glVertex2f(1,0);
+            glTexCoord2f(0,1); glVertex2f(0,1);
+            glTexCoord2f(1,1); glVertex2f(1,1);
+        glEnd();
+
+        glEnable(GL_DEPTH_TEST);
+
+        GlException_CHECK_ERROR();
     }
 
     TIME_PAINTGL_DETAILS ComputationCheckError();
@@ -684,9 +696,6 @@ void RenderView::
 void RenderView::
         drawCollection(int i, float yscale )
 {
-    if (!model->collections[i]->isVisible())
-        return;
-
     model->renderSignalTarget->source()->set_channel( i );
     model->renderer->collection = model->collections[i].get();
     model->renderer->fixed_color = channel_colors[i];
