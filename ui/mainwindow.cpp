@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 
 #include "computationkernel.h"
+#include "sawe/configuration.h"
 
 // Ui
 #include "ui_mainwindow.h"
@@ -178,7 +179,7 @@ void SaweMainWindow::
     }
 
 
-    ui->menuDevicename->setTitle( ("Using " + computationDeviceName()).c_str() );
+    ui->menuDevicename->setTitle( ("Using " + Sawe::Configuration::computationDeviceName()).c_str() );
 
 
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),

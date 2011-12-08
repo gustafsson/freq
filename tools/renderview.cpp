@@ -8,6 +8,7 @@
 
 // Sonic AWE
 #include "sawe/project.h"
+#include "sawe/configuration.h"
 #include "tfr/cwt.h"
 #include "toolfactory.h"
 #include "support/drawworking.h"
@@ -40,12 +41,8 @@
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
 
-#ifdef SONICAWE_VERSION
+//#define TIME_PAINTGL_DRAW
 #define TIME_PAINTGL_DRAW if(0)
-#else
-#define TIME_PAINTGL_DRAW
-//#define TIME_PAINTGL_DRAW if(0)
-#endif
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -611,7 +608,7 @@ void RenderView::
     unsigned i=0;
 
     // draw the first without fbo
-    for (i; i < N; ++i)
+    for (; i < N; ++i)
     {
         if (!model->collections[i]->isVisible())
             continue;

@@ -98,6 +98,7 @@ private:
     bool _draw_flat;
     float _redundancy;
     bool _invalid_frustum;
+    bool _drawcrosseswhen0;
     GLvector projectionPlane, projectionNormal, // for clipFrustum
         rightPlane, rightNormal,
         leftPlane, leftNormal,

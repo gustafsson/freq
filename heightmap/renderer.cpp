@@ -1,6 +1,7 @@
 #include <gl.h>
 
 #include "heightmap/renderer.h"
+#include "sawe/configuration.h"
 
 #ifndef __APPLE__
 #   include <GL/glut.h>
@@ -53,11 +54,13 @@ Renderer::Renderer( Collection* collection )
     _initialized(NotInitialized),
     _draw_flat(false),
     _redundancy(2.5f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
-    _invalid_frustum(true)
+    _invalid_frustum(true),
+    _drawcrosseswhen0( Sawe::Configuration::version().empty() )
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
     memset(projection_matrix, 0, sizeof(projection_matrix));
     memset(viewport_matrix, 0, sizeof(viewport_matrix));
+
     // Using glut for drawing fonts, so glutInit must be called.
     static int c=0;
     if (0==c)
@@ -529,12 +532,8 @@ void Renderer::renderSpectrogramRef( Reference ref )
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
     pBlock block = collection->getBlock( ref );
-    bool drawcrosseswhen0 = false;
-#ifndef SONICAWE_VERSION
-    drawcrosseswhen0 = true;
-#endif
 
-    float yscalelimit = drawcrosseswhen0 ? 0.0004f : 0.f;
+    float yscalelimit = _drawcrosseswhen0 ? 0.0004f : 0.f;
     if (0!=block.get() && y_scale > yscalelimit) {
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();

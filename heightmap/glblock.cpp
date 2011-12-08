@@ -137,8 +137,8 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
                     "See more info in 'Help->Report a bug'");
 
             message->setDetailedText( programInfoLog );
-            message->show();
             message->setAttribute( Qt::WA_DeleteOnClose );
+            message->show();
         }
 
     } catch (...) {

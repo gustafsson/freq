@@ -1,5 +1,6 @@
 #include "microphonerecorder.h"
 #include "playback.h"
+#include "sawe/configuration.h"
 
 #include <iostream>
 #include <memory.h>
@@ -310,11 +311,10 @@ unsigned MicrophoneRecorder::
         num_channels()
 {
     QMutexLocker lock(&_data_lock);
-#ifdef SAWE_MONO
-    return _data.num_channels()?1:0;
-#else
-    return _data.num_channels();
-#endif
+    if (Sawe::Configuration::mono())
+        return _data.num_channels()?1:0;
+    else
+        return _data.num_channels();
 }
 
 void MicrophoneRecorder::

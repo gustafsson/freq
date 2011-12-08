@@ -169,7 +169,7 @@ win32 {
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
-DEFINES += SONICAWE_REVISION="\\\"$$system(git rev-parse --short HEAD)\\\""
+DEFINES += SONICAWE_REVISION="$$system(git rev-parse --short HEAD)"
 
 INCLUDEPATH += \
     ../../sonic/gpumisc \

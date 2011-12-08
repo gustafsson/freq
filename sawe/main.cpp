@@ -2,7 +2,7 @@
 #include "sawe/application.h"
 #include "tfr/cwt.h"
 #include "sawe/reader.h"
-#include "sawe/uname.h"
+#include "sawe/configuration.h"
 
 // gpumisc
 #include <redirectstdout.h>
@@ -608,12 +608,15 @@ int main(int argc, char *argv[])
         rs.reset();
 
         {
-            TaskInfo ti("Version: %s", a.version_string().c_str());
-            TaskInfo("OS: %s", operatingSystemName().c_str());
+            TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
+            TaskInfo("OS: %s", Sawe::Configuration::operatingSystemName().c_str());
             TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
             TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
-            TaskInfo("Build timestamp for %s: %s, %s. Revision %s", UNAME, __DATE__, __TIME__, SONICAWE_REVISION);
-            TaskInfo("number of CPU cores: %d", cpuCores());
+            TaskInfo("Build timestamp for %s: %s, %s. Revision %s", 
+                Sawe::Configuration::uname().c_str(), 
+                __DATE__, __TIME__, 
+                Sawe::Configuration::revision().c_str());
+            TaskInfo("number of CPU cores: %d", Sawe::Configuration::cpuCores());
             {
                 TaskInfo ti("OpenGL information");
                 TaskInfo("vendor: %s", glGetString(GL_VENDOR));
@@ -636,7 +639,7 @@ int main(int argc, char *argv[])
         if (!check_cuda( false ))
             return 1337;
 
-        TaskInfo("computation device: %s", computationDeviceName().c_str());
+        TaskInfo("computation device: %s", Sawe::Configuration::computationDeviceName().c_str());
 
         if( 0 == a.shared_glwidget()->context())
         {

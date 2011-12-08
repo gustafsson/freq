@@ -2,6 +2,7 @@
 
 #include "sawe/application.h"
 #include "sawe/openfileerror.h"
+#include "sawe/configuration.h"
 #if !defined(TARGET_reader)
 #include "adapters/audiofile.h"
 #include "adapters/csvtimeseries.h"
@@ -312,7 +313,7 @@ void Project::
 
     command_invoker_.reset( new Tools::Commands::CommandInvoker(this) );
 
-    string title = Sawe::Application::title_string();
+    string title = Sawe::Configuration::title_string();
     if (!project_title().empty())
         title = project_title() + " - " + title;
 
@@ -345,7 +346,7 @@ void Project::
 {
     if (!project_filename_.empty())
         project_title_ = QFileInfo(QString::fromLocal8Bit( project_filename_.c_str() )).fileName().toStdString();
-    _mainWindow->setWindowTitle( QString::fromLocal8Bit( (project_title() + " - " + Sawe::Application::title_string()).c_str() ));
+    _mainWindow->setWindowTitle( QString::fromLocal8Bit( (project_title() + " - " + Sawe::Configuration::title_string()).c_str() ));
 }
 
 

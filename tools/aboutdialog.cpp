@@ -1,7 +1,7 @@
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"
 #include "ui_mainwindow.h"
-#include "sawe/application.h"
+#include "sawe/configuration.h"
 #include "ui/mainwindow.h"
 
 // gpumisc
@@ -44,8 +44,8 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
 void AboutDialog::
         showEvent(QShowEvent *)
 {
-    ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
-    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
+    ui->labelVersion->setText( QString::fromStdString( Sawe::Configuration::version_string() ) );
+    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(Sawe::Configuration::revision().c_str()) );
     ui->labelLicense->setText( Sawe::Reader::reader_text().c_str() );
     if (Sawe::Reader::reader_title() == Sawe::Reader::reader_text() )
         ui->labelLicense->clear();

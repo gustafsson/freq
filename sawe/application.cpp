@@ -5,6 +5,7 @@
 // Sonic AWE
 #include "ui/mainwindow.h"
 #include "tfr/cwt.h"
+#include "configuration.h"
 
 // gpumisc
 #include <demangle.h>
@@ -29,9 +30,6 @@
 #endif
 
 using namespace std;
-
-#define STRINGIFY(x) #x
-#define TOSTR(x) STRINGIFY(x)
 
 namespace Sawe {
 
@@ -99,7 +97,7 @@ Application::
 Application::
         ~Application()
 {
-    TaskInfo ti("Closing Sonic AWE, %s", _version_string.c_str());
+    TaskInfo ti("Closing Sonic AWE, %s", Sawe::Configuration::version_string().c_str());
     ti.tt().partlyDone();
 
     _projects.clear();
@@ -128,22 +126,6 @@ QGLWidget* Application::
         shared_glwidget()
 {
     return global_ptr()->shared_glwidget_;
-}
-
-
-string Application::
-        version_string()
-{
-    global_ptr()->build_version_string();
-    return global_ptr()->_version_string;
-}
-
-
-string Application::
-        title_string()
-{
-    global_ptr()->build_version_string();
-    return global_ptr()->_title_string;
 }
 
 
@@ -334,38 +316,11 @@ void Application::
 
 
 void Application::
-        build_version_string()
-{
-    if (!_version_string.empty())
-        return;
-
-    stringstream ss;
-    #ifdef SONICAWE_VERSION
-        ss << "v" << TOSTR(SONICAWE_VERSION);
-    #else
-        ss << "dev " << __DATE__;
-        #ifdef _DEBUG
-            ss << ", " << __TIME__;
-        #endif
-
-        #ifdef SONICAWE_BRANCH
-            if( 0 < strlen( TOSTR(SONICAWE_BRANCH) ))
-                ss << " - branch: " << TOSTR(SONICAWE_BRANCH);
-        #endif
-    #endif
-
-    _version_string = ss.str();
-    _title_string = Reader::reader_title() + " - " + _version_string;
-}
-
-
-void Application::
         check_license()
 {
     Reader::reader_text(true);
 
-    global_ptr()->_version_string.clear();
-    global_ptr()->build_version_string();
+    Sawe::Configuration::rebuild_version_string();
 
     emit global_ptr()->titleChanged();
 }

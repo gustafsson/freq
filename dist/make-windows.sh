@@ -22,7 +22,7 @@ if [ "Y" == "${rebuildall}" ]; then
   "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
   rm -f gpumisc/release/gpumisc.lib
-  rm -f sonicawe/release/sonicawe.exe
+  touch sonicawe/sawe/configuration.cpp
 fi
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
@@ -42,7 +42,7 @@ if [ "Y" == "${rebuildall}" ]; then
   "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
   rm -f gpumisc/release/gpumisc.lib
-  rm -f sonicawe/release/sonicawe.exe
+  touch sonicawe/sawe/configuration.cpp
 fi
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln

@@ -1,7 +1,7 @@
 #include "checkupdates.h"
 #include "sawe/reader.h"
 #include "sawe/application.h"
-#include "sawe/uname.h"
+#include "sawe/configuration.h"
 #include "support/buildhttppost.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
@@ -33,8 +33,10 @@ CheckUpdates::
         // wait for reader to finish
         connect( Sawe::Application::global_ptr(), SIGNAL(titleChanged()), SLOT(autoCheckForUpdatesSoon()) );
     }
-
-    autoCheckForUpdatesSoon();
+    else
+    {
+        autoCheckForUpdatesSoon();
+    }
 }
 
 
@@ -95,15 +97,15 @@ void CheckUpdates::
     Support::BuildHttpPost postdata;
 
     postdata.addKeyValue( "kind", manualUpdate?checkAuto?"manual-auto":"manual":"auto" );
-    postdata.addKeyValue( "uname", operatingSystemName().c_str() );
-    postdata.addKeyValue( "device", computationDeviceName().c_str() );
+    postdata.addKeyValue( "uname", Sawe::Configuration::operatingSystemName().c_str() );
+    postdata.addKeyValue( "device", Sawe::Configuration::computationDeviceName().c_str() );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
     postdata.addKeyValue( "text", Sawe::Reader::reader_text().c_str() );
     postdata.addKeyValue( "hostname", QHostInfo::localHostName() );
     postdata.addKeyValue( "domainname", QHostInfo::localDomainName() );
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
-    postdata.addKeyValue( "version", Sawe::Application::version_string().c_str() );
-    postdata.addKeyValue( "title", Sawe::Application::title_string().c_str() );
+    postdata.addKeyValue( "version", Sawe::Configuration::version_string().c_str() );
+    postdata.addKeyValue( "title", Sawe::Configuration::title_string().c_str() );
 
     manager.reset( new QNetworkAccessManager(this) );
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),
