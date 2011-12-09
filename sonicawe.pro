@@ -272,34 +272,6 @@ else:OBJECTS_DIR = $${OBJECTS_DIR}release/
 
 
 # #######################################################################
-# Deploy configuration
-# #######################################################################
-CONFIGURATION_DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
-CONFIGURATION_DEFINES += SONICAWE_REVISION="$$system(git rev-parse --short HEAD)"
-
-configuration.name = configuration
-configuration.input = CONFIGURATION_SOURCES
-configuration.dependency_type = TYPE_C
-configuration.variable_out = OBJECTS
-configuration.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_IN_BASE}$${first(QMAKE_EXT_OBJ)}
-CONFIGURATION_FLAGS = $$QMAKE_CXXFLAGS
-CONFIG(debug, debug|release):CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_DEBUG
-else:CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_RELEASE
-win32:CONFIGURATION_FLAGS += /EHsc
-win32:CXX_OUTPARAM = /Fo
-else:CXX_OUTPARAM = "-o "
-testlib:CONFIGURATION_FLAGS+=-fPIC
-configuration.commands = $${QMAKE_CXX} \
-    $${CONFIGURATION_FLAGS} \
-    $$join(CONFIGURATION_DEFINES,'" -D"','-D"','"') \
-    $$join(DEFINES,'" -D"','-D"','"') \
-    $(INCPATH) \
-    -c ${QMAKE_FILE_IN} \
-    $${CXX_OUTPARAM}"${QMAKE_FILE_OUT}"
-QMAKE_EXTRA_COMPILERS += configuration
-
-
-# #######################################################################
 # OpenCL
 # #######################################################################
 useopencl {
@@ -428,3 +400,31 @@ cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
 
 } #usecuda
+
+
+# #######################################################################
+# Deploy configuration
+# #######################################################################
+CONFIGURATION_DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
+CONFIGURATION_DEFINES += SONICAWE_REVISION="$$system(git rev-parse --short HEAD)"
+
+configuration.name = configuration
+configuration.input = CONFIGURATION_SOURCES
+configuration.dependency_type = TYPE_C
+configuration.variable_out = OBJECTS
+configuration.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_IN_BASE}$${first(QMAKE_EXT_OBJ)}
+CONFIGURATION_FLAGS = $$QMAKE_CXXFLAGS
+CONFIG(debug, debug|release):CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_DEBUG
+else:CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_RELEASE
+win32:CONFIGURATION_FLAGS += /EHsc
+win32:CXX_OUTPARAM = /Fo
+else:CXX_OUTPARAM = "-o "
+testlib:CONFIGURATION_FLAGS+=-fPIC
+configuration.commands = $${QMAKE_CXX} \
+    $${CONFIGURATION_FLAGS} \
+    $$join(CONFIGURATION_DEFINES,'" -D"','-D"','"') \
+    $$join(DEFINES,'" -D"','-D"','"') \
+    $(INCPATH) \
+    -c ${QMAKE_FILE_IN} \
+    $${CXX_OUTPARAM}"${QMAKE_FILE_OUT}"
+QMAKE_EXTRA_COMPILERS += configuration
