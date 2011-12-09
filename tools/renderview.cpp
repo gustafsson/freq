@@ -1100,7 +1100,14 @@ void RenderView::
                 }
             }
             else
+            {
                 worker.center = model->_qx;
+            }
+        }
+        else
+        {
+            // fetch_todo_list
+            worker.target(worker.target());
         }
     }
 
