@@ -36,7 +36,7 @@ Configuration::
             channel_( 0 ),
             scales_per_octave_( 20 ),
             wavelet_time_support_( 3 ),
-            wavelet_scale_support_( 2 ),
+            wavelet_scale_support_( 3 ),
 #ifdef USE_CUDA
             min_hz_( 60 ),
 #else
