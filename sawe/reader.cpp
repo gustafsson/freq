@@ -4,6 +4,7 @@
   */
 
 #include "reader.h"
+#include "configuration.h"
 
 #include <vector>
 #include <sstream>
@@ -214,7 +215,7 @@ string Reader::
             QDate warningDate = expiredDate.addDays(-7);
             QDate stopDate = expiredDate.addDays(14);
 
-            QDate built = QDate::fromString(QString(__DATE__).replace("  ", " "), "MMM d yyyy");
+            QDate built = QDate::fromString(QString(Sawe::Configuration::build_date().c_str()).replace("  ", " "), "MMM d yyyy");
             if (warningDate < QDate::currentDate() || warningDate < built)
             {
                 for (static bool shown=false; !shown; shown=true)

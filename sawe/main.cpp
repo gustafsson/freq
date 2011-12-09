@@ -517,7 +517,7 @@ int main(int argc, char *argv[])
             TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
             TaskInfo("Build timestamp for %s: %s, %s. Revision %s", 
                 Sawe::Configuration::uname().c_str(), 
-                __DATE__, __TIME__, 
+                Sawe::Configuration::build_date().c_str(), Sawe::Configuration::build_time().c_str(),
                 Sawe::Configuration::revision().c_str());
             TaskInfo("number of CPU cores: %d", Sawe::Configuration::cpuCores());
             {

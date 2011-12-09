@@ -45,7 +45,10 @@ void AboutDialog::
         showEvent(QShowEvent *)
 {
     ui->labelVersion->setText( QString::fromStdString( Sawe::Configuration::version_string() ) );
-    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(Sawe::Configuration::revision().c_str()) );
+    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.")
+                                 .arg(Sawe::Configuration::build_date().c_str())
+                                 .arg(Sawe::Configuration::build_time().c_str())
+                                 .arg(Sawe::Configuration::revision().c_str()) );
     ui->labelLicense->setText( Sawe::Reader::reader_text().c_str() );
     if (Sawe::Reader::reader_title() == Sawe::Reader::reader_text() )
         ui->labelLicense->clear();

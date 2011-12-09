@@ -16,6 +16,9 @@ public:
     static std::string uname();
     static std::string distcodename();
 
+    static std::string build_date();
+    static std::string build_time();
+
     static bool mono();
 
     static std::string version_string();

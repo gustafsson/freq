@@ -140,6 +140,20 @@ string Configuration::
 }
 
 
+std::string Configuration::
+        build_date()
+{
+    return __DATE__;
+}
+
+
+std::string Configuration::
+        build_time()
+{
+    return __TIME__;
+}
+
+
 bool Configuration::
         mono()
 {
@@ -508,9 +522,9 @@ void Configuration::
         ss << "v" << Sawe::Configuration::version();
     else
     {
-        ss << "dev " << __DATE__;
+        ss << "dev " << build_date();
         #ifdef _DEBUG
-            ss << ", " << __TIME__;
+            ss << ", " << build_time();
         #endif
 
         if (!Sawe::Configuration::branch().empty())
