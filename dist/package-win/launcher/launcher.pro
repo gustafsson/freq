@@ -4,10 +4,6 @@
 #
 #-------------------------------------------------
 
-QT       += core
-
-QT       -= gui
-
 TARGET = launcher
 TEMPLATE = vcapp
 CONFIG += debug_and_release
