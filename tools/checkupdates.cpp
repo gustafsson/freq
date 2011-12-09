@@ -106,6 +106,7 @@ void CheckUpdates::
     postdata.addKeyValue( "kind", manualUpdate?checkAuto?"manual-auto":"manual":"auto" );
     postdata.addKeyValue( "uname", Sawe::Configuration::operatingSystemName().c_str() );
     postdata.addKeyValue( "device", Sawe::Configuration::computationDeviceName().c_str() );
+    postdata.addKeyValue( "revision", Sawe::Configuration::revision().c_str() );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
     postdata.addKeyValue( "text", Sawe::Reader::reader_text().c_str() );
     postdata.addKeyValue( "hostname", QHostInfo::localHostName() );
