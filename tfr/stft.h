@@ -43,6 +43,7 @@ public:
     virtual float displayedTimeResolution( float FS, float hz );
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    virtual std::string toString();
 
     pChunk forward( Signal::pBuffer );
     Signal::pBuffer backward( pChunk );
@@ -121,6 +122,7 @@ public:
     virtual float displayedTimeResolution( float FS, float hz );
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    virtual std::string toString();
 
     unsigned increment();
     unsigned chunk_size() { return _window_size; }

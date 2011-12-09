@@ -67,6 +67,15 @@ unsigned Cepstrum::
 }
 
 
+std::string Cepstrum::
+        toString()
+{
+    std::stringstream ss;
+    ss << "Tfr::Cepstrum (" << stft()->toString() << ")";
+    return ss.str();
+}
+
+
 unsigned Cepstrum::
         chunk_size()
 {

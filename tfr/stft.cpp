@@ -146,6 +146,15 @@ unsigned Fft::
 }
 
 
+std::string Fft::
+        toString()
+{
+    std::stringstream ss;
+    ss << "Tfr::Fft"
+       << ", redundant=" << _compute_redundant;
+    return ss.str();
+}
+
 Signal::pBuffer Fft::
         backward( pChunk chunk)
 {
@@ -507,6 +516,18 @@ unsigned Stft::
     return lpo2s(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size;
 }
 
+
+std::string Stft::
+        toString()
+{
+    std::stringstream ss;
+    ss << "Tfr::Stft, "
+       << "window_size=" << _window_size
+       << ", redundant=" << (_compute_redundant?"C2C":"R2C")
+       << ", overlap=" << _overlap
+       << ", window_type=" << windowTypeName();
+    return ss.str();
+}
 
 //static unsigned absdiff(unsigned a, unsigned b)
 //{

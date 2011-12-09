@@ -79,6 +79,12 @@ public:
       'current_valid_samples_per_chunk').
       */
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) = 0;
+
+
+    /**
+      Returns a string representation of this transform. Mainly used for debugging and testing.
+      */
+    virtual std::string toString() = 0;
 };
 typedef boost::shared_ptr<Transform> pTransform;
 
