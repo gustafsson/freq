@@ -37,7 +37,7 @@ if [ "Y" == "${rebuildall}" ] || [ "y" == "${rebuildall}" ]; then
 else
 	rebuildall=N;
 
-	if [ -z "${rebuildcuda}" ]; then read -p ".cu-files (CUDA kernels) doesn't detect when affected .h-files are changed. \"touch\" all .cu-files? (y/N) " rebuildcuda; echo; fi
+	if [ -z "${rebuildcuda}" ]; then read -p ".cu-files (CUDA kernels) are not rebuilt when included .h-files are changed. \"touch\" all .cu-files? (y/N) " rebuildcuda; echo; fi
 	if [ "Y" == "${rebuildcuda}" ] || [ "y" == "${rebuildcuda}" ]; then
 		(cd ..; touch `find . -name *.cu`)
 	fi
