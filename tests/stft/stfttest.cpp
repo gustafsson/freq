@@ -23,12 +23,16 @@ private slots:
     void equalForwardInverse();
 
 private:
+    static float testTransform(Tfr::pTransform t, Signal::pBuffer b, float* forwardtime=0, float* inversetime=0, float* epsilon=0);
+
     Signal::pBuffer b;
     bool coutinfo;
-    int N, windowsize, ffts;
+    bool benchmark_summary;
+    int N, windowsize, ftruns;
 
     float epsilon[2];
     std::vector<float> diffs, forwardtime, inversetime;
+    float overlap;
 
     unsigned passedTests;
 };
@@ -36,18 +40,20 @@ private:
 
 StftTest::StftTest()
 {
-    coutinfo = false;
-    //int N = 1<<23, windowsize=1<<16;
-    N = 1<<22;
-    windowsize=1<<10;
+    coutinfo = true;
+    benchmark_summary = false;
+    //N = 1<<23; windowsize=1<<16;
+    //N = 1<<22; windowsize=1<<10;
+    N = 16; windowsize=4;
+    overlap = 0.98f;
 
     epsilon[0] = 2e-7 * log((double)N);
     epsilon[1] = 2e-7 * log((double)windowsize);
 
-    ffts = 2;
-    diffs.resize(ffts*2);
-    forwardtime.resize(ffts*2);
-    inversetime.resize(ffts*2);
+    ftruns = 1 + Tfr::Stft::WindowType_NumberOfWindowTypes;
+    diffs.resize(ftruns*2);
+    forwardtime.resize(ftruns*2);
+    inversetime.resize(ftruns*2);
 
     passedTests = 0;
 }
@@ -55,7 +61,7 @@ StftTest::StftTest()
 void StftTest::initTestCase()
 {
     TaskTimer tt("Initiating test signal");
-    b.reset(new Signal::Buffer(0, N, 1));
+    b.reset(new Signal::Buffer(N, N, 1));
 
     float* p = b->waveform_data()->getCpuMemory();
     srand(0);
@@ -85,8 +91,23 @@ void StftTest::initTestCase()
 void StftTest::cleanupTestCase()
 {
     if (coutinfo) cout << endl;
-    for (int i=0; i<ffts*2; ++i)
-        cout << (i/2?"Stft":"Fft") << " " << (i%2?"C2C":"R2C") << " " << diffs[i] << " < " << epsilon[i/2] << " " << (diffs[i]<epsilon[i/2]?"ok":"failed") << ". Time: " << forwardtime[i] << " s and " << inversetime[i] << " s. Sum " << forwardtime[i]+inversetime[i] << " s" << endl;
+    for (int i=0; i<2*ftruns; ++i)
+    {
+        bool success = diffs[i]<epsilon[false != (i/2)];
+        cout << (success?"Success: ":"Failed:  ")
+             << i << " " << (i==0||i==1?"Fft":("Stft " + Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)(i/2-1))).c_str())
+             << " " << (i%2?"C2C":"R2C")
+             << " " << diffs[i];
+
+        if (i<4)
+            cout << " < " << epsilon[false != (i/2)];
+
+        if (benchmark_summary)
+            cout << ". Time: " << forwardtime[i] << " s and inverse " << inversetime[i]
+                 << " s. Sum " << forwardtime[i]+inversetime[i] << " s";
+
+        cout << endl;
+    }
 
     cout << "Passed tests: " << passedTests << endl;
 }
@@ -98,11 +119,15 @@ void StftTest::
     QTest::addColumn<int>("stft");
     QTest::addColumn<bool>("redundant");
 
-    for (int stft=0; stft<ffts; ++stft)
+    for (int stft=0; stft<ftruns; ++stft)
     {
         for (int redundant=0; redundant<2; ++redundant)
         {
-            QTest::newRow(QString("%1:%2").arg(stft?"Stft":"Fft").arg(redundant?"C2C":"R2C").toLocal8Bit().data()) << stft << (bool)redundant;
+            QTest::newRow(QString("%1%2 %3")
+                          .arg(stft?"Stft ":"Fft")
+                          .arg(stft?Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)(stft-1)).c_str():"")
+                          .arg(redundant?"C2C":"R2C").toLocal8Bit().data())
+                    << stft << (bool)redundant;
         }
     }
 }
@@ -114,70 +139,88 @@ void StftTest::
     QFETCH(int, stft);
     QFETCH(bool, redundant);
 
-    QBENCHMARK
+    //QBENCHMARK
     {
+        Tfr::pTransform ft;
+        if (stft)
+        {
+            Tfr::Stft* t;
+            ft.reset(t = new Tfr::Stft);
+            t->setWindow( (Tfr::Stft::WindowType)(stft-1), overlap );
+            t->set_approximate_chunk_size(windowsize);
+            t->compute_redundant(redundant);
+        }
+        else
+        {
+            ft.reset( new Tfr::Fft(redundant) );
+        }
 
-    float* p = b->waveform_data()->getCpuMemory();
+        float ft_diff = testTransform( ft, b, &forwardtime[stft*2+redundant], &inversetime[stft*2+redundant], coutinfo?&epsilon[0!=stft]:0);
+        diffs[stft*2+redundant] = ft_diff;
 
-    float norm = 1.f/N;
-    Tfr::pTransform ft;
-    if (stft)
-    {
-        norm = 1.f;
-        Tfr::Stft* stft;
-        ft.reset(stft = new Tfr::Stft);
-        stft->set_approximate_chunk_size(windowsize);
-        stft->compute_redundant(redundant);
+        passedTests += ft_diff < epsilon[0!=stft];
+
+        QVERIFY( ft_diff < epsilon[0!=stft] );
     }
-    else
-    {
-        ft.reset( new Tfr::Fft(redundant) );
-    }
+}
+
+
+float StftTest::
+    testTransform(Tfr::pTransform t, Signal::pBuffer b, float* forwardtime, float* inversetime, float *epsilon)
+{
+    float norm = 1.f;
+    if (dynamic_cast<Tfr::Fft*>(t.get()))
+        norm = 1.f/b->number_of_samples();
 
     Tfr::pChunk c;
     b->waveform_data()->getCpuMemory();
     {
-        TaskTimer tt("%s %s forward", stft?"Stft":"Fft", redundant?"C2C":"R2C", 0);
-        c = (*ft)(b);
-        forwardtime[stft*2+redundant]=tt.elapsedTime();
+        TaskTimer tt("%s forward", t->toString().c_str());
+        c = (*t)(b);
+        if (forwardtime) *forwardtime=tt.elapsedTime();
     }
 
     Signal::pBuffer b2;
     {
-        TaskTimer tt("%s %s backward", stft?"Stft":"Fft", redundant?"C2C":"R2C", 0);
-        b2 = ft->inverse(c);
-        inversetime[stft*2+redundant]=tt.elapsedTime();
+        TaskTimer tt("%s backward", t->toString().c_str());
+        b2 = t->inverse(c);
+        if (inversetime) *inversetime=tt.elapsedTime();
     }
 
-    std::complex<float>* cp = c->transform_data->getCpuMemory();
-    if (coutinfo) cout << vartype(*ft).c_str() << " " << (redundant?"C2C":"R2C") << endl;
 
-    if (coutinfo) for (unsigned i=0; i<c->transform_data->numberOfElements(); ++i)
-        cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
-
+    float ft_diff = 0;
+    Signal::pBuffer expected = Signal::BufferSource(b).readFixedLength(b2->getInterval());
+    float *expectedp = expected->waveform_data()->getCpuMemory();
     float* p2 = b2->waveform_data()->getCpuMemory();
 
-    if (coutinfo) cout << "inverse" << endl;
-    float ft_diff = 0;
-    for (int i=0; i<N; ++i)
+    for (unsigned i=0; i<b2->number_of_samples(); ++i)
     {
-        if (coutinfo) cout << i << ", " << p[i] << ", " << p2[i]*norm <<  ";";
-        float diff = p[i] - p2[i]*norm;
-        if (coutinfo) if (fabsf(diff) > epsilon[stft])
-            cout << " Failed: " << diff;
-        if (ft_diff < fabsf(diff))
-            ft_diff = fabsf(diff);
-        if (coutinfo) cout << endl;
+        float diff = fabsf(expectedp[i] - p2[i]*norm);
+        if (ft_diff < diff)
+            ft_diff = diff;
     }
 
-    diffs[stft*2+redundant] = ft_diff;
-    if (coutinfo) cout << endl;
+    if (epsilon)
+    {
+        cout << t->toString() << endl;
 
-    passedTests += ft_diff < epsilon[stft];
+        std::complex<float>* cp = c->transform_data->getCpuMemory();
+        for (unsigned i=0; i<c->transform_data->numberOfElements(); ++i)
+            cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
 
-    QVERIFY( ft_diff < epsilon[stft] );
+        cout << "inverse" << endl;
 
+        for (unsigned i=0; i<b2->number_of_samples(); ++i)
+        {
+            cout << b2->sample_offset+i << ", " << expectedp[i] << ", " << p2[i]*norm <<  ";";
+            float diff = expectedp[i] - p2[i]*norm;
+            if (fabsf(diff) > *epsilon)
+                cout << " Failed: " << diff;
+            cout << endl;
+        }
     }
+
+    return ft_diff;
 }
 
 QTEST_MAIN(StftTest);
