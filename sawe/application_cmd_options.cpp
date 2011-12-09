@@ -129,6 +129,7 @@ void Application::
 {
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     cwt.scales_per_octave( Sawe::Configuration::scales_per_octave() );
+    cwt.set_wanted_min_hz( Sawe::Configuration::min_hz() );
     cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );
     cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
     //cwt.set_wanted_min_hz( _min_hz );

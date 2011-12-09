@@ -108,7 +108,7 @@ void PlaybackView::
         {
             r.model->_qx = _playbackMarker;
 
-            r.userinput_update(true, false);
+            r.userinput_update( true, true, false );
         }
     }
 }
