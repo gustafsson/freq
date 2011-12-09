@@ -7,22 +7,25 @@
 
 #include <vector>
 
+namespace Tools { class RenderModel; }
+
 namespace Tools { namespace Selections
 {
     class SplineModel
     {
     public:
-        SplineModel( Tfr::FreqAxis const& fa );
+        SplineModel( RenderModel* rendermodel );
         ~SplineModel();
 
         Signal::pOperation updateFilter();
 
         std::vector<Heightmap::Position> v;
         bool drawing;
+        Tfr::FreqAxis freqAxis();
 
     private:
         void createFilter();
-        Tfr::FreqAxis fa_;
+        RenderModel* rendermodel_;
     };
 } } // namespace Tools::Selections
 #endif // SPLINEMODEL_H

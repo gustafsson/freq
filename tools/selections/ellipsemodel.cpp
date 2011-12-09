@@ -1,23 +1,24 @@
 #include "ellipsemodel.h"
 #include "filters/ellipse.h"
 #include "tools/support/operation-composite.h"
+#include "tools/rendermodel.h"
 
 namespace Tools { namespace Selections
 {
 
 EllipseModel::
-        EllipseModel( Tfr::FreqAxis const& fa )
-            : fa_(fa)
+        EllipseModel( RenderModel* rendermodel )
+            : rendermodel_(rendermodel)
 {
     float l = 8;
-    a.time = l*.5f;
-    a.scale = .85f;
-    b.time = l*sqrt(2.0f);
-    b.scale = 2;
+    centre.time = l*.5f;
+    centre.scale = .85f;
+    centrePlusRadius.time = l*sqrt(2.0f);
+    centrePlusRadius.scale = 2;
 
     // no selection
-    a.time = b.time;
-    a.scale = b.scale;
+    centre.time = centrePlusRadius.time;
+    centre.scale = centrePlusRadius.scale;
 }
 
 
@@ -31,17 +32,17 @@ EllipseModel::
 Signal::pOperation EllipseModel::
         updateFilter()
 {
-    if (a.time == b.time || a.scale == b.scale)
+    if (centre.time == centrePlusRadius.time || centre.scale == centrePlusRadius.scale)
         return Signal::pOperation();
 
     Signal::pOperation filter( new Filters::Ellipse( 0,0,0,0, true ) );
 
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(filter.get());
 
-    e->_t1 = a.time;
-    e->_t2 = b.time;
-    e->_f1 = fa_.getFrequency( a.scale );
-    e->_f2 = fa_.getFrequency( b.scale );
+    e->_centre_t = centre.time;
+    e->_centre_plus_radius_t = centrePlusRadius.time;
+    e->_centre_f = freqAxis().getFrequency( centre.scale );
+    e->_centre_plus_radius_f = freqAxis().getFrequency( centrePlusRadius.scale );
 
     return filter;
 }
@@ -53,16 +54,22 @@ void EllipseModel::
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(filter.get());
     if (!e)
     {
-        b.time = a.time;
-        b.scale = a.scale;
+        centrePlusRadius.time = centre.time;
+        centrePlusRadius.scale = centre.scale;
         return;
     }
 
-    a.time = e->_t1;
-    b.time = e->_t2;
-    a.scale = fa_.getFrequencyScalar( e->_f1 );
-    b.scale = fa_.getFrequencyScalar( e->_f2 );
+    centre.time = e->_centre_t;
+    centrePlusRadius.time = e->_centre_plus_radius_t;
+    centre.scale = freqAxis().getFrequencyScalar( e->_centre_f );
+    centrePlusRadius.scale = freqAxis().getFrequencyScalar( e->_centre_plus_radius_f );
 }
 
+
+Tfr::FreqAxis EllipseModel::
+        freqAxis()
+{
+    return rendermodel_->display_scale();
+}
 
 } } // namespace Tools::Selections

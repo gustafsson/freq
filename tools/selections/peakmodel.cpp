@@ -21,8 +21,8 @@
 namespace Tools { namespace Selections
 {
 
-PeakModel::PeakModel( Tfr::FreqAxis const& fa )
-    :   spline_model( fa )
+PeakModel::PeakModel( RenderModel* rendermodel )
+    :   spline_model( rendermodel )
 {
 }
 
@@ -683,5 +683,6 @@ void PeakModel::
         }
     }
 }
+
 
 }} // Tools::Selections

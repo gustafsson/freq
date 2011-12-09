@@ -41,10 +41,10 @@ void EllipseView::
         drawSelectionCircle()
 {
     float
-        x = model_->a.time,
-        z = model_->a.scale,
-        _rx = fabs(model_->b.time - model_->a.time),
-        _rz = fabs(model_->b.scale - model_->a.scale);
+        x = model_->centre.time,
+        z = model_->centre.scale,
+        _rx = fabs(model_->centrePlusRadius.time - model_->centre.time),
+        _rz = fabs(model_->centrePlusRadius.scale - model_->centre.scale);
     float y = 1;
 
     glPushAttribContext ac;

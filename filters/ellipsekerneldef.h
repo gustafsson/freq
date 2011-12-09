@@ -6,7 +6,7 @@
 #include "datastorageaccess.h"
 
 template<typename T>
-inline RESAMPLE_ANYCALL void remove_disc_elem(DataPos p, T* wavelet, DataStorageSize numElem, Area area, bool save_inside, float fs )
+inline RESAMPLE_ANYCALL void remove_disc_elem(const DataPos& p, T* wavelet, const DataStorageSize& numElem, const Area& area, bool save_inside, float fs )
 {
     unsigned x = p.x, fi = p.y;
 
@@ -20,8 +20,8 @@ inline RESAMPLE_ANYCALL void remove_disc_elem(DataPos p, T* wavelet, DataStorage
     float ry = fabs(area.y2 - area.y1);
     //float dx = fabs(x+.5f - area.x);
     //float dy = fabs(fi-.5f - area.y);
-    float dx = fabs(x - area.x1);
-    float dy = fabs(fi - area.y1);
+    float dx = fabs(float(x) - area.x1);
+    float dy = fabs(float(fi) - area.y1);
 
     float ax = 0.03f*fs; // TODO this should be wavelet_time_support_samples( fs, hz ) = k*2^((b+fi)/scales_per_octave)
     float ay = 1.5f; // only round in time?

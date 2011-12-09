@@ -19,7 +19,7 @@ enum PropagationState {
 class PeakModel
 {
 public:
-    PeakModel( Tfr::FreqAxis const& fa );
+    PeakModel( RenderModel* rendermodel );
 
     Signal::pOperation updateFilter() { return spline_model.updateFilter(); }
 

@@ -17,10 +17,10 @@ namespace Filters {
 
 Ellipse::Ellipse(float t1, float f1, float t2, float f2, bool save_inside)
 {
-    _t1 = t1;
-    _f1 = f1;
-    _t2 = t2;
-    _f2 = f2;
+    _centre_t = t1;
+    _centre_f = f1;
+    _centre_plus_radius_t = t2;
+    _centre_plus_radius_f = f2;
     _save_inside = save_inside;
 }
 
@@ -31,8 +31,8 @@ std::string Ellipse::
     std::stringstream ss;
     ss << std::setiosflags(std::ios::fixed)
        << std::setprecision(1)
-       << "Ellipse at " <<  _t1 << " s, "
-       << std::setprecision(0) << _f1 << " Hz, size " << std::log(std::fabs((_t2-_t1)*(_f2-_f1)*M_PI));
+       << "Ellipse at " <<  _centre_t << " s, "
+       << std::setprecision(0) << _centre_f << " Hz, size " << std::log(std::fabs((_centre_plus_radius_t-_centre_t)*(_centre_plus_radius_f-_centre_f)*M_PI));
 
     if (!this->_save_inside)
         ss << ", save outside";
@@ -47,10 +47,10 @@ void Ellipse::
     TIME_FILTER TaskTimer tt("Ellipse");
 
     Area area = {
-            _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
-            _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 )};
+            _centre_t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
+            chunk.freqAxis.getFrequencyScalarNotClamped( _centre_f ),
+            _centre_plus_radius_t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
+            chunk.freqAxis.getFrequencyScalarNotClamped( _centre_plus_radius_f )};
 
     ::removeDisc( chunk.transform_data,
                   area, _save_inside, chunk.sample_rate );
@@ -78,12 +78,12 @@ Signal::Intervals Ellipse::
 {
     long double FS = sample_rate();
 
-    float r = fabsf(_t1 - _t2);
+    float r = fabsf(_centre_t - _centre_plus_radius_t);
     r += 0.06f;
 
     long double
-        start_time_d = std::max(0.f, (std::min(_t1,_t2) - r))*FS,
-        end_time_d = std::max(0.f, (std::max(_t1,_t2) + r))*FS;
+        start_time_d = std::max(0.f, _centre_t - r)*FS,
+        end_time_d = std::max(0.f, _centre_t + r)*FS;
 
     Signal::IntervalType
         start_time = std::min((long double)Signal::Interval::IntervalType_MAX, start_time_d),

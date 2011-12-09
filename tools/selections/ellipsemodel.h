@@ -5,23 +5,25 @@
 #include "signal/operation.h"
 #include "heightmap/position.h"
 
+namespace Tools { class RenderModel; }
 
 namespace Tools { namespace Selections
 {
     class EllipseModel
     {
     public:
-        EllipseModel( Tfr::FreqAxis const& fa );
+        EllipseModel( RenderModel* rendermodel );
         ~EllipseModel();
 
         Signal::pOperation updateFilter();
         void tryFilter(Signal::pOperation o);
 
-        Heightmap::Position a, b;
+        Heightmap::Position centre, centrePlusRadius;
+        Tfr::FreqAxis freqAxis();
 
     private:
         void createFilter();
-        Tfr::FreqAxis fa_;
+        RenderModel* rendermodel_;
     };
 } } // namespace Tools::Selections
 #endif // ELLIPSEMODEL_H

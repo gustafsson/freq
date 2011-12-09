@@ -118,12 +118,12 @@ namespace Tools { namespace Selections
 
                 float rt = p.time - selectionStart.time;
                 float rf = p.scale - selectionStart.scale;
-                model()->a = Heightmap::Position(
+                model()->centre = Heightmap::Position(
                         selectionStart.time +  .5f*rt,
                         selectionStart.scale + .5f*rf );
-                model()->b = Heightmap::Position(
-                        model()->a.time +  .5f*sqrtf(2.f)*rt,
-                        model()->a.scale + .5f*sqrtf(2.f)*rf );
+                model()->centrePlusRadius = Heightmap::Position(
+                        model()->centre.time +  .5f*sqrtf(2.f)*rt,
+                        model()->centre.scale + .5f*sqrtf(2.f)*rf );
             }
         }
 

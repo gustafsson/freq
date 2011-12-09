@@ -15,7 +15,7 @@ public:
     virtual Signal::Intervals zeroed_samples();
     virtual Signal::Intervals affected_samples();
 
-    float _t1, _f1, _t2, _f2;
+    float _centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f;
     bool _save_inside;
 
 private:
@@ -28,8 +28,8 @@ private:
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
-		   & make_nvp("t1", _t1) & make_nvp("f1", _f1)
-           & make_nvp("t2", _t2) & make_nvp("f2", _f2)
+           & make_nvp("t1", _centre_t) & make_nvp("f1", _centre_f)
+           & make_nvp("t2", _centre_plus_radius_t) & make_nvp("f2", _centre_plus_radius_f)
            & make_nvp("save_inside", _save_inside);
     }
 };

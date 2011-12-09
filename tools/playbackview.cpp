@@ -172,15 +172,15 @@ bool PlaybackView::
     Tfr::FreqAxis const& fa =
             _render_view->model->display_scale();
     float
-            s1 = fa.getFrequencyScalar( e->_f1 ),
-            s2 = fa.getFrequencyScalar( e->_f2 );
+            s1 = fa.getFrequencyScalar( e->_centre_f ),
+            s2 = fa.getFrequencyScalar( e->_centre_plus_radius_f );
 
     float
         t = _playbackMarker,
-        x = e->_t1,
+        x = e->_centre_t,
         y = 1,
         z = s1,
-        _rx = e->_t2 - e->_t1,
+        _rx = e->_centre_plus_radius_t - e->_centre_t,
         _rz = s2 - s1,
         z1 = z-sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz,
         z2 = z+sqrtf(1 - (x-t)*(x-t)/_rx/_rx)*_rz;
