@@ -57,7 +57,8 @@ private:
         :
         input_device_(-1),
         _offset(0),
-        _sample_rate(1)
+        _sample_rate(1),
+        _is_interleaved(false)
     {} // for deserialization
 
     float time();
@@ -68,6 +69,7 @@ private:
     boost::posix_time::ptime _start_recording, _last_update;
     float _offset;
     float _sample_rate;
+    bool _is_interleaved;
     bool _has_input_device;
     QMutex _data_lock;
     Signal::SinkSourceChannels _data;

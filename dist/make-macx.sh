@@ -6,33 +6,40 @@ if [ -z "${version}" ]; then echo "Missing version, can't upload."; exit 1; fi
 cd ../..
 
 echo "========================== Building ==========================="
-echo "Building Sonic AWE ${versiontag}"
+echo "Building ${packagename} ${versiontag}"
+
+echo "qmaketarget: $qmaketarget"
 qmake $qmaketarget -spec macx-g++ CONFIG+=release
 
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  qmake $qmaketarget
-  make distclean
+if [ "Y" == "${rebuildall}" ]; then
+  make clean
 else
-  rm -f sonicawe/${packagename}
-  qmake
+  touch sonicawe/sawe/configuration/configuration.cpp
+  rm -f gpumisc/libgpumisc.a
+  rm -f {sonicawe,gpumisc}/Makefile
 fi
 
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
-make -j`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
+no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
+make -j${no_cores}
 cp sonicawe/${packagename} sonicawe/${packagename}org
 
 
+echo "========================== Building ==========================="
+echo "Building ${packagename} cuda ${versiontag}"
+
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-  qmake $qmaketarget CONFIG+=gcc-4.3
-  make distclean
+echo "qmaketarget: $qmaketarget"
+qmake $qmaketarget -spec macx-g++ CONFIG+=release
+
+if [ "Y" == "${rebuildall}" ]; then
+  make clean
 else
-  rm -f sonicawe/${packagename}-cuda
-  qmake
+  touch sonicawe/sawe/configuration/configuration.cpp
+  rm -f gpumisc/libgpumisc.a
+  rm -f {sonicawe,gpumisc}/Makefile
 fi
 
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
-make -j`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
+make -j${no_cores}
 
 cp sonicawe/${packagename}org sonicawe/${packagename}
 
@@ -41,7 +48,7 @@ echo "Building Sonic AWE Launcher"
 cd sonicawe/dist
 cp -r package-macos package-macos~
 cd package-macos~
-gcc -framework CoreFoundation -o launcher launcher.c
+gcc -framework CoreFoundation -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -o launcher launcher.c
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_macos_i386.zip"

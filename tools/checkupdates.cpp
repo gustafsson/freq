@@ -1,7 +1,7 @@
 #include "checkupdates.h"
 #include "sawe/reader.h"
 #include "sawe/application.h"
-#include "sawe/uname.h"
+#include "sawe/configuration.h"
 #include "support/buildhttppost.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
@@ -28,13 +28,22 @@ CheckUpdates::
     connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(checkForUpdates()));
 
 
+    // Only check for updates once per process
+    static bool hasChecked = false;
+    if (hasChecked)
+        return;
+    hasChecked = true;
+
+
     if ("not"==Sawe::Reader::reader_text().substr(0,3))
     {
         // wait for reader to finish
         connect( Sawe::Application::global_ptr(), SIGNAL(titleChanged()), SLOT(autoCheckForUpdatesSoon()) );
     }
-
-    autoCheckForUpdatesSoon();
+    else
+    {
+        autoCheckForUpdatesSoon();
+    }
 }
 
 
@@ -95,14 +104,15 @@ void CheckUpdates::
     Support::BuildHttpPost postdata;
 
     postdata.addKeyValue( "kind", manualUpdate?checkAuto?"manual-auto":"manual":"auto" );
-    postdata.addKeyValue( "uname", operatingSystemName().c_str() );
-    postdata.addKeyValue( "device", computationDeviceName().c_str() );
+    postdata.addKeyValue( "uname", Sawe::Configuration::operatingSystemName().c_str() );
+    postdata.addKeyValue( "device", Sawe::Configuration::computationDeviceName().c_str() );
     postdata.addKeyValue( "name", Sawe::Reader::name.c_str() );
+    postdata.addKeyValue( "text", Sawe::Reader::reader_text().c_str() );
     postdata.addKeyValue( "hostname", QHostInfo::localHostName() );
     postdata.addKeyValue( "domainname", QHostInfo::localDomainName() );
     postdata.addKeyValue( "value", QSettings().value("value").toString() );
-    postdata.addKeyValue( "version", Sawe::Application::version_string().c_str() );
-    postdata.addKeyValue( "title", Sawe::Application::title_string().c_str() );
+    postdata.addKeyValue( "version", Sawe::Configuration::version_string().c_str() );
+    postdata.addKeyValue( "title", Sawe::Configuration::title_string().c_str() );
 
     manager.reset( new QNetworkAccessManager(this) );
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),
@@ -131,8 +141,11 @@ void CheckUpdates::
     {
         if (QNetworkReply::HostNotFoundError != reply->error())
         {
-            QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
-            QSettings().remove(checkUpdatesTag);
+            if (manualUpdate)
+            {
+                QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", reply->errorString() + "\n" + s);
+                //QSettings().remove(checkUpdatesTag);
+            }
         }
     }
     else if (s.contains("sorry", Qt::CaseInsensitive) ||
@@ -141,8 +154,11 @@ void CheckUpdates::
              s.contains("fail", Qt::CaseInsensitive) ||
              s.contains("html", Qt::CaseInsensitive))
     {
-        QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", s);
-        QSettings().remove(checkUpdatesTag);
+        if (manualUpdate)
+        {
+            QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not check for updates", s);
+            //QSettings().remove(checkUpdatesTag);
+        }
     }
     else
     {

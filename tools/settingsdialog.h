@@ -30,12 +30,14 @@ private slots:
     void radioButtonOctave(bool);
     void octavePathChanged(QString text);
     void matlabPathChanged(QString text);
+    void resolutionChanged(int);
 
 private:
     Ui::SettingsDialog *ui;
     Sawe::Project* project;
 
     void setupGui();
+    void updateResolutionSlider();
 };
 
 } // namespace Tools

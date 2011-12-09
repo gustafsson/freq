@@ -1,5 +1,7 @@
 #include "buffersource.h"
 
+#include "sawe/configuration.h"
+
 #include <boost/foreach.hpp>
 
 namespace Signal {
@@ -91,11 +93,10 @@ long unsigned BufferSource::
 unsigned BufferSource::
         num_channels()
 {
-#ifdef SAWE_MONO
-    return _waveforms.size() ? 1 : 0;
-#else
-    return _waveforms.size();
-#endif
+    if (Sawe::Configuration::mono())
+        return _waveforms.size() ? 1 : 0;
+    else
+        return _waveforms.size();
 }
 
 

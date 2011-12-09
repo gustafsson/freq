@@ -1,15 +1,14 @@
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"
 #include "ui_mainwindow.h"
-#include "sawe/application.h"
+#include "sawe/configuration.h"
 #include "ui/mainwindow.h"
 
-#ifdef USE_CUDA
 // gpumisc
+#ifdef USE_CUDA
 #include <CudaProperties.h>
-#else
-#include <cpuproperties.h>
 #endif
+#include <cpuproperties.h>
 
 // license
 #include "sawe/reader.h"
@@ -45,8 +44,8 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
 void AboutDialog::
         showEvent(QShowEvent *)
 {
-    ui->labelVersion->setText( QString::fromStdString( Sawe::Application::version_string() ) );
-    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(SONICAWE_REVISION) );
+    ui->labelVersion->setText( QString::fromStdString( Sawe::Configuration::version_string() ) );
+    ui->labelTimestamp->setText( QString("Built on %1 at %2 from revision %3.").arg(__DATE__).arg(__TIME__).arg(Sawe::Configuration::revision().c_str()) );
     ui->labelLicense->setText( Sawe::Reader::reader_text().c_str() );
     if (Sawe::Reader::reader_title() == Sawe::Reader::reader_text() )
         ui->labelLicense->clear();
@@ -72,7 +71,7 @@ void AboutDialog::
                              .arg(total/1024.f/1024.f, 0, 'f', 1)
                              .arg(CudaProperties::flops(prop)*1e-9, 0, 'f', 0)
                              .arg(CudaProperties::gpu_memory_speed()*1e-9, 0, 'f', 1)
-                             .arg(CudaProperties::cpu_memory_speed()*1e-9, 0, 'f', 1)
+                             .arg(CpuProperties::cpu_memory_speed()*1e-9, 0, 'f', 1)
                              .arg(prop.major).arg(prop.minor)
                              .arg(CudaProperties::getCudaDriverVersion())
                              .arg(CudaProperties::getCudaRuntimeVersion())

@@ -2,7 +2,7 @@
 #include "sawe/application.h"
 #include "tfr/cwt.h"
 #include "sawe/reader.h"
-#include "sawe/uname.h"
+#include "sawe/configuration.h"
 
 // gpumisc
 #include <redirectstdout.h>
@@ -259,115 +259,6 @@ int main(int argc, char *argv[])
     }
     if (0)
     {
-        //int N = 1<<23, windowsize=1<<16;
-        //int N = 1<<22, windowsize=1<<10;
-        int N = 16, windowsize=4;
-        float epsilon[2] = {2e-7 * log(N), 2e-7 * log(windowsize)};
-        bool coutinfo = true;
-
-
-        TaskTimer tt("Running Stft/fft tests");
-        Signal::pBuffer b(new Signal::Buffer(windowsize, N, 1));
-        float* p = b->waveform_data()->getCpuMemory();
-        srand(0);
-        for (int i=0; i<N; ++i)
-            p[i] = 2.f*rand()/RAND_MAX - 1.f;
-
-        if (coutinfo) cout << "buffer" << endl;
-        if (coutinfo) for (int i=0; i<N; ++i)
-        {
-            cout << i << ", " << p[i] << ";" << endl;
-        }
-        if (coutinfo) cout << endl;
-
-        {
-            TaskTimer tt("Warming up...");
-
-            Tfr::Stft a;
-            a.set_approximate_chunk_size(windowsize);
-            a(b);
-
-            Tfr::Fft f;
-            f(b);
-        }
-
-        float overlap = 0.98f;
-        const unsigned ftruns = 2+1;//Tfr::Stft::WindowType_FlatTop;
-        float diffs[2*ftruns], forwardtime[2*ftruns], inversetime[2*ftruns];
-        for (unsigned stft=0; stft<ftruns; ++stft)
-        for (int redundant=0; redundant<2; ++redundant)
-        {
-            TaskTimer tt("%s %s", stft?"Stft":"Fft", redundant?"C2C":"R2C");
-
-            float norm = 1.f/N;
-            Tfr::pTransform ft;
-            if (stft)
-            {
-                norm = 1.f;
-                Tfr::Stft* t;
-                ft.reset(t = new Tfr::Stft);
-                t->setWindow( (Tfr::Stft::WindowType)(stft-1), overlap );
-                t->set_approximate_chunk_size(windowsize);
-                t->compute_redundant(redundant);
-            }
-            else
-            {
-                ft.reset( new Tfr::Fft(redundant) );
-            }
-
-            Tfr::pChunk c;
-            b->waveform_data()->getCpuMemory();
-            {
-                TaskTimer tt("%s %s forward", stft?"Stft":"Fft", redundant?"C2C":"R2C");
-                c = (*ft)(b);
-                forwardtime[stft*2+redundant]=tt.elapsedTime();
-            }
-
-            Signal::pBuffer b2;
-            {
-                TaskTimer tt("%s %s backward", stft?"Stft":"Fft", redundant?"C2C":"R2C");
-                b2 = ft->inverse(c);
-                inversetime[stft*2+redundant]=tt.elapsedTime();
-            }
-
-            std::complex<float>* cp = c->transform_data->getCpuMemory();
-            if (coutinfo) cout << vartype(*ft).c_str() << " " << (redundant?"C2C":"R2C") << endl;
-
-            if (coutinfo) for (unsigned i=0; i<c->transform_data->numberOfElements(); ++i)
-                cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
-
-            float* p2 = b2->waveform_data()->getCpuMemory();
-
-            if (coutinfo) cout << "inverse" << endl;
-            float ft_diff = 0;
-            Signal::pBuffer expected = BufferSource(b).readFixedLength(b2->getInterval());
-            float *expectedp = expected->waveform_data()->getCpuMemory();
-
-            for (unsigned i=0; i<b2->number_of_samples(); ++i)
-            {
-                if (coutinfo) cout << b2->sample_offset+i << ", " << expectedp[i] << ", " << p2[i]*norm <<  ";";
-                float diff = expectedp[i] - p2[i]*norm;
-                if (coutinfo) if (fabsf(diff) > epsilon[stft])
-                    cout << " Failed: " << diff;
-                if (ft_diff < fabsf(diff))
-                    ft_diff = fabsf(diff);
-                if (coutinfo) cout << endl;
-            }
-            diffs[stft*2+redundant] = ft_diff;
-            if (coutinfo) cout << endl;
-        }
-        if (coutinfo) cout << endl;
-        for (unsigned i=0; i<2*ftruns; ++i)
-            cout << i << " " << (i==0||i==1?"Fft":("Stft " + Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)(i/2-1))).c_str())
-                 << " " << (i%2?"C2C":"R2C")
-                 << " " << diffs[i] << " < " << epsilon[i/2]
-                 << " " << (diffs[i]<epsilon[i/2]?"ok":"failed")
-                 << ". Time: " << forwardtime[i] << " s and " << inversetime[i]
-                 << " s. Sum " << forwardtime[i]+inversetime[i] << " s" << endl;
-        return 0;
-    }
-    if (0)
-    {
         Intervals I(403456,403457);
         Intervals J(0,403456);
         cout << ((I-J) & J) << endl;
@@ -620,11 +511,23 @@ int main(int argc, char *argv[])
         rs.reset();
 
         {
-            TaskInfo ti("Version: %s", a.version_string().c_str());
-            TaskInfo("OS: %s", operatingSystemName().c_str());
+            TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
+            TaskInfo("OS: %s", Sawe::Configuration::operatingSystemName().c_str());
             TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
             TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
-            TaskInfo("Build timestamp for %s: %s, %s. Revision %s", UNAME, __DATE__, __TIME__, SONICAWE_REVISION);
+            TaskInfo("Build timestamp for %s: %s, %s. Revision %s", 
+                Sawe::Configuration::uname().c_str(), 
+                __DATE__, __TIME__, 
+                Sawe::Configuration::revision().c_str());
+            TaskInfo("number of CPU cores: %d", Sawe::Configuration::cpuCores());
+            {
+                TaskInfo ti("OpenGL information");
+                TaskInfo("vendor: %s", glGetString(GL_VENDOR));
+                TaskInfo("renderer: %s", glGetString(GL_RENDERER));
+                TaskInfo("version: %s", glGetString(GL_VERSION));
+                TaskInfo("shading language: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+                TaskInfo("exstensions: %s", glGetString(GL_EXTENSIONS));
+            }
 
             boost::gregorian::date today = boost::gregorian::day_clock::local_day();
             boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
@@ -637,9 +540,9 @@ int main(int argc, char *argv[])
 
         // Check if a cuda context can be created, but don't require OpenGL bindings just yet
         if (!check_cuda( false ))
-            return -1;
+            return 1337;
 
-        TaskInfo("computation device: %s", computationDeviceName().c_str());
+        TaskInfo("computation device: %s", Sawe::Configuration::computationDeviceName().c_str());
 
         if( 0 == a.shared_glwidget()->context())
         {

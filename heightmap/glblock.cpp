@@ -63,7 +63,7 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
         bool showShaderLog = !compiled;
         showShaderLog |= 0 != QString(shaderInfoLog).contains("warning", Qt::CaseInsensitive);
-        showShaderLog |= 0 != QString(shaderInfoLog).contains("error", Qt::CaseInsensitive);
+        showShaderLog |= 0 != QString(shaderInfoLog).contains("error", Qt::CaseInsensitive) && 0 == QString(shaderInfoLog).contains("No errors", Qt::CaseInsensitive);
 #if DEBUG_
         showShaderLog |= strlen(shaderInfoLog)>0;
 #endif
@@ -73,16 +73,16 @@ void attachShader(GLuint prg, GLenum type, const char *name)
             TaskInfo ti("Failed to compile shader %s", name );
             TaskInfo("%s", shaderInfoLog);
 
-            QMessageBox message(
+            QMessageBox* message = new QMessageBox(
                     QMessageBox::Critical,
                     "Couldn't properly setup graphics",
                     "Sonic AWE couldn't properly setup required graphics (shader compile error). "
                     "Please file this as a bug report to help us fix this. "
                     "See more info in 'Help->Report a bug'");
 
-            message.setDetailedText( shaderInfoLog );
-
-            message.exec();
+            message->setDetailedText( shaderInfoLog );
+            message->show();
+            message->setAttribute( Qt::WA_DeleteOnClose );
         }
 
         if (compiled)
@@ -118,7 +118,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
         bool showProgramLog = !linked;
         showProgramLog |= 0 != QString(programInfoLog).contains("warning", Qt::CaseInsensitive);
-        showProgramLog |= 0 != QString(programInfoLog).contains("error", Qt::CaseInsensitive);
+        showProgramLog |= 0 != QString(programInfoLog).contains("error", Qt::CaseInsensitive) && 0 == QString(programInfoLog).contains("No errors", Qt::CaseInsensitive);
 #if DEBUG_
         showProgramLog |= strlen(programInfoLog)>0;
 #endif
@@ -129,16 +129,16 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
                      fragFileName, vertFileName );
             TaskInfo("%s", programInfoLog);
 
-            QMessageBox message(
+            QMessageBox* message = new QMessageBox(
                     QMessageBox::Critical,
                     "Couldn't properly setup graphics",
                     "Sonic AWE couldn't properly setup required graphics (shader link error). "
                     "Please file this as a bug report to help us fix this. "
                     "See more info in 'Help->Report a bug'");
 
-            message.setDetailedText( programInfoLog );
-
-            message.exec();
+            message->setDetailedText( programInfoLog );
+            message->setAttribute( Qt::WA_DeleteOnClose );
+            message->show();
         }
 
     } catch (...) {
@@ -470,10 +470,10 @@ void GlBlock::
         glDrawArrays(GL_POINTS, 0, vbo_size);
     } else if (wireFrame) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_SHORT, 0);
+            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
     }
     if (withHeightMap)
     {
@@ -577,7 +577,7 @@ unsigned GlBlock::
     if (_height) s += sizeof(float); // OpenGL VBO
     if (_mapped_height) s += sizeof(float); // Cuda device memory
     if (_tex_height) s += sizeof(float); // OpenGL texture
-    if (_tex_height_nearest) s += 4*sizeof(float); // OpenGL texture
+    if (_tex_height_nearest) s += sizeof(float); // OpenGL texture
 
     // _mapped_slope and _slope are temporary and only lives in the scope of update_texture
 

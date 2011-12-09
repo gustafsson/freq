@@ -15,6 +15,7 @@
 #include <TaskTimer.h>
 #include <QDate>
 #include <QTextStream>
+#include <QMessageBox>
 
 using namespace std;
 
@@ -209,11 +210,40 @@ string Reader::
         }
         else
         {
-            QDate qd(year, month, day);
-            if (qd.addMonths(1) < QDate::currentDate())
-                return "";
+            QDate expiredDate(year, month, day);
+            QDate warningDate = expiredDate.addDays(-7);
+            QDate stopDate = expiredDate.addDays(14);
 
-            if (qd.addMonths(1) < QDate::fromString(QString(__DATE__).replace("  ", " "), "MMM d yyyy"))
+            QDate built = QDate::fromString(QString(__DATE__).replace("  ", " "), "MMM d yyyy");
+            if (warningDate < QDate::currentDate() || warningDate < built)
+            {
+                for (static bool shown=false; !shown; shown=true)
+                {
+                    QMessageBox* message = new QMessageBox(
+                            QMessageBox::Information,
+                            "Licence will expire soon", "Your licence of Sonic AWE will expire on " + expires);
+
+                    message->setAttribute( Qt::WA_DeleteOnClose );
+                    message->show();
+                }
+            }
+
+
+            if (expiredDate < QDate::currentDate() || expiredDate < built)
+            {
+                for (static bool shown=false; !shown; shown=true)
+                {
+                    QMessageBox* message = new QMessageBox(
+                            QMessageBox::Warning,
+                            "Expired licence", "Your licence of Sonic AWE has expired since " + expires);
+
+                    message->setAttribute( Qt::WA_DeleteOnClose );
+                    message->show();
+                }
+            }
+
+
+            if (stopDate < QDate::currentDate() || stopDate < built)
                 return "";
 
             QString licenseText;

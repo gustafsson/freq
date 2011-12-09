@@ -42,7 +42,7 @@ RESAMPLE_CALL void draw_waveform_pts_elem(
     {
         float v = in_waveform.read( read_x );
         v *= scaling;
-        v = fmaxf(-1.f, fminf(1.f, v));
+        v = fmax(-1.f, fmin(1.f, v));
 
         float y = (v+1.f)*.5f*(matrix_sz.height-1.f);
         unsigned y1 = (unsigned)y;
@@ -103,7 +103,7 @@ RESAMPLE_CALL void draw_waveform_elem(
         float v = in_waveform.read( read_x );
 
         v *= scaling;
-        v = fmaxf(-1.f, fminf(1.f, v));
+        v = fmax(-1.f, fmin(1.f, v));
 
         float y = (v+1.f)*.5f*(matrix_sz.height-1.f);
         if (y>maxy) maxy = y;
@@ -184,8 +184,8 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     float w2 = v1*(1-px2) + v2*px2;
     w1 *= scaling;
     w2 *= scaling;
-    w1 = fmaxf(-1.f, fminf(1.f, w1));
-    w2 = fmaxf(-1.f, fminf(1.f, w2));
+    w1 = fmax(-1.f, fmin(1.f, w1));
+    w2 = fmax(-1.f, fmin(1.f, w2));
     float fy1 = (w1+1.f)*.5f*(matrix_sz.height-1.f);
     float fy2 = (w2+1.f)*.5f*(matrix_sz.height-1.f);
 
@@ -229,7 +229,7 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     for (unsigned y=y1; y<=y2; ++y)
     {
         float py = y;
-        py = fmaxf(0.f, 1.f - fabsf(my - y)*invdy);
+        py = fmax(0.f, 1.f - fabsf(my - y)*invdy);
         out_waveform_matrix.ref( WritePos( writePos_x, y ) ) = MakeWriteType(0.02f*py, 0);
     }
 }

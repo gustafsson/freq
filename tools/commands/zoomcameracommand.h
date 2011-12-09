@@ -24,8 +24,8 @@ private:
         ScaleZ
     };
 
-    bool zoom(int delta, ZoomMode mode);
-    void doZoom(int delta, float* scale, float* min_scale, float* max_scale);
+    bool zoom(float delta, ZoomMode mode);
+    void doZoom(float delta, float* scale, float* min_scale, float* max_scale);
 };
 
 } // namespace Commands

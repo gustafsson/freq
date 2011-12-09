@@ -185,7 +185,7 @@ RenderController::
 #endif
         ui->actionSet_colorscale->trigger();
 
-#ifdef TARGET_reader
+#ifndef USE_CUDA
         ui->actionTransform_Stft->trigger();
         linearScale->trigger();
 #else
@@ -390,7 +390,7 @@ void RenderController::
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     unsigned prev_chunk_size = s.chunk_size();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+    s.set_approximate_chunk_size( 0.25f*c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
 
     c.wavelet_fast_time_support( wavelet_fast_time_support );
 
@@ -462,7 +462,7 @@ Tfr::Transform* RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     setBlockFilter( cwtblock );
@@ -481,7 +481,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
     setBlockFilter( cwtblock );
@@ -492,7 +492,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_reassign()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -505,7 +505,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -517,7 +517,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections);
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     setBlockFilter( cwtblock );
@@ -964,9 +964,8 @@ void RenderController::
     unsigned N = channels->source()->num_channels();
     for (unsigned i=0; i<N; ++i)
     {
-        foreach (QAction* o, channelselector->actions())
+        foreach (QAction* a, channelselector->actions())
         {
-            QAction* a = dynamic_cast<QAction*>(o);
             if (!a)
                 continue;
             if (a->data().toUInt() >= N)
@@ -992,11 +991,16 @@ void RenderController::
 void RenderController::
         reroute()
 {
-    Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
+    //Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
     foreach (QAction* o, channelselector->actions())
     {
         unsigned c = o->data().toUInt();
-        channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
+        //channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
+        if (model()->collections[c]->isVisible() != o->isChecked())
+        {
+            model()->collections[c]->setVisible( o->isChecked() );
+            stateChanged();
+        }
     }
 }
 

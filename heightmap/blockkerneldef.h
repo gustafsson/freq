@@ -73,6 +73,8 @@ public:
         outputAxis = b.outputAxis;
         scale = b.scale;
         offs = b.offs;
+        xstep = b.xstep;
+        xmax = b.xmax;
         return *this;
     }
 
@@ -122,7 +124,7 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float x=q.x; x<q.x+xstep; ++x)
+            else for (float x=q2.x; x<floor(q2.x+xstep) && x<xmax; ++x)
             {
                 v = max(v, interpolate(
                         get( DataPos(x, q.y), reader, c ),
@@ -134,7 +136,7 @@ public:
 //        {
 //            if (xstep <= 1.f)
 //            {
-//                for (float y=q.y; y<q.y+ystep; ++y)
+//                for (float y=q2.y; y<floor(q2.y+ystep); ++y)
 //                {
 //                    v = max(v, interpolate(
 //                            get( DataPos(q.x, y), reader, c ),
@@ -144,9 +146,9 @@ public:
 //            }
 //            else
 //            {
-//                for (float x=q.x; x<q.x+xstep; ++x)
+//                for (float x=q2.x; floor(x<q2.x+xstep); ++x)
 //                {
-//                    for (float y=q.y; y<q.y+ystep; ++y)
+//                    for (float y=q2.y; floor(y<q2.y+ystep); ++y)
 //                    {
 //                        v = max(v, get( DataPos(x, y), reader, c ));
 //                    }
@@ -171,6 +173,7 @@ public:
     float offs;
 
     float xstep;
+    float xmax;
 //    float ystep;
 };
 
@@ -242,7 +245,7 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float y=q.y; y<q.y+ystep; ++y)
+            else for (float y=q2.y; y<floor(q2.y+ystep); ++y)
             {
                 v = max(v, interpolate(
                         get( DataPos(q.x, y), reader),
@@ -254,7 +257,7 @@ public:
 //        {
 //            if (ystep <= 1.f)
 //            {
-//                for (float x=q.x; x<q.x+xstep; ++x)
+//                for (float x=q2.x; x<floor(q2.x+xstep); ++x)
 //                {
 //                    v = max(v, interpolate(
 //                            get( DataPos(x, q.y), reader),
@@ -264,9 +267,9 @@ public:
 //            }
 //            else
 //            {
-//                for (float x=q.x; x<q.x+xstep; ++x)
+//                for (float x=q2.x; x<floor(q2.x+xstep); ++x)
 //                {
-//                    for (float y=q.y; y<q.y+ystep; ++y)
+//                    for (float y=q2.y; y<floor(q2.y+ystep); ++y)
 //                    {
 //                        v = max(v, get( DataPos(x, y), reader));
 //                    }
@@ -402,7 +405,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                  Tfr::FreqAxis inputAxis,
                  Tfr::FreqAxis outputAxis,
                  AxisConverter amplitudeAxis,
-                 bool full_resolution
+                 bool enable_subtexel_aggregation
                  )
 {
     // translate type to be read as a cuda texture
@@ -442,12 +445,13 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.outputAxis = outputAxis;
     axes.offs = inputRegion.top;
     axes.scale = inputRegion.height();
+    axes.xmax = validInputs.last;
 
     axes.xstep = (validInputs.last - validInputs.first) / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
     // axes.ystep = 1; // because of varying frequency density ystep should be computed in the kernel together with the FreqAxes
     // axes.ystep = input->size().height / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
 
-    if (!full_resolution)
+    if (!enable_subtexel_aggregation)
     {
         axes.xstep = 1;
         // axes.ystep = 1;
@@ -530,7 +534,7 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                  Tfr::FreqAxis outputAxis,
                  Heightmap::AmplitudeAxis amplitudeAxis,
                  float normalization_factor,
-                 bool full_resolution
+                 bool enable_subtexel_aggregation
                  )
 {
     switch(amplitudeAxis)
@@ -540,21 +544,21 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor),
-                full_resolution);
+                enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor),
-                full_resolution);
+                enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         blockResampleChunkAxis(
                 input, output, validInputs, inputRegion,
                 outputRegion, transformMethod, inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
-                full_resolution);
+                enable_subtexel_aggregation);
         break;
     }
 }

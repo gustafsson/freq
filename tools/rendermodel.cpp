@@ -36,6 +36,9 @@ RenderModel::
 
     renderer.reset( new Heightmap::Renderer( collections[0].get() ));
 
+    for (unsigned c=0; c<o->num_channels(); ++c)
+        collections[c]->renderer = renderer.get();
+
 #ifdef TARGET_sss
     _pz = -6;
     xscale = 0.1f;
@@ -70,12 +73,12 @@ void RenderModel::
     _qz = .5f;  // _qz(3.6f/5),
     _px = 0;
     _py = 0;
-    _pz = -6.5f;
+    _pz = -40.f;
     _rx = 91;
     _ry = 180;
     _rz = 0;
-    xscale = 1;
-    zscale = 5;
+    xscale = 5;
+    zscale = -_pz*0.75f;
 }
 
 
@@ -114,5 +117,13 @@ Tfr::Filter* RenderModel::
 {
     return dynamic_cast<Tfr::Filter*>(collections[0]->block_filter().get());
 }
+
+
+float RenderModel::
+        effective_ry()
+{
+    return fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview;
+}
+
 
 } // namespace Tools

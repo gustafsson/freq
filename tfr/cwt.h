@@ -31,6 +31,7 @@ public:
     copies with the page-locked chunk is synchronized at beforehand.
     */
 
+    // TODO remove singletons
     static Cwt& Singleton();
     static pTransform SingletonP();
 

@@ -2,6 +2,7 @@
 
 #include "blockkernel.h"
 #include "collection.h"
+#include "renderer.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/drawnwaveform.h"
@@ -15,8 +16,8 @@
 
 #include <float.h>
 
-#define TIME_BLOCKFILTER
-//#define TIME_BLOCKFILTER if(0)
+//#define TIME_BLOCKFILTER
+#define TIME_BLOCKFILTER if(0)
 
 //#define TIME_CWTTOBLOCK
 #define TIME_CWTTOBLOCK if(0)
@@ -142,7 +143,7 @@ void BlockFilter::
 void BlockFilter::
         mergeRowMajorChunk( pBlock block, Chunk& chunk, Block::pData outData,
                             bool full_resolution, ComplexInfo complex_info,
-                            float normalization_factor)
+                            float normalization_factor, bool enable_subtexel_aggregation)
 {
     ComputationCheckError();
 
@@ -277,6 +278,7 @@ void BlockFilter::
 
     BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
 
+    enable_subtexel_aggregation &= full_resolution;
 
     // Invoke kernel execution to merge chunk into block
     ::blockResampleChunk( chunk.transform_data,
@@ -293,7 +295,7 @@ void BlockFilter::
                      _collection->display_scale(),
                      _collection->amplitude_axis(),
                      normalization_factor,
-                     full_resolution
+                     enable_subtexel_aggregation
                      );
 
 
@@ -325,18 +327,11 @@ void BlockFilter::
 //////////////////////////////// CwtToBlock ///////////////////////////////
 
 CwtToBlock::
-        CwtToBlock( Collection* collection )
-            :
-            BlockFilterImpl<Tfr::CwtFilter>(collection),
-            complex_info(ComplexInfo_Amplitude_Non_Weighted)
-{
-}
-
-CwtToBlock::
-        CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
+        CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections, Renderer* renderer )
             :
             BlockFilterImpl<Tfr::CwtFilter>(collections),
-            complex_info(ComplexInfo_Amplitude_Non_Weighted)
+            complex_info(ComplexInfo_Amplitude_Non_Weighted),
+            renderer(renderer)
 {
 }
 
@@ -354,7 +349,7 @@ void CwtToBlock::
     BOOST_FOREACH( const pChunk& chunkpart, chunks.chunks )
     {
         mergeRowMajorChunk( block, *chunkpart, outData,
-                            full_resolution, complex_info, normalization_factor );
+                            full_resolution, complex_info, normalization_factor, renderer->redundancy() <= 1 );
     }
 }
 
@@ -390,15 +385,6 @@ void StftToBlock::
 ///////////////////////////// CepstrumToBlock /////////////////////////////
 
 CepstrumToBlock::
-        CepstrumToBlock( Collection* collection )
-            :
-            BlockFilterImpl<Tfr::CepstrumFilter>(collection)
-{
-    //_try_shortcuts = false;
-}
-
-
-CepstrumToBlock::
         CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
             :
             BlockFilterImpl<Tfr::CepstrumFilter>(collections)
@@ -416,15 +402,6 @@ void CepstrumToBlock::
 
 
 /////////////////////////// DrawnWaveformToBlock ///////////////////////////
-
-DrawnWaveformToBlock::
-        DrawnWaveformToBlock( Collection* collection )
-            :
-            BlockFilterImpl<Tfr::DrawnWaveformFilter>(collection)
-{
-    //_try_shortcuts = false;
-}
-
 
 DrawnWaveformToBlock::
         DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
@@ -497,7 +474,7 @@ void DrawnWaveformToBlock::
     if (dwc->block_fs != block_fs)
         return;
 
-    mergeRowMajorChunk(block, chunk, outData, true, ComplexInfo_Amplitude_Non_Weighted, 1.f);
+    mergeRowMajorChunk(block, chunk, outData, true, ComplexInfo_Amplitude_Non_Weighted, 1.f, false);
 }
 
 } // namespace Heightmap

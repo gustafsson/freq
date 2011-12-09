@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ -z "$pass" ]; then
+if [ -z "$verifyRepos" ]; then
   . ./prereq.sh
 fi
 
@@ -15,10 +15,10 @@ if [ -z "${target}" ]; then
 else
   packagename=sonicawe-${target}
   versiontag="${version}${snapshot}"
-  qmaketarget="CONFIG+=TARGET_${target} DEFINES+=TARGET_${target} CONFIG+=customtarget CUSTOMTARGET=$packagename"
+  qmaketarget="CONFIG+=TARGET_${target} DEFINES+=TARGET_${target}"
 fi
 
-qmaketarget="${qmaketarget} DEFINES+=SONICAWE_VERSION=${versiontag} DEFINES+=SONICAWE_UNAME=`uname -s`"
+qmaketarget="${qmaketarget} CONFIGURATION_DEFINES+=SONICAWE_VERSION=${versiontag} CONFIGURATION_DEFINES+=SONICAWE_UNAME=`uname -s` CONFIG+=customtarget CUSTOMTARGET=$packagename TARGETNAME+=$target"
 
 if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
     platform=windows

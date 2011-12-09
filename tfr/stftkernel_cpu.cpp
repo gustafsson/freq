@@ -63,4 +63,22 @@ void stftToComplex(
     }
 }
 
+
+void cepstrumPrepareCepstra(
+        Tfr::ChunkData::Ptr chunk,
+        float normalization )
+{
+    CpuMemoryReadWrite<Tfr::ChunkElement, 2> cepstra = CpuMemoryStorage::ReadWrite<2>( chunk );
+
+#pragma omp parallel for
+    for (int y=0; y<(int)cepstra.numberOfElements().height; ++y)
+    {
+        CpuMemoryReadWrite<Tfr::ChunkElement, 2>::Position pos( 0, y );
+        for (pos.x=0; pos.x<cepstra.numberOfElements().width; ++pos.x)
+        {
+            cepstra.write(pos, Tfr::ChunkElement(logf( 0.001f + norm(cepstra.ref(pos)) ) * normalization, 0));
+        }
+    }
+}
+
 #endif

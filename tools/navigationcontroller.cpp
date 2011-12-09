@@ -123,6 +123,35 @@ void NavigationController::
     _view->userinput_update();
 }
 
+
+void NavigationController::
+        rotateUp()
+{
+    rotateCamera( 0, 10 );
+}
+
+
+void NavigationController::
+        rotateDown()
+{
+    rotateCamera( 0, -10 );
+}
+
+
+void NavigationController::
+        rotateLeft()
+{
+    rotateCamera( 10, 0 );
+}
+
+
+void NavigationController::
+        rotateRight()
+{
+    rotateCamera( -10, 0 );
+}
+
+
 void NavigationController::
         mousePressEvent ( QMouseEvent * e )
 {
@@ -204,8 +233,6 @@ void NavigationController::
     }
     else
     {
-        float s = -0.125f;
-
         if (e->modifiers().testFlag(Qt::AltModifier))
         {
             zoom( e->delta(), Zoom );
@@ -213,6 +240,7 @@ void NavigationController::
         else
         {
             bool success1, success2;
+            float s = -0.125f;
 
             QPointF prev = e->pos();
             if( e->orientation() == Qt::Horizontal )
@@ -290,7 +318,7 @@ void NavigationController::
     }
 
     if (zoomCommand)
-        zoomCamera( 0, 0, 10*(-zoomCommand->deltaX( x ) + zoomCommand->deltaY( y )) );
+        zoomCamera( 0, 0, -zoomCommand->deltaX( x ) + zoomCommand->deltaY( y ) );
 
     if (rescaleCommand)
     {
@@ -381,10 +409,14 @@ void NavigationController::
     bindKeyToSlot( main, "Down", this, SLOT(moveDown()) );
     bindKeyToSlot( main, "Left", this, SLOT(moveLeft()) );
     bindKeyToSlot( main, "Right", this, SLOT(moveRight()) );
-    bindKeyToSlot( main, "Shift+Up", this, SLOT(scaleUp()) );
-    bindKeyToSlot( main, "Shift+Down", this, SLOT(scaleDown()) );
-    bindKeyToSlot( main, "Shift+Left", this, SLOT(scaleLeft()) );
-    bindKeyToSlot( main, "Shift+Right", this, SLOT(scaleRight()) );
+    bindKeyToSlot( main, "Ctrl+Up", this, SLOT(scaleUp()) );
+    bindKeyToSlot( main, "Ctrl+Down", this, SLOT(scaleDown()) );
+    bindKeyToSlot( main, "Ctrl+Left", this, SLOT(scaleLeft()) );
+    bindKeyToSlot( main, "Ctrl+Right", this, SLOT(scaleRight()) );
+    bindKeyToSlot( main, "Shift+Up", this, SLOT(rotateUp()) );
+    bindKeyToSlot( main, "Shift+Down", this, SLOT(rotateDown()) );
+    bindKeyToSlot( main, "Shift+Left", this, SLOT(rotateLeft()) );
+    bindKeyToSlot( main, "Shift+Right", this, SLOT(rotateRight()) );
 }
 
 
@@ -408,7 +440,7 @@ void NavigationController::
 void NavigationController::
         zoomCamera( float dt, float ds, float dz )
 {
-    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz ));
+    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt*0.05, ds*0.05, dz*0.005 ));
     _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
 

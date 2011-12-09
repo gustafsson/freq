@@ -29,14 +29,14 @@ std::string ZoomCameraCommand::
 void ZoomCameraCommand::
         executeFirst()
 {
-    if (dt) if (!zoom( 1000*dt*model->xscale, ScaleX ))
+    if (dt) if (!zoom( dt*model->xscale, ScaleX ))
     {
         float L = model->project()->worker.source()->length();
         float d = std::min( 0.5f * fabsf(dt), fabsf(model->_qx - L/2));
         model->_qx += model->_qx>L*.5f ? -d : d;
     }
 
-    if (ds) if (!zoom( 1000*ds*model->zscale, ScaleZ ))
+    if (ds) if (!zoom( ds*model->zscale, ScaleZ ))
     {
         float d = std::min( 0.5f * fabsf(ds), fabsf(model->_qz - .5f));
         model->_qz += model->_qz>.5f ? -d : d;
@@ -47,7 +47,7 @@ void ZoomCameraCommand::
 
 
 bool ZoomCameraCommand::
-        zoom(int delta, ZoomMode mode)
+        zoom(float delta, ZoomMode mode)
 {
     float L = model->project()->worker.length();
     float fs = model->project()->head->head_source()->sample_rate();
@@ -101,18 +101,16 @@ bool ZoomCameraCommand::
 
 
 void ZoomCameraCommand::
-        doZoom(int delta, float* scale, float* min_scale, float* max_scale)
+        doZoom(float d, float* scale, float* min_scale, float* max_scale)
 {
     //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-    float ps = 0.0005;
+    if (d>0.1)
+        d=0.1;
+    if (d<-0.1)
+        d=-0.1;
+
     if(scale)
     {
-        float d = ps * delta;
-        if (d>0.1)
-            d=0.1;
-        if (d<-0.1)
-            d=-0.1;
-
         *scale *= (1-d);
 
         if (d > 0 )
@@ -128,9 +126,9 @@ void ZoomCameraCommand::
     }
     else
     {
-        model->_pz *= (1+ps * delta);
+        model->_pz *= (1+d);
 
-        if (model->_pz<-40) model->_pz = -40;
+        if (model->_pz<-100) model->_pz = -100;
         if (model->_pz>-.1) model->_pz = -.1;
     }
 }

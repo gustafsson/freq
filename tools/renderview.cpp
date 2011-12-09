@@ -8,6 +8,7 @@
 
 // Sonic AWE
 #include "sawe/project.h"
+#include "sawe/configuration.h"
 #include "tfr/cwt.h"
 #include "toolfactory.h"
 #include "support/drawworking.h"
@@ -40,8 +41,8 @@
 #define TIME_PAINTGL
 //#define TIME_PAINTGL if(0)
 
-#define TIME_PAINTGL_DRAW
-//#define TIME_PAINTGL_DRAW if(0)
+//#define TIME_PAINTGL_DRAW
+#define TIME_PAINTGL_DRAW if(0)
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -384,8 +385,8 @@ QPointF RenderView::
         getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     GLdouble objY = 0;
-    if (1 != model->orthoview && use_heightmap_value)
-        objY = getHeightmapValue(pos) * model->renderer->y_scale * 4 * last_ysize;
+    if ((1 != model->orthoview || model->_rx!=90) && use_heightmap_value)
+        objY = getHeightmapValue(pos) * model->renderer->y_scale * last_ysize;
 
     GLdouble winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
@@ -590,6 +591,7 @@ void RenderView::
 
     // Draw the first channel without a frame buffer
     model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
+    model->renderer->cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
 
     Heightmap::Position cursorPos = getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
     model->renderer->cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
@@ -603,10 +605,19 @@ void RenderView::
         current_viewport[0], current_viewport[1],
         current_viewport[2], current_viewport[3]);
 
-    for (unsigned i=0; i < 1; ++i)
-        drawCollection(i, yscale);
+    unsigned i=0;
 
-    if (1<N)
+    // draw the first without fbo
+    for (; i < N; ++i)
+    {
+        if (!model->collections[i]->isVisible())
+            continue;
+
+        drawCollection(i, yscale);
+        break;
+    }
+
+    if (i<N)
     {
         // drawCollections is called for 3 different viewports each frame.
         // GlFrameBuffer will query the current viewport to determine the size
@@ -620,46 +631,49 @@ void RenderView::
         //     my_fbo.reset( new GlFrameBuffer );
         //     fbo = my_fbo.get();
         // }
+    }
 
-        for (unsigned i=1; i < N; ++i)
+    for (; i<N; ++i)
+    {
+        if (!model->collections[i]->isVisible())
+            continue;
+
+        GlException_CHECK_ERROR();
+
         {
-            GlException_CHECK_ERROR();
+            GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            glViewport(0, 0,
+                       fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
 
-            {
-                GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
-                glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                glViewport(0, 0,
-                           fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
-
-                drawCollection(i, yscale);
-            }
-
-            glViewport(current_viewport[0], current_viewport[1],
-                       current_viewport[2], current_viewport[3]);
-
-            glPushMatrixContext mpc( GL_PROJECTION );
-            glLoadIdentity();
-            glOrtho(0,1,0,1,-10,10);
-            glPushMatrixContext mc( GL_MODELVIEW );
-            glLoadIdentity();
-
-            glBlendFunc( GL_DST_COLOR, GL_ZERO );
-
-            glDisable(GL_DEPTH_TEST);
-
-            glColor4f(1,1,1,1);
-            GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
-            glBegin(GL_TRIANGLE_STRIP);
-                glTexCoord2f(0,0); glVertex2f(0,0);
-                glTexCoord2f(1,0); glVertex2f(1,0);
-                glTexCoord2f(0,1); glVertex2f(0,1);
-                glTexCoord2f(1,1); glVertex2f(1,1);
-            glEnd();
-
-            glEnable(GL_DEPTH_TEST);
-
-            GlException_CHECK_ERROR();
+            drawCollection(i, yscale);
         }
+
+        glViewport(current_viewport[0], current_viewport[1],
+                   current_viewport[2], current_viewport[3]);
+
+        glPushMatrixContext mpc( GL_PROJECTION );
+        glLoadIdentity();
+        glOrtho(0,1,0,1,-10,10);
+        glPushMatrixContext mc( GL_MODELVIEW );
+        glLoadIdentity();
+
+        glBlendFunc( GL_DST_COLOR, GL_ZERO );
+
+        glDisable(GL_DEPTH_TEST);
+
+        glColor4f(1,1,1,1);
+        GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
+        glBegin(GL_TRIANGLE_STRIP);
+            glTexCoord2f(0,0); glVertex2f(0,0);
+            glTexCoord2f(1,0); glVertex2f(1,0);
+            glTexCoord2f(0,1); glVertex2f(0,1);
+            glTexCoord2f(1,1); glVertex2f(1,1);
+        glEnd();
+
+        glEnable(GL_DEPTH_TEST);
+
+        GlException_CHECK_ERROR();
     }
 
     TIME_PAINTGL_DETAILS ComputationCheckError();
@@ -667,7 +681,7 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DRAW TaskInfo("Drew %u*%u block%s (%u triangles) in viewport(%d, %d)",
+    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%d, %d).",
         N,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s",
@@ -683,7 +697,10 @@ void RenderView::
     model->renderer->collection = model->collections[i].get();
     model->renderer->fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
-    glEnable( GL_CULL_FACE ); // enabled only while drawing collections
+    if (0 != model->_rx)
+        glEnable( GL_CULL_FACE ); // enabled only while drawing collections
+    else
+        glEnable( GL_DEPTH_TEST );
     model->renderer->draw( yscale ); // 0.6 ms
     glDisable( GL_CULL_FACE );
     glEnable(GL_BLEND);
@@ -1003,9 +1020,13 @@ void RenderView::
 
         setupCamera();
 
-        glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
         glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
         glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+
+        // drawCollections shouldn't use the matrix applied by setRotationForAxes
+        glPushMatrixContext ctx(GL_MODELVIEW);
+        setRotationForAxes(false);
+        glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
     }
 
     bool onlyComputeBlocksForRenderView = false;
@@ -1018,7 +1039,7 @@ void RenderView::
             collection->next_frame(); // Discard needed blocks before this row
         }
 
-        drawCollections( _renderview_fbo.get(), 1 - model->orthoview );
+        drawCollections( _renderview_fbo.get(), model->_rx==90 ? 1 - model->orthoview : 1 );
 
         last_ysize = model->renderer->last_ysize;
         glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
@@ -1031,7 +1052,22 @@ void RenderView::
         {
             float length = model->project()->worker.length();
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
+
+            bool draw_piano = model->renderer->draw_piano;
+            bool draw_hz = model->renderer->draw_hz;
+            bool draw_t = model->renderer->draw_t;
+
+            // apply rotation again, and make drawAxes use it
+            setRotationForAxes(true);
+            memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
+            memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
+            memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+
             model->renderer->drawAxes( length ); // 4.7 ms
+
+            model->renderer->draw_piano = draw_piano;
+            model->renderer->draw_hz = draw_hz;
+            model->renderer->draw_t = draw_t;
         }
     }
 
@@ -1229,7 +1265,6 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
-    if (model->_rx<90) model->orthoview = 0;
     if (model->orthoview != 1 && model->orthoview != 0)
         userinput_update();
 
@@ -1237,7 +1272,7 @@ void RenderView::
     glTranslated( model->_px, model->_py, model->_pz );
 
     glRotated( model->_rx, 1, 0, 0 );
-    glRotated( fmod(fmod(model->_ry,360)+360, 360) * (1-model->orthoview) + (90*(int)((fmod(fmod(model->_ry,360)+360, 360)+45)/90))*model->orthoview, 0, 1, 0 );
+    glRotated( model->effective_ry(), 0, 1, 0 );
     glRotated( model->_rz, 0, 0, 1 );
 
     if (model->renderer->left_handed_axes)
@@ -1250,9 +1285,67 @@ void RenderView::
 
     glScaled(model->xscale, 1, model->zscale);
 
+    float a = model->effective_ry();
+    float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
+    float dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
+    float dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
+    float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
+
+    float limit = 5, middle=45;
+    if (model->_rx<limit)
+    {
+        float f = 1 - model->_rx/limit;
+        if (dyx<middle || dyx2<middle)
+            glScalef(1,1,1-0.99999*f);
+        if (dyz<middle || dyz2<middle)
+            glScalef(1-0.99999*f,1,1);
+    }
+
     glTranslated( -model->_qx, -model->_qy, -model->_qz );
 
     model->orthoview.TimeStep(.08);
+}
+
+
+void RenderView::
+        setRotationForAxes(bool setAxisVisibility)
+{
+    float a = model->effective_ry();
+    float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
+    float dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
+    float dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
+    float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
+
+    float limit = 5, middle=45;
+    model->renderer->draw_axis_at0 = 0;
+    if (model->_rx<limit)
+    {
+        float f = 1 - model->_rx/limit;
+        if (dyx<middle)
+            glRotatef(f*-90,1-dyx/middle,0,0);
+        if (dyx2<middle)
+            glRotatef(f*90,1-dyx2/middle,0,0);
+
+        if (dyz<middle)
+            glRotatef(f*-90,0,0,1-dyz/middle);
+        if (dyz2<middle)
+            glRotatef(f*90,0,0,1-dyz2/middle);
+
+        if (setAxisVisibility)
+        {
+            if (dyx<middle || dyx2<middle)
+            {
+                model->renderer->draw_hz = false;
+                model->renderer->draw_piano = false;
+                model->renderer->draw_axis_at0 = dyx<middle?1:-1;
+            }
+            if (dyz<middle || dyz2<middle)
+            {
+                model->renderer->draw_t = false;
+                model->renderer->draw_axis_at0 = dyz2<middle?1:-1;
+            }
+        }
+    }
 }
 
 

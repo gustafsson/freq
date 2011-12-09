@@ -29,9 +29,10 @@ void RotateCameraCommand::
 
     model->_ry += (1-model->orthoview)*rs * dx;
     model->_rx += rs * dy;
-    if (model->_rx<10) model->_rx=10;
+    if (model->_rx<0) { model->_rx=0; model->orthoview=1; }
     if (model->_rx>90) { model->_rx=90; model->orthoview=1; }
-    if (0<model->orthoview && model->_rx<90) { model->_rx=90; model->orthoview=0; }
+    if (0<model->orthoview && model->_rx<90 && model->_rx>45) { model->_rx=90; model->orthoview=0; }
+    if (0<model->orthoview && model->_rx<45 && model->_rx>0) { model->_rx=0; model->orthoview=0; }
 }
 
 

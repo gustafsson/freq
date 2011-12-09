@@ -44,7 +44,8 @@ public:
     bool draw_hz;
     bool draw_t;
     bool draw_cursor_marker;
-    GLvector camera;
+    int draw_axis_at0;
+    GLvector camera, cameraRotation;
     GLvector cursor;
 
     bool draw_contour_plot;
@@ -67,6 +68,9 @@ public:
     GLvector gluUnProject(GLvector win, bool *r=0);
 
     void frustumMinMaxT( float& min_t, float& max_t);
+
+    float redundancy();
+    void redundancy(float value);
 private:
     enum LevelOfDetal {
         Lod_NeedBetterF,
@@ -94,6 +98,7 @@ private:
     bool _draw_flat;
     float _redundancy;
     bool _invalid_frustum;
+    bool _drawcrosseswhen0;
     GLvector projectionPlane, projectionNormal, // for clipFrustum
         rightPlane, rightNormal,
         leftPlane, leftNormal,

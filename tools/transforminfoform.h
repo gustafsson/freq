@@ -6,7 +6,7 @@
 #include <QWidget>
 #include <QTimer>
 
-class QAbstractTableModel;
+class QLineEdit;
 
 namespace Ui {
     class TransformInfoForm;
@@ -36,13 +36,13 @@ public slots:
 
 private:
     Ui::TransformInfoForm *ui;
-    QAbstractTableModel *model;
     Sawe::Project* project;
     RenderView* renderview;
 
     QDockWidget* dock;
 
     void addRow(QString name, QString value);
+    void setEditText(QLineEdit* edit, QString value);
 
     QTimer timer;
 };

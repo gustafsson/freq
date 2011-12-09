@@ -9,6 +9,9 @@
 #include <boost/serialization/binary_object.hpp>
 #include <boost/unordered_map.hpp>
 
+// qt, zlib compression
+#include <QByteArray>
+
 namespace Tools {
 namespace Support {
 
@@ -46,7 +49,7 @@ public:
 
 private:
     friend class boost::serialization::access;
-    template<class archive> void save(archive& ar, const unsigned int /*version*/) const {
+    template<class archive> void save(archive& ar, const unsigned int version) const {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
 
 		size_t N = images->size();
@@ -62,11 +65,22 @@ private:
             ar & BOOST_SERIALIZATION_NVP(sz.width);
             ar & BOOST_SERIALIZATION_NVP(sz.height);
 
-            boost::serialization::binary_object Data( bv.second->getCpuMemory(), bv.second->getSizeInBytes1D() );
-            ar & BOOST_SERIALIZATION_NVP(Data);
+            if (version<=0)
+            {
+                boost::serialization::binary_object Data( bv.second->getCpuMemory(), bv.second->getSizeInBytes1D() );
+                ar & BOOST_SERIALIZATION_NVP(Data);
+            }
+            else
+            {
+                QByteArray zlibUncompressed = QByteArray::fromRawData( (char*)bv.second->getCpuMemory(), bv.second->getSizeInBytes1D() );
+                QByteArray zlibCompressed = qCompress(zlibUncompressed);
+                unsigned compressedN = zlibCompressed.size();
+                ar & BOOST_SERIALIZATION_NVP(compressedN);
+                ar.save_binary( zlibCompressed.constData(), compressedN );
+            }
         }
     }
-    template<class archive> void load(archive& ar, const unsigned int /*version*/) {
+    template<class archive> void load(archive& ar, const unsigned int version) {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
 
         unsigned N = 0;
@@ -82,8 +96,22 @@ private:
             sz.depth = 1;
 
             BrushImageDataP img(new DataStorage<float>(sz));
-            boost::serialization::binary_object Data( img->getCpuMemory(), img->getSizeInBytes1D() );
-            ar & BOOST_SERIALIZATION_NVP(Data);
+            if (version<=0)
+            {
+                boost::serialization::binary_object Data( img->getCpuMemory(), img->getSizeInBytes1D() );
+                ar & BOOST_SERIALIZATION_NVP(Data);
+            }
+            else
+            {
+                unsigned compressedN = 0;
+                ar & BOOST_SERIALIZATION_NVP(compressedN);
+                QByteArray zlibCompressed;
+                zlibCompressed.resize(compressedN);
+                ar.load_binary( zlibCompressed.data(), compressedN );
+                QByteArray zlibUncompressed = qUncompress(zlibCompressed);
+                BOOST_ASSERT( img->getSizeInBytes1D() == (size_t)zlibUncompressed.size() );
+                memcpy(img->getCpuMemory(), zlibUncompressed.constData(), img->getSizeInBytes1D());
+            }
 
             (*images)[ ref ] = img;
         }
@@ -111,5 +139,7 @@ private:
 
 } // namespace Support
 } // namespace Tools
+
+BOOST_CLASS_VERSION(Tools::Support::BrushFilter, 1)
 
 #endif // BRUSHFILTER_H

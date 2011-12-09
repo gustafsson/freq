@@ -11,44 +11,41 @@ licensefile="license.txt"
 
 cd ../..
 echo "========================== Building ==========================="
-echo "Building Sonic AWE ${packagename}"  
-echo qmaketarget: $qmaketarget
+echo "Building ${packagename} ${versiontag}"
 
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
-	cd gpumisc
-	qmake $qmaketarget
-	cd ../sonicawe
-	qmake $qmaketarget
-	cd ..
-	qmake $qmaketarget
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+echo qmaketarget: $qmaketarget
+(cd gpumisc && qmake $qmaketarget)
+(cd sonicawe && qmake $qmaketarget)
+qmake $qmaketarget
+
+if [ "Y" == "${rebuildall}" ]; then
+  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
-  rm -f sonicawe/release/sonicawe.exe
+  rm -f gpumisc/release/gpumisc.lib
+  touch sonicawe/sawe/configuration/configuration.cpp
 fi
 
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
 
-echo "========================== Building ==========================="
-echo "Building Sonic AWE ${packagename} Cuda"
-echo qmaketarget: $qmaketarget
 
+echo "========================== Building ==========================="
+echo "Building ${packagename} cuda ${versiontag}"
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
-if [ -z "$rebuildall" ] || [ "${rebuildall}" == "y" ] || [ "${rebuildall}" == "Y" ]; then
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
-	cd gpumisc
-	qmake $qmaketarget
-	cd ../sonicawe
-	qmake $qmaketarget
-	cd ..
-	qmake $qmaketarget
-	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+
+echo qmaketarget: $qmaketarget
+(cd gpumisc && qmake $qmaketarget)
+(cd sonicawe && qmake $qmaketarget)
+qmake $qmaketarget
+
+if [ "Y" == "${rebuildall}" ]; then
+  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
 else
-  rm -f sonicawe/release/sonicawe.exe
+  rm -f gpumisc/release/gpumisc.lib
+  touch sonicawe/sawe/configuration/configuration.cpp
 fi
 
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //m:2 //p:Configuration=Release sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cuda.exe
 
 
@@ -75,14 +72,15 @@ cp -r sonic/sonicawe/matlab $packagefullname/matlab
 cp sonic/sonicawe/license/$licensefile $packagefullname
 cp sonic/sonicawe/dist/package-win/awe_256.ico $packagefullname
 
-#Executing dxdiag for Nvidia driver version minimum requirement
-CMD //C dxdiag //x %CD%\\dxdiag.xml
-if [ -f dxdiag.xml ]; then
-nvid_version=`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
-else
-echo Nvidia driver version could not be read because dxdiag xml file was not found. WARNING, version value is set to \"1.0.0.0\" any version of Nvidia drivers will be recognized as compatible.
-nvid_version="1.0.0.0"
-fi
+
+#echo " - Executing dxdiag for Nvidia driver version minimum requirement"
+#CMD //C dxdiag //x %CD%\\dxdiag.xml
+#if [ -f dxdiag.xml ]; then
+#nvid_version=`sed -e '/DriverVersion/ !d' -e 's!<DriverVersion>\([^<]*\)</DriverVersion>!\~&\~!' dxdiag.xml | awk -F"~" '{print $2}' | cut -f2 -d">" | cut -f1 -d"<"`
+#else
+#echo Nvidia driver version could not be read because dxdiag xml file was not found. WARNING, version value is set to \"1.0.0.0\" any version of Nvidia drivers will be recognized as compatible.
+#nvid_version="1.0.0.0"
+#fi
 
 
 echo " - execute NsiWriter.exe to create and fill the Sonicawe.nsi script"
@@ -98,6 +96,9 @@ instfilepathwin=`echo $instfilepathwin | sed 's@\\/@\\\\@g'`
 instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
 $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
+
+# append \ to paths for ${File}
+sed -i.backup -r "s/(^\\$\{File\}.*) (.*$)/\1\\\\ \2/g" $nsisscript
 
 #sed="sed -i.backup -e"
 sed="sed -i.backup"

@@ -1,6 +1,7 @@
 #include "collection.h"
 #include "blockkernel.h"
 #include "blockfilter.h"
+#include "renderer.h"
 
 #include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
@@ -37,8 +38,8 @@
 #define TIME_GETBLOCK if(0)
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
-#define MAX_FRACTION_FOR_CACHES (1.f/5.f)
-#define MAX_CREATED_BLOCKS_PER_FRAME 8
+#define MAX_FRACTION_FOR_CACHES (1.f/2.f)
+#define MAX_CREATED_BLOCKS_PER_FRAME 32
 
 using namespace Signal;
 
@@ -59,6 +60,8 @@ Block::
 Collection::
         Collection( pOperation target )
 :   target( target ),
+    renderer( 0 ),
+    _is_visible( true ),
     _samples_per_block( -1 ), // Created for each
     _scales_per_block( -1 ),
     _unfinished_count(0),
@@ -182,47 +185,53 @@ unsigned Collection::
             break;
         b->glblock->unmap();
     }*/
-    foreach(const recent_t::value_type& a, _recent)
-    {
-        Block const& b = *a;
-        if (b.frame_number_last_used == _frame_counter)
-        {
-            const Reference &r = b.ref;
-            // poke children
-            poke(r.left());
-            poke(r.right());
-            poke(r.top());
-            poke(r.bottom());
 
-            // poke parent
-            poke(r.parent());
-
-            // poke surrounding sibblings
-            Reference q = r;
-            for (q.block_index[0] = std::max(1u, r.block_index[0]) - 1;
-                 q.block_index[0] <= r.block_index[0] + 1;
-                 q.block_index[0]++)
-            {
-                for (q.block_index[1] = std::max(1u, r.block_index[1]) - 1;
-                     q.block_index[1] <= r.block_index[1] + 1;
-                     q.block_index[1]++)
-                {
-                    poke(q);
-                }
-            }
-        }
-    }
+    std::vector<pBlock> blocksToPoke;
 
     foreach(const cache_t::value_type& b, _cache)
     {
         b.second->glblock->unmap();
 
-        if (b.second->frame_number_last_used != _frame_counter)
+        if (b.second->frame_number_last_used == _frame_counter)
+        {
+            blocksToPoke.push_back(b.second);
+        }
+        else
         {
             if (b.second->glblock->has_texture())
             {
                 TaskTimer tt("Deleting texture");
                 b.second->glblock->delete_texture();
+            }
+        }
+    }
+
+
+    foreach(const pBlock& b, blocksToPoke)
+    {
+        // poke blocks that are likely to be needed soon
+
+        const Reference &r = b->ref;
+        // poke children
+        poke(r.left());
+        poke(r.right());
+        poke(r.top());
+        poke(r.bottom());
+
+        // poke parent
+        poke(r.parent());
+
+        // poke surrounding sibblings, and this
+        Reference q = r;
+        for (q.block_index[0] = std::max(1u, r.block_index[0]) - 1;
+             q.block_index[0] <= r.block_index[0] + 1;
+             q.block_index[0]++)
+        {
+            for (q.block_index[1] = std::max(1u, r.block_index[1]) - 1;
+                 q.block_index[1] <= r.block_index[1] + 1;
+                 q.block_index[1]++)
+            {
+                poke(q);
             }
         }
     }
@@ -238,7 +247,11 @@ void Collection::
 {
     cache_t::iterator itr = _cache.find( r );
     if (itr != _cache.end())
+    {
         itr->second->frame_number_last_used = _frame_counter;
+        _recent.remove( itr->second );
+        _recent.push_front( itr->second );
+    }
 }
 
 
@@ -314,10 +327,9 @@ pBlock Collection::
         QMutexLocker l(&_cache_mutex);
 		#endif
 
+        block->frame_number_last_used = _frame_counter;
         _recent.remove( block );
         _recent.push_front( block );
-
-        block->frame_number_last_used = _frame_counter;
     }
 
     return block;
@@ -526,6 +538,20 @@ void Collection::
 }
 
 
+bool Collection::
+        isVisible()
+{
+    return _is_visible;
+}
+
+
+void Collection::
+        setVisible(bool v)
+{
+    _is_visible = v;
+}
+
+
 void Collection::
         invalidate_samples( const Intervals& sid )
 {
@@ -569,6 +595,9 @@ Intervals Collection::
 {
     Intervals r;
 
+    if (!_is_visible)
+        return r;
+
 #ifndef SAWE_NO_MUTEX
 	QMutexLocker l(&_cache_mutex);
 #endif
@@ -580,7 +609,8 @@ Intervals Collection::
     foreach ( const recent_t::value_type& a, _recent )
     {
         Block const& b = *a;
-        if (_frame_counter == b.frame_number_last_used)
+        unsigned framediff = _frame_counter - b.frame_number_last_used;
+        if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
         {
             counter++;
             Intervals i = b.ref.getInterval();
@@ -715,13 +745,13 @@ pBlock Collection::
             size_t memForNewBlock = 0;
             memForNewBlock += sizeof(float); // OpenGL VBO
             memForNewBlock += sizeof(float); // Cuda device memory
-            memForNewBlock += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
-            memForNewBlock += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
+            memForNewBlock += sizeof(float); // OpenGL texture
+            memForNewBlock += sizeof(float); // OpenGL neareset texture
             memForNewBlock *= scales_per_block()*samples_per_block();
             size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
             size_t free = availableMemoryForSingleAllocation();
 
-            size_t margin = memForNewBlock;
+            size_t margin = memForNewBlock>>1;
             // prefer to use block rather than discard an old block and then reallocate it
             if (youngest_count < _recent.size() && allocatedMemory+memForNewBlock+margin> free*MAX_FRACTION_FOR_CACHES)
             {
@@ -729,8 +759,12 @@ pBlock Collection::
                 Position a,b;
                 block->ref.getArea(a,b);
 
-                TaskTimer tt("Stealing block [%g:%g, %g:%g]. %u blocks, recent %u blocks.",
-                             a.time, a.scale, b.time, b.scale, _cache.size(), _recent.size());
+                TaskTimer tt("Stealing block [%g:%g, %g:%g] last used %u frames ago. Total free %s, total cache %s, %u blocks",
+                             a.time, b.time, a.scale, b.scale, _frame_counter - block->frame_number_last_used,
+                             DataStorageVoid::getMemorySizeText( free ).c_str(),
+                             DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
+                              _cache.size()
+                             );
 
                 _recent.remove( block );
                 _cache.erase( block->ref );
@@ -741,17 +775,24 @@ pBlock Collection::
                 block->glblock->reset( b.time-a.time, b.scale-a.scale );
             }
 
-            // Need to release even more blocks?
-            while (youngest_count < _recent.size() && allocatedMemory+memForNewBlock> free*MAX_FRACTION_FOR_CACHES)
+            // Need to release even more blocks? Release one at a time for each call to createBlock
+            if (youngest_count < _recent.size() && allocatedMemory > free*MAX_FRACTION_FOR_CACHES)
             {
                 Position a,b;
                 _recent.back()->ref.getArea(a,b);
 
                 size_t blockMemory = _recent.back()->glblock->allocated_bytes_per_element()*scales_per_block()*samples_per_block();
                 allocatedMemory -= std::min(allocatedMemory,blockMemory);
+                free = free > blockMemory ? free + blockMemory : 0;
 
-                TaskTimer tt("Removing block [%g:%g, %g:%g] (freeing %g KB). %u remaining blocks, recent %u blocks.",
-                             a.time, a.scale, b.time, b.scale, blockMemory/1024.f/1024.f, _cache.size(), _recent.size());
+                TaskTimer tt("Removing block [%g:%g, %g:%g] last used %u frames ago. Freeing %s, total free %s, cache %s, %u blocks",
+                             a.time, b.time, a.scale, b.scale,
+                             _frame_counter - block->frame_number_last_used,
+                             DataStorageVoid::getMemorySizeText( blockMemory ).c_str(),
+                             DataStorageVoid::getMemorySizeText( free ).c_str(),
+                             DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
+                             _cache.size()
+                             );
 
                 _cache.erase(_recent.back()->ref);
                 _recent.pop_back();
@@ -833,45 +874,55 @@ pBlock Collection::
 
                         Position a,b;
                         ref.getArea(a,b);
-                        foreach( const pBlock& bl, gib )
+
+                        for (int merge_level=1; merge_level<4; ++merge_level)
                         {
-                            // The switch from high resolution blocks to low resolution blocks (or
-                            // the other way around) should be as invisible as possible. Therefor
-                            // the contents should be stubbed from whatever contents the previous
-                            // blocks already have, even if the contents are out-of-date.
-                            //
-                            // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
-                            Interval v = bl->ref.getInterval();
-
-                            // Check if these samples are still considered for update
-                            if ( (things_to_update & v ).count() <= 1)
-                                continue;
-
-                            int d = bl->ref.log2_samples_size[0];
-                            d -= ref.log2_samples_size[0];
-                            d += bl->ref.log2_samples_size[1];
-                            d -= ref.log2_samples_size[1];
-
-                            if (d>=-2 && d<=2)
+                            std::vector<pBlock> next;
+                            foreach( const pBlock& bl, gib )
                             {
-                                Position a2,b2;
-                                bl->ref.getArea(a2,b2);
-                                if (a2.scale <= a.scale && b2.scale >= b.scale )
+                                // The switch from high resolution blocks to low resolution blocks (or
+                                // the other way around) should be as invisible as possible. Therefor
+                                // the contents should be stubbed from whatever contents the previous
+                                // blocks already have, even if the contents are out-of-date.
+                                //
+                                // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
+                                Interval v = bl->ref.getInterval();
+
+                                // Check if these samples are still considered for update
+                                if ( (things_to_update & v ).count() <= 1)
+                                    continue;
+
+                                int d = bl->ref.log2_samples_size[0];
+                                d -= ref.log2_samples_size[0];
+                                d += bl->ref.log2_samples_size[1];
+                                d -= ref.log2_samples_size[1];
+
+                                if (d==merge_level || -d==merge_level)
                                 {
-                                    // 'bl' covers all scales in 'block' (not necessarily all time samples though)
-                                    things_to_update -= v;
-                                    mergeBlock( block, bl, 0 );
-                                }
-                                else if (bl->ref.log2_samples_size[1] + 1 == ref.log2_samples_size[1])
-                                {
-                                    // mergeBlock makes sure that their scales overlap more or less
-                                    mergeBlock( block, bl, 0 );
+                                    Position a2,b2;
+                                    bl->ref.getArea(a2,b2);
+                                    if (a2.scale <= a.scale && b2.scale >= b.scale )
+                                    {
+                                        // 'bl' covers all scales in 'block' (not necessarily all time samples though)
+                                        things_to_update -= v;
+                                        mergeBlock( block, bl, 0 );
+                                    }
+                                    else if (bl->ref.log2_samples_size[1] + 1 == ref.log2_samples_size[1])
+                                    {
+                                        // mergeBlock makes sure that their scales overlap more or less
+                                        //mergeBlock( block, bl, 0 ); takes time
+                                    }
+                                    else
+                                    {
+                                        // don't bother with things that doesn't match very well
+                                    }
                                 }
                                 else
                                 {
-                                    // don't bother with things that doesn't match very well
+                                    next.push_back( bl );
                                 }
                             }
+                            gib = next;
                         }
                     }
                 }
@@ -1143,7 +1194,8 @@ bool Collection::
                   ResampleArea( oa.time, oa.scale, ob.time, ob.scale ) );
 
     // Validate region of block if inBlock was source of higher resolution than outBlock
-    if (false) // blockMerge doesn't use subpixel information, until then the following is incorrect
+    bool enable_subtexel_aggregation = renderer ? renderer->redundancy()<=1 : false;
+    if (!enable_subtexel_aggregation) // blockMerge doesn't support subtexel aggregation
     if (inBlock->ref.log2_samples_size[0] < outBlock->ref.log2_samples_size[0] &&
         inBlock->ref.log2_samples_size[1] == outBlock->ref.log2_samples_size[1])
     {

@@ -114,14 +114,18 @@ ChunkAndInverse CwtFilter::
 #endif
 
 #ifdef _DEBUG
+    Signal::Interval chunkInterval = ci.chunk->getInterval();
+    BOOST_ASSERT( chunkInterval & I );
+
+    int subchunki = 0;
     BOOST_FOREACH( const pChunk& chunk, dynamic_cast<Tfr::CwtChunk*>(ci.chunk.get())->chunks )
     {
         Signal::Interval cii = chunk->getInterval();
         BOOST_ASSERT( cii & I );
-    }
+        BOOST_ASSERT( chunkInterval == cii );
 
-    Signal::Interval cii = ci.chunk->getInterval();
-    BOOST_ASSERT( cii & I );
+        ++subchunki;
+    }
 #endif
 
     return ci;

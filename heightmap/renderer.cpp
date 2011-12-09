@@ -1,6 +1,7 @@
 #include <gl.h>
 
 #include "heightmap/renderer.h"
+#include "sawe/configuration.h"
 
 #ifndef __APPLE__
 #   include <GL/glut.h>
@@ -36,6 +37,7 @@ Renderer::Renderer( Collection* collection )
     draw_hz(true),
     draw_t(true),
     draw_cursor_marker(false),
+    draw_axis_at0(0),
     camera(0,0,0),
     draw_contour_plot(false),
     color_mode( ColorMode_Rainbow ),
@@ -51,12 +53,14 @@ Renderer::Renderer( Collection* collection )
     _mesh_fraction_height(1),
     _initialized(NotInitialized),
     _draw_flat(false),
-    _redundancy(1.f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
-    _invalid_frustum(true)
+    _redundancy(2.5f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
+    _invalid_frustum(true),
+    _drawcrosseswhen0( Sawe::Configuration::version().empty() )
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
     memset(projection_matrix, 0, sizeof(projection_matrix));
     memset(viewport_matrix, 0, sizeof(viewport_matrix));
+
     // Using glut for drawing fonts, so glutInit must be called.
     static int c=0;
     if (0==c)
@@ -105,21 +109,21 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
     if (_mesh_index_buffer)
         glDeleteBuffersARB(1, &_mesh_index_buffer);
 
+    w+=2;
+    h+=2;
+
     _mesh_width = w;
     _mesh_height = h;
 
     _vbo_size = ((w*2)+4)*(h-1);
     glGenBuffersARB(1, &_mesh_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(GLushort), 0, GL_STATIC_DRAW);
+    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(BLOCKindexType), 0, GL_STATIC_DRAW);
 
     // fill with indices for rendering mesh as triangle strips
-    GLushort *indices = (GLushort*) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-    if (!indices) {
-        return;
-    }
+    BLOCKindexType *indices = (BLOCKindexType*) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 
-    for(unsigned y=0; y<h-1; y++) {
+    if (indices) for(unsigned y=0; y<h-1; y++) {
         *indices++ = y*w;
         for(unsigned x=0; x<w; x++) {
             *indices++ = y*w+x;
@@ -138,16 +142,13 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( w*h*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
+    _mesh_position.reset( new Vbo( (w+2)*(h+2)*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
 
     glBindBuffer(_mesh_position->vbo_type(), *_mesh_position);
     float *pos = (float *) glMapBuffer(_mesh_position->vbo_type(), GL_WRITE_ONLY);
-    if (!pos) {
-        return;
-    }
 
-    for(unsigned y=0; y<h-1; y++) {
-        for(unsigned x=0; x<w; x++) {
+    if (pos) for(int y=-1; y<=(int)h; y++) {
+        for(int x=-1; x<=(int)w; x++) {
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
             *pos++ = u;
@@ -155,16 +156,6 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
             *pos++ = v;
             *pos++ = 1.0f;
         }
-    }
-
-    // enmake sure v==1
-    for(unsigned x=0; x<w; x++) {
-        float u = x / (float) (w-1);
-        float v = 1;
-        *pos++ = u;
-        *pos++ = 0.0f;
-        *pos++ = v;
-        *pos++ = 1.0f;
     }
 
     glUnmapBuffer(_mesh_position->vbo_type());
@@ -272,6 +263,7 @@ void Renderer::init()
 
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
+    //_shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
 
@@ -308,6 +300,20 @@ void Renderer::
         if (min_t > v[0])
             min_t = v[0];
     }
+}
+
+
+float Renderer::
+        redundancy()
+{
+    return _redundancy;
+}
+
+
+void Renderer::
+        redundancy(float value)
+{
+    _redundancy = value;
 }
 
 
@@ -526,11 +532,8 @@ void Renderer::renderSpectrogramRef( Reference ref )
     glScalef(b.time-a.time, 1, b.scale-a.scale);
 
     pBlock block = collection->getBlock( ref );
-    bool drawcrosseswhen0 = false;
-#ifdef _DEBUG
-    drawcrosseswhen0 = true;
-#endif
-    float yscalelimit = drawcrosseswhen0 ? 0.0004f : 0.f;
+
+    float yscalelimit = _drawcrosseswhen0 ? 0.0004f : 0.f;
     if (0!=block.get() && y_scale > yscalelimit) {
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();
@@ -1153,14 +1156,21 @@ void Renderer::drawAxes( float T )
             continue;
 
 
-        // need initial f value
-        double f = fa.getFrequencyT( p[2] );
-
         GLvector::T timePerPixel_closest, scalePerPixel_closest;
         computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
-        GLvector pp = p;
 
-        if ((taxis && draw_t) || (!taxis && draw_hz))
+        if (draw_axis_at0==-1)
+        {
+            (taxis?p[2]:p[0]) = ((taxis?p[2]:p[0])==0) ? 1 : 0;
+            (taxis?p1[2]:p1[0]) = ((taxis?p1[2]:p1[0])==0) ? 1 : 0;
+        }
+
+        // need initial f value
+        GLvector pp = p;
+        double f = fa.getFrequencyT( p[2] );
+
+        if (((taxis && draw_t) || (!taxis && draw_hz)) &&
+            (draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
         for (double u=-1; true; )
         {
             GLvector::T timePerPixel, scalePerPixel;
@@ -1465,7 +1475,7 @@ void Renderer::drawAxes( float T )
             t = nt;
         }
 
-        if (!taxis && draw_piano)
+        if (!taxis && draw_piano && (draw_axis_at0?p[0]==0:true))
         {
             GLvector::T timePerPixel, scalePerPixel;
             computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
@@ -1480,8 +1490,8 @@ void Renderer::drawAxes( float T )
             // log(F(n)/440)/log(pow(2, 1/12)) = log(n-49)
             // n = exp(log(F(n)/440)/log(pow(2, 1/12))) + 49
 
-            unsigned F1 = fa.getFrequency( (float)clippedFrustum[i][2] );
-            unsigned F2 = fa.getFrequency( (float)clippedFrustum[j][2] );
+            unsigned F1 = fa.getFrequency( (float)p1[2] );
+            unsigned F2 = fa.getFrequency( (float)(p1+v)[2] );
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
             if (!(F1>fa.min_hz)) F1=fa.min_hz;
             if (!(F2<fa.max_hz())) F2=fa.max_hz();
@@ -1522,12 +1532,12 @@ void Renderer::drawAxes( float T )
                         wP *= .5;
                 }
 
-                float u = (ff - clippedFrustum[i][2])/v[2];
-                float un = (ff+wN - clippedFrustum[i][2])/v[2];
-                float up = (ff-wP - clippedFrustum[i][2])/v[2];
-                GLvector pt = clippedFrustum[i]+v*u;
-                GLvector pn = clippedFrustum[i]+v*un;
-                GLvector pp = clippedFrustum[i]+v*up;
+                float u = (ff - p1[2])/v[2];
+                float un = (ff+wN - p1[2])/v[2];
+                float up = (ff-wP - p1[2])/v[2];
+                GLvector pt = p1+v*u;
+                GLvector pn = p1+v*un;
+                GLvector pp = p1+v*up;
 
                 glPushMatrixContext push_model( GL_MODELVIEW );
 
@@ -1640,12 +1650,18 @@ void Renderer::drawAxes( float T )
     }
 
     glEnableClientState(GL_VERTEX_ARRAY);
-    glLineWidth(2);
-    glVertexPointer(4, GL_FLOAT, 0, &phatTicks[0]);
-    glDrawArrays(GL_LINES, 0, phatTicks.size());
-    glLineWidth(1);
-    glVertexPointer(4, GL_FLOAT, 0, &ticks[0]);
-    glDrawArrays(GL_LINES, 0, ticks.size());
+    if (!phatTicks.empty())
+    {
+        glLineWidth(2);
+        glVertexPointer(4, GL_FLOAT, 0, &phatTicks[0]);
+        glDrawArrays(GL_LINES, 0, phatTicks.size());
+        glLineWidth(1);
+    }
+    if (!ticks.empty())
+    {
+        glVertexPointer(4, GL_FLOAT, 0, &ticks[0]);
+        glDrawArrays(GL_LINES, 0, ticks.size());
+    }
     glDisableClientState(GL_VERTEX_ARRAY);
 
     glEnable(GL_DEPTH_TEST);

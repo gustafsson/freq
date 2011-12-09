@@ -99,8 +99,6 @@ bool Worker::
 
     updateLength();
 
-    TaskInfo("Worker workOne %g, %g, %g", _requested_fps, _highest_fps, _min_fps);
-
     //Signal::Intervals todo_list = this->fetch_todo_list();
     Signal::Intervals todo_list = _todo_list;// this->fetch_todo_list();
     unsigned center_sample = source()->sample_rate() * center;
