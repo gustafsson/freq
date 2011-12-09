@@ -14,6 +14,10 @@ TARGET = sonicawe
 
 TEMPLATE = app
 win32:TEMPLATE = vcapp
+testlib {
+    TEMPLATE = lib
+    win32:TEMPLATE = vclib
+}
 win32:CONFIG += debug_and_release
 win32:CONFIG -= embed_manifest_dll
 win32:CONFIG += embed_manifest_exe
@@ -241,16 +245,21 @@ win32:QMAKE_LFLAGS_DEBUG += \
 ####################
 # Temporary output
 
-TMPBASEDIR=
-customtarget: TMPBASEDIR=target/$${TARGETNAME}
+TMPDIR=
+customtarget: TMPDIR=target/$${TARGETNAME}
+testlib {
+    TMPDIR = lib/$${TMPDIR}
+}
 
 usecuda {
-  TMPDIR = tmp/$${TMPBASEDIR}/cuda
+  TMPDIR = $${TMPDIR}/cuda
 } else:useopencl {
-  TMPDIR = tmp/$${TMPBASEDIR}/opencl
+  TMPDIR = $${TMPDIR}/opencl
 } else {
-  TMPDIR = tmp/$${TMPBASEDIR}/cpu
+  TMPDIR = $${TMPDIR}/cpu
 }
+
+TMPDIR = tmp/$${TMPDIR}
 
 win32:RCC_DIR = $${TMPDIR}
 MOC_DIR = $${TMPDIR}
@@ -279,7 +288,14 @@ else:CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_RELEASE
 win32:CONFIGURATION_FLAGS += /EHsc
 win32:CXX_OUTPARAM = /Fo
 else:CXX_OUTPARAM = "-o "
-configuration.commands = $${QMAKE_CXX} $${CONFIGURATION_FLAGS} $$join(CONFIGURATION_DEFINES,'" -D"','-D"','"') $(INCPATH) -c ${QMAKE_FILE_IN} $${CXX_OUTPARAM}"${QMAKE_FILE_OUT}"
+testlib:CONFIGURATION_FLAGS+=-fPIC
+configuration.commands = $${QMAKE_CXX} \
+    $${CONFIGURATION_FLAGS} \
+    $$join(CONFIGURATION_DEFINES,'" -D"','-D"','"') \
+    $$join(DEFINES,'" -D"','-D"','"') \
+    $(INCPATH) \
+    -c ${QMAKE_FILE_IN} \
+    $${CXX_OUTPARAM}"${QMAKE_FILE_OUT}"
 QMAKE_EXTRA_COMPILERS += configuration
 
 
