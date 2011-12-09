@@ -681,7 +681,7 @@ Signal::pBuffer Cwt::
             part->freqAxis.min_hz, part->freqAxis.max_hz()) );
 
         Signal::pBuffer inv = inverse(part);
-        Signal::pBuffer super = SuperSample::supersample(inv, pchunk->sample_rate);
+        Signal::pBuffer super = SuperSample::supersample(inv, pchunk->original_sample_rate);
 
         DEBUG_CWT {
             tt->getStream()
