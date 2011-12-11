@@ -21,6 +21,7 @@ public:
     virtual float displayedTimeResolution( float FS, float hz );
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    virtual std::string toString();
 
     unsigned chunk_size();
 

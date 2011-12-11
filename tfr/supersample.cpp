@@ -27,7 +27,7 @@ Signal::pBuffer SuperSample::
     bool redundant = ((Tfr::StftChunk*)chunk.get())->redundant();
 
     unsigned src_window_size = ((Tfr::StftChunk*)chunk.get())->window_size();
-    Tfr::pChunk biggerchunk( new Tfr::StftChunk( src_window_size << multiple, redundant ));
+    Tfr::pChunk biggerchunk( new Tfr::StftChunk( src_window_size << multiple, Stft::WindowType_Rectangular, src_window_size<<multiple, redundant ));
     biggerchunk->freqAxis = chunk->freqAxis;
     biggerchunk->chunk_offset = chunk->chunk_offset;
     biggerchunk->first_valid_sample = chunk->first_valid_sample << multiple;

@@ -1202,6 +1202,19 @@ size_t Cwt::
 }
 
 
+std::string Cwt::
+        toString()
+{
+    std::stringstream ss;
+    ss << "Tfr::Cwt"
+       << ", min_hz=" << _min_hz
+       << ", scales_per_octave=" << _scales_per_octave
+       << ", wavelet_time_suppport=" << _wavelet_time_suppport
+       << ", wavelet_scale_suppport=" << _wavelet_scale_suppport;
+    return ss.str();
+}
+
+
 unsigned Cwt::
         chunk_alignment(float fs) const
 {

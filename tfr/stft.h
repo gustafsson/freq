@@ -12,11 +12,16 @@
 
 namespace Tfr {
 
+
 enum FftDirection
 {
     FftDirection_Forward = -1,
     FftDirection_Inverse = 1
 };
+
+
+class StftChunk;
+
 
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
@@ -38,6 +43,7 @@ public:
     virtual float displayedTimeResolution( float FS, float hz );
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    virtual std::string toString();
 
     pChunk forward( Signal::pBuffer );
     Signal::pBuffer backward( pChunk );
@@ -116,6 +122,7 @@ public:
     virtual float displayedTimeResolution( float FS, float hz );
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    virtual std::string toString();
 
     unsigned increment();
     unsigned chunk_size() { return _window_size; }
@@ -137,13 +144,18 @@ public:
 
     float overlap() { return _overlap; }
     WindowType windowType() { return _window_type; }
-    void setWindow(WindowType type, float overlap);
     std::string windowTypeName() { return windowTypeName(_window_type); }
     static std::string windowTypeName(WindowType);
+    void setWindow(WindowType type, float overlap);
 
 
     void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
 
+
+    /**
+      Different windows are more sutiable for applying the window on the inverse as well.
+      */
+    bool applyWindowOnInverse(WindowType);
 
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
@@ -174,9 +186,13 @@ private:
       the overlap function exactly on the sample.
       */
     DataStorage<float>::Ptr prepareWindow( DataStorage<float>::Ptr );
+    DataStorage<float>::Ptr reduceWindow( DataStorage<float>::Ptr windowedSignal, const StftChunk* c );
 
     template<WindowType>
     void prepareWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out );
+
+    template<WindowType>
+    void reduceWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out, const StftChunk* c );
 
     template<WindowType>
     float computeWindowValue( float p );
@@ -197,7 +213,7 @@ private:
 class StftChunk: public Chunk
 {
 public:
-    StftChunk(unsigned window_size, bool redundant);
+    StftChunk(unsigned window_size, Stft::WindowType window_type, unsigned increment, bool redundant);
     void setHalfs( unsigned n );
     unsigned halfs( );
     unsigned nActualScales() const;
@@ -209,8 +225,13 @@ public:
     unsigned transformSize() const;
     bool redundant() const { return _redundant; }
     unsigned window_size() const { return _window_size; }
+    Stft::WindowType window_type() const { return _window_type; }
+    unsigned increment() const { return _increment; }
 
 private:
+    Stft::WindowType _window_type;
+    unsigned _increment;
+
     unsigned _halfs_n;
 
     /**

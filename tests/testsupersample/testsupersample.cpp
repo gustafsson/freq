@@ -132,8 +132,8 @@ void TestSuperSample::
 
     Signal::pBuffer super = Tfr::SuperSample::supersample(b, b->sample_rate*multiple);
 
-    QVERIFY( multiple*N == (int)super->waveform_data()->numberOfElements() );
-    QVERIFY( multiple*b->sample_rate == super->sample_rate );
+    QCOMPARE( (int)super->waveform_data()->numberOfElements(), multiple*N );
+    QCOMPARE( super->sample_rate, multiple*b->sample_rate );
     QCOMPARE( super->start(), b->start() );
     QCOMPARE( super->length(), b->length() );
 

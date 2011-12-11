@@ -24,6 +24,8 @@ public:
 
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
 
+    virtual std::string toString();
+
     float blob(float FS);
 
     float block_fs;

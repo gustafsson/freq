@@ -135,6 +135,15 @@ unsigned DrawnWaveform::
 }
 
 
+std::string DrawnWaveform::
+        toString()
+{
+    std::stringstream ss;
+    ss << "Tfr::DrawnWaveform, block_fs=" << block_fs << ", maxValue=" << maxValue;
+    return ss.str();
+}
+
+
 float DrawnWaveform::
         blob(float FS)
 {
