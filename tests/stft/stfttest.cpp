@@ -87,7 +87,7 @@ StftTest::StftTest()
 void StftTest::initTestCase()
 {
     TaskTimer tt("Initiating test signal");
-    data.reset(new Buffer(N, N, 1));
+    data.reset(new Buffer(0, N, 1));
 
     float* p = data->waveform_data()->getCpuMemory();
     srand(0);
@@ -322,7 +322,8 @@ float StftTest::
     testTransform(pTransform t, pBuffer b, float* forwardtime, float* inversetime, float *epsilon)
 {
     float norm = 1.f;
-    if (dynamic_cast<Fft*>(t.get()))
+    bool isfft = 0!=dynamic_cast<Fft*>(t.get());
+    if (isfft)
         norm = 1.f/b->number_of_samples();
 
     pChunk c;
@@ -347,7 +348,14 @@ float StftTest::
     float *expectedp = expected->waveform_data()->getCpuMemory();
     float* p2 = b2->waveform_data()->getCpuMemory();
 
-    for (unsigned i=0; i<b2->number_of_samples(); ++i)
+    unsigned start = 0;
+    if (!isfft && 0 == b2i.first)
+    {
+        StftChunk* stftchunk = dynamic_cast<StftChunk*>(c.get());
+        start = stftchunk->window_size() - stftchunk->increment();
+    }
+
+    for (unsigned i=start; i<b2->number_of_samples(); ++i)
     {
         float diff = fabsf(expectedp[i] - p2[i]*norm);
         if (ft_diff < diff)
@@ -364,7 +372,7 @@ float StftTest::
 
         cout << "expected, inverse, diff, frac" << endl;
 
-        for (unsigned i=0; i<b2->number_of_samples()&&i<coutinfo; ++i)
+        for (unsigned i=start; i<b2->number_of_samples()&&i<coutinfo; ++i)
         {
             float diff = expectedp[i] - p2[i]*norm;
             float frac = expectedp[i] / p2[i]*norm;

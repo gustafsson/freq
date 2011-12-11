@@ -95,7 +95,8 @@ void BlockFilter::
     block->ref.getArea(a,b);
 
     Position chunk_a, chunk_b;
-    Signal::Interval inInterval = chunk.getInterval();
+    //Signal::Interval inInterval = chunk.getInterval();
+    Signal::Interval inInterval = chunk.getCoveredInterval();
     Signal::Interval blockInterval = block->ref.getInterval();
     // don't validate more texels than we have actual support for
     Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval);

@@ -143,6 +143,15 @@ public:
       */
     virtual Signal::Interval getInterval() const;
 
+
+    /**
+      Returns an equivalent interval in the original sample rate.
+
+        Interval(
+            chunk_offset*original_sample_rate/sample_rate ,
+            (chunk_offset + nSamples())*original_sample_rate/sample_rate )
+      */
+    virtual Signal::Interval getCoveredInterval() const;
 };
 typedef boost::shared_ptr< Chunk > pChunk;
 

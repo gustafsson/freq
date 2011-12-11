@@ -258,7 +258,7 @@ Tfr::pChunk Stft::
 
     if (0 == b->sample_offset)
     {
-        chunk->n_valid_samples += chunk->first_valid_sample;
+        chunk->n_valid_samples += chunk->first_valid_sample + chunk->chunk_offset;
         chunk->first_valid_sample = 0;
         chunk->chunk_offset = 0;
     }
@@ -283,7 +283,10 @@ Tfr::pChunk Stft::
         TaskInfo("Difftest %s (value %g)", maxd<1e-9*_window_size?"passed":"failed", maxd);
     }
 
-    TIME_STFT TaskInfo("Stft chunk %s, %s", chunk->getInterval().toString().c_str(), chunk->getInversedInterval().toString().c_str());
+    TIME_STFT TaskInfo("Stft chunk %s, %s, %s",
+                       chunk->getInterval().toString().c_str(),
+                       chunk->getInversedInterval().toString().c_str(),
+                       chunk->getCoveredInterval().toString().c_str());
 
     return chunk;
 }
@@ -937,7 +940,7 @@ void Stft::
     TaskInfo("signal->size().width = %u", signal->size().width);
     TaskInfo("c->n_valid_samples*increment = %u", c->n_valid_samples*increment );
 
-    BOOST_ASSERT( c->n_valid_samples*increment == signal->size().width );
+    BOOST_ASSERT( c->n_valid_samples*increment + (0 == c->chunk_offset?increment/2:0) == signal->size().width );
 
     for (pos.z=0; pos.z<windowedSignal->size().depth; ++pos.z)
     {
@@ -1051,9 +1054,13 @@ DataStorage<float>::Ptr Stft::
     unsigned L = c->n_valid_samples*increment;
     if (0 == c->chunk_offset)
     {
-        L += window_size/2-increment/2;
+        L += increment/2;
     }
     DataStorage<float>::Ptr signal(new DataStorage<float>( L ));
+    TaskInfo("increment = %u", increment);
+    TaskInfo("c->n_valid_samples = %u", c->n_valid_samples);
+    TaskInfo("c->n_valid_samples*increment = %u", c->n_valid_samples*increment);
+    TaskInfo("L = %u", L);
 
     switch(c->window_type())
     {
