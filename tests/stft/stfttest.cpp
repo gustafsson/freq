@@ -34,11 +34,10 @@ private:
     bool benchmark_summary;
     int N, windowsize, ftruns;
 
-    float epsilon[3];
-    std::vector<float> diffs, forwardtime, inversetime;
+    std::vector<float> diffs, forwardtime, inversetime, epsilon;
     float overlap;
 
-    unsigned passedTests;
+    unsigned passedTests, failedTests;
     pBuffer gold_input_data;
     std::vector<std::complex<float> > gold_ft;
     float gold_overlap;
@@ -49,25 +48,40 @@ private:
 
 StftTest::StftTest()
 {
-    coutinfo = 10;
+    coutinfo = 60;
     benchmark_summary = false;
     //N = 1<<23; windowsize=1<<16;
     //N = 1<<22; windowsize=1<<10;
-    //N = 16; windowsize=4;
+    N = 16; windowsize=4;
     N = 1024; windowsize=256;
+    //N = 64; windowsize=16;
     overlap = 0.75f;
 
+    epsilon.resize(1+Stft::WindowType_NumberOfWindowTypes);
+    // these are given for windowsize 256 and overlap 0.75
     epsilon[0] = 2e-7 * log((double)N);
-    epsilon[1] = 2e-7 * log((double)windowsize);
-    epsilon[2] = 0.001f;
+    epsilon[1+Stft::WindowType_Rectangular] = 2e-7 * log((double)windowsize); // rectangular
+    epsilon[1+Stft::WindowType_Hann] = .0002f;
+    epsilon[1+Stft::WindowType_Hamming] = .00005f;
+    epsilon[1+Stft::WindowType_Tukey] = .004f;
+    epsilon[1+Stft::WindowType_Cosine] = .001f;
+    epsilon[1+Stft::WindowType_Lanczos] = .003f;
+    epsilon[1+Stft::WindowType_Triangular] = 2e-7 * log((double)windowsize);
+    epsilon[1+Stft::WindowType_Gaussian] = .004f;
+    epsilon[1+Stft::WindowType_BarlettHann] = .0006f;
+    epsilon[1+Stft::WindowType_Blackman] = .0003f;
+    epsilon[1+Stft::WindowType_Nuttail] = 3e-5;
+    epsilon[1+Stft::WindowType_BlackmanHarris] = 3e-5;
+    epsilon[1+Stft::WindowType_BlackmanNuttail] = 4e-5;
+    epsilon[1+Stft::WindowType_FlatTop] = 0.03f;
 
     ftruns = 1 + Stft::WindowType_NumberOfWindowTypes;
-    //ftruns = 4;
     diffs.resize(ftruns*2);
     forwardtime.resize(ftruns*2);
     inversetime.resize(ftruns*2);
 
     passedTests = 0;
+    failedTests = 0;
 }
 
 void StftTest::initTestCase()
@@ -135,7 +149,7 @@ void StftTest::initTestCase()
     if (coutinfo)
     {
         cout << "buffer" << endl;
-        for (unsigned i=0; i<N && i<coutinfo; ++i)
+        for (int i=0; i<N && i<(int)coutinfo; ++i)
         {
             cout << i << ", " << p[i] << ";" << endl;
         }
@@ -160,14 +174,14 @@ void StftTest::cleanupTestCase()
 
     for (int i=0; i<2*ftruns; ++i)
     {
-        bool success = diffs[i]<epsilon[i/2<2?i/2:2];
+        bool success = diffs[i]<epsilon[i/2];
         cout << (success?"Success: ":"Failed:  ")
              << i << " " << (i==0||i==1?"Fft":("Stft " + Stft::windowTypeName((Stft::WindowType)(i/2-1))).c_str())
              << " " << (i%2?"C2C":"R2C")
              << " " << diffs[i];
 
         if (i<4)
-            cout << " < " << epsilon[i/2<2?i/2:2];
+            cout << " < " << epsilon[i/2];
 
         if (benchmark_summary)
             cout << ". Time: " << forwardtime[i] << " s and inverse " << inversetime[i]
@@ -292,12 +306,14 @@ void StftTest::
             ft.reset( new Fft(redundant) );
         }
 
-        float ft_diff = testTransform( ft, data, &forwardtime[stft*2+redundant], &inversetime[stft*2+redundant], coutinfo?&epsilon[stft<2?stft:2]:0);
+        float ft_diff = testTransform( ft, data, &forwardtime[stft*2+redundant], &inversetime[stft*2+redundant], coutinfo?&epsilon[stft]:0);
         diffs[stft*2+redundant] = ft_diff;
 
-        passedTests += ft_diff < epsilon[stft<2?stft:2];
+        bool success = ft_diff < epsilon[stft];
+        passedTests += success;
+        failedTests += !success;
 
-        QVERIFY( ft_diff < epsilon[stft<2?stft:2] );
+        QVERIFY( ft_diff < epsilon[stft] );
     }
 }
 
@@ -326,7 +342,8 @@ float StftTest::
 
 
     float ft_diff = 0;
-    pBuffer expected = BufferSource(b).readFixedLength(b2->getInterval());
+    Interval b2i = b2->getInterval();
+    pBuffer expected = BufferSource(b).readFixedLength(b2i);
     float *expectedp = expected->waveform_data()->getCpuMemory();
     float* p2 = b2->waveform_data()->getCpuMemory();
 
@@ -345,7 +362,7 @@ float StftTest::
         for (unsigned i=0; i<c->transform_data->numberOfElements() && i<coutinfo; ++i)
             cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
 
-        cout << "inverse" << endl;
+        cout << "expected, inverse, diff, frac" << endl;
 
         for (unsigned i=0; i<b2->number_of_samples()&&i<coutinfo; ++i)
         {

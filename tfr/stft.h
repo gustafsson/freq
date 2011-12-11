@@ -152,6 +152,11 @@ public:
     void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
 
 
+    /**
+      Different windows are more sutiable for applying the window on the inverse as well.
+      */
+    bool applyWindowOnInverse(WindowType);
+
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
 private:
