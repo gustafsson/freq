@@ -8,6 +8,8 @@
 #include "tfr/stft.h"
 
 using namespace std;
+using namespace Tfr;
+using namespace Signal;
 
 class StftTest : public QObject
 {
@@ -19,38 +21,48 @@ public:
 private slots:
     void initTestCase();
     void cleanupTestCase();
+    void compareToGold_data();
+    void compareToGold();
     void equalForwardInverse_data();
     void equalForwardInverse();
 
 private:
-    static float testTransform(Tfr::pTransform t, Signal::pBuffer b, float* forwardtime=0, float* inversetime=0, float* epsilon=0);
+    float testTransform(pTransform t, pBuffer b, float* forwardtime=0, float* inversetime=0, float* epsilon=0);
 
-    Signal::pBuffer b;
-    bool coutinfo;
+    pBuffer data;
+    unsigned coutinfo;
     bool benchmark_summary;
     int N, windowsize, ftruns;
 
-    float epsilon[2];
+    float epsilon[3];
     std::vector<float> diffs, forwardtime, inversetime;
     float overlap;
 
     unsigned passedTests;
+    pBuffer gold_input_data;
+    std::vector<std::complex<float> > gold_ft;
+    float gold_overlap;
+    Stft::WindowType gold_window;
+    int gold_windowsize;
 };
 
 
 StftTest::StftTest()
 {
-    coutinfo = true;
+    coutinfo = 10;
     benchmark_summary = false;
     //N = 1<<23; windowsize=1<<16;
     //N = 1<<22; windowsize=1<<10;
-    N = 16; windowsize=4;
-    overlap = 0.98f;
+    //N = 16; windowsize=4;
+    N = 1024; windowsize=256;
+    overlap = 0.75f;
 
     epsilon[0] = 2e-7 * log((double)N);
     epsilon[1] = 2e-7 * log((double)windowsize);
+    epsilon[2] = 0.001f;
 
-    ftruns = 1 + Tfr::Stft::WindowType_NumberOfWindowTypes;
+    ftruns = 1 + Stft::WindowType_NumberOfWindowTypes;
+    //ftruns = 4;
     diffs.resize(ftruns*2);
     forwardtime.resize(ftruns*2);
     inversetime.resize(ftruns*2);
@@ -61,46 +73,101 @@ StftTest::StftTest()
 void StftTest::initTestCase()
 {
     TaskTimer tt("Initiating test signal");
-    b.reset(new Signal::Buffer(N, N, 1));
+    data.reset(new Buffer(N, N, 1));
 
-    float* p = b->waveform_data()->getCpuMemory();
+    float* p = data->waveform_data()->getCpuMemory();
     srand(0);
     for (int i=0; i<N; ++i)
         p[i] = 2.f*rand()/RAND_MAX - 1.f;
 
-    if (coutinfo) cout << "buffer" << endl;
-    if (coutinfo) for (int i=0; i<N; ++i)
-    {
-        cout << i << ", " << p[i] << ";" << endl;
-    }
-    if (coutinfo) cout << endl;
+    gold_input_data.reset( new Buffer(4,16,1));
+    float *gold_input = gold_input_data->waveform_data()->getCpuMemory();
+    gold_overlap = 0.5;
+    gold_windowsize = 4;
+    gold_ft.resize( 7*gold_windowsize );
+    gold_window = Stft::WindowType_Rectangular;
+    gold_input[0]=.4072680;
+    gold_input[1]=.5475688;
+    gold_input[2]=.8947876;
+    gold_input[3]=.4636770;
+    gold_input[4]=.3359026;
+    gold_input[5]=.0809182;
+    gold_input[6]=.2194318;
+    gold_input[7]=.0091178;
+    gold_input[8]=.7669713;
+    gold_input[9]=.4394998;
+    gold_input[10]=.8835012;
+    gold_input[11]=.9390582;
+    gold_input[12]=.2508032;
+    gold_input[13]=.0341413;
+    gold_input[14]=.2510600;
+    gold_input[15]=.6913113;
 
+    gold_ft[0]=ChunkElement(2.3133,0);
+    gold_ft[1]=ChunkElement(-0.48752,-0.083892);
+    gold_ft[2]=ChunkElement(0.29081,0);
+    gold_ft[3]=ChunkElement(-0.48752,0.083892);
+    gold_ft[4]=ChunkElement(1.7753,0);
+    gold_ft[5]=ChunkElement(0.55888,-0.38276);
+    gold_ft[6]=ChunkElement(0.6861,0);
+    gold_ft[7]=ChunkElement(0.55888,0.38276);
+    gold_ft[8]=ChunkElement(0.64537,0);
+    gold_ft[9]=ChunkElement(0.11647,-0.0718);
+    gold_ft[10]=ChunkElement(0.4653,0);
+    gold_ft[11]=ChunkElement(0.11647,0.0718);
+    gold_ft[12]=ChunkElement(1.435,0);
+    gold_ft[13]=ChunkElement(-0.54754,0.43038);
+    gold_ft[14]=ChunkElement(0.53779,0);
+    gold_ft[15]=ChunkElement(-0.54754,-0.43038);
+    gold_ft[16]=ChunkElement(3.029,0);
+    gold_ft[17]=ChunkElement(-0.11653,0.49956);
+    gold_ft[18]=ChunkElement(0.27191,0);
+    gold_ft[19]=ChunkElement(-0.11653,-0.49956);
+    gold_ft[20]=ChunkElement(2.1075,0);
+    gold_ft[21]=ChunkElement(0.6327,-0.90492);
+    gold_ft[22]=ChunkElement(0.1611,0);
+    gold_ft[23]=ChunkElement(0.6327,0.90492);
+    gold_ft[24]=ChunkElement(1.2273,0);
+    gold_ft[25]=ChunkElement(-0.00025684,0.65717);
+    gold_ft[26]=ChunkElement(-0.22359,0);
+    gold_ft[27]=ChunkElement(-0.00025684,-0.65717);
+
+    if (coutinfo)
     {
+        cout << "buffer" << endl;
+        for (unsigned i=0; i<N && i<coutinfo; ++i)
+        {
+            cout << i << ", " << p[i] << ";" << endl;
+        }
+        cout << endl;
+
         TaskTimer tt("Warming up...");
 
-        Tfr::Stft a;
+        Stft a;
         a.set_approximate_chunk_size(windowsize);
-        a(b);
+        a(data);
 
-        Tfr::Fft f;
-        f(b);
+        Fft f;
+        f(data);
     }
 }
 
 
 void StftTest::cleanupTestCase()
 {
-    if (coutinfo) cout << endl;
+    if (coutinfo)
+        cout << endl;
+
     for (int i=0; i<2*ftruns; ++i)
     {
-        bool success = diffs[i]<epsilon[false != (i/2)];
+        bool success = diffs[i]<epsilon[i/2<2?i/2:2];
         cout << (success?"Success: ":"Failed:  ")
-             << i << " " << (i==0||i==1?"Fft":("Stft " + Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)(i/2-1))).c_str())
+             << i << " " << (i==0||i==1?"Fft":("Stft " + Stft::windowTypeName((Stft::WindowType)(i/2-1))).c_str())
              << " " << (i%2?"C2C":"R2C")
              << " " << diffs[i];
 
         if (i<4)
-            cout << " < " << epsilon[false != (i/2)];
+            cout << " < " << epsilon[i/2<2?i/2:2];
 
         if (benchmark_summary)
             cout << ". Time: " << forwardtime[i] << " s and inverse " << inversetime[i]
@@ -110,6 +177,76 @@ void StftTest::cleanupTestCase()
     }
 
     cout << "Passed tests: " << passedTests << endl;
+}
+
+
+
+void StftTest::
+        compareToGold_data()
+{
+    QTest::addColumn<bool>("overlap");
+
+    for (int overlap=0; overlap<2; ++overlap)
+    {
+        QTest::newRow(QString("Gold %1")
+                      .arg(overlap?"overlap":"no overlap").toLocal8Bit().data())
+                << (bool)overlap;
+    }
+}
+
+void StftTest::
+    compareToGold()
+{
+    QFETCH(bool, overlap);
+
+    Stft* t;
+    pTransform ft(t = new Stft);
+    t->setWindow( gold_window, overlap?gold_overlap:0 );
+    t->set_approximate_chunk_size( gold_windowsize );
+    t->compute_redundant( true );
+
+    float ft_diff = testTransform( ft, gold_input_data, 0, 0, coutinfo?&epsilon[1]:0);
+
+    if (coutinfo && ft_diff>epsilon[1])
+    {
+        pChunk c = (*t)(gold_input_data);
+        if (overlap)
+            QCOMPARE( c->getInterval(), gold_input_data->getInterval() );
+
+        std::complex<float>* cp = c->transform_data->getCpuMemory();
+        gold_ft.resize( 7*gold_windowsize );
+
+        std::vector<std::complex<float> > gold_ft_nonredundant;
+        std::vector<std::complex<float> >* gold_ft_data = 0;
+        if (overlap)
+            gold_ft_data = &gold_ft;
+        else
+        {
+            gold_ft_nonredundant.resize(16);
+
+            for (int i=0; i<4; ++i)
+                for (int j=0; j<4; ++j)
+                    gold_ft_nonredundant[i*4+j] = gold_ft[i*8+j];
+
+            gold_ft_data = &gold_ft_nonredundant;
+        }
+
+        std::complex<float>* gold_cp = &(*gold_ft_data)[0];
+        QCOMPARE( c->transform_data->numberOfElements(), gold_ft_data->size() );
+
+        cout << "Gold transform\t\tComputed transform" << endl;
+        for (unsigned i=0; i<c->transform_data->numberOfElements() && i<coutinfo; ++i)
+        {
+            cout << i << ", " << gold_cp[i].real() << ",\t" << gold_cp[i].imag() << ";" << endl;
+            cout << i << ", " << cp[i].real() << ",\t" << cp[i].imag() << ";" << endl;
+        }
+
+        pBuffer b2 = t->inverse(c);
+    }
+
+    passedTests += ft_diff < epsilon[1];
+
+    QVERIFY( ft_diff < epsilon[1] );
 }
 
 
@@ -125,7 +262,7 @@ void StftTest::
         {
             QTest::newRow(QString("%1%2 %3")
                           .arg(stft?"Stft ":"Fft")
-                          .arg(stft?Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)(stft-1)).c_str():"")
+                          .arg(stft?Stft::windowTypeName((Stft::WindowType)(stft-1)).c_str():"")
                           .arg(redundant?"C2C":"R2C").toLocal8Bit().data())
                     << stft << (bool)redundant;
         }
@@ -141,38 +278,38 @@ void StftTest::
 
     //QBENCHMARK
     {
-        Tfr::pTransform ft;
+        pTransform ft;
         if (stft)
         {
-            Tfr::Stft* t;
-            ft.reset(t = new Tfr::Stft);
-            t->setWindow( (Tfr::Stft::WindowType)(stft-1), overlap );
+            Stft* t;
+            ft.reset(t = new Stft);
+            t->setWindow( (Stft::WindowType)(stft-1), overlap );
             t->set_approximate_chunk_size(windowsize);
             t->compute_redundant(redundant);
         }
         else
         {
-            ft.reset( new Tfr::Fft(redundant) );
+            ft.reset( new Fft(redundant) );
         }
 
-        float ft_diff = testTransform( ft, b, &forwardtime[stft*2+redundant], &inversetime[stft*2+redundant], coutinfo?&epsilon[0!=stft]:0);
+        float ft_diff = testTransform( ft, data, &forwardtime[stft*2+redundant], &inversetime[stft*2+redundant], coutinfo?&epsilon[stft<2?stft:2]:0);
         diffs[stft*2+redundant] = ft_diff;
 
-        passedTests += ft_diff < epsilon[0!=stft];
+        passedTests += ft_diff < epsilon[stft<2?stft:2];
 
-        QVERIFY( ft_diff < epsilon[0!=stft] );
+        QVERIFY( ft_diff < epsilon[stft<2?stft:2] );
     }
 }
 
 
 float StftTest::
-    testTransform(Tfr::pTransform t, Signal::pBuffer b, float* forwardtime, float* inversetime, float *epsilon)
+    testTransform(pTransform t, pBuffer b, float* forwardtime, float* inversetime, float *epsilon)
 {
     float norm = 1.f;
-    if (dynamic_cast<Tfr::Fft*>(t.get()))
+    if (dynamic_cast<Fft*>(t.get()))
         norm = 1.f/b->number_of_samples();
 
-    Tfr::pChunk c;
+    pChunk c;
     b->waveform_data()->getCpuMemory();
     {
         TaskTimer tt("%s forward", t->toString().c_str());
@@ -180,7 +317,7 @@ float StftTest::
         if (forwardtime) *forwardtime=tt.elapsedTime();
     }
 
-    Signal::pBuffer b2;
+    pBuffer b2;
     {
         TaskTimer tt("%s backward", t->toString().c_str());
         b2 = t->inverse(c);
@@ -189,7 +326,7 @@ float StftTest::
 
 
     float ft_diff = 0;
-    Signal::pBuffer expected = Signal::BufferSource(b).readFixedLength(b2->getInterval());
+    pBuffer expected = BufferSource(b).readFixedLength(b2->getInterval());
     float *expectedp = expected->waveform_data()->getCpuMemory();
     float* p2 = b2->waveform_data()->getCpuMemory();
 
@@ -200,23 +337,21 @@ float StftTest::
             ft_diff = diff;
     }
 
-    if (epsilon)
+    if (epsilon && ft_diff>*epsilon)
     {
         cout << t->toString() << endl;
 
         std::complex<float>* cp = c->transform_data->getCpuMemory();
-        for (unsigned i=0; i<c->transform_data->numberOfElements(); ++i)
+        for (unsigned i=0; i<c->transform_data->numberOfElements() && i<coutinfo; ++i)
             cout << i << ", " << cp[i].real() << ", " << cp[i].imag() << ";" << endl;
 
         cout << "inverse" << endl;
 
-        for (unsigned i=0; i<b2->number_of_samples(); ++i)
+        for (unsigned i=0; i<b2->number_of_samples()&&i<coutinfo; ++i)
         {
-            cout << b2->sample_offset+i << ", " << expectedp[i] << ", " << p2[i]*norm <<  ";";
             float diff = expectedp[i] - p2[i]*norm;
-            if (fabsf(diff) > *epsilon)
-                cout << " Failed: " << diff;
-            cout << endl;
+            float frac = expectedp[i] / p2[i]*norm;
+            cout << b2->sample_offset+i << ", " << expectedp[i] << ", " << p2[i]*norm <<  ", " << diff << ", " << frac<< ";" << endl;
         }
     }
 

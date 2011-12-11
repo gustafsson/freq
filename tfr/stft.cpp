@@ -238,9 +238,9 @@ Tfr::pChunk Stft::
         chunk = ComputeChunk(windowedInput);
 
     chunk->freqAxis = freqAxis( b->sample_rate );
-    chunk->chunk_offset = (b->sample_offset/(float)_window_size + .5f)*_window_size/increment();
-    chunk->first_valid_sample = 0;
-    chunk->n_valid_samples = chunk->nSamples()-1;
+    chunk->chunk_offset = b->sample_offset/(float)increment();
+    chunk->first_valid_sample = (_window_size - increment())/(float)increment();
+    chunk->n_valid_samples = chunk->nSamples() - 2*chunk->chunk_offset;
     chunk->sample_rate = b->sample_rate / increment();
     chunk->original_sample_rate = b->sample_rate;
 
@@ -469,7 +469,7 @@ Signal::pBuffer Stft::
 
 
     Signal::pBuffer b(new Signal::Buffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
-    *b->waveform_data() = *signal; // this will not copy any data as b->waveform_data() is empty
+    *b->waveform_data() = *signal; // will copy data
 
 
     return b;
@@ -767,19 +767,19 @@ unsigned Stft::
 
 
 
-template<> float Stft::computeWindowValue<Stft::WindowType_Hann>( float p )         { return (1.f / 0.5f) * (0.5f  + 0.5f*cos(M_PI*p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Hamming>( float p )      { return (1.f / 0.54f) * (0.54f  + 0.46f*cos(M_PI*p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Tukey>( float p )        { return std::fabs(p) < 0.5 ? 1.f : (1.f / 0.5f) * (0.5f  + 0.5f*cos(M_PI*(std::fabs(p)*2.f-1.f))); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Cosine>( float p )       { return 1.5708f * cos(M_PI*p*0.5f); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Lanczos>( float p )      { return 4.4305f * sin(M_PI*p)/(M_PI*p); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Triangular>( float p )   { return 2.f * (1.f - fabs(p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Gaussian>( float p )     { return 2.42375107349f*exp2f(-6.492127684f*p*p); } // sigma = 1/3
-template<> float Stft::computeWindowValue<Stft::WindowType_BarlettHann>( float p )  { return 2.f*(0.62f-0.24f*fabs(p)+0.38f*cos(M_PI*p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Blackman>( float p )     { return 2.3809f * (0.42f + 0.5f*cos(M_PI*p) + 0.08f*cos(2.f*M_PI*p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_Nuttail>( float p )      { return 2.8108f * (0.355768f + 0.487396f*cos(M_PI*p) + 0.144232f*cos(2.f*M_PI*p) + 0.012604f*cos(3.f*M_PI*p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_BlackmanHarris>( float p )  { return 2.7875f * (0.35875f + 0.48829*cos(M_PI*p) + 0.14128f*cos(2.f*M_PI*p) + 0.01168f*cos(3.f*M_PI*p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_BlackmanNuttail>( float p ) { return 2.7504f * (0.3635819f + 0.4891775*cos(M_PI*p) + 0.1365995f*cos(2.f*M_PI*p) + 0.0106411f*cos(3.f*M_PI*p)); }
-template<> float Stft::computeWindowValue<Stft::WindowType_FlatTop>( float p ) { return 1.0f * (1.f + 1.93f*cos(M_PI*p) + 1.29f*cos(2.f*M_PI*p) + 0.388f*cos(3.f*M_PI*p) + 0.032f*cos(4.f*M_PI*p)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Hann>( float p )         { return 1.f  + cos(M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Hamming>( float p )      { return 0.54f  + 0.46f*cos(M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Tukey>( float p )        { return std::fabs(p) < 0.5 ? 2.f : 1.f + cos(M_PI*(std::fabs(p)*2.f-1.f)); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Cosine>( float p )       { return cos(M_PI*p*0.5f); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Lanczos>( float p )      { return p==0?1.f:sin(M_PI*p)/(M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Triangular>( float p )   { return 1.f - fabs(p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Gaussian>( float p )     { return exp2f(-6.492127684f*p*p); } // sigma = 1/3
+template<> float Stft::computeWindowValue<Stft::WindowType_BarlettHann>( float p )  { return 0.62f-0.24f*fabs(p)+0.38f*cos(M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Blackman>( float p )     { return 0.42f + 0.5f*cos(M_PI*p) + 0.08f*cos(2.f*M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_Nuttail>( float p )      { return 0.355768f + 0.487396f*cos(M_PI*p) + 0.144232f*cos(2.f*M_PI*p) + 0.012604f*cos(3.f*M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_BlackmanHarris>( float p )  { return 0.35875f + 0.48829*cos(M_PI*p) + 0.14128f*cos(2.f*M_PI*p) + 0.01168f*cos(3.f*M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_BlackmanNuttail>( float p ) { return 0.3635819f + 0.4891775*cos(M_PI*p) + 0.1365995f*cos(2.f*M_PI*p) + 0.0106411f*cos(3.f*M_PI*p); }
+template<> float Stft::computeWindowValue<Stft::WindowType_FlatTop>( float p ) { return 1.f + 1.93f*cos(M_PI*p) + 1.29f*cos(2.f*M_PI*p) + 0.388f*cos(3.f*M_PI*p) + 0.032f*cos(4.f*M_PI*p); }
 template<Stft::WindowType> float Stft::computeWindowValue( float )                  { return 1.f; }
 
 
@@ -797,12 +797,15 @@ void Stft::
 
     std::vector<float> windowfunction(_window_size);
     float* window = &windowfunction[0];
-#pragma omp parallel for
+    float norm = 0;
     for (int x=0;x<(int)_window_size; ++x)
     {
         float p = 2.f*(x+1)/(_window_size+1) - 1.f;
-        window[x] = computeWindowValue<Type>(p);
+        float a = computeWindowValue<Type>(p);
+        norm += a*a;
+        window[x] = a;
     }
+    norm = sqrt(_window_size / norm);
 
     for (pos.z=0; pos.z<source->size().depth; ++pos.z)
     {
@@ -815,7 +818,7 @@ void Stft::
                 float *i = &in.ref(pos) + w*increment;
 
                 for (unsigned x=0; x<_window_size; ++x)
-                    o[x] = window[x] * i[x];
+                    o[x] = window[x] * i[x] * norm;
             }
         }
     }
@@ -840,12 +843,16 @@ void Stft::
 
     std::vector<float> windowfunction(window_size);
     float* window = &windowfunction[0];
-#pragma omp parallel for
+
+    float norm = 0;
     for (int x=0;x<window_size; ++x)
     {
         float p = 2.f*(x+1)/(window_size+1) - 1.f;
-        window[x] = normalize*computeWindowValue<Type>(p);
+        float a = computeWindowValue<Type>(p);
+        norm += a*a;
+        window[x] = normalize*a;
     }
+    norm = sqrt(_window_size / norm);
 
     int discard = window_size-increment;
     int out0 = discard;
@@ -872,9 +879,9 @@ void Stft::
                 int x0 = w*increment;
                 int x=0;
                 for (; x<window_size-increment; ++x)
-                    if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += window[x] * i[x];
+                    if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += window[x] * i[x] * norm;
                 for (; x<window_size; ++x)
-                    if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] = window[x] * i[x];
+                    if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] = window[x] * i[x] * norm;
             }
         }
     }
