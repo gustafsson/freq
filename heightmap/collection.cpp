@@ -39,7 +39,7 @@
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
 #define MAX_FRACTION_FOR_CACHES (1.f/2.f)
-#define MAX_CREATED_BLOCKS_PER_FRAME 32
+#define MAX_CREATED_BLOCKS_PER_FRAME 8
 
 using namespace Signal;
 
@@ -875,7 +875,7 @@ pBlock Collection::
                         Position a,b;
                         ref.getArea(a,b);
 
-                        for (int merge_level=1; merge_level<4; ++merge_level)
+                        for (int merge_level=0; merge_level<4; ++merge_level)
                         {
                             std::vector<pBlock> next;
                             foreach( const pBlock& bl, gib )
