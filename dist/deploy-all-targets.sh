@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+starttimestamp="`date`"
+
 # setting a target=myThing here will run 
 # qmake CONFIG+=TARGET_myThing DEFINES+=TARGET_myThing
 urls=
@@ -45,3 +47,7 @@ else
 	echo "========================== All urls ==========================="
 	echo -e $urls
 fi
+
+echo
+echo "Deploy started at: ${starttimestamp}"
+echo "Deploy ended at:   `date`"
