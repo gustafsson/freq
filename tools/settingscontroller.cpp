@@ -35,9 +35,8 @@ SettingsController::
 void SettingsController::
         showSettings()
 {
-    // the pointer is owned by project->mainWindowWidget()
+    // the pointer is owned by project->mainWindowWidget(), the dialog has WA_DeleteOnClose
     SettingsDialog* settingsDialog = new SettingsDialog(project, project->mainWindowWidget());
-
     connect(settingsDialog, SIGNAL(finished(int)), SLOT(dialogFinished(int)));
 
     settingsDialog->show();

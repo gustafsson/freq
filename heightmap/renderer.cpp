@@ -65,6 +65,8 @@ Renderer::Renderer( Collection* collection )
     memset(projection_matrix, 0, sizeof(projection_matrix));
     memset(viewport_matrix, 0, sizeof(viewport_matrix));
 
+    _mesh_fraction_width = _mesh_fraction_height = 1 << (int)(_redundancy*.5f);
+
     // Using glut for drawing fonts, so glutInit must be called.
     static int c=0;
     if (0==c)

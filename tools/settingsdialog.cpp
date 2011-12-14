@@ -85,6 +85,7 @@ void SettingsDialog::
     ui->lineEditLogFiles->setText(Sawe::Application::log_directory());
 
     updateResolutionSlider();
+    resolutionChanged(ui->horizontalSliderResolution->value());
     connect(ui->horizontalSliderResolution, SIGNAL(valueChanged(int)), SLOT(resolutionChanged(int)));
 
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(accept()));
@@ -183,10 +184,12 @@ void SettingsDialog::
     float p = 1 - (v-ui->horizontalSliderResolution->minimum())/(float)(ui->horizontalSliderResolution->maximum()-ui->horizontalSliderResolution->minimum());
     // keep in sync with updateResolutionSlider
     float resolution = 1 + p*5;
+    int fraction = 1 << (int)(resolution*0.5);
 
     QSettings().setValue("resolution", resolution);
 
     project->tools().render_view()->model->renderer->redundancy(resolution);
+    project->tools().render_view()->model->renderer->setFractionSize(fraction, fraction);
     project->tools().render_view()->userinput_update();
 }
 
