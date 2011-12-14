@@ -44,7 +44,7 @@ public:
 
     void draw( float scaley );
     void drawAxes( float T );
-    void drawFrustum( float alpha=0.6f );
+    void drawFrustum();
 
     bool draw_piano;
     bool draw_hz;
@@ -59,6 +59,7 @@ public:
     tvector<4, float> fixed_color;
     float y_scale;
     float last_ysize;
+    float last_axes_length;
     unsigned drawn_blocks;
     bool left_handed_axes;
 

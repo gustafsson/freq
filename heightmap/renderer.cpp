@@ -57,6 +57,7 @@ Renderer::Renderer( Collection* collection )
     fixed_color( 1,0,0,1 ),
     y_scale( 1 ),
     last_ysize( 1 ),
+    last_axes_length( 0 ),
     drawn_blocks(0),
     left_handed_axes(true),
     _mesh_index_buffer(0),
@@ -1144,6 +1145,7 @@ void swap( T& x, T& y) {
 
 void Renderer::drawAxes( float T )
 {
+    last_axes_length = T;
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
@@ -1805,7 +1807,7 @@ template<> void glVertex3v( const GLdouble* t ) {    glVertex3dv(t); }
 template<>  void glVertex3v( const GLfloat* t )  {    glVertex3fv(t); }
 
 void Renderer::
-        drawFrustum(float alpha)
+        drawFrustum()
 {
     if (clippedFrustum.empty())
         return;
@@ -1827,28 +1829,26 @@ void Renderer::
     glPushMatrixContext mc(GL_MODELVIEW);
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
-    glColor4f(alpha, alpha, alpha, alpha);
-    glBegin( GL_TRIANGLE_FAN );
-        for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
-                i!=clippedFrustum.end();
-                i++)
-        {
-            //float s = (closest-camera).dot()/(*i-camera).dot();
-            //glColor4f(0,0,0,s*.25f);
-            glVertex3v( i->v );
-        }
-    glEnd();
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_DOUBLE, 0, &clippedFrustum[0]);
 
-    //glColor4f(0,0,0,.85);
-    glBegin( GL_LINE_LOOP );
-        for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
-                i!=clippedFrustum.end();
-                i++)
-        {
-            glVertex3v( i->v );
-        }
-    glEnd();
+
+    // dark inside
+    glColor4f( 1, 1, 1, 1 );
+    glBlendEquation( GL_FUNC_REVERSE_SUBTRACT );
+    glBlendFunc( GL_ONE_MINUS_DST_COLOR, GL_ONE );
+    glDrawArrays( GL_TRIANGLE_FAN, 0, clippedFrustum.size() );
+
+
+    // black border
+    glColor4f( 0, 0, 0, 0.5 );
+    glBlendEquation( GL_FUNC_ADD );
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glLineWidth( 0.5 );
+    glDrawArrays(GL_LINE_LOOP, 0, clippedFrustum.size());
+
+
+    glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_BLEND);
 }
 

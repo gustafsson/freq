@@ -140,7 +140,7 @@ void TimelineView::
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 
     {   // Antialiasing
         glEnable(GL_LINE_SMOOTH);
@@ -205,7 +205,7 @@ void TimelineView::
         emit hideMe();
     }
 
-    _length = std::max( 1.f, _project->worker.length());
+    _length = std::max( 1.f, _render_view->model->renderer->last_axes_length );
     if (_length < 60*10)
         _barHeight = 0;
     else
@@ -304,7 +304,6 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            //_render_view->model->renderer->drawFrustum(0.75);
             _render_view->model->renderer->drawFrustum();
         }
 

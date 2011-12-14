@@ -743,7 +743,7 @@ void RenderView::
         glEnable(GL_LINE_SMOOTH);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
         glEnable(GL_POLYGON_SMOOTH);
-        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+        glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
         glDisable(GL_POLYGON_SMOOTH);
 
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
