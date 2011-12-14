@@ -229,13 +229,13 @@ void NavigationController::
         else if (e->modifiers().testFlag(Qt::AltModifier))
             zoom( e->delta(), ScaleZ );
         else
-            zoom( e->delta(), Zoom );
+            zoom( -e->delta(), Zoom );
     }
     else
     {
         if (e->modifiers().testFlag(Qt::AltModifier))
         {
-            zoom( e->delta(), Zoom );
+            zoom( -e->delta(), Zoom );
         }
         else
         {
