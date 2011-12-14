@@ -21,12 +21,17 @@ namespace Tools
     class ToolMainLoop;
     class RenderView;
 
-    class ToolModel
+    class ToolModel: public QObject
     {
+        Q_OBJECT
     public:
         virtual ~ToolModel() {}
 
         void removeFromRepo();
+        void emitModelChanged();
+
+    signals:
+        void modelChanged(Tools::ToolModel*);
 
     private:
         friend class ToolRepo;

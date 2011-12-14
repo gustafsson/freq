@@ -12,11 +12,14 @@
 
 #include <boost/scoped_ptr.hpp>
 
+namespace Sawe { class ToolModel; }
 namespace Signal { class Worker; }
 
 namespace Tools
 {
+    class ToolModel;
     class RenderView;
+
     namespace Selections {
         class EllipseModel;
         class EllipseView;
@@ -74,6 +77,8 @@ namespace Tools
         void receiveFilterRemoval(int);
 
         void selectionComboBoxToggled();
+
+        void renderModelChanged(Tools::ToolModel* model);
 
     private:
         virtual void changeEvent ( QEvent * event );

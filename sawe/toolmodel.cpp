@@ -17,6 +17,13 @@ namespace Tools
     }
 
 
+    void ToolModel::
+            emitModelChanged()
+    {
+        emit modelChanged(this);
+    }
+
+
     ToolModelP ToolRepo::
             addModel(ToolModel* model)
     {

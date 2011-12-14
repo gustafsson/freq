@@ -5,6 +5,7 @@
 #include "signal/target.h"
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/renderer.h"
+#include "sawe/toolmodel.h"
 
 // gpumisc
 #include <TAni.h>
@@ -26,7 +27,7 @@ namespace Tfr { class Filter; }
 
 namespace Tools
 {
-    class RenderModel
+    class RenderModel: public ToolModel
     {
     public:
         RenderModel(Sawe::Project* p);

@@ -129,6 +129,27 @@ namespace Tools
         peak_model_.reset( new Selections::PeakModel(       render_view()->model) );
         peak_view_.reset( new Selections::PeakView(         peak_model_.data(), &render_view()->model->project()->worker ));
         peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
+
+        connect( render_view()->model, SIGNAL(modelChanged(Tools::ToolModel*)), SLOT(renderModelChanged(Tools::ToolModel*)) );
+    }
+
+
+    void SelectionController::
+            renderModelChanged(Tools::ToolModel* m)
+    {
+        Tools::RenderModel* renderModel = dynamic_cast<Tools::RenderModel*>( m );
+        bool ortho1D = 0==renderModel->_rx;
+        bool frequencySelection = fmod( renderModel->effective_ry() + 90, 180.0 ) == 0.0;
+        bool timeSelection = fmod( renderModel->effective_ry(), 180.0 ) == 0.0;
+        Ui::MainWindow* ui = model()->project()->mainWindow()->getItems();
+
+        ui->actionEllipseSelection->setEnabled( !ortho1D );
+        ui->actionRectangleSelection->setEnabled( !ortho1D );
+        ui->actionSplineSelection->setEnabled( !ortho1D );
+        ui->actionPeakSelection->setEnabled( !ortho1D );
+        ui->actionPolygonSelection->setEnabled( !ortho1D );
+        ui->actionTimeSelection->setEnabled( timeSelection || !ortho1D );
+        ui->actionFrequencySelection->setEnabled( frequencySelection || !ortho1D );
     }
 
 
