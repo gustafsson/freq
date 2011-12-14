@@ -102,12 +102,16 @@ public:
         q2.x = p.x;
         q2.y = p.y*scale+offs;
         float hz = outputAxis.getFrequency( q2.y );
+        //float hz2 = outputAxis.getFrequency( q2.y + ystep );
         q2.y = inputAxis.getFrequencyScalar( hz );
+        //float next_q2y = inputAxis.getFrequencyScalar( hz2 );
 
         DataPos q(floor(q2.x), floor(q2.y));
         ResamplePos k( q2.x - floor(q2.x), q2.y - floor(q2.y) );
 
         float v = 0.f;
+
+        //float ystep = next_q2y - q2.y;
 
 //        if (ystep <= 1.f)
 //        {
@@ -219,7 +223,9 @@ public:
         // when outputAxis and inputAxis are affine transformations of eachother.
         // Hence the kernel is memory bound.
         float hz = outputAxis.getFrequency( p.x );
+        float hz2 = outputAxis.getFrequency( p.x + xstep );
         q2.x = inputAxis.getFrequencyScalar( hz );
+        float next_q2x = inputAxis.getFrequencyScalar( hz2 );
         q2.y = p.y;
 
         //float r = InterpolateFetcher<float, DefaultConverter>(defaultConverter)( q, reader );
@@ -229,11 +235,12 @@ public:
         ResamplePos k( q2.x - floor(q2.x), q2.y - floor(q2.y) );
 
         float v = 0.f;
+        float xdiff = 1.25f*(next_q2x - q2.x);
 
-//        if (xstep <= 1.f)
-//        {
-            if (ystep <= 1.f)
-            {
+        if (xdiff <= 1.f)
+        {
+//            if (ystep <= 1.f)
+//            {
                 v = interpolate(
                         interpolate(
                                 get( q, reader ),
@@ -244,30 +251,30 @@ public:
                                 get( DataPos(q.x+1.f, q.y+1.f), reader ),
                                 k.x),
                         k.y );
-            }
-            else for (float y=q2.y; y<floor(q2.y+ystep); ++y)
-            {
-                v = max(v, interpolate(
-                        get( DataPos(q.x, y), reader),
-                        get( DataPos(q.x+1.f, y), reader),
-                        k.x));
-            }
-//        }
-//        else
-//        {
+//            }
+//            else for (float y=q2.y; y<floor(q2.y+ystep) && y<ymax; ++y)
+//            {
+//                v = max(v, interpolate(
+//                        get( DataPos(q.x, y), reader),
+//                        get( DataPos(q.x+1.f, y), reader),
+//                        k.x));
+//            }
+        }
+        else
+        {
 //            if (ystep <= 1.f)
 //            {
-//                for (float x=q2.x; x<floor(q2.x+xstep); ++x)
-//                {
-//                    v = max(v, interpolate(
-//                            get( DataPos(x, q.y), reader),
-//                            get( DataPos(x, q.y+1.f), reader),
-//                            k.y));
-//                }
+                for (float x=q2.x; x<floor(q2.x+xdiff); ++x)
+                {
+                    v = max(v, interpolate(
+                            get( DataPos(x, q.y), reader),
+                            get( DataPos(x, q.y+1.f), reader),
+                            k.y));
+                }
 //            }
 //            else
 //            {
-//                for (float x=q2.x; x<floor(q2.x+xstep); ++x)
+//                for (float x=q2.x; x<floor(q2.x+xdiff); ++x)
 //                {
 //                    for (float y=q2.y; y<floor(q2.y+ystep); ++y)
 //                    {
@@ -275,7 +282,7 @@ public:
 //                    }
 //                }
 //            }
-//        }
+        }
         return v;
     }
 
@@ -289,8 +296,9 @@ public:
     Tfr::FreqAxis inputAxis;
     Tfr::FreqAxis outputAxis;
 
-//    float xstep;
+    float xstep;
     float ystep;
+    float ymax;
 };
 
 
@@ -447,13 +455,13 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     axes.scale = inputRegion.height();
     axes.xmax = validInputs.last;
 
-    axes.xstep = (validInputs.last - validInputs.first) / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
+    axes.xstep = (validInputs.last - validInputs.first - 1) / (float)sz_output.width * outputRegion.width()/inputRegion.width();
     // axes.ystep = 1; // because of varying frequency density ystep should be computed in the kernel together with the FreqAxes
     // axes.ystep = input->size().height / (float)sz_output.height * outputRegion.height()/(float)inputRegion.height();
 
     if (!enable_subtexel_aggregation)
     {
-        axes.xstep = 1;
+        axes.xstep = 0;
         // axes.ystep = 1;
     }
 
@@ -572,7 +580,9 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
-                   AxisConverter axisConverter)
+                   AxisConverter axisConverter,
+                   bool enable_subtexel_aggregation
+                   )
 {
 #ifdef __CUDACC__
     cudaPitchedPtr cpp = CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr();
@@ -587,7 +597,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
                     DataStorageSize( nScales, nSamples ), p );
 #endif
 
-    DataStorageSize sz_input = input->size();
+    DataStorageSize sz_input = input->size(); // != inputp->size()
     DataStorageSize sz_output = output->size();
 
 
@@ -604,8 +614,15 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     fetcher.outputAxis = outputAxis;
 
     // xstep and ystep are used after transposing to input coordinates
-    fetcher.ystep = input->size().height / (float)sz_output.width * outputRegion.width()/(float)inputRegion.width();
-    // fetcher.xstep = 1; // because of varying frequency density xstep should be computed in the kernel with the FreqAxes
+    fetcher.ystep = (sz_input.height-1) / (float)(sz_output.width-1) * outputRegion.width()/inputRegion.width();
+    fetcher.xstep = 1.f/(sz_output.width-1) * outputRegion.height()/inputRegion.height();
+    fetcher.ymax = sz_input.height;
+
+    if (!enable_subtexel_aggregation)
+    {
+        fetcher.ystep = 0;
+        fetcher.xstep = 0;
+    }
 
     resample2d_fetcher(
                 input,
@@ -630,7 +647,8 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis,
-                   float normalization_factor)
+                   float normalization_factor,
+                   bool enable_subtexel_aggregation)
 {
     // fetcher.factor makes it roughly equal height to Cwt
     switch(amplitudeAxis)
@@ -639,19 +657,22 @@ void resampleStft( Tfr::ChunkData::Ptr input,
         resampleStftAxis(
                 input, nScales, nSamples, output, inputRegion, outputRegion,
                 inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor));
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor),
+                enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         resampleStftAxis(
                 input, nScales, nSamples, output, inputRegion, outputRegion,
                 inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor));
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor),
+                enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         resampleStftAxis(
                 input, nScales, nSamples, output, inputRegion, outputRegion,
                 inputAxis, outputAxis,
-                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor));
+                ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
+                enable_subtexel_aggregation);
         break;
     }
 }

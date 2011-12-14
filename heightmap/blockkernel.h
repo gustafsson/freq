@@ -93,7 +93,7 @@ extern "C"
                  Tfr::FreqAxis outputAxis,
                  Heightmap::AmplitudeAxis amplitudeAxis,
                  float normalization_factor,
-                 bool full_resolution
+                 bool enable_subtexel_aggregation
                  );
 
 extern "C"
@@ -137,6 +137,7 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                    Tfr::FreqAxis inputAxis,
                    Tfr::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis,
-                   float normalization_factor);
+                   float normalization_factor,
+                   bool enable_subtexel_aggregation);
 
 #endif // HEIGHTMAPBLOCK_CU_H
