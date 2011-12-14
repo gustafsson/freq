@@ -95,7 +95,7 @@ void NavigationController::
 void NavigationController::
         scaleUp()
 {
-    zoom( -40, ScaleZ );
+    zoom( -2, ScaleZ );
     _view->userinput_update();
 }
 
@@ -103,7 +103,7 @@ void NavigationController::
 void NavigationController::
         scaleDown()
 {
-    zoom( 40, ScaleZ );
+    zoom( 2, ScaleZ );
     _view->userinput_update();
 }
 
@@ -111,7 +111,7 @@ void NavigationController::
 void NavigationController::
         scaleLeft()
 {
-    zoom( 40, ScaleX );
+    zoom( 2, ScaleX );
     _view->userinput_update();
 }
 
@@ -119,7 +119,7 @@ void NavigationController::
 void NavigationController::
         scaleRight()
 {
-    zoom( -40, ScaleX );
+    zoom( -2, ScaleX );
     _view->userinput_update();
 }
 
@@ -253,8 +253,8 @@ void NavigationController::
             if (success1 && success2)
             {
                 if (e->modifiers().testFlag(Qt::ControlModifier))
-                    zoomCamera( last.time - current.time,
-                                last.scale - current.scale,
+                    zoomCamera( (current.time - last.time)*_view->model->xscale/_view->model->_pz,
+                                (current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
                                 0 );
                 else
                     moveCamera( last.time - current.time, last.scale - current.scale);
@@ -327,8 +327,8 @@ void NavigationController::
         Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
         if (success1 && success2)
         {
-            zoomCamera( last.time - current.time,
-                        last.scale - current.scale,
+            zoomCamera( (current.time - last.time)*_view->model->xscale/_view->model->_pz,
+                        (current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
                         0 );
         }
     }
@@ -440,7 +440,7 @@ void NavigationController::
 void NavigationController::
         zoomCamera( float dt, float ds, float dz )
 {
-    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt*0.05, ds*0.05, dz*0.005 ));
+    Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz*0.005 ));
     _view->model->project()->commandInvoker()->invokeCommand( cmd );
 }
 
