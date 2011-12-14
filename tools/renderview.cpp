@@ -614,6 +614,7 @@ void RenderView::
             continue;
 
         drawCollection(i, yscale);
+        ++i;
         break;
     }
 
