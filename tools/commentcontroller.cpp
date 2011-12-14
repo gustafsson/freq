@@ -73,6 +73,10 @@ void CommentController::
     }
 
     view->model()->pos = p;
+
+    // keep in sync with CommentView::updatePosition()
+    view->model()->scroll_scale = 0.5f*sqrt(-view_->model->_pz);
+
     view->setHtml( text );
     view->show();
 }
@@ -192,6 +196,10 @@ void CommentController::
     if (comment_)
     {
         comment_->model()->screen_pos[0] = UpdateModelPositionFromScreen;
+
+        // keep in sync with CommentView::updatePosition()
+        comment_->model()->scroll_scale = 0.5f*sqrt(-view_->model->_pz);
+
         comment_->setEditFocus(true);
         comment_ = 0;
     }
