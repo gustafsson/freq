@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include <complex>
 
-//#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
-//#define BLOCKindexType GLushort
-#define BLOCK_INDEX_TYPE GL_UNSIGNED_INT
-#define BLOCKindexType GLuint
+#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
+#define BLOCKindexType GLushort
+//#define BLOCK_INDEX_TYPE GL_UNSIGNED_INT
+//#define BLOCKindexType GLuint
 
 
 
