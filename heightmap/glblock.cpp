@@ -25,14 +25,19 @@
 #define TIME_GLBLOCK if(0)
 
 
+using namespace std;
+
+
 namespace Heightmap {
 
 // Helpers based on Cuda SDK sample, ocean FFT
 // TODO check license terms of the Cuda SDK
 
 // Attach shader to a program
-void attachShader(GLuint prg, GLenum type, const char *name)
+string attachShader(GLuint prg, GLenum type, const char *name)
 {
+    stringstream result;
+
     TIME_COMPILESHADER TaskTimer tt("Compiling shader %s", name);
     try {
         GLuint shader;
@@ -44,9 +49,9 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
         QResource qr(name);
         if (!qr.isValid())
-            throw std::ios::failure(std::string("Couldn't find shader resource ") + name);
+            throw ios::failure(string("Couldn't find shader resource ") + name);
         if ( 0 == qr.size())
-            throw std::ios::failure(std::string("Shader resource empty ") + name);
+            throw ios::failure(string("Shader resource empty ") + name);
 
         size = qr.size();
         src = (char*)qr.data();
@@ -60,29 +65,21 @@ void attachShader(GLuint prg, GLenum type, const char *name)
         int len;
 
         glGetShaderInfoLog(shader, sizeof(shaderInfoLog), (GLsizei*)&len, shaderInfoLog);
+        QString qshaderInfoLog(shaderInfoLog);
 
         bool showShaderLog = !compiled;
-        showShaderLog |= 0 != QString(shaderInfoLog).contains("warning", Qt::CaseInsensitive);
-        showShaderLog |= 0 != QString(shaderInfoLog).contains("error", Qt::CaseInsensitive) && 0 == QString(shaderInfoLog).contains("No errors", Qt::CaseInsensitive);
+        showShaderLog |= !qshaderInfoLog.isEmpty() && qshaderInfoLog != "No errors";
+//        showShaderLog |= 0 != qshaderInfoLog.contains("fail", Qt::CaseInsensitive);
+//        showShaderLog |= 0 != qshaderInfoLog.contains("warning", Qt::CaseInsensitive);
+//        showShaderLog |= 0 != qshaderInfoLog.contains("error", Qt::CaseInsensitive) && 0 == qshaderInfoLog.contains("No errors", Qt::CaseInsensitive);
 #if DEBUG_
         showShaderLog |= strlen(shaderInfoLog)>0;
 #endif
 
         if (showShaderLog)
         {
-            TaskInfo ti("Failed to compile shader %s", name );
-            TaskInfo("%s", shaderInfoLog);
-
-            QMessageBox* message = new QMessageBox(
-                    QMessageBox::Critical,
-                    "Couldn't properly setup graphics",
-                    "Sonic AWE couldn't properly setup required graphics (shader compile error). "
-                    "Please file this as a bug report to help us fix this. "
-                    "See more info in 'Help->Report a bug'");
-
-            message->setDetailedText( shaderInfoLog );
-            message->show();
-            message->setAttribute( Qt::WA_DeleteOnClose );
+            result << "Failed to compile shader '" << name << "'"  << endl
+                   << shaderInfoLog << endl;
         }
 
         if (compiled)
@@ -92,10 +89,12 @@ void attachShader(GLuint prg, GLenum type, const char *name)
 
         glDeleteShader(shader);
 
-    } catch (const std::exception &x) {
+    } catch (const exception &x) {
         TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
         throw;
     }
+
+    return result.str();
 }
 
 // Create shader program from vertex shader and fragment shader files
@@ -103,11 +102,12 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 {
     GLint linked;
     GLuint program;
+    stringstream resultLog;
 
     program = glCreateProgram();
     try {
-        attachShader(program, GL_VERTEX_SHADER, vertFileName);
-        attachShader(program, GL_FRAGMENT_SHADER, fragFileName);
+        resultLog << attachShader(program, GL_VERTEX_SHADER, vertFileName);
+        resultLog << attachShader(program, GL_FRAGMENT_SHADER, fragFileName);
 
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &linked);
@@ -115,28 +115,33 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
         char programInfoLog[2048] = "";
         glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
         programInfoLog[sizeof(programInfoLog)-1] = 0;
+        QString qprogramInfoLog(programInfoLog);
 
         bool showProgramLog = !linked;
-        showProgramLog |= 0 != QString(programInfoLog).contains("warning", Qt::CaseInsensitive);
-        showProgramLog |= 0 != QString(programInfoLog).contains("error", Qt::CaseInsensitive) && 0 == QString(programInfoLog).contains("No errors", Qt::CaseInsensitive);
+        showProgramLog |= !qprogramInfoLog.isEmpty() && qprogramInfoLog != "No errors";
+//        showProgramLog |= 0 != qprogramInfoLog.contains("fail", Qt::CaseInsensitive);
+//        showProgramLog |= 0 != qprogramInfoLog.contains("warning", Qt::CaseInsensitive);
+//        showProgramLog |= 0 != qprogramInfoLog.contains("error", Qt::CaseInsensitive) && 0 == qprogramInfoLog.contains("No errors", Qt::CaseInsensitive);
 #if DEBUG_
         showProgramLog |= strlen(programInfoLog)>0;
 #endif
 
         if (showProgramLog)
         {
-            TaskInfo ti("Failed to link fragment shader (%s) with vertex shader (%s)",
-                     fragFileName, vertFileName );
-            TaskInfo("%s", programInfoLog);
+            stringstream log;
+            log     << "Failed to link fragment shader (" << fragFileName << ") "
+                    << "with vertex shader (" << vertFileName << ")" << endl
+                    << programInfoLog << endl
+                    << resultLog.str();
 
             QMessageBox* message = new QMessageBox(
                     QMessageBox::Critical,
                     "Couldn't properly setup graphics",
-                    "Sonic AWE couldn't properly setup required graphics (shader link error). "
+                    "Sonic AWE couldn't properly setup required graphics. "
                     "Please file this as a bug report to help us fix this. "
                     "See more info in 'Help->Report a bug'");
 
-            message->setDetailedText( programInfoLog );
+            message->setDetailedText( log.str().c_str() );
             message->setAttribute( Qt::WA_DeleteOnClose );
             message->show();
         }

@@ -16,6 +16,10 @@
 
 #include <boost/foreach.hpp>
 
+// Qt
+#include <QSettings>
+#include <QMessageBox>
+
 #ifdef _MSC_VER
 #include "msc_stdc.h"
 #endif
@@ -232,6 +236,7 @@ void Renderer::init()
 #endif
 
 #ifndef __APPLE__
+    /*
     if (0 != glewInit() ) {
         fprintf(stderr, "ERROR: Couldn't initialize \"glew\".");
         fflush(stderr);
@@ -259,13 +264,105 @@ void Renderer::init()
                 "  GL_ARB_texture_float.\n\n"
                 "No such graphics card was found, Sonic AWE can not start.");
     }
+    */
 #endif
+
+    const char* glversion = (const char*)glGetString(GL_VERSION);
+    string glversionstring(glversion);
+    stringstream versionreader(glversionstring);
+    int gl_major=0, gl_minor=0;
+    char dummy;
+    versionreader >> gl_major >> dummy >> gl_minor;
+
+    if ((1 > gl_major )
+        || ( 1 == gl_major && 4 > gl_minor ))
+    {
+        QMessageBox* message = new QMessageBox(
+                QMessageBox::Critical,
+                "Couldn't properly setup graphics",
+                "Sonic AWE requires a graphics card that supports OpenGL 2.0 and no such graphics card was found.\n\n"
+                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.");
+
+        message->setAttribute( Qt::WA_DeleteOnClose );
+        message->show();
+
+        // fail
+        return;
+    }
+
+    const char* exstensions[] = {
+        "GL_ARB_vertex_buffer_object",
+        "GL_ARB_pixel_buffer_object",
+        "",
+        "GL_ARB_texture_float"
+    };
+
+    bool required_extension = true;
+    const char* all_extensions = (const char*)glGetString(GL_EXTENSIONS);
+    TaskInfo("Checking extensions %s", all_extensions);
+    for (unsigned i=0; i < sizeof(exstensions)/sizeof(exstensions[0]); ++i)
+    {
+        if (0 == strlen(exstensions[i]))
+        {
+            required_extension = false;
+            continue;
+        }
+
+
+        bool hasExtension = 0 != strstr(all_extensions, exstensions[i]);
+        TaskInfo("%s %s extension %s",
+                 hasExtension?"Found":"Couldn't find",
+                 required_extension?"required":"preferred",
+                 exstensions[i]);
+
+        if (hasExtension)
+            continue;
+
+        std::stringstream err;
+        std::stringstream details;
+
+        err << "Sonic AWE can't properly setup graphics. ";
+        if (required_extension)
+        {
+            err << "Sonic AWE requires features that couldn't be found on your graphics card.";
+            details << "Sonic AWE requires a graphics card that supports '" << exstensions[i] << "'";
+        }
+        else
+        {
+            bool warn_expected_opengl = QSettings().value("warn_expected_opengl", true).toBool();
+            if (!warn_expected_opengl)
+                continue;
+             QSettings().setValue("warn_expected_opengl", false);
+
+            err << "Sonic AWE works better with features that couldn't be found on your graphics card. "
+                << "However, Sonic AWE might still run. Click OK to try.";
+            details << "Sonic AWE works better with a graphics card that supports '" << exstensions[i] << "'";
+        }
+
+        err << endl << endl << "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.";
+
+        QMessageBox* message = new QMessageBox(
+                required_extension?QMessageBox::Critical : QMessageBox::Warning,
+                "Couldn't properly setup graphics",
+                err.str().c_str());
+
+        message->setDetailedText( details.str().c_str() );
+        message->setAttribute( Qt::WA_DeleteOnClose );
+        message->show();
+
+        if (required_extension)
+            return;
+    }
 
     // load shader
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
     //_shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
+
+    setSize(2,2);
+    beginVboRendering();
+    endVboRendering();
 
     _initialized=Initialized;
 

@@ -1245,11 +1245,13 @@ void RenderView::
         c->reset(); // note, not c.reset()
     }
 
-    if (model->renderer)
+    if (model->renderer && model->renderer->isInitialized())
     {
         // model->renderer might be 0 if we're about to close the application
+        // and don't bother recreating renderer if initialization has previously failed
 
         Heightmap::Renderer::ColorMode old_color_mode = model->renderer->color_mode;
+
         model->renderer.reset();
         model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
         model->renderer->color_mode = old_color_mode;
