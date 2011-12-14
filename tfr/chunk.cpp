@@ -86,7 +86,7 @@ Signal::Interval Chunk::
     if (0 == chunk_offset)
     {
         I.first = 0;
-        I.last = std::floor((nSamples() - .5f) * scale + 0.5);
+        I.last = std::floor(nSamples() * scale + 0.5);
     }
 
     return I;
