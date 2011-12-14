@@ -323,6 +323,8 @@ void GlBlock::
 void GlBlock::
         create_texture(bool create_nearest)
 {
+    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
+
     if (0==_tex_height)
     {
         glGenTextures(1, &_tex_height);
@@ -336,9 +338,7 @@ void GlBlock::
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
-//        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
-        //glGenerateMipmap(GL_TEXTURE_2D);
+        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -357,12 +357,7 @@ void GlBlock::
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 
-        // Some GPUs are supposeddly really slow to use GL_LUMINANCE_FLOAT32_ATI
-        // in vertex shaders, so we're trying with GL_RGBA_FLOAT32_ATI instead
-        // update allocated_bytes_per_element when this type is changed
-
-        glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE32F_ARB,w, h,0, GL_LUMINANCE, GL_FLOAT, 0);
-        //glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w, h,0, GL_RED, GL_FLOAT, 0);
+        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -393,9 +388,12 @@ void GlBlock::
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height);
 
-        GlException_CHECK_ERROR();
-        glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_RED, GL_FLOAT, 0);
-        GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+        static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
+        if (!hasTextureFloat)
+            glPixelTransferf( GL_RED_SCALE, 0.1f );
+
+        // See method comment in header file if you get an error on this row
+        GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
@@ -405,14 +403,15 @@ void GlBlock::
             glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
             glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
 
-            GlException_CHECK_ERROR();
-            glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, GL_RED, GL_FLOAT, 0);
-            GlException_CHECK_ERROR(); // See method comment in header file if you get an error on this row
+            // See method comment in header file if you get an error on this row
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
             glBindTexture(GL_TEXTURE_2D, 0);
             glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
         }
 
+        if (!hasTextureFloat)
+            glPixelTransferf( GL_RED_SCALE, 1.0f );
 
         TIME_GLBLOCK ComputationSynchronize();
 
@@ -464,8 +463,8 @@ void GlBlock::
     {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, _tex_height_nearest );
+        glActiveTexture(GL_TEXTURE0);
     }
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _tex_height);
 
     const bool wireFrame = false;
@@ -480,13 +479,14 @@ void GlBlock::
     } else {
         glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
     }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
     if (withHeightMap)
     {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE0);
     }
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
     TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();

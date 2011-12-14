@@ -14,9 +14,10 @@ void main()
 {
     // We want linear interpolation all the way out to the edge
     vec2 vertex = clamp(gl_Vertex.xz, 0.0, 1.0);
-    gl_TexCoord[0].xy = vertex*scale_tex + offset_tex;
+    vec2 tex = vertex*scale_tex + offset_tex;
 
-    vec2 tex = gl_TexCoord[0].xy;
+    gl_TexCoord[0].xy = tex;
+
     vec2 tex1 = max(tex - offset_tex*2.0, offset_tex);
     vec2 tex2 = min(tex + offset_tex*2.0, 1.0-offset_tex);
 
@@ -33,11 +34,11 @@ void main()
     vec3 worldSpaceNormal = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
                                    vec3(tex2.x-tex1.x,  slope.x, 0.0));
 
-    if (vertex != gl_Vertex.xz)
-        height *= 0.5;
+    height = mix( 0.0, height, vertex==gl_Vertex.xz );
 
-    // calculate position and transform to homogeneous clip space
     vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
+
+    // transform to homogeneous clip space
     gl_Position      = gl_ModelViewProjectionMatrix * pos;
 
     vec3 eyeSpacePos      = (gl_ModelViewMatrix * pos).xyz;

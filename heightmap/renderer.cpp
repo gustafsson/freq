@@ -576,7 +576,8 @@ void Renderer::beginVboRendering()
 
     // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorMode, uniFixedColor, uniContourPlot, uniYScale, uniScaleTex, uniOffsTex;
+        TaskTimer tt("Setting shader parameters");
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorTextureFactor, uniFixedColor, uniContourPlot, uniYScale, uniScaleTex, uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -587,14 +588,17 @@ void Renderer::beginVboRendering()
         uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
         glUniform1i(uniVertText2, 2); // GL_TEXTURE2
 
-        uniColorMode = glGetUniformLocation(_shader_prog, "colorMode");
-        glUniform1i(uniColorMode, (int)color_mode);
-
         uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
-        glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
+        if (color_mode == ColorMode_Grayscale)
+            glUniform4f(uniFixedColor, 1.f, 1.f, 1.f, 1.f);
+        else
+            glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
+
+        uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
+        glUniform1f(uniColorTextureFactor, color_mode == ColorMode_Rainbow ? 1.f : 0.f );
 
         uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
-        glUniform1i(uniContourPlot, draw_contour_plot);
+        glUniform1f(uniContourPlot, draw_contour_plot ? 1.f : 0.f );
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
