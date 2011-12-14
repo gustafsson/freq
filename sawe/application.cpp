@@ -77,7 +77,8 @@ Application::
 :   QApplication(argc, argv),
     default_record_device(-1)
 {
-    shared_glwidget_ = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+    QGLFormat glformat;
+    shared_glwidget_ = new QGLWidget(glformat);
     shared_glwidget_->makeCurrent();
 
     setOrganizationName("MuchDifferent");

@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
                 TaskInfo("renderer: %s", glGetString(GL_RENDERER));
                 TaskInfo("version: %s", glGetString(GL_VERSION));
                 TaskInfo("shading language: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-                TaskInfo("exstensions: %s", glGetString(GL_EXTENSIONS));
+                TaskInfo("extensions/capabilities/caps: %s", glGetString(GL_EXTENSIONS));
             }
 
             boost::gregorian::date today = boost::gregorian::day_clock::local_day();
