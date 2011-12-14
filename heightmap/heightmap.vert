@@ -34,7 +34,7 @@ void main()
     vec3 worldSpaceNormal = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
                                    vec3(tex2.x-tex1.x,  slope.x, 0.0));
 
-    height = mix( 0.0, height, vertex==gl_Vertex.xz );
+    height = vertex==gl_Vertex.xz ? height : 0.0;
 
     vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
 

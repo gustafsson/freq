@@ -135,6 +135,8 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
                     << programInfoLog << endl
                     << resultLog.str();
 
+            TaskInfo("Couldn't properly setup graphics\n%s", log.str().c_str());
+
             QMessageBox* message = new QMessageBox(
                     QMessageBox::Critical,
                     "Couldn't properly setup graphics",
@@ -146,6 +148,17 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
             message->setAttribute( Qt::WA_DeleteOnClose );
             message->show();
         }
+
+        glUseProgram(program);
+
+        GLenum glError = glGetError();
+        if (GL_NO_ERROR != glError)
+        {
+            TaskInfo("glUseProgram failed %s", gluErrorString(glError));
+            program = 0;
+        }
+
+        glUseProgram( 0 );
 
     } catch (...) {
         glDeleteProgram(program);

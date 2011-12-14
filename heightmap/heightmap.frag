@@ -31,7 +31,7 @@ void main()
     curveColor *= shadow; // curveColor*shadow + vec4(fresnel);
     curveColor = mix(vec4(1.0), curveColor, f);
 
-    v = mix( vertex_height, v, 0.0==vertex_height );
+    v = 0.0==vertex_height ? v : vertex_height;
     float isarithm1 = fract( v * 25.0) < 0.93 ? 1.0 : 0.9;
     float isarithm2 = fract( v * 5.0) < 0.93 ? 1.0 : 0.9;
     curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);

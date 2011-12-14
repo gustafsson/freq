@@ -385,6 +385,9 @@ void Renderer::init()
     _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
     //_shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
+    if (0 == _shader_prog)
+        return;
+
     createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
 
     setSize(2,2);
