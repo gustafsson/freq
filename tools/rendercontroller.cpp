@@ -425,6 +425,8 @@ Signal::PostSink* RenderController::
     Signal::pOperation blockop( blockfilter );
     Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), view, this));
 
+    model()->renderSignalTarget->allow_cheat_resolution( dynamic_cast<Tfr::CwtFilter*>(blockfilter) );
+
     std::vector<Signal::pOperation> v;
     v.push_back( channelop );
     Signal::PostSink* ps = model()->renderSignalTarget->post_sink();

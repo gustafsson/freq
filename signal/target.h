@@ -124,6 +124,10 @@ public:
 
     /**
       */
+    void allow_cheat_resolution(bool);
+
+    /**
+      */
     unsigned next_good_size( unsigned current_valid_samples_per_chunk );
 
     /**

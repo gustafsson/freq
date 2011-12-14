@@ -358,6 +358,13 @@ bool Target::
 }
 
 
+void Target::
+        allow_cheat_resolution(bool value)
+{
+    allow_cheat_resolution_ = value;
+}
+
+
 template<typename T>
 T* findType(Signal::pOperation p)
 {
