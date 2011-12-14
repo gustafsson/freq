@@ -4,6 +4,7 @@
 
 // heightmap
 #include "heightmap/renderer.h"
+#include "heightmap/collection.h"
 
 // tfr
 #include "tfr/cwt.h"

@@ -2,25 +2,31 @@
 #define HEIGHTMAPRENDERER_H
 
 // Heightmap namespace
-#include "collection.h"
 #include "glblock.h"
+#include "reference.h"
 
 // gpumisc
 #include <tmatrix.h>
-#include <GlTexture.h>
 
 // std
 #include <sstream>
+#include <vector>
 
 // OpenGL
 #include "gl.h"
 
+// boost
+#include <boost/scoped_ptr.hpp>
+
 typedef tvector<3,GLdouble> GLvector;
+class GlTexture;
 
 namespace Heightmap {
 
     GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
     GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+
+    class Collection;
 
 class Renderer
 {

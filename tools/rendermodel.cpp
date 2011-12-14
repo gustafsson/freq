@@ -1,9 +1,12 @@
 #include "rendermodel.h"
 #include "sawe/project.h"
 
+#include "heightmap/collection.h"
 #include "heightmap/renderer.h"
 
 #include "tfr/filter.h"
+
+#include <GlTexture.h>
 
 namespace Tools
 {

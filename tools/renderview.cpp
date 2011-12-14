@@ -7,15 +7,17 @@
 #include "ui/mainwindow.h"
 
 // Sonic AWE
-#include "sawe/project.h"
-#include "sawe/configuration.h"
-#include "tfr/cwt.h"
-#include "toolfactory.h"
-#include "support/drawworking.h"
-#include "support/drawwatermark.h"
 #include "adapters/microphonerecorder.h"
 #include "heightmap/renderer.h"
+#include "heightmap/block.h"
+#include "heightmap/collection.h"
 #include "sawe/application.h"
+#include "sawe/project.h"
+#include "sawe/configuration.h"
+#include "support/drawwatermark.h"
+#include "support/drawworking.h"
+#include "tfr/cwt.h"
+#include "toolfactory.h"
 
 // gpumisc
 #include <computationkernel.h>

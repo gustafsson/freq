@@ -1,7 +1,7 @@
 #ifndef PLAYBACKCONTROLLER_H
 #define PLAYBACKCONTROLLER_H
 
-#include "signal/operation.h"
+#include "signal/poperation.h"
 
 #include <QObject>
 

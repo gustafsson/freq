@@ -46,17 +46,6 @@ using namespace Signal;
 namespace Heightmap {
 
 
-///// HEIGHTMAP::BLOCK
-
-Block::
-        ~Block()
-{
-    TaskInfo("Deleting block %s", ref.toString().c_str());
-}
-
-
-///// HEIGHTMAP::COLLECTION
-
 Collection::
         Collection( pOperation target )
 :   target( target ),

@@ -2,7 +2,7 @@
 #define CHANGESELECTIONCOMMAND_H
 
 #include "command.h"
-#include "signal/operation.h"
+#include "signal/poperation.h"
 
 namespace Tools {
     class SelectionController;

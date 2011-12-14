@@ -1,6 +1,9 @@
 #include "heightmap/reference.h"
 #include "heightmap/collection.h"
 
+#include "signal/operation.h"
+#include "tfr/transform.h"
+
 namespace Heightmap {
 
 bool Reference::

@@ -8,6 +8,7 @@
 #include <redirectstdout.h>
 #include <neat_math.h>
 #include <computationkernel.h>
+#include <ThreadChecker.h>
 
 // Qt
 #include <QtGui/QMessageBox>

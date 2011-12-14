@@ -5,11 +5,12 @@
 #include "renderer.h"
 
 // gpumisc
-#include <vbo.h>
-#include <demangle.h>
-#include <GlException.h>
+#include "vbo.h"
+#include "demangle.h"
+#include "GlException.h"
 #include "cpumemorystorage.h"
 #include "computationkernel.h"
+#include "TaskTimer.h"
 
 // std
 #include <stdio.h>

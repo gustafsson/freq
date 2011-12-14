@@ -3,14 +3,12 @@
 
 // Heightmap namespace
 #include "reference_hash.h"
-#include "glblock.h"
 #include "amplitudeaxis.h"
+#include "tfr/freqaxis.h"
 
 // Sonic AWE
 #include "signal/intervals.h"
-#include "signal/operation.h"
-#include "tfr/chunk.h"
-#include "tfr/transform.h"
+#include "signal/poperation.h"
 
 // gpumisc
 #include "ThreadChecker.h"
@@ -90,64 +88,17 @@ Spectogram. For altering the output refer to transform-inverse.h.
 The term scaleogram is not used in the source code, in favor of spectrogram.
 */
 
+
+namespace Tfr {
+    class Chunk;
+    class Transform;
+}
+
 namespace Heightmap {
 
 class Renderer;
+class Block;
 
-// TODO it would probably look awesome if new blocks weren't displayed
-// instantaneously but rather faded in from 0 or from their previous value.
-// This method could be used to slide between the images of two different
-// signals or channels as well. This should be implemented by rendering two or
-// more separate collections in Heightmap::Renderer. It would fetch Blocks by
-// their 'Reference' from the different collections and use a shader to
-// transfer results between them.
-class Block {
-public:
-    Block( Reference ref )
-        :
-        frame_number_last_used(-1),
-        ref(ref)
-#ifndef SAWE_NO_MUTEX
-        ,new_data_available( false )
-#endif
-    {}
-
-    ~Block();
-
-    // TODO move this value to a complementary class
-    unsigned frame_number_last_used;
-
-    // Zoom level for this slot, determines size of elements
-    Reference ref;
-    pGlBlock glblock;
-
-    typedef DataStorage<float>::Ptr pData;
-
-    /**
-        TODO test this in a multi gpu environment
-        For multi-GPU or (just multithreaded) environments, each GPU-thread have
-        its own cuda context and data can't be  transfered between cuda contexts
-        without first going to the cpu. Therefore a 'cpu_copy' is kept in CPU
-        memory so that the block data is readily available for merging new
-        blocks. Only one GPU may access 'cpu_copy' at once. The OpenGL textures
-        are updated from cpu_copy whenever new_data_available is set to true.
-
-        For single-GPU environments, 'cpu_copy' is not used.
-    */
-#ifndef SAWE_NO_MUTEX
-    pData cpu_copy;
-    bool new_data_available;
-    QMutex cpu_copy_mutex;
-#endif
-
-    /**
-      valid_samples describes the intervals of valid samples contained in this block.
-      it is relative to the start of the heightmap, not relative to this block unless this is
-      the first block in the heightmap. The samplerate is the sample rate of the full
-      resolution signal.
-      */
-    Signal::Intervals valid_samples, non_zero;
-};
 typedef boost::shared_ptr<Block> pBlock;
 
 
@@ -224,7 +175,7 @@ public:
     /**
       Extract the transform from the current filter.
       */
-    Tfr::pTransform transform();
+    boost::shared_ptr<Tfr::Transform> transform();
 
 
     unsigned long cacheByteSize();
@@ -330,7 +281,7 @@ private:
     /**
       TODO comment
       */
-    void        mergeStftBlock( Tfr::pChunk stft, pBlock block );
+    void        mergeStftBlock( boost::shared_ptr<Tfr::Chunk> stft, pBlock block );
 
 
     /**

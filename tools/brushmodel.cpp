@@ -1,5 +1,8 @@
 #include "brushmodel.h"
 
+#include "heightmap/block.h"
+#include "heightmap/collection.h"
+
 #include "sawe/project.h"
 #include "tfr/cwt.h"
 

@@ -5,8 +5,12 @@
 #include "tfr/stftfilter.h"
 #include "tfr/cepstrumfilter.h"
 #include "tfr/drawnwaveformfilter.h"
+#include "heightmap/block.h"
+#include "heightmap/amplitudeaxis.h"
 #include "heightmap/collection.h"
+
 #include <iostream>
+#include <vector>
 
 namespace Heightmap
 {

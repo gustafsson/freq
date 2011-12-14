@@ -1,19 +1,28 @@
+// gpusmisc/OpenGL
 #include <gl.h>
 
-#include "heightmap/renderer.h"
-#include "sawe/configuration.h"
-
+// glut
 #ifndef __APPLE__
 #   include <GL/glut.h>
 #else
 #   include <GLUT/glut.h>
 #endif
 
+// sonicawe
+#include "heightmap/renderer.h"
+#include "heightmap/collection.h"
+#include "heightmap/block.h"
+#include "sawe/configuration.h"
+
+// gpumisc
 #include <float.h>
 #include <GlException.h>
 #include <computationkernel.h>
 #include <glPushContext.h>
+#include <TaskTimer.h>
+#include <GlTexture.h>
 
+// boost
 #include <boost/foreach.hpp>
 
 // Qt

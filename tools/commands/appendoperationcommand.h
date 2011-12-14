@@ -2,7 +2,7 @@
 #define APPENDOPERATIONCOMMAND_H
 
 #include "operationcommand.h"
-#include "signal/operation.h"
+#include "signal/poperation.h"
 
 namespace Sawe {
     class Project;

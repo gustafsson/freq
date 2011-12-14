@@ -1,7 +1,6 @@
 #include "recordedcommand.h"
 
 #include "tools/rendermodel.h"
-#include "signal/operation.h"
 #include "adapters/microphonerecorder.h"
 
 namespace Tools {

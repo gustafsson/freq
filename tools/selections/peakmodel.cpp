@@ -8,6 +8,7 @@
 // Sonic AWE
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"
+#include "heightmap/block.h"
 
 // gpumisc
 #include <tvector.h>

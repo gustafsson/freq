@@ -2,8 +2,9 @@
 
 #include "tools/rendermodel.h"
 #include "navigationcommand.h"
-
+#include "heightmap/collection.h"
 #include "sawe/project.h"
+#include "tfr/transform.h"
 
 namespace Tools {
 namespace Commands {
