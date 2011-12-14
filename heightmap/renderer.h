@@ -58,6 +58,7 @@ public:
 
     void setFractionSize( unsigned divW=1, unsigned divH=1);
     bool fullMeshResolution();
+    unsigned trianglesPerBlock();
     bool isInitialized();
     void init();
 

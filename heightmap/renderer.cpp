@@ -99,6 +99,13 @@ bool Renderer::
 }
 
 
+unsigned Renderer::
+        trianglesPerBlock()
+{
+    return (_mesh_width-1) * (_mesh_height-1) * 2;
+}
+
+
 void Renderer::setSize( unsigned w, unsigned h)
 {
     if (w == _mesh_width && h ==_mesh_height)
@@ -111,24 +118,23 @@ void Renderer::setSize( unsigned w, unsigned h)
 // create index buffer for rendering quad mesh
 void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 {
+    GlException_CHECK_ERROR();
+
     // create index buffer
     if (_mesh_index_buffer)
         glDeleteBuffersARB(1, &_mesh_index_buffer);
 
-    w+=2;
-    h+=2;
+    // edge dropout to eliminate visible glitches
+    if (w>2) w+=2;
+    if (h>2) h+=2;
 
     _mesh_width = w;
     _mesh_height = h;
 
     _vbo_size = ((w*2)+4)*(h-1);
-    glGenBuffersARB(1, &_mesh_index_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-    glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(BLOCKindexType), 0, GL_STATIC_DRAW);
 
-    // fill with indices for rendering mesh as triangle strips
-    BLOCKindexType *indices = (BLOCKindexType*) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-
+    std::vector<BLOCKindexType> indicesdata(_vbo_size);
+    BLOCKindexType *indices = &indicesdata[0];
     if (indices) for(unsigned y=0; y<h-1; y++) {
         *indices++ = y*w;
         for(unsigned x=0; x<w; x++) {
@@ -141,20 +147,30 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
         *indices++ = (y+1)*w;
     }
 
-    glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+    glGenBuffers(1, &_mesh_index_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+
+    // fill with indices for rendering mesh as triangle strips
+    GlException_SAFE_CALL( glBufferData(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(BLOCKindexType), &indicesdata[0], GL_STATIC_DRAW) );
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    GlException_CHECK_ERROR();
 }
 
 // create fixed vertex buffer to store mesh vertices
 void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 {
-    _mesh_position.reset( new Vbo( (w+2)*(h+2)*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
+    int y1 = 0, x1 = 0, y2 = h, x2 = w;
 
-    glBindBuffer(_mesh_position->vbo_type(), *_mesh_position);
-    float *pos = (float *) glMapBuffer(_mesh_position->vbo_type(), GL_WRITE_ONLY);
+    // edge dropout to eliminate visible glitches
+    if (w>2) x1--, x2++;
+    if (h>2) y1--, y2++;
 
-    if (pos) for(int y=-1; y<=(int)h; y++) {
-        for(int x=-1; x<=(int)w; x++) {
+    std::vector<float> posdata( (x2-x1)*(y2-y1)*4 );
+    float *pos = &posdata[0];
+    if (pos) for(int y=y1; y<y2; y++) {
+        for(int x=x1; x<x2; x++) {
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
             *pos++ = u;
@@ -164,8 +180,8 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
         }
     }
 
-    glUnmapBuffer(_mesh_position->vbo_type());
-    glBindBuffer(_mesh_position->vbo_type(), 0);
+    _mesh_position.reset( new Vbo( (w+2)*(h+2)*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW, &posdata[0] ));
+
 }
 
 typedef tvector<4,GLdouble> GLvector4;

@@ -681,12 +681,20 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DRAW printf("Drew %u*%u block%s (%u triangles) in viewport(%d, %d).",
-        N,
+    TIME_PAINTGL_DRAW
+    {
+        unsigned collections = 0;
+        for (i=0; i < N; ++i)
+            collections += model->collections[i]->isVisible();
+
+        TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
+        collections,
         model->renderer->drawn_blocks, 
         model->renderer->drawn_blocks==1?"":"s",
-        N*model->renderer->drawn_blocks*(yscale==0?2:(model->collections[0]->scales_per_block()-1)*(model->collections[0]->samples_per_block()-1)*2),
+        model->renderer->trianglesPerBlock(),
+        collections*model->renderer->drawn_blocks*model->renderer->trianglesPerBlock(),
         current_viewport[2], current_viewport[3]);
+    }
 }
 
 
