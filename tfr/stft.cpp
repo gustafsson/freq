@@ -14,8 +14,8 @@
 #include <msc_stdc.h>
 #endif
 
-#define TIME_STFT
-//#define TIME_STFT if(0)
+//#define TIME_STFT
+#define TIME_STFT if(0)
 
 //#define TEST_FT_INVERSE
 #define TEST_FT_INVERSE if(0)
@@ -246,15 +246,6 @@ Tfr::pChunk Stft::
         chunk->n_valid_samples = 0;
     chunk->sample_rate = b->sample_rate / increment();
     chunk->original_sample_rate = b->sample_rate;
-
-    TaskInfo("chunk_offset = %g", chunk->chunk_offset.asFloat());
-    TaskInfo("first_valid_sample = %u", chunk->first_valid_sample);
-    TaskInfo("chunk->n_valid_samples = %u", chunk->n_valid_samples);
-    TaskInfo("_window_size = %u", _window_size);
-    TaskInfo("increment() = %u", increment());
-    TaskInfo("(_window_size - increment())/(float)increment() = %g", (_window_size - increment())/(float)increment());
-    TaskInfo("b->getInterval() = %s", b->getInterval().toString().c_str());
-    TaskInfo("chunk->getInterval() = %s", chunk->getInterval().toString().c_str());
 
     if (0 == b->sample_offset)
     {
