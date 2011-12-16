@@ -27,8 +27,11 @@ win32:QMAKE_CXXFLAGS_RELEASE += /openmp
 ####################
 # Source code
 
-
 SOURCES += *.cpp
+
+
+####################
+# Compiler flags
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
@@ -39,21 +42,24 @@ INCLUDEPATH += \
     ../../../../sonic/sonicawe \
 
 win32 {
-INCLUDEPATH += \
+    INCLUDEPATH += \
         ../../../../winlib/glut \
         ../../../../winlib/glew/include \
         ../../../../winlib \
-LIBS += \
+    LIBS += \
         -l../../../../winlib/glut/glut32 \
         -l../../../../winlib/glew/lib/glew32 \
+
+    LIBS += \
+        -L../../../sonicawe/debug -lsonicawe \
+} else {
+    # build sonicawe with qmake CONFIG+=testlib
+    LIBS += -L../../../sonicawe/debug -lsonicawe \
+
+    # find libsonicawe when executing from project path
+    QMAKE_LFLAGS += -Wl,-rpath=../../
 }
 
-# build sonicawe with qmake CONFIG+=testlib
-LIBS += \
-        -L../../../sonicawe/debug -lsonicawe \
-
-# find libsonicawe when executing from project path
-unix:!macx:QMAKE_LFLAGS += -Wl,-rpath=../../
 
 ####################
 # Temporary output
