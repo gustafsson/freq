@@ -430,18 +430,27 @@ void Renderer::
 
 tvector<4,float> mix(tvector<4,float> a, tvector<4,float> b, float f)
 {
-    return a*(1-f)+b;
+    return a*(1-f) + b*f;
 }
 
 tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::ColorMode scheme ) {
-    tvector<4,float> spectrum[7];
+    tvector<4,float> spectrum[12];
     int count = 0;
     if (Renderer::ColorMode_GreenRed == scheme)
     {
         spectrum[0] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[1] = tvector<4,float>( 0, 1, 0, 0 ),
-        spectrum[2] = tvector<4,float>( 1, 0, 0, 0 );
-        count = 2;
+        spectrum[2] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[3] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
+        spectrum[5] = tvector<4,float>( 1, 1, 0, 0 ),
+        spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
+        spectrum[7] = tvector<4,float>( 1, 0, 0, 0 );
+        spectrum[8] = tvector<4,float>( 1, 0, 0, 0 );
+        spectrum[9] = tvector<4,float>( 1, 0, 0, 0 );
+        spectrum[10] = tvector<4,float>( -0.5, 0, 0, 0 ); // dark line, almost black
+        spectrum[11] = tvector<4,float>( 0.75, 0, 0, 0 ); // dark red when over the top
+        count = 11;
     }
     else
     {
@@ -453,7 +462,10 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
         spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
         spectrum[5] = tvector<4,float>( 1, 0, 1, 0 ),
         spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
-        count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
+        spectrum[7] = tvector<4,float>( 1, 0, 0, 0 );
+        spectrum[8] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[9] = tvector<4,float>( 0.5, 0, 0, 0 );
+        count = 9;//sizeof(spectrum)/sizeof(spectrum[0])-1;
 
         /* for black background
             { 0, 0, 0 },
@@ -468,14 +480,16 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
 
     float f = float(count)*wavelengthScalar;
     int i1 = int(floor(max(0.f, min(f-1.f, float(count)))));
-    int i2 = int(floor(min(f, float(count))));
-    int i3 = int(floor(min(f+1.f, float(count))));
-    int i4 = int(floor(min(f+2.f, float(count))));
+    int i2 = int(floor(max(0.f, min(f, float(count)))));
+    int i3 = int(floor(max(0.f, min(f+1.f, float(count)))));
+    int i4 = int(floor(max(0.f, min(f+2.f, float(count)))));
     float t = (f-float(i2))*0.5;
     float s = 0.5 + t;
 
     tvector<4,float> rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
-    return rgb*0.5;
+    rgb = rgb * 0.5;
+    //TaskInfo("%g %g %g: %g %g %g %g", f, t, s, rgb[0], rgb[1], rgb[2], rgb[3]);
+    return rgb;
 }
 
 void Renderer::createColorTexture(unsigned N) {
@@ -631,7 +645,7 @@ void Renderer::beginVboRendering()
         glUniform2f(uniOffsTex, .5f/w, .5f/h);
     }
 
-    createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
+    createColorTexture(24); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
     glActiveTexture(GL_TEXTURE2);
     colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
