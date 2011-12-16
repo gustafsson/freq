@@ -602,6 +602,9 @@ void RenderView::
     // viewport.
     GLint current_viewport[4];
     glGetIntegerv(GL_VIEWPORT, current_viewport);
+    GLint viewportWidth = current_viewport[2],
+          viewportHeight = current_viewport[3];
+
 
     TIME_PAINTGL_DETAILS TaskTimer tt("Viewport (%u, %u, %u, %u)",
         current_viewport[0], current_viewport[1],
@@ -620,34 +623,36 @@ void RenderView::
         break;
     }
 
-    if (i<N)
-    {
-        // drawCollections is called for 3 different viewports each frame.
-        // GlFrameBuffer will query the current viewport to determine the size
-        // of the fbo for this iteration.
-        fbo->recreate();
 
-        // Could also recreate the fbo each frame
-        // boost::scoped_ptr<GlFrameBuffer> my_fbo;
-        // if (!fbo)
-        // {
-        //     my_fbo.reset( new GlFrameBuffer );
-        //     fbo = my_fbo.get();
-        // }
-    }
+    bool hasValidatedFboSize = false;
 
     for (; i<N; ++i)
     {
         if (!model->collections[i]->isVisible())
             continue;
 
+        if (!hasValidatedFboSize)
+        {
+            // drawCollections is called for several different viewports each frame.
+            // GlFrameBuffer will query the current viewport to determine the size
+            // of the fbo for this iteration.
+            if (viewportWidth > fbo->getGlTexture().getWidth()
+                || viewportHeight > fbo->getGlTexture().getHeight()
+                || viewportWidth*2 < fbo->getGlTexture().getWidth()
+                || viewportHeight*2 < fbo->getGlTexture().getHeight())
+            {
+                fbo->recreate();
+            }
+
+            hasValidatedFboSize = true;
+        }
+
         GlException_CHECK_ERROR();
 
         {
             GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-            glViewport(0, 0,
-                       fbo->getGlTexture().getWidth(), fbo->getGlTexture().getHeight());
+            glViewport(0, 0, viewportWidth, viewportHeight);
 
             drawCollection(i, yscale);
         }
@@ -668,10 +673,12 @@ void RenderView::
         glColor4f(1,1,1,1);
         GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
         glBegin(GL_TRIANGLE_STRIP);
+            float tx = viewportWidth/(float)fbo->getGlTexture().getWidth();
+            float ty = viewportHeight/(float)fbo->getGlTexture().getHeight();
             glTexCoord2f(0,0); glVertex2f(0,0);
-            glTexCoord2f(1,0); glVertex2f(1,0);
-            glTexCoord2f(0,1); glVertex2f(0,1);
-            glTexCoord2f(1,1); glVertex2f(1,1);
+            glTexCoord2f(tx,0); glVertex2f(1,0);
+            glTexCoord2f(0,ty); glVertex2f(0,1);
+            glTexCoord2f(tx,ty); glVertex2f(1,1);
         glEnd();
 
         glEnable(GL_DEPTH_TEST);
