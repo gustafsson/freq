@@ -238,7 +238,7 @@ Tfr::pChunk Stft::
         chunk = ComputeChunk(windowedInput);
 
     chunk->freqAxis = freqAxis( b->sample_rate );
-    chunk->chunk_offset = (b->sample_offset + (_window_size/2 - increment()/2))/(float)increment();
+    chunk->chunk_offset = (b->sample_offset + (_window_size/2 - increment()/2))/(double)increment();
     chunk->first_valid_sample = ceil((_window_size/2 - increment()/2)/(float)increment());
     if (chunk->nSamples() > 2*chunk->first_valid_sample)
         chunk->n_valid_samples = chunk->nSamples() - 2*chunk->first_valid_sample;
@@ -1262,6 +1262,25 @@ unsigned StftChunk::
         transformSize() const
 {
     return _window_size >> _halfs_n;
+}
+
+
+Signal::Interval StftChunk::
+        getCoveredInterval() const
+{
+    double scale = original_sample_rate/sample_rate;
+    Signal::Interval I(
+            std::floor((chunk_offset + .5f).asFloat() * scale + 0.5),
+            std::floor((chunk_offset + nSamples() - .5f).asFloat() * scale + 0.5)
+    );
+
+    if (0 == chunk_offset)
+    {
+        I.first = 0;
+        I.last = std::floor((nSamples() - 1) * scale + 0.5 + window_size()/2);
+    }
+
+    return I;
 }
 
 

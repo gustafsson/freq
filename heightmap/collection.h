@@ -119,7 +119,7 @@ public:
     virtual bool empty();
 
 
-    virtual Signal::Intervals invalid_samples();
+    virtual Signal::Intervals invalid_samples() const;
     virtual void invalidate_samples( const Signal::Intervals& );
 
 
@@ -303,7 +303,7 @@ private:
     /**
       Try to create 'r' and return its invalid samples if it was created.
       */
-    Signal::Intervals getInvalid(const Reference& r);
+    Signal::Intervals getInvalid(const Reference& r) const;
 };
 
 } // namespace Heightmap

@@ -71,7 +71,7 @@ public:
     }
 
     ResampleArea inputRegion;
-    ValidInputs validInputs4;
+    ValidSamples validInputs4;
 };
 
 
@@ -84,8 +84,8 @@ void coordinatetest_resample2d(
     elemSize3_t outsz = output.getNumberOfElements();
     ResampleArea inputRegion(0,0,1,1);
     ResampleArea outputRegion(0,0,1,1);
-    ValidInputs validInputs4(0,0,insz.x,insz.y);
-    ValidOutputs validOutputs(outsz.x, outsz.y);
+    ValidSamples validInputs4(0,0,insz.x,insz.y);
+    ValidSamples validOutputs(0,0,outsz.x, outsz.y);
 
     CoordinateTestFetcher coordinatetest;
     coordinatetest.inputRegion = inputRegion;
@@ -109,7 +109,7 @@ void coordinatetest_resample2d(
             inputRegion,
             ResampleArea(0,0.5,1,1),
             validInputs4,
-            validOutputs
+            DataPos(validOutputs.right, validOutputs.bottom)
             );
     float2 a[] =
     {

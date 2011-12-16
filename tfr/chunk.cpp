@@ -77,19 +77,7 @@ Signal::Interval Chunk::
 Signal::Interval Chunk::
         getCoveredInterval() const
 {
-    double scale = original_sample_rate/sample_rate;
-    Signal::Interval I(
-            std::floor((chunk_offset + .5f).asFloat() * scale + 0.5),
-            std::floor((chunk_offset + nSamples() - .5f).asFloat() * scale + 0.5)
-    );
-
-    if (0 == chunk_offset)
-    {
-        I.first = 0;
-        I.last = std::floor(nSamples() * scale + 0.5);
-    }
-
-    return I;
+    return getInterval();
 }
 
 

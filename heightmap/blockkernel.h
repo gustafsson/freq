@@ -8,9 +8,9 @@
 
 typedef DataStorage<float> BlockData;
 
-struct ValidInputInterval
+struct ValidInterval
 {
-    ValidInputInterval(unsigned first, unsigned last)
+    ValidInterval(unsigned first, unsigned last)
         :
         first(first),
         last(last)
@@ -85,7 +85,7 @@ extern "C"
         void blockResampleChunk(
                 Tfr::ChunkData::Ptr input,
                 BlockData::Ptr output,
-                 ValidInputInterval validInputs,
+                 ValidInterval validInputs,
                  ResampleArea inputRegion,
                  ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
@@ -132,6 +132,7 @@ extern "C"
 void resampleStft( Tfr::ChunkData::Ptr input,
                    size_t nScales, size_t nSamples,
                    BlockData::Ptr output,
+                   ValidInterval outputInterval,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,

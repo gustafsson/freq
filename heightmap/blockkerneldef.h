@@ -117,6 +117,7 @@ public:
 //        {
             if (xstep <= 1.f)
             {
+                // bilinear interpolation
                 v = interpolate(
                         interpolate(
                                 get( q, reader, c ),
@@ -128,12 +129,18 @@ public:
                                 k.x),
                         k.y );
             }
-            else for (float x=q2.x; x<floor(q2.x+xstep) && x<xmax; ++x)
+            else
             {
-                v = max(v, interpolate(
-                        get( DataPos(x, q.y), reader, c ),
-                        get( DataPos(x, q.y+1.f), reader, c ),
-                        k.y));
+                float v2 = 0;
+                float xstop = min(floor(q2.x+xstep), xmax);
+
+                for (float x=q2.x; x<xstop; ++x)
+                    v = max(v, get( DataPos(x, q.y), reader, c ));
+
+                for (float x=q2.x; x<xstop; ++x)
+                    v2 = max(v2, get( DataPos(x, q.y+1.f), reader, c ));
+
+                v = interpolate( v, v2, k.y);
             }
 //        }
 //        else
@@ -223,9 +230,11 @@ public:
         // when outputAxis and inputAxis are affine transformations of eachother.
         // Hence the kernel is memory bound.
         float hz = outputAxis.getFrequency( p.x );
-        float hz2 = outputAxis.getFrequency( p.x + xstep );
+        float hz1 = outputAxis.getFrequency( p.x - 0.5f*xstep );
+        float hz2 = outputAxis.getFrequency( p.x + 0.5f*xstep );
         q2.x = inputAxis.getFrequencyScalar( hz );
-        float next_q2x = inputAxis.getFrequencyScalar( hz2 );
+        float qx1 = inputAxis.getFrequencyScalar( hz1 );
+        float qx2 = inputAxis.getFrequencyScalar( hz2 );
         q2.y = p.y;
 
         //float r = InterpolateFetcher<float, DefaultConverter>(defaultConverter)( q, reader );
@@ -235,53 +244,68 @@ public:
         ResamplePos k( q2.x - floor(q2.x), q2.y - floor(q2.y) );
 
         float v = 0.f;
-        float xdiff = 1.25f*(next_q2x - q2.x);
+        float xdiff = fabsf(qx2 - qx1);
 
         if (xdiff <= 1.f)
         {
-//            if (ystep <= 1.f)
-//            {
+            if (ystep <= 1)
+            {
+                // bilinear interpolation
                 v = interpolate(
                         interpolate(
                                 get( q, reader ),
-                                get( DataPos(q.x+1.f, q.y), reader ),
+                                get( DataPos(q.x+1, q.y), reader ),
                                 k.x),
                         interpolate(
-                                get( DataPos(q.x, q.y+1.f), reader ),
-                                get( DataPos(q.x+1.f, q.y+1.f), reader ),
+                                get( DataPos(q.x, q.y+1), reader ),
+                                get( DataPos(q.x+1, q.y+1), reader ),
                                 k.x),
                         k.y );
-//            }
-//            else for (float y=q2.y; y<floor(q2.y+ystep) && y<ymax; ++y)
-//            {
-//                v = max(v, interpolate(
-//                        get( DataPos(q.x, y), reader),
-//                        get( DataPos(q.x+1.f, y), reader),
-//                        k.x));
-//            }
+            }
+            else
+            {
+                unsigned stopy = min(q.y+ystep, ymax);
+
+                for (DataPos getp(q.x, q.y); getp.y<stopy; ++getp.y)
+                    v = max(v, get( getp, reader));
+
+                float v2 = 0.f;
+                for (DataPos getp(q.x + 1, q.y); getp.y<stopy; ++getp.y)
+                    v2 = max(v2, get( getp, reader));
+
+                v = interpolate( v, v2, k.x);
+            }
         }
         else
         {
-//            if (ystep <= 1.f)
-//            {
-                for (float x=q2.x; x<floor(q2.x+xdiff); ++x)
+            qx1 = floor(min(qx2, qx1));
+            unsigned stopx = qx1+xdiff;
+
+            if (ystep <= 1)
+            {
+                float v2=0;
+
+                for (DataPos getp(qx1, q.y); getp.x<stopx; ++getp.x)
+                    v = max(v, get( getp, reader));
+
+                for (DataPos getp(qx1, q.y+1); getp.x<stopx; ++getp.x)
+                    v2 = max(v2, get( getp, reader));
+
+                v = interpolate( v, v2, k.y);
+            }
+            else
+            {
+                DataPos getp(0, 0);
+                unsigned stopy = min(q.y+ystep, ymax);
+
+                for (getp.y = q.y; getp.y<stopy; ++getp.y)
                 {
-                    v = max(v, interpolate(
-                            get( DataPos(x, q.y), reader),
-                            get( DataPos(x, q.y+1.f), reader),
-                            k.y));
+                    for (getp.x = qx1; getp.x<stopx; ++getp.x)
+                    {
+                        v = max(v, get( getp, reader));
+                    }
                 }
-//            }
-//            else
-//            {
-//                for (float x=q2.x; x<floor(q2.x+xdiff); ++x)
-//                {
-//                    for (float y=q2.y; y<floor(q2.y+ystep); ++y)
-//                    {
-//                        v = max(v, get( DataPos(x, y), reader));
-//                    }
-//                }
-//            }
+            }
         }
         return v;
     }
@@ -297,8 +321,8 @@ public:
     Tfr::FreqAxis outputAxis;
 
     float xstep;
-    float ystep;
-    float ymax;
+    unsigned ystep;
+    unsigned ymax;
 };
 
 
@@ -379,7 +403,7 @@ public:
 
     Tfr::FreqAxis freqAxis;
     ResampleArea inputRegion;
-    ValidInputs validInputs4;
+    ValidSamples validInputs4;
 };
 
 
@@ -406,7 +430,7 @@ using namespace std;
 template<typename AxisConverter>
 void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                  DataStorage<float>::Ptr output,
-                 ValidInputInterval validInputs,
+                 ValidInterval validInputs,
                  ResampleArea inputRegion,
                  ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
@@ -445,8 +469,8 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
     // 'resample2d_fetcher' to only translate to a normalized reading position
     // [0, height-1) along the input y-axis.
 //    uint4 validInputs4 = make_uint4( validInputs.x, 0, validInputs.y, sz_input.y );
-    ValidInputs validInputs4( validInputs.first, 0, validInputs.last, 2 );
-    ValidOutputs validOutputs( sz_output.width, sz_output.height );
+    ValidSamples validInputs4( validInputs.first, 0, validInputs.last, 2 );
+    ValidSamples validOutputs( 0, 0, sz_output.width, sz_output.height );
 
     AxisFetcher<AxisConverter> axes = amplitudeAxis;
     axes.inputAxis = inputAxis;
@@ -534,7 +558,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
 
 void blockResampleChunk( Tfr::ChunkData::Ptr input,
                   BlockData::Ptr output,
-                 ValidInputInterval validInputs, // validInputs is the first and last-1 valid samples in x
+                 ValidInterval validInputs, // validInputs is the first and last-1 valid samples in x
                  ResampleArea inputRegion,
                  ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
@@ -576,6 +600,7 @@ template<typename AxisConverter>
 void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
                    size_t nScales, size_t nSamples,
                    BlockData::Ptr output,
+                   ValidInterval outputInterval,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
@@ -606,8 +631,9 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
     // 'resample2d_fetcher' to only translate to a normalized reading position
     // [0, width-1) along the input x-axis. 'resample2d_fetcher' does the
     // transpose for us.
-    ValidInputs validInputs( 0, 0, 2, sz_input.height );
-    ValidOutputs validOutputs( sz_output.width, sz_output.height );
+    ValidSamples validInputs( 0, 0, 2, sz_input.height );
+    //ValidOutputs validOutputs( sz_output.width, sz_output.height ); // TODO need validOutputInterval to use fetcher.ystep
+    ValidSamples validOutputs( outputInterval.first, 0, outputInterval.last, sz_output.height );
 
     AxisFetcherTranspose<AxisConverter> fetcher = axisConverter;
     fetcher.inputAxis = inputAxis;
@@ -615,7 +641,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
 
     // xstep and ystep are used after transposing to input coordinates
     fetcher.ystep = (sz_input.height-1) / (float)(sz_output.width-1) * outputRegion.width()/inputRegion.width();
-    fetcher.xstep = 1.f/(sz_output.width-1) * outputRegion.height()/inputRegion.height();
+    fetcher.xstep = 1.f/(sz_output.height-1) * outputRegion.height()/inputRegion.height();
     fetcher.ymax = sz_input.height;
 
     if (!enable_subtexel_aggregation)
@@ -642,6 +668,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
 void resampleStft( Tfr::ChunkData::Ptr input,
                    size_t nScales, size_t nSamples,
                    BlockData::Ptr output,
+                   ValidInterval outputInterval,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
@@ -655,21 +682,24 @@ void resampleStft( Tfr::ChunkData::Ptr input,
     {
     case Heightmap::AmplitudeAxis_Linear:
         resampleStftAxis(
-                input, nScales, nSamples, output, inputRegion, outputRegion,
+                input, nScales, nSamples, output, outputInterval,
+                inputRegion, outputRegion,
                 inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Linear>(normalization_factor),
                 enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_Logarithmic:
         resampleStftAxis(
-                input, nScales, nSamples, output, inputRegion, outputRegion,
+                input, nScales, nSamples, output, outputInterval,
+                inputRegion, outputRegion,
                 inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Logarithmic>(normalization_factor),
                 enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_5thRoot:
         resampleStftAxis(
-                input, nScales, nSamples, output, inputRegion, outputRegion,
+                input, nScales, nSamples, output, outputInterval,
+                inputRegion, outputRegion,
                 inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
                 enable_subtexel_aggregation);

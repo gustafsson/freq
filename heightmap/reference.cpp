@@ -4,6 +4,8 @@
 #include "signal/operation.h"
 #include "tfr/transform.h"
 
+using namespace std;
+
 namespace Heightmap {
 
 bool Reference::
@@ -17,9 +19,16 @@ bool Reference::
 void Reference::
         getArea( Position &a, Position &b) const
 {
+    getArea( a, b, samplesPerBlock(), scalesPerBlock() );
+}
+
+void Reference::
+        getArea( Position &a, Position &b, unsigned samples_per_block, unsigned scales_per_block ) const
+{
+    // TODO make Referece independent of samples_per_block and scales_per_block
     // For integers 'i': "2 to the power of 'i'" == powf(2.f, i) == ldexpf(1.f, i)
-    Position blockSize( _collection->samples_per_block() * ldexpf(1.f,log2_samples_size[0]),
-                        _collection->scales_per_block() * ldexpf(1.f,log2_samples_size[1]));
+    Position blockSize( samples_per_block * ldexpf(1.f,log2_samples_size[0]),
+                        scales_per_block * ldexpf(1.f,log2_samples_size[1]));
     a.time = blockSize.time * block_index[0];
     a.scale = blockSize.scale * block_index[1];
     b.time = a.time + blockSize.time;
@@ -154,7 +163,7 @@ bool Reference::
 
     if (c & BoundsCheck_HighS)
     {
-        float scaledelta = (b.scale-a.scale)/_collection->scales_per_block();
+        float scaledelta = (b.scale-a.scale)/scalesPerBlock();
         float a2hz = cfa.getFrequency(a.scale + scaledelta);
         float b2hz = cfa.getFrequency(b.scale - scaledelta);
 
@@ -172,7 +181,7 @@ bool Reference::
     {
         float atres = _collection->transform()->displayedTimeResolution(FS, ahz);
         float btres = _collection->transform()->displayedTimeResolution(FS, bhz);
-        float tdelta = 2*(b.time-a.time)/_collection->samples_per_block();
+        float tdelta = 2*(b.time-a.time)/samplesPerBlock();
         if (btres > tdelta && atres > tdelta)
             return false;
     }
@@ -208,12 +217,12 @@ bool Reference::
     return false;
 }
 
-std::string Reference::
+string Reference::
         toString() const
 {
     Position a, b;
     getArea( a, b );
-    std::stringstream ss;
+    stringstream ss;
     ss << "(" << a.time << " " << a.scale << ";" << b.time << " " << b.scale << " ! "
             << getInterval() << " ! "
             << log2_samples_size[0] << " " << log2_samples_size[1] << ";"
@@ -257,18 +266,18 @@ Signal::Interval Reference::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    float blockSize = _collection->samples_per_block() * ldexpf(1.f,log2_samples_size[0]);
-    float elementSize = 1.f / sample_rate();
-    float blockLocalSize = _collection->samples_per_block() * elementSize;
+    long double blockSize = samplesPerBlock() * ldexp(1.f,log2_samples_size[0]);
+    long double elementSize = 1.0 / sample_rate();
+    long double blockLocalSize = samplesPerBlock() * elementSize;
 
     // where the first element starts
-    float startTime = blockSize * block_index[0] - elementSize*.5f;
+    long double startTime = blockSize * block_index[0] - elementSize*.5f;
 
     // where the last element ends
-    float endTime = startTime + blockLocalSize;
+    long double endTime = startTime + blockLocalSize;
 
-    float FS = _collection->target->sample_rate();
-    Signal::Interval i( std::max(0.f, floorf(startTime * FS)), ceilf(endTime * FS) );
+    long double FS = _collection->target->sample_rate();
+    Signal::Interval i( max(0.L, floor(startTime * FS)), ceil(endTime * FS) );
 
     //Position a, b;
     //getArea( a, b );
@@ -278,49 +287,64 @@ Signal::Interval Reference::
 
 
 Signal::Interval Reference::
-        spannedElementsInterval(const Signal::Interval& I) const
+        spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    float blockSize = _collection->samples_per_block() * ldexpf(1.f,log2_samples_size[0]);
-    float FS = _collection->target->sample_rate();
+    unsigned samples_per_block = samplesPerBlock();
+    long double blockSize = samples_per_block * ldexp(1.,log2_samples_size[0]);
+    long double FS = _collection->target->sample_rate();
 
-    unsigned stepsPerBlock = _collection->samples_per_block() - 1;
-    double p = FS*blockSize/stepsPerBlock;
+    unsigned stepsPerBlock = samples_per_block - 1;
+    long double p = FS*blockSize/stepsPerBlock;
     double localStartTime = I.first/p;
     double localEndTime = I.last/p;
+    double s = 0.; // .5/stepsPerBlock;
 
     if (localEndTime-localStartTime<2.f)
     {
+        // TODO this is only an accetable fallback if blocks can't be bigger
+
         // didn't even span two elements, expand to span the elements it intersects with
-        localStartTime = floorf(localStartTime) - .5;
-        localEndTime = ceilf(localEndTime) + .5;
+        if (0 != localStartTime)
+            localStartTime = floor(localStartTime + .5 - s) - .5;
+        localEndTime = ceil(localEndTime - .5 + s) + .5;
     }
     else
     {
         // round off to spanned elements
         if (0 != localStartTime)
-            localStartTime = ceilf(localStartTime) - .5;
-        localEndTime = floorf(localEndTime) + .5;
+            localStartTime = ceil(localStartTime + .5 - s) - .5;
+        localEndTime = floor(localEndTime - .5 + s) + .5;
     }
 
-    double c = localStartTime*p;
-    double
-        a = std::floor(c),
-        b = std::ceil(localEndTime*p);
+    Signal::IntervalType first = stepsPerBlock * block_index[0];
+    spannedBlockSamples.first = min((double)samples_per_block, max(0.0, ceil(localStartTime) - first));  // Interval::first is inclusive
+    spannedBlockSamples.last = min((double)samples_per_block, max(0.0, ceil(localEndTime) - first)); // Interval::last is exclusive
+
+    long double
+        a = floor(localStartTime*p),
+        b = ceil(localEndTime*p);
 
     Signal::Interval r(
-            std::max(0., a),
-            std::max(0., b));
+            max(0.L, a),
+            max(0.L, b));
+
+#ifdef _DEBUG
+    if ((r&I) != r && localEndTime-localStartTime > 3.f)
+    {
+        int stopp = 1;
+    }
+#endif
 
     return r&I;
 }
 
 
-float Reference::
+long double Reference::
         sample_rate() const
 {
     Position a, b;
     getArea( a, b );
-    return ldexpf(1.f, -log2_samples_size[0]) - 1/(b.time-a.time);
+    return ldexp(1.0, -log2_samples_size[0]) - 1/((long double)b.time-a.time);
 }
 
 unsigned Reference::

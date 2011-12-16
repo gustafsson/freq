@@ -228,6 +228,8 @@ public:
     Stft::WindowType window_type() const { return _window_type; }
     unsigned increment() const { return _increment; }
 
+    Signal::Interval getCoveredInterval() const;
+
 private:
     Stft::WindowType _window_type;
     unsigned _increment;

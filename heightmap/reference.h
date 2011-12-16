@@ -17,12 +17,13 @@ public:
 
     bool operator==(const Reference &b) const;
     void getArea( Position &a, Position &b) const;
+    void getArea( Position &a, Position &b, unsigned samples_per_block, unsigned scales_per_block ) const;
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
     Collection* collection() const;
     void setCollection(Collection* c);
 
-    float sample_rate() const;
+    long double sample_rate() const;
     unsigned frequency_resolution() const;
 
     bool containsPoint(Position p) const;
@@ -65,7 +66,7 @@ public:
       invalid samples.
       */
     Signal::Interval getInterval() const;
-    Signal::Interval spannedElementsInterval(const Signal::Interval& I) const;
+    Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
 
     Reference( Collection* parent );
 private:

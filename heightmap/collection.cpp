@@ -245,9 +245,9 @@ void Collection::
 
 
 Signal::Intervals inline Collection::
-        getInvalid(const Reference& r)
+        getInvalid(const Reference& r) const
 {
-    cache_t::iterator itr = _cache.find( r );
+    cache_t::const_iterator itr = _cache.find( r );
     if (itr != _cache.end())
     {
         return r.getInterval() - itr->second->valid_samples;
@@ -335,12 +335,22 @@ std::vector<pBlock> Collection::
 	#endif
     //TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s ) from %u caches", I.toString().c_str(), only_visible?"only visible":"all", _cache.size());
 
+    //float fs = target->sample_rate();
+    //float Ia = I.first / fs, Ib = I.last/fs;
+
     foreach ( const cache_t::value_type& c, _cache )
     {
         const pBlock& pb = c.second;
         
-        if (only_visible && _frame_counter != pb->frame_number_last_used)
+        unsigned framediff = _frame_counter - pb->frame_number_last_used;
+        if (only_visible && framediff != 0 && framediff != 1)
             continue;
+
+//        Position a, b;
+//        // getArea is faster than getInterval but misses the overlapping parts returned by getInterval
+//        pb->ref.getArea(a, b, _samples_per_block, _scales_per_block);
+//        if (b.time <= Ia || a.time >= Ib)
+//            continue;
 
         // This check is done in mergeBlock as well, but do it here first
         // for a hopefully more local and thus faster loop.
@@ -579,8 +589,9 @@ void Collection::
     _prev_length = length;
 }
 
+
 Intervals Collection::
-        invalid_samples()
+        invalid_samples() const
 {
     Intervals r;
 
@@ -664,6 +675,9 @@ pBlock Collection::
 {
     try {
         INFO_COLLECTION TaskTimer tt("Allocation attempt");
+
+        GlException_CHECK_ERROR();
+        ComputationCheckError();
 
         pBlock attempt( new Block(ref));
         Position a,b;
