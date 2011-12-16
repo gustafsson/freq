@@ -139,8 +139,8 @@ namespace Tools
     {
         Tools::RenderModel* renderModel = dynamic_cast<Tools::RenderModel*>( m );
         bool ortho1D = 0==renderModel->_rx;
-        bool frequencySelection = fmod( renderModel->effective_ry() + 90, 180.0 ) == 0.0;
-        bool timeSelection = fmod( renderModel->effective_ry(), 180.0 ) == 0.0;
+        bool frequencySelection = fmod( renderModel->effective_ry() + 90, 180.f ) == 0.f;
+        bool timeSelection = fmod( renderModel->effective_ry(), 180.f ) == 0.f;
         Ui::MainWindow* ui = model()->project()->mainWindow()->getItems();
 
         ui->actionEllipseSelection->setEnabled( !ortho1D );
