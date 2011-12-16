@@ -253,8 +253,8 @@ void NavigationController::
             if (success1 && success2)
             {
                 if (e->modifiers().testFlag(Qt::ControlModifier))
-                    zoomCamera( (current.time - last.time)*_view->model->xscale/_view->model->_pz,
-                                (current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
+                    zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
+                                4*(current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
                                 0 );
                 else
                     moveCamera( last.time - current.time, last.scale - current.scale);
@@ -327,8 +327,8 @@ void NavigationController::
         Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
         if (success1 && success2)
         {
-            zoomCamera( (current.time - last.time)*_view->model->xscale/_view->model->_pz,
-                        (current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
+            zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
+                        4*(current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
                         0 );
         }
     }
