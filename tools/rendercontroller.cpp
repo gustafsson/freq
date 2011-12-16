@@ -240,6 +240,14 @@ void RenderController::
 
 
 void RenderController::
+        receiveSetGreenRedColors()
+{
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_GreenRed;
+    stateChanged();
+}
+
+
+void RenderController::
         receiveToogleHeightlines(bool value)
 {
     model()->renderer->draw_contour_plot = value;
@@ -337,9 +345,10 @@ void RenderController::
     if (model()->renderer->draw_hz)  hzmarker->setCheckedAction( ui->actionToggle_hz_grid );
     switch( model()->renderer->color_mode )
     {
-    case Heightmap::Renderer::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_colorscale); break;
+    case Heightmap::Renderer::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_rainbow_colors); break;
     case Heightmap::Renderer::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
     case Heightmap::Renderer::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
+    case Heightmap::Renderer::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
@@ -704,11 +713,13 @@ void RenderController::
         color->addActionItem( ui->actionSet_rainbow_colors );
         color->addActionItem( ui->actionSet_grayscale );
         color->addActionItem( ui->actionSet_colorscale );
+        color->addActionItem( ui->actionSet_greenred_colors );
         toolbar_render->addWidget( color );
 
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
         connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
+        connect(ui->actionSet_greenred_colors, SIGNAL(triggered()), SLOT(receiveSetGreenRedColors()));
         color->setCheckedAction(ui->actionSet_colorscale);
     }
 

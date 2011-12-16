@@ -34,6 +34,7 @@ namespace Tools
         void receiveSetRainbowColors();
         void receiveSetGrayscaleColors();
         void receiveSetColorscaleColors();
+        void receiveSetGreenRedColors();
 
         // Toggle Buttons
         void receiveToogleHeightlines(bool);

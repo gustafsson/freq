@@ -34,7 +34,8 @@ public:
     enum ColorMode {
         ColorMode_Rainbow = 0,
         ColorMode_Grayscale = 1,
-        ColorMode_FixedColor = 2
+        ColorMode_FixedColor = 2,
+        ColorMode_GreenRed = 3
     };
 
     Renderer( Collection* collection );
@@ -113,6 +114,7 @@ private:
         topPlane, topNormal,
         bottomPlane, bottomNormal;
 
+    ColorMode _color_texture_colors;
     boost::scoped_ptr<GlTexture> colorTexture;
 
     friend class Heightmap::GlBlock;

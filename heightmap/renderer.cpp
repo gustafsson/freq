@@ -69,7 +69,8 @@ Renderer::Renderer( Collection* collection )
     _draw_flat(false),
     _redundancy(2.5f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
     _invalid_frustum(true),
-    _drawcrosseswhen0( Sawe::Configuration::version().empty() )
+    _drawcrosseswhen0( Sawe::Configuration::version().empty() ),
+    _color_texture_colors( (ColorMode)-1 )
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
     memset(projection_matrix, 0, sizeof(projection_matrix));
@@ -389,8 +390,6 @@ void Renderer::init()
     if (0 == _shader_prog)
         return;
 
-    createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
-
     setSize(2,2);
     beginVboRendering();
     endVboRendering();
@@ -450,26 +449,39 @@ tvector<4,float> mix(tvector<4,float> a, tvector<4,float> b, float f)
     return a*(1-f)+b;
 }
 
-tvector<4,float> getWavelengthColorCompute( float wavelengthScalar ) {
+tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::ColorMode scheme ) {
     tvector<4,float> spectrum[7];
-        /* white background */
-    spectrum[0] = tvector<4,float>( 1, 0, 0, 0 ),
-    spectrum[1] = tvector<4,float>( 0, 0, 1, 0 ),
-    spectrum[2] = tvector<4,float>( 0, 1, 1, 0 ),
-    spectrum[3] = tvector<4,float>( 0, 1, 0, 0 ),
-    spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
-    spectrum[5] = tvector<4,float>( 1, 0, 1, 0 ),
-    spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
-        /* black background
-        { 0, 0, 0 },
-        { 1, 0, 1 },
-        { 0, 0, 1 },
-        { 0, 1, 1 },
-        { 0, 1, 0 },
-        { 1, 1, 0 },
-        { 1, 0, 0 }}; */
+    int count = 0;
+    if (Renderer::ColorMode_GreenRed == scheme)
+    {
+        spectrum[0] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[1] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[2] = tvector<4,float>( 1, 0, 0, 0 );
+        count = 2;
+    }
+    else
+    {
+        /* for white background */
+        spectrum[0] = tvector<4,float>( 1, 0, 0, 0 ),
+        spectrum[1] = tvector<4,float>( 0, 0, 1, 0 ),
+        spectrum[2] = tvector<4,float>( 0, 1, 1, 0 ),
+        spectrum[3] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
+        spectrum[5] = tvector<4,float>( 1, 0, 1, 0 ),
+        spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
+        count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
 
-    int count = 6;//sizeof(spectrum)/sizeof(spectrum[0])-1;
+        /* for black background
+            { 0, 0, 0 },
+            { 1, 0, 1 },
+            { 0, 0, 1 },
+            { 0, 1, 1 },
+            { 0, 1, 0 },
+            { 1, 1, 0 },
+            { 1, 0, 0 }}; */
+    }
+
+
     float f = float(count)*wavelengthScalar;
     int i1 = int(floor(max(0.f, min(f-1.f, float(count)))));
     int i2 = int(floor(min(f, float(count))));
@@ -483,9 +495,14 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar ) {
 }
 
 void Renderer::createColorTexture(unsigned N) {
+    if (_color_texture_colors == color_mode && colorTexture->getWidth()==N)
+        return;
+
+    _color_texture_colors = color_mode;
+
     std::vector<tvector<4,float> > texture(N);
     for (unsigned i=0; i<N; ++i) {
-        texture[i] = getWavelengthColorCompute( i/(float)(N-1) );
+        texture[i] = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
     }
     colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
 }
@@ -608,7 +625,10 @@ void Renderer::beginVboRendering()
             glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
 
         uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
-        glUniform1f(uniColorTextureFactor, color_mode == ColorMode_Rainbow ? 1.f : 0.f );
+        glUniform1f(uniColorTextureFactor,
+                    color_mode == ColorMode_Rainbow
+                    || color_mode == ColorMode_GreenRed
+                    ? 1.f : 0.f );
 
         uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
         glUniform1f(uniContourPlot, draw_contour_plot ? 1.f : 0.f );
@@ -627,6 +647,7 @@ void Renderer::beginVboRendering()
         glUniform2f(uniOffsTex, .5f/w, .5f/h);
     }
 
+    createColorTexture(16); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
     glActiveTexture(GL_TEXTURE2);
     colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
