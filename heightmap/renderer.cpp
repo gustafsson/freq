@@ -13,6 +13,7 @@
 #include "heightmap/collection.h"
 #include "heightmap/block.h"
 #include "sawe/configuration.h"
+#include "sawe/nonblockingmessagebox.h"
 
 // gpumisc
 #include <float.h>
@@ -27,7 +28,6 @@
 
 // Qt
 #include <QSettings>
-#include <QMessageBox>
 
 #ifdef _MSC_VER
 #include "msc_stdc.h"
@@ -251,51 +251,39 @@ void Renderer::init()
 
     TaskTimer tt("Initializing OpenGL");
 
-    // initialize necessary OpenGL extensions
     GlException_CHECK_ERROR();
 
 #ifdef USE_CUDA
     int cudaDevices=0;
     CudaException_SAFE_CALL( cudaGetDeviceCount( &cudaDevices) );
     if (0 == cudaDevices ) {
-        fprintf(stderr, "ERROR: Couldn't find any \"cuda capable\" device.");
-        fflush(stderr);
-        throw std::runtime_error("Could not find any \"cuda capable\" device");
+        Sawe::NonblockingMessageBox::show(
+                QMessageBox::Critical,
+                "Couldn't find any \"cuda capable\" device",
+                "This version of Sonic AWE requires a graphics card that supports CUDA and no such graphics card was found.\n\n"
+                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this." );
+
+        // fail
+        return;
     }
 #endif
 
-#ifndef __APPLE__
-    /*
+#ifndef __APPLE__ // glewInit is not needed on Mac
     if (0 != glewInit() ) {
-        fprintf(stderr, "ERROR: Couldn't initialize \"glew\".");
-        fflush(stderr);
-        throw std::runtime_error("Could not initialize glew");
-    }
+        Sawe::NonblockingMessageBox::show(
+                QMessageBox::Critical,
+                "Couldn't properly setup graphics",
+                "Sonic AWE failed to setup required graphics hardware.\n\n"
+                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.",
 
-    if (! glewIsSupported("GL_VERSION_2_0" )) {
-        fprintf(stderr, "ERROR: Support for necessary OpenGL extensions (GL_VERSION_2_0) missing.");
-        fflush(stderr);
-        throw std::runtime_error("Sonic AWE requires a graphics card that supports OpenGL 2.0.\n\nNo such graphics card was found, Sonic AWE can not start.");
-    }
+                "Couldn't initialize \"glew\"");
 
-    if (!glewIsSupported( "GL_VERSION_1_5 GL_ARB_vertex_buffer_object GL_ARB_pixel_buffer_object GL_ARB_texture_float" )) {
-        fprintf(stderr, "Error: failed to get minimal extensions\n");
-        fprintf(stderr, "Sonic AWE requires:\n");
-        fprintf(stderr, "  OpenGL version 1.5\n");
-        fprintf(stderr, "  GL_ARB_vertex_buffer_object\n");
-        fprintf(stderr, "  GL_ARB_pixel_buffer_object\n");
-        fprintf(stderr, "  GL_ARB_texture_float\n");
-        fflush(stderr);
-        throw std::runtime_error(
-                "Sonic AWE requires a graphics card that supports OpenGL 1.5 and the following OpenGL features\n"
-                "  GL_ARB_vertex_buffer_object\n"
-                "  GL_ARB_pixel_buffer_object\n"
-                "  GL_ARB_texture_float.\n\n"
-                "No such graphics card was found, Sonic AWE can not start.");
+        // fail
+        return;
     }
-    */
 #endif
 
+    // verify necessary OpenGL extensions
     const char* glversion = (const char*)glGetString(GL_VERSION);
     string glversionstring(glversion);
     stringstream versionreader(glversionstring);
@@ -303,17 +291,16 @@ void Renderer::init()
     char dummy;
     versionreader >> gl_major >> dummy >> gl_minor;
 
+    TaskInfo("OpenGL version %d.%d (%s)", gl_major, gl_minor, glversion);
+
     if ((1 > gl_major )
         || ( 1 == gl_major && 4 > gl_minor ))
     {
-        QMessageBox* message = new QMessageBox(
+        Sawe::NonblockingMessageBox::show(
                 QMessageBox::Critical,
                 "Couldn't properly setup graphics",
                 "Sonic AWE requires a graphics card that supports OpenGL 2.0 and no such graphics card was found.\n\n"
                 "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.");
-
-        message->setAttribute( Qt::WA_DeleteOnClose );
-        message->show();
 
         // fail
         return;
@@ -370,14 +357,11 @@ void Renderer::init()
 
         err << endl << endl << "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.";
 
-        QMessageBox* message = new QMessageBox(
+        Sawe::NonblockingMessageBox::show(
                 required_extension?QMessageBox::Critical : QMessageBox::Warning,
                 "Couldn't properly setup graphics",
-                err.str().c_str());
-
-        message->setDetailedText( details.str().c_str() );
-        message->setAttribute( Qt::WA_DeleteOnClose );
-        message->show();
+                err.str().c_str(),
+                details.str().c_str());
 
         if (required_extension)
             return;
@@ -606,7 +590,7 @@ void Renderer::beginVboRendering()
 
     // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
-        TaskTimer tt("Setting shader parameters");
+        TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
         GLuint uniVertText0, uniVertText1, uniVertText2, uniColorTextureFactor, uniFixedColor, uniContourPlot, uniYScale, uniScaleTex, uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");

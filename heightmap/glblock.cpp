@@ -1,5 +1,8 @@
 #include "glblock.h"
 
+// sonicawe
+#include "sawe/nonblockingmessagebox.h"
+
 // Heightmap namespace
 #include "collection.h"
 #include "renderer.h"
@@ -17,7 +20,6 @@
 
 // Qt
 #include <QResource>
-#include <QMessageBox>
 
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)
@@ -73,7 +75,7 @@ string attachShader(GLuint prg, GLenum type, const char *name)
 //        showShaderLog |= 0 != qshaderInfoLog.contains("fail", Qt::CaseInsensitive);
 //        showShaderLog |= 0 != qshaderInfoLog.contains("warning", Qt::CaseInsensitive);
 //        showShaderLog |= 0 != qshaderInfoLog.contains("error", Qt::CaseInsensitive) && 0 == qshaderInfoLog.contains("No errors", Qt::CaseInsensitive);
-#if DEBUG_
+#ifdef _DEBUG
         showShaderLog |= strlen(shaderInfoLog)>0;
 #endif
 
@@ -123,7 +125,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 //        showProgramLog |= 0 != qprogramInfoLog.contains("fail", Qt::CaseInsensitive);
 //        showProgramLog |= 0 != qprogramInfoLog.contains("warning", Qt::CaseInsensitive);
 //        showProgramLog |= 0 != qprogramInfoLog.contains("error", Qt::CaseInsensitive) && 0 == qprogramInfoLog.contains("No errors", Qt::CaseInsensitive);
-#if DEBUG_
+#ifdef _DEBUG
         showProgramLog |= strlen(programInfoLog)>0;
 #endif
 
@@ -137,16 +139,14 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
             TaskInfo("Couldn't properly setup graphics\n%s", log.str().c_str());
 
-            QMessageBox* message = new QMessageBox(
+            Sawe::NonblockingMessageBox::show(
                     QMessageBox::Critical,
                     "Couldn't properly setup graphics",
                     "Sonic AWE couldn't properly setup required graphics. "
                     "Please file this as a bug report to help us fix this. "
-                    "See more info in 'Help->Report a bug'");
+                    "See more info in 'Help->Report a bug'",
 
-            message->setDetailedText( log.str().c_str() );
-            message->setAttribute( Qt::WA_DeleteOnClose );
-            message->show();
+                    log.str().c_str() );
         }
 
         glUseProgram(program);
