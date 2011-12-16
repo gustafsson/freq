@@ -13,8 +13,10 @@ QT += opengl
 TARGET = stfttest
 CONFIG   += console
 CONFIG   -= app_bundle
+win32:CONFIG += debug_and_release
 
 TEMPLATE = app
+win32:TEMPLATE = vcapp
 
 
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
@@ -36,11 +38,22 @@ INCLUDEPATH += \
     ../../../../sonic/gpumisc \
     ../../../../sonic/sonicawe \
 
+win32 {
+INCLUDEPATH += \
+        ../../../../winlib/glut \
+        ../../../../winlib/glew/include \
+        ../../../../winlib \
+LIBS += \
+        -l../../../../winlib/glut/glut32 \
+        -l../../../../winlib/glew/lib/glew32 \
+}
+
 # build sonicawe with qmake CONFIG+=testlib
-LIBS = -L../../../sonicawe -lsonicawe
+LIBS += \
+        -L../../../sonicawe/debug -lsonicawe \
 
 # find libsonicawe when executing from project path
-QMAKE_LFLAGS += -Wl,-rpath=../../
+unix:!macx:QMAKE_LFLAGS += -Wl,-rpath=../../
 
 ####################
 # Temporary output
