@@ -23,7 +23,7 @@ pChunk Cepstrum::
     ft.compute_redundant( true );
     pChunk cepstra = ft(b);
 
-    ::cepstrumPrepareCepstra( cepstra->transform_data, 1.f/ft.chunk_size() );
+    ::cepstrumPrepareCepstra( cepstra->transform_data, 4.f/ft.chunk_size() );
 
     ft.compute( cepstra->transform_data, cepstra->transform_data, FftDirection_Forward );
     cepstra->freqAxis = freqAxis( cepstra->original_sample_rate );
