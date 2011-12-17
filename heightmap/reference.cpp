@@ -299,21 +299,19 @@ Signal::Interval Reference::
     double localEndTime = I.last/p;
     double s = 0.; // .5/stepsPerBlock;
 
-    if (localEndTime-localStartTime<2.f)
-    {
-        // TODO this is only an accetable fallback if blocks can't be bigger
+    // round off to spanned elements
+    if (0 != localStartTime)
+        localStartTime = ceil(localStartTime + .5 - s) - .5;
+    localEndTime = floor(localEndTime - .5 + s) + .5;
 
-        // didn't even span two elements, expand to span the elements it intersects with
-        if (0 != localStartTime)
-            localStartTime = floor(localStartTime + .5 - s) - .5;
-        localEndTime = ceil(localEndTime - .5 + s) + .5;
-    }
-    else
+    // didn't even span one element, expand to span the elements it intersects with
+    if ( localEndTime - localStartTime < (0 != localStartTime ? 1.0 : 0.5 ))
     {
-        // round off to spanned elements
-        if (0 != localStartTime)
-            localStartTime = ceil(localStartTime + .5 - s) - .5;
-        localEndTime = floor(localEndTime - .5 + s) + .5;
+        // TODO this is only an accetable fallback if blocks can't be bigger than I.count()
+
+        double middle = floor( (I.first/p + I.last/p)*0.5 );
+        localStartTime = max(0.0, middle - 0.5);
+        localEndTime = middle + 1.5;
     }
 
     Signal::IntervalType first = stepsPerBlock * block_index[0];
@@ -329,7 +327,7 @@ Signal::Interval Reference::
             max(0.L, b));
 
 #ifdef _DEBUG
-    if ((r&I) != r && localEndTime-localStartTime > 3.f)
+    if ((r&I) != r && localEndTime-localStartTime > 2.f)
     {
         int stopp = 1;
     }
