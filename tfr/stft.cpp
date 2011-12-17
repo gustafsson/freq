@@ -135,14 +135,18 @@ float Fft::
 unsigned Fft::
         next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
 {
-    return Fft::sChunkSizeG(current_valid_samples_per_chunk);
+    size_t maxsize = std::min( (size_t)(64<<20), availableMemoryForSingleAllocation() );
+    maxsize /= 3*sizeof(ChunkElement);
+    return std::min(maxsize, (size_t)Fft::sChunkSizeG(current_valid_samples_per_chunk));
 }
 
 
 unsigned Fft::
         prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
 {
-    return Fft::lChunkSizeS(current_valid_samples_per_chunk);
+    size_t maxsize = std::min( (size_t)(64<<20), availableMemoryForSingleAllocation() );
+    maxsize /= 3*sizeof(ChunkElement);
+    return std::min(maxsize, (size_t)Fft::lChunkSizeS(current_valid_samples_per_chunk));
 }
 
 
@@ -512,7 +516,9 @@ unsigned Stft::
     if (current_valid_samples_per_chunk<_window_size)
         return _window_size;
 
-    return spo2g(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size;
+    size_t maxsize = std::min( (size_t)(64<<20), availableMemoryForSingleAllocation() );
+    maxsize = std::max((size_t)_window_size, maxsize/(3*sizeof(ChunkElement)));
+    return std::min((unsigned)maxsize, spo2g(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size);
 }
 
 
@@ -522,7 +528,9 @@ unsigned Stft::
     if (current_valid_samples_per_chunk<2*_window_size)
         return _window_size;
 
-    return lpo2s(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size;
+    size_t maxsize = std::min( (size_t)(64<<20), availableMemoryForSingleAllocation() );
+    maxsize = std::max((size_t)_window_size, maxsize/(3*sizeof(ChunkElement)));
+    return std::min((unsigned)maxsize, lpo2s(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size);
 }
 
 

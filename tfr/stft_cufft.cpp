@@ -174,6 +174,10 @@ void Stft::
             i = 0;
 
     size_t free = availableMemoryForSingleAllocation();
+    free /= 2; // Don't even try to get close to use all memory
+    // never use more than 64 MB
+    if (free > 64<<20)
+        free = 64<<20;
 
     unsigned multiple = 0;
     multiple++; // input

@@ -404,10 +404,7 @@ unsigned Target::
         prev_good_size( unsigned current_valid_samples_per_chunk )
 {
     Tfr::Filter* f = 0;
-    for(Signal::pOperation r = source(); !f && r!=0; r = r->source())
-        f = dynamic_cast<Tfr::Filter*>(r.get());
-
-    if (f)
+    if (Tfr::Filter* f = findType<Tfr::Filter>(source()))
         return f->prev_good_size(current_valid_samples_per_chunk);
 
     unsigned minsize = 64;
