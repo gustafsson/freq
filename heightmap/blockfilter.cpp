@@ -103,9 +103,6 @@ void BlockFilter::
     Signal::Interval spannedBlockSamples(0,0);
     Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval, spannedBlockSamples);
 
-    // stft doesn't use subtexel aggregation along t axis
-    //Signal::Interval usableInInterval = inInterval;
-
     Signal::Interval transfer = usableInInterval&blockInterval;
 
 #ifdef _DEBUG
@@ -132,7 +129,7 @@ void BlockFilter::
         Signal::Interval usableBlockInterval = block->ref.spannedElementsInterval(blockInterval, blockSpannedBlockSamples2);
     }
 
-    float s1=(spannedBlockSamples.first - .5*0 - 1) / (float)(block->ref.samplesPerBlock()-1);
+    float s1=(spannedBlockSamples.first - .5*0 - 1.5) / (float)(block->ref.samplesPerBlock()-1);
     float s2=(spannedBlockSamples.last - .5*0) / (float)(block->ref.samplesPerBlock()-1);
     float t1=(transfer.first - blockInterval.first) / (float)blockInterval.count();
     float t2=(transfer.last - blockInterval.first) / (float)blockInterval.count();
