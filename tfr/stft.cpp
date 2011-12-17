@@ -238,13 +238,14 @@ Tfr::pChunk Stft::
         chunk = ComputeChunk(windowedInput);
 
     chunk->freqAxis = freqAxis( b->sample_rate );
-    chunk->chunk_offset = (b->sample_offset + (_window_size/2 - increment()/2))/(double)increment();
-    chunk->first_valid_sample = ceil((_window_size/2 - increment()/2)/(float)increment());
+    double increment = this->increment();
+    chunk->chunk_offset = (b->sample_offset + (_window_size/2 - increment/2))/increment;
+    chunk->first_valid_sample = ceil((_window_size/2 - increment/2)/increment);
     if (chunk->nSamples() > 2*chunk->first_valid_sample)
         chunk->n_valid_samples = chunk->nSamples() - 2*chunk->first_valid_sample;
     else
         chunk->n_valid_samples = 0;
-    chunk->sample_rate = b->sample_rate / increment();
+    chunk->sample_rate = b->sample_rate / increment;
     chunk->original_sample_rate = b->sample_rate;
 
     if (0 == b->sample_offset)
