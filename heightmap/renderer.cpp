@@ -442,9 +442,9 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
         spectrum[1] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[2] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[3] = tvector<4,float>( 0, 1, 0, 0 ),
-        spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
+        spectrum[4] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[5] = tvector<4,float>( 1, 1, 0, 0 ),
-        spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
+        spectrum[6] = tvector<4,float>( 1, 1, 0, 0 ),
         spectrum[7] = tvector<4,float>( 1, 0, 0, 0 );
         spectrum[8] = tvector<4,float>( 1, 0, 0, 0 );
         spectrum[9] = tvector<4,float>( 1, 0, 0, 0 );
@@ -455,17 +455,32 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
     else
     {
         /* for white background */
-        spectrum[0] = tvector<4,float>( 1, 0, 0, 0 ),
-        spectrum[1] = tvector<4,float>( 0, 0, 1, 0 ),
-        spectrum[2] = tvector<4,float>( 0, 1, 1, 0 ),
-        spectrum[3] = tvector<4,float>( 0, 1, 0, 0 ),
-        spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
-        spectrum[5] = tvector<4,float>( 1, 0, 1, 0 ),
-        spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
-        spectrum[7] = tvector<4,float>( 1, 0, 0, 0 );
-        spectrum[8] = tvector<4,float>( 0, 0, 0, 0 );
-        spectrum[9] = tvector<4,float>( 0.5, 0, 0, 0 );
-        count = 9;//sizeof(spectrum)/sizeof(spectrum[0])-1;
+        float a = 1/255.f;
+        // rainbow http://en.wikipedia.org/wiki/Rainbow#Spectrum
+        spectrum[0] = tvector<4,float>( 1, 0, 0, 0 ), // red
+        spectrum[1] = tvector<4,float>( 148*a, 0, 211*a, 0 ), // violet
+        spectrum[2] = tvector<4,float>( 148*a, 0, 211*a, 0 ), // violet
+        spectrum[3] = tvector<4,float>( 75*a, 0, 130*a, 0 ), // indigo
+        spectrum[4] = tvector<4,float>( 0, 0, 1, 0 ), // blue
+        spectrum[5] = tvector<4,float>( 0, 0.5, 0, 0 ), // green
+        spectrum[6] = tvector<4,float>( 1, 1, 0, 0 ), // yellow
+        spectrum[7] = tvector<4,float>( 1, 0.5, 0, 0 ), // orange
+        spectrum[8] = tvector<4,float>( 1, 0, 0, 0 ), // red
+        spectrum[9] = tvector<4,float>( 1, 0, 0, 0 );
+        spectrum[10] = tvector<4,float>( -0.5, 0, 0, 0 ); // dark line, almost black
+        spectrum[11] = tvector<4,float>( 0.75, 0, 0, 0 ); // dark red when over the top
+        count = 11;
+//        spectrum[0] = tvector<4,float>( 1, 0, 1, 0 ),
+//        spectrum[1] = tvector<4,float>( 0, 0, 1, 0 ),
+//        spectrum[2] = tvector<4,float>( 0, 1, 1, 0 ),
+//        spectrum[3] = tvector<4,float>( 0, 1, 0, 0 ),
+//        spectrum[4] = tvector<4,float>( 1, 1, 0, 0 ),
+//        spectrum[5] = tvector<4,float>( 1, 0, 1, 0 ),
+//        spectrum[6] = tvector<4,float>( 1, 0, 0, 0 );
+//        spectrum[7] = tvector<4,float>( 1, 0, 0, 0 );
+//        spectrum[8] = tvector<4,float>( 0, 0, 0, 0 );
+//        spectrum[9] = tvector<4,float>( 0.5, 0, 0, 0 );
+//        count = 9;//sizeof(spectrum)/sizeof(spectrum[0])-1;
 
         /* for black background
             { 0, 0, 0 },
