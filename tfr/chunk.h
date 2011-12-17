@@ -7,10 +7,8 @@
 // gpusmisc
 #include "freqaxis.h"
 #include "unsignedf.h"
-#include "datastorage.h"
 
 // boost
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 // std

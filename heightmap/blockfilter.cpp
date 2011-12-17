@@ -82,6 +82,9 @@ void BlockFilter::
 #endif
     }
 
+
+    pchunk.inverse.reset( new Signal::Buffer(chunk_interval.first, chunk_interval.count(), pchunk.inverse->sample_rate) );
+
     TIME_BLOCKFILTER ComputationSynchronize();
 }
 

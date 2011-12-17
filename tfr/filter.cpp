@@ -1,5 +1,7 @@
 #include "filter.h"
 #include "signal/buffersource.h"
+#include "tfr/chunk.h"
+#include "tfr/transform.h"
 
 #include <demangle.h>
 
@@ -98,6 +100,20 @@ Operation* Filter::
     if (!_try_shortcuts)
         return this;
     return Operation::affecting_source( I );
+}
+
+
+unsigned Filter::
+        prev_good_size( unsigned current_valid_samples_per_chunk )
+{
+    return transform()->prev_good_size( current_valid_samples_per_chunk, sample_rate() );
+}
+
+
+unsigned Filter::
+        next_good_size( unsigned current_valid_samples_per_chunk )
+{
+    return transform()->next_good_size( current_valid_samples_per_chunk, sample_rate() );
 }
 
 

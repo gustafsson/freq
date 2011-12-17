@@ -1,6 +1,7 @@
 #ifdef USE_CUDA
 #include "reassign.h"
 #include "reassign.cu.h"
+#include "tfr/chunk.h"
 
 // gpumisc
 #include <computationkernel.h>

@@ -1,12 +1,16 @@
 #ifndef TFRFILTER_H
 #define TFRFILTER_H
 
-#include "transform.h"
-
 #include "signal/intervals.h"
 #include "signal/operation.h"
 
 namespace Tfr {
+
+class Transform;
+typedef boost::shared_ptr<Transform> pTransform;
+
+class Chunk;
+typedef boost::shared_ptr<Chunk> pChunk;
 
 /// @see ChunkAndInverse::inverse
 struct ChunkAndInverse
@@ -70,6 +74,21 @@ public:
     /// @see transform()
     virtual Operation* affecting_source( const Signal::Interval& I );
 
+
+    /**
+      Returns the next good chunk size for the transform() (or the
+      largest if there is no good chunk size larger than
+      'current_valid_samples_per_chunk').
+      */
+    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk );
+
+
+    /**
+      Returns the previously good chunk size for transform() (or the
+      smallest if there is no good chunk size larger than
+      'current_valid_samples_per_chunk').
+      */
+    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
 
 protected:
     /**

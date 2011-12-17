@@ -1,6 +1,7 @@
 #include "splinefilter.h"
 #include "splinefilterkernel.h"
 #include "cpumemorystorage.h"
+#include "tfr/chunk.h"
 
 // gpumisc
 #include <computationkernel.h>

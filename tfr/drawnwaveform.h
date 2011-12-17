@@ -2,6 +2,9 @@
 #define DRAWNWAVEFORM_H
 
 #include "transform.h"
+#include "chunk.h"
+
+// gpumisc
 #include "HasSingleton.h"
 
 namespace Tfr {

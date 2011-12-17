@@ -1,6 +1,8 @@
 #include "bandpass.h"
 #include <sstream>
 
+#include "tfr/chunk.h"
+
 #define TIME_BANDPASS
 //#define TIME_BANDPASS if(0)
 

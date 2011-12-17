@@ -2,6 +2,7 @@
 #define TFRSTFT_H
 
 #include "transform.h"
+#include "chunk.h"
 
 // std
 #include <vector>

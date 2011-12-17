@@ -390,7 +390,7 @@ unsigned Target::
         next_good_size( unsigned current_valid_samples_per_chunk )
 {
     if (Tfr::Filter* f = findType<Tfr::Filter>(source()))
-        return f->transform()->next_good_size(current_valid_samples_per_chunk, source()->sample_rate());
+        return f->next_good_size(current_valid_samples_per_chunk);
 
     unsigned minsize = 64;
     if (current_valid_samples_per_chunk<minsize)
@@ -408,7 +408,7 @@ unsigned Target::
         f = dynamic_cast<Tfr::Filter*>(r.get());
 
     if (f)
-        return f->transform()->prev_good_size(current_valid_samples_per_chunk, source()->sample_rate());
+        return f->prev_good_size(current_valid_samples_per_chunk);
 
     unsigned minsize = 64;
     if (current_valid_samples_per_chunk<2*minsize)

@@ -1,8 +1,8 @@
 #include "fantrackerfilter.h"
 
 #include "tfr/cepstrum.h"
-
 #include "tfr/filter.h"
+#include "tfr/chunk.h"
 #include "tools/support/fantrackerfilter.h"
 
 #include <boost/foreach.hpp>
@@ -13,8 +13,8 @@ namespace Tools {
 namespace Support {
 
     FanTrackerFilter::FanTrackerFilter()
-        {
-        }
+    {
+    }
 
 
     void FanTrackerFilter::operator()( Tfr::Chunk& c )

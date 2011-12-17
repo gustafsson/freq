@@ -2,6 +2,8 @@
 #include "stft.h"
 #include "stftkernel.h"
 
+#include "signal/buffer.h"
+
 #include "TaskTimer.h"
 #include "neat_math.h"
 

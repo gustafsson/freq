@@ -1,13 +1,22 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "chunk.h"
 #include "freqaxis.h"
+#include "signal/intervals.h"
 
-#include "signal/source.h"
+#include <boost/shared_ptr.hpp>
+
+namespace Signal
+{
+    class Buffer;
+    typedef boost::shared_ptr<Buffer> pBuffer;
+}
 
 namespace Tfr
 {
+
+class Chunk;
+typedef boost::shared_ptr<Chunk> pChunk;
 
 /**
   Examples of Transform implementations:
@@ -60,9 +69,16 @@ public:
 
 
     /**
-      Returns the interval that could be validated using a buffer of a given length.
+      Returns the interval that could be validated using an interval of a given length.
       */
-    virtual Signal::Interval validLength(Signal::pBuffer buffer) { return buffer->getInterval(); }
+    //virtual Signal::Interval validInterval(Signal::pBuffer buffer) = 0;
+
+
+    /**
+      Returns the interval that would be required to yield a chunk with
+      (getInterval() & I == I), i.e at least spanning I.
+      */
+    //virtual Signal::Interval requiredInterval(Signal::Interval I) = 0;
 
 
     /**

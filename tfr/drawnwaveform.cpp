@@ -2,7 +2,9 @@
 
 #include "drawnwaveformkernel.h"
 #include "computationkernel.h"
+#include "signal/buffer.h"
 
+// gpumisc
 #include "neat_math.h"
 
 // std

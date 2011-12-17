@@ -1,6 +1,8 @@
 #include "matlabfilter.h"
 #include "hdf5.h"
 
+#include "tfr/chunk.h"
+
 #include <signal.h>
 #include <sys/stat.h>
 #include <sstream>

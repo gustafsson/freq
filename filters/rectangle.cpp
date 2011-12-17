@@ -1,5 +1,6 @@
 #include "rectangle.h"
 #include "rectanglekernel.h"
+#include "tfr/chunk.h"
 
 // gpumisc
 #include <computationkernel.h>

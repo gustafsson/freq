@@ -15,6 +15,8 @@
 
 #include <string.h>
 
+#include <boost/scoped_ptr.hpp>
+
 //#define VERBOSE_HDF5_HEADER
 #define VERBOSE_HDF5_HEADER if(0)
 

@@ -1,6 +1,7 @@
 #ifdef USE_CUDA
 #include "move.h"
 #include "move.cu.h"
+#include "tfr/chunk.h"
 
 //#define TIME_FILTER
 #define TIME_FILTER if(0)

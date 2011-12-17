@@ -1,4 +1,5 @@
 #include "ridge.h"
+#include "tfr/chunk.h"
 
 #include <complex>
 #include <vector>

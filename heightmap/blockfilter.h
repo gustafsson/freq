@@ -89,9 +89,6 @@ public:
     void applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
         BlockFilter::applyFilter( pchunk );
-
-        Signal::Interval I = FilterKind::transform()->validLength(pchunk.inverse);
-        pchunk.inverse.reset( new Signal::Buffer(I.first, I.count(), pchunk.inverse->sample_rate) );
     }
 
 
