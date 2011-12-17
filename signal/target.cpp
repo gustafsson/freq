@@ -403,7 +403,6 @@ unsigned Target::
 unsigned Target::
         prev_good_size( unsigned current_valid_samples_per_chunk )
 {
-    Tfr::Filter* f = 0;
     if (Tfr::Filter* f = findType<Tfr::Filter>(source()))
         return f->prev_good_size(current_valid_samples_per_chunk);
 
