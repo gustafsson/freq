@@ -185,13 +185,17 @@ RenderController::
 #endif
         ui->actionSet_colorscale->trigger();
 
-#ifndef USE_CUDA
         ui->actionTransform_Stft->trigger();
-        linearScale->trigger();
-#else
-        ui->actionTransform_Cwt->trigger();
         logScale->trigger();
-#endif
+
+//#ifndef USE_CUDA
+//        ui->actionTransform_Stft->trigger();
+//        linearScale->trigger();
+//#else
+//        ui->actionTransform_Cwt->trigger();
+//        logScale->trigger();
+//#endif
+
         main->getItems()->actionToggleTransformToolBox->setChecked( true );
     }
 }
