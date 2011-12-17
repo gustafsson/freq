@@ -93,7 +93,9 @@ public:
     void applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
         BlockFilter::applyFilter( pchunk );
-        largestApplied = std::max( largestApplied, (unsigned)pchunk.inverse->getInterval().count() );
+
+        Signal::Interval I = pchunk.inverse->getInterval();
+        largestApplied = std::max( largestApplied, (unsigned)I.count() );
     }
 
 
@@ -142,7 +144,8 @@ public:
         unsigned smallest_ok = smallestOk(J);
         if (largestApplied < smallest_ok)
         {
-            undersampled |= J;
+            if (0 != J.first)
+                undersampled |= J;
         }
         else if (undersampled)
         {

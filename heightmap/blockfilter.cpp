@@ -323,6 +323,9 @@ void BlockFilter::
 
     enable_subtexel_aggregation &= full_resolution;
 
+    // way to slow
+    //enable_subtexel_aggregation = false;
+
     // Invoke kernel execution to merge chunk into block
     ::blockResampleChunk( chunk.transform_data,
                      outData,
