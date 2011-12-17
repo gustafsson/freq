@@ -139,7 +139,7 @@ public:
     }
 
 
-    virtual void invalidate_samples(const Intervals& I)
+    virtual void invalidate_samples(const Signal::Intervals& I)
     {
         largestApplied = 0;
         FilterKind::invalidate_samples( I );
