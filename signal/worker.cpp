@@ -122,6 +122,8 @@ bool Worker::
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
 
+
+    _samples_per_chunk = _target->next_good_size( _samples_per_chunk - 1 );
     Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
     if (is_cheating() && interval.last > _number_of_samples)
     {

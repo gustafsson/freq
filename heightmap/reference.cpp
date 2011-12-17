@@ -307,7 +307,8 @@ Signal::Interval Reference::
     // didn't even span one element, expand to span the elements it intersects with
     if ( localEndTime - localStartTime < (0 != localStartTime ? 1.0 : 0.5 ))
     {
-        // TODO this is only an accetable fallback if blocks can't be bigger than I.count()
+        // this is only an accetable fallback if blocks can't be bigger than I.count()
+        // BlockFilter::largestApplied takes care of this
 
         double middle = floor( (I.first/p + I.last/p)*0.5 );
         localStartTime = max(0.0, middle - 0.5);

@@ -34,6 +34,8 @@ protected:
     virtual void mergeRowMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData,
                                      bool full_resolution, ComplexInfo complex_info, float normalization_factor, bool enable_subtexel_aggregation );
 
+    unsigned smallestOk(const Signal::Interval& I);
+
     Collection* _collection;
 };
 
@@ -44,7 +46,8 @@ class BlockFilterImpl: public FilterKind, public BlockFilter
 public:
     BlockFilterImpl( Collection* collection )
         :
-        BlockFilter(collection)
+        BlockFilter(collection),
+        largestApplied(0)
     {
     }
 
@@ -52,7 +55,8 @@ public:
     BlockFilterImpl( std::vector<boost::shared_ptr<Collection> >* collections )
         :
         BlockFilter((*collections)[0].get()),
-        _collections(collections)
+        _collections(collections),
+        largestApplied(0)
     {
     }
 
@@ -89,6 +93,7 @@ public:
     void applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
         BlockFilter::applyFilter( pchunk );
+        largestApplied = std::max( largestApplied, (unsigned)pchunk.inverse->getInterval().count() );
     }
 
 
@@ -98,8 +103,75 @@ public:
         return Signal::Intervals::Intervals();
     }
 
+
+    virtual Signal::pBuffer read(const Signal::Interval& J)
+    {
+        Signal::Interval I = J;
+
+        // loop, because smallestOk depend on I
+        for (
+                Signal::Interval K(0,0);
+                K != I;
+                I = coveredInterval(I))
+        {
+            K = I;
+        }
+
+        return FilterKind::read( I );
+    }
+
+
+    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk )
+    {
+        unsigned smallest_ok = smallestOk(Signal::Interval(0,0));
+        unsigned requiredSize = std::min(largestApplied, smallest_ok);
+        return std::max(requiredSize, FilterKind::next_good_size( current_valid_samples_per_chunk ) );
+    }
+
+
+    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk )
+    {
+        unsigned smallest_ok = smallestOk(Signal::Interval(0,0));
+        unsigned requiredSize = std::min(largestApplied, smallest_ok);
+        return std::max(requiredSize, FilterKind::prev_good_size( current_valid_samples_per_chunk ) );
+    }
+
+
+    Signal::Interval coveredInterval(const Signal::Interval& J)
+    {
+        unsigned smallest_ok = smallestOk(J);
+        if (largestApplied < smallest_ok)
+        {
+            undersampled |= J;
+        }
+        else if (undersampled)
+        {
+            FilterKind::invalidate_samples(undersampled);
+            undersampled.clear();
+        }
+
+        unsigned requiredSize = std::min(largestApplied, smallest_ok);
+        if (requiredSize <= J.count())
+            return J;
+
+        // grow in both directions
+        Signal::Interval I = Signal::Intervals(J).enlarge( (requiredSize - J.count())/2 ).spannedInterval();
+        I.last = I.first + requiredSize;
+
+        if (largestApplied < smallest_ok)
+        {
+            undersampled |= I;
+        }
+
+        return I;
+    }
+
 protected:
     std::vector<boost::shared_ptr<Collection> >* _collections;
+
+private:
+    unsigned largestApplied;
+    Signal::Intervals undersampled;
 };
 
 

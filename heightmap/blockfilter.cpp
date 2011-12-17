@@ -367,6 +367,26 @@ void BlockFilter::
 }
 
 
+unsigned BlockFilter::
+        smallestOk(const Signal::Interval& I)
+{
+    float FS = _collection->target->sample_rate();
+    long double min_fs = FS;
+    std::vector<pBlock> intersections = _collection->getIntersectingBlocks( I?I:_collection->invalid_samples(), true );
+    BOOST_FOREACH( pBlock b, intersections )
+    {
+        if (!(b->ref.getInterval() - b->valid_samples))
+            continue;
+
+        long double fs = b->ref.sample_rate();
+        min_fs = std::min( min_fs, fs );
+    }
+
+    unsigned r = ceil( 2 * FS/min_fs );
+    return r;
+}
+
+
 //////////////////////////////// CwtToBlock ///////////////////////////////
 
 CwtToBlock::
