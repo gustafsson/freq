@@ -73,14 +73,14 @@ void RenderModel::
 {
     _qx = 0;
     _qy = 0;
-    _qz = .5f;  // _qz(3.6f/5),
+    _qz = .5f;
     _px = 0;
     _py = 0;
-    _pz = -40.f;
+    _pz = -10.f;
     _rx = 91;
     _ry = 180;
     _rz = 0;
-    xscale = 5;
+    xscale = -_pz;
     zscale = -_pz*0.75f;
 }
 
