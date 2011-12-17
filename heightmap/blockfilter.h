@@ -139,6 +139,13 @@ public:
     }
 
 
+    virtual void invalidate_samples(const Intervals& I)
+    {
+        largestApplied = 0;
+        FilterKind::invalidate_samples( I );
+    }
+
+
     Signal::Interval coveredInterval(const Signal::Interval& J)
     {
         unsigned smallest_ok = smallestOk(J);
@@ -149,6 +156,7 @@ public:
         }
         else if (undersampled)
         {
+            // don't reset largestApplied, call FilterKind::invalidate_samples directly
             FilterKind::invalidate_samples(undersampled);
             undersampled.clear();
         }
