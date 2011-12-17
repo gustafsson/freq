@@ -25,15 +25,16 @@ void main()
 
     // rainbow
     curveColor = mix(curveColor, texture2D(tex_color, vec2(f,0)), colorTextureFactor);
-    f = mix(f, 1.0 - (1.0-f)*(1.0-f)*(1.0-f), colorTextureFactor);
+    float g = max(0.0, 1.0-f);
+    f = mix(f, 1.0 - g*g*g, colorTextureFactor);
 
     //float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
     curveColor *= shadow; // curveColor*shadow + vec4(fresnel);
     curveColor = mix(vec4(1.0), curveColor, f);
 
     v = 0.0==vertex_height ? v : vertex_height;
-    float isarithm1 = fract( v * 25.0) < 0.93 ? 1.0 : 0.9;
-    float isarithm2 = fract( v * 5.0) < 0.93 ? 1.0 : 0.9;
+    float isarithm1 = fract( v * 25.0) < 0.93 ? 1.0 : 0.8;
+    float isarithm2 = fract( v * 5.0) < 0.93 ? 1.0 : 0.8;
     curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
 
     curveColor.w = 1.0; //-saturate(fresnel);
