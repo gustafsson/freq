@@ -106,8 +106,8 @@ bool Worker::
     Signal::Intervals centerinterval(center_sample, center_sample+1);
     centerinterval = centerinterval.enlarge(_samples_per_chunk*4);
 
-    if (is_cheating() && (todo_list & centerinterval).count()>2*_samples_per_chunk)
-        _requested_fps = _requested_cheat_fps;
+    if ((todo_list & centerinterval).count()>2*_samples_per_chunk)
+        _requested_fps = std::min(_highest_fps, _requested_cheat_fps);
 
     if (_target->post_sink()->isUnderfed())
         _requested_fps = _min_fps;

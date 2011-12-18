@@ -133,7 +133,7 @@ void BlockFilter::
     }
 
     float s1=(spannedBlockSamples.first - .5*0 - 1.5) / (float)(block->ref.samplesPerBlock()-1);
-    float s2=(spannedBlockSamples.last - .5*0) / (float)(block->ref.samplesPerBlock()-1);
+    float s2=(spannedBlockSamples.last - .5*0 + 1.5) / (float)(block->ref.samplesPerBlock()-1);
     float t1=(transfer.first - blockInterval.first) / (float)blockInterval.count();
     float t2=(transfer.last - blockInterval.first) / (float)blockInterval.count();
 
