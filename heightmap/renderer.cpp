@@ -1868,15 +1868,16 @@ void Renderer::
 
 
     // dark inside
-    glColor4f( 1, 1, 1, 1 );
+    float darkness = 0.2f; // 0 = not dark, 1 = very dark
+    glColor4f( darkness, darkness, darkness, 1 );
     glBlendEquation( GL_FUNC_REVERSE_SUBTRACT );
     glBlendFunc( GL_ONE_MINUS_DST_COLOR, GL_ONE );
     glDrawArrays( GL_TRIANGLE_FAN, 0, clippedFrustum.size() );
+    glBlendEquation( GL_FUNC_ADD );
 
 
     // black border
     glColor4f( 0, 0, 0, 0.5 );
-    glBlendEquation( GL_FUNC_ADD );
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glLineWidth( 0.5 );
     glDrawArrays(GL_LINE_LOOP, 0, clippedFrustum.size());
