@@ -25,8 +25,8 @@
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
-//#define INFO_COLLECTION
-#define INFO_COLLECTION if(0)
+#define INFO_COLLECTION
+//#define INFO_COLLECTION if(0)
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
