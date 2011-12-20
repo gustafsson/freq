@@ -9,6 +9,7 @@
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"
 #include "heightmap/block.h"
+#include "heightmap/glblock.h"
 
 // gpumisc
 #include <tvector.h>
@@ -105,12 +106,11 @@ float& PeakModel::
 void PeakModel::
         findAddPeak( Heightmap::Reference ref, Heightmap::Position pos )
 {
-    Heightmap::Position a, b;
-    ref.getArea( a, b );
+    Heightmap::Region r = ref.getRegion();
     unsigned h = ref.scalesPerBlock();
     unsigned w = ref.samplesPerBlock();
-    unsigned y0 = (pos.scale-a.scale)/(b.scale-a.scale)*(h-1) + .5f;
-    unsigned x0 = (pos.time-a.time)/(b.time-a.time)*(w-1) + .5f;
+    unsigned y0 = (pos.scale-r.a.scale)/r.scale()*(h-1) + .5f;
+    unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
 
     classifictions.clear();
 
@@ -417,9 +417,8 @@ void PeakModel::
                              PropagationState prevState, float prevVal
                              )
 {
-    Heightmap::Position a,b;
-    ref.getArea(a,b);
-    if (b.scale > 1 || a.scale >= 1)
+    Heightmap::Region r = ref.getRegion();
+    if (r.b.scale > 1 || r.a.scale >= 1)
         return;
 
     Heightmap::pBlock block = ref.collection()->getBlock( ref );
@@ -588,9 +587,8 @@ void PeakModel::
             ref = ref.sibblingTop();
             y -= h;
 
-            Heightmap::Position a, b;
-            ref.getArea( a, b );
-            if (a.scale >= 1 || b.scale > 1 )
+            Heightmap::Region r = ref.getRegion();
+            if (r.a.scale >= 1 || r.b.scale > 1 )
             {
                 this->classifictions.clear();
                 return;

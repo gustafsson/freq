@@ -10,6 +10,7 @@
 #include "adapters/microphonerecorder.h"
 #include "heightmap/renderer.h"
 #include "heightmap/block.h"
+#include "heightmap/glblock.h"
 #include "heightmap/collection.h"
 #include "sawe/application.h"
 #include "sawe/project.h"
@@ -277,12 +278,11 @@ float RenderView::
         *ref = findRefAtCurrentZoomLevel( pos );
     }
 
-    Heightmap::Position a,b;
-    ref->getArea( a, b );
+    Heightmap::Region r = ref->getRegion();
 
-    ref->block_index[0] = pos.time / (b.time - a.time);
-    ref->block_index[1] = pos.scale / (b.scale - a.scale);
-    ref->getArea( a, b );
+    ref->block_index[0] = pos.time / r.time();
+    ref->block_index[1] = pos.scale / r.scale();
+    r = ref->getRegion();
 
     Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
     if (!block)
@@ -305,8 +305,8 @@ float RenderView::
     float* data = blockData->getCpuMemory();
     unsigned w = ref->samplesPerBlock();
     unsigned h = ref->scalesPerBlock();
-    unsigned x0 = (pos.time-a.time)/(b.time-a.time)*(w-1) + .5f;
-    float    yf = (pos.scale-a.scale)/(b.scale-a.scale)*(h-1);
+    unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
+    float    yf = (pos.scale-r.a.scale)/r.scale()*(h-1);
     unsigned y0 = yf + .5f;
 
     BOOST_ASSERT( x0 < w );
@@ -348,18 +348,18 @@ float RenderView::
         {
             v = k*m0*m0 + p*m0 + q;
             if (pick_local_max)
-                *pick_local_max = a.scale + (b.scale-a.scale)*(y0 + m0)/(h-1);
+                *pick_local_max = r.a.scale + r.scale()*(y0 + m0)/(h-1);
         }
         else
         {
             v = v2;
             if (pick_local_max)
-                *pick_local_max = a.scale + (b.scale-a.scale)*(y0)/(h-1);
+                *pick_local_max = r.a.scale + r.scale()*(y0)/(h-1);
         }
 
         float testmax;
         float testv = quad_interpol( y0, data + x0, h, w, &testmax );
-        float testlocalmax = a.scale + (b.scale-a.scale)*(testmax)/(h-1);
+        float testlocalmax = r.a.scale + r.scale()*(testmax)/(h-1);
 
         BOOST_ASSERT( testv == v );
         if (pick_local_max)

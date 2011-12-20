@@ -8,17 +8,25 @@ Block::
         Block( Reference ref )
     :
     frame_number_last_used(-1),
-    ref(ref)
+    ref_(ref),
 #ifndef SAWE_NO_MUTEX
-    ,new_data_available( false )
+    new_data_available( false ),
 #endif
-{}
+    block_interval_( ref.getInterval() ),
+    region_( ref.getRegion() ),
+    sample_rate_( ref.sample_rate() )
+{
+}
 
 
 Block::
         ~Block()
 {
-    TaskInfo("Deleting block %s", ref.toString().c_str());
+    if (glblock)
+    {
+        TaskTimer tt("Deleting block %s", ref_.toString().c_str());
+        glblock.reset();
+    }
 }
 
 

@@ -534,24 +534,23 @@ Reference Renderer::
     // this algorithm will choose some ref along the border closest to the
     // point 'p'.
 
-    while(true)
+    while (true)
     {
         LevelOfDetal lod = testLod(ref);
 
-        Position a,b;
-        ref.getArea(a,b);
+        Region r = ref.getRegion();
 
         switch(lod)
         {
         case Lod_NeedBetterF:
-            if ((a.scale+b.scale)/2 > p.scale)
+            if ((r.a.scale+r.b.scale)/2 > p.scale)
                 ref = ref.bottom();
             else
                 ref = ref.top();
             break;
 
         case Lod_NeedBetterT:
-            if ((a.time+b.time)/2 > p.time)
+            if ((r.a.time+r.b.time)/2 > p.time)
                 ref = ref.left();
             else
                 ref = ref.right();
@@ -690,12 +689,11 @@ void Renderer::renderSpectrogramRef( Reference ref )
     TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
-    Position a, b;
-    ref.getArea( a, b );
+    Region r = ref.getRegion();
     glPushMatrixContext mc( GL_MODELVIEW );
 
-    glTranslatef(a.time, 0, a.scale);
-    glScalef(b.time-a.time, 1, b.scale-a.scale);
+    glTranslatef(r.a.time, 0, r.a.scale);
+    glScalef(r.time(), 1, r.scale());
 
     pBlock block = collection->getBlock( ref );
 
@@ -1066,8 +1064,8 @@ std::vector<GLvector> Renderer::
 bool Renderer::
         computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
-    Position p[2];
-    ref.getArea( p[0], p[1] );
+    Region r = ref.getRegion();
+    const Position p[2] = { r.a, r.b };
 
     float y[]={0, projectionPlane[1]*.5};
     for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)

@@ -30,7 +30,6 @@ namespace Heightmap {
         unsigned frame_number_last_used;
 
         // Zoom level for this slot, determines size of elements
-        Reference ref;
         boost::shared_ptr<GlBlock> glblock;
 
         typedef DataStorage<float>::Ptr pData;
@@ -59,6 +58,18 @@ namespace Heightmap {
           resolution signal.
           */
         Signal::Intervals valid_samples, non_zero;
+
+        const Reference& reference() const { return ref_; }
+
+        const Signal::Interval& getInterval() const { return block_interval_; }
+        const Region& getRegion() const { return region_; }
+        float sample_rate() const { return sample_rate_; }
+    private:
+        const Reference ref_;
+
+        const Signal::Interval block_interval_;
+        const Region region_;
+        const float sample_rate_;
     };
     typedef boost::shared_ptr<Block> pBlock;
 

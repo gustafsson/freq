@@ -3,6 +3,7 @@
 #include "blockkernel.h"
 #include "collection.h"
 #include "renderer.h"
+#include "glblock.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/drawnwaveform.h"
@@ -52,7 +53,7 @@ void BlockFilter::
 
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
-        if (((block->ref.getInterval() - block->valid_samples) & chunk_interval).empty() )
+        if (((block->getInterval() - block->valid_samples) & chunk_interval).empty() )
             continue;
 
 #ifndef SAWE_NO_MUTEX
@@ -94,17 +95,16 @@ void BlockFilter::
 {
     TIME_BLOCKFILTER ComputationSynchronize();
 
-    Position a, b;
-    block->ref.getArea(a,b);
+    Region r = block->getRegion();
 
     Position chunk_a, chunk_b;
     //Signal::Interval inInterval = chunk.getInterval();
     Signal::Interval inInterval = chunk.getCoveredInterval();
-    Signal::Interval blockInterval = block->ref.getInterval();
+    Signal::Interval blockInterval = block->getInterval();
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval, spannedBlockSamples);
+    Signal::Interval usableInInterval = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
 
@@ -119,36 +119,36 @@ void BlockFilter::
         return;
 
 #ifdef _DEBUG
-    blockInterval = block->ref.getInterval();
+    blockInterval = block->getInterval();
     Signal::Interval blockSpannedBlockSamples(0,0);
-    Signal::Interval usableBlockInterval = block->ref.spannedElementsInterval(blockInterval, blockSpannedBlockSamples);
-    blockInterval = block->ref.getInterval();
-    usableBlockInterval = block->ref.spannedElementsInterval(blockInterval, blockSpannedBlockSamples);
+    Signal::Interval usableBlockInterval = block->reference().spannedElementsInterval(blockInterval, blockSpannedBlockSamples);
+    blockInterval = block->getInterval();
+    usableBlockInterval = block->reference().spannedElementsInterval(blockInterval, blockSpannedBlockSamples);
     Signal::Intervals invalidBlockInterval = blockInterval - block->valid_samples;
 
-    if (blockSpannedBlockSamples.count() != block->ref.samplesPerBlock())
+    if (blockSpannedBlockSamples.count() != block->reference().samplesPerBlock())
     {
         Signal::Interval blockSpannedBlockSamples2(0,0);
-        Signal::Interval usableBlockInterval = block->ref.spannedElementsInterval(blockInterval, blockSpannedBlockSamples2);
+        Signal::Interval usableBlockInterval = block->reference().spannedElementsInterval(blockInterval, blockSpannedBlockSamples2);
     }
 
-    float s1=(spannedBlockSamples.first - .5*0 - 1.5) / (float)(block->ref.samplesPerBlock()-1);
-    float s2=(spannedBlockSamples.last - .5*0 + 1.5) / (float)(block->ref.samplesPerBlock()-1);
+    float s1=(spannedBlockSamples.first - .5*0 - 1.5) / (float)(block->reference().samplesPerBlock()-1);
+    float s2=(spannedBlockSamples.last - .5*0 + 1.5) / (float)(block->reference().samplesPerBlock()-1);
     float t1=(transfer.first - blockInterval.first) / (float)blockInterval.count();
     float t2=(transfer.last - blockInterval.first) / (float)blockInterval.count();
 
     Signal::Interval spannedBlockSamples3(0,0);
-    Signal::Interval usableInInterval3 = block->ref.spannedElementsInterval(inInterval, spannedBlockSamples3);
+    Signal::Interval usableInInterval3 = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples3);
 
     if( s2-s1 < t2-t1 || spannedBlockSamples.count()>4)
     {
         Signal::Interval spannedBlockSamples2(0,0);
-        Signal::Interval usableInInterval2 = block->ref.spannedElementsInterval(inInterval, spannedBlockSamples2);
+        Signal::Interval usableInInterval2 = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples2);
     }
 
     BOOST_ASSERT( s2 >= t2 );
     BOOST_ASSERT( s1 <= t1 );
-    BOOST_ASSERT(blockSpannedBlockSamples.count() == block->ref.samplesPerBlock());
+    BOOST_ASSERT(blockSpannedBlockSamples.count() == block->reference().samplesPerBlock());
     BOOST_ASSERT(usableBlockInterval == blockInterval);
     BOOST_ASSERT(usableInInterval.first >= inInterval.first || usableInInterval.last <= inInterval.last);
 #endif
@@ -168,8 +168,8 @@ void BlockFilter::
                   ValidInterval(spannedBlockSamples.first, spannedBlockSamples.last),
                   ResampleArea( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
-                  ResampleArea( a.time, a.scale,
-                               b.time, b.scale ),
+                  ResampleArea( r.a.time, r.a.scale,
+                               r.b.time, r.b.scale ),
                   chunk.freqAxis,
                   _collection->display_scale(),
                   _collection->amplitude_axis(),
@@ -193,7 +193,7 @@ void BlockFilter::
     //unsigned cuda_stream = 0;
 
     // Find out what intervals that match
-    Signal::Interval outInterval = block->ref.getInterval();
+    Signal::Interval outInterval = block->getInterval();
     Signal::Interval inInterval = chunk.getInterval();
 
     // don't validate more texels than we have actual support for
@@ -234,15 +234,14 @@ void BlockFilter::
         return;
     }
 
-    Position a,b;
-    block->ref.getArea(a,b);
+    Region r = block->getRegion();
     float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
     float chunk_length = chunk.n_valid_samples / chunk.sample_rate;
     DEBUG_CWTTOBLOCK TaskTimer tt2("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
-                                 chunk_startTime, chunk_startTime + chunk_length, a.time, b.time, a.scale, b.scale);
+                                 chunk_startTime, chunk_startTime + chunk_length, r.a.time, r.b.time, r.a.scale, r.b.scale);
 
-    float merge_first_scale = a.scale;
-    float merge_last_scale = b.scale;
+    float merge_first_scale = r.a.scale;
+    float merge_last_scale = r.b.scale;
     float chunk_first_scale = _collection->display_scale().getFrequencyScalar( chunk.minHz() );
     float chunk_last_scale = _collection->display_scale().getFrequencyScalar( chunk.maxHz() );
 
@@ -257,7 +256,7 @@ void BlockFilter::
                   "chunk_first_scale = %g, chunk_last_scale = %g\n"
                   "chunk.minHz() = %g, chunk.maxHz() = %g",
                   merge_first_scale, merge_last_scale,
-                  a.scale, b.scale,
+                  r.a.scale, r.b.scale,
                   chunk_first_scale, chunk_last_scale,
                   chunk.minHz(), chunk.maxHz()).suppressTiming();
         return;
@@ -269,8 +268,8 @@ void BlockFilter::
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
-    DEBUG_CWTTOBLOCK TaskInfo("a.scale = %g", a.scale);
-    DEBUG_CWTTOBLOCK TaskInfo("b.scale = %g", b.scale);
+    DEBUG_CWTTOBLOCK TaskInfo("r.a.scale = %g", r.a.scale);
+    DEBUG_CWTTOBLOCK TaskInfo("r.b.scale = %g", r.b.scale);
     DEBUG_CWTTOBLOCK TaskInfo("chunk_first_scale = %g", chunk_first_scale);
     DEBUG_CWTTOBLOCK TaskInfo("chunk_last_scale = %g", chunk_last_scale);
     DEBUG_CWTTOBLOCK TaskInfo("merge_first_scale = %g", merge_first_scale);
@@ -293,26 +292,26 @@ void BlockFilter::
     TIME_CWTTOBLOCK
     {
         Position ia, ib; // intersect
-        ia.time = std::max(a.time, chunk_a.time);
-        ia.scale = std::max(a.scale, chunk_a.scale);
-        ib.time = std::min(b.time, chunk_b.time);
-        ib.scale = std::min(b.scale, chunk_b.scale);
+        ia.time = std::max(r.a.time, chunk_a.time);
+        ia.scale = std::max(r.a.scale, chunk_a.scale);
+        ib.time = std::min(r.b.time, chunk_b.time);
+        ib.scale = std::min(r.b.scale, chunk_b.scale);
         s = Position ( ib.time - ia.time, ib.scale - ia.scale);
-        sblock = Position( b.time - a.time, b.scale - a.scale);
+        sblock = Position( r.b.time - r.a.time, r.b.scale - r.a.scale);
         schunk = Position( chunk_b.time - chunk_a.time, chunk_b.scale - chunk_a.scale);
     }
 
     TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %.2f), (%.2f %.2f)] |%.2f %.2f, %.2f %.2f| %ux%u=%u <- %ux%u=%u",
-            a.time, b.time,
-            a.scale, b.scale,
+            r.a.time, r.b.time,
+            r.a.scale, r.b.scale,
             chunk_a.time, chunk_b.time,
             chunk_a.scale, chunk_b.scale,
             transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate,
             merge_first_scale, merge_last_scale,
-            (unsigned)(s.time / sblock.time * block->ref.samplesPerBlock() + .5f),
-            (unsigned)(s.scale / sblock.scale * block->ref.scalesPerBlock() + .5f),
-            (unsigned)(s.time / sblock.time * block->ref.samplesPerBlock() *
-            s.scale / sblock.scale * block->ref.scalesPerBlock() + .5f),
+            (unsigned)(s.time / sblock.time * block->reference().samplesPerBlock() + .5f),
+            (unsigned)(s.scale / sblock.scale * block->reference().scalesPerBlock() + .5f),
+            (unsigned)(s.time / sblock.time * block->reference().samplesPerBlock() *
+            s.scale / sblock.scale * block->reference().scalesPerBlock() + .5f),
             (unsigned)(s.time / schunk.time * chunk.n_valid_samples + .5f),
             (unsigned)(s.scale / schunk.scale * chunk.nScales() + .5f),
             (unsigned)(s.time / schunk.time * chunk.n_valid_samples *
@@ -334,8 +333,8 @@ void BlockFilter::
                      ResampleArea( chunk_a.time, chunk_a.scale,
                                   //chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // numerical error workaround, only affects visual
                                  chunk_b.time, chunk_b.scale  ), // numerical error workaround, only affects visual
-                     ResampleArea( a.time, a.scale,
-                                  b.time, b.scale ),
+                     ResampleArea( r.a.time, r.a.scale,
+                                  r.b.time, r.b.scale ),
                      complex_info,
                      chunk.freqAxis,
                      _collection->display_scale(),
@@ -360,7 +359,7 @@ void BlockFilter::
     block->non_zero |= transfer;
 
     DEBUG_CWTTOBLOCK {
-        TaskInfo ti("Block filter input and output %s", block->ref.toString().c_str());
+        TaskInfo ti("Block filter input and output %s", block->reference().toString().c_str());
         DataStorageSize sz = chunk.transform_data->size();
         sz.width *= 2;
         Statistics<float> o1( CpuMemoryStorage::BorrowPtr<float>( sz, (float*)CpuMemoryStorage::ReadOnly<2>(chunk.transform_data).ptr() ));
@@ -378,10 +377,10 @@ unsigned BlockFilter::
     std::vector<pBlock> intersections = _collection->getIntersectingBlocks( I?I:_collection->invalid_samples(), true );
     BOOST_FOREACH( pBlock b, intersections )
     {
-        if (!(b->ref.getInterval() - b->valid_samples))
+        if (!(b->getInterval() - b->valid_samples))
             continue;
 
-        long double fs = b->ref.sample_rate();
+        long double fs = b->sample_rate();
         min_fs = std::min( min_fs, fs );
     }
 
@@ -486,12 +485,12 @@ ChunkAndInverse DrawnWaveformToBlock::
     Signal::Intervals missingSamples;
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
-        missingSamples |= block->ref.getInterval() - block->valid_samples;
+        missingSamples |= block->getInterval() - block->valid_samples;
     }
 
     missingSamples &= I;
 
-    long double largest_fs = 0;
+    float largest_fs = 0;
     Signal::Interval toCompute = I;
     if (missingSamples)
     {
@@ -501,10 +500,10 @@ ChunkAndInverse DrawnWaveformToBlock::
 
         BOOST_FOREACH( pBlock block, intersecting_blocks)
         {
-            if (((block->ref.getInterval() - block->valid_samples) & first).empty() )
+            if (((block->getInterval() - block->valid_samples) & first).empty() )
                 continue;
 
-            largest_fs = std::max(largest_fs, block->ref.sample_rate());
+            largest_fs = std::max(largest_fs, block->sample_rate());
         }
 
         DrawnWaveform* wt = dynamic_cast<DrawnWaveform*>(transform().get());
@@ -535,7 +534,7 @@ void DrawnWaveformToBlock::
 
     DrawnWaveformChunk* dwc = dynamic_cast<DrawnWaveformChunk*>(&chunk);
 
-    float block_fs = block->ref.sample_rate();
+    float block_fs = block->sample_rate();
 
     if (dwc->block_fs != block_fs)
         return;

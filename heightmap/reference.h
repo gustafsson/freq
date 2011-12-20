@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAPREFERENCE_H
 #define HEIGHTMAPREFERENCE_H
 
-#include "heightmap/position.h"
+#include "position.h"
 #include "signal/intervals.h"
 
 #include <tvector.h>
@@ -16,8 +16,8 @@ public:
     tvector<2,unsigned> block_index;
 
     bool operator==(const Reference &b) const;
-    void getArea( Position &a, Position &b) const;
-    void getArea( Position &a, Position &b, unsigned samples_per_block, unsigned scales_per_block ) const;
+    Region getRegion() const;
+    Region getRegion( unsigned samples_per_block, unsigned scales_per_block ) const;
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
     Collection* collection() const;

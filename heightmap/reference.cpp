@@ -16,15 +16,16 @@ bool Reference::
             // Don't compare _collection == b._collection;
 }
 
-void Reference::
-        getArea( Position &a, Position &b) const
+Region Reference::
+        getRegion() const
 {
-    getArea( a, b, samplesPerBlock(), scalesPerBlock() );
+    return getRegion(samplesPerBlock(), scalesPerBlock());
 }
 
-void Reference::
-        getArea( Position &a, Position &b, unsigned samples_per_block, unsigned scales_per_block ) const
+Region Reference::
+        getRegion( unsigned samples_per_block, unsigned scales_per_block ) const
 {
+    Position a, b;
     // TODO make Referece independent of samples_per_block and scales_per_block
     // For integers 'i': "2 to the power of 'i'" == powf(2.f, i) == ldexpf(1.f, i)
     Position blockSize( samples_per_block * ldexpf(1.f,log2_samples_size[0]),
@@ -33,6 +34,8 @@ void Reference::
     a.scale = blockSize.scale * block_index[1];
     b.time = a.time + blockSize.time;
     b.scale = a.scale + blockSize.scale;
+
+    return Region(a,b);
 }
 
 /* child references */
@@ -142,30 +145,28 @@ Reference::
 bool Reference::
         containsPoint(Position p) const
 {
-    Position a, b;
-    getArea( a, b );
+    Region r = getRegion();
 
-    return a.time <= p.time && p.time <= b.time &&
-            a.scale <= p.scale && p.scale <= b.scale;
+    return r.a.time <= p.time && p.time <= r.b.time &&
+            r.a.scale <= p.scale && p.scale <= r.b.scale;
 }
 
 
 bool Reference::
         boundsCheck(BoundsCheck c) const
 {
-    Position a, b;
-    getArea( a, b );
+    Region r = getRegion();
 
     float FS = _collection->target->sample_rate();
     const Tfr::FreqAxis& cfa = _collection->display_scale();
-    float ahz = cfa.getFrequency(a.scale);
-    float bhz = cfa.getFrequency(b.scale);
+    float ahz = cfa.getFrequency(r.a.scale);
+    float bhz = cfa.getFrequency(r.b.scale);
 
     if (c & BoundsCheck_HighS)
     {
-        float scaledelta = (b.scale-a.scale)/scalesPerBlock();
-        float a2hz = cfa.getFrequency(a.scale + scaledelta);
-        float b2hz = cfa.getFrequency(b.scale - scaledelta);
+        float scaledelta = (r.scale())/scalesPerBlock();
+        float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
+        float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
         const Tfr::FreqAxis& tfa = _collection->transform()->freqAxis(FS);
         float scalara = tfa.getFrequencyScalar(ahz);
@@ -181,7 +182,7 @@ bool Reference::
     {
         float atres = _collection->transform()->displayedTimeResolution(FS, ahz);
         float btres = _collection->transform()->displayedTimeResolution(FS, bhz);
-        float tdelta = 2*(b.time-a.time)/samplesPerBlock();
+        float tdelta = 2*r.time()/samplesPerBlock();
         if (btres > tdelta && atres > tdelta)
             return false;
     }
@@ -189,16 +190,16 @@ bool Reference::
     if (c & BoundsCheck_OutT)
     {
         float length = _collection->target->length();
-        if (a.time >= length )
+        if (r.a.time >= length )
             return false;
     }
 
     if (c & BoundsCheck_OutS)
     {
-        if (a.scale >= 1)
+        if (r.a.scale >= 1)
             return false;
 
-        if (b.scale > 1)
+        if (r.b.scale > 1)
             return false;
     }
 
@@ -209,10 +210,9 @@ bool Reference::
 bool Reference::
         tooLarge() const
 {
-    Position a, b;
-    getArea( a, b );
+    Region r = getRegion();
     Signal::pOperation wf = _collection->target;
-    if (b.time > 2 * wf->length() && b.scale > 2 )
+    if (r.b.time > 2 * wf->length() && r.b.scale > 2 )
         return true;
     return false;
 }
@@ -220,10 +220,9 @@ bool Reference::
 string Reference::
         toString() const
 {
-    Position a, b;
-    getArea( a, b );
+    Region r = getRegion();
     stringstream ss;
-    ss << "(" << a.time << " " << a.scale << ";" << b.time << " " << b.scale << " ! "
+    ss << "(" << r.a.time << " " << r.a.scale << ";" << r.b.time << " " << r.b.scale << " ! "
             << getInterval() << " ! "
             << log2_samples_size[0] << " " << log2_samples_size[1] << ";"
             << block_index[0] << " " << block_index[1]
@@ -258,6 +257,8 @@ void Reference::
 Signal::Interval Reference::
         getInterval() const
 {
+    // TaskTimer tt("Reference::getInterval");
+
     // Similiar to getArea, but uses 1./sample_rate() instead of
     // "2 ^ log2_samples_size[0]" to compute the actual size of this block.
     // blockSize refers to the non-overlapping size.
@@ -341,9 +342,8 @@ Signal::Interval Reference::
 long double Reference::
         sample_rate() const
 {
-    Position a, b;
-    getArea( a, b );
-    return ldexp(1.0, -log2_samples_size[0]) - 1/((long double)b.time-a.time);
+    Region r = getRegion();
+    return ldexp(1.0, -log2_samples_size[0]) - 1/(long double)r.time();
 }
 
 unsigned Reference::

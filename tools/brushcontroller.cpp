@@ -133,17 +133,16 @@ void BrushController::
             {
                 ref = ref.parent().parent().parent();
 
-                Heightmap::Position a,b;
-                ref.getArea(a,b);
-                while(b.scale>1)
+                Heightmap::Region region = ref.getRegion();
+                while(region.b.scale>1)
                 {
                     ref = ref.bottom();
-                    ref.getArea(a,b);
+                    region = ref.getRegion();
                 }
-                while(b.time > 2*r.last_length())
+                while(region.b.time > 2*r.last_length())
                 {
                     ref = ref.left();
-                    ref.getArea(a,b);
+                    region = ref.getRegion();
                 }
             }
 

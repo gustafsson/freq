@@ -162,7 +162,7 @@ public:
       Blocks are updated by CwtToBlock and StftToBlock by merging chunks into
       all existing blocks that intersect with the chunk interval.
       */
-    std::vector<pBlock>      getIntersectingBlocks( Signal::Intervals I, bool only_visible );
+    std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible );
 
 
     /**
@@ -221,6 +221,10 @@ private:
 
     Position
             _max_sample_size;
+
+    // free memory is updated in next_frame()
+    size_t
+            _free_memory;
 
     Signal::pOperation _filter;
 

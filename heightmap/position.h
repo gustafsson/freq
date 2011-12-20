@@ -15,6 +15,20 @@ public:
     bool operator!= (Position const&b) { return !(*this==b); }
 };
 
+
+class Region {
+public:
+    Position a, b;
+
+    Region(Position a, Position b) : a(a), b(b) {}
+
+    bool operator== (Region const&r) { return a==r.a && b==r.b; }
+    bool operator!= (Region const&r) { return !(*this==r); }
+
+    float time() const { return b.time - a.time; }
+    float scale() const { return b.scale - a.scale; }
+};
+
 } // Heightmap
 
 #endif // HEIGHTMAPPOSITION_H
