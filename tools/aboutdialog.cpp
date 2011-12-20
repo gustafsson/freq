@@ -60,21 +60,21 @@ void AboutDialog::
 
     ui->labelSystem->setText(QString(
             "Using GPU (%1 of %2) %3.\n"
-            "%4 MB free of %5 MB total graphics memory.\n"
+            "%4 free of %5 total graphics memory.\n"
             "Gpu Gflops: %6\n"
-            "Gpu memory speed: %7 GB/s (estimated)\n"
-            "Cpu memory speed: %8 GB/s (estimated)\n"
+            "Gpu memory speed: %7/s (estimated)\n"
+            "Cpu memory speed: %8/s (estimated)\n"
             "Cuda compute capability: %9.%10\n"
             "Cuda driver version: %11\n"
             "Cuda runtime version: %12\n")
                              .arg(1+CudaProperties::getCudaCurrentDevice())
                              .arg(CudaProperties::getCudaDeviceCount())
                              .arg(prop.name)
-                             .arg(free/1024.f/1024.f, 0, 'f', 1)
-                             .arg(total/1024.f/1024.f, 0, 'f', 1)
+                             .arg(DataStorageVoid::getMemorySizeText( free ).c_str())
+                             .arg(DataStorageVoid::getMemorySizeText( total ).c_str())
                              .arg(CudaProperties::flops(prop)*1e-9, 0, 'f', 0)
-                             .arg(CudaProperties::gpu_memory_speed()*1e-9, 0, 'f', 1)
-                             .arg(CpuProperties::cpu_memory_speed()*1e-9, 0, 'f', 1)
+                             .arg(DataStorageVoid::getMemorySizeText( CudaProperties::gpu_memory_speed() ).c_str())
+                             .arg(DataStorageVoid::getMemorySizeText( CpuProperties::cpu_memory_speed() ).c_str())
                              .arg(prop.major).arg(prop.minor)
                              .arg(CudaProperties::getCudaDriverVersion())
                              .arg(CudaProperties::getCudaRuntimeVersion())

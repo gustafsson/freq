@@ -212,8 +212,9 @@ bool Worker::
 
             size_t free=0, total=0;
             cudaMemGetInfo(&free, &total);
-            TaskInfo("Cuda RAM size %g MB (of which %g MB are currently available)",
-                     total/1024.f/1024, free/1024.f/1024);
+            TaskInfo("Cuda RAM size %s (of which %s are currently available)",
+                     DataStorageVoid::getMemorySizeText( total ).c_str(),
+                     DataStorageVoid::getMemorySizeText( free ).c_str() );
 
         } else {
             throw;

@@ -976,8 +976,9 @@ void RenderView::
         }
     }
 
-    TIME_PAINTGL_DETAILS TaskInfo("Drawing (%g MB cache for %u*%u blocks) of %s (%p) %s",
-        N*sumsize/1024.f/1024.f, N, cacheCount, vartype(*first_source).c_str(), first_source, first_source->name().c_str());
+    TIME_PAINTGL_DETAILS TaskInfo("Drawing (%s cache for %u*%u blocks) of %s (%p) %s",
+        DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
+        N, cacheCount, vartype(*first_source).c_str(), first_source, first_source->name().c_str());
 
     if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
     {

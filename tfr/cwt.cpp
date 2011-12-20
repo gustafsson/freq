@@ -177,9 +177,9 @@ pChunk Cwt::
     //unsigned L = 2*std_samples0 + valid_samples;
     //bool ispowerof2 = spo2g(L-1) == lpo2s(L+1);
 
+    size_t free = availableMemoryForSingleAllocation();
     bool trypowerof2;
     {
-        size_t free = availableMemoryForSingleAllocation();
         unsigned r, T0 = required_length( 0, buffer->sample_rate, r );
         unsigned smallest_L2 = spo2g(T0-1) - 2*r;
         size_t smallest_required2 = required_gpu_bytes(smallest_L2, buffer->sample_rate);
@@ -187,10 +187,9 @@ pChunk Cwt::
     }
 
     DEBUG_CWT {
-        size_t free = availableMemoryForSingleAllocation();
-        TaskInfo("Free memory: %f MB. Required: %f MB",
-             free/1024.f/1024.f,
-             required_gpu_bytes(valid_samples, buffer->sample_rate )/1024.f/1024.f);
+        TaskInfo("Free memory: %s. Required: %f MB",
+             DataStorageVoid::getMemorySizeText( free ).c_str(),
+             DataStorageVoid::getMemorySizeText( required_gpu_bytes(valid_samples, buffer->sample_rate ) ).c_str());
     }
 
     DEBUG_CWT TaskTimer("offset = %lu", offset).suppressTiming();
@@ -413,8 +412,9 @@ pChunk Cwt::
         if (alt>sum)
             sum = alt;
 
-        size_t free = availableMemoryForSingleAllocation();
-        TaskInfo("Free memory: %f MB. Allocated %f MB", free/1024.f/1024.f, sum/1024.f/1024.f);
+        TaskInfo("Free memory: %s. Allocated %s",
+                 DataStorageVoid::getMemorySizeText( free ).c_str(),
+                 DataStorageVoid::getMemorySizeText( sum ).c_str());
     }
 
     DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->maxHz(), wt->minHz()).suppressTiming();
@@ -968,9 +968,10 @@ unsigned Cwt::
 
     if (free < required)
     {
-        TaskInfo("next_good_size: current_valid_samples_per_chunk = %u (L=%u, r=%u) requires %f MB. Free: %f MB",
+        TaskInfo("next_good_size: current_valid_samples_per_chunk = %u (L=%u, r=%u) requires %s. Free: %s",
                  current_valid_samples_per_chunk, L, r,
-                 required/1024.f/1024.f, free/1024.f/1024.f);
+                 DataStorageVoid::getMemorySizeText( required ).c_str(),
+                 DataStorageVoid::getMemorySizeText( free ).c_str() );
         return prev_good_size( L, fs );
     }
 /*        unsigned nTtest = Fft::sChunkSizeG(T, chunk_alignment( fs ));
@@ -986,7 +987,9 @@ unsigned Cwt::
             L = Ltest;
     }*/
 
-    DEBUG_CWT TaskInfo("Cwt::next_good_size free = %g MB, required = %g MB", free/1024.f/1024.f, required/1024.f/1024.f);
+    DEBUG_CWT TaskInfo("Cwt::next_good_size free = %s, required = %s",
+                       DataStorageVoid::getMemorySizeText( free ).c_str(),
+                       DataStorageVoid::getMemorySizeText( required ).c_str());
     return L;
 }
 
@@ -1005,8 +1008,10 @@ unsigned Cwt::
     size_t smallest_required = required_gpu_bytes(smallest_L, fs);
 
     DEBUG_CWT TaskInfo(
-            "prev_good_size: smallest_L = %u, chunk_alignment( %g ) = %u. Free: %f MB, required memory: %f MB",
-             smallest_L, fs, alignment, free/1024.f/1024.f, smallest_required/1024.f/1024.f);
+            "prev_good_size: smallest_L = %u, chunk_alignment( %g ) = %u. Free: %s, required memory: %s",
+             smallest_L, fs, alignment,
+             DataStorageVoid::getMemorySizeText( free ).c_str(),
+             DataStorageVoid::getMemorySizeText( smallest_required ).c_str() );
 
     BOOST_ASSERT( smallest_L + 2*r >= alignment );
 
@@ -1062,7 +1067,8 @@ unsigned Cwt::
 
     smallest_required = required_gpu_bytes(smallest_L, fs);
     DEBUG_CWT TaskInfo("prev_good_size: scales_per_octave is %g, smallest_L = %u, required = %f MB",
-                       scales_per_octave(), smallest_L, smallest_required/1024.f/1024.f);
+                       scales_per_octave(), smallest_L,
+                       DataStorageVoid::getMemorySizeText( smallest_required ).c_str());
 
     return smallest_L;
 }

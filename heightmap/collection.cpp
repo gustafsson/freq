@@ -89,7 +89,7 @@ void Collection::
 #endif
 
     {
-        TaskInfo ti("Collection::Reset, cache count = %u, size = %g MB", _cache.size(), cacheByteSize()/1024.f/1024.f);
+        TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
         foreach(const cache_t::value_type& b, _cache)
         {
             TaskInfo("%s", b.first.toString().c_str());
@@ -441,9 +441,11 @@ void Collection::
 #ifdef USE_CUDA
     cudaMemGetInfo(&free, &total);
 #endif
-    float MB = 1./1024/1024;
-    TaskInfo("Currently has %u cached blocks (ca %g MB). There are %g MB graphics memory free of a total of %g MB",
-             _cache.size(), cacheByteSize() * MB, free * MB, total * MB );
+    TaskInfo("Currently has %u cached blocks (ca %s). There are %s graphics memory free of a total of %s",
+             _cache.size(),
+             DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str(),
+             DataStorageVoid::getMemorySizeText( free ).c_str(),
+             DataStorageVoid::getMemorySizeText( total ).c_str());
 }
 
 
@@ -471,8 +473,11 @@ void Collection::
         }
     }
 
-    TaskInfo("Now has %u cached blocks (ca %g MB)", _cache.size(),
-             _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float)*1e-6 );
+    TaskInfo("Now has %u cached blocks, %s",
+             _cache.size(),
+             DataStorageVoid::getMemorySizeText(
+                     _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float) ).c_str()
+             );
 }
 
 
