@@ -6,6 +6,7 @@
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "computationkernel.h"
+#include "dropnotifyform.h"
 
 #include <QSettings>
 #include <QTimer>
@@ -18,7 +19,7 @@
 namespace Tools {
 
 CheckUpdates::
-        CheckUpdates(Ui::SaweMainWindow *parent) :
+        CheckUpdates(::Ui::SaweMainWindow *parent) :
     QObject(parent),
     manualUpdate(false),
     targetUrl("http://feedback.sonicawe.com/checkforupdates.php"),
@@ -188,9 +189,21 @@ void CheckUpdates::
                 url = s.mid(i+5);
             }
 
-            int q = QMessageBox::question(dynamic_cast<QWidget*>(parent()), "Sonic AWE updates", message, QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-            if (q == QMessageBox::Yes)
-                QDesktopServices::openUrl(url);
+
+            typedef ::Ui::SaweMainWindow SaweMainWindowType;
+            SaweMainWindowType* mainwindow = dynamic_cast<SaweMainWindowType*>(parent());
+
+            // GetCudaForm has Qt::WA_DeleteOnClose
+            new DropNotifyForm(
+                    mainwindow->centralWidget(),
+                    mainwindow->getProject()->tools().render_view(),
+                    message,
+                    url,
+                    "Download");
+
+//            int q = QMessageBox::question(dynamic_cast<QWidget*>(parent()), "Sonic AWE updates", message, QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+//            if (q == QMessageBox::Yes)
+//                QDesktopServices::openUrl(url);
         }
     }
 }

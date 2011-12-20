@@ -134,7 +134,7 @@ FORMS += \
     tools/selections/rectangleform.ui \
     sawe/enterlicense.ui \
     tools/settingsdialog.ui \
-    tools/getcudaform.ui \
+    tools/dropnotifyform.ui \
     tools/sendfeedback.ui \
     tools/commands/commandhistory.ui \
 

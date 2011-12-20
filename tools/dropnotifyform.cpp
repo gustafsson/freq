@@ -1,5 +1,5 @@
-#include "getcudaform.h"
-#include "ui_getcudaform.h"
+#include "dropnotifyform.h"
+#include "ui_dropnotifyform.h"
 
 
 #include "renderview.h"
@@ -16,16 +16,15 @@ namespace Tools {
 
 TAni<float> formHeight(1);
 
-QUrl GetCudaForm::url("http://muchdifferent.com/?page=signals-cuda");
 
-
-GetCudaForm::
-        GetCudaForm(QWidget *parent, RenderView* render_view)
+DropNotifyForm::
+        DropNotifyForm(QWidget *parent, RenderView* render_view, QString text, QString url, QString buttontext)
             :
     QWidget(parent),
-    ui(new Ui::GetCudaForm),
+    ui(new Ui::DropNotifyForm),
     render_view(render_view),
-    dt(0.01)
+    dt(0.01),
+    url("http://muchdifferent.com/?page=signals-cuda")
 {
     ui->setupUi(this);
 
@@ -47,11 +46,20 @@ GetCudaForm::
     ui->labelInfoText->setText("Sonic AWE is faster with CUDA");
 #endif
 
+    if (!text.isEmpty())
+    {
+        ui->labelInfoText->setText(text);
+        this->url = url;
+    }
+    if (!buttontext.isEmpty())
+        ui->pushButtonReadMore->setText( buttontext );
+
     connect(ui->pushButtonClose, SIGNAL(clicked()), SLOT(close()));
     connect(ui->pushButtonReadMore, SIGNAL(clicked()), SLOT(readMore()));
 
     this->setBackgroundRole( QPalette::Mid );
     this->setAutoFillBackground( true );
+    this->setAttribute( Qt::WA_DeleteOnClose );
 
     parentLayout = dynamic_cast<QVBoxLayout*>(parent->layout());
     BOOST_ASSERT( parentLayout );
@@ -67,14 +75,14 @@ GetCudaForm::
 }
 
 
-GetCudaForm::
-        ~GetCudaForm()
+DropNotifyForm::
+        ~DropNotifyForm()
 {
     delete ui;
 }
 
 
-void GetCudaForm::
+void DropNotifyForm::
         readMore()
 {
     QDesktopServices::openUrl(url);
@@ -82,7 +90,7 @@ void GetCudaForm::
 }
 
 
-void GetCudaForm::
+void DropNotifyForm::
         ani()
 {
     int h = formHeight;
@@ -99,7 +107,6 @@ void GetCudaForm::
         render_view->userinput_update();
     }
 }
-
 
 
 } // namespace Tools

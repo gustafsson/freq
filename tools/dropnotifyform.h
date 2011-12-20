@@ -1,5 +1,5 @@
-#ifndef GETCUDAFORM_H
-#define GETCUDAFORM_H
+#ifndef DROPNOTIFYFORM_H
+#define DROPNOTIFYFORM_H
 
 #include <QWidget>
 #include <QUrl>
@@ -10,25 +10,25 @@ class QVBoxLayout;
 namespace Tools {
 
 namespace Ui {
-    class GetCudaForm;
+    class DropNotifyForm;
 }
 
 class RenderView;
 
-class GetCudaForm : public QWidget
+class DropNotifyForm : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit GetCudaForm(QWidget *parent, RenderView* render_view);
-    ~GetCudaForm();
+    explicit DropNotifyForm(QWidget *parent, RenderView* render_view, QString text="", QString url="", QString buttontext="");
+    ~DropNotifyForm();
 
 public slots:
     void readMore();
     void ani();
 
 private:
-    Ui::GetCudaForm *ui;
+    Ui::DropNotifyForm *ui;
     RenderView* render_view;
     QTimer animate;
     QVBoxLayout* parentLayout;
@@ -36,9 +36,9 @@ private:
 
     float dt;
 
-    static QUrl url;
+    QUrl url;
 };
 
 
 } // namespace Tools
-#endif // GETCUDAFORM_H
+#endif // DROPNOTIFYFORM_H

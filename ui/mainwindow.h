@@ -43,6 +43,7 @@ public:
     void disableFullscreen();
     void restoreSettings(QByteArray);
     QByteArray saveSettings() const;
+    Sawe::Project* getProject() const { return project; }
 
 signals:
     void onMainWindowCloseEvent( QWidget* closed );
