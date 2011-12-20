@@ -33,7 +33,7 @@ pChunk DrawnWaveform::
     if (0 == w)
         throw std::logic_error("DrawnWaveform::operator() Not enough data");
 
-    size_t free=availableMemoryForSingleAllocation();
+    size_t free = availableMemoryForSingleAllocation();
 
     free /= 2; // Don't even try to get close to use all memory
     // never use more than 64 MB

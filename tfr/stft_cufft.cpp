@@ -173,11 +173,9 @@ void Stft::
             slices = count,
             i = 0;
 
-    size_t free = availableMemoryForSingleAllocation();
-    free /= 2; // Don't even try to get close to use all memory
-    // never use more than 64 MB
-    if (free > 64<<20)
-        free = 64<<20;
+    // Don't use more than 32 MB for the transform, assume that it's already verified that
+    // the number of chunks fit in memory
+    size_t free = 32<<20;
 
     unsigned multiple = 0;
     multiple++; // input
