@@ -114,7 +114,10 @@ bool Worker::
 
     if (skip_if_low_fps)
         if (_requested_fps>_highest_fps)
+        {
+            _samples_per_chunk = _target->next_good_size( 1 );
             return false;
+        }
 
     if (todo_list.empty())
         return false;

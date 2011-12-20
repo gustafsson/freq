@@ -151,7 +151,7 @@ public:
         unsigned smallest_ok = smallestOk(J);
         if (largestApplied < smallest_ok)
         {
-            if (0 != J.first)
+            if (!(disregardAtZero() && 0 == J.first))
                 undersampled |= J;
         }
         else if (undersampled)
@@ -167,7 +167,11 @@ public:
 
         // grow in both directions
         Signal::Interval I = Signal::Intervals(J).enlarge( (requiredSize - J.count())/2 ).spannedInterval();
+        if (disregardAtZero() && 0==I.first && 0!=J.first)
+            I.first = J.first;
+
         I.last = I.first + requiredSize;
+
 
         if (largestApplied < smallest_ok)
         {
@@ -178,6 +182,9 @@ public:
     }
 
 protected:
+    virtual bool disregardAtZero() { return false; }
+
+
     std::vector<boost::shared_ptr<Collection> >* _collections;
 
 private:
@@ -203,6 +210,7 @@ public:
 
     virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
     void mergeChunkpart( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual bool disregardAtZero() { return true; }
 
 private:
     Renderer* renderer;
