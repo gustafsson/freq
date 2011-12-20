@@ -6,6 +6,9 @@
 #include "adapters/playback.h"
 #include "adapters/microphonerecorder.h"
 
+#include "tfr/cwt.h"
+#include "heightmap/collection.h"
+
 #include <QSettings>
 #include <QFileDialog>
 
@@ -188,8 +191,17 @@ void SettingsDialog::
 
     QSettings().setValue("resolution", resolution);
 
+
+    float prevRedundancy = project->tools().render_view()->model->renderer->redundancy();
     project->tools().render_view()->model->renderer->redundancy(resolution);
     project->tools().render_view()->model->renderer->setFractionSize(fraction, fraction);
+
+    bool isCwt = dynamic_cast<Tfr::Cwt*>(project->tools().render_model.collections[0]->transform().get());
+    bool subtexelAggregationChanged = isCwt && (prevRedundancy == 1.f) != (resolution == 1.f);
+
+    if (subtexelAggregationChanged)
+        project->head->head_source()->invalidate_samples( project->head->head_source()->getInterval() );
+
     project->tools().render_view()->userinput_update();
 }
 
