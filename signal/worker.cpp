@@ -235,9 +235,16 @@ bool Worker::
         unsigned prev_samples_per_chunk = _samples_per_chunk;
         if (current_fps < _requested_fps)
         {
-            _samples_per_chunk = _target->prev_good_size( _samples_per_chunk );
-            if (_samples_per_chunk == prev_samples_per_chunk)
-                _highest_fps = current_fps;
+            float diff = current_fps/_requested_fps;
+            while(diff*prev_samples_per_chunk > _samples_per_chunk)
+            {
+                _samples_per_chunk = _target->prev_good_size( _samples_per_chunk );
+                if (_samples_per_chunk == prev_samples_per_chunk)
+                {
+                    _highest_fps = current_fps;
+                    break;
+                }
+            }
 
             WORKER_INFO TaskInfo(
                     "Low framerate (%.1f fps). Decreased samples per chunk to %u",
