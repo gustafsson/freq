@@ -25,8 +25,8 @@
 #define TIME_COLLECTION
 //#define TIME_COLLECTION if(0)
 
-#define INFO_COLLECTION
-//#define INFO_COLLECTION if(0)
+//#define INFO_COLLECTION
+#define INFO_COLLECTION if(0)
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
@@ -39,7 +39,7 @@
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
 #define MAX_FRACTION_FOR_CACHES (1.f/2.f)
-#define MAX_CREATED_BLOCKS_PER_FRAME 8
+#define MAX_CREATED_BLOCKS_PER_FRAME 16
 
 using namespace Signal;
 
